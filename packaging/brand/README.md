@@ -50,6 +50,17 @@ follows the theme tokens `--mm-brand-water` and `--mm-brand-wordmark` instead â€
 three-stream primary mark, since the sidebar never renders it anywhere near 16px. The wordmark is
 the word "Weir" set in the app font (Inter), not outlines.
 
+## The border inside the tile
+
+The app icon has a thin accent border drawn inside the tile, not on its edge, so a margin of the dark tile shows
+between the border and the edge. It matches Deluno's app icon (`deluno-route-primary.svg`) as shares of the tile:
+the border is centred 76/1024 in from the edge, is 20/1024 thick, has a corner radius of 192/1024 and is the mark's
+colour at 38% opacity. On the 24-unit grid that is `x=1.78`, `stroke-width=0.47`, `rx=4.5`. To keep the same room
+between the mark and the border that Deluno's mark has, the mark is drawn at 0.8 of its size about the tile's centre
+(0.9 in the 16px tile, where every pixel of the mark counts and the border is under one pixel thick). The two app
+icons and `apps/web/public/favicon.svg` carry this; the bare marks (`weir-mark*.svg`, the docs logos, the in-app
+mark) do not, because they have no tile.
+
 ## Where the geometry comes from (#581)
 
 The SVGs here were generated, not drawn. The accepted render is kept at `source.png` in this folder; its band
