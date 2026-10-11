@@ -2,9 +2,12 @@
     The scenarios, in run order: what each one does and what it takes to pass. Data only, so the orchestrator, the runner,
     the plan mode, the record and the tests (scripts/scenarios.test.mjs) all read the same list.
 
-    Phase `WithDeluno` runs FIRST, with no checkpoint restore, on the VM exactly as Deluno's suite leaves it: Deluno set up, Weir
-    installed by Deluno's picker (the previous release), and the key file for Deluno's API in the VM. Phase `Fresh` runs SECOND on
-    the clean checkpoint, with the build under test installed alone.
+    Phase `Update` runs FIRST, with no checkpoint restore, on the VM with Deluno set up and Weir installed by Deluno's picker (the
+    previous release): it installs the build under test over that Weir. Deluno's suite then makes its hand-offs, films, resends and
+    outages while the build under test is the Weir installed, because a hand-off the previous release handled says nothing about
+    the build. Phase `WithDeluno` runs SECOND, with no restore, on the VM exactly as Deluno's suite leaves it, with the key file for
+    Deluno's API in the VM. Phase `Fresh` runs LAST on the clean checkpoint, with the build under test installed alone. One
+    invocation can run them back to back, or the Update phase alone before Deluno's suite and the other two after it.
 
     Every scenario is required. A scenario whose preconditions are not met is recorded `not-applicable` with the reason, and a
     record with any not-applicable scenario sets no success status: a release cannot pass without the real-Deluno scenarios.
@@ -12,10 +15,10 @@
 
 $ScenarioCatalog = @(
     [pscustomobject]@{
-        Id = 'update-over-installed-weir'; Phase = 'WithDeluno'; Required = $true
+        Id = 'update-over-installed-weir'; Phase = 'Update'; Required = $true
         Title = 'An update over the Weir Deluno installed'
-        Does = 'Takes the Weir Deluno''s picker installed (the previous release, running), signs in (or creates the account when it has none), makes a Weir-only workflow and has Weir clean a film in it, then installs the build under test over the running Weir with Setup --silent. Asks the updated server for the copy of Weir''s data the tray asks for before an update.'
-        Passes = 'Weir is running again on the build under test, with its commit, without being started by hand; the tray log says it was running before the install and started again; the account, the workflow and every Activity entry from before are still there; when the update changed the database the copy saved before it exists and System overview names it; the updated server saves the tray''s requested copy under backups\pre-update; a film dropped in afterwards is cleaned.'
+        Does = 'Takes the Weir Deluno''s picker installed (the previous release, running), signs in (or creates the account when it has none), makes a Weir-only workflow and has Weir clean a film in it, reads every Activity entry, then installs the build under test over the running Weir with Setup --silent and reads every Activity entry again. Asks the updated server for the copy of Weir''s data the tray asks for before an update. Leaves a note of the moment the build under test began answering, for the Deluno scenarios.'
+        Passes = 'Weir is running again on the build under test, with its commit, without being started by hand; the tray log says it was running before the install and started again; the account, the workflow and every Activity entry from before (all of them, paged, with the same time, kind, title, detail and result) are still there; when the update changed the database the copy saved before it exists and System overview names it; the updated server saves the tray''s requested copy under backups\pre-update; a film dropped in afterwards is cleaned.'
     }
     [pscustomobject]@{
         Id = 'workflows-from-deluno'; Phase = 'WithDeluno'; Required = $true
@@ -26,26 +29,26 @@ $ScenarioCatalog = @(
     [pscustomobject]@{
         Id = 'deluno-film-handoff'; Phase = 'WithDeluno'; Required = $true
         Title = 'A film Deluno handed over'
-        Does = 'Lists the hand-offs Deluno really made (its own API, with the key) and follows each film through Weir.'
-        Passes = 'At least one film hand-off finished; for every finished film, Weir shows the cleaned file as processed with Deluno''s imported answer recorded against it, and Deluno shows its own import done.'
+        Does = 'Lists the hand-offs Deluno really made (its own API, with the key) and follows each film the build under test took (made after it began answering) through Weir. Films made before that were handled by the previous release and are not judged.'
+        Passes = 'At least one film hand-off was made after the build under test took over and finished; for every such film, Weir shows the cleaned file as processed with Deluno''s imported answer recorded against it, and Deluno shows its own import done. With none made after the build took over, the scenario is not applicable and says what Deluno''s suite has to do.'
     }
     [pscustomobject]@{
         Id = 'deluno-release-with-extra'; Phase = 'WithDeluno'; Required = $true
         Title = 'A release with a small extra'
-        Does = 'Looks in the workflows Deluno feeds for a release folder holding a film and an extra under the workflow''s minimum size.'
-        Passes = 'Such a release exists; its film was cleaned and its extra was left alone, skipped and not failed; and nothing in the workflow needs the person.'
+        Does = 'Looks, among the film hand-offs the build under test took, for a release whose folder in the download client still holds a film and a video file under the minimum size of the workflow Weir cleaned the film in. Deluno leaves such an extra out of the hand-off, so the extra is read where it stays.'
+        Passes = 'Such a release exists; its film was cleaned; the extra is still in the client''s folder, Weir wrote nothing named for it to its output folder, and Weir either never saw it or left it alone as skipped; nothing in the workflow is failed or rejected.'
     }
     [pscustomobject]@{
         Id = 'deluno-resend'; Phase = 'WithDeluno'; Required = $true
         Title = 'A hand-off sent again from Deluno'
         Does = 'Asks Deluno to tell Weir again what became of an imported hand-off (Deluno''s own send-again), then reads both sides.'
-        Passes = 'Deluno records the repeat as delivered or settled, never refused; Weir keeps the one imported answer and the file it already settled, and raises no failure.'
+        Passes = 'Deluno really sends it again (a new attempt, just now) and records the repeat as delivered or settled, never refused; Weir keeps the one imported answer and the file it already settled, and raises no failure.'
     }
     [pscustomobject]@{
         Id = 'deluno-outcomes'; Phase = 'WithDeluno'; Required = $true
         Title = 'What Deluno was told about every outcome'
-        Does = 'Reads the outcome Deluno recorded for each hand-off and the outcome Weir recorded for the same file.'
-        Passes = 'No outcome is pending, refused, never received or given up on; imported on one side is imported on the other, and not-imported on one is not-imported on the other.'
+        Does = 'Reads the outcome Deluno recorded for each hand-off and, for the hand-offs made after the build under test took over, the outcome Weir recorded for the same file.'
+        Passes = 'No outcome is pending, refused, never received or given up on, except a hand-off that handed no file back (Weir was down for it), which Deluno closes as not-imported and given-up with nothing owed and says so; for every hand-off the build under test took and Deluno delivered, imported on one side is imported on the other, and not-imported on one is not-imported on the other.'
     }
     [pscustomobject]@{
         Id = 'logs-clean-deluno'; Phase = 'WithDeluno'; Required = $true

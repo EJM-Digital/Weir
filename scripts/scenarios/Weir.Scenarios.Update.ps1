@@ -16,8 +16,8 @@ function Scenario_update_over_installed_weir {
     $before = Invoke-WeirOnlyFilm -Name 'Survivor.Film.2010' -Workflow $workflow
     Assert-CleanedFilm -OutputPath $before.Release.Output | Out-Null
     $workflowsBefore = @(Get-WeirJson $script:Ctx.Session '/api/v1/processing/libraries')
-    $activityBefore = @(Get-ActivityItems -Limit 100)
-    Assert-That (@($activityBefore | Where-Object event_type -eq 'processing.file_remux_pass_completed').Count -ge 1) "Weir $oldVersion recorded the film it cleaned in Activity"
+    $activityBefore = @(Get-AllActivityItems)
+    Assert-That (@($activityBefore | Where-Object event_type -eq 'processing.file_remux_pass_completed').Count -ge 1) "Weir $oldVersion recorded the film it cleaned in Activity ($($activityBefore.Count) entries in all)"
 
     # 2. The build under test, installed over the running Weir.
     $update = Invoke-WeirSetup -Path $script:Ctx.SetupPath
@@ -26,6 +26,7 @@ function Scenario_update_over_installed_weir {
         Test-VersionUnderTest -Reported (Get-ServerVersion) -Expected $script:Ctx.Version -ShortSha $script:Ctx.ShortSha
     } | Out-Null
     $newVersion = Get-ServerVersion
+    Save-BuildUnderTestMarker -Reported $newVersion
     $tray = @(Get-Process -Name 'Weir' -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $paths.TrayExe })
     Assert-That ($tray.Count -ge 1) 'a tray from the new install is running'
     Assert-That ((Get-TrayLogText) -match 'Weir was running before this install') 'the tray log says Weir was running before the install and started again'
@@ -38,9 +39,12 @@ function Scenario_update_over_installed_weir {
         $same = @($workflowsAfter | Where-Object { $_.id -eq $kept.id -and $_.watched_folder -eq $kept.watched_folder -and $_.output_folder -eq $kept.output_folder })
         Assert-That ($same.Count -eq 1) "the workflow '$($kept.name)' and its folders are as they were"
     }
-    $activityAfter = @(Get-ActivityItems -Limit 100)
-    $stillThere = @($activityBefore | Where-Object { $row = $_; @($activityAfter | Where-Object { $_.id -eq $row.id }).Count -eq 1 })
-    Assert-That ($stillThere.Count -eq $activityBefore.Count) "all $($activityBefore.Count) Activity entries from before the update are still there"
+    # Every entry, paged: the newest 100 of a list that the update (and this run) adds to cannot show whether one was lost.
+    $activityAfter = @(Get-AllActivityItems)
+    $lost = @(Find-ActivityLostOrChanged -Before $activityBefore -After $activityAfter)
+    $lostText = (@($lost | Select-Object -First 5 | ForEach-Object { "#$($_.Id) '$($_.Title)' $($_.Problem)" }) -join '; ')
+    Assert-That ($lost.Count -eq 0) "all $($activityBefore.Count) Activity entries from before the update are still there, unchanged (found $($lost.Count) gone or changed: $lostText)"
+    Assert-That ($activityAfter.Count -ge $activityBefore.Count) "Activity holds at least as many entries as before ($($activityAfter.Count) after, $($activityBefore.Count) before)"
 
     # 4. The copy saved before the update, when the update changed the database; and the tray's own request for one.
     $log = Get-FileTextOrNull -Path $paths.ServerLog

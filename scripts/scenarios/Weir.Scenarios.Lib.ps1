@@ -300,6 +300,29 @@ function Find-LogProblems {
     }
 }
 
+# --- starting a phase and reading how it ended -----------------------------------------------------------------------------
+
+# The script the scheduled task runs inside the VM: Run-WeirScenarios.ps1 with its arguments, then the exit code written whole and
+# moved into place, always a number. A script that simply ends sets no $LASTEXITCODE when no native program ran, and the earlier
+# wrapper then wrote an empty file that the orchestrator's poll could not read (rc.14's first run, Fresh phase): a run that ends
+# without an exit code is 4, and one that throws is 3.
+function New-PhaseWrapperText {
+    param([Parameter(Mandatory)] [string] $RunFolder, [Parameter(Mandatory)] [string] $RunnerPath, [Parameter(Mandatory)] [string] $Arguments)
+    @(
+        "`$ErrorActionPreference = 'Continue'",
+        "function Save-ExitCode(`$code) { `$part = '$RunFolder\exitcode.part'; [IO.File]::WriteAllText(`$part, [string]`$code); Move-Item -LiteralPath `$part -Destination '$RunFolder\exitcode.txt' -Force }",
+        "try { & '$RunnerPath' $Arguments *> '$RunFolder\runner.out'; `$code = `$LASTEXITCODE; Save-ExitCode `$(if (`$null -eq `$code) { 4 } else { `$code }) }",
+        "catch { `$_ | Out-String | Add-Content '$RunFolder\runner.out'; Save-ExitCode 3 }") -join "`r`n"
+}
+
+# The exit code in the file's text, or $null while there is none (no file yet, or text that is not a number).
+function Read-ExitCodeText {
+    param($Text)
+    if ($null -eq $Text) { return $null }
+    $trimmed = ([string]$Text).Trim()
+    if ($trimmed -match '^\d+$') { [int]$trimmed } else { $null }
+}
+
 # --- the record -----------------------------------------------------------------------------------------------------
 
 function Add-ScenarioResult {
@@ -320,7 +343,9 @@ function Write-ScenarioRecord {
         [Parameter(Mandatory)] $Catalog,
         [Parameter(Mandatory)] $Results,
         [Parameter(Mandatory)] [hashtable] $Facts,
-        [string[]] $Files = @()
+        [string[]] $Files = @(),
+        # Phases this invocation left to another one and that have no result yet: their scenarios read "not run yet", not "failed".
+        [string[]] $NotRunPhases = @()
     )
     $lines = New-Object System.Collections.Generic.List[string]
     $lines.Add("# Weir scenario suite $($Facts.Version), commit $($Facts.ShortSha)")
@@ -336,15 +361,17 @@ function Write-ScenarioRecord {
     foreach ($entry in $Catalog) {
         $number++
         $result = @($Results | Where-Object { $_.Id -eq $entry.Id }) | Select-Object -First 1
-        $status = if ($result) { $result.Status } else { 'failed' }
-        $detail = if ($result) { $result.Detail } else { 'The scenario did not run.' }
+        $notRunYet = (-not $result) -and ($NotRunPhases -contains $entry.Phase)
+        $status = if ($result) { $result.Status } elseif ($notRunYet) { 'not run yet' } else { 'failed' }
+        $detail = if ($result) { $result.Detail } elseif ($notRunYet) { 'Left to another invocation of the suite (-Phases); this record is not complete.' } else { 'The scenario did not run.' }
         $seconds = if ($result) { $result.Seconds } else { 0 }
         $lines.Add(("| {0} | {1} | {2} | {3} | {4} |" -f $number, $entry.Title, $status, $seconds, (($detail -replace '\|', '/') -replace '\r?\n', ' ')))
     }
-    $failed = @($Catalog | Where-Object { $e = $_; $r = @($Results | Where-Object { $_.Id -eq $e.Id }) | Select-Object -First 1; -not $r -or $r.Status -eq 'failed' })
+    $failed = @($Catalog | Where-Object { $e = $_; $r = @($Results | Where-Object { $_.Id -eq $e.Id }) | Select-Object -First 1; ($r -and $r.Status -eq 'failed') -or (-not $r -and $NotRunPhases -notcontains $e.Phase) })
+    $notRun = @($Catalog | Where-Object { $e = $_; -not (@($Results | Where-Object { $_.Id -eq $e.Id })) -and $NotRunPhases -contains $e.Phase })
     $passed = @($Results | Where-Object Status -eq 'passed').Count
     $lines.Add('')
-    $lines.Add("**$passed of $(@($Catalog).Count) scenarios passed; $(@($failed).Count) failed.**")
+    $lines.Add("**$passed of $(@($Catalog).Count) scenarios passed; $(@($failed).Count) failed$(if ($notRun.Count -gt 0) { "; $($notRun.Count) not run yet" }).**")
     $lines.Add('')
     $lines.Add('## What each scenario does and what passes')
     foreach ($entry in $Catalog) {

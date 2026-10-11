@@ -95,6 +95,56 @@ public sealed partial class HeldFileReturnTests
         await AssertSupersededAsync("first");
     }
 
+    // --- the manager's answer to the send that took over -------------------------------------------------------------------
+
+    /// <summary>
+    /// What Deluno's golden run does with a release sent again (its "during" timing, and "before"): the manager imports once and
+    /// answers the send that took the pass over. Weir records that answer against the copy, so the file reads imported.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task The_managers_import_of_the_send_that_took_over_is_recorded_against_the_copy(bool whileBeingCleaned)
+    {
+        await SetUpAsync(releaseFolder: true);
+        await HandOffAsync("first");
+        if (whileBeingCleaned)
+        {
+            var sentAgain = false;
+            _media.OnCall = () =>
+            {
+                string[] last;
+                lock (_media.Calls)
+                {
+                    last = [.. _media.Calls[^1]];
+                }
+
+                if (!sentAgain && last[0] == "ffmpeg" && last.Contains("-map") && !last.Contains("null"))
+                {
+                    sentAgain = true;
+                    Task.Run(() => HandOffAsync("second")).GetAwaiter().GetResult();
+                }
+            };
+            await DrainAsync();
+            Assert.True(sentAgain);
+        }
+        else
+        {
+            await HandOffAsync("second");
+            await DrainAsync();
+        }
+
+        await AssertCleanedAndToldAsync("second");
+        var outcomes = new HandbackOutcomes(_fixture.Ledger, _fixture.Targets, _fixture.Handback, _fixture.Store.Clock);
+        var answer = await _fixture.Db(async uow => await outcomes.RecordHandoffOutcomeAsync(
+            uow, (await HandoffLedgerStore.FindAsync(uow, "deluno", "second"))!, "Deluno", HandbackRules.Imported, DateTimeOffset.UtcNow, @"C:\Media\Movies\Busyfilm (2017)\Busyfilm.mkv", null));
+
+        var copy = await _fixture.Db(uow => _fixture.Handback.FindAsync(uow, _libraryId, Relative));
+        Assert.Equal(HandbackRules.Imported, copy!.Outcome);
+        Assert.Equal("Deluno", copy.OutcomeBy);
+        Assert.Contains("imported", answer.Message, StringComparison.Ordinal);
+    }
+
     // --- as the wait for a gone file ends -----------------------------------------------------------------------------------
 
     [Theory]

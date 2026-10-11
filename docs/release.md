@@ -84,18 +84,37 @@ suite, run on the golden VM on the exact commit.
 
 `scripts/scenarios/Invoke-WeirScenarios.ps1` is the same shape as Deluno's `Invoke-GoldenPath.ps1` (PowerShell remoting to
 the Hyper-V host, PowerShell Direct into the VM, the same two credential files), so the Deluno session runs both suites in
-one VM round. It runs two phases, **in this order**:
+one VM round. It runs three phases, **in this order**:
 
-1. **WithDeluno, first, with no restore,** on the VM exactly as Deluno's suite leaves it: Deluno set up, Weir installed by
-   Deluno's picker (the previous release, running), and the key file for Deluno's API in the VM. It installs the build under
-   test over that Weir, then follows what Deluno really did through Weir.
-2. **Fresh, second:** the clean checkpoint is restored (it has no Deluno, which is why this phase is second), the build under
+1. **Update, first, with no restore,** on the VM with Deluno set up and Weir installed by Deluno's picker (the previous
+   release, running). It installs the build under test over that Weir and checks what survives (every Activity entry, paged,
+   unchanged). It leaves a note of the moment the build under test began answering.
+2. **WithDeluno, next, with no restore,** on the VM exactly as Deluno's suite leaves it, with the key file for Deluno's API
+   in the VM. It follows what Deluno really did through the build under test.
+3. **Fresh, last:** the clean checkpoint is restored (it has no Deluno, which is why this phase is last), the build under
    test is installed alone, and the scenarios that need no manager run.
 
+**Deluno's hand-offs must be made while the build under test is the Weir installed.** A hand-off the previous release
+handled says nothing about the build, and the Deluno scenarios judge only hand-offs made after the build began answering (a
+hand-off made earlier is counted, not judged; with none made later the scenario is recorded not-applicable and says what
+to do). So in a combined round the Deluno session installs Weir with its picker, then the suite is run twice:
+
 ```powershell
+# 1. Right after Deluno's suite installed Weir with its picker, before it sends any film (leave the Weir login file first):
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.14 -CommitSha <the 40-character SHA that will be tagged>
+  -Version 1.0.0-rc.14 -CommitSha <the 40-character SHA that will be tagged> -Phases Update
+# 2. After Deluno's suite has made its hand-offs (leave the Deluno key file and the Weir login file again):
+./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
+  -Version 1.0.0-rc.14 -CommitSha <the same SHA> -Phases WithDeluno,Fresh
 ```
+
+Both invocations write into the same `artifacts/weir-scenarios-<version>-<short sha>/` folder, and the record merges every
+phase found there; the `golden-path` status is set by the invocation that completes the record (or by either one as soon as
+a scenario fails). With no `-Phases` all three run back to back, which is the right way to try the suite but cannot pass: the
+hand-offs Deluno made earlier were the previous release's.
+
+A phase that goes wrong (the VM stops answering, the scenario task dies) is recorded as cut short with what it had done
+copied back, and the next phase still runs. Each scenario inside a phase gets its own verdict.
 
 No secret is ever passed on a command line or carried between sessions; every secret is read only inside the VM, and the
 orchestrator only passes paths. `-DelunoUrl` (default `http://127.0.0.1:7879`) is where Deluno is looked for in the VM.
@@ -115,19 +134,19 @@ it does and what passes. The run keeps both apps' logs and writes `scenario-<ver
 `artifacts/weir-scenarios-<version>-<short sha>/`, beside each scenario's evidence, Weir's server and tray logs, Deluno's logs
 when Deluno is installed, and Weir's request log.
 
-**The pass record needs both phases and every scenario.** Success is set only when every scenario passed. A scenario whose
+**The pass record needs all three phases and every scenario.** Success is set only when every scenario passed. A scenario whose
 preconditions are not met (no Deluno answering, no key file, no film hand-off or small extra to follow, a Weir whose login was
 not left) is recorded not-applicable with the reason, and a run with any of them sets `pending`, not success, so a release
 cannot pass without the real-Deluno scenarios. A failure, or a run cut short after tests began, sets `failure`.
 
 | Phase | Scenario | What it proves |
 | --- | --- | --- |
-| WithDeluno | An update over the Weir Deluno installed | The build under test installed with `Setup --silent` over the running picker-installed Weir brings it back by itself on the right version and commit; the account, a workflow and the Activity from before survive; the copy saved before the update exists when the database changed; the updated server saves the tray's requested copy; a film is cleaned afterwards. |
+| Update | An update over the Weir Deluno installed | The build under test installed with `Setup --silent` over the running picker-installed Weir brings it back by itself on the right version and commit; the account, a workflow and every Activity entry from before (all of them, paged, unchanged) survive; the copy saved before the update exists when the database changed; the updated server saves the tray's requested copy; a film is cleaned afterwards. |
 | WithDeluno | Workflows set up from Deluno | With the key from the key file, Weir's workflows are linked to the Deluno in the VM with its folders and the folder chain is ready. |
-| WithDeluno | A film Deluno handed over | Every completed film hand-off in Deluno's own list shows in Weir as processed with Deluno's imported answer recorded against it. |
-| WithDeluno | A release with a small extra | A release Deluno handed over holds a cleaned film and an extra under the minimum size that Weir skipped, not failed; nothing needs the person. |
-| WithDeluno | A hand-off sent again from Deluno | Deluno's own send-again of an imported outcome is recorded delivered or settled, never refused, and Weir keeps its one answer and raises no failure. |
-| WithDeluno | What Deluno was told about every outcome | No outcome is pending, refused, never received or given up on; Deluno's and Weir's answers for each file agree. |
+| WithDeluno | A film Deluno handed over | Every completed film hand-off Deluno made after the build under test began answering shows in Weir as processed with Deluno's imported answer recorded against it. |
+| WithDeluno | A release with a small extra | A release the build under test took, whose folder in the download client still holds a film and a video file under the workflow's minimum size: the film is cleaned, the extra is still in the client's folder, Weir wrote nothing for it, and Weir never saw it or left it alone as skipped; nothing in the workflow is failed or rejected. Deluno leaves such an extra out of the hand-off, and must leave the release in the client's completed folder until the scenarios have run. |
+| WithDeluno | A hand-off sent again from Deluno | Deluno's own send-again of an imported outcome really sends it (a new attempt) and is recorded delivered or settled, never refused, and Weir keeps its one answer and raises no failure. |
+| WithDeluno | What Deluno was told about every outcome | No outcome is pending, refused, never received or given up on, except a hand-off that handed no file back (Weir was down for it), which Deluno closes as not-imported and given-up with nothing owed and says so; for the hand-offs the build under test took, Deluno's and Weir's answers for each file agree. |
 | WithDeluno | Logs with no unexpected warnings, with Deluno | System > Logs, the server log and the tray log hold no unexplained warning or error since the phase began. |
 | Fresh | Fresh install | `Setup --silent` exits 0; the installed build reports the version and commit under test; the tray and server run; the server listens on this PC only; no window opens. |
 | Fresh | First visit and account creation | A brand-new Edge profile lands on account creation, then (once the account exists) on sign-in; neither ever says a session expired. |
@@ -174,9 +193,10 @@ root cause is found (the owner, 11 Oct 2026), and a failure is fixed with a test
   `apps/server/Directory.Build.props`. Either way the artifact's name and its run's `headSha` tie it to the
   commit, and it is never published.
 
-**2. Run it on the golden VM.** The scenario suite above runs on the Hyper-V Windows VM right after Deluno's suite, with this
-build's `Weir-win-Setup.exe` made from the commit being tagged: first on the VM as Deluno's suite left it, then (after the
-saved clean checkpoint is restored) on the clean machine. It runs unattended.
+**2. Run it on the golden VM.** The scenario suite above runs on the Hyper-V Windows VM around Deluno's suite, with this
+build's `Weir-win-Setup.exe` made from the commit being tagged: first the build is installed over the Weir Deluno's picker
+installed (before Deluno's suite sends any film), then, once Deluno's suite has made its hand-offs, the Deluno scenarios run on
+the VM as it was left, then (after the saved clean checkpoint is restored) the scenarios on the clean machine. It runs unattended.
 The rig stays the long-running real-data box and is not the golden path.
 
 **3. The checklist.** [golden-path.md](golden-path.md) is the shared checklist for both products, the same word for word

@@ -6,10 +6,11 @@
     This is the part of the scenario suite that runs INSIDE the golden VM, in the signed-in desktop session, so that the tray has a
     desktop (Invoke-WeirScenarios.ps1 starts it there). Nothing here touches a machine other than the one it runs on.
 
-    Phase WithDeluno runs first, with no restore, on the VM exactly as Deluno's suite leaves it: Deluno set up, Weir installed by
-    Deluno's picker, and a file with a Deluno API key in the VM. It installs the build under test over that Weir, then follows what
-    Deluno really did through Weir. Phase Fresh runs on the clean checkpoint, installs the build under test alone, and runs the
-    scenarios that need no manager.
+    Phase Update runs first, with no restore, on the VM with Deluno set up and Weir installed by Deluno's picker: it installs the
+    build under test over that Weir. Phase WithDeluno runs next, with no restore, on the VM exactly as Deluno's suite leaves it
+    (Deluno made its hand-offs while the build under test was the Weir installed) and a file with a Deluno API key in the VM; it
+    follows what Deluno really did through Weir. Phase Fresh runs on the clean checkpoint, installs the build under test alone, and
+    runs the scenarios that need no manager.
     Each scenario says what it does and what passes (Weir.Scenarios.Catalog.ps1), writes its own evidence file, and gets one
     verdict. The run writes results-<phase>.json, the evidence folder, the logs of Weir's server and tray (and Deluno's when it is
     there), Weir's request log, and scenario-<version>-<sha>.<phase>.md.
@@ -21,7 +22,7 @@
     change to a scenario is tried before a VM round. A rehearsal's record says so and can never set the golden-path status.
 
 .PARAMETER Phase
-    WithDeluno or Fresh.
+    Update, WithDeluno or Fresh.
 
 .PARAMETER SetupPath
     The Weir-win-Setup.exe of the build under test (the manual CI run's artifact weir-windows-<short sha>).
@@ -56,7 +57,7 @@
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('WithDeluno', 'Fresh')] [string] $Phase = 'Fresh',
+    [ValidateSet('Update', 'WithDeluno', 'Fresh')] [string] $Phase = 'Fresh',
     [string] $SetupPath,
     [string] $Version,
     [string] $ShortSha,
@@ -242,4 +243,7 @@ catch {
 $failed = @($allResults | Where-Object { $_.Status -eq 'failed' })
 $missing = @($phaseScenarios | Where-Object { $_.Required -and $_.Id -notin ($allResults | ForEach-Object { $_.Id }) })
 Write-Host ("{0} passed, {1} failed, {2} not applicable, in {3} s." -f @($allResults | Where-Object Status -eq 'passed').Count, $failed.Count, @($allResults | Where-Object Status -eq 'not-applicable').Count, [int]$runClock.Elapsed.TotalSeconds)
+# Always an explicit code: a script that simply ends leaves $LASTEXITCODE unset when no native program ran, and the wrapper that
+# starts this in the desktop session then wrote an empty exit-code file, which the orchestrator could not read (rc.14's first run).
 if ($failed.Count -gt 0 -or $missing.Count -gt 0) { exit 1 }
+exit 0
