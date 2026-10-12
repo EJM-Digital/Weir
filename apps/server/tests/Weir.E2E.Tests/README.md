@@ -37,6 +37,22 @@ A missing browser fails the first test with Playwright's own message naming the 
 Screenshots of the high-risk pages are written to `artifacts/screenshots/` at the repository root (ignored by git,
 overwritten each run). They are for looking at, not compared.
 
+## When a test fails
+
+A test that fails keeps its evidence in `artifacts/e2e-failures/<run>/<Class.Method>/` (ignored by git; a passing test
+deletes its own, and each run has a folder of its own, so a failure that does not repeat is still there after later runs):
+
+| File | What it shows |
+| --- | --- |
+| `error.txt` | The full error: message, Playwright call log and stack trace. |
+| `context-N-trace.zip` | Every step the browser took, with screenshots and the page at each step: `pwsh bin/Debug/net10.0/playwright.ps1 show-trace <file>`. |
+| `context-N-page-M.png` | The page as it was when the test ended. |
+| `browser.log` | The console, page errors, failed requests, responses of 400 and over and every navigation, with times. |
+| `server.log` | The last 2,000 lines the server wrote. |
+
+CI uploads the folder as `e2e-failure-evidence`. A test that passed only on the retry (`docs/ci-standard.md`, item 11) leaves
+its first failure there too: open the trace before anything is loosened.
+
 ## How it works
 
 - **`Harness/E2EServer`** is one server and one Playwright driver for the whole run (`ICollectionFixture`). It starts the
@@ -45,8 +61,9 @@ overwritten each run). They are for looking at, not compared.
   that make the server quiet (workers, file watcher, periodic scan, work file sweeps) are put back to their
   defaults, because the Logs tests expect the job rows a running server writes. Without `WEIR_E2E=1` it starts nothing.
 - **`Support/E2ETestBase`** resets per-test state before each test (users, sessions, suite settings and the library
-  folders are cleared) and gives the test a headless Chromium of its own. All test
-  classes share one collection, so tests run one at a time against the one server.
+  folders are cleared) and gives the test a headless Chromium of its own, traced and logged. All test
+  classes share one collection, so tests run one at a time against the one server. **`Harness/FailureArtifacts`** and
+  **`Harness/FailureKeepingFramework`** keep what a failed test wrote and delete the rest.
 - **`Harness/E2EDatabase`** writes plain SQL to the running server's SQLite file for what the browser cannot create, an
   activity event the open Logs tab must pick up live.
 - **`Support/ProcessingRig`** is a second Weir for a test that watches a file move through the screens: one worker over a fake

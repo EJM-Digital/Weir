@@ -15,12 +15,38 @@ public sealed class E2EServer : IAsyncLifetime
 
     private WeirServer? _server;
     private IPlaywright? _playwright;
+    private DateTime _webAppBuiltAt;
 
     public IPlaywright Playwright => _playwright ?? throw NotStarted();
 
     public string DatabasePath => (_server ?? throw NotStarted()).DatabasePath;
 
     public string Home => (_server ?? throw NotStarted()).Home;
+
+    /// <summary>
+    /// What changed under the run that no test did, for a failed test's evidence: the server is served the built web app from
+    /// disk, so a rebuild of it (another `npm run build`) swaps its files under a page that is loading them, and a server that has
+    /// stopped answers nothing.
+    /// </summary>
+    public IReadOnlyList<string> OutsideChanges()
+    {
+        var changes = new List<string>();
+        var server = _server ?? throw NotStarted();
+        if (!server.IsRunning)
+        {
+            changes.Add("The server process is no longer running.");
+        }
+
+        if (File.GetLastWriteTimeUtc(WebAppIndex) != _webAppBuiltAt)
+        {
+            changes.Add($"The built web app ({WebAppIndex}) was replaced after the run started.");
+        }
+
+        return changes;
+    }
+
+    /// <summary>Everything the server has written to its output so far.</summary>
+    public string LogText() => (_server ?? throw NotStarted()).LogText();
 
     /// <summary>The server's address without a trailing slash.</summary>
     public string BaseUrl => (_server ?? throw NotStarted()).BaseUrl.GetLeftPart(UriPartial.Authority);
@@ -56,11 +82,12 @@ public sealed class E2EServer : IAsyncLifetime
             return;
         }
 
-        if (!File.Exists(Path.Combine(RepoPaths.WebDist, "index.html")))
+        if (!File.Exists(WebAppIndex))
         {
             throw new InvalidOperationException("Weir E2E needs the built web app: run `npm ci && npm run build` in apps/web first.");
         }
 
+        _webAppBuiltAt = File.GetLastWriteTimeUtc(WebAppIndex);
         _server = await WeirServer.StartNewAsync(Environment);
         _playwright = await Microsoft.Playwright.Playwright.CreateAsync();
     }
@@ -78,6 +105,8 @@ public sealed class E2EServer : IAsyncLifetime
     // sweeps are on (without the sweeps the log has no job rows for the Jobs source to show).
     private static Dictionary<string, string> Environment =>
         ServerEnvironment.OperatorDefaults.With(("WEIR_WEB_DIST", RepoPaths.WebDist));
+
+    private static string WebAppIndex => Path.Combine(RepoPaths.WebDist, "index.html");
 
     private static InvalidOperationException NotStarted() => new("The E2E server has not started: set WEIR_E2E=1.");
 }

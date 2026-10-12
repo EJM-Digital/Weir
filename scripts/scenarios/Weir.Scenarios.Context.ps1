@@ -53,6 +53,43 @@ function Test-VersionUnderTest {
     $true
 }
 
+# A time as the machine's UTC clock reads it, from a DateTime or from the text a JSON answer carries (with its offset). Windows
+# PowerShell 5.1 leaves ISO text as text and newer versions turn it into a DateTime; either way the instant is the same.
+function ConvertTo-UtcTime {
+    param($Value)
+    if ($null -eq $Value -or [string]$Value -eq '') { return $null }
+    if ($Value -is [datetime]) { return $Value.ToUniversalTime() }
+    [datetimeoffset]::Parse([string]$Value, [Globalization.CultureInfo]::InvariantCulture).UtcDateTime
+}
+
+# Where the first update scenario leaves the moment the build under test began answering. It sits beside the run folder, not in it,
+# because the run folder is emptied at the start of every phase and the Deluno scenarios of a later phase need it.
+function Get-BuildMarkerPath {
+    Join-Path (Split-Path -Parent $script:Ctx.RunFolder) 'build-under-test.json'
+}
+
+function Save-BuildUnderTestMarker {
+    param([Parameter(Mandatory)] [string] $Reported)
+    $marker = @{ version = $script:Ctx.Version; short_sha = $script:Ctx.ShortSha; reported = $Reported; began_answering_ticks = [DateTime]::UtcNow.Ticks }
+    Set-Content -LiteralPath (Get-BuildMarkerPath) -Value ($marker | ConvertTo-Json -Compress) -Encoding UTF8
+}
+
+# When the build under test took over from the previous release, as { Utc; Because }: the marker the update scenario left for this
+# version and commit, else when the running server process started (a lower bound: whatever Deluno handed over after that was
+# certainly handled by it). A hand-off made before this moment was handled by the previous release.
+function Get-BuildUnderTestSince {
+    $text = Get-FileTextOrNull -Path (Get-BuildMarkerPath)
+    if ($text) {
+        try { $marker = $text.TrimStart([char]0xFEFF) | ConvertFrom-Json } catch { $marker = $null }
+        if ($marker -and $marker.version -eq $script:Ctx.Version -and $marker.short_sha -eq $script:Ctx.ShortSha) {
+            return [pscustomobject]@{ Utc = [DateTime]::new([long]$marker.began_answering_ticks, [DateTimeKind]::Utc); Because = 'the update scenario saw it begin answering' }
+        }
+    }
+    $server = @(Get-Process -Name 'WeirServer' -ErrorAction SilentlyContinue | Sort-Object StartTime) | Select-Object -First 1
+    if (-not $server) { throw 'The build under test is not running, so there is no telling which hand-offs it handled.' }
+    [pscustomobject]@{ Utc = $server.StartTime.ToUniversalTime(); Because = 'no update scenario left a marker, so this is when the running server started' }
+}
+
 function Get-TrayLogText {
     $text = Get-FileTextOrNull -Path (Get-WeirPaths).TrayLog
     if ($null -eq $text) { '' } else { $text }
@@ -123,6 +160,47 @@ function Get-ActivityItems {
     $path = "/api/v1/activity/recent?limit=$Limit"
     if ($EventType) { $path += "&event_type=$EventType" }
     @((Get-WeirJson $script:Ctx.Session $path).items)
+}
+
+# Every Activity entry, newest first. One request returns at most 100, and an update (or the run itself) adds entries, so a list of
+# "the newest 100" read before and after cannot say whether an entry was lost: the oldest ones slide out of it. This pages back
+# by `before_id` until Weir says there is no more.
+function Get-AllActivityItems {
+    $items = New-Object System.Collections.Generic.List[object]
+    $before = $null
+    for ($page = 1; $page -le 500; $page++) {
+        $path = '/api/v1/activity/recent?limit=100&with_total=false'
+        if ($before) { $path += "&before_id=$before" }
+        $answer = Get-WeirJson $script:Ctx.Session $path
+        $got = @($answer.items)
+        foreach ($item in $got) { $items.Add($item) }
+        if ($answer.has_more -ne $true -or $got.Count -eq 0) { return $items.ToArray() }
+        $before = $got[$got.Count - 1].id
+    }
+    throw 'Activity has more than 50,000 entries, which is more than this check pages through.'
+}
+
+# The entries of $Before that $After does not hold exactly as they were: the same id with the same time, kind, title, detail,
+# result and file. Nothing is excused: an entry that is missing, or that reads differently, is a finding. Entries only in $After
+# (what happened since) are not.
+function Find-ActivityLostOrChanged {
+    param($Before, $After)
+    $now = @{}
+    foreach ($row in @($After)) { $now[[string]$row.id] = $row }
+    $fields = 'created_at', 'event_type', 'module', 'title', 'detail', 'trigger', 'result', 'library_id', 'relative_path', 'run_key'
+    foreach ($row in @($Before)) {
+        $kept = $now[[string]$row.id]
+        if ($null -eq $kept) { [pscustomobject]@{ Id = $row.id; Title = [string]$row.title; Problem = 'is gone' }; continue }
+        foreach ($field in $fields) {
+            $was = [string](Get-Prop $row $field)
+            $is = [string](Get-Prop $kept $field)
+            if ($was -ne $is) {
+                $cut = { param($text) if ($text.Length -gt 80) { $text.Substring(0, 80) + '...' } else { $text } }
+                [pscustomobject]@{ Id = $row.id; Title = [string]$row.title; Problem = "$field was '$(& $cut $was)' and now reads '$(& $cut $is)'" }
+                break
+            }
+        }
+    }
 }
 
 function Get-ScenarioFiles {

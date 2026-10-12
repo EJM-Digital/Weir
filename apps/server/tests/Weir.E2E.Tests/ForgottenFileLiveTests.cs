@@ -16,7 +16,7 @@ public sealed class ForgottenFileLiveTests(E2EServer server) : E2ETestBase(serve
     public async Task A_forgotten_file_handed_over_again_reads_imported_in_Activity_and_is_not_cleaned_twice()
     {
         await using var rig = await ProcessingRig.StartAsync();
-        await using var context = await NewContextAsync(new ViewportSize { Width = 1280, Height = 720 });
+        var context = await NewContextAsync(new ViewportSize { Width = 1280, Height = 720 });
         var activity = await context.NewPageAsync();
         ApplyDefaultTimeout(activity);
         await Navigation.EnsureSignedInAsync(activity, rig.BaseUrl);

@@ -16,7 +16,7 @@ public sealed class ProcessAgainTests(E2EServer server) : E2ETestBase(server)
     public async Task Process_again_on_an_unchanged_cleaned_file_is_skipped_visibly_and_writes_no_second_output()
     {
         await using var rig = await ProcessingRig.StartAsync();
-        await using var context = await NewContextAsync(new ViewportSize { Width = 1280, Height = 720 });
+        var context = await NewContextAsync(new ViewportSize { Width = 1280, Height = 720 });
         var activity = await context.NewPageAsync();
         ApplyDefaultTimeout(activity);
         await Navigation.EnsureSignedInAsync(activity, rig.BaseUrl);

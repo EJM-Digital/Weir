@@ -1,6 +1,6 @@
 namespace Weir.E2E.Tests.Harness;
 
-/// <summary>Where the repository's built web app and the screenshot artifacts are.</summary>
+/// <summary>Where the repository's built web app and the screenshot and failure artifacts are.</summary>
 public static class RepoPaths
 {
     private static readonly Lazy<string> Root = new(FindRoot);
@@ -9,6 +9,9 @@ public static class RepoPaths
 
     /// <summary>Informational screenshots, ignored by git: no pixel-exact baselines are committed.</summary>
     public static string Screenshots => Path.Combine(Root.Value, "artifacts", "screenshots");
+
+    /// <summary>What a failed test leaves behind (<see cref="FailureArtifacts"/>), ignored by git.</summary>
+    public static string Failures => Path.Combine(Root.Value, "artifacts", "e2e-failures");
 
     private static string FindRoot()
     {
