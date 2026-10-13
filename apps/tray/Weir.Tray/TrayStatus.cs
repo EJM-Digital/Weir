@@ -49,6 +49,22 @@ static class TrayStatusFile
     /// </summary>
     internal static TrayStatusReading Read(string runtimeHome, Action<string> log)
     {
+        // A name that the server is renaming a new file over can be missing for an instant: a file that is not there is looked for once
+        // more after a moment before it is called missing, because missing changes what is shown.
+        var reading = ReadOnce(runtimeHome, log);
+        if (reading != TrayStatusReading.Missing)
+        {
+            return reading;
+        }
+
+        Thread.Sleep(LookAgainAfter);
+        return ReadOnce(runtimeHome, log);
+    }
+
+    private static readonly TimeSpan LookAgainAfter = TimeSpan.FromMilliseconds(20);
+
+    private static TrayStatusReading ReadOnce(string runtimeHome, Action<string> log)
+    {
         var path = Path.Combine(runtimeHome, FileName);
         try
         {

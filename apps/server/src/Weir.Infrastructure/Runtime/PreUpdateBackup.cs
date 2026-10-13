@@ -97,6 +97,7 @@ public sealed class PreUpdateBackup
     private readonly TimeProvider _time;
     private readonly ILogger _logger;
     private readonly Action<string>? _saving;
+    private readonly Action? _working;
 
     /// <param name="backupDir">The backup folder (<c>WEIR_BACKUP_DIR</c>); copies go in its <see cref="FolderName"/> folder.</param>
     /// <param name="home">Weir's data folder, where the settings files and secrets are.</param>
@@ -105,8 +106,16 @@ public sealed class PreUpdateBackup
     /// <param name="logger">Where the copy is announced and a failure is described.</param>
     /// <param name="fromVersion">The version running now, when it is known.</param>
     /// <param name="saving">Told the sentence that says a copy is being saved, just before the copy starts.</param>
+    /// <param name="working">Called from SQLite while the copy is made and checked: the proof that a copy of a large database is still going.</param>
     public PreUpdateBackup(
-        string backupDir, string home, string version, TimeProvider time, ILogger logger, string? fromVersion = null, Action<string>? saving = null)
+        string backupDir,
+        string home,
+        string version,
+        TimeProvider time,
+        ILogger logger,
+        string? fromVersion = null,
+        Action<string>? saving = null,
+        Action? working = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(backupDir);
         ArgumentException.ThrowIfNullOrWhiteSpace(home);
@@ -118,6 +127,7 @@ public sealed class PreUpdateBackup
         _time = time ?? throw new ArgumentNullException(nameof(time));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _saving = saving;
+        _working = working;
     }
 
     /// <summary>How much room the volume has, or null when that cannot be told. A test replaces it.</summary>
@@ -198,7 +208,7 @@ public sealed class PreUpdateBackup
         written.Add(unfinished);
         File.Delete(unfinished);
         CopyDatabase(connection, unfinished);
-        VerifyDatabase(unfinished, fromRevision);
+        VerifyDatabase(unfinished, fromRevision, _working);
         File.Move(unfinished, database);
         written.Remove(unfinished);
         written.Add(database);
@@ -268,7 +278,7 @@ public sealed class PreUpdateBackup
     }
 
     /// <summary>Opens the copy on its own connection, checks it is whole and that it records <paramref name="revision"/>.</summary>
-    private static void VerifyDatabase(string path, string revision)
+    private static void VerifyDatabase(string path, string revision, Action? working)
     {
         using var copy = new SqliteConnection(new SqliteConnectionStringBuilder
         {
@@ -277,6 +287,7 @@ public sealed class PreUpdateBackup
             Pooling = false,
         }.ToString());
         copy.Open();
+        using var reporting = working is null ? null : SqliteWorkProgress.Report(copy, working);
         using var check = copy.CreateCommand();
         check.CommandText = "PRAGMA quick_check";
         var verdict = Convert.ToString(check.ExecuteScalar(), CultureInfo.InvariantCulture);

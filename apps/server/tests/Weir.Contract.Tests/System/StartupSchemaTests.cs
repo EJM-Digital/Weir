@@ -160,7 +160,8 @@ public sealed class StartupSchemaTests(StartupSchemaTests.HeadSchemaFixture fixt
         var note = (await File.ReadAllTextAsync(Path.Combine(server.Home, "startup-error.txt"))).Split('\n', 2);
         Assert.Equal("Couldn't save a copy of its data before updating", note[0]);
         Assert.StartsWith("Weir couldn't save a copy of its data before updating, so it didn't change anything:", note[1], StringComparison.Ordinal);
-        Assert.False(File.Exists(Path.Combine(server.Home, "startup-progress.txt")));
+        // The progress file is left at the phase the start stopped in: it never got past opening the database.
+        Assert.Contains("\"phase\":\"opening_database\"", await File.ReadAllTextAsync(Path.Combine(server.Home, "startup-progress.json")), StringComparison.Ordinal);
 
         await using (var after = await server.StopForDatabaseAsync(restart: false))
         {

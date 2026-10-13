@@ -2,7 +2,6 @@ using System.Collections;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Hosting.Systemd;
 using Microsoft.Extensions.Hosting.WindowsServices;
-using Microsoft.Extensions.Logging.Console;
 using Weir.Api;
 using Weir.Api.Http;
 using Weir.Core;
@@ -54,9 +53,32 @@ public static class WeirServer
     {
         ArgumentNullException.ThrowIfNull(args);
         var options = WeirOptionsLoader.Load(runtime);
+        // Standard output is written by a thread of its own and never waited for: a pipe nobody reads must not stop the start (NonBlockingConsole).
+        var console = NonBlockingConsole.ForStandardOutput();
+        // Written before anything that can block: from here the tray can tell a server that is working from one that has stopped.
+        // The Windows tray asks for the progress on standard output too, the channel it judges a start by; elsewhere there is only the file.
+        var progress = new StartupProgress(
+            options.WeirHome,
+            Environment.ProcessId,
+            TimeProvider.System,
+            runtime.Get(StartupProgress.PipeVariable) == "1" ? console.WriteLine : null);
+        progress.Enter(StartupPhase.Starting);
         var listen = ServerListenOptions.Parse(args, runtime);
         RuntimeDirectories.Ensure(options);
         RuntimeDirectories.AssertSqliteDbLocationUsable(options.DbPath);
+
+        // The log is opened before anything that can block, and says so, so a start that never answers still shows how far it got.
+        var minimumLevel = LogLineFormat.ParseMinimumLevel(options.LogLevel);
+        var logFile = new WeirLogFile(Path.Join(options.LogDir, RuntimePaths.LogFileName), TimeProvider.System);
+        var logAlerts = new LogAlerts();
+        var fileLogs = new WeirLogFileLoggerProvider(logFile, TimeProvider.System, minimumLevel, logAlerts);
+        var earlyLog = fileLogs.CreateLogger("Weir.Host.Startup");
+        earlyLog.LogInformation(
+            "Weir {Version} is starting process={ProcessId} home={Home}",
+            WeirVersion.Resolve(options.VersionOverride),
+            Environment.ProcessId,
+            options.WeirHome);
+        StartAttemptNote.WarnIfRetry(runtime, earlyLog);
 
         var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions
         {
@@ -85,19 +107,15 @@ public static class WeirServer
             }
         });
 
-        var minimumLevel = LogLineFormat.ParseMinimumLevel(options.LogLevel);
-        var logFile = new WeirLogFile(Path.Join(options.LogDir, RuntimePaths.LogFileName), TimeProvider.System);
         builder.Services.AddSingleton(logFile);
         builder.Logging.ClearProviders();
         builder.Logging.SetMinimumLevel(minimumLevel);
         // Kestrel and routing chatter at INFO would drown Weir's own lines, and there is no per-request access log.
         builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
         builder.Logging.AddFilter("Microsoft.Hosting.Lifetime", minimumLevel);
-        builder.Logging.AddConsole(console => console.FormatterName = WeirConsoleFormatter.FormatterName)
-            .AddConsoleFormatter<WeirConsoleFormatter, ConsoleFormatterOptions>();
-        var logAlerts = new LogAlerts();
         builder.Services.AddSingleton(logAlerts);
-        builder.Logging.AddProvider(new WeirLogFileLoggerProvider(logFile, TimeProvider.System, minimumLevel, logAlerts));
+        builder.Logging.AddProvider(fileLogs);
+        builder.Logging.AddProvider(new WeirConsoleLoggerProvider(console, TimeProvider.System, minimumLevel));
         var metrics = new RuntimeMetricsStore(TimeProvider.System);
         builder.Services.AddSingleton(metrics);
         builder.Logging.AddProvider(new MetricsLoggerProvider(metrics, minimumLevel));
@@ -115,13 +133,15 @@ public static class WeirServer
         {
             var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Weir.Host.Startup");
             WarnStartupMisconfigurations(options, logger);
-            OpenDatabase(app, options, logger);
+            OpenDatabase(app, options, logger, progress);
+            progress.Enter(StartupPhase.StartingListener);
 
             var lifecycle = app.Services.GetRequiredService<ServerLifecycle>();
             var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
             lifetime.ApplicationStarted.Register(() =>
             {
                 lifecycle.MarkStartupComplete();
+                progress.Enter(StartupPhase.Ready);
                 logger.LogInformation(
                     "Weir {Version} listening on {Host}:{Port}",
                     WeirVersion.Resolve(options.VersionOverride),
@@ -130,10 +150,12 @@ public static class WeirServer
             });
             lifetime.ApplicationStopping.Register(lifecycle.MarkStopping);
             lifetime.ApplicationStopped.Register(logFile.Dispose);
+            lifetime.ApplicationStopped.Register(console.Dispose);
         }
         catch
         {
             logFile.Dispose();
+            console.Dispose();
             ((IDisposable)app).Dispose();
             throw;
         }
@@ -192,23 +214,30 @@ public static class WeirServer
         }
     }
 
-    private static void OpenDatabase(WebApplication app, WeirOptions options, ILogger logger)
+    private static void OpenDatabase(WebApplication app, WeirOptions options, ILogger logger, StartupProgress progress)
     {
+        progress.Enter(StartupPhase.OpeningDatabase);
+        // Saving a copy and migrating scale with the data, and parts of both cannot report; the tray is told how long to allow.
+        var patience = StartupPatience.ForDatabase(options.DbPath);
         var database = app.Services.GetRequiredService<SqliteDatabase>();
         StartupNotes.ClearStale(options.WeirHome);
         var time = app.Services.GetRequiredService<TimeProvider>();
-        IDisposable? progress = null;
         var backup = new PreUpdateBackup(
             options.BackupDir,
             options.WeirHome,
             WeirVersion.Resolve(options.VersionOverride),
             time,
             logger,
-            saving: sentence => progress = StartupNotes.BeginProgress(options.WeirHome, sentence, time));
+            saving: _ => progress.Enter(StartupPhase.SavingCopy, expectWithin: patience),
+            working: progress.Beat);
         SchemaStartupOutcome outcome;
+        logger.LogInformation("Opening the database path={Path}", options.DbPath);
         try
         {
-            outcome = new SchemaMigrator(database).EnsureAtHead((connection, revision) => backup.Save(connection, revision));
+            outcome = new SchemaMigrator(database).EnsureAtHead(
+                (connection, revision) => backup.Save(connection, revision),
+                (step, steps) => progress.Enter(StartupPhase.Migrating, step, steps, patience),
+                progress.Beat);
         }
         catch (DatabaseSchemaMismatchException exception)
         {
@@ -220,10 +249,6 @@ public static class WeirServer
             logger.LogCritical("{Message}", exception.Message);
             StartupNotes.WriteError(options.WeirHome, PreUpdateBackupException.Headline, exception.Message);
             throw;
-        }
-        finally
-        {
-            progress?.Dispose();
         }
 
         if (outcome == SchemaStartupOutcome.Created)
@@ -239,6 +264,9 @@ public static class WeirServer
             logger.LogInformation("Opened database at schema revision={Revision} path={Path}", SchemaMigrator.HeadRevision, options.DbPath);
         }
 
+        // The database is at this build's schema. What follows touches it with ordinary statements, so it is a phase of its own: a hang here
+        // is not reported as updating the database, and carries nothing the update asked for.
+        progress.Enter(StartupPhase.Preparing);
         app.Services.GetRequiredService<ServerLifecycle>().MarkDatabaseOpened();
         RecordServerStart(app, database, logger);
 

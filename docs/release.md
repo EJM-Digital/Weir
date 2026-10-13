@@ -476,8 +476,9 @@ running once started, exactly like a person's own copy:
 `--silent` on `Weir.exe` guarantees no UI at all — no port dialog, no error message box, no browser
 tab — regardless of whether the session looks interactive. Poll `GET http://127.0.0.1:9400/ready`
 until it answers `{"ready": true}` (a healthy start typically takes a few seconds; 60 seconds is a
-generous timeout). An early exit means the start failed; its exit code is non-zero and
-`tray-host.log` under the runtime home (`C:\ProgramData\Weir` by default) says why.
+generous timeout for a start that goes well; a start that has to be retried takes longer, see below). An early exit means the tray gave up, after retrying;
+its exit code is non-zero and
+`tray-host.log` under the runtime home (`C:\ProgramData\Weir` by default) says why. When the server never answered, `tray-host.log` also describes the stuck process (its processor time, threads and the files it had loaded), and `server-host.log` beside it holds everything the server printed or wrote to its error output, each line marked with the process id. The server's own `logs\weir.log` says `Weir ... is starting` before anything that can block, then `Opening the database`. The tray supervises every start (the first, one after a crash, Restart Weir), and a start is hung when it stops reporting progress, not after a fixed time. A caller that starts Weir and polls `/ready` should therefore allow about three minutes for a Weir that has to retry (five hung starts take about three minutes), and longer for a very large database, which says how long it needs. How it decides, what it logs and where its numbers come from is in [`start-supervision.md`](start-supervision.md).
 
 **Over a running Weir (#942).** Setup stops the running Weir, tray and server, before it runs any hook, and starts the new Weir itself only when it is not silent. So a silent Setup over a running Weir would leave it stopped. To prevent that, a Setup `--silent` over a Weir that was running starts Weir again, and one over a Weir that was not running leaves it stopped:
 

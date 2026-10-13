@@ -71,6 +71,7 @@ on every install. The [Quickstart](../docs-site/docs/quickstart.md#3-follow-the-
 | Your data: database, logs, backups, settings | `C:\ProgramData\Weir` |
 | The port you chose | `C:\ProgramData\Weir\port.txt` |
 | The tray log (why Weir did something at start-up) | `C:\ProgramData\Weir\tray-host.log` |
+| What the server printed while it started, and anything it wrote to its error output (the answer when the server never came up) | `C:\ProgramData\Weir\server-host.log` |
 
 The data folder is locked to your Windows account, so other accounts on the PC cannot read it.
 
@@ -159,5 +160,8 @@ network without a prompt, are in the [Windows installer reference](../docs-site/
 - **"Port in use".** Pick another port in the first-run window, or later with **Change port**.
 - **Other devices cannot connect.** Open **System › About**. Under **This PC** it says whether network access is
   on, and shows "Blocked by Windows Firewall" if Windows is stopping other devices. **Try again** asks Windows once more.
+- **"Weir didn't start after 5 tries".** The tray tried to start Weir five times in a short while and stopped trying. Click the notice or
+  **Restart Weir** to try again; `tray-host.log` says why each try failed (it hung in a step, or it stopped with a code), and
+  `server-host.log` has what the server printed. If Weir starts only on a retry it still works, and System › Logs shows a warning that it needed one.
 - **Anything else.** Read `C:\ProgramData\Weir\tray-host.log` and **System › Logs**, then
   [open an issue](https://github.com/jampat000/Weir/issues) and include what they say.

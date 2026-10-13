@@ -147,6 +147,7 @@ sealed class TrayApp : IDisposable
             TrayLog.Write($"Fatal startup error:\n{ex}");
             if (!_start.Interactive)
             {
+                TrayLog.Write($"Nobody is at the desktop to tell, so Weir exits with code 1: {ex.Message}");
                 _exitCode = 1;
                 Application.ExitThread();
                 return;
@@ -190,7 +191,7 @@ sealed class TrayApp : IDisposable
         _server.Watch(
             () => OnUi(() => ShowBalloon(
                 "Weir",
-                _server.StartupError is { } why ? TrayBalloons.StoppedBecause(why) : TrayBalloons.StoppedText,
+                StoppedText(),
                 ToolTipIcon.Error,
                 RestartObserved)),
             _cts.Token);
@@ -223,12 +224,20 @@ sealed class TrayApp : IDisposable
             _updates is { IsDownloaded: true } updates ? updates.PendingVersion : null,
             _server.Port,
             _statusDeadline.Overdue,
-            _server.StartupError);
+            _server.StartupError ?? _server.GaveUpError);
     }
 
     // The server's own reason when it said one (a copy of the data it could not save before updating), else the general text.
     private string CouldNotStartText() =>
-        _server.StartupError is { } why ? TrayBalloons.CouldNotStartBecause(why) : TrayBalloons.CouldNotStartText;
+        _server.StartupError is { } why ? TrayBalloons.CouldNotStartBecause(why)
+        : _server.GaveUpAfterAttempts is > 0 and var tries ? TrayBalloons.GaveUpText(tries)
+        : TrayBalloons.CouldNotStartText;
+
+    // The same, for a server that ran and then could not be brought back.
+    private string StoppedText() =>
+        _server.StartupError is { } why ? TrayBalloons.StoppedBecause(why)
+        : _server.GaveUpAfterAttempts is > 0 and var tries ? TrayBalloons.StoppedAfterTriesText(tries)
+        : TrayBalloons.StoppedText;
 
     private void AskAboutStartWithWindows()
     {

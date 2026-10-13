@@ -2,6 +2,7 @@ using Weir.Core;
 using Weir.Core.Configuration;
 using Weir.Host;
 using Weir.Infrastructure.Auth;
+using Weir.Infrastructure.Logging;
 using Weir.Infrastructure.Runtime;
 using Weir.Infrastructure.Sqlite;
 
@@ -20,8 +21,7 @@ if (args.Length > 0 && string.Equals(args[0], "recover", StringComparison.Ordina
     }
     catch (WeirConfigurationException exception)
     {
-        await Console.Error.WriteLineAsync($"Weir cannot start: {exception.Message}").ConfigureAwait(false);
-        return 1;
+        return StartRefusal.Report(exception, WeirServer.CurrentRuntime(), NonBlockingConsole.ForStandardError(), leaveNote: false);
     }
 }
 
@@ -51,8 +51,7 @@ try
 catch (Exception exception) when (exception is WeirConfigurationException or DatabaseSchemaMismatchException or PreUpdateBackupException)
 {
     // Operator-facing refusals: print the message, not a stack trace.
-    await Console.Error.WriteLineAsync($"Weir cannot start: {exception.Message}").ConfigureAwait(false);
-    return 1;
+    return StartRefusal.Report(exception, WeirServer.CurrentRuntime(), NonBlockingConsole.ForStandardError());
 }
 
 await app.RunAsync().ConfigureAwait(false);
