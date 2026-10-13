@@ -24,6 +24,24 @@ dotnet test apps/server/tests/Weir.Contract.Tests                          # eve
 A server that does not become ready fails the test with the end of its own log. Each server writes its output to
 `<data folder>/contract-logs/server-<n>.log`.
 
+## When a test fails
+
+A test that fails keeps what its servers wrote in `artifacts/contract-failures/<run>/<Class.Method>/` at the repository
+root (ignored by git, or the folder in `WEIR_CONTRACT_FAILURES`); a passing test deletes its own. CI uploads the folder
+as `contract-failure-evidence-<area>`, and the data folders of a failed leg as `weir-contract-data-<area>`.
+
+| What | Where |
+| --- | --- |
+| The error, with its stack trace | `error.txt` |
+| The server's own log | `<server>/logs/weir.log` |
+| Everything the server process printed, standard output and error, one file per start | `<server>/contract-logs/server-<n>.log` |
+| How far it had got when it stopped | `<server>/startup-progress.json` |
+
+A row of a theory has the start of its id after the method name. A server a whole class shares (`IClassFixture`) is kept
+as `<Class>.shared-server`, with the names of the class's failed tests in its `error.txt`, because the one server
+served them all. The framework that does this is `Harness/FailureKeepingFramework.cs`; `Harness/FailureEvidence.cs`
+says how a name is made.
+
 ## How the harness works
 
 Everything is in `Harness/`. Areas live in folders beside it (`Activity/`), one folder per area.
@@ -38,7 +56,9 @@ Everything is in `Harness/`. Areas live in folders beside it (`Activity/`), one 
   the same moment as the machine has processors (never fewer than two), so a small CI runner is not asked to start a
   dozen at once; a server that is ready gives its place back. A port is picked by asking the system for a free one, so
   another process can take it before the server binds; a server that exits with "address already in use" is started
-  again on a new port (three attempts in all), and any other early exit fails at once. Disposing a server waits until
+  again on a new port (three attempts in all), and any other early exit fails at once. `/ready` answering is not enough
+  to call a server ready: the process the harness started must also have logged that it listens on its port, because the
+  process that won the port may be the server of another test, which answers `/ready` until its own test ends. Disposing a server waits until
   nothing holds its database files before it deletes the folder.
 - **`ServerEnvironment`** is the quiet default environment: no workers, no watcher, no periodic enqueue, high
   sign-in limits, artwork off. Pass `environment` to add or override. `ServerEnvironment.OperatorDefaults` is what

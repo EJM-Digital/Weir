@@ -28,8 +28,11 @@ static class ServerHealth
     internal static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(250);
 
     /// <summary>
-    /// Returns once <paramref name="readyUrl"/> answers 200: /ready is the readiness signal, as a Kubernetes readiness probe is.
-    /// Meanwhile the progress the server reports (<paramref name="watch"/>, fed from <paramref name="readProgress"/>) is the startup
+    /// Returns once <paramref name="readyUrl"/> answers 200 and the server process this start began has reported that its listener
+    /// is up (<see cref="StartWatch.ReportedReady"/>, a record carrying its own process id). /ready is the readiness signal, as a
+    /// Kubernetes readiness probe is, but it cannot say who answers: another Weir, or anything else, on the same port answers it too,
+    /// while the server just started is about to fail to bind and exit. An answer is therefore not taken for the new server until it
+    /// says it is listening, and a server that exits instead ends the wait as any exit does. Meanwhile the progress the server reports (<paramref name="watch"/>, fed from <paramref name="readProgress"/>) is the startup
     /// probe: a server is waited for for as long as it keeps making progress, and not for a fixed time. Throws
     /// <see cref="ServerExitedException"/> as soon as the server process has exited, and <see cref="ServerStartHungException"/> once it
     /// has been silent for longer than its phase allows; never a network error. <paramref name="exitCodeIfExited"/> returns the
@@ -53,13 +56,18 @@ static class ServerHealth
             }
 
             var answer = await AskAsync(client, readyUrl, cancellationToken).ConfigureAwait(false);
-            if (answer is null)
-            {
-                return;
-            }
-
             var (fromPipe, fromFile) = readProgress();
             var verdict = watch.Check(fromPipe, fromFile);
+            if (answer is null)
+            {
+                if (watch.ReportedReady)
+                {
+                    return;
+                }
+
+                answer = "HTTP 200, but this server has not reported that it is listening";
+            }
+
             if (verdict.Hung)
             {
                 throw new ServerStartHungException(verdict, answer);

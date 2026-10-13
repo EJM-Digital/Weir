@@ -15,7 +15,9 @@
 // WEIR_STANDIN_NO_STOP_EVENT never creates the stop event, as a server hung before it could;
 // WEIR_STANDIN_SAY_FILE repeats each line appended to that file onto standard output;
 // WEIR_STANDIN_PHASE (with WEIR_STANDIN_EXPECT_S) writes one startup-progress.json record for itself at start, and a test writes
-// the later ones; WEIR_STANDIN_READY_FILE makes /ready answer 200 only once that file exists. Every start is also noted in
+// the later ones; WEIR_STANDIN_READY_FILE makes /ready answer 200 only once that file exists. When it answers 200 for the first time it
+// also reports the phase "ready" for itself on standard output (when the tray asked for progress lines there), as the real server does
+// once its listener is up, and the tray takes /ready for this server's only after that. Every start is also noted in
 // standin-starts.txt in WEIR_HOME with the attempt number and the failures the tray passed (WEIR_START_ATTEMPT, WEIR_START_FAILURES).
 using System.Net;
 using System.Net.Sockets;
@@ -119,6 +121,7 @@ static async Task ServeReadiness(int port, TimeSpan readyAfter)
     var listener = new TcpListener(IPAddress.Loopback, port);
     listener.Start();
     var started = DateTime.UtcNow;
+    var reportedReady = false;
     while (true)
     {
         using var client = await listener.AcceptTcpClientAsync();
@@ -129,6 +132,12 @@ static async Task ServeReadiness(int port, TimeSpan readyAfter)
             _ = await stream.ReadAsync(buffer);
             var readyFile = Environment.GetEnvironmentVariable(ReadyFileVariable);
             var ready = readyFile is { Length: > 0 } ? File.Exists(readyFile) : DateTime.UtcNow - started >= readyAfter;
+            if (ready && !reportedReady)
+            {
+                reportedReady = true;
+                ReportReadyOnStandardOutput();
+            }
+
             var status = ready ? "200 OK" : "503 Service Unavailable";
             var body = ready ? "{\"ready\":true}" : "{\"ready\":false}";
             var response = $"HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n{body}";
@@ -168,6 +177,18 @@ static async Task RepeatToStandardOutput(string path)
 
         await Task.Delay(10);
     }
+}
+
+static void ReportReadyOnStandardOutput()
+{
+    if (Environment.GetEnvironmentVariable("WEIR_PROGRESS_STDOUT") is not { Length: > 0 })
+    {
+        return;
+    }
+
+    var at = DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
+    Console.Out.WriteLine($"weir-start-progress {{\"pid\":{Environment.ProcessId},\"phase\":\"ready\",\"step\":0,\"steps\":0,\"expect_within_s\":0,\"at\":\"{at}\"}}");
+    Console.Out.Flush();
 }
 
 static void NoteStart()

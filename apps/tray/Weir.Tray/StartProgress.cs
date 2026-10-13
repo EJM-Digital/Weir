@@ -15,6 +15,9 @@ namespace Weir.Tray;
 /// <param name="At">When the server wrote it, by its own clock.</param>
 sealed record StartProgress(int ProcessId, string Phase, int Step, int Steps, TimeSpan ExpectWithin, DateTimeOffset At)
 {
+    /// <summary>The server has its listener up and answers: its last phase.</summary>
+    internal bool IsReady => Phase == "ready";
+
     /// <summary>The phase in the words the log uses.</summary>
     internal string Words => Phase switch
     {

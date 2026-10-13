@@ -40,6 +40,14 @@ public sealed class ServerLog : IDisposable
         return reader.ReadToEnd();
     }
 
+    /// <summary>
+    /// Whether the process has logged that it listens on <paramref name="host"/>:<paramref name="port"/>, the line Weir writes once
+    /// its listener is up. Only the process that bound the port writes it, so it tells this server from another that holds the port.
+    /// </summary>
+    public bool SaysListeningOn(string host, int port) =>
+        Text().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
+            .Any(line => line.EndsWith($" listening on {host}:{port}", StringComparison.Ordinal));
+
     public string Tail()
     {
         var lines = Text().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);

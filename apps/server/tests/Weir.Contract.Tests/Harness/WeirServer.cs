@@ -12,12 +12,16 @@ namespace Weir.Contract.Tests.Harness;
 /// started (and what that process started). The data folder survives a restart; a restart picks a new port, so
 /// create clients after it. A port is chosen by asking the system for a free one and releasing it again, so another
 /// process can take it before the server binds; a server that exits for that reason alone is started again on a new
-/// port, up to <see cref="MaxStartAttempts"/> times in all.
+/// port, up to <see cref="MaxStartAttempts"/> times in all. A server counts as ready only when the process started here
+/// has said it listens on its port and the port answers, because the process that took the port may be a server of
+/// another test, which answers on it until its own test ends.
 /// </summary>
 public sealed class WeirServer : IAsyncDisposable
 {
     public const string KeepDataVariable = "WEIR_CONTRACT_KEEP_DATA";
     public const int MaxStartAttempts = 3;
+
+    private const string ListenHost = "127.0.0.1";
 
     private static readonly TimeSpan StartTimeout = TimeSpan.FromSeconds(90);
     private static readonly TimeSpan ReadyPollInterval = TimeSpan.FromMilliseconds(100);
@@ -28,6 +32,7 @@ public sealed class WeirServer : IAsyncDisposable
     private readonly Dictionary<string, string> _environment;
     private readonly Func<int> _pickPort;
     private readonly List<ServerLog> _logs = [];
+    private readonly string? _evidenceName = FailureEvidence.CurrentName;
     private Process? _process;
     private int? _keptPort;
 
@@ -41,7 +46,10 @@ public sealed class WeirServer : IAsyncDisposable
 
     public string Home { get; }
 
-    public Uri BaseUrl { get; private set; } = new("http://127.0.0.1/");
+    /// <summary>The name the logs of this server are kept under (<see cref="FailureEvidence"/>); null when it was started outside a test.</summary>
+    internal string? EvidenceName => _evidenceName;
+
+    public Uri BaseUrl { get; private set; } = new($"http://{ListenHost}/");
 
     public string DatabasePath => Path.Combine(Home, "data", "weir.sqlite3");
 
@@ -154,6 +162,12 @@ public sealed class WeirServer : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await StopAsync();
+        if (_evidenceName is not null)
+        {
+            // Kept for the test (or test class) that used this server; the framework deletes it again unless that test failed.
+            FailureEvidence.Archive(_evidenceName, Home);
+        }
+
         foreach (var log in _logs)
         {
             log.Dispose();
@@ -188,7 +202,7 @@ public sealed class WeirServer : IAsyncDisposable
     private async Task StartOnNewPortAsync(string? note)
     {
         var port = _keptPort ?? _pickPort();
-        BaseUrl = new Uri($"http://127.0.0.1:{port}/");
+        BaseUrl = new Uri($"http://{ListenHost}:{port}/");
         var log = new ServerLog(Path.Combine(Home, "contract-logs", $"server-{_logs.Count + 1}.log"));
         _logs.Add(log);
         if (note is not null)
@@ -205,7 +219,7 @@ public sealed class WeirServer : IAsyncDisposable
             UseShellExecute = false,
             CreateNoWindow = true,
         };
-        var listenArguments = new[] { "--host", "127.0.0.1", "--port", port.ToString(CultureInfo.InvariantCulture) };
+        var listenArguments = new[] { "--host", ListenHost, "--port", port.ToString(CultureInfo.InvariantCulture) };
         foreach (var argument in leadingArguments.Concat(listenArguments))
         {
             start.ArgumentList.Add(argument);
@@ -237,6 +251,14 @@ public sealed class WeirServer : IAsyncDisposable
             }
 
             var problem = await ProbeReadyAsync();
+            if (problem is null && !log.SaysListeningOn(ListenHost, port))
+            {
+                // Whatever answers at this address is not known to be this process. The port was picked and released before the
+                // server started, so another server may have taken it in between and answer for itself while this one is about to
+                // fail to bind. Only this process saying that it listens there makes the answer its own.
+                problem = "something answers, but this server has not said it is listening there";
+            }
+
             if (problem is null)
             {
                 return;

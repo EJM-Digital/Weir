@@ -10,7 +10,11 @@ This note says what it does, which proven practice each part follows, where its 
 2. The server reports how far it has got (`StartupProgress`): at every phase and, while SQLite is working inside one, about once a
    second. The phases with no database work write one record each.
 3. The tray waits while that progress keeps changing and asks `/ready` every quarter second. `/ready` answering 200 is the
-   readiness signal; the progress only decides whether a start that has not answered yet is **working** or **hung**.
+   readiness signal, but only once the server the tray started has also reported the phase `ready` (on either channel, in a record
+   carrying its own process id): `/ready` cannot say who answers, and another Weir that holds the port answers it too while the new
+   server is about to fail to bind and exit. Until then a 200 is not taken for the new server's; if it exits, the start fails as any
+   exit does, and if it never reports it is **hung** like any silent start. Otherwise the progress only decides whether a start that
+   has not answered yet is **working** or **hung**.
 4. A start fails when the server exits, or is **hung**: silent for longer than its phase allows. A hung server is asked to stop,
    then killed with its whole process tree. Only a process the tray started is ever touched. The next attempt does not begin until
    the old process is confirmed gone; if it is still running after the kill, the tray stops there and says so, because a second
