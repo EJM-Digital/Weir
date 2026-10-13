@@ -32,7 +32,7 @@ static class StartupNotes
     {
         // The server deletes the last note before it starts and writes a new one only when it refuses, so nothing replaces this file while
         // it is there and a missing one is final. A file a virus scanner or the server's own write holds for a moment is looked at again.
-        var reading = ReplacedFile.ReadText(path, absentIsFinal: true);
+        var reading = ReplacedFile.ReadText(path);
         if (reading.State != ReplacedFileState.Read || (serverStartedUtc is { } started && reading.WrittenUtc < started))
         {
             return null;

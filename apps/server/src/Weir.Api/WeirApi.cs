@@ -98,6 +98,8 @@ public static class WeirApi
         services.AddHostedService<TrayPauseRequestWatcher>();
         // Saves the copy of Weir's data the tray asks for just before it applies an update.
         services.AddHostedService<TrayUpdateBackupWatcher>();
+        // Says in the log when requests wait for a thread to start work on, which nothing else shows.
+        services.AddHostedService<ThreadPoolWatch>();
         services.AddWeirResponseCompression();
         services.AddRouting();
         return services;
