@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Data;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Microsoft.Data.Sqlite;
@@ -66,9 +65,6 @@ public sealed class SqliteDatabase
     /// <summary>SQLite's result code for a database file that cannot be opened (<c>SQLITE_CANTOPEN</c>).</summary>
     private const int SqliteCantOpen = 14;
 
-    /// <summary>SQLite's result code for a database that stays locked past the busy timeout (<c>SQLITE_BUSY</c>).</summary>
-    private const int SqliteBusy = 5;
-
     /// <summary>
     /// Weir's own writers queue here, one at a time, before they ask SQLite for its write lock. SQLite makes a writer that
     /// finds the lock taken sleep and retry inside <c>BEGIN IMMEDIATE</c> for up to the busy timeout, and
@@ -92,6 +88,7 @@ public sealed class SqliteDatabase
     private readonly Lock? _poolGate;
     private readonly ILogger? _logger;
     private readonly int _busyTimeoutMilliseconds;
+    private readonly TimeProvider _time;
 
     /// <param name="databasePath">The SQLite file.</param>
     /// <param name="pooling">
@@ -107,8 +104,13 @@ public sealed class SqliteDatabase
     /// Overrides <see cref="BusyTimeoutMilliseconds"/>. Production never passes this; a test that needs a
     /// write-lock wait to fail fast, instead of tying up thirty real seconds, can shrink it here.
     /// </param>
-    public SqliteDatabase(string databasePath, bool pooling = true, ILogger<SqliteDatabase>? logger = null, int? busyTimeoutMilliseconds = null)
+    /// <param name="timeProvider">
+    /// The clock that times the write gate's wait and its give-up, so a test can pass the busy timeout with no real waiting.
+    /// SQLite's own busy handler, for a writer outside this process, always runs on the real clock.
+    /// </param>
+    public SqliteDatabase(string databasePath, bool pooling = true, ILogger<SqliteDatabase>? logger = null, int? busyTimeoutMilliseconds = null, TimeProvider? timeProvider = null)
     {
+        _time = timeProvider ?? TimeProvider.System;
         ArgumentException.ThrowIfNullOrEmpty(databasePath);
         DatabasePath = databasePath;
         _logger = logger;
@@ -176,18 +178,30 @@ public sealed class SqliteDatabase
 
     /// <summary>
     /// Takes a turn at the write gate, waiting for it without holding a thread, and says how long that took. Gives up as
-    /// SQLite would, with <c>SQLITE_BUSY</c>, once the busy timeout has passed. Whoever takes a turn gives it back with
-    /// <see cref="ReleaseWriteGate"/> when the write lock is free again.
+    /// SQLite would, once the busy timeout has passed, with a <see cref="DatabaseBusyException"/> (<c>SQLITE_BUSY</c>) that says how long
+    /// the wait was. Whoever takes a turn gives it back with <see cref="ReleaseWriteGate"/> when the write lock is free again.
     /// </summary>
     internal async Task<TimeSpan> AcquireWriteGateAsync(CancellationToken cancellationToken)
     {
-        var started = Stopwatch.GetTimestamp();
-        if (!await _writeGate.WaitAsync(_busyTimeoutMilliseconds, cancellationToken).ConfigureAwait(false))
+        cancellationToken.ThrowIfCancellationRequested();
+        if (_writeGate.Wait(0, CancellationToken.None))
         {
-            throw new SqliteException("database is locked", SqliteBusy);
+            return TimeSpan.Zero;
         }
 
-        return Stopwatch.GetElapsedTime(started);
+        var started = _time.GetTimestamp();
+        using var giveUp = new CancellationTokenSource(TimeSpan.FromMilliseconds(_busyTimeoutMilliseconds), _time);
+        using var either = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, giveUp.Token);
+        try
+        {
+            await _writeGate.WaitAsync(either.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (giveUp.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            throw new DatabaseBusyException(_time.GetElapsedTime(started));
+        }
+
+        return _time.GetElapsedTime(started);
     }
 
     internal void ReleaseWriteGate() => _writeGate.Release();
@@ -197,11 +211,25 @@ public sealed class SqliteDatabase
     /// writer outside this process for no longer than what is left of one busy timeout after <paramref name="waitedForGate"/>,
     /// so a refusal never takes twice the timeout. Microsoft.Data.Sqlite retries a busy statement until the command timeout,
     /// in whole seconds and at least one, so SQLite's own busy wait is switched off meanwhile and the command timeout is
-    /// the time left, rounded up to the second. Both are set back afterwards.
+    /// the time left, rounded up to the second. Both are set back afterwards. A refusal is a <see cref="DatabaseBusyException"/>
+    /// that says how long the writer waited in all, at the gate and here.
     /// </summary>
     internal async Task<SqliteTransaction> BeginWriteTransactionAsync(SqliteConnection connection, TimeSpan waitedForGate, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(connection);
+        var started = _time.GetTimestamp();
+        try
+        {
+            return await BeginImmediateAsync(connection, waitedForGate, cancellationToken).ConfigureAwait(false);
+        }
+        catch (SqliteException exception) when (exception is not DatabaseBusyException && DatabaseBusyException.IsBusy(exception))
+        {
+            throw new DatabaseBusyException(waitedForGate + _time.GetElapsedTime(started), exception.SqliteErrorCode, exception.SqliteExtendedErrorCode);
+        }
+    }
+
+    private async Task<SqliteTransaction> BeginImmediateAsync(SqliteConnection connection, TimeSpan waitedForGate, CancellationToken cancellationToken)
+    {
         if (waitedForGate < TimeSpan.FromMilliseconds(10))
         {
             return connection.BeginTransaction(IsolationLevel.Serializable, deferred: false);
@@ -363,7 +391,7 @@ public sealed class SqliteDatabase
                 }
                 finally
                 {
-                    await ExecuteAsync(connection, $"PRAGMA busy_timeout={BusyTimeoutMilliseconds}", CancellationToken.None)
+                    await ExecuteAsync(connection, $"PRAGMA busy_timeout={_busyTimeoutMilliseconds}", CancellationToken.None)
                         .ConfigureAwait(false);
                 }
             }

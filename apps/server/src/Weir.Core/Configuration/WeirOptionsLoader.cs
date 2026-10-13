@@ -135,6 +135,7 @@ public static class WeirOptionsLoader
             ProcessingWorkerCount = processingWorkers,
             ProcessingJobLeaseSeconds = processingJobLeaseSeconds,
             ProcessingWatcherEnabled = watcherEnabled,
+            SqliteBusyTimeoutSeconds = ClampSqliteBusyTimeoutSeconds(EnvInt(runtime, "WEIR_SQLITE_BUSY_TIMEOUT_SECONDS", WeirOptions.DefaultSqliteBusyTimeoutSeconds)),
             ManagerWorkflowSyncEnabled = EnvBool(runtime, "WEIR_MEDIA_MANAGER_WORKFLOW_SYNC_ENABLED", true),
             ProcessingWatcherDebounceSeconds = watcherDebounce,
             ProcessingWatchedFolderRemuxScanDispatchScheduleEnabled = EnvBool(
@@ -184,6 +185,9 @@ public static class WeirOptionsLoader
     /// for an unreasonable time before startup recovery or a reclaim picks it up.
     /// </summary>
     public static int ClampProcessingJobLeaseSeconds(long raw) => Clamp(raw, 30, 86_400);
+
+    /// <summary>How long a write waits for the database: 1 s .. 2 minutes.</summary>
+    public static int ClampSqliteBusyTimeoutSeconds(long raw) => Clamp(raw, 1, 120);
 
     /// <summary>A periodic schedule interval: 60 s .. 7 days.</summary>
     public static int ClampProcessingScheduleIntervalSeconds(long raw) => Clamp(raw, 60, SevenDaysSeconds);

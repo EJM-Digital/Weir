@@ -230,6 +230,19 @@ public sealed class WeirOptionsParsingTests
         Assert.Equal(expected, TestRuntime.Load(("WEIR_PROCESSING_JOB_LEASE_SECONDS", raw)).ProcessingJobLeaseSeconds);
 
     [Theory]
+    [InlineData("1", 1)]
+    [InlineData("0", 1)]
+    [InlineData("-5", 1)]
+    [InlineData("45", 45)]
+    [InlineData("999999", 120)]
+    public void Sqlite_busy_timeout_seconds_is_one_second_to_two_minutes(string raw, int expected) =>
+        Assert.Equal(expected, TestRuntime.Load(("WEIR_SQLITE_BUSY_TIMEOUT_SECONDS", raw)).SqliteBusyTimeoutSeconds);
+
+    [Fact]
+    public void Sqlite_busy_timeout_is_thirty_seconds_unless_set() =>
+        Assert.Equal(30, TestRuntime.Load().SqliteBusyTimeoutSeconds);
+
+    [Theory]
     [InlineData("0", 0.25)]
     [InlineData("10", 10.0)]
     [InlineData("1000", 300.0)]
