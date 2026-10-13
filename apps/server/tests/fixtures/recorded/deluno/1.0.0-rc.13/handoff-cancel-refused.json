@@ -1,0 +1,48 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.13",
+  "state": "handoff-cancel-refused",
+  "recordedAt": "2026-10-11T01:59:32Z",
+  "note": "A hand-off cancelled by Deluno (DELETE) while it was still waiting its turn (or, when Weir had already started it, refused).",
+  "exchanges": [
+    {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/v1/intake/handoffs/deluno/0f24ba4d-794e-4f24-9dfb-437fe97f0ff7"
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "detail": "This hand-off is completed, so Weir did not cancel it."
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/0f24ba4d-794e-4f24-9dfb-437fe97f0ff7"
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "0f24ba4d-794e-4f24-9dfb-437fe97f0ff7",
+          "state": "completed",
+          "queuePosition": null,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-10-11T01:59:32.791703Z",
+          "outputPath": "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Q8.mkv",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Q8.mkv"
+          ],
+          "message": "Checked this file and found that no changes were needed. The original download was kept in the watched folder for your download client, because this workflow is linked to a media manager."
+        }
+      }
+    }
+  ]
+}

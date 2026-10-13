@@ -1,0 +1,33 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.13",
+  "state": "capabilities",
+  "recordedAt": "2026-10-11T01:59:06Z",
+  "note": "GET /api/v1/intake/capabilities with the shared secret.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/capabilities"
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "capabilities": [
+            "handoff-status",
+            "handoff-cancel",
+            "handoff-outcome",
+            "handoff-outcome-codes",
+            "library-folders"
+          ],
+          "machine_name": "<scrubbed>",
+          "product": "Weir",
+          "version": "1.0.0-rc.13"
+        }
+      }
+    }
+  ]
+}

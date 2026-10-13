@@ -1,0 +1,33 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.13",
+  "state": "outcome-delivered-without-output-path",
+  "recordedAt": "2026-10-11T02:02:40Z",
+  "note": "The outcome reported for a hand-off that handed back no new file.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/0b3372c0-0298-41ce-9f47-b3e81ad40ac1/outcome",
+        "body": {
+          "outcome": "imported",
+          "occurredUtc": "2026-10-11T02:02:40.6707399Z",
+          "importedPath": "C:\\Downloads\\Completed\\Movies\\Recorded.Weir.R.mkv",
+          "reason": null
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "0b3372c0-0298-41ce-9f47-b3e81ad40ac1",
+          "outcome": "imported",
+          "released": true,
+          "message": "Weir recorded that Deluno imported the file and released its copy."
+        }
+      }
+    }
+  ]
+}

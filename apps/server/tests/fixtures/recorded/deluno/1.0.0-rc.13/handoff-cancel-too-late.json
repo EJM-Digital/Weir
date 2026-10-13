@@ -1,0 +1,20 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.13",
+  "state": "handoff-cancel-too-late",
+  "recordedAt": "2026-10-11T01:59:32Z",
+  "note": "A cancel for a hand-off Weir has already started or finished.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/v1/intake/handoffs/deluno/18cc9422-6cbc-4d24-971b-02f8719417c9"
+      },
+      "reply": {
+        "status": 204,
+        "headers": {},
+        "bodyText": ""
+      }
+    }
+  ]
+}

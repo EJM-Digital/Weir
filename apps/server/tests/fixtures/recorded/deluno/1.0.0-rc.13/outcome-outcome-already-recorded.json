@@ -1,0 +1,31 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.13",
+  "state": "outcome-outcome-already-recorded",
+  "recordedAt": "2026-10-11T01:59:32Z",
+  "note": "The outcome reported for a hand-off that was cancelled: Weir answers 409 handoff_ended.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/0f24ba4d-794e-4f24-9dfb-437fe97f0ff7/outcome",
+        "body": {
+          "outcome": "not-imported",
+          "occurredUtc": "2026-10-11T01:59:32.8982515Z",
+          "importedPath": null,
+          "reason": "Recorded: the hand-off was cancelled"
+        }
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "detail": "Deluno already said it imported this file, so Weir kept that answer.",
+          "code": "outcome_already_recorded"
+        }
+      }
+    }
+  ]
+}

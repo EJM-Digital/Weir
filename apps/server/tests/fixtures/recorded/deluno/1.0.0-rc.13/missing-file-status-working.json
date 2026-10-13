@@ -1,0 +1,31 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.13",
+  "state": "missing-file-status-working",
+  "recordedAt": "2026-10-11T02:02:36Z",
+  "note": "The status of that hand-off while it was working.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/7d95da06-6d1c-4c31-b12a-410eff952852"
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "7d95da06-6d1c-4c31-b12a-410eff952852",
+          "state": "working",
+          "queuePosition": null,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-10-11T01:59:35.734951Z",
+          "outputPath": null,
+          "outputFiles": null,
+          "message": null
+        }
+      }
+    }
+  ]
+}
