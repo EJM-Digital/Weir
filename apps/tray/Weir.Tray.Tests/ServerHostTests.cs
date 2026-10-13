@@ -151,6 +151,24 @@ public sealed class ServerHostTests
     }
 
     [Fact(Timeout = TestTimeoutMs)]
+    public async Task Another_server_answering_ready_on_the_port_is_not_taken_for_the_one_the_tray_started()
+    {
+        using var rig = new StartRig();
+        using var stranger = new ReadyAnswerer(rig.Host.Port);
+        StartRig.Steer("WEIR_STANDIN_NO_STOP_EVENT", "1");
+
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        var gaveUp = await RunToEndAsync(rig, start, After(rig.LatestListeningAsync));
+
+        // The stranger said 200 again and again, and the server the tray started never said it was listening.
+        Assert.True(stranger.Answers > 0);
+        Assert.Equal("hung before it reported anything for 30 s", gaveUp.Reason);
+        Assert.Equal(ServerPhase.Stopped, rig.Host.Phase);
+        Assert.False(rig.Host.ServerIsRunning);
+        Assert.Empty(rig.Running());
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
     public async Task A_progress_file_of_an_earlier_run_does_not_pass_for_progress_of_this_one()
     {
         using var rig = new StartRig();
@@ -580,6 +598,52 @@ public sealed class ServerHostTests
         }
 
         throw new InvalidOperationException("The start was expected to give up and did not.");
+    }
+
+    // Something else that holds the server port and answers GET /ready with 200, as another running Weir would.
+    private sealed class ReadyAnswerer : IDisposable
+    {
+        private readonly System.Net.Sockets.TcpListener _listener;
+        private readonly CancellationTokenSource _stop = new();
+        private int _answers;
+
+        internal ReadyAnswerer(int port)
+        {
+            _listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, port);
+            _listener.Start();
+            _ = Task.Run(AnswerAsync);
+        }
+
+        internal int Answers => Volatile.Read(ref _answers);
+
+        public void Dispose()
+        {
+            _stop.Cancel();
+            _listener.Stop();
+            _stop.Dispose();
+        }
+
+        private async Task AnswerAsync()
+        {
+            const string Body = "{\"ready\":true}";
+            var response = System.Text.Encoding.ASCII.GetBytes(
+                $"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {Body.Length}\r\nConnection: close\r\n\r\n{Body}");
+            try
+            {
+                while (!_stop.IsCancellationRequested)
+                {
+                    using var client = await _listener.AcceptTcpClientAsync(_stop.Token);
+                    var stream = client.GetStream();
+                    _ = await stream.ReadAsync(new byte[4096], _stop.Token);
+                    await stream.WriteAsync(response, _stop.Token);
+                    Interlocked.Increment(ref _answers);
+                }
+            }
+            catch (Exception ex) when (ex is OperationCanceledException or System.Net.Sockets.SocketException or ObjectDisposedException or IOException)
+            {
+                // Stopped, or the asker went away.
+            }
+        }
     }
 
     private static int StartPolicyBurst => Policy.StartLimitBurst;

@@ -22,6 +22,33 @@ public sealed class StartWatchTests
         new(pid, phase, step, steps, TimeSpan.FromSeconds(expectSeconds), Noon + (at ?? TimeSpan.FromMilliseconds(200)));
 
     [Fact]
+    public void A_server_has_reported_ready_only_when_its_own_process_said_so_on_either_channel()
+    {
+        var watch = Watch();
+        Assert.False(watch.ReportedReady);
+
+        watch.Check(Reading("starting_listener"), Reading("starting_listener"));
+        Assert.False(watch.ReportedReady);
+
+        watch.Check(Reading("ready", pid: ServerPid + 1), null);
+        Assert.False(watch.ReportedReady);
+
+        watch.Check(null, Reading("ready"));
+        Assert.True(watch.ReportedReady);
+    }
+
+    [Fact]
+    public void A_report_of_ready_stays_reported_when_the_other_channel_later_shows_an_earlier_phase()
+    {
+        var watch = Watch();
+        watch.Check(Reading("ready"), Reading("preparing"));
+
+        watch.Check(Reading("ready"), Reading("starting_listener"));
+
+        Assert.True(watch.ReportedReady);
+    }
+
+    [Fact]
     public void A_server_that_has_reported_nothing_is_hung_only_after_the_first_progress_window()
     {
         var watch = Watch();

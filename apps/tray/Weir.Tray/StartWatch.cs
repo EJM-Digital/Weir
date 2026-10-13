@@ -41,6 +41,12 @@ sealed class StartWatch
     internal StartProgress? Last => _latest;
 
     /// <summary>
+    /// This server process, and no other, has reported on either channel that its listener is up. Once true it stays true: a late
+    /// reading of an earlier phase from the other channel does not undo it.
+    /// </summary>
+    internal bool ReportedReady { get; private set; }
+
+    /// <summary>
     /// Takes what each channel holds now (null when it holds nothing, or could not be read this time, which is no news and not silence
     /// by itself) and says whether the server is hung.
     /// </summary>
@@ -67,6 +73,7 @@ sealed class StartWatch
 
         seen = reading;
         _latest = reading;
+        ReportedReady |= reading.IsReady;
         return true;
     }
 }

@@ -28,7 +28,7 @@ public sealed class ServerHealthTests
         var handler = new ScriptedHandler(call => call < 3 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
         using var client = new HttpClient(handler);
 
-        var waiting = Wait(client, clock);
+        var waiting = Wait(client, clock, () => ReadyOnceAsked(handler, 3));
         await handler.NextCall();
         Assert.Equal(Pause, await clock.NextDelay());
         Assert.Equal(1, handler.Calls);
@@ -48,7 +48,7 @@ public sealed class ServerHealthTests
         var handler = new ScriptedHandler(call => call < 2 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
         using var client = new HttpClient(handler);
 
-        var waiting = Wait(client, clock);
+        var waiting = Wait(client, clock, () => ReadyOnceAsked(handler, 2));
         await clock.NextDelay();
         clock.Advance(Pause);
         await waiting;
@@ -95,7 +95,7 @@ public sealed class ServerHealthTests
         var reports = 0;
 
         // 4,000 asks a quarter of a second apart are over sixteen minutes; a new report comes every tenth.
-        var waiting = Wait(client, clock, () => Report("migrating", step: ++reports / 10, steps: 400));
+        var waiting = Wait(client, clock, () => handler.Calls >= 4_000 ? Report("ready") : Report("migrating", step: ++reports / 10, steps: 400));
         await DriveUntilDone(waiting, clock);
 
         await waiting;
@@ -125,10 +125,86 @@ public sealed class ServerHealthTests
         var handler = new ScriptedHandler(call => call < asks ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
         using var client = new HttpClient(handler);
 
-        var waiting = Wait(client, clock);
+        var waiting = Wait(client, clock, () => ReadyOnceAsked(handler, asks));
         await DriveUntilDone(waiting, clock);
 
         await waiting;
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task An_answer_of_200_is_not_this_servers_until_it_says_it_is_listening()
+    {
+        var clock = new DelayWatchingTimeProvider();
+        var handler = new ScriptedHandler(_ => HttpStatusCode.OK);
+        using var client = new HttpClient(handler);
+
+        var waiting = Wait(client, clock, () => Report("starting_listener"));
+        await DriveUntilDone(waiting, clock);
+
+        var error = await Assert.ThrowsAsync<ServerStartHungException>(() => waiting);
+        Assert.Contains("HTTP 200, but this server has not reported that it is listening", error.Message);
+        Assert.Contains("starting to listen", error.Message);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task An_answer_of_200_with_nothing_reported_at_all_is_not_this_servers()
+    {
+        var clock = new DelayWatchingTimeProvider();
+        var handler = new ScriptedHandler(_ => HttpStatusCode.OK);
+        using var client = new HttpClient(handler);
+
+        var waiting = Wait(client, clock);
+        await DriveUntilDone(waiting, clock);
+
+        var error = await Assert.ThrowsAsync<ServerStartHungException>(() => waiting);
+        Assert.Contains("HTTP 200, but this server has not reported that it is listening", error.Message);
+        Assert.Contains("before it reported anything", error.Message);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task Another_servers_report_of_listening_is_not_this_servers()
+    {
+        var clock = new DelayWatchingTimeProvider();
+        var handler = new ScriptedHandler(_ => HttpStatusCode.OK);
+        using var client = new HttpClient(handler);
+        var other = Report("ready") with { ProcessId = ServerPid + 1 };
+
+        var waiting = Wait(client, clock, () => other);
+        await DriveUntilDone(waiting, clock);
+
+        await Assert.ThrowsAsync<ServerStartHungException>(() => waiting);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_server_that_exits_while_another_one_answers_for_its_port_fails_with_its_exit_code()
+    {
+        var clock = new DelayWatchingTimeProvider();
+        var handler = new ScriptedHandler(_ => HttpStatusCode.OK);
+        using var client = new HttpClient(handler);
+
+        // The server just started cannot bind the port, so it exits; the one that holds the port keeps answering 200.
+        var waiting = ServerHealth.WaitUntilReadyAsync(
+            client, ReadyUrl, () => handler.Calls >= 3 ? 1 : null, Watch(clock), () => (Report("starting_listener"), null), Pause, clock, CancellationToken.None);
+        while (await Task.WhenAny(waiting, clock.NextDelay()) != waiting)
+        {
+            clock.Advance(Pause);
+        }
+
+        var error = await Assert.ThrowsAsync<ServerExitedException>(() => waiting);
+        Assert.Equal(1, error.ExitCode);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_server_that_reports_listening_on_the_file_alone_is_ready()
+    {
+        var clock = new DelayWatchingTimeProvider();
+        var handler = new ScriptedHandler(_ => HttpStatusCode.OK);
+        using var client = new HttpClient(handler);
+
+        await ServerHealth.WaitUntilReadyAsync(
+            client, ReadyUrl, () => null, Watch(clock), () => (null, Report("ready")), Pause, clock, CancellationToken.None);
+
+        Assert.Equal(1, handler.Calls);
     }
 
     [Fact(Timeout = TestTimeoutMs)]
@@ -145,6 +221,9 @@ public sealed class ServerHealthTests
         Assert.Contains("code 3", error.Message);
         Assert.Equal(0, handler.Calls);
     }
+
+    // The report of a server that answers 200 from ask number answersFrom on: it says it is listening once it has been asked that often.
+    private static StartProgress? ReadyOnceAsked(ScriptedHandler handler, int answersFrom) => handler.Calls >= answersFrom ? Report("ready") : null;
 
     private static StartWatch Watch(TimeProvider clock) => new(Policy, clock, ServerPid);
 
