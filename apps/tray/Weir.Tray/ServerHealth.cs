@@ -2,7 +2,23 @@ using System.Net;
 
 namespace Weir.Tray;
 
-/// <summary>Waits for a starting server to answer its readiness endpoint.</summary>
+/// <summary>The server process ended before it became ready.</summary>
+sealed class ServerExitedException(int exitCode)
+    : InvalidOperationException($"Weir server process exited unexpectedly with code {exitCode} before becoming healthy.")
+{
+    internal int ExitCode { get; } = exitCode;
+}
+
+/// <summary>The server process is alive but has stopped making progress: silent for longer than its phase allows.</summary>
+sealed class ServerStartHungException(StartVerdict verdict, string lastAnswer)
+    : TimeoutException(
+        FormattableString.Invariant($"Weir did not become ready: it was silent for {verdict.SilentFor.TotalSeconds:0.#} s ") +
+        FormattableString.Invariant($"(allowed {verdict.Allowed.TotalSeconds:0.#} s) {verdict.Where} (last answer to /ready: {lastAnswer})."))
+{
+    internal StartVerdict Verdict { get; } = verdict;
+}
+
+/// <summary>Waits for a starting server to answer its readiness endpoint, for as long as it keeps making progress.</summary>
 static class ServerHealth
 {
     /// <summary>How long one readiness request may take before it counts as "not ready yet".</summary>
@@ -12,80 +28,64 @@ static class ServerHealth
     internal static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(250);
 
     /// <summary>
-    /// How long to keep asking while nothing answers, how long to pause between attempts, and the clock both are measured on. Once
-    /// the server has answered with anything but 200 it is alive and starting, and <paramref name="WhenStarting"/>, when given and
-    /// longer, is how long it is then kept waiting for. While <paramref name="StillWorking"/> says yes the wait goes on past either
-    /// limit: it is how a server that is alive and has said it is busy (saving a copy of the data before an update) is not given up
-    /// on, for as long as its own note stays fresh.
-    /// </summary>
-    internal sealed record Timing(
-        TimeSpan Timeout,
-        TimeSpan RetryDelay,
-        TimeProvider Clock,
-        TimeSpan? WhenStarting = null,
-        Func<bool>? StillWorking = null);
-
-    /// <summary>
-    /// Returns once <paramref name="readyUrl"/> answers 200. Throws <see cref="InvalidOperationException"/> as soon
-    /// as the server process has exited, and <see cref="TimeoutException"/> (never a network error) once the
-    /// timeout has passed without a 200. <paramref name="exitCodeIfExited"/> returns the server's exit code once it
-    /// has exited, and null while it runs.
+    /// Returns once <paramref name="readyUrl"/> answers 200: /ready is the readiness signal, as a Kubernetes readiness probe is.
+    /// Meanwhile the progress the server reports (<paramref name="watch"/>, fed from <paramref name="readProgress"/>) is the startup
+    /// probe: a server is waited for for as long as it keeps making progress, and not for a fixed time. Throws
+    /// <see cref="ServerExitedException"/> as soon as the server process has exited, and <see cref="ServerStartHungException"/> once it
+    /// has been silent for longer than its phase allows; never a network error. <paramref name="exitCodeIfExited"/> returns the
+    /// server's exit code once it has exited, and null while it runs.
     /// </summary>
     internal static async Task WaitUntilReadyAsync(
         HttpClient client,
         Uri readyUrl,
         Func<int?> exitCodeIfExited,
-        Timing timing,
+        StartWatch watch,
+        Func<StartProgress?> readProgress,
+        TimeSpan retryDelay,
+        TimeProvider clock,
         CancellationToken cancellationToken)
     {
-        var started = timing.Clock.GetTimestamp();
-        var limit = timing.Timeout;
         while (true)
         {
             if (exitCodeIfExited() is { } exitCode)
             {
-                throw new InvalidOperationException(
-                    $"Weir server process exited unexpectedly with code {exitCode} before becoming healthy.");
+                throw new ServerExitedException(exitCode);
             }
 
-            var (answer, serverAnswered) = await AskAsync(client, readyUrl, cancellationToken).ConfigureAwait(false);
+            var answer = await AskAsync(client, readyUrl, cancellationToken).ConfigureAwait(false);
             if (answer is null)
             {
                 return;
             }
 
-            if (serverAnswered && timing.WhenStarting is { } whenStarting && whenStarting > limit)
+            var verdict = watch.Check(readProgress());
+            if (verdict.Hung)
             {
-                limit = whenStarting;
+                throw new ServerStartHungException(verdict, answer);
             }
 
-            if (timing.Clock.GetElapsedTime(started) >= limit && timing.StillWorking?.Invoke() != true)
-            {
-                throw new TimeoutException(
-                    $"Weir did not answer {readyUrl} within {limit.TotalSeconds:0.#}s (last attempt: {answer}).");
-            }
-            await Task.Delay(timing.RetryDelay, timing.Clock, cancellationToken).ConfigureAwait(false);
+            await Task.Delay(retryDelay, clock, cancellationToken).ConfigureAwait(false);
         }
     }
 
-    // Null when the server is ready; otherwise what it (or the network) said instead, and whether the server itself said it.
-    private static async Task<(string? Answer, bool ServerAnswered)> AskAsync(HttpClient client, Uri readyUrl, CancellationToken cancellationToken)
+    // Null when the server is ready; otherwise what it (or the network) said instead.
+    private static async Task<string?> AskAsync(HttpClient client, Uri readyUrl, CancellationToken cancellationToken)
     {
         try
         {
             using var response = await client
                 .GetAsync(readyUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                 .ConfigureAwait(false);
-            return response.StatusCode == HttpStatusCode.OK ? (null, true) : ($"HTTP {(int)response.StatusCode}", true);
+            return response.StatusCode == HttpStatusCode.OK ? null : $"HTTP {(int)response.StatusCode}";
         }
         catch (HttpRequestException ex)
         {
             // Nothing listening yet, or the connection dropped while the server started.
-            return (ex.Message, false);
+            return ex.Message;
         }
         catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return ($"no answer within {client.Timeout.TotalSeconds:0.#}s", false);
+            return $"no answer within {client.Timeout.TotalSeconds:0.#}s";
         }
     }
 }

@@ -14,6 +14,15 @@ internal sealed class DelayWatchingTimeProvider : FakeTimeProvider
 
     public Task<TimeSpan> NextDelay() => _delays.Reader.ReadAsync().AsTask();
 
+    /// <summary>
+    /// Completes when a delay is waiting to be taken, without taking it, so a wait that is given up on (because the code under test
+    /// finished first) never leaves a read behind to take the next delay of whatever the clock is used for next.
+    /// </summary>
+    public Task<bool> DelayWaitingAsync() => _delays.Reader.WaitToReadAsync().AsTask();
+
+    /// <summary>Takes the delay that is waiting, if there is one.</summary>
+    public bool TryTakeDelay(out TimeSpan delay) => _delays.Reader.TryRead(out delay);
+
     public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
     {
         var timer = base.CreateTimer(callback, state, dueTime, period);

@@ -1,134 +1,432 @@
-using System.Net;
-using System.Net.Sockets;
-using Weir.Tray.LanAccess;
+using System.Diagnostics;
 
 using Xunit;
 
 namespace Weir.Tray.Tests;
 
 /// <summary>
-/// The tray's server host with real stand-in servers that answer, or do not, on a port of their own: how long it waits for a
-/// server that has said nothing and for one that has said it is starting, that a server that never became ready is stopped, and
-/// that the icon says "Stopping..." while a server finishes. The waits are shortened to a second or so; no test asserts how long
-/// anything took.
+/// The tray's one supervisor for every start of the server, with real stand-in servers on a fake clock: a server that exits at
+/// once, one that hangs in a phase, one that is slow but keeps reporting (which must not be killed), the start limit, backoff and
+/// the Restart Weir budget. The tests pass the fake delays themselves, so no assertion is about how long anything took.
 /// </summary>
-public sealed class ServerHostTests : IDisposable
+public sealed class ServerHostTests
 {
-    private const string ReadyAfterVariable = "WEIR_STANDIN_READY_AFTER_MS";
-    private const string StopAfterVariable = "WEIR_STANDIN_STOP_AFTER_MS";
-    private const int TestTimeoutMs = 60_000;
+    private const int TestTimeoutMs = 120_000;
+    private static readonly StartPolicy Policy = StartPolicy.Default;
 
-    private readonly TempDirectory _home = TempDirectory.AsWeirHome();
-    private readonly List<ServerHost> _hosts = [];
-
-    public void Dispose()
+    // Passes each short poll only once the newest stand-in has done what the test is about: a real process takes a moment to exit or
+    // to listen, and the fake clock would otherwise run through the whole window before it had.
+    private static Func<TimeSpan, Task> After(Func<Task> condition) => async delay =>
     {
-        foreach (var host in _hosts)
+        if (delay == ServerHealth.RetryDelay)
         {
-            host.StopAsync().GetAwaiter().GetResult();
-            host.Dispose();
+            await condition();
+        }
+    };
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_server_that_exits_at_once_is_tried_again_after_a_growing_wait_until_the_start_limit_and_then_the_tray_gives_up()
+    {
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_EXIT_CODE", "3");
+
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        var gaveUp = await RunToEndAsync(rig, start, After(rig.LatestExitedAsync));
+
+        Assert.Equal(Policy.StartLimitBurst, gaveUp.Attempts);
+        Assert.StartsWith("exited with code 3", gaveUp.Reason, StringComparison.Ordinal);
+        // The waits between the five attempts, with the jitter's random number at 0: half of 2, 4, 8 and 16 seconds.
+        Assert.Equal(
+            [TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(4), TimeSpan.FromSeconds(8)],
+            rig.Delays.Where(delay => delay != ServerHealth.RetryDelay));
+        Assert.Equal(ServerPhase.Stopped, rig.Host.Phase);
+        Assert.Equal(Policy.StartLimitBurst, rig.Host.GaveUpAfterAttempts);
+        Assert.False(rig.Host.ServerIsRunning);
+        Assert.Empty(rig.Running());
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task Every_attempt_is_logged_with_its_number_the_reason_and_the_next_delay_and_stays_in_both_logs()
+    {
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_EXIT_CODE", "3");
+
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        await RunToEndAsync(rig, start, After(rig.LatestExitedAsync));
+
+        foreach (var log in new[] { rig.TrayLog, rig.ServerLog })
+        {
+            Assert.Contains("Start attempt 1 failed: exited with code 3", log, StringComparison.Ordinal);
+            Assert.Contains("Trying again in 1 s (1 of 5 failures allowed within 15 min)", log, StringComparison.Ordinal);
+            Assert.Contains("Start attempt 2 failed: exited with code 3", log, StringComparison.Ordinal);
+            Assert.Contains("Trying again in 2 s (2 of 5 failures allowed within 15 min)", log, StringComparison.Ordinal);
+            Assert.Contains("Trying again in 4 s (3 of 5 failures allowed within 15 min)", log, StringComparison.Ordinal);
+            Assert.Contains("Trying again in 8 s (4 of 5 failures allowed within 15 min)", log, StringComparison.Ordinal);
+            Assert.Contains("Start attempt 5 failed: exited with code 3", log, StringComparison.Ordinal);
+            Assert.Contains("Giving up (5 of 5 failures allowed within 15 min); Weir is not running. Restart Weir tries again.", log, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task Each_retry_tells_the_new_server_which_attempt_it_is_and_why_the_earlier_ones_failed()
+    {
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_EXIT_CODE", "3");
+
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        await RunToEndAsync(rig, start, After(rig.LatestExitedAsync));
+
+        var starts = rig.Starts;
+        Assert.Equal(["", "2", "3", "4", "5"], starts.Select(s => s.Attempt));
+        Assert.Equal(string.Empty, starts[0].Failures);
+        Assert.StartsWith("attempt 1: exited with code 3", starts[1].Failures, StringComparison.Ordinal);
+        Assert.Contains("attempt 4: exited with code 3", starts[4].Failures, StringComparison.Ordinal);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_start_that_only_worked_on_a_retry_is_logged_as_failed_attempts_and_still_ends_ready()
+    {
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_EXIT_CODE", "7");
+        StartRig.Steer("WEIR_STANDIN_SUCCEED_AT_ATTEMPT", "3");
+
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        await rig.DriveAsync(start, After(async () =>
+        {
+            await rig.LatestStartedAsync(1);
+            await StartRig.UntilAsync(() => !StartRig.IsRunning(rig.Starts[^1].Pid) || rig.Starts[^1].Attempt == "3", "the stand-in to exit or the third attempt to start");
+            if (rig.Starts[^1].Attempt == "3")
+            {
+                await rig.LatestListeningAsync();
+            }
+        }));
+
+        Assert.Equal(ServerPhase.Running, rig.Host.Phase);
+        Assert.True(rig.Host.ServerIsRunning);
+        foreach (var log in new[] { rig.TrayLog, rig.ServerLog })
+        {
+            Assert.Contains("Start attempt 1 failed: exited with code 7", log, StringComparison.Ordinal);
+            Assert.Contains("Start attempt 2 failed: exited with code 7", log, StringComparison.Ordinal);
+            Assert.Contains("Weir started on attempt 3, after 2 failed attempts: attempt 1: exited with code 7", log, StringComparison.Ordinal);
         }
 
-        Environment.SetEnvironmentVariable(ReadyAfterVariable, null);
-        Environment.SetEnvironmentVariable(StopAfterVariable, null);
-        _home.Dispose();
-    }
-
-    private ServerHost Host(TimeSpan nothingAnswers, TimeSpan starting, string? readyAfterMs = null, string? stopAfterMs = null)
-    {
-        Environment.SetEnvironmentVariable(ReadyAfterVariable, readyAfterMs);
-        Environment.SetEnvironmentVariable(StopAfterVariable, stopAfterMs);
-        var install = Path.Combine(_home.Path, "install-" + Guid.NewGuid().ToString("n"));
-        StandInServers.Install(Path.Combine(install, "server"));
-        var host = new ServerHost(_home.Path, install, FreePort(), ListenScope.ThisPcOnly, nothingAnswers, starting);
-        _hosts.Add(host);
-        return host;
-    }
-
-    private static int FreePort()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
+        // The words the suite's tray-log check looks for are there, so a start that needed a retry is never read as a clean one.
+        Assert.Matches("(?i)(failed)", rig.TrayLog);
+        Assert.Equal("3", rig.Starts[^1].Attempt);
     }
 
     [Fact(Timeout = TestTimeoutMs)]
-    public async Task A_server_that_does_not_listen_fails_at_the_short_limit_and_is_stopped_rather_than_left_running()
+    public async Task A_server_hung_in_a_phase_is_stopped_with_the_phase_named_and_tried_again_until_the_limit()
     {
-        // The long limit is two minutes: waiting for it would run the test out of time.
-        var host = Host(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(2), readyAfterMs: "-1");
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_PHASE", "opening_database");
+        StartRig.Steer("WEIR_STANDIN_NO_STOP_EVENT", "1");
+        StartRig.Steer("WEIR_STANDIN_READY_FILE", rig.ReadyFile);
 
-        await Assert.ThrowsAsync<TimeoutException>(() => host.StartAsync(CancellationToken.None));
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        var gaveUp = await RunToEndAsync(rig, start, After(rig.LatestReportedAsync));
 
-        Assert.False(host.ServerIsRunning);
-        Assert.Equal(ServerPhase.Stopped, host.Phase);
+        Assert.Equal(Policy.StartLimitBurst, gaveUp.Attempts);
+        Assert.Equal("hung in phase 'opening the database' for 30 s", gaveUp.Reason);
+        Assert.Contains("Start attempt 1 failed: hung in phase 'opening the database' for 30 s. Trying again in 1 s", rig.TrayLog, StringComparison.Ordinal);
+        // Each stuck process was looked at before it was stopped, and every one is gone.
+        Assert.Equal(Policy.StartLimitBurst, CountOf(rig.TrayLog, "did not answer: it had run for"));
+        Assert.Contains("loaded", rig.TrayLog, StringComparison.Ordinal);
+        Assert.Empty(rig.Running());
+        Assert.False(rig.Host.ServerIsRunning);
     }
 
     [Fact(Timeout = TestTimeoutMs)]
-    public async Task A_server_that_answers_not_ready_is_waited_for_past_the_short_limit_until_it_is_ready()
+    public async Task A_server_hung_before_it_reported_anything_is_stopped_and_said_to_have_been()
     {
-        // Ready seven seconds after it starts listening, which is after the six-second short limit however soon it started.
-        var host = Host(TimeSpan.FromSeconds(6), TimeSpan.FromSeconds(60), readyAfterMs: "7000");
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_NO_STOP_EVENT", "1");
+        StartRig.Steer("WEIR_STANDIN_READY_FILE", rig.ReadyFile);
 
-        await host.StartAsync(CancellationToken.None);
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        var gaveUp = await RunToEndAsync(rig, start, After(rig.LatestListeningAsync));
 
-        Assert.True(host.ServerIsRunning);
-        Assert.Equal(ServerPhase.Running, host.Phase);
+        Assert.Equal("hung before it reported anything for 30 s", gaveUp.Reason);
+        Assert.Empty(rig.Running());
     }
 
     [Fact(Timeout = TestTimeoutMs)]
-    public async Task A_server_saving_a_copy_before_an_update_is_waited_for_past_both_limits_while_it_keeps_saying_so()
+    public async Task A_progress_file_of_an_earlier_run_does_not_pass_for_progress_of_this_one()
     {
-        // Ready three seconds after it starts listening, which is after both one-second limits; its note says it is busy meanwhile.
-        var host = Host(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), readyAfterMs: "3000");
-        using var done = new CancellationTokenSource();
-        var note = Task.Run(async () =>
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_NO_STOP_EVENT", "1");
+        StartRig.Steer("WEIR_STANDIN_READY_FILE", rig.ReadyFile);
+        // Left by a server that has since ended, with a process id this one does not have.
+        rig.WriteProgress(pid: 1, phase: "ready");
+
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        var gaveUp = await RunToEndAsync(rig, start, After(rig.LatestListeningAsync));
+
+        Assert.Equal("hung before it reported anything for 30 s", gaveUp.Reason);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_slow_start_that_keeps_reporting_progress_is_never_killed_however_long_it_takes()
+    {
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_PHASE", "migrating");
+        StartRig.Steer("WEIR_STANDIN_READY_FILE", rig.ReadyFile);
+        var step = 0;
+        var polls = 0;
+        var began = rig.Clock.GetUtcNow();
+
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        await rig.DriveAsync(start, async delay =>
         {
-            while (!done.IsCancellationRequested)
+            Assert.Equal(ServerHealth.RetryDelay, delay);
+            await rig.LatestListeningAsync();
+            // Every fourth poll (a second of fake time) the migration moves on; after five windows' worth it is done.
+            if (++polls % 4 == 0)
             {
-                File.WriteAllText(Path.Combine(_home.Path, StartupNotes.ProgressFileName), "saving a copy");
-                await Task.Delay(100, CancellationToken.None);
+                rig.WriteProgress(rig.Starts[^1].Pid, "migrating", ++step, 1_000);
             }
-        }, CancellationToken.None);
 
+            if (polls == (int)(Policy.StallWindow * 5 / ServerHealth.RetryDelay))
+            {
+                File.WriteAllText(rig.ReadyFile, "ready");
+            }
+        });
+
+        Assert.True(rig.Clock.GetUtcNow() - began > Policy.StallWindow * 4, "The start was not slower than four stall windows");
+        Assert.Single(rig.Starts);
+        Assert.True(rig.Host.ServerIsRunning);
+        Assert.Equal(ServerPhase.Running, rig.Host.Phase);
+        Assert.DoesNotContain("failed", rig.TrayLog, StringComparison.Ordinal);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task The_tray_asks_every_server_it_starts_for_its_progress_on_standard_output()
+    {
+        using var rig = new StartRig();
+
+        await rig.StartReadyAsync();
+
+        Assert.Equal("1", Assert.Single(rig.Starts).Pipe);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_slow_start_that_reports_only_on_the_pipe_is_never_killed_although_no_progress_file_is_ever_written()
+    {
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_SAY_FILE", rig.SayFile);
+        StartRig.Steer("WEIR_STANDIN_READY_FILE", rig.ReadyFile);
+        var polls = 0;
+        var step = 0;
+        var began = rig.Clock.GetUtcNow();
+
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        await rig.DriveAsync(start, async delay =>
+        {
+            await rig.LatestListeningAsync();
+            // Every twentieth poll (five seconds of fake time) the migration reports a step; after five windows' worth it is done.
+            if (++polls % 20 == 0)
+            {
+                rig.Say(rig.Starts[^1].Pid, "migrating", ++step, 1_000);
+                await StartRig.UntilAsync(() => rig.ServerLog.Contains($"(step {step} of 1000)", StringComparison.Ordinal), "the line to reach the tray through the pipe");
+            }
+
+            if (polls == (int)(Policy.StallWindow * 5 / delay))
+            {
+                File.WriteAllText(rig.ReadyFile, "ready");
+            }
+        });
+
+        Assert.False(File.Exists(Path.Combine(rig.HomePath, StartProgressFile.FileName)));
+        Assert.True(rig.Clock.GetUtcNow() - began > Policy.StallWindow * 4);
+        Assert.Single(rig.Starts);
+        Assert.Equal(ServerPhase.Running, rig.Host.Phase);
+        Assert.DoesNotContain("failed", rig.TrayLog, StringComparison.Ordinal);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_start_that_reported_on_the_pipe_and_then_went_quiet_is_hung_in_the_phase_it_last_reported()
+    {
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_NO_STOP_EVENT", "1");
+        StartRig.Steer("WEIR_STANDIN_SAY_FILE", rig.SayFile);
+        StartRig.Steer("WEIR_STANDIN_READY_FILE", rig.ReadyFile);
+        var said = 0;
+
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        var gaveUp = await RunToEndAsync(rig, start, async delay =>
+        {
+            if (delay != ServerHealth.RetryDelay)
+            {
+                return;
+            }
+
+            await rig.LatestListeningAsync();
+            if (said < rig.Starts.Count)
+            {
+                rig.Say(rig.Starts[^1].Pid, "saving_copy");
+                await StartRig.UntilAsync(() => rig.ServerLog.Contains($"[pid {rig.Starts[^1].Pid} progress] saving a copy of the data", StringComparison.Ordinal), "the line to reach the tray");
+                said = rig.Starts.Count;
+            }
+        });
+
+        Assert.Equal("hung in phase 'saving a copy of the data' for 30 s", gaveUp.Reason);
+        Assert.Empty(rig.Running());
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_server_that_asks_for_longer_silence_than_the_stall_window_is_given_it()
+    {
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_PHASE", "saving_copy");
+        StartRig.Steer("WEIR_STANDIN_EXPECT_S", "300");
+        StartRig.Steer("WEIR_STANDIN_READY_FILE", rig.ReadyFile);
+        var polls = 0;
+        var began = rig.Clock.GetUtcNow();
+
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        await rig.DriveAsync(start, async delay =>
+        {
+            await rig.LatestListeningAsync();
+            // It says nothing more for 250 seconds, eight times the stall window, then is ready.
+            if (++polls == (int)(TimeSpan.FromSeconds(250) / delay))
+            {
+                File.WriteAllText(rig.ReadyFile, "ready");
+            }
+        });
+
+        Assert.True(rig.Clock.GetUtcNow() - began >= TimeSpan.FromSeconds(250));
+        Assert.Single(rig.Starts);
+        Assert.Equal(ServerPhase.Running, rig.Host.Phase);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_process_the_tray_did_not_start_is_never_stopped_with_the_ones_it_did()
+    {
+        using var rig = new StartRig();
+        var bystanderFolder = Path.Combine(rig.HomePath, "bystander");
+        var bystanderExe = StandInServers.Place(bystanderFolder, "WeirServer.exe");
+        var bystanderStart = new ProcessStartInfo(bystanderExe) { UseShellExecute = false, CreateNoWindow = true };
+        bystanderStart.Environment["WEIR_HOME"] = bystanderFolder;
+        bystanderStart.ArgumentList.Add("no-stop-event");
+        using var bystander = Process.Start(bystanderStart)!;
+        StartRig.Steer("WEIR_STANDIN_PHASE", "opening_database");
+        StartRig.Steer("WEIR_STANDIN_NO_STOP_EVENT", "1");
+        StartRig.Steer("WEIR_STANDIN_READY_FILE", rig.ReadyFile);
         try
         {
-            await host.StartAsync(CancellationToken.None);
+            var start = rig.Host.StartAsync(CancellationToken.None);
+            await RunToEndAsync(rig, start, After(rig.LatestReportedAsync));
+
+            Assert.Empty(rig.Running());
+            Assert.False(bystander.HasExited, "A server the tray did not start was stopped");
         }
         finally
         {
-            await done.CancelAsync();
-            await note;
+            bystander.Kill(entireProcessTree: true);
         }
-
-        Assert.True(host.ServerIsRunning);
-        Assert.Equal(ServerPhase.Running, host.Phase);
     }
 
     [Fact(Timeout = TestTimeoutMs)]
-    public async Task A_progress_note_the_last_server_left_does_not_stretch_the_limits()
+    public async Task A_server_that_ran_and_then_exits_is_started_again_through_the_same_supervision()
     {
-        var lastServersNote = Path.Combine(_home.Path, StartupNotes.ProgressFileName);
-        File.WriteAllText(lastServersNote, "saving a copy");
-        File.SetLastWriteTimeUtc(lastServersNote, DateTime.UtcNow.AddSeconds(-30));
-        var host = Host(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), readyAfterMs: "-1");
+        using var rig = new StartRig();
+        await rig.StartReadyAsync();
+        var gaveUp = false;
+        rig.Host.Watch(() => gaveUp = true, CancellationToken.None);
+        var first = rig.Starts[0].Pid;
+        using (var running = Process.GetProcessById(first))
+        {
+            running.Kill();
+            await running.WaitForExitAsync();
+        }
 
-        await Assert.ThrowsAsync<TimeoutException>(() => host.StartAsync(CancellationToken.None));
+        var restarted = Task.Run(() => StartRig.UntilAsync(() => rig.Starts.Count == 2 && rig.Host.ServerIsRunning && rig.Host.Phase == ServerPhase.Running, "the second server to be running"));
+        await rig.DriveAsync(restarted, After(async () =>
+        {
+            await rig.LatestStartedAsync(2);
+            await rig.LatestListeningAsync();
+        }));
 
-        Assert.False(host.ServerIsRunning);
+        Assert.False(gaveUp);
+        Assert.Contains("Start attempt 1 failed: exited with code", rig.TrayLog, StringComparison.Ordinal);
+        Assert.Equal("2", rig.Starts[1].Attempt);
+        Assert.StartsWith("attempt 1: exited with code", rig.Starts[1].Failures, StringComparison.Ordinal);
+        Assert.Contains("Weir started on attempt 2, after 1 failed attempt", rig.TrayLog, StringComparison.Ordinal);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task Restart_Weir_after_the_tray_gave_up_gets_the_whole_budget_of_attempts_again()
+    {
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_EXIT_CODE", "3");
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        await RunToEndAsync(rig, start, After(rig.LatestExitedAsync));
+        Assert.Equal(ServerPhase.Stopped, rig.Host.Phase);
+        StartRig.Steer("WEIR_STANDIN_EXIT_CODE", null);
+
+        var restart = rig.Host.RestartNowAsync(CancellationToken.None);
+        await rig.DriveAsync(restart, After(rig.LatestListeningAsync));
+
+        Assert.True(await restart);
+        Assert.Equal(ServerPhase.Running, rig.Host.Phase);
+        Assert.Equal(0, rig.Host.GaveUpAfterAttempts);
+        // Attempt 1 again, so nothing is passed to the server about earlier failures.
+        Assert.Equal(string.Empty, rig.Starts[^1].Attempt);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_server_that_said_why_it_cannot_start_is_not_tried_again()
+    {
+        const string Headline = "Couldn't save a copy of its data before updating";
+        const string Sentence = "Weir couldn't save a copy of its data before updating, so it didn't change anything: the drive is full.";
+        using var rig = new StartRig();
+        File.WriteAllText(Path.Combine(rig.Server, "fail-start.txt"), $"{Headline}\n{Sentence}");
+
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        var gaveUp = await RunToEndAsync(rig, start, After(rig.LatestExitedAsync));
+
+        Assert.Equal(1, gaveUp.Attempts);
+        Assert.Single(File.ReadAllLines(Path.Combine(rig.Server, "starts.txt")));
+        Assert.Equal(new StartupError(Headline, Sentence), rig.Host.StartupError);
+        Assert.Contains("The server said why it cannot start, so it is not tried again", rig.TrayLog, StringComparison.Ordinal);
     }
 
     [Fact(Timeout = TestTimeoutMs)]
     public async Task The_icon_says_stopping_while_the_server_finishes_and_stopped_after()
     {
-        var host = Host(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), stopAfterMs: "1000");
-        await host.StartAsync(CancellationToken.None);
+        using var rig = new StartRig();
+        await rig.StartReadyAsync();
         var phases = new List<ServerPhase>();
-        host.PhaseChanged += () => phases.Add(host.Phase);
+        rig.Host.PhaseChanged += () => phases.Add(rig.Host.Phase);
 
-        await host.StopAsync();
+        await rig.Host.StopAsync();
 
         Assert.Equal([ServerPhase.Stopping, ServerPhase.Stopped], phases);
-        Assert.False(host.ServerIsRunning);
+        Assert.False(rig.Host.ServerIsRunning);
+    }
+
+    private static async Task<StartGaveUpException> RunToEndAsync(StartRig rig, Task start, Func<TimeSpan, Task> whenParked)
+    {
+        try
+        {
+            await rig.DriveAsync(start, whenParked);
+        }
+        catch (StartGaveUpException gaveUp)
+        {
+            return gaveUp;
+        }
+
+        throw new InvalidOperationException("The start was expected to give up and did not.");
+    }
+
+    private static int CountOf(string text, string what)
+    {
+        var count = 0;
+        for (var at = text.IndexOf(what, StringComparison.Ordinal); at >= 0; at = text.IndexOf(what, at + what.Length, StringComparison.Ordinal))
+        {
+            count++;
+        }
+
+        return count;
     }
 }

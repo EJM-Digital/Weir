@@ -176,8 +176,8 @@ public sealed class SystemOverviewApiTests
         Assert.Null(backup["from_version"]);
         Assert.False(string.IsNullOrEmpty(backup["to_version"]!.GetValue<string>()));
         Assert.True(backup["in_data_folder"]!.GetValue<bool>());
-        // A start that went well leaves neither note for the tray.
-        Assert.False(File.Exists(Path.Join(server.Home, StartupNotes.ProgressFileName)));
+        // A start that went well leaves no reason for the tray, and its progress says it got as far as ready.
+        Assert.Contains("\"phase\":\"ready\"", File.ReadAllText(Path.Join(server.Home, StartupProgress.FileName)), StringComparison.Ordinal);
         Assert.False(File.Exists(Path.Join(server.Home, StartupNotes.ErrorFileName)));
     }
 
@@ -240,7 +240,7 @@ public sealed class SystemOverviewApiTests
             var lines = File.ReadAllText(Path.Join(home, StartupNotes.ErrorFileName)).Split('\n', 2);
             Assert.Equal(PreUpdateBackupException.Headline, lines[0]);
             Assert.Equal(error.Message, lines[1]);
-            Assert.False(File.Exists(Path.Join(home, StartupNotes.ProgressFileName)));
+            Assert.Contains("\"phase\":\"opening_database\"", File.ReadAllText(Path.Join(home, StartupProgress.FileName)), StringComparison.Ordinal);
             using var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={Path.Join(home, "data", "weir.sqlite3")};Pooling=False");
             connection.Open();
             using var command = connection.CreateCommand();

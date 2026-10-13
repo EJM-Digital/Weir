@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 
 namespace Weir.Tray;
 
@@ -14,6 +15,12 @@ namespace Weir.Tray;
 /// open indefinitely, and a caller waiting for end-of-file would wait forever too, even though the
 /// process it actually launched (Setup.exe, or Weir.exe itself) already exited (#779). Closing the
 /// handles here, before anything else runs, stops them reaching WeirServer.exe as well.
+///
+/// What stands in their place is the null device, not nothing: a write to it returns at once and a read finds the end of the file,
+/// so nothing the tray or a process it starts without redirecting does with its standard handles can wait on a pipe that nobody
+/// reads. (A write into a full, unread pipe waits for ever, and so does opening the console stream of a process whose handle is
+/// that pipe: that is how a server was found not to start. The server now never waits for its console, and the tray gives it
+/// pipes of its own that it reads, but the tray itself should not be one more process that can be held there.)
 /// </summary>
 static class InheritedStdioHandles
 {
@@ -33,6 +40,9 @@ static class InheritedStdioHandles
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetStdHandle(int nStdHandle, nint hHandle);
+
+    // Kept for the life of the process: the standard handles point at it.
+    private static SafeFileHandle? _nullDevice;
 
     private static readonly (string Name, int Id)[] Handles =
     [
@@ -64,7 +74,22 @@ static class InheritedStdioHandles
                 continue;
             }
 
-            SetStdHandle(id, nint.Zero);
+            SetStdHandle(id, NullDevice(log));
+        }
+    }
+
+    // The null device, opened once; zero (no handle) if it cannot be, which is what the tray had before.
+    private static nint NullDevice(Action<string> log)
+    {
+        try
+        {
+            _nullDevice ??= File.OpenHandle("NUL", FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+            return _nullDevice.DangerousGetHandle();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            log($"Could not open the null device for the standard handles ({ex.Message}).");
+            return nint.Zero;
         }
     }
 }

@@ -58,19 +58,31 @@ sealed class ServerOutputLog : IDisposable
     /// started with both streams redirected. The streams are read to their end whatever happens to the file: a server whose
     /// output nobody reads stops at the first full pipe.
     /// </summary>
-    internal void Attach(Process process)
+    internal void Attach(Process process, StartProgressFeed feed)
     {
         Write($"server pid {process.Id} started");
-        BackgroundWork.Observe($"Server output (pid {process.Id}, out)", Pump(process.StandardOutput, process.Id, "out"));
-        BackgroundWork.Observe($"Server output (pid {process.Id}, err)", Pump(process.StandardError, process.Id, "err"));
+        BackgroundWork.Observe($"Server output (pid {process.Id}, out)", Pump(process.StandardOutput, process.Id, "out", feed));
+        BackgroundWork.Observe($"Server output (pid {process.Id}, err)", Pump(process.StandardError, process.Id, "err", null));
     }
 
-    private async Task Pump(StreamReader reader, int processId, string stream)
+    // A progress line is progress, so it goes to the feed the start is judged by; the log keeps it in words, once for each phase and
+    // step and not for each beat. Every other line is kept as the server wrote it.
+    private async Task Pump(StreamReader reader, int processId, string stream, StartProgressFeed? feed)
     {
         try
         {
             while (await reader.ReadLineAsync().ConfigureAwait(false) is { } line)
             {
+                if (feed is not null && line.StartsWith(StartProgressFile.Prefix, StringComparison.Ordinal))
+                {
+                    if (feed.Accept(line) is { } record)
+                    {
+                        Write($"[pid {processId} progress] {record.Words}");
+                    }
+
+                    continue;
+                }
+
                 Write($"[pid {processId} {stream}] {line}");
             }
         }

@@ -43,6 +43,8 @@ public sealed class StartupTraceTests
                 command.ExecuteNonQuery();
             }));
 
+            // The progress file is left where the start stopped, which is what the tray reads to say where it was.
+            Assert.Contains("\"phase\":\"opening_database\"", File.ReadAllText(Path.Join(home, "startup-progress.json")), StringComparison.Ordinal);
             var messages = LogMessages(home);
             Assert.Contains(messages, message => message.Contains("is starting", StringComparison.Ordinal));
             Assert.Contains(messages, message => message.StartsWith("Opening the database", StringComparison.Ordinal));
