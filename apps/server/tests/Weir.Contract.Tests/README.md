@@ -38,7 +38,9 @@ Everything is in `Harness/`. Areas live in folders beside it (`Activity/`), one 
   the same moment as the machine has processors (never fewer than two), so a small CI runner is not asked to start a
   dozen at once; a server that is ready gives its place back. A port is picked by asking the system for a free one, so
   another process can take it before the server binds; a server that exits with "address already in use" is started
-  again on a new port (three attempts in all), and any other early exit fails at once. Disposing a server waits until
+  again on a new port (three attempts in all), and any other early exit fails at once. `/ready` answering is not enough
+  to call a server ready: the process the harness started must also have logged that it listens on its port, because the
+  process that won the port may be the server of another test, which answers `/ready` until its own test ends. Disposing a server waits until
   nothing holds its database files before it deletes the folder.
 - **`ServerEnvironment`** is the quiet default environment: no workers, no watcher, no periodic enqueue, high
   sign-in limits, artwork off. Pass `environment` to add or override. `ServerEnvironment.OperatorDefaults` is what

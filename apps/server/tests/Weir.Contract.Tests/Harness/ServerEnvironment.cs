@@ -20,6 +20,7 @@ public static class ServerEnvironment
         "WEIR_CORS_ORIGINS",
         "WEIR_TRUSTED_BROWSER_ORIGINS",
         "WEIR_ENV",
+        "WEIR_LOG_LEVEL",
         "WEIR_WEB_DIST",
     ];
 
