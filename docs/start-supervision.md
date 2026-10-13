@@ -143,3 +143,22 @@ out-of-range records), `ServerHostTests` (real stand-in servers on a fake clock:
 channel, a hung server that will not stop, a port change, the start limit, crash after running, Restart Weir), `ServerOutputLogTests`,
 `InheritedStdioHandlesTests`, `StartupProgressTests`, `StartupProgressChannelsTests`, `NonBlockingConsoleTests`, `StartRefusalTests`, and
 `ServerOutputPipeTests`, which starts the real server with a full pipe nobody reads, once to run and once to refuse its settings.
+
+## Reading the files that are replaced under a reader
+
+The server and the tray talk through small files in the data folder, and each is replaced by writing a new file and renaming it over the
+old one (`AtomicFileWriter` in the server, `AtomicFile` in the tray). A reader that opens the file at that moment can be refused (access
+denied, a sharing violation) or can find the name missing for an instant, and a virus scanner holding a file just written does the same.
+None of this says anything about the file. Every reader of these files therefore goes through `ReplacedFile` (one copy in the server, one in
+the tray), which looks again after 20 ms, up to 5 looks, before it says what it found:
+
+* **Read**: the text, and when the file was written.
+* **Absent**: no file on any look. This is the state of a fresh install, and it is the only state that means "nothing saved".
+* **Busy**: refused on every look. This says nothing about the file. A reader never takes it for damaged or absent, and never changes
+  anything because of it: the tray's watcher of the saved LAN choice leaves the server alone, the wait for the server to be idle keeps its
+  place (`ServerWork.NotRead`), and a request for a copy of the data before an update is not sent on as if no copy could be made. Only a
+  reader that must decide now (the update settings, which decide whether to install) falls back to the choice that installs nothing, and says
+  it was busy rather than damaged.
+
+`startup-error.txt` is the one file nothing replaces while it exists (the server deletes the last one first), so a missing one is final;
+a busy one is still looked at again. `startup-progress.json` and `tray-status.json` have readers of their own that follow the same rule.

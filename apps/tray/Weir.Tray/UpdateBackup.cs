@@ -57,16 +57,33 @@ static class UpdateBackupReady
 
     private static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 
-    internal static RunningServer? Read(string runtimeHome)
+    /// <summary>The server the marker names, or null when there is no marker or it names none. See <see cref="Look"/> for a marker that could not be read.</summary>
+    internal static RunningServer? Read(string runtimeHome) => Look(runtimeHome).Server;
+
+    /// <summary>
+    /// What the marker says. The server writes it by renaming a new file over the last one, so a refused open or a missing name is
+    /// looked at again (<see cref="ReplacedFile"/>) before the marker is called absent. <c>Busy</c> is a marker that stayed unreadable:
+    /// it says nothing, and is not the same as a build with no marker.
+    /// </summary>
+    internal static (bool Busy, RunningServer? Server) Look(string runtimeHome)
     {
+        var reading = ReplacedFile.ReadText(Path.Combine(runtimeHome, FileName));
+        switch (reading.State)
+        {
+            case ReplacedFileState.Absent:
+                return (false, null);
+            case ReplacedFileState.Busy:
+                return (true, null);
+        }
+
         try
         {
-            var wire = JsonSerializer.Deserialize<Wire>(File.ReadAllText(Path.Combine(runtimeHome, FileName)), Json);
-            return wire is { Pid: { } pid, StartedAt: { } startedAt } ? new RunningServer(pid, startedAt.UtcDateTime) : null;
+            var wire = JsonSerializer.Deserialize<Wire>(reading.Text, Json);
+            return (false, wire is { Pid: { } pid, StartedAt: { } startedAt } ? new RunningServer(pid, startedAt.UtcDateTime) : null);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        catch (JsonException)
         {
-            return null;
+            return (false, null);
         }
     }
 
@@ -128,9 +145,18 @@ sealed class UpdateBackupRequest(string runtimeHome, TimeProvider clock, Func<Ru
 
     internal async Task<UpdateBackupAnswer> AskAsync(string targetVersion, CancellationToken cancellationToken)
     {
-        if (server() is not { } running
-            || UpdateBackupReady.Read(runtimeHome) is not { } ready
-            || !ready.IsSameProcessAs(running))
+        if (server() is not { } running)
+        {
+            return new UpdateBackupAnswer(UpdateBackupOutcome.NotAnswered, null);
+        }
+
+        // A marker that cannot be read is not a server without one: that would let the update go ahead with no copy of Weir's data.
+        var (markerBusy, marked) = UpdateBackupReady.Look(runtimeHome);
+        if (markerBusy)
+        {
+            return Failed("Weir's record of whether it can save a copy of its data could not be read just now. Try again in a moment.");
+        }
+        if (marked is not { } ready || !ready.IsSameProcessAs(running))
         {
             return new UpdateBackupAnswer(UpdateBackupOutcome.NotAnswered, null);
         }

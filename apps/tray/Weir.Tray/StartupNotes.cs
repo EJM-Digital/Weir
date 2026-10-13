@@ -30,21 +30,13 @@ static class StartupNotes
     // Written no earlier than the process began: a file from an earlier process is never this one's.
     private static string? ReadFresh(string path, DateTime? serverStartedUtc)
     {
-        try
-        {
-            if (!File.Exists(path))
-            {
-                return null;
-            }
-            if (serverStartedUtc is { } started && File.GetLastWriteTimeUtc(path) < started)
-            {
-                return null;
-            }
-            return File.ReadAllText(path).Trim();
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        // The server deletes the last note before it starts and writes a new one only when it refuses, so nothing replaces this file while
+        // it is there and a missing one is final. A file a virus scanner or the server's own write holds for a moment is looked at again.
+        var reading = ReplacedFile.ReadText(path, absentIsFinal: true);
+        if (reading.State != ReplacedFileState.Read || (serverStartedUtc is { } started && reading.WrittenUtc < started))
         {
             return null;
         }
+        return reading.Text.Trim();
     }
 }

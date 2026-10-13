@@ -593,4 +593,16 @@ public sealed class UpdateBackupTests : IDisposable
     {
         public Task<bool> SaveBeforeApplyAsync(string? targetVersion) => throw new InvalidOperationException("raw text");
     }
+
+    [Fact(Timeout = 10_000)]
+    public async Task A_ready_marker_that_cannot_be_read_just_now_is_not_a_server_without_one()
+    {
+        ServerIsReady(_server!.Value.ProcessId, _server.Value.StartedUtc);
+        using var held = new FileStream(ReadyPath, FileMode.Open, FileAccess.Read, FileShare.None);
+
+        var answer = await Request().AskAsync(Target, CancellationToken.None);
+
+        Assert.Equal(UpdateBackupOutcome.Failed, answer.Outcome);
+        Assert.False(File.Exists(RequestPath));
+    }
 }

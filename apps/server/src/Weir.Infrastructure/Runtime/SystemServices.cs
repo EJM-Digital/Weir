@@ -72,21 +72,32 @@ public sealed class UpdateFiles
     public WireObject ReadSettings(Action<string>? warn = null)
     {
         var path = Path.Join(_options.WeirHome, SettingsFileName);
-        if (!File.Exists(path) && !Directory.Exists(path))
-        {
-            return UpdateStatus.DefaultUpdateSettings;
-        }
 
-        string text;
+        // Both the Settings page and the tray replace this file by renaming a new one over it, so a refusal or a missing name is looked at
+        // again before the file is called absent (the shipped default) or unreadable (notify only).
+        ReplacedFileText reading;
         try
         {
-            text = File.ReadAllText(path, new UTF8Encoding(false, throwOnInvalidBytes: true));
+            reading = ReplacedFile.ReadText(path, new UTF8Encoding(false, throwOnInvalidBytes: true));
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or DecoderFallbackException)
+        catch (DecoderFallbackException)
         {
             warn?.Invoke(path);
             return UpdateStatus.UnreadableUpdateSettings;
         }
+
+        if (reading.State == ReplacedFileState.Absent)
+        {
+            return UpdateStatus.DefaultUpdateSettings;
+        }
+
+        if (reading.State == ReplacedFileState.Busy)
+        {
+            warn?.Invoke(path);
+            return UpdateStatus.UnreadableUpdateSettings;
+        }
+
+        var text = reading.Text;
 
         if (text.StartsWith('﻿'))
         {

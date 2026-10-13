@@ -66,4 +66,33 @@ public sealed class WorkStateFileTests : IDisposable
 
         Assert.Equal(ServerWork.Unknown, WorkStateFile.Read(_home.Path, Now));
     }
+
+    [Fact]
+    public void An_answer_that_stays_refused_reads_as_not_read_which_says_nothing()
+    {
+        ServerSays.Idle(_home.Path, Now);
+        using var held = new FileStream(Path.Combine(_home.Path, WorkStateFile.FileName), FileMode.Open, FileAccess.Read, FileShare.None);
+
+        Assert.Equal(ServerWork.NotRead, WorkStateFile.Read(_home.Path, Now));
+    }
+
+    [Fact]
+    public void The_countdown_keeps_its_place_through_an_answer_that_was_not_read()
+    {
+        var countdown = new IdleCountdown(TimeSpan.FromMinutes(5));
+        Assert.False(countdown.Observe(ServerWork.Idle, Now));
+
+        Assert.False(countdown.Observe(ServerWork.NotRead, Now + TimeSpan.FromMinutes(3)));
+        Assert.True(countdown.Observe(ServerWork.Idle, Now + TimeSpan.FromMinutes(5)));
+    }
+
+    [Fact]
+    public void The_countdown_starts_again_through_an_answer_that_is_unknown()
+    {
+        var countdown = new IdleCountdown(TimeSpan.FromMinutes(5));
+        Assert.False(countdown.Observe(ServerWork.Idle, Now));
+
+        Assert.False(countdown.Observe(ServerWork.Unknown, Now + TimeSpan.FromMinutes(3)));
+        Assert.False(countdown.Observe(ServerWork.Idle, Now + TimeSpan.FromMinutes(5)));
+    }
 }
