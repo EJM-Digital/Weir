@@ -38,6 +38,8 @@ public sealed class StartRefusalTests : IDisposable
 
         Assert.Equal(1, exit);
         Assert.Equal("Weir's settings are not valid\nWEIR_PORT must be a number.", File.ReadAllText(NotePath));
+        // Report waits only a courtesy moment for the console; on a busy machine the line can land after it returns.
+        Assert.True(console.Drain(TimeSpan.FromSeconds(30)), "the line never reached the console");
         Assert.Contains("Weir cannot start: WEIR_PORT must be a number.", Encoding.UTF8.GetString(_error.ToArray()), StringComparison.Ordinal);
     }
 
