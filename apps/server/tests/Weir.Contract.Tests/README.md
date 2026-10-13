@@ -24,6 +24,24 @@ dotnet test apps/server/tests/Weir.Contract.Tests                          # eve
 A server that does not become ready fails the test with the end of its own log. Each server writes its output to
 `<data folder>/contract-logs/server-<n>.log`.
 
+## When a test fails
+
+A test that fails keeps what its servers wrote in `artifacts/contract-failures/<run>/<Class.Method>/` at the repository
+root (ignored by git, or the folder in `WEIR_CONTRACT_FAILURES`); a passing test deletes its own. CI uploads the folder
+as `contract-failure-evidence-<area>`, and the data folders of a failed leg as `weir-contract-data-<area>`.
+
+| What | Where |
+| --- | --- |
+| The error, with its stack trace | `error.txt` |
+| The server's own log | `<server>/logs/weir.log` |
+| Everything the server process printed, standard output and error, one file per start | `<server>/contract-logs/server-<n>.log` |
+| How far it had got when it stopped | `<server>/startup-progress.json` |
+
+A row of a theory has the start of its id after the method name. A server a whole class shares (`IClassFixture`) is kept
+as `<Class>.shared-server`, with the names of the class's failed tests in its `error.txt`, because the one server
+served them all. The framework that does this is `Harness/FailureKeepingFramework.cs`; `Harness/FailureEvidence.cs`
+says how a name is made.
+
 ## How the harness works
 
 Everything is in `Harness/`. Areas live in folders beside it (`Activity/`), one folder per area.

@@ -82,6 +82,17 @@ jobs:
           retention-days: 1
           path: apps/server/tests/Weir.Contract.Tests/TestResults/*.trx
 
+      # What each failed test kept (apps/server/tests/Weir.Contract.Tests/README.md, "When a test fails"): its error and the logs
+      # of the servers it used, in a folder named for the test. A passing test deletes its own.
+      - name: Upload contract failure evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: contract-failure-evidence-${{ matrix.area }}
+          if-no-files-found: ignore
+          retention-days: 7
+          path: artifacts/contract-failures
+
       - name: Upload contract data folders and server logs
         if: ${{ !cancelled() && steps.contract.outcome == 'failure' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

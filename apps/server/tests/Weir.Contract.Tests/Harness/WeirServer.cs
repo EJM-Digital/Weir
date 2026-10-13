@@ -32,6 +32,7 @@ public sealed class WeirServer : IAsyncDisposable
     private readonly Dictionary<string, string> _environment;
     private readonly Func<int> _pickPort;
     private readonly List<ServerLog> _logs = [];
+    private readonly string? _evidenceName = FailureEvidence.CurrentName;
     private Process? _process;
     private int? _keptPort;
 
@@ -44,6 +45,9 @@ public sealed class WeirServer : IAsyncDisposable
     }
 
     public string Home { get; }
+
+    /// <summary>The name the logs of this server are kept under (<see cref="FailureEvidence"/>); null when it was started outside a test.</summary>
+    internal string? EvidenceName => _evidenceName;
 
     public Uri BaseUrl { get; private set; } = new($"http://{ListenHost}/");
 
@@ -158,6 +162,12 @@ public sealed class WeirServer : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await StopAsync();
+        if (_evidenceName is not null)
+        {
+            // Kept for the test (or test class) that used this server; the framework deletes it again unless that test failed.
+            FailureEvidence.Archive(_evidenceName, Home);
+        }
+
         foreach (var log in _logs)
         {
             log.Dispose();
