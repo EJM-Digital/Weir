@@ -36,6 +36,7 @@ public sealed class UpdateFiles
 
     private readonly WeirOptions _options;
     private readonly TimeProvider _time;
+    private readonly Action<TimeSpan> _pause;
 
     // The last good reading of each file the tray replaces under us. A file that is refused for a moment (the tray is renaming a new
     // one over it) says nothing, so the last good reading stands in until the next look; only a file that is not there, or that is
@@ -44,11 +45,19 @@ public sealed class UpdateFiles
     private DateTimeOffset? _lastBeat;
     private string? _lastStateText;
     private string? _lastNotAppliedReason;
+    private WireObject? _lastSettings;
 
     public UpdateFiles(WeirOptions options, TimeProvider? time = null)
+        : this(options, time, Thread.Sleep)
+    {
+    }
+
+    // The pause is what waits between two looks at a file that is refused; a test replaces it, to see that nothing waits.
+    internal UpdateFiles(WeirOptions options, TimeProvider? time, Action<TimeSpan> pause)
     {
         _options = options;
         _time = time ?? TimeProvider.System;
+        _pause = pause;
     }
 
     /// <summary>
@@ -109,7 +118,7 @@ public sealed class UpdateFiles
     {
         try
         {
-            var reading = ReplacedFile.ReadText(Path.Join(_options.WeirHome, fileName), new UTF8Encoding(false, throwOnInvalidBytes: true));
+            var reading = ReplacedFile.ReadText(Path.Join(_options.WeirHome, fileName), new UTF8Encoding(false, throwOnInvalidBytes: true), attempts: 1, pause: _pause);
             return (reading.State, reading.State == ReplacedFileState.Read ? reading.Text : null);
         }
         catch (DecoderFallbackException)
@@ -123,12 +132,13 @@ public sealed class UpdateFiles
     {
         var path = Path.Join(_options.WeirHome, SettingsFileName);
 
-        // Both the Settings page and the tray replace this file by renaming a new one over it, so a refusal or a missing name is looked at
-        // again before the file is called absent (the shipped default) or unreadable (notify only).
+        // Both the Settings page and the tray replace this file by renaming a new one over it. A request does not wait for it: a file that
+        // is refused for a moment is the last good reading, and the next call looks again. Only before any reading is there is nothing
+        // to stand in, and the safe side is notify only.
         ReplacedFileText reading;
         try
         {
-            reading = ReplacedFile.ReadText(path, new UTF8Encoding(false, throwOnInvalidBytes: true));
+            reading = ReplacedFile.ReadText(path, new UTF8Encoding(false, throwOnInvalidBytes: true), attempts: 1, pause: _pause);
         }
         catch (DecoderFallbackException)
         {
@@ -138,11 +148,19 @@ public sealed class UpdateFiles
 
         if (reading.State == ReplacedFileState.Absent)
         {
-            return UpdateStatus.DefaultUpdateSettings;
+            return RememberSettings(UpdateStatus.DefaultUpdateSettings);
         }
 
         if (reading.State == ReplacedFileState.Busy)
         {
+            lock (_lastGood)
+            {
+                if (_lastSettings is not null)
+                {
+                    return _lastSettings;
+                }
+            }
+
             warn?.Invoke(path);
             return UpdateStatus.UnreadableUpdateSettings;
         }
@@ -162,7 +180,17 @@ public sealed class UpdateFiles
             return UpdateStatus.UnreadableUpdateSettings;
         }
 
-        return parsed;
+        return RememberSettings(parsed);
+    }
+
+    private WireObject RememberSettings(WireObject settings)
+    {
+        lock (_lastGood)
+        {
+            _lastSettings = settings;
+        }
+
+        return settings;
     }
 
     /// <summary>Save the update settings: written whole to a unique scratch file, then renamed into place.</summary>
@@ -176,7 +204,7 @@ public sealed class UpdateFiles
         }
 
         ReplaceFile(SettingsFileName, Encoding.UTF8.GetBytes(text));
-        return UpdateStatus.UpdateSettingsOut(mode, checkOnStartup, checkIntervalMinutes);
+        return RememberSettings(UpdateStatus.UpdateSettingsOut(mode, checkOnStartup, checkIntervalMinutes));
     }
 
     /// <summary>
@@ -243,7 +271,7 @@ public sealed class UpdateFiles
 
     private string? ReadNotAppliedReason()
     {
-        var reading = ReplacedFile.ReadText(Path.Join(_options.WeirHome, NotAppliedFileName));
+        var reading = ReplacedFile.ReadText(Path.Join(_options.WeirHome, NotAppliedFileName), attempts: 1, pause: _pause);
         lock (_lastGood)
         {
             if (reading.State == ReplacedFileState.Busy)

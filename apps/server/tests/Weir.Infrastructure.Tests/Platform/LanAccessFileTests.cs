@@ -18,6 +18,12 @@ public sealed class LanAccessFileTests : IDisposable
         Assert.Null(Saved().Read());
     }
 
+    [Fact]
+    public void With_nothing_saved_nothing_waits_to_find_that_out()
+    {
+        Assert.Null(new LanAccessFile(_home.Path, _ => throw new InvalidOperationException("Nothing waits for a file that is not there.")).Read());
+    }
+
     [Theory]
     [InlineData(NetworkScope.Network, "on")]
     [InlineData(NetworkScope.ThisPcOnly, "off")]
@@ -55,6 +61,47 @@ public sealed class LanAccessFileTests : IDisposable
         Saved().Write(NetworkScope.Network);
 
         Assert.True(File.GetLastWriteTimeUtc(SavedPath) > longAgo);
+    }
+
+    [Fact]
+    public void A_file_that_is_refused_for_a_moment_is_the_last_good_choice_and_nothing_waits()
+    {
+        var file = new LanAccessFile(_home.Path, _ => throw new InvalidOperationException("A read does not wait."));
+        file.Write(NetworkScope.Network);
+        Assert.Equal(NetworkScope.Network, file.Read());
+
+        using (new FileStream(SavedPath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.Equal(NetworkScope.Network, file.Read());
+        }
+
+        file.Write(NetworkScope.ThisPcOnly);
+        Assert.Equal(NetworkScope.ThisPcOnly, file.Read());
+    }
+
+    [Fact]
+    public void A_file_that_is_refused_before_any_choice_was_read_is_this_pc_only_and_nothing_waits()
+    {
+        Saved().Write(NetworkScope.Network);
+
+        using (new FileStream(SavedPath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.Equal(NetworkScope.ThisPcOnly, new LanAccessFile(_home.Path, _ => throw new InvalidOperationException("A read does not wait.")).Read());
+        }
+
+        Assert.Equal(NetworkScope.Network, Saved().Read());
+    }
+
+    [Fact]
+    public void A_choice_that_was_removed_after_it_was_read_is_none_again()
+    {
+        var file = new LanAccessFile(_home.Path, _ => throw new InvalidOperationException("A read does not wait."));
+        file.Write(NetworkScope.Network);
+        Assert.Equal(NetworkScope.Network, file.Read());
+
+        File.Delete(SavedPath);
+
+        Assert.Null(file.Read());
     }
 
     [Fact]
