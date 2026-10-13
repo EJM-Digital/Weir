@@ -256,7 +256,7 @@ public sealed class PortChoiceTests : IDisposable
 
         Assert.True(saved.Busy);
         Assert.Null(saved.Port);
-        Assert.True(pauses >= PortChoice.BusyLooks - 1);
+        Assert.Equal(ReplacedFile.Attempts - 1, pauses);
     }
 
     [Fact]
@@ -268,7 +268,7 @@ public sealed class PortChoiceTests : IDisposable
 
         var saved = PortChoice.LoadSaved(Home, _ =>
         {
-            if (++pauses == 7)
+            if (++pauses == 2)
             {
                 held.Dispose();
             }

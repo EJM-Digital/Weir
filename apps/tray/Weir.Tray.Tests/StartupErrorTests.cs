@@ -107,6 +107,28 @@ public sealed class StartupErrorTests : IDisposable
     }
 
     [Fact]
+    public void One_try_reads_as_one_try_not_one_tries()
+    {
+        Assert.Equal("1 try", TrayBalloons.Tries(1));
+        Assert.Equal("2 tries", TrayBalloons.Tries(2));
+        Assert.Equal(
+            "Weir didn't start after 1 try, so it has stopped trying. The details are in the tray log. Click to try again.",
+            TrayBalloons.GaveUpText(1));
+        Assert.Equal(
+            "Weir stopped and didn't start again after 1 try. The details are in the tray log. Click to try again.",
+            TrayBalloons.StoppedAfterTriesText(1));
+    }
+
+    [Fact]
+    public void A_start_that_stopped_because_the_port_window_was_closed_says_so_and_not_how_many_tries()
+    {
+        Assert.Equal(
+            "Weir didn't start because you closed the port window without choosing a port. Click to try again.",
+            TrayBalloons.NoPortChosenText);
+        Assert.DoesNotContain("tries", TrayBalloons.NoPortChosenText, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void The_hover_text_of_a_server_the_supervision_gave_up_on_says_so()
     {
         var state = new TrayState(ServerPhase.Stopped, null, null, 9347, StartupError: new StartupError("Didn't start after 5 tries", string.Empty));

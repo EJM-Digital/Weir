@@ -59,13 +59,20 @@ sealed class TrayApp : IDisposable
         TrayStart start,
         IUpdateService updateService,
         UpdateSettings updateSettings,
-        SecondLaunchSignal secondLaunch)
+        SecondLaunchSignal secondLaunch,
+        Func<PortChoice.Resolution>? resolvePort = null)
     {
         var installRoot = AppContext.BaseDirectory;
         _runtimeHome = Program.RuntimeHome();
         _start = start;
         _secondLaunch = secondLaunch;
         _server = new ServerHost(_runtimeHome, installRoot, port, listenScope);
+        if (resolvePort is not null)
+        {
+            // The port was not known when the tray began (port.txt was busy): each start attempt asks again, on the UI thread, where a
+            // dialog can be shown.
+            _server.ResolvePort = _ => ResolveOnUiAsync(resolvePort);
+        }
         _lanAccess = new LanAccessSync(_runtimeHome, _server, new WindowsFirewallAccess(), TimeProvider.System);
         _updateSettings = updateSettings;
         _updateService = updateService;
@@ -109,8 +116,11 @@ sealed class TrayApp : IDisposable
         _ui = SynchronizationContext.Current;
 
         _server.PrepareEnvironment();
-        _server.WritePortFile();
-        TrayLog.Write($"Prepared runtime environment on port {_server.Port}");
+        if (_server.Port > 0)
+        {
+            _server.WritePortFile();
+        }
+        TrayLog.Write(_server.Port > 0 ? $"Prepared runtime environment on port {_server.Port}" : "Prepared runtime environment; the port is not known yet");
 
         // The icon is there from the first moment, marked Starting, not only once the server answers.
         CreateTrayIcon();
@@ -208,6 +218,25 @@ sealed class TrayApp : IDisposable
         _updates!.Start();
     }
 
+    private Task<PortChoice.Resolution> ResolveOnUiAsync(Func<PortChoice.Resolution> resolve)
+    {
+        var done = new TaskCompletionSource<PortChoice.Resolution>(TaskCreationOptions.RunContinuationsAsynchronously);
+        OnUi(() =>
+        {
+            try
+            {
+                done.SetResult(resolve());
+            }
+#pragma warning disable CA1031 // Whatever it was, the waiting start is told.
+            catch (Exception ex)
+#pragma warning restore CA1031
+            {
+                done.SetException(ex);
+            }
+        });
+        return done.Task;
+    }
+
     /// <summary>Runs <paramref name="action"/> on the UI thread, after whatever it is doing at the moment.</summary>
     private void OnUi(Action action) => _ui!.Post(_ => action(), null);
 
@@ -230,6 +259,7 @@ sealed class TrayApp : IDisposable
     // The server's own reason when it said one (a copy of the data it could not save before updating), else the general text.
     private string CouldNotStartText() =>
         _server.StartupError is { } why ? TrayBalloons.CouldNotStartBecause(why)
+        : _server.NoPortChosen ? TrayBalloons.NoPortChosenText
         : _server.GaveUpAfterAttempts is > 0 and var tries ? TrayBalloons.GaveUpText(tries)
         : TrayBalloons.CouldNotStartText;
 

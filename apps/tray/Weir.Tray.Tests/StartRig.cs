@@ -23,13 +23,13 @@ internal sealed class StartRig : IDisposable
 
     private readonly TempDirectory _home = TempDirectory.AsWeirHome();
 
-    internal StartRig(StartPolicy? policy = null, Func<double>? random01 = null)
+    internal StartRig(StartPolicy? policy = null, Func<double>? random01 = null, bool portUnknown = false)
     {
         Clock = new DelayWatchingTimeProvider();
         var install = Path.Combine(_home.Path, "install");
         Server = Path.Combine(install, "server");
         StandInServers.Install(Server);
-        Host = new ServerHost(_home.Path, install, FreePort(), ListenScope.ThisPcOnly, policy, Clock, random01 ?? (() => 0));
+        Host = new ServerHost(_home.Path, install, portUnknown ? 0 : FreePort(), ListenScope.ThisPcOnly, policy, Clock, random01 ?? (() => 0));
     }
 
     internal DelayWatchingTimeProvider Clock { get; }

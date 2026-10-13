@@ -40,6 +40,7 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
     private long _startedAtStamp;
     private volatile StartProgressFeed? _feed;
     private volatile int _gaveUpAttempts;
+    private volatile bool _noPortChosen;
     private Task? _watchdog;
     private Action? _onGaveUp;
     private CancellationToken _watchdogToken;
@@ -76,6 +77,13 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
 
     internal int Port => _port;
 
+    /// <summary>
+    /// Finds the port when it is not known (0), at the start of each attempt, until it is. Null when the port was known from the start.
+    /// A saved port that cannot be read yet is a failed attempt like any other (back-off, the start limit); once a port is found it is
+    /// kept. A test replaces it.
+    /// </summary>
+    internal Func<CancellationToken, Task<PortChoice.Resolution>>? ResolvePort { get; set; }
+
     /// <summary>The server process this host started, while it runs, or null.</summary>
     internal RunningServer? Running =>
         _process is { HasExited: false } process && StartedAtUtc is { } started ? new RunningServer(process.Id, started) : null;
@@ -100,7 +108,13 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
     internal int GaveUpAfterAttempts => _gaveUpAttempts;
 
     /// <summary>The hover text's reason for a server the supervision gave up on, when it did and the server itself said nothing.</summary>
-    internal StartupError? GaveUpError => _gaveUpAttempts > 0 ? new StartupError($"Didn't start after {_gaveUpAttempts} tries", string.Empty) : null;
+    internal StartupError? GaveUpError =>
+        NoPortChosen ? new StartupError("No port chosen", string.Empty)
+        : _gaveUpAttempts > 0 ? new StartupError($"Didn't start after {TrayBalloons.Tries(_gaveUpAttempts)}", string.Empty)
+        : null;
+
+    /// <summary>The person closed the port window without choosing a port, so the start stopped before any server was run.</summary>
+    internal bool NoPortChosen => _noPortChosen;
 
     private void SetPhase(ServerPhase phase)
     {
@@ -130,6 +144,13 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
         var from = _port;
         try
         {
+            if (from == 0)
+            {
+                // Saving a port now could overwrite the one that cannot be read yet.
+                TrayLog.Write("Change port: not done, because the saved port is not known yet. Restart Weir first.");
+                return false;
+            }
+
             TrayLog.Write($"Change port: restarting the server on port {to} (was {from}).");
             if (await TryStartOnAsync(to, _scope, cancellationToken).ConfigureAwait(false))
             {
@@ -169,6 +190,11 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
             if (from == to)
             {
                 return ScopeChange.Unchanged;
+            }
+            if (_port == 0)
+            {
+                TrayLog.Write("LAN access: not changed, because the port is not known yet. Restart Weir first.");
+                return ScopeChange.Failed;
             }
             TrayLog.Write($"LAN access: restarting the server so that {to.Describe()} (it was: {from.Describe()}).");
             if (await TryStartOnAsync(_port, to, cancellationToken).ConfigureAwait(false))

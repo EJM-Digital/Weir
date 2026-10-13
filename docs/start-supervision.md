@@ -168,7 +168,7 @@ the tray), which looks again after 20 ms, up to 5 looks, before it says what it 
 | `tray-heartbeat.json` (tray) | server | The last heartbeat read, still ageing: a tray that is refused for a moment has not quit. |
 | `update-state.json` (tray) | server, Settings page | The last state read, so a downloaded update stays downloaded and Apply is not refused. |
 | `pause-request.json`, `update-backup-request.json` (tray) | server watchers | The request is looked at again a moment later (2 s, 1 s) and is never dropped. |
-| `port.txt` (tray) | tray at start | Waited for about two seconds, then Weir does not start now and keeps the port it has: it is never read as "no port chosen", which would ask the first-run question again and save another port. |
+| `port.txt` (tray) | tray at start | The port stays unknown and the start is a failed attempt like any other: the same capped, jittered back-off, logged, up to the same start limit, then the same give-up (the notice, the red icon, Restart Weir; exit 1 only with nobody at the desktop). It is never read as "no port chosen": no first-run dialog is shown and no port is saved while the file is busy, and Change port and the LAN choice wait until the port is known. |
 | `startup-error.txt` (server) | tray | Looked at again; a missing file is final, since the server deletes the last one first. |
 | `startup-progress.json`, `tray-status.json`, `update-backup-result.json` (server) | tray | Readers of their own that follow the same rule: no news, nothing changed. |
 

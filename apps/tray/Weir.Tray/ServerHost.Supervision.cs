@@ -69,6 +69,7 @@ sealed partial class ServerHost
             await StopProcessAsync().ConfigureAwait(false);
             _supervision.Reset();
             _gaveUpAttempts = 0;
+            _noPortChosen = false;
             try
             {
                 await SuperviseAsync(failedBefore: null, cancellationToken).ConfigureAwait(false);
@@ -204,7 +205,8 @@ sealed partial class ServerHost
             if (failure is not null)
             {
                 // Read once: what is logged and what is done are decided from the same reading.
-                var said = ServerSaid();
+                // A start that has not found its port has started no server, so there is nothing a server could have said.
+                var said = _port == 0 ? null : ServerSaid();
                 var decision = _supervision.Failed(failure);
                 LogFailure(decision, said);
                 if (decision.GiveUp || said is not null)
@@ -264,6 +266,7 @@ sealed partial class ServerHost
         var earlier = _supervision.Failures;
         _supervision.Ready();
         _gaveUpAttempts = 0;
+        _noPortChosen = false;
         SetPhase(ServerPhase.Running);
         if (earlier.Count > 0)
         {
@@ -300,6 +303,11 @@ sealed partial class ServerHost
     // else why it failed. A hung server is stopped before this returns, so no attempt is left running behind the next.
     private async Task<string?> AttemptAsync(CancellationToken cancellationToken)
     {
+        if (_port == 0 && await FindPortAsync(cancellationToken).ConfigureAwait(false) is { } noPort)
+        {
+            return noPort;
+        }
+
         Process process;
         try
         {
@@ -347,6 +355,38 @@ sealed partial class ServerHost
             ForgetFailedProcess(process);
             return hung;
         }
+    }
+
+    // The port is not known yet (the saved one could not be read when the tray began). Null when it is known now; else why it is not. A
+    // saved port that is busy is a failed attempt like any other, so it waits as long as any start does and gives up the same way. No
+    // dialog and no save happen while it is busy. A person who closes the first-run dialog is not asked again.
+    private async Task<string?> FindPortAsync(CancellationToken cancellationToken)
+    {
+        if (ResolvePort is not { } resolve)
+        {
+            return "no port is known";
+        }
+
+        var found = await resolve(cancellationToken).ConfigureAwait(false);
+        if (found.Busy)
+        {
+            return $"{PortChoice.SavedPortFileName} could not be read (it stayed busy), so no port is known yet";
+        }
+
+        if (found.Port is not { } port)
+        {
+            var attempt = _supervision.Attempt;
+            Say("No port was chosen, so Weir is not started. Restart Weir asks again.");
+            _gaveUpAttempts = attempt;
+            _noPortChosen = true;
+            SetPhase(ServerPhase.Stopped);
+            throw new StartGaveUpException("No port was chosen", attempt, "no port was chosen");
+        }
+
+        _port = port;
+        WritePortFile();
+        Say($"The saved port is readable again: port {port}.");
+        return null;
     }
 
     // Stops a hung server: asked to stop, then killed with its whole tree. A test replaces it.

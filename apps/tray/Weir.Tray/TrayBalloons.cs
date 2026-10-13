@@ -14,13 +14,19 @@ static class TrayBalloons
     /// <summary>Weir could not start, or could not start again from Restart Weir. A click tries again.</summary>
     internal const string CouldNotStartText = "Weir couldn't start. Click to try again.";
 
+    /// <summary>"1 try" or "5 tries".</summary>
+    internal static string Tries(int attempts) => attempts == 1 ? "1 try" : $"{attempts} tries";
+
     /// <summary>The supervision tried several times to start Weir and stopped trying. A click tries again.</summary>
     internal static string GaveUpText(int attempts) =>
-        $"Weir didn't start after {attempts} tries, so it has stopped trying. The details are in the tray log. Click to try again.";
+        $"Weir didn't start after {Tries(attempts)}, so it has stopped trying. The details are in the tray log. Click to try again.";
 
     /// <summary>Weir stopped and the supervision could not start it again in several tries. A click tries again.</summary>
     internal static string StoppedAfterTriesText(int attempts) =>
-        $"Weir stopped and didn't start again after {attempts} tries. The details are in the tray log. Click to try again.";
+        $"Weir stopped and didn't start again after {Tries(attempts)}. The details are in the tray log. Click to try again.";
+
+    /// <summary>The person closed the window that asks for a port without choosing one, so there was nothing to start on. A click asks again.</summary>
+    internal const string NoPortChosenText = "Weir didn't start because you closed the port window without choosing a port. Click to try again.";
 
     /// <summary>Weir could not start and said why, in its own words. A click tries again.</summary>
     internal static string CouldNotStartBecause(StartupError why) => $"Weir couldn't start. {why.Detail} Click to try again.";
