@@ -64,13 +64,7 @@ jobs:
           node-version-file: .node-version
 
       # Reads package-lock.json; nothing is installed. Production dependencies only, high severity and up: the
-      # web app's and the docs site's dev tools never ship.
+      # web app's and the docs site's dev tools never ship. An advisory that cannot reach anyone and has no fix yet
+      # can be excused in scripts/npm-audit-exceptions.json, with its reason and an expiry date.
       - name: Production dependencies of the web app and the docs site
-        run: |
-          failed=0
-          for folder in apps/web docs-site; do
-            echo "::group::npm audit in $folder"
-            (cd "$folder" && npm audit --omit=dev --audit-level=high) || failed=1
-            echo "::endgroup::"
-          done
-          exit "$failed"
+        run: node scripts/check-npm-audit.mjs apps/web docs-site
