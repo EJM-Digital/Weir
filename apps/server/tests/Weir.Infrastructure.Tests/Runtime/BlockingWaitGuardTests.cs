@@ -10,9 +10,9 @@ public sealed class BlockingWaitGuardTests
     /// <summary>Source files allowed a <c>Thread.Sleep</c>, each with why it never holds a request's thread for long.</summary>
     private static readonly Dictionary<string, string> Sleepers = new(StringComparer.OrdinalIgnoreCase)
     {
-        [Path.Join("Weir.Infrastructure", "Runtime", "ReplacedFile.cs")] = "the pause between looks at a file that is refused (never one that is not there); callers with a last good reading look once",
-        [Path.Join("Weir.Infrastructure", "Runtime", "SystemServices.cs")] = "hands ReplacedFile its pause; every read on a request looks once",
-        [Path.Join("Weir.Infrastructure", "Runtime", "LanAccessFile.cs")] = "hands ReplacedFile its pause; waits only for a file that is refused",
+        [Path.Join("Weir.Infrastructure", "Runtime", "ReplacedFile.cs")] = "the pause between looks at a file that is refused (never one that is not there); only the watchers' reads ask for more than one look",
+        [Path.Join("Weir.Infrastructure", "Runtime", "SystemServices.cs")] = "hands ReplacedFile its pause; every read on a request or a timer looks once and keeps the last good reading",
+        [Path.Join("Weir.Infrastructure", "Runtime", "LanAccessFile.cs")] = "hands ReplacedFile its pause; every read looks once and keeps the last good choice",
         [Path.Join("Weir.Infrastructure", "Runtime", "StartupProgress.cs")] = "start-up only, before the server listens",
         [Path.Join("Weir.Infrastructure", "Logging", "NonBlockingConsole.cs")] = "waits for the last lines when the server stops",
     };

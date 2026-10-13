@@ -156,8 +156,10 @@ denied, a sharing violation), and a virus scanner holding a file just written do
 Every reader of these files therefore goes through `ReplacedFile` (one copy in the server, one in the tray), which looks again after 20 ms,
 up to 5 looks, when the open is refused, before it says what it found. A name that is not there is not looked for again, because a rename
 over a file leaves the name in place: a reader that waited for a file that is simply not there would hold its thread for every read of it,
-and the thread pool (one thread per processor, one more every half second or so) has none to spare on a small machine. A reader that keeps
-a last good reading to stand in for a refused file (the server's `UpdateFiles`, on the request path) looks once and never waits.
+and the thread pool (one thread per processor, one more every half second or so) has none to spare on a small machine. Nothing on a request
+or a timer waits at all: the server's readers (`UpdateFiles`: the heartbeat, the state, the reason an update was held back, the settings; and
+`LanAccessFile`) look once and keep the last good reading, which stands in for a refused file until the next call looks again. Only
+start-up and the watcher threads (which have nothing else to do) wait between looks.
 `BlockingWaitGuardTests` keeps the list of places in the server that sleep short and named, and `ThreadPoolWatch` writes a warning to the
 log, with the pool's counts, when work waits two seconds or more for a thread, so a stall leaves its evidence behind.
 
@@ -169,7 +171,7 @@ log, with the pool's counts, when work waits two seconds or more for a thread, s
 | File (written by) | Reader | While it is busy |
 | --- | --- | --- |
 | `lan-access` (server, tray) | tray watcher | Leaves the server as it is and looks again at the next tick. The start, which must choose, falls back to this PC only. |
-| `update-settings.json` (server, tray) | tray, Settings page | The tray uses NotifyOnly (installs nothing) and says it was busy; the page reports the same fallback it uses for an unreadable file. |
+| `update-settings.json` (server, tray) | tray, Settings page | The tray uses NotifyOnly (installs nothing) and says it was busy; the page shows the settings it last read, and NotifyOnly (the fallback for an unreadable file) only when it has read none yet. |
 | `work-state.json` (server) | tray's wait for idle | `ServerWork.NotRead`: the wait keeps its place. |
 | `update-backup-ready` (server) | tray | The request for a copy is a failed request, so the update is held back, not sent on with no copy. |
 | `update-backup-failed`, `update-not-applied.json` (tray) | tray at start; server for the reason | The start-up install leaves the update waiting; the reason is neither shown missing nor removed. The server keeps the last reason it read. |

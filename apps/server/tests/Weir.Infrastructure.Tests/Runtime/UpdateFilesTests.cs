@@ -238,4 +238,40 @@ public sealed class UpdateFilesTests : IDisposable
 
         Assert.Equal("Auto", ((WireString)settings["mode"]).Value);
     }
+
+    // A request or a timer never waits: a file that is refused for a moment is the last good reading, and is looked at again by the next call.
+    [Fact]
+    public void Settings_that_are_refused_for_a_moment_are_the_last_good_settings_and_nothing_waits()
+    {
+        var files = FilesThatNeverWait();
+        files.WriteSettings("DownloadOnly", false, 240);
+        Assert.Equal("DownloadOnly", ((WireString)files.ReadSettings()["mode"]).Value);
+        var warned = new List<string>();
+
+        using (new FileStream(Path.Join(Home, UpdateFiles.SettingsFileName), FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            var refused = files.ReadSettings(warned.Add);
+
+            Assert.Equal("DownloadOnly", ((WireString)refused["mode"]).Value);
+            Assert.Equal(new System.Numerics.BigInteger(240), ((WireInteger)refused["check_interval_minutes"]).Value);
+        }
+
+        Assert.Empty(warned);
+        files.WriteSettings("NotifyOnly", true, 60);
+        Assert.Equal("NotifyOnly", ((WireString)files.ReadSettings()["mode"]).Value);
+    }
+
+    [Fact]
+    public void Settings_that_are_refused_before_any_were_read_are_notify_only_without_waiting()
+    {
+        File.WriteAllText(Path.Join(Home, UpdateFiles.SettingsFileName), "{\"mode\": \"Auto\", \"check_on_startup\": true, \"check_interval_minutes\": 60}");
+        var warned = new List<string>();
+
+        using (new FileStream(Path.Join(Home, UpdateFiles.SettingsFileName), FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.Equal("NotifyOnly", ((WireString)FilesThatNeverWait().ReadSettings(warned.Add)["mode"]).Value);
+        }
+
+        Assert.Single(warned);
+    }
 }
