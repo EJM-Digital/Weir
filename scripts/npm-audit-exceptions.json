@@ -1,0 +1,11 @@
+{
+  "exceptions": [
+    {
+      "folder": "docs-site",
+      "advisory": "GHSA-vfj7-8cjw-p6xm",
+      "package": "braces",
+      "why": "braces runs only while Docusaurus builds the documentation site from this repository's own files; the published site is static HTML with none of it inside. The denial of service needs an attacker-controlled glob pattern, and the build only ever expands the repository's own patterns. No patched braces exists yet.",
+      "expires": "2026-11-14"
+    }
+  ]
+}
