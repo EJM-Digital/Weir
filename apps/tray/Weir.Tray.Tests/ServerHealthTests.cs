@@ -139,20 +139,20 @@ public sealed class ServerHealthTests
         var clock = new FakeTimeProvider();
 
         var error = await Assert.ThrowsAsync<ServerExitedException>(() =>
-            ServerHealth.WaitUntilReadyAsync(client, ReadyUrl, () => 3, Watch(clock), () => null, Pause, clock, CancellationToken.None));
+            ServerHealth.WaitUntilReadyAsync(client, ReadyUrl, () => 3, Watch(clock), () => (null, null), Pause, clock, CancellationToken.None));
 
         Assert.Equal(3, error.ExitCode);
         Assert.Contains("code 3", error.Message);
         Assert.Equal(0, handler.Calls);
     }
 
-    private static StartWatch Watch(TimeProvider clock) => new(Policy, clock, ServerPid, ProcessStarted);
+    private static StartWatch Watch(TimeProvider clock) => new(Policy, clock, ServerPid);
 
     private static StartProgress Report(string phase, int step = 0, int steps = 0) =>
         new(ServerPid, phase, step, steps, TimeSpan.Zero, ProcessStarted + TimeSpan.FromSeconds(1));
 
     private static Task Wait(HttpClient client, TimeProvider clock, Func<StartProgress?>? progress = null) =>
-        ServerHealth.WaitUntilReadyAsync(client, ReadyUrl, () => null, Watch(clock), progress ?? (() => null), Pause, clock, CancellationToken.None);
+        ServerHealth.WaitUntilReadyAsync(client, ReadyUrl, () => null, Watch(clock), () => (progress?.Invoke(), null), Pause, clock, CancellationToken.None);
 
     // Lets each pause pass as soon as the wait starts it, until the wait ends.
     private static async Task DriveUntilDone(Task waiting, DelayWatchingTimeProvider clock)

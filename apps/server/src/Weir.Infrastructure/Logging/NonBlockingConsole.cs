@@ -32,6 +32,7 @@ public sealed class NonBlockingConsole : IDisposable
     private Stream? _output;
     private Encoding? _bytes;
     private long _dropped;
+    private long _unreported;
     private long _written;
     private long _queued;
 
@@ -54,15 +55,15 @@ public sealed class NonBlockingConsole : IDisposable
     }
 
     /// <summary>
-    /// Standard output, in the encoding the console uses. The stream is opened on the writing thread: with a pipe that is full and not
-    /// read, even <c>Console.OpenStandardOutput()</c> does not return (measured), so opening it here would hold up the caller.
+    /// Standard output, in the encoding the console uses. The stream is opened on the writing thread, because opening it does not
+    /// return while a write into a full pipe that nobody reads is waiting, and the caller must not wait for that.
     /// </summary>
     public static NonBlockingConsole ForStandardOutput() => new(Console.OpenStandardOutput, () => Console.OutputEncoding);
 
     /// <summary>Standard error, opened on the writing thread like <see cref="ForStandardOutput"/>.</summary>
     public static NonBlockingConsole ForStandardError() => new(Console.OpenStandardError, () => Console.OutputEncoding);
 
-    /// <summary>How many lines were dropped because the console was not taking them.</summary>
+    /// <summary>How many lines were dropped because the console was not taking them, in all, whether or not it has been told yet.</summary>
     public long Dropped => Interlocked.Read(ref _dropped);
 
     /// <summary>Hands <paramref name="line"/> to the console and returns at once, whatever the console is doing.</summary>
@@ -76,6 +77,7 @@ public sealed class NonBlockingConsole : IDisposable
         else
         {
             Interlocked.Increment(ref _dropped);
+            Interlocked.Increment(ref _unreported);
         }
     }
 
@@ -155,7 +157,7 @@ public sealed class NonBlockingConsole : IDisposable
 
     private void WriteDropNotice()
     {
-        var dropped = Interlocked.Exchange(ref _dropped, 0);
+        var dropped = Interlocked.Exchange(ref _unreported, 0);
         if (dropped > 0)
         {
             WriteOne($"({dropped} console lines were not written because nothing was reading standard output; weir.log has them all.)");

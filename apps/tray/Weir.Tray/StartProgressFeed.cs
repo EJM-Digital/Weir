@@ -3,7 +3,8 @@ namespace Weir.Tray;
 /// <summary>
 /// The progress a server reports on its standard output, which the tray owns: the newest record of one server process. A line is
 /// progress the moment the server writes it, whatever is happening to startup-progress.json, so this is the channel a start is
-/// judged by; the file is read as well, and the newer of the two counts (<see cref="StartProgressFile.Newer"/>).
+/// judged by; the file is read as well, and a change on either is progress (<see cref="StartWatch"/>). A line can be dropped from the
+/// server queue when nothing reads its output, which is why the file is read too.
 /// </summary>
 sealed class StartProgressFeed(int processId)
 {

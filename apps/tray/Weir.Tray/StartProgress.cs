@@ -23,6 +23,7 @@ sealed record StartProgress(int ProcessId, string Phase, int Step, int Steps, Ti
         "saving_copy" => "saving a copy of the data",
         "migrating" when Steps > 0 => string.Create(CultureInfo.InvariantCulture, $"updating the database (step {Step} of {Steps})"),
         "migrating" => "updating the database",
+        "preparing" => "getting ready",
         "starting_listener" => "starting to listen",
         "ready" => "ready",
         _ => Phase,
@@ -100,12 +101,20 @@ static class StartProgressFile
     }
 
     /// <summary>
-    /// The newer of two readings of one server (the pipe's, the file's): the later <see cref="StartProgress.At"/>, the pipe's when
-    /// they are equal. It depends on the two readings alone, so it changes only when one of them advances; alternating between two
-    /// readings that are each unchanged would otherwise look like progress for ever.
+    /// Removes the file, best effort, before a server is started: whatever it holds is an earlier server's, whatever process id that server
+    /// had. The new server writes its own.
     /// </summary>
-    internal static StartProgress? Newer(StartProgress? fromPipe, StartProgress? fromFile) =>
-        fromPipe is null ? fromFile : fromFile is null ? fromPipe : fromFile.At > fromPipe.At ? fromFile : fromPipe;
+    internal static void Clear(string runtimeHome)
+    {
+        try
+        {
+            File.Delete(Path.Combine(runtimeHome, FileName));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // An earlier server's file stays; it is told from this server's by its process id.
+        }
+    }
 
     /// <summary>What a progress line on standard output starts with (<c>StartupProgress.PipePrefix</c> in the server).</summary>
     internal const string Prefix = "weir-start-progress ";
@@ -116,14 +125,18 @@ static class StartProgressFile
     private static FileStream Open(string path) =>
         new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
 
+    // A number outside what a server could mean is clamped, never thrown at: this runs on the thread that reads the server's output.
+    private const int MostSteps = 1_000_000;
+    private static readonly long MostSilenceSeconds = (long)TimeSpan.FromDays(1).TotalSeconds;
+
     private static StartProgress? Parse(Wire? wire) =>
         wire is { Pid: { } pid, Phase: { Length: > 0 } phase, At: { } at }
             ? new StartProgress(
                 pid,
                 phase,
-                Math.Max(0, wire.Step ?? 0),
-                Math.Max(0, wire.Steps ?? 0),
-                TimeSpan.FromSeconds(Math.Max(0, wire.ExpectWithinS ?? 0)),
+                Math.Clamp(wire.Step ?? 0, 0, MostSteps),
+                Math.Clamp(wire.Steps ?? 0, 0, MostSteps),
+                TimeSpan.FromSeconds(Math.Clamp(wire.ExpectWithinS ?? 0, 0, MostSilenceSeconds)),
                 at)
             : null;
 

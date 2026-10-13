@@ -7,11 +7,14 @@ This note says what it does, which proven practice each part follows, where its 
 ## What it does
 
 1. The tray starts the server with its standard output and error redirected and read, and with `WEIR_PROGRESS_STDOUT=1`.
-2. The server reports how far it has got (`StartupProgress`): at every phase and, while a phase works, about once a second.
+2. The server reports how far it has got (`StartupProgress`): at every phase and, while SQLite is working inside one, about once a
+   second. The phases with no database work write one record each.
 3. The tray waits while that progress keeps changing and asks `/ready` every quarter second. `/ready` answering 200 is the
    readiness signal; the progress only decides whether a start that has not answered yet is **working** or **hung**.
 4. A start fails when the server exits, or is **hung**: silent for longer than its phase allows. A hung server is asked to stop,
-   then killed with its whole process tree. Only a process the tray started is ever touched.
+   then killed with its whole process tree. Only a process the tray started is ever touched. The next attempt does not begin until
+   the old process is confirmed gone; if it is still running after the kill, the tray stops there and says so, because a second
+   server would find the first holding the port and the database.
 5. A failed start is tried again after a capped, jittered wait, until too many fail close together; then the tray gives up and says so.
 
 ## The practices it follows
@@ -25,7 +28,7 @@ This note says what it does, which proven practice each part follows, where its 
 | Failure count resets after a stable run | Kubernetes resets back-off after 10 minutes; the Windows service manager's reset period | `StableAfter` |
 | A startup check separate from a readiness check | Kubernetes startup, liveness and readiness probes | progress (`StartWatch`) and `/ready` |
 | A service lengthens its own start-up time by reporting | systemd `sd_notify EXTEND_TIMEOUT_USEC` | `expect_within_s` in the progress record |
-| Do not restart what restarting cannot fix | systemd `RestartPreventExitStatus=` | a server that wrote `startup-error.txt` is not tried again |
+| Do not restart what restarting cannot fix | systemd `RestartPreventExitStatus=` | a server that wrote `startup-error.txt` is not tried again; this includes a refusal for its settings or its database |
 | Stop politely, then kill the tree | systemd `KillMode=` / `TimeoutStopSec=` | `ServerProcessStop` |
 
 ## The policy
@@ -39,8 +42,9 @@ This note says what it does, which proven practice each part follows, where its 
 | Failures that end the trying | 5 within 15 minutes | systemd's burst and interval. Five hung starts take about three minutes. |
 | Stable run | 10 minutes ready | Kubernetes' reset time. |
 
-Restart Weir, chosen by a person, gets the whole budget again. A change of port or of who may connect starts the server once and
-goes back to what worked if it fails; it does not count against the budget.
+Restart Weir, chosen by a person, gets the whole budget again. A change of port or of who may connect starts the server once, as a
+start of its own (the earlier failures are forgotten and are not passed to it), and goes back to what worked if it fails; it does not
+count against the budget.
 
 ## Measurements
 
@@ -62,6 +66,11 @@ scanner does to a large file just written. Those silences grew to three minutes 
 have called hung, so a server doing data-heavy work says how long it needs (`StartupPatience`): 30 s plus 300 s per GB, which is
 468 s for the 1.5 GB database above, 2.3 times the slowest start seen. The tray believes that up to an hour and no further.
 
+That allowance is for the silence **after SQLite has been seen working** in the phase (the first beat of the phase carries it, and a
+later migration step of the same phase carries it on). A start that has not beaten gets the ordinary 30 s, and so does one waiting for
+a lock: SQLite gives up on a lock after 30 s and the start ends with an error. The allowance is not asked for on entering a phase, and
+not in the phases that do no database work.
+
 ## Progress
 
 The record is the same on both channels:
@@ -70,27 +79,33 @@ The record is the same on both channels:
 { "pid": 5764, "phase": "migrating", "step": 3, "steps": 7, "expect_within_s": 468, "at": "2026-10-13T06:22:58Z" }
 ```
 
-Phases: `starting`, `opening_database`, `saving_copy`, `migrating`, `starting_listener`, `ready`.
+Phases: `starting`, `opening_database`, `saving_copy`, `migrating`, `preparing` (the database is open: noting the start,
+clearing old sessions, naming connections), `starting_listener`, `ready`. `starting`, `preparing` and `starting_listener` write one
+record each and are held to the ordinary 30 s window.
 
-* **Standard output, the tray's channel.** A line `weir-start-progress {record}`. The tray owns the pipe, so a line is progress the
-  moment it is written and cannot be refused or late.
+* **Standard output, the tray's channel.** A line `weir-start-progress {record}`. The tray owns the pipe and reads it, so a line is
+  progress the moment it is written; it is not refused or made late by a file. If nothing were reading, the server's queue of 1024 lines
+  would fill and further lines would be dropped (and counted), which is why the file is the second channel.
 * **`startup-progress.json` in the data folder**, for readers outside the tray (the scenario suite, support). It is replaced whole,
   then renamed into place. Windows refuses a rename over a file that is open or being scanned for a moment, as access denied or a
   sharing violation, so the server tries again (5 times, 100 ms apart) and the next beat tries again after that; a reader treats
   access denied and a sharing violation as "busy", opens the file again after a moment, and when it stays busy has no news.
-  Neither a failed write nor a busy read is ever taken for silence: the tray counts the time since the record last changed on
-  either channel (the later of the two), and the record on a channel that did not change does not count as progress.
+  Neither a failed write nor a busy read is ever taken for silence: the tray counts the time since a record last changed on either
+  channel, and a record that has not changed is not progress however often it is read.
 
-A record of another process, or written before the server began, is ignored.
+Progress is only ever "this record is not the one before it". The tray never compares the server's clock with its own, so a clock
+that steps back (a virtual machine's time sync, a snapshot resumed) cannot make good records look stale. A record of another process is
+ignored, and the tray removes the file before it starts a server, so a file left by an earlier one is never read as this one's.
 
 ## The server's console never blocks
 
 The server's lines on standard output go through `NonBlockingConsole`: a bounded queue and a thread of their own, which also opens
 the console stream. When nothing reads the output the queue fills and lines are dropped and counted; `weir.log` always has them.
-This is a fix to a measured fault. With standard output a pipe that is full and not read, the previous server stopped before its
-first log line: not listening, no stop event, no database, no exit. Even `Console.OpenStandardOutput()` does not return when a
-write into that pipe is waiting. That matches what the tray saw once after an update (no log line, no stop event, no database, no exit); how that server came to have an unread pipe was not found, and the tray starts the server with a console of its own in every test made of it. It is why the tray also gives the server
-pipes of its own and reads them (`server-host.log`), and why the tray replaces its own standard handles with the null device.
+A pipe holds a few kilobytes. When whatever holds its other end does not read it, a write into it waits for ever, and so does
+`Console.OpenStandardOutput()` in a process whose standard output is that pipe while a write is waiting. A log call that wrote to the
+console itself would wait with it, and the server would never reach its own log, listen, create the event the tray stops it by, or
+exit. So the server does not touch the console on any thread it runs on, and the tray also gives the server pipes of its own and
+reads them (`server-host.log`), and replaces its own standard handles with the null device.
 
 ## What is logged
 
@@ -100,6 +115,7 @@ pipes of its own and reads them (`server-host.log`), and why the tray replaces i
 Start attempt 1 failed: hung in phase 'opening the database' for 30 s. Trying again in 1.4 s (1 of 5 failures allowed within 15 min).
 Start attempt 2 failed: exited with code 3 after running 0.4 s (last phase: starting). Trying again in 3.2 s (2 of 5 failures allowed within 15 min).
 Weir started on attempt 3, after 2 failed attempts: attempt 1: hung in phase 'opening the database' for 30 s; attempt 2: exited with code 3 after running 0.4 s (last phase: starting).
+Start attempt 1 failed: hung in phase 'opening the database' for 30 s, and could not be stopped (process 5764 is still running). Not trying again: another server would find this one still holding the port and the database. End process 5764 (Task Manager, or restart the PC), then use Restart Weir.
 Start attempt 5 failed: hung before it reported anything for 30 s. Giving up (5 of 5 failures allowed within 15 min); Weir is not running. Restart Weir tries again.
 ```
 
@@ -121,8 +137,9 @@ reason is in the two tray logs.
 
 ## Tests
 
-`StartSupervisionTests` (back-off, jitter bounds, start limit, reset after a stable run), `StartWatchTests` (hung or working, with
-fake time), `StartProgressFileTests` and `StartProgressBusyTests` (torn, busy and refused reads), `ServerHostTests` (real stand-in
-servers on a fake clock: exits at once, hangs in a phase, slow but reporting, start limit, crash after running, Restart Weir),
-`StartupProgressTests` and `StartupProgressChannelsTests` (server side), `NonBlockingConsoleTests`, and `ServerOutputPipeTests`, which
-starts the real server with a full pipe nobody reads.
+`StartSupervisionTests` (back-off, jitter bounds, start limit, reset after a stable run), `StartWatchTests` (hung or working, two channels,
+clocks that step back or jump, with fake time), `StartProgressFileTests` and `StartProgressBusyTests` (torn, busy, refused and
+out-of-range records), `ServerHostTests` (real stand-in servers on a fake clock: exits at once, hangs in a phase, slow but reporting on either
+channel, a hung server that will not stop, a port change, the start limit, crash after running, Restart Weir), `ServerOutputLogTests`,
+`InheritedStdioHandlesTests`, `StartupProgressTests`, `StartupProgressChannelsTests`, `NonBlockingConsoleTests`, `StartRefusalTests`, and
+`ServerOutputPipeTests`, which starts the real server with a full pipe nobody reads, once to run and once to refuse its settings.

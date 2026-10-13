@@ -6,7 +6,7 @@ namespace Weir.Tray.Tests;
 /// While the server renames a new startup-progress.json over the old one, or a virus scanner has it, Windows refuses a reader as
 /// access denied or as a sharing violation. That is the file being busy: it is read again after a moment, and when it stays busy
 /// the look has no news. It is never taken for a missing file or a damaged one. The same record also arrives as a line on the
-/// server's standard output, which cannot be busy; the newer of the two counts.
+/// server's standard output, which cannot be busy; a change on either counts.
 /// </summary>
 public sealed class StartProgressBusyTests : IDisposable
 {
@@ -113,33 +113,39 @@ public sealed class StartProgressBusyTests : IDisposable
     }
 
     [Fact]
-    public void The_newer_of_the_pipe_and_the_file_is_the_later_one_and_the_pipes_when_they_are_equal()
+    public void A_record_with_numbers_no_server_could_mean_is_clamped_and_never_thrown_at()
     {
-        var early = new StartProgress(1, "opening_database", 0, 0, TimeSpan.Zero, new DateTimeOffset(2026, 10, 13, 6, 0, 1, TimeSpan.Zero));
-        var late = early with { Phase = "saving_copy", At = early.At + TimeSpan.FromSeconds(5) };
-        var sameTime = early with { Phase = "migrating" };
+        var line = StartProgressFile.Prefix + """{"pid":5764,"phase":"migrating","step":-5,"steps":2147483647,"expect_within_s":9223372036854775807,"at":"2026-10-13T06:22:58Z"}""";
 
-        Assert.Equal(late, StartProgressFile.Newer(early, late));
-        Assert.Equal(late, StartProgressFile.Newer(late, early));
-        Assert.Equal(early, StartProgressFile.Newer(early, sameTime));
-        Assert.Equal(early, StartProgressFile.Newer(early, null));
-        Assert.Equal(late, StartProgressFile.Newer(null, late));
-        Assert.Null(StartProgressFile.Newer(null, null));
+        var record = StartProgressFile.ParseLine(line);
+
+        Assert.NotNull(record);
+        Assert.Equal(0, record.Step);
+        Assert.Equal(1_000_000, record.Steps);
+        Assert.Equal(TimeSpan.FromDays(1), record.ExpectWithin);
+        File.WriteAllText(FilePath, line[StartProgressFile.Prefix.Length..]);
+        Assert.Equal(record, StartProgressFile.Read(_home.Path));
+    }
+
+    [Theory]
+    [InlineData("""{"pid":5764,"phase":"migrating","expect_within_s":99999999999999999999,"at":"2026-10-13T06:22:58Z"}""")]
+    [InlineData("""{"pid":99999999999,"phase":"migrating","at":"2026-10-13T06:22:58Z"}""")]
+    [InlineData("""{"pid":5764,"phase":"migrating","at":"9999-99-99"}""")]
+    public void A_line_the_parser_cannot_make_sense_of_is_not_a_record_and_does_not_end_the_reading_of_the_output(string json)
+    {
+        Assert.Null(StartProgressFile.ParseLine(StartProgressFile.Prefix + json));
+        Assert.Null(new StartProgressFeed(5764).Accept(StartProgressFile.Prefix + json));
     }
 
     [Fact]
-    public void The_merge_gives_the_same_record_every_time_so_readings_that_do_not_advance_never_look_like_progress()
+    public void Clearing_removes_an_earlier_servers_file_and_is_not_an_error_when_there_is_none()
     {
-        var fromPipe = new StartProgress(1, "saving_copy", 0, 0, TimeSpan.Zero, new DateTimeOffset(2026, 10, 13, 6, 0, 5, TimeSpan.Zero));
-        var fromFile = fromPipe with { Phase = "opening_database", At = fromPipe.At - TimeSpan.FromSeconds(4) };
-        var time = new Microsoft.Extensions.Time.Testing.FakeTimeProvider();
-        var watch = new StartWatch(StartPolicy.Default, time, 1, fromPipe.At - TimeSpan.FromSeconds(10));
+        StartProgressFile.Clear(_home.Path);
+        File.WriteAllText(FilePath, Starting);
 
-        watch.Check(StartProgressFile.Newer(fromPipe, fromFile));
-        time.Advance(StartPolicy.Default.StallWindow);
+        StartProgressFile.Clear(_home.Path);
 
-        // The file lags behind the pipe, and each look takes both again: the watch sees one record, unchanged, and calls it hung.
-        Assert.True(watch.Check(StartProgressFile.Newer(fromPipe, fromFile)).Hung);
+        Assert.False(File.Exists(FilePath));
     }
 
     [Fact]

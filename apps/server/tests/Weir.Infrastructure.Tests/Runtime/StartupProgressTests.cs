@@ -53,6 +53,7 @@ public sealed class StartupProgressTests : IDisposable
     [InlineData(StartupPhase.OpeningDatabase, "opening_database")]
     [InlineData(StartupPhase.SavingCopy, "saving_copy")]
     [InlineData(StartupPhase.Migrating, "migrating")]
+    [InlineData(StartupPhase.Preparing, "preparing")]
     [InlineData(StartupPhase.StartingListener, "starting_listener")]
     [InlineData(StartupPhase.Ready, "ready")]
     public void Every_phase_has_the_name_the_tray_reads(StartupPhase phase, string name)
@@ -63,27 +64,34 @@ public sealed class StartupProgressTests : IDisposable
     }
 
     [Fact]
-    public void A_phase_can_ask_for_longer_silence_and_a_beat_keeps_asking()
+    public void A_phase_that_asks_for_longer_silence_does_not_have_it_until_sqlite_has_been_seen_working_in_it()
     {
         var progress = Progress();
+
         progress.Enter(StartupPhase.SavingCopy, expectWithin: TimeSpan.FromSeconds(468.9));
 
+        // Entering the phase asks for nothing: a start that is stuck before it does any work gets the tray's ordinary window.
+        Assert.Equal(0, Read().GetProperty("expect_within_s").GetInt64());
+
+        progress.Beat();
         Assert.Equal(468, Read().GetProperty("expect_within_s").GetInt64());
 
         _time.Advance(StartupProgress.BeatEvery);
         progress.Beat();
         Assert.Equal(468, Read().GetProperty("expect_within_s").GetInt64());
-
-        progress.Enter(StartupPhase.StartingListener);
-        Assert.Equal(0, Read().GetProperty("expect_within_s").GetInt64());
     }
 
     [Fact]
-    public void A_beat_inside_the_interval_does_not_write_and_one_after_it_does()
+    public void The_first_beat_of_a_phase_is_written_at_once_and_later_ones_at_most_once_a_second()
     {
         var progress = Progress();
         progress.Enter(StartupPhase.SavingCopy);
+        var entered = Read().GetProperty("at").GetDateTimeOffset();
+
+        _time.Advance(TimeSpan.FromMilliseconds(5));
+        progress.Beat();
         var first = Read().GetProperty("at").GetDateTimeOffset();
+        Assert.Equal(entered + TimeSpan.FromMilliseconds(5), first);
 
         _time.Advance(StartupProgress.BeatEvery - TimeSpan.FromMilliseconds(1));
         progress.Beat();
@@ -91,9 +99,27 @@ public sealed class StartupProgressTests : IDisposable
 
         _time.Advance(TimeSpan.FromMilliseconds(1));
         progress.Beat();
-        var second = Read().GetProperty("at").GetDateTimeOffset();
-        Assert.Equal(first + StartupProgress.BeatEvery, second);
+        Assert.Equal(first + StartupProgress.BeatEvery, Read().GetProperty("at").GetDateTimeOffset());
         Assert.Equal("saving_copy", Read().GetProperty("phase").GetString());
+    }
+
+    [Fact]
+    public void A_later_step_of_a_phase_that_has_worked_carries_the_allowance_on_and_a_new_phase_does_not()
+    {
+        var progress = Progress();
+        var asked = TimeSpan.FromSeconds(300);
+        progress.Enter(StartupPhase.Migrating, 1, 3, asked);
+        progress.Beat();
+
+        progress.Enter(StartupPhase.Migrating, 2, 3, asked);
+        Assert.Equal(300, Read().GetProperty("expect_within_s").GetInt64());
+
+        progress.Enter(StartupPhase.Preparing);
+        Assert.Equal(0, Read().GetProperty("expect_within_s").GetInt64());
+
+        // A beat in a phase that asked for nothing asks for nothing.
+        progress.Beat();
+        Assert.Equal(0, Read().GetProperty("expect_within_s").GetInt64());
     }
 
     [Fact]
@@ -150,9 +176,10 @@ public sealed class StartupProgressTests : IDisposable
                 using var reader = new StreamReader(stream);
                 text = reader.ReadToEnd();
             }
-            catch (Exception exception) when (exception is (IOException and not FileNotFoundException) or UnauthorizedAccessException)
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
-                // The rename was under way; a reader tries again, as the tray does.
+                // The rename was under way: Windows refuses the open, or for an instant the name is not there (a missing file is no
+                // reading, not a half-written one). A reader tries again, as the tray does (StartProgress.Read).
                 continue;
             }
 

@@ -18,6 +18,8 @@ internal sealed class UnreadStdoutServer : IDisposable
     private const int CreateNoWindow = 0x08000000;
     private const int CreateUnicodeEnvironment = 0x400;
     private const int PipeBufferBytes = 4096;
+    private const int PipeWait = 0;
+    private const int PipeNoWait = 1;
 
     private readonly Process _process;
     private readonly int _port;
@@ -41,23 +43,7 @@ internal sealed class UnreadStdoutServer : IDisposable
         Check(CreatePipe(out var outRead, out var outWrite, ref security, PipeBufferBytes), "CreatePipe (out)");
         Check(CreatePipe(out var inRead, out _, ref security, PipeBufferBytes), "CreatePipe (in)");
 
-        // Writes until the pipe cannot take another byte. The write that would block is left blocked on its own thread, for good.
-        var filled = 0L;
-        new Thread(() =>
-        {
-            var chunk = new byte[64];
-            while (WriteFile(outWrite, chunk, chunk.Length, out var written, IntPtr.Zero))
-            {
-                Interlocked.Add(ref filled, written);
-            }
-        })
-        { IsBackground = true }.Start();
-        var seen = -1L;
-        while (seen != Interlocked.Read(ref filled))
-        {
-            seen = Interlocked.Read(ref filled);
-            Thread.Sleep(200);
-        }
+        FillAndLeaveAWriterWaiting(outWrite);
 
         var program = Path.Combine(AppContext.BaseDirectory, "Weir.dll");
         var info = new StartupInfo
@@ -81,6 +67,21 @@ internal sealed class UnreadStdoutServer : IDisposable
             CreateProcess(null, command, IntPtr.Zero, IntPtr.Zero, true, CreateNoWindow | CreateUnicodeEnvironment, block, AppContext.BaseDirectory, ref info, out var created),
             "CreateProcess");
         return new UnreadStdoutServer(Process.GetProcessById(created.ProcessId), port, home);
+    }
+
+    /// <summary>Waits for the server to exit, for no longer than <paramref name="ceiling"/>; false when it is still running.</summary>
+    internal async Task<bool> ExitsAsync(TimeSpan ceiling)
+    {
+        using var cancelled = new CancellationTokenSource(ceiling);
+        try
+        {
+            await _process.WaitForExitAsync(cancelled.Token);
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
     }
 
     /// <summary>Waits until /ready answers 200, or <paramref name="ceiling"/> passes: the wait is on the server, and only a broken one reaches the ceiling.</summary>
@@ -122,6 +123,31 @@ internal sealed class UnreadStdoutServer : IDisposable
         }
 
         _process.Dispose();
+    }
+
+    // Fills the pipe to the last byte, then leaves a write waiting on it. The pipe is put in non-waiting mode for the filling, in which a
+    // write that does not fit returns at once, so "full" is known and not waited for; it is put back, and one more write is made on a thread
+    // of its own that can never finish. That waiting write is part of the condition (the server's own console calls queue behind it),
+    // and it is already waiting by the time a server can start: the thread is started first, and a server takes far longer than the call.
+    private static void FillAndLeaveAWriterWaiting(IntPtr write)
+    {
+        var noWait = PipeNoWait;
+        Check(SetNamedPipeHandleState(write, ref noWait, IntPtr.Zero, IntPtr.Zero), "SetNamedPipeHandleState (no wait)");
+        var oneByte = new byte[1];
+        while (WriteFile(write, oneByte, oneByte.Length, out var written, IntPtr.Zero) && written == oneByte.Length)
+        {
+        }
+
+        var wait = PipeWait;
+        Check(SetNamedPipeHandleState(write, ref wait, IntPtr.Zero, IntPtr.Zero), "SetNamedPipeHandleState (wait)");
+        var aboutToWrite = new ManualResetEventSlim(false);
+        new Thread(() =>
+        {
+            aboutToWrite.Set();
+            WriteFile(write, oneByte, oneByte.Length, out _, IntPtr.Zero);
+        })
+        { IsBackground = true }.Start();
+        aboutToWrite.Wait();
     }
 
     private static void Check(bool succeeded, string what)
@@ -175,6 +201,10 @@ internal sealed class UnreadStdoutServer : IDisposable
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CreatePipe(out IntPtr read, out IntPtr write, ref SecurityAttributes attributes, int size);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetNamedPipeHandleState(IntPtr pipe, ref int mode, IntPtr maxCollectionCount, IntPtr collectDataTimeout);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]

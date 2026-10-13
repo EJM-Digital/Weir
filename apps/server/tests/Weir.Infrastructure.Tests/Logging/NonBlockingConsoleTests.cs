@@ -6,8 +6,7 @@ namespace Weir.Infrastructure.Tests.Logging;
 
 /// <summary>
 /// Standard output is written by a thread of its own and never waited for. A pipe nobody reads takes a few kilobytes and then makes a
-/// write wait for ever; a log call that waited with it stopped the server before it had logged a line (see ServerOutputPipeTests for the
-/// real server). Nothing here depends on how long anything takes: a console that will not take a line is a stream that does not return.
+/// write wait for ever, so no log call may wait on the console (ServerOutputPipeTests starts the real server on such a pipe). Nothing here depends on how long anything takes: a console that will not take a line is a stream that does not return.
 /// </summary>
 public sealed class NonBlockingConsoleTests
 {
@@ -31,6 +30,7 @@ public sealed class NonBlockingConsoleTests
     {
         using var stream = new BlockedStream();
         using var console = new NonBlockingConsole(stream, Encoding.UTF8);
+        await stream.BlockTheWriterAsync(console);
 
         // Far more than the queue holds. Were any call to wait on the console the caller would never get back.
         await Task.Run(() =>
@@ -49,6 +49,7 @@ public sealed class NonBlockingConsoleTests
     {
         using var stream = new BlockedStream();
         using var console = new NonBlockingConsole(stream, Encoding.UTF8);
+        await stream.BlockTheWriterAsync(console);
         for (var line = 0; line < NonBlockingConsole.Capacity * 2; line++)
         {
             console.WriteLine($"line {line}");
@@ -124,6 +125,7 @@ public sealed class NonBlockingConsoleTests
         using var console = new NonBlockingConsole(stream, Encoding.UTF8);
         using var provider = new WeirConsoleLoggerProvider(console, TimeProvider.System, LogLevel.Information);
         var logger = provider.CreateLogger("Weir.Host.Startup");
+        await stream.BlockTheWriterAsync(console);
 
         await Task.Run(() =>
         {
@@ -134,6 +136,53 @@ public sealed class NonBlockingConsoleTests
         }).WaitAsync(TimeSpan.FromSeconds(20));
 
         Assert.True(console.Dropped > 0);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task The_count_of_dropped_lines_is_a_running_total_that_telling_the_console_does_not_reset()
+    {
+        using var stream = new BlockedStream();
+        using var console = new NonBlockingConsole(stream, Encoding.UTF8);
+        await stream.BlockTheWriterAsync(console);
+        for (var line = 0; line < NonBlockingConsole.Capacity * 3; line++)
+        {
+            console.WriteLine($"line {line}");
+        }
+
+        var droppedBefore = console.Dropped;
+        stream.Release();
+        Assert.True(console.Drain(TimeSpan.FromSeconds(20)), "The console never took what was queued");
+
+        Assert.True(droppedBefore >= NonBlockingConsole.Capacity * 2, $"Only {droppedBefore} lines were counted as dropped");
+        Assert.Equal(droppedBefore, console.Dropped);
+        Assert.Contains($"({droppedBefore} console lines were not written", stream.Text, StringComparison.Ordinal);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task Stopping_gives_what_is_queued_time_to_reach_a_console_that_is_taking_it()
+    {
+        using var stream = new RecordingStream();
+        var console = new NonBlockingConsole(stream, Encoding.UTF8);
+        for (var line = 0; line < 500; line++)
+        {
+            console.WriteLine($"line {line}");
+        }
+
+        console.Dispose();
+
+        // Nothing is waited for here: Dispose returned only after the writer had written them all.
+        Assert.EndsWith($"line 499{Environment.NewLine}", stream.Text, StringComparison.Ordinal);
+        await Task.CompletedTask;
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task Stopping_does_not_wait_for_ever_for_a_console_that_will_not_take_a_line()
+    {
+        using var stream = new BlockedStream();
+        var console = new NonBlockingConsole(stream, Encoding.UTF8);
+        await stream.BlockTheWriterAsync(console);
+
+        await Task.Run(console.Dispose).WaitAsync(TimeSpan.FromSeconds(20));
     }
 
     private sealed class RecordingStream : Stream
@@ -197,6 +246,7 @@ public sealed class NonBlockingConsoleTests
     private sealed class BlockedStream : Stream
     {
         private readonly ManualResetEventSlim _open = new(false);
+        private readonly ManualResetEventSlim _writing = new(false);
         private readonly RecordingStream _inner = new();
 
         public string Text => _inner.Text;
@@ -217,6 +267,18 @@ public sealed class NonBlockingConsoleTests
 
         public void Release() => _open.Set();
 
+        /// <summary>
+        /// Hands the console one line and waits until the writing thread is stuck inside this stream with it. The console takes the count
+        /// of dropped lines for its notice when its thread first gets a line, so a test that counts drops must not start until that thread
+        /// is running: on a busy machine the thread can start after thousands of lines were dropped, and the count they made goes into a
+        /// notice that this stream is holding.
+        /// </summary>
+        public async Task BlockTheWriterAsync(NonBlockingConsole console)
+        {
+            console.WriteLine("the line the writer is stuck on");
+            await Task.Run(() => _writing.Wait()).WaitAsync(TimeSpan.FromSeconds(20));
+        }
+
         public Task WaitForTextAsync(string text) => _inner.WaitForTextAsync(text);
 
         public override void Flush()
@@ -225,6 +287,7 @@ public sealed class NonBlockingConsoleTests
 
         public override void Write(byte[] buffer, int offset, int count)
         {
+            _writing.Set();
             _open.Wait();
             _inner.Write(buffer, offset, count);
         }

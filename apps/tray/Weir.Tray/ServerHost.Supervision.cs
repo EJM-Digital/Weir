@@ -5,6 +5,14 @@ using Weir.Tray.LanAccess;
 
 namespace Weir.Tray;
 
+/// <summary>A hung server was asked to stop and killed, and is still running.</summary>
+sealed class ServerWillNotStopException(int processId, string reason) : InvalidOperationException(reason)
+{
+    internal int ProcessId { get; } = processId;
+
+    internal string Reason { get; } = reason;
+}
+
 /// <summary>The supervision gave up: the start limit was reached, or the server said why it cannot start.</summary>
 sealed class StartGaveUpException(string message, int attempts, string reason) : InvalidOperationException(message)
 {
@@ -171,8 +179,7 @@ sealed partial class ServerHost
             }
 
             var reason = $"exited with code {exited.ExitCode} after running {Seconds(_time.GetElapsedTime(_startedAtStamp))}";
-            _process = null;
-            exited.Dispose();
+            ForgetFailedProcess(exited);
             SetPhase(ServerPhase.Starting);
             await SuperviseAsync(failedBefore: reason, cancellationToken).ConfigureAwait(false);
             return true;
@@ -196,18 +203,28 @@ sealed partial class ServerHost
         {
             if (failure is not null)
             {
+                // Read once: what is logged and what is done are decided from the same reading.
+                var said = ServerSaid();
                 var decision = _supervision.Failed(failure);
-                LogFailure(decision, StartupNotes.ReadError(_runtimeHome, StartedAtUtc));
-                if (decision.GiveUp || StartupNotes.ReadError(_runtimeHome, StartedAtUtc) is not null)
+                LogFailure(decision, said);
+                if (decision.GiveUp || said is not null)
                 {
-                    throw GaveUp(decision);
+                    throw GaveUp(decision, said);
                 }
 
                 SetPhase(ServerPhase.Starting);
                 await Task.Delay(decision.Delay, _time, cancellationToken).ConfigureAwait(false);
             }
 
-            failure = await AttemptAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                failure = await AttemptAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (ServerWillNotStopException stuck)
+            {
+                throw GaveUpOnStuckServer(stuck);
+            }
+
             if (failure is null)
             {
                 OnReady();
@@ -217,10 +234,9 @@ sealed partial class ServerHost
     }
 
     // The supervision stops here: the tray shows Stopped, with the reason, and Restart Weir is the way back.
-    private StartGaveUpException GaveUp(StartDecision decision)
+    private StartGaveUpException GaveUp(StartDecision decision, StartupError? said)
     {
         var attempts = decision.Attempt;
-        var said = StartupNotes.ReadError(_runtimeHome, StartedAtUtc);
         _gaveUpAttempts = attempts;
         SetPhase(ServerPhase.Stopped);
         return new StartGaveUpException(
@@ -229,6 +245,17 @@ sealed partial class ServerHost
                 : $"Weir cannot start: {said.Detail}",
             attempts,
             decision.Reason);
+    }
+
+    // A server that was asked to stop and killed, and is still running, still holds the port and the database. Another attempt would only
+    // find them taken, so the trying stops here and says why.
+    private StartGaveUpException GaveUpOnStuckServer(ServerWillNotStopException stuck)
+    {
+        var decision = _supervision.Failed(stuck.Reason);
+        Say($"Start attempt {decision.Attempt} failed: {stuck.Reason}. Not trying again: another server would find this one still holding the port and the database. End process {stuck.ProcessId} (Task Manager, or restart the PC), then use Restart Weir.");
+        _gaveUpAttempts = decision.Attempt;
+        SetPhase(ServerPhase.Stopped);
+        return new StartGaveUpException($"Weir did not start after {decision.Attempt} attempts; the last failed: {stuck.Reason}", decision.Attempt, stuck.Reason);
     }
 
     private void OnReady()
@@ -283,7 +310,7 @@ sealed partial class ServerHost
             return $"could not be started: {ex.Message}";
         }
 
-        var watch = new StartWatch(_policy, _time, process.Id, new DateTimeOffset(StartTimeUtc(process), TimeSpan.Zero));
+        var watch = new StartWatch(_policy, _time, process.Id);
         var feed = _feed!;
         try
         {
@@ -292,7 +319,7 @@ sealed partial class ServerHost
                 new Uri($"http://127.0.0.1:{_port}/ready"),
                 () => process.HasExited ? process.ExitCode : null,
                 watch,
-                () => StartProgressFile.Newer(feed.Latest, StartProgressFile.Read(_runtimeHome)),
+                () => (feed.Latest, StartProgressFile.Read(_runtimeHome)),
                 ServerHealth.RetryDelay,
                 _time,
                 cancellationToken).ConfigureAwait(false);
@@ -309,21 +336,55 @@ sealed partial class ServerHost
             // What the process was doing is recorded before it is stopped; then it is asked to stop and, failing that, killed with
             // its whole tree. Only this host's own process is ever stopped here.
             Say($"Weir's server (pid {process.Id}) did not answer: {ServerProcessSnapshot.Describe(process)}. What it printed is in {ServerOutputLog.FileName}.");
-            await ServerProcessStop.StopAsync(process, ServerStopTimeouts.Orphan).ConfigureAwait(false);
-            ForgetFailedProcess(process);
+            var outcome = await StopHung(process).ConfigureAwait(false);
             var where = watch.Last is null ? "before it reported anything" : $"in phase '{ex.Verdict.Where}'";
-            return $"hung {where} for {Seconds(ex.Verdict.SilentFor)}";
+            var hung = $"hung {where} for {Seconds(ex.Verdict.SilentFor)}";
+            if (!IsGone(process, outcome))
+            {
+                throw new ServerWillNotStopException(process.Id, $"{hung}, and could not be stopped (process {process.Id} is still running)");
+            }
+
+            ForgetFailedProcess(process);
+            return hung;
         }
     }
 
-    private void ForgetFailedProcess(Process process)
+    // Stops a hung server: asked to stop, then killed with its whole tree. A test replaces it.
+    internal Func<Process, Task<ServerStopOutcome>> StopHung { get; set; } =
+        process => ServerProcessStop.StopAsync(process, ServerStopTimeouts.Orphan);
+
+    // What the server said about why it cannot start, or null. A test replaces it.
+    internal Func<StartupError?>? ServerSaidOverride { get; set; }
+
+    private StartupError? ServerSaid() => ServerSaidOverride is { } over ? over() : StartupNotes.ReadError(_runtimeHome, StartedAtUtc);
+
+    // Confirmed from the process itself, not from what the stop reported: a kill that did not take, or a stop that gave up waiting, leaves it running.
+    // A process a quit has already stopped and disposed is gone.
+    private static bool IsGone(Process process, ServerStopOutcome outcome)
     {
-        if (ReferenceEquals(_process, process))
+        if (outcome is ServerStopOutcome.AlreadyExited or ServerStopOutcome.StoppedCleanly)
         {
-            _process = null;
+            return true;
         }
 
-        process.Dispose();
+        try
+        {
+            return process.HasExited;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or Win32Exception)
+        {
+            return true;
+        }
+    }
+
+    // The attempt is over and the process with it. Whoever takes the process out of _process owns disposing it, so a quit that stops the
+    // server at the same moment and the attempt never both do.
+    private void ForgetFailedProcess(Process process)
+    {
+        if (TakeProcess(process))
+        {
+            process.Dispose();
+        }
     }
 
     private static string Seconds(TimeSpan duration) =>
@@ -337,14 +398,30 @@ sealed partial class ServerHost
         await StopProcessAsync().ConfigureAwait(false);
         _port = port;
         _scope = scope;
-        var failure = await AttemptAsync(cancellationToken).ConfigureAwait(false);
+
+        // A change the person asked for is a start of its own: the earlier attempts and their failures are not this server's, and are not
+        // passed to it as if they were.
+        _supervision.Reset();
+        _gaveUpAttempts = 0;
+        string? failure;
+        try
+        {
+            failure = await AttemptAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (ServerWillNotStopException stuck)
+        {
+            Say($"The server did not start on port {port} ({scope.Describe()}): {stuck.Reason}. It is still running, so nothing is started beside it. End process {stuck.ProcessId}, then use Restart Weir.");
+            SetPhase(ServerPhase.Stopped);
+            return false;
+        }
+
         if (failure is not null)
         {
             Say($"The server did not start on port {port} ({scope.Describe()}): {failure}");
             return false;
         }
 
-        SetPhase(ServerPhase.Running);
+        OnReady();
         return true;
     }
 
@@ -352,6 +429,9 @@ sealed partial class ServerHost
     {
         var serverExe = FindServerExe();
         TrayLog.Write($"Starting bundled server host: {serverExe} (attempt {_supervision.Attempt})");
+
+        // What the file holds is an earlier server's, whatever process id that server had.
+        StartProgressFile.Clear(_runtimeHome);
 
         var start = new ProcessStartInfo
         {
@@ -385,7 +465,11 @@ sealed partial class ServerHost
 
         Volatile.Write(ref _startedAtTicks, StartTimeUtc(process).Ticks);
         _startedAtStamp = _time.GetTimestamp();
-        _process = process;
+        lock (_processGate)
+        {
+            _process = process;
+        }
+
         TrayLog.Write($"Bundled server host pid={process.Id}");
         return process;
     }

@@ -41,8 +41,11 @@ public sealed class StartupProgressChannelsTests : IDisposable
         var progress = Progress();
 
         progress.Enter(StartupPhase.Migrating, 3, 7, TimeSpan.FromSeconds(468));
+        progress.Beat();
 
-        var line = Assert.Single(PipeLines());
+        // The record after the first beat of the phase is the one that carries what the phase asked for.
+        var line = PipeLines()[^1];
+        Assert.Equal(2, PipeLines().Length);
         Assert.StartsWith(StartupProgress.PipePrefix, line, StringComparison.Ordinal);
         var json = line[StartupProgress.PipePrefix.Length..];
         Assert.Equal(File.ReadAllText(_home.Join(StartupProgress.FileName)), json);
@@ -69,12 +72,14 @@ public sealed class StartupProgressChannelsTests : IDisposable
         var progress = Progress();
         progress.Enter(StartupPhase.SavingCopy);
 
+        // The first beat of a phase is written at once; after it, one a second.
+        progress.Beat();
         progress.Beat();
         _time.Advance(StartupProgress.BeatEvery);
         progress.Beat();
         progress.Beat();
 
-        Assert.Equal(2, PipeLines().Length);
+        Assert.Equal(3, PipeLines().Length);
     }
 
     [Fact]
@@ -127,14 +132,13 @@ public sealed class StartupProgressChannelsTests : IDisposable
             throw new UnauthorizedAccessException("Access to the path is denied.");
         });
 
-        progress.Enter(StartupPhase.SavingCopy, expectWithin: TimeSpan.FromSeconds(300));
+        progress.Enter(StartupPhase.SavingCopy);
 
         Assert.Equal(StartupProgress.FileAttempts, attempts);
         Assert.Equal(StartupProgress.FileAttempts - 1, _pauses.Count);
         Assert.False(File.Exists(_home.Join(StartupProgress.FileName)));
         var line = Assert.Single(PipeLines());
         Assert.Contains("\"phase\":\"saving_copy\"", line, StringComparison.Ordinal);
-        Assert.Contains("\"expect_within_s\":300", line, StringComparison.Ordinal);
     }
 
     [Fact]

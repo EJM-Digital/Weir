@@ -79,10 +79,8 @@ public sealed class StartProgressFileTests : IDisposable
         Assert.Equal(TimeSpan.Zero, reading.ExpectWithin);
     }
 
-    // This test once hung, and the hang was real: Windows refuses a rename over a file that a reader has open (access denied or a
-    // sharing violation), so the writer's AtomicFile.WriteAllText threw, the writer task ended, and the flag the reader loop waited
-    // on was never cleared. The writer now does what the server's does (tries again when refused), and the loop ends when the
-    // writer does, however it ended.
+    // Windows refuses a rename over a file that a reader has open (access denied or a sharing violation), so the writer tries a
+    // write again when it is refused, as the server's does, and the reading loop ends when the writer's task does, however it ended.
     [Fact(Timeout = 60_000)]
     public async Task A_file_replaced_over_and_over_while_it_is_read_is_always_read_whole_or_not_at_all()
     {
@@ -140,6 +138,7 @@ public sealed class StartProgressFileTests : IDisposable
     [InlineData("saving_copy", 0, 0, "saving a copy of the data")]
     [InlineData("migrating", 3, 7, "updating the database (step 3 of 7)")]
     [InlineData("migrating", 0, 0, "updating the database")]
+    [InlineData("preparing", 0, 0, "getting ready")]
     [InlineData("starting_listener", 0, 0, "starting to listen")]
     [InlineData("ready", 0, 0, "ready")]
     [InlineData("something_new", 0, 0, "something_new")]

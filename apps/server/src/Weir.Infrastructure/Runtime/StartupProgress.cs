@@ -20,7 +20,10 @@ public enum StartupPhase
     /// <summary>Applying schema migrations; the step and the number of steps say how far.</summary>
     Migrating,
 
-    /// <summary>The database is ready; the listener and the background services are starting.</summary>
+    /// <summary>The database is open at this build's schema; the server is noting the start, clearing old sessions and naming connections.</summary>
+    Preparing,
+
+    /// <summary>The listener and the background services are starting.</summary>
     StartingListener,
 
     /// <summary>Listening and answering. <c>/ready</c> answers 200 from here.</summary>
@@ -37,14 +40,17 @@ public enum StartupPhase
 /// tray (the scenario suite, support). A write that is refused is tried again, a few times, because Windows refuses a rename for
 /// a moment while a reader or a virus scanner has the file; and a write that still fails is tried again with the next beat.</item>
 /// </list>
-/// A record is written at every phase and, while a phase is working, at most once a second:
+/// A record is written at every phase and, while SQLite is working inside one, at most once a second. The phases that do no database
+/// work (<see cref="StartupPhase.Starting"/>, <see cref="StartupPhase.Preparing"/>, <see cref="StartupPhase.StartingListener"/>) write
+/// one record each, and the tray gives them its ordinary window:
 /// <code>
 /// { "pid": 5764, "phase": "migrating", "step": 3, "steps": 7, "expect_within_s": 468, "at": "2026-10-13T06:22:58.1234567Z" }
 /// </code>
 /// <c>pid</c> is the server's process id, so the file of an earlier server is never taken for this one's. <c>at</c> is when the
 /// record was made: a phase change or a <see cref="Beat"/>. <c>step</c> and <c>steps</c> are 0 outside
 /// <see cref="StartupPhase.Migrating"/>. <c>expect_within_s</c> is how long the server says it may be silent from this write
-/// (0: no longer than the tray's own limit).
+/// (0: no longer than the tray's own limit). It is asked for only once SQLite has been seen working in the phase (a beat), so a phase that
+/// has not done any work gets the ordinary window.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -54,7 +60,9 @@ public enum StartupPhase
 /// <para>
 /// Work on a large database has steps SQLite does in one go, such as writing and syncing a copy of a gigabyte, in which nothing
 /// can be reported. <c>expect_within_s</c> is the idea of <c>sd_notify EXTEND_TIMEOUT_USEC</c>: the service says how long it needs
-/// and the supervisor believes it up to a ceiling of its own (<see cref="StartupPatience"/>).
+/// and the supervisor believes it up to a ceiling of its own (<see cref="StartupPatience"/>). It applies to the silence that follows a
+/// beat, which is such a step. A start that has not beaten, or that is waiting for a lock (SQLite gives up on a lock after 30 s with an
+/// error that ends the start), is held to the ordinary window.
 /// </para>
 /// <para>Neither channel can stop the start: a line or a file that cannot be written is skipped, and the start goes on.</para>
 /// </remarks>
@@ -85,6 +93,8 @@ public sealed class StartupProgress
     private int _step;
     private int _steps;
     private TimeSpan _expectWithin;
+    private TimeSpan _allowance;
+    private bool _worked;
     private long _lastAt;
     private bool _any;
 
@@ -109,27 +119,39 @@ public sealed class StartupProgress
 
     /// <summary>
     /// The phase, and the step of <paramref name="steps"/> when it has them. Always written. <paramref name="expectWithin"/> is the
-    /// longest the server may now be silent, when that is longer than the tray's own limit.
+    /// longest the server may be silent after SQLite has been seen working in this phase, when that is longer than the tray's own limit;
+    /// the record says so only once that has happened, in this phase (a later step of it carries it on), and not on entering a phase.
     /// </summary>
     public void Enter(StartupPhase phase, int step = 0, int steps = 0, TimeSpan expectWithin = default)
     {
         lock (_gate)
         {
+            if (phase != _phase)
+            {
+                _worked = false;
+            }
+
             _phase = phase;
             _step = step;
             _steps = steps;
-            _expectWithin = expectWithin;
+            _allowance = expectWithin;
+            _expectWithin = _worked ? _allowance : TimeSpan.Zero;
             Write();
         }
     }
 
-    /// <summary>The work in the current phase is still going. Written at most once every <see cref="BeatEvery"/>.</summary>
+    /// <summary>
+    /// SQLite is working in the current phase. The first beat of a phase is written at once; later ones at most once every
+    /// <see cref="BeatEvery"/>.
+    /// </summary>
     public void Beat()
     {
         lock (_gate)
         {
-            if (!_any || _time.GetElapsedTime(_lastAt) >= BeatEvery)
+            if (!_any || !_worked || _time.GetElapsedTime(_lastAt) >= BeatEvery)
             {
+                _worked = true;
+                _expectWithin = _allowance;
                 Write();
             }
         }
@@ -141,6 +163,7 @@ public sealed class StartupProgress
         StartupPhase.OpeningDatabase => "opening_database",
         StartupPhase.SavingCopy => "saving_copy",
         StartupPhase.Migrating => "migrating",
+        StartupPhase.Preparing => "preparing",
         StartupPhase.StartingListener => "starting_listener",
         StartupPhase.Ready => "ready",
         _ => throw new ArgumentOutOfRangeException(nameof(phase)),

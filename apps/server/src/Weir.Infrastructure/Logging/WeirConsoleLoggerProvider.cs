@@ -4,8 +4,7 @@ namespace Weir.Infrastructure.Logging;
 
 /// <summary>
 /// Writes every log entry at or above the configured level to the console in Weir's plain format (local time, level, logger name and
-/// message), through <see cref="NonBlockingConsole"/>, so that a log call never waits for a console that is not being read. This
-/// replaces the framework's console logger, whose write into a full pipe stopped the server before it had logged anything.
+/// message), through <see cref="NonBlockingConsole"/>, so that a log call never waits for a console that is not being read.
 /// </summary>
 public sealed class WeirConsoleLoggerProvider : ILoggerProvider
 {

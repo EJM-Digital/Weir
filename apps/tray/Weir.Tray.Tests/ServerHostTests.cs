@@ -156,13 +156,31 @@ public sealed class ServerHostTests
         using var rig = new StartRig();
         StartRig.Steer("WEIR_STANDIN_NO_STOP_EVENT", "1");
         StartRig.Steer("WEIR_STANDIN_READY_FILE", rig.ReadyFile);
-        // Left by a server that has since ended, with a process id this one does not have.
-        rig.WriteProgress(pid: 1, phase: "ready");
 
         var start = rig.Host.StartAsync(CancellationToken.None);
-        var gaveUp = await RunToEndAsync(rig, start, After(rig.LatestListeningAsync));
+        var gaveUp = await RunToEndAsync(rig, start, async delay =>
+        {
+            if (delay == ServerHealth.RetryDelay)
+            {
+                await rig.LatestListeningAsync();
+                // A record of a server that has since ended, with a process id this one does not have, appears on every look.
+                rig.WriteProgress(pid: 1, phase: "ready");
+            }
+        });
 
         Assert.Equal("hung before it reported anything for 30 s", gaveUp.Reason);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_start_clears_the_file_an_earlier_server_left_before_the_new_server_runs()
+    {
+        using var rig = new StartRig();
+        rig.WriteProgress(pid: 1, phase: "ready");
+
+        await rig.StartReadyAsync();
+
+        // The stand-in writes no progress of its own, so a file that is still there would be the earlier server's.
+        Assert.Null(StartProgressFile.Read(rig.HomePath));
     }
 
     [Fact(Timeout = TestTimeoutMs)]
@@ -392,6 +410,151 @@ public sealed class ServerHostTests
     }
 
     [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_server_started_for_a_port_change_is_told_nothing_about_the_failures_before_it()
+    {
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_EXIT_CODE", "7");
+        StartRig.Steer("WEIR_STANDIN_SUCCEED_AT_ATTEMPT", "3");
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        await rig.DriveAsync(start, After(async () =>
+        {
+            await rig.LatestStartedAsync(1);
+            await StartRig.UntilAsync(() => !StartRig.IsRunning(rig.Starts[^1].Pid) || rig.Starts[^1].Attempt == "3", "the stand-in to exit or the third attempt to start");
+            if (rig.Starts[^1].Attempt == "3")
+            {
+                await rig.LatestListeningAsync();
+            }
+        }));
+        Assert.Equal("3", rig.Starts[^1].Attempt);
+        var startsBefore = rig.Starts.Count;
+        StartRig.Steer("WEIR_STANDIN_EXIT_CODE", null);
+
+        var move = rig.Host.MoveToPortAsync(StartRig.AnotherPort(), CancellationToken.None);
+        await rig.DriveAsync(move, After(rig.LatestListeningAsync));
+
+        Assert.True(await move);
+        var moved = rig.Starts[startsBefore];
+        Assert.Equal(string.Empty, moved.Attempt);
+        Assert.Equal(string.Empty, moved.Failures);
+        // The move is a start of its own: no "started on attempt" line and no failures held over for the next crash to report.
+        Assert.Equal(1, CountOf(rig.TrayLog, "Weir started on attempt"));
+        Assert.Equal(ServerPhase.Running, rig.Host.Phase);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_crash_after_a_port_change_is_counted_from_the_change_and_not_from_the_failures_before_it()
+    {
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_EXIT_CODE", "7");
+        StartRig.Steer("WEIR_STANDIN_SUCCEED_AT_ATTEMPT", "3");
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        await rig.DriveAsync(start, After(async () =>
+        {
+            await rig.LatestStartedAsync(1);
+            await StartRig.UntilAsync(() => !StartRig.IsRunning(rig.Starts[^1].Pid) || rig.Starts[^1].Attempt == "3", "the stand-in to exit or the third attempt to start");
+            if (rig.Starts[^1].Attempt == "3")
+            {
+                await rig.LatestListeningAsync();
+            }
+        }));
+        StartRig.Steer("WEIR_STANDIN_EXIT_CODE", null);
+        var move = rig.Host.MoveToPortAsync(StartRig.AnotherPort(), CancellationToken.None);
+        await rig.DriveAsync(move, After(rig.LatestListeningAsync));
+        Assert.True(await move);
+        var gaveUp = false;
+        rig.Host.Watch(() => gaveUp = true, CancellationToken.None);
+        var startsBefore = rig.Starts.Count;
+        using (var running = Process.GetProcessById(rig.Starts[^1].Pid))
+        {
+            running.Kill();
+            await running.WaitForExitAsync();
+        }
+
+        var restarted = Task.Run(() => StartRig.UntilAsync(() => rig.Starts.Count == startsBefore + 1 && rig.Host.Phase == ServerPhase.Running, "the server to be started again"));
+        await rig.DriveAsync(restarted, After(async () =>
+        {
+            await rig.LatestStartedAsync(startsBefore + 1);
+            await rig.LatestListeningAsync();
+        }));
+
+        Assert.False(gaveUp);
+        var again = rig.Starts[startsBefore];
+        Assert.Equal("2", again.Attempt);
+        Assert.StartsWith("attempt 1: exited with code", again.Failures, StringComparison.Ordinal);
+        Assert.DoesNotContain("attempt 2", again.Failures, StringComparison.Ordinal);
+    }
+
+    [Theory(Timeout = TestTimeoutMs)]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_hung_server_that_is_still_running_after_the_stop_is_not_started_beside_and_the_tray_says_so(bool killFailed)
+    {
+        var reported = killFailed ? ServerStopOutcome.KillFailed : ServerStopOutcome.Killed;
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_PHASE", "opening_database");
+        StartRig.Steer("WEIR_STANDIN_NO_STOP_EVENT", "1");
+        StartRig.Steer("WEIR_STANDIN_READY_FILE", rig.ReadyFile);
+        // The stop reports what the theory says and leaves the process running: a kill that did not take, or one that was not waited for.
+        rig.Host.StopHung = _ => Task.FromResult(reported);
+
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        var gaveUp = await RunToEndAsync(rig, start, After(rig.LatestReportedAsync));
+
+        Assert.Equal(1, gaveUp.Attempts);
+        Assert.Contains("could not be stopped", gaveUp.Reason, StringComparison.Ordinal);
+        Assert.Single(rig.Starts);
+        Assert.Single(rig.Running());
+        Assert.Equal(ServerPhase.Stopped, rig.Host.Phase);
+        Assert.Contains($"End process {rig.Starts[0].Pid}", rig.TrayLog, StringComparison.Ordinal);
+        Assert.Contains("Not trying again: another server would find this one still holding the port and the database", rig.TrayLog, StringComparison.Ordinal);
+        Assert.DoesNotContain("Trying again in", rig.TrayLog, StringComparison.Ordinal);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_process_a_quit_has_already_stopped_and_disposed_is_gone_and_is_not_disposed_a_second_time()
+    {
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_PHASE", "opening_database");
+        StartRig.Steer("WEIR_STANDIN_NO_STOP_EVENT", "1");
+        StartRig.Steer("WEIR_STANDIN_READY_FILE", rig.ReadyFile);
+        // The quit gets to the process first: it is killed and disposed while the attempt is still stopping it.
+        rig.Host.StopHung = async process =>
+        {
+            var outcome = await ServerProcessStop.StopAsync(process, ServerStopTimeouts.Orphan);
+            process.Dispose();
+            return outcome;
+        };
+
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        var gaveUp = await RunToEndAsync(rig, start, After(rig.LatestReportedAsync));
+
+        Assert.Equal(StartPolicyBurst, gaveUp.Attempts);
+        Assert.StartsWith("hung in phase 'opening the database'", gaveUp.Reason, StringComparison.Ordinal);
+        Assert.Empty(rig.Running());
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task What_the_server_said_about_why_it_cannot_start_is_read_once_and_what_is_logged_is_what_is_done()
+    {
+        using var rig = new StartRig();
+        StartRig.Steer("WEIR_STANDIN_EXIT_CODE", "3");
+        var reads = 0;
+        var said = new StartupError("Weir's settings are not valid", "WEIR_PORT must be a number.");
+        // Nothing the first time (so the start is tried again), the note the second: a host that read more than once for a failure would
+        // log "Trying again" and then give up on the same failure.
+        rig.Host.ServerSaidOverride = () => ++reads == 1 ? null : said;
+
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        var gaveUp = await RunToEndAsync(rig, start, After(rig.LatestExitedAsync));
+
+        Assert.Equal(2, gaveUp.Attempts);
+        Assert.Equal(2, reads);
+        Assert.Equal(2, rig.Starts.Count);
+        Assert.Equal(1, CountOf(rig.TrayLog, "Trying again in"));
+        Assert.Equal(1, CountOf(rig.TrayLog, "so it is not tried again: WEIR_PORT must be a number."));
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
     public async Task The_icon_says_stopping_while_the_server_finishes_and_stopped_after()
     {
         using var rig = new StartRig();
@@ -418,6 +581,8 @@ public sealed class ServerHostTests
 
         throw new InvalidOperationException("The start was expected to give up and did not.");
     }
+
+    private static int StartPolicyBurst => Policy.StartLimitBurst;
 
     private static int CountOf(string text, string what)
     {

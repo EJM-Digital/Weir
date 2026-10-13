@@ -40,7 +40,7 @@ static class ServerHealth
         Uri readyUrl,
         Func<int?> exitCodeIfExited,
         StartWatch watch,
-        Func<StartProgress?> readProgress,
+        Func<(StartProgress? FromPipe, StartProgress? FromFile)> readProgress,
         TimeSpan retryDelay,
         TimeProvider clock,
         CancellationToken cancellationToken)
@@ -58,7 +58,8 @@ static class ServerHealth
                 return;
             }
 
-            var verdict = watch.Check(readProgress());
+            var (fromPipe, fromFile) = readProgress();
+            var verdict = watch.Check(fromPipe, fromFile);
             if (verdict.Hung)
             {
                 throw new ServerStartHungException(verdict, answer);

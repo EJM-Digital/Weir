@@ -145,7 +145,6 @@ internal sealed class StartRig : IDisposable
         File.AppendAllText(SayFile, string.Create(
             System.Globalization.CultureInfo.InvariantCulture,
             $"{StartProgressFile.Prefix}{{\"pid\":{pid},\"phase\":\"{phase}\",\"step\":{step},\"steps\":{steps},\"expect_within_s\":{expectWithinSeconds},\"at\":\"{DateTimeOffset.UtcNow:O}\"}}{Environment.NewLine}"));
-
     /// <summary>The process ids of the stand-ins this rig has started that are still running.</summary>
     /// <summary>Waits until the newest stand-in has exited.</summary>
     internal Task LatestExitedAsync() =>
@@ -180,6 +179,7 @@ internal sealed class StartRig : IDisposable
     internal Task LatestStartedAsync(int count) =>
         UntilAsync(() => Starts.Count >= count, "the stand-in server to start");
 
+    /// <summary>The process ids of the stand-ins this rig has started that are still running.</summary>
     internal IReadOnlyList<int> Running() => [.. Starts.Select(start => start.Pid).Where(IsRunning)];
 
     private static bool CanConnect(int port)
@@ -258,6 +258,9 @@ internal sealed class StartRig : IDisposable
             return string.Empty;
         }
     }
+
+    /// <summary>A port nothing is listening on, other than the one the host uses.</summary>
+    internal static int AnotherPort() => FreePort();
 
     private static int FreePort()
     {

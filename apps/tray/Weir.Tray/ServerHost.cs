@@ -30,6 +30,7 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
     // them act on the process at once.
     private readonly SemaphoreSlim _gate = new(1, 1);
 
+    private readonly object _processGate = new();
     private volatile Process? _process;
     private volatile int _port;
     private volatile ListenScope _scope;
@@ -210,15 +211,41 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
 
     private async Task StopProcessAsync()
     {
-        var process = _process;
+        var process = TakeProcess();
         if (process is null)
         {
             return;
         }
-        _process = null;
+
         using (process)
         {
             await ServerProcessStop.StopAsync(process).ConfigureAwait(false);
+        }
+    }
+
+    // Takes the server process out of _process, so that whoever has it is the one to stop and dispose it: the process of the attempt
+    // under way (`only`), or whichever is there. False/null when it is already gone or someone else has it.
+    private Process? TakeProcess()
+    {
+        lock (_processGate)
+        {
+            var process = _process;
+            _process = null;
+            return process;
+        }
+    }
+
+    private bool TakeProcess(Process only)
+    {
+        lock (_processGate)
+        {
+            if (!ReferenceEquals(_process, only))
+            {
+                return false;
+            }
+
+            _process = null;
+            return true;
         }
     }
 

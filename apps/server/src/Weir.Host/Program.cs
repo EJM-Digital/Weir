@@ -21,7 +21,7 @@ if (args.Length > 0 && string.Equals(args[0], "recover", StringComparison.Ordina
     }
     catch (WeirConfigurationException exception)
     {
-        return CannotStart(exception.Message);
+        return StartRefusal.Report(exception, WeirServer.CurrentRuntime(), NonBlockingConsole.ForStandardError(), leaveNote: false);
     }
 }
 
@@ -51,18 +51,8 @@ try
 catch (Exception exception) when (exception is WeirConfigurationException or DatabaseSchemaMismatchException or PreUpdateBackupException)
 {
     // Operator-facing refusals: print the message, not a stack trace.
-    return CannotStart(exception.Message);
+    return StartRefusal.Report(exception, WeirServer.CurrentRuntime(), NonBlockingConsole.ForStandardError());
 }
 
 await app.RunAsync().ConfigureAwait(false);
 return 0;
-
-// The reason goes to standard error through the same non-blocking path as every other line, and the process exits whether or not
-// anything reads it: a refusal must not turn into a hang because the pipe it is written to is full.
-static int CannotStart(string reason)
-{
-    var error = NonBlockingConsole.ForStandardError();
-    error.WriteLine($"Weir cannot start: {reason}");
-    error.Drain(TimeSpan.FromSeconds(2));
-    return 1;
-}
