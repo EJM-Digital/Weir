@@ -58,6 +58,17 @@ public static class WeirServer
         RuntimeDirectories.Ensure(options);
         RuntimeDirectories.AssertSqliteDbLocationUsable(options.DbPath);
 
+        // The log is opened before anything that can block, and says so, so a start that never answers still shows how far it got.
+        var minimumLevel = LogLineFormat.ParseMinimumLevel(options.LogLevel);
+        var logFile = new WeirLogFile(Path.Join(options.LogDir, RuntimePaths.LogFileName), TimeProvider.System);
+        var logAlerts = new LogAlerts();
+        var fileLogs = new WeirLogFileLoggerProvider(logFile, TimeProvider.System, minimumLevel, logAlerts);
+        fileLogs.CreateLogger("Weir.Host.Startup").LogInformation(
+            "Weir {Version} is starting process={ProcessId} home={Home}",
+            WeirVersion.Resolve(options.VersionOverride),
+            Environment.ProcessId,
+            options.WeirHome);
+
         var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions
         {
             // Configuration comes from WEIR_* only; appsettings files and ASPNETCORE_* URLs do not apply.
@@ -85,8 +96,6 @@ public static class WeirServer
             }
         });
 
-        var minimumLevel = LogLineFormat.ParseMinimumLevel(options.LogLevel);
-        var logFile = new WeirLogFile(Path.Join(options.LogDir, RuntimePaths.LogFileName), TimeProvider.System);
         builder.Services.AddSingleton(logFile);
         builder.Logging.ClearProviders();
         builder.Logging.SetMinimumLevel(minimumLevel);
@@ -95,9 +104,8 @@ public static class WeirServer
         builder.Logging.AddFilter("Microsoft.Hosting.Lifetime", minimumLevel);
         builder.Logging.AddConsole(console => console.FormatterName = WeirConsoleFormatter.FormatterName)
             .AddConsoleFormatter<WeirConsoleFormatter, ConsoleFormatterOptions>();
-        var logAlerts = new LogAlerts();
         builder.Services.AddSingleton(logAlerts);
-        builder.Logging.AddProvider(new WeirLogFileLoggerProvider(logFile, TimeProvider.System, minimumLevel, logAlerts));
+        builder.Logging.AddProvider(fileLogs);
         var metrics = new RuntimeMetricsStore(TimeProvider.System);
         builder.Services.AddSingleton(metrics);
         builder.Logging.AddProvider(new MetricsLoggerProvider(metrics, minimumLevel));
@@ -206,6 +214,7 @@ public static class WeirServer
             logger,
             saving: sentence => progress = StartupNotes.BeginProgress(options.WeirHome, sentence, time));
         SchemaStartupOutcome outcome;
+        logger.LogInformation("Opening the database path={Path}", options.DbPath);
         try
         {
             outcome = new SchemaMigrator(database).EnsureAtHead((connection, revision) => backup.Save(connection, revision));

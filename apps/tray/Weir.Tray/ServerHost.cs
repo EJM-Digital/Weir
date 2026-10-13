@@ -46,6 +46,7 @@ sealed class ServerHost : IServerListenScope, IDisposable
     private readonly string _runtimeHome;
     private readonly string _installRoot;
     private readonly HttpClient _http = new() { Timeout = ServerHealth.RequestTimeout };
+    private readonly ServerOutputLog _output;
 
     // Held while the server is started, replaced or stopped, by the watchdog, a port change or a quit, so no two of
     // them act on the process at once.
@@ -79,6 +80,7 @@ sealed class ServerHost : IServerListenScope, IDisposable
         _installRoot = installRoot;
         _port = port;
         _scope = scope;
+        _output = new ServerOutputLog(runtimeHome);
         _nothingAnswersTimeout = nothingAnswersTimeout ?? DefaultNothingAnswersTimeout;
         _startingTimeout = startingTimeout ?? DefaultStartingTimeout;
     }
@@ -434,7 +436,13 @@ sealed class ServerHost : IServerListenScope, IDisposable
             WorkingDirectory = Path.GetDirectoryName(serverExe),
             UseShellExecute = false,
             CreateNoWindow = true,
+            // Kept in server-host.log (ServerOutputLog): a server that stops before its own log exists has nowhere else to say why.
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardOutputEncoding = ServerOutputLog.ServerEncoding(),
+            StandardErrorEncoding = ServerOutputLog.ServerEncoding(),
         }) ?? throw new InvalidOperationException($"Failed to start {ServerExeName}");
+        _output.Attach(process);
 
         Volatile.Write(ref _startedAtTicks, StartTimeUtc(process).Ticks);
         _process = process;
@@ -476,6 +484,11 @@ sealed class ServerHost : IServerListenScope, IDisposable
             // A server that never became ready is not left running behind a tray that says it has stopped. Its process is kept, exited,
             // so the watchdog sees it and starts it again like any other that exited.
             TrayLog.Write($"{ex.Message} Stopping it.");
+            if (process is not null)
+            {
+                TrayLog.Write($"Weir's server (pid {process.Id}) did not answer: {ServerProcessSnapshot.Describe(process)}. What it printed is in {ServerOutputLog.FileName}.");
+            }
+
             if (process is { HasExited: false })
             {
                 await ServerProcessStop.StopAsync(process, ServerStopTimeouts.Orphan).ConfigureAwait(false);
@@ -532,5 +545,6 @@ sealed class ServerHost : IServerListenScope, IDisposable
     {
         _http.Dispose();
         _gate.Dispose();
+        _output.Dispose();
     }
 }

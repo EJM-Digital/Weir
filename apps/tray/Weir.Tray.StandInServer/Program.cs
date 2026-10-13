@@ -7,7 +7,8 @@
 //
 // Started with the "--port N" the tray gives the server, it also answers GET /ready on that port at 127.0.0.1: 503 until
 // WEIR_STANDIN_READY_AFTER_MS milliseconds have passed (200 at once if unset), or never listening at all when that is -1.
-// WEIR_STANDIN_STOP_AFTER_MS is how long it takes to exit once asked to stop.
+// WEIR_STANDIN_STOP_AFTER_MS is how long it takes to exit once asked to stop. WEIR_STANDIN_ERROR_LINE, when set, is written to its
+// standard error after "ready".
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -18,6 +19,7 @@ const string NoStopEvent = "no-stop-event";
 const string PortArgument = "--port";
 const string ReadyAfterVariable = "WEIR_STANDIN_READY_AFTER_MS";
 const string StopAfterVariable = "WEIR_STANDIN_STOP_AFTER_MS";
+const string ErrorLineVariable = "WEIR_STANDIN_ERROR_LINE";
 const string ReadyLine = "ready";
 const int StoppedExitCode = 0;
 const int LifetimeEndedExitCode = 1;
@@ -40,6 +42,11 @@ using var stopEvent = args.Contains(NoStopEvent)
     : new EventWaitHandle(initialState: false, EventResetMode.ManualReset, ServerStopRequest.EventName(Environment.ProcessId));
 Console.Out.WriteLine(ReadyLine);
 Console.Out.Flush();
+if (Environment.GetEnvironmentVariable(ErrorLineVariable) is { Length: > 0 } errorLine)
+{
+    Console.Error.WriteLine(errorLine);
+    Console.Error.Flush();
+}
 
 var portIndex = Array.IndexOf(args, PortArgument);
 if (portIndex >= 0 && portIndex + 1 < args.Length && int.TryParse(args[portIndex + 1], out var port) && ReadyAfter() is { } readyAfter)

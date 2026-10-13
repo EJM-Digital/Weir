@@ -71,6 +71,7 @@ on every install. The [Quickstart](../docs-site/docs/quickstart.md#3-follow-the-
 | Your data: database, logs, backups, settings | `C:\ProgramData\Weir` |
 | The port you chose | `C:\ProgramData\Weir\port.txt` |
 | The tray log (why Weir did something at start-up) | `C:\ProgramData\Weir\tray-host.log` |
+| What the server printed while it started, and anything it wrote to its error output (the answer when the server never came up) | `C:\ProgramData\Weir\server-host.log` |
 
 The data folder is locked to your Windows account, so other accounts on the PC cannot read it.
 
