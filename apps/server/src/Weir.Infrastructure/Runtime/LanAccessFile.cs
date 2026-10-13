@@ -26,24 +26,18 @@ public sealed class LanAccessFile
 
     /// <summary>
     /// The saved choice, or null when none has been saved. Text the tray would not understand reads as this PC only,
-    /// as it does there: opening Weir to the network is never a guess.
+    /// as it does there: opening Weir to the network is never a guess. The tray replaces the file by renaming a new one over it, so a
+    /// file that is refused or not there is looked at again (<see cref="ReplacedFile"/>) before it is called unreadable or unsaved.
     /// </summary>
     public NetworkScope? Read()
     {
-        var path = Path.Join(_home, FileName);
-        try
+        var reading = ReplacedFile.ReadText(Path.Join(_home, FileName));
+        return reading.State switch
         {
-            if (!File.Exists(path))
-            {
-                return null;
-            }
-
-            return File.ReadAllText(path).Trim() == NetworkText ? NetworkScope.Network : NetworkScope.ThisPcOnly;
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            return NetworkScope.ThisPcOnly;
-        }
+            ReplacedFileState.Absent => null,
+            ReplacedFileState.Busy => NetworkScope.ThisPcOnly,
+            _ => reading.Text.Trim() == NetworkText ? NetworkScope.Network : NetworkScope.ThisPcOnly,
+        };
     }
 
     /// <summary>Saves <paramref name="scope"/>. Writing the same choice again still touches the file, which the tray takes as a request to ask for the firewall rule again.</summary>

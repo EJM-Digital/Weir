@@ -366,4 +366,49 @@ public sealed class LanAccessSyncTests : IDisposable
         Assert.Equal(1, _firewall.Asked);
         Assert.Equal(ListenScope.ThisPcOnly, Saved());
     }
+
+    // -- A choice that is being replaced ------------------------------------
+
+    [Fact]
+    public async Task A_saved_choice_that_cannot_be_read_just_now_is_waited_for_not_taken_for_a_choice()
+    {
+        var server = new FakeServer(ListenScope.OtherDevices);
+        _firewall.Allows = true;
+        using var sync = SyncFor(server);
+        SaveFromAnotherProcess(ListenScope.ThisPcOnly);
+
+        // Another process is renaming a new file over the choice: Windows refuses the open meanwhile.
+        using (new FileStream(Path.Combine(Home, LanAccessSetting.FileName), FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            await sync.CheckAsync(Watch(), CancellationToken.None);
+
+            Assert.Empty(server.Moves);
+            Assert.Empty(_applied);
+            Assert.Equal(ListenScope.OtherDevices, server.Scope);
+        }
+
+        await sync.CheckAsync(Watch(), CancellationToken.None);
+
+        Assert.Equal([ListenScope.ThisPcOnly], server.Moves);
+        Assert.Equal(ListenScope.ThisPcOnly, server.Scope);
+    }
+
+    [Fact]
+    public async Task A_choice_that_was_busy_is_not_a_new_save_when_it_is_read_again()
+    {
+        var server = new FakeServer(ListenScope.ThisPcOnly);
+        using var sync = SyncFor(server);
+        SaveFromAnotherProcess(ListenScope.OtherDevices);
+        await sync.CheckAsync(Watch(), CancellationToken.None);
+        var asked = _firewall.Asked;
+
+        using (new FileStream(Path.Combine(Home, LanAccessSetting.FileName), FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            await sync.CheckAsync(Watch(), CancellationToken.None);
+        }
+
+        await sync.CheckAsync(Watch(), CancellationToken.None);
+
+        Assert.Equal(asked, _firewall.Asked);
+    }
 }

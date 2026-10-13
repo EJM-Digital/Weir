@@ -197,21 +197,24 @@ static class Program
                 return 0;
             }
 
-            var port = ResolvePort(args, runtimeHome);
-            if (port is null)
+            var resolution = ResolvePort(args, runtimeHome);
+            if (resolution.Port is null && !resolution.Busy)
             {
                 return 1;
             }
             var listenScope = LanAccessStartup.Resolve(runtimeHome, InstallProcesses.Root(), () => new ComFirewallPolicy(), TrayLog.Write);
             FirewallRuleWidening.AskInBackground(runtimeHome, listenScope, HasInteractiveDesktop(args, PortChoice.HasInteractiveDesktop));
 
+            // A port.txt that is busy leaves the port unknown: the server host looks again with the same back-off as any start, and gives
+            // up the same way (the balloon, the red icon, Restart Weir; or exit 1 with nobody at the desktop).
             using var app = new TrayApp(
-                port.Value,
+                resolution.Port ?? 0,
                 listenScope,
                 new TrayStart(AnnouncesStart(args), HasInteractiveDesktop(args, PortChoice.HasInteractiveDesktop)),
                 updateService,
                 updateSettings,
-                secondLaunch);
+                secondLaunch,
+                resolution.Busy ? () => ResolvePort(args, runtimeHome) : null);
             return app.Run();
         }
         catch (Exception ex)
@@ -276,10 +279,19 @@ static class Program
     /// earlier run, else chosen now — by the person if there is one, by the default if not.
     /// Null means do not start; the reason is in tray-host.log.
     /// </summary>
-    private static int? ResolvePort(string[] args, string runtimeHome)
+    private static PortChoice.Resolution ResolvePort(string[] args, string runtimeHome)
     {
         var supplied = PortChoice.SuppliedPort(args, Environment.GetEnvironmentVariable);
-        var saved = PortChoice.LoadSaved(runtimeHome);
+        var savedPort = PortChoice.LoadSaved(runtimeHome);
+        if (savedPort.Busy)
+        {
+            // Not knowing the saved port is not the same as there being none: going on would ask the first-run question again, or save
+            // another port over the person's. Nothing is decided, asked or saved; the start looks again.
+            TrayLog.Write($"Port: {PortChoice.SavedPortFileName} could not be read just now (it was being replaced or scanned), so no port is decided, asked for or saved.");
+            return new PortChoice.Resolution(null, Busy: true);
+        }
+
+        var saved = savedPort.Port;
         var interactive = HasInteractiveDesktop(args, PortChoice.HasInteractiveDesktop);
 
         // A server left behind by a tray that crashed still holds our port, and would make
@@ -300,7 +312,7 @@ static class Program
             PortChoice.Save(runtimeHome, port);
             TrayLog.Write($"Saved port {port} to {Path.Combine(runtimeHome, PortChoice.SavedPortFileName)}.");
         }
-        return decision.Port;
+        return new PortChoice.Resolution(decision.Port, Busy: false);
     }
 
     // Weir is not running while this waits, so the icon is up, blinking, and a click on it brings the window forward.

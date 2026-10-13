@@ -133,4 +133,20 @@ public sealed class IdleInstallTests : IDisposable
         serverSays(_home.Path, _clock.GetUtcNow() + Step);
         _clock.Advance(Step);
     }
+
+    [Fact]
+    public void An_answer_that_cannot_be_read_just_now_neither_counts_as_quiet_nor_starts_the_period_again()
+    {
+        Assert.False(PollAfter(TimeSpan.Zero, ServerSays.Idle));
+        Assert.False(PollAfter(IdleInstall.IdlePeriod - Step, ServerSays.Idle));
+
+        // The server is renaming a new answer over the old one: Windows refuses the open for as long as this lasts.
+        _clock.Advance(Step);
+        using (new FileStream(Path.Combine(_home.Path, WorkStateFile.FileName), FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.False(_install.Poll());
+        }
+
+        Assert.True(PollAfter(TimeSpan.Zero, ServerSays.Idle));
+    }
 }

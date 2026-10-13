@@ -44,6 +44,9 @@ public sealed class TrayUpdateBackupWatcher : BackgroundService
     /// <summary>How long a request that cannot be read yet is given to be finished before it is read once more.</summary>
     public static readonly TimeSpan HalfWrittenWait = TimeSpan.FromMilliseconds(500);
 
+    /// <summary>How long a request that was refused for a moment waits before it is looked at again; the tray waits 15 s for the first answer.</summary>
+    public static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(1);
+
     private static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 
     private readonly WeirOptions _options;
@@ -128,7 +131,12 @@ public sealed class TrayUpdateBackupWatcher : BackgroundService
                 await Task.Delay(TrayHandOffWatcher.Settle, stoppingToken).ConfigureAwait(false);
                 try
                 {
-                    await AnswerAsync(stoppingToken).ConfigureAwait(false);
+                    if (!await AnswerAsync(stoppingToken).ConfigureAwait(false))
+                    {
+                        // The request was refused for a moment (the tray, or a virus scanner, had it): look again rather than leave the tray unanswered.
+                        await Task.Delay(RetryAfter, stoppingToken).ConfigureAwait(false);
+                        _written.Writer.TryWrite(true);
+                    }
                 }
 #pragma warning disable CA1031 // Nothing a request does may stop the server; it is logged, and the tray's wait ends without an answer.
                 catch (Exception exception) when (exception is not OperationCanceledException)
@@ -168,25 +176,29 @@ public sealed class TrayUpdateBackupWatcher : BackgroundService
 
     private sealed record Request(string Id, DateTimeOffset RequestedAt, string TargetVersion);
 
-    private async Task AnswerAsync(CancellationToken stoppingToken)
+    /// <summary>Answers the request in the file. False when the file was refused and is to be looked at again.</summary>
+    private async Task<bool> AnswerAsync(CancellationToken stoppingToken)
     {
         var path = Path.Join(_options.WeirHome, RequestFileName);
-        if (await ReadAsync(path, stoppingToken).ConfigureAwait(false) is not { } text)
+        var reading = ReplacedFile.ReadText(path);
+        if (reading.State != ReplacedFileState.Read)
         {
-            return;
+            return Settled(reading.State);
         }
 
+        var text = reading.Text;
         var request = Parse(text);
         if (request is null)
         {
             // The tray may still be writing it.
             await Task.Delay(HalfWrittenWait, stoppingToken).ConfigureAwait(false);
-            if (await ReadAsync(path, stoppingToken).ConfigureAwait(false) is not { } again)
+            var again = ReplacedFile.ReadText(path);
+            if (again.State != ReplacedFileState.Read)
             {
-                return;
+                return Settled(again.State);
             }
 
-            text = again;
+            text = again.Text;
             request = Parse(text);
         }
 
@@ -208,7 +220,8 @@ public sealed class TrayUpdateBackupWatcher : BackgroundService
             await SaveAndReportAsync(request, stoppingToken).ConfigureAwait(false);
         }
 
-        await DeleteIfUnchangedAsync(path, text, stoppingToken).ConfigureAwait(false);
+        DeleteIfUnchanged(path, text);
+        return true;
     }
 
     private async Task SaveAndReportAsync(Request request, CancellationToken stoppingToken)
@@ -300,25 +313,25 @@ public sealed class TrayUpdateBackupWatcher : BackgroundService
     private static string? Text(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
-    /// <summary>The file's text, or null when there is no file.</summary>
-    private static async Task<string?> ReadAsync(string path, CancellationToken stoppingToken)
+    /// <summary>Removes the answered file, unless the tray has written another request into it since it was read: that one is heard on its own.</summary>
+    // No file is nothing to answer; a file that is refused for a moment is looked at again.
+    private bool Settled(ReplacedFileState state)
     {
-        try
+        if (state == ReplacedFileState.Busy)
         {
-            return await File.ReadAllTextAsync(path, Encoding.UTF8, stoppingToken).ConfigureAwait(false);
+            _logger.LogDebug("The tray's update backup request is refused for a moment; looking again shortly.");
         }
-        catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException)
-        {
-            return null;
-        }
+
+        return state != ReplacedFileState.Busy;
     }
 
-    /// <summary>Removes the answered file, unless the tray has written another request into it since it was read: that one is heard on its own.</summary>
-    private async Task DeleteIfUnchangedAsync(string path, string answered, CancellationToken stoppingToken)
+    private void DeleteIfUnchanged(string path, string answered)
     {
         try
         {
-            if (await ReadAsync(path, stoppingToken).ConfigureAwait(false) == answered)
+            // A file that is refused just now is not known to be unchanged, so it is left; it was answered, and finding it again changes nothing.
+            var now = ReplacedFile.ReadText(path);
+            if (now.State == ReplacedFileState.Read && now.Text == answered)
             {
                 File.Delete(path);
             }

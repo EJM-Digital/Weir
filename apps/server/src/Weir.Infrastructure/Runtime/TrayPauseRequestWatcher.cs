@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 using System.Threading.Channels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -124,8 +123,7 @@ public sealed class TrayPauseRequestWatcher : BackgroundService
     {
         try
         {
-            await AnswerAsync(stoppingToken).ConfigureAwait(false);
-            return true;
+            return await AnswerAsync(stoppingToken).ConfigureAwait(false);
         }
 #pragma warning disable CA1031 // Nothing a request does may stop the server; it is logged and tried again.
         catch (Exception exception) when (exception is not OperationCanceledException)
@@ -136,26 +134,30 @@ public sealed class TrayPauseRequestWatcher : BackgroundService
         }
     }
 
-    private async Task AnswerAsync(CancellationToken stoppingToken)
+    /// <summary>Answers the request in the file. False when the file was refused (the tray is renaming one into place) and is to be looked at again.</summary>
+    private async Task<bool> AnswerAsync(CancellationToken stoppingToken)
     {
         var path = Path.Join(_options.WeirHome, FileName);
-        if (await ReadAsync(path, stoppingToken).ConfigureAwait(false) is not { } text)
+        var reading = ReplacedFile.ReadText(path);
+        if (reading.State != ReplacedFileState.Read)
         {
-            return;
+            return Settled(reading.State);
         }
 
+        var text = reading.Text;
         var request = Parse(text);
         if (request is null)
         {
             // The tray may still be writing it.
             _logger.LogDebug("The tray's pause request cannot be read yet; looking again shortly.");
             await Task.Delay(HalfWrittenWait, stoppingToken).ConfigureAwait(false);
-            if (await ReadAsync(path, stoppingToken).ConfigureAwait(false) is not { } again)
+            var again = ReplacedFile.ReadText(path);
+            if (again.State != ReplacedFileState.Read)
             {
-                return;
+                return Settled(again.State);
             }
 
-            text = again;
+            text = again.Text;
             request = Parse(text);
         }
 
@@ -177,20 +179,8 @@ public sealed class TrayPauseRequestWatcher : BackgroundService
             _lastApplied = request.RequestedAt;
         }
 
-        await DeleteIfUnchangedAsync(path, text, stoppingToken).ConfigureAwait(false);
-    }
-
-    /// <summary>The file's text, or null when there is no file.</summary>
-    private static async Task<string?> ReadAsync(string path, CancellationToken stoppingToken)
-    {
-        try
-        {
-            return await File.ReadAllTextAsync(path, Encoding.UTF8, stoppingToken).ConfigureAwait(false);
-        }
-        catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException)
-        {
-            return null;
-        }
+        DeleteIfUnchanged(path, text);
+        return true;
     }
 
     private sealed record PauseRequest(bool Paused, DateTimeOffset RequestedAt);
@@ -226,11 +216,24 @@ public sealed class TrayPauseRequestWatcher : BackgroundService
     }
 
     /// <summary>Removes the answered file, unless the tray has written another request into it since it was read: that one is heard on its own.</summary>
-    private async Task DeleteIfUnchangedAsync(string path, string answered, CancellationToken stoppingToken)
+    // No file is nothing to answer; a file that is refused for a moment is looked at again.
+    private bool Settled(ReplacedFileState state)
+    {
+        if (state == ReplacedFileState.Busy)
+        {
+            _logger.LogDebug("The tray's pause request is refused for a moment; looking again shortly.");
+        }
+
+        return state != ReplacedFileState.Busy;
+    }
+
+    private void DeleteIfUnchanged(string path, string answered)
     {
         try
         {
-            if (await ReadAsync(path, stoppingToken).ConfigureAwait(false) == answered)
+            // A file that is refused just now is not known to be unchanged, so it is left; it was answered, and finding it again changes nothing.
+            var now = ReplacedFile.ReadText(path);
+            if (now.State == ReplacedFileState.Read && now.Text == answered)
             {
                 File.Delete(path);
             }

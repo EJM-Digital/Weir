@@ -178,4 +178,20 @@ public sealed class TrayUpdateBackupWatcherTests : IDisposable
         command.CommandText = sql;
         return (string?)await command.ExecuteScalarAsync();
     }
+
+    [Fact]
+    public async Task A_request_that_is_refused_for_a_moment_is_looked_at_again_and_not_left_unanswered()
+    {
+        await File.WriteAllTextAsync(RequestPath, Request());
+        var held = new FileStream(RequestPath, FileMode.Open, FileAccess.Read, FileShare.None);
+        await _watcher.StartAsync(CancellationToken.None);
+
+        await Eventually.ThatAsync(() => _log.Logged(Microsoft.Extensions.Logging.LogLevel.Debug, "refused for a moment"));
+        Assert.True(File.Exists(RequestPath));
+
+        held.Dispose();
+        var result = await FinalResultAsync();
+
+        Assert.Equal(Id, (string?)result["id"]);
+    }
 }

@@ -23,20 +23,31 @@ static class WorkStateFile
     /// <summary>
     /// What the server said, judged at <paramref name="now"/>. Anything short of a fresh, readable answer is
     /// <see cref="ServerWork.Unknown"/>, never <see cref="ServerWork.Idle"/>: a missing answer must not let an install
-    /// through.
+    /// through. The server replaces the file every few seconds by renaming a new one over it, so a refused open or a missing name is
+    /// looked at again first; a file that stays refused is <see cref="ServerWork.NotRead"/>, which says nothing and so does not
+    /// start the wait for quiet over.
     /// </summary>
     internal static ServerWork Read(string runtimeHome, DateTimeOffset now)
     {
+        var reading = ReplacedFile.ReadText(Path.Combine(runtimeHome, FileName));
+        switch (reading.State)
+        {
+            case ReplacedFileState.Absent:
+                return ServerWork.Unknown;
+            case ReplacedFileState.Busy:
+                return ServerWork.NotRead;
+        }
+
         try
         {
-            var answer = JsonSerializer.Deserialize<Answer>(File.ReadAllText(Path.Combine(runtimeHome, FileName)), Json);
+            var answer = JsonSerializer.Deserialize<Answer>(reading.Text, Json);
             if (answer is not { Busy: { } busy, CheckedAt: { } checkedAt } || (now - checkedAt).Duration() > MaxAge)
             {
                 return ServerWork.Unknown;
             }
             return busy ? ServerWork.Busy : ServerWork.Idle;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        catch (JsonException)
         {
             return ServerWork.Unknown;
         }

@@ -72,10 +72,16 @@ sealed class LanAccessSync(string runtimeHome, IServerListenScope server, IFirew
         await _changing.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var savedAt = LanAccessSetting.SavedAt(runtimeHome);
-            var isNewSave = savedAt != _handledSavedAt;
-            _handledSavedAt = savedAt;
-            if (LanAccessSetting.Read(runtimeHome, log: _ => { }) is not { } scope)
+            // A file that is being replaced says nothing: not a choice, not a change, and not a reason to put the server back.
+            var saved = LanAccessSetting.Look(runtimeHome, log: _ => { });
+            if (saved.Busy)
+            {
+                return;
+            }
+
+            var isNewSave = saved.SavedAt != _handledSavedAt;
+            _handledSavedAt = saved.SavedAt;
+            if (saved.Scope is not { } scope)
             {
                 return;
             }

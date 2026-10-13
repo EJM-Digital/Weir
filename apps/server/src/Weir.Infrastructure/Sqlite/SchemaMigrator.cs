@@ -156,7 +156,10 @@ public sealed class SchemaMigrator
     /// Called with the open connection and the recorded revision once a database is known to need migrating, before any
     /// migration runs. When it throws, the migrations are not run and the database is left as it was.
     /// </param>
-    public SchemaStartupOutcome EnsureAtHead(Action<SqliteConnection, string>? beforeUpgrade = null)
+    /// <param name="migrating">Told, before each migration runs, which one it is (from 1) and how many there are, so start-up can say how far it has got.</param>
+    /// <param name="working">Called from SQLite while a statement runs (<see cref="SqliteWorkProgress"/>): the proof that a slow step is still going.</param>
+    public SchemaStartupOutcome EnsureAtHead(
+        Action<SqliteConnection, string>? beforeUpgrade = null, Action<int, int>? migrating = null, Action? working = null)
     {
         // Only a missing file is a new install. A file that exists but holds no schema was made by
         // something else (or by a start that failed half-way), so it is refused as unversioned without
@@ -168,6 +171,7 @@ public sealed class SchemaMigrator
         }
 
         using var connection = _database.Open();
+        using var reporting = working is null ? null : SqliteWorkProgress.Report(connection, working);
         var userObjects = ScalarLong(connection, "SELECT COUNT(*) FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'");
         if (userObjects == 0)
         {
@@ -176,7 +180,7 @@ public sealed class SchemaMigrator
                 throw UnversionedError();
             }
 
-            ApplyAll(connection);
+            ApplyAll(connection, migrating);
             return SchemaStartupOutcome.Created;
         }
 
@@ -190,7 +194,7 @@ public sealed class SchemaMigrator
         if (currentIndex >= 0)
         {
             beforeUpgrade?.Invoke(connection, current!);
-            ApplyRange(connection, Migrations.Skip(currentIndex + 1), HeadRevision);
+            ApplyRange(connection, Migrations.Skip(currentIndex + 1), HeadRevision, migrating);
             return SchemaStartupOutcome.Upgraded;
         }
 
@@ -222,7 +226,8 @@ public sealed class SchemaMigrator
         return SchemaStartupOutcome.Created;
     }
 
-    private static void ApplyAll(SqliteConnection connection) => ApplyRange(connection, Migrations.OrderBy(m => m.Number), HeadRevision);
+    private static void ApplyAll(SqliteConnection connection, Action<int, int>? migrating) =>
+        ApplyRange(connection, Migrations.OrderBy(m => m.Number), HeadRevision, migrating);
 
     /// <summary>
     /// Runs <paramref name="migrations"/> in one transaction and records <paramref name="revision"/>.
@@ -239,12 +244,13 @@ public sealed class SchemaMigrator
     /// that genuinely left the database inconsistent.
     /// </para>
     /// </summary>
-    private static void ApplyRange(SqliteConnection connection, IEnumerable<SchemaMigration> migrations, string revision)
+    private static void ApplyRange(
+        SqliteConnection connection, IEnumerable<SchemaMigration> migrations, string revision, Action<int, int>? migrating = null)
     {
         Pragma(connection, "PRAGMA foreign_keys=off");
         try
         {
-            ApplyRangeCore(connection, migrations, revision);
+            ApplyRangeCore(connection, migrations, revision, migrating);
         }
         finally
         {
@@ -259,12 +265,16 @@ public sealed class SchemaMigrator
         command.ExecuteNonQuery();
     }
 
-    private static void ApplyRangeCore(SqliteConnection connection, IEnumerable<SchemaMigration> migrations, string revision)
+    private static void ApplyRangeCore(
+        SqliteConnection connection, IEnumerable<SchemaMigration> migrations, string revision, Action<int, int>? migrating)
     {
+        var steps = migrations.ToList();
         using var transaction = connection.BeginTransaction();
 
-        foreach (var migration in migrations)
+        for (var step = 0; step < steps.Count; step++)
         {
+            migrating?.Invoke(step + 1, steps.Count);
+            var migration = steps[step];
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = ReadMigrationSql(migration);

@@ -139,4 +139,60 @@ public sealed class UpdateFilesTests : IDisposable
 
         Assert.Equal((step, false, "9.9.9"), Read());
     }
+
+    [Fact]
+    public void A_heartbeat_that_is_refused_for_a_moment_is_the_last_one_seen_and_keeps_ageing()
+    {
+        Beat(TimeSpan.Zero);
+        var files = Files();
+        Assert.True(files.TrayIsRunning());
+
+        // The tray is renaming a new heartbeat over the old one: Windows refuses the open meanwhile.
+        using (new FileStream(Path.Join(Home, UpdateFiles.TrayHeartbeatFileName), FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.True(files.TrayIsRunning());
+
+            _store.Clock.Advance(UpdateFiles.TrayHeartbeatMaxAge + TimeSpan.FromSeconds(1));
+            Assert.False(files.TrayIsRunning());
+        }
+    }
+
+    [Fact]
+    public void A_heartbeat_that_is_refused_before_any_was_seen_is_no_tray_yet()
+    {
+        Beat(TimeSpan.Zero);
+
+        using (new FileStream(Path.Join(Home, UpdateFiles.TrayHeartbeatFileName), FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.False(Files().TrayIsRunning());
+        }
+
+        Assert.True(Files().TrayIsRunning());
+    }
+
+    [Fact]
+    public void A_state_file_that_is_refused_for_a_moment_keeps_a_downloaded_update_downloaded()
+    {
+        TrayWrites("{\"state\": \"downloaded\", \"downloaded\": true, \"version\": \"9.9.9\"}");
+        var files = Files();
+        Assert.True(files.HasDownloadedUpdate());
+
+        using (new FileStream(Path.Join(Home, UpdateFiles.StateFileName), FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.True(files.HasDownloadedUpdate());
+            Assert.Equal("9.9.9", ((WireString)files.ReadState()["pending_version"]).Value);
+        }
+    }
+
+    [Fact]
+    public void A_state_file_that_is_not_there_is_the_default_state_even_after_one_was_read()
+    {
+        TrayWrites("{\"state\": \"downloaded\", \"downloaded\": true, \"version\": \"9.9.9\"}");
+        var files = Files();
+        Assert.True(files.HasDownloadedUpdate());
+
+        File.Delete(Path.Join(Home, UpdateFiles.StateFileName));
+
+        Assert.False(files.HasDownloadedUpdate());
+    }
 }

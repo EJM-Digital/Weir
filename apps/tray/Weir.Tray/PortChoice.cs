@@ -212,19 +212,31 @@ static class PortChoice
 
     // -- Persistence ----------------------------------------------------------
 
-    internal static int? LoadSaved(string runtimeHome)
+    /// <summary>What a look at the saved port found.</summary>
+    /// <param name="Busy">The file stayed unreadable (another process was replacing it or scanning it). That says nothing about the port: it is not "never chosen".</param>
+    /// <param name="Port">The saved port, or null when none is saved or the file holds no port.</param>
+    internal readonly record struct SavedPort(bool Busy, int? Port);
+
+    /// <summary>
+    /// The port an earlier run saved. A port.txt that cannot be read (after the looks <see cref="ReplacedFile"/> makes) is reported as busy; it
+    /// is never taken for "no port chosen", because that puts the first-run dialog in front of someone who already answered it and saves
+    /// a different port over theirs. Waiting for it is the supervision's job (ServerHost), not this look's.
+    /// </summary>
+    internal static SavedPort LoadSaved(string runtimeHome, Action<TimeSpan>? pause = null)
     {
-        var path = Path.Combine(runtimeHome, SavedPortFileName);
-        try
+        var reading = ReplacedFile.ReadText(Path.Combine(runtimeHome, SavedPortFileName), pause: pause);
+        return reading.State switch
         {
-            return File.Exists(path) ? ParsePort(File.ReadAllText(path)) : null;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            TrayLog.Write($"{SavedPortFileName} could not be read ({ex.Message}); treating the port as not yet chosen.");
-            return null;
-        }
+            ReplacedFileState.Absent => new SavedPort(false, null),
+            ReplacedFileState.Read => new SavedPort(false, ParsePort(reading.Text)),
+            _ => new SavedPort(true, null),
+        };
     }
+
+    /// <summary>What deciding the port came to.</summary>
+    /// <param name="Port">The port to run on, or null when there is none to run on.</param>
+    /// <param name="Busy">The saved port could not be read, so nothing was decided, asked or saved. The start waits and tries again.</param>
+    internal readonly record struct Resolution(int? Port, bool Busy);
 
     // Written whole (AtomicFile): a torn write would read as "never chosen" and put the first-run dialog in
     // front of someone who already answered it.

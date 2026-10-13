@@ -46,4 +46,17 @@ public sealed class UpdateNotAppliedTests : IDisposable
             "{\"downloaded\":false,\"pending_version\":null,\"state\":\"idle\",\"failure\":null,\"tray_running\":false}",
             WireJsonWriter.Dumps(state, WireJsonFormat.Response));
     }
+
+    [Fact]
+    public void A_reason_that_is_refused_for_a_moment_is_still_said()
+    {
+        File.WriteAllText(Path_(UpdateFiles.NotAppliedFileName), "{\"version\": \"9.9.9\", \"reason\": \"The drive is full.\"}");
+        var files = new UpdateFiles(_store.Options);
+        Assert.Equal("The drive is full.", ((WireString)files.ReadState()["not_updated_reason"]).Value);
+
+        using (new FileStream(Path_(UpdateFiles.NotAppliedFileName), FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.Equal("The drive is full.", ((WireString)files.ReadState()["not_updated_reason"]).Value);
+        }
+    }
 }

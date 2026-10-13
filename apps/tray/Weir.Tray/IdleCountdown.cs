@@ -12,6 +12,11 @@ sealed class IdleCountdown(TimeSpan period)
     /// <summary>Takes the server's latest answer, given at <paramref name="now"/>. True once it has been idle for the whole period.</summary>
     internal bool Observe(ServerWork work, DateTimeOffset now)
     {
+        if (work == ServerWork.NotRead)
+        {
+            // The answer was being replaced. It is neither quiet nor busy, so the count stays where it is and the next look decides.
+            return false;
+        }
         if (work != ServerWork.Idle)
         {
             _idleSince = null;

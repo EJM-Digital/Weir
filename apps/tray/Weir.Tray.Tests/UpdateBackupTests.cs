@@ -593,4 +593,44 @@ public sealed class UpdateBackupTests : IDisposable
     {
         public Task<bool> SaveBeforeApplyAsync(string? targetVersion) => throw new InvalidOperationException("raw text");
     }
+
+    [Fact(Timeout = 10_000)]
+    public async Task A_ready_marker_that_cannot_be_read_just_now_is_not_a_server_without_one()
+    {
+        ServerIsReady(_server!.Value.ProcessId, _server.Value.StartedUtc);
+        using var held = new FileStream(ReadyPath, FileMode.Open, FileAccess.Read, FileShare.None);
+
+        var answer = await Request().AskAsync(Target, CancellationToken.None);
+
+        Assert.Equal(UpdateBackupOutcome.Failed, answer.Outcome);
+        Assert.False(File.Exists(RequestPath));
+    }
+
+    [Fact]
+    public void A_failed_copy_marker_that_cannot_be_read_just_now_leaves_the_update_waiting()
+    {
+        File.WriteAllText(Path.Combine(_home.Path, "update-backup-failed"), "2.0.0");
+        using var held = new FileStream(Path.Combine(_home.Path, "update-backup-failed"), FileMode.Open, FileAccess.Read, FileShare.None);
+
+        Assert.True(UpdateBackupHook.FailedFor(_home.Path, "3.0.0"));
+    }
+
+    [Fact]
+    public void A_failed_copy_marker_that_is_not_there_does_not()
+    {
+        Assert.False(UpdateBackupHook.FailedFor(_home.Path, "3.0.0"));
+    }
+
+    [Fact]
+    public void A_held_back_reason_that_cannot_be_read_just_now_is_neither_shown_as_missing_nor_removed()
+    {
+        var notApplied = Path.Combine(_home.Path, "update-not-applied.json");
+        File.WriteAllText(notApplied, "{\"version\":\"2.0.0\",\"reason\":\"No room.\"}");
+        using (new FileStream(notApplied, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.Null(UpdateBackupHook.PendingReason(_home.Path, "1.0.0"));
+        }
+
+        Assert.Equal("No room.", UpdateBackupHook.PendingReason(_home.Path, "1.0.0"));
+    }
 }

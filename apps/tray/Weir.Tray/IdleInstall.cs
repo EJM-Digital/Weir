@@ -42,7 +42,7 @@ sealed class IdleInstall(string runtimeHome, TimeProvider clock)
     // Only a change is logged: a wait of hours would otherwise write a line every few seconds.
     private void LogChange(ServerWork work)
     {
-        if (work == _lastAnswer)
+        if (work == ServerWork.NotRead || work == _lastAnswer)
         {
             return;
         }
