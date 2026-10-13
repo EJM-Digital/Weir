@@ -1,0 +1,33 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.13",
+  "state": "outcome-before-finished-200",
+  "recordedAt": "2026-10-11T01:59:32Z",
+  "note": "The outcome reported for a hand-off still waiting its turn: Weir answers 409 handoff_not_finished.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/0f24ba4d-794e-4f24-9dfb-437fe97f0ff7/outcome",
+        "body": {
+          "outcome": "imported",
+          "occurredUtc": "2026-10-11T01:59:32.6612803Z",
+          "importedPath": "C:\\Downloads\\Completed\\Movies\\Recorded.Weir.Q8.mkv",
+          "reason": null
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "0f24ba4d-794e-4f24-9dfb-437fe97f0ff7",
+          "outcome": "imported",
+          "released": true,
+          "message": "Weir recorded that Deluno imported the file and released its copy."
+        }
+      }
+    }
+  ]
+}

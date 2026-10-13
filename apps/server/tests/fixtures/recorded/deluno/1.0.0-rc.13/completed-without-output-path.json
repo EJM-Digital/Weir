@@ -1,0 +1,31 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.13",
+  "state": "completed-without-output-path",
+  "recordedAt": "2026-10-11T02:02:40Z",
+  "note": "The status of a hand-off that finished with no output path: Weir had already cleaned this file once.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/0b3372c0-0298-41ce-9f47-b3e81ad40ac1"
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "0b3372c0-0298-41ce-9f47-b3e81ad40ac1",
+          "state": "completed",
+          "queuePosition": null,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-10-11T02:02:39Z",
+          "outputPath": null,
+          "outputFiles": null,
+          "message": "Checked this file and found that no changes were needed. The original download was kept in the watched folder for your download client, because this workflow is linked to a media manager."
+        }
+      }
+    }
+  ]
+}

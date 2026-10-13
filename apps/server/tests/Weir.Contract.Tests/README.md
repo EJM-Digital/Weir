@@ -85,3 +85,18 @@ places and a leg can never run zero tests.
 4. Share only stateless helpers. Area-specific helpers (seed rows, settings bodies) stay in the area's folder.
 5. Scenarios that need the real `ffmpeg` and `ffprobe` use `[RealFfmpegFact]`: they run when both are on `PATH` (or
    in `WEIR_CONTRACT_REAL_FFMPEG_DIR`) and are skipped otherwise. CI installs ffmpeg so they run there.
+
+## Recorded replays
+
+`MediaManagers/Recorded/` replays what Deluno recorded of its talk with Weir (`apps/server/tests/fixtures/recorded/deluno/<version>/`, with
+its own README naming where and when it was captured) against a running Weir. A test never builds a Deluno request or a Weir reply:
+
+- `Recording` loads a recording as it is, and fails with how to get one when a state was never recorded.
+- `RecordedWorld` rebuilds the state the recording was made in (a Movies and a TV Shows workflow a fake Deluno manages), and
+  `Translation` maps the recorded paths and ids onto this test's own, changing nothing else.
+- `Replay` sends a recorded request and holds the reply to the recorded one. A mismatch fails with the recording's file and the JSON
+  path of each field that differs. Values that change every time (ids, times, the machine name, the version) are held to their type.
+- A change made on purpose since the recording is never made by editing it: the test pins it as an `ExpectedDifference` with the issue
+  number, and the pin fails once Weir answers what was recorded again.
+
+`RecordedComparisonTests` proves the failures say what they should.
