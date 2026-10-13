@@ -18,6 +18,12 @@ public sealed class LanAccessFileTests : IDisposable
         Assert.Null(Saved().Read());
     }
 
+    [Fact]
+    public void With_nothing_saved_nothing_waits_to_find_that_out()
+    {
+        Assert.Null(new LanAccessFile(_home.Path, _ => throw new InvalidOperationException("Nothing waits for a file that is not there.")).Read());
+    }
+
     [Theory]
     [InlineData(NetworkScope.Network, "on")]
     [InlineData(NetworkScope.ThisPcOnly, "off")]

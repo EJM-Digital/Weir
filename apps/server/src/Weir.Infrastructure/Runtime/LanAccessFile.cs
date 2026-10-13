@@ -16,12 +16,20 @@ public sealed class LanAccessFile
     private const string ThisPcOnlyText = "off";
 
     private readonly string _home;
+    private readonly Action<TimeSpan> _pause;
 
     /// <param name="home">Weir's data folder (<c>WEIR_HOME</c>), where the tray looks for the file.</param>
     public LanAccessFile(string home)
+        : this(home, Thread.Sleep)
+    {
+    }
+
+    // The pause is what waits between two looks at a file that is refused; a test replaces it, to see that nothing waits.
+    internal LanAccessFile(string home, Action<TimeSpan> pause)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(home);
         _home = home;
+        _pause = pause;
     }
 
     /// <summary>
@@ -31,7 +39,7 @@ public sealed class LanAccessFile
     /// </summary>
     public NetworkScope? Read()
     {
-        var reading = ReplacedFile.ReadText(Path.Join(_home, FileName));
+        var reading = ReplacedFile.ReadText(Path.Join(_home, FileName), pause: _pause);
         return reading.State switch
         {
             ReplacedFileState.Absent => null,

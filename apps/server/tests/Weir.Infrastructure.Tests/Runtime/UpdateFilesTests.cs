@@ -18,6 +18,10 @@ public sealed class UpdateFilesTests : IDisposable
 
     private UpdateFiles Files() => new(_store.Options, _store.Clock);
 
+    private static void NothingWaits(TimeSpan _) => throw new InvalidOperationException("A read waited for a file.");
+
+    private UpdateFiles FilesThatNeverWait() => new(_store.Options, _store.Clock, NothingWaits);
+
     private void Beat(TimeSpan ago) =>
         File.WriteAllText(Path.Join(Home, UpdateFiles.TrayHeartbeatFileName), $"{{\"at\": \"{(_store.Clock.GetUtcNow() - ago):O}\"}}");
 
@@ -194,5 +198,44 @@ public sealed class UpdateFilesTests : IDisposable
         File.Delete(Path.Join(Home, UpdateFiles.StateFileName));
 
         Assert.False(files.HasDownloadedUpdate());
+    }
+
+    // The page asks for these on every look, and so do the live stream and a timer. On a machine with few cores a thread that waits
+    // for 20 ms four times per read is a thread the server's other requests are missing, so a read looks once.
+    [Fact]
+    public void The_state_is_read_without_waiting_when_none_of_the_trays_files_are_there()
+    {
+        var state = FilesThatNeverWait().ReadState();
+
+        Assert.False(state["tray_running"].IsTruthy);
+        Assert.Equal("idle", ((WireString)state["state"]).Value);
+    }
+
+    [Fact]
+    public void The_state_is_read_without_waiting_when_the_trays_files_are_all_refused()
+    {
+        Beat(TimeSpan.Zero);
+        TrayWrites("{\"state\": \"downloaded\", \"downloaded\": true, \"version\": \"9.9.9\"}");
+        File.WriteAllText(Path.Join(Home, UpdateFiles.NotAppliedFileName), "{\"version\": \"9.9.9\", \"reason\": \"no copy\"}");
+        var files = FilesThatNeverWait();
+        Assert.Equal("downloaded", ((WireString)files.ReadState()["state"]).Value);
+
+        using var heartbeat = new FileStream(Path.Join(Home, UpdateFiles.TrayHeartbeatFileName), FileMode.Open, FileAccess.Read, FileShare.None);
+        using var state = new FileStream(Path.Join(Home, UpdateFiles.StateFileName), FileMode.Open, FileAccess.Read, FileShare.None);
+        using var notApplied = new FileStream(Path.Join(Home, UpdateFiles.NotAppliedFileName), FileMode.Open, FileAccess.Read, FileShare.None);
+
+        var shown = files.ReadState();
+
+        Assert.True(shown["tray_running"].IsTruthy);
+        Assert.Equal("9.9.9", ((WireString)shown["pending_version"]).Value);
+        Assert.Equal("no copy", ((WireString)shown["not_updated_reason"]).Value);
+    }
+
+    [Fact]
+    public void Settings_that_are_not_there_are_the_shipped_default_without_waiting()
+    {
+        var settings = FilesThatNeverWait().ReadSettings();
+
+        Assert.Equal("Auto", ((WireString)settings["mode"]).Value);
     }
 }

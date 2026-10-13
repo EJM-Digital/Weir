@@ -36,6 +36,7 @@ public sealed class UpdateFiles
 
     private readonly WeirOptions _options;
     private readonly TimeProvider _time;
+    private readonly Action<TimeSpan> _pause;
 
     // The last good reading of each file the tray replaces under us. A file that is refused for a moment (the tray is renaming a new
     // one over it) says nothing, so the last good reading stands in until the next look; only a file that is not there, or that is
@@ -46,9 +47,16 @@ public sealed class UpdateFiles
     private string? _lastNotAppliedReason;
 
     public UpdateFiles(WeirOptions options, TimeProvider? time = null)
+        : this(options, time, Thread.Sleep)
+    {
+    }
+
+    // The pause is what waits between two looks at a file that is refused; a test replaces it, to see that nothing waits.
+    internal UpdateFiles(WeirOptions options, TimeProvider? time, Action<TimeSpan> pause)
     {
         _options = options;
         _time = time ?? TimeProvider.System;
+        _pause = pause;
     }
 
     /// <summary>
@@ -109,7 +117,7 @@ public sealed class UpdateFiles
     {
         try
         {
-            var reading = ReplacedFile.ReadText(Path.Join(_options.WeirHome, fileName), new UTF8Encoding(false, throwOnInvalidBytes: true));
+            var reading = ReplacedFile.ReadText(Path.Join(_options.WeirHome, fileName), new UTF8Encoding(false, throwOnInvalidBytes: true), attempts: 1, pause: _pause);
             return (reading.State, reading.State == ReplacedFileState.Read ? reading.Text : null);
         }
         catch (DecoderFallbackException)
@@ -128,7 +136,7 @@ public sealed class UpdateFiles
         ReplacedFileText reading;
         try
         {
-            reading = ReplacedFile.ReadText(path, new UTF8Encoding(false, throwOnInvalidBytes: true));
+            reading = ReplacedFile.ReadText(path, new UTF8Encoding(false, throwOnInvalidBytes: true), pause: _pause);
         }
         catch (DecoderFallbackException)
         {
@@ -243,7 +251,7 @@ public sealed class UpdateFiles
 
     private string? ReadNotAppliedReason()
     {
-        var reading = ReplacedFile.ReadText(Path.Join(_options.WeirHome, NotAppliedFileName));
+        var reading = ReplacedFile.ReadText(Path.Join(_options.WeirHome, NotAppliedFileName), attempts: 1, pause: _pause);
         lock (_lastGood)
         {
             if (reading.State == ReplacedFileState.Busy)

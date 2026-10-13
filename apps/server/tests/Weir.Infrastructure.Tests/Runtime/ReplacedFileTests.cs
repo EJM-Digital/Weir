@@ -65,43 +65,25 @@ public sealed class ReplacedFileTests : IDisposable
     }
 
     [Fact]
-    public void A_name_that_is_missing_for_an_instant_is_read_when_it_is_back()
+    public void A_name_that_is_not_there_is_absent_at_the_first_look_and_nothing_waits()
     {
-        var looks = 0;
+        // Most of these files are not there most of the time (no update waiting, no request from the tray, nothing saved yet), and
+        // a file is renamed over, never deleted and written again, so a missing name is the answer. Waiting for it would hold a
+        // request thread for every read of a file that is simply not there.
+        var reading = ReplacedFile.ReadText(FilePath, pause: _ => throw new InvalidOperationException("Nothing waits for a file that is not there."));
 
-        var reading = ReplacedFile.ReadText(FilePath, pause: _ =>
-        {
-            looks++;
-            if (looks == 3)
-            {
-                File.WriteAllText(FilePath, "back");
-            }
-        });
-
-        Assert.Equal(ReplacedFileState.Read, reading.State);
-        Assert.Equal("back", reading.Text);
+        Assert.Equal(ReplacedFileState.Absent, reading.State);
     }
 
     [Fact]
-    public void A_name_that_is_missing_on_every_look_is_absent()
+    public void A_caller_with_a_last_good_reading_asks_for_one_look_and_never_waits()
     {
-        var looks = 0;
+        File.WriteAllText(FilePath, "now");
+        using var held = new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None);
 
-        var reading = ReplacedFile.ReadText(FilePath, pause: _ => looks++);
+        var reading = ReplacedFile.ReadText(FilePath, attempts: 1, pause: _ => throw new InvalidOperationException("One look does not wait."));
 
-        Assert.Equal(ReplacedFileState.Absent, reading.State);
-        Assert.Equal(ReplacedFile.Attempts - 1, looks);
-    }
-
-    [Fact]
-    public void A_file_that_is_only_ever_deleted_first_is_not_looked_for_again()
-    {
-        var looks = 0;
-
-        var reading = ReplacedFile.ReadText(FilePath, absentIsFinal: true, pause: _ => looks++);
-
-        Assert.Equal(ReplacedFileState.Absent, reading.State);
-        Assert.Equal(0, looks);
+        Assert.Equal(ReplacedFileState.Busy, reading.State);
     }
 
     [Fact]
