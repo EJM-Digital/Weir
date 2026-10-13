@@ -155,10 +155,26 @@ the tray), which looks again after 20 ms, up to 5 looks, before it says what it 
 * **Read**: the text, and when the file was written.
 * **Absent**: no file on any look. This is the state of a fresh install, and it is the only state that means "nothing saved".
 * **Busy**: refused on every look. This says nothing about the file. A reader never takes it for damaged or absent, and never changes
-  anything because of it: the tray's watcher of the saved LAN choice leaves the server alone, the wait for the server to be idle keeps its
-  place (`ServerWork.NotRead`), and a request for a copy of the data before an update is not sent on as if no copy could be made. Only a
-  reader that must decide now (the update settings, which decide whether to install) falls back to the choice that installs nothing, and says
-  it was busy rather than damaged.
+  anything because of it. What it does instead depends on what it is deciding, and is always the safe side:
 
-`startup-error.txt` is the one file nothing replaces while it exists (the server deletes the last one first), so a missing one is final;
-a busy one is still looked at again. `startup-progress.json` and `tray-status.json` have readers of their own that follow the same rule.
+| File (written by) | Reader | While it is busy |
+| --- | --- | --- |
+| `lan-access` (server, tray) | tray watcher | Leaves the server as it is and looks again at the next tick. The start, which must choose, falls back to this PC only. |
+| `update-settings.json` (server, tray) | tray, Settings page | The tray uses NotifyOnly (installs nothing) and says it was busy; the page reports the same fallback it uses for an unreadable file. |
+| `work-state.json` (server) | tray's wait for idle | `ServerWork.NotRead`: the wait keeps its place. |
+| `update-backup-ready` (server) | tray | The request for a copy is a failed request, so the update is held back, not sent on with no copy. |
+| `update-backup-failed`, `update-not-applied.json` (tray) | tray at start; server for the reason | The start-up install leaves the update waiting; the reason is neither shown missing nor removed. The server keeps the last reason it read. |
+| `update-start-attempt` (tray) | tray at start | Counts as an earlier attempt: no install. |
+| `tray-heartbeat.json` (tray) | server | The last heartbeat read, still ageing: a tray that is refused for a moment has not quit. |
+| `update-state.json` (tray) | server, Settings page | The last state read, so a downloaded update stays downloaded and Apply is not refused. |
+| `pause-request.json`, `update-backup-request.json` (tray) | server watchers | The request is looked at again a moment later (2 s, 1 s) and is never dropped. |
+| `port.txt` (tray) | tray at start | Waited for about two seconds, then Weir does not start now and keeps the port it has: it is never read as "no port chosen", which would ask the first-run question again and save another port. |
+| `startup-error.txt` (server) | tray | Looked at again; a missing file is final, since the server deletes the last one first. |
+| `startup-progress.json`, `tray-status.json`, `update-backup-result.json` (server) | tray | Readers of their own that follow the same rule: no news, nothing changed. |
+
+A reader with no earlier reading to fall back on (the first look after a restart) takes the plainer side of the same rule: a heartbeat
+that cannot be read is no tray yet, a state that cannot be read is the idle state.
+
+Files written once and never renamed over (`firewall-prompt-answered`, `firewall-rule-widening-asked`) cannot be missing or refused
+because of a rename, and `session.secret` and `credentials.secret` are read by the tray alone, at its start, and replaced only when
+unusable; none of these has a reader that needs the rule.

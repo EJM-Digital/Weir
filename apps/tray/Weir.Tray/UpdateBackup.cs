@@ -332,14 +332,16 @@ sealed class UpdateBackupHook(
     /// </summary>
     internal static bool FailedFor(string runtimeHome, string version)
     {
-        try
+        var reading = ReplacedFile.ReadText(Path.Combine(runtimeHome, FailedMarkerFileName));
+        return reading.State switch
         {
-            return File.ReadAllText(Path.Combine(runtimeHome, FailedMarkerFileName)).Trim() == version;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return false;
-        }
+            ReplacedFileState.Read => reading.Text.Trim() == version,
+
+            // A marker that cannot be read just now is not a marker that is not there: this decides whether an install goes ahead
+            // with no server to save the copy, so unknown leaves the update waiting, and the next start looks again.
+            ReplacedFileState.Busy => true,
+            _ => false,
+        };
     }
 
     /// <summary>
@@ -349,9 +351,16 @@ sealed class UpdateBackupHook(
     /// </summary>
     internal static string? PendingReason(string runtimeHome, string runningVersion)
     {
+        // A record that cannot be read just now says nothing: it is neither shown as missing nor removed.
+        var reading = ReplacedFile.ReadText(Path.Combine(runtimeHome, NotAppliedFileName));
+        if (reading.State != ReplacedFileState.Read)
+        {
+            return null;
+        }
+
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(runtimeHome, NotAppliedFileName)));
+            using var document = JsonDocument.Parse(reading.Text);
             var root = document.RootElement;
             var reason = root.ValueKind == JsonValueKind.Object && root.TryGetProperty("reason", out var r) && r.ValueKind == JsonValueKind.String
                 ? r.GetString()
@@ -371,7 +380,7 @@ sealed class UpdateBackupHook(
             }
             return reason;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        catch (JsonException)
         {
             return null;
         }

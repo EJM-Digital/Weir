@@ -212,17 +212,43 @@ static class PortChoice
 
     // -- Persistence ----------------------------------------------------------
 
-    internal static int? LoadSaved(string runtimeHome)
+    /// <summary>What a look at the saved port found.</summary>
+    /// <param name="Busy">The file stayed unreadable (another process was replacing it or scanning it). That says nothing about the port: it is not "never chosen".</param>
+    /// <param name="Port">The saved port, or null when none is saved or the file holds no port.</param>
+    internal readonly record struct SavedPort(bool Busy, int? Port);
+
+    /// <summary>How many times a file that stays unreadable is looked at (each look is several, see <see cref="ReplacedFile"/>), and how far apart.</summary>
+    internal const int BusyLooks = 10;
+
+    internal static readonly TimeSpan BusyLookAgainAfter = TimeSpan.FromMilliseconds(200);
+
+    /// <summary>
+    /// The port an earlier run saved. A port.txt that cannot be read is waited for, about two seconds, and then reported as busy; it is
+    /// never taken for "no port chosen", because that puts the first-run dialog in front of someone who already answered it and saves
+    /// a different port over theirs.
+    /// </summary>
+    internal static SavedPort LoadSaved(string runtimeHome, Action<TimeSpan>? pause = null)
     {
+        pause ??= Thread.Sleep;
         var path = Path.Combine(runtimeHome, SavedPortFileName);
-        try
+        for (var look = 1; ; look++)
         {
-            return File.Exists(path) ? ParsePort(File.ReadAllText(path)) : null;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            TrayLog.Write($"{SavedPortFileName} could not be read ({ex.Message}); treating the port as not yet chosen.");
-            return null;
+            var reading = ReplacedFile.ReadText(path, pause: pause);
+            switch (reading.State)
+            {
+                case ReplacedFileState.Absent:
+                    return new SavedPort(false, null);
+                case ReplacedFileState.Read:
+                    return new SavedPort(false, ParsePort(reading.Text));
+            }
+
+            if (look == BusyLooks)
+            {
+                TrayLog.Write($"{SavedPortFileName} could not be read (it stayed busy); the saved port is not known.");
+                return new SavedPort(true, null);
+            }
+
+            pause(BusyLookAgainAfter);
         }
     }
 

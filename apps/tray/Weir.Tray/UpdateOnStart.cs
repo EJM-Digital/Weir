@@ -71,18 +71,16 @@ static class UpdateOnStart
     // from a first one.
     private static bool WasAttempted(string runtimeHome, string version)
     {
-        try
+        var reading = ReplacedFile.ReadText(Path.Combine(runtimeHome, AttemptFileName));
+        switch (reading.State)
         {
-            return File.ReadAllText(Path.Combine(runtimeHome, AttemptFileName)).Trim() == version;
-        }
-        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
-        {
-            return false;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            TrayLog.Write($"Could not read {AttemptFileName} ({ex.Message}).");
-            return true;
+            case ReplacedFileState.Busy:
+                TrayLog.Write($"Could not read {AttemptFileName} (it stayed busy).");
+                return true;
+            case ReplacedFileState.Absent:
+                return false;
+            default:
+                return reading.Text.Trim() == version;
         }
     }
 

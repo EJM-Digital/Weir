@@ -37,6 +37,14 @@ public sealed class UpdateFiles
     private readonly WeirOptions _options;
     private readonly TimeProvider _time;
 
+    // The last good reading of each file the tray replaces under us. A file that is refused for a moment (the tray is renaming a new
+    // one over it) says nothing, so the last good reading stands in until the next look; only a file that is not there, or that is
+    // damaged, changes it. See ReplacedFile.
+    private readonly Lock _lastGood = new();
+    private DateTimeOffset? _lastBeat;
+    private string? _lastStateText;
+    private string? _lastNotAppliedReason;
+
     public UpdateFiles(WeirOptions options, TimeProvider? time = null)
     {
         _options = options;
@@ -54,17 +62,59 @@ public sealed class UpdateFiles
             return false;
         }
 
+        // A heartbeat that cannot be read just now is the last one seen, ageing as time passes: a tray that is being refused for a
+        // moment is not a tray that has quit.
+        var (state, text) = Look(TrayHeartbeatFileName);
+        DateTimeOffset? beat;
+        if (state == ReplacedFileState.Busy)
+        {
+            lock (_lastGood)
+            {
+                beat = _lastBeat;
+            }
+        }
+        else
+        {
+            beat = text is null ? null : ParseHeartbeat(text);
+            lock (_lastGood)
+            {
+                _lastBeat = beat;
+            }
+        }
+
+        return beat is { } when && _time.GetUtcNow() - when <= TrayHeartbeatMaxAge;
+    }
+
+    private static DateTimeOffset? ParseHeartbeat(string text)
+    {
         try
         {
-            var text = File.ReadAllText(Path.Join(_options.WeirHome, TrayHeartbeatFileName), new UTF8Encoding(false, throwOnInvalidBytes: true));
             return WireJsonParser.Parse(text) is WireObject beat
                 && beat.Get("at") is WireString at
                 && DateTimeOffset.TryParse(at.Value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var when)
-                && _time.GetUtcNow() - when <= TrayHeartbeatMaxAge;
+                    ? when
+                    : null;
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or DecoderFallbackException or WireJsonDecodeException)
+        catch (WireJsonDecodeException)
         {
-            return false;
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Looks at one of the tray's files, looking again when it is refused or missing (<see cref="ReplacedFile"/>). The text is null
+    /// when the file is not there, could not be read, or holds bytes that are not UTF-8.
+    /// </summary>
+    private (ReplacedFileState State, string? Text) Look(string fileName)
+    {
+        try
+        {
+            var reading = ReplacedFile.ReadText(Path.Join(_options.WeirHome, fileName), new UTF8Encoding(false, throwOnInvalidBytes: true));
+            return (reading.State, reading.State == ReplacedFileState.Read ? reading.Text : null);
+        }
+        catch (DecoderFallbackException)
+        {
+            return (ReplacedFileState.Read, null);
         }
     }
 
@@ -173,27 +223,44 @@ public sealed class UpdateFiles
 
     private WireObject ReadStateFile()
     {
-        var path = Path.Join(_options.WeirHome, StateFileName);
-        if (!File.Exists(path))
+        // The tray replaces this file at every step of an update. While it is refused the last good text stands in, so a downloaded
+        // update does not vanish from the page, and Apply is not refused, for as long as the tray holds the file.
+        var (state, text) = Look(StateFileName);
+        lock (_lastGood)
         {
-            return UpdateStatus.ParseUpdateState(null);
+            if (state == ReplacedFileState.Busy)
+            {
+                text = _lastStateText;
+            }
+            else
+            {
+                _lastStateText = text;
+            }
         }
 
-        try
-        {
-            return UpdateStatus.ParseUpdateState(File.ReadAllText(path, new UTF8Encoding(false, throwOnInvalidBytes: true)));
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or DecoderFallbackException)
-        {
-            return UpdateStatus.ParseUpdateState(null);
-        }
+        return UpdateStatus.ParseUpdateState(text);
     }
 
     private string? ReadNotAppliedReason()
     {
+        var reading = ReplacedFile.ReadText(Path.Join(_options.WeirHome, NotAppliedFileName));
+        lock (_lastGood)
+        {
+            if (reading.State == ReplacedFileState.Busy)
+            {
+                return _lastNotAppliedReason;
+            }
+
+            _lastNotAppliedReason = reading.State == ReplacedFileState.Read ? ReasonIn(reading.Text) : null;
+            return _lastNotAppliedReason;
+        }
+    }
+
+    private static string? ReasonIn(string json)
+    {
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(Path.Join(_options.WeirHome, NotAppliedFileName)));
+            using var document = JsonDocument.Parse(json);
             return document.RootElement.ValueKind == JsonValueKind.Object
                 && document.RootElement.TryGetProperty("reason", out var reason)
                 && reason.ValueKind == JsonValueKind.String
@@ -201,7 +268,7 @@ public sealed class UpdateFiles
                     ? text
                     : null;
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
+        catch (JsonException)
         {
             return null;
         }

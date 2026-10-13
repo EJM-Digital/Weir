@@ -208,4 +208,20 @@ public sealed class TrayPauseRequestWatcherTests : IDisposable
         Assert.False((await CurrentAsync()).Paused);
         Assert.Empty(await EntriesAsync());
     }
+
+    [Fact]
+    public async Task A_request_that_is_refused_for_a_moment_is_looked_at_again_and_not_lost()
+    {
+        await File.WriteAllTextAsync(RequestPath, Request(paused: true));
+        var held = new FileStream(RequestPath, FileMode.Open, FileAccess.Read, FileShare.None);
+        await _watcher.StartAsync(CancellationToken.None);
+
+        await Eventually.ThatAsync(() => _log.Logged(LogLevel.Debug, "refused for a moment"));
+        Assert.False((await CurrentAsync()).Paused);
+        Assert.True(File.Exists(RequestPath));
+
+        held.Dispose();
+        await UntilTheRequestIsTakenAwayAsync();
+        Assert.True((await CurrentAsync()).Paused);
+    }
 }

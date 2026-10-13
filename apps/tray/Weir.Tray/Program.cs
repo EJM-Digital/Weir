@@ -279,7 +279,16 @@ static class Program
     private static int? ResolvePort(string[] args, string runtimeHome)
     {
         var supplied = PortChoice.SuppliedPort(args, Environment.GetEnvironmentVariable);
-        var saved = PortChoice.LoadSaved(runtimeHome);
+        var savedPort = PortChoice.LoadSaved(runtimeHome);
+        if (savedPort.Busy)
+        {
+            // Not knowing the saved port is not the same as there being none: going on would ask the first-run question again, or save
+            // another port over the person's. Nothing starts; the next start looks again.
+            TrayLog.Write($"Port: {PortChoice.SavedPortFileName} could not be read, so Weir does not start now and keeps the port it has. Start Weir again in a moment.");
+            return null;
+        }
+
+        var saved = savedPort.Port;
         var interactive = HasInteractiveDesktop(args, PortChoice.HasInteractiveDesktop);
 
         // A server left behind by a tray that crashed still holds our port, and would make

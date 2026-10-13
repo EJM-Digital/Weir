@@ -224,7 +224,7 @@ public sealed class PortChoiceTests : IDisposable
     [Fact]
     public void Nothing_saved_is_null()
     {
-        Assert.Null(PortChoice.LoadSaved(Home));
+        Assert.Equal(new PortChoice.SavedPort(false, null), PortChoice.LoadSaved(Home));
     }
 
     [Fact]
@@ -232,7 +232,7 @@ public sealed class PortChoiceTests : IDisposable
     {
         PortChoice.Save(Home, 9400);
 
-        Assert.Equal(9400, PortChoice.LoadSaved(Home));
+        Assert.Equal(9400, PortChoice.LoadSaved(Home).Port);
         Assert.Equal("9400", File.ReadAllText(Path.Combine(Home, "port.txt")));
         Assert.Empty(Directory.GetFiles(Home, "*.tmp"));
     }
@@ -242,7 +242,39 @@ public sealed class PortChoiceTests : IDisposable
     {
         File.WriteAllText(Path.Combine(Home, "port.txt"), "not a port");
 
-        Assert.Null(PortChoice.LoadSaved(Home));
+        Assert.Equal(new PortChoice.SavedPort(false, null), PortChoice.LoadSaved(Home));
+    }
+
+    [Fact]
+    public void A_saved_port_that_stays_unreadable_is_busy_never_not_chosen()
+    {
+        PortChoice.Save(Home, 9400);
+        using var held = new FileStream(Path.Combine(Home, "port.txt"), FileMode.Open, FileAccess.Read, FileShare.None);
+        var pauses = 0;
+
+        var saved = PortChoice.LoadSaved(Home, _ => pauses++);
+
+        Assert.True(saved.Busy);
+        Assert.Null(saved.Port);
+        Assert.True(pauses >= PortChoice.BusyLooks - 1);
+    }
+
+    [Fact]
+    public void A_saved_port_that_is_refused_for_a_moment_is_read_when_it_comes_back()
+    {
+        PortChoice.Save(Home, 9400);
+        var held = new FileStream(Path.Combine(Home, "port.txt"), FileMode.Open, FileAccess.Read, FileShare.None);
+        var pauses = 0;
+
+        var saved = PortChoice.LoadSaved(Home, _ =>
+        {
+            if (++pauses == 7)
+            {
+                held.Dispose();
+            }
+        });
+
+        Assert.Equal(new PortChoice.SavedPort(false, 9400), saved);
     }
 
     // -- The machine -------------------------------------------------------------
