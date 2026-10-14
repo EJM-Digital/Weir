@@ -52,8 +52,8 @@ public sealed class JobsStartupRecoveryService : IHostedService
     /// Completes once recovery and the swap sweep have run, or at once when <see cref="StartAsync"/> was never
     /// called (a unit test building this service directly, with no gate to honour). The file lanes and the
     /// upkeep lane (#717, #718) each await this before claiming their first job, so a pass or a scan never
-    /// starts against a library recovery has not yet finished looking at. Nothing else waits on it: <c>/ready</c>
-    /// and the web app answer as soon as Kestrel is listening.
+    /// starts against a library recovery has not yet finished looking at. Kestrel does not wait on it and the web
+    /// app answers at once, but <c>/ready</c> answers 503 "starting" until it ends, with workers on or off.
     /// </summary>
     public Task RecoveryCompleted => _recoveryCompleted?.Task ?? Task.CompletedTask;
 
