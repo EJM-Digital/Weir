@@ -88,6 +88,7 @@ Everything is in `Harness/`. Areas live in folders beside it (`Activity/`), one 
   test run died before teardown; it never touches a server whose run is still alive, so runs side by side are safe.
   Its folder is shared by every fixture and every run, so a read, a delete or a claim that meets someone else's is theirs and
   never throws, and an orphan is stopped by the one caller that makes its claim file (`ServerLedgerTests`).
+- **`WEIR_LIBRARY_SWAP_HOLD_AT`** is a server setting for tests, not a harness class: set to the name of a point in a library swap (`OriginalMovedAside`, `CleanedCopyInPlace`, ...) it stops the swap there for good and writes the point's name to `swap-held-at.txt` in the data folder. The test waits for that file, ends the process with `StopAsync`, and starts it again to see what recovery does. `Jobs/SwapWorld` builds a library with one film that needs cleaning and does this; `Jobs/SwapCrashPlan` lists what each point leaves on disk. A value that names no point stops the server from starting. Nothing sets it on a real install.
 - **`ContractAreaAttribute`** puts a class in an area (`[ContractArea("activity")]`) and in `Category=Contract`.
 
 ## Adding tests and areas
