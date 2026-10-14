@@ -7,8 +7,8 @@ namespace Weir.Infrastructure.Tests.Sqlite;
 
 /// <summary>
 /// Weir's own writers queue for the write lock without holding a thread, one at a time, and a unit of work gives its turn back
-/// however it ends. Every database here has a short busy timeout and every wait a limit, so a broken gate fails a test
-/// instead of hanging it.
+/// however it ends. Every wait has a limit, so a broken gate fails a test instead of hanging it. Nothing here measures how fast
+/// the process's shared thread pool answers: that depends on every other test running at the same time, not on the gate.
 /// </summary>
 public sealed class UnitOfWorkWriteGateTests
 {
@@ -19,7 +19,14 @@ public sealed class UnitOfWorkWriteGateTests
 
     private static readonly TimeSpan Limit = TimeSpan.FromSeconds(10);
 
+    /// <summary>For a test that expects a writer to be refused when the busy timeout passes.</summary>
     private static SqliteDatabase ShortTimeout(JobsTestDatabase db) => new(db.DbPath, busyTimeoutMilliseconds: BusyTimeoutMilliseconds);
+
+    /// <summary>
+    /// For a test in which every writer is meant to get its turn: the production busy timeout, so that no writer is refused
+    /// because a busy machine was slow to hand the lock on. A broken gate is caught by what the test asserts, not by a timeout.
+    /// </summary>
+    private static SqliteDatabase Patient(JobsTestDatabase db) => new(db.DbPath);
 
     private static async Task WriteAsync(SqliteDatabase database, string dedupeKey, CancellationToken cancellationToken = default)
     {
@@ -31,11 +38,18 @@ public sealed class UnitOfWorkWriteGateTests
         }
     }
 
-    /// <summary>A unit that has written and keeps its turn until <paramref name="release"/> completes.</summary>
+    /// <summary>
+    /// A unit that has written and keeps its turn until <paramref name="release"/> completes. It takes its turn on the calling thread,
+    /// which is free to take it, so getting there needs nothing from the thread pool.
+    /// </summary>
     private static async Task<Task> HoldTheLockAsync(SqliteDatabase database, string dedupeKey, TaskCompletionSource release)
     {
         var holding = new TaskCompletionSource();
-        var holder = Task.Run(async () =>
+        var holder = HoldAsync();
+        await (await Task.WhenAny(holding.Task, holder).WaitAsync(Limit));
+        return holder;
+
+        async Task HoldAsync()
         {
             var uow = await UnitOfWork.OpenAsync(database);
             await using (uow.ConfigureAwait(false))
@@ -45,9 +59,7 @@ public sealed class UnitOfWorkWriteGateTests
                 await release.Task;
                 await uow.CommitAsync();
             }
-        });
-        await holding.Task.WaitAsync(Limit);
-        return holder;
+        }
     }
 
     /// <summary>Waits for tasks to end, however they end, so nothing is still using a database when a test lets go of it.</summary>
@@ -65,32 +77,32 @@ public sealed class UnitOfWorkWriteGateTests
     }
 
     /// <summary>
-    /// Whether the thread pool still runs work promptly, asked from a thread of its own so that a pool with no free thread cannot
-    /// stop the question being put.
+    /// A writer that waited for the lock in SQLite's busy handler, or on the gate with a blocking wait, would keep its thread for as
+    /// long as it waited. Every writer here starts on a scheduler with one thread of its own while another unit holds the lock, so
+    /// a writer that held its thread would keep the writers behind it from ever starting, and one that gave it up lets every writer
+    /// get as far as asking for its turn. The thread pool is not involved, so nothing running beside this test can disturb the answer.
     /// </summary>
-    private static Task<bool> PoolRunsWorkPromptlyAsync() =>
-        Task.Factory.StartNew(
-            () => Task.Run(() => 42).Wait(TimeSpan.FromSeconds(1)),
-            CancellationToken.None,
-            TaskCreationOptions.LongRunning,
-            TaskScheduler.Default);
-
     [Fact]
     public async Task Writers_waiting_for_the_lock_hold_no_threads_and_all_get_their_turn()
     {
         using var db = new JobsTestDatabase();
-        var database = ShortTimeout(db);
+        var database = Patient(db);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var holder = await HoldTheLockAsync(database, "holder", release);
 
-        // More than the pool's minimum: threads blocked in SQLite's busy handler would stall everything else.
-        var waiting = Enumerable.Range(0, Environment.ProcessorCount * 4 + 8).ToArray();
-        var writers = waiting.Select(index => Task.Run(() => WriteAsync(database, $"waiting-{index}"))).ToArray();
+        // Eight writers for the one thread there is.
+        using var oneThread = new OneThreadScheduler();
+        var waiting = Enumerable.Range(0, 8).ToArray();
+        var asking = waiting
+            .Select(index => Task.Factory.StartNew(() => WriteAsync(database, $"waiting-{index}"), CancellationToken.None, TaskCreationOptions.DenyChildAttach, oneThread))
+            .ToArray();
+        var writers = asking.Select(asked => asked.Unwrap()).ToArray();
         try
         {
-            // Long enough for every writer to have asked for its turn.
-            await Task.Delay(500);
-            Assert.True(await PoolRunsWorkPromptlyAsync().WaitAsync(Limit), "the thread pool had no thread to spare");
+            // Each of these is done when its writer first gave the thread up: that is where it waits for the gate, because the unit
+            // holding the lock has not let go of it. A writer that blocked instead would keep the thread from the writers behind it, and
+            // this wait would not finish.
+            await Task.WhenAll(asking).WaitAsync(Limit);
             Assert.All(writers, writer => Assert.False(writer.IsCompleted));
 
             release.SetResult();
@@ -184,7 +196,7 @@ public sealed class UnitOfWorkWriteGateTests
     public async Task A_writer_cancelled_while_it_waits_leaves_the_queue_without_taking_a_turn()
     {
         using var db = new JobsTestDatabase();
-        var database = ShortTimeout(db);
+        var database = Patient(db);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var holder = await HoldTheLockAsync(database, "holder", release);
         using var cancel = new CancellationTokenSource();

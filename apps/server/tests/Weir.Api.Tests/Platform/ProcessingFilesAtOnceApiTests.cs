@@ -151,14 +151,13 @@ public sealed class ProcessingFilesAtOnceApiTests
             begin.ExecuteNonQuery();
         }
 
-        var started = System.Diagnostics.Stopwatch.StartNew();
         using var response = await client.GetAsync("/api/v1/processing/files-at-once");
-        started.Stop();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        // The uncommitted 4 is not visible; the read saw the last committed value and did not wait for the writer.
+        // The uncommitted 4 is not visible; the read saw the last committed value and did not wait for the writer. A read that did wait
+        // could only end in "database is locked", because the writer holds the lock until the end of this test, so the answer above
+        // is the whole claim and no clock is needed.
         Assert.Equal(1, (await ApiTestClient.Json(response))["files_at_once"]!.GetValue<int>());
-        Assert.True(started.Elapsed < TimeSpan.FromSeconds(10), $"The read-out waited {started.Elapsed.TotalSeconds:0.0}s for the write lock.");
 
         using var rollback = writer.CreateCommand();
         rollback.CommandText = "ROLLBACK";

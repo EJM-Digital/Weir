@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Weir.Core.MediaManagers;
 using Weir.Infrastructure.Activity;
@@ -241,10 +240,9 @@ public sealed class FolderReachabilityTests : IAsyncLifetime, IDisposable
         await _reachability.StartAsync(CancellationToken.None);
         await Eventually.ThatAsync(() => _probe.HungCalls == 1);
 
-        var stopped = Stopwatch.StartNew();
-        await _reachability.StopAsync(CancellationToken.None);
-
-        Assert.True(stopped.Elapsed < TimeSpan.FromSeconds(5), $"stopping took {stopped.Elapsed}");
+        // The probe is never released here, so a stop that waited for it would never return: the limit only ends such a wait as a
+        // failure. How quickly a stop that does not wait returns depends on the machine, not on this code.
+        await _reachability.StopAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(30));
     }
 
     [Fact]
