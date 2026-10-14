@@ -18,8 +18,18 @@ public sealed class RealFfmpegFixtures : IDisposable
     /// </summary>
     private static readonly TimeSpan GenerationLimit = TimeSpan.FromMinutes(5);
 
-    private readonly string _root = Directory.CreateTempSubdirectory("weir-real-ffmpeg-fixtures-").FullName;
+    private readonly string _root;
     private readonly ConcurrentDictionary<string, Lazy<Task<string>>> _generated = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Every real-tool test class takes these fixtures, and a class whose fixtures cannot be made fails all its tests, so this is
+    /// where tools that <see cref="RealToolRequirement"/> requires and the machine lacks turn the tests from skipped into failed.
+    /// </summary>
+    public RealFfmpegFixtures()
+    {
+        RealToolRequirement.EnsureAvailable();
+        _root = Directory.CreateTempSubdirectory("weir-real-ffmpeg-fixtures-").FullName;
+    }
 
     public void Dispose() => Directory.Delete(_root, recursive: true);
 

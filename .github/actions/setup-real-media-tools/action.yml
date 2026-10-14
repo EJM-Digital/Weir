@@ -1,0 +1,86 @@
+# Puts the pinned ffmpeg, ffprobe and mkvmerge where a server test job can use them, for the real-tool tests that
+# skip themselves without them (apps/server/tests/Weir.Infrastructure.Tests/Media/RealToolRequirement.cs). Run it
+# after actions/checkout, with a step-level timeout-minutes, and give the test step the two folders it returns as
+# WEIR_FFMPEG_DIR and WEIR_MKVTOOLNIX_DIR.
+#
+# Linux gets the static ffmpeg build (.github/actions/setup-ffmpeg-linux) and mkvmerge from MKVToolNix's AppImage
+# (scripts/install-mkvtoolnix-linux.mjs). Windows gets the builds the Windows package ships
+# (scripts/install-media-tools-windows.ps1), through the caches the package job uses. Every download is checked against
+# its SHA-256 pin before it is used, and none takes whatever version is newest.
+name: Set up the real media tools
+description: Installs the pinned, checksum-verified ffmpeg, ffprobe and mkvmerge and returns the folders they are in.
+
+outputs:
+  ffmpeg-dir:
+    description: The folder holding ffmpeg and ffprobe.
+    value: ${{ steps.linux.outputs.ffmpeg-dir || steps.windows.outputs.ffmpeg-dir }}
+  mkvtoolnix-dir:
+    description: The folder holding mkvmerge.
+    value: ${{ steps.linux.outputs.mkvtoolnix-dir || steps.windows.outputs.mkvtoolnix-dir }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up ffmpeg (Linux)
+      if: runner.os == 'Linux'
+      uses: ./.github/actions/setup-ffmpeg-linux
+
+    - name: MKVToolNix build checksum
+      id: mkvtoolnix
+      if: runner.os == 'Linux'
+      shell: bash
+      run: node scripts/mkvtoolnix-cache-key.mjs >> "$GITHUB_OUTPUT"
+
+    - name: Cache mkvmerge
+      if: runner.os == 'Linux'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: ${{ runner.temp }}/weir-mkvtoolnix
+        key: ${{ runner.os }}-${{ steps.mkvtoolnix.outputs.key }}
+
+    - name: Install mkvmerge (Linux)
+      id: linux
+      if: runner.os == 'Linux'
+      shell: bash
+      env:
+        FFMPEG_DIR: ${{ runner.temp }}/weir-ffmpeg
+        MKVTOOLNIX_DIR: ${{ runner.temp }}/weir-mkvtoolnix
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        node scripts/install-mkvtoolnix-linux.mjs "$MKVTOOLNIX_DIR"
+        "$MKVTOOLNIX_DIR/mkvmerge" --version
+        {
+          echo "ffmpeg-dir=$FFMPEG_DIR"
+          echo "mkvtoolnix-dir=$MKVTOOLNIX_DIR"
+        } >> "$GITHUB_OUTPUT"
+
+    # The same keys and folders as the Windows package job (ci-packaging.yml), so the two share one cache.
+    - name: FFmpeg build checksum
+      id: ffmpeg
+      if: runner.os == 'Windows'
+      shell: bash
+      run: node scripts/ffmpeg-cache-key.mjs >> "$GITHUB_OUTPUT"
+
+    - name: Cache vendored FFmpeg
+      if: runner.os == 'Windows'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: packaging/windows/vendor/ffmpeg
+        key: ${{ runner.os }}-${{ steps.ffmpeg.outputs.key }}
+
+    - name: Cache vendored MKVToolNix
+      if: runner.os == 'Windows'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: packaging/windows/vendor/mkvtoolnix
+        key: mkvtoolnix-vendor-${{ runner.os }}-${{ hashFiles('packaging/windows/build-velopack-vendored-media-tools.ps1') }}
+        restore-keys: |
+          mkvtoolnix-vendor-${{ runner.os }}-
+
+    - name: Install ffmpeg and mkvmerge (Windows)
+      id: windows
+      if: runner.os == 'Windows'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: powershell -ExecutionPolicy Bypass -File scripts/install-media-tools-windows.ps1

@@ -8,13 +8,13 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const buildScriptName = "build-velopack-vendored-media-tools.ps1";
 
-function assignment(buildScript, name) {
+export function assignment(buildScript, name) {
   const match = buildScript.match(new RegExp(`^\\$${name} = "([^"$]+)"`, "m"));
   if (!match) throw new Error(`$${name} was not found in ${buildScriptName}.`);
   return match[1];
 }
 
-function sha256Assignment(buildScript, name) {
+export function sha256Assignment(buildScript, name) {
   const value = assignment(buildScript, name);
   if (!/^[0-9a-f]{64}$/i.test(value)) {
     throw new Error(`$${name} in ${buildScriptName} is not a 64-character hex SHA256: ${value}`);
@@ -22,8 +22,13 @@ function sha256Assignment(buildScript, name) {
   return value.toLowerCase();
 }
 
+/** The text of the build script that holds the pins for FFmpeg and MKVToolNix. */
+export function readPinnedBuildScript() {
+  return readFileSync(path.join(repoRoot, "packaging", "windows", buildScriptName), "utf8");
+}
+
 /** The Windows and Linux archives of the pinned BtbN release: `{ releaseTag, windows, linux }`, each `{ name, url, sha256 }`. */
-export function readFfmpegPin(buildScript = readFileSync(path.join(repoRoot, "packaging", "windows", buildScriptName), "utf8")) {
+export function readFfmpegPin(buildScript = readPinnedBuildScript()) {
   const releaseTag = assignment(buildScript, "ffmpegReleaseTag");
   const archive = (nameVariable, sha256Variable) => {
     const name = assignment(buildScript, nameVariable);
