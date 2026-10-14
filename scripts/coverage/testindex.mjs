@@ -32,6 +32,9 @@ const CONTRACT_TESTS = "apps/server/tests/Weir.Contract.Tests/";
 const SCENARIOS = "scripts/scenarios/";
 const PACKAGE_SMOKE = "scripts/smoke-windows-package.ps1";
 const LIVE_AUDIT = "apps/server/tools/Weir.LiveAudit/";
+/** A packaging script that starts the shipped container (and, below, the workflows whose steps do). */
+const CONTAINER_SCRIPT = /(?:^|\/)scripts\/(?:[^/]*\/)*[^/]*(?:docker|compose|container)[^/]*\.(?:mjs|ps1|sh)$/;
+export const CONTAINER_SMOKE_FILE = /^(?:\.github\/workflows\/[^/]+\.ya?ml|scripts\/(?:[^/]*\/)*[^/]*(?:docker|compose|container)[^/]*\.(?:mjs|ps1|sh))$/;
 
 /** Every file that can hold a proof, as repo-relative paths. */
 export function testFiles(root) {
@@ -41,7 +44,8 @@ export function testFiles(root) {
   add("apps/tray/Weir.Tray.Tests", (f) => f.endsWith(".cs"));
   add("apps/server/tools/Weir.LiveAudit", (f) => f.endsWith(".cs"));
   add("apps/web/src", (f) => /\.test\.tsx?$/.test(f));
-  add("scripts", (f) => /\.test\.mjs$/.test(f) || /[\\/]scenarios[\\/].*\.ps1$/.test(f) || f.endsWith("smoke-windows-package.ps1"));
+  add("scripts", (f) => /\.test\.mjs$/.test(f) || /[\\/]scenarios[\\/].*\.ps1$/.test(f) || f.endsWith("smoke-windows-package.ps1") || CONTAINER_SCRIPT.test(slash(f)));
+  add(".github/workflows", (f) => /\.ya?ml$/.test(f));
   return files.map((f) => slash(relative(root, f)));
 }
 
@@ -49,6 +53,20 @@ const TS_TITLE = /\b(?:it|test|describe)(?:\.(?:each|skip|only|fixme|fails|concu
 const CS_METHOD = /\[(?:[A-Za-z]*Fact|[A-Za-z]*Theory)\b[^\]]*\]\s*(?:\[[^\]]*\]\s*)*(?:public\s+|internal\s+)?(?:static\s+)?(?:async\s+)?(?:Task|void|ValueTask)\s+(\w+)/g;
 const CS_CLASS = /\b(?:class|record)\s+(\w+)/g;
 const RECORDING = /\bRecordedDeluno\b|\bDelunoSide\b|\bRecordedWorld\b|\bRecordedReplies\b|fixtures[\\/]+recorded/;
+
+// real-fs: the test (or its class setup) creates a real temp folder or a real SQLite file, works on it with real file or database code,
+// and neither names a fake or in-memory file system or store. What cannot be decided is refused.
+const FS_CREATE =
+  /Path\.GetTempPath\s*\(|CreateTempSubdirectory\s*\(|Path\.GetTempFileName\s*\(|\b(?:TempDirectory|TemporaryFolder|JobsTestDatabase|StoreFixture|MediaManagerFixture)\b|\bMigratedDatabaseTemplate\b|\b(?:WeirTestServer|WeirServer|SwapWorld|LibraryCleanWorld|LeasedJobScenario|LibrariesPartBFilm|Scenario)\.Start\w*\s*\(|\b(?:Server|Users|SeededServer|HandoffServer|ManagerServer)Fixture\b|\bSwapCrashRecoveryChecks\.RunAsync/;
+const FS_WORK = /\b(?:File|Directory|FileInfo|DirectoryInfo)\.|\bnew\s+(?:FileInfo|DirectoryInfo)\b|CreateHardLink|SqliteConnection|SqliteDatabase|UnitOfWork|SchemaMigrator|\bMigrat\w*|\bSeedSql\.|\bStopForDatabaseAsync\b|\bRealMedia\.|\.(?:AddFilmAsync|FilesOnDisk|AssertNoSwapLeftovers)\(|\bSwapCrashRecoveryChecks\.RunAsync/;
+const FS_FAKE =
+  /ScriptedStateFileSystem|\bSwapScenario\b|\bI\w*FileSystem\b|\bIFolderProbe\b|\bIHardlinkInspector\b|\bISwapJournal\b|\bIOutputOwnership\w*\b|\bIRemuxPassFileFacts\b|\bIRemovedTrackStore\b|\bIPostSuccessCleanupData\b|\bITvSeasonFolderCleanup\b|\bIUpdateBackup\b|MockFileSystem|MemoryFileSystem|\bFake\w*(?:FileSystem|Storage|Repository|Database|Store|Journal|Probe|Disk|Volume)\b|\bInMemory\w*|\bNull\w*Repository\b|:memory:|Mode=Memory|new\s+Mock<|Substitute\.For</;
+
+// container-smoke: a packaging step or script that starts the shipped container image (docker run, or docker compose up on the shipped file).
+const CONTAINER_START = /\bdocker\s+(?:compose\s+(?:-\S+\s+\S+\s+)*up|run)\b/;
+
+/** C# test files a real-fs claim may name: the server's and the tray's, never the browser tests. */
+export const REAL_FS_FILE = /^apps\/(?:server\/tests\/(?!Weir\.E2E\.Tests\/)|tray\/Weir\.Tray\.Tests\/).+\.cs$/;
 
 /** The names inside one test file: its tests, its groups and (C#) its classes. */
 export function namesOf(file, text) {
@@ -59,6 +77,8 @@ export function namesOf(file, text) {
   } else if (file.endsWith(".ps1")) {
     for (const m of text.matchAll(/^\s*function\s+([\w-]+)/gim)) names.add(m[1]);
     for (const m of text.matchAll(/\bId\s*=\s*'([a-z][a-z0-9-]*)'/g)) names.add(m[1]);
+  } else if (/\.ya?ml$/.test(file)) {
+    for (const m of text.matchAll(/^\s*-\s+name:\s*(.+?)\s*$/gm)) names.add(m[1].replace(/^["']|["']$/g, ""));
   } else {
     for (const m of text.matchAll(TS_TITLE)) names.add(m[2]);
   }
@@ -104,6 +124,54 @@ export class TestIndex {
       for (const s of f.squashed) if (s.startsWith(q) || (s.length >= 14 && q.startsWith(s))) return true;
     }
     return q.length >= 20 && f.hay.includes(q);
+  }
+
+  /**
+   * Is the proof a step of a packaging workflow (or a packaging script) that starts the shipped container image?
+   * Decided statically from the step's text: a named step is judged alone, a script or "*" as a whole. { real, why }.
+   */
+  containerSmoke(file, name) {
+    const f = this.files.get(file);
+    if (!f || !CONTAINER_SMOKE_FILE.test(file)) return { real: false, why: "not a packaging workflow or container script" };
+    let text = f.text;
+    if (/\.ya?ml$/.test(file) && name && name !== "*") {
+      const q = squash(name);
+      const step = f.text.split(/^(?=\s*-\s+name:)/m).find((s) => squash(/^\s*-\s+name:\s*(.+)/.exec(s)?.[1] ?? "") === q);
+      if (step === undefined) return { real: false, why: `no step named "${name}" to judge` };
+      text = step;
+    }
+    return CONTAINER_START.test(text) ? { real: true, why: "" } : { real: false, why: `${name || file} does not start the container image with docker run or docker compose up` };
+  }
+
+  /**
+   * Is the test a real-fs test: it runs Weir's real code against real files in a real temp folder, or a real SQLite file?
+   * Decided statically from the class setup (the text before its first test) plus the test's own body.
+   * A named test is judged alone; a class name, a cited fragment or "*" is judged over every test it covers, and every one must qualify.
+   * { real, why }: what cannot be decided is not real.
+   */
+  realFs(file, name) {
+    const f = this.files.get(file);
+    if (!f || !REAL_FS_FILE.test(file)) return { real: false, why: "not a C# test of the server or the tray" };
+    const header = f.header ?? "";
+    let scope;
+    const body = name && name !== "*" ? f.bodies?.get(name) : undefined;
+    if (body !== undefined) scope = [[name, body]];
+    else {
+      const all = [...(f.bodies ?? [])];
+      if (!name || name === "*" || f.names.has(name)) scope = all;
+      else {
+        const q = squash(name);
+        scope = all.filter(([n]) => squash(n).startsWith(q));
+      }
+    }
+    if (scope.length === 0) return { real: false, why: "no test found to judge" };
+    for (const [n, text] of scope) {
+      const both = `${header}\n${text}`;
+      if (FS_FAKE.test(both)) return { real: false, why: `${n} uses a fake or in-memory file system or store` };
+      if (!FS_CREATE.test(both)) return { real: false, why: `${n} (or its class setup) creates no real temp folder or database file` };
+      if (!FS_WORK.test(both)) return { real: false, why: `${n} does no file or database work that can be seen` };
+    }
+    return { real: true, why: "" };
   }
 
   /**
@@ -164,7 +232,8 @@ function csBodies(file, text) {
 /**
  * The kind of proof a file is: xunit (the server's and the tray's unit, integration and API tests), contract (the contract suite),
  * e2e (Playwright for .NET against the real host), vitest, node (the repository scripts' tests), scenario (a golden-VM scenario),
- * recording-replay (a test that replays Deluno's recorded real reply), package-smoke (the Windows package smoke and the live audit).
+ * recording-replay (a test that replays Deluno's recorded real reply), real-fs (a test the check verifies runs on a real temp folder or
+ * SQLite file with no fake), package-smoke (the Windows package smoke and the live audit).
  */
 export function proofTypeOf(file, index, name) {
   if (file === PACKAGE_SMOKE || file.startsWith(LIVE_AUDIT)) return "package-smoke";
@@ -172,6 +241,7 @@ export function proofTypeOf(file, index, name) {
   if (file.startsWith(E2E_TESTS)) return "e2e";
   if (/\.test\.tsx?$/.test(file)) return "vitest";
   if (/\.test\.mjs$/.test(file)) return "node";
-  if (file.startsWith(CONTRACT_TESTS)) return index && index.replaysRecording(file, name) ? "recording-replay" : "contract";
-  return "xunit";
+  if (file.startsWith(CONTRACT_TESTS) && index && index.replaysRecording(file, name)) return "recording-replay";
+  if (index && index.realFs(file, name).real) return "real-fs";
+  return file.startsWith(CONTRACT_TESTS) ? "contract" : "xunit";
 }

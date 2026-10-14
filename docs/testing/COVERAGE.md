@@ -18,6 +18,7 @@ ids under `contract.` are shared with it, and the proof types follow each app's 
 | `severity` | yes | `high` (data loss, wrong file or media handling, security, or a main flow), `medium` (a feature not working), `low` (cosmetic). |
 | `touches` | yes | `other-app` (Deluno, Sonarr, Radarr, a download client, GitHub, the artwork service), `disk` (media files: clean, move, hard-link, delete, back up, restore), `install` (install, update, uninstall, tray, Docker), `none`. |
 | `required` | yes | Derived, and the check refuses any other value: `real` for a `high` row whose `touches` is not `none`; `inproc` for every other row. |
+| `vm` | no | Only `true`, and only on a row whose `touches` is `disk` or `install`. Marks a row that only a real install can prove: NTFS-specific behaviour (alternate streams, case rules, long paths, ACLs), network shares (UNC/SMB/NAS), cross-drive or cross-volume moves and hard links, the installer, the update, the tray and Windows service mode. A `vm` row reaches `real` by a `scenario` proof alone; `real-fs` and every other type stay `inproc` for it. |
 | `proofs` | yes | A list of `{ "type", "file", "name" }`. **Empty when the row is a gap.** |
 | `partial` | no | Proofs that touch the behaviour but do not prove it. Not counted; kept so a gap shows where to start. Checked like `proofs`. |
 | `needs` | no | `{ "kind", "test" }`: what would close the gap. |
@@ -39,11 +40,22 @@ Row ids from the audit are in `audit.id` (`R-032`, `JOB-025`, `WEB-447`, `TRAY-0
 | `node` | A `*.test.mjs` file in `scripts`. | inproc |
 | `scenario` | A golden-VM scenario of `scripts/scenarios` (named by its id in `Weir.Scenarios.Catalog.ps1`). | real |
 | `recording-replay` | A contract test that replays one of Deluno's recordings (`apps/server/tests/fixtures/recorded`). | real |
+| `real-fs` | A C# test in `apps/server/tests` (not the E2E project) or `apps/tray/Weir.Tray.Tests` that runs Weir's real code on a real temp folder or a real SQLite file, with no fake. The check verifies it from the test's text (below). | real for a `disk` or `install` row that is not `vm`, otherwise inproc |
+| `container-smoke` | A step of a packaging workflow (`.github/workflows`, named by its `- name:`) or a container script in `scripts` (a name containing `docker`, `compose` or `container`, named `"*"`) that starts the shipped container image on a real volume. The check verifies it from the step's text. | real for a `disk` or `install` row that is not `vm`, otherwise inproc |
 | `package-smoke` | `scripts/smoke-windows-package.ps1` or the live audit (`apps/server/tools/Weir.LiveAudit`), run by the packaging jobs. | inproc |
 
 A proof's `name` is a test, a test group or a class in `file` (for a scenario, its id); `"*"` means the whole file. An e2e test intercepts requests
 when its body, or the part of its file before its first test, calls `RouteAsync`, `FulfillAsync` or `RouteFromHARAsync`; what cannot be decided
 counts as intercepting. Weir's e2e tests intercept none today.
+
+A `real-fs` claim is verified statically and never taken on trust. The test, or its class setup (the text before the class's first test), must create a real temp folder or database file
+(`Path.GetTempPath`, `Directory.CreateTempSubdirectory`, `Path.GetTempFileName`, `TempDirectory`, `TemporaryFolder`, `MigratedDatabaseTemplate`, `JobsTestDatabase`, `StoreFixture`, `MediaManagerFixture`, `WeirTestServer`/`WeirServer`/`SwapWorld`/`LibraryCleanWorld`/`LeasedJobScenario`/`LibrariesPartBFilm`/`Scenario` started, or one of the contract suite's server fixtures),
+do file or database work on it (`File.`, `Directory.`, `FileInfo`, `CreateHardLink`, `SqliteConnection`, `SqliteDatabase`, `UnitOfWork`, a migration), and name no fake or in-memory file system or store (`ISwapFileSystem`, `SwapScenario`,
+`IFolderProbe`, `ISwapJournal`, `Fake*` file system, storage, store or journal, `InMemory*`, `:memory:`, a mocked file or storage interface). A class name, a fragment or `"*"` is judged over every test it covers, and every one must qualify.
+What the check cannot decide is refused: the proof is reported, counts as `inproc`, and is counted in the totals below; `--strict` fails on it.
+
+A `container-smoke` claim is verified the same way. The named workflow step (or the whole script) must run `docker run` or `docker compose up`; a step that only builds, scans or inspects an image is refused.
+It exists so the Docker rows, which no VM scenario reaches, can reach `real` by a CI step that starts the shipped `compose.yaml` and the previous release image on a real volume (#986).
 
 ### Contract ids
 
@@ -58,7 +70,8 @@ that recording has to be replayed (`scripts/check-recorded-replays.mjs` fails un
 
 ## Proof levels
 
-- **real**: a `scenario`; a `recording-replay`; or, for a screen row only, an `e2e` test that intercepts no request.
+- **real**: a `scenario`; a `recording-replay`; a verified `real-fs` test or `container-smoke` step, for a row that touches `disk` or `install` and is not `vm`; or, for a screen row only, an `e2e` test that intercepts no request.
+  A `vm` row (only a real install can prove it) is real by a `scenario` alone.
 - **inproc**: any other proof. It runs Weir's code, but the other side is Weir's own stand-in.
 - **none**: the row is a gap.
 
@@ -103,14 +116,14 @@ When you add a test that closes a gap, put it in `proofs`, drop the row's `issue
 <!-- coverage:generated:start -->
 Generated by `node scripts/check-coverage-register.mjs --write-doc` from `coverage-register.json`. Do not edit by hand.
 
-**1856** behaviours. **972** reach their required proof level (52%); **884** are gaps, **109** of them high; **0** gaps are not on an issue yet.
+**1856** behaviours. **1000** reach their required proof level (54%); **856** are gaps, **83** of them high; **0** gaps are not on an issue yet.
 
 ### By severity
 
 | Severity | Rows | Reach their level | Gaps |
 | --- | ---: | ---: | ---: |
-| high | 171 | 62 | 109 |
-| medium | 1321 | 870 | 451 |
+| high | 171 | 88 | 83 |
+| medium | 1321 | 872 | 449 |
 | low | 364 | 40 | 324 |
 
 ### High rows by what they touch (these need `real`, except `none`, which needs `inproc`)
@@ -118,34 +131,38 @@ Generated by `node scripts/check-coverage-register.mjs --write-doc` from `covera
 | Touches | High rows | High gaps |
 | --- | ---: | ---: |
 | other-app | 60 | 32 |
-| disk | 54 | 48 |
-| install | 14 | 12 |
+| disk | 54 | 23 |
+| install | 14 | 11 |
 | none | 43 | 17 |
 
 ### By best proof a row has
 
 | Best proof | Rows |
 | --- | ---: |
-| none (a gap) | 548 |
-| inproc | 1075 |
-| real | 233 |
+| none (a gap) | 544 |
+| inproc | 1018 |
+| real | 294 |
 
 E2E proofs: **191**; unstubbed (can reach `real` for a screen behaviour) **191**; stubbed **0**; not decidable statically, counted as stubbed **0**.
+
+Real-fs proofs: **191** claimed; **191** verified and counted as real; **0** refused (the check could not verify a real temp folder or database file with no fake, so they count as inproc); **0** verified but without effect (the row is "vm", or does not touch disk or install). **75** rows are "vm" (only a real install can prove them, so they need a scenario); **58** of them are still gaps.
+
+Container-smoke proofs: **0** claimed; **0** verified and counted as real; **0** refused (the named step or script does not start the container image, so they count as inproc); **0** verified but without effect (the row is "vm", or does not touch disk or install).
 
 ### By area
 
 | Area | What | Rows | Reach their level | Gaps | High rows | High gaps | No proof | Inproc | Real |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| api | API routes and what applies across them | 158 | 125 | 33 | 15 | 9 | 25 | 118 | 15 |
+| api | API routes and what applies across them | 158 | 128 | 30 | 15 | 6 | 24 | 103 | 31 |
 | contract | Deluno-Weir contract: Weir's side of every call, reply and report (ids shared with Deluno) | 57 | 32 | 25 | 39 | 16 | 25 | 0 | 32 |
 | events | Activity event types | 43 | 36 | 7 | 0 | 0 | 7 | 33 | 3 |
-| file-lifecycle | File lifecycle rules (docs/file-lifecycle-contract.md) | 44 | 9 | 35 | 37 | 28 | 9 | 26 | 9 |
+| file-lifecycle | File lifecycle rules (docs/file-lifecycle-contract.md) | 44 | 28 | 16 | 37 | 9 | 8 | 8 | 28 |
 | integrations | Integrations crossed with their operations | 29 | 7 | 22 | 2 | 2 | 17 | 6 | 6 |
-| platform | Install, update, uninstall, ports, firewall, Docker, packaging | 29 | 10 | 19 | 6 | 5 | 19 | 3 | 7 |
+| platform | Install, update, uninstall, ports, firewall, Docker, packaging | 29 | 10 | 19 | 6 | 5 | 19 | 2 | 8 |
 | scenarios | Golden-VM scenarios | 16 | 1 | 15 | 0 | 0 | 15 | 0 | 1 |
-| services | Jobs, hosted services, periodic tasks and schedules | 56 | 38 | 18 | 2 | 2 | 15 | 34 | 7 |
-| settings | Settings: stored fields and environment variables | 133 | 81 | 52 | 7 | 2 | 47 | 73 | 13 |
-| tray | Windows tray: menu, icon, balloons, supervision, updates | 91 | 38 | 53 | 8 | 7 | 21 | 59 | 11 |
+| services | Jobs, hosted services, periodic tasks and schedules | 56 | 42 | 14 | 2 | 0 | 13 | 29 | 14 |
+| settings | Settings: stored fields and environment variables | 133 | 82 | 51 | 7 | 1 | 47 | 63 | 23 |
+| tray | Windows tray: menu, icon, balloons, supervision, updates | 91 | 39 | 52 | 8 | 6 | 21 | 51 | 19 |
 | web-activity-library | Web: Activity and Library | 194 | 74 | 120 | 12 | 12 | 78 | 98 | 18 |
 | web-dashboard | Web: Dashboard (Live and System views) | 198 | 136 | 62 | 1 | 1 | 25 | 149 | 24 |
 | web-routes | Web routes and the controls that carry a test id | 107 | 89 | 18 | 0 | 0 | 18 | 89 | 0 |
@@ -161,8 +178,6 @@ E2E proofs: **191**; unstubbed (can reach `real` for a screen behaviour) **191**
 | #979 | 1 | 0 |
 | #981 | 7 | 0 |
 | #982 | 8 | 0 |
-| #983 | 2 | 2 |
-| #984 | 2 | 1 |
 | #985 | 2 | 1 |
 | #986 | 2 | 2 |
 | #987 | 1 | 1 |
@@ -233,14 +248,13 @@ E2E proofs: **191**; unstubbed (can reach `real` for a screen behaviour) **191**
 | #1056 | 32 | 3 |
 | #1057 | 27 | 0 |
 | #1058 | 26 | 0 |
-| #1059 | 31 | 4 |
-| #1063 | 1 | 0 |
+| #1059 | 30 | 3 |
 | #1064 | 6 | 0 |
-| #1065 | 6 | 6 |
-| #1066 | 7 | 7 |
-| #1067 | 10 | 10 |
+| #1065 | 1 | 1 |
+| #1066 | 2 | 2 |
+| #1067 | 2 | 2 |
 | #1068 | 9 | 9 |
-| #1069 | 6 | 6 |
+| #1069 | 2 | 2 |
 | #1070 | 9 | 9 |
 | #1071 | 3 | 3 |
 | #1072 | 1 | 1 |
