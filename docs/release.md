@@ -307,7 +307,10 @@ The `Release` workflow:
 - **`publish-windows`**, once `ci-passed`, `golden-path`, `validate` and `windows-smoke` have passed:
   - when the repository variable `ATTEST_PROVENANCE` is `true`, records a signed provenance attestation for the
     release files (the Windows files and `weir-web-dist.zip`)
-  - creates the GitHub Release from `docs/release-notes/<tag>.md`, with those files attached
+  - creates the GitHub Release from `docs/release-notes/<tag>.md` as a draft, attaches those files, checks the draft
+    holds each one at its size, and only then publishes it (`scripts/publish-release.mjs`). Releases on this repository are
+    immutable once published, so nothing can be attached afterwards; a published release that is missing files cannot be
+    repaired and needs a new tag. A run that failed part-way leaves a draft, which re-running the workflow finishes.
 - **`publish-docker`**, once `ci-passed`, `golden-path`, `validate`, `docker-candidate` and `docker-arm64` have passed:
   - builds and pushes Docker tags for linux/amd64 and linux/arm64:
     - `ghcr.io/<owner>/<repo>:X.Y.Z` (the git tag is `vX.Y.Z`; the image tag drops the `v`, and a pre-release keeps its suffix: `1.0.0-rc.1`)

@@ -525,14 +525,13 @@ jobs:
           fi
           cp "$notes_file" "$GITHUB_WORKSPACE/release-notes.md"
 
+      # Releases are immutable on this repository: once published, nothing can be attached. So the release is made as a
+      # draft, every file is attached to the draft and checked, and only then is it published, in one last step.
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
-        with:
-          files: |
-            weir-web-dist.zip
-            windows-artifact/*
-          body_path: release-notes.md
-          prerelease: ${{ steps.version.outputs.prerelease }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+        run: node scripts/publish-release.mjs "$TAG" release-notes.md "$PRERELEASE" weir-web-dist.zip windows-artifact/*
 
   # The container image, rebuilt from the layers docker-candidate and docker-arm64 cached. It does not wait for the
   # Windows jobs, and nothing in it touches the Releases page.
