@@ -36,6 +36,7 @@ whose source is in [`../docs-site/docs`](../docs-site/docs).
 - [`smoke-checklists.md`](smoke-checklists.md) - manual Windows and Docker smoke checks.
 - [`security-hardening.md`](security-hardening.md) - security baseline and credential handling.
 - [`operator-messaging-standard.md`](operator-messaging-standard.md) - how operator-facing messages are worded.
+- [`testing/COVERAGE.md`](testing/COVERAGE.md) - the coverage register: every behaviour, route, job, setting, event, screen control and tray item, and the tests that prove it.
 - [`settings-truthfulness-audit.md`](settings-truthfulness-audit.md) - what each setting actually does when saved.
 - [`visual-identity.md`](visual-identity.md) - palette, logo and brand assets.
 - [`ux-polish.md`](ux-polish.md) - the UI review baseline.

@@ -178,6 +178,10 @@ jobs:
   repo-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # issues: read lets the coverage register check ask which coverage issues are open.
+    permissions:
+      contents: read
+      issues: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -234,6 +238,20 @@ jobs:
 
       - name: The real media tools - pins, installers and the check that every real-tool test ran
         run: node --test scripts/ffmpeg-pin.test.mjs scripts/pinned-download.test.mjs scripts/mkvtoolnix-pin.test.mjs scripts/install-mkvtoolnix-linux.test.mjs scripts/summarize-test-results.test.mjs scripts/check-real-tool-tests.test.mjs
+
+      # The register is read against the code, and against the open coverage issues and the branch a pull request goes into.
+      - name: Coverage register accounts for everything and has no more gaps
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          node --test scripts/check-coverage-register.test.mjs
+          if [ -n "$BASE_REF" ]; then
+            git fetch --depth=1 origin "$BASE_REF"
+            node scripts/check-coverage-register.mjs --gh --base "origin/$BASE_REF"
+          else
+            node scripts/check-coverage-register.mjs --gh
+          fi
 
       - name: Docker entrypoint keeps the server's umask
         run: node --test scripts/docker-entrypoint.test.mjs
