@@ -161,7 +161,7 @@ public sealed partial class LibraryCleanHandler
         try
         {
             await using var uow = await UnitOfWork.OpenAsync(_database, CancellationToken.None).ConfigureAwait(false);
-            var extra = new WireObject().Set("library_id", libraryId).Set("relative_path", path);
+            var extra = new WireObject().Set("library_id", libraryId).Set("relative_media_path", path);
             if (trigger is not null)
             {
                 extra.Set("trigger", trigger);
