@@ -86,6 +86,8 @@ Everything is in `Harness/`. Areas live in folders beside it (`Activity/`), one 
 - **`Poll.UntilAsync`** waits for an outcome with a deadline; never sleep for a fixed time.
 - **`ServerLedger`** records every server this run started in the temp folder. The next run stops servers whose
   test run died before teardown; it never touches a server whose run is still alive, so runs side by side are safe.
+  Its folder is shared by every fixture and every run, so a read, a delete or a claim that meets someone else's is theirs and
+  never throws, and an orphan is stopped by the one caller that makes its claim file (`ServerLedgerTests`).
 - **`ContractAreaAttribute`** puts a class in an area (`[ContractArea("activity")]`) and in `Category=Contract`.
 
 ## Adding tests and areas
