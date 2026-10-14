@@ -20,7 +20,7 @@
     "route": "/import-original"
   },
   "reply-import-original-unknown": {
-    "reason": "Weir never asks Deluno to import an original. When it cannot clean a file it hands the original back itself or reports the hand-off failed, and Deluno decides what to import.",
+    "reason": "Weir never asks Deluno to import an original. When it cannot clean a file it hands the original back itself or reports the hand-off failed, and Deluno decides what to import. Its 404 now names what was missing: {\"error\":\"handoff_not_found\",\"message\":...} (Deluno #1267); a body-less 404 is only a missing route.",
     "route": "/import-original"
   },
   "reply-send-again-connection-removed": {
@@ -36,7 +36,7 @@
     "route": "send-again"
   },
   "reply-send-again-nothing-recorded": {
-    "reason": "Weir never asks Deluno to send an outcome again: Deluno sends its outcomes and retries them on its own. Only the VM scenario suite calls this route, from outside Weir.",
+    "reason": "Weir never asks Deluno to send an outcome again: Deluno sends its outcomes and retries them on its own. Only the VM scenario suite calls this route, from outside Weir. Its 404 now carries {\"error\":\"nothing_recorded\",\"message\":...} (Deluno #1267).",
     "route": "send-again"
   },
   "reply-send-again-weir-hand-off-ended": {

@@ -103,7 +103,7 @@ public sealed class LibraryFolderChainCheck
     /// <summary>The Deluno library the workflow was created from, when it was created from one.</summary>
     private static DelunoLibraryLink? DelunoLinkOf(ProcessingLibraryRecord library) =>
         library.DiscoveredFromConnectionId is { } connectionId && !string.IsNullOrEmpty(library.DiscoveredLibraryKey)
-            ? new DelunoLibraryLink(connectionId, library.DiscoveredLibraryKey)
+            ? new DelunoLibraryLink(connectionId, library.DiscoveredLibraryKey, library.Name)
             : null;
 
     private async Task<List<WireObject>> DownloadClientEntriesAsync(

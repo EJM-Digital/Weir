@@ -99,10 +99,27 @@ public sealed class DelunoRepliesTests
 
         rig.Fake.Serve(recording, rig.Placeholders, exchanges: [1], anyQuery: true);
         var unknown = await rig.SetupCheckAsync();
-        // 404 with no body is how Weir tells a Deluno that predates the route; it keeps the manifest's lines and adds a note.
+        // 404 library_not_found: Deluno knows the route and has removed the library, so it is told so and is never called too old.
+        Assert.Equal(
+            [("unverified", $"{rig.Label} no longer has the films library this workflow came from, so Weir can't check where its downloads go. " +
+                $"Remove this workflow if the library is gone for good, or unlink it from {rig.Label} to keep it as a Weir-only workflow.")],
+            Lines(unknown));
+        Assert.DoesNotContain(Lines(unknown), line => line.Text.Contains("rc.23", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_404_from_Deluno_with_no_body_is_still_a_Deluno_that_predates_the_route()
+    {
+        await using var rig = await Rig.StartAsync();
+        // The recorded library_not_found reply with its body taken away is what an older Deluno answers for a route it does not have.
+        rig.Fake.Serve(DelunoSide.Reply("reply-download-destinations-empty"), rig.Placeholders, exchanges: [1], anyQuery: true, withoutBody: true);
+
+        var check = await rig.SetupCheckAsync();
+
         Assert.Contains(
             ("note", $"Deluno 1.0.0-rc.23 or later lets Weir check where its download clients save and how its path mappings apply."),
-            Lines(unknown));
+            Lines(check));
+        Assert.DoesNotContain(Lines(check), line => line.Text.Contains("no longer has", StringComparison.Ordinal));
     }
 
     // --- refusals ------------------------------------------------------------------------------------

@@ -9,7 +9,8 @@ internal static partial class DelunoDestinationsReader
 {
     /// <summary>
     /// <c>GET /api/integrations/processors/download-destinations</c>, for <paramref name="libraryKey"/> or, when null, every
-    /// library. A 404 is a Deluno that predates the route and a 403 is a key without the Imports scope; neither throws.
+    /// library. A 404 that says <c>library_not_found</c> is a Deluno that no longer has the library, any other 404 is a Deluno that
+    /// predates the route, and a 403 is a key without the Imports scope; none of them throws.
     /// </summary>
     public static async Task<DelunoDestinationsAnswer> ReadAsync(
         ManagerConnection connection, string? libraryKey, IManagerHttpHandlerFactory handlers, ILogger logger, CancellationToken cancellationToken)
@@ -20,6 +21,11 @@ internal static partial class DelunoDestinationsReader
             KeyValuePair<string, object>[] query = libraryKey is null ? [] : [new("libraryId", libraryKey)];
             var payload = await client.GetJsonAsync(DelunoDestinationRules.DownloadDestinationsPath, query, cancellationToken).ConfigureAwait(false);
             return DelunoDestinationsAnswer.Read(DelunoDestinationRules.ParseLibraries(payload));
+        }
+        catch (MediaManagerHttpException exception) when (exception.StatusCode == (int)HttpStatusCode.NotFound && exception.ErrorCode == DelunoDestinationRules.LibraryNotFoundCode)
+        {
+            LogLibraryNotFound(logger, connection.Label, libraryKey);
+            return DelunoDestinationsAnswer.Failed(DelunoDestinationsStatus.LibraryNotFound);
         }
         catch (MediaManagerHttpException exception) when (exception.StatusCode == (int)HttpStatusCode.NotFound)
         {
@@ -38,6 +44,9 @@ internal static partial class DelunoDestinationsReader
                 DelunoDestinationsStatus.Unreachable, ManagerDialectRules.Unreachable(connection, exception, "where its downloads are saved"));
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "{Label} says it has no library with the id {LibraryKey}, so the workflow linked to that library cannot be checked.")]
+    private static partial void LogLibraryNotFound(ILogger logger, string label, string? libraryKey);
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "{Label} has no download-destinations route, so it is older than the release that added it.")]
     private static partial void LogDestinationsNotOffered(ILogger logger, string label);

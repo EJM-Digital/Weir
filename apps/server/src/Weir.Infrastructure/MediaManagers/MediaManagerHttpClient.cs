@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net.Http.Headers;
 using System.Security.Authentication;
 using System.Text;
+using System.Text.RegularExpressions;
 using Weir.Core.Json;
 using Weir.Core.MediaManagers;
 using Weir.Core.Net;
@@ -264,7 +265,9 @@ public sealed class MediaManagerHttpClient
                 {
                     // Neither exception carries the response body: an unreachable manager already leaks nothing, and
                     // the connection test and setup-check screens that surface these messages must not become a way
-                    // to read back bytes from whatever answered instead of the manager Weir asked for.
+                    // to read back bytes from whatever answered instead of the manager Weir asked for. The one thing kept
+                    // is the answer's error code, and only when it is shaped like a code (ErrorCodeOf), so a caller can
+                    // tell what a status meant without reading the manager's words.
                     if (status == 429)
                     {
                         throw new MediaManagerRateLimitedException(
@@ -272,7 +275,7 @@ public sealed class MediaManagerHttpClient
                             RetryAfterSeconds(response.Headers.TryGetValues("Retry-After", out var values) ? values.First() : null));
                     }
 
-                    throw new MediaManagerHttpException($"HTTP {status.ToString(CultureInfo.InvariantCulture)}", status);
+                    throw new MediaManagerHttpException($"HTTP {status.ToString(CultureInfo.InvariantCulture)}", status, ErrorCodeOf(raw));
                 }
 
                 if (raw.Length == 0 && allowEmpty)
@@ -307,6 +310,30 @@ public sealed class MediaManagerHttpClient
             }
         }
     }
+
+    /// <summary>
+    /// The <c>error</c> member of a JSON object answer when it is a code (lower-case words joined by underscores, at most 64
+    /// characters), otherwise null. Anything else in the answer, and an answer that is not JSON, is not kept.
+    /// </summary>
+    internal static string? ErrorCodeOf(byte[] raw)
+    {
+        if (raw.Length == 0)
+        {
+            return null;
+        }
+
+        try
+        {
+            var parsed = WireJsonParser.Parse(new UTF8Encoding(false, true).GetString(raw));
+            return parsed is WireObject answer && answer.Get("error") is WireString { Value.Length: <= 64 } code && ErrorCodeShape.IsMatch(code.Value) ? code.Value : null;
+        }
+        catch (Exception exception) when (exception is WireJsonDecodeException or DecoderFallbackException)
+        {
+            return null;
+        }
+    }
+
+    private static readonly Regex ErrorCodeShape = new(@"^[a-z][a-z0-9]*(_[a-z0-9]+)*\z", RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
 
     /// <summary>The <c>Retry-After</c> header as a non-negative delay in seconds, or null (an HTTP-date is not acted on).</summary>
     public static double? RetryAfterSeconds(string? raw)

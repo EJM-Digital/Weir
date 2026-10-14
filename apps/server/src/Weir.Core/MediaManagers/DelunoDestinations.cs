@@ -51,6 +51,9 @@ public enum DelunoDestinationsStatus
     /// <summary>The route does not exist: a Deluno older than the release that added it.</summary>
     NotOffered,
 
+    /// <summary>Deluno has the route but answered <c>library_not_found</c>: it no longer has the library asked about.</summary>
+    LibraryNotFound,
+
     /// <summary>Deluno refused the key because it lacks the Imports scope.</summary>
     NeedsImportsScope,
 
@@ -71,6 +74,9 @@ public sealed record DelunoDestinationsAnswer(
 /// <summary>Reads Deluno's download-destinations answer into <see cref="DelunoLibraryDestinations"/>; fields Weir does not use are ignored.</summary>
 public static class DelunoDestinationRules
 {
+    /// <summary>The <c>error</c> code of Deluno's 404 for a library id it does not have (Deluno #1267); a 404 without it is a missing route.</summary>
+    public const string LibraryNotFoundCode = "library_not_found";
+
     public const string DownloadDestinationsPath = "/api/integrations/processors/download-destinations";
 
     /// <summary>The first Deluno release that serves <see cref="DownloadDestinationsPath"/>, as named to people.</summary>

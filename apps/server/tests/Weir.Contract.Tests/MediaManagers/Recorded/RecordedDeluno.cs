@@ -13,7 +13,8 @@ internal static class RecordedDeluno
     /// fails loudly. <paramref name="exchanges"/> limits the replay to these positions; <paramref name="anyQuery"/> answers a route with
     /// its recorded reply whatever query Weir sends (for a recording made without the query Weir adds). <paramref name="asRoute"/>
     /// serves the replies to a different call than the one they were recorded for: a refusal Deluno recorded for one route is the
-    /// refusal its other routes make too, and this is how Weir is shown it where it would meet it.
+    /// refusal its other routes make too, and this is how Weir is shown it where it would meet it. <paramref name="withoutBody"/> drops
+    /// the reply's body, which is how an older Deluno answers a route it does not have.
     /// </summary>
     public static void Serve(
         this FakeManager deluno,
@@ -21,7 +22,8 @@ internal static class RecordedDeluno
         DelunoPlaceholders placeholders,
         int[]? exchanges = null,
         bool anyQuery = false,
-        (string Method, string Path)? asRoute = null)
+        (string Method, string Path)? asRoute = null,
+        bool withoutBody = false)
     {
         var served = recording.Exchanges
             .Where((_, index) => exchanges is null || exchanges.Contains(index))
@@ -39,7 +41,7 @@ internal static class RecordedDeluno
                     ? new Reply(404, new System.Text.Json.Nodes.JsonObject { ["message"] = $"{recording.File} holds no reply to {request.Method} {request.Path}?{Normalised(request)}" })
                     : new Reply(
                         match.Reply.Status,
-                        placeholders.Apply(match.Reply.Body),
+                        withoutBody ? null : placeholders.Apply(match.Reply.Body),
                         match.Reply.Headers
                             .Where(header => header.Key != "content-type")
                             .ToDictionary(header => header.Key, header => placeholders.Apply(header.Value)));

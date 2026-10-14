@@ -2,7 +2,7 @@
   "app": "deluno",
   "version": "1.0.0-rc.30.32",
   "state": "reply-download-destinations-empty",
-  "recordedAt": "2026-10-14T06:06:46Z",
+  "recordedAt": "2026-10-14T08:20:42Z",
   "note": "Weir asks where downloads land on a Deluno with no library: an empty list, and a library id Deluno does not know. Recorded from the real server code through the in-process test host (ApplicationTestHost), by DelunoRepliesToWeirTests; generated ids, times and the data folder are replaced by <id>, <utc> and <data-root>.",
   "exchanges": [
     {
@@ -33,7 +33,13 @@
       },
       "reply": {
         "status": 404,
-        "headers": {}
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "error": "library_not_found",
+          "message": "Deluno has no library with the id no-such-library."
+        }
       }
     }
   ]

@@ -62,8 +62,10 @@ manager link.
   reported as a difference. The route needs a Deluno API key with the Imports
   permission (Deluno: System › API Access, the Media automation access). On a
   Deluno older than rc.23 Weir keeps showing the folders as not verified and says
-  which release lets it check; with a key that lacks the permission it says how to
-  fix that. A hand-off is still accepted only when its path, as Deluno sends it,
+  which release lets it check (a 404 with no body, or none that names a code); when
+  Deluno answers 404 with the code library_not_found it has the route but has removed
+  the library the workflow is linked to, and Weir says so and what to do, never that
+  Deluno is too old; with a key that lacks the permission it says how to fix that. A hand-off is still accepted only when its path, as Deluno sends it,
   is inside the watched folder.
 
   A hand-off may carry an optional `sourceFiles`: an array of absolute file
