@@ -102,10 +102,10 @@ to do). So in a combined round the Deluno session installs Weir with its picker,
 ```powershell
 # 1. Right after Deluno's suite installed Weir with its picker, before it sends any film (leave the Weir login file first):
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.17 -CommitSha <the 40-character SHA that will be tagged> -Phases Update
+  -Version 1.0.0-rc.18 -CommitSha <the 40-character SHA that will be tagged> -Phases Update
 # 2. After Deluno's suite has made its hand-offs (leave the Deluno key file and the Weir login file again):
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.17 -CommitSha <the same SHA> -Phases WithDeluno,Fresh
+  -Version 1.0.0-rc.18 -CommitSha <the same SHA> -Phases WithDeluno,Fresh
 ```
 
 Both invocations write into the same `artifacts/weir-scenarios-<version>-<short sha>/` folder, and the record merges every
@@ -210,7 +210,7 @@ ticked list.
 ```bash
 gh api repos/jampat000/Weir/statuses/<full sha> \
   -f state=success -f context=golden-path \
-  -f description="Weir scenarios passed: 15 of 15, 1.0.0-rc.17+abc1234" \
+  -f description="Weir scenarios passed: 15 of 15, 1.0.0-rc.18+abc1234" \
   -f target_url="https://github.com/jampat000/Weir/issues/<n>#issuecomment-<id>"
 ```
 
