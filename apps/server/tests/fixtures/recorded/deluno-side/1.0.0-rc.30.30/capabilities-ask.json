@@ -1,0 +1,36 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "capabilities-ask",
+  "recordedAt": "2026-10-13T21:11:31Z",
+  "note": "Deluno asks what Weir can be asked and told.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/capabilities",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "capabilities": [
+            "handoff-status",
+            "handoff-cancel",
+            "handoff-outcome",
+            "handoff-outcome-codes",
+            "library-folders"
+          ],
+          "machine_name": "<scrubbed>",
+          "product": "Weir",
+          "version": "1.0.0-rc.13"
+        }
+      }
+    }
+  ]
+}

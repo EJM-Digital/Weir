@@ -1,0 +1,48 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "handoff-release-folder",
+  "recordedAt": "2026-10-13T21:13:39Z",
+  "note": "A release-folder Transmission download handed to Weir: sourcePath is the release folder.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a1371d23b57a89bf279db3493ab745:1791926018997",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a1371d23b57a89bf279db3493ab745",
+          "libraryId": "01a136e9242275898618c522d88dec53",
+          "mediaType": "movies",
+          "sourcePath": "C:\\Downloads\\Completed\\Movies\\Gprecfoldervpli02.2020.1080p.WEB-DL.x264-GOLDEN",
+          "releaseName": "Gprecfoldervpli02.2020.1080p.WEB-DL.x264-GOLDEN",
+          "queueItemId": "3fcdf342f91ff2b7745ae70fda4b1878fbf33f1e",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "Gprecfoldervpli02",
+          "year": 2020,
+          "sourceFiles": [
+            "C:\\Downloads\\Completed\\Movies\\Gprecfoldervpli02.2020.1080p.WEB-DL.x264-GOLDEN\\Gprecfoldervpli02.2020.1080p.WEB-DL.x264-GOLDEN.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    }
+  ]
+}

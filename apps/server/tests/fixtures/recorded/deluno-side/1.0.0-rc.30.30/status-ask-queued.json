@@ -1,0 +1,59 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "status-ask-queued",
+  "recordedAt": "2026-10-13T21:20:40Z",
+  "note": "Deluno's periodic status poll for a hand-off Weir holds queued (Weir paused), twice, a minute apart.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/01a13722a77b7d77a7435c2aa3afb12e",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a13722a77b7d77a7435c2aa3afb12e",
+          "state": "queued",
+          "queuePosition": 1,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-10-13T21:19:40.519702Z",
+          "outputPath": null,
+          "outputFiles": null,
+          "message": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/01a13722a77b7d77a7435c2aa3afb12e",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a13722a77b7d77a7435c2aa3afb12e",
+          "state": "queued",
+          "queuePosition": 1,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-10-13T21:19:40.519702Z",
+          "outputPath": null,
+          "outputFiles": null,
+          "message": null
+        }
+      }
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Net;
 using System.Net.Http.Headers;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
@@ -121,6 +122,7 @@ public sealed partial class HandoffCompletionReporter
         ArgumentNullException.ThrowIfNull(body);
         var name = target.Connection.Label;
         int status;
+        var tooLate = false;
         try
         {
             using var client = new HttpClient(_handlers.Handler(followRedirects: false), disposeHandler: false) { Timeout = CompletionReports.Timeout };
@@ -141,6 +143,10 @@ public sealed partial class HandoffCompletionReporter
 
             using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
             status = (int)response.StatusCode;
+            if (status == (int)HttpStatusCode.Conflict)
+            {
+                tooLate = CompletionReports.IsTooLate(status, await ReadAnswerAsync(response, cancellationToken).ConfigureAwait(false));
+            }
         }
         catch (Exception exception) when (exception is HttpRequestException or IOException or TaskCanceledException or UriFormatException or InvalidOperationException)
         {
@@ -154,7 +160,20 @@ public sealed partial class HandoffCompletionReporter
         }
 
         _logger.LogWarning("Hand-off report to {Url} returned HTTP {Status}", target.Url, status);
-        return new HandoffReportDelivery(false, $"failed: {name} answered HTTP {status.ToString(CultureInfo.InvariantCulture)}");
+        return new HandoffReportDelivery(false, $"failed: {name} answered HTTP {status.ToString(CultureInfo.InvariantCulture)}", tooLate);
+    }
+
+    /// <summary>What a manager's refusal says, when it is JSON; null when it is not or cannot be read.</summary>
+    private static async Task<WireValue?> ReadAnswerAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return WireJsonParser.Parse(await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));
+        }
+        catch (WireJsonDecodeException)
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -174,7 +193,11 @@ public sealed partial class HandoffCompletionReporter
             ? MediaPathNames.Name(relativePath, OperatingSystem.IsWindows())
             : body.Get("releaseName") is { IsTruthy: true } release ? WireConvert.Str(release) : "a handed-over file";
         string title;
-        if (!delivery.Accepted)
+        if (delivery.ManagerStoppedWaiting)
+        {
+            title = $"{name} had already stopped waiting for {fileName}";
+        }
+        else if (!delivery.Accepted)
         {
             title = $"Weir could not tell {name} about {fileName}";
         }
@@ -214,8 +237,12 @@ public sealed partial class HandoffCompletionReporter
             .Set("delivery", delivery.Status)
             .Set("report", body)
             .Set("trigger", "worker")
-            .Set("result", delivery.Accepted ? "success" : "failed");
-        if (!delivery.Accepted)
+            .Set("result", delivery.Accepted ? "success" : delivery.ManagerStoppedWaiting ? "skipped" : "failed");
+        if (delivery.ManagerStoppedWaiting)
+        {
+            detail.Set("user_message", $"{name} had already stopped waiting for {fileName}, so it did not queue an import.");
+        }
+        else if (!delivery.Accepted)
         {
             detail.Set(
                 "next_action",

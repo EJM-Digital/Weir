@@ -1,0 +1,49 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "reply-no-sign-in",
+  "recordedAt": "2026-10-14T06:06:54Z",
+  "note": "Each of the four routes called with no credential at all. Recorded from the real server code through the in-process test host (ApplicationTestHost), by DelunoRepliesToWeirTests; generated ids, times and the data folder are replaced by <id>, <utc> and <data-root>.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/integrations/processors/handoffs"
+      },
+      "reply": {
+        "status": 401,
+        "headers": {}
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/integrations/processors/download-destinations"
+      },
+      "reply": {
+        "status": 401,
+        "headers": {}
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/handoffs/no-such-handoff/import-original"
+      },
+      "reply": {
+        "status": 401,
+        "headers": {}
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/handoffs/no-such-handoff/outcome/send-again"
+      },
+      "reply": {
+        "status": 401,
+        "headers": {}
+      }
+    }
+  ]
+}

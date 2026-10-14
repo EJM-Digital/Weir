@@ -1,0 +1,137 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "reply-download-destinations-libraries",
+  "recordedAt": "2026-10-14T06:07:10Z",
+  "note": "Weir asks where downloads land: a movie library that hands to Weir with its path mapping, a TV library with no processor, for every library, for one, and for a library Deluno does not know. Recorded from the real server code through the in-process test host (ApplicationTestHost), by DelunoRepliesToWeirTests; generated ids, times and the data folder are replaced by <id>, <utc> and <data-root>.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/integrations/processors/download-destinations",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "libraries": [
+            {
+              "libraryId": "<library:films>",
+              "libraryName": "films",
+              "mediaType": "movies",
+              "downloadsPath": "<data-root>/films-downloads",
+              "processorOutputPath": "<data-root>/films-ready",
+              "importWorkflow": "refine-before-import",
+              "destinations": [],
+              "processorConnection": {
+                "id": "<connection:weir>",
+                "name": "Weir",
+                "pathMappings": [
+                  {
+                    "delunoPath": "/downloads",
+                    "processorPath": "D:/Downloads"
+                  }
+                ]
+              }
+            },
+            {
+              "libraryId": "<library:shows>",
+              "libraryName": "shows",
+              "mediaType": "tv",
+              "downloadsPath": "<data-root>/shows-downloads",
+              "processorOutputPath": null,
+              "importWorkflow": "standard",
+              "destinations": [],
+              "processorConnection": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/integrations/processors/download-destinations?libraryId=<library:films>",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "libraries": [
+            {
+              "libraryId": "<library:films>",
+              "libraryName": "films",
+              "mediaType": "movies",
+              "downloadsPath": "<data-root>/films-downloads",
+              "processorOutputPath": "<data-root>/films-ready",
+              "importWorkflow": "refine-before-import",
+              "destinations": [],
+              "processorConnection": {
+                "id": "<connection:weir>",
+                "name": "Weir",
+                "pathMappings": [
+                  {
+                    "delunoPath": "/downloads",
+                    "processorPath": "D:/Downloads"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/integrations/processors/download-destinations?libraryId=<library:shows>",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "libraries": [
+            {
+              "libraryId": "<library:shows>",
+              "libraryName": "shows",
+              "mediaType": "tv",
+              "downloadsPath": "<data-root>/shows-downloads",
+              "processorOutputPath": null,
+              "importWorkflow": "standard",
+              "destinations": [],
+              "processorConnection": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/integrations/processors/download-destinations?libraryId=no-such-library",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 404,
+        "headers": {}
+      }
+    }
+  ]
+}

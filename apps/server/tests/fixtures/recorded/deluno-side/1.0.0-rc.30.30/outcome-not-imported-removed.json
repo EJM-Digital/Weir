@@ -1,0 +1,65 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "outcome-not-imported-removed",
+  "recordedAt": "2026-10-13T21:16:39Z",
+  "note": "Deluno tells Weir it will not import a hand-off it removed (\"I don't want it\"): not-imported with a reason, importedPath null.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/01a1371ef9dc72f08efd0fe26b99841f/outcome",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "outcome": "not-imported",
+          "occurredUtc": "2026-10-13T21:16:39.5302049+00:00",
+          "importedPath": null,
+          "reason": "Deluno removed Gprecbeforedage01.2020.1080p.WEB-DL.x264-GOLDEN.mkv from qBittorrent on <host>, so it will not import it."
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1371ef9dc72f08efd0fe26b99841f",
+          "outcome": "not-imported",
+          "released": false,
+          "message": "Weir recorded that the file will not be imported, and kept its copy."
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/01a1371fe5fd780c8bc310962bedb8f4/outcome",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "outcome": "not-imported",
+          "occurredUtc": "2026-10-13T21:17:39.9469806+00:00",
+          "importedPath": null,
+          "reason": "Deluno removed Gprecduringdoqh02.2020.1080p.WEB-DL.x264-GOLDEN.mkv from qBittorrent on <host>, so it will not import it."
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1371fe5fd780c8bc310962bedb8f4",
+          "outcome": "not-imported",
+          "released": false,
+          "message": "Weir recorded that the file will not be imported, and kept its copy."
+        }
+      }
+    }
+  ]
+}

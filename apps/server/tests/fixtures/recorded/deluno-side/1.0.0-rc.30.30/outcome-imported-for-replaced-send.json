@@ -1,0 +1,37 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "outcome-imported-for-replaced-send",
+  "recordedAt": "2026-10-13T21:16:40Z",
+  "note": "Deluno's outcome for the resend of a release it had removed: imported, with the library file.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/01a1371fe55b7e79b8ef0fcff5cd6955/outcome",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "outcome": "imported",
+          "occurredUtc": "2026-10-13T21:16:40.1748731+00:00",
+          "importedPath": "C:\\Media\\Movies\\Gprecbeforedage01 (2020)\\Gprecbeforedage01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "reason": null
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1371fe55b7e79b8ef0fcff5cd6955",
+          "outcome": "imported",
+          "released": false,
+          "message": "Weir recorded that Deluno imported the file. Deluno will not import this file: Deluno removed Gprecbeforedage01.2020.1080p.WEB-DL.x264-GOLDEN.mkv from qBittorrent on <host>, so it will not import it. Weir kept its copy in the hand-back folder."
+        }
+      }
+    }
+  ]
+}

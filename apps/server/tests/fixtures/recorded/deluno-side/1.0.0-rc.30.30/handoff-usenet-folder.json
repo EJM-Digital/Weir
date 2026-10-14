@@ -1,0 +1,45 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "handoff-usenet-folder",
+  "recordedAt": "2026-10-13T21:14:39Z",
+  "note": "A release-folder SABnzbd download handed to Weir.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a1371e0ee07eceb910f323f5215d00:1791926079199",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a1371e0ee07eceb910f323f5215d00",
+          "libraryId": "01a136e9242275898618c522d88dec53",
+          "mediaType": "movies",
+          "sourcePath": "C:\\Downloads\\Completed\\Movies\\Gprecusenetekhf03.2020.1080p.WEB-DL.x264-GOLDEN\\Gprecusenetekhf03.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "releaseName": "Gprecusenetekhf03.2020.1080p.WEB-DL.x264-GOLDEN",
+          "queueItemId": "b8ef7282-86eb-4a41-9ebf-cb45e1a60fbb",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "Gprecusenetekhf03",
+          "year": 2020
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    }
+  ]
+}

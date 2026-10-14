@@ -1,0 +1,41 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "events-failed-unreadable",
+  "recordedAt": "2026-10-13T21:39:34Z",
+  "note": "Weir reports a failed hand-off for a file it cannot read (random bytes named .mkv), disposition held.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a137341a3c7198ae8f4dcabd658222",
+          "status": "failed",
+          "processorName": "Weir",
+          "libraryId": "01a136e9242275898618c522d88dec53",
+          "releaseName": "Gprecbrokenzeqr01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "message": "Weir can't read this file yet. It may still be arriving, so Weir will look again later.",
+          "disposition": "held",
+          "sourceRemoved": false,
+          "outputFiles": []
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "failed",
+          "handoffId": "01a137341a3c7198ae8f4dcabd658222",
+          "activityId": "01a13734e0017762af0f71fcbf716a78",
+          "importJobId": null
+        }
+      }
+    }
+  ]
+}

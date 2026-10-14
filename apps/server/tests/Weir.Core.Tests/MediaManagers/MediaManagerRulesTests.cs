@@ -287,6 +287,20 @@ public sealed class MediaManagerRulesTests
         Assert.False(CompletionReports.IsSucceeded(Dict("""{"ok":true,"outcome":"source_gone"}""")));
     }
 
+    [Theory]
+    [InlineData(409, """{"message":"Deluno stopped waiting for Film.mkv, which ended dismissed, so this report is too late. No import was queued.","handoffId":"h1","status":"dismissed"}""", true)]
+    [InlineData(409, """{"handoffId":"h1","status":"completed"}""", false)]
+    [InlineData(409, """{"message":"something else"}""", false)]
+    [InlineData(409, """["dismissed"]""", false)]
+    [InlineData(404, """{"handoffId":"h1","status":"dismissed"}""", false)]
+    [InlineData(202, """{"handoffId":"h1","status":"dismissed"}""", false)]
+    public void A_manager_that_stopped_waiting_says_so_with_a_409_naming_the_dismissed_status(int httpStatus, string answer, bool expected) =>
+        Assert.Equal(expected, CompletionReports.IsTooLate(httpStatus, WireJsonParser.Parse(answer)));
+
+    [Fact]
+    public void An_answer_that_cannot_be_read_is_not_a_manager_that_stopped_waiting() =>
+        Assert.False(CompletionReports.IsTooLate(409, null));
+
     [Fact]
     public void Failures_carry_the_reason_and_what_happened_to_the_source()
     {

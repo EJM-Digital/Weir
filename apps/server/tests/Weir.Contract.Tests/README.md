@@ -123,3 +123,16 @@ its own README naming where and when it was captured) against a running Weir. A 
   number, and the pin fails once Weir answers what was recorded again.
 
 `RecordedComparisonTests` proves the failures say what they should.
+
+`fixtures/recorded/deluno-side/` is the other half (#971): Deluno's recordings of its own requests, Weir's reports to it and its own replies, a
+byte-for-byte copy of Deluno's folder pinned by its `MANIFEST.sha256` (`scripts/check-recorded-manifest.mjs`). Its README names the Deluno commit and
+says which test replays what.
+
+- `DelunoRequestsTests` and `RecordedLibraryFoldersTests` send Deluno's recorded requests (hand-offs, status poll, cancel, outcomes, the two asks) to a
+  Weir set up as that session had it and hold Weir's reply and state to the recording.
+- `DelunoReportsTests` makes Weir produce each ending (finished, failed, source gone, too late) against a fake Deluno that records what Weir POSTs and
+  answers with Deluno's recorded reply; `EmittedReport` holds the body to the recorded one, member names, order, types and the exact words.
+- `DelunoRepliesTests` serves Deluno's recorded replies (`DelunoPlaceholders` fills in the placeholders) to Weir's reads and refusals.
+- `DelunoRecordingComparisonTests` proves a recording that stops matching fails naming its file and JSON path.
+- A recording Weir has no behaviour for is listed in `fixtures/recorded/deluno-side-no-weir-behaviour.json`; `scripts/check-recorded-replays.mjs` fails on
+  one that is neither replayed nor listed.

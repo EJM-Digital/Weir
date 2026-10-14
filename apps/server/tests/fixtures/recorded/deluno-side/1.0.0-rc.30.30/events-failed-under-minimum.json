@@ -1,0 +1,41 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "events-failed-under-minimum",
+  "recordedAt": "2026-10-13T21:25:41Z",
+  "note": "Weir reports a failed hand-off: a file under its minimum size, disposition held.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1372829747bbabe31b2beb10d7116",
+          "status": "failed",
+          "processorName": "Weir",
+          "libraryId": "01a136e9242275898618c522d88dec53",
+          "releaseName": "Gprecfailowns01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "message": "Skipped because this file is 0.8 MB, under the 50 MB minimum.",
+          "disposition": "held",
+          "sourceRemoved": false,
+          "outputFiles": []
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "failed",
+          "handoffId": "01a1372829747bbabe31b2beb10d7116",
+          "activityId": "01a137282a497f76a57f3106f71e4d41",
+          "importJobId": null
+        }
+      }
+    }
+  ]
+}

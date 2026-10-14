@@ -1,0 +1,66 @@
+{
+  "reply-handoffs-empty": {
+    "reason": "Weir never asks Deluno for its list of hand-offs: Weir keeps its own record of each hand-off and Deluno asks Weir about it, not the other way round. Only the VM scenario suite reads this list, from outside Weir, with a key of its own.",
+    "route": "/processors/handoffs"
+  },
+  "reply-handoffs-listed": {
+    "reason": "Weir never asks Deluno for its list of hand-offs: Weir keeps its own record of each hand-off and Deluno asks Weir about it, not the other way round. Only the VM scenario suite reads this list, from outside Weir, with a key of its own.",
+    "route": "/processors/handoffs"
+  },
+  "reply-handoffs-with-outcomes": {
+    "reason": "Weir never asks Deluno for its list of hand-offs: Weir keeps its own record of each hand-off and Deluno asks Weir about it, not the other way round. Only the VM scenario suite reads this list, from outside Weir, with a key of its own.",
+    "route": "/processors/handoffs"
+  },
+  "reply-import-original-accepted": {
+    "reason": "Weir never asks Deluno to import an original. When it cannot clean a file it hands the original back itself or reports the hand-off failed, and Deluno decides what to import.",
+    "route": "/import-original"
+  },
+  "reply-import-original-not-yet": {
+    "reason": "Weir never asks Deluno to import an original. When it cannot clean a file it hands the original back itself or reports the hand-off failed, and Deluno decides what to import.",
+    "route": "/import-original"
+  },
+  "reply-import-original-unknown": {
+    "reason": "Weir never asks Deluno to import an original. When it cannot clean a file it hands the original back itself or reports the hand-off failed, and Deluno decides what to import.",
+    "route": "/import-original"
+  },
+  "reply-send-again-connection-removed": {
+    "reason": "Weir never asks Deluno to send an outcome again: Deluno sends its outcomes and retries them on its own. Only the VM scenario suite calls this route, from outside Weir.",
+    "route": "send-again"
+  },
+  "reply-send-again-delivered-released": {
+    "reason": "Weir never asks Deluno to send an outcome again: Deluno sends its outcomes and retries them on its own. Only the VM scenario suite calls this route, from outside Weir.",
+    "route": "send-again"
+  },
+  "reply-send-again-delivered": {
+    "reason": "Weir never asks Deluno to send an outcome again: Deluno sends its outcomes and retries them on its own. Only the VM scenario suite calls this route, from outside Weir.",
+    "route": "send-again"
+  },
+  "reply-send-again-nothing-recorded": {
+    "reason": "Weir never asks Deluno to send an outcome again: Deluno sends its outcomes and retries them on its own. Only the VM scenario suite calls this route, from outside Weir.",
+    "route": "send-again"
+  },
+  "reply-send-again-weir-hand-off-ended": {
+    "reason": "Weir never asks Deluno to send an outcome again: Deluno sends its outcomes and retries them on its own. Only the VM scenario suite calls this route, from outside Weir.",
+    "route": "send-again"
+  },
+  "reply-send-again-weir-has-its-answer": {
+    "reason": "Weir never asks Deluno to send an outcome again: Deluno sends its outcomes and retries them on its own. Only the VM scenario suite calls this route, from outside Weir.",
+    "route": "send-again"
+  },
+  "reply-send-again-weir-never-received": {
+    "reason": "Weir never asks Deluno to send an outcome again: Deluno sends its outcomes and retries them on its own. Only the VM scenario suite calls this route, from outside Weir.",
+    "route": "send-again"
+  },
+  "reply-send-again-weir-not-finished": {
+    "reason": "Weir never asks Deluno to send an outcome again: Deluno sends its outcomes and retries them on its own. Only the VM scenario suite calls this route, from outside Weir.",
+    "route": "send-again"
+  },
+  "reply-send-again-weir-refuses-secret": {
+    "reason": "Weir never asks Deluno to send an outcome again: Deluno sends its outcomes and retries them on its own. Only the VM scenario suite calls this route, from outside Weir.",
+    "route": "send-again"
+  },
+  "reply-send-again-weir-unreachable": {
+    "reason": "Weir never asks Deluno to send an outcome again: Deluno sends its outcomes and retries them on its own. Only the VM scenario suite calls this route, from outside Weir.",
+    "route": "send-again"
+  }
+}

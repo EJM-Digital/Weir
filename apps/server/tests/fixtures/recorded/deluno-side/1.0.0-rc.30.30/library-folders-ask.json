@@ -1,0 +1,50 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "library-folders-ask",
+  "recordedAt": "2026-10-13T21:11:32Z",
+  "note": "Deluno asks for Weir's libraries and watched folders.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/library-folders",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "libraries": [
+            {
+              "id": 1,
+              "name": "Movies",
+              "media_type": "movie",
+              "watched_folder": "C:\\Downloads\\Completed\\Movies",
+              "work_folder": "C:\\ProgramData\\Weir\\processing\\processing-movie-work",
+              "output_folder": "C:\\Weir\\Ready\\Movies",
+              "manager_library_key": "01a136e9242275898618c522d88dec53",
+              "folders_from_manager": true,
+              "minimum_file_size_bytes": 52428800
+            },
+            {
+              "id": 2,
+              "name": "TV Shows",
+              "media_type": "tv",
+              "watched_folder": "C:\\Downloads\\Completed\\TV",
+              "work_folder": "C:\\ProgramData\\Weir\\processing\\processing-tv-work",
+              "output_folder": "C:\\Weir\\Ready\\TV",
+              "manager_library_key": "01a136e9255c79f9b93c4e6b81736481",
+              "folders_from_manager": true,
+              "minimum_file_size_bytes": 52428800
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

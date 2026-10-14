@@ -1,0 +1,73 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "events-too-late",
+  "recordedAt": "2026-10-13T21:15:57Z",
+  "note": "Weir reports a finished hand-off Deluno no longer waits for (the person said \"I don't want it\", so it ended dismissed): Deluno answers 409 and queues no import.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1371ef9dc72f08efd0fe26b99841f",
+          "status": "completed",
+          "processorName": "Weir",
+          "libraryId": "01a136e9242275898618c522d88dec53",
+          "releaseName": "Gprecbeforedage01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "outputPath": "C:\\Weir\\Ready\\Movies\\Gprecbeforedage01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "message": "Remux finished.",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\Movies\\Gprecbeforedage01.2020.1080p.WEB-DL.x264-GOLDEN.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": "Deluno stopped waiting for Gprecbeforedage01.2020.1080p.WEB-DL.x264-GOLDEN.mkv, which ended dismissed, so this report is too late. No import was queued.",
+          "handoffId": "01a1371ef9dc72f08efd0fe26b99841f",
+          "status": "dismissed"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1371fe5fd780c8bc310962bedb8f4",
+          "status": "completed",
+          "processorName": "Weir",
+          "libraryId": "01a136e9242275898618c522d88dec53",
+          "releaseName": "Gprecduringdoqh02.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "outputPath": "C:\\Weir\\Ready\\Movies\\Gprecduringdoqh02.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "message": "Remux finished.",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\Movies\\Gprecduringdoqh02.2020.1080p.WEB-DL.x264-GOLDEN.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": "Deluno stopped waiting for Gprecduringdoqh02.2020.1080p.WEB-DL.x264-GOLDEN.mkv, which ended dismissed, so this report is too late. No import was queued.",
+          "handoffId": "01a1371fe5fd780c8bc310962bedb8f4",
+          "status": "dismissed"
+        }
+      }
+    }
+  ]
+}

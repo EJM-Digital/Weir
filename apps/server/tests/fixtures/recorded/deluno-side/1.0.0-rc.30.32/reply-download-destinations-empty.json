@@ -1,0 +1,40 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "reply-download-destinations-empty",
+  "recordedAt": "2026-10-14T06:06:46Z",
+  "note": "Weir asks where downloads land on a Deluno with no library: an empty list, and a library id Deluno does not know. Recorded from the real server code through the in-process test host (ApplicationTestHost), by DelunoRepliesToWeirTests; generated ids, times and the data folder are replaced by <id>, <utc> and <data-root>.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/integrations/processors/download-destinations",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "libraries": []
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/integrations/processors/download-destinations?libraryId=no-such-library",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 404,
+        "headers": {}
+      }
+    }
+  ]
+}

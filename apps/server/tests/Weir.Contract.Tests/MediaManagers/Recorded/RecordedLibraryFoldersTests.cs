@@ -15,21 +15,28 @@ public sealed class RecordedLibraryFoldersTests
     private const string TvKey = "01a127b7c0eb7b108e7ec900f36acb11";
 
     [Fact]
-    public async Task The_library_folders_of_workflows_set_up_from_Deluno_are_what_Deluno_recorded()
+    public async Task The_library_folders_of_workflows_set_up_from_Deluno_are_what_Deluno_recorded() =>
+        await ReplayAsync(Recording.Load("library-folders"), RecordedWorld.MoviesKey, TvKey);
+
+    [Fact]
+    public async Task The_library_folders_Deluno_asked_for_in_its_own_session_are_what_Deluno_recorded() =>
+        await ReplayAsync(DelunoSide.Request("library-folders-ask"), DelunoSide.MoviesKey, DelunoSide.TvKey);
+
+    private static async Task ReplayAsync(Recording recording, string moviesKey, string tvKey)
     {
         using var rig = new TemporaryFolder();
         var movies = Native(rig, "Completed/Movies");
         var tv = Native(rig, "Completed/TV");
         using var deluno = FakeManager.StartDeluno(
         [
-            Library(RecordedWorld.MoviesKey, "Movies", "movie", MoviesReady(rig)),
-            Library(TvKey, "TV Shows", "tv", TvReady(rig)),
+            Library(moviesKey, "Movies", "movie", MoviesReady(rig)),
+            Library(tvKey, "TV Shows", "tv", TvReady(rig)),
         ]);
         deluno.Route("GET", DestinationsPath, new JsonObject
         {
             ["libraries"] = new JsonArray(
-                Published(RecordedWorld.MoviesKey, "Movies", Directory.CreateDirectory(movies).FullName, MoviesReady(rig)),
-                Published(TvKey, "TV Shows", Directory.CreateDirectory(tv).FullName, TvReady(rig))),
+                Published(moviesKey, "Movies", Directory.CreateDirectory(movies).FullName, MoviesReady(rig)),
+                Published(tvKey, "TV Shows", Directory.CreateDirectory(tv).FullName, TvReady(rig))),
         });
         await using var server = await WeirServer.StartNewAsync(new Dictionary<string, string>(SyncOn.Concat(Handoffs.SecretEnvironment)));
         using var admin = await server.CreateAdminClientAsync();
@@ -42,6 +49,6 @@ public sealed class RecordedLibraryFoldersTests
             .Folder(RecordedWorld.RecordedTvOutput, TvReady(rig))
             .Folder(@"C:\ProgramData\Weir", server.Home);
 
-        await new Replay(() => server.CreateClient(), Handoffs.SecretValue, translation).SendAsync(Recording.Load("library-folders"));
+        await new Replay(() => server.CreateClient(), Handoffs.SecretValue, translation).SendAsync(recording);
     }
 }

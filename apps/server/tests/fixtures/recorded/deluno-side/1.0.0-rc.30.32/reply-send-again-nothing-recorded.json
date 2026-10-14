@@ -1,0 +1,45 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "reply-send-again-nothing-recorded",
+  "recordedAt": "2026-10-14T06:06:58Z",
+  "note": "Weir asks Deluno to tell it again what became of a hand-off, and Deluno has recorded no outcome for it (none is made until an import finishes): 404 with the reason. Recorded from the real server code through the in-process test host (ApplicationTestHost), by DelunoRepliesToWeirTests; generated ids, times and the data folder are replaced by <id>, <utc> and <data-root>.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/handoffs/<handoff:waiting>/outcome/send-again",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": "Deluno has nothing recorded to tell the processor about this hand-off. An outcome is recorded when its import finishes."
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/handoffs/no-such-handoff/outcome/send-again",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": "Deluno has nothing recorded to tell the processor about this hand-off. An outcome is recorded when its import finishes."
+        }
+      }
+    }
+  ]
+}
