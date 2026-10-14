@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Weir.Core.Activity;
 using Weir.Core.LibraryMode;
 using Weir.Infrastructure.LibraryMode;
 using Weir.Infrastructure.Processing.RemuxPass;
@@ -809,6 +810,7 @@ public sealed class SafeSwapTests
         Assert.Equal(SwapJournalState.KeepConflict, s.Journal.Latest(SwapScenario.JobId)!.State);
         Assert.Single(s.ActivityWriter.Events);
         Assert.Contains("Weir kept both copies of", s.ActivityWriter.Events[0].Title, StringComparison.Ordinal);
+        Assert.Equal(Original, ActivityClassifier.Classify(s.ActivityWriter.Events[0].EventType, s.ActivityWriter.Events[0].Detail).RelativePath);
 
         // The conflict is recorded once: a further sweep must not alert about it again or touch the files again.
         s.ActivityWriter.Events.Clear();
