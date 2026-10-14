@@ -352,6 +352,13 @@ internal sealed class FakeSwapJournal : ISwapJournal
         _files.Step("Journal(list)")();
         return Task.FromResult<IReadOnlyList<SwapJournalEntry>>(_entries.Values.Where(entry => entry.IsUnfinished).OrderBy(entry => entry.JobId).ToList());
     }
+
+    public Task<IReadOnlyList<string>> ListKeepConflictPathsAsync(CancellationToken cancellationToken = default)
+    {
+        _files.Step("Journal(conflicts)")();
+        return Task.FromResult<IReadOnlyList<string>>(
+            _entries.Values.Where(entry => entry.State == SwapJournalState.KeepConflict).OrderBy(entry => entry.JobId).Select(entry => entry.OriginalPath).ToList());
+    }
 }
 
 /// <summary>A validator that passes, fails or throws as told, and can run a side effect (a concurrent change) while it checks.</summary>

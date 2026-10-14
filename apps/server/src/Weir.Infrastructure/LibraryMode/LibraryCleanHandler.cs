@@ -245,6 +245,7 @@ public sealed partial class LibraryCleanHandler : IJobHandler
                 OriginalDurationSeconds = durationSeconds,
                 KeepOriginal = keepOriginal,
                 KeepFreeBytes = library.MinimumFreeDiskSpaceMb * BytesPerMib,
+                AllowHardlinked = settings.CleanHardlinkedFiles,
             },
             cancellationToken).ConfigureAwait(false);
 

@@ -38,6 +38,7 @@ This file is the short entry point for coding agents. Keep detailed rules in lin
 - Packaging smoke checks are documented in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 - Docs map validation: `node scripts/check-agent-docs.mjs`.
 - Coverage: CI holds line and branch coverage per project to the floors in [`docs/coverage/floors.json`](docs/coverage/floors.json); a pull request that adds tests raises the floors it earned, and a floor only goes down in a pull request of its own ([`docs/coverage/README.md`](docs/coverage/README.md)). Locally: `npm run test:coverage` in `apps/web`.
+- Coverage register: `node scripts/check-coverage-register.mjs`. Every route, job kind, setting, event type, web route, screen control and tray menu item needs a row in [`docs/testing/coverage-register.json`](docs/testing/coverage-register.json), and every row names the tests that prove it or the open coverage issue that will. Update the register in the same pull request as the code; the rules and the proof types are in [`docs/testing/COVERAGE.md`](docs/testing/COVERAGE.md).
 
 ## Working Style
 

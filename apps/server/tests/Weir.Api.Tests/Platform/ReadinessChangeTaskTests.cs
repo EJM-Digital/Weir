@@ -1,8 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Weir.Api.Endpoints;
 using Weir.Core.Readiness;
 using Weir.Core.Workers;
 using Weir.Infrastructure.Activity;
+using Weir.Infrastructure.Jobs;
 
 namespace Weir.Api.Tests.Platform;
 
@@ -52,12 +54,43 @@ public sealed class ReadinessChangeTaskTests
         return await NextAsync(subscription) != Sentinel;
     }
 
+    private static void RemoveWorkerSlots(IServiceCollection services)
+    {
+        var slots = services
+            .Where(service => service.ServiceType == typeof(IHostedService) &&
+                service.ImplementationType is { } type && (type == typeof(ProcessingWorkerService) || type == typeof(UpkeepWorkerService)))
+            .ToList();
+        foreach (var service in slots)
+        {
+            services.Remove(service);
+        }
+    }
+
+    /// <summary>
+    /// A server whose worker slots report only what the test says. The real slots beat on their own clock, so one beat landing
+    /// between a stop and the look would take the stop back and leave the answer as it was.
+    /// </summary>
+    private static async Task<WeirTestServer> StartWithSlotsTheTestDrivesAsync()
+    {
+        var server = await WeirTestServer.StartAsync(
+            [("WEIR_SESSION_SECRET", ApiTestClient.Secret), ("WEIR_PROCESSING_WORKER_COUNT", "1")],
+            configureServices: RemoveWorkerSlots);
+        Assert.DoesNotContain(server.Services.GetServices<IHostedService>(), service => service is ProcessingWorkerService or UpkeepWorkerService);
+        var heartbeats = server.Services.GetRequiredService<WorkerHeartbeats>();
+        heartbeats.Started(ProcessingWorkerService.HeartbeatModule, 0);
+        for (var slot = 0; slot < WorkLanes.UpkeepSlots; slot++)
+        {
+            heartbeats.Started(WorkLanes.UpkeepHeartbeatModule, slot);
+        }
+
+        await Eventually.ThatAsync(async () => (await SystemEndpoints.BuildReadinessAsync(server.Services)).Ready);
+        return server;
+    }
+
     [Fact]
     public async Task A_worker_that_stops_and_one_that_comes_back_are_published_while_a_browser_watches()
     {
-        await using var server = await WeirTestServer.StartAsync(
-            [("WEIR_SESSION_SECRET", ApiTestClient.Secret), ("WEIR_PROCESSING_WORKER_COUNT", "1")]);
-        await Eventually.ThatAsync(async () => (await SystemEndpoints.BuildReadinessAsync(server.Services)).Ready);
+        await using var server = await StartWithSlotsTheTestDrivesAsync();
         var changes = new DataChangePublisher();
         var clients = new ActivityStreamClients();
         var looks = new ServerLooks(TimeProvider.System);
@@ -73,13 +106,33 @@ public sealed class ReadinessChangeTaskTests
         await task.RunOnceAsync(CancellationToken.None);
         Assert.False(await PublishedAsync(changes, subscription), "An answer that has not changed is not published again.");
 
-        heartbeats.Stopped("processing", 0);
+        heartbeats.Stopped(ProcessingWorkerService.HeartbeatModule, 0);
         await task.RunOnceAsync(CancellationToken.None);
         Assert.Equal(DataTopics.Readiness, await NextAsync(subscription));
 
-        heartbeats.Beat("processing", 0);
+        heartbeats.Beat(ProcessingWorkerService.HeartbeatModule, 0);
         await task.RunOnceAsync(CancellationToken.None);
         Assert.Equal(DataTopics.Readiness, await NextAsync(subscription));
+    }
+
+    [Fact]
+    public async Task A_worker_that_stops_and_reports_again_before_the_look_is_not_published()
+    {
+        await using var server = await StartWithSlotsTheTestDrivesAsync();
+        var changes = new DataChangePublisher();
+        var clients = new ActivityStreamClients();
+        var task = new ReadinessChangeTask(server.Services, clients, changes, new ServerLooks(TimeProvider.System));
+        var heartbeats = server.Services.GetRequiredService<WorkerHeartbeats>();
+        using var watcher = clients.Open();
+        using var subscription = changes.Subscribe();
+        await task.RunOnceAsync(CancellationToken.None);
+        Assert.Equal(DataTopics.Readiness, await NextAsync(subscription));
+
+        heartbeats.Stopped(ProcessingWorkerService.HeartbeatModule, 0);
+        heartbeats.Beat(ProcessingWorkerService.HeartbeatModule, 0);
+        await task.RunOnceAsync(CancellationToken.None);
+
+        Assert.False(await PublishedAsync(changes, subscription), "A worker that is running at the look is the answer already given.");
     }
 
     [Fact]

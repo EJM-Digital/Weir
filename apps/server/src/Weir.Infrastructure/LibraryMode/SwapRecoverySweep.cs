@@ -63,6 +63,7 @@ public sealed record SwapRecoveryReport(int TempFilesDeleted, int BackupsDeleted
 /// <item><c>&lt;name&gt;.weir-bak&lt;ext&gt;</c> and the original present → the commit happened (or a newer file arrived): delete the backup.</item>
 /// <item><c>&lt;name&gt;.weir-bak&lt;ext&gt;</c> and the original missing → the commit did not happen: rename the backup back, with a warning.</item>
 /// <item><c>&lt;name&gt;.weir-tmp&lt;ext&gt;</c> → delete it (a cleaned copy never put in place; the job runs again).</item>
+/// <item>An empty kept-original reservation the journal names, with the original in place and the cleaned copy unused → release it.</item>
 /// </list>
 /// <para>
 /// The paths recorded on unfinished job rows (<see cref="ISwapJournal"/>) are handled first; walking the library folders is only a
@@ -110,6 +111,22 @@ public sealed class SwapRecoverySweep
             report += new SwapRecoveryReport(0, 0, 0, 1);
         }
 
+        IReadOnlyList<string> waitingForAPerson;
+        try
+        {
+            waitingForAPerson = await _journal.ListKeepConflictPathsAsync(cancellationToken).ConfigureAwait(false);
+        }
+#pragma warning disable CA1031 // Without knowing which backups wait for a person, no folder walk may delete one.
+        catch (Exception exception) when (exception is not OperationCanceledException)
+#pragma warning restore CA1031
+        {
+            _logger.LogWarning(exception, "Library swap sweep could not read which kept originals need a person; it will not walk the library folders");
+            waitingForAPerson = [];
+            walkFolders = false;
+            report += new SwapRecoveryReport(0, 0, 0, 1);
+        }
+
+        handled.UnionWith(waitingForAPerson);
         foreach (var entry in unfinished)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -243,6 +260,12 @@ public sealed class SwapRecoverySweep
                     }
                 }
             }
+            else if (keptOriginalPath is not null && files.FileExists(temp) && files.FileExists(originalPath))
+            {
+                // The swap stopped after it reserved the place for the kept original and before it moved the original aside:
+                // the cleaned copy was never used, so nothing was ever put in the reservation.
+                OriginalsMover.CleanUpUnfilledReservation(files, keptOriginalPath);
+            }
         }
         catch (OriginalsKeepConflictException exception)
         {
@@ -288,7 +311,7 @@ public sealed class SwapRecoverySweep
         var detail = $"Weir kept both copies of {fileName}; check {entry.KeptOriginalPath} and remove the incomplete one.";
         try
         {
-            var extra = new WireObject().Set("relative_path", entry.OriginalPath).Set("kept_original_path", entry.KeptOriginalPath);
+            var extra = new WireObject().Set("relative_media_path", entry.OriginalPath).Set("kept_original_path", entry.KeptOriginalPath);
             await _activityWriter.RecordAsync(
                     new ActivityEventDraft(LibraryActivityEventTypes.OriginalKeepConflict, "library", detail, WireJsonWriter.Dumps(extra, WireJsonFormat.Compact)),
                     cancellationToken)
