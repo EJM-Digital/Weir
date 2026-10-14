@@ -556,6 +556,7 @@ public sealed class AuthApiTests
     public async Task Readiness_reports_for_a_real_signed_in_session()
     {
         await using var server = await StartServerAsync(("WEIR_VERSION", "7.8.9"));
+        await server.WaitForStartupRecoveryAsync();
         await TestDatabase.SeedAdminAsync(server);
         var client = new ApiTestClient(server);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/v1/system/readiness")).StatusCode);
