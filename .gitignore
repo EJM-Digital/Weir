@@ -87,3 +87,6 @@ data-protection-keys/
 *.sqlite3-shm
 *.db-wal
 *.db-shm
+
+# Web app coverage report (npm run test:coverage)
+apps/web/coverage/

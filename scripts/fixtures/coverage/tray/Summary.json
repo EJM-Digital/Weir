@@ -1,0 +1,30 @@
+{
+  "summary": {
+    "generatedon": "2026-10-14T10:01:00Z",
+    "parser": "Cobertura",
+    "assemblies": 1,
+    "classes": 4,
+    "files": 4,
+    "coveredlines": 68,
+    "uncoveredlines": 5,
+    "coverablelines": 73,
+    "totallines": 207,
+    "linecoverage": 93.1,
+    "coveredbranches": 18,
+    "totalbranches": 18,
+    "branchcoverage": 100,
+    "coveredmethods": 9,
+    "fullcoveredmethods": 9,
+    "totalmethods": 10,
+    "methodcoverage": 90,
+    "fullmethodcoverage": 90
+ },
+  "coverage": {
+    "assemblies": [
+      { "name": "Weir", "classes": 4, "coverage": 93.1, "coveredlines": 68, "coverablelines": 73, "totallines": 207, "branchcoverage": 100, "coveredbranches": 18, "totalbranches": 18, "methodcoverage": 90, "fullmethodcoverage": 90, "coveredmethods": 9, "fullcoveredmethods": 9, "totalmethods": 10, "classesinassembly": [
+        { "name": "Weir.Tray.AtomicFile", "coverage": 100, "coveredlines": 11, "coverablelines": 11, "totallines": 31, "branchcoverage": null, "coveredbranches": 0, "totalbranches": 0, "methodcoverage": 100, "fullmethodcoverage": 100, "coveredmethods": 1, "fullcoveredmethods": 1, "totalmethods": 1 },
+        { "name": "Weir.Tray.Debounce", "coverage": 100, "coveredlines": 11, "coverablelines": 11, "totallines": 26, "branchcoverage": 100, "coveredbranches": 4, "totalbranches": 4, "methodcoverage": 100, "fullmethodcoverage": 100, "coveredmethods": 2, "fullcoveredmethods": 2, "totalmethods": 2 },
+        { "name": "Weir.Tray.Firewall.FirewallRule", "coverage": 100, "coveredlines": 7, "coverablelines": 7, "totallines": 42, "branchcoverage": null, "coveredbranches": 0, "totalbranches": 0, "methodcoverage": 100, "fullmethodcoverage": 100, "coveredmethods": 1, "fullcoveredmethods": 1, "totalmethods": 1 },
+        { "name": "Weir.Tray.Firewall.FirewallRuleWidening", "coverage": 88.6, "coveredlines": 39, "coverablelines": 44, "totallines": 108, "branchcoverage": 100, "coveredbranches": 14, "totalbranches": 14, "methodcoverage": 83.3, "fullmethodcoverage": 83.3, "coveredmethods": 5, "fullcoveredmethods": 5, "totalmethods": 6 } ] } ]
+  }
+}

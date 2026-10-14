@@ -29,6 +29,29 @@ const devPorts = JSON.parse(
 ) as DevPortsFile;
 const dev = devPorts.development;
 
+type CoverageFloorsFile = {
+  floors: { web: { line: number; branch: number } };
+};
+
+/**
+ * The web app's line and branch floors, from the file CI's coverage check reads for every project. Only the tests
+ * read it: the production builds (the Docker image's, the Windows package's) are made without docs/.
+ */
+function webCoverageThresholds(mode: string) {
+  if (mode !== "test") {
+    return undefined;
+  }
+  const floors = (
+    JSON.parse(
+      readFileSync(
+        path.join(__dirname, "..", "..", "docs", "coverage", "floors.json"),
+        "utf-8",
+      ),
+    ) as CoverageFloorsFile
+  ).floors.web;
+  return { lines: floors.line, branches: floors.branch };
+}
+
 /** Local-only unless someone deliberately opts into exposing the dev server on the network. */
 const devHost = (process.env.VITE_HOST || "").trim() || "127.0.0.1";
 
@@ -125,6 +148,21 @@ export default defineConfig(({ mode }) => {
       // A test that reads a stylesheet's own text (`?raw`) gets it; every other stylesheet stays empty.
       css: { include: /\.css\?raw$/ },
       globals: true,
+      coverage: {
+        provider: "v8",
+        // Every source file counts, tested or not: an untested file is a row of zeros in the report.
+        include: ["src/**/*.{ts,tsx}"],
+        exclude: [
+          "src/**/*.test.{ts,tsx}",
+          "src/test/**",
+          "src/**/*.d.ts",
+          "src/lib/api/generated/**",
+        ],
+        reporter: ["lcov", "json-summary", "text-summary"],
+        reportsDirectory: "./coverage",
+        // docs/coverage/floors.json; a run below either figure fails.
+        thresholds: webCoverageThresholds(mode),
+      },
     },
   };
 });
