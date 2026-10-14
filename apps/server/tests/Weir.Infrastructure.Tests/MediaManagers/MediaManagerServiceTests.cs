@@ -228,7 +228,6 @@ public sealed class MediaManagerServiceTests
         var id = await fixture.AddConnectionAsync("deluno", "http://192.0.2.10:5099/", "deluno_secret_key");
         var saved = (await fixture.Db(uow => fixture.ConnectionStore.GetAsync(uow, id)))!;
         Assert.Equal("http://192.0.2.10:5099", saved.BaseUrl);
-        Assert.Equal(["missing", "upgrade"], saved.Lanes.Select(l => l.Lane));
         Assert.Equal("deluno_secret_key", fixture.Cipher.Decrypt(saved.ApiKeyCiphertext));
 
         var badUrl = await Assert.ThrowsAsync<MediaManagerConnectionException>(() => fixture.AddConnectionAsync("radarr", "not-a-url"));

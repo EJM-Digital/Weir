@@ -5,7 +5,6 @@ import type { RequestBody, Schema } from "../api/types";
  * is kept by hand to say what actually arrives.
  */
 export type AppSettings = {
-  signed_in_home_notice: string | null;
   setup_wizard_state: "pending" | "skipped" | "completed" | string;
   app_timezone: string;
   log_retention_days: number;

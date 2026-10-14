@@ -28,7 +28,6 @@ function deluno(): MediaManagerConnection {
     last_test_ok: true,
     last_test_at: "2026-09-29T10:00:00Z",
     last_test_detail: null,
-    lanes: [],
   };
 }
 

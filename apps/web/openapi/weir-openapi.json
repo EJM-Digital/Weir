@@ -3795,13 +3795,6 @@
             "title": "Kind",
             "type": "string"
           },
-          "lanes": {
-            "items": {
-              "$ref": "#/components/schemas/MediaManagerSearchLaneOut"
-            },
-            "title": "Lanes",
-            "type": "array"
-          },
           "last_answer_ms": {
             "anyOf": [
               {
@@ -4049,136 +4042,20 @@
         "title": "MediaManagerConnectionUpdateIn",
         "type": "object"
       },
-      "MediaManagerSearchLaneIn": {
+      "MediaManagerRetiredLaneIn": {
         "additionalProperties": false,
+        "description": "Every setting a search lane once had (enabled, max_items_per_run, retry_delay_minutes, schedule_enabled, schedule_days, schedule_start, schedule_end, schedule_interval_seconds) is accepted and ignored.",
         "properties": {
           "csrf_token": {
             "minLength": 1,
             "title": "Csrf Token",
             "type": "string"
-          },
-          "enabled": {
-            "title": "Enabled",
-            "type": "boolean"
-          },
-          "max_items_per_run": {
-            "maximum": 1000.0,
-            "minimum": 1.0,
-            "title": "Max Items Per Run",
-            "type": "integer"
-          },
-          "retry_delay_minutes": {
-            "maximum": 525600.0,
-            "minimum": 1.0,
-            "title": "Retry Delay Minutes",
-            "type": "integer"
-          },
-          "schedule_days": {
-            "maxLength": 2000,
-            "title": "Schedule Days",
-            "type": "string"
-          },
-          "schedule_enabled": {
-            "title": "Schedule Enabled",
-            "type": "boolean"
-          },
-          "schedule_end": {
-            "maxLength": 5,
-            "title": "Schedule End",
-            "type": "string"
-          },
-          "schedule_interval_seconds": {
-            "maximum": 604800.0,
-            "minimum": 60.0,
-            "title": "Schedule Interval Seconds",
-            "type": "integer"
-          },
-          "schedule_start": {
-            "maxLength": 5,
-            "title": "Schedule Start",
-            "type": "string"
           }
         },
         "required": [
-          "csrf_token",
-          "enabled",
-          "max_items_per_run",
-          "retry_delay_minutes",
-          "schedule_enabled",
-          "schedule_days",
-          "schedule_start",
-          "schedule_end",
-          "schedule_interval_seconds"
+          "csrf_token"
         ],
-        "title": "MediaManagerSearchLaneIn",
-        "type": "object"
-      },
-      "MediaManagerSearchLaneOut": {
-        "properties": {
-          "enabled": {
-            "description": "Whether this automatic search lane is turned on.",
-            "title": "Enabled",
-            "type": "boolean"
-          },
-          "lane": {
-            "enum": [
-              "missing",
-              "upgrade"
-            ],
-            "title": "Lane",
-            "type": "string"
-          },
-          "max_items_per_run": {
-            "maximum": 1000.0,
-            "minimum": 1.0,
-            "title": "Max Items Per Run",
-            "type": "integer"
-          },
-          "retry_delay_minutes": {
-            "maximum": 525600.0,
-            "minimum": 1.0,
-            "title": "Retry Delay Minutes",
-            "type": "integer"
-          },
-          "schedule_days": {
-            "description": "Comma-separated weekdays, e.g. Mon,Tue. Empty means every day.",
-            "title": "Schedule Days",
-            "type": "string"
-          },
-          "schedule_enabled": {
-            "description": "When on, searches only run inside the days and times below.",
-            "title": "Schedule Enabled",
-            "type": "boolean"
-          },
-          "schedule_end": {
-            "maxLength": 5,
-            "title": "Schedule End",
-            "type": "string"
-          },
-          "schedule_interval_seconds": {
-            "maximum": 604800.0,
-            "minimum": 60.0,
-            "title": "Schedule Interval Seconds",
-            "type": "integer"
-          },
-          "schedule_start": {
-            "maxLength": 5,
-            "title": "Schedule Start",
-            "type": "string"
-          }
-        },
-        "required": [
-          "lane",
-          "enabled",
-          "max_items_per_run",
-          "retry_delay_minutes",
-          "schedule_enabled",
-          "schedule_days",
-          "schedule_start",
-          "schedule_end",
-          "schedule_interval_seconds"
-        ],
-        "title": "MediaManagerSearchLaneOut",
+        "title": "MediaManagerRetiredLaneIn",
         "type": "object"
       },
       "MediaManagerWebhookSecretOut": {
@@ -7900,29 +7777,9 @@
             "title": "Max Concurrent Files",
             "type": "integer"
           },
-          "movie_schedule_days": {
-            "maxLength": 2000,
-            "title": "Movie Schedule Days",
-            "type": "string"
-          },
           "movie_schedule_enabled": {
             "title": "Movie Schedule Enabled",
             "type": "boolean"
-          },
-          "movie_schedule_end": {
-            "maxLength": 5,
-            "title": "Movie Schedule End",
-            "type": "string"
-          },
-          "movie_schedule_hours_limited": {
-            "description": "When true, timed movie scans only enqueue inside the days and times below (suite time zone).",
-            "title": "Movie Schedule Hours Limited",
-            "type": "boolean"
-          },
-          "movie_schedule_start": {
-            "maxLength": 5,
-            "title": "Movie Schedule Start",
-            "type": "string"
           },
           "runner_capacity": {
             "description": "Total processing capacity. Active files consume it according to their cost, and new work waits once it is fully occupied.",
@@ -7965,28 +7822,9 @@
             "title": "Schedule Timezone",
             "type": "string"
           },
-          "tv_schedule_days": {
-            "maxLength": 2000,
-            "title": "Tv Schedule Days",
-            "type": "string"
-          },
           "tv_schedule_enabled": {
             "title": "Tv Schedule Enabled",
             "type": "boolean"
-          },
-          "tv_schedule_end": {
-            "maxLength": 5,
-            "title": "Tv Schedule End",
-            "type": "string"
-          },
-          "tv_schedule_hours_limited": {
-            "title": "Tv Schedule Hours Limited",
-            "type": "boolean"
-          },
-          "tv_schedule_start": {
-            "maxLength": 5,
-            "title": "Tv Schedule Start",
-            "type": "string"
           },
           "updated_at": {
             "title": "Updated At",
@@ -8048,15 +7886,7 @@
           "keep_failed_work_files",
           "file_log_retention_days",
           "movie_schedule_enabled",
-          "movie_schedule_hours_limited",
-          "movie_schedule_days",
-          "movie_schedule_start",
-          "movie_schedule_end",
           "tv_schedule_enabled",
-          "tv_schedule_hours_limited",
-          "tv_schedule_days",
-          "tv_schedule_start",
-          "tv_schedule_end",
           "schedule_timezone",
           "updated_at"
         ],
@@ -8065,7 +7895,7 @@
       },
       "ProcessingOperatorSettingsPutIn": {
         "additionalProperties": false,
-        "description": "PUT body supports partial updates: omit a group to leave it unchanged on the server.",
+        "description": "PUT body supports partial updates: omit a group to leave it unchanged on the server. Settings Weir has retired (verbose detection records, the minimum file age and size, the free-space floor, failed-download cleanup and the hours window for Movies and TV) are accepted and ignored.",
         "properties": {
           "csrf_token": {
             "minLength": 1,
@@ -8109,18 +7939,6 @@
             ],
             "title": "Max Concurrent Files"
           },
-          "movie_schedule_days": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Movie Schedule Days"
-          },
           "movie_schedule_enabled": {
             "anyOf": [
               {
@@ -8131,41 +7949,6 @@
               }
             ],
             "title": "Movie Schedule Enabled"
-          },
-          "movie_schedule_end": {
-            "anyOf": [
-              {
-                "maxLength": 5,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Movie Schedule End"
-          },
-          "movie_schedule_hours_limited": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Movie Schedule Hours Limited"
-          },
-          "movie_schedule_start": {
-            "anyOf": [
-              {
-                "maxLength": 5,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Movie Schedule Start"
           },
           "runner_capacity": {
             "anyOf": [
@@ -8243,18 +8026,6 @@
             ],
             "title": "Runner Cost Sd"
           },
-          "tv_schedule_days": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tv Schedule Days"
-          },
           "tv_schedule_enabled": {
             "anyOf": [
               {
@@ -8265,41 +8036,6 @@
               }
             ],
             "title": "Tv Schedule Enabled"
-          },
-          "tv_schedule_end": {
-            "anyOf": [
-              {
-                "maxLength": 5,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tv Schedule End"
-          },
-          "tv_schedule_hours_limited": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tv Schedule Hours Limited"
-          },
-          "tv_schedule_start": {
-            "anyOf": [
-              {
-                "maxLength": 5,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tv Schedule Start"
           },
           "work_temp_stale_sweep_enabled": {
             "anyOf": [
@@ -10515,19 +10251,6 @@
             "title": "Setup Wizard State",
             "type": "string"
           },
-          "signed_in_home_notice": {
-            "anyOf": [
-              {
-                "maxLength": 4000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Optional short message on the home dashboard for signed-in users.",
-            "title": "Signed In Home Notice"
-          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -10632,18 +10355,6 @@
               }
             ],
             "title": "Setup Wizard State"
-          },
-          "signed_in_home_notice": {
-            "anyOf": [
-              {
-                "maxLength": 4000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Signed In Home Notice"
           }
         },
         "required": [
@@ -15011,7 +14722,7 @@
     },
     "/api/v1/media-managers/connections/{connection_id}/lanes/{lane}": {
       "put": {
-        "description": "Save one automatic search lane for one manager.",
+        "description": "Retired. Searching belongs to the media manager, so a connection has no search lanes. The connection is returned as it is and nothing in the body is saved.",
         "operationId": "put_media_manager_lane_api_v1_media_managers_connections__connection_id__lanes__lane__put",
         "parameters": [
           {
@@ -15042,7 +14753,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MediaManagerSearchLaneIn"
+                "$ref": "#/components/schemas/MediaManagerRetiredLaneIn"
               }
             }
           },
@@ -15053,7 +14764,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MediaManagerSearchLaneOut"
+                  "$ref": "#/components/schemas/MediaManagerConnectionOut"
                 }
               }
             },
@@ -15076,7 +14787,7 @@
             "$ref": "#/components/responses/DatabaseBusy"
           }
         },
-        "summary": "Put Media Manager Lane",
+        "summary": "Put Media Manager Lane (retired)",
         "tags": [
           "media-managers"
         ]

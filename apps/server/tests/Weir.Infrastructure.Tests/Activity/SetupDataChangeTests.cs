@@ -109,17 +109,7 @@ public sealed class SetupDataChangeTests : IDisposable
         Assert.Equal([DataTopics.Connections], await HeardAsync(async uow => id = await _managers.InsertAsync(uow, "sonarr", true, "http://sonarr.local", null)));
         Assert.Equal([DataTopics.Connections], await HeardAsync(uow => _managers.UpdateColumnsAsync(uow, id, [("enabled", 0)])));
         Assert.Equal([DataTopics.Connections], await HeardAsync(uow => _managers.RecordTestResultAsync(uow, id, true, Now, "Connected.")));
-        Assert.Equal([DataTopics.Connections], await HeardAsync(uow => _managers.SaveLaneAsync(uow, new MediaManagerSearchLaneRecord(0, id, "missing", true, 5, 60, false, "", "00:00", "23:59", 3600))));
         Assert.Equal([DataTopics.Connections], await HeardAsync(uow => _managers.DeleteAsync(uow, id)));
-    }
-
-    [Fact]
-    public async Task A_media_manager_lane_saved_as_it_already_is_publishes_nothing()
-    {
-        var id = await _store.WithUnitOfWork(uow => _managers.InsertAsync(uow, "radarr", true, "http://radarr.local", null));
-        var lane = await _store.WithUnitOfWork(uow => _managers.GetLaneAsync(uow, id, "missing")) ?? throw new InvalidOperationException("The lane was not made.");
-
-        Assert.Empty(await HeardAsync(uow => _managers.SaveLaneAsync(uow, lane)));
     }
 
     [Fact]

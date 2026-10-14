@@ -129,7 +129,6 @@ export function useSystemSettingsForm(settings: AppSettings | undefined) {
   const putBody = (current: AppSettings): AppSettingsPutBody => {
     const activityDays = retention.finalizeActivityDays();
     return {
-      signed_in_home_notice: current.signed_in_home_notice,
       setup_wizard_state: current.setup_wizard_state,
       app_timezone: (current.app_timezone ?? "UTC").trim() || "UTC",
       log_retention_days: retention.finalizeLogDays(),

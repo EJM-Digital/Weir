@@ -40,6 +40,14 @@ says where a setting lives and what actually happens when it is saved.
 - Hardware decoding: there is no setting. Weir copies video and audio without decoding them, so a
   graphics card has nothing to do. Older saves and backups that carry the old hardware decoding or
   "rewrite with FFmpeg" fields are still accepted; the values are ignored and not reported.
+- Search lanes, the signed-in home note, and the hours window for Movies and TV: there are no settings for
+  them, because nothing acted on any of them. Searching for missing files and upgrades belongs to the media
+  manager, so a connection has no search lanes. No page showed a home note. Each workflow's weekly schedule
+  on Schedule decides when it works, so Performance has no hours window of its own; the Movies and TV
+  periodic-scan switches (`movie_schedule_enabled`, `tv_schedule_enabled`) stay. Their database columns are
+  gone. An older client, or a backup that still carries them, is answered as though it had not sent them:
+  saving a lane (`PUT /api/v1/media-managers/connections/{id}/lanes/{lane}`) returns the connection, the two
+  settings saves ignore the fields, and a restore reads past them.
 - Your playback devices (Setup › Rules › Playback devices): information only. It drives the "can play directly"
   badge on files and changes nothing about how a file is processed.
 - When a file fails (a workflow's own section): "Maximum automatic attempts" is the whole number of tries, the

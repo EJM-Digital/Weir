@@ -8,7 +8,6 @@ const NOW = Date.parse("2026-10-02T12:00:00Z");
 
 function settings(overrides: Partial<AppSettings>): AppSettings {
   return {
-    signed_in_home_notice: null,
     setup_wizard_state: "completed",
     app_timezone: "UTC",
     log_retention_days: 30,

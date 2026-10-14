@@ -20,7 +20,6 @@ public sealed class SuiteSettingsApiTests(UsersFixture fixture) : IClassFixture<
 
     private static JsonObject RetentionBody(string timezone = "UTC") => new()
     {
-        ["signed_in_home_notice"] = null,
         ["app_timezone"] = timezone,
         ["log_retention_days"] = 30,
     };
@@ -55,7 +54,7 @@ public sealed class SuiteSettingsApiTests(UsersFixture fixture) : IClassFixture<
         var body = response.Fields;
         // Weir is named after the machine it runs on, so there is no name setting to read.
         Assert.False(body.ContainsKey("product_display_name"));
-        AssertNull(body, "signed_in_home_notice");
+        Assert.False(body.ContainsKey("signed_in_home_notice"));
         // This module's install gained its users by seeding after first start, so the wizard stayed at its first-run value.
         Assert.Equal("pending", (string?)body["setup_wizard_state"]);
         Assert.Contains((string?)body["app_timezone"], new[] { "UTC", "America/New_York" });
@@ -129,7 +128,6 @@ public sealed class SuiteSettingsApiTests(UsersFixture fixture) : IClassFixture<
             new JsonObject
             {
                 ["product_display_name"] = "House Library", // sent by an older client: accepted, not stored
-                ["signed_in_home_notice"] = "Welcome back.",
                 ["setup_wizard_state"] = "skipped",
                 ["app_timezone"] = "UTC",
                 ["log_retention_days"] = 45,
@@ -141,7 +139,6 @@ public sealed class SuiteSettingsApiTests(UsersFixture fixture) : IClassFixture<
         Assert.True(response.Status == HttpStatusCode.OK, response.ToString());
         var saved = response.Fields;
         Assert.False(saved.ContainsKey("product_display_name"));
-        Assert.Equal("Welcome back.", (string?)saved["signed_in_home_notice"]);
         Assert.Equal("skipped", (string?)saved["setup_wizard_state"]);
         Assert.Equal(45, (int)saved["log_retention_days"]!);
         Assert.True((bool)saved["configuration_backup_enabled"]!);
@@ -150,7 +147,6 @@ public sealed class SuiteSettingsApiTests(UsersFixture fixture) : IClassFixture<
 
         var read = await admin.GetAsync(Settings);
         Assert.Equal(HttpStatusCode.OK, read.Status);
-        Assert.Equal("Welcome back.", (string?)read.Fields["signed_in_home_notice"]);
 
         await using var database = await server.StopForDatabaseAsync();
         var rows = SeedSql.Rows(database.Connection, "SELECT * FROM suite_settings WHERE id = 1");
@@ -218,6 +214,28 @@ public sealed class SuiteSettingsApiTests(UsersFixture fixture) : IClassFixture<
         Assert.Equal(1, Convert.ToInt64(old ?? 0L, CultureInfo.InvariantCulture));
     }
 
+    /// <summary>No page shows a note for the signed-in home page, so there is no setting for one. An older client that still sends it is answered as though it had not.</summary>
+    [Fact]
+    public async Task An_older_client_sending_the_home_notice_is_answered_and_nothing_is_kept()
+    {
+        await using var server = await WeirServer.StartNewAsync();
+        using var admin = await server.CreateAdminClientAsync();
+
+        foreach (JsonNode? notice in new JsonNode?[] { "Welcome back.", null, 7 })
+        {
+            var body = RetentionBody();
+            body["signed_in_home_notice"] = notice;
+            var response = await admin.PutWithCsrfAsync(Settings, body);
+            Assert.True(response.Status == HttpStatusCode.OK, response.ToString());
+            Assert.False(response.Fields.ContainsKey("signed_in_home_notice"));
+        }
+
+        var read = await admin.GetAsync(Settings);
+        Assert.False(read.Fields.ContainsKey("signed_in_home_notice"));
+        await using var database = await server.StopForDatabaseAsync();
+        Assert.DoesNotContain("signed_in_home_notice", SeedSql.Rows(database.Connection, "SELECT * FROM suite_settings WHERE id = 1").Single().Keys);
+    }
+
     /// <summary>With automatic backups on and no backup yet, the running server writes one.</summary>
     [Fact]
     public async Task Suite_configuration_backup_tick_creates_snapshot()
@@ -230,7 +248,6 @@ public sealed class SuiteSettingsApiTests(UsersFixture fixture) : IClassFixture<
                 Settings,
                 new JsonObject
                 {
-                    ["signed_in_home_notice"] = null,
                     ["setup_wizard_state"] = "completed",
                     ["app_timezone"] = "UTC",
                     ["log_retention_days"] = 30,

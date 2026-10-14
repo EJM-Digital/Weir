@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Weir.Api.Http;
@@ -57,15 +56,7 @@ internal sealed class ProcessingOperatorSettingsEndpointHandlers
         .Set("keep_failed_work_files", row.KeepFailedWorkFiles)
         .Set("file_log_retention_days", OperatorSettingsRules.ClampFileLogRetentionDays(row.FileLogRetentionDays))
         .Set("movie_schedule_enabled", row.MovieScheduleEnabled)
-        .Set("movie_schedule_hours_limited", row.MovieScheduleHoursLimited)
-        .Set("movie_schedule_days", row.MovieScheduleDays)
-        .Set("movie_schedule_start", row.MovieScheduleStart)
-        .Set("movie_schedule_end", row.MovieScheduleEnd)
         .Set("tv_schedule_enabled", row.TvScheduleEnabled)
-        .Set("tv_schedule_hours_limited", row.TvScheduleHoursLimited)
-        .Set("tv_schedule_days", row.TvScheduleDays)
-        .Set("tv_schedule_start", row.TvScheduleStart)
-        .Set("tv_schedule_end", row.TvScheduleEnd)
         .Set("schedule_timezone", timezone)
         .Set("updated_at", row.UpdatedAt.IsoFormat());
 
@@ -80,13 +71,16 @@ internal sealed class ProcessingOperatorSettingsEndpointHandlers
 
     /// <summary>
     /// Retired Performance settings. The wait for a new file, the minimum size and the space to keep free belong to each
-    /// workflow, an unknown resolution costs what a 1080p file does, and nothing acts on verbose detection records or on the
+    /// workflow, an unknown resolution costs what a 1080p file does, each workflow's weekly schedule decides when it works
+    /// (so Movies and TV have no hours window of their own), and nothing acts on verbose detection records or on the
     /// failed-download cleanup. An older client or backup may still send them, so they are accepted and never read.
     /// </summary>
     private static readonly string[] RetiredSettings =
     [
         "verbose_detection_logging", "min_file_age_seconds", "min_input_file_size_mb", "minimum_free_disk_space_mb",
         "runner_cost_undetermined", "failure_cleanup_enabled", "failure_cleanup_interval_seconds",
+        "movie_schedule_hours_limited", "movie_schedule_days", "movie_schedule_start", "movie_schedule_end",
+        "tv_schedule_hours_limited", "tv_schedule_days", "tv_schedule_start", "tv_schedule_end",
     ];
 
     public async Task<ApiResult> PutOperatorSettingsAsync(ApiRequest request)
@@ -114,30 +108,8 @@ internal sealed class ProcessingOperatorSettingsEndpointHandlers
         var keepFailedWorkFiles = model.OptionalBool("keep_failed_work_files");
         var fileLogRetentionDays = model.OptionalInt("file_log_retention_days", ge: 0, le: 3650);
         var movieScheduleEnabled = model.OptionalBool("movie_schedule_enabled");
-        var movieScheduleHoursLimited = model.OptionalBool("movie_schedule_hours_limited");
-        var movieScheduleDays = model.OptionalStr("movie_schedule_days", maxLength: 2000);
-        var movieScheduleStart = model.OptionalStr("movie_schedule_start", maxLength: 5);
-        var movieScheduleEnd = model.OptionalStr("movie_schedule_end", maxLength: 5);
         var tvScheduleEnabled = model.OptionalBool("tv_schedule_enabled");
-        var tvScheduleHoursLimited = model.OptionalBool("tv_schedule_hours_limited");
-        var tvScheduleDays = model.OptionalStr("tv_schedule_days", maxLength: 2000);
-        var tvScheduleStart = model.OptionalStr("tv_schedule_start", maxLength: 5);
-        var tvScheduleEnd = model.OptionalStr("tv_schedule_end", maxLength: 5);
         model.Finish(ExtraFields.Forbid);
-
-        var movieGroupCount = new bool?[] { movieScheduleEnabled, movieScheduleHoursLimited }.Count(v => v is not null) +
-                               new[] { movieScheduleDays, movieScheduleStart, movieScheduleEnd }.Count(v => v is not null);
-        if (movieGroupCount != 0 && movieGroupCount != 5)
-        {
-            issues.Add(new ValidationIssue("value_error", ["body"], "Value error, Movie schedule fields must all be omitted or all provided together.", WireValue.Null));
-        }
-
-        var tvGroupCount = new bool?[] { tvScheduleEnabled, tvScheduleHoursLimited }.Count(v => v is not null) +
-                            new[] { tvScheduleDays, tvScheduleStart, tvScheduleEnd }.Count(v => v is not null);
-        if (tvGroupCount != 0 && tvGroupCount != 5)
-        {
-            issues.Add(new ValidationIssue("value_error", ["body"], "Value error, TV schedule fields must all be omitted or all provided together.", WireValue.Null));
-        }
 
         var hasProcessField = maxConcurrentFiles is not null || runnerCapacity is not null || runnerCostSd is not null ||
                                runnerCost720P is not null || runnerCost1080P is not null || runnerCost4K is not null ||
@@ -229,35 +201,14 @@ internal sealed class ProcessingOperatorSettingsEndpointHandlers
             after = after with { KeepFailedWorkFiles = kf };
         }
 
-        try
+        if (movieScheduleEnabled is { } movieOn)
         {
-            if (movieScheduleEnabled is { } me)
-            {
-                after = after with
-                {
-                    MovieScheduleEnabled = me,
-                    MovieScheduleHoursLimited = movieScheduleHoursLimited ?? false,
-                    MovieScheduleDays = ScheduleWindow.ValidateDaysCsv(movieScheduleDays),
-                    MovieScheduleStart = ScheduleWindow.NormalizeHhmm(movieScheduleStart, "00:00"),
-                    MovieScheduleEnd = ScheduleWindow.NormalizeHhmm(movieScheduleEnd, "23:59"),
-                };
-            }
-
-            if (tvScheduleEnabled is { } te)
-            {
-                after = after with
-                {
-                    TvScheduleEnabled = te,
-                    TvScheduleHoursLimited = tvScheduleHoursLimited ?? false,
-                    TvScheduleDays = ScheduleWindow.ValidateDaysCsv(tvScheduleDays),
-                    TvScheduleStart = ScheduleWindow.NormalizeHhmm(tvScheduleStart, "00:00"),
-                    TvScheduleEnd = ScheduleWindow.NormalizeHhmm(tvScheduleEnd, "23:59"),
-                };
-            }
+            after = after with { MovieScheduleEnabled = movieOn };
         }
-        catch (ScheduleWindowException exception)
+
+        if (tvScheduleEnabled is { } tvOn)
         {
-            throw new ApiException(StatusCodes.Status400BadRequest, exception.Message);
+            after = after with { TvScheduleEnabled = tvOn };
         }
 
         await _operatorSettings.UpdateAsync(uow, before, after).ConfigureAwait(false);

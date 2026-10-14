@@ -38,7 +38,7 @@ public sealed class SuiteApiTests
         await viewer.SignInAsync("bob", ViewerPassword);
         using var read = await viewer.GetAsync("/api/v1/suite/settings");
         Assert.Equal(HttpStatusCode.OK, read.StatusCode);
-        using var write = await viewer.PutAsync("/api/v1/suite/settings", new { csrf_token = await viewer.CsrfAsync(), signed_in_home_notice = (string?)null, app_timezone = "UTC", log_retention_days = 30 });
+        using var write = await viewer.PutAsync("/api/v1/suite/settings", new { csrf_token = await viewer.CsrfAsync(), app_timezone = "UTC", log_retention_days = 30 });
         Assert.Equal(HttpStatusCode.Forbidden, write.StatusCode);
     }
 
@@ -49,7 +49,7 @@ public sealed class SuiteApiTests
         await using var _ = server;
         using var initial = await client.GetAsync("/api/v1/suite/settings");
         var body = await Json(initial);
-        Assert.Null(body["signed_in_home_notice"]);
+        Assert.False(body.AsObject().ContainsKey("signed_in_home_notice"));
         Assert.False(body.AsObject().ContainsKey("product_display_name"));
         Assert.Equal("pending", body["setup_wizard_state"]!.GetValue<string>());
         Assert.Equal(30, body["log_retention_days"]!.GetValue<int>());
@@ -63,7 +63,6 @@ public sealed class SuiteApiTests
         {
             csrf_token = await client.CsrfAsync(),
             product_display_name = "House Library",
-            signed_in_home_notice = "Welcome back.",
             setup_wizard_state = "skipped",
             app_timezone = "UTC",
             log_retention_days = 45,
@@ -75,7 +74,6 @@ public sealed class SuiteApiTests
         var saved = await Json(put);
         Assert.False(saved.AsObject().ContainsKey("product_display_name"));
         Assert.Equal("03:30", saved["configuration_backup_preferred_time"]!.GetValue<string>());
-        Assert.Equal("Welcome back.", (await Json(await client.GetAsync("/api/v1/suite/settings")))["signed_in_home_notice"]!.GetValue<string>());
         Assert.Equal("Weir", await TestDatabase.ScalarStringAsync(server, "SELECT product_display_name FROM suite_settings WHERE id = 1"));
         Assert.Equal(45, await TestDatabase.ScalarAsync(server, "SELECT log_retention_days FROM suite_settings WHERE id = 1"));
         Assert.Equal(1, await TestDatabase.ScalarAsync(server, "SELECT configuration_backup_enabled FROM suite_settings WHERE id = 1"));
@@ -83,6 +81,38 @@ public sealed class SuiteApiTests
         using var badZone = await client.PutAsync("/api/v1/suite/settings", new { csrf_token = await client.CsrfAsync(), app_timezone = "Not/A_Real_Zone", log_retention_days = 30 });
         Assert.Equal(HttpStatusCode.BadRequest, badZone.StatusCode);
         Assert.Contains("timezone", (await Detail(badZone)).ToLowerInvariant(), StringComparison.Ordinal);
+    }
+
+    /// <summary>No page shows a note for the signed-in home page, so there is no setting for one. An older client that still sends it is answered as though it had not.</summary>
+    [Fact]
+    public async Task An_older_client_sending_the_home_notice_is_answered_and_nothing_is_kept()
+    {
+        var (server, client) = await SignedInAdminAsync();
+        await using var _ = server;
+
+        using var put = await client.PutAsync("/api/v1/suite/settings", new
+        {
+            csrf_token = await client.CsrfAsync(),
+            signed_in_home_notice = "Welcome back.",
+            app_timezone = "UTC",
+            log_retention_days = 45,
+        });
+
+        Assert.Equal(HttpStatusCode.OK, put.StatusCode);
+        var saved = await Json(put);
+        Assert.False(saved.AsObject().ContainsKey("signed_in_home_notice"));
+        Assert.Equal(45, saved["log_retention_days"]!.GetValue<int>());
+        Assert.False((await Json(await client.GetAsync("/api/v1/suite/settings"))).AsObject().ContainsKey("signed_in_home_notice"));
+        Assert.Equal(0, await TestDatabase.ScalarAsync(server, "SELECT count(*) FROM pragma_table_info('suite_settings') WHERE name = 'signed_in_home_notice'"));
+
+        using var notText = await client.PutAsync("/api/v1/suite/settings", new
+        {
+            csrf_token = await client.CsrfAsync(),
+            signed_in_home_notice = 7,
+            app_timezone = "UTC",
+            log_retention_days = 45,
+        });
+        Assert.Equal(HttpStatusCode.OK, notText.StatusCode);
     }
 
     [Fact]
@@ -254,6 +284,33 @@ public sealed class SuiteApiTests
         using var fromOlder = await client.PutAsync("/api/v1/suite/configuration-bundle", new { csrf_token = await client.CsrfAsync(), bundle = olderFormat });
         Assert.Equal(HttpStatusCode.OK, fromOlder.StatusCode);
         Assert.Equal("Weir", await TestDatabase.ScalarStringAsync(server, "SELECT product_display_name FROM suite_settings WHERE id = 1"));
+    }
+
+    /// <summary>The fixture is a backup an older Weir wrote: it carries the home note and the hours window for Movies and TV, which are retired.</summary>
+    [Fact]
+    public async Task A_backup_from_an_older_Weir_restores_without_the_retired_settings_it_carries()
+    {
+        var (server, client) = await SignedInAdminAsync();
+        await using var _ = server;
+        var olderFormat = JsonNode.Parse(await File.ReadAllTextAsync(Path.Join(AppContext.BaseDirectory, "Fixtures", "bundle-v4.json")))!.AsObject();
+        Assert.Equal("Hello", olderFormat["suite_settings"]!["signed_in_home_notice"]!.GetValue<string>());
+        olderFormat["operator_settings"]!["movie_schedule_hours_limited"] = 1;
+        olderFormat["operator_settings"]!["movie_schedule_days"] = "Mon,Tue";
+        olderFormat["operator_settings"]!["tv_schedule_start"] = "08:00";
+
+        using var restored = await client.PutAsync("/api/v1/suite/configuration-bundle", new { csrf_token = await client.CsrfAsync(), bundle = olderFormat });
+
+        Assert.Equal(HttpStatusCode.OK, restored.StatusCode);
+        var answer = await Json(restored);
+        Assert.False(answer["suite_settings"]!.AsObject().ContainsKey("signed_in_home_notice"));
+        foreach (var field in new[] { "movie_schedule_hours_limited", "movie_schedule_days", "tv_schedule_start" })
+        {
+            Assert.False(answer["operator_settings"]!.AsObject().ContainsKey(field), field);
+        }
+
+        Assert.False((await Json(await client.GetAsync("/api/v1/suite/settings"))).AsObject().ContainsKey("signed_in_home_notice"));
+        Assert.False((await Json(await client.GetAsync("/api/v1/processing/operator-settings"))).AsObject().ContainsKey("movie_schedule_days"));
+        Assert.Equal(14, await TestDatabase.ScalarAsync(server, "SELECT log_retention_days FROM suite_settings WHERE id = 1"));
     }
 
     [Fact]

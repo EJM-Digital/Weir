@@ -21,7 +21,6 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 const SETTINGS: AppSettings = {
-  signed_in_home_notice: null,
   setup_wizard_state: "completed",
   app_timezone: "UTC",
   log_retention_days: 30,
