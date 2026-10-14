@@ -125,6 +125,20 @@ public sealed class ProcessingJobSwapJournalTests : IDisposable
     }
 
     [Fact]
+    public async Task Only_swaps_waiting_on_a_kept_original_conflict_are_listed_as_needing_a_person()
+    {
+        var conflicted = Job("a", null);
+        var other = Job("b", null);
+        var committing = Job("c", null);
+        await _journal.RecordAsync(new SwapJournalEntry(conflicted, "/lib/a.mkv", SwapJournalState.KeepConflict));
+        await _journal.RecordAsync(new SwapJournalEntry(other, "/lib/b.mkv", SwapJournalState.Recovered));
+        await _journal.RecordAsync(new SwapJournalEntry(committing, "/lib/c.mkv", SwapJournalState.Committing));
+
+        Assert.Equal(["/lib/a.mkv"], await _journal.ListKeepConflictPathsAsync());
+        Assert.DoesNotContain(await _journal.ListUnfinishedAsync(), entry => entry.JobId == conflicted);
+    }
+
+    [Fact]
     public async Task A_swap_with_the_setting_off_records_no_kept_original_path()
     {
         var id = Job("a", null);

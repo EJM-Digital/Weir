@@ -43,14 +43,22 @@ public sealed partial class SafeSwap
     private readonly ISwapOutputValidator _validator;
     private readonly ILogger _logger;
     private readonly IOutputOwnership? _ownership;
+    private readonly ISwapProgress? _progress;
 
-    public SafeSwap(ISwapFileSystem files, ISwapJournal journal, ISwapOutputValidator validator, ILogger<SafeSwap> logger, IOutputOwnership? ownership = null)
+    public SafeSwap(
+        ISwapFileSystem files,
+        ISwapJournal journal,
+        ISwapOutputValidator validator,
+        ILogger<SafeSwap> logger,
+        IOutputOwnership? ownership = null,
+        ISwapProgress? progress = null)
     {
         _files = files;
         _journal = journal;
         _validator = validator;
         _logger = logger;
         _ownership = ownership;
+        _progress = progress;
     }
 
     /// <summary>The checks made before any work, without changing anything. A scan can show the refusal reasons.</summary>
@@ -178,6 +186,8 @@ public sealed partial class SafeSwap
             return new SwapResult(SwapOutcome.Failed, SafeSwapRules.FailedMessage(stage, exception.Message), false, warnings);
         }
 
+        _progress?.Reached(SwapPoint.Started);
+
         async Task<SwapResult> Abandon(SwapOutcome outcome, string message)
         {
             await RollbackAsync(jobId, originalPath).ConfigureAwait(false);
@@ -216,6 +226,8 @@ public sealed partial class SafeSwap
                 return await Abandon(SwapOutcome.SourceChanged, SafeSwapRules.SourceChangedMessage);
             }
 
+            _progress?.Reached(SwapPoint.CopyChecked);
+
             // From here the swap takes milliseconds and is not cancelled part-way.
             stage = "copying the file's permissions";
             try
@@ -233,6 +245,7 @@ public sealed partial class SafeSwap
             keepDestination = ResolveKeepDestination(options?.KeepOriginal, originalPath);
             stage = "recording that the swap is committing";
             await _journal.RecordAsync(new SwapJournalEntry(jobId, originalPath, SwapJournalState.Committing, keepDestination), CancellationToken.None).ConfigureAwait(false);
+            _progress?.Reached(SwapPoint.CommitRecorded);
 
             stage = "moving the original aside";
             _files.Move(originalPath, backup);
@@ -244,11 +257,14 @@ public sealed partial class SafeSwap
                 return await Abandon(SwapOutcome.SourceChanged, SafeSwapRules.SourceChangedMessage);
             }
 
+            _progress?.Reached(SwapPoint.OriginalMovedAside);
+
             stage = "putting the cleaned copy in place";
             _files.Move(temp, originalPath);
             // #555: the swapped-in file is a fresh name (the rename above), so it needs the output-ownership
             // policy applied like any other file Weir just published; never fails the swap.
             _ownership?.ApplyToFile(originalPath);
+            _progress?.Reached(SwapPoint.CleanedCopyInPlace);
         }
         catch (OperationCanceledException)
         {
@@ -281,6 +297,8 @@ public sealed partial class SafeSwap
             _logger.LogWarning(exception, "Library swap committed but not recorded job_id={JobId} path={Path}", jobId, originalPath);
             warnings.Add($"Weir replaced the file but could not record it on the job: {exception.Message}");
         }
+
+        _progress?.Reached(SwapPoint.CommittedRecorded);
 
         var backupRemoved = false;
         string? keptOriginalPath = null;
@@ -316,6 +334,7 @@ public sealed partial class SafeSwap
 
         if (backupRemoved)
         {
+            _progress?.Reached(SwapPoint.BackupDealtWith);
             try
             {
                 await _journal.RecordAsync(new SwapJournalEntry(jobId, originalPath, SwapJournalState.Finished), CancellationToken.None).ConfigureAwait(false);
@@ -326,6 +345,8 @@ public sealed partial class SafeSwap
             {
                 _logger.LogWarning(exception, "Library swap finished but not recorded job_id={JobId} path={Path}", jobId, originalPath);
             }
+
+            _progress?.Reached(SwapPoint.FinishedRecorded);
         }
 
         return new SwapResult(SwapOutcome.Committed, SafeSwapRules.CommittedMessage, backupRemoved, warnings, keptOriginalPath);
