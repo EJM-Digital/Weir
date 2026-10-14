@@ -39,13 +39,21 @@ internal sealed class Replay(Func<WeirClient> createClient, string secret, Trans
     public Task<WeirResponse> SendAsync(Recording recording, Credential credential) =>
         SendAsync(recording, recording.Only, credential, []);
 
+    /// <summary>
+    /// Sends a call Deluno makes the same way as a recorded one but for a hand-off the recording does not cover (<see cref="DelunoSide.HandoffLike"/>),
+    /// and returns Weir's answer without holding it to a recording.
+    /// </summary>
+    public async Task<WeirResponse> SendCallAsync(RecordedCall call, Credential credential = Credential.Right)
+    {
+        using var deluno = createClient();
+        return await deluno.RequestAsync(new HttpMethod(call.Method), translation.Apply(call.Path), Request(call.Body), Headers(credential, call));
+    }
+
     private async Task<WeirResponse> SendAsync(
         Recording recording, RecordedExchange exchange, Credential credential, IReadOnlyList<ExpectedDifference> pins)
     {
         var call = exchange.Request;
-        using var deluno = createClient();
-        var response = await deluno.RequestAsync(
-            new HttpMethod(call.Method), translation.Apply(call.Path), Request(call.Body), Headers(credential));
+        var response = await SendCallAsync(call, credential);
         var differences = Differences(exchange.Reply, response, pins);
         if (differences.Count > 0)
         {
@@ -64,19 +72,37 @@ internal sealed class Replay(Func<WeirClient> createClient, string secret, Trans
         var body = translation.Apply(recorded);
         if (body is JsonObject fields && fields.ContainsKey("occurredUtc"))
         {
-            // When Deluno made its report is the time it made it; a replay reports now.
-            fields["occurredUtc"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.fffffff'Z'", CultureInfo.InvariantCulture);
+            // When Deluno made its report is the time it made it; a replay reports now, written the way the recording wrote it
+            // (rc.13 wrote a Z, Deluno rc.30.30 writes +00:00).
+            var written = (string?)fields["occurredUtc"] ?? string.Empty;
+            fields["occurredUtc"] = DateTimeOffset.UtcNow.ToString(
+                written.EndsWith('Z') ? "yyyy-MM-dd'T'HH:mm:ss.fffffff'Z'" : "yyyy-MM-dd'T'HH:mm:ss.fffffffzzz", CultureInfo.InvariantCulture);
         }
 
         return body;
     }
 
-    private Dictionary<string, string> Headers(Credential credential) => credential switch
+    /// <summary>
+    /// The secret as <paramref name="credential"/> says, and the headers the recording kept besides the scrubbed secret and the body's
+    /// own content type (an Idempotency-Key, say), exactly as recorded.
+    /// </summary>
+    private Dictionary<string, string> Headers(Credential credential, RecordedCall call)
     {
-        Credential.Right => new() { ["X-Webhook-Secret"] = secret },
-        Credential.Wrong => new() { ["X-Webhook-Secret"] = secret + "-not" },
-        _ => [],
-    };
+        var headers = call.Headers
+            .Where(header => header.Key is not ("x-webhook-secret" or "content-type"))
+            .ToDictionary(header => header.Key, header => header.Value);
+        switch (credential)
+        {
+            case Credential.Right:
+                headers["X-Webhook-Secret"] = secret;
+                break;
+            case Credential.Wrong:
+                headers["X-Webhook-Secret"] = secret + "-not";
+                break;
+        }
+
+        return headers;
+    }
 
     private List<string> Differences(RecordedAnswer recorded, WeirResponse actual, IReadOnlyList<ExpectedDifference> pins)
     {

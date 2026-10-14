@@ -45,13 +45,27 @@ public sealed record HandoffOrigin(string SourceKey, string? HandoffId, string? 
     private static WireValue? Truthy(WireValue? value) => value is not null && value.IsTruthy ? value : null;
 }
 
-/// <summary>Whether a manager accepted a report. <see cref="Accepted"/> is only ever true on a 2xx answer.</summary>
-public sealed record HandoffReportDelivery(bool Accepted, string Status);
+/// <summary>
+/// Whether a manager accepted a report. <see cref="Accepted"/> is only ever true on a 2xx answer. <see cref="ManagerStoppedWaiting"/> is a
+/// refusal that is not a fault: the manager answered that it had already stopped waiting for the hand-off, so the report came too
+/// late and nothing was queued (<see cref="CompletionReports.IsTooLate"/>).
+/// </summary>
+public sealed record HandoffReportDelivery(bool Accepted, string Status, bool ManagerStoppedWaiting = false);
 
 /// <summary>The completion report body a manager receives, and its wording.</summary>
 public static class CompletionReports
 {
     public const string ProcessorName = "Weir";
+
+    /// <summary>The <c>status</c> of Deluno's 409 to a report of a hand-off it had already stopped waiting for.</summary>
+    public const string DismissedStatus = "dismissed";
+
+    /// <summary>
+    /// Whether a manager's answer to a report says it had already stopped waiting for the hand-off: a 409 whose body names the hand-off's
+    /// <c>status</c> as dismissed. Read from that word, never from the manager's sentence.
+    /// </summary>
+    public static bool IsTooLate(int httpStatus, WireValue? answer) =>
+        httpStatus == 409 && answer is WireObject { } body && body.Get("status") is WireString { Value: DismissedStatus };
 
     public const string PassThroughAfterFailureMessage =
         "Weir could not process this file, so it handed the original back unchanged; it is ready to import.";

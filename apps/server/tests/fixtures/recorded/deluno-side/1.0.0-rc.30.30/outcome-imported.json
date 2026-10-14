@@ -1,0 +1,65 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "outcome-imported",
+  "recordedAt": "2026-10-13T21:12:44Z",
+  "note": "Deluno tells Weir it imported a cleaned film (a single file, then a release folder): importedPath is the library file.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/01a1371c38837e979272e31cd3ce6c3a/outcome",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "outcome": "imported",
+          "occurredUtc": "2026-10-13T21:12:44.4520348+00:00",
+          "importedPath": "C:\\Media\\Movies\\Gprecsingleemdq01 (2020)\\Gprecsingleemdq01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "reason": null
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1371c38837e979272e31cd3ce6c3a",
+          "outcome": "imported",
+          "released": false,
+          "message": "Weir recorded that Deluno imported the file. Deluno moved Weir's copy into its library, so there was nothing for Weir to remove."
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/01a1371d23b57a89bf279db3493ab745/outcome",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "outcome": "imported",
+          "occurredUtc": "2026-10-13T21:13:44.3696926+00:00",
+          "importedPath": "C:\\Media\\Movies\\Gprecfoldervpli02 (2020)\\Gprecfoldervpli02.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "reason": null
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1371d23b57a89bf279db3493ab745",
+          "outcome": "imported",
+          "released": false,
+          "message": "Weir recorded that Deluno imported the file. Deluno moved Weir's copy into its library, so there was nothing for Weir to remove."
+        }
+      }
+    }
+  ]
+}

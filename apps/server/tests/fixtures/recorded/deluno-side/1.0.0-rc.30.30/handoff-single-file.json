@@ -1,0 +1,45 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "handoff-single-file",
+  "recordedAt": "2026-10-13T21:12:38Z",
+  "note": "A single-file qBittorrent download handed to Weir: sourcePath is the file itself. The real request Deluno rc.30.30 sent (headers kept) and Weir 1.0.0-rc.13's reply.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a1371c38837e979272e31cd3ce6c3a:1791925958786",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a1371c38837e979272e31cd3ce6c3a",
+          "libraryId": "01a136e9242275898618c522d88dec53",
+          "mediaType": "movies",
+          "sourcePath": "C:\\Downloads\\Completed\\Movies\\Gprecsingleemdq01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "releaseName": "Gprecsingleemdq01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "queueItemId": "89f780e9b8940833de44710e2a242669bb2503fc",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "Gprecsingleemdq01",
+          "year": 2020
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    }
+  ]
+}

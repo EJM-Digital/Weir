@@ -1,0 +1,216 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "reply-handoffs-listed",
+  "recordedAt": "2026-10-14T06:06:56Z",
+  "note": "Weir lists Deluno's hand-offs: one waiting, one the processor failed and one that completed, for every library, for one library, for a library with none, and with a limit of one. Recorded from the real server code through the in-process test host (ApplicationTestHost), by DelunoRepliesToWeirTests; generated ids, times and the data folder are replaced by <id>, <utc> and <data-root>.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/integrations/processors/handoffs",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": [
+          {
+            "id": "<handoff:completed>",
+            "libraryId": "<library:films>",
+            "mediaType": "movies",
+            "clientId": "qbittorrent",
+            "queueItemId": "queue-completed",
+            "releaseName": "Example.Film.completed.2020.1080p.WEB-DL.x264-GROUP",
+            "sourcePath": "<data-root>/films-downloads/Example.Film.completed.2020.1080p.WEB-DL.x264-GROUP",
+            "processorName": "Weir",
+            "status": "completed",
+            "outputPath": null,
+            "importJobId": null,
+            "failureMessage": null,
+            "createdUtc": "<utc>",
+            "updatedUtc": "<utc>",
+            "processor": null,
+            "outcome": null,
+            "processorConnectionId": null,
+            "sourceFiles": null
+          },
+          {
+            "id": "<handoff:failed>",
+            "libraryId": "<library:films>",
+            "mediaType": "movies",
+            "clientId": "qbittorrent",
+            "queueItemId": "queue-failed",
+            "releaseName": "Example.Film.failed.2020.1080p.WEB-DL.x264-GROUP",
+            "sourcePath": "<data-root>/films-downloads/Example.Film.failed.2020.1080p.WEB-DL.x264-GROUP",
+            "processorName": "Weir",
+            "status": "failed",
+            "outputPath": null,
+            "importJobId": null,
+            "failureMessage": "Weir could not finish it.",
+            "createdUtc": "<utc>",
+            "updatedUtc": "<utc>",
+            "processor": null,
+            "outcome": null,
+            "processorConnectionId": null,
+            "sourceFiles": null
+          },
+          {
+            "id": "<handoff:waiting>",
+            "libraryId": "<library:films>",
+            "mediaType": "movies",
+            "clientId": "qbittorrent",
+            "queueItemId": "queue-waiting",
+            "releaseName": "Example.Film.waiting.2020.1080p.WEB-DL.x264-GROUP",
+            "sourcePath": "<data-root>/films-downloads/Example.Film.waiting.2020.1080p.WEB-DL.x264-GROUP",
+            "processorName": "Weir",
+            "status": "waiting",
+            "outputPath": null,
+            "importJobId": null,
+            "failureMessage": null,
+            "createdUtc": "<utc>",
+            "updatedUtc": "<utc>",
+            "processor": null,
+            "outcome": null,
+            "processorConnectionId": null,
+            "sourceFiles": null
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/integrations/processors/handoffs?libraryId=<library:films>",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": [
+          {
+            "id": "<handoff:completed>",
+            "libraryId": "<library:films>",
+            "mediaType": "movies",
+            "clientId": "qbittorrent",
+            "queueItemId": "queue-completed",
+            "releaseName": "Example.Film.completed.2020.1080p.WEB-DL.x264-GROUP",
+            "sourcePath": "<data-root>/films-downloads/Example.Film.completed.2020.1080p.WEB-DL.x264-GROUP",
+            "processorName": "Weir",
+            "status": "completed",
+            "outputPath": null,
+            "importJobId": null,
+            "failureMessage": null,
+            "createdUtc": "<utc>",
+            "updatedUtc": "<utc>",
+            "processor": null,
+            "outcome": null,
+            "processorConnectionId": null,
+            "sourceFiles": null
+          },
+          {
+            "id": "<handoff:failed>",
+            "libraryId": "<library:films>",
+            "mediaType": "movies",
+            "clientId": "qbittorrent",
+            "queueItemId": "queue-failed",
+            "releaseName": "Example.Film.failed.2020.1080p.WEB-DL.x264-GROUP",
+            "sourcePath": "<data-root>/films-downloads/Example.Film.failed.2020.1080p.WEB-DL.x264-GROUP",
+            "processorName": "Weir",
+            "status": "failed",
+            "outputPath": null,
+            "importJobId": null,
+            "failureMessage": "Weir could not finish it.",
+            "createdUtc": "<utc>",
+            "updatedUtc": "<utc>",
+            "processor": null,
+            "outcome": null,
+            "processorConnectionId": null,
+            "sourceFiles": null
+          },
+          {
+            "id": "<handoff:waiting>",
+            "libraryId": "<library:films>",
+            "mediaType": "movies",
+            "clientId": "qbittorrent",
+            "queueItemId": "queue-waiting",
+            "releaseName": "Example.Film.waiting.2020.1080p.WEB-DL.x264-GROUP",
+            "sourcePath": "<data-root>/films-downloads/Example.Film.waiting.2020.1080p.WEB-DL.x264-GROUP",
+            "processorName": "Weir",
+            "status": "waiting",
+            "outputPath": null,
+            "importJobId": null,
+            "failureMessage": null,
+            "createdUtc": "<utc>",
+            "updatedUtc": "<utc>",
+            "processor": null,
+            "outcome": null,
+            "processorConnectionId": null,
+            "sourceFiles": null
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/integrations/processors/handoffs?libraryId=<library:shows>",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": []
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/integrations/processors/handoffs?take=1",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": [
+          {
+            "id": "<handoff:completed>",
+            "libraryId": "<library:films>",
+            "mediaType": "movies",
+            "clientId": "qbittorrent",
+            "queueItemId": "queue-completed",
+            "releaseName": "Example.Film.completed.2020.1080p.WEB-DL.x264-GROUP",
+            "sourcePath": "<data-root>/films-downloads/Example.Film.completed.2020.1080p.WEB-DL.x264-GROUP",
+            "processorName": "Weir",
+            "status": "completed",
+            "outputPath": null,
+            "importJobId": null,
+            "failureMessage": null,
+            "createdUtc": "<utc>",
+            "updatedUtc": "<utc>",
+            "processor": null,
+            "outcome": null,
+            "processorConnectionId": null,
+            "sourceFiles": null
+          }
+        ]
+      }
+    }
+  ]
+}

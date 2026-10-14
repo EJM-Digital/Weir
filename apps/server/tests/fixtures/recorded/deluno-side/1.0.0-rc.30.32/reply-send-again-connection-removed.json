@@ -1,0 +1,45 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "reply-send-again-connection-removed",
+  "recordedAt": "2026-10-14T06:06:48Z",
+  "note": "Deluno is asked to say an outcome again and the processor connection is gone: 200, the outcome given up, and the words that there is nobody left to tell. Recorded from the real server code through the in-process test host (ApplicationTestHost), by DelunoRepliesToWeirTests; generated ids, times and the data folder are replaced by <id>, <utc> and <data-root>.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/handoffs/<handoff:imported>/outcome/send-again",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": "Deluno could not tell Weir what became of Example.Film.imported.2020.1080p.WEB-DL.x264-GROUP. The connection to Weir was removed, so there is nobody left to tell.",
+          "outcome": {
+            "handoffId": "<handoff:imported>",
+            "processorName": "Weir",
+            "libraryId": "<library:films>",
+            "releaseName": "Example.Film.imported.2020.1080p.WEB-DL.x264-GROUP",
+            "outcome": "imported",
+            "importedPath": "<data-root>/films/Example.Film.imported.2020.1080p.WEB-DL.x264-GROUP.mkv",
+            "reason": null,
+            "occurredUtc": "<utc>",
+            "delivery": "given-up",
+            "attempts": 0,
+            "lastAttemptUtc": "<utc>",
+            "nextAttemptUtc": null,
+            "released": false,
+            "processorSaid": "The connection to Weir was removed, so there is nobody left to tell.",
+            "recordedUtc": "<utc>",
+            "processorConnectionId": null
+          }
+        }
+      }
+    }
+  ]
+}

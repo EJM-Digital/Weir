@@ -201,6 +201,16 @@ jobs:
           node scripts/check-contract-areas.mjs
           node --test scripts/check-contract-areas.test.mjs
 
+      - name: Deluno's recordings match the manifest they were copied with
+        run: |
+          node scripts/check-recorded-manifest.mjs
+          node --test scripts/check-recorded-manifest.test.mjs
+
+      - name: Every recording of Deluno's side is replayed or explained
+        run: |
+          node scripts/check-recorded-replays.mjs
+          node --test scripts/check-recorded-replays.test.mjs
+
       - name: Every server event type has a title
         run: |
           node scripts/check-event-titles.mjs

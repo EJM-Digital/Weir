@@ -1,0 +1,81 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "handoff-resend",
+  "recordedAt": "2026-10-13T21:15:39Z",
+  "note": "A release sent, then \"I don't want it\" and sent again: the first send, then the resend under a new hand-off id for the same source (a new Idempotency-Key).",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a1371ef9dc72f08efd0fe26b99841f:1791926139356",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a1371ef9dc72f08efd0fe26b99841f",
+          "libraryId": "01a136e9242275898618c522d88dec53",
+          "mediaType": "movies",
+          "sourcePath": "C:\\Downloads\\Completed\\Movies\\Gprecbeforedage01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "releaseName": "Gprecbeforedage01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "queueItemId": "c156e6f22e3aabee184f0559c1b3a305afd2834d",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "Gprecbeforedage01",
+          "year": 2020
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a1371fe55b7e79b8ef0fcff5cd6955:1791926199642",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a1371fe55b7e79b8ef0fcff5cd6955",
+          "libraryId": "01a136e9242275898618c522d88dec53",
+          "mediaType": "movies",
+          "sourcePath": "C:\\Downloads\\Completed\\Movies\\Gprecbeforedage01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "releaseName": "Gprecbeforedage01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "queueItemId": "c156e6f22e3aabee184f0559c1b3a305afd2834d",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "Gprecbeforedage01",
+          "year": 2020
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    }
+  ]
+}

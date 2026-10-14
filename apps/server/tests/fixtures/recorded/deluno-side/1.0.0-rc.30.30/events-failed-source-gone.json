@@ -1,0 +1,41 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "events-failed-source-gone",
+  "recordedAt": "2026-10-13T21:37:57Z",
+  "note": "Weir reports a hand-off whose download was deleted before it started: failureClass source_gone.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a13729149372b4bba84e7f59c9986b",
+          "status": "failed",
+          "processorName": "Weir",
+          "libraryId": "01a136e9242275898618c522d88dec53",
+          "releaseName": "Gprecgonecgyh02.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "message": "The download is no longer there, so Weir had nothing to do.",
+          "sourceRemoved": false,
+          "failureClass": "source_gone",
+          "outputFiles": []
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "failed",
+          "handoffId": "01a13729149372b4bba84e7f59c9986b",
+          "activityId": "01a1373366377a5cbd1e87b45effd411",
+          "settled": false
+        }
+      }
+    }
+  ]
+}

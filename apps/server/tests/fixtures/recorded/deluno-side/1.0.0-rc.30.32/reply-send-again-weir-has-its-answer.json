@@ -1,0 +1,45 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "reply-send-again-weir-has-its-answer",
+  "recordedAt": "2026-10-14T06:07:01Z",
+  "note": "Deluno is asked to say an outcome again. Weir says it already holds an answer (409 outcome_already_recorded): settled. Recorded from the real server code through the in-process test host (ApplicationTestHost), by DelunoRepliesToWeirTests; generated ids, times and the data folder are replaced by <id>, <utc> and <data-root>.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/handoffs/<handoff:imported>/outcome/send-again",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": "Weir kept its earlier answer about Example.Film.imported.2020.1080p.WEB-DL.x264-GROUP, so Deluno stopped telling it. Deluno already said it imported this file, so Weir kept that answer.",
+          "outcome": {
+            "handoffId": "<handoff:imported>",
+            "processorName": "Weir",
+            "libraryId": "<library:films>",
+            "releaseName": "Example.Film.imported.2020.1080p.WEB-DL.x264-GROUP",
+            "outcome": "imported",
+            "importedPath": "<data-root>/films/Example.Film.imported.2020.1080p.WEB-DL.x264-GROUP.mkv",
+            "reason": null,
+            "occurredUtc": "<utc>",
+            "delivery": "settled",
+            "attempts": 1,
+            "lastAttemptUtc": "<utc>",
+            "nextAttemptUtc": null,
+            "released": false,
+            "processorSaid": "Deluno already said it imported this file, so Weir kept that answer.",
+            "recordedUtc": "<utc>",
+            "processorConnectionId": null
+          }
+        }
+      }
+    }
+  ]
+}

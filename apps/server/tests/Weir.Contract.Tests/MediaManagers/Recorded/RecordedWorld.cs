@@ -83,7 +83,14 @@ internal sealed class RecordedWorld : IAsyncDisposable
         return FakeMedia.Bytes(probe);
     }
 
-    public static async Task<RecordedWorld> StartAsync()
+    /// <summary>
+    /// The world of the recordings. <paramref name="moviesKey"/> is Deluno's id for its Movies library, as the recorded hand-offs name it
+    /// (it differs from one recording session to the next). <paramref name="delunoOutputRoot"/> is the folder Deluno says Weir hands its
+    /// cleaned files back to, as Deluno's machine writes it; null means this machine's own output folder, which is how the rc.13
+    /// recordings were replayed. A Windows path there makes Weir rebuild the paths it reports under it, as it does for a Deluno
+    /// on another machine.
+    /// </summary>
+    public static async Task<RecordedWorld> StartAsync(string moviesKey = MoviesKey, string? delunoOutputRoot = null)
     {
         var scenario = await Scenario.StartAsync();
         try
@@ -91,12 +98,12 @@ internal sealed class RecordedWorld : IAsyncDisposable
             var deluno = scenario.Own(FakeManager.StartDeluno());
             deluno.Libraries.Add(new JsonObject
             {
-                ["id"] = MoviesKey,
+                ["id"] = moviesKey,
                 ["name"] = "Movies",
                 ["mediaType"] = "movies",
                 ["rootPath"] = "/deluno/library/movies",
                 ["importWorkflow"] = "refine-before-import",
-                ["processorOutputPath"] = scenario.Folders.Output,
+                ["processorOutputPath"] = delunoOutputRoot ?? scenario.Folders.Output,
             });
             var connection = await scenario.CreateConnectionAsync(deluno);
             var movies = await SetUpAsync(scenario, "movie", scenario.Folders, connection["id"]!);

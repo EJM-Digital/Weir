@@ -1,0 +1,108 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "events-completed",
+  "recordedAt": "2026-10-13T21:12:41Z",
+  "note": "Weir reports a finished hand-off to Deluno (a single file, a release folder, a Usenet folder): Deluno answers 202 and queues the import.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1371c38837e979272e31cd3ce6c3a",
+          "status": "completed",
+          "processorName": "Weir",
+          "libraryId": "01a136e9242275898618c522d88dec53",
+          "releaseName": "Gprecsingleemdq01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "outputPath": "C:\\Weir\\Ready\\Movies\\Gprecsingleemdq01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "message": "Remux finished.",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\Movies\\Gprecsingleemdq01.2020.1080p.WEB-DL.x264-GOLDEN.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "completed",
+          "handoffId": "01a1371c38837e979272e31cd3ce6c3a",
+          "activityId": "01a1371c4495731c8699597a6aaf7791",
+          "importJobId": "01a1371c449c77d384c20a43294ea730"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1371d23b57a89bf279db3493ab745",
+          "status": "completed",
+          "processorName": "Weir",
+          "libraryId": "01a136e9242275898618c522d88dec53",
+          "releaseName": "Gprecfoldervpli02.2020.1080p.WEB-DL.x264-GOLDEN",
+          "outputPath": "C:\\Weir\\Ready\\Movies\\Gprecfoldervpli02.2020.1080p.WEB-DL.x264-GOLDEN\\Gprecfoldervpli02.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "message": "Remux finished.",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\Movies\\Gprecfoldervpli02.2020.1080p.WEB-DL.x264-GOLDEN\\Gprecfoldervpli02.2020.1080p.WEB-DL.x264-GOLDEN.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "completed",
+          "handoffId": "01a1371d23b57a89bf279db3493ab745",
+          "activityId": "01a1371d2f6b73189f9ffce218ed9851",
+          "importJobId": "01a1371d2f6d72dfab210c64afa3e122"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1371e0ee07eceb910f323f5215d00",
+          "status": "completed",
+          "processorName": "Weir",
+          "libraryId": "01a136e9242275898618c522d88dec53",
+          "releaseName": "Gprecusenetekhf03.2020.1080p.WEB-DL.x264-GOLDEN",
+          "outputPath": "C:\\Weir\\Ready\\Movies\\Gprecusenetekhf03.2020.1080p.WEB-DL.x264-GOLDEN\\Gprecusenetekhf03.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "message": "Remux finished.",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\Movies\\Gprecusenetekhf03.2020.1080p.WEB-DL.x264-GOLDEN\\Gprecusenetekhf03.2020.1080p.WEB-DL.x264-GOLDEN.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "completed",
+          "handoffId": "01a1371e0ee07eceb910f323f5215d00",
+          "activityId": "01a1371e5665799a88bdd39aa284cf05",
+          "importJobId": "01a1371e56697ed49ee1fe174b1b0adf"
+        }
+      }
+    }
+  ]
+}

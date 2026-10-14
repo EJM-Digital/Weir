@@ -1,0 +1,41 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.30",
+  "state": "cancel-queued",
+  "recordedAt": "2026-10-13T21:23:41Z",
+  "note": "\"Stop waiting\" on a hand-off Weir holds queued: Deluno's DELETE and Weir's 204 (two hand-offs).",
+  "exchanges": [
+    {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/v1/intake/handoffs/deluno/01a13722a77b7d77a7435c2aa3afb12e",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 204,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "bodyText": ""
+      }
+    },
+    {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/v1/intake/handoffs/deluno/01a137273e4d7b3fb567567b14cc4922",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 204,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "bodyText": ""
+      }
+    }
+  ]
+}

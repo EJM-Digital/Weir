@@ -1,0 +1,22 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "reply-import-original-unknown",
+  "recordedAt": "2026-10-14T06:07:03Z",
+  "note": "Weir asks to import the original of a hand-off Deluno has no record of: 404. Recorded from the real server code through the in-process test host (ApplicationTestHost), by DelunoRepliesToWeirTests; generated ids, times and the data folder are replaced by <id>, <utc> and <data-root>.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/handoffs/no-such-handoff/import-original",
+        "headers": {
+          "x-api-key": "<api key with the read and imports scopes>"
+        }
+      },
+      "reply": {
+        "status": 404,
+        "headers": {}
+      }
+    }
+  ]
+}
