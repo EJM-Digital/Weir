@@ -9,7 +9,7 @@ recordings of Weir's replies, made by Deluno the other way round, are in `../del
 | | |
 | --- | --- |
 | Source | Deluno repository, `tests/fixtures/recorded/deluno/` |
-| Source commit | `4301f16d3c019dc9eb1835994c281ad45301329a` (Deluno local `main`, pending push: "Merge 404 bodies on the Weir-facing routes, so a body-less 404 means only that the route is missing", Deluno #1267; it re-made five recordings, the commit before the merge is `fdefe2d9ad985a3bfc27f1df59fe8781fa30372e`). The other recordings are as of `dc38dcebd3e7b16ff01c1c14c7fec1fd19920136` (Deluno `origin/main`) |
+| Source commit | `d9339c03a2c5a8b924e7add57d616cf2f6c2c5a4` (Deluno `main`). It carries Deluno #1267, which re-made five recordings so that a body-less 404 means only that the route is missing; every file here is byte-identical to that commit (git blob ids match) |
 | Copied | byte for byte, with Deluno's `MANIFEST.sha256`; 38 recordings |
 | Never edited here | `node scripts/check-recorded-manifest.mjs` fails (CI, `repo-checks`) when a file differs from its line in the manifest, and names the file |
 | Copy again | `git -C <Deluno> archive <commit> tests/fixtures/recorded/deluno` and put the `1.0.0-rc.*` folders and `MANIFEST.sha256` here, then change the commit above |
