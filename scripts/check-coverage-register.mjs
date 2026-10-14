@@ -16,11 +16,17 @@
 //   (1) the code has a route, job kind, hosted service, periodic task, setting, event type, web route, web control, tray menu item or
 //       golden-VM scenario that no row names in `covers` (scripts/coverage/inventory.mjs reads them from source);
 //   (2) a row covers something the code no longer has;
-//   (3) a proof names a file or test that does not exist, or claims a type the file does not have;
+//   (3) a proof names a file or test that does not exist, or claims a type the file does not have (a real-fs claim the check cannot verify
+//       is not one of these: it is refused, counts as inproc and is reported, and --strict fails on it);
 //   (4) a row has no proof and no `issue`;
 //   (5) the number of gaps is above `gapCeiling` (or above the register's count at --base), or below it (lower it, so the ceiling only
 //       ever goes down), or a row names an issue that is not open (--gh, --open-issues);
 //   (6) the register is malformed.
+// real-fs: a backend test that runs Weir's real code against real files in a real temp folder (real hard links, moves, deletes, permissions)
+// or a real SQLite database file, with no fake or in-memory file system or store. The check decides it statically (the class setup or the
+// test creates the temp folder or database, does file or database work, and names no fake). It satisfies "real" for a row that touches disk
+// or install, unless the row is marked "vm": true, a row only a real install can prove (NTFS specifics, network shares, cross-volume moves,
+// the installer, the update, the tray, Windows service mode): that row reaches "real" by a scenario alone.
 // A gap is a row whose proofs do not reach its required level (`required` is derived from `severity` and `touches`), or that names an
 // `issue`: a row proven in part keeps its proofs and names the issue that will prove the rest. Gaps that are not
 // yet on an issue are counted and reported. --strict fails on every gap; Weir turns it on once the gaps are closed.
@@ -28,15 +34,17 @@ import { spawnSync } from "node:child_process";
 import { existsSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { TestIndex, read } from "./coverage/testindex.mjs";
+import { CONTAINER_SMOKE_FILE, REAL_FS_FILE, TestIndex, read } from "./coverage/testindex.mjs";
 import { buildInventory, countsOf } from "./coverage/inventory.mjs";
 
 export const REGISTER = "docs/testing/coverage-register.json";
-export const PROOF_TYPES = ["xunit", "contract", "e2e", "vitest", "node", "scenario", "recording-replay", "package-smoke"];
+export const PROOF_TYPES = ["xunit", "contract", "e2e", "vitest", "node", "scenario", "recording-replay", "real-fs", "container-smoke", "package-smoke"];
 export const KINDS = ["screen action", "state", "API route", "job", "integration-operation", "failure-mode", "migration", "install-update", "tray", "setting", "event", "file-lifecycle"];
 export const SEVERITIES = ["high", "medium", "low"];
 export const TOUCHES = ["other-app", "disk", "install", "none"];
 export const REAL_TYPES = new Set(["scenario", "recording-replay"]);
+/** real-fs satisfies "real" only for these rows, and never for a row marked "vm": true. */
+export const REAL_FS_TOUCHES = new Set(["disk", "install"]);
 /** Areas whose rows are behaviours of a screen: an e2e test against the real host may reach "real" for these. */
 export const SCREEN_AREAS = new Set(["web-shell", "web-dashboard", "web-activity-library", "web-setup-workflows-rules", "web-setup-connections-performance", "web-system", "web-routes"]);
 const LEVEL_NAMES = ["none", "inproc", "real"];
@@ -47,8 +55,23 @@ export const requiredLevel = (row) => (requiredFor(row) === "real" ? 2 : 1);
 
 /** Is this e2e proof stubbed? Decided statically; what cannot be decided counts as stubbed. */
 export const e2eState = (proof, index) => (index && typeof index.stubInfo === "function" ? index.stubInfo(proof.file, proof.name) : { stubbed: true, decided: false });
-/** scenario and recording-replay are real; an e2e test is real only for a screen behaviour and only when its requests are not intercepted. */
+/** The proof types the check verifies from the text of the test, step or script they name, and the index method that judges each. */
+export const VERIFIED_TYPES = { "real-fs": "realFs", "container-smoke": "containerSmoke" };
+/** Is this claim one the check can verify from the text? */
+export const claimVerified = (proof, index) => {
+  const judge = VERIFIED_TYPES[proof.type];
+  return !!index && typeof index[judge] === "function" && index[judge](proof.file, proof.name).real;
+};
+/** Does a verified-type proof count for this row? Only for a disk or install row that is not "vm", and only when the check verifies the claim. */
+export const claimCounts = (proof, row, index) => proof.type in VERIFIED_TYPES && !!row && row.vm !== true && REAL_FS_TOUCHES.has(row.touches) && claimVerified(proof, index);
+/**
+ * scenario and recording-replay are real; real-fs and container-smoke are real for a verified disk or install row that is not "vm"; an e2e
+ * test is real only for a screen behaviour and only when its requests are not intercepted. A "vm" row (only a real install can prove it) is
+ * real by a scenario alone.
+ */
 export function proofLevel(proof, row, index) {
+  if (row && row.vm === true) return proof.type === "scenario" ? 2 : 1;
+  if (proof.type in VERIFIED_TYPES) return claimCounts(proof, row, index) ? 2 : 1;
   if (REAL_TYPES.has(proof.type)) return 2;
   if (proof.type === "e2e" && row && SCREEN_AREAS.has(row.area) && !e2eState(proof, index).stubbed) return 2;
   return 1;
@@ -74,6 +97,8 @@ export function validateShape(register) {
     if (!SEVERITIES.includes(row.severity)) problems.push(`${where}: severity "${row.severity}" is not high, medium or low`);
     if (!TOUCHES.includes(row.touches)) problems.push(`${where}: touches "${row.touches}" is not one of ${TOUCHES.join(", ")}`);
     else if (row.required !== requiredFor(row)) problems.push(`${where}: required must be "${requiredFor(row)}" for a ${row.severity} row that touches ${row.touches}`);
+    if (row.vm != null && row.vm !== true) problems.push(`${where}: vm may only be true (leave it out otherwise)`);
+    if (row.vm === true && !REAL_FS_TOUCHES.has(row.touches)) problems.push(`${where}: vm is for a row that touches disk or install, not ${row.touches}`);
     if (row.issue != null && !(Number.isInteger(row.issue) && row.issue > 0)) problems.push(`${where}: issue must be the number of an open coverage issue`);
     if (!Array.isArray(row.proofs)) problems.push(`${where}: proofs must be a list (empty when it is a gap)`);
     if (row.covers !== undefined && !Array.isArray(row.covers)) problems.push(`${where}: covers must be a list`);
@@ -111,6 +136,10 @@ function typeMismatch(p, index) {
       return p.file.startsWith("apps/server/tests/Weir.Contract.Tests/") ? null : `a contract proof must be a test in Weir.Contract.Tests, not ${p.file}`;
     case "package-smoke":
       return p.file === "scripts/smoke-windows-package.ps1" || p.file.startsWith("apps/server/tools/Weir.LiveAudit/") ? null : `a package-smoke proof must be the Windows package smoke or the live audit, not ${p.file}`;
+    case "real-fs":
+      return REAL_FS_FILE.test(p.file) ? null : `a real-fs proof must be a C# test of the server or the tray, not ${p.file}`;
+    case "container-smoke":
+      return CONTAINER_SMOKE_FILE.test(p.file) ? null : `a container-smoke proof must be a packaging workflow or a container script in scripts, not ${p.file}`;
     case "recording-replay":
       return index.replaysRecording(p.file, p.name) ? null : `"${p.name}" in ${p.file} does not load one of Deluno's recordings`;
     default:
@@ -135,6 +164,20 @@ export function missingProofs(register, index) {
     }
   }
   return bad;
+}
+
+/** A real-fs or container-smoke claim the check could not verify from the text: refused, so it counts as inproc. */
+export function refusedClaims(register, index) {
+  const refused = [];
+  const kinds = { "real-fs": REAL_FS_FILE, "container-smoke": CONTAINER_SMOKE_FILE };
+  for (const row of register.rows) {
+    for (const p of row.proofs ?? []) {
+      if (!(p.type in VERIFIED_TYPES) || !index.has(p.file) || !kinds[p.type].test(p.file) || !index.hasName(p.file, p.name)) continue;
+      const verdict = index[VERIFIED_TYPES[p.type]](p.file, p.name);
+      if (!verdict.real) refused.push({ row: row.id, proof: p, why: verdict.why });
+    }
+  }
+  return refused;
 }
 
 /** (4) rows with neither a proof nor an issue. */
@@ -167,6 +210,8 @@ export function totals(register, index) {
   const gaps = [];
   const highByTouches = Object.fromEntries(TOUCHES.map((t) => [t, { rows: 0, gaps: 0 }]));
   const e2e = { proofs: 0, unstubbed: 0, stubbed: 0, undecided: 0 };
+  const realFs = { claims: 0, counted: 0, refused: 0, noEffect: 0, vmRows: 0, vmRowGaps: 0 };
+  const container = { claims: 0, counted: 0, refused: 0, noEffect: 0 };
   function blank() {
     return { rows: 0, proven: 0, gaps: 0 };
   }
@@ -175,6 +220,18 @@ export function totals(register, index) {
     if (row.severity === "high" && highByTouches[row.touches]) {
       highByTouches[row.touches].rows++;
       if (gap) highByTouches[row.touches].gaps++;
+    }
+    if (row.vm === true) {
+      realFs.vmRows++;
+      if (gap) realFs.vmRowGaps++;
+    }
+    for (const pr of row.proofs ?? []) {
+      const tally = pr.type === "real-fs" ? realFs : pr.type === "container-smoke" ? container : null;
+      if (!tally) continue;
+      tally.claims++;
+      if (!claimVerified(pr, index)) tally.refused++;
+      else if (claimCounts(pr, row, index)) tally.counted++;
+      else tally.noEffect++;
     }
     for (const pr of row.proofs ?? []) {
       if (pr.type !== "e2e") continue;
@@ -198,7 +255,7 @@ export function totals(register, index) {
     if (gap) gaps.push(row);
   }
   const untracked = gaps.filter((g) => g.issue == null);
-  return { all, byArea, bySeverity, byLevel, highByTouches, e2e, gaps, untracked, highGaps: gaps.filter((g) => g.severity === "high").length };
+  return { all, byArea, bySeverity, byLevel, highByTouches, e2e, realFs, container, gaps, untracked, highGaps: gaps.filter((g) => g.severity === "high").length };
 }
 
 export function evaluate({ register, inventory, index, openIssues = null, baseGaps = null }) {
@@ -206,6 +263,7 @@ export function evaluate({ register, inventory, index, openIssues = null, baseGa
     shape: validateShape(register),
     ...mapInventory(register, inventory),
     missing: missingProofs(register, index),
+    refused: refusedClaims(register, index),
     issueProblems: issueProblems(register),
     gapProblems: gapProblems(register, index, { openIssues, baseGaps }),
     totals: totals(register, index),
@@ -229,6 +287,8 @@ export function generatedSection(register, inventory, t) {
   lines.push("", "### By best proof a row has", "", "| Best proof | Rows |", "| --- | ---: |");
   for (const l of LEVEL_NAMES) lines.push(`| ${l === "none" ? "none (a gap)" : l} | ${t.byLevel[l]} |`);
   lines.push("", `E2E proofs: **${t.e2e.proofs}**; unstubbed (can reach \`real\` for a screen behaviour) **${t.e2e.unstubbed}**; stubbed **${t.e2e.stubbed}**; not decidable statically, counted as stubbed **${t.e2e.undecided}**.`);
+  lines.push("", `Real-fs proofs: **${t.realFs.claims}** claimed; **${t.realFs.counted}** verified and counted as real; **${t.realFs.refused}** refused (the check could not verify a real temp folder or database file with no fake, so they count as inproc); **${t.realFs.noEffect}** verified but without effect (the row is "vm", or does not touch disk or install). **${t.realFs.vmRows}** rows are "vm" (only a real install can prove them, so they need a scenario); **${t.realFs.vmRowGaps}** of them are still gaps.`);
+  lines.push("", `Container-smoke proofs: **${t.container.claims}** claimed; **${t.container.counted}** verified and counted as real; **${t.container.refused}** refused (the named step or script does not start the container image, so they count as inproc); **${t.container.noEffect}** verified but without effect (the row is "vm", or does not touch disk or install).`);
   lines.push("", "### By area", "", "| Area | What | Rows | Reach their level | Gaps | High rows | High gaps | No proof | Inproc | Real |", "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |");
   for (const [area, a] of Object.entries(t.byArea).sort()) {
     lines.push(`| ${area} | ${register.areas[area]?.name ?? ""} | ${a.rows} | ${a.proven} | ${a.gaps} | ${a.high} | ${a.highGaps} | ${a.level.none} | ${a.level.inproc} | ${a.level.real} |`);
@@ -319,7 +379,7 @@ async function main() {
     return;
   }
   if (args.includes("--json")) {
-    console.log(JSON.stringify({ rows: t.all, bySeverity: t.bySeverity, highByTouches: t.highByTouches, e2e: t.e2e, byLevel: t.byLevel, byArea: t.byArea, highGaps: t.highGaps, untracked: t.untracked.length, inventory: countsOf(inventory) }, null, 1));
+    console.log(JSON.stringify({ rows: t.all, bySeverity: t.bySeverity, highByTouches: t.highByTouches, e2e: t.e2e, realFs: t.realFs, container: t.container, byLevel: t.byLevel, byArea: t.byArea, highGaps: t.highGaps, untracked: t.untracked.length, inventory: countsOf(inventory) }, null, 1));
     return;
   }
   if (args.includes("--list-gaps")) {
@@ -342,6 +402,11 @@ async function main() {
   else lines.push(`  OK  ${t.gaps.length} gaps, at the ceiling${baseRef ? (baseGaps === null ? ` (no register at ${baseRef} to compare)` : ` and no more than the ${baseGaps} at ${baseRef}`) : ""}${openIssues ? "; every issue named is open" : ""}`);
   const levelLine = `${t.gaps.length} gaps (${t.highGaps} high): ${t.all.proven} of ${t.all.rows} rows reach their required proof level; ${t.untracked.length} gaps are not on an issue yet`;
   lines.push(`  ${t.gaps.length ? "!!" : "OK"}  ${levelLine}`);
+  lines.push(`      real-fs proofs ${t.realFs.claims}: ${t.realFs.counted} counted, ${t.realFs.refused} refused (counted inproc), ${t.realFs.noEffect} without effect; vm rows (need a scenario): ${t.realFs.vmRows}, ${t.realFs.vmRowGaps} still gaps; container-smoke proofs ${t.container.claims}: ${t.container.counted} counted, ${t.container.refused} refused`);
+  if (result.refused.length) {
+    lines.push(`  !!  ${result.refused.length} real-fs or container-smoke claim(s) the check cannot verify (they count as inproc; only --strict fails on them):\n    ${shown(result.refused, (r) => `${r.row}: ${r.proof.file} ${r.proof.name}: ${r.why}`)}`);
+    if (strict) fail.push(`${result.refused.length} real-fs or container-smoke claim(s) the check cannot verify (--strict)`);
+  }
   if (strict && t.gaps.length) fail.push(`${levelLine} (--strict)`);
 
   console.log(lines.join("\n"));
