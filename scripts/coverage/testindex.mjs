@@ -50,6 +50,17 @@ const CS_METHOD = /\[(?:[A-Za-z]*Fact|[A-Za-z]*Theory)\b[^\]]*\]\s*(?:\[[^\]]*\]
 const CS_CLASS = /\b(?:class|record)\s+(\w+)/g;
 const RECORDING = /\bRecordedDeluno\b|\bDelunoSide\b|\bRecordedWorld\b|\bRecordedReplies\b|fixtures[\\/]+recorded/;
 
+// real-fs: the test (or its class setup) creates a real temp folder or a real SQLite file, works on it with real file or database code,
+// and neither names a fake or in-memory file system or store. What cannot be decided is refused.
+const FS_CREATE =
+  /Path\.GetTempPath\s*\(|CreateTempSubdirectory\s*\(|Path\.GetTempFileName\s*\(|\b(?:TempDirectory|TemporaryFolder|JobsTestDatabase|StoreFixture|MediaManagerFixture)\b|\bMigratedDatabaseTemplate\b|\b(?:WeirTestServer|WeirServer|SwapWorld|LibraryCleanWorld|LeasedJobScenario|LibrariesPartBFilm|Scenario)\.Start\w*\s*\(|\b(?:Server|Users|SeededServer|HandoffServer|ManagerServer)Fixture\b/;
+const FS_WORK = /\b(?:File|Directory|FileInfo|DirectoryInfo)\.|\bnew\s+(?:FileInfo|DirectoryInfo)\b|CreateHardLink|SqliteConnection|SqliteDatabase|UnitOfWork|SchemaMigrator|\bMigrat\w*/;
+const FS_FAKE =
+  /ScriptedStateFileSystem|\bSwapScenario\b|\bI\w*FileSystem\b|\bIFolderProbe\b|\bIHardlinkInspector\b|\bISwapJournal\b|\bIOutputOwnership\w*\b|\bIRemuxPassFileFacts\b|\bIRemovedTrackStore\b|\bIPostSuccessCleanupData\b|\bITvSeasonFolderCleanup\b|\bIUpdateBackup\b|MockFileSystem|MemoryFileSystem|\bFake\w*(?:FileSystem|Storage|Repository|Database|Store|Journal|Probe|Disk|Volume)\b|\bInMemory\w*|\bNull\w*Repository\b|:memory:|Mode=Memory|new\s+Mock<|Substitute\.For</;
+
+/** C# test files a real-fs claim may name: the server's and the tray's, never the browser tests. */
+export const REAL_FS_FILE = /^apps\/(?:server\/tests\/(?!Weir\.E2E\.Tests\/)|tray\/Weir\.Tray\.Tests\/).+\.cs$/;
+
 /** The names inside one test file: its tests, its groups and (C#) its classes. */
 export function namesOf(file, text) {
   const names = new Set();
@@ -104,6 +115,37 @@ export class TestIndex {
       for (const s of f.squashed) if (s.startsWith(q) || (s.length >= 14 && q.startsWith(s))) return true;
     }
     return q.length >= 20 && f.hay.includes(q);
+  }
+
+  /**
+   * Is the test a real-fs test: it runs Weir's real code against real files in a real temp folder, or a real SQLite file?
+   * Decided statically from the class setup (the text before its first test) plus the test's own body.
+   * A named test is judged alone; a class name, a cited fragment or "*" is judged over every test it covers, and every one must qualify.
+   * { real, why }: what cannot be decided is not real.
+   */
+  realFs(file, name) {
+    const f = this.files.get(file);
+    if (!f || !REAL_FS_FILE.test(file)) return { real: false, why: "not a C# test of the server or the tray" };
+    const header = f.header ?? "";
+    let scope;
+    const body = name && name !== "*" ? f.bodies?.get(name) : undefined;
+    if (body !== undefined) scope = [[name, body]];
+    else {
+      const all = [...(f.bodies ?? [])];
+      if (!name || name === "*" || f.names.has(name)) scope = all;
+      else {
+        const q = squash(name);
+        scope = all.filter(([n]) => squash(n).startsWith(q));
+      }
+    }
+    if (scope.length === 0) return { real: false, why: "no test found to judge" };
+    for (const [n, text] of scope) {
+      const both = `${header}\n${text}`;
+      if (FS_FAKE.test(both)) return { real: false, why: `${n} uses a fake or in-memory file system or store` };
+      if (!FS_CREATE.test(both)) return { real: false, why: `${n} (or its class setup) creates no real temp folder or database file` };
+      if (!FS_WORK.test(both)) return { real: false, why: `${n} does no file or database work that can be seen` };
+    }
+    return { real: true, why: "" };
   }
 
   /**
@@ -164,7 +206,8 @@ function csBodies(file, text) {
 /**
  * The kind of proof a file is: xunit (the server's and the tray's unit, integration and API tests), contract (the contract suite),
  * e2e (Playwright for .NET against the real host), vitest, node (the repository scripts' tests), scenario (a golden-VM scenario),
- * recording-replay (a test that replays Deluno's recorded real reply), package-smoke (the Windows package smoke and the live audit).
+ * recording-replay (a test that replays Deluno's recorded real reply), real-fs (a test the check verifies runs on a real temp folder or
+ * SQLite file with no fake), package-smoke (the Windows package smoke and the live audit).
  */
 export function proofTypeOf(file, index, name) {
   if (file === PACKAGE_SMOKE || file.startsWith(LIVE_AUDIT)) return "package-smoke";
@@ -172,6 +215,7 @@ export function proofTypeOf(file, index, name) {
   if (file.startsWith(E2E_TESTS)) return "e2e";
   if (/\.test\.tsx?$/.test(file)) return "vitest";
   if (/\.test\.mjs$/.test(file)) return "node";
-  if (file.startsWith(CONTRACT_TESTS)) return index && index.replaysRecording(file, name) ? "recording-replay" : "contract";
-  return "xunit";
+  if (file.startsWith(CONTRACT_TESTS) && index && index.replaysRecording(file, name)) return "recording-replay";
+  if (index && index.realFs(file, name).real) return "real-fs";
+  return file.startsWith(CONTRACT_TESTS) ? "contract" : "xunit";
 }

@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { buildInventory } from "./coverage/inventory.mjs";
 import { TestIndex } from "./coverage/testindex.mjs";
-import { evaluate, isGap, proofLevel, requiredFor, validateShape } from "./check-coverage-register.mjs";
+import { evaluate, generatedSection, isGap, proofLevel, requiredFor, validateShape } from "./check-coverage-register.mjs";
 
 const script = path.join(path.dirname(fileURLToPath(import.meta.url)), "check-coverage-register.mjs");
 const made = [];
@@ -296,6 +296,120 @@ describe("the proof levels", () => {
     const row = { area: "web-shell", severity: "high", touches: "disk", proofs: [{ type: "vitest" }] };
     assert.equal(isGap(row, index), true);
     assert.equal(isGap({ ...row, proofs: [{ type: "vitest" }, { type: "e2e" }] }, index), false);
+  });
+});
+
+/** A C# test class: a real temp folder and real file work, or a fake file system, as the test needs. */
+const csTest = (body, setup = "") => `public sealed class PlacementTests\n{\n${setup}    [Fact]\n    public void Places_the_file()\n    {\n${body}    }\n}\n`;
+const REAL_BODY = '        using var dir = new TempDirectory();\n        File.WriteAllText(Path.Join(dir.Path, "a.mkv"), "x");\n';
+const PLACEMENT = "apps/server/tests/Weir.Infrastructure.Tests/PlacementTests.cs";
+const realFsProof = [{ type: "real-fs", file: PLACEMENT, name: "Places_the_file" }];
+const diskRow = (extra = {}) => ({ area: "file-lifecycle", severity: "high", touches: "disk", required: "real", proofs: realFsProof, ...extra });
+
+describe("real-fs proofs", () => {
+  const index = (body, setup) => new TestIndex(fixture({ [PLACEMENT]: csTest(body, setup) }));
+
+  test("a test that makes a real temp folder and works on its files is real for a disk row", () => {
+    const idx = index(REAL_BODY);
+    assert.equal(idx.realFs(PLACEMENT, "Places_the_file").real, true);
+    assert.equal(proofLevel(realFsProof[0], diskRow(), idx), 2);
+    assert.equal(isGap(diskRow(), idx), false);
+  });
+
+  test("it is real for an install row too, and a database file counts as a real store", () => {
+    const idx = index("        using var db = new JobsTestDatabase();\n        using var connection = new SqliteConnection(db.ConnectionString);\n");
+    assert.equal(proofLevel(realFsProof[0], diskRow({ touches: "install" }), idx), 2);
+  });
+
+  test("a folder made in the class setup counts for every test in the class", () => {
+    const idx = index('        File.Delete(Path.Join(_dir.Path, "a.mkv"));\n', "    private readonly TempDirectory _dir = new();\n");
+    assert.equal(idx.realFs(PLACEMENT, "PlacementTests").real, true);
+  });
+
+  test("a fake file system or an in-memory database is refused", () => {
+    for (const fake of ["var files = new FakeSwapFileSystem();", "ISwapFileSystem files = null!;", 'var c = new SqliteConnection("Data Source=:memory:");', "var s = new InMemoryRedownloadTracker();"]) {
+      const idx = index(`${REAL_BODY}        ${fake}\n`);
+      const verdict = idx.realFs(PLACEMENT, "Places_the_file");
+      assert.equal(verdict.real, false, fake);
+      assert.match(verdict.why, /fake or in-memory/);
+      assert.equal(proofLevel(realFsProof[0], diskRow(), idx), 1);
+    }
+  });
+
+  test("a test that makes no temp folder or does no file work is refused", () => {
+    assert.match(index('        File.WriteAllText("a.mkv", "x");\n').realFs(PLACEMENT, "Places_the_file").why, /creates no real temp folder/);
+    assert.match(index("        using var dir = new TempDirectory();\n        Assert.True(true);\n").realFs(PLACEMENT, "Places_the_file").why, /no file or database work/);
+  });
+
+  test("a class or a whole file is real only when every test in it is", () => {
+    const fake = csTest('        var files = new FakeSwapFileSystem();\n        File.Exists("x");\n').replace("PlacementTests", "OtherTests").replace("Places_the_file", "Fakes_the_files");
+    const idx = new TestIndex(fixture({ [PLACEMENT]: csTest(REAL_BODY) + fake }));
+    assert.equal(idx.realFs(PLACEMENT, "PlacementTests").real, false, "the fake sits in the same file, so the class name judges every test the file holds");
+    assert.equal(idx.realFs(PLACEMENT, "Places_the_file").real, true);
+    assert.equal(idx.realFs(PLACEMENT, "*").real, false);
+  });
+
+  test("it does not count for a row that touches no disk or install, nor for a vm row", () => {
+    const idx = index(REAL_BODY);
+    assert.equal(proofLevel(realFsProof[0], diskRow({ touches: "other-app" }), idx), 1);
+    assert.equal(proofLevel(realFsProof[0], diskRow({ vm: true }), idx), 1);
+  });
+
+  test("a claim the check cannot verify counts as inproc and is reported, without failing the run", () => {
+    const reg = register({ gapCeiling: 1 });
+    reg.rows[0] = { ...reg.rows[0], severity: "high", touches: "disk", required: "real", proofs: realFsProof };
+    const result = check(fixture({ [PLACEMENT]: csTest('        File.WriteAllText("a.mkv", "x");\n') }), reg);
+    assert.deepEqual(result.missing, []);
+    assert.equal(result.refused.length, 1);
+    assert.match(result.refused[0].why, /creates no real temp folder/);
+    assert.equal(result.totals.realFs.refused, 1);
+    assert.equal(result.totals.gaps.length, 1);
+  });
+
+  test("a real-fs proof must name a C# test of the server or the tray", () => {
+    const reg = register();
+    reg.rows[7].proofs = [{ type: "real-fs", file: "apps/web/src/pages/thing-page.test.tsx", name: "opens the thing" }];
+    assert.match(check(fixture(), reg).missing[0].why, /real-fs proof must be a C# test of the server or the tray/);
+    const browser = "apps/server/tests/Weir.E2E.Tests/ThingTests.cs";
+    reg.rows[7].proofs = [{ type: "real-fs", file: browser, name: "Places_the_file" }];
+    assert.match(check(fixture({ [browser]: csTest(REAL_BODY) }), reg).missing[0].why, /real-fs proof must be a C# test of the server or the tray/);
+  });
+
+  test("the totals count claims, counted proofs and proofs without effect", () => {
+    const reg = register({ gapCeiling: 1 });
+    reg.rows[0] = { ...reg.rows[0], severity: "high", touches: "disk", required: "real", proofs: realFsProof };
+    reg.rows[1] = { ...reg.rows[1], severity: "high", touches: "disk", required: "real", vm: true, proofs: realFsProof };
+    const result = check(fixture({ [PLACEMENT]: csTest(REAL_BODY) }), reg);
+    assert.deepEqual({ ...result.totals.realFs }, { claims: 2, counted: 1, refused: 0, noEffect: 1, vmRows: 1, vmRowGaps: 1 });
+    assert.match(generatedSection(reg, buildInventory(fixture()), result.totals), /Real-fs proofs: \*\*2\*\* claimed; \*\*1\*\* verified/);
+  });
+});
+
+describe("vm rows", () => {
+  const index = { stubInfo: () => ({ stubbed: false, decided: true }), realFs: () => ({ real: true, why: "" }) };
+  const vmRow = (extra = {}) => ({ area: "tray", severity: "high", touches: "install", required: "real", vm: true, ...extra });
+
+  test("a vm row reaches real by a scenario alone", () => {
+    assert.equal(proofLevel({ type: "scenario" }, vmRow(), index), 2);
+    for (const type of ["real-fs", "recording-replay", "e2e", "xunit", "contract"]) assert.equal(proofLevel({ type }, vmRow(), index), 1, type);
+    assert.equal(isGap(vmRow({ proofs: [{ type: "real-fs" }] }), index), true);
+    assert.equal(isGap(vmRow({ proofs: [{ type: "real-fs" }, { type: "scenario" }] }), index), false);
+  });
+
+  test("a vm row that needs only inproc is proven by any proof", () => {
+    assert.equal(isGap(vmRow({ severity: "medium", required: "inproc", proofs: [{ type: "xunit" }] }), index), false);
+  });
+
+  test("vm may only be true, and only on a row that touches disk or install", () => {
+    const reg = register();
+    reg.rows[0].vm = false;
+    reg.rows[1].vm = true;
+    const problems = validateShape(reg).join("\n");
+    assert.match(problems, /vm may only be true/);
+    assert.match(problems, /vm is for a row that touches disk or install, not none/);
+    delete reg.rows[0].vm;
+    reg.rows[1].touches = "disk";
+    assert.deepEqual(validateShape(reg), []);
   });
 });
 

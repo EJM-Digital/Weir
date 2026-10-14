@@ -1,7 +1,7 @@
 {
   "version": 1,
   "generatedFrom": "the coverage audit of 14 Oct 2026, brought up to date with main at rc.18, plus the inventories of scripts/coverage/inventory.mjs",
-  "gapCeiling": 888,
+  "gapCeiling": 865,
   "areas": {
     "api": {
       "code": "R",
@@ -1164,7 +1164,7 @@
           "name": "LibraryModeSettingsTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibrarySettingsStoreTests.cs",
           "name": "LibrarySettingsStoreTests"
         }
@@ -2237,12 +2237,12 @@
           "name": "ReconciliationServiceTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
           "name": "A_reconciliation_repair_needs_the_origin_check_and_a_csrf_token"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/MediaManagerServiceTests.cs",
           "name": "Reconciliation_reports_missing_folders_and_removes_temp_artifacts_only_with_confirmation"
         }
@@ -2265,7 +2265,7 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
           "name": "A_reconciliation_repair_needs_the_origin_check_and_a_csrf_token"
         },
@@ -2627,12 +2627,12 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingManualTrackApiTests.cs",
           "name": "Getting_tracks_requires_sign_in"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingManualTrackApiTests.cs",
           "name": "Getting_tracks_returns_every_stream_with_the_rules_verdict"
         },
@@ -2660,7 +2660,7 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingManualTrackApiTests.cs",
           "name": "ProcessingManualTrackApiTests"
         },
@@ -2746,7 +2746,7 @@
           "name": "ProcessingFilesApiTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/HistoryFileRemovalServiceTests.cs",
           "name": "HistoryFileRemovalServiceTests"
         }
@@ -2774,7 +2774,7 @@
           "name": "ProcessingFilesApiTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/HistoryFileRemovalServiceTests.cs",
           "name": "HistoryFileRemovalServiceTests"
         },
@@ -2784,7 +2784,6 @@
           "name": "ProcessingEndpointsContractTests"
         }
       ],
-      "issue": 1069,
       "covers": [
         "route:DELETE /api/v1/processing/files/{file_id}"
       ],
@@ -2913,7 +2912,7 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Jobs/ProcessingJobsInspectionApiTests.cs",
           "name": "ProcessingJobsInspectionApiTests"
         },
@@ -2941,7 +2940,7 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Jobs/ProcessingJobsInspectionApiTests.cs",
           "name": "ProcessingJobsInspectionApiTests"
         },
@@ -3008,7 +3007,7 @@
           "name": "ProcessingEndpointsContractTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/HoldDiagnosticStoreTests.cs",
           "name": "HoldDiagnosticStoreTests"
         }
@@ -3275,7 +3274,7 @@
           "name": "ProcessingLibrariesApiTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/LibrarySetupApiTests.cs",
           "name": "LibrarySetupApiTests"
         },
@@ -3389,7 +3388,7 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryFolderChainApiTests.cs",
           "name": "LibraryFolderChainApiTests"
         },
@@ -3981,7 +3980,7 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Jobs/FileRemuxPassManualEnqueueApiTests.cs",
           "name": "Pass_through_converts_an_existing_pending_job_instead_of_duplicating_it"
         }
@@ -4123,12 +4122,11 @@
           "name": "A_profile_a_library_cleans_by_cannot_be_deleted"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/LibraryCleanRulesProfileMigrationTests.cs",
           "name": "A_profile_a_library_cleans_by_cannot_be_deleted"
         }
       ],
-      "issue": 1069,
       "covers": [
         "route:DELETE /api/v1/processing/rule-sets/{rule_set_id}"
       ],
@@ -4147,7 +4145,7 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingRulesPreviewApiTests.cs",
           "name": "Unsaved_rules_change_which_track_is_kept_and_the_database_stays_the_same"
         },
@@ -4289,12 +4287,12 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Jobs/WatchedFolderRemuxScanDispatchManualEnqueueApiTests.cs",
           "name": "WatchedFolderRemuxScanDispatchManualEnqueueApiTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Jobs/WatchedFolderScanScheduleToggleTests.cs",
           "name": "WatchedFolderScanScheduleToggleTests"
         },
@@ -6486,17 +6484,17 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/CleanedSourceRepeatTests.cs",
           "name": "CleanedSourceRepeatTests"
         },
@@ -6506,7 +6504,7 @@
           "name": "CleanedSourceRepeatTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/OutputFolderCleanupTests.cs",
           "name": "OutputFolderCleanupTests"
         },
@@ -6516,7 +6514,7 @@
           "name": "OutputFolderCleanupTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/ForgottenFileTests.cs",
           "name": "ForgottenFileTests"
         },
@@ -6546,12 +6544,12 @@
           "name": "KeepOriginalDownloadTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/LinkedWorkflowOriginalsTests.cs",
           "name": "LinkedWorkflowOriginalsTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/HandoffScenariosTests.cs",
           "name": "HandoffScenariosTests"
         }
@@ -6584,17 +6582,17 @@
           "name": "ProcessingPassThroughHandlerTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/FailurePoliciesTests.cs",
           "name": "Failure_is_retried_then_the_original_is_passed_through_unchanged"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/UnreadableFileTests.cs",
           "name": "A_readable_file_that_needs_no_change_still_passes_through"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Jobs/FileRemuxPassManualEnqueueApiTests.cs",
           "name": "Pass_through_converts_an_existing_pending_job_instead_of_duplicating_it"
         }
@@ -6622,22 +6620,22 @@
           "name": "ProcessingRejectHandlerTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ScanRejectedFileDeletionTests.cs",
           "name": "ScanRejectedFileDeletionTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/FailurePoliciesTests.cs",
           "name": "Content_rejection_under_reject_policy_reports_rejected_to_deluno_and_leaves_the_download_for_it_to_remove"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/FailurePoliciesTests.cs",
           "name": "Content_rejection_under_reject_policy_removes_and_blocklists_the_radarr_queue_item"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/FailurePoliciesTests.cs",
           "name": "A_rules_rejection_with_no_media_manager_is_a_rejected_file_the_remove_dialog_can_act_on"
         },
@@ -6647,7 +6645,6 @@
           "name": "RejectWithoutPriorScanTests"
         }
       ],
-      "issue": 1069,
       "covers": [
         "job:processing.file.reject.v1"
       ],
@@ -6876,22 +6873,22 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkTempStaleSweepHandlerTests.cs",
           "name": "Removes_weirs_own_temp_output_once_it_is_older_than_the_stale_age"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkTempStaleSweepHandlerTests.cs",
           "name": "Never_touches_a_file_that_is_not_weirs_however_old"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkTempStaleSweepHandlerTests.cs",
           "name": "Leaves_the_temp_output_of_a_pass_that_is_running_now"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkTempStaleSweepHandlerTests.cs",
           "name": "Sweeps_only_its_own_scope"
         },
@@ -7480,7 +7477,7 @@
           "name": "ScanWakeupsTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanHandedOffTests.cs",
           "name": "The_scheduler_never_ticks_for_a_workflow_deluno_feeds"
         },
@@ -7490,17 +7487,17 @@
           "name": "LibraryPeriodicScanStatusApiTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanDispatchScheduleTaskTests.cs",
           "name": "ProcessingWatchedFolderScanDispatchScheduleTaskTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/ScanSettingsChangesApiTests.cs",
           "name": "ScanSettingsChangesApiTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Jobs/WatchedFolderScanScheduleToggleTests.cs",
           "name": "WatchedFolderScanScheduleToggleTests"
         }
@@ -7533,17 +7530,17 @@
           "name": "The_sweep_forgets_gone_files_in_a_library_whose_scan_never_runs"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/LeftInPlaceOriginalTests.cs",
           "name": "Nothing_is_forgotten_when_the_watched_folder_itself_is_missing"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WatchedFolderScanLockTests.cs",
           "name": "WatchedFolderScanLockTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/FilesLeavingTheListsAnnouncedTests.cs",
           "name": "FilesLeavingTheListsAnnouncedTests"
         },
@@ -7835,7 +7832,8 @@
       "audit": {
         "id": "JOB-052",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "services.hosted-services.trayhandoffwatcher-announce-files-the-tray-writes-update-downloaded-network",
@@ -8034,7 +8032,8 @@
       "audit": {
         "id": "JOB-058",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "services.hosted-services.systemstatssampler-1-s-readings-while-a-stream-is-open",
@@ -8954,7 +8953,8 @@
       "audit": {
         "id": "SET-N01",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "settings.operator.max-concurrent-files-files-at-once-1-10",
@@ -10052,7 +10052,7 @@
       "required": "real",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/MixedWorkflowsApiTests.cs",
           "name": "MixedWorkflowsApiTests"
         },
@@ -10062,7 +10062,7 @@
           "name": "LibraryRoundTripApiTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ScanRejectedFileDeletionTests.cs",
           "name": "ScanRejectedFileDeletionTests"
         },
@@ -10077,17 +10077,16 @@
           "name": "ProcessingRejectHandlerTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/UnreadableFileTests.cs",
           "name": "UnreadableFileTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ScanWhilePausedTests.cs",
           "name": "A_scan_does_not_delete_a_rejected_file_while_paused"
         }
       ],
-      "issue": 1069,
       "covers": [
         "setting:ProcessingLibraryRecord.RejectedFileAction"
       ],
@@ -10338,7 +10337,7 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/LibraryStoreTests.cs",
           "name": "LibraryStoreTests"
         },
@@ -10353,7 +10352,7 @@
           "name": "Ffmpeg_compatibility_chosen_for_the_workflow_reaches_the_executed_ffmpeg"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "The_workflows_ffmpeg_compatibility_applies_when_cleaning_a_library_file"
         }
@@ -10386,17 +10385,17 @@
           "name": "WriterChoiceTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "A_workflow_that_prefers_mkvmerge_says_so_when_ffmpeg_had_to_write_the_file"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "A_workflow_set_to_ffmpeg_cleans_with_ffmpeg_and_has_nothing_to_explain"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MkvmergeRealTests.cs",
           "name": "MkvmergeRealTests"
         },
@@ -10434,12 +10433,12 @@
           "name": "LeftInPlaceOriginalTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/LinkedWorkflowOriginalsTests.cs",
           "name": "LinkedWorkflowOriginalsTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/CleanedSourceRepeatTests.cs",
           "name": "CleanedSourceRepeatTests"
         },
@@ -10449,7 +10448,7 @@
           "name": "CleanedSourceRepeatTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/PauseTests.cs",
           "name": "PauseTests"
         },
@@ -10464,7 +10463,7 @@
           "name": "KeepOriginalDownloadTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/LinkedOriginalsTests.cs",
           "name": "LinkedOriginalsTests"
         },
@@ -10507,7 +10506,7 @@
           "name": "ProcessingPassThroughHandlerTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "The_disk_space_guardrail_can_be_off_and_reports_a_shortfall"
         },
@@ -10517,7 +10516,7 @@
           "name": "WorkflowFreeSpaceApiTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "LibraryCleanHandlerTests"
         },
@@ -11142,12 +11141,12 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerTests.cs",
           "name": "LibraryFileWalkerTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibrarySettingsStoreTests.cs",
           "name": "LibrarySettingsStoreTests"
         },
@@ -11167,7 +11166,7 @@
           "name": "LibraryModeSettingsTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryScanHandlerTests.cs",
           "name": "Scanning_a_library_with_no_folders_configured_reports_a_reason_and_probes_nothing"
         }
@@ -11361,7 +11360,7 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/KeepOriginalAfterCleanMigrationTests.cs",
           "name": "KeepOriginalAfterCleanMigrationTests"
         },
@@ -11371,7 +11370,7 @@
           "name": "LibraryOriginalsSettingsApiTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "Keeping_the_original_puts_it_in_dot_weir_originals_and_still_cleans_the_file"
         },
@@ -11414,7 +11413,7 @@
           "name": "LibraryOriginalsSettingsApiTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerTests.cs",
           "name": "LibraryFileWalkerTests"
         }
@@ -11442,17 +11441,17 @@
           "name": "LibraryCleanRulesProfileApiTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/LibraryCleanRulesProfileMigrationTests.cs",
           "name": "LibraryCleanRulesProfileMigrationTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryModeRulesTests.cs",
           "name": "LibraryModeRulesTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "LibraryCleanHandlerTests"
         }
@@ -13175,12 +13174,12 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanDispatchScheduleTaskTests.cs",
           "name": "With_the_global_env_kill_switch_off_no_periodic_scan_is_ever_enqueued_even_though_everything_else_is_ready"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Jobs/WatchedFolderScanScheduleToggleTests.cs",
           "name": "WatchedFolderScanScheduleToggleTests"
         },
@@ -13400,7 +13399,7 @@
           "name": "SystemEndpointsTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/UpdateStatusReaderTests.cs",
           "name": "UpdateStatusReaderTests"
         },
@@ -13415,17 +13414,17 @@
           "name": "SuiteApiTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/UpdateOutlookTests.cs",
           "name": "UpdateOutlookTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/UpdateFilesTests.cs",
           "name": "UpdateFilesTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/System/UpdateRequestsApiTests.cs",
           "name": "UpdateRequestsApiTests"
         }
@@ -13539,7 +13538,7 @@
           "name": "MediaToolLocationsTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MediaToolsTests.cs",
           "name": "MediaToolsTests"
         },
@@ -13554,12 +13553,12 @@
           "name": "RealFfmpeg"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/RealFfmpegTests.cs",
           "name": "RealFfmpeg"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
         }
@@ -41919,7 +41918,8 @@
       "audit": {
         "id": "TRAY-001",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.enabled-disabled-state-of-every-item-per-server-phase",
@@ -41989,7 +41989,8 @@
       "audit": {
         "id": "TRAY-002",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.menu-item-click-action-mapping-trayapp-menuclicks-open-pause",
@@ -42025,7 +42026,8 @@
       "audit": {
         "id": "TRAY-003",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.start-with-windows-is-a-real-check-item-ui",
@@ -42061,7 +42063,8 @@
       "audit": {
         "id": "TRAY-004",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.quit-item-hover-text-says-what-it-stops",
@@ -42086,7 +42089,8 @@
       "audit": {
         "id": "TRAY-005",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.icon-dot-green-amber-manager-or-folder-not-answering",
@@ -42287,7 +42291,8 @@
       "audit": {
         "id": "TRAY-010",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.hover-text-weir-status-running-address-starting-stopping-paused",
@@ -42436,7 +42441,8 @@
       "audit": {
         "id": "TRAY-014",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.left-click-opens-weir-once-click-double-click-in",
@@ -42482,7 +42488,8 @@
       "audit": {
         "id": "TRAY-015",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.middle-click-and-right-click-do-not-open-weir",
@@ -42501,7 +42508,8 @@
       "audit": {
         "id": "TRAY-016",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.a-click-while-the-server-is-starting-stopping-stopped",
@@ -42531,7 +42539,8 @@
       "audit": {
         "id": "TRAY-017",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.browser-opening-always-the-live-port-at-http-127",
@@ -42567,7 +42576,8 @@
       "audit": {
         "id": "TRAY-018",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.the-no-browser-rule-end-to-end-a-start",
@@ -42586,7 +42596,8 @@
       "audit": {
         "id": "TRAY-019",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.balloon-plumbing-every-balloon-shows-with-10-s-info",
@@ -42605,7 +42616,8 @@
       "audit": {
         "id": "TRAY-020",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.balloon-weir-is-running-at-address-click-to-open",
@@ -42641,7 +42653,8 @@
       "audit": {
         "id": "TRAY-021",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.balloon-weir-couldn-t-start-in-its-variants-server",
@@ -42682,7 +42695,8 @@
       "audit": {
         "id": "TRAY-022",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.start-of-the-tray-with-nobody-at-the-desktop",
@@ -42727,7 +42741,8 @@
       "audit": {
         "id": "TRAY-024",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.update-balloons-auto-installs-by-itself-after-5-minutes",
@@ -42746,7 +42761,8 @@
       "audit": {
         "id": "TRAY-025",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.balloon-weir-didn-t-update-because-it-couldn-t",
@@ -42787,7 +42803,8 @@
       "audit": {
         "id": "TRAY-026",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.balloon-weir-couldn-t-pause-resume-processing-click-shows",
@@ -42832,7 +42849,8 @@
       "audit": {
         "id": "TRAY-027",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.lan-access-balloons-restarted-could-not-restart-declined-failed",
@@ -42853,7 +42871,8 @@
       "audit": {
         "id": "TRAY-028",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.second-launch-balloon-weir-is-already-running-at-address",
@@ -42879,7 +42898,8 @@
       "audit": {
         "id": "TRAY-029",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.starting-the-server-port-n-host-localhost-or-host",
@@ -42931,7 +42951,7 @@
           "name": "ServerEnvironmentTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/tray/Weir.Tray.Tests/SecretFileTests.cs",
           "name": "SecretFileTests"
         },
@@ -42962,12 +42982,12 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/ServerOutputPipeTests.cs",
           "name": "ServerOutputPipeTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/StartupProgressTests.cs",
           "name": "StartupProgressTests"
         },
@@ -43181,7 +43201,8 @@
       "audit": {
         "id": "TRAY-037",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.the-server-s-own-reason-for-not-starting-startup",
@@ -43193,12 +43214,12 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/StartupNotesTests.cs",
           "name": "StartupNotesTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/StartRefusalTests.cs",
           "name": "StartRefusalTests"
         },
@@ -43248,12 +43269,12 @@
           "name": "A_start_clears_the_file_an_earlier_server_left_before_the_new_server_runs"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/tray/Weir.Tray.Tests/StartupErrorTests.cs",
           "name": "A_reason_the_last_server_left_is_not_this_ones"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/tray/Weir.Tray.Tests/StartupErrorTests.cs",
           "name": "A_note_written_the_instant_before_the_server_began_is_the_last_ones_not_this_ones"
         },
@@ -43263,7 +43284,6 @@
           "name": "InstallProcessesTests"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-039",
         "verdict": "Partly"
@@ -43303,7 +43323,8 @@
       "audit": {
         "id": "TRAY-040",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.quit-stop-the-server-first-then-install-a-downloaded",
@@ -43344,7 +43365,8 @@
       "audit": {
         "id": "TRAY-041",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.server-console-output-kept-in-server-host-log-with",
@@ -43386,7 +43408,7 @@
           "name": "InheritedStdioHandlesTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffArtworkTests.cs",
           "name": "Setup"
         }
@@ -43443,7 +43465,8 @@
       "audit": {
         "id": "TRAY-045",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.port-decision-table-port-weir-port-saved-ask-default",
@@ -43503,7 +43526,8 @@
       "audit": {
         "id": "TRAY-047",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.saved-port-persistence-port-txt-written-whole-never-read",
@@ -43515,12 +43539,12 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/tray/Weir.Tray.Tests/PortChoiceTests.cs",
           "name": "A_saved_port_round_trips"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/tray/Weir.Tray.Tests/PortChoiceTests.cs",
           "name": "A_damaged_saved_port_reads_as_not_chosen"
         },
@@ -43562,7 +43586,8 @@
       "audit": {
         "id": "TRAY-049",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.headless-silent-start-that-cannot-get-a-usable-port",
@@ -43609,7 +43634,8 @@
       "audit": {
         "id": "TRAY-051",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.who-the-server-listens-for-at-start-saved-lan",
@@ -43660,7 +43686,8 @@
       "audit": {
         "id": "TRAY-053",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.configure-firewall-remove-firewall-allow-lan-exit-codes-0",
@@ -43680,7 +43707,8 @@
       "audit": {
         "id": "TRAY-054",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.uac-elevation-helper-firewallelevation-relaunches-this-weir-exe-with",
@@ -43699,7 +43727,8 @@
       "audit": {
         "id": "TRAY-055",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.first-run-firewall-question-allow-weir-on-your-network",
@@ -43718,7 +43747,8 @@
       "audit": {
         "id": "TRAY-056",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.widening-an-older-domain-private-rule-to-all-profiles",
@@ -43739,7 +43769,8 @@
       "audit": {
         "id": "TRAY-057",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.menu-allow-other-devices-on-your-network-only-allow",
@@ -43758,7 +43789,8 @@
       "audit": {
         "id": "TRAY-058",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.choice-saved-by-another-process-system-about-page-allow",
@@ -43808,7 +43840,8 @@
       "audit": {
         "id": "TRAY-059",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.listening-scope-really-applied-localhost-127-0-0-1",
@@ -43845,22 +43878,22 @@
       "required": "real",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/TrayPauseRequestWatcherTests.cs",
           "name": "TrayPauseRequestWatcherTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/tray/Weir.Tray.Tests/PauseAndPortTests.cs",
           "name": "Choosing_Pause_while_running_asks_the_server_to_pause"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/tray/Weir.Tray.Tests/PauseAndPortTests.cs",
           "name": "Choosing_Resume_while_paused_asks_the_server_to_resume"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/tray/Weir.Tray.Tests/PauseRequestFileTests.cs",
           "name": "PauseRequestFileTests"
         },
@@ -43885,12 +43918,12 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/TrayStatusWriterTests.cs",
           "name": "TrayStatusWriterTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/tray/Weir.Tray.Tests/TrayStatusFileTests.cs",
           "name": "TrayStatusFileTests"
         },
@@ -43935,7 +43968,7 @@
           "name": "The_tray_says_it_is_alive_when_it_starts_and_every_half_minute"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/UpdateFilesTests.cs",
           "name": "UpdateFilesTests"
         },
@@ -43945,7 +43978,7 @@
           "name": "SuiteUpdateRequestsApiTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/System/UpdateRequestsApiTests.cs",
           "name": "UpdateRequestsApiTests"
         },
@@ -44030,12 +44063,12 @@
           "name": "UpdateRequestWatcherTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/UpdateFilesTests.cs",
           "name": "UpdateFilesTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/System/UpdateRequestsApiTests.cs",
           "name": "UpdateRequestsApiTests"
         },
@@ -44116,7 +44149,8 @@
       "audit": {
         "id": "TRAY-068",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.where-updates-come-from-public-releases-atom-no-api",
@@ -44207,7 +44241,8 @@
       "audit": {
         "id": "TRAY-071",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.download-semantics-per-mode-auto-and-download-only-download",
@@ -44234,7 +44269,7 @@
           "name": "An_update_never_waits_to_install_itself_in_the_other_modes"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/tray/Weir.Tray.Tests/TrayUpdateRequestsTests.cs",
           "name": "A_download_request_downloads_a_found_update_even_when_the_mode_only_notifies"
         },
@@ -44276,7 +44311,8 @@
       "audit": {
         "id": "TRAY-073",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.pre-update-copy-of-weir-s-data-tray-asks",
@@ -44288,12 +44324,12 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/TrayUpdateBackupWatcherTests.cs",
           "name": "TrayUpdateBackupWatcherTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/PreUpdateBackupTests.cs",
           "name": "PreUpdateBackupTests"
         },
@@ -44303,7 +44339,7 @@
           "name": "UpdateBackupTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/System/UpdateBackupRequestTests.cs",
           "name": "UpdateBackupRequestTests"
         },
@@ -44352,7 +44388,8 @@
       "audit": {
         "id": "TRAY-075",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.update-settings-update-settings-json-auto-download-only-notify",
@@ -44379,7 +44416,7 @@
           "name": "An_update_is_not_handed_over_when_the_mode_was_changed_while_it_waited"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/UpdateFilesTests.cs",
           "name": "Settings_that_are_not_there_are_the_shipped_default_without_waiting"
         }
@@ -44464,7 +44501,8 @@
       "audit": {
         "id": "TRAY-079",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.velopack-hooks-after-install-log-stop-own-processes-schedule",
@@ -44490,7 +44528,8 @@
       "audit": {
         "id": "TRAY-080",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.silent-setup-installs-without-starting-weir-without-a-prompt",
@@ -44535,7 +44574,8 @@
       "audit": {
         "id": "TRAY-081",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.uninstall-stops-this-install-s-tray-and-server-removes",
@@ -44566,7 +44606,8 @@
       "audit": {
         "id": "TRAY-082",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.uninstall-leaves-weir-s-data-c-programdata-weir-database",
@@ -44585,7 +44626,8 @@
       "audit": {
         "id": "TRAY-083",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.runtime-home-is-created-owner-only-and-tightened-on",
@@ -44621,7 +44663,8 @@
       "audit": {
         "id": "TRAY-084",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.secrets-session-secret-and-credentials-secret-created-long-and",
@@ -44647,7 +44690,8 @@
       "audit": {
         "id": "TRAY-085",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.more-than-one-windows-account-or-session-fast-user",
@@ -44666,7 +44710,8 @@
       "audit": {
         "id": "TRAY-086",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.tray-host-log-one-writer-line-format-yyyy-mm",
@@ -44740,7 +44785,8 @@
       "audit": {
         "id": "TRAY-089",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "tray.tray.version-line-and-weir-exe-version-no-build-metadata",
@@ -44778,12 +44824,12 @@
           "name": "StopRequestTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/StartRefusalTests.cs",
           "name": "StartRefusalTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/ServerOutputPipeTests.cs",
           "name": "ServerOutputPipeTests"
         }
@@ -46220,7 +46266,8 @@
       "audit": {
         "id": "PLAT-01",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "platform.platform.windows-setup-silent-driven-by-another-program-deluno-s",
@@ -46265,7 +46312,8 @@
       "audit": {
         "id": "PLAT-02",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "platform.platform.windows-update-over-a-running-weir-by-setup-silent",
@@ -46305,7 +46353,8 @@
       "audit": {
         "id": "PLAT-03",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "platform.platform.windows-update-over-a-running-weir-by-a-plain",
@@ -46324,7 +46373,8 @@
       "audit": {
         "id": "PLAT-04",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "platform.platform.windows-the-tray-updates-weir-from-the-release-feed",
@@ -46343,7 +46393,8 @@
       "audit": {
         "id": "PLAT-05",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "platform.platform.windows-uninstall-removes-the-program-stops-weir-first-removes",
@@ -46374,7 +46425,8 @@
       "audit": {
         "id": "PLAT-06",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "platform.platform.windows-uninstall-keeps-the-data-in-c-programdata-weir",
@@ -46393,7 +46445,8 @@
       "audit": {
         "id": "PLAT-06b",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "platform.platform.windows-first-run-of-the-tray-asks-start-weir",
@@ -46439,7 +46492,8 @@
       "audit": {
         "id": "PLAT-07",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "platform.platform.windows-port-default-9347-saved-port-weir-port-taken",
@@ -46495,7 +46549,8 @@
       "audit": {
         "id": "PLAT-08",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "platform.platform.windows-lan-access-and-firewall-a-program-scoped-inbound",
@@ -46545,7 +46600,8 @@
       "audit": {
         "id": "PLAT-09",
         "verdict": "Covered"
-      }
+      },
+      "vm": true
     },
     {
       "id": "platform.platform.windows-start-with-windows-hkcu-run-entry-off-by",
@@ -46571,7 +46627,8 @@
       "audit": {
         "id": "PLAT-10",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "platform.platform.windows-start-supervision-hung-start-detection-retries-backoff-crash",
@@ -46622,7 +46679,8 @@
       "audit": {
         "id": "PLAT-11",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "platform.platform.docker-image-builds-passes-a-trivy-high-critical-scan",
@@ -46903,7 +46961,7 @@
           "name": "SetupCodeApiTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Auth/SetupCodeGateTests.cs",
           "name": "SetupCodeGateTests"
         },
@@ -47085,22 +47143,22 @@
       "required": "inproc",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/PreUpdateBackupTests.cs",
           "name": "PreUpdateBackupTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/TrayUpdateBackupWatcherTests.cs",
           "name": "TrayUpdateBackupWatcherTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/System/StartupSchemaTests.cs",
           "name": "An_upgrade_first_saves_a_copy_of_the_database_at_its_old_revision"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/System/UpdateBackupRequestTests.cs",
           "name": "UpdateBackupRequestTests"
         },
@@ -47271,7 +47329,7 @@
           "name": "HealthCheckCommandTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/System/HealthTests.cs",
           "name": "HealthTests"
         },
@@ -47340,7 +47398,8 @@
       "audit": {
         "id": "PLAT-26",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "platform.platform.process-level-safety-request-body-limits-host-allow-list",
@@ -47436,22 +47495,22 @@
           "name": "RemuxOutputValidationTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/CrashTempOutputTests.cs",
           "name": "A_crash_mid_remux_leaves_no_temp_output_and_the_job_still_finishes"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "A_copy_that_fails_validation_leaves_nothing_behind"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "A_copy_larger_than_one_chunk_arrives_whole"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "A_validated_copy_replaces_the_destination_and_reports_progress"
         },
@@ -47461,7 +47520,6 @@
           "name": "*"
         }
       ],
-      "issue": 1065,
       "audit": {
         "id": "FL-01",
         "verdict": "Covered"
@@ -47482,22 +47540,21 @@
           "name": "A_clean_swap_puts_the_cleaned_copy_under_the_original_name_and_leaves_nothing_else"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "A_hard_link_is_validated_before_it_is_exposed"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "A_finalised_file_moves_into_place"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "A_cross_volume_finalise_never_writes_the_final_name_until_the_file_is_complete"
         }
       ],
-      "issue": 1065,
       "audit": {
         "id": "FL-02",
         "verdict": "Covered"
@@ -47532,7 +47589,8 @@
       "audit": {
         "id": "FL-03",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "file-lifecycle.file-lifecycle.success-job-or-activity-is-recorded-only-after-the",
@@ -47559,12 +47617,12 @@
           "name": "A_journal_that_cannot_record_the_commit_does_not_undo_it"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/HandoffScenariosTests.cs",
           "name": "Handoff_is_remuxed_and_reported_complete_with_the_managers_output_path"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffLifecycleTests.cs",
           "name": "The_report_records_the_output_path"
         },
@@ -47594,17 +47652,17 @@
           "name": "LeftInPlaceOriginalTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/ReleaseFolderRemovalTests.cs",
           "name": "ReleaseFolderRemovalTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/TvSeasonFolderCleanupTests.cs",
           "name": "TvSeasonFolderCleanupTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/OutputFolderCleanupTests.cs",
           "name": "OutputFolderCleanupTests"
         },
@@ -47614,17 +47672,17 @@
           "name": "OutputFolderCleanupTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ScanRejectedFileDeletionTests.cs",
           "name": "ScanRejectedFileDeletionTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/LinkedOriginalsTests.cs",
           "name": "LinkedOriginalsTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "A_rejected_file_is_deleted_only_inside_the_watched_folder_with_its_empty_parents"
         },
@@ -47649,37 +47707,36 @@
       "required": "real",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/ProcessingPassThroughHandlerTests.cs",
           "name": "The_original_is_delivered_byte_for_byte_and_the_source_survives"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "Replace_overwrites_and_says_so"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "Skip_leaves_the_existing_output_alone"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "Keep_both_writes_alongside_with_a_deterministic_suffix_and_keeps_counting"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "A_copy_that_fails_validation_leaves_nothing_behind"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "A_cancelled_copy_leaves_nothing_behind"
         }
       ],
-      "issue": 1065,
       "audit": {
         "id": "FL-06",
         "verdict": "Covered"
@@ -47726,17 +47783,16 @@
       "required": "real",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "A_finalised_file_moves_into_place"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "A_staged_file_that_cannot_be_moved_is_copied_to_the_partial_and_still_published_atomically"
         }
       ],
-      "issue": 1065,
       "audit": {
         "id": "FL-08",
         "verdict": "Covered"
@@ -47879,7 +47935,7 @@
           "name": "Preflight_changes_nothing"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
           "name": "PhysicalSwapTests"
         },
@@ -47899,7 +47955,6 @@
           "name": "LibraryCleanPreflightTests"
         }
       ],
-      "issue": 1066,
       "audit": {
         "id": "FL-11",
         "verdict": "Covered"
@@ -47935,7 +47990,7 @@
           "name": "A_writer_that_writes_nothing_fails_without_touching_the_original"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "A_cleaned_copy_that_fails_the_staged_output_check_is_never_swapped_in"
         },
@@ -47945,7 +48000,6 @@
           "name": "Temp_and_backup_names_sit_beside_the_original_and_keep_its_extension"
         }
       ],
-      "issue": 1066,
       "audit": {
         "id": "FL-12",
         "verdict": "Covered"
@@ -47976,12 +48030,11 @@
           "name": "A_deleted_original_is_not_replaced_by_the_cleaned_copy"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
           "name": "A_real_change_to_the_original_replaces_nothing"
         }
       ],
-      "issue": 1066,
       "audit": {
         "id": "FL-13",
         "verdict": "Covered"
@@ -48017,17 +48070,16 @@
           "name": "A_write_to_the_original_as_it_is_moved_aside_is_caught_and_the_original_put_back"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
           "name": "A_real_file_is_replaced_in_place_with_a_new_mtime_and_the_job_row_records_it"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "An_end_to_end_clean_replaces_the_file_in_place_and_leaves_no_leftovers"
         }
       ],
-      "issue": 1066,
       "audit": {
         "id": "FL-14",
         "verdict": "Covered"
@@ -48079,17 +48131,17 @@
       "required": "real",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
           "name": "A_file_opened_by_a_player_during_the_write_is_in_use_at_the_commit_and_left_intact"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
           "name": "A_reader_that_shares_delete_does_not_block_the_swap"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
           "name": "A_rename_never_replaces_an_existing_file"
         },
@@ -48104,7 +48156,6 @@
           "name": "A_file_locked_at_the_commit_is_an_in_use_result_with_the_original_untouched"
         }
       ],
-      "issue": 1065,
       "audit": {
         "id": "FL-16",
         "verdict": "Covered"
@@ -48135,17 +48186,16 @@
           "name": "SafeSwapTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
           "name": "The_real_sweep_recovers_every_case_across_nested_folders_and_leaves_other_files_alone"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
           "name": "The_real_sweep_goes_to_journaled_paths_first"
         }
       ],
-      "issue": 1066,
       "audit": {
         "id": "FL-17",
         "verdict": "Covered"
@@ -48171,17 +48221,16 @@
           "name": "SafeSwapTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
           "name": "PhysicalSwapTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "LibraryCleanHandlerTests"
         }
       ],
-      "issue": 1067,
       "audit": {
         "id": "FL-18",
         "verdict": "Covered"
@@ -48368,12 +48417,12 @@
       "required": "real",
       "proofs": [
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/CleanedSourceRepeatTests.cs",
           "name": "Process_again_on_a_cleaned_file_is_skipped_says_so_and_writes_no_second_output"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/CleanedSourceRepeatTests.cs",
           "name": "A_different_file_or_the_same_path_with_different_bytes_is_cleaned_as_usual"
         },
@@ -48403,7 +48452,7 @@
       "required": "real",
       "proofs": [
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/CleanedSourceRepeatTests.cs",
           "name": "CleanedSourceRepeatTests"
         },
@@ -48413,7 +48462,7 @@
           "name": "CleanedSourceRepeatTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/HeldFileReturnTests.cs",
           "name": "HeldFileReturnTests"
         },
@@ -48423,12 +48472,11 @@
           "name": "HeldFileReturnTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/ForgottenFileTests.cs",
           "name": "A_forgotten_file_handed_over_again_is_not_cleaned_twice_and_still_reads_imported"
         }
       ],
-      "issue": 1067,
       "audit": {
         "id": "FL-24",
         "verdict": "Covered"
@@ -48600,12 +48648,11 @@
           "name": "ProcessingPassThroughHandlerTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "LibraryCleanHandlerTests"
         }
       ],
-      "issue": 1067,
       "audit": {
         "id": "FL-28",
         "verdict": "Covered"
@@ -48652,7 +48699,7 @@
       "required": "real",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/ReleaseFolderRemovalTests.cs",
           "name": "ReleaseFolderRemovalTests"
         },
@@ -48662,7 +48709,6 @@
           "name": "LeftInPlaceOriginalTests"
         }
       ],
-      "issue": 1067,
       "audit": {
         "id": "FL-30",
         "verdict": "Covered"
@@ -48688,7 +48734,7 @@
           "name": "LeftInPlaceOriginalTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/HeldFileReturnTests.cs",
           "name": "HeldFileReturnTests"
         },
@@ -48703,7 +48749,7 @@
           "name": "ProcessingPassThroughHandlerTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/ProcessingWatchedFolderWatcherServiceTests.cs",
           "name": "ProcessingWatchedFolderWatcherServiceTests"
         },
@@ -48759,7 +48805,7 @@
       "required": "real",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/HeldFileReturnTests.cs",
           "name": "HeldFileReturnTests"
         },
@@ -48784,7 +48830,6 @@
           "name": "ResentHandoffOutcomeTests"
         }
       ],
-      "issue": 1067,
       "audit": {
         "id": "FL-33",
         "verdict": "Covered"
@@ -48800,17 +48845,17 @@
       "required": "real",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/VanishedSourceTests.cs",
           "name": "A_scan_of_a_watched_folder_that_is_gone_warns_in_plain_words_and_does_not_fail_the_job"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/VanishedSourceTests.cs",
           "name": "The_missing_watched_folder_warning_is_said_once_until_the_folder_is_back_and_the_return_is_said_once"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Jobs/WatchedFolderRemuxScanDispatchManualEnqueueApiTests.cs",
           "name": "Scan_now_on_a_watched_folder_that_is_gone_says_so_where_the_person_clicked"
         },
@@ -48820,7 +48865,6 @@
           "name": "SystemHealthLiveTests"
         }
       ],
-      "issue": 1067,
       "audit": {
         "id": "FL-34",
         "verdict": "Covered"
@@ -48846,7 +48890,7 @@
           "name": "A_locked_release_folder_is_left_in_place_with_a_reason"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
           "name": "PhysicalSwapTests"
         },
@@ -48856,12 +48900,11 @@
           "name": "ToolFailureTextTests"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
           "name": "A_file_open_for_writing_by_another_program_makes_the_pass_wait"
         }
       ],
-      "issue": 1067,
       "audit": {
         "id": "FL-35",
         "verdict": "Covered"
@@ -48877,7 +48920,7 @@
       "required": "real",
       "proofs": [
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/LeftInPlaceOriginalTests.cs",
           "name": "A_file_that_stays_unreadable_is_refused_after_the_looks_and_kept_even_when_the_workflow_deletes_rejected_files"
         },
@@ -48902,17 +48945,16 @@
           "name": "RemuxPassHandlerTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/UnreadableFileTests.cs",
           "name": "UnreadableFileTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/RealFfmpegClassifiesDamagedMediaTests.cs",
           "name": "RealFfmpegClassifiesDamagedMediaTests"
         }
       ],
-      "issue": 1067,
       "audit": {
         "id": "FL-36",
         "verdict": "Covered"
@@ -49168,7 +49210,7 @@
       "required": "real",
       "proofs": [
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/PauseTests.cs",
           "name": "Pausing_and_resuming_are_in_activity"
         },
@@ -49183,7 +49225,7 @@
           "name": "Pausing_and_resuming_are_in_activity_with_who_did_it"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/SuitePauseServiceTests.cs",
           "name": "SuitePauseServiceTests"
         },
@@ -49266,7 +49308,8 @@
       "audit": {
         "id": "SUITE update-over-installed-weir",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "scenarios.withdeluno.workflows-from-deluno",
@@ -49467,7 +49510,8 @@
       "audit": {
         "id": "SUITE fresh-install",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "scenarios.fresh.first-visit-account",
@@ -49496,7 +49540,8 @@
       "audit": {
         "id": "SUITE first-visit-account",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "scenarios.fresh.weir-only-film",
@@ -49525,7 +49570,8 @@
       "audit": {
         "id": "SUITE weir-only-film",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "scenarios.fresh.process-again",
@@ -49554,7 +49600,8 @@
       "audit": {
         "id": "SUITE process-again",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "scenarios.fresh.pause-resume",
@@ -49583,7 +49630,8 @@
       "audit": {
         "id": "SUITE pause-resume",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "scenarios.fresh.deleted-queued-file",
@@ -49612,7 +49660,8 @@
       "audit": {
         "id": "SUITE deleted-queued-file",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "scenarios.fresh.update-requests",
@@ -49641,7 +49690,8 @@
       "audit": {
         "id": "SUITE update-requests",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "scenarios.fresh.logs-clean",
@@ -49670,7 +49720,8 @@
       "audit": {
         "id": "SUITE logs-clean",
         "verdict": "Partly"
-      }
+      },
+      "vm": true
     },
     {
       "id": "scenarios.orchestrator.pick-one-scenario-by-name",
@@ -49689,7 +49740,8 @@
       "audit": {
         "id": "SUITE orchestrator",
         "verdict": "Gap"
-      }
+      },
+      "vm": true
     },
     {
       "id": "web-routes.router.setup",
