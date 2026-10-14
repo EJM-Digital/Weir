@@ -169,8 +169,21 @@ public class MediaManagerHttpException : Exception
         StatusCode = statusCode;
     }
 
+    public MediaManagerHttpException(string message, int statusCode, string? errorCode)
+        : base(message)
+    {
+        StatusCode = statusCode;
+        ErrorCode = errorCode;
+    }
+
     /// <summary>The HTTP status the manager answered with, when it answered at all.</summary>
     public int? StatusCode { get; }
+
+    /// <summary>
+    /// The machine code a manager named in its answer's <c>error</c> member (Deluno's <c>library_not_found</c>), when the answer
+    /// carried one in the form of a code: lower-case words joined by underscores. Nothing else of the answer is kept.
+    /// </summary>
+    public string? ErrorCode { get; }
 }
 
 /// <summary>The manager answered 429. Back off; never retry inside the call.</summary>

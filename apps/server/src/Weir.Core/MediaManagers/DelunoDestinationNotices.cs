@@ -19,6 +19,17 @@ internal static class DelunoDestinationNotices
     /// <summary>What happened when Deluno no longer lists the library a workflow came from (no closing full stop, so a sentence can follow).</summary>
     public static string LibraryGoneFact(string managerLabel) => $"{managerLabel} no longer has the library this workflow came from";
 
+    /// <summary>
+    /// Deluno answered that it has no library with the id the workflow is linked to. <paramref name="workflowName"/> is the
+    /// workflow being checked, when the check is for a saved one.
+    /// </summary>
+    public static string LibraryRemoved(string managerLabel, string libraryName, string? workflowName)
+    {
+        var (workflow, that) = workflowName is { Length: > 0 } ? ($"the \"{workflowName}\" workflow", "that ") : ("this workflow", string.Empty);
+        return $"{managerLabel} no longer has the {libraryName} library {that}{workflow} came from, so Weir can't check where its downloads go. " +
+            $"Remove {workflow} if the library is gone for good, or unlink it from {managerLabel} to keep it as a Weir-only workflow.";
+    }
+
     public static string LibraryGoneAdvice(string managerLabel) =>
         $"Remove this workflow if the library is gone for good, or unlink it from {managerLabel} to keep it as a Weir-only workflow.";
 

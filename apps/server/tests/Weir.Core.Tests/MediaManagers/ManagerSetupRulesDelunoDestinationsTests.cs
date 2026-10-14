@@ -296,6 +296,42 @@ public sealed class ManagerSetupRulesDelunoDestinationsTests
     }
 
     [Fact]
+    public void A_library_deluno_says_it_no_longer_has_is_named_with_what_to_do_and_is_not_called_too_old()
+    {
+        var result = Evaluate(DelunoDestinationsAnswer.Failed(DelunoDestinationsStatus.LibraryNotFound));
+
+        var line = Assert.Single(result.Lines);
+        Assert.Equal(SetupCheckLine.Unverified, line.State);
+        Assert.Equal(
+            "Deluno no longer has the Movies library this workflow came from, so Weir can't check where its downloads go. " +
+            "Remove this workflow if the library is gone for good, or unlink it from Deluno to keep it as a Weir-only workflow.",
+            line.Text);
+        Assert.Null(result.WatchedFolder);
+        Assert.Null(result.OutputFolder);
+    }
+
+    [Fact]
+    public void A_library_deluno_no_longer_has_names_the_workflow_when_the_check_is_for_one()
+    {
+        var choice = ManagerSetupRules.ChooseDelunoLibrary("Deluno", MediaManagerKinds.Movie, [RefiningMovies]);
+
+        var result = ManagerSetupRules.EvaluateDelunoWithDestinations(
+            "Deluno",
+            MediaManagerKinds.Movie,
+            "C:\\Downloads",
+            "C:\\Ready",
+            choice,
+            null,
+            DelunoDestinationsAnswer.Failed(DelunoDestinationsStatus.LibraryNotFound),
+            workflowName: "Family films");
+
+        Assert.Equal(
+            "Deluno no longer has the Movies library that the \"Family films\" workflow came from, so Weir can't check where its downloads go. " +
+            "Remove the \"Family films\" workflow if the library is gone for good, or unlink it from Deluno to keep it as a Weir-only workflow.",
+            Assert.Single(result.Lines).Text);
+    }
+
+    [Fact]
     public void A_key_without_the_imports_scope_gets_a_plain_fix_ahead_of_the_manifest_lines()
     {
         var result = Evaluate(DelunoDestinationsAnswer.Failed(DelunoDestinationsStatus.NeedsImportsScope));

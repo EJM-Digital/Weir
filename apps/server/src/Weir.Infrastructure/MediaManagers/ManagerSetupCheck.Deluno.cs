@@ -30,7 +30,7 @@ public sealed partial class ManagerSetupCheck
         string mediaScope,
         string watchedFolder,
         string outputFolder,
-        string? preferredLibraryKey,
+        DelunoLibraryLink? link,
         CancellationToken cancellationToken)
     {
         var manifest = await ReadDelunoManifestAsync(connection, label, cancellationToken).ConfigureAwait(false);
@@ -40,14 +40,14 @@ public sealed partial class ManagerSetupCheck
         }
 
         var facts = ManagerSourceFactsRules.ForDeluno(mediaScope, description.Libraries, description.DownloadClients);
-        var choice = ManagerSetupRules.ChooseDelunoLibrary(label, mediaScope, description.Libraries, preferredLibraryKey);
+        var choice = ManagerSetupRules.ChooseDelunoLibrary(label, mediaScope, description.Libraries, link?.LibraryKey);
         if (choice.Library is not { } library)
         {
             return (new DelunoSetupResult(null, null, choice.Lines), facts);
         }
 
         var answer = await ReadDestinationsAsync(connection, library.Key, cancellationToken).ConfigureAwait(false);
-        return (ManagerSetupRules.EvaluateDelunoWithDestinations(label, mediaScope, watchedFolder, outputFolder, choice, description.DownloadClients, answer, _folders), facts);
+        return (ManagerSetupRules.EvaluateDelunoWithDestinations(label, mediaScope, watchedFolder, outputFolder, choice, description.DownloadClients, answer, _folders, link?.WorkflowName), facts);
     }
 
     /// <summary>The folders Deluno's manifest reports for the media type, with no workflow to compare them with and no second read.</summary>

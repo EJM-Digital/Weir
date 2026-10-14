@@ -37,8 +37,11 @@ public sealed record ArrSetupResult(IReadOnlyList<string> Hosts, IReadOnlyList<S
 /// </summary>
 public sealed record ManagerDownloadClientDescriptor(string Name, bool Enabled, string? MoviesCategory, string? TvCategory);
 
-/// <summary>The Deluno library (<see cref="LibraryKey"/>, its id in Deluno) on connection <see cref="ConnectionId"/> that a workflow was created from.</summary>
-public sealed record DelunoLibraryLink(long ConnectionId, string LibraryKey);
+/// <summary>
+/// The Deluno library (<see cref="LibraryKey"/>, its id in Deluno) on connection <see cref="ConnectionId"/> that a workflow was
+/// created from. <see cref="WorkflowName"/> is that workflow's name, so a sentence about the link can say which workflow it is.
+/// </summary>
+public sealed record DelunoLibraryLink(long ConnectionId, string LibraryKey, string? WorkflowName = null);
 
 /// <summary>
 /// The Deluno library a workflow is checked against, or null with the <see cref="Lines"/> that explain why there is none.

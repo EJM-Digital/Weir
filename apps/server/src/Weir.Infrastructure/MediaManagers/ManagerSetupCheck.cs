@@ -100,8 +100,8 @@ public sealed partial class ManagerSetupCheck
             }
             else
             {
-                var preferredLibraryKey = delunoLibrary is { } link && link.ConnectionId == row.Id ? link.LibraryKey : null;
-                var (deluno, delunoFacts) = await CheckDelunoAsync(connection, label, mediaScope, watchedFolder, outputFolder, preferredLibraryKey, cancellationToken).ConfigureAwait(false);
+                var link = delunoLibrary is { } linked && linked.ConnectionId == row.Id ? linked : null;
+                var (deluno, delunoFacts) = await CheckDelunoAsync(connection, label, mediaScope, watchedFolder, outputFolder, link, cancellationToken).ConfigureAwait(false);
                 entry.Set("story", SourceFactsOut(delunoFacts));
                 lines = deluno.Lines;
                 entry.Set("suggested_watched_folder", deluno.WatchedFolder).Set("suggested_output_folder", deluno.OutputFolder);

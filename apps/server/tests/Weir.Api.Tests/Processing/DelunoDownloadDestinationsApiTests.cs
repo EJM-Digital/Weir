@@ -294,6 +294,46 @@ public sealed class DelunoDownloadDestinationsApiTests
     }
 
     [Fact]
+    public async Task A_deluno_that_answers_library_not_found_is_said_to_have_removed_the_library_and_is_never_called_too_old()
+    {
+        var (server, client, manager) = await StartAsync();
+        await using var _server = server;
+        await ConnectAsync(client);
+        DelunoManifest(manager).Json(
+            HttpMethod.Get, DestinationsPath, """{"error":"library_not_found","message":"Deluno has no library with the id lib-tv."}""", HttpStatusCode.NotFound);
+
+        var deluno = await DelunoCheckAsync(client);
+
+        var label = LabelOf(deluno);
+        Assert.Equal(
+            [
+                ("unverified", $"{label} no longer has the TV library this workflow came from, so Weir can't check where its downloads go. " +
+                    $"Remove this workflow if the library is gone for good, or unlink it from {label} to keep it as a Weir-only workflow."),
+            ],
+            Lines(deluno));
+        Assert.True(deluno["ready"]!.GetValue<bool>());
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("""{"error":"handoff_not_found"}""")]
+    [InlineData("""{"error":"Library not found!"}""")]
+    public async Task A_404_without_the_library_not_found_code_is_still_a_deluno_older_than_the_route(string body)
+    {
+        var (server, client, manager) = await StartAsync();
+        await using var _server = server;
+        await ConnectAsync(client);
+        DelunoManifest(manager).Json(HttpMethod.Get, DestinationsPath, body, HttpStatusCode.NotFound);
+
+        var deluno = await DelunoCheckAsync(client);
+
+        Assert.Equal(
+            ("note", "Deluno 1.0.0-rc.23 or later lets Weir check where its download clients save and how its path mappings apply."),
+            Lines(deluno)[^1]);
+        Assert.DoesNotContain(Lines(deluno), line => line.Text.Contains("no longer has", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task A_key_without_the_imports_scope_is_told_how_to_fix_it_and_the_check_stays_not_verified()
     {
         var (server, client, manager) = await StartAsync();

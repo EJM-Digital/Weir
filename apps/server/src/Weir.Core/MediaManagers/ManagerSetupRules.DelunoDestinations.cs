@@ -10,7 +10,8 @@ public static partial class ManagerSetupRules
     /// every folder it named is turned into Weir's view through Deluno's path mappings and judged: inside the watched folder
     /// (each client's save folder and the library's downloads folder) or the output folder (the processed-output folder) is
     /// <see cref="SetupCheckLine.Ok"/>, outside is <see cref="SetupCheckLine.Problem"/>, and a client Deluno could not
-    /// ask stays <see cref="SetupCheckLine.Unverified"/>. When it did not answer, the manifest's lines stand and say why.
+    /// ask stays <see cref="SetupCheckLine.Unverified"/>. When it did not answer, the manifest's lines stand and say why. When it
+    /// says it no longer has the library, that one line stands alone, naming <paramref name="workflowName"/> when it is known.
     /// </summary>
     public static DelunoSetupResult EvaluateDelunoWithDestinations(
         string managerLabel,
@@ -20,13 +21,20 @@ public static partial class ManagerSetupRules
         DelunoLibraryChoice choice,
         IReadOnlyList<ManagerDownloadClientDescriptor>? downloadClients,
         DelunoDestinationsAnswer answer,
-        IFolderProbe? probe = null)
+        IFolderProbe? probe = null,
+        string? workflowName = null)
     {
         ArgumentNullException.ThrowIfNull(choice);
         ArgumentNullException.ThrowIfNull(answer);
         if (choice.Library is not { } chosen)
         {
             return new DelunoSetupResult(null, null, choice.Lines);
+        }
+
+        if (answer.Status == DelunoDestinationsStatus.LibraryNotFound)
+        {
+            var removed = new SetupCheckLine(SetupCheckLine.Unverified, DelunoDestinationNotices.LibraryRemoved(managerLabel, chosen.Name, workflowName));
+            return new DelunoSetupResult(null, null, [removed]);
         }
 
         if (answer.Status != DelunoDestinationsStatus.Read)
