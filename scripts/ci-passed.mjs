@@ -21,6 +21,8 @@ export const GATES = {
   // Calls ci-contract.yml: every area's leg.
   contract: "run_contract",
   tray: "run_tray",
+  // Merges the server, tray and web coverage and holds each to its floor (docs/coverage/floors.json).
+  coverage: "run_coverage",
   // Calls ci-packaging.yml: the Docker and Windows package smokes.
   packaging: "run_packaging",
 };

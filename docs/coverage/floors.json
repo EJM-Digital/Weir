@@ -1,0 +1,11 @@
+{
+  "measuredFrom": { "run": 1 },
+  "floors": {
+    "server-core": { "line": 0, "branch": 0 },
+    "server-infrastructure": { "line": 0, "branch": 0 },
+    "server-api": { "line": 0, "branch": 0 },
+    "server-host": { "line": 0, "branch": 0 },
+    "tray": { "line": 0, "branch": 0 },
+    "web": { "line": 0, "branch": 0 }
+  }
+}

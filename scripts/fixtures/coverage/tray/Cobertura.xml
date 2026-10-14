@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
+<coverage line-rate="0.9315068493150684" branch-rate="1" lines-covered="68" lines-valid="73" branches-covered="18" branches-valid="18" complexity="23" version="0" timestamp="1791972060">
+  <sources>
+    <source>/home/runner/work/Weir/Weir/apps/tray/Weir.Tray/</source>
+  </sources>
+  <packages>
+    <package name="Weir" line-rate="0.9315068493150684" branch-rate="1" complexity="23">
+      <classes>
+        <class name="Weir.Tray.AtomicFile" filename="/home/runner/work/Weir/Weir/apps/tray/Weir.Tray/AtomicFile.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name="WriteAllText" signature="(System.String,System.String,System.String)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="17" hits="11202" branch="false" />
+                <line number="18" hits="11202" branch="false" />
+                <line number="19" hits="11197" branch="false" />
+                <line number="21" hits="11197" branch="false" />
+                <line number="22" hits="11197" branch="false" />
+                <line number="23" hits="11197" branch="false" />
+                <line number="24" hits="2608" branch="false" />
+                <line number="26" hits="11197" branch="false" />
+                <line number="28" hits="11197" branch="false" />
+                <line number="29" hits="11197" branch="false" />
+                <line number="30" hits="2608" branch="false" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="17" hits="11202" branch="false" />
+            <line number="18" hits="11202" branch="false" />
+            <line number="19" hits="11197" branch="false" />
+            <line number="21" hits="11197" branch="false" />
+            <line number="22" hits="11197" branch="false" />
+            <line number="23" hits="11197" branch="false" />
+            <line number="24" hits="2608" branch="false" />
+            <line number="26" hits="11197" branch="false" />
+            <line number="28" hits="11197" branch="false" />
+            <line number="29" hits="11197" branch="false" />
+            <line number="30" hits="2608" branch="false" />
+          </lines>
+        </class>
+        <class name="Weir.Tray.Debounce" filename="/home/runner/work/Weir/Weir/apps/tray/Weir.Tray/Debounce.cs" line-rate="1" branch-rate="1" complexity="5">
+          <methods>
+            <method name="Allow" signature="()" line-rate="1" branch-rate="1" complexity="4">
+              <lines>
+                <line number="14" hits="13" branch="false" />
+                <line number="15" hits="13" branch="false" />
+                <line number="17" hits="13" branch="false" />
+                <line number="18" hits="13" branch="true" condition-coverage="100% (4/4)" />
+                <line number="19" hits="3" branch="false" />
+                <line number="20" hits="3" branch="false" />
+                <line number="22" hits="10" branch="false" />
+                <line number="23" hits="10" branch="false" />
+                <line number="25" hits="13" branch="false" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="(System.TimeSpan,System.TimeProvider)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="7" hits="11" branch="false" />
+                <line number="9" hits="11" branch="false" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="7" hits="11" branch="false" />
+            <line number="9" hits="11" branch="false" />
+            <line number="14" hits="13" branch="false" />
+            <line number="15" hits="13" branch="false" />
+            <line number="17" hits="13" branch="false" />
+            <line number="18" hits="13" branch="true" condition-coverage="100% (4/4)" />
+            <line number="19" hits="3" branch="false" />
+            <line number="20" hits="3" branch="false" />
+            <line number="22" hits="10" branch="false" />
+            <line number="23" hits="10" branch="false" />
+            <line number="25" hits="13" branch="false" />
+          </lines>
+        </class>
+        <class name="Weir.Tray.Firewall.FirewallRule" filename="/home/runner/work/Weir/Weir/apps/tray/Weir.Tray/Firewall/FirewallRule.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(System.String,System.String,Weir.Tray.Firewall.FirewallRuleAction,Weir.Tray.Firewall.FirewallRuleDirection,Weir.Tray.Firewall.FirewallProfiles,System.Boolean)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="36" hits="72" branch="false" />
+                <line number="37" hits="72" branch="false" />
+                <line number="38" hits="72" branch="false" />
+                <line number="39" hits="72" branch="false" />
+                <line number="40" hits="72" branch="false" />
+                <line number="41" hits="72" branch="false" />
+                <line number="42" hits="72" branch="false" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="36" hits="72" branch="false" />
+            <line number="37" hits="72" branch="false" />
+            <line number="38" hits="72" branch="false" />
+            <line number="39" hits="72" branch="false" />
+            <line number="40" hits="72" branch="false" />
+            <line number="41" hits="72" branch="false" />
+            <line number="42" hits="72" branch="false" />
+          </lines>
+        </class>
+        <class name="Weir.Tray.Firewall.FirewallRuleWidening" filename="/home/runner/work/Weir/Weir/apps/tray/Weir.Tray/Firewall/FirewallRuleWidening.cs" line-rate="0.8863636363636364" branch-rate="1" complexity="16">
+          <methods>
+            <method name="MayAsk" signature="(Weir.Tray.LanAccess.ListenScope,System.Boolean,System.Boolean)" line-rate="1" branch-rate="1" complexity="2">
+              <lines>
+                <line number="24" hits="25" branch="true" condition-coverage="100% (2/2)" />
+              </lines>
+            </method>
+            <method name="IsNarrow" signature="(Weir.Tray.Firewall.FirewallProfiles)" line-rate="1" branch-rate="1" complexity="2">
+              <lines>
+                <line number="31" hits="19" branch="true" condition-coverage="100% (2/2)" />
+              </lines>
+            </method>
+            <method name="AskInBackground" signature="(System.String,Weir.Tray.LanAccess.ListenScope,System.Boolean)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="35" hits="0" branch="false" />
+                <line number="36" hits="0" branch="false" />
+                <line number="37" hits="0" branch="false" />
+                <line number="38" hits="0" branch="false" />
+                <line number="39" hits="0" branch="false" />
+              </lines>
+            </method>
+            <method name="AskIfNeeded" signature="(System.String,Weir.Tray.LanAccess.ListenScope,System.Boolean,System.Func`1&lt;Weir.Tray.Firewall.IFirewallPolicy&gt;,System.String,Weir.Tray.Firewall.IFirewallAccess,System.Action`1&lt;System.String&gt;)" line-rate="1" branch-rate="1" complexity="6">
+              <lines>
+                <line number="54" hits="25" branch="false" />
+                <line number="55" hits="25" branch="true" condition-coverage="100% (2/2)" />
+                <line number="56" hits="5" branch="false" />
+                <line number="57" hits="5" branch="false" />
+                <line number="62" hits="20" branch="false" />
+                <line number="63" hits="20" branch="false" />
+                <line number="64" hits="19" branch="false" />
+                <line number="65" hits="1" branch="false" />
+                <line number="66" hits="1" branch="false" />
+                <line number="69" hits="1" branch="false" />
+                <line number="70" hits="1" branch="false" />
+                <line number="72" hits="19" branch="true" condition-coverage="100% (2/2)" />
+                <line number="73" hits="4" branch="false" />
+                <line number="74" hits="4" branch="false" />
+                <line number="77" hits="15" branch="true" condition-coverage="100% (2/2)" />
+                <line number="78" hits="1" branch="false" />
+                <line number="79" hits="1" branch="false" />
+                <line number="81" hits="14" branch="false" />
+                <line number="82" hits="14" branch="false" />
+                <line number="83" hits="14" branch="false" />
+                <line number="84" hits="14" branch="false" />
+                <line number="85" hits="25" branch="false" />
+              </lines>
+            </method>
+            <method name="TryRecordAsked" signature="(System.String,System.Action`1&lt;System.String&gt;)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="89" hits="15" branch="false" />
+                <line number="91" hits="15" branch="false" />
+                <line number="92" hits="15" branch="false" />
+                <line number="93" hits="14" branch="false" />
+                <line number="95" hits="1" branch="false" />
+                <line number="96" hits="1" branch="false" />
+                <line number="97" hits="1" branch="false" />
+                <line number="98" hits="1" branch="false" />
+                <line number="100" hits="15" branch="false" />
+              </lines>
+            </method>
+            <method name="Describe" signature="(Weir.Tray.Firewall.FirewallElevation/Outcome)" line-rate="1" branch-rate="1" complexity="4">
+              <lines>
+                <line number="102" hits="14" branch="true" condition-coverage="100% (4/4)" />
+                <line number="103" hits="14" branch="false" />
+                <line number="104" hits="10" branch="false" />
+                <line number="105" hits="2" branch="false" />
+                <line number="106" hits="2" branch="false" />
+                <line number="107" hits="14" branch="false" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="24" hits="25" branch="true" condition-coverage="100% (2/2)" />
+            <line number="31" hits="19" branch="true" condition-coverage="100% (2/2)" />
+            <line number="35" hits="0" branch="false" />
+            <line number="36" hits="0" branch="false" />
+            <line number="37" hits="0" branch="false" />
+            <line number="38" hits="0" branch="false" />
+            <line number="39" hits="0" branch="false" />
+            <line number="54" hits="25" branch="false" />
+            <line number="55" hits="25" branch="true" condition-coverage="100% (2/2)" />
+            <line number="56" hits="5" branch="false" />
+            <line number="57" hits="5" branch="false" />
+            <line number="62" hits="20" branch="false" />
+            <line number="63" hits="20" branch="false" />
+            <line number="64" hits="19" branch="false" />
+            <line number="65" hits="1" branch="false" />
+            <line number="66" hits="1" branch="false" />
+            <line number="69" hits="1" branch="false" />
+            <line number="70" hits="1" branch="false" />
+            <line number="72" hits="19" branch="true" condition-coverage="100% (2/2)" />
+            <line number="73" hits="4" branch="false" />
+            <line number="74" hits="4" branch="false" />
+            <line number="77" hits="15" branch="true" condition-coverage="100% (2/2)" />
+            <line number="78" hits="1" branch="false" />
+            <line number="79" hits="1" branch="false" />
+            <line number="81" hits="14" branch="false" />
+            <line number="82" hits="14" branch="false" />
+            <line number="83" hits="14" branch="false" />
+            <line number="84" hits="14" branch="false" />
+            <line number="85" hits="25" branch="false" />
+            <line number="89" hits="15" branch="false" />
+            <line number="91" hits="15" branch="false" />
+            <line number="92" hits="15" branch="false" />
+            <line number="93" hits="14" branch="false" />
+            <line number="95" hits="1" branch="false" />
+            <line number="96" hits="1" branch="false" />
+            <line number="97" hits="1" branch="false" />
+            <line number="98" hits="1" branch="false" />
+            <line number="100" hits="15" branch="false" />
+            <line number="102" hits="14" branch="true" condition-coverage="100% (4/4)" />
+            <line number="103" hits="14" branch="false" />
+            <line number="104" hits="10" branch="false" />
+            <line number="105" hits="2" branch="false" />
+            <line number="106" hits="2" branch="false" />
+            <line number="107" hits="14" branch="false" />
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>

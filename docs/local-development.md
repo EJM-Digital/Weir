@@ -146,10 +146,11 @@ cares about changed (a manual run always runs everything). Its jobs:
    [`areas.json`](../apps/server/tests/Weir.Contract.Tests/areas.json), in parallel
    (`dotnet test --filter "Area=<area>"`).
 8. **`tray`** (always runs on a push to `main`): the tray's unit tests.
-9. **`packaging`**: the Docker and Windows package smokes (`.github/workflows/ci-packaging.yml`) —
+9. **`coverage`**: the line and branch coverage of the server, the tray and the web app (measured in the jobs above), merged and held to the floors in [`docs/coverage/floors.json`](coverage/floors.json); see [`coverage/README.md`](coverage/README.md).
+10. **`packaging`**: the Docker and Windows package smokes (`.github/workflows/ci-packaging.yml`) —
    builds the image, runs it and the live packaged audit (`apps/server/tools/Weir.LiveAudit`), and runs the Velopack build and
    **`scripts/smoke-windows-package.ps1`**.
-10. **`ci-passed`**: the verdict. It passes only when every job that was due for the change passed and
+11. **`ci-passed`**: the verdict. It passes only when every job that was due for the change passed and
     every other job was skipped — this is the one check `main`'s ruleset requires.
 
 Pushing a SemVer tag **`v*`** (`vX.Y.Z`, or `vX.Y.Z-rc.N` for a release candidate) runs the **`Release`** workflow. It does not repeat these tests: it

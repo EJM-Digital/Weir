@@ -37,6 +37,7 @@ This file is the short entry point for coding agents. Keep detailed rules in lin
 - Weir has no Python: `node scripts/check-no-python.mjs` fails if a `.py` file is tracked. Tooling is Node, PowerShell or .NET.
 - Packaging smoke checks are documented in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 - Docs map validation: `node scripts/check-agent-docs.mjs`.
+- Coverage: CI holds line and branch coverage per project to the floors in [`docs/coverage/floors.json`](docs/coverage/floors.json); a pull request that adds tests raises the floors it earned, and a floor only goes down in a pull request of its own ([`docs/coverage/README.md`](docs/coverage/README.md)). Locally: `npm run test:coverage` in `apps/web`.
 
 ## Working Style
 
