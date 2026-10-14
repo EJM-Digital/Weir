@@ -188,8 +188,10 @@ export function checkReleaseGates({ release, ci, ciContract, ciPackaging }) {
     ],
     `${RELEASE} ${PUBLISH_WINDOWS} job`,
   );
-  // A tag with a pre-release part publishes a GitHub pre-release, never a normal release.
-  requireText(publishWindows, "prerelease: ${{ steps.version.outputs.prerelease }}", `${RELEASE} ${PUBLISH_WINDOWS} job`);
+  // A tag with a pre-release part publishes a GitHub pre-release, never a normal release; and the release is filled as a
+  // draft before it is published, because published releases on this repository are immutable.
+  requireText(publishWindows, "PRERELEASE: ${{ steps.version.outputs.prerelease }}", `${RELEASE} ${PUBLISH_WINDOWS} job`);
+  requireText(publishWindows, "node scripts/publish-release.mjs", `${RELEASE} ${PUBLISH_WINDOWS} job`);
   for (const marker of ["id-token: write", "attestations: write"]) {
     requireText(publishWindows, marker, `${RELEASE} ${PUBLISH_WINDOWS} job`);
   }

@@ -166,7 +166,8 @@ test("publish-docker pushes the version tag alone", () => {
 });
 
 test("publish-windows attests the release files and publishes the notes last", () => {
-  rejects(editJob(real.release, "publish-windows", (body) => body.replace("prerelease: ${{ steps.version.outputs.prerelease }}", "prerelease: false")), /prerelease/);
+  rejects(editJob(real.release, "publish-windows", (body) => body.replace("PRERELEASE: ${{ steps.version.outputs.prerelease }}", "PRERELEASE: false")), /prerelease/i);
+  rejects(editJob(real.release, "publish-windows", (body) => body.replace("node scripts/publish-release.mjs", "gh release create")), /publish-release/);
   rejects(editJob(real.release, "publish-windows", (body) => body.replace("if: ${{ vars.ATTEST_PROVENANCE == 'true' }}\n", "")), /ATTEST_PROVENANCE/);
   const swapped = editJob(real.release, "publish-windows", (body) =>
     body
