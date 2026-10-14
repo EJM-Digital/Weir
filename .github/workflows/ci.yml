@@ -130,6 +130,9 @@ jobs:
               - 'docker/**'
               - 'Dockerfile'
               - '.dockerignore'
+            # The floors every test leg is held to: a change to them is checked against a fresh measurement of all three.
+            coverage_floors:
+              - 'docs/coverage/floors.json'
             workflows:
               - '.github/**'
 
@@ -145,6 +148,7 @@ jobs:
           WEB: ${{ steps.filter.outputs.web }}
           HARNESS: ${{ steps.filter.outputs.harness }}
           TRAY: ${{ steps.filter.outputs.tray }}
+          FLOORS: ${{ steps.filter.outputs.coverage_floors }}
           PACKAGING: ${{ steps.filter.outputs.packaging }}
           MEDIA_TOOLS: ${{ steps.filter.outputs.media_tools }}
           DOCKER: ${{ steps.filter.outputs.docker }}
@@ -159,19 +163,22 @@ jobs:
           on_pull_request() { if [ "$main_push" = true ]; then echo false; else echo "$1"; fi; }
 
           web=$(either "$all" "$SERVER" "$HARNESS" "$WEB")
+          # The unit tests of all three projects run to measure coverage when the floors change.
+          web_tests=$(either "$web" "$FLOORS")
+          tray_tests=$(either "$all" "$TRAY" "$FLOORS")
           # packaging's own filter stays narrow on a pull request (see below); a server or web change
           # outside it still needs packaging tested once it lands on main, since nothing else will.
           packaging_reached_by_main=$(both "$main_push" "$(either "$SERVER" "$WEB")")
           {
-            echo "run_server_linux=$(either "$all" "$SERVER" "$MEDIA_TOOLS")"
-            echo "run_server_windows=$(either "$all" "$SERVER" "$MEDIA_TOOLS")"
+            echo "run_server_linux=$(either "$all" "$SERVER" "$MEDIA_TOOLS" "$FLOORS")"
+            echo "run_server_windows=$(either "$all" "$SERVER" "$MEDIA_TOOLS" "$FLOORS")"
             echo "run_server_audit=$(on_pull_request "$(either "$all" "$SERVER")")"
-            echo "run_web=$web"
+            echo "run_web=$web_tests"
             echo "run_web_audit=$(on_pull_request "$(either "$all" "$WEB")")"
             echo "run_e2e=$(on_pull_request "$web")"
             echo "run_contract=$(either "$all" "$SERVER")"
-            echo "run_tray=$(either "$all" "$TRAY")"
-            echo "run_coverage=$(either "$web" "$TRAY")"
+            echo "run_tray=$tray_tests"
+            echo "run_coverage=$(either "$web_tests" "$tray_tests")"
             echo "run_packaging=$(either "$all" "$PACKAGING" "$packaging_reached_by_main")"
             echo "run_arm64=$(either "$manual" "$DOCKER")"
           } | tee -a "$GITHUB_OUTPUT"

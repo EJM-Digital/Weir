@@ -41,13 +41,16 @@ names the project and the measure. A project whose tests did not run for the cha
 is not judged, and a project whose tests ran but wrote no report fails.
 
 - **Raising a floor.** A pull request that adds tests raises the floors it earned, to the figure the run printed
-  (the table marks "floor can rise"). Nothing raises them for you.
+  (the table marks "floor can rise"). Nothing raises them for you. A change to `floors.json` alone runs the server,
+  tray and web tests too, so a raised floor is checked against a fresh measurement.
 - **Lowering a floor.** A floor only goes down in a pull request of its own, with the reason in plain words written
   under `lowered` in `floors.json`, naming the old and the new figure:
   `"web.branch": { "from": 82.7, "to": 80, "reason": "..." }`. Without that entry the check fails and says so;
   with it the check passes and prints the reason in the job summary.
-- **Starting figures.** `measuredFrom` records the CI run the first floors were measured from. They were taken from
-  that run, not chosen.
+- **Starting figures.** `measuredFrom` records the CI runs the first floors were measured from, and `note` says how each
+  floor follows from them. They were taken from those runs, not chosen. A few server files (background services and
+  file watchers) are run by tests that race them, so the lines they cover vary a little from run to run; the floors
+  of the two projects they are in leave room for that.
 
 ## Running it locally
 
