@@ -170,7 +170,6 @@ export function useWizardSave({
     onMessage(null);
     try {
       await saveAppSettings.mutateAsync({
-        signed_in_home_notice: settings.signed_in_home_notice,
         setup_wizard_state: "skipped",
         app_timezone: settings.app_timezone,
         log_retention_days: settings.log_retention_days,
@@ -212,7 +211,6 @@ export function useWizardSave({
     try {
       await saveLibraries(draft, choice);
       await saveAppSettings.mutateAsync({
-        signed_in_home_notice: settings.signed_in_home_notice,
         setup_wizard_state: "completed",
         app_timezone: draft.timezone,
         log_retention_days: settings.log_retention_days,

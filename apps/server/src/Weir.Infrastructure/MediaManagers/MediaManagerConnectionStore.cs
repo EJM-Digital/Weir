@@ -8,34 +8,7 @@ using Weir.Infrastructure.Sqlite;
 
 namespace Weir.Infrastructure.MediaManagers;
 
-/// <summary>One <c>media_manager_search_lanes</c> row.</summary>
-public sealed record MediaManagerSearchLaneRecord(
-    long Id,
-    long ConnectionId,
-    string Lane,
-    bool Enabled,
-    long MaxItemsPerRun,
-    long RetryDelayMinutes,
-    bool ScheduleEnabled,
-    string ScheduleDays,
-    string ScheduleStart,
-    string ScheduleEnd,
-    long ScheduleIntervalSeconds)
-{
-    /// <summary>The lane as the API returns it.</summary>
-    public WireObject ToOut() => new WireObject()
-        .Set("lane", Lane)
-        .Set("enabled", Enabled)
-        .Set("max_items_per_run", MaxItemsPerRun)
-        .Set("retry_delay_minutes", RetryDelayMinutes)
-        .Set("schedule_enabled", ScheduleEnabled)
-        .Set("schedule_days", ScheduleDays)
-        .Set("schedule_start", ScheduleStart)
-        .Set("schedule_end", ScheduleEnd)
-        .Set("schedule_interval_seconds", ScheduleIntervalSeconds);
-}
-
-/// <summary>One <c>media_manager_connections</c> row with its lanes.</summary>
+/// <summary>One <c>media_manager_connections</c> row.</summary>
 public sealed record MediaManagerConnectionRecord(
     long Id,
     string Kind,
@@ -52,8 +25,6 @@ public sealed record MediaManagerConnectionRecord(
     long? LastAnswerMs = null,
     Timestamp? LastUsedAt = null)
 {
-    public IReadOnlyList<MediaManagerSearchLaneRecord> Lanes { get; init; } = [];
-
     /// <summary>How this connection is written in a sentence, led by its product and followed by its nickname.</summary>
     public string Label => MediaManagerKinds.LabelForConnection(Kind, Name, Nickname);
 
@@ -87,8 +58,7 @@ public sealed record MediaManagerConnectionRecord(
         .Set("last_test_detail", LastTestDetail)
         .Set("last_answer_ms", LastAnswerMs)
         .Set("last_used_at", ConnectionUsage.WireText(LastUsedAt))
-        .Set("downloaded_scan_enabled", DownloadedScanEnabled)
-        .Set("lanes", new WireArray(Lanes.OrderBy(lane => lane.Lane, StringComparer.Ordinal).Select(lane => (WireValue)lane.ToOut())));
+        .Set("downloaded_scan_enabled", DownloadedScanEnabled);
 }
 
 /// <summary>
@@ -107,17 +77,13 @@ public sealed class ArrLibraryOperatorSettingsStore
     }
 }
 
-/// <summary>Explicit SQL over <c>media_manager_connections</c> and <c>media_manager_search_lanes</c>.</summary>
+/// <summary>Explicit SQL over <c>media_manager_connections</c>.</summary>
 public sealed class MediaManagerConnectionStore
 {
     private const string ConnectionColumns =
         "id, kind, name, enabled, base_url, api_key_ciphertext, webhook_secret_ciphertext, " +
         "last_connection_test_ok, last_connection_test_at, last_connection_test_detail, downloaded_scan_enabled, nickname, " +
         "last_answer_ms, last_used_at";
-
-    private const string LaneColumns =
-        "id, connection_id, lane, enabled, max_items_per_run, retry_delay_minutes, schedule_enabled, schedule_days, " +
-        "schedule_start, schedule_end, schedule_interval_seconds";
 
     private readonly ConnectionUsageLedger? _usage;
     private readonly DataChangePublisher? _changes;
@@ -130,27 +96,27 @@ public sealed class MediaManagerConnectionStore
         _changes = changes;
     }
 
-    /// <summary>Every connection with its lanes, by id.</summary>
+    /// <summary>Every connection, by id.</summary>
     public async Task<List<MediaManagerConnectionRecord>> ListAsync(UnitOfWork uow)
     {
         ArgumentNullException.ThrowIfNull(uow);
         var rows = await uow.QueryAsync($"SELECT {ConnectionColumns} FROM media_manager_connections ORDER BY id", ReadConnection).ConfigureAwait(false);
-        return [.. (await WithLanesAsync(uow, rows).ConfigureAwait(false)).Select(WithLiveUsage)];
+        return [.. rows.Select(WithLiveUsage)];
     }
 
-    /// <summary>Enabled connections by id, without their lanes.</summary>
+    /// <summary>Enabled connections by id.</summary>
     public async Task<List<MediaManagerConnectionRecord>> ListEnabledAsync(UnitOfWork uow)
     {
         ArgumentNullException.ThrowIfNull(uow);
         return await uow.QueryAsync($"SELECT {ConnectionColumns} FROM media_manager_connections WHERE enabled IS 1 ORDER BY id", ReadConnection).ConfigureAwait(false);
     }
 
-    /// <summary>One connection with its lanes, or null.</summary>
+    /// <summary>One connection, or null.</summary>
     public async Task<MediaManagerConnectionRecord?> GetAsync(UnitOfWork uow, long connectionId)
     {
         ArgumentNullException.ThrowIfNull(uow);
         var row = await uow.QuerySingleAsync($"SELECT {ConnectionColumns} FROM media_manager_connections WHERE id = $id", ReadConnection, ("$id", connectionId)).ConfigureAwait(false);
-        return row is null ? null : WithLiveUsage((await WithLanesAsync(uow, [row]).ConfigureAwait(false))[0]);
+        return row is null ? null : WithLiveUsage(row);
     }
 
     /// <summary>The first enabled connection of a kind.</summary>
@@ -193,7 +159,7 @@ public sealed class MediaManagerConnectionStore
     public Task RefreshNamesAsync(UnitOfWork uow) =>
         ConnectionNameColumn.RefreshAsync(uow, "media_manager_connections", MediaManagerKinds.ProductLabel);
 
-    /// <summary>Insert a connection and its two default lanes; returns the new id.</summary>
+    /// <summary>Insert a connection; returns the new id.</summary>
     public async Task<long> InsertAsync(
         UnitOfWork uow, string kind, bool enabled, string baseUrl, string? apiKeyCiphertext, bool downloadedScanEnabled = false, string? nickname = null)
     {
@@ -211,14 +177,6 @@ public sealed class MediaManagerConnectionStore
                 ("$scan", downloadedScanEnabled ? 1 : 0),
                 ("$nickname", nickname)).ConfigureAwait(false),
             System.Globalization.CultureInfo.InvariantCulture);
-        foreach (var lane in MediaManagerKinds.SearchLanes)
-        {
-            await uow.ExecuteAsync(
-                "INSERT INTO media_manager_search_lanes (connection_id, lane) VALUES ($id, $lane)",
-                ("$id", id),
-                ("$lane", lane)).ConfigureAwait(false);
-        }
-
         await RefreshNamesAsync(uow).ConfigureAwait(false);
         Changed(uow);
         return id;
@@ -247,11 +205,10 @@ public sealed class MediaManagerConnectionStore
         Changed(uow);
     }
 
-    /// <summary>Delete the lanes first, then the connection, so no lane is left without its connection.</summary>
+    /// <summary>Delete the connection.</summary>
     public async Task DeleteAsync(UnitOfWork uow, long connectionId)
     {
         ArgumentNullException.ThrowIfNull(uow);
-        await uow.ExecuteAsync("DELETE FROM media_manager_search_lanes WHERE connection_id = $id", ("$id", connectionId)).ConfigureAwait(false);
         await uow.ExecuteAsync("DELETE FROM media_manager_connections WHERE id = $id", ("$id", connectionId)).ConfigureAwait(false);
         await RefreshNamesAsync(uow).ConfigureAwait(false);
         _usage?.Forget(new ConnectionRef(ConnectionKind.MediaManager, connectionId));
@@ -299,67 +256,7 @@ public sealed class MediaManagerConnectionStore
         return written;
     }
 
-    public Task<MediaManagerSearchLaneRecord?> GetLaneAsync(UnitOfWork uow, long connectionId, string lane)
-    {
-        ArgumentNullException.ThrowIfNull(uow);
-        return uow.QuerySingleAsync(
-            $"SELECT {LaneColumns} FROM media_manager_search_lanes WHERE connection_id = $id AND lane = $lane LIMIT 1",
-            ReadLane,
-            ("$id", connectionId),
-            ("$lane", lane));
-    }
-
-    /// <summary>Save one lane whole: insert it when missing, otherwise update what changed.</summary>
-    public async Task<MediaManagerSearchLaneRecord> SaveLaneAsync(UnitOfWork uow, MediaManagerSearchLaneRecord wanted)
-    {
-        ArgumentNullException.ThrowIfNull(uow);
-        ArgumentNullException.ThrowIfNull(wanted);
-        var existing = await GetLaneAsync(uow, wanted.ConnectionId, wanted.Lane).ConfigureAwait(false);
-        (string, object?)[] values =
-        [
-            ("$enabled", wanted.Enabled ? 1 : 0),
-            ("$max", wanted.MaxItemsPerRun),
-            ("$retry", wanted.RetryDelayMinutes),
-            ("$sched", wanted.ScheduleEnabled ? 1 : 0),
-            ("$days", wanted.ScheduleDays),
-            ("$start", wanted.ScheduleStart),
-            ("$end", wanted.ScheduleEnd),
-            ("$interval", wanted.ScheduleIntervalSeconds),
-        ];
-        if (existing is null)
-        {
-            await uow.ExecuteAsync(
-                "INSERT INTO media_manager_search_lanes (connection_id, lane, enabled, max_items_per_run, retry_delay_minutes, schedule_enabled, " +
-                "schedule_days, schedule_start, schedule_end, schedule_interval_seconds) " +
-                "VALUES ($id, $lane, $enabled, $max, $retry, $sched, $days, $start, $end, $interval)",
-                [("$id", wanted.ConnectionId), ("$lane", wanted.Lane), .. values]).ConfigureAwait(false);
-            Changed(uow);
-        }
-        else if (existing with { Id = 0 } != wanted with { Id = 0 })
-        {
-            await uow.ExecuteAsync(
-                "UPDATE media_manager_search_lanes SET enabled = $enabled, max_items_per_run = $max, retry_delay_minutes = $retry, " +
-                "schedule_enabled = $sched, schedule_days = $days, schedule_start = $start, schedule_end = $end, " +
-                "schedule_interval_seconds = $interval, updated_at = CURRENT_TIMESTAMP WHERE id = $row",
-                [("$row", existing.Id), .. values]).ConfigureAwait(false);
-            Changed(uow);
-        }
-
-        return (await GetLaneAsync(uow, wanted.ConnectionId, wanted.Lane).ConfigureAwait(false))!;
-    }
-
     private void Changed(UnitOfWork uow) => _changes?.PublishOnCommit(uow, DataTopics.Connections);
-
-    private async Task<List<MediaManagerConnectionRecord>> WithLanesAsync(UnitOfWork uow, List<MediaManagerConnectionRecord> rows)
-    {
-        if (rows.Count == 0)
-        {
-            return rows;
-        }
-
-        var lanes = await uow.QueryAsync($"SELECT {LaneColumns} FROM media_manager_search_lanes ORDER BY id", ReadLane).ConfigureAwait(false);
-        return [.. rows.Select(row => row with { Lanes = [.. lanes.Where(lane => lane.ConnectionId == row.Id)] })];
-    }
 
     private static MediaManagerConnectionRecord ReadConnection(SqliteDataReader reader) => new(
         SqliteValues.GetInt64(reader, 0),
@@ -376,17 +273,4 @@ public sealed class MediaManagerConnectionStore
         SqliteValues.GetStringOrNull(reader, 11),
         SqliteValues.GetInt64OrNull(reader, 12),
         SqliteValues.GetDateTimeOrNull(reader, 13));
-
-    private static MediaManagerSearchLaneRecord ReadLane(SqliteDataReader reader) => new(
-        SqliteValues.GetInt64(reader, 0),
-        SqliteValues.GetInt64(reader, 1),
-        SqliteValues.GetString(reader, 2),
-        SqliteValues.GetBool(reader, 3),
-        SqliteValues.GetInt64(reader, 4),
-        SqliteValues.GetInt64(reader, 5),
-        SqliteValues.GetBool(reader, 6),
-        SqliteValues.GetString(reader, 7),
-        SqliteValues.GetString(reader, 8),
-        SqliteValues.GetString(reader, 9),
-        SqliteValues.GetInt64(reader, 10));
 }

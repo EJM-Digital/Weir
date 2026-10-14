@@ -104,7 +104,6 @@ function renderWizard() {
   });
   client.setQueryData(authKeys.me, { id: 1, username: "admin", role: "admin" });
   client.setQueryData(settingsKeys.app, {
-    signed_in_home_notice: null,
     setup_wizard_state: "pending",
     app_timezone: "UTC",
     log_retention_days: 30,

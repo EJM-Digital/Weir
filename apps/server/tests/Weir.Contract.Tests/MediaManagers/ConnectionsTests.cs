@@ -5,7 +5,7 @@ using Weir.Contract.Tests.Harness.Fakes;
 
 namespace Weir.Contract.Tests.MediaManagers;
 
-/// <summary>Media manager connections: create, update, delete, test, lanes, webhook secrets and access.</summary>
+/// <summary>Media manager connections: create, update, delete, test, retired search lanes, webhook secrets and access.</summary>
 [ContractArea("media_managers")]
 public sealed class ConnectionsTests(NoWebhookSecretFixture fixture) : IClassFixture<NoWebhookSecretFixture>
 {
@@ -34,7 +34,7 @@ public sealed class ConnectionsTests(NoWebhookSecretFixture fixture) : IClassFix
         Assert.Equal("deluno", (string)row["kind"]!);
         Assert.Equal("http://192.0.2.10:5099", (string)row["base_url"]!);
         Assert.Equal("/api/v1/intake/webhook/deluno", (string)row["webhook_url_path"]!);
-        Assert.Equal(["missing", "upgrade"], row["lanes"]!.AsArray().Select(lane => (string)lane!["lane"]!).Order());
+        Assert.False(row.ContainsKey("lanes"));
     }
 
     [Fact]
@@ -270,29 +270,60 @@ public sealed class ConnectionsTests(NoWebhookSecretFixture fixture) : IClassFix
         Assert.Contains("removed while its connection test was running", (string)response.Fields["detail"]!);
     }
 
+    /// <summary>
+    /// Searching for missing files and upgrades is the media manager's own, so a connection has no search lanes. An older client
+    /// that still saves one is answered with the connection as it is, and nothing it sends is kept or checked.
+    /// </summary>
     [Fact]
-    public async Task A_lane_can_be_saved_per_manager()
+    public async Task An_older_client_saving_a_lane_is_answered_with_the_connection_and_nothing_is_kept()
+    {
+        using var admin = await OperatorAsync();
+        var row = (await ManagerConnections.CreateAsync(admin)).Fields;
+        var lane = $"{Route}/{JsonFields.Id(row)}/lanes/missing";
+
+        var saved = await admin.PutWithCsrfAsync(lane, OldLaneBody(days: "Mon,Tue", start: "01:00", end: "05:00"));
+
+        Assert.True(saved.Status == HttpStatusCode.OK, saved.ToString());
+        Assert.Equal(JsonFields.Id(row), JsonFields.Id(saved.Fields));
+        Assert.False(saved.Fields.ContainsKey("lanes"));
+        Assert.False(saved.Fields.ContainsKey("lane"));
+        Assert.False(saved.Fields.ContainsKey("schedule_days"));
+
+        // A day that is not a day and an hour past 23 were once refused. The values are not read now.
+        var unreadable = await admin.PutWithCsrfAsync($"{Route}/{JsonFields.Id(row)}/lanes/upgrade", OldLaneBody(days: "monday", start: "25:00", end: "9"));
+        Assert.True(unreadable.Status == HttpStatusCode.OK, unreadable.ToString());
+
+        var read = await admin.GetAsync($"{Route}/{JsonFields.Id(row)}");
+        Assert.Equal(row.ToJsonString(), read.Fields.ToJsonString());
+    }
+
+    [Fact]
+    public async Task The_retired_lane_route_still_checks_who_is_asking_which_connection_and_which_lane()
     {
         using var admin = await OperatorAsync();
         var row = (await ManagerConnections.CreateAsync(admin)).Fields;
 
-        var saved = await admin.PutWithCsrfAsync($"{Route}/{JsonFields.Id(row)}/lanes/missing", new JsonObject
-        {
-            ["enabled"] = true,
-            ["max_items_per_run"] = 25,
-            ["retry_delay_minutes"] = 60,
-            ["schedule_enabled"] = true,
-            ["schedule_days"] = "Mon,Tue",
-            ["schedule_start"] = "01:00",
-            ["schedule_end"] = "05:00",
-            ["schedule_interval_seconds"] = 900,
-        });
+        var noConnection = await admin.PutWithCsrfAsync($"{Route}/99999/lanes/missing", OldLaneBody());
+        var noLane = await admin.PutWithCsrfAsync($"{Route}/{JsonFields.Id(row)}/lanes/sideways", OldLaneBody());
+        using var probe = Server.CreateClient();
+        var anonymous = await probe.RequestAsync(HttpMethod.Put, $"{Route}/{JsonFields.Id(row)}/lanes/missing", OldLaneBody());
 
-        Assert.True(saved.Status == HttpStatusCode.OK, saved.ToString());
-        Assert.Equal("missing", (string)saved.Fields["lane"]!);
-        Assert.True((bool)saved.Fields["enabled"]!);
-        Assert.Equal("Mon,Tue", (string)saved.Fields["schedule_days"]!);
+        Assert.Equal(HttpStatusCode.NotFound, noConnection.Status);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, noLane.Status);
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymous.Status);
     }
+
+    private static JsonObject OldLaneBody(string days = "Mon", string start = "01:00", string end = "05:00") => new()
+    {
+        ["enabled"] = true,
+        ["max_items_per_run"] = 25,
+        ["retry_delay_minutes"] = 60,
+        ["schedule_enabled"] = true,
+        ["schedule_days"] = days,
+        ["schedule_start"] = start,
+        ["schedule_end"] = end,
+        ["schedule_interval_seconds"] = 900,
+    };
 
     [Fact]
     public async Task Routes_require_an_operator_session()

@@ -80,7 +80,6 @@ function managerConnection(
     last_test_ok: true,
     last_test_at: "2026-09-29T10:00:00Z",
     last_test_detail: "Connected.",
-    lanes: [],
     ...over,
   };
 }
@@ -170,7 +169,6 @@ function renderWizard() {
   });
   client.setQueryData(authKeys.me, { id: 1, username: "admin", role: "admin" });
   client.setQueryData(settingsKeys.app, {
-    signed_in_home_notice: null,
     setup_wizard_state: "pending",
     app_timezone: "UTC",
     log_retention_days: 30,

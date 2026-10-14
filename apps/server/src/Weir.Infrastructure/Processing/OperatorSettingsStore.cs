@@ -19,9 +19,7 @@ public sealed class OperatorSettingsStore
     private const string Columns =
         "max_concurrent_files, runner_capacity, runner_cost_sd, runner_cost_720p, runner_cost_1080p, runner_cost_4k, " +
         "work_temp_stale_sweep_enabled, keep_failed_work_files, file_log_retention_days, " +
-        "movie_schedule_enabled, movie_schedule_hours_limited, movie_schedule_days, " +
-        "movie_schedule_start, movie_schedule_end, tv_schedule_enabled, tv_schedule_hours_limited, tv_schedule_days, " +
-        "tv_schedule_start, tv_schedule_end, updated_at, runner_budget_enabled, work_temp_stale_sweep_interval_seconds, " +
+        "movie_schedule_enabled, tv_schedule_enabled, updated_at, runner_budget_enabled, work_temp_stale_sweep_interval_seconds, " +
         "unclaimed_handback_cleanup_enabled, unclaimed_handback_window_days, " +
         "unclaimed_handback_cleanup_interval_seconds";
 
@@ -48,10 +46,8 @@ public sealed class OperatorSettingsStore
         await uow.ExecuteAsync(
             "INSERT INTO operator_settings (id, max_concurrent_files, runner_capacity, runner_cost_sd, runner_cost_720p, " +
             "runner_cost_1080p, runner_cost_4k, work_temp_stale_sweep_enabled, " +
-            "keep_failed_work_files, file_log_retention_days, movie_schedule_enabled, movie_schedule_hours_limited, " +
-            "movie_schedule_days, movie_schedule_start, movie_schedule_end, tv_schedule_enabled, tv_schedule_hours_limited, " +
-            "tv_schedule_days, tv_schedule_start, tv_schedule_end) VALUES (1, 1, 4, 0, 0, 1, 1, 1, 0, 90, " +
-            "1, 0, '', '00:00', '23:59', 1, 0, '', '00:00', '23:59')").ConfigureAwait(false);
+            "keep_failed_work_files, file_log_retention_days, movie_schedule_enabled, tv_schedule_enabled) " +
+            "VALUES (1, 1, 4, 0, 0, 1, 1, 1, 0, 90, 1, 1)").ConfigureAwait(false);
         return await GetAsync(uow).ConfigureAwait(false) ?? throw new InvalidOperationException("operator_settings row was not created.");
     }
 
@@ -83,15 +79,7 @@ public sealed class OperatorSettingsStore
         Compare("keep_failed_work_files", before.KeepFailedWorkFiles, after.KeepFailedWorkFiles, v => v ? 1 : 0);
         Compare("file_log_retention_days", before.FileLogRetentionDays, after.FileLogRetentionDays, v => v);
         Compare("movie_schedule_enabled", before.MovieScheduleEnabled, after.MovieScheduleEnabled, v => v ? 1 : 0);
-        Compare("movie_schedule_hours_limited", before.MovieScheduleHoursLimited, after.MovieScheduleHoursLimited, v => v ? 1 : 0);
-        Compare("movie_schedule_days", before.MovieScheduleDays, after.MovieScheduleDays, v => v);
-        Compare("movie_schedule_start", before.MovieScheduleStart, after.MovieScheduleStart, v => v);
-        Compare("movie_schedule_end", before.MovieScheduleEnd, after.MovieScheduleEnd, v => v);
         Compare("tv_schedule_enabled", before.TvScheduleEnabled, after.TvScheduleEnabled, v => v ? 1 : 0);
-        Compare("tv_schedule_hours_limited", before.TvScheduleHoursLimited, after.TvScheduleHoursLimited, v => v ? 1 : 0);
-        Compare("tv_schedule_days", before.TvScheduleDays, after.TvScheduleDays, v => v);
-        Compare("tv_schedule_start", before.TvScheduleStart, after.TvScheduleStart, v => v);
-        Compare("tv_schedule_end", before.TvScheduleEnd, after.TvScheduleEnd, v => v);
         if (sets.Count == 0)
         {
             return;
@@ -114,20 +102,12 @@ public sealed class OperatorSettingsStore
         KeepFailedWorkFiles = SqliteValues.GetBool(reader, 7),
         FileLogRetentionDays = SqliteValues.GetInt64(reader, 8),
         MovieScheduleEnabled = SqliteValues.GetBool(reader, 9),
-        MovieScheduleHoursLimited = SqliteValues.GetBool(reader, 10),
-        MovieScheduleDays = SqliteValues.GetString(reader, 11),
-        MovieScheduleStart = SqliteValues.GetString(reader, 12),
-        MovieScheduleEnd = SqliteValues.GetString(reader, 13),
-        TvScheduleEnabled = SqliteValues.GetBool(reader, 14),
-        TvScheduleHoursLimited = SqliteValues.GetBool(reader, 15),
-        TvScheduleDays = SqliteValues.GetString(reader, 16),
-        TvScheduleStart = SqliteValues.GetString(reader, 17),
-        TvScheduleEnd = SqliteValues.GetString(reader, 18),
-        UpdatedAt = SqliteValues.GetDateTime(reader, 19),
-        RunnerBudgetEnabled = SqliteValues.GetBool(reader, 20),
-        WorkTempStaleSweepIntervalSeconds = reader.IsDBNull(21) ? null : reader.GetInt64(21),
-        UnclaimedHandbackCleanupEnabled = SqliteValues.GetBool(reader, 22),
-        UnclaimedHandbackWindowDays = SqliteValues.GetInt64(reader, 23),
-        UnclaimedHandbackCleanupIntervalSeconds = reader.IsDBNull(24) ? null : reader.GetInt64(24),
+        TvScheduleEnabled = SqliteValues.GetBool(reader, 10),
+        UpdatedAt = SqliteValues.GetDateTime(reader, 11),
+        RunnerBudgetEnabled = SqliteValues.GetBool(reader, 12),
+        WorkTempStaleSweepIntervalSeconds = reader.IsDBNull(13) ? null : reader.GetInt64(13),
+        UnclaimedHandbackCleanupEnabled = SqliteValues.GetBool(reader, 14),
+        UnclaimedHandbackWindowDays = SqliteValues.GetInt64(reader, 15),
+        UnclaimedHandbackCleanupIntervalSeconds = reader.IsDBNull(16) ? null : reader.GetInt64(16),
     };
 }

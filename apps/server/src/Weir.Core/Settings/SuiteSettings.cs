@@ -9,7 +9,6 @@ namespace Weir.Core.Settings;
 /// <summary>The <c>suite_settings</c> singleton row (id = 1).</summary>
 public sealed record SuiteSettingsRecord
 {
-    public string? SignedInHomeNotice { get; init; }
     public string SetupWizardState { get; init; } = "pending";
     public string AppTimezone { get; init; } = "UTC";
     public long LogRetentionDays { get; init; } = 30;
@@ -27,7 +26,6 @@ public sealed record SuiteSettingsRecord
 
 /// <summary>A validated <c>PUT /suite/settings</c> (or bundle restore) request.</summary>
 public sealed record SuiteSettingsUpdate(
-    string? SignedInHomeNotice,
     string AppTimezone,
     long LogRetentionDays,
     string? SetupWizardState = null,
@@ -52,13 +50,6 @@ public static class SuiteSettingsRules
     {
         ArgumentNullException.ThrowIfNull(update);
         ArgumentNullException.ThrowIfNull(zones);
-        var notice = (update.SignedInHomeNotice ?? string.Empty).Trim();
-        string? normalizedNotice = notice.Length == 0 ? null : notice;
-        if (normalizedNotice is not null && CodePoints(normalizedNotice) > 4000)
-        {
-            throw new WireValueException("Home notice is too long (4,000 characters maximum).");
-        }
-
         var tz = (update.AppTimezone ?? string.Empty).Trim();
         if (tz.Length == 0)
         {
@@ -101,7 +92,6 @@ public static class SuiteSettingsRules
 
         return update with
         {
-            SignedInHomeNotice = normalizedNotice,
             AppTimezone = tz,
             SetupWizardState = wizard,
             ConfigurationBackupPreferredTime = backupTime,
@@ -115,7 +105,6 @@ public static class SuiteSettingsRules
         ArgumentNullException.ThrowIfNull(normalized);
         return row with
         {
-            SignedInHomeNotice = normalized.SignedInHomeNotice,
             SetupWizardState = normalized.SetupWizardState ?? row.SetupWizardState,
             AppTimezone = normalized.AppTimezone,
             LogRetentionDays = normalized.LogRetentionDays,
@@ -175,7 +164,6 @@ public static class SuiteSettingsRules
         var tz = (row.AppTimezone ?? "UTC").Trim();
         var interval = row.ConfigurationBackupIntervalHours == 0 ? 24 : row.ConfigurationBackupIntervalHours;
         return new WireObject()
-            .Set("signed_in_home_notice", row.SignedInHomeNotice)
             .Set("setup_wizard_state", wizard)
             .Set("app_timezone", tz.Length == 0 ? "UTC" : tz)
             .Set("log_retention_days", Math.Max(1, Math.Min(row.LogRetentionDays, 3650)))
@@ -185,17 +173,6 @@ public static class SuiteSettingsRules
             .Set("configuration_backup_preferred_time", NormalizeBackupPreferredTime(row.ConfigurationBackupPreferredTime))
             .Set("configuration_backup_last_run_at", row.ConfigurationBackupLastRunAt?.ToWireText())
             .Set("updated_at", row.UpdatedAt.ToWireText());
-    }
-
-    private static int CodePoints(string value)
-    {
-        var count = 0;
-        for (var i = 0; i < value.Length; i += char.IsSurrogatePair(value, i) ? 2 : 1)
-        {
-            count++;
-        }
-
-        return count;
     }
 }
 

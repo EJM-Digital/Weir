@@ -653,8 +653,8 @@ export interface paths {
     };
     get?: never;
     /**
-     * Put Media Manager Lane
-     * @description Save one automatic search lane for one manager.
+     * Put Media Manager Lane (retired)
+     * @description Retired. Searching belongs to the media manager, so a connection has no search lanes. The connection is returned as it is and nothing in the body is saved.
      */
     put: operations["put_media_manager_lane_api_v1_media_managers_connections__connection_id__lanes__lane__put"];
     post?: never;
@@ -4251,8 +4251,6 @@ export interface components {
        * @enum {string}
        */
       kind: "radarr" | "sonarr" | "deluno" | "native";
-      /** Lanes */
-      lanes?: components["schemas"]["MediaManagerSearchLaneOut"][];
       /**
        * Last Answer Ms
        * @description How long the last call to this connection took, in milliseconds: a connection test or any real call. Null until Weir has made one.
@@ -4343,59 +4341,13 @@ export interface components {
        */
       nickname?: string | null;
     };
-    /** MediaManagerSearchLaneIn */
-    MediaManagerSearchLaneIn: {
+    /**
+     * MediaManagerRetiredLaneIn
+     * @description Every setting a search lane once had (enabled, max_items_per_run, retry_delay_minutes, schedule_enabled, schedule_days, schedule_start, schedule_end, schedule_interval_seconds) is accepted and ignored.
+     */
+    MediaManagerRetiredLaneIn: {
       /** Csrf Token */
       csrf_token: string;
-      /** Enabled */
-      enabled: boolean;
-      /** Max Items Per Run */
-      max_items_per_run: number;
-      /** Retry Delay Minutes */
-      retry_delay_minutes: number;
-      /** Schedule Days */
-      schedule_days: string;
-      /** Schedule Enabled */
-      schedule_enabled: boolean;
-      /** Schedule End */
-      schedule_end: string;
-      /** Schedule Interval Seconds */
-      schedule_interval_seconds: number;
-      /** Schedule Start */
-      schedule_start: string;
-    };
-    /** MediaManagerSearchLaneOut */
-    MediaManagerSearchLaneOut: {
-      /**
-       * Enabled
-       * @description Whether this automatic search lane is turned on.
-       */
-      enabled: boolean;
-      /**
-       * Lane
-       * @enum {string}
-       */
-      lane: "missing" | "upgrade";
-      /** Max Items Per Run */
-      max_items_per_run: number;
-      /** Retry Delay Minutes */
-      retry_delay_minutes: number;
-      /**
-       * Schedule Days
-       * @description Comma-separated weekdays, e.g. Mon,Tue. Empty means every day.
-       */
-      schedule_days: string;
-      /**
-       * Schedule Enabled
-       * @description When on, searches only run inside the days and times below.
-       */
-      schedule_enabled: boolean;
-      /** Schedule End */
-      schedule_end: string;
-      /** Schedule Interval Seconds */
-      schedule_interval_seconds: number;
-      /** Schedule Start */
-      schedule_start: string;
     };
     /**
      * MediaManagerWebhookSecretOut
@@ -6284,19 +6236,8 @@ export interface components {
       keep_failed_work_files: boolean;
       /** Max Concurrent Files */
       max_concurrent_files: number;
-      /** Movie Schedule Days */
-      movie_schedule_days: string;
       /** Movie Schedule Enabled */
       movie_schedule_enabled: boolean;
-      /** Movie Schedule End */
-      movie_schedule_end: string;
-      /**
-       * Movie Schedule Hours Limited
-       * @description When true, timed movie scans only enqueue inside the days and times below (suite time zone).
-       */
-      movie_schedule_hours_limited: boolean;
-      /** Movie Schedule Start */
-      movie_schedule_start: string;
       /**
        * Runner Capacity
        * @description Total processing capacity. Active files consume it according to their cost, and new work waits once it is fully occupied.
@@ -6320,16 +6261,8 @@ export interface components {
        * @description IANA zone for schedule windows (suite settings).
        */
       schedule_timezone: string;
-      /** Tv Schedule Days */
-      tv_schedule_days: string;
       /** Tv Schedule Enabled */
       tv_schedule_enabled: boolean;
-      /** Tv Schedule End */
-      tv_schedule_end: string;
-      /** Tv Schedule Hours Limited */
-      tv_schedule_hours_limited: boolean;
-      /** Tv Schedule Start */
-      tv_schedule_start: string;
       /** Updated At */
       updated_at: string;
       /**
@@ -6360,7 +6293,7 @@ export interface components {
     };
     /**
      * ProcessingOperatorSettingsPutIn
-     * @description PUT body supports partial updates: omit a group to leave it unchanged on the server.
+     * @description PUT body supports partial updates: omit a group to leave it unchanged on the server. Settings Weir has retired (verbose detection records, the minimum file age and size, the free-space floor, failed-download cleanup and the hours window for Movies and TV) are accepted and ignored.
      */
     ProcessingOperatorSettingsPutIn: {
       /** Csrf Token */
@@ -6371,16 +6304,8 @@ export interface components {
       keep_failed_work_files?: boolean | null;
       /** Max Concurrent Files */
       max_concurrent_files?: number | null;
-      /** Movie Schedule Days */
-      movie_schedule_days?: string | null;
       /** Movie Schedule Enabled */
       movie_schedule_enabled?: boolean | null;
-      /** Movie Schedule End */
-      movie_schedule_end?: string | null;
-      /** Movie Schedule Hours Limited */
-      movie_schedule_hours_limited?: boolean | null;
-      /** Movie Schedule Start */
-      movie_schedule_start?: string | null;
       /** Runner Capacity */
       runner_capacity?: number | null;
       /** Runner Cost 1080P */
@@ -6393,16 +6318,8 @@ export interface components {
       runner_cost_720p?: number | null;
       /** Runner Cost Sd */
       runner_cost_sd?: number | null;
-      /** Tv Schedule Days */
-      tv_schedule_days?: string | null;
       /** Tv Schedule Enabled */
       tv_schedule_enabled?: boolean | null;
-      /** Tv Schedule End */
-      tv_schedule_end?: string | null;
-      /** Tv Schedule Hours Limited */
-      tv_schedule_hours_limited?: boolean | null;
-      /** Tv Schedule Start */
-      tv_schedule_start?: string | null;
       /** Work Temp Stale Sweep Enabled */
       work_temp_stale_sweep_enabled?: boolean | null;
       /** Work Temp Stale Sweep Interval Seconds */
@@ -7645,11 +7562,6 @@ export interface components {
        */
       setup_wizard_state: string;
       /**
-       * Signed In Home Notice
-       * @description Optional short message on the home dashboard for signed-in users.
-       */
-      signed_in_home_notice?: string | null;
-      /**
        * Updated At
        * Format: date-time
        */
@@ -7687,8 +7599,6 @@ export interface components {
       log_retention_days: number;
       /** Setup Wizard State */
       setup_wizard_state?: string | null;
-      /** Signed In Home Notice */
-      signed_in_home_notice?: string | null;
     };
     /**
      * SuiteUpdateStatusOut
@@ -10047,7 +9957,7 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["MediaManagerSearchLaneIn"];
+        "application/json": components["schemas"]["MediaManagerRetiredLaneIn"];
       };
     };
     responses: {
@@ -10057,7 +9967,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["MediaManagerSearchLaneOut"];
+          "application/json": components["schemas"]["MediaManagerConnectionOut"];
         };
       };
       /** @description Validation Error */

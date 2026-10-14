@@ -2,8 +2,6 @@ import { sendJson } from "../api/send-json";
 import { apiFetch, readJson, requireOk } from "../api/client";
 import type { RequestBody, Schema } from "../api/types";
 
-export type MediaManagerSearchLane = Schema<"MediaManagerSearchLaneOut">;
-
 /** A media manager Weir talks to. The kind selects the payload dialect, nothing more. */
 export type MediaManagerKind = Schema<"MediaManagerConnectionOut">["kind"];
 
@@ -26,7 +24,7 @@ export function connectionNeedsAddress(kind: MediaManagerKind): boolean {
 export const OPTIONAL_ADDRESS_HINT =
   "Optional. Leave it blank if it only sends messages to Weir and Weir never calls it.";
 
-/** Kept by hand: the server always sends the last_test_* fields and lanes, which the schema marks optional. */
+/** Kept by hand: the server always sends the last_test_* fields, which the schema marks optional. */
 export interface MediaManagerConnection {
   id: number;
   kind: MediaManagerKind;
@@ -47,7 +45,6 @@ export interface MediaManagerConnection {
   last_answer_ms?: number | null;
   /** When Weir last talked to it or it last called Weir. */
   last_used_at?: string | null;
-  lanes: MediaManagerSearchLane[];
 }
 
 export type MediaManagerConnectionCreate =

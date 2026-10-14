@@ -158,7 +158,7 @@ public sealed class MediaManagerApiTests
         await using var _server = server;
         var row = await CreateAsync(client);
         Assert.Equal(
-            """{"id":1,"kind":"deluno","name":"Deluno on 192.0.2.10","nickname":null,"enabled":true,"base_url":"http://192.0.2.10:5099","api_key_is_saved":true,"webhook_secret_is_set":false,"webhook_url_path":"/api/v1/intake/webhook/deluno","unsigned_webhook_warning":"This connection accepts webhooks without a secret. Create a secret and add it to Deluno on 192.0.2.10.","last_test_ok":null,"last_test_at":null,"last_test_detail":null,"last_answer_ms":null,"last_used_at":null,"downloaded_scan_enabled":false,"lanes":[{"lane":"missing","enabled":false,"max_items_per_run":50,"retry_delay_minutes":1440,"schedule_enabled":false,"schedule_days":"","schedule_start":"00:00","schedule_end":"23:59","schedule_interval_seconds":3600},{"lane":"upgrade","enabled":false,"max_items_per_run":50,"retry_delay_minutes":1440,"schedule_enabled":false,"schedule_days":"","schedule_start":"00:00","schedule_end":"23:59","schedule_interval_seconds":3600}]}""",
+            """{"id":1,"kind":"deluno","name":"Deluno on 192.0.2.10","nickname":null,"enabled":true,"base_url":"http://192.0.2.10:5099","api_key_is_saved":true,"webhook_secret_is_set":false,"webhook_url_path":"/api/v1/intake/webhook/deluno","unsigned_webhook_warning":"This connection accepts webhooks without a secret. Create a secret and add it to Deluno on 192.0.2.10.","last_test_ok":null,"last_test_at":null,"last_test_detail":null,"last_answer_ms":null,"last_used_at":null,"downloaded_scan_enabled":false}""",
             row.ToJsonString());
         await CreateAsync(client, "radarr", "http://192.0.2.20:7878");
 
@@ -209,7 +209,6 @@ public sealed class MediaManagerApiTests
 
         using var deleted = await client.SendAsync(HttpMethod.Delete, $"{Connections}/2", new { csrf_token = await client.CsrfAsync() });
         Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
-        Assert.Equal(0, await TestDatabase.ScalarAsync(server, "SELECT count(*) FROM media_manager_search_lanes WHERE connection_id = 2"));
     }
 
     /// <summary>
@@ -245,56 +244,61 @@ public sealed class MediaManagerApiTests
         Assert.Equal(HttpStatusCode.Forbidden, (await viewer.GetAsync(Connections)).StatusCode);
     }
 
-    [Fact]
-    public async Task A_lane_is_saved_per_manager_with_its_schedule_normalised()
-    {
-        var (server, client, _) = await StartAsync();
-        await using var _server = server;
-        await CreateAsync(client);
-        object Lane(string days, string start) => new { csrf_token = client.CsrfAsync().Result, enabled = true, max_items_per_run = 25, retry_delay_minutes = 60, schedule_enabled = true, schedule_days = days, schedule_start = start, schedule_end = "5:00", schedule_interval_seconds = 900 };
-        using (var saved = await client.PutAsync($"{Connections}/1/lanes/missing", Lane("Mon,Tue", "1:00")))
-        {
-            var body = await Json(saved);
-            Assert.Equal(("missing", true, "Mon,Tue", "01:00", "05:00"), (body["lane"]!.GetValue<string>(), body["enabled"]!.GetValue<bool>(), body["schedule_days"]!.GetValue<string>(), body["schedule_start"]!.GetValue<string>(), body["schedule_end"]!.GetValue<string>()));
-        }
-
-        using (var badDays = await client.PutAsync($"{Connections}/1/lanes/missing", Lane("monday", "01:00")))
-        {
-            Assert.Equal((HttpStatusCode.BadRequest, "Days must be written like Mon, Tue, Wed with commas between them."), (badDays.StatusCode, await Detail(badDays)));
-        }
-
-        using var badLane = await client.PutAsync($"{Connections}/1/lanes/sideways", Lane("Mon", "01:00"));
-        Assert.Equal(("literal_error", "path"), ((await Json(badLane))["detail"]![0]!["type"]!.GetValue<string>(), (await Json(badLane))["detail"]![0]!["loc"]![0]!.GetValue<string>()));
-    }
-
     /// <summary>
-    /// #544 item 2: an invalid lane time (an hour past 23, or a value that is not even <c>HH:MM</c>) answered 500
-    /// from an uncaught <c>WireValueException</c>; it is now a 400 naming the field that could not be read.
+    /// Searching belongs to the media manager, so a connection has no search lanes. An older client that still saves one is
+    /// answered with the connection as it is, whatever it sends, and nothing is kept.
     /// </summary>
     [Fact]
-    public async Task An_invalid_lane_time_is_a_400_naming_the_field()
+    public async Task An_older_client_saving_a_lane_is_answered_with_the_connection_and_nothing_is_kept()
     {
         var (server, client, _) = await StartAsync();
         await using var _server = server;
         await CreateAsync(client);
-        object Lane(string start, string end) => new { csrf_token = client.CsrfAsync().Result, enabled = true, max_items_per_run = 25, retry_delay_minutes = 60, schedule_enabled = true, schedule_days = "Mon", schedule_start = start, schedule_end = end, schedule_interval_seconds = 900 };
-
-        using (var badHour = await client.PutAsync($"{Connections}/1/lanes/missing", Lane("25:00", "23:59")))
+        object Lane(string days, string start, string end) => new
         {
-            Assert.Equal(HttpStatusCode.BadRequest, badHour.StatusCode);
-            var detail = await Detail(badHour);
-            Assert.StartsWith("schedule_start:", detail, StringComparison.Ordinal);
-            Assert.Contains("0", detail, StringComparison.Ordinal);
+            csrf_token = client.CsrfAsync().Result,
+            enabled = true,
+            max_items_per_run = 25,
+            retry_delay_minutes = 60,
+            schedule_enabled = true,
+            schedule_days = days,
+            schedule_start = start,
+            schedule_end = end,
+            schedule_interval_seconds = 900,
+        };
+        var connection = await Json(await client.GetAsync($"{Connections}/1"));
+        Assert.False(connection.AsObject().ContainsKey("lanes"));
+
+        using (var saved = await client.PutAsync($"{Connections}/1/lanes/missing", Lane("Mon,Tue", "1:00", "5:00")))
+        {
+            Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
+            Assert.Equal(connection.ToJsonString(), (await Json(saved)).ToJsonString());
         }
 
-        using var notATime = await client.PutAsync($"{Connections}/1/lanes/missing", Lane("00:00", "9"));
-        Assert.Equal(HttpStatusCode.BadRequest, notATime.StatusCode);
-        Assert.StartsWith("schedule_end:", await Detail(notATime), StringComparison.Ordinal);
+        // The values are never read, so a day or a time that would once have been refused is not.
+        using (var unreadable = await client.PutAsync($"{Connections}/1/lanes/upgrade", Lane("monday", "25:00", "9")))
+        {
+            Assert.Equal(HttpStatusCode.OK, unreadable.StatusCode);
+        }
 
-        // The lane was not left half-saved by the refused write: it still holds its untouched default.
-        using var unchanged = await client.GetAsync($"{Connections}/1");
-        var lane = (await Json(unchanged))["lanes"]!.AsArray().Single(l => l!["lane"]!.GetValue<string>() == "missing")!;
-        Assert.Equal(("", "00:00", "23:59"), (lane["schedule_days"]!.GetValue<string>(), lane["schedule_start"]!.GetValue<string>(), lane["schedule_end"]!.GetValue<string>()));
+        using (var other = await client.PutAsync($"{Connections}/1/lanes/missing", new { csrf_token = await client.CsrfAsync(), surprise = 1 }))
+        {
+            Assert.Equal("extra_forbidden", (await Json(other))["detail"]![0]!["type"]!.GetValue<string>());
+        }
+
+        using (var badLane = await client.PutAsync($"{Connections}/1/lanes/sideways", Lane("Mon", "01:00", "05:00")))
+        {
+            Assert.Equal(("literal_error", "path"), ((await Json(badLane))["detail"]![0]!["type"]!.GetValue<string>(), (await Json(badLane))["detail"]![0]!["loc"]![0]!.GetValue<string>()));
+        }
+
+        using (var noConnection = await client.PutAsync($"{Connections}/99/lanes/missing", Lane("Mon", "01:00", "05:00")))
+        {
+            Assert.Equal(HttpStatusCode.NotFound, noConnection.StatusCode);
+        }
+
+        using var again = await client.GetAsync($"{Connections}/1");
+        Assert.Equal(connection.ToJsonString(), (await Json(again)).ToJsonString());
+        Assert.Equal(0, await TestDatabase.ScalarAsync(server, "SELECT count(*) FROM sqlite_master WHERE name = 'media_manager_search_lanes'"));
     }
 
     [Fact]
@@ -354,7 +358,7 @@ public sealed class MediaManagerApiTests
 
         manager.Route(HttpMethod.Get, "/api/integrations/external/health", async _ =>
         {
-            await TestDatabase.ExecuteAsync(server, "DELETE FROM media_manager_search_lanes; DELETE FROM media_manager_connections;");
+            await TestDatabase.ExecuteAsync(server, "DELETE FROM media_manager_connections;");
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("""{"status":"ok"}""") };
         });
         using var removed = await client.PostAsync($"{Connections}/1/test", new { csrf_token = await client.CsrfAsync() });

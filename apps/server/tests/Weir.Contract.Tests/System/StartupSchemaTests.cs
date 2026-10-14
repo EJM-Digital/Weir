@@ -77,11 +77,25 @@ public sealed class StartupSchemaTests(StartupSchemaTests.HeadSchemaFixture fixt
         Assert.Contains("suite_settings", fixture.Schema.Keys);
         var names = fixture.Schema["suite_settings"];
         Assert.Contains("product_display_name", names);
-        Assert.Contains("signed_in_home_notice", names);
+        Assert.DoesNotContain("signed_in_home_notice", names);
         Assert.DoesNotContain("application_logs_enabled", names);
         Assert.Contains("configuration_backup_enabled", names);
         Assert.Contains("configuration_backup_interval_hours", names);
         Assert.Contains("configuration_backup_preferred_time", names);
+    }
+
+    [Fact]
+    public void Head_schema_has_no_search_lanes_and_no_hours_window_for_movies_or_tv()
+    {
+        Assert.DoesNotContain("media_manager_search_lanes", fixture.Schema.Keys);
+        var names = fixture.Schema["operator_settings"];
+        Assert.Contains("movie_schedule_enabled", names);
+        Assert.Contains("tv_schedule_enabled", names);
+        foreach (var retired in new[] { "hours_limited", "days", "start", "end" })
+        {
+            Assert.DoesNotContain($"movie_schedule_{retired}", names);
+            Assert.DoesNotContain($"tv_schedule_{retired}", names);
+        }
     }
 
     [Fact]
@@ -280,6 +294,25 @@ public sealed class StartupSchemaTests(StartupSchemaTests.HeadSchemaFixture fixt
         SeedSql.Execute(connection, "ALTER TABLE handbacks DROP COLUMN outcome_source_key");
         SeedSql.Execute(connection, "ALTER TABLE handbacks DROP COLUMN outcome_connection_id");
         SeedSql.Execute(connection, "ALTER TABLE handbacks DROP COLUMN outcome_authenticated");
+        // ...and bring back what that release still had and the last migration takes away.
+        SeedSql.Execute(
+            connection,
+            "CREATE TABLE media_manager_search_lanes (id INTEGER NOT NULL, connection_id INTEGER NOT NULL, lane TEXT NOT NULL, " +
+            "enabled BOOLEAN DEFAULT '0' NOT NULL, max_items_per_run INTEGER DEFAULT '50' NOT NULL, retry_delay_minutes INTEGER DEFAULT '1440' NOT NULL, " +
+            "schedule_enabled BOOLEAN DEFAULT '0' NOT NULL, schedule_days TEXT DEFAULT '' NOT NULL, schedule_start TEXT DEFAULT '00:00' NOT NULL, " +
+            "schedule_end TEXT DEFAULT '23:59' NOT NULL, schedule_interval_seconds INTEGER DEFAULT '3600' NOT NULL, " +
+            "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, CONSTRAINT pk_media_manager_search_lanes PRIMARY KEY (id), " +
+            "CONSTRAINT uq_media_manager_search_lanes_connection_lane UNIQUE (connection_id, lane), " +
+            "CONSTRAINT fk_media_manager_search_lanes_media_manager_connections_connection_id FOREIGN KEY(connection_id) " +
+            "REFERENCES media_manager_connections (id) ON DELETE CASCADE)");
+        SeedSql.Execute(connection, "ALTER TABLE suite_settings ADD COLUMN signed_in_home_notice TEXT");
+        foreach (var scope in new[] { "movie", "tv" })
+        {
+            SeedSql.Execute(connection, $"ALTER TABLE operator_settings ADD COLUMN {scope}_schedule_hours_limited INTEGER DEFAULT '0' NOT NULL");
+            SeedSql.Execute(connection, $"ALTER TABLE operator_settings ADD COLUMN {scope}_schedule_days TEXT DEFAULT '' NOT NULL");
+            SeedSql.Execute(connection, $"ALTER TABLE operator_settings ADD COLUMN {scope}_schedule_start TEXT DEFAULT '00:00' NOT NULL");
+            SeedSql.Execute(connection, $"ALTER TABLE operator_settings ADD COLUMN {scope}_schedule_end TEXT DEFAULT '23:59' NOT NULL");
+        }
     }
 
     /// <summary>

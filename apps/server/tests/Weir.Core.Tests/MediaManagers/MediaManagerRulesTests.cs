@@ -595,18 +595,6 @@ public sealed class MediaManagerRulesTests
         Assert.False(IntakeRules.IsMediaCandidateName("movie.nfo"));
     }
 
-    [Fact]
-    public void Schedule_fields_are_validated_with_plain_sentences()
-    {
-        Assert.Equal("Mon,Tue", ScheduleCsv.ValidateScheduleDaysCsv(" Mon , ,Tue"));
-        Assert.Equal(string.Empty, ScheduleCsv.ValidateScheduleDaysCsv("  "));
-        Assert.Equal("Days must be written like Mon, Tue, Wed with commas between them.", Assert.Throws<WireValueException>(() => ScheduleCsv.ValidateScheduleDaysCsv("monday")).Message);
-        Assert.Equal("09:05", ScheduleCsv.NormalizeHhmm("9:5", "00:00"));
-        Assert.Equal("23:59", ScheduleCsv.NormalizeHhmm("", "23:59"));
-        Assert.Throws<WireValueException>(() => ScheduleCsv.NormalizeHhmm("25:00", "00:00"));
-        Assert.Throws<WireValueException>(() => ScheduleCsv.NormalizeHhmm("9", "00:00"));
-    }
-
     // --- library files and file changes (#507) -------------------------------------------------
 
     [Fact]

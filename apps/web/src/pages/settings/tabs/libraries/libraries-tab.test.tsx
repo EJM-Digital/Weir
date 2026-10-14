@@ -47,7 +47,6 @@ it("discovers and imports selected manager libraries", async () => {
       last_test_ok: true,
       last_test_at: null,
       last_test_detail: null,
-      lanes: [],
     },
   ]);
   vi.spyOn(api, "fetchProcessingLibraries").mockResolvedValue([library()]);
