@@ -77,6 +77,7 @@ Everything is in `Harness/`. Areas live in folders beside it (`Activity/`), one 
   `Origin` or `X-Requested-With` unless asked, as a media manager or a script would not: `server.CreateClient(headers)` or
   `CreateAdminClientAsync(headers)` set headers for every request (a browser-like client passes both), and
   `RequestAsync`, `GetAsync(path, headers, query...)` and the `...WithCsrfAsync` methods take headers for one request.
+- **`HeldWriteLock`**: SQLite's write lock on a *running* server's database, held by the test the way a backup tool would hold it, so every write the server is asked for waits and then gives up. Start the server with `WEIR_SQLITE_BUSY_TIMEOUT_SECONDS=1` (the shortest) so the wait is a second, not thirty. Disposing lets go.
 - **`SseReader`** reads a stream block by block: `NextBlockAsync`, `NextEventAsync`, `NextEventNamedAsync`. Event data is
   any JSON (`JsonNode`). Each call fails after 10 seconds of silence unless it is given a longer `idleTimeout`.
 - **`StoppedDatabase` and `SeedSql`**: plain SQL against the shared schema for rows no API creates. `SeedSql.UtcText`

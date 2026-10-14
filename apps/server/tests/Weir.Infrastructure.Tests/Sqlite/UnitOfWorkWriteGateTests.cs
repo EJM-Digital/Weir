@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Time.Testing;
+using Weir.Infrastructure.Processing.RemuxPass;
 using Weir.Infrastructure.Sqlite;
 using Weir.Infrastructure.Tests.Jobs;
 
@@ -227,7 +229,7 @@ public sealed class UnitOfWorkWriteGateTests
         var holder = await HoldTheLockAsync(database, "holder", release);
         try
         {
-            var refused = await Assert.ThrowsAsync<SqliteException>(() => WriteAsync(database, "too-late")).WaitAsync(Limit);
+            var refused = await Assert.ThrowsAsync<DatabaseBusyException>(() => WriteAsync(database, "too-late")).WaitAsync(Limit);
             Assert.Equal(5, refused.SqliteErrorCode);
 
             release.SetResult();
@@ -274,7 +276,7 @@ public sealed class UnitOfWorkWriteGateTests
         {
             await outer.ExecuteAsync(InsertJob, ("@dedupe", "outer"));
 
-            var refused = await Assert.ThrowsAsync<SqliteException>(() => WriteAsync(database, "inner")).WaitAsync(Limit);
+            var refused = await Assert.ThrowsAsync<DatabaseBusyException>(() => WriteAsync(database, "inner")).WaitAsync(Limit);
             Assert.Equal(5, refused.SqliteErrorCode);
 
             await outer.CommitAsync();
@@ -305,17 +307,77 @@ public sealed class UnitOfWorkWriteGateTests
             await using var connection = await database.OpenAsync();
             var started = Stopwatch.StartNew();
 
-            var refused = await Assert.ThrowsAsync<SqliteException>(
+            var refused = await Assert.ThrowsAsync<DatabaseBusyException>(
                 () => database.BeginWriteTransactionAsync(connection, TimeSpan.FromMilliseconds(2500), CancellationToken.None)).WaitAsync(Limit);
 
             Assert.Equal(5, refused.SqliteErrorCode);
             Assert.InRange(started.Elapsed, TimeSpan.FromMilliseconds(1000), TimeSpan.FromMilliseconds(3500));
+
+            // What it says it waited is the time at the gate it was told of plus the time it really spent waiting for the outside writer.
+            Assert.InRange(refused.Waited, TimeSpan.FromMilliseconds(2500) + TimeSpan.FromMilliseconds(1000), TimeSpan.FromMilliseconds(2500) + TimeSpan.FromMilliseconds(3500));
         }
         finally
         {
             await using var rollback = outsider.CreateCommand();
             rollback.CommandText = "ROLLBACK";
             await rollback.ExecuteNonQueryAsync();
+        }
+    }
+
+    /// <summary>
+    /// The gate's give-up is timed by the database's <see cref="TimeProvider"/>, so this proves what a refused writer reports with no real
+    /// waiting: the writer is still a <see cref="SqliteException"/> with SQLite's busy code, for the callers that already handle one, and it
+    /// carries how long it waited, for the answer to a media manager (#964).
+    /// </summary>
+    [Fact]
+    public async Task A_writer_refused_at_the_gate_reports_the_time_it_waited_on_the_databases_own_clock()
+    {
+        using var db = new JobsTestDatabase();
+        var time = new FakeTimeProvider();
+        var database = new SqliteDatabase(db.DbPath, busyTimeoutMilliseconds: SqliteDatabase.BusyTimeoutMilliseconds, timeProvider: time);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var holder = await HoldTheLockAsync(database, "holder", release);
+        try
+        {
+            var waiting = WriteAsync(database, "too-late");
+            time.Advance(TimeSpan.FromMilliseconds(SqliteDatabase.BusyTimeoutMilliseconds - 1));
+            Assert.False(waiting.IsCompleted);
+
+            time.Advance(TimeSpan.FromMilliseconds(1));
+            var refused = await Assert.ThrowsAsync<DatabaseBusyException>(() => waiting).WaitAsync(Limit);
+
+            Assert.IsAssignableFrom<SqliteException>(refused);
+            Assert.Equal(5, refused.SqliteErrorCode);
+            Assert.True(LockedWrites.IsLock(refused));
+            Assert.Equal(TimeSpan.FromMilliseconds(SqliteDatabase.BusyTimeoutMilliseconds), refused.Waited);
+        }
+        finally
+        {
+            release.TrySetResult();
+            await SettleAsync([holder]);
+        }
+    }
+
+    [Fact]
+    public async Task A_writer_cancelled_at_the_gate_is_cancelled_not_refused_as_busy()
+    {
+        using var db = new JobsTestDatabase();
+        var time = new FakeTimeProvider();
+        var database = new SqliteDatabase(db.DbPath, busyTimeoutMilliseconds: SqliteDatabase.BusyTimeoutMilliseconds, timeProvider: time);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var holder = await HoldTheLockAsync(database, "holder", release);
+        using var cancel = new CancellationTokenSource();
+        try
+        {
+            var waiting = WriteAsync(database, "cancelled", cancel.Token);
+            await cancel.CancelAsync();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiting).WaitAsync(Limit);
+        }
+        finally
+        {
+            release.TrySetResult();
+            await SettleAsync([holder]);
         }
     }
 }

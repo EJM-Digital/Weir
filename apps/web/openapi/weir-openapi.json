@@ -1,5 +1,38 @@
 {
   "components": {
+    "responses": {
+      "DatabaseBusy": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/DatabaseBusyError"
+            }
+          }
+        },
+        "description": "Service Unavailable: the database stayed busy for the whole time Weir waits for it (WEIR_SQLITE_BUSY_TIMEOUT_SECONDS, 30 seconds unless set), so the write was not made. The Retry-After header says how many seconds to wait before sending it again, and nothing in the request needs changing.",
+        "headers": {
+          "Retry-After": {
+            "description": "Whole seconds to wait before sending the request again: how long the write waited, between 1 and 60.",
+            "required": true,
+            "schema": {
+              "maximum": 60,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/InternalServerError"
+            }
+          }
+        },
+        "description": "Internal Server Error: Weir hit a failure it did not foresee and logged it. The request may be sent again; if it fails the same way, the details are in Weir's log."
+      }
+    },
     "schemas": {
       "ActivityEventItemOut": {
         "properties": {
@@ -683,6 +716,30 @@
           "topic"
         ],
         "title": "DataChangedFrame",
+        "type": "object"
+      },
+      "DatabaseBusyError": {
+        "description": "The answer to a write that gave up because the database stayed locked past the time Weir waits for it. Nothing in the body is internal: it says what happened and when to try again.",
+        "properties": {
+          "code": {
+            "description": "Always database_busy: the request can be sent again after the Retry-After header.",
+            "enum": [
+              "database_busy"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "description": "One plain sentence for a person, naming how many seconds to wait.",
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "detail"
+        ],
+        "title": "DatabaseBusyError",
         "type": "object"
       },
       "DirectPlayDeviceOut": {
@@ -1531,6 +1588,30 @@
           "status"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "InternalServerError": {
+        "description": "The answer to a failure Weir did not foresee. It says nothing of the failure itself; the details are in Weir's log.",
+        "properties": {
+          "code": {
+            "description": "Always internal_error.",
+            "enum": [
+              "internal_error"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "description": "One plain sentence for a person.",
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "detail"
+        ],
+        "title": "InternalServerError",
         "type": "object"
       },
       "LibraryBreakdownRowOut": {
@@ -12850,6 +12931,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Activity Export",
@@ -12912,6 +12996,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Activity File History",
@@ -12954,6 +13041,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Activity File History Remove",
@@ -13193,6 +13286,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Activity Recent",
@@ -13213,6 +13309,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Activity Stream",
@@ -13251,6 +13350,9 @@
           },
           "404": {
             "description": "Weir holds no poster with that id."
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Artwork Poster",
@@ -13293,6 +13395,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Bootstrap",
@@ -13315,6 +13423,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Bootstrap Status",
@@ -13357,6 +13468,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Change Password",
@@ -13399,6 +13516,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Change Username",
@@ -13420,6 +13543,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Csrf",
@@ -13461,6 +13587,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Login",
@@ -13520,6 +13652,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Logout",
@@ -13541,6 +13679,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Me",
@@ -13562,6 +13703,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Current Session",
@@ -13583,6 +13727,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Sessions",
@@ -13632,6 +13779,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Revoke Other Sessions",
@@ -13691,6 +13844,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Revoke Session",
@@ -13733,6 +13892,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Set Theme",
@@ -13759,6 +13924,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Download Client Connections",
@@ -13799,6 +13967,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Download Client Connection",
@@ -13842,6 +14016,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Download Client Connection",
@@ -13893,6 +14070,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Download Client Connection",
@@ -13937,6 +14120,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Delete Download Client Connection",
@@ -13991,6 +14180,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Download Client Connection Test",
@@ -14042,6 +14237,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Download Client Suggestions",
@@ -14123,6 +14321,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Intake Capabilities",
@@ -14173,6 +14374,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Intake Library Folders",
@@ -14238,6 +14442,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Delete Intake Handoff",
@@ -14310,6 +14520,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Intake Handoff",
@@ -14320,7 +14533,7 @@
     },
     "/api/v1/intake/handoffs/{source_key}/{handoff_id}/outcome": {
       "post": {
-        "description": "The manager says what became of the file Weir handed back. imported records it and releases Weir's copy when it is still exactly the file Weir wrote; not-imported records it and keeps the copy, and a later imported replaces it. 200 again for the same outcome; 404 never received; 409 not finished or a different outcome already recorded, with a code: outcome_already_recorded (final), handoff_not_finished or handoff_ended (worth sending again).",
+        "description": "The manager says what became of the file Weir handed back. imported records it and releases Weir's copy when it is still exactly the file Weir wrote; not-imported records it and keeps the copy, and a later imported replaces it. 200 again for the same outcome; 404 never received; 409 not finished or a different outcome already recorded, with a code: outcome_already_recorded (final), handoff_not_finished or handoff_ended (worth sending again). 503 with code database_busy and a Retry-After header when Weir's database stays locked past the time Weir waits for it; send the same outcome again after that many seconds.",
         "operationId": "post_intake_handoff_outcome_api_v1_intake_handoffs__source_key___handoff_id__outcome_post",
         "parameters": [
           {
@@ -14392,6 +14605,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Intake Handoff Outcome",
@@ -14402,7 +14621,7 @@
     },
     "/api/v1/intake/webhook/{source_key}": {
       "post": {
-        "description": "Accept one event from a media manager and hand it to whichever module owns it.",
+        "description": "Accept one event from a media manager and hand it to whichever module owns it. 503 with code database_busy and a Retry-After header when Weir's database stays locked past the time Weir waits for it; send the same event again after that many seconds.",
         "operationId": "post_media_manager_intake_api_v1_intake_webhook__source_key__post",
         "parameters": [
           {
@@ -14467,6 +14686,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Media Manager Intake",
@@ -14493,6 +14718,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Media Manager Capabilities",
@@ -14519,6 +14747,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Media Manager Connections",
@@ -14559,6 +14790,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Media Manager Connection",
@@ -14605,6 +14842,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Delete Media Manager Connection",
@@ -14646,6 +14889,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Media Manager Connection",
@@ -14698,6 +14944,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Media Manager Connection",
@@ -14746,6 +14998,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Media Manager Connection Folder Chain",
@@ -14813,6 +15068,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Media Manager Lane",
@@ -14867,6 +15128,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Media Manager Connection Test",
@@ -14921,6 +15188,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Media Manager Webhook Secret",
@@ -14942,6 +15215,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Pause",
@@ -14981,6 +15257,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Pause",
@@ -15003,6 +15285,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Direct Play Devices",
@@ -15044,6 +15329,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Direct Play Devices",
@@ -15226,6 +15517,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Files",
@@ -15249,6 +15543,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Files At Once",
@@ -15292,6 +15589,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Requeue Processing Files",
@@ -15335,6 +15638,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing Rejected Files Process Again",
@@ -15387,6 +15696,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Rejected Files Summary",
@@ -15432,6 +15744,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing File Remove Options",
@@ -15491,8 +15806,14 @@
             },
             "description": "Validation Error"
           },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
           "502": {
             "description": "delete or keep could not reach, or was refused by, the media manager it asked"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Delete Processing File",
@@ -15516,6 +15837,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Kept Files",
@@ -15574,6 +15898,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing Kept File Process Again",
@@ -15631,6 +15961,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing File Log",
@@ -15674,6 +16007,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Download Processing File Log",
@@ -15729,6 +16065,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing File Manual Plan",
@@ -15784,6 +16126,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Move Processing File To Top",
@@ -15839,6 +16187,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Requeue Processing File",
@@ -15884,6 +16238,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing File Tracks",
@@ -15929,6 +16286,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing File Why Held",
@@ -15952,6 +16312,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Hardware",
@@ -15995,6 +16358,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing File Remux Pass Enqueue",
@@ -16065,6 +16434,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Jobs Inspection",
@@ -16108,6 +16480,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing Watched Folder Remux Scan Dispatch Enqueue",
@@ -16162,6 +16540,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing Job Cancel Pending",
@@ -16216,6 +16600,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing Job Recover Finalize Failed",
@@ -16243,6 +16633,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Libraries",
@@ -16284,6 +16677,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing Library",
@@ -16333,6 +16732,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Discoverable Libraries",
@@ -16382,6 +16784,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Library Drift",
@@ -16441,6 +16846,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing Import Libraries",
@@ -16488,6 +16899,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing Libraries Reorder",
@@ -16536,6 +16953,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Delete Processing Library",
@@ -16578,6 +17001,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Library",
@@ -16631,6 +17057,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Processing Library",
@@ -16676,6 +17108,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Library Folder Chain",
@@ -16909,6 +17344,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Library Files",
@@ -16973,6 +17411,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Library Files Clean",
@@ -17027,6 +17471,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Library Files Leave Alone",
@@ -17071,6 +17521,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Library Overview",
@@ -17115,6 +17568,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Library Problems",
@@ -17159,6 +17615,9 @@
               }
             },
             "description": "No library with that id"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Library Redownloads",
@@ -17221,6 +17680,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Library Redownload",
@@ -17278,6 +17743,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Library Scan",
@@ -17342,6 +17813,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Library Schedule",
@@ -17386,6 +17863,9 @@
               }
             },
             "description": "No library with that id"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Library Settings",
@@ -17441,6 +17921,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Library Settings",
@@ -17495,6 +17981,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing Library Preview",
@@ -17550,6 +18042,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing Library Unlink",
@@ -17593,6 +18091,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing Library Check",
@@ -17691,6 +18195,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Library Cleans",
@@ -17714,6 +18221,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Library Suggestions",
@@ -17736,6 +18246,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Maintenance",
@@ -17779,6 +18292,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing Maintenance Run",
@@ -17872,6 +18391,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Manager Setup",
@@ -17896,6 +18418,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Metadata Provider",
@@ -17938,6 +18463,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Metadata Provider",
@@ -17982,6 +18513,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Metadata Provider Test",
@@ -18004,6 +18541,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Operator Settings",
@@ -18044,6 +18584,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Processing Operator Settings",
@@ -18092,6 +18638,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Overview Stats",
@@ -18139,6 +18688,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Reject Support",
@@ -18165,6 +18717,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Rule Sets",
@@ -18205,6 +18760,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Processing Rule Set",
@@ -18253,6 +18814,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Delete Processing Rule Set",
@@ -18305,6 +18872,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Processing Rule Set",
@@ -18328,6 +18901,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Processing Runtime Settings",
@@ -18371,6 +18947,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Suite Apply Update",
@@ -18413,6 +18995,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Suite Check Update",
@@ -18455,6 +19043,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Suite Download Update",
@@ -18476,6 +19070,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Configuration Backups",
@@ -18516,6 +19113,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Configuration Backup",
@@ -18556,6 +19159,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Download Configuration Backup",
@@ -18580,6 +19186,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Configuration Bundle",
@@ -18622,6 +19231,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Configuration Bundle",
@@ -18713,6 +19328,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Suite Logs",
@@ -18735,6 +19353,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Download Suite Logs",
@@ -18756,6 +19377,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Suite Metrics",
@@ -18778,6 +19402,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Suite Network Access",
@@ -18818,6 +19445,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Suite Network Access",
@@ -18839,6 +19472,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Notification Channels",
@@ -18878,6 +19514,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Notification Channel",
@@ -18929,6 +19571,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Delete Notification Channel Route",
@@ -18979,6 +19627,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Notification Channel",
@@ -19031,6 +19685,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Notification Channel Test",
@@ -19053,6 +19713,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Suite Operational History Preview",
@@ -19095,6 +19758,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Suite Operational History Reset",
@@ -19117,6 +19786,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Suite Security Overview",
@@ -19139,6 +19811,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Suite Settings",
@@ -19179,6 +19854,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Suite Settings",
@@ -19201,6 +19882,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Suite Update Settings",
@@ -19241,6 +19925,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Put Suite Update Settings",
@@ -19263,6 +19953,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Suite Update State",
@@ -19285,6 +19978,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Suite Update Status",
@@ -19335,6 +20031,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get System Directories",
@@ -19658,6 +20357,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get System Log",
@@ -19961,6 +20663,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get System Log Export",
@@ -19983,6 +20688,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get System Media Tools",
@@ -20005,6 +20713,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get System Overview",
@@ -20027,6 +20738,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Authenticated Readiness",
@@ -20047,6 +20761,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get Reconciliation Report",
@@ -20087,6 +20804,12 @@
               }
             },
             "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
           }
         },
         "summary": "Post Reconciliation Repair",
@@ -20109,6 +20832,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get System Stats",
@@ -20135,6 +20861,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Get System Tasks",
@@ -20156,6 +20885,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Health",
@@ -20177,6 +20909,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         },
         "summary": "Ready",

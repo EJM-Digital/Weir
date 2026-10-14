@@ -157,6 +157,37 @@ describe("apiResponseErrorMessage", () => {
     expect(normalized.message).toBe("Could not save.");
   });
 
+  it("says what failed, not the server's wording, for a JSON 500", async () => {
+    const normalized = await apiResponseErrorMessage(
+      SETTINGS,
+      jsonResponse(500, {
+        detail:
+          "Weir ran into an unexpected problem and could not finish this request. The details are in Weir's log.",
+        code: "internal_error",
+      }),
+      "Could not save.",
+    );
+
+    expect(normalized.message).toBe("Could not save.");
+  });
+
+  it("says what failed for a busy database too, and keeps the server's code and wording for a caller that reads them", async () => {
+    const normalized = await apiResponseErrorMessage(
+      SETTINGS,
+      jsonResponse(503, {
+        detail:
+          "Weir is busy with other changes and could not finish this request. Try again in 30 seconds.",
+        code: "database_busy",
+      }),
+      "Could not save.",
+    );
+
+    expect(normalized.message).toBe("Could not save.");
+    expect(normalized.detail).toBe(
+      "Weir is busy with other changes and could not finish this request. Try again in 30 seconds.",
+    );
+  });
+
   it("exposes status and path on ApiHttpError", () => {
     const error = new ApiHttpError(
       "/api/v1/example",

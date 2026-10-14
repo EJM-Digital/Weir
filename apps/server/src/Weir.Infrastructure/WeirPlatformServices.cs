@@ -31,7 +31,10 @@ public static class WeirPlatformServices
         services.TryAddSingleton(options);
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton(MachineIdentity.Current());
-        services.TryAddSingleton(sp => new SqliteDatabase(options.DbPath, logger: sp.GetService<ILogger<SqliteDatabase>>()));
+        services.TryAddSingleton(sp => new SqliteDatabase(
+            options.DbPath,
+            logger: sp.GetService<ILogger<SqliteDatabase>>(),
+            busyTimeoutMilliseconds: options.SqliteBusyTimeoutSeconds * 1000));
         services.TryAddSingleton<WorkerHeartbeats>();
         services.TryAddSingleton<WatcherStateStore>();
         services.TryAddSingleton<ScanSettingsChanges>();

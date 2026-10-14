@@ -84,12 +84,7 @@ public sealed class RequestContextMiddleware
     private static bool IsEventStream(HttpContext context) =>
         context.Response.ContentType?.StartsWith(EventStreamContentType, StringComparison.OrdinalIgnoreCase) == true;
 
-    /// <summary>The label of the route the request matched (see <see cref="RouteLabel"/>), else the URL path.</summary>
-    private string RouteLabelFor(HttpContext context) =>
-        context.GetEndpoint()?.Metadata.GetMetadata<RouteLabel>()?.Label
-        ?? _routes.FirstPathMatch(context.Request.Path)?.Label
-        ?? context.Request.Path.Value
-        ?? string.Empty;
+    private string RouteLabelFor(HttpContext context) => RequestRoute.LabelFor(context, _routes);
 
     /// <summary>
     /// Whether <paramref name="exception"/> is the connection going away rather than a fault: work that was cancelled, a body

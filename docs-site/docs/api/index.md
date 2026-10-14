@@ -25,6 +25,17 @@ Weir uses cookie-based sessions with CSRF protection:
 - Session cookies are HTTP-only and secure (when behind HTTPS)
 - State-changing requests require CSRF tokens
 
+## Errors
+
+Every error answer is JSON with a `detail` sentence. Where a client needs to act on which error it got, the answer also carries a `code`, a stable name that does not change when the wording does. A client reads the status and `code`, never `detail`.
+
+| Status | `code` | Meaning | What to do |
+|--------|--------|---------|------------|
+| 503 | `database_busy` | Any route that writes: the database stayed locked for the whole time Weir waits for it (30 seconds unless `WEIR_SQLITE_BUSY_TIMEOUT_SECONDS` is set), for example while a backup tool holds it. The write was not made. | Send the same request again after the `Retry-After` header's seconds. That figure is how long the write really waited, from 1 to 60. |
+| 500 | `internal_error` | Weir hit a failure it did not foresee. The body says nothing of the failure; the details, with the stack trace, are in Weir's log. | The request may be sent again. If it fails the same way, report it with the log. |
+
+The hand-off outcome route (`POST /api/v1/intake/handoffs/{source_key}/{handoff_id}/outcome`) also answers 409 with `outcome_already_recorded`, `handoff_not_finished` or `handoff_ended`; its description in the OpenAPI document says which can be sent again.
+
 ## Key endpoints
 
 ### Health and readiness
