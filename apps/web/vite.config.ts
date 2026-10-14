@@ -33,15 +33,24 @@ type CoverageFloorsFile = {
   floors: { web: { line: number; branch: number } };
 };
 
-/** The web app's line and branch floors, from the file CI's coverage check reads for every project. */
-const webFloors = (
-  JSON.parse(
-    readFileSync(
-      path.join(__dirname, "..", "..", "docs", "coverage", "floors.json"),
-      "utf-8",
-    ),
-  ) as CoverageFloorsFile
-).floors.web;
+/**
+ * The web app's line and branch floors, from the file CI's coverage check reads for every project. Only the tests
+ * read it: the production builds (the Docker image's, the Windows package's) are made without docs/.
+ */
+function webCoverageThresholds(mode: string) {
+  if (mode !== "test") {
+    return undefined;
+  }
+  const floors = (
+    JSON.parse(
+      readFileSync(
+        path.join(__dirname, "..", "..", "docs", "coverage", "floors.json"),
+        "utf-8",
+      ),
+    ) as CoverageFloorsFile
+  ).floors.web;
+  return { lines: floors.line, branches: floors.branch };
+}
 
 /** Local-only unless someone deliberately opts into exposing the dev server on the network. */
 const devHost = (process.env.VITE_HOST || "").trim() || "127.0.0.1";
@@ -152,7 +161,7 @@ export default defineConfig(({ mode }) => {
         reporter: ["lcov", "json-summary", "text-summary"],
         reportsDirectory: "./coverage",
         // docs/coverage/floors.json; a run below either figure fails.
-        thresholds: { lines: webFloors.line, branches: webFloors.branch },
+        thresholds: webCoverageThresholds(mode),
       },
     },
   };

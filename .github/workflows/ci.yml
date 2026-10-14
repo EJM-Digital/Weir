@@ -234,6 +234,9 @@ jobs:
           node scripts/check-event-titles.mjs
           node --test scripts/check-event-titles.test.mjs
 
+      - name: Coverage floors and report alignment
+        run: node --test scripts/check-coverage-floors.test.mjs scripts/align-coverage-reports.test.mjs
+
       - name: The real media tools - pins, installers and the check that every real-tool test ran
         run: node --test scripts/ffmpeg-pin.test.mjs scripts/pinned-download.test.mjs scripts/mkvtoolnix-pin.test.mjs scripts/install-mkvtoolnix-linux.test.mjs scripts/summarize-test-results.test.mjs scripts/check-real-tool-tests.test.mjs
 
@@ -642,8 +645,12 @@ jobs:
       - name: Install ReportGenerator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.11
 
-      # Linux and Windows write the same classes with different folders in their file names; ReportGenerator
-      # merges them into one report per project. The logging code the compiler generates under obj/ is left out.
+      # Linux and Windows name the checkout and the compiler's file-local types differently, which makes
+      # ReportGenerator count some classes twice when it merges them (scripts/align-coverage-reports.mjs).
+      - name: Make the runners' coverage files name the same things
+        run: node scripts/align-coverage-reports.mjs coverage-input "$GITHUB_WORKSPACE"
+
+      # One report per project. The logging code the compiler generates under obj/ is left out.
       - name: Merge the server coverage
         if: needs.changes.outputs.run_server_linux == 'true'
         run: >-
