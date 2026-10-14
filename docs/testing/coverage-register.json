@@ -55119,7 +55119,7 @@
     {
       "id": "settings.env.library-swap-hold-at",
       "area": "settings",
-      "behaviour": "WEIR_LIBRARY_SWAP_HOLD_AT (tests only): a library swap stops for good at the named point so a test can end the process there; an unknown point is refused at start",
+      "behaviour": "WEIR_LIBRARY_SWAP_HOLD_AT (tests only): a library swap stops for good at the named point so a test can end the process there; an unknown point is refused at start, and any value is refused at start when WEIR_ENV is production, so a real install never honours it",
       "kind": "setting",
       "severity": "medium",
       "touches": "none",
@@ -55129,6 +55129,16 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Configuration/WeirOptionsParsingTests.cs",
           "name": "A_library_swap_is_held_nowhere_unless_a_point_is_named"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Configuration/WeirOptionsParsingTests.cs",
+          "name": "A_library_swap_hold_is_refused_at_start_in_production"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Jobs/SwapHoldSeamTests.cs",
+          "name": "A_server_running_as_production_refuses_to_start_with_the_swap_hold_set"
         },
         {
           "type": "contract",

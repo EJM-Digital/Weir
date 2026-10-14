@@ -16,6 +16,10 @@ public static class WeirOptionsLoader
         "WEIR_CORS_ORIGINS cannot include '*' because Weir uses credentialed " +
         "browser requests. Configure explicit origins instead.";
 
+    public const string LibrarySwapHoldInProductionMessage =
+        "WEIR_LIBRARY_SWAP_HOLD_AT is a setting for tests only. Set on a real install it would stop every library clean part-way through, " +
+        "so Weir will not start while it is set. Remove it and start Weir again.";
+
     private const int SevenDaysSeconds = 7 * 24 * 3600;
     private const int ThirtyDaysSeconds = 30 * 24 * 3600;
 
@@ -65,6 +69,14 @@ public static class WeirOptionsLoader
         if (cors.Any(origin => origin == "*"))
         {
             throw new WeirConfigurationException(CorsWildcardMessage);
+        }
+
+        // A test seam that stops a library swap for good. Refused in production, where a stray value would stop every clean
+        // part-way through; the contract harness and the dev launchers run with another WEIR_ENV.
+        var librarySwapHoldAt = NullIfEmpty(runtime.Get("WEIR_LIBRARY_SWAP_HOLD_AT")?.Trim());
+        if (librarySwapHoldAt is not null && env == "production")
+        {
+            throw new WeirConfigurationException(LibrarySwapHoldInProductionMessage);
         }
 
         var trustedProxyIps = ParseCsv(runtime.Get("WEIR_TRUSTED_PROXY_IPS"));
@@ -136,7 +148,7 @@ public static class WeirOptionsLoader
             ProcessingJobLeaseSeconds = processingJobLeaseSeconds,
             ProcessingWatcherEnabled = watcherEnabled,
             SqliteBusyTimeoutSeconds = ClampSqliteBusyTimeoutSeconds(EnvInt(runtime, "WEIR_SQLITE_BUSY_TIMEOUT_SECONDS", WeirOptions.DefaultSqliteBusyTimeoutSeconds)),
-            LibrarySwapHoldAt = NullIfEmpty(runtime.Get("WEIR_LIBRARY_SWAP_HOLD_AT")?.Trim()),
+            LibrarySwapHoldAt = librarySwapHoldAt,
             ManagerWorkflowSyncEnabled = EnvBool(runtime, "WEIR_MEDIA_MANAGER_WORKFLOW_SYNC_ENABLED", true),
             ProcessingWatcherDebounceSeconds = watcherDebounce,
             ProcessingWatchedFolderRemuxScanDispatchScheduleEnabled = EnvBool(
