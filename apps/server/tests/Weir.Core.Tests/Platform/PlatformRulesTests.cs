@@ -142,12 +142,12 @@ public sealed class PlatformRulesTests
     {
         var zones = new FakeZones();
         string Error(SuiteSettingsUpdate update) => Assert.Throws<WireValueException>(() => SuiteSettingsRules.Normalize(update, zones)).Message;
-        Assert.Equal("Choose a valid timezone (for example: UTC, Europe/London, America/New_York).", Error(new(null, "Not/A_Real_Zone", 30)));
-        Assert.Equal("Log retention must be between 1 and 3650 days.", Error(new(null, "UTC", 0)));
-        Assert.Equal("Setup wizard state must be pending, skipped, or completed.", Error(new(null, "UTC", 30, "later")));
-        Assert.Equal("Backup time must use HH:MM in 24-hour time.", Error(new(null, "UTC", 30, ConfigurationBackupPreferredTime: "ab:cd")));
-        var normalized = SuiteSettingsRules.Normalize(new("  ", "UTC", 45, "COMPLETED", ConfigurationBackupPreferredTime: "3:5"), zones);
-        Assert.Equal(((string?)null, "completed", "03:05"), (normalized.SignedInHomeNotice, normalized.SetupWizardState, normalized.ConfigurationBackupPreferredTime));
+        Assert.Equal("Choose a valid timezone (for example: UTC, Europe/London, America/New_York).", Error(new("Not/A_Real_Zone", 30)));
+        Assert.Equal("Log retention must be between 1 and 3650 days.", Error(new("UTC", 0)));
+        Assert.Equal("Setup wizard state must be pending, skipped, or completed.", Error(new("UTC", 30, "later")));
+        Assert.Equal("Backup time must use HH:MM in 24-hour time.", Error(new("UTC", 30, ConfigurationBackupPreferredTime: "ab:cd")));
+        var normalized = SuiteSettingsRules.Normalize(new("UTC", 45, "COMPLETED", ConfigurationBackupPreferredTime: "3:5"), zones);
+        Assert.Equal(("completed", "03:05"), (normalized.SetupWizardState, normalized.ConfigurationBackupPreferredTime));
         Assert.Equal("skipped", SuiteSettingsRules.DefaultSetupWizardState(1));
         Assert.Equal("pending", SuiteSettingsRules.DefaultSetupWizardState(0));
     }

@@ -141,6 +141,7 @@ public sealed class SystemEndpointsTests
     public async Task Readiness_is_ready_when_workers_are_turned_off()
     {
         await using var server = await WeirTestServer.StartAsync([("WEIR_PROCESSING_WORKER_COUNT", "0")], signedIn: true);
+        await server.WaitForStartupRecoveryAsync();
 
         using var detailed = await server.Client.GetAsync("/api/v1/system/readiness");
         using var brief = await server.Client.GetAsync("/ready");

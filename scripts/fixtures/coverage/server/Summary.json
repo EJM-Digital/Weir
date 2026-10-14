@@ -1,0 +1,38 @@
+{
+  "summary": {
+    "generatedon": "2026-10-14T10:01:29Z",
+    "parser": "MultiReport (5x Cobertura)",
+    "assemblies": 4,
+    "classes": 9,
+    "files": 6,
+    "coveredlines": 256,
+    "uncoveredlines": 224,
+    "coverablelines": 480,
+    "totallines": 1128,
+    "linecoverage": 53.3,
+    "coveredbranches": 100,
+    "totalbranches": 254,
+    "branchcoverage": 39.3,
+    "coveredmethods": 30,
+    "fullcoveredmethods": 19,
+    "totalmethods": 41,
+    "methodcoverage": 73.1,
+    "fullmethodcoverage": 46.3
+ },
+  "coverage": {
+    "assemblies": [
+      { "name": "Weir", "classes": 2, "coverage": 67, "coveredlines": 53, "coverablelines": 79, "totallines": 139, "branchcoverage": 50, "coveredbranches": 6, "totalbranches": 12, "methodcoverage": 100, "fullmethodcoverage": 50, "coveredmethods": 6, "fullcoveredmethods": 3, "totalmethods": 6, "classesinassembly": [
+        { "name": "Program", "coverage": 44.1, "coveredlines": 15, "coverablelines": 34, "totallines": 58, "branchcoverage": 50, "coveredbranches": 4, "totalbranches": 8, "methodcoverage": 100, "fullmethodcoverage": 0, "coveredmethods": 1, "fullcoveredmethods": 0, "totalmethods": 1 },
+        { "name": "Weir.Host.StopRequestListener", "coverage": 84.4, "coveredlines": 38, "coverablelines": 45, "totallines": 81, "branchcoverage": 50, "coveredbranches": 2, "totalbranches": 4, "methodcoverage": 100, "fullmethodcoverage": 60, "coveredmethods": 5, "fullcoveredmethods": 3, "totalmethods": 5 } ] },
+      { "name": "Weir.Api", "classes": 3, "coverage": 66.6, "coveredlines": 104, "coverablelines": 156, "totallines": 1050, "branchcoverage": 43.4, "coveredbranches": 33, "totalbranches": 76, "methodcoverage": 73.3, "fullmethodcoverage": 53.3, "coveredmethods": 11, "fullcoveredmethods": 8, "totalmethods": 15, "classesinassembly": [
+        { "name": "Weir.Api.Http.ApiException", "coverage": 33.3, "coveredlines": 6, "coverablelines": 18, "totallines": 350, "branchcoverage": null, "coveredbranches": 0, "totalbranches": 0, "methodcoverage": 25, "fullmethodcoverage": 25, "coveredmethods": 1, "fullcoveredmethods": 1, "totalmethods": 4 },
+        { "name": "Weir.Api.Http.ApiResponses", "coverage": 100, "coveredlines": 39, "coverablelines": 39, "totallines": 350, "branchcoverage": 100, "coveredbranches": 6, "totalbranches": 6, "methodcoverage": 100, "fullmethodcoverage": 100, "coveredmethods": 5, "fullcoveredmethods": 5, "totalmethods": 5 },
+        { "name": "Weir.Api.Http.CookieHeaders", "coverage": 59.5, "coveredlines": 59, "coverablelines": 99, "totallines": 350, "branchcoverage": 38.5, "coveredbranches": 27, "totalbranches": 70, "methodcoverage": 83.3, "fullmethodcoverage": 33.3, "coveredmethods": 5, "fullcoveredmethods": 2, "totalmethods": 6 } ] },
+      { "name": "Weir.Core", "classes": 1, "coverage": 55, "coveredlines": 60, "coverablelines": 109, "totallines": 210, "branchcoverage": 40.1, "coveredbranches": 45, "totalbranches": 112, "methodcoverage": 77.7, "fullmethodcoverage": 22.2, "coveredmethods": 7, "fullcoveredmethods": 2, "totalmethods": 9, "classesinassembly": [
+        { "name": "Weir.Core.Json.WireConvert", "coverage": 55, "coveredlines": 60, "coverablelines": 109, "totallines": 210, "branchcoverage": 40.1, "coveredbranches": 45, "totalbranches": 112, "methodcoverage": 77.7, "fullmethodcoverage": 22.2, "coveredmethods": 7, "fullcoveredmethods": 2, "totalmethods": 9 } ] },
+      { "name": "Weir.Infrastructure", "classes": 3, "coverage": 28.6, "coveredlines": 39, "coverablelines": 136, "totallines": 753, "branchcoverage": 29.6, "coveredbranches": 16, "totalbranches": 54, "methodcoverage": 54.5, "fullmethodcoverage": 54.5, "coveredmethods": 6, "fullcoveredmethods": 6, "totalmethods": 11, "classesinassembly": [
+        { "name": "Weir.Infrastructure.Http.ExternalEndpointException", "coverage": 0, "coveredlines": 0, "coverablelines": 9, "totallines": 324, "branchcoverage": null, "coveredbranches": 0, "totalbranches": 0, "methodcoverage": 0, "fullmethodcoverage": 0, "coveredmethods": 0, "fullcoveredmethods": 0, "totalmethods": 3 },
+        { "name": "Weir.Infrastructure.Http.ExternalJsonPoster", "coverage": 0, "coveredlines": 0, "coverablelines": 88, "totallines": 324, "branchcoverage": 0, "coveredbranches": 0, "totalbranches": 38, "methodcoverage": 0, "fullmethodcoverage": 0, "coveredmethods": 0, "fullcoveredmethods": 0, "totalmethods": 2 },
+        { "name": "Weir.Infrastructure.Http.OutboundAddressGuard", "coverage": 100, "coveredlines": 39, "coverablelines": 39, "totallines": 105, "branchcoverage": 100, "coveredbranches": 16, "totalbranches": 16, "methodcoverage": 100, "fullmethodcoverage": 100, "coveredmethods": 6, "fullcoveredmethods": 6, "totalmethods": 6 } ] } ]
+  }
+}

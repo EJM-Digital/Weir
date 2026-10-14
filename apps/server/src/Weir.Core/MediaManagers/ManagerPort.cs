@@ -2,7 +2,7 @@ using Weir.Core.Json;
 
 namespace Weir.Core.MediaManagers;
 
-/// <summary>The kinds, lanes and scopes a media manager connection can have.</summary>
+/// <summary>The kinds and scopes a media manager connection can have.</summary>
 public static class MediaManagerKinds
 {
     /// <summary>The connection-less generic source: a manager with no dialect of its own.</summary>
@@ -11,8 +11,8 @@ public static class MediaManagerKinds
     /// <summary>Every manager kind.</summary>
     public static readonly IReadOnlyList<string> All = ["radarr", "sonarr", "deluno", Native];
 
-    /// <summary>Every search lane.</summary>
-    public static readonly IReadOnlyList<string> SearchLanes = ["missing", "upgrade"];
+    /// <summary>The lane names an older client still puts in the retired lane route. Searching is the manager's own.</summary>
+    public static readonly IReadOnlyList<string> RetiredSearchLanes = ["missing", "upgrade"];
 
     public const string Movie = "movie";
     public const string Tv = "tv";

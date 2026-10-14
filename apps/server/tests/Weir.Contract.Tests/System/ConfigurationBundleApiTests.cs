@@ -10,6 +10,12 @@ public sealed class ConfigurationBundleApiTests(UsersFixture fixture) : IClassFi
 {
     private const string Bundle = $"{WeirClient.Api}/suite/configuration-bundle";
 
+    private static readonly string[] HoursWindowFields =
+    [
+        "movie_schedule_hours_limited", "movie_schedule_days", "movie_schedule_start", "movie_schedule_end",
+        "tv_schedule_hours_limited", "tv_schedule_days", "tv_schedule_start", "tv_schedule_end",
+    ];
+
     [Fact]
     public async Task Configuration_bundle_get_requires_operator()
     {
@@ -95,6 +101,59 @@ public sealed class ConfigurationBundleApiTests(UsersFixture fixture) : IClassFi
 
         var restore = await admin.PutWithCsrfAsync(Bundle, new JsonObject { ["bundle"] = bundle.DeepClone() });
         Assert.True(restore.Status == HttpStatusCode.OK, restore.ToString());
+    }
+
+    /// <summary>
+    /// The signed-in home note and the hours window for Movies and for TV are retired: exports drop them, and a backup made
+    /// before they were retired still restores, whatever it holds in them, with only the two periodic-scan switches kept.
+    /// </summary>
+    [Fact]
+    public async Task A_backup_that_still_carries_the_retired_settings_restores_and_keeps_none_of_them()
+    {
+        using var admin = await fixture.Server.CreateAdminClientAsync();
+        var exported = await admin.GetAsync(Bundle);
+        Assert.True(exported.Status == HttpStatusCode.OK, exported.ToString());
+        var current = exported.Fields;
+        Assert.False(current["suite_settings"]!.AsObject().ContainsKey("signed_in_home_notice"));
+        Assert.All(HoursWindowFields, field => Assert.False(current["operator_settings"]!.AsObject().ContainsKey(field), field));
+
+        var older = current.DeepClone().AsObject();
+        older["suite_settings"]!["signed_in_home_notice"] = "Welcome back.";
+        var operatorSettings = older["operator_settings"]!.AsObject();
+        operatorSettings["movie_schedule_enabled"] = false;
+        operatorSettings["movie_schedule_hours_limited"] = true;
+        operatorSettings["movie_schedule_days"] = "Mon,Tue";
+        operatorSettings["movie_schedule_start"] = "09:00";
+        operatorSettings["movie_schedule_end"] = "17:30";
+        operatorSettings["tv_schedule_hours_limited"] = true;
+        operatorSettings["tv_schedule_days"] = "Wed";
+        operatorSettings["tv_schedule_start"] = "08:00";
+        operatorSettings["tv_schedule_end"] = "09:30";
+
+        try
+        {
+            var put = await admin.PutWithCsrfAsync(Bundle, new JsonObject { ["bundle"] = older.DeepClone() });
+            Assert.True(put.Status == HttpStatusCode.OK, put.ToString());
+            Assert.False(put.Fields["suite_settings"]!.AsObject().ContainsKey("signed_in_home_notice"));
+            Assert.All(HoursWindowFields, field => Assert.False(put.Fields["operator_settings"]!.AsObject().ContainsKey(field), field));
+            Assert.Equal(0, (int)put.Fields["operator_settings"]!["movie_schedule_enabled"]!);
+
+            // A note that is not even text was a server error to restore; it is not read now.
+            older["suite_settings"]!["signed_in_home_notice"] = 7;
+            var notText = await admin.PutWithCsrfAsync(Bundle, new JsonObject { ["bundle"] = older.DeepClone() });
+            Assert.True(notText.Status == HttpStatusCode.OK, notText.ToString());
+
+            var settings = await admin.GetAsync($"{WeirClient.Api}/suite/settings");
+            Assert.False(settings.Fields.ContainsKey("signed_in_home_notice"));
+            var performance = await admin.GetAsync($"{WeirClient.Api}/processing/operator-settings");
+            Assert.All(HoursWindowFields, field => Assert.False(performance.Fields.ContainsKey(field), field));
+            Assert.False((bool)performance.Fields["movie_schedule_enabled"]!);
+        }
+        finally
+        {
+            var restore = await admin.PutWithCsrfAsync(Bundle, new JsonObject { ["bundle"] = current.DeepClone() });
+            Assert.True(restore.Status == HttpStatusCode.OK, restore.ToString());
+        }
     }
 
     [Fact]

@@ -10,7 +10,7 @@ namespace Weir.Contract.Tests.MediaManagers;
 /// </summary>
 public sealed class Issue544Fixture() : ManagerServerFixture(ManagerEnvironment.WebhookSecret(Issue544Tests.InstanceSecret));
 
-/// <summary>Media manager edge cases: non-JSON 2xx answers, lane time validation, exact hand-off ledger matching, and per-connection secrets.</summary>
+/// <summary>Media manager edge cases: non-JSON 2xx answers, exact hand-off ledger matching, and per-connection secrets.</summary>
 [ContractArea("media_managers")]
 public sealed class Issue544Tests(Issue544Fixture fixture) : IClassFixture<Issue544Fixture>
 {
@@ -79,42 +79,6 @@ public sealed class Issue544Tests(Issue544Fixture fixture) : IClassFixture<Issue
         Assert.True(response.Status == HttpStatusCode.OK, response.ToString());
         Assert.False((bool)response.Elements[0]!["reachable"]!);
     }
-
-    // --- item 2: an invalid lane time is a 400 naming the field -----------------------------------
-
-    [Fact]
-    public async Task An_invalid_lane_time_is_a_400_naming_the_field()
-    {
-        using var admin = await OperatorAsync();
-        var row = await CreatedAsync(admin);
-        var lane = $"{Route}/{JsonFields.Id(row)}/lanes/missing";
-
-        var badHour = await admin.PutWithCsrfAsync(lane, LaneBody("25:00", "23:59"));
-        Assert.True(badHour.Status == HttpStatusCode.BadRequest, badHour.ToString());
-        Assert.StartsWith("schedule_start:", (string)badHour.Fields["detail"]!);
-
-        var notATime = await admin.PutWithCsrfAsync(lane, LaneBody("00:00", "9"));
-        Assert.True(notATime.Status == HttpStatusCode.BadRequest, notATime.ToString());
-        Assert.StartsWith("schedule_end:", (string)notATime.Fields["detail"]!);
-
-        // Refused, not half-saved: the lane still holds its untouched default.
-        var unchanged = await admin.GetAsync($"{Route}/{JsonFields.Id(row)}");
-        var saved = unchanged.Fields["lanes"]!.AsArray().Single(item => (string)item!["lane"]!  == "missing")!;
-        Assert.Equal("00:00", (string)saved["schedule_start"]!);
-        Assert.Equal("23:59", (string)saved["schedule_end"]!);
-    }
-
-    private static JsonObject LaneBody(string start, string end) => new()
-    {
-        ["enabled"] = true,
-        ["max_items_per_run"] = 25,
-        ["retry_delay_minutes"] = 60,
-        ["schedule_enabled"] = true,
-        ["schedule_days"] = "Mon",
-        ["schedule_start"] = start,
-        ["schedule_end"] = end,
-        ["schedule_interval_seconds"] = 900,
-    };
 
     // --- item 5: hand-off ledger prefix matching is exact, not a SQL wildcard ---------------------
 

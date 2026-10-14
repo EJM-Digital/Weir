@@ -101,7 +101,6 @@ internal sealed class SuiteConfigurationEndpointHandlers
         var issues = new ValidationIssues();
         var model = new BodyModel(body, issues);
         var csrfToken = model.Str("csrf_token", minLength: 1);
-        var notice = model.OptionalStr("signed_in_home_notice", maxLength: 4000);
         var wizard = model.OptionalStr("setup_wizard_state", minLength: 1, maxLength: 32);
         var timezone = model.Str("app_timezone", minLength: 1, maxLength: 120);
         var logRetention = model.Number("log_retention_days", 0, required: true, ge: 1, le: 3650);
@@ -119,7 +118,7 @@ internal sealed class SuiteConfigurationEndpointHandlers
         try
         {
             var normalized = SuiteSettingsRules.Normalize(
-                new SuiteSettingsUpdate(notice, timezone, logRetention, wizard, activityRetention, backupEnabled, backupHours, backupTime),
+                new SuiteSettingsUpdate(timezone, logRetention, wizard, activityRetention, backupEnabled, backupHours, backupTime),
                 _zones);
             var before = await _suiteSettings.EnsureAsync(uow).ConfigureAwait(false);
             await _suiteSettings.UpdateAsync(uow, before, SuiteSettingsRules.Apply(before, normalized)).ConfigureAwait(false);

@@ -72,7 +72,6 @@ export function TimeZoneRow({
             data-testid="schedule-save-timezone"
             onClick={() =>
               save.mutate({
-                signed_in_home_notice: settings.signed_in_home_notice,
                 setup_wizard_state: settings.setup_wizard_state,
                 app_timezone: zone,
                 log_retention_days: settings.log_retention_days,

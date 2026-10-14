@@ -26,7 +26,6 @@ function connection(
     last_test_ok: null,
     last_test_at: null,
     last_test_detail: null,
-    lanes: [],
     ...over,
   };
 }

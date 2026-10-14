@@ -25,14 +25,18 @@ public sealed class ConnectionActivityTests(NoWebhookSecretFixture fixture) : IC
         return admin;
     }
 
-    /// <summary>The next <paramref name="count"/> <c>connection.activity</c> frames that are about one media manager connection.</summary>
-    private static async Task<List<JsonObject>> ConnectionFramesAsync(SseReader stream, int connectionId, int count)
+    /// <summary>
+    /// The next <paramref name="count"/> <c>connection.activity</c> frames about one media manager connection that go
+    /// the way <paramref name="direction"/> says. Weir's own heartbeat calls every enabled manager once a minute, so a
+    /// frame for a connection is not always the one a test provoked; the direction tells the two apart.
+    /// </summary>
+    private static async Task<List<JsonObject>> ConnectionFramesAsync(SseReader stream, int connectionId, string direction, int count)
     {
         var frames = new List<JsonObject>();
         while (frames.Count < count)
         {
             var frame = (await stream.NextEventNamedAsync(ConnectionFrame)).AsObject();
-            if ((string?)frame["kind"] == "media_manager" && (int?)frame["id"] == connectionId)
+            if ((string?)frame["kind"] == "media_manager" && (int?)frame["id"] == connectionId && (string?)frame["direction"] == direction)
             {
                 frames.Add(frame);
             }
@@ -112,7 +116,7 @@ public sealed class ConnectionActivityTests(NoWebhookSecretFixture fixture) : IC
         {
             await OpenedAsync(stream);
             Assert.Equal(HttpStatusCode.OK, (await admin.PostWithCsrfAsync($"{ManagerConnections.Route}/{connectionId}/test")).Status);
-            var frames = await ConnectionFramesAsync(stream, connectionId, 2);
+            var frames = await ConnectionFramesAsync(stream, connectionId, "outbound", 2);
             (asked, answered) = (frames[0], frames[1]);
         }
 
@@ -139,7 +143,7 @@ public sealed class ConnectionActivityTests(NoWebhookSecretFixture fixture) : IC
         {
             await OpenedAsync(stream);
             Assert.Equal(HttpStatusCode.OK, (await admin.PostWithCsrfAsync($"{ManagerConnections.Route}/{connectionId}/test")).Status);
-            ended = (await ConnectionFramesAsync(stream, connectionId, 2))[1];
+            ended = (await ConnectionFramesAsync(stream, connectionId, "outbound", 2))[1];
         }
 
         Assert.Equal("failed", (string)ended["phase"]!);
@@ -163,7 +167,7 @@ public sealed class ConnectionActivityTests(NoWebhookSecretFixture fixture) : IC
                 new JsonObject { ["eventType"] = "Grab", ["movie"] = new JsonObject { ["id"] = 1 } },
                 headers);
             Assert.True(posted.Status == HttpStatusCode.OK, posted.ToString());
-            frame = Assert.Single(await ConnectionFramesAsync(stream, JsonFields.Id(row), 1));
+            frame = Assert.Single(await ConnectionFramesAsync(stream, JsonFields.Id(row), "inbound", 1));
         }
 
         Assert.Equal(FrameFields, JsonFields.Names(frame));
@@ -174,5 +178,34 @@ public sealed class ConnectionActivityTests(NoWebhookSecretFixture fixture) : IC
         var used = (string?)(await admin.GetAsync($"{ManagerConnections.Route}/{JsonFields.Id(row)}")).Fields["last_used_at"];
         Assert.NotNull(used);
         Assert.EndsWith("Z", used);
+    }
+
+    [Fact]
+    public async Task A_call_to_a_manager_just_before_it_calls_weir_does_not_hide_the_inbound_frame()
+    {
+        using var admin = await OperatorAsync();
+        using var fake = FakeManager.StartDeluno();
+        fake.Route("GET", "/api/v3/system/status", new JsonObject { ["version"] = "5.0.0" });
+        var (row, headers) = await ManagerConnections.CreateWithSecretAsync(
+            admin, new JsonObject { ["kind"] = "radarr", ["base_url"] = fake.BaseUrl, ["api_key"] = fake.ApiKey });
+        var connectionId = JsonFields.Id(row);
+
+        JsonObject frame;
+        using (var stream = await admin.OpenStreamAsync(ActivityStream))
+        {
+            await OpenedAsync(stream);
+
+            // Weir's own heartbeat does this to every enabled manager each minute, at any moment.
+            Assert.Equal(HttpStatusCode.OK, (await admin.PostWithCsrfAsync($"{ManagerConnections.Route}/{connectionId}/test")).Status);
+            var posted = await admin.PostAsync(
+                $"{WeirClient.Api}/intake/webhook/radarr",
+                new JsonObject { ["eventType"] = "Grab", ["movie"] = new JsonObject { ["id"] = 1 } },
+                headers);
+            Assert.True(posted.Status == HttpStatusCode.OK, posted.ToString());
+            frame = Assert.Single(await ConnectionFramesAsync(stream, connectionId, "inbound", 1));
+        }
+
+        Assert.Equal("answered", (string)frame["phase"]!);
+        Assert.Equal("inbound", (string)frame["direction"]!);
     }
 }

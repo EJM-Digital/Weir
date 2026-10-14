@@ -10,7 +10,7 @@ namespace Weir.Infrastructure.Settings;
 public sealed class SuiteSettingsStore
 {
     private const string Columns =
-        "signed_in_home_notice, setup_wizard_state, app_timezone, log_retention_days, activity_retention_days, " +
+        "setup_wizard_state, app_timezone, log_retention_days, activity_retention_days, " +
         "direct_play_devices, configuration_backup_enabled, configuration_backup_interval_hours, configuration_backup_preferred_time, " +
         "configuration_backup_last_run_at, processing_paused, processing_paused_until, scan_while_paused, updated_at";
 
@@ -41,9 +41,9 @@ public sealed class SuiteSettingsStore
 
         var users = await _users.CountUsersAsync(uow).ConfigureAwait(false);
         await uow.ExecuteAsync(
-            "INSERT INTO suite_settings (id, signed_in_home_notice, setup_wizard_state, app_timezone, log_retention_days, " +
+            "INSERT INTO suite_settings (id, setup_wizard_state, app_timezone, log_retention_days, " +
             "activity_retention_days, configuration_backup_enabled, configuration_backup_interval_hours, configuration_backup_preferred_time, " +
-            "configuration_backup_last_run_at) VALUES (1, NULL, $wizard, 'UTC', 30, 90, 0, 24, '02:00', NULL)",
+            "configuration_backup_last_run_at) VALUES (1, $wizard, 'UTC', 30, 90, 0, 24, '02:00', NULL)",
             ("$wizard", SuiteSettingsRules.DefaultSetupWizardState(users))).ConfigureAwait(false);
         return await GetAsync(uow).ConfigureAwait(false) ?? throw new InvalidOperationException("suite_settings row was not created.");
     }
@@ -68,7 +68,6 @@ public sealed class SuiteSettingsStore
             }
         }
 
-        Compare("signed_in_home_notice", before.SignedInHomeNotice, after.SignedInHomeNotice, v => v);
         Compare("setup_wizard_state", before.SetupWizardState, after.SetupWizardState, v => v);
         Compare("app_timezone", before.AppTimezone, after.AppTimezone, v => v);
         Compare("log_retention_days", before.LogRetentionDays, after.LogRetentionDays, v => v);
@@ -104,19 +103,18 @@ public sealed class SuiteSettingsStore
 
     private static SuiteSettingsRecord Read(SqliteDataReader reader) => new()
     {
-        SignedInHomeNotice = SqliteValues.GetStringOrNull(reader, 0),
-        SetupWizardState = SqliteValues.GetString(reader, 1),
-        AppTimezone = SqliteValues.GetString(reader, 2),
-        LogRetentionDays = SqliteValues.GetInt64(reader, 3),
-        ActivityRetentionDays = SqliteValues.GetInt64(reader, 4),
-        DirectPlayDevices = SqliteValues.GetString(reader, 5),
-        ConfigurationBackupEnabled = SqliteValues.GetBool(reader, 6),
-        ConfigurationBackupIntervalHours = SqliteValues.GetInt64(reader, 7),
-        ConfigurationBackupPreferredTime = SqliteValues.GetString(reader, 8),
-        ConfigurationBackupLastRunAt = SqliteValues.GetDateTimeOrNull(reader, 9),
-        ProcessingPaused = SqliteValues.GetBool(reader, 10),
-        ProcessingPausedUntil = SqliteValues.GetDateTimeOrNull(reader, 11),
-        ScanWhilePaused = SqliteValues.GetBool(reader, 12),
-        UpdatedAt = SqliteValues.GetDateTime(reader, 13),
+        SetupWizardState = SqliteValues.GetString(reader, 0),
+        AppTimezone = SqliteValues.GetString(reader, 1),
+        LogRetentionDays = SqliteValues.GetInt64(reader, 2),
+        ActivityRetentionDays = SqliteValues.GetInt64(reader, 3),
+        DirectPlayDevices = SqliteValues.GetString(reader, 4),
+        ConfigurationBackupEnabled = SqliteValues.GetBool(reader, 5),
+        ConfigurationBackupIntervalHours = SqliteValues.GetInt64(reader, 6),
+        ConfigurationBackupPreferredTime = SqliteValues.GetString(reader, 7),
+        ConfigurationBackupLastRunAt = SqliteValues.GetDateTimeOrNull(reader, 8),
+        ProcessingPaused = SqliteValues.GetBool(reader, 9),
+        ProcessingPausedUntil = SqliteValues.GetDateTimeOrNull(reader, 10),
+        ScanWhilePaused = SqliteValues.GetBool(reader, 11),
+        UpdatedAt = SqliteValues.GetDateTime(reader, 12),
     };
 }

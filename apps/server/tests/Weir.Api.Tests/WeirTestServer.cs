@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Weir.Api.Http;
 using Weir.Core.Configuration;
 using Weir.Host;
+using Weir.Infrastructure.Jobs;
 using Weir.Infrastructure.Sqlite;
 using Weir.Infrastructure.Tests;
 
@@ -89,6 +90,13 @@ internal sealed class WeirTestServer : IAsyncDisposable
         return new WeirTestServer(home, app);
     }
 
+    /// <summary>
+    /// Waits for start-up recovery to finish. Kestrel listens before it does, and readiness is not ready until it has,
+    /// so a test that reads readiness once, rather than polling it, waits here first.
+    /// </summary>
+    public Task WaitForStartupRecoveryAsync() =>
+        Services.GetRequiredService<JobsStartupRecoveryService>().RecoveryCompleted.WaitAsync(StartupRecoveryCeiling);
+
     /// <summary>Create a built-looking web app under <paramref name="home"/>/web.</summary>
     public static void WriteWebDist(string home)
     {
@@ -101,6 +109,8 @@ internal sealed class WeirTestServer : IAsyncDisposable
         File.WriteAllText(Path.Join(dist, "assets", "app-abc123.js.gz"), "gzip-bytes");
         File.WriteAllText(Path.Join(dist, "assets", "font.woff2"), "font");
     }
+
+    private static readonly TimeSpan StartupRecoveryCeiling = TimeSpan.FromSeconds(30);
 
     private static readonly TimeSpan BreakDatabaseDeadline = TimeSpan.FromSeconds(10);
 

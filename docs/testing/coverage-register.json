@@ -1,7 +1,7 @@
 {
   "version": 1,
   "generatedFrom": "the coverage audit of 14 Oct 2026, brought up to date with main at rc.18, plus the inventories of scripts/coverage/inventory.mjs",
-  "gapCeiling": 860,
+  "gapCeiling": 856,
   "areas": {
     "api": {
       "code": "R",
@@ -1822,41 +1822,40 @@
     {
       "id": "api.media-managers.put-media-managers-connections-connection-id-lanes-lane",
       "area": "api",
-      "behaviour": "PUT /api/v1/media-managers/connections/{connection_id}/lanes/{lane}",
+      "behaviour": "PUT /api/v1/media-managers/connections/{connection_id}/lanes/{lane} (retired: answers an older client with the connection and keeps nothing)",
       "kind": "API route",
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/ConnectionsTests.cs",
-          "name": "A_lane_can_be_saved_per_manager"
+          "name": "An_older_client_saving_a_lane_is_answered_with_the_connection_and_nothing_is_kept"
         },
         {
           "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Issue544Tests.cs",
-          "name": "An_invalid_lane_time_is_a_400_naming_the_field"
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/ConnectionsTests.cs",
+          "name": "The_retired_lane_route_still_checks_who_is_asking_which_connection_and_which_lane"
         },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
-          "name": "An_invalid_lane_time_is_a_400_naming_the_field"
+          "name": "An_older_client_saving_a_lane_is_answered_with_the_connection_and_nothing_is_kept"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/RetireUnusedSettingsMigrationTests.cs",
+          "name": "RetireUnusedSettingsMigrationTests"
         }
-      ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Saving a lane is proven, but nothing runs a search from a lane (the jobs and settings report: SET-X03, eight fields stored with no behaviour behind them). Either build the behaviour and test it, or retire the route and fields"
-      },
-      "issue": 999,
-      "covers": [
-        "route:PUT /api/v1/media-managers/connections/{connection_id}/lanes/{lane}"
       ],
       "audit": {
         "id": "R-046",
-        "verdict": "Partly"
-      }
+        "verdict": "Covered"
+      },
+      "covers": [
+        "route:PUT /api/v1/media-managers/connections/{connection_id}/lanes/{lane}"
+      ]
     },
     {
       "id": "api.media-managers.post-media-managers-connections-connection-id-test",
@@ -8374,23 +8373,46 @@
     {
       "id": "settings.suite.signed-in-home-notice-suite-settings",
       "area": "settings",
-      "behaviour": "signed_in_home_notice (suite settings)",
+      "behaviour": "signed_in_home_notice (suite settings; retired: no page showed it, so a save or a restore that carries it is accepted and ignored)",
       "kind": "setting",
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "A setting that is stored and returned but has no consumer. Either show it (and test that the notice reaches the signed-in home page) or remove it from the model and the API. Layer: e2e if kept."
-      },
-      "issue": 999,
-      "covers": [
-        "setting:SuiteSettingsRecord.SignedInHomeNotice"
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/SuiteSettingsApiTests.cs",
+          "name": "An_older_client_sending_the_home_notice_is_answered_and_nothing_is_kept"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/ConfigurationBundleApiTests.cs",
+          "name": "A_backup_that_still_carries_the_retired_settings_restores_and_keeps_none_of_them"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteApiTests.cs",
+          "name": "An_older_client_sending_the_home_notice_is_answered_and_nothing_is_kept"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteApiTests.cs",
+          "name": "A_backup_from_an_older_Weir_restores_without_the_retired_settings_it_carries"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/RetireUnusedSettingsMigrationTests.cs",
+          "name": "RetireUnusedSettingsMigrationTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/StartupSchemaTests.cs",
+          "name": "Head_schema_includes_suite_settings_table"
+        }
       ],
       "audit": {
         "id": "SET-S01",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -9252,7 +9274,7 @@
         {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingOperatorSettingsApiTests.cs",
-          "name": "Operator_settings_put_rejects_partial_movie_schedule_group"
+          "name": "Operator_settings_put_process_only_preserves_the_switches"
         },
         {
           "type": "xunit",
@@ -9287,30 +9309,46 @@
     {
       "id": "settings.operator.movie-schedule-hours-limited-days-start-end-and-tv",
       "area": "settings",
-      "behaviour": "movie_schedule_hours_limited / _days / _start / _end and tv_schedule_hours_limited / _days / _start / _end (8 fields)",
+      "behaviour": "movie_schedule_hours_limited / _days / _start / _end and tv_schedule_hours_limited / _days / _start / _end (8 fields; retired: each workflow's weekly schedule decides when it works, so a save or a restore that carries them is accepted and ignored)",
       "kind": "setting",
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Eight accepted, validated, persisted and returned fields that change nothing (docs/settings-truthfulness-audit.md says hours are per workflow). Remove them from the API (accept-and-ignore like the other retired fields, with a test) or wire them. Layer: contract."
-      },
-      "issue": 999,
-      "covers": [
-        "setting:ProcessingOperatorSettingsRecord.MovieScheduleHoursLimited",
-        "setting:ProcessingOperatorSettingsRecord.TvScheduleHoursLimited",
-        "setting:ProcessingOperatorSettingsRecord.MovieScheduleDays",
-        "setting:ProcessingOperatorSettingsRecord.MovieScheduleStart",
-        "setting:ProcessingOperatorSettingsRecord.MovieScheduleEnd",
-        "setting:ProcessingOperatorSettingsRecord.TvScheduleDays",
-        "setting:ProcessingOperatorSettingsRecord.TvScheduleStart",
-        "setting:ProcessingOperatorSettingsRecord.TvScheduleEnd"
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingOperatorSettingsApiTests.cs",
+          "name": "An_older_client_sending_the_whole_hours_window_is_answered_and_only_the_switch_is_kept"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingOperatorSettingsApiTests.cs",
+          "name": "An_older_client_sending_only_hours_window_fields_is_answered_and_they_are_not_read"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/RetiredOperatorSettingsApiTests.cs",
+          "name": "RetiredOperatorSettingsApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/ConfigurationBundleApiTests.cs",
+          "name": "A_backup_that_still_carries_the_retired_settings_restores_and_keeps_none_of_them"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/RetireUnusedSettingsMigrationTests.cs",
+          "name": "RetireUnusedSettingsMigrationTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/StartupSchemaTests.cs",
+          "name": "Head_schema_has_no_search_lanes_and_no_hours_window_for_movies_or_tv"
+        }
       ],
       "audit": {
         "id": "SET-O07",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -12235,20 +12273,41 @@
     {
       "id": "settings.connection.search-lanes-lanes-missing-upgrade-enabled-max-items-per",
       "area": "settings",
-      "behaviour": "Search lanes: lanes/{missing,upgrade} enabled, max_items_per_run, retry_delay_minutes, schedule_enabled, schedule_days, schedule_start, schedule_end, schedule_interval_seconds",
+      "behaviour": "Search lanes (retired): lanes/{missing,upgrade} enabled, max_items_per_run, retry_delay_minutes, schedule_enabled, schedule_days, schedule_start, schedule_end, schedule_interval_seconds. Searching is the media manager's own; the table is dropped and a lane save is accepted and ignored",
       "kind": "setting",
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Eight settings per lane (two lanes per connection) are stored and returned but nothing searches. Remove the endpoint and columns (accept-and-ignore) or implement it; as it stands the contract suite proves a feature that does not exist. Layer: contract."
-      },
-      "issue": 999,
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/ConnectionsTests.cs",
+          "name": "An_older_client_saving_a_lane_is_answered_with_the_connection_and_nothing_is_kept"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/ConnectionsTests.cs",
+          "name": "A_manager_with_no_columns_of_its_own_can_be_added"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
+          "name": "An_older_client_saving_a_lane_is_answered_with_the_connection_and_nothing_is_kept"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/RetireUnusedSettingsMigrationTests.cs",
+          "name": "RetireUnusedSettingsMigrationTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/StartupSchemaTests.cs",
+          "name": "Head_schema_has_no_search_lanes_and_no_hours_window_for_movies_or_tv"
+        }
+      ],
       "audit": {
         "id": "SET-X03",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -32265,7 +32324,7 @@
       ],
       "needs": {
         "kind": "vitest",
-        "test": "The other fields in the body (signed_in_home_notice, setup_wizard_state, log_retention_days), the success state (Save disappears, clock text) and a zone not in the curated list are not asserted. No E2E saves a zone."
+        "test": "The other fields in the body (setup_wizard_state, log_retention_days), the success state (Save disappears, clock text) and a zone not in the curated list are not asserted. No E2E saves a zone."
       },
       "issue": 1055,
       "audit": {
@@ -38297,7 +38356,7 @@
       ],
       "needs": {
         "kind": "vitest",
-        "test": "Function-level spies only (`putAppSettings`). Never asserted: `configuration_backup_enabled`, `signed_in_home_notice`, `setup_wizard_state`, `app_timezone` passthrough, interval clamp 1..720. No fetch-level test of `putAppSettings` (SAPI checks paths only). Contract `Suite_settings_put_persists` is API side."
+        "test": "Function-level spies only (`putAppSettings`). Never asserted: `configuration_backup_enabled`, `setup_wizard_state`, `app_timezone` passthrough, interval clamp 1..720. No fetch-level test of `putAppSettings` (SAPI checks paths only). Contract `Suite_settings_put_persists` is API side."
       },
       "issue": 1057,
       "audit": {
@@ -55228,7 +55287,7 @@
     {
       "id": "settings.env.library-swap-hold-at",
       "area": "settings",
-      "behaviour": "WEIR_LIBRARY_SWAP_HOLD_AT (tests only): a library swap stops for good at the named point so a test can end the process there; an unknown point is refused at start",
+      "behaviour": "WEIR_LIBRARY_SWAP_HOLD_AT (tests only): a library swap stops for good at the named point so a test can end the process there; an unknown point is refused at start, and any value is refused at start when WEIR_ENV is production, so a real install never honours it",
       "kind": "setting",
       "severity": "medium",
       "touches": "none",
@@ -55238,6 +55297,16 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Configuration/WeirOptionsParsingTests.cs",
           "name": "A_library_swap_is_held_nowhere_unless_a_point_is_named"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Configuration/WeirOptionsParsingTests.cs",
+          "name": "A_library_swap_hold_is_refused_at_start_in_production"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Jobs/SwapHoldSeamTests.cs",
+          "name": "A_server_running_as_production_refuses_to_start_with_the_swap_hold_set"
         },
         {
           "type": "contract",

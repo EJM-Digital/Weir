@@ -76,10 +76,6 @@ public sealed class LibraryPeriodicScanStatusApiTests
             {
                 csrf_token = await client.CsrfAsync(),
                 movie_schedule_enabled = false,
-                movie_schedule_hours_limited = false,
-                movie_schedule_days = string.Empty,
-                movie_schedule_start = "00:00",
-                movie_schedule_end = "23:59",
             });
         Assert.Equal(System.Net.HttpStatusCode.OK, saved.StatusCode);
 

@@ -13,7 +13,7 @@ using static Weir.Api.Endpoints.EndpointLookups;
 namespace Weir.Api.Endpoints;
 
 /// <summary>
-/// Media manager connections and capabilities: create/list/edit/delete a connection, its search lanes, the
+/// Media manager connections and capabilities: create/list/edit/delete a connection, the
 /// webhook secret it authenticates with, and the connection test also used by the heartbeat
 /// (<see cref="ManagerHealthProbe"/>).
 /// </summary>
@@ -275,74 +275,32 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
             .Set("header_name", "X-Webhook-Secret"));
     }
 
+    /// <summary>
+    /// Searching for missing files and upgrades belongs to the media manager, so a connection has no search lanes. An older
+    /// client may still save one: it is answered with the connection as it is, and nothing it sends is kept.
+    /// </summary>
+    private static readonly string[] RetiredLaneSettings =
+    [
+        "enabled", "max_items_per_run", "retry_delay_minutes", "schedule_enabled", "schedule_days", "schedule_start", "schedule_end",
+        "schedule_interval_seconds",
+    ];
+
     public async Task<ApiResult> PutLaneAsync(ApiRequest request)
     {
         var body = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);
-        FieldRules.TryLiteral(new WireString(request.RouteValue("lane") ?? string.Empty), ["path", "lane"], MediaManagerKinds.SearchLanes, issues, out var lane);
+        FieldRules.TryLiteral(new WireString(request.RouteValue("lane") ?? string.Empty), ["path", "lane"], MediaManagerKinds.RetiredSearchLanes, issues, out _);
         var model = new BodyModel(body, issues);
+        model.AcceptAndIgnore(RetiredLaneSettings);
         var csrfToken = model.Str("csrf_token", minLength: 1);
-        var enabled = model.Bool("enabled", defaultValue: false, required: true);
-        var maxItems = model.Number("max_items_per_run", 0, required: true, ge: 1, le: 1000);
-        var retryDelay = model.Number("retry_delay_minutes", 0, required: true, ge: 1, le: 525600);
-        var scheduleEnabled = model.Bool("schedule_enabled", defaultValue: false, required: true);
-        var scheduleDays = model.Str("schedule_days", maxLength: 2000);
-        var scheduleStart = model.Str("schedule_start", maxLength: 5);
-        var scheduleEnd = model.Str("schedule_end", maxLength: 5);
-        var interval = model.Number("schedule_interval_seconds", 0, required: true, ge: 60, le: 604800);
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
         MediaManagerConnectionsEndpoints.VerifyCsrf(request, csrfToken);
         var uow = await request.DbAsync().ConfigureAwait(false);
-        await RequireConnectionAsync(uow, _connectionStore, connectionId).ConfigureAwait(false);
-        string days;
-        try
-        {
-            days = ScheduleCsv.ValidateScheduleDaysCsv(scheduleDays);
-        }
-        catch (WireValueException exception)
-        {
-            throw new ApiException(StatusCodes.Status400BadRequest, exception.Message);
-        }
-
-        // #544 item 2: a bad time (`25:00`, `9`) answers 400 naming the field that could not be read, not a 500.
-        string start;
-        try
-        {
-            start = ScheduleCsv.NormalizeHhmm(scheduleStart, "00:00");
-        }
-        catch (WireValueException exception)
-        {
-            throw new ApiException(StatusCodes.Status400BadRequest, $"schedule_start: {exception.Message}");
-        }
-
-        string end;
-        try
-        {
-            end = ScheduleCsv.NormalizeHhmm(scheduleEnd, "23:59");
-        }
-        catch (WireValueException exception)
-        {
-            throw new ApiException(StatusCodes.Status400BadRequest, $"schedule_end: {exception.Message}");
-        }
-
-        var saved = await _connectionStore.SaveLaneAsync(uow, new MediaManagerSearchLaneRecord(
-            0,
-            connectionId,
-            lane,
-            enabled,
-            maxItems,
-            retryDelay,
-            scheduleEnabled,
-            days,
-            start,
-            end,
-            interval)).ConfigureAwait(false);
-        await request.CommitAsync().ConfigureAwait(false);
-        return ApiRoutes.Ok(saved.ToOut());
+        return ApiRoutes.Ok((await RequireConnectionAsync(uow, _connectionStore, connectionId).ConfigureAwait(false)).ToOut());
     }
 
     /// <summary>The connection test, shared with the heartbeat (<see cref="ManagerHealthProbe"/>).</summary>

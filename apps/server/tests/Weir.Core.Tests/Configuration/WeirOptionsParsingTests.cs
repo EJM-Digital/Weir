@@ -251,7 +251,26 @@ public sealed class WeirOptionsParsingTests
 
     [Fact]
     public void A_library_swap_hold_keeps_the_point_as_written() =>
-        Assert.Equal("OriginalMovedAside", TestRuntime.Load(("WEIR_LIBRARY_SWAP_HOLD_AT", " OriginalMovedAside ")).LibrarySwapHoldAt);
+        Assert.Equal(
+            "OriginalMovedAside",
+            TestRuntime.Load(("WEIR_ENV", "development"), ("WEIR_LIBRARY_SWAP_HOLD_AT", " OriginalMovedAside ")).LibrarySwapHoldAt);
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("production")]
+    [InlineData(" Production ")]
+    public void A_library_swap_hold_is_refused_at_start_in_production(string? env)
+    {
+        var refused = Assert.Throws<WeirConfigurationException>(() => env is null
+            ? TestRuntime.Load(("WEIR_LIBRARY_SWAP_HOLD_AT", "OriginalMovedAside"))
+            : TestRuntime.Load(("WEIR_ENV", env), ("WEIR_LIBRARY_SWAP_HOLD_AT", "OriginalMovedAside")));
+
+        Assert.Equal(WeirOptionsLoader.LibrarySwapHoldInProductionMessage, refused.Message);
+    }
+
+    [Fact]
+    public void A_library_swap_hold_left_empty_in_production_is_not_a_hold_and_starts() =>
+        Assert.Null(TestRuntime.Load(("WEIR_ENV", "production"), ("WEIR_LIBRARY_SWAP_HOLD_AT", "")).LibrarySwapHoldAt);
 
     [Theory]
     [InlineData("0", 0.25)]

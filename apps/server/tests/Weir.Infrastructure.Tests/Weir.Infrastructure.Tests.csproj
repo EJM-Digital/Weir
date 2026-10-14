@@ -1,4 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- The coverage collector reads the ASP.NET Core assemblies Weir.Infrastructure uses from the compilation context; without it the collector cannot open Weir.Infrastructure and measures nothing for it. -->
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />

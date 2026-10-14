@@ -1,6 +1,6 @@
 # Weir CI: the server on Linux and Windows, the web app, the E2E smoke, the contract suite (ci-contract.yml), the
-# tray, and the Docker and Windows package smokes (ci-packaging.yml). Triggers: push to main, pull_request,
-# workflow_dispatch.
+# tray, the coverage check, and the Docker and Windows package smokes (ci-packaging.yml). Triggers: push to main,
+# pull_request, workflow_dispatch.
 #
 # `changes` turns the paths a change touches into one run_* flag per job, and each job runs only when its flag
 # is true; a manual run runs everything. `ci-passed` needs every job and passes only when each job that was due
@@ -61,6 +61,7 @@ jobs:
       run_e2e: ${{ steps.flags.outputs.run_e2e }}
       run_contract: ${{ steps.flags.outputs.run_contract }}
       run_tray: ${{ steps.flags.outputs.run_tray }}
+      run_coverage: ${{ steps.flags.outputs.run_coverage }}
       run_packaging: ${{ steps.flags.outputs.run_packaging }}
       run_arm64: ${{ steps.flags.outputs.run_arm64 }}
       contract_areas: ${{ steps.areas.outputs.areas }}
@@ -129,6 +130,9 @@ jobs:
               - 'docker/**'
               - 'Dockerfile'
               - '.dockerignore'
+            # The floors every test leg is held to: a change to them is checked against a fresh measurement of all three.
+            coverage_floors:
+              - 'docs/coverage/floors.json'
             workflows:
               - '.github/**'
 
@@ -144,6 +148,7 @@ jobs:
           WEB: ${{ steps.filter.outputs.web }}
           HARNESS: ${{ steps.filter.outputs.harness }}
           TRAY: ${{ steps.filter.outputs.tray }}
+          FLOORS: ${{ steps.filter.outputs.coverage_floors }}
           PACKAGING: ${{ steps.filter.outputs.packaging }}
           MEDIA_TOOLS: ${{ steps.filter.outputs.media_tools }}
           DOCKER: ${{ steps.filter.outputs.docker }}
@@ -158,18 +163,22 @@ jobs:
           on_pull_request() { if [ "$main_push" = true ]; then echo false; else echo "$1"; fi; }
 
           web=$(either "$all" "$SERVER" "$HARNESS" "$WEB")
+          # The unit tests of all three projects run to measure coverage when the floors change.
+          web_tests=$(either "$web" "$FLOORS")
+          tray_tests=$(either "$all" "$TRAY" "$FLOORS")
           # packaging's own filter stays narrow on a pull request (see below); a server or web change
           # outside it still needs packaging tested once it lands on main, since nothing else will.
           packaging_reached_by_main=$(both "$main_push" "$(either "$SERVER" "$WEB")")
           {
-            echo "run_server_linux=$(either "$all" "$SERVER" "$MEDIA_TOOLS")"
-            echo "run_server_windows=$(either "$all" "$SERVER" "$MEDIA_TOOLS")"
+            echo "run_server_linux=$(either "$all" "$SERVER" "$MEDIA_TOOLS" "$FLOORS")"
+            echo "run_server_windows=$(either "$all" "$SERVER" "$MEDIA_TOOLS" "$FLOORS")"
             echo "run_server_audit=$(on_pull_request "$(either "$all" "$SERVER")")"
-            echo "run_web=$web"
+            echo "run_web=$web_tests"
             echo "run_web_audit=$(on_pull_request "$(either "$all" "$WEB")")"
             echo "run_e2e=$(on_pull_request "$web")"
             echo "run_contract=$(either "$all" "$SERVER")"
-            echo "run_tray=$(either "$all" "$TRAY")"
+            echo "run_tray=$tray_tests"
+            echo "run_coverage=$(either "$web_tests" "$tray_tests")"
             echo "run_packaging=$(either "$all" "$PACKAGING" "$packaging_reached_by_main")"
             echo "run_arm64=$(either "$manual" "$DOCKER")"
           } | tee -a "$GITHUB_OUTPUT"
@@ -235,6 +244,9 @@ jobs:
         run: |
           node scripts/check-event-titles.mjs
           node --test scripts/check-event-titles.test.mjs
+
+      - name: Coverage floors and report alignment
+        run: node --test scripts/check-coverage-floors.test.mjs scripts/align-coverage-reports.test.mjs
 
       - name: The real media tools - pins, installers and the check that every real-tool test ran
         run: node --test scripts/ffmpeg-pin.test.mjs scripts/pinned-download.test.mjs scripts/mkvtoolnix-pin.test.mjs scripts/install-mkvtoolnix-linux.test.mjs scripts/summarize-test-results.test.mjs scripts/check-real-tool-tests.test.mjs
@@ -306,7 +318,9 @@ jobs:
           WEIR_FFMPEG_DIR: ${{ steps.media-tools.outputs.ffmpeg-dir }}
           WEIR_MKVTOOLNIX_DIR: ${{ steps.media-tools.outputs.mkvtoolnix-dir }}
           WEIR_REQUIRE_REAL_TOOLS: "1"
-        run: dotnet test Weir.slnx --no-build --filter "Category!=Stress&Category!=Contract&Category!=E2E" --logger trx
+        run: >-
+          dotnet test Weir.slnx --no-build --filter "Category!=Stress&Category!=Contract&Category!=E2E" --logger trx
+          --collect:"XPlat Code Coverage" --settings coverage.runsettings
 
       - name: Summarize server test results
         if: ${{ !cancelled() }}
@@ -324,6 +338,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
           path: apps/server/**/TestResults/*.trx
+
+      - name: Upload server coverage (Linux)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-server-linux
+          if-no-files-found: ignore
+          retention-days: 1
+          path: apps/server/tests/*/TestResults/*/coverage.cobertura.xml
 
       - name: Server dependency vulnerability scan
         if: needs.changes.outputs.run_server_audit == 'true'
@@ -367,7 +390,9 @@ jobs:
           WEIR_FFMPEG_DIR: ${{ steps.media-tools.outputs.ffmpeg-dir }}
           WEIR_MKVTOOLNIX_DIR: ${{ steps.media-tools.outputs.mkvtoolnix-dir }}
           WEIR_REQUIRE_REAL_TOOLS: "1"
-        run: dotnet test Weir.slnx --no-build --filter "Category!=Stress&Category!=Contract&Category!=E2E" --logger trx
+        run: >-
+          dotnet test Weir.slnx --no-build --filter "Category!=Stress&Category!=Contract&Category!=E2E" --logger trx
+          --collect:"XPlat Code Coverage" --settings coverage.runsettings
 
       - name: Summarize server test results
         if: ${{ !cancelled() }}
@@ -385,6 +410,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
           path: apps/server/**/TestResults/*.trx
+
+      - name: Upload server coverage (Windows)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-server-windows
+          if-no-files-found: ignore
+          retention-days: 1
+          path: apps/server/tests/*/TestResults/*/coverage.cobertura.xml
 
   # The production web build, once, for the E2E smoke to serve.
   web-dist:
@@ -432,7 +466,8 @@ jobs:
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
 
-      # The build itself is web-dist's.
+      # The build itself is web-dist's. The unit tests run with coverage (vite.config.ts), which also fails them
+      # when the app falls below its floor in docs/coverage/floors.json.
       - name: Weir web - install, API types, lint, format, unit tests
         working-directory: apps/web
         run: |
@@ -440,7 +475,16 @@ jobs:
           npm run api:types:check
           npm run lint
           npm run format
-          npm run test
+          npm run test:coverage
+
+      - name: Upload web coverage
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-web
+          if-no-files-found: ignore
+          retention-days: 1
+          path: apps/web/coverage
 
       # After the web install above, so it reuses apps/web/node_modules for Knip.
       - name: Weir dead-code guard
@@ -573,7 +617,7 @@ jobs:
         run: dotnet build apps/tray/Weir.Tray.slnx --no-restore
 
       - name: Test Weir tray
-        run: dotnet test apps/tray/Weir.Tray.slnx --no-build --logger trx
+        run: dotnet test apps/tray/Weir.Tray.slnx --no-build --logger trx --collect:"XPlat Code Coverage" --settings apps/tray/coverage.runsettings
 
       - name: Summarize tray test results
         if: ${{ !cancelled() }}
@@ -588,6 +632,104 @@ jobs:
           retention-days: 1
           path: apps/tray/**/TestResults/*.trx
 
+      - name: Upload tray coverage
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-tray
+          if-no-files-found: ignore
+          retention-days: 1
+          path: apps/tray/Weir.Tray.Tests/TestResults/*/coverage.cobertura.xml
+
+  # The coverage check (#976): the per-leg reports of the server (Linux and Windows), the tray and the web app,
+  # merged into one report per project and held to the floors in docs/coverage/floors.json. The contract suite and
+  # the E2E smoke are not part of it: they run the server as a separate process, which the coverage collector
+  # cannot see (docs/coverage/README.md). A project whose tests did not run for this change is not judged.
+  coverage:
+    needs: [changes, server-linux, server-windows, web, tray]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.run_coverage == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: apps/server/global.json
+
+      - name: Download the coverage of every leg that ran
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: coverage-*
+          path: coverage-input
+
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.11
+
+      # Linux and Windows name the checkout and the compiler's file-local types differently, which makes
+      # ReportGenerator count some classes twice when it merges them (scripts/align-coverage-reports.mjs).
+      - name: Make the runners' coverage files name the same things
+        run: node scripts/align-coverage-reports.mjs coverage-input "$GITHUB_WORKSPACE"
+
+      # One report per project. The logging code the compiler generates under obj/ is left out.
+      - name: Merge the server coverage
+        if: needs.changes.outputs.run_server_linux == 'true'
+        run: >-
+          reportgenerator "-reports:coverage-input/coverage-server-*/**/coverage.cobertura.xml"
+          "-targetdir:coverage/server" "-reporttypes:Html;Cobertura;JsonSummary"
+          "-filefilters:-*/obj/*;-*\obj\*" "-title:Weir server"
+
+      - name: Merge the tray coverage
+        if: needs.changes.outputs.run_tray == 'true'
+        run: >-
+          reportgenerator "-reports:coverage-input/coverage-tray/**/coverage.cobertura.xml"
+          "-targetdir:coverage/tray" "-reporttypes:Html;Cobertura;JsonSummary"
+          "-filefilters:-*/obj/*;-*\obj\*" "-title:Weir tray"
+
+      # On a pull request the base branch's floors, on a push to main the previous commit's: a floor lower than
+      # that one needs its own explanation in the file (scripts/check-coverage-floors.mjs).
+      - name: Floors before this change
+        if: github.event_name != 'workflow_dispatch'
+        env:
+          BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if git fetch --no-tags --depth=1 origin "$BEFORE" && git show FETCH_HEAD:docs/coverage/floors.json > base-floors.json; then
+            echo "Compared with the floors at $BEFORE."
+          else
+            rm -f base-floors.json
+            echo "No earlier floors file to compare with."
+          fi
+
+      - name: Coverage against the floors
+        env:
+          SERVER: ${{ needs.changes.outputs.run_server_linux }}
+          TRAY: ${{ needs.changes.outputs.run_tray }}
+          WEB: ${{ needs.changes.outputs.run_web }}
+        run: |
+          args=(--floors docs/coverage/floors.json)
+          if [ -f base-floors.json ]; then args+=(--base-floors base-floors.json); fi
+          if [ "$SERVER" = true ]; then args+=(--server coverage/server); fi
+          if [ "$TRAY" = true ]; then args+=(--tray coverage/tray); fi
+          if [ "$WEB" = true ]; then
+            mkdir -p coverage/web
+            if [ -d coverage-input/coverage-web ]; then cp -r coverage-input/coverage-web/. coverage/web/; fi
+            args+=(--web coverage/web)
+          fi
+          node scripts/check-coverage-floors.mjs "${args[@]}"
+
+      - name: Upload coverage reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-reports
+          if-no-files-found: ignore
+          retention-days: 14
+          path: coverage
+
   # The Docker and Windows package smokes (ci-packaging.yml).
   packaging:
     needs: changes
@@ -599,7 +741,7 @@ jobs:
 
   # The verdict. `always()` so it reports even when a job it needs failed or was skipped.
   ci-passed:
-    needs: [changes, repo-checks, server-linux, server-windows, web-dist, web, e2e-smoke, contract, tray, packaging]
+    needs: [changes, repo-checks, server-linux, server-windows, web-dist, web, e2e-smoke, contract, tray, coverage, packaging]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 10

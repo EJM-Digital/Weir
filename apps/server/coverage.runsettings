@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What the coverage figures count (#976): the four shipped server assemblies and nothing else. Test projects, the
+  test child process, the contract suite's fake tools, and anything the compiler generated are left out, so a
+  figure moves only when a test does or a line of server code does.
+  Used by CI and by docs/local-development.md, through the collector named "XPlat Code Coverage".
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[Weir.Core]*,[Weir.Infrastructure]*,[Weir.Api]*,[Weir]*</Include>
+          <Exclude>[Weir.*Tests]*,[Weir.TestChild]*,[Weir.Contract.*]*</Exclude>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+          <ExcludeByFile>**/obj/**</ExcludeByFile>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

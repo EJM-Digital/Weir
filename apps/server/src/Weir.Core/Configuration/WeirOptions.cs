@@ -96,7 +96,7 @@ public sealed record WeirOptions
 
     /// <summary>
     /// For tests only (<c>WEIR_LIBRARY_SWAP_HOLD_AT</c>): the name of the point in a library swap where it stops for good so a test can
-    /// end the process there (<c>HeldSwapProgress</c>). Unset on a real install.
+    /// end the process there (<c>HeldSwapProgress</c>). Unset on a real install: the loader refuses it when <c>WEIR_ENV</c> is production.
     /// </summary>
     public string? LibrarySwapHoldAt { get; init; }
 
