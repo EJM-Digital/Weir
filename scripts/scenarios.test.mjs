@@ -44,7 +44,7 @@ test("every scenario file parses in Windows PowerShell 5.1", { skip }, () => {
 
 test("every scenario in the catalog has code, a phase, and words for what it does and what passes", { skip }, () => {
   const entries = plan();
-  assert.ok(entries.length >= 12);
+  assert.equal(entries.length, 13);
   assert.equal(new Set(entries.map((entry) => entry.Id)).size, entries.length, "scenario ids are unique");
   for (const entry of entries) {
     assert.ok(entry.Implemented, `${entry.Id} has no Scenario_ function`);
@@ -62,8 +62,8 @@ test("the scenarios the issue asks for are all there", { skip }, () => {
   const ids = plan().map((entry) => entry.Id);
   for (const wanted of [
     "update-over-installed-weir", "workflows-from-deluno", "deluno-film-handoff", "deluno-release-with-extra", "deluno-resend",
-    "deluno-outcomes", "logs-clean-deluno", "fresh-install", "first-visit-account", "weir-only-film", "process-again",
-    "pause-resume", "deleted-queued-file", "update-requests", "logs-clean",
+    "deluno-outcomes", "fresh-install", "first-visit-account", "weir-only-film", "process-again",
+    "pause-resume", "deleted-queued-file", "update-requests",
   ]) {
     assert.ok(ids.includes(wanted), `missing scenario ${wanted}`);
   }
@@ -233,7 +233,6 @@ function harness(body) {
     "$script:Ctx.ShortSha = 'abcdef0'",
     "$script:Ctx.Session = 'a session'",
     "$script:Ctx.DelunoUrl = 'http://127.0.0.1:7879'",
-    "$script:Ctx.DelunoConnectionId = 1",
     body,
   ];
   return { source: lines.join("\n"), folder };
@@ -542,4 +541,359 @@ test("an invalid -Phases is refused before anything is touched", { skip }, () =>
   assert.notEqual(run.status, 0);
   assert.match(run.err + run.out, /-Phases takes any of Update, WithDeluno, Fresh; it was given 'Soak'/);
   assert.equal(existsSync(join(out, "artifacts")), false);
+});
+
+// --- every scenario runs alone (#981) ------------------------------------------------------------------------------------------
+
+test("no scenario of its own is left for the logs: every scenario ends with the log check", { skip }, () => {
+  const ids = plan().map((entry) => entry.Id);
+  assert.ok(!ids.some((id) => id.startsWith("logs-clean")), "a stand-alone logs scenario reads the warnings of the whole machine");
+  const runner = readFileSync(join(scenarios, "Run-WeirScenarios.ps1"), "utf8");
+  assert.match(runner, /Start-LogWatch\s+\$detail = & \$function/, "the runner notes the logs before a scenario begins");
+  assert.match(runner, /\$logs = Complete-LogWatch/, "the runner judges what the logs gained once a scenario has passed");
+});
+
+// Reads every Scenario_ function with PowerShell's own parser and says what it finds that stops it running alone.
+const scenarioIndependence = String.raw`
+$ErrorActionPreference = 'Stop'
+. '${join(scenarios, "Weir.Scenarios.Catalog.ps1")}'
+$ids = @($ScenarioCatalog | ForEach-Object { $_.Id })
+$phaseOf = @{}
+foreach ($entry in $ScenarioCatalog) { $phaseOf[$entry.Id] = $entry.Phase }
+$found = 0
+foreach ($file in Get-ChildItem -LiteralPath '${scenarios}' -Filter 'Weir.Scenarios.*.ps1') {
+    $tokens = $null; $errors = $null
+    $tree = [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors)
+    $functions = $tree.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -like 'Scenario_*' }, $true)
+    foreach ($function in $functions) {
+        $found++
+        $id = $function.Name.Substring('Scenario_'.Length).Replace('_', '-')
+        # 1. It writes no state of the run's context: whatever it needs is made by the helpers it calls, for itself.
+        $assignments = $function.Body.FindAll({ param($n) $n -is [System.Management.Automation.Language.AssignmentStatementAst] }, $true)
+        foreach ($assignment in $assignments) {
+            $left = $assignment.Left
+            if ($left -is [System.Management.Automation.Language.MemberExpressionAst] -and $left.Expression -is [System.Management.Automation.Language.VariableExpressionAst] -and $left.Expression.VariablePath.UserPath -eq 'script:Ctx') {
+                'WRITES|' + $id + '|' + $left.Member.Value
+            }
+        }
+        # 2. It calls no other scenario.
+        $commands = $function.Body.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] }, $true)
+        foreach ($command in $commands) {
+            $name = $command.GetCommandName()
+            if ($name -and $name -like 'Scenario_*') { 'CALLS|' + $id + '|' + $name }
+        }
+        # 3. It names no other scenario.
+        $strings = $function.Body.FindAll({ param($n) $n -is [System.Management.Automation.Language.StringConstantExpressionAst] }, $true)
+        foreach ($string in $strings) {
+            if ($ids -contains $string.Value -and $string.Value -ne $id) { 'NAMES|' + $id + '|' + $string.Value }
+        }
+        # 4. A Fresh scenario makes its own Weir and account.
+        if ($phaseOf[$id] -eq 'Fresh' -and $id -ne 'fresh-install') {
+            $setups = @($commands | Where-Object { $_.GetCommandName() -in 'Initialize-FreshScenario', 'Ensure-FreshWeir' })
+            if ($setups.Count -eq 0) { 'NOSETUP|' + $id }
+        }
+    }
+}
+'FOUND|' + $found
+`;
+
+test("no scenario names another, calls another, or reads state another left: each one makes its own", { skip }, () => {
+  const run = psFile(scenarioIndependence);
+  assert.equal(run.status, 0, run.err + run.out);
+  const lines = run.out.trim().split(/\r?\n/);
+  const found = lines.pop();
+  assert.deepEqual(lines, [], `these scenarios depend on another or write the run's shared state:\n${lines.join("\n")}`);
+  assert.equal(found, "FOUND|13", "every scenario of the catalog was read");
+});
+
+// The shared helpers, dot-sourced with a context pointing at a temporary place, for the log watch and Fresh setup tests.
+function freshHarness(body, { rehearsal = false } = {}) {
+  const folder = mkdtempSync(join(tmpdir(), "weir-scenarios-fresh-"));
+  const home = join(folder, "home");
+  const run = join(folder, "run");
+  mkdirSync(join(home, "logs"), { recursive: true });
+  mkdirSync(join(run, "evidence"), { recursive: true });
+  const lines = [
+    "$ErrorActionPreference = 'Stop'",
+    ...["Lib", "Catalog", "Context", "Install", "Tray", "FreshWeir", "WeirOnly"].map((name) => `. '${join(scenarios, `Weir.Scenarios.${name}.ps1`)}'`),
+    `$script:Ctx.RunFolder = '${run}'`,
+    `$script:Ctx.RuntimeHome = '${home}'`,
+    `$script:Ctx.InstallRoot = '${join(folder, "install")}'`,
+    `$script:Ctx.MediaRoot = '${join(folder, "media")}'`,
+    "$script:Ctx.Base = 'http://localhost:1'",
+    "$script:Ctx.Version = '1.0.0-rc.99'",
+    "$script:Ctx.ShortSha = 'abcdef0'",
+    "$script:Ctx.KnownLogRows = @()",
+    "$script:Ctx.Session = $null",
+    `$script:Ctx.Rehearsal = $${rehearsal ? "true" : "false"}`,
+    body,
+  ];
+  return { source: lines.join("\n"), folder, home };
+}
+
+const serverLine = (level, message, at = "2026-10-11T19:00:00Z") => JSON.stringify({ level, message, timestamp: at });
+
+test("the log watch judges only what a scenario added: warnings that were there when it began are not its", { skip }, () => {
+  const { source } = freshHarness(String.raw`
+$script:Rows = @([pscustomobject]@{ source = 'server'; id = 7; at = '2026-10-11T18:00:00'; title = 'An old warning' })
+$script:More = $false
+function Get-WeirJson { param($Session, $Path) [pscustomobject]@{ items = $script:Rows; next_cursor = $(if ($script:More) { 'next' } else { $null }) } }
+function Show($label, $block) { try { $r = & $block; $label + ': PASSED ' + $r } catch { $label + ': FAILED ' + $_.Exception.Message } }
+$server = Join-Path $script:Ctx.RuntimeHome 'logs\weir.log'
+$tray = Join-Path $script:Ctx.RuntimeHome 'tray-host.log'
+Set-Content -LiteralPath $server -Value @('{"level":"INFO","message":"started","timestamp":"2026-10-11T17:00:00Z"}', '{"level":"WARNING","message":"an old server warning","timestamp":"2026-10-11T17:30:00Z"}')
+Set-Content -LiteralPath $tray -Value @('[2026-10-11 17:00:00] Weir started', '[2026-10-11 17:10:00] Could not do an old thing')
+
+$script:Ctx.Session = 'a session'
+Start-LogWatch; Set-LogWatchPage
+Show 'nothing-new' { Complete-LogWatch }
+
+Start-LogWatch; Set-LogWatchPage
+Add-Content -LiteralPath $server -Value '{"level":"ERROR","message":"a new server error","timestamp":"2026-10-11T20:00:00Z"}'
+Show 'new-server' { Complete-LogWatch }
+
+Start-LogWatch; Set-LogWatchPage
+Add-Content -LiteralPath $tray -Value '[2026-10-11 20:05:00] Could not start a new thing'
+Show 'new-tray' { Complete-LogWatch }
+
+Start-LogWatch; Set-LogWatchPage
+$script:Rows = @([pscustomobject]@{ source = 'event'; id = 9; at = '2026-10-11T20:10:00'; title = 'A new page warning' }) + $script:Rows
+Show 'new-page' { Complete-LogWatch }
+
+$script:Ctx.KnownLogRows = @([pscustomobject]@{ Pattern = 'new page warning'; Why = 'the scenario provoked it' })
+Start-LogWatch; Set-LogWatchPage
+$script:Rows = @([pscustomobject]@{ source = 'event'; id = 10; at = '2026-10-11T20:11:00'; title = 'Another new page warning' }) + $script:Rows
+Show 'named-on-purpose' { Complete-LogWatch }
+$script:Ctx.KnownLogRows = @()
+
+Start-LogWatch; Set-LogWatchPage
+$script:More = $true
+$script:Rows = @(1..100 | ForEach-Object { [pscustomobject]@{ source = 'event'; id = 100 + $_; at = '2026-10-11T21:00:00'; title = 'warning ' + $_ } })
+Show 'more-than-a-page' { Complete-LogWatch }
+$script:More = $false
+
+$script:Ctx.Session = $null
+Start-LogWatch
+Show 'no-account' { Complete-LogWatch }
+$script:Ctx.LogWatch = $null
+Show 'never-started' { Complete-LogWatch }
+`);
+  const run = psFile(source);
+  assert.equal(run.status, 0, run.err + run.out);
+  const lines = run.out.trim().split(/\r?\n/);
+  assert.match(lines[0], /^nothing-new: PASSED Logs since it began: no unexpected warning or error on System > Logs, in the server log file or in the tray log\.$/);
+  assert.match(lines[1], /^new-server: FAILED the server log file gained no unexpected warning or error \(found 1: ERROR a new server error\)$/);
+  assert.match(lines[2], /^new-tray: FAILED the tray log gained no line reporting trouble \(found 1: \[2026-10-11 20:05:00\] Could not start a new thing\)$/);
+  assert.match(lines[3], /^new-page: FAILED System > Logs gained no unexpected warning or error \(found 1: A new page warning\)$/);
+  assert.match(lines[4], /^named-on-purpose: PASSED .*named as caused on purpose: the scenario provoked it/);
+  assert.match(lines[5], /^more-than-a-page: FAILED System > Logs holds more new warnings and errors than one page shows/);
+  assert.match(lines[6], /^no-account: PASSED Logs since it began: no unexpected warning or error in the server log file or the tray log \(there was no account/);
+  assert.match(lines[7], /^never-started: FAILED The scenario ended with no log watch to judge/);
+});
+
+test("a scenario that begins with no account counts everything Logs holds when it ends; one that signs in notes it first", { skip }, () => {
+  const { source } = freshHarness(String.raw`
+function Get-WeirJson { param($Session, $Path) [pscustomobject]@{ items = @([pscustomobject]@{ source = 'event'; id = 3; at = '2026-10-11T18:00:00'; title = 'Started with a warning' }); next_cursor = $null } }
+function Show($label, $block) { try { $r = & $block; $label + ': PASSED' } catch { $label + ': FAILED ' + $_.Exception.Message } }
+Set-Content -LiteralPath (Join-Path $script:Ctx.RuntimeHome 'logs\weir.log') -Value '{"level":"INFO","message":"started","timestamp":"2026-10-11T17:00:00Z"}'
+Set-Content -LiteralPath (Join-Path $script:Ctx.RuntimeHome 'tray-host.log') -Value '[2026-10-11 17:00:00] Weir started'
+# Began with no session; the account was made and signed in to inside the scenario (no Set-LogWatchPage).
+Start-LogWatch
+$script:Ctx.Session = 'a session'
+Show 'began-without-account' { Complete-LogWatch }
+# Signed in at the start of the scenario (Initialize-WeirSession notes the page): what was there is not the scenario's.
+Start-LogWatch
+Set-LogWatchPage
+Show 'began-signed-in' { Complete-LogWatch }
+`);
+  const run = psFile(source);
+  assert.equal(run.status, 0, run.err + run.out);
+  const lines = run.out.trim().split(/\r?\n/);
+  assert.match(lines[0], /^began-without-account: FAILED System > Logs gained no unexpected warning or error \(found 1: Started with a warning\)$/);
+  assert.equal(lines[1], "began-signed-in: PASSED");
+});
+
+test("-Scenarios resolves ids in run order, takes commas and wildcards, and names the nearest ids for a mistyped one", { skip }, () => {
+  const { source } = freshHarness(String.raw`
+function Pick($requested) { try { (Resolve-ScenarioSelection -Requested $requested -Catalog $ScenarioCatalog) -join ',' } catch { 'ERROR ' + $_.Exception.Message } }
+'one=' + (Pick @('process-again'))
+'comma=' + (Pick @('pause-resume,process-again'))
+'separate=' + (Pick @('pause-resume', 'process-again'))
+'wildcard=' + (Pick @('deluno-*'))
+'twice=' + (Pick @('process-again', 'process-again'))
+'none=[' + (Pick @()) + ']'
+'typo=' + (Pick @('process-agin'))
+'phase-name=' + (Pick @('Fresh'))
+`);
+  const run = psFile(source);
+  assert.equal(run.status, 0, run.err + run.out);
+  const lines = run.out.trim().split(/\r?\n/);
+  assert.deepEqual(lines.slice(0, 6), [
+    "one=process-again",
+    "comma=process-again,pause-resume",
+    "separate=process-again,pause-resume",
+    "wildcard=deluno-film-handoff,deluno-release-with-extra,deluno-resend,deluno-outcomes",
+    "twice=process-again",
+    "none=[]",
+  ]);
+  assert.match(lines[6], /^typo=ERROR -Scenarios names 'process-agin', which is no scenario\. The nearest ids are: process-again, [a-z-]+, [a-z-]+\.$/);
+  assert.match(lines[7], /^phase-name=ERROR -Scenarios names 'Fresh', which is no scenario\. The nearest ids are: [a-z-]+, [a-z-]+, [a-z-]+\.$/);
+});
+
+test("the account is kept, forgotten or reset from what Weir says and what the run holds", { skip }, () => {
+  const { source } = freshHarness(String.raw`
+foreach ($exists in $false, $true) { foreach ($held in $false, $true) { foreach ($none in $false, $true) {
+    'exists=' + $exists + ' held=' + $held + ' noAccount=' + $none + ' -> ' + (Resolve-AccountAction -AccountExists $exists -Held $held -NoAccount $none)
+} } }
+`);
+  const run = psFile(source);
+  assert.equal(run.status, 0, run.err + run.out);
+  assert.deepEqual(run.out.trim().split(/\r?\n/), [
+    "exists=False held=False noAccount=False -> keep",
+    "exists=False held=False noAccount=True -> keep",
+    "exists=False held=True noAccount=False -> forget",
+    "exists=False held=True noAccount=True -> forget",
+    "exists=True held=False noAccount=False -> reset",
+    "exists=True held=False noAccount=True -> reset",
+    "exists=True held=True noAccount=False -> keep",
+    "exists=True held=True noAccount=True -> reset",
+  ]);
+});
+
+test("a Fresh scenario starts from a Weir whose account state it knows, and a rehearsal never resets someone else's Weir", { skip }, () => {
+  const { source } = freshHarness(String.raw`
+$script:Offered = $true
+function Wait-WeirReady { param($TimeoutSeconds) }
+function Get-WeirJson { param($Session, $Path) [pscustomobject]@{ bootstrap_allowed = $script:Offered } }
+function Show($label, $block) { try { & $block | Out-Null; $label + ': ok ' + $(if ($script:Ctx.ContainsKey('Username')) { 'holds-account' } else { 'no-account-held' }) } catch { $label + ': FAILED ' + $_.Exception.Message } }
+Show 'offered' { Ensure-FreshWeir }
+Show 'offered-and-asked-for-none' { Ensure-FreshWeir -NoAccount }
+$script:Ctx.Username = 'scenario-admin'; $script:Ctx.Password = 'x'; $script:Ctx.Session = 'a session'
+Show 'account-gone-since' { Ensure-FreshWeir }
+$script:Offered = $false
+$script:Ctx.Username = 'scenario-admin'; $script:Ctx.Password = 'x'
+Show 'account-held' { Ensure-FreshWeir }
+Show 'account-held-but-none-wanted' { Ensure-FreshWeir -NoAccount }
+$script:Ctx.Remove('Username')
+Show 'account-not-held' { Ensure-FreshWeir }
+`, { rehearsal: true });
+  const run = psFile(source);
+  assert.equal(run.status, 0, run.err + run.out);
+  const lines = run.out.trim().split(/\r?\n/);
+  assert.equal(lines[0], "offered: ok no-account-held");
+  assert.match(lines[1], /^offered-and-asked-for-none: ok no-account-held$/);
+  assert.equal(lines[2], "account-gone-since: ok no-account-held");
+  assert.equal(lines[3], "account-held: ok holds-account");
+  assert.match(lines[4], /^account-held-but-none-wanted: FAILED A rehearsal is pointed at a Weir somebody else started, so it cannot set that Weir back to having no account/);
+  assert.match(lines[5], /^account-not-held: FAILED A rehearsal is pointed at a Weir somebody else started/);
+});
+
+test("a workflow is named for the run and its folders sit under the run's id, so a rerun is never refused as a duplicate", { skip }, () => {
+  const { source } = freshHarness(String.raw`
+$script:Created = New-Object System.Collections.Generic.List[string]
+function Get-WeirJson { param($Session, $Path, $Method, $Body) $script:Created.Add($Body.name + '|' + $Body.watched_folder); [pscustomobject]@{ id = $script:Created.Count } }
+$script:Ctx.Session = 'a session'
+$root = Join-Path $script:Ctx.MediaRoot 'films'
+$script:Ctx.RunId = 'aaaaaa'
+$first = New-ScenarioWorkflow -Name 'Scenario films' -Root $root
+$other = New-ScenarioWorkflow -Name 'Scenario again' -Root (Join-Path $script:Ctx.MediaRoot 'again')
+$script:Ctx.RunId = 'bbbbbb'
+$rerun = New-ScenarioWorkflow -Name 'Scenario films' -Root $root
+'names=' + ($first.Name, $other.Name, $rerun.Name -join ',')
+'distinct=' + (@($first.Name, $other.Name, $rerun.Name | Select-Object -Unique).Count)
+'folders=' + (@($first.Watched, $rerun.Watched | Select-Object -Unique).Count)
+'under-run-id=' + $first.Watched.EndsWith('films\aaaaaa\watched') + ',' + $rerun.Watched.EndsWith('films\bbbbbb\watched')
+'run-id-is-made=' + ((Get-RunId) -eq 'bbbbbb')
+$script:Ctx.Remove('RunId')
+'made-when-missing=' + ((Get-RunId) -match '^[0-9a-f]{6}$')
+`);
+  const run = psFile(source);
+  assert.equal(run.status, 0, run.err + run.out);
+  assert.deepEqual(run.out.trim().split(/\r?\n/), [
+    "names=Scenario films aaaaaa,Scenario again aaaaaa,Scenario films bbbbbb",
+    "distinct=3",
+    "folders=2",
+    "under-run-id=True,True",
+    "run-id-is-made=True",
+    "made-when-missing=True",
+  ]);
+});
+
+test("a record of chosen scenarios lists every other scenario as not chosen, never as failed", { skip }, () => {
+  const { source } = freshHarness(String.raw`
+$results = @([pscustomobject]@{ Id = 'process-again'; Status = 'passed'; Detail = 'it did'; Seconds = 3 })
+$path = Join-Path $script:Ctx.RunFolder 'record.md'
+$others = @($ScenarioCatalog | Where-Object { $_.Id -ne 'process-again' } | ForEach-Object { $_.Id })
+Write-ScenarioRecord -Path $path -Catalog $ScenarioCatalog -Results $results -Facts @{ Version = '1.0.0-rc.99'; ShortSha = 'abcdef0' } -NotChosenIds $others
+$text = Get-Content -LiteralPath $path -Raw
+'chosen=' + ($text -match '\| Process again \| passed \|')
+'not-chosen=' + ([regex]::Matches($text, '\| not chosen \|').Count)
+'failed-rows=' + ([regex]::Matches($text, '\| failed \|').Count)
+$text -split "\r?\n" | Where-Object { $_ -like '**1 of 13 scenarios passed*' }
+`);
+  const run = psFile(source);
+  assert.equal(run.status, 0, run.err + run.out);
+  assert.deepEqual(run.out.trim().split(/\r?\n/), ["chosen=True", "not-chosen=12", "failed-rows=0", "**1 of 13 scenarios passed; 0 failed; 12 not run.**"]);
+});
+
+// --- the orchestrator and the runner take -Scenarios ------------------------------------------------------------------------
+
+test("every scenario can be chosen alone: -WhatIf lists that scenario only, in its own phase, and sets no status", { skip }, () => {
+  for (const entry of plan()) {
+    const out = whatIf("-Scenarios", entry.Id);
+    const listed = out.split(/\r?\n/).filter((line) => /^ {5}- /.test(line));
+    assert.deepEqual(listed, [`     - ${entry.Title}`], `${entry.Id} alone lists exactly itself`);
+    assert.match(out, new RegExp(`Scenarios chosen: ${entry.Id}\\. Each runs alone`));
+    assert.match(out, new RegExp(`Run-WeirScenarios\\.ps1 -Phase ${entry.Phase} -Scenarios ${entry.Id} as a one-shot`));
+    assert.match(out, /No golden-path status is set, whatever the result/);
+    assert.doesNotMatch(out, /set the golden-path status on/);
+    for (const phase of ["Update", "WithDeluno", "Fresh"]) {
+      const named = new RegExp(`^Phase ${phase} \\(`, "m").test(out);
+      assert.equal(named, phase === entry.Phase, `${entry.Id}: ${phase} ${named ? "is" : "is not"} in the run`);
+    }
+    if (entry.Phase === "Fresh") assert.match(out, /restore checkpoint 'clean'/, `${entry.Id} starts from the clean checkpoint`);
+    else assert.doesNotMatch(out, /restore checkpoint 'clean'/, `${entry.Id} runs on the VM as Deluno left it`);
+  }
+});
+
+test("-Scenarios chooses several scenarios across phases, and -Phases may only name phases they are in", { skip }, () => {
+  const both = whatIf("-Scenarios", "update-over-installed-weir,process-again");
+  assert.match(both, /Phases in this invocation: Update, Fresh/);
+  assert.match(both, /-Phase Update -Scenarios update-over-installed-weir as a one-shot/);
+  assert.match(both, /-Phase Fresh -Scenarios process-again as a one-shot/);
+  const withPhases = whatIf("-Phases", "Fresh", "-Scenarios", "process-again,pause-resume");
+  assert.match(withPhases, /-Phase Fresh -Scenarios process-again,pause-resume as a one-shot/);
+  const out = mkdtempSync(join(tmpdir(), "weir-scenarios-outside-"));
+  const run = powershell([
+    "-File", join(scenarios, "Invoke-WeirScenarios.ps1"),
+    "-RigHost", "no-such-host", "-InstallerPath", join(out, "x", "Weir-win-Setup.exe"), "-Version", "1.0.0-rc.99",
+    "-CommitSha", "0123456789abcdef0123456789abcdef01234567", "-OutDirectory", join(out, "artifacts"), "-Phases", "Update", "-Scenarios", "process-again", "-WhatIf",
+  ]);
+  assert.notEqual(run.status, 0);
+  assert.match(run.err + run.out, /-Scenarios names process-again \(phase Fresh\), outside -Phases Update/);
+  assert.equal(existsSync(join(out, "artifacts")), false);
+});
+
+test("a mistyped scenario id is refused before anything is touched, naming the nearest ids", { skip }, () => {
+  const out = mkdtempSync(join(tmpdir(), "weir-scenarios-typo-"));
+  const run = powershell([
+    "-File", join(scenarios, "Invoke-WeirScenarios.ps1"),
+    "-RigHost", "no-such-host", "-InstallerPath", join(out, "x", "Weir-win-Setup.exe"), "-Version", "1.0.0-rc.99",
+    "-CommitSha", "0123456789abcdef0123456789abcdef01234567", "-OutDirectory", join(out, "artifacts"), "-Scenarios", "process-agin", "-WhatIf",
+  ]);
+  assert.notEqual(run.status, 0);
+  assert.match(run.err + run.out, /-Scenarios names 'process-agin', which is no scenario\. The nearest ids are: process-again/);
+  assert.equal(existsSync(join(out, "artifacts")), false);
+  const inVm = powershell(["-File", join(scenarios, "Run-WeirScenarios.ps1"), "-Plan", "-Scenarios", "process-agin"]);
+  assert.notEqual(inVm.status, 0);
+  assert.match(inVm.err + inVm.out, /which is no scenario/);
+});
+
+test("the runner takes -Scenarios (the name Deluno's suite uses) and no longer -Only, and the orchestrator hands each phase its own ids", () => {
+  const runner = readFileSync(join(scenarios, "Run-WeirScenarios.ps1"), "utf8");
+  assert.match(runner, /\[string\[\]\] \$Scenarios/);
+  assert.doesNotMatch(runner, /\$Only\b/);
+  const orchestrator = readFileSync(join(scenarios, "Invoke-WeirScenarios.ps1"), "utf8");
+  assert.match(orchestrator, /\[string\[\]\] \$Scenarios/);
+  assert.match(orchestrator, /\$arguments\.Scenarios = /);
 });

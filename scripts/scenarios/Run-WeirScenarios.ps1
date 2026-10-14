@@ -11,8 +11,9 @@
     (Deluno made its hand-offs while the build under test was the Weir installed) and a file with a Deluno API key in the VM; it
     follows what Deluno really did through Weir. Phase Fresh runs on the clean checkpoint, installs the build under test alone, and
     runs the scenarios that need no manager.
-    Each scenario says what it does and what passes (Weir.Scenarios.Catalog.ps1), writes its own evidence file, and gets one
-    verdict. The run writes results-<phase>.json, the evidence folder, the logs of Weir's server and tray (and Deluno's when it is
+    Each scenario says what it does and what passes (Weir.Scenarios.Catalog.ps1), makes what it needs itself so that it runs alone,
+    writes its own evidence file, and gets one verdict; a scenario that passed is then judged on the warnings and errors the logs
+    gained since it began. The run writes results-<phase>.json, the evidence folder, the logs of Weir's server and tray (and Deluno's when it is
     there), Weir's request log, and scenario-<version>-<sha>.<phase>.md.
 
     -Plan lists the scenarios and what each one does and passes on, and exits. It touches nothing: no folder, no process, no file.
@@ -23,6 +24,10 @@
 
 .PARAMETER Phase
     Update, WithDeluno or Fresh.
+
+.PARAMETER Scenarios
+    Run only these scenarios of the phase, by id (comma separated; * and ? stand for any text). Each one makes what it needs, so any
+    of them can be run alone. An id that is no scenario is an error naming the nearest ones. Without it the whole phase runs.
 
 .PARAMETER SetupPath
     The Weir-win-Setup.exe of the build under test (the manual CI run's artifact weir-windows-<short sha>).
@@ -70,7 +75,7 @@ param(
     [string] $DelunoKeyFileInVm = 'C:\golden\deluno-weir-scenario-key.txt',
     [string] $WeirLoginFileInVm = 'C:\golden\weir-scenario-login.txt',
     [string] $SourceFilm,
-    [string[]] $Only,
+    [string[]] $Scenarios,
     [switch] $Plan,
     [switch] $Json,
     [switch] $Rehearsal,
@@ -83,13 +88,14 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Catalog.ps1')
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Context.ps1')
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Install.ps1')
+. (Join-Path $PSScriptRoot 'Weir.Scenarios.FreshWeir.ps1')
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.WeirOnly.ps1')
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Update.ps1')
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Deluno.ps1')
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Tray.ps1')
 
-# The warnings and errors a run is allowed to cause on purpose, each with why. An unexplained one fails logs-clean. Empty
-# unless a scenario provokes one deliberately; the scenarios here provoke none.
+# The warnings and errors a run is allowed to cause on purpose, each with why. An unexplained one fails the scenario that was running
+# when it appeared. Empty unless a scenario provokes one deliberately; the scenarios here provoke none.
 $KnownLogRows = @()
 
 function Get-ScenarioFunction {
@@ -98,7 +104,11 @@ function Get-ScenarioFunction {
 }
 
 $phaseScenarios = @($ScenarioCatalog | Where-Object { $_.Phase -eq $Phase })
-if ($Only) { $phaseScenarios = @($phaseScenarios | Where-Object { $Only -contains $_.Id }) }
+$chosenIds = @(Resolve-ScenarioSelection -Requested $Scenarios -Catalog $ScenarioCatalog)
+if ($chosenIds.Count -gt 0) {
+    $phaseScenarios = @($phaseScenarios | Where-Object { $chosenIds -contains $_.Id })
+    if ($phaseScenarios.Count -eq 0 -and -not $Plan) { throw "None of the chosen scenarios ($($chosenIds -join ', ')) is in the $Phase phase." }
+}
 
 if ($Plan) {
     $planned = @($ScenarioCatalog | ForEach-Object {
@@ -148,11 +158,14 @@ $script:Ctx.ToolsFolder = $ToolsFolder
 $script:Ctx.Rehearsal = [bool]$Rehearsal
 $script:Ctx.KnownLogRows = $KnownLogRows
 $script:Ctx.Session = $null
+$script:Ctx.LogWatch = $null
+$script:Ctx.RunId = $null
+Get-RunId | Out-Null
 
 New-Item -ItemType Directory -Force -Path $MediaRoot | Out-Null
 $runClock = [Diagnostics.Stopwatch]::StartNew()
 # A rehearsal runs no installer and has no Deluno, so these cannot be rehearsed; the scenarios that need only a running Weir can.
-$skippedInRehearsal = 'fresh-install', 'update-over-installed-weir', 'workflows-from-deluno', 'deluno-film-handoff', 'deluno-release-with-extra', 'deluno-resend', 'deluno-outcomes', 'logs-clean-deluno'
+$skippedInRehearsal = 'fresh-install', 'update-over-installed-weir', 'workflows-from-deluno', 'deluno-film-handoff', 'deluno-release-with-extra', 'deluno-resend', 'deluno-outcomes'
 
 foreach ($entry in $phaseScenarios) {
     $script:EvidenceFile = Join-Path $RunFolder "evidence\$($entry.Id).log"
@@ -166,19 +179,19 @@ foreach ($entry in $phaseScenarios) {
         }
         $function = Get-ScenarioFunction -Id $entry.Id
         if (-not $function) { throw "The scenario has no function Scenario_$($entry.Id.Replace('-', '_'))." }
-        # The Fresh phase's scenarios after the account is made share its session. The Deluno phase's scenarios get theirs themselves
-        # (Initialize-WeirSession), because the Weir they find may already have an account.
-        if ($Phase -eq 'Fresh' -and $entry.Id -ne 'fresh-install' -and $entry.Id -ne 'first-visit-account' -and $null -eq $script:Ctx.Session) {
-            if (-not $script:Ctx.ContainsKey('Username')) { throw 'Blocked: the account was never created, so there is nothing to sign in to.' }
-            $script:Ctx.Session = Sign-InScenarioAccount
-        }
+        # Every scenario makes what it needs itself (Initialize-FreshScenario, Initialize-WeirSession), and is judged on what the logs
+        # gained since it began once it has passed.
+        Start-LogWatch
         $detail = & $function
         if ($detail -is [array]) { $detail = $detail[-1] }
         if ($null -ne $detail -and $detail.PSObject.Properties['NotApplicable']) {
+            $script:Ctx.LogWatch = $null
             Add-ScenarioResult -Id $entry.Id -Status 'not-applicable' -Detail $detail.Detail -Seconds $clock.Elapsed.TotalSeconds
             Write-Host (Protect-Secrets "    not applicable: $($detail.Detail)") -ForegroundColor Yellow
             continue
         }
+        $logs = Complete-LogWatch
+        $detail = "$detail $logs"
         Add-ScenarioResult -Id $entry.Id -Status 'passed' -Detail ([string]$detail) -Seconds $clock.Elapsed.TotalSeconds
         Write-Host (Protect-Secrets "    passed in $([int]$clock.Elapsed.TotalSeconds) s: $detail") -ForegroundColor Green
         Add-Evidence "PASSED: $detail"
@@ -227,6 +240,7 @@ $facts = @{
     'Run time' = "$([int]$runClock.Elapsed.TotalSeconds) s"
     Rehearsal = $(if ($Rehearsal) { 'YES: no installer was run and the tray was played; this record can never set the golden-path status' } else { 'no' })
 }
+if ($chosenIds.Count -gt 0) { $facts['Scenarios chosen'] = ($phaseScenarios | ForEach-Object { $_.Id }) -join ', ' }
 if ($SetupPath -and (Test-Path -LiteralPath $SetupPath)) { $facts['Installer sha256'] = (Get-FileHash -LiteralPath $SetupPath -Algorithm SHA256).Hash }
 if ($script:Ctx.ContainsKey('FilmMaster')) { $facts['Film'] = "$([IO.Path]::GetFileName($script:Ctx.FilmMaster.Path)), $($script:Ctx.FilmMaster.Summary.Bytes) bytes, sha256 $($script:Ctx.FilmMaster.Sha256)$(if ($script:Ctx.FilmMaster.Generated) { ' (made with Weir''s FFmpeg)' } else { ' (given to the run)' })" }
 
