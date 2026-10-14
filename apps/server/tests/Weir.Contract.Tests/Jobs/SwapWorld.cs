@@ -14,6 +14,11 @@ internal sealed class SwapWorld : IAsyncDisposable
 {
     public const string HoldSetting = "WEIR_LIBRARY_SWAP_HOLD_AT";
 
+    /// <summary>The server only honours <see cref="HoldSetting"/> when it is not running as a production install.</summary>
+    public const string NotProductionSetting = "WEIR_ENV";
+
+    public const string NotProduction = "development";
+
     private const string HeldFileName = "swap-held-at.txt";
     private const string WorkersSetting = "WEIR_PROCESSING_WORKER_COUNT";
     private const string CleanedLanguage = "eng";
@@ -78,6 +83,7 @@ internal sealed class SwapWorld : IAsyncDisposable
             if (holdAt is not null)
             {
                 environment[HoldSetting] = holdAt;
+                environment[NotProductionSetting] = NotProduction;
             }
 
             server = await WeirServer.StartNewAsync(environment);
