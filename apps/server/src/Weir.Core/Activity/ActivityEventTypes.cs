@@ -50,6 +50,9 @@ public static class ActivityEventTypes
     /// <summary>A report sent to the media manager that handed a file over.</summary>
     public const string ProcessingHandoffReported = "processing.handoff_reported";
 
+    /// <summary>A person told Weir to give up on reports it still owed a media manager, so the connection could be removed.</summary>
+    public const string ProcessingHandoffReportsDropped = "processing.handoff_reports_dropped";
+
     /// <summary>The manager cancelled a hand-off Weir had not started (#480).</summary>
     public const string ProcessingHandoffCancelled = "processing.handoff_cancelled";
 

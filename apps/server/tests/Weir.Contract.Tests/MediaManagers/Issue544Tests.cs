@@ -134,6 +134,10 @@ public sealed class Issue544Tests(Issue544Fixture fixture) : IClassFixture<Issue
         Assert.True(
             (string)status.Fields["state"]! == "queued",
             "an unrelated sibling folder's file must not be folded into this hand-off's status");
+
+        // The hand-off is done with: a connection with one in progress is not removed, which the next test's clean-up does.
+        var cancelled = await manager.DeleteAsync(Handoffs.StatusPath(handoffId), InstanceSecretHeader);
+        Assert.Equal(HttpStatusCode.NoContent, cancelled.Status);
     }
 
     // --- item 6: several enabled connections of one kind each authenticate with their own secret --

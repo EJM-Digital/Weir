@@ -15,7 +15,7 @@ import { connectionTitle } from "../../lib/ui/connection-title";
 import { mmActionButtonClass } from "../../lib/ui/mm-control-roles";
 import { AddConnectionForm } from "../settings/tabs/media-managers/add-connection-form";
 import { AddDownloadClientForm } from "../settings/tabs/media-managers/add-download-client-form";
-import { RemoveConnectionDialog } from "../settings/tabs/media-managers/connection-card";
+import { RemoveConnectionDialog } from "../settings/tabs/media-managers/remove-connection-dialog";
 import { RemoveDownloadClientDialog } from "../settings/tabs/media-managers/download-client-card";
 import { NewConnectionSecretPrompt } from "../settings/tabs/media-managers/new-connection-secret-prompt";
 import type { WizardConnections } from "./use-wizard-connections";

@@ -32,6 +32,8 @@ Every error answer is JSON with a `detail` sentence. Where a client needs to act
 | Status | `code` | Meaning | What to do |
 |--------|--------|---------|------------|
 | 503 | `database_busy` | Any route that writes: the database stayed locked for the whole time Weir waits for it (30 seconds unless `WEIR_SQLITE_BUSY_TIMEOUT_SECONDS` is set), for example while a backup tool holds it. The write was not made. | Send the same request again after the `Retry-After` header's seconds. That figure is how long the write really waited, from 1 to 60. |
+| 409 | `connection_in_use` | `DELETE /api/v1/media-managers/connections/{connection_id}`: a workflow still comes from the connection, a hand-off from it is in progress, or Weir owes it a report. Nothing was removed. The answer also lists `workflows` (each with an `id` and `name`), `handoffs_in_progress` and `reports` (each owed report with its `handoff_id` and `name`). | Unlink the workflows with `POST /api/v1/media-managers/connections/{connection_id}/unlink-workflows`, or remove them with `DELETE /api/v1/processing/libraries/{library_id}`; let the hand-offs finish or cancel them; deliver the reports Weir owes, or give up on them with `POST /api/v1/media-managers/connections/{connection_id}/give-up-reports`; then send the removal again. |
+| 409 | `handoffs_in_progress` | `POST /api/v1/media-managers/connections/{connection_id}/unlink-workflows`: a hand-off from the connection is in progress, so its workflows stay linked. Nothing was changed. | Let the hand-off finish or cancel it, then send the same request again. |
 | 500 | `internal_error` | Weir hit a failure it did not foresee. The body says nothing of the failure; the details, with the stack trace, are in Weir's log. | The request may be sent again. If it fails the same way, report it with the log. |
 
 The hand-off outcome route (`POST /api/v1/intake/handoffs/{source_key}/{handoff_id}/outcome`) also answers 409 with `outcome_already_recorded`, `handoff_not_finished` or `handoff_ended`; its description in the OpenAPI document says which can be sent again.
@@ -66,7 +68,7 @@ The API still says "library" for what the app calls a workflow, so existing inte
 
 | Prefix | Description |
 |--------|-------------|
-| `/api/v1/media-managers/` | Connections to Sonarr, Radarr, Deluno and other tools: add, test, searches, webhook secret |
+| `/api/v1/media-managers/` | Connections to Sonarr, Radarr, Deluno and other tools: add, test, searches, webhook secret, unlink their workflows, give up on reports Weir owes them, remove (refused while anything still depends on the connection) |
 | `/api/v1/intake/` | Hand-offs from media managers: the webhook, each hand-off's status, and its outcome |
 
 ### Platform

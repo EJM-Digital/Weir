@@ -614,6 +614,96 @@
         "title": "ConnectionActivityFrame",
         "type": "object"
       },
+      "ConnectionInUseError": {
+        "description": "The answer to removing a media manager connection that something still depends on, or to unlinking its workflows while a hand-off from it is in progress. Nothing was changed. Unlink the workflows with POST /api/v1/media-managers/connections/{connection_id}/unlink-workflows or remove them with DELETE /api/v1/processing/libraries/{library_id}, let the hand-offs finish or cancel them, and let Weir deliver the reports it owes or give up on them with POST /api/v1/media-managers/connections/{connection_id}/give-up-reports, then remove the connection again.",
+        "properties": {
+          "code": {
+            "description": "connection_in_use when removing the connection was refused; handoffs_in_progress when unlinking its workflows was.",
+            "enum": [
+              "connection_in_use",
+              "handoffs_in_progress"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "description": "One plain sentence for a person, naming the workflows, the hand-offs and the reports in the way and what to do first.",
+            "title": "Detail",
+            "type": "string"
+          },
+          "handoffs_in_progress": {
+            "description": "How many hand-offs from this connection Weir is still working on.",
+            "minimum": 0,
+            "title": "Handoffs In Progress",
+            "type": "integer"
+          },
+          "reports": {
+            "description": "The reports on finished hand-offs that Weir still owes this connection, because it was not answering.",
+            "items": {
+              "$ref": "#/components/schemas/ConnectionOwedReportOut"
+            },
+            "title": "Reports",
+            "type": "array"
+          },
+          "workflows": {
+            "description": "The workflows that still come from this connection.",
+            "items": {
+              "$ref": "#/components/schemas/ConnectionWorkflowOut"
+            },
+            "title": "Workflows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "detail",
+          "workflows",
+          "handoffs_in_progress",
+          "reports"
+        ],
+        "title": "ConnectionInUseError",
+        "type": "object"
+      },
+      "ConnectionOwedReportOut": {
+        "description": "A report on a finished hand-off that Weir still owes a media manager.",
+        "properties": {
+          "handoff_id": {
+            "title": "Handoff Id",
+            "type": "string"
+          },
+          "name": {
+            "description": "The file or release folder the hand-off was about.",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "handoff_id",
+          "name"
+        ],
+        "title": "ConnectionOwedReportOut",
+        "type": "object"
+      },
+      "ConnectionWorkflowOut": {
+        "description": "A workflow, as a media manager connection's removal or unlinking names it.",
+        "properties": {
+          "id": {
+            "minimum": 1,
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ConnectionWorkflowOut",
+        "type": "object"
+      },
       "CsrfOut": {
         "properties": {
           "csrf_token": {
@@ -4085,6 +4175,40 @@
           "webhook_url_path"
         ],
         "title": "MediaManagerWebhookSecretOut",
+        "type": "object"
+      },
+      "MediaManagerReportsGivenUpOut": {
+        "description": "The reports Weir gave up on owing a connection, as recorded in Activity. Empty when none was owed.",
+        "properties": {
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/ConnectionOwedReportOut"
+            },
+            "title": "Reports",
+            "type": "array"
+          }
+        },
+        "required": [
+          "reports"
+        ],
+        "title": "MediaManagerReportsGivenUpOut",
+        "type": "object"
+      },
+      "MediaManagerWorkflowsUnlinkedOut": {
+        "description": "The workflows that were unlinked from a connection. They stay, with their settings and folders; one that no manager feeds any more is switched off until the person chooses what it does next.",
+        "properties": {
+          "workflows": {
+            "items": {
+              "$ref": "#/components/schemas/ConnectionWorkflowOut"
+            },
+            "title": "Workflows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "workflows"
+        ],
+        "title": "MediaManagerWorkflowsUnlinkedOut",
         "type": "object"
       },
       "MediaToolsOut": {
@@ -14544,6 +14668,16 @@
           "204": {
             "description": "Successful Response"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionInUseError"
+                }
+              }
+            },
+            "description": "The connection still feeds workflows, or hand-offs from it are in progress, or Weir owes it reports. Nothing was removed; the answer names them. Unlink or remove the workflows, then send the same request again."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -14720,6 +14854,66 @@
         ]
       }
     },
+    "/api/v1/media-managers/connections/{connection_id}/give-up-reports": {
+      "post": {
+        "description": "Stop owing this connection the reports Weir could not deliver because it was not answering, as the third way to let go of what keeps it from being removed. Nothing is sent to the manager. The reports dropped are recorded in Activity (processing.handoff_reports_dropped) and the Activity of each file they covered says Weir gave up. Answers 200 with an empty list when none was owed.",
+        "operationId": "post_media_manager_give_up_reports_api_v1_media_managers_connections__connection_id__give_up_reports_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Connection Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaManagerConnectionTestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaManagerReportsGivenUpOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
+          }
+        },
+        "summary": "Post Media Manager Give Up Reports",
+        "tags": [
+          "media-managers"
+        ]
+      }
+    },
     "/api/v1/media-managers/connections/{connection_id}/lanes/{lane}": {
       "put": {
         "description": "Retired. Searching belongs to the media manager, so a connection has no search lanes. The connection is returned as it is and nothing in the body is saved.",
@@ -14848,6 +15042,76 @@
           }
         },
         "summary": "Post Media Manager Connection Test",
+        "tags": [
+          "media-managers"
+        ]
+      }
+    },
+    "/api/v1/media-managers/connections/{connection_id}/unlink-workflows": {
+      "post": {
+        "description": "Unlink every workflow from this connection, as the first of the two ways to let go of the workflows that keep it from being removed (the other is removing each workflow). The workflows stay, with their settings and folders; a workflow no manager feeds any more is switched off, so it does not start scanning its folder until the person has chosen what it does next. Refused with 409 handoffs_in_progress while a hand-off from this connection is in progress. No folder or file is touched.",
+        "operationId": "post_media_manager_unlink_workflows_api_v1_media_managers_connections__connection_id__unlink_workflows_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Connection Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaManagerConnectionTestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaManagerWorkflowsUnlinkedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionInUseError"
+                }
+              }
+            },
+            "description": "A hand-off from this connection is still in progress (code handoffs_in_progress), so its workflows stay linked. Nothing was changed. Let the hand-off finish or cancel it, then send the same request again."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
+          }
+        },
+        "summary": "Post Media Manager Unlink Workflows",
         "tags": [
           "media-managers"
         ]
