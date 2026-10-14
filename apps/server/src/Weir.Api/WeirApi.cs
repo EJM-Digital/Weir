@@ -108,7 +108,7 @@ public static class WeirApi
     /// <summary>
     /// The middleware, outermost first: the server's error response, forwarded headers (trusted proxies only),
     /// the Host allow-list, compressed assets, CORS (when origins are configured), the trusted-proxy scheme,
-    /// HEAD-as-GET, the X-Requested-With check, request context, security headers, response compression, then
+    /// HEAD-as-GET, the X-Requested-With check, request context, security headers, the busy-database answer, response compression, then
     /// routes, the static mount and the 404 handler.
     /// </summary>
     public static WebApplication UseWeirApi(this WebApplication app)
@@ -136,6 +136,7 @@ public static class WeirApi
         app.UseMiddleware<XRequestedWithMiddleware>();
         app.UseMiddleware<RequestContextMiddleware>();
         app.UseMiddleware<SecurityHeadersMiddleware>();
+        app.UseMiddleware<DatabaseBusyMiddleware>();
         app.UseMiddleware<MethodNotAllowedBodyMiddleware>();
         app.UseWeirResponseCompression();
         app.UseRouting();

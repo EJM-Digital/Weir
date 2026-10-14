@@ -28,7 +28,7 @@ public sealed class ClaimConcurrencyTests : IDisposable
         var claims = new ConcurrentBag<(long Id, string Owner)>();
         using var barrier = new Barrier(workers);
 
-        await Task.WhenAll(Enumerable.Range(0, workers).Select(index => Task.Run(async () =>
+        await OwnThreads.RunAllAsync(workers, async index =>
         {
             var store = SeparateStore();
             barrier.SignalAndWait();
@@ -36,7 +36,7 @@ public sealed class ClaimConcurrencyTests : IDisposable
             {
                 claims.Add((job.Id, job.LeaseOwner!));
             }
-        })));
+        });
 
         Assert.Equal(jobs, claims.Count);
         Assert.Equal(jobs, claims.Select(c => c.Id).Distinct().Count());
@@ -125,7 +125,7 @@ public sealed class ClaimConcurrencyTests : IDisposable
 
         var claims = new ConcurrentBag<long>();
         using var barrier = new Barrier(workers);
-        await Task.WhenAll(Enumerable.Range(0, workers).Select(index => Task.Run(async () =>
+        await OwnThreads.RunAllAsync(workers, async index =>
         {
             var store = SeparateStore();
             barrier.SignalAndWait();
@@ -133,7 +133,7 @@ public sealed class ClaimConcurrencyTests : IDisposable
             {
                 claims.Add(job.Id);
             }
-        })));
+        });
 
         Assert.Equal(jobs, claims.Count);
         Assert.Equal(jobs, claims.Distinct().Count());
@@ -149,7 +149,10 @@ public sealed class ClaimConcurrencyTests : IDisposable
         const int totalJobs = producers * perProducer;
         var claimed = new CountdownEvent(totalJobs);
         var claims = new ConcurrentBag<long>();
-        var producing = Enumerable.Range(0, producers).Select(p => Task.Run(async () =>
+        // Each producer and consumer works on a thread of its own. Their calls run to the end on the calling thread, and a writer that
+        // finds the write lock taken waits for it in SQLite's busy handler, so on the thread pool the fourteen would hold fourteen of its
+        // threads (a CI runner has four ready) for as long as the test runs.
+        var producing = OwnThreads.RunAllAsync(producers, async p =>
         {
             var store = SeparateStore();
             for (var i = 0; i < perProducer; i++)
@@ -158,13 +161,13 @@ public sealed class ClaimConcurrencyTests : IDisposable
                 // A duplicate enqueue returns the same row rather than adding one.
                 await store.EnqueueOrGetAsync($"p{p}-{i}", Kind);
             }
-        })).ToArray();
+        });
         // Every consumer keeps claiming until the countdown - signalled once per successful claim, by
         // whichever consumer got it - reaches zero, rather than guessing "idle" from a spin count. A
         // deadline is still a backstop: a real bug that stops claims dead should fail promptly, not hang
         // the run until the test host's own outer timeout kills it.
         var deadline = DateTime.UtcNow.AddSeconds(60);
-        var consuming = Enumerable.Range(0, consumers).Select(c => Task.Run(async () =>
+        var consuming = OwnThreads.RunAllAsync(consumers, async c =>
         {
             var store = SeparateStore();
             while (!claimed.IsSet && DateTime.UtcNow < deadline)
@@ -176,10 +179,10 @@ public sealed class ClaimConcurrencyTests : IDisposable
                 }
                 else
                 {
-                    await Task.Yield();
+                    Thread.Yield();
                 }
             }
-        })).ToArray();
+        });
 
         await Task.WhenAll(producing);
         await Task.WhenAll(consuming);

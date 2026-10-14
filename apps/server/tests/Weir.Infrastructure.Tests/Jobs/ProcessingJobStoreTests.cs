@@ -92,13 +92,11 @@ public sealed class ProcessingJobStoreTests : IDisposable
     public async Task Concurrent_enqueue_same_dedupe_key_single_row()
     {
         using var barrier = new Barrier(8);
-        var tasks = Enumerable.Range(0, 8).Select(_ => Task.Run(async () =>
+        var ids = await OwnThreads.RunAllAsync(8, async _ =>
         {
             barrier.SignalAndWait();
             return (await _db.Store.EnqueueOrGetAsync("race", Kind)).Id;
-        })).ToArray();
-
-        var ids = await Task.WhenAll(tasks);
+        });
 
         Assert.Single(ids.Distinct());
         Assert.Equal(1, _db.Count("SELECT count(*) FROM jobs"));
@@ -347,11 +345,11 @@ public sealed class ProcessingJobStoreTests : IDisposable
         await _db.Store.EnqueueOrGetAsync("b", Kind);
         using var barrier = new Barrier(2);
 
-        var claims = await Task.WhenAll(Enumerable.Range(0, 2).Select(index => Task.Run(async () =>
+        var claims = await OwnThreads.RunAllAsync(2, async index =>
         {
             barrier.SignalAndWait();
             return (await _db.Store.ClaimNextAsync($"t{index}", T0.AddHours(1), T0))?.Id;
-        })));
+        });
 
         Assert.Equal(2, claims.Where(id => id is not null).Distinct().Count());
     }

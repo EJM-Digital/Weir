@@ -26,12 +26,18 @@ internal static class ResponseMarkers
 }
 
 /// <summary>
-/// The outermost error handler: an unhandled exception is answered with a plain-text 500
-/// <c>Internal Server Error</c>, the exact body existing clients expect (the exception was already logged by the
-/// request context).
+/// The outermost error handler: an unhandled exception is answered with a 500 whose JSON body is
+/// <c>{"detail": …, "code": "internal_error"}</c>, so a media manager can read it like every other Weir error. The body says
+/// nothing of the failure itself: the exception was already logged, with its stack trace, by the request context.
 /// </summary>
 public sealed class ServerErrorMiddleware
 {
+    /// <summary>The <c>code</c> an unhandled failure is answered with.</summary>
+    public const string Code = "internal_error";
+
+    /// <summary>What a caller is told: that Weir failed, not how.</summary>
+    public const string Detail = "Weir ran into an unexpected problem and could not finish this request. The details are in Weir's log.";
+
     private readonly RequestDelegate _next;
     private readonly WeirOptions _options;
 
@@ -48,17 +54,17 @@ public sealed class ServerErrorMiddleware
         {
             await _next(context).ConfigureAwait(false);
         }
-#pragma warning disable CA1031 // The last line of defence: any unhandled failure becomes a plain 500.
+#pragma warning disable CA1031 // The last line of defence: any unhandled failure becomes a JSON 500.
         catch (Exception) when (!context.Response.HasStarted && !context.RequestAborted.IsCancellationRequested)
 #pragma warning restore CA1031
         {
             context.Items[ResponseMarkers.ServerError] = true;
             context.Response.Clear();
-            context.Response.ContentType = "text/plain; charset=utf-8";
+            context.Response.ContentType = "application/json";
             // SecurityHeadersMiddleware skips a response already marked ResponseMarkers.ServerError, so this
             // 500 would otherwise leave with none of nosniff, the frame and permissions policy, or the rest.
             SecurityHeadersMiddleware.Apply(context, _options.SecurityEnableHsts);
-            await ApiResponses.WritePlainTextAsync(context, StatusCodes.Status500InternalServerError, "Internal Server Error").ConfigureAwait(false);
+            await ApiResponses.WriteDetailAsync(context, new ApiException(StatusCodes.Status500InternalServerError, Detail) { Code = Code }).ConfigureAwait(false);
         }
     }
 }

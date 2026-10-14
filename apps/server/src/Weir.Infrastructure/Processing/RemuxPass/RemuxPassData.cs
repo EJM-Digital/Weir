@@ -57,7 +57,7 @@ public static class LockedWrites
 
     /// <summary><c>database is locked</c> or <c>database table is locked</c>.</summary>
     public static bool IsLock(SqliteException exception) =>
-        exception?.SqliteErrorCode is 5 or 6;
+        exception is not null && DatabaseBusyException.IsBusy(exception);
 }
 
 /// <summary>The pass's database and manager reads and writes over SQLite and the media manager ports.</summary>

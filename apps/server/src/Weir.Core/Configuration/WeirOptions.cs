@@ -85,6 +85,16 @@ public sealed record WeirOptions
     public required bool ProcessingWatcherEnabled { get; init; }
 
     /// <summary>
+    /// How long a write waits for the database before it gives up with a 503 and a <c>Retry-After</c> (<c>WEIR_SQLITE_BUSY_TIMEOUT_SECONDS</c>,
+    /// 1 to 120, default 30). A writer queues for Weir's own write gate and then for a writer outside Weir, such as a backup tool, for
+    /// this long in all. Raising it only makes a media manager wait longer for the same answer.
+    /// </summary>
+    public int SqliteBusyTimeoutSeconds { get; init; } = DefaultSqliteBusyTimeoutSeconds;
+
+    /// <summary>The write wait when <c>WEIR_SQLITE_BUSY_TIMEOUT_SECONDS</c> is unset.</summary>
+    public const int DefaultSqliteBusyTimeoutSeconds = 30;
+
+    /// <summary>
     /// Whether Weir sets up its workflows from a media manager that reports its folders (Deluno) and keeps them in step
     /// (<c>WEIR_MEDIA_MANAGER_WORKFLOW_SYNC_ENABLED</c>, default on). Off leaves every workflow's folders to be typed.
     /// </summary>

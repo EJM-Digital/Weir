@@ -525,7 +525,7 @@ export interface paths {
     put?: never;
     /**
      * Post Intake Handoff Outcome
-     * @description The manager says what became of the file Weir handed back. imported records it and releases Weir's copy when it is still exactly the file Weir wrote; not-imported records it and keeps the copy, and a later imported replaces it. 200 again for the same outcome; 404 never received; 409 not finished or a different outcome already recorded, with a code: outcome_already_recorded (final), handoff_not_finished or handoff_ended (worth sending again).
+     * @description The manager says what became of the file Weir handed back. imported records it and releases Weir's copy when it is still exactly the file Weir wrote; not-imported records it and keeps the copy, and a later imported replaces it. 200 again for the same outcome; 404 never received; 409 not finished or a different outcome already recorded, with a code: outcome_already_recorded (final), handoff_not_finished or handoff_ended (worth sending again). 503 with code database_busy and a Retry-After header when Weir's database stays locked past the time Weir waits for it; send the same outcome again after that many seconds.
      */
     post: operations["post_intake_handoff_outcome_api_v1_intake_handoffs__source_key___handoff_id__outcome_post"];
     delete?: never;
@@ -545,7 +545,7 @@ export interface paths {
     put?: never;
     /**
      * Post Media Manager Intake
-     * @description Accept one event from a media manager and hand it to whichever module owns it.
+     * @description Accept one event from a media manager and hand it to whichever module owns it. 503 with code database_busy and a Retry-After header when Weir's database stays locked past the time Weir waits for it; send the same event again after that many seconds.
      */
     post: operations["post_media_manager_intake_api_v1_intake_webhook__source_key__post"];
     delete?: never;
@@ -2846,6 +2846,23 @@ export interface components {
         | "settings"
         | "update";
     };
+    /**
+     * DatabaseBusyError
+     * @description The answer to a write that gave up because the database stayed locked past the time Weir waits for it. Nothing in the body is internal: it says what happened and when to try again.
+     */
+    DatabaseBusyError: {
+      /**
+       * Code
+       * @description Always database_busy: the request can be sent again after the Retry-After header.
+       * @enum {string}
+       */
+      code: "database_busy";
+      /**
+       * Detail
+       * @description One plain sentence for a person, naming how many seconds to wait.
+       */
+      detail: string;
+    };
     /** DirectPlayDeviceOut */
     DirectPlayDeviceOut: {
       /** Id */
@@ -3212,6 +3229,23 @@ export interface components {
        * @description Application liveness indicator.
        */
       status: string;
+    };
+    /**
+     * InternalServerError
+     * @description The answer to a failure Weir did not foresee. It says nothing of the failure itself; the details are in Weir's log.
+     */
+    InternalServerError: {
+      /**
+       * Code
+       * @description Always internal_error.
+       * @enum {string}
+       */
+      code: "internal_error";
+      /**
+       * Detail
+       * @description One plain sentence for a person.
+       */
+      detail: string;
     };
     /**
      * LibraryBreakdownRowOut
@@ -8698,7 +8732,28 @@ export interface components {
       slots_note: string;
     };
   };
-  responses: never;
+  responses: {
+    /** @description Service Unavailable: the database stayed busy for the whole time Weir waits for it (WEIR_SQLITE_BUSY_TIMEOUT_SECONDS, 30 seconds unless set), so the write was not made. The Retry-After header says how many seconds to wait before sending it again, and nothing in the request needs changing. */
+    DatabaseBusy: {
+      headers: {
+        /** @description Whole seconds to wait before sending the request again: how long the write waited, between 1 and 60. */
+        "Retry-After": number;
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["DatabaseBusyError"];
+      };
+    };
+    /** @description Internal Server Error: Weir hit a failure it did not foresee and logged it. The request may be sent again; if it fails the same way, the details are in Weir's log. */
+    InternalServerError: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["InternalServerError"];
+      };
+    };
+  };
   parameters: never;
   requestBodies: never;
   headers: never;
@@ -8746,6 +8801,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_activity_file_history_api_v1_activity_file_history_get: {
@@ -8778,6 +8834,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_activity_file_history_remove_api_v1_activity_file_history_remove_post: {
@@ -8811,6 +8868,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_activity_recent_api_v1_activity_recent_get: {
@@ -8854,6 +8913,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_activity_stream_api_v1_activity_stream_get: {
@@ -8874,6 +8934,7 @@ export interface operations {
           "application/json": unknown;
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_artwork_poster_api_v1_artwork_posters__poster_id__get: {
@@ -8903,6 +8964,7 @@ export interface operations {
         };
         content?: never;
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_bootstrap_api_v1_auth_bootstrap_post: {
@@ -8936,6 +8998,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_bootstrap_status_api_v1_auth_bootstrap_status_get: {
@@ -8956,6 +9020,7 @@ export interface operations {
           "application/json": components["schemas"]["BootstrapStatusOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_change_password_api_v1_auth_change_password_post: {
@@ -8989,6 +9054,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_change_username_api_v1_auth_change_username_post: {
@@ -9022,6 +9089,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_csrf_api_v1_auth_csrf_get: {
@@ -9042,6 +9111,7 @@ export interface operations {
           "application/json": components["schemas"]["CsrfOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_login_api_v1_auth_login_post: {
@@ -9075,6 +9145,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_logout_api_v1_auth_logout_post: {
@@ -9108,6 +9180,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_me_api_v1_auth_me_get: {
@@ -9128,6 +9202,7 @@ export interface operations {
           "application/json": components["schemas"]["MeOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_current_session_api_v1_auth_session_get: {
@@ -9148,6 +9223,7 @@ export interface operations {
           "application/json": components["schemas"]["CurrentSessionOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_sessions_api_v1_auth_sessions_get: {
@@ -9168,6 +9244,7 @@ export interface operations {
           "application/json": components["schemas"]["SessionsOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_revoke_other_sessions_api_v1_auth_sessions_revoke_others_post: {
@@ -9199,6 +9276,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_revoke_session_api_v1_auth_sessions__session_id__revoke_post: {
@@ -9232,6 +9311,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_set_theme_api_v1_auth_theme_post: {
@@ -9265,6 +9346,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_download_client_connections_api_v1_download_clients_connections_get: {
@@ -9285,6 +9368,7 @@ export interface operations {
           "application/json": components["schemas"]["DownloadClientConnectionOut"][];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_download_client_connection_api_v1_download_clients_connections_post: {
@@ -9318,6 +9402,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_download_client_connection_api_v1_download_clients_connections__connection_id__get: {
@@ -9349,6 +9435,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   put_download_client_connection_api_v1_download_clients_connections__connection_id__put: {
@@ -9384,6 +9471,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   delete_download_client_connection_api_v1_download_clients_connections__connection_id__delete: {
@@ -9417,6 +9506,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_download_client_connection_test_api_v1_download_clients_connections__connection_id__test_post: {
@@ -9452,6 +9543,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_download_client_suggestions_api_v1_download_clients_suggestions_get: {
@@ -9483,6 +9576,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_intake_capabilities_api_v1_intake_capabilities_get: {
@@ -9532,6 +9626,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_intake_library_folders_api_v1_intake_library_folders_get: {
@@ -9563,6 +9658,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_intake_handoff_api_v1_intake_handoffs__source_key___handoff_id__get: {
@@ -9601,6 +9697,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   delete_intake_handoff_api_v1_intake_handoffs__source_key___handoff_id__delete: {
@@ -9635,6 +9732,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_intake_handoff_outcome_api_v1_intake_handoffs__source_key___handoff_id__outcome_post: {
@@ -9675,6 +9774,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_media_manager_intake_api_v1_intake_webhook__source_key__post: {
@@ -9717,6 +9818,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_media_manager_capabilities_api_v1_media_managers_capabilities_get: {
@@ -9737,6 +9840,7 @@ export interface operations {
           "application/json": components["schemas"]["MediaManagerCapabilityOut"][];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_media_manager_connections_api_v1_media_managers_connections_get: {
@@ -9757,6 +9861,7 @@ export interface operations {
           "application/json": components["schemas"]["MediaManagerConnectionOut"][];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_media_manager_connection_api_v1_media_managers_connections_post: {
@@ -9790,6 +9895,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_media_manager_connection_api_v1_media_managers_connections__connection_id__get: {
@@ -9821,6 +9928,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   put_media_manager_connection_api_v1_media_managers_connections__connection_id__put: {
@@ -9856,6 +9964,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   delete_media_manager_connection_api_v1_media_managers_connections__connection_id__delete: {
@@ -9889,6 +9999,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_media_manager_connection_folder_chain_api_v1_media_managers_connections__connection_id__folder_chain_get: {
@@ -9920,6 +10032,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   put_media_manager_lane_api_v1_media_managers_connections__connection_id__lanes__lane__put: {
@@ -9956,6 +10069,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_media_manager_connection_test_api_v1_media_managers_connections__connection_id__test_post: {
@@ -9991,6 +10106,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_media_manager_webhook_secret_api_v1_media_managers_connections__connection_id__webhook_secret_post: {
@@ -10026,6 +10143,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_pause_api_v1_pause_get: {
@@ -10046,6 +10165,7 @@ export interface operations {
           "application/json": components["schemas"]["PauseOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   put_pause_api_v1_pause_put: {
@@ -10079,6 +10199,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_direct_play_devices_api_v1_processing_direct_play_devices_get: {
@@ -10099,6 +10221,7 @@ export interface operations {
           "application/json": components["schemas"]["DirectPlayDevicesOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   put_direct_play_devices_api_v1_processing_direct_play_devices_put: {
@@ -10132,6 +10255,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_files_api_v1_files_get: {
@@ -10189,6 +10314,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_processing_files_at_once_api_v1_processing_files_at_once_get: {
@@ -10209,6 +10335,7 @@ export interface operations {
           "application/json": components["schemas"]["ProcessingFilesAtOnceOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   requeue_files_api_v1_files_requeue_post: {
@@ -10242,6 +10369,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_processing_rejected_files_process_again_api_v1_processing_files_rejected_process_again_post: {
@@ -10275,6 +10404,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_processing_rejected_files_summary_api_v1_processing_files_rejected_summary_get: {
@@ -10306,6 +10437,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_processing_file_remove_options_api_v1_files__file_id__remove_options_get: {
@@ -10337,6 +10469,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   delete_processing_file_api_v1_files__file_id__delete: {
@@ -10379,6 +10512,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
       /** @description delete or keep could not reach, or was refused by, the media manager it asked */
       502: {
         headers: {
@@ -10386,6 +10520,7 @@ export interface operations {
         };
         content?: never;
       };
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_processing_kept_files_api_v1_processing_kept_files_get: {
@@ -10406,6 +10541,7 @@ export interface operations {
           "application/json": components["schemas"]["ProcessingKeptFilesOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_processing_kept_file_process_again_api_v1_processing_kept_files__id__process_again_post: {
@@ -10448,6 +10584,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_processing_file_log_api_v1_files__file_id__log_get: {
@@ -10481,6 +10619,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   download_processing_file_log_api_v1_files__file_id__log_download_get: {
@@ -10512,6 +10651,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_processing_file_manual_plan_api_v1_files__file_id__manual_plan_post: {
@@ -10547,6 +10687,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   move_processing_file_to_top_api_v1_files__file_id__move_to_top_post: {
@@ -10582,6 +10724,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   requeue_processing_file_api_v1_files__file_id__requeue_post: {
@@ -10617,6 +10761,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_processing_file_tracks_api_v1_files__file_id__tracks_get: {
@@ -10648,6 +10794,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_processing_file_why_held_api_v1_files__file_id__why_held_get: {
@@ -10679,6 +10826,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_processing_hardware_api_v1_processing_hardware_get: {
@@ -10699,6 +10847,7 @@ export interface operations {
           "application/json": components["schemas"]["ProcessingHardwareOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_processing_file_remux_pass_enqueue_api_v1_jobs_file_remux_pass_enqueue_post: {
@@ -10732,6 +10881,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_jobs_inspection_api_v1_jobs_inspection_get: {
@@ -10766,6 +10917,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_processing_watched_folder_remux_scan_dispatch_enqueue_api_v1_jobs_watched_folder_remux_scan_dispatch_enqueue_post: {
@@ -10799,6 +10951,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_processing_job_cancel_pending_api_v1_jobs__job_id__cancel_pending_post: {
@@ -10834,6 +10988,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_processing_job_recover_finalize_failed_api_v1_jobs__job_id__recover_finalize_failed_post: {
@@ -10869,6 +11025,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_libraries_api_v1_libraries_get: {
@@ -10889,6 +11047,7 @@ export interface operations {
           "application/json": components["schemas"]["ProcessingLibraryOut"][];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_processing_library_api_v1_libraries_post: {
@@ -10922,6 +11081,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_processing_discoverable_libraries_api_v1_libraries_discover__connection_id__get: {
@@ -10953,6 +11114,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_processing_library_drift_api_v1_libraries_discover__connection_id__drift_get: {
@@ -10984,6 +11146,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_processing_import_libraries_api_v1_libraries_discover__connection_id__import_post: {
@@ -11019,6 +11182,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_libraries_reorder_api_v1_libraries_reorder_post: {
@@ -11052,6 +11217,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_processing_library_api_v1_libraries__library_id__get: {
@@ -11083,6 +11250,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   put_processing_library_api_v1_libraries__library_id__put: {
@@ -11118,6 +11286,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   delete_processing_library_api_v1_libraries__library_id__delete: {
@@ -11151,6 +11321,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_processing_library_folder_chain_api_v1_processing_libraries__library_id__folder_chain_get: {
@@ -11182,6 +11354,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_library_files: {
@@ -11254,6 +11427,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_library_files_clean: {
@@ -11298,6 +11472,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_library_files_leave_alone: {
@@ -11333,6 +11509,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_library_overview: {
@@ -11364,6 +11542,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_library_problems: {
@@ -11395,6 +11574,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_library_redownloads: {
@@ -11426,6 +11606,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_library_redownload: {
@@ -11470,6 +11651,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_library_scan: {
@@ -11512,6 +11695,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_library_schedule: {
@@ -11556,6 +11741,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_library_settings: {
@@ -11587,6 +11774,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   put_library_settings: {
@@ -11629,6 +11817,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_processing_library_preview_api_v1_libraries__library_id__preview_post: {
@@ -11664,6 +11854,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_processing_library_unlink_api_v1_libraries__library_id__unlink_post: {
@@ -11699,6 +11891,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_processing_library_check_api_v1_processing_library_check_post: {
@@ -11732,6 +11926,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_library_cleans_api_v1_library_cleans_get: {
@@ -11766,6 +11962,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_processing_library_suggestions_api_v1_processing_library_suggestions_get: {
@@ -11786,6 +11983,7 @@ export interface operations {
           "application/json": components["schemas"]["LibrarySuggestionsOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_processing_maintenance_api_v1_processing_maintenance_get: {
@@ -11806,6 +12004,7 @@ export interface operations {
           "application/json": components["schemas"]["MaintenanceStateOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_processing_maintenance_run_api_v1_processing_maintenance_run_post: {
@@ -11839,6 +12038,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_processing_manager_setup_api_v1_processing_manager_setup_get: {
@@ -11875,6 +12076,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_metadata_provider_api_v1_processing_metadata_provider_get: {
@@ -11895,6 +12097,7 @@ export interface operations {
           "application/json": components["schemas"]["MetadataProviderOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   put_metadata_provider_api_v1_processing_metadata_provider_put: {
@@ -11928,6 +12131,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_metadata_provider_test_api_v1_processing_metadata_provider_test_post: {
@@ -11961,6 +12166,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_operator_settings_api_v1_operator_settings_get: {
@@ -11981,6 +12188,7 @@ export interface operations {
           "application/json": components["schemas"]["ProcessingOperatorSettingsOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   put_operator_settings_api_v1_operator_settings_put: {
@@ -12014,6 +12222,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_processing_overview_stats_api_v1_processing_overview_stats_get: {
@@ -12046,6 +12256,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_processing_reject_support_api_v1_processing_reject_support_get: {
@@ -12077,6 +12288,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_rule_sets_api_v1_rule_sets_get: {
@@ -12097,6 +12309,7 @@ export interface operations {
           "application/json": components["schemas"]["ProcessingRuleSetOut"][];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_processing_rule_set_api_v1_rule_sets_post: {
@@ -12130,6 +12343,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   put_processing_rule_set_api_v1_rule_sets__rule_set_id__put: {
@@ -12165,6 +12380,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   delete_processing_rule_set_api_v1_rule_sets__rule_set_id__delete: {
@@ -12198,6 +12415,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_processing_runtime_settings_api_v1_processing_runtime_settings_get: {
@@ -12218,6 +12437,7 @@ export interface operations {
           "application/json": components["schemas"]["ProcessingRuntimeSettingsOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_suite_apply_update_api_v1_suite_apply_update_post: {
@@ -12251,6 +12471,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_suite_check_update_api_v1_suite_check_update_post: {
@@ -12284,6 +12506,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_suite_download_update_api_v1_suite_download_update_post: {
@@ -12317,6 +12541,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_configuration_backups_api_v1_suite_configuration_backups_get: {
@@ -12337,6 +12563,7 @@ export interface operations {
           "application/json": components["schemas"]["SuiteConfigurationBackupListOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_configuration_backup_api_v1_suite_configuration_backups_post: {
@@ -12370,6 +12597,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   download_configuration_backup_api_v1_suite_configuration_backups__backup_id__download_get: {
@@ -12401,6 +12630,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_configuration_bundle_api_v1_suite_configuration_bundle_get: {
@@ -12423,6 +12653,7 @@ export interface operations {
           };
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   put_configuration_bundle_api_v1_suite_configuration_bundle_put: {
@@ -12458,6 +12689,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_suite_logs_api_v1_suite_logs_get: {
@@ -12492,6 +12725,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   download_suite_logs_api_v1_suite_logs_download_get: {
@@ -12512,6 +12746,7 @@ export interface operations {
           "application/x-ndjson": string;
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_suite_metrics_api_v1_suite_metrics_get: {
@@ -12532,6 +12767,7 @@ export interface operations {
           "application/json": components["schemas"]["SuiteMetricsOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_suite_network_access_api_v1_suite_network_access_get: {
@@ -12552,6 +12788,7 @@ export interface operations {
           "application/json": components["schemas"]["SuiteNetworkAccessOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   put_suite_network_access_api_v1_suite_network_access_put: {
@@ -12585,6 +12822,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_notification_channels_api_v1_suite_notification_channels_get: {
@@ -12605,6 +12844,7 @@ export interface operations {
           "application/json": components["schemas"]["NotificationChannelListOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_notification_channel_api_v1_suite_notification_channels_post: {
@@ -12638,6 +12878,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   put_notification_channel_api_v1_suite_notification_channels__channel_id__put: {
@@ -12673,6 +12915,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   delete_notification_channel_route_api_v1_suite_notification_channels__channel_id__delete: {
@@ -12704,6 +12948,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   post_notification_channel_test_api_v1_suite_notification_channels__channel_id__test_post: {
@@ -12739,6 +12985,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_suite_operational_history_preview_api_v1_suite_operational_history_preview_get: {
@@ -12759,6 +13007,7 @@ export interface operations {
           "application/json": components["schemas"]["SuiteOperationalHistoryResetOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_suite_operational_history_reset_api_v1_suite_operational_history_reset_post: {
@@ -12792,6 +13041,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_suite_security_overview_api_v1_suite_security_overview_get: {
@@ -12812,6 +13063,7 @@ export interface operations {
           "application/json": components["schemas"]["SuiteSecurityOverviewOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_suite_settings_api_v1_suite_settings_get: {
@@ -12832,6 +13084,7 @@ export interface operations {
           "application/json": components["schemas"]["SuiteSettingsOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   put_suite_settings_api_v1_suite_settings_put: {
@@ -12865,6 +13118,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_suite_update_settings_api_v1_suite_update_settings_get: {
@@ -12885,6 +13140,7 @@ export interface operations {
           "application/json": components["schemas"]["UpdateSettingsOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   put_suite_update_settings_api_v1_suite_update_settings_put: {
@@ -12918,6 +13174,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_suite_update_state_api_v1_suite_update_state_get: {
@@ -12938,6 +13196,7 @@ export interface operations {
           "application/json": components["schemas"]["UpdateStateOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_suite_update_status_api_v1_suite_update_status_get: {
@@ -12958,6 +13217,7 @@ export interface operations {
           "application/json": components["schemas"]["SuiteUpdateStatusOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_system_directories_api_v1_system_directories_get: {
@@ -12989,6 +13249,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_system_log_api_v1_system_log_get: {
@@ -13052,6 +13313,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_system_log_export_api_v1_system_log_export_get: {
@@ -13113,6 +13375,7 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_system_media_tools_api_v1_system_media_tools_get: {
@@ -13133,6 +13396,7 @@ export interface operations {
           "application/json": components["schemas"]["MediaToolsOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_system_overview_api_v1_system_overview_get: {
@@ -13153,6 +13417,7 @@ export interface operations {
           "application/json": components["schemas"]["SystemOverviewOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   authenticated_readiness_api_v1_system_readiness_get: {
@@ -13173,6 +13438,7 @@ export interface operations {
           "application/json": components["schemas"]["ReadinessResponse"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_reconciliation_report_api_v1_system_reconciliation_get: {
@@ -13193,6 +13459,7 @@ export interface operations {
           "application/json": unknown;
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   post_reconciliation_repair_api_v1_system_reconciliation_repair_post: {
@@ -13226,6 +13493,8 @@ export interface operations {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_system_stats_api_v1_system_stats_get: {
@@ -13246,6 +13515,7 @@ export interface operations {
           "application/json": components["schemas"]["SystemStatsOut"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   get_system_tasks_api_v1_system_tasks_get: {
@@ -13266,6 +13536,7 @@ export interface operations {
           "application/json": components["schemas"]["SystemTaskOut"][];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   health_health_get: {
@@ -13286,6 +13557,7 @@ export interface operations {
           "application/json": components["schemas"]["HealthResponse"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
   ready_ready_get: {
@@ -13306,6 +13578,7 @@ export interface operations {
           "application/json": components["schemas"]["PublicReadinessResponse"];
         };
       };
+      500: components["responses"]["InternalServerError"];
     };
   };
 }
