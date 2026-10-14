@@ -58,14 +58,16 @@ public sealed class JobsStartupRecoveryService : IHostedService
     public Task RecoveryCompleted => _recoveryCompleted?.Task ?? Task.CompletedTask;
 
     /// <summary>
-    /// Runs recovery and the swap sweep in the background and returns at once, so their folder walks run
-    /// alongside Kestrel starting to listen rather than in front of it (#718). A worker lane must not start
-    /// before they finish, so it awaits <see cref="RecoveryCompleted"/> itself.
+    /// Runs recovery and the swap sweep on a thread of their own and returns at once, so their folder walks run
+    /// alongside Kestrel starting to listen rather than in front of it (#718). The database calls here finish
+    /// without yielding, so without the separate thread the whole walk would run inside this call and hold up
+    /// every service started after it. A worker lane must not start before they finish, so it awaits
+    /// <see cref="RecoveryCompleted"/> itself.
     /// </summary>
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _recoveryCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _ = RunRecoveryAsync();
+        _ = Task.Run(RunRecoveryAsync, CancellationToken.None);
         return Task.CompletedTask;
     }
 

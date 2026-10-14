@@ -106,7 +106,7 @@ public sealed class SwapRecoverySweepTests
 
         await s.Sweep.RunAsync([], walkFolders: false);
 
-        Assert.Equal(["Journal(list)"], s.Files.Operations);
+        Assert.Equal(["Journal(list)", "Journal(conflicts)"], s.Files.Operations);
     }
 
     [Fact]

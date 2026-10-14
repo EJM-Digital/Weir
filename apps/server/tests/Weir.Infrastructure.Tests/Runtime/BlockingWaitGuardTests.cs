@@ -15,6 +15,7 @@ public sealed class BlockingWaitGuardTests
         [Path.Join("Weir.Infrastructure", "Runtime", "LanAccessFile.cs")] = "hands ReplacedFile its pause; every read looks once and keeps the last good choice",
         [Path.Join("Weir.Infrastructure", "Runtime", "StartupProgress.cs")] = "start-up only, before the server listens",
         [Path.Join("Weir.Infrastructure", "Logging", "NonBlockingConsole.cs")] = "waits for the last lines when the server stops",
+        [Path.Join("Weir.Infrastructure", "LibraryMode", "SwapProgress.cs")] = "a test seam, set only by WEIR_LIBRARY_SWAP_HOLD_AT, that stops a library swap for good on a job lane's thread so a test can end the process there; never set on a real install",
     };
 
     [Fact]

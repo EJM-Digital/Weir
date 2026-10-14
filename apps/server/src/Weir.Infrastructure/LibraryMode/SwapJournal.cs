@@ -52,6 +52,9 @@ public interface ISwapJournal
     Task RecordAsync(SwapJournalEntry entry, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<SwapJournalEntry>> ListUnfinishedAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>The library files whose kept original needs a person (<see cref="SwapJournalState.KeepConflict"/>). Their backups are not to be touched.</summary>
+    Task<IReadOnlyList<string>> ListKeepConflictPathsAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -126,6 +129,22 @@ public sealed class ProcessingJobSwapJournal : ISwapJournal
         }
 
         return entries;
+    }
+
+    public async Task<IReadOnlyList<string>> ListKeepConflictPathsAsync(CancellationToken cancellationToken = default)
+    {
+        var paths = new List<string>();
+        await using var connection = await _database.OpenAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT original_path FROM library_swaps WHERE state = @state AND original_path IS NOT NULL ORDER BY job_id";
+        command.Parameters.AddWithValue("@state", StateName(SwapJournalState.KeepConflict));
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            paths.Add(reader.GetString(0));
+        }
+
+        return paths;
     }
 
     public static string StateName(SwapJournalState state) => state switch

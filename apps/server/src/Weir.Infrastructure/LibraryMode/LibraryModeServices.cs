@@ -38,6 +38,11 @@ public static class LibraryModeServices
         services.TryAddSingleton(sp => new ProcessingJobSwapJournal(sp.GetRequiredService<SqliteDatabase>()));
         services.TryAddSingleton<ISwapJournal>(sp => sp.GetRequiredService<ProcessingJobSwapJournal>());
         services.TryAddSingleton<ISwapOutputValidator, RemuxOutputSwapValidator>();
+        if (options.LibrarySwapHoldAt is { } holdAt)
+        {
+            services.AddSingleton<ISwapProgress>(HeldSwapProgress.FromSetting(holdAt, options.WeirHome));
+        }
+
         services.TryAddSingleton<SafeSwap>();
         services.TryAddSingleton<SwapRecoverySweep>();
 

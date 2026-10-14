@@ -95,6 +95,12 @@ public sealed record WeirOptions
     public const int DefaultSqliteBusyTimeoutSeconds = 30;
 
     /// <summary>
+    /// For tests only (<c>WEIR_LIBRARY_SWAP_HOLD_AT</c>): the name of the point in a library swap where it stops for good so a test can
+    /// end the process there (<c>HeldSwapProgress</c>). Unset on a real install.
+    /// </summary>
+    public string? LibrarySwapHoldAt { get; init; }
+
+    /// <summary>
     /// Whether Weir sets up its workflows from a media manager that reports its folders (Deluno) and keeps them in step
     /// (<c>WEIR_MEDIA_MANAGER_WORKFLOW_SYNC_ENABLED</c>, default on). Off leaves every workflow's folders to be typed.
     /// </summary>

@@ -136,6 +136,7 @@ public static class WeirOptionsLoader
             ProcessingJobLeaseSeconds = processingJobLeaseSeconds,
             ProcessingWatcherEnabled = watcherEnabled,
             SqliteBusyTimeoutSeconds = ClampSqliteBusyTimeoutSeconds(EnvInt(runtime, "WEIR_SQLITE_BUSY_TIMEOUT_SECONDS", WeirOptions.DefaultSqliteBusyTimeoutSeconds)),
+            LibrarySwapHoldAt = NullIfEmpty(runtime.Get("WEIR_LIBRARY_SWAP_HOLD_AT")?.Trim()),
             ManagerWorkflowSyncEnabled = EnvBool(runtime, "WEIR_MEDIA_MANAGER_WORKFLOW_SYNC_ENABLED", true),
             ProcessingWatcherDebounceSeconds = watcherDebounce,
             ProcessingWatchedFolderRemuxScanDispatchScheduleEnabled = EnvBool(

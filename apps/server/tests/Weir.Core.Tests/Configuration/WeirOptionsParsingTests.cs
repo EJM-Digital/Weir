@@ -243,6 +243,17 @@ public sealed class WeirOptionsParsingTests
         Assert.Equal(30, TestRuntime.Load().SqliteBusyTimeoutSeconds);
 
     [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void A_library_swap_is_held_nowhere_unless_a_point_is_named(string? raw) =>
+        Assert.Null(raw is null ? TestRuntime.Load().LibrarySwapHoldAt : TestRuntime.Load(("WEIR_LIBRARY_SWAP_HOLD_AT", raw)).LibrarySwapHoldAt);
+
+    [Fact]
+    public void A_library_swap_hold_keeps_the_point_as_written() =>
+        Assert.Equal("OriginalMovedAside", TestRuntime.Load(("WEIR_LIBRARY_SWAP_HOLD_AT", " OriginalMovedAside ")).LibrarySwapHoldAt);
+
+    [Theory]
     [InlineData("0", 0.25)]
     [InlineData("10", 10.0)]
     [InlineData("1000", 300.0)]
