@@ -17,11 +17,12 @@
 //       golden-VM scenario that no row names in `covers` (scripts/coverage/inventory.mjs reads them from source);
 //   (2) a row covers something the code no longer has;
 //   (3) a proof names a file or test that does not exist, or claims a type the file does not have;
-//   (4) a row has no proof and no `issue`, or names an `issue` it no longer needs because its proofs reach its required level;
+//   (4) a row has no proof and no `issue`;
 //   (5) the number of gaps is above `gapCeiling` (or above the register's count at --base), or below it (lower it, so the ceiling only
 //       ever goes down), or a row names an issue that is not open (--gh, --open-issues);
 //   (6) the register is malformed.
-// A gap is a row whose proofs do not reach its required level; `required` is derived from `severity` and `touches`. Gaps that are not
+// A gap is a row whose proofs do not reach its required level (`required` is derived from `severity` and `touches`), or that names an
+// `issue`: a row proven in part keeps its proofs and names the issue that will prove the rest. Gaps that are not
 // yet on an issue are counted and reported. --strict fails on every gap; Weir turns it on once the gaps are closed.
 import { spawnSync } from "node:child_process";
 import { existsSync, writeFileSync } from "node:fs";
@@ -53,7 +54,8 @@ export function proofLevel(proof, row, index) {
   return 1;
 }
 export const rowLevel = (row, index) => (row.proofs ?? []).reduce((best, p) => Math.max(best, proofLevel(p, row, index)), 0);
-export const isGap = (row, index) => rowLevel(row, index) < requiredLevel(row);
+/** A gap is a row whose proofs do not reach its required level, or that still names the issue that will finish proving it. */
+export const isGap = (row, index) => row.issue != null || rowLevel(row, index) < requiredLevel(row);
 
 /** The register's own shape: ids, enums, and the rule deriving the required level from severity and what the row touches. */
 export function validateShape(register) {
@@ -135,12 +137,11 @@ export function missingProofs(register, index) {
   return bad;
 }
 
-/** (4) rows with neither a proof nor an issue, and rows with an issue they no longer need. */
-export function issueProblems(register, index) {
+/** (4) rows with neither a proof nor an issue. */
+export function issueProblems(register) {
   const problems = [];
   for (const row of register.rows) {
     if ((row.proofs ?? []).length === 0 && row.issue == null) problems.push(`row ${row.id} has neither a proof nor an issue that will prove it: ${row.behaviour.slice(0, 80)}`);
-    if (row.issue != null && !isGap(row, index)) problems.push(`row ${row.id} names issue #${row.issue} but its proofs reach its required level: remove the issue`);
   }
   return problems;
 }
@@ -205,7 +206,7 @@ export function evaluate({ register, inventory, index, openIssues = null, baseGa
     shape: validateShape(register),
     ...mapInventory(register, inventory),
     missing: missingProofs(register, index),
-    issueProblems: issueProblems(register, index),
+    issueProblems: issueProblems(register),
     gapProblems: gapProblems(register, index, { openIssues, baseGaps }),
     totals: totals(register, index),
   };
@@ -336,7 +337,7 @@ async function main() {
   if (result.stale.length) fail.push(`(2) ${result.stale.length} row(s) cover something the code no longer has (remove the key, or the row):\n    ${shown(result.stale, (s) => `${s.row} -> ${s.key}`)}`);
   if (result.missing.length) fail.push(`(3) ${result.missing.length} proof(s) name a file or test that does not exist, or claim a type they do not have (fix the proof; the row is then a gap and needs an issue):\n    ${shown(result.missing, (m) => `${m.row}: ${m.why}`)}`);
   else lines.push("  OK  every proof names a test that exists, of the type it claims");
-  if (result.issueProblems.length) fail.push(`(4) ${result.issueProblems.length} row(s) with a missing or needless issue:\n    ${shown(result.issueProblems, (x) => x)}`);
+  if (result.issueProblems.length) fail.push(`(4) ${result.issueProblems.length} row(s) with neither a proof nor an issue:\n    ${shown(result.issueProblems, (x) => x)}`);
   if (result.gapProblems.length) fail.push(`(5) the gaps:\n    ${shown(result.gapProblems, (x) => x)}`);
   else lines.push(`  OK  ${t.gaps.length} gaps, at the ceiling${baseRef ? (baseGaps === null ? ` (no register at ${baseRef} to compare)` : ` and no more than the ${baseGaps} at ${baseRef}`) : ""}${openIssues ? "; every issue named is open" : ""}`);
   const levelLine = `${t.gaps.length} gaps (${t.highGaps} high): ${t.all.proven} of ${t.all.rows} rows reach their required proof level; ${t.untracked.length} gaps are not on an issue yet`;

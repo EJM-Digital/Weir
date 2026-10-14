@@ -208,10 +208,20 @@ describe("(4) a row with neither a proof nor an issue", () => {
     clean(check(fixture(), reg, { openIssues: new Set([975]) }));
   });
 
-  test("an issue on a row whose proofs reach its level is named", () => {
+  test("a row proven in part keeps its proofs, names the issue that will prove the rest, and is a gap", () => {
+    const reg = register({ gapCeiling: 1 });
+    reg.rows[0].issue = 975;
+    const result = check(fixture(), reg, { openIssues: new Set([975]) });
+    clean(result);
+    assert.equal(result.totals.gaps.length, 1);
+    assert.equal(result.totals.untracked.length, 0);
+    assert.equal(result.totals.gaps[0].proofs.length, 1);
+  });
+
+  test("the same row is a gap that cannot be added without lifting the ceiling", () => {
     const reg = register();
     reg.rows[0].issue = 975;
-    assert.match(check(fixture(), reg).issueProblems[0], /names issue #975 but its proofs reach its required level/);
+    assert.match(check(fixture(), reg).gapProblems[0], /1 gaps, above the ceiling of 0/);
   });
 });
 
