@@ -1,7 +1,7 @@
 {
   "version": 1,
   "generatedFrom": "the coverage audit of 14 Oct 2026, brought up to date with main at rc.18, plus the inventories of scripts/coverage/inventory.mjs",
-  "gapCeiling": 865,
+  "gapCeiling": 860,
   "areas": {
     "api": {
       "code": "R",
@@ -1288,7 +1288,18 @@
       "severity": "high",
       "touches": "disk",
       "required": "real",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanReplacesFileTests.cs",
+          "name": "LibraryCleanReplacesFileTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanRefusalTests.cs",
+          "name": "LibraryCleanRefusalTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -1326,11 +1337,6 @@
           "name": "PhysicalSwapTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "This route queues the in-place replacement of a user's library file. The swap is proven at unit level on a real temp filesystem; no contract or VM test runs a clean through HTTP with real ffmpeg on the Windows filesystem; no refusal tests (viewer/CSRF)"
-      },
-      "issue": 983,
       "covers": [
         "route:POST /api/v1/processing/libraries/{library_id}/library-files/clean"
       ],
@@ -2718,7 +2724,7 @@
           "name": "ProcessingFilesSortingTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingFilesPassThroughRejectStatusTests.cs",
           "name": "ProcessingFilesPassThroughRejectStatusTests"
         }
@@ -5894,8 +5900,7 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/StartupRecoveryTests.cs",
@@ -5912,42 +5917,42 @@
           "name": "Startup_recovery_leaves_rows_that_were_not_leased_alone"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/StartupRecoveryTests.cs",
           "name": "Startup_processing_recovery_removes_hidden_partial_outputs"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/StartupRecoveryTests.cs",
           "name": "Startup_recovery_never_follows_a_link_out_of_the_output_folder"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/StartupRecoveryTests.cs",
           "name": "A_crash_mid_remux_leaves_no_temp_output_in_the_custom_work_folder_534"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/StartupRecoveryTests.cs",
           "name": "The_startup_sweep_removes_only_weir_temp_names_from_every_work_folder"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/StartupRecoveryTests.cs",
           "name": "A_failed_copy_kept_on_request_survives_a_restart_until_it_is_a_day_old"
         },
         {
-          "type": "xunit",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/JobsStartupTests.cs",
           "name": "Startup_recovers_a_job_a_killed_server_left_leased_and_removes_its_temp_output"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/ResilienceTests.cs",
           "name": "Server_killed_mid_job_recovers_the_job_on_restart_and_finishes_it"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/CrashTempOutputTests.cs",
           "name": "A_crash_mid_remux_leaves_no_temp_output_and_the_job_still_finishes"
         },
@@ -5955,13 +5960,23 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/EveryLibraryHasAProfileTests.cs",
           "name": "EveryLibraryHasAProfileTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/JobsStartupRecoveryServiceTests.cs",
+          "name": "JobsStartupRecoveryServiceTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Jobs/StartupRecoveryLogTests.cs",
+          "name": "StartupRecoveryLogTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Jobs/SwapRecoveryByWalkTests.cs",
+          "name": "SwapRecoveryByWalkTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P1] Not proven: (a) the swap-recovery sweep as the start-up service calls it (folders from LibrarySettingsStore, walkFolders:true, optional SwapRecoverySweep injected by DI) - SwapRecoverySweepTests and PhysicalSwapTests call the sweep directly; (b) the reserved-folder warning (WarnAboutReservedLibraryFolders) has no test at all; (c) the failure branch (recovery throws, logs Critical, still opens the gate so lanes start) has no test; (d) no VM scenario kills and restarts Weir mid-job."
-      },
-      "issue": 984,
       "covers": [
         "service:JobsStartupRecoveryService"
       ],
@@ -6849,12 +6864,33 @@
       "severity": "high",
       "touches": "disk",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "The only job that overwrites a user's existing library files has NO test above handler level: no contract test, no e2e, no VM scenario in scripts/scenarios/Weir.Scenarios.Catalog.ps1, and the handler tests never run the real mkvmerge/ffmpeg output through the swap (fake runner). Needed: a VM scenario (and a contract scenario with fake tools) that cleans a real file in a library folder through the API, asserts the file is replaced in place with the right tracks, no .weir-backup/.tmp left, kept original in .weir-originals when asked, and survives a kill mid-swap and a restart. See also JOB-001."
-      },
-      "issue": 983,
+      "proofs": [
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanReplacesFileTests.cs",
+          "name": "LibraryCleanReplacesFileTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanKeepsOriginalTests.cs",
+          "name": "LibraryCleanKeepsOriginalTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanLeftoversTests.cs",
+          "name": "LibraryCleanLeftoversTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Jobs/SwapCrashRecoveryTests.cs",
+          "name": "SwapCrashRecoveryTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Jobs/SwapCrashKeepingOriginalTests.cs",
+          "name": "SwapCrashKeepingOriginalTests"
+        }
+      ],
       "covers": [
         "job:processing.library.clean.v1"
       ],
@@ -7285,11 +7321,6 @@
           "name": "ReadinessChangeTaskTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "ReadinessChangeTaskTests.A_worker_that_stops_and_one_that_comes_back_are_published_while_a_browser_watches timed out once; find the cause, then keep the proof."
-      },
-      "issue": 1063,
       "covers": [
         "task:readiness-changes"
       ],
@@ -43224,7 +43255,7 @@
           "name": "StartRefusalTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/System/StartupSchemaTests.cs",
           "name": "StartupSchemaTests"
         },
@@ -47284,7 +47315,7 @@
           "name": "SuiteFileApiTests"
         },
         {
-          "type": "contract",
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/System/SuiteSettingsApiTests.cs",
           "name": "Log_retention_does_not_prune_activity_history"
         },
@@ -48300,7 +48331,38 @@
       "severity": "high",
       "touches": "disk",
       "required": "real",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Jobs/SwapCrashRecoveryTests.cs",
+          "name": "SwapCrashRecoveryTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Jobs/SwapCrashKeepingOriginalTests.cs",
+          "name": "SwapCrashKeepingOriginalTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Jobs/SwapRecoveryByWalkTests.cs",
+          "name": "SwapRecoveryByWalkTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Jobs/SwapCrashRerunTests.cs",
+          "name": "SwapCrashRerunTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanLeftoversTests.cs",
+          "name": "A_backup_left_without_its_film_is_put_back_when_Weir_starts"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanLeftoversTests.cs",
+          "name": "A_backup_left_beside_a_film_that_is_in_place_is_removed_when_Weir_starts"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -48323,11 +48385,6 @@
           "name": "JobsStartupTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No test leaves a .weir-bak or .weir-tmp (or an unfilled keep-original reservation) behind, starts a server, and checks the file is restored. The wiring that passes the sweep to the startup service, and the order against the workers, is unproven. A miss leaves a user's film replaced or missing"
-      },
-      "issue": 984,
       "audit": {
         "id": "FL-20",
         "verdict": "Partly"

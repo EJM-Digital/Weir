@@ -385,6 +385,67 @@ describe("real-fs proofs", () => {
   });
 });
 
+describe("container-smoke proofs", () => {
+  const WORKFLOW = ".github/workflows/ci-packaging.yml";
+  const STEPS =
+    "jobs:\n  docker-smoke:\n    steps:\n" +
+    "      - name: Start Weir Docker candidate\n        run: docker compose -f compose.yaml up -d\n" +
+    "      - name: Trivy scan of the Docker candidate\n        run: trivy image weir:candidate\n" +
+    "      - name: Cleanup\n        run: docker rm -f weir\n";
+  const dockerRow = (name, extra = {}) => ({ area: "platform", severity: "high", touches: "install", required: "real", proofs: [{ type: "container-smoke", file: WORKFLOW, name }], ...extra });
+  const index = () => new TestIndex(fixture({ [WORKFLOW]: STEPS }));
+
+  test("a step that starts the shipped container is real for an install row", () => {
+    const idx = index();
+    assert.equal(idx.containerSmoke(WORKFLOW, "Start Weir Docker candidate").real, true);
+    const row = dockerRow("Start Weir Docker candidate");
+    assert.equal(proofLevel(row.proofs[0], row, idx), 2);
+    assert.equal(isGap(row, idx), false);
+  });
+
+  test("a step that does not start the container is refused and counts as inproc", () => {
+    const idx = index();
+    const verdict = idx.containerSmoke(WORKFLOW, "Trivy scan of the Docker candidate");
+    assert.equal(verdict.real, false);
+    assert.match(verdict.why, /does not start the container image/);
+    const row = dockerRow("Trivy scan of the Docker candidate");
+    assert.equal(proofLevel(row.proofs[0], row, idx), 1);
+  });
+
+  test("a step that is not in the workflow is named", () => {
+    const reg = register();
+    reg.rows[0] = { ...reg.rows[0], area: "api", severity: "high", touches: "install", required: "real", proofs: [{ type: "container-smoke", file: WORKFLOW, name: "A step nobody wrote" }] };
+    const result = check(fixture({ [WORKFLOW]: STEPS }), reg);
+    assert.match(result.missing[0].why, /no test, group or class "A step nobody wrote"/);
+  });
+
+  test("a script that starts the container is judged as a whole", () => {
+    const script = "scripts/smoke-docker-compose.mjs";
+    const idx = new TestIndex(fixture({ [script]: 'spawn("docker", ["compose", "up", "-d"]);\n// docker compose -f compose.yaml up -d\n' }));
+    assert.equal(idx.containerSmoke(script, "*").real, true);
+    assert.equal(new TestIndex(fixture({ [script]: "console.log('nothing started');\n" })).containerSmoke(script, "*").real, false);
+  });
+
+  test("it must name a packaging workflow or a container script", () => {
+    const reg = register();
+    reg.rows[0].proofs = [{ type: "container-smoke", file: "apps/server/tests/Weir.Api.Tests/ThingTests.cs", name: "Gets_the_things" }];
+    assert.match(check(fixture(), reg).missing[0].why, /container-smoke proof must be a packaging workflow or a container script/);
+  });
+
+  test("it does not count for a vm row or a row that touches no disk or install, and the totals count it", () => {
+    const idx = index();
+    assert.equal(proofLevel(dockerRow("Start Weir Docker candidate").proofs[0], dockerRow("Start Weir Docker candidate", { vm: true }), idx), 1);
+    assert.equal(proofLevel(dockerRow("Start Weir Docker candidate").proofs[0], dockerRow("Start Weir Docker candidate", { touches: "other-app" }), idx), 1);
+    const reg = register({ gapCeiling: 0 });
+    reg.rows[0] = { ...reg.rows[0], area: "api", severity: "high", touches: "install", required: "real", proofs: dockerRow("Start Weir Docker candidate").proofs };
+    reg.rows[1] = { ...reg.rows[1], area: "api", severity: "high", touches: "install", required: "real", proofs: dockerRow("Trivy scan of the Docker candidate").proofs };
+    reg.gapCeiling = 1;
+    const result = check(fixture({ [WORKFLOW]: STEPS }), reg);
+    assert.deepEqual({ ...result.totals.container }, { claims: 2, counted: 1, refused: 1, noEffect: 0 });
+    assert.equal(result.refused.length, 1);
+  });
+});
+
 describe("vm rows", () => {
   const index = { stubInfo: () => ({ stubbed: false, decided: true }), realFs: () => ({ real: true, why: "" }) };
   const vmRow = (extra = {}) => ({ area: "tray", severity: "high", touches: "install", required: "real", vm: true, ...extra });
