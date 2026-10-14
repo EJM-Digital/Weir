@@ -48,11 +48,16 @@ Weir should be easy for coding agents to inspect, modify, validate, and repair w
 | API types (from `apps/web`) | `npm run api:types:check` |
 | Dead code | `node scripts/check-dead-code.mjs` |
 | Docs map | `node scripts/check-agent-docs.mjs` |
+| Coverage register | `node scripts/check-coverage-register.mjs` and `node --test scripts/check-coverage-register.test.mjs` ([`testing/COVERAGE.md`](testing/COVERAGE.md)) |
 | Contract suite | `dotnet test apps/server/tests/Weir.Contract.Tests --filter "Area=<area>"` ([README](../apps/server/tests/Weir.Contract.Tests/README.md)) |
 | E2E | `WEIR_E2E=1 dotnet test apps/server/tests/Weir.E2E.Tests` (see [`local-development.md`](local-development.md)) |
 | No Python | `node scripts/check-no-python.mjs` |
 | Nothing private in public files | `node scripts/check-public-privacy.mjs` |
 | Windows and Docker smoke | [`smoke-checklists.md`](smoke-checklists.md) |
+
+## The coverage register
+
+[`testing/coverage-register.json`](testing/coverage-register.json) lists every route, job kind, hosted service, periodic task, setting, event type, web route, screen control, tray menu item and golden-VM scenario, read from the code, with the tests that prove each. CI fails on new code with no row, on a row for code that is gone, on a proof whose test no longer exists, and on a gap that is added or sits on a closed issue. Add or change the rows in the same pull request as the code, and when a test closes a gap put it in the row's `proofs`, drop its `issue` and lower `gapCeiling`. The rules are in [`testing/COVERAGE.md`](testing/COVERAGE.md).
 
 ## Feedback loops to prefer
 

@@ -37,6 +37,7 @@ This file is the short entry point for coding agents. Keep detailed rules in lin
 - Weir has no Python: `node scripts/check-no-python.mjs` fails if a `.py` file is tracked. Tooling is Node, PowerShell or .NET.
 - Packaging smoke checks are documented in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 - Docs map validation: `node scripts/check-agent-docs.mjs`.
+- Coverage register: `node scripts/check-coverage-register.mjs`. Every route, job kind, setting, event type, web route, screen control and tray menu item needs a row in [`docs/testing/coverage-register.json`](docs/testing/coverage-register.json), and every row names the tests that prove it or the open coverage issue that will. Update the register in the same pull request as the code; the rules and the proof types are in [`docs/testing/COVERAGE.md`](docs/testing/COVERAGE.md).
 
 ## Working Style
 
