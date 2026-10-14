@@ -28,7 +28,7 @@ dotnet build apps/server/Weir.slnx -warnaserror
 dotnet test apps/server/Weir.slnx
 ```
 
-`RealFfmpegTests` run real ffprobe and ffmpeg and skip unless the tools are found through `WEIR_FFMPEG_DIR` or `PATH`.
+The real-tool tests (`RealFfmpegTests`, `MkvmergeRealTests`, `RemuxPassRealFfmpegTests`) run real ffprobe, ffmpeg and mkvmerge and skip unless the tools are found through `WEIR_FFMPEG_DIR`, `WEIR_MKVTOOLNIX_DIR` or `PATH`. With `WEIR_REQUIRE_REAL_TOOLS=1` a missing tool fails them instead; CI sets it, installs the pinned tools (`.github/actions/setup-real-media-tools`) and fails the leg unless all 31 ran (`scripts/check-real-tool-tests.mjs`). To run them yourself with the CI tools on Windows, run `scripts/install-media-tools-windows.ps1` and point the two variables at `packaging/windows/vendor/ffmpeg` and `packaging/windows/vendor/mkvtoolnix`.
 
 What makes the server tests fast, so a new test keeps them that way:
 

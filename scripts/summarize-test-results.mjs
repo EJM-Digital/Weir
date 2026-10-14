@@ -27,20 +27,30 @@ function decode(text) {
     .replace(/&amp;/g, "&");
 }
 
-export function readTrx(text) {
-  const counters = attributes((text.match(/<Counters\b[^>]*>/) ?? [""])[0]);
-  const failures = [];
+/** Every result in a TRX file: `{ name, outcome, message }`, the message being the error or the reason a test was skipped. */
+export function readTrxResults(text) {
+  const results = [];
   for (const match of text.matchAll(/<UnitTestResult\b[^>]*?\/>|<UnitTestResult\b[^>]*>[\s\S]*?<\/UnitTestResult>/g)) {
     const result = attributes(match[0].slice(0, match[0].indexOf(">") + 1));
-    if (result.outcome !== "Failed") continue;
     const message = (match[0].match(/<Message>([\s\S]*?)<\/Message>/) ?? [])[1] ?? "";
-    failures.push({ name: decode(result.testName ?? "(unnamed test)"), message: decode(message).trim().split(/\r?\n/)[0].slice(0, 300) });
+    results.push({ name: decode(result.testName ?? "(unnamed test)"), outcome: result.outcome, message: decode(message).trim() });
   }
-  const number = (name) => Number(counters[name] ?? 0);
-  return { total: number("total"), passed: number("passed"), failed: number("failed"), skipped: number("notExecuted"), failures };
+  return results;
 }
 
-function findTrx(folder) {
+export function readTrx(text) {
+  const counters = attributes((text.match(/<Counters\b[^>]*>/) ?? [""])[0]);
+  const results = readTrxResults(text);
+  const failures = results
+    .filter((result) => result.outcome === "Failed")
+    .map((result) => ({ name: result.name, message: result.message.split(/\r?\n/)[0].slice(0, 300) }));
+  const number = (name) => Number(counters[name] ?? 0);
+  // dotnet test counts a skipped test in the total but leaves the notExecuted counter at 0, so the results say how many skipped.
+  const skipped = results.filter((result) => result.outcome === "NotExecuted").length;
+  return { total: number("total"), passed: number("passed"), failed: number("failed"), skipped, failures };
+}
+
+export function findTrx(folder) {
   const found = [];
   const walk = (current) => {
     for (const entry of readdirSync(current, { withFileTypes: true })) {

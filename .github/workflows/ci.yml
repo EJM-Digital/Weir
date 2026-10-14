@@ -110,6 +110,21 @@ jobs:
               - 'scripts/ffmpeg-pin.mjs'
               - 'scripts/install-ffmpeg-linux.mjs'
               - '.github/workflows/ci-packaging.yml'
+            # The real ffmpeg, ffprobe and mkvmerge the server tests run against (their pins and installers) and the check
+            # that every real-tool test ran. The workflows filter below covers the actions that call them.
+            media_tools:
+              - 'packaging/windows/build-velopack-vendored-media-tools.ps1'
+              - 'packaging/windows/pinned-download.ps1'
+              - 'scripts/check-real-tool-tests.mjs'
+              - 'scripts/ffmpeg-cache-key.mjs'
+              - 'scripts/ffmpeg-pin.mjs'
+              - 'scripts/install-ffmpeg-linux.mjs'
+              - 'scripts/install-media-tools-windows.ps1'
+              - 'scripts/install-mkvtoolnix-linux.mjs'
+              - 'scripts/mkvtoolnix-cache-key.mjs'
+              - 'scripts/mkvtoolnix-pin.mjs'
+              - 'scripts/pinned-download.mjs'
+              - 'scripts/summarize-test-results.mjs'
             docker:
               - 'docker/**'
               - 'Dockerfile'
@@ -130,6 +145,7 @@ jobs:
           HARNESS: ${{ steps.filter.outputs.harness }}
           TRAY: ${{ steps.filter.outputs.tray }}
           PACKAGING: ${{ steps.filter.outputs.packaging }}
+          MEDIA_TOOLS: ${{ steps.filter.outputs.media_tools }}
           DOCKER: ${{ steps.filter.outputs.docker }}
           WORKFLOWS: ${{ steps.filter.outputs.workflows }}
         run: |
@@ -146,8 +162,8 @@ jobs:
           # outside it still needs packaging tested once it lands on main, since nothing else will.
           packaging_reached_by_main=$(both "$main_push" "$(either "$SERVER" "$WEB")")
           {
-            echo "run_server_linux=$(either "$all" "$SERVER")"
-            echo "run_server_windows=$(either "$all" "$SERVER")"
+            echo "run_server_linux=$(either "$all" "$SERVER" "$MEDIA_TOOLS")"
+            echo "run_server_windows=$(either "$all" "$SERVER" "$MEDIA_TOOLS")"
             echo "run_server_audit=$(on_pull_request "$(either "$all" "$SERVER")")"
             echo "run_web=$web"
             echo "run_web_audit=$(on_pull_request "$(either "$all" "$WEB")")"
@@ -216,6 +232,9 @@ jobs:
           node scripts/check-event-titles.mjs
           node --test scripts/check-event-titles.test.mjs
 
+      - name: The real media tools - pins, installers and the check that every real-tool test ran
+        run: node --test scripts/ffmpeg-pin.test.mjs scripts/pinned-download.test.mjs scripts/mkvtoolnix-pin.test.mjs scripts/install-mkvtoolnix-linux.test.mjs scripts/summarize-test-results.test.mjs scripts/check-real-tool-tests.test.mjs
+
       - name: Docker entrypoint keeps the server's umask
         run: node --test scripts/docker-entrypoint.test.mjs
 
@@ -251,16 +270,33 @@ jobs:
         working-directory: apps/server
         run: dotnet build Weir.slnx -warnaserror --no-restore
 
+      # The real-tool tests (RealFfmpegTests, MkvmergeRealTests, RemuxPassRealFfmpegTests) run the real ffmpeg, ffprobe and
+      # mkvmerge. They skip themselves where those are missing, and a skip reads as a pass, so the pinned tools are
+      # installed here, WEIR_REQUIRE_REAL_TOOLS turns a missing tool into a failure, and the check after the tests
+      # fails the leg unless every one of them ran.
+      - name: Set up the real media tools
+        id: media-tools
+        uses: ./.github/actions/setup-real-media-tools
+        timeout-minutes: 10
+
       # Category=Stress (the SQLite pool-race test) runs several seconds of wall clock across 8 threads and
       # would starve every other test running alongside it here; ci-stress.yml runs it nightly instead.
       # Category=Contract and Category=E2E start a real server (and a browser): the contract and e2e-smoke jobs run them.
       - name: Test Weir server
         working-directory: apps/server
+        env:
+          WEIR_FFMPEG_DIR: ${{ steps.media-tools.outputs.ffmpeg-dir }}
+          WEIR_MKVTOOLNIX_DIR: ${{ steps.media-tools.outputs.mkvtoolnix-dir }}
+          WEIR_REQUIRE_REAL_TOOLS: "1"
         run: dotnet test Weir.slnx --no-build --filter "Category!=Stress&Category!=Contract&Category!=E2E" --logger trx
 
       - name: Summarize server test results
         if: ${{ !cancelled() }}
         run: node scripts/summarize-test-results.mjs trx apps/server "Server tests (Linux)"
+
+      - name: Every real-tool test ran
+        if: ${{ !cancelled() }}
+        run: node scripts/check-real-tool-tests.mjs apps/server linux "Real-tool tests (Linux)"
 
       - name: Upload server test results
         if: ${{ !cancelled() }}
@@ -300,14 +336,28 @@ jobs:
         working-directory: apps/server
         run: dotnet build Weir.slnx -warnaserror --no-restore
 
+      # The pinned tools the Windows package ships, for the real-tool tests (see server-linux's "Set up the real media tools").
+      - name: Set up the real media tools
+        id: media-tools
+        uses: ./.github/actions/setup-real-media-tools
+        timeout-minutes: 10
+
       # See server-linux's own "Test Weir server" step: ci-stress.yml runs Category=Stress nightly instead.
       - name: Test Weir server
         working-directory: apps/server
+        env:
+          WEIR_FFMPEG_DIR: ${{ steps.media-tools.outputs.ffmpeg-dir }}
+          WEIR_MKVTOOLNIX_DIR: ${{ steps.media-tools.outputs.mkvtoolnix-dir }}
+          WEIR_REQUIRE_REAL_TOOLS: "1"
         run: dotnet test Weir.slnx --no-build --filter "Category!=Stress&Category!=Contract&Category!=E2E" --logger trx
 
       - name: Summarize server test results
         if: ${{ !cancelled() }}
         run: node scripts/summarize-test-results.mjs trx apps/server "Server tests (Windows)"
+
+      - name: Every real-tool test ran
+        if: ${{ !cancelled() }}
+        run: node scripts/check-real-tool-tests.mjs apps/server windows "Real-tool tests (Windows)"
 
       - name: Upload server test results
         if: ${{ !cancelled() }}

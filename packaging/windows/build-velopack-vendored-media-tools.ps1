@@ -91,6 +91,11 @@ $mkvtoolnixArchiveSha256 = "c02e918900f6d945d9307b426237e456378b79a200589ac6928d
 $mkvtoolnixVendorDir = Join-Path $PSScriptRoot "vendor\\mkvtoolnix"
 $mkvtoolnixArchiveName = "mkvtoolnix-64-bit-$mkvtoolnixVersion.zip"
 $mkvtoolnixArchiveUrl = "https://mkvtoolnix.download/windows/releases/$mkvtoolnixVersion/$mkvtoolnixArchiveName"
+# The server tests that run the real mkvmerge also run on Linux in CI. MKVToolNix publishes no Linux build other
+# than its AppImage, so that job takes the AppImage of this same version from
+# https://mkvtoolnix.download/appimage/MKVToolNix_GUI-<version>-x86_64.AppImage (scripts/install-mkvtoolnix-linux.mjs
+# reads this line and the version above). Bump the version and this hash together; hash the AppImage yourself.
+$mkvtoolnixLinuxAppImageSha256 = "c66345b30d6d5fd640ea982ab5e202a99b9f541a20e42aa19edd90f3ddd5dc9b"
 
 # AGPL/LGPL/GPL source-availability pins, downloaded and hash-verified by
 # fetch-bundled-tool-sources.ps1 and attached to each GitHub Release, so the exact source behind the

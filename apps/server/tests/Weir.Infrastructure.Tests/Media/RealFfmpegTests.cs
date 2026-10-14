@@ -9,16 +9,13 @@ using Weir.Infrastructure.Processes;
 
 namespace Weir.Infrastructure.Tests.Media;
 
-/// <summary>A fact that runs only where a working ffprobe and ffmpeg can be found (WEIR_FFMPEG_DIR or PATH).</summary>
+/// <summary>A fact that runs only where a working ffprobe and ffmpeg can be found (WEIR_FFMPEG_DIR or PATH), unless <see cref="RealToolRequirement"/> makes them required.</summary>
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class RequiresFfmpegFactAttribute : FactAttribute
 {
     public RequiresFfmpegFactAttribute()
     {
-        if (RealFfmpeg.Tools is null)
-        {
-            Skip = "No working ffprobe and ffmpeg were found: set WEIR_FFMPEG_DIR or put them on PATH to run the real-ffmpeg tests.";
-        }
+        Skip = RealToolRequirement.FfmpegSkipReason(RealToolRequirement.Required, RealFfmpeg.Tools is not null);
     }
 }
 
@@ -28,32 +25,19 @@ public sealed class RequiresFfmpegOnWindowsFactAttribute : FactAttribute
 {
     public RequiresFfmpegOnWindowsFactAttribute()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            Skip = "Windows named pipes are the mechanism this test blocks ffmpeg on.";
-        }
-        else if (RealFfmpeg.Tools is null)
-        {
-            Skip = "No working ffprobe and ffmpeg were found: set WEIR_FFMPEG_DIR or put them on PATH to run the real-ffmpeg tests.";
-        }
+        Skip = OperatingSystem.IsWindows()
+            ? RealToolRequirement.FfmpegSkipReason(RealToolRequirement.Required, RealFfmpeg.Tools is not null)
+            : "Windows named pipes are the mechanism this test blocks ffmpeg on.";
     }
 }
 
-/// <summary>#548: a fact that runs only where a working mkvmerge can be found (WEIR_MKVTOOLNIX_DIR or PATH).</summary>
+/// <summary>#548: a fact that runs only where a working mkvmerge can be found (WEIR_MKVTOOLNIX_DIR or PATH), unless <see cref="RealToolRequirement"/> makes it required.</summary>
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class RequiresMkvmergeFactAttribute : FactAttribute
 {
     public RequiresMkvmergeFactAttribute()
     {
-        if (RealMkvmerge.Tool is null)
-        {
-            Skip = "No working mkvmerge was found: set WEIR_MKVTOOLNIX_DIR or put it on PATH to run the real-mkvmerge tests.";
-        }
-
-        if (RealFfmpeg.Tools is null)
-        {
-            Skip = "No working ffprobe and ffmpeg were found, and the mkvmerge tests generate their fixtures with them.";
-        }
+        Skip = RealToolRequirement.MkvmergeSkipReason(RealToolRequirement.Required, RealFfmpeg.Tools is not null, RealMkvmerge.Tool is not null);
     }
 }
 

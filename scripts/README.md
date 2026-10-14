@@ -20,7 +20,7 @@ work, not rewritten for its own sake. Scripts are named in kebab-case.
 | `check-agent-docs.mjs` | Checks that the agent documentation map (`AGENTS.md` and its links) is valid. |
 | `check-github-action-pins.mjs` | Fails when a workflow uses an action that is not pinned to a full commit SHA. |
 | `check-workflow-hygiene.mjs` | Fails when a workflow has no top-level `permissions` block (or grants write there), or a job has no `timeout-minutes`. |
-| `summarize-test-results.mjs` | Writes TRX and Playwright results to a CI job's summary page. |
+| `summarize-test-results.mjs` | Writes TRX and Playwright results to a CI job's summary page, counting skipped tests from the results because `dotnet test` leaves its skipped counter at 0 (`summarize-test-results.test.mjs`). |
 | `retry-failed-tests.mjs` | Runs the browser tests that failed in the E2E smoke's first run once more and lists those that passed only then under "Flaky (passed on retry)"; backend tests are never retried (`retry-failed-tests.test.mjs`). |
 | `docker-entrypoint.test.mjs` | Runs `docker/entrypoint.sh` against a stand-in server and checks that the owner-only mode for the secret files does not pass to the server, whose output folders and files would otherwise be private to the `weir` user. |
 | `check-no-python.mjs` | Fails when a Python file is tracked: Weir's tooling and tests are Node, PowerShell or .NET (`check-no-python.test.mjs`). |
@@ -48,6 +48,11 @@ work, not rewritten for its own sake. Scripts are named in kebab-case.
 | `ffmpeg-pin.mjs` | Reads the FFmpeg pin (release tag, archive names, SHA-256) from `packaging/windows/build-velopack-vendored-media-tools.ps1`, for the two scripts below (`ffmpeg-pin.test.mjs`). |
 | `ffmpeg-cache-key.mjs` | Prints the cache key for the pinned FFmpeg, the Windows package's by default or the Linux CI jobs' with `linux`: it changes exactly when the pin does. |
 | `install-ffmpeg-linux.mjs` | Downloads the pinned static Linux FFmpeg with retries, checks its SHA-256 before unpacking and installs `ffmpeg` and `ffprobe` into a folder. Run through `.github/actions/setup-ffmpeg-linux`, so no Linux job installs FFmpeg from a package mirror. |
+| `mkvtoolnix-pin.mjs` | Reads the MKVToolNix pin (version, the Windows archive and the Linux AppImage, each with its SHA-256) from `packaging/windows/build-velopack-vendored-media-tools.ps1` (`mkvtoolnix-pin.test.mjs`). |
+| `mkvtoolnix-cache-key.mjs` | Prints the cache key for the Linux CI jobs' mkvmerge: it changes exactly when the pin does. |
+| `install-mkvtoolnix-linux.mjs` | Downloads the pinned MKVToolNix AppImage with retries, checks its SHA-256 before running it, and installs `mkvmerge` and the libraries it loads into a folder behind a `mkvmerge` launcher (`install-mkvtoolnix-linux.test.mjs`). |
+| `install-media-tools-windows.ps1` | Installs the pinned Windows FFmpeg and MKVToolNix into `packaging/windows/vendor`, the folders the Windows package is built from, through the package scripts' own download and checksum code. |
+| `check-real-tool-tests.mjs` | Fails a server test leg unless all 31 real-tool tests (`RealFfmpegTests`, `MkvmergeRealTests`, `RemuxPassRealFfmpegTests`) ran, reading the TRX files: a skip, other than the Windows-only named-pipe test off Windows, fails the leg. Run through `.github/actions/setup-real-media-tools`, which installs the tools (`check-real-tool-tests.test.mjs`). |
 | `pinned-download.mjs` | Downloads a file pinned by SHA-256 from its upstream URL, or from the same-named asset of the newest Weir release when upstream no longer has it (found from the release feed, not the API), and refuses bytes that do not match the pin (`pinned-download.test.mjs`). The Node counterpart of `packaging/windows/pinned-download.ps1`. |
 
 ## Local development
