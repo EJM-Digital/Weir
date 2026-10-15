@@ -9,7 +9,6 @@ namespace Weir.E2E.Tests;
 public sealed class ForgottenFileLiveTests(E2EServer server) : E2ETestBase(server)
 {
     private const float PushMs = 10_000;
-    private const float FinishMs = 30_000;
     private const string FileName = "Pulp Fiction 1994.mkv";
 
     [E2EFact]
@@ -24,7 +23,8 @@ public sealed class ForgottenFileLiveTests(E2EServer server) : E2ETestBase(serve
         var row = activity.GetByRole(AriaRole.Row).Filter(new() { HasText = FileName });
         await rig.HandOffRootFileAsync("h-root-1", FileName);
         rig.ReleasePass(FileName);
-        await Expect(row).ToContainTextAsync("Done", new() { Timeout = FinishMs });
+        await rig.WaitForWorkToEndAsync();
+        await Expect(row).ToContainTextAsync("Done", new() { Timeout = PushMs });
         await rig.WaitForReportAsync();
         await rig.ReportImportedAsync("h-root-1");
         await Expect(row).ToContainTextAsync("Imported by Deluno", new() { Timeout = PushMs });
