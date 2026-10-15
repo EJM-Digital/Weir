@@ -85,6 +85,8 @@
     second run of the same scenarios on the same machine, after a first run that did restore the checkpoint. The VM must exist and
     answer over PowerShell Direct (it is started if it is off), or the run stops and says which. It needs -Scenarios, because a run
     that restores nothing is never a pass for the tag. The Update and WithDeluno phases never restore, so it changes nothing for them.
+    It prints the Weir version found on the VM, and refuses to run when that is not -Version and -CommitSha unless a chosen scenario
+    (fresh-install) installs the build under test: otherwise the scenarios would judge an older Weir.
 
 .PARAMETER DelunoUrl
     The Deluno inside the VM (default http://127.0.0.1:7879). No secret is passed to the VM or carried between sessions.
@@ -311,6 +313,16 @@ function Use-VmWithoutRestore {
         Invoke-Command -Session $rig -ArgumentList $VmName -ScriptBlock { param($n) Start-VM -Name $n -ErrorAction Stop }
     }
     try { Wait-VmAnswers } catch { throw "-NoRestore needs VM '$VmName' to answer over PowerShell Direct, and it does not: $($_.Exception.Message)" }
+
+    # Nothing is restored, so the Weir on the machine is the one the scenarios meet. Say which, and refuse one that is not the build under test
+    # when no chosen scenario installs it.
+    $found = [string](Invoke-InVm {
+        $server = Join-Path $env:LOCALAPPDATA 'Weir\current\server\WeirServer.exe'
+        if (Test-Path -LiteralPath $server) { (& $server --version | Out-String).Trim() }
+    })
+    Write-Host "   Weir on $VmName before the run: $(if ($found) { $found } else { 'none installed' })" -ForegroundColor Cyan
+    $refusal = Get-NoRestoreRefusal -Found $found -Version $Version -CommitSha $CommitSha -ScenarioIds @($inRun | ForEach-Object { $_.Id })
+    if ($refusal) { throw $refusal }
 }
 
 # --- one phase ------------------------------------------------------------------------------------------------------------

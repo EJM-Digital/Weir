@@ -98,6 +98,21 @@ test("a third job may not publish", () => {
   }
 });
 
+test("the release candidate's entrypoint smoke and its arm64 start may not be dropped", () => {
+  rejects(
+    editJob(real.release, "docker-candidate", (body) => body.replace("- name: Compose entrypoint maps the user", "- name: Skipped")),
+    /Compose entrypoint maps the user/,
+  );
+  rejects(
+    editJob(real.release, "docker-arm64", (body) => body.replace("- name: Start the unpushed arm64 release candidate under QEMU", "- name: Skipped")),
+    /Start the unpushed arm64 release candidate under QEMU/,
+  );
+  rejects(
+    editJob(real.release, "docker-arm64", (body) => body.replace("          load: true\n", "")),
+    /load: true/,
+  );
+});
+
 test("a build job may not log in to the registry, push, release or move a tag", () => {
   for (const [job, marker] of [
     ["docker-arm64", "      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4\n"],
