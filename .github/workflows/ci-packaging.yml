@@ -151,9 +151,8 @@ jobs:
           cache-to: type=gha,mode=max,scope=weir-ci-arm64,ignore-error=true
 
   windows-package-smoke:
-    # The spare Windows PC (docs/self-hosted-runner.md) when the repository variable WEIR_SELF_HOSTED_WINDOWS is 'true',
-    # never for a pull request from a fork; GitHub's own Windows runner otherwise.
-    runs-on: ${{ vars.WEIR_SELF_HOSTED_WINDOWS == 'true' && !github.event.pull_request.head.repo.fork && fromJSON('["self-hosted","Windows","weir-heavy"]') || 'windows-latest' }}
+    # Always GitHub's own runner: this job installs Weir for real, which needs a clean machine every time.
+    runs-on: windows-latest
     timeout-minutes: 30
     env:
       # A self-hosted Windows PC keeps Windows' default script policy; this lets the job's own PowerShell run

@@ -1,16 +1,17 @@
 # Self-hosted Windows runner
 
-Weir's three Windows jobs can run on a spare Windows PC instead of GitHub's own Windows runners:
+Weir's two Windows test jobs can run on a spare Windows PC instead of GitHub's own Windows runners:
 
 - `server-windows` in `ci.yml`;
-- `tray` in `ci.yml`;
-- `windows-package-smoke` in `ci-packaging.yml`.
+- `tray` in `ci.yml`.
+
+`windows-package-smoke` always stays on GitHub's runners: it installs Weir for real, which needs a clean machine every time, and a PC someone uses may already have Weir and its data on it.
 
 They are the heaviest jobs, billed at twice the Linux rate on GitHub's runners. On a dedicated PC they also stop competing with local work for the same machine. The Linux jobs (contract, E2E, the Linux server legs, Docker) and every release job stay on GitHub's runners. A release is always built on a clean, GitHub-hosted machine.
 
 ## How a job chooses the runner
 
-Each of the three jobs says:
+Each of the two jobs says:
 
 ```yaml
 runs-on: ${{ vars.WEIR_SELF_HOSTED_WINDOWS == 'true' && !github.event.pull_request.head.repo.fork && fromJSON('["self-hosted","Windows","weir-heavy"]') || 'windows-latest' }}
