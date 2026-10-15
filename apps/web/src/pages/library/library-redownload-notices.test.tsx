@@ -13,7 +13,9 @@ function answer(response: Response) {
     vi.fn((input: RequestInfo | URL) =>
       String(input).endsWith(REDOWNLOADS_URL)
         ? Promise.resolve(response)
-        : Promise.reject(new TypeError(`unexpected request to ${input}`)),
+        : Promise.reject(
+            new TypeError(`unexpected request to ${String(input)}`),
+          ),
     ),
   );
 }
