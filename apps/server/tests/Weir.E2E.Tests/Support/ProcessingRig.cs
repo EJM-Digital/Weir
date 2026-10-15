@@ -256,8 +256,7 @@ public sealed class ProcessingRig : IAsyncDisposable
         }
 
         text.AppendLine("Server log, last 60 lines:");
-        foreach (var line in _server.LogText().Split('
-').TakeLast(60))
+        foreach (var line in _server.LogText().Split('\n').TakeLast(60))
         {
             text.AppendLine(line.TrimEnd());
         }
