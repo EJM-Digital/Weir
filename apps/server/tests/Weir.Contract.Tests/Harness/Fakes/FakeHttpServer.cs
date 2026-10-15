@@ -99,7 +99,7 @@ public abstract class FakeHttpServer : IDisposable
 
     protected abstract HttpAnswer Answer(RecordedRequest request);
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         _listener.Abort();
         GC.SuppressFinalize(this);
