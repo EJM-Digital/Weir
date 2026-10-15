@@ -11,7 +11,9 @@ export type StubbedRequest = {
 
 /** What a route answers: a Response as it is, or anything else as a 200 with that JSON body. */
 export type StubbedAnswer = unknown;
-type Route = StubbedAnswer | ((request: StubbedRequest) => StubbedAnswer);
+type Route =
+  | StubbedAnswer
+  | ((request: StubbedRequest) => StubbedAnswer | Promise<StubbedAnswer>);
 
 /** A JSON answer with a status, for a route that fails or answers something other than a 200. */
 export function jsonAnswer(body: unknown, status = 200): Response {
@@ -73,7 +75,9 @@ export function stubWeirApi(routes: Record<string, Route>): StubbedApi {
         throw new TypeError(`unstubbed request: ${key}`);
       }
       const route = table.get(key);
-      const answer = typeof route === "function" ? route(request) : route;
+      const answer = await (typeof route === "function"
+        ? route(request)
+        : route);
       return answer instanceof Response ? answer.clone() : jsonAnswer(answer);
     },
   );
