@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
+  cleanup,
   fireEvent,
   render,
   screen,
@@ -25,6 +26,9 @@ import { processingKeys } from "../../lib/processing/query-keys";
 import { settingsKeys } from "../../lib/settings/query-keys";
 import { useFakeClock, useRealClock } from "../../test/fake-clock";
 import { SetupWizardPage } from "./setup-wizard-page";
+import { CEILING, TEST_CEILING_MS } from "./wizard-test-server";
+
+vi.setConfig({ testTimeout: TEST_CEILING_MS });
 
 const { navigateMock, saveSettingsMock } = vi.hoisted(() => ({
   navigateMock: vi.fn(),
@@ -228,12 +232,14 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // Unmounting first stops the folder check's settle timer, so nothing asks the api once its stubs are gone.
+  cleanup();
   vi.restoreAllMocks();
   useRealClock();
 });
 
 async function foundLibraries() {
-  return within(await screen.findByTestId("setup-wizard-found"));
+  return within(await screen.findByTestId("setup-wizard-found", {}, CEILING));
 }
 
 describe("first run: connect Deluno first", () => {
@@ -260,15 +266,20 @@ describe("first run: connect Deluno first", () => {
     renderWizard();
 
     choose("Deluno");
-    fireEvent.change(await screen.findByTestId("media-manager-base-url"), {
-      target: { value: "http://10.0.0.51:5000" },
-    });
+    fireEvent.change(
+      await screen.findByTestId("media-manager-base-url", {}, CEILING),
+      {
+        target: { value: "http://10.0.0.51:5000" },
+      },
+    );
     fireEvent.change(screen.getByTestId("media-manager-api-key"), {
       target: { value: "secret" },
     });
     fireEvent.click(screen.getByTestId("media-manager-save"));
 
-    expect(await screen.findByText("✓ Connected")).toBeInTheDocument();
+    expect(
+      await screen.findByText("✓ Connected", {}, CEILING),
+    ).toBeInTheDocument();
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: "deluno",
@@ -292,7 +303,7 @@ describe("first run: connect Deluno first", () => {
     choose("Deluno");
 
     expect(
-      await screen.findByTestId("media-manager-base-url"),
+      await screen.findByTestId("media-manager-base-url", {}, CEILING),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("media-manager-kind")).not.toBeInTheDocument();
   });
@@ -319,7 +330,10 @@ describe("first run: connect Deluno first", () => {
     await foundLibraries();
     fireEvent.click(screen.getByRole("button", { name: "Finish setup" }));
 
-    await waitFor(() => expect(updateLibrary).toHaveBeenCalledTimes(2));
+    await waitFor(
+      () => expect(updateLibrary).toHaveBeenCalledTimes(2),
+      CEILING,
+    );
     expect(updateLibrary).toHaveBeenCalledWith(
       1,
       expect.objectContaining({
@@ -335,7 +349,7 @@ describe("first run: connect Deluno first", () => {
     );
     expect(createLibrary).not.toHaveBeenCalled();
     expect(
-      await screen.findByRole("heading", { name: "What's next" }),
+      await screen.findByRole("heading", { name: "What's next" }, CEILING),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "Connect Sonarr, Radarr or Deluno" }),
@@ -368,7 +382,10 @@ describe("first run: connect Deluno first", () => {
     await foundLibraries();
     fireEvent.click(screen.getByRole("button", { name: "Finish setup" }));
 
-    await waitFor(() => expect(createLibrary).toHaveBeenCalledTimes(1));
+    await waitFor(
+      () => expect(createLibrary).toHaveBeenCalledTimes(1),
+      CEILING,
+    );
     expect(createLibrary).toHaveBeenCalledWith({
       name: "Movies (2)",
       media_type: "movie",
@@ -394,7 +411,10 @@ describe("first run: connect Deluno first", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Finish setup" }));
 
-    await waitFor(() => expect(updateLibrary).toHaveBeenCalledTimes(1));
+    await waitFor(
+      () => expect(updateLibrary).toHaveBeenCalledTimes(1),
+      CEILING,
+    );
     expect(updateLibrary).toHaveBeenCalledWith(
       1,
       expect.objectContaining({ output_folder: "F:\\Ready\\Movies" }),
@@ -426,7 +446,7 @@ describe("first run: connect Deluno first", () => {
     fireEvent.click(screen.getByRole("button", { name: "Finish setup" }));
 
     expect(
-      await screen.findByRole("heading", { name: "What's next" }),
+      await screen.findByRole("heading", { name: "What's next" }, CEILING),
     ).toBeInTheDocument();
     expect(createLibrary).not.toHaveBeenCalled();
     expect(updateLibrary).not.toHaveBeenCalled();
@@ -447,7 +467,7 @@ describe("first run: connect Deluno first", () => {
     choose("Deluno");
 
     expect(
-      await screen.findByText("Weir could not connect to Deluno."),
+      await screen.findByText("Weir could not connect to Deluno.", {}, CEILING),
     ).toBeInTheDocument();
     expect(
       screen.getByText("Nothing answered at that address."),
@@ -480,11 +500,15 @@ describe("first run: connect Deluno first", () => {
     await foundLibraries();
 
     expect(
-      await screen.findByTestId("setup-wizard-found-movie-problem"),
+      await screen.findByTestId(
+        "setup-wizard-found-movie-problem",
+        {},
+        CEILING,
+      ),
     ).toHaveTextContent("Weir can't use its own data folder");
     fireEvent.click(screen.getByRole("button", { name: "Finish setup" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    expect(await screen.findByRole("alert", {}, CEILING)).toHaveTextContent(
       "Weir can't use its own data folder",
     );
     expect(updateLibrary).not.toHaveBeenCalled();
@@ -520,10 +544,13 @@ describe("first run: connect Deluno first", () => {
     await foundLibraries();
 
     expect(
-      await screen.findByText(/does not exist\. Create it/),
+      await screen.findByText(/does not exist\. Create it/, {}, CEILING),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Finish setup" }));
-    await waitFor(() => expect(updateLibrary).toHaveBeenCalledTimes(2));
+    await waitFor(
+      () => expect(updateLibrary).toHaveBeenCalledTimes(2),
+      CEILING,
+    );
   });
 
   it("shows a line Weir could not verify as not verified, not as fine and not as a problem", async () => {
@@ -562,7 +589,11 @@ describe("first run: connect Deluno first", () => {
     await foundLibraries();
 
     expect(
-      await screen.findByText(/Weir can't see where each download client/),
+      await screen.findByText(
+        /Weir can't see where each download client/,
+        {},
+        CEILING,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("Not verified:")).toBeInTheDocument();
     expect(screen.queryByText("Fine:")).not.toBeInTheDocument();
@@ -619,7 +650,10 @@ describe("first run: connect Sonarr and Radarr first", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Finish setup" }));
 
-    await waitFor(() => expect(updateLibrary).toHaveBeenCalledTimes(2));
+    await waitFor(
+      () => expect(updateLibrary).toHaveBeenCalledTimes(2),
+      CEILING,
+    );
     expect(updateLibrary).toHaveBeenCalledWith(
       1,
       expect.objectContaining({ manager_connection_ids: [11] }),
@@ -638,9 +672,13 @@ describe("first run: connect Sonarr and Radarr first", () => {
     fireEvent.click(screen.getByRole("button", { name: "Finish setup" }));
 
     expect(
-      await screen.findByRole("link", {
-        name: "Finish setting up Sonarr and Radarr",
-      }),
+      await screen.findByRole(
+        "link",
+        {
+          name: "Finish setting up Sonarr and Radarr",
+        },
+        CEILING,
+      ),
     ).toHaveAttribute("href", "/setup/workflows");
     expect(
       screen.queryByRole("link", { name: "Connect Sonarr, Radarr or Deluno" }),
@@ -653,7 +691,7 @@ describe("first run: connect Sonarr and Radarr first", () => {
 
     choose("Sonarr / Radarr");
 
-    const kinds = await screen.findByTestId("media-manager-kind");
+    const kinds = await screen.findByTestId("media-manager-kind", {}, CEILING);
     expect(
       within(kinds)
         .getAllByRole("option")
@@ -673,6 +711,8 @@ describe("first run: connect Sonarr and Radarr first", () => {
     expect(
       await screen.findByText(
         "Radarr does not say where its downloads are saved.",
+        {},
+        CEILING,
       ),
     ).toBeInTheDocument();
     expect(
@@ -705,7 +745,10 @@ describe("first run: connect a download client first", () => {
     expect(found.getByText(/folders from SABnzbd/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Finish setup" }));
 
-    await waitFor(() => expect(updateLibrary).toHaveBeenCalledTimes(1));
+    await waitFor(
+      () => expect(updateLibrary).toHaveBeenCalledTimes(1),
+      CEILING,
+    );
     expect(updateLibrary).toHaveBeenCalledWith(
       1,
       expect.objectContaining({
@@ -788,15 +831,20 @@ describe("first run: connect a download client first", () => {
     renderWizard();
 
     choose(/A download client/);
-    fireEvent.change(await screen.findByTestId("download-client-base-url"), {
-      target: { value: "http://10.0.0.60:8080" },
-    });
+    fireEvent.change(
+      await screen.findByTestId("download-client-base-url", {}, CEILING),
+      {
+        target: { value: "http://10.0.0.60:8080" },
+      },
+    );
     fireEvent.change(screen.getByTestId("download-client-api-key"), {
       target: { value: "key" },
     });
     fireEvent.click(screen.getByTestId("download-client-save"));
 
-    expect(await screen.findByText("✓ Connected")).toBeInTheDocument();
+    expect(
+      await screen.findByText("✓ Connected", {}, CEILING),
+    ).toBeInTheDocument();
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: "sabnzbd",

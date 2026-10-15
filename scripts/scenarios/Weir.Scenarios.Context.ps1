@@ -42,17 +42,6 @@ function Get-ServerVersion {
     (Invoke-RestMethod -Uri "$($script:Ctx.Base)/openapi.json" -TimeoutSec 10).info.version
 }
 
-# True when $Reported is the build under test: the release's own version, and the commit when the build carries one.
-function Test-VersionUnderTest {
-    param([Parameter(Mandatory)] [string] $Reported, [Parameter(Mandatory)] [string] $Expected, [string] $ShortSha)
-    $expectedBase = $Expected.Split('+')[0]
-    $reportedBase = $Reported.Split('+')[0]
-    if ($reportedBase -ne $expectedBase) { return $false }
-    # A build made for the golden path carries its commit (`<version>+<short sha>`); one that does not cannot be tied to the commit.
-    if ($ShortSha) { return $Reported.Contains('+') -and $Reported.Split('+')[1].StartsWith($ShortSha.Substring(0, [Math]::Min(7, $ShortSha.Length))) }
-    $true
-}
-
 # A time as the machine's UTC clock reads it, from a DateTime or from the text a JSON answer carries (with its offset). Windows
 # PowerShell 5.1 leaves ISO text as text and newer versions turn it into a DateTime; either way the instant is the same.
 function ConvertTo-UtcTime {
@@ -237,9 +226,28 @@ function Get-RemuxJobs {
 # --- the Weir log ----------------------------------------------------------------------------------------------------------
 
 # System > Logs rows at warning or error, as the Logs page lists them.
+# True when a row written at $At (text with its offset, or a time) is from $Mark on. A time that cannot be read counts as written
+# since: a row is never excused for being unreadable.
+function Test-WrittenFrom {
+    param($At, [Parameter(Mandatory)] [datetime] $Mark)
+    $time = try { ConvertTo-UtcTime $At } catch { $null }
+    if ($null -eq $time) { return $true }
+    $time -ge $Mark
+}
+
+# The second it is now (UTC), as a mark to judge only what is written from then on.
+function Get-SecondMark {
+    $now = [DateTime]::UtcNow
+    New-Object DateTime ($now.Ticks - ($now.Ticks % [TimeSpan]::TicksPerSecond)), ([DateTimeKind]::Utc)
+}
+
+# The warning and error rows on System > Logs written from $Since on. The page lists at most 100 rows at a time, newest first; a page
+# of nothing but rows written since $Since may hide more of them, which is itself a failure, not something to page through and excuse.
+# Rows from before $Since (earlier runs, or the build before an update, on a machine that was not restored) are not counted.
 function Get-LogPageProblems {
-    # The Logs page lists at most 100 rows at a time. More than that is itself a failure, not something to page through and excuse.
+    param([Parameter(Mandatory)] [datetime] $Since)
     $page = Get-WeirJson $script:Ctx.Session '/api/v1/system/log?level=warning,error&limit=100'
-    if ($page.next_cursor) { throw "Logs lists more than 100 warnings and errors ($($page.total) in all), which is not a clean run." }
-    @($page.items)
+    $rows = @($page.items | Where-Object { Test-WrittenFrom -At $_.at -Mark $Since })
+    if ($page.next_cursor -and $rows.Count -ge @($page.items).Count) { throw "Logs lists more than 100 warnings and errors since this scenario began, which is not a clean run." }
+    $rows
 }

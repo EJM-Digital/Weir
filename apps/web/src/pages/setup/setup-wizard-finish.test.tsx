@@ -248,8 +248,49 @@ describe("the time zone", () => {
     expect(await savedZone(server)).toBe("Europe/Berlin");
   });
 
-  it.each(["Mars/Olympus_Mons", "", "   "])(
-    "falls back to UTC for a saved zone of %j",
+  it("shows UTC as chosen when the server is in UTC, and saves it", async () => {
+    const server = new WizardServer();
+    await openedWizard();
+    chooseNeither();
+
+    expect(screen.getByRole("button", { name: "Time zone" })).toHaveTextContent(
+      /^UTC — Coordinated Universal Time/,
+    );
+    finish();
+
+    expect(await savedZone(server)).toBe("UTC");
+  });
+
+  it("shows a valid zone the list lacks as chosen, and keeps it when it is not changed", async () => {
+    const server = new WizardServer({
+      settings: pendingSettings({ app_timezone: "Europe/Dublin" }),
+    });
+    await openedWizard();
+    chooseNeither();
+
+    expect(screen.getByRole("button", { name: "Time zone" })).toHaveTextContent(
+      /^Europe\/Dublin/,
+    );
+    finish();
+
+    expect(await savedZone(server)).toBe("Europe/Dublin");
+    expect(server.state.settings.app_timezone).toBe("Europe/Dublin");
+  });
+
+  it("keeps a saved zone with spaces around it, without them", async () => {
+    const server = new WizardServer({
+      settings: pendingSettings({ app_timezone: " Europe/Dublin " }),
+    });
+    await openedWizard();
+    chooseNeither();
+
+    finish();
+
+    expect(await savedZone(server)).toBe("Europe/Dublin");
+  });
+
+  it.each(["", "   "])(
+    "saves UTC when no zone is saved (%j)",
     async (saved) => {
       const server = new WizardServer({
         settings: pendingSettings({ app_timezone: saved }),
@@ -263,9 +304,9 @@ describe("the time zone", () => {
     },
   );
 
-  it("lets a zone be picked after an unknown one fell back to UTC", async () => {
+  it("lets another zone be picked over one the list lacks", async () => {
     const server = new WizardServer({
-      settings: pendingSettings({ app_timezone: "Mars/Olympus_Mons" }),
+      settings: pendingSettings({ app_timezone: "Europe/Dublin" }),
     });
     await openedWizard();
     chooseNeither();

@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
 using Weir.Contract.Tests.Harness.Fakes;
+using Weir.Contract.Tests.Jobs;
 using Weir.Contract.Tests.Processing;
 
 namespace Weir.Contract.Tests.MediaManagers;
@@ -57,12 +58,16 @@ public sealed class ConnectionRemovalTests
         return read.Fields;
     }
 
-    /// <summary>Saving a workflow queues a scan, and a workflow with work queued or running is not removed, so removal waits for it to finish.</summary>
-    private static async Task WaitForNoActiveJobsAsync(Scenario scenario) =>
-        await new JobWait().UntilAsync(
-            scenario.JobStatusesAsync,
-            async () => (await scenario.JobStatusesAsync()).All(status => status is not ("pending" or "leased")) ? "quiet" : null,
-            "the scan queued when the workflow was saved");
+    /// <summary>
+    /// Saving a workflow gets it a scan, queued by the scheduler on its next tick, and a workflow with work queued or running is not
+    /// removed, so removal waits for that scan to run. The scan is work Weir owes on its own timer, and no job is there to see until it
+    /// is queued, so the wait is for the scan itself to have finished and not for a moment when no job is active.
+    /// </summary>
+    private static async Task WaitForSaveScanAsync(Scenario scenario) =>
+        await scenario.WaitWhileWorkedOnAsync(
+            async () => (await scenario.FinishedJobsAsync(JobsApi.ScanDispatchKind)).Count > 0 ? "scanned" : null,
+            "the scan queued when the workflow was saved to finish",
+            owed: () => Task.FromResult(true));
 
     private static async Task AssertConnectionKeptAsync(WeirClient admin, int connectionId) =>
         Assert.Equal([connectionId], (await admin.GetAsync(ManagerConnections.Route)).Elements.Select(row => JsonFields.Id(row!)));
@@ -135,7 +140,7 @@ public sealed class ConnectionRemovalTests
         var download = WriteDownload(scenario);
         var connectionId = await ConnectionIdAsync(scenario.Admin);
         Assert.Equal(HttpStatusCode.Conflict, (await ManagerConnections.DeleteAsync(scenario.Admin, connectionId)).Status);
-        await WaitForNoActiveJobsAsync(scenario);
+        await WaitForSaveScanAsync(scenario);
 
         var workflowRemoved = await scenario.Admin.DeleteWithCsrfBodyAsync($"{WeirClient.Api}/processing/libraries/{(int)library["id"]!}");
         var removed = await ManagerConnections.DeleteAsync(scenario.Admin, connectionId);
