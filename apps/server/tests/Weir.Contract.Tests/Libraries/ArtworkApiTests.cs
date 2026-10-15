@@ -68,10 +68,7 @@ public sealed class ArtworkApiTests(ServerFixture fixture) : IClassFixture<Serve
         gateway.Knows("metropolis", "metropolis.jpg");
         await using var server = await WeirServer.StartNewAsync(gateway.Env);
         string[] paths = ["Metropolis (1927)/Metropolis.1927.1080p.mkv", "Metropolis (1927)/Metropolis.1927.extras.mkv"];
-        foreach (var path in paths)
-        {
-            await LibrariesPartBPosters.SeedFileAsync(server, path);
-        }
+        await LibrariesPartBPosters.SeedFilesAsync(server, paths);
 
         using var admin = await server.CreateAdminClientAsync();
 
@@ -86,16 +83,34 @@ public sealed class ArtworkApiTests(ServerFixture fixture) : IClassFixture<Serve
     }
 
     [Fact]
+    public async Task A_lookup_the_server_is_stopped_in_the_middle_of_is_made_again_when_it_starts()
+    {
+        using var gateway = new FakeGateway();
+        gateway.Knows("metropolis", "metropolis.jpg");
+        gateway.HoldSearches();
+        await using var server = await WeirServer.StartNewAsync(gateway.Env);
+        const string path = "Metropolis (1927)/Metropolis.1927.1080p.mkv";
+        await LibrariesPartBPosters.SeedFileAsync(server, path);
+        await gateway.SearchHeldAsync();
+
+        await server.RestartAsync();
+        gateway.ReleaseSearches();
+        using var admin = await server.CreateAdminClientAsync();
+
+        Assert.NotEmpty(await LibrariesPartBPosters.WaitForPosterAsync(admin, path));
+        // The search the stop cut short is recorded when the fake answers it, which is after the release.
+        await Poll.UntilAsync(() => Task.FromResult(gateway.SearchesFor("metropolis").Count >= 2), "both searches to be recorded");
+        Assert.Equal(2, gateway.SearchesFor("metropolis").Count);
+    }
+
+    [Fact]
     public async Task Every_episode_of_a_series_shares_one_lookup_of_the_series()
     {
         using var gateway = new FakeGateway();
         gateway.Knows("example show", "show.jpg");
         await using var server = await WeirServer.StartNewAsync(gateway.Env);
         string[] paths = ["Example Show/Season 1/Example.Show.S01E01.mkv", "Example Show/Season 1/Example.Show.S01E02.mkv"];
-        foreach (var path in paths)
-        {
-            await LibrariesPartBPosters.SeedFileAsync(server, path, mediaType: "tv");
-        }
+        await LibrariesPartBPosters.SeedFilesAsync(server, paths, mediaType: "tv");
 
         using var admin = await server.CreateAdminClientAsync();
 
@@ -132,10 +147,7 @@ public sealed class ArtworkApiTests(ServerFixture fixture) : IClassFixture<Serve
         using var gateway = new FakeGateway();
         gateway.Busy(retryAfterSeconds: 600);
         await using var server = await WeirServer.StartNewAsync(gateway.Env);
-        foreach (var path in new[] { "First Film (2010)/First.Film.2010.mkv", "Second Film (2011)/Second.Film.2011.mkv" })
-        {
-            await LibrariesPartBPosters.SeedFileAsync(server, path);
-        }
+        await LibrariesPartBPosters.SeedFilesAsync(server, ["First Film (2010)/First.Film.2010.mkv", "Second Film (2011)/Second.Film.2011.mkv"]);
 
         using var admin = await server.CreateAdminClientAsync();
 
