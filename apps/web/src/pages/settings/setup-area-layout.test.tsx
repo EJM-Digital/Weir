@@ -200,6 +200,17 @@ describe("a setup area", () => {
     },
   );
 
+  it("sends the Speed tab's own name back to the Performance address, which shows Speed", async () => {
+    const router = await renderAt("/setup/performance/speed");
+
+    expect(router.state.location.pathname).toBe("/setup/performance");
+    expect(await screen.findByText("Speed content")).toBeVisible();
+    expect(screen.getByRole("tab", { name: "Speed" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
   it("leaves /setup itself to the first sign-in", () => {
     const router = createMemoryRouter(
       [
