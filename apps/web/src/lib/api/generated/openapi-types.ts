@@ -644,6 +644,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/media-managers/connections/{connection_id}/give-up-reports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Post Media Manager Give Up Reports
+     * @description Stop owing this connection the reports Weir could not deliver because it was not answering, as the third way to let go of what keeps it from being removed. Nothing is sent to the manager. The reports dropped are recorded in Activity (processing.handoff_reports_dropped) and the Activity of each file they covered says Weir gave up. Answers 200 with an empty list when none was owed.
+     */
+    post: operations["post_media_manager_give_up_reports_api_v1_media_managers_connections__connection_id__give_up_reports_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/media-managers/connections/{connection_id}/lanes/{lane}": {
     parameters: {
       query?: never;
@@ -678,6 +698,26 @@ export interface paths {
      * @description Check the saved address and key actually reach the manager.
      */
     post: operations["post_media_manager_connection_test_api_v1_media_managers_connections__connection_id__test_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/media-managers/connections/{connection_id}/unlink-workflows": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Post Media Manager Unlink Workflows
+     * @description Unlink every workflow from this connection, as the first of the two ways to let go of the workflows that keep it from being removed (the other is removing each workflow). The workflows stay, with their settings and folders; a workflow no manager feeds any more is switched off, so it does not start scanning its folder until the person has chosen what it does next. Refused with 409 handoffs_in_progress while a hand-off from this connection is in progress. No folder or file is touched.
+     */
+    post: operations["post_media_manager_unlink_workflows_api_v1_media_managers_connections__connection_id__unlink_workflows_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -2772,6 +2812,61 @@ export interface components {
        */
       phase: "asked" | "answered" | "failed";
     };
+    /**
+     * ConnectionInUseError
+     * @description The answer to removing a media manager connection that something still depends on, or to unlinking its workflows while a hand-off from it is in progress. Nothing was changed. Unlink the workflows with POST /api/v1/media-managers/connections/{connection_id}/unlink-workflows or remove them with DELETE /api/v1/processing/libraries/{library_id}, let the hand-offs finish or cancel them, and let Weir deliver the reports it owes or give up on them with POST /api/v1/media-managers/connections/{connection_id}/give-up-reports, then remove the connection again.
+     */
+    ConnectionInUseError: {
+      /**
+       * Code
+       * @description connection_in_use when removing the connection was refused; handoffs_in_progress when unlinking its workflows was.
+       * @enum {string}
+       */
+      code: "connection_in_use" | "handoffs_in_progress";
+      /**
+       * Detail
+       * @description One plain sentence for a person, naming the workflows, the hand-offs and the reports in the way and what to do first.
+       */
+      detail: string;
+      /**
+       * Handoffs In Progress
+       * @description How many hand-offs from this connection Weir is still working on.
+       */
+      handoffs_in_progress: number;
+      /**
+       * Reports
+       * @description The reports on finished hand-offs that Weir still owes this connection, because it was not answering.
+       */
+      reports: components["schemas"]["ConnectionOwedReportOut"][];
+      /**
+       * Workflows
+       * @description The workflows that still come from this connection.
+       */
+      workflows: components["schemas"]["ConnectionWorkflowOut"][];
+    };
+    /**
+     * ConnectionOwedReportOut
+     * @description A report on a finished hand-off that Weir still owes a media manager.
+     */
+    ConnectionOwedReportOut: {
+      /** Handoff Id */
+      handoff_id: string;
+      /**
+       * Name
+       * @description The file or release folder the hand-off was about.
+       */
+      name: string;
+    };
+    /**
+     * ConnectionWorkflowOut
+     * @description A workflow, as a media manager connection's removal or unlinking names it.
+     */
+    ConnectionWorkflowOut: {
+      /** Id */
+      id: number;
+      /** Name */
+      name: string;
+    };
     /** CsrfOut */
     CsrfOut: {
       /**
@@ -4365,6 +4460,22 @@ export interface components {
       webhook_secret: string;
       /** Webhook Url Path */
       webhook_url_path: string;
+    };
+    /**
+     * MediaManagerReportsGivenUpOut
+     * @description The reports Weir gave up on owing a connection, as recorded in Activity. Empty when none was owed.
+     */
+    MediaManagerReportsGivenUpOut: {
+      /** Reports */
+      reports: components["schemas"]["ConnectionOwedReportOut"][];
+    };
+    /**
+     * MediaManagerWorkflowsUnlinkedOut
+     * @description The workflows that were unlinked from a connection. They stay, with their settings and folders; one that no manager feeds any more is switched off until the person chooses what it does next.
+     */
+    MediaManagerWorkflowsUnlinkedOut: {
+      /** Workflows */
+      workflows: components["schemas"]["ConnectionWorkflowOut"][];
     };
     /**
      * MediaToolsOut
@@ -9900,6 +10011,15 @@ export interface operations {
         };
         content?: never;
       };
+      /** @description The connection still feeds workflows, or hand-offs from it are in progress, or Weir owes it reports. Nothing was removed; the answer names them. Unlink or remove the workflows, then send the same request again. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConnectionInUseError"];
+        };
+      };
       /** @description Validation Error */
       422: {
         headers: {
@@ -9943,6 +10063,43 @@ export interface operations {
         };
       };
       500: components["responses"]["InternalServerError"];
+    };
+  };
+  post_media_manager_give_up_reports_api_v1_media_managers_connections__connection_id__give_up_reports_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        connection_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MediaManagerConnectionTestIn"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MediaManagerReportsGivenUpOut"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   put_media_manager_lane_api_v1_media_managers_connections__connection_id__lanes__lane__put: {
@@ -10005,6 +10162,52 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["MediaManagerConnectionTestOut"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
+    };
+  };
+  post_media_manager_unlink_workflows_api_v1_media_managers_connections__connection_id__unlink_workflows_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        connection_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MediaManagerConnectionTestIn"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MediaManagerWorkflowsUnlinkedOut"];
+        };
+      };
+      /** @description A hand-off from this connection is still in progress (code handoffs_in_progress), so its workflows stay linked. Nothing was changed. Let the hand-off finish or cancel it, then send the same request again. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConnectionInUseError"];
         };
       };
       /** @description Validation Error */

@@ -241,6 +241,10 @@ public static class ManagerWaitMessages
     public static string ReportWaiting(string manager) =>
         $"Waiting for {manager}, which is not answering. Weir will tell it this file is ready when it answers.";
 
+    /// <summary>A report the person told Weir to stop waiting to send.</summary>
+    public static string ReportGivenUp(string manager) =>
+        $"Weir gave up on telling {manager} this file is ready, as you asked.";
+
     /// <summary>The same report, delivered once the manager answered again.</summary>
     public static string ReportDelivered(string manager) =>
         $"{manager} is answering again, and Weir has told it this file is ready.";

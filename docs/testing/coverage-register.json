@@ -1768,14 +1768,104 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/ConnectionNamesTests.cs",
           "name": "ConnectionNamesTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/ConnectionRemovalHandoffTests.cs",
+          "name": "ConnectionRemovalHandoffTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/ConnectionRemovalTests.cs",
+          "name": "ConnectionRemovalTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/ConnectionRemovalApiTests.cs",
+          "name": "ConnectionRemovalApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ConnectionRemovalBlockersTests.cs",
+          "name": "ConnectionRemovalBlockersTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/ConnectionLinksAreKeptMigrationTests.cs",
+          "name": "ConnectionLinksAreKeptMigrationTests"
         }
       ],
-      "issue": 1068,
       "covers": [
         "route:DELETE /api/v1/media-managers/connections/{connection_id}"
       ],
       "audit": {
         "id": "R-044",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "api.media-managers.post-media-managers-connections-connection-id-unlink-workflows",
+      "area": "api",
+      "behaviour": "POST /api/v1/media-managers/connections/{connection_id}/unlink-workflows",
+      "kind": "API route",
+      "severity": "high",
+      "touches": "other-app",
+      "required": "real",
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/ConnectionRemovalHandoffTests.cs",
+          "name": "ConnectionRemovalHandoffTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/ConnectionRemovalTests.cs",
+          "name": "ConnectionRemovalTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/ConnectionRemovalApiTests.cs",
+          "name": "ConnectionRemovalApiTests"
+        }
+      ],
+      "covers": [
+        "route:POST /api/v1/media-managers/connections/{connection_id}/unlink-workflows"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "api.media-managers.post-media-managers-connections-connection-id-give-up-reports",
+      "area": "api",
+      "behaviour": "POST /api/v1/media-managers/connections/{connection_id}/give-up-reports",
+      "kind": "API route",
+      "severity": "high",
+      "touches": "other-app",
+      "required": "real",
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/ConnectionRemovalHandoffTests.cs",
+          "name": "ConnectionRemovalHandoffTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/ConnectionRemovalApiTests.cs",
+          "name": "ConnectionRemovalApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ConnectionRemovalBlockersTests.cs",
+          "name": "GivenUpReportsTests"
+        }
+      ],
+      "covers": [
+        "route:POST /api/v1/media-managers/connections/{connection_id}/give-up-reports"
+      ],
+      "audit": {
+        "id": "inventory",
         "verdict": "Covered"
       }
     },
@@ -49397,6 +49487,46 @@
       }
     },
     {
+      "id": "file-lifecycle.file-lifecycle.a-connection-a-workflow-still-comes-from-is-not-removed",
+      "area": "file-lifecycle",
+      "behaviour": "A media manager connection that a workflow still comes from, that has a hand-off in progress, or that Weir still owes a report is not removed (409 connection_in_use, naming them); unlinking the workflows switches off any that no manager feeds, giving up on the owed reports drops them and records them in Activity, and no step nor the removal touches a folder or file",
+      "kind": "file-lifecycle",
+      "severity": "high",
+      "touches": "other-app",
+      "required": "real",
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/ConnectionRemovalHandoffTests.cs",
+          "name": "ConnectionRemovalHandoffTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/ConnectionRemovalTests.cs",
+          "name": "ConnectionRemovalTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/ConnectionRemovalApiTests.cs",
+          "name": "ConnectionRemovalApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ConnectionRemovalBlockersTests.cs",
+          "name": "ConnectionRemovalBlockersTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/ConnectionLinksAreKeptMigrationTests.cs",
+          "name": "ConnectionLinksAreKeptMigrationTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
       "id": "scenarios.update.update-over-installed-weir",
       "area": "scenarios",
       "behaviour": "Golden-VM scenario update-over-installed-weir (An update over the Weir Deluno installed) runs on its own, on a machine in the state it needs",
@@ -51585,6 +51715,133 @@
       }
     },
     {
+      "id": "web-routes.pages-settings-tabs-media-managers-remove-connection-dialog.media-manager-in-use-keep",
+      "area": "web-routes",
+      "behaviour": "Keep it, in the list of what still needs a media manager connection, closes it and changes nothing",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "leaves everything as it is when the person keeps the connection"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "lists the workflows and offers the two steps, and changes nothing until one is chosen"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.tsx#media-manager-in-use-keep"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-settings-tabs-media-managers-remove-connection-dialog.media-manager-in-use-unlink",
+      "area": "web-routes",
+      "behaviour": "Unlink the workflows leaves them as they are, says so, and asks again before removing the connection",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "unlinks the workflows when chosen, says so, and asks again before removing anything"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "says why the workflows could not be unlinked"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "offers neither step while a hand-off is in progress"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.tsx#media-manager-in-use-unlink"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-settings-tabs-media-managers-remove-connection-dialog.media-manager-in-use-remove-workflows",
+      "area": "web-routes",
+      "behaviour": "Remove the workflows removes them one after another, says the folders were not touched, and asks again before removing the connection",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "removes the workflows one after another when chosen, says the folders were not touched, and asks again"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "says why a workflow could not be removed and stops there"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.tsx#media-manager-in-use-remove-workflows"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-settings-tabs-media-managers-remove-connection-dialog.media-manager-in-use-give-up-reports",
+      "area": "web-routes",
+      "behaviour": "Give up on the reports still owed, in the list of what still needs a media manager connection, drops them, says so, and asks again before removing the connection",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "gives up on the reports when chosen, says so, and asks again before removing anything"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "names a single owed report in the singular"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "says why the reports could not be given up"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "lists the owed reports beside the workflows and offers to give up on them as its own step"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.tsx#media-manager-in-use-give-up-reports"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
       "id": "web-routes.pages-settings-tabs-media-managers-connection.media-manager-edit-base-url",
       "area": "web-routes",
       "behaviour": "The control media-manager-edit-base-url in pages/settings/tabs/media-managers/connection-edit-form.tsx does what its label says",
@@ -53380,6 +53637,39 @@
       ],
       "covers": [
         "event:processing.handoff_cancelled"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "events.processing.processing-handoff-reports-dropped",
+      "area": "events",
+      "behaviour": "Weir records \"Reports to your media manager given up\" in Activity, naming the reports dropped (processing.handoff_reports_dropped)",
+      "kind": "event",
+      "severity": "low",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/ConnectionRemovalHandoffTests.cs",
+          "name": "ConnectionRemovalHandoffTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/ConnectionRemovalApiTests.cs",
+          "name": "ConnectionRemovalApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ConnectionRemovalBlockersTests.cs",
+          "name": "GivenUpReportsTests"
+        }
+      ],
+      "covers": [
+        "event:processing.handoff_reports_dropped"
       ],
       "audit": {
         "id": "inventory",

@@ -46,6 +46,12 @@ public sealed class ApiException : Exception
     /// needs to act on which error it got; <c>detail</c> is wording for people and may change.
     /// </summary>
     public string? Code { get; init; }
+
+    /// <summary>
+    /// Members sent beside <c>detail</c> and <c>code</c>, for an error whose answer tells the client what stood in the way
+    /// (the workflows that keep a connection from being removed, say). Never set a member named <c>detail</c> or <c>code</c>.
+    /// </summary>
+    public WireObject? Details { get; init; }
 }
 
 /// <summary>Writes JSON and plain-text responses with the exact bytes, content type and length existing clients expect.</summary>
@@ -84,6 +90,11 @@ public static class ApiResponses
         if (exception.Code is { } code)
         {
             body.Set("code", code);
+        }
+
+        foreach (var (name, value) in exception.Details?.Items ?? [])
+        {
+            body.Set(name, value);
         }
 
         return WriteJsonAsync(context, exception.StatusCode, body);

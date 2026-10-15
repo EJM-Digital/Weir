@@ -8,6 +8,7 @@ using Weir.Core.MediaManagers;
 using Weir.Core.Time;
 using Weir.Core.Validation;
 using Weir.Infrastructure.MediaManagers;
+using Weir.Infrastructure.Processing;
 using static Weir.Api.Endpoints.EndpointLookups;
 
 namespace Weir.Api.Endpoints;
@@ -32,6 +33,8 @@ public static class MediaManagerConnectionsEndpoints
         endpoints.MapV1("GET", "/media-managers/connections/{connection_id}", handlers.GetConnectionAsync);
         endpoints.MapV1("PUT", "/media-managers/connections/{connection_id}", handlers.UpdateConnectionAsync);
         endpoints.MapV1("DELETE", "/media-managers/connections/{connection_id}", handlers.DeleteConnectionAsync);
+        endpoints.MapV1("POST", "/media-managers/connections/{connection_id}/unlink-workflows", handlers.PostUnlinkWorkflowsAsync);
+        endpoints.MapV1("POST", "/media-managers/connections/{connection_id}/give-up-reports", handlers.PostGiveUpReportsAsync);
         endpoints.MapV1("POST", "/media-managers/connections/{connection_id}/webhook-secret", handlers.PostWebhookSecretAsync);
         endpoints.MapV1("PUT", "/media-managers/connections/{connection_id}/lanes/{lane}", handlers.PutLaneAsync);
         endpoints.MapV1("POST", "/media-managers/connections/{connection_id}/test", handlers.PostConnectionTestAsync);
@@ -73,19 +76,25 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
     private readonly LibraryFolderChainCheck _folderChainCheck;
     private readonly IManagerHttpHandlerFactory _handlers;
     private readonly ManagerWorkflowSync _workflowSync;
+    private readonly MediaManagerConnectionDependents _dependents;
+    private readonly ScanSettingsChanges _scanSettingsChanges;
 
     public MediaManagerConnectionsEndpointHandlers(
         MediaManagerConnectionService connections,
         MediaManagerConnectionStore connectionStore,
         LibraryFolderChainCheck folderChainCheck,
         IManagerHttpHandlerFactory handlers,
-        ManagerWorkflowSync workflowSync)
+        ManagerWorkflowSync workflowSync,
+        MediaManagerConnectionDependents dependents,
+        ScanSettingsChanges scanSettingsChanges)
     {
         _connections = connections ?? throw new ArgumentNullException(nameof(connections));
         _connectionStore = connectionStore ?? throw new ArgumentNullException(nameof(connectionStore));
         _folderChainCheck = folderChainCheck ?? throw new ArgumentNullException(nameof(folderChainCheck));
         _handlers = handlers ?? throw new ArgumentNullException(nameof(handlers));
         _workflowSync = workflowSync ?? throw new ArgumentNullException(nameof(workflowSync));
+        _dependents = dependents ?? throw new ArgumentNullException(nameof(dependents));
+        _scanSettingsChanges = scanSettingsChanges ?? throw new ArgumentNullException(nameof(scanSettingsChanges));
     }
 
     public async Task<ApiResult> ListConnectionsAsync(ApiRequest request)
@@ -242,7 +251,21 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
 
         MediaManagerConnectionsEndpoints.VerifyCsrf(request, csrfToken);
         var uow = await request.DbAsync().ConfigureAwait(false);
-        await RequireConnectionAsync(uow, _connectionStore, connectionId).ConfigureAwait(false);
+        // The write lock comes first, so a hand-off that arrives while this decides cannot slip in after the check.
+        await uow.BeginImmediateAsync().ConfigureAwait(false);
+        var row = await RequireConnectionAsync(uow, _connectionStore, connectionId).ConfigureAwait(false);
+        var blockers = await _dependents.BlockersAsync(uow, row).ConfigureAwait(false);
+        if (blockers.Any)
+        {
+            // Checking a hand-off's state refreshes its record, so that is kept even though nothing is removed.
+            await request.CommitAsync().ConfigureAwait(false);
+            throw new ApiException(StatusCodes.Status409Conflict, blockers.RemovalRefusal(row.Label))
+            {
+                Code = ConnectionRemovalBlockers.InUseCode,
+                Details = blockers.ToWire(),
+            };
+        }
+
         await _connectionStore.DeleteAsync(uow, connectionId).ConfigureAwait(false);
         await request.CommitAsync().ConfigureAwait(false);
         return new CustomApiResult(context =>
@@ -250,6 +273,73 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
             ApiResponses.NoContentJson(context);
             return Task.CompletedTask;
         });
+    }
+
+    /// <summary>
+    /// <c>POST /media-managers/connections/{connection_id}/unlink-workflows</c>: the first of the two ways to let go of the workflows
+    /// that keep a connection from being removed. The workflows stay, with their settings and folders; a workflow no manager feeds
+    /// any more is switched off until the person chooses what it does next. Refused while a hand-off from the connection is still
+    /// in progress, because Weir would then treat the download as its own to release before the manager has its file.
+    /// </summary>
+    public async Task<ApiResult> PostUnlinkWorkflowsAsync(ApiRequest request)
+    {
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var issues = new ValidationIssues();
+        var connectionId = ConnectionId(request, issues);
+        var model = new BodyModel(body, issues);
+        var csrfToken = model.Str("csrf_token", minLength: 1);
+        model.Finish(ExtraFields.Forbid);
+        issues.ThrowIfAny();
+
+        MediaManagerConnectionsEndpoints.VerifyCsrf(request, csrfToken);
+        var uow = await request.DbAsync().ConfigureAwait(false);
+        await uow.BeginImmediateAsync().ConfigureAwait(false);
+        var row = await RequireConnectionAsync(uow, _connectionStore, connectionId).ConfigureAwait(false);
+        var blockers = await _dependents.BlockersAsync(uow, row).ConfigureAwait(false);
+        if (blockers.HandoffsInProgress > 0)
+        {
+            await request.CommitAsync().ConfigureAwait(false);
+            throw new ApiException(StatusCodes.Status409Conflict, blockers.UnlinkRefusal(row.Label))
+            {
+                Code = ConnectionRemovalBlockers.HandoffsInProgressCode,
+                Details = blockers.ToWire(),
+            };
+        }
+
+        var unlinked = await _dependents.UnlinkWorkflowsAsync(uow, row).ConfigureAwait(false);
+        await request.CommitAsync().ConfigureAwait(false);
+        if (unlinked.Count > 0)
+        {
+            _scanSettingsChanges.Record();
+        }
+
+        return ApiRoutes.Ok(new WireObject().Set("workflows", new WireArray(unlinked.Select(workflow => (WireValue)workflow.ToWire()))));
+    }
+
+    /// <summary>
+    /// <c>POST /media-managers/connections/{connection_id}/give-up-reports</c>: the third way to let go of what keeps a connection from
+    /// being removed. Weir stops owing the connection the reports it could not deliver (a manager that never comes back would otherwise
+    /// hold it until the hand-offs are pruned), tells nobody, and records in Activity which reports it dropped.
+    /// </summary>
+    public async Task<ApiResult> PostGiveUpReportsAsync(ApiRequest request)
+    {
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var issues = new ValidationIssues();
+        var connectionId = ConnectionId(request, issues);
+        var model = new BodyModel(body, issues);
+        var csrfToken = model.Str("csrf_token", minLength: 1);
+        model.Finish(ExtraFields.Forbid);
+        issues.ThrowIfAny();
+
+        MediaManagerConnectionsEndpoints.VerifyCsrf(request, csrfToken);
+        var uow = await request.DbAsync().ConfigureAwait(false);
+        await uow.BeginImmediateAsync().ConfigureAwait(false);
+        var row = await RequireConnectionAsync(uow, _connectionStore, connectionId).ConfigureAwait(false);
+        var dropped = await _dependents.GiveUpOwedReportsAsync(uow, row).ConfigureAwait(false);
+        await request.CommitAsync().ConfigureAwait(false);
+        return ApiRoutes.Ok(new WireObject().Set("reports", new WireArray(dropped.Select(report => (WireValue)report.ToWire()))));
     }
 
     public async Task<ApiResult> PostWebhookSecretAsync(ApiRequest request)
