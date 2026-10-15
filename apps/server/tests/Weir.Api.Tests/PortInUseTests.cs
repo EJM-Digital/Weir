@@ -1,8 +1,8 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using Weir.Host;
+using Weir.Infrastructure.Tests;
 
 namespace Weir.Api.Tests;
 
@@ -37,17 +37,68 @@ public sealed class PortInUseTests : IDisposable
     {
         using var holder = heldOnEveryAddress ? new TcpListener(IPAddress.IPv6Any, 0) { Server = { DualMode = true } } : new TcpListener(IPAddress.Loopback, 0);
         holder.Start();
-        var port = ((IPEndPoint)holder.LocalEndpoint).Port;
 
-        var run = await RunServerAsync(host, port);
+        await AssertRefusedAsync(host, ((IPEndPoint)holder.LocalEndpoint).Port);
+    }
 
-        Assert.True(run.Exited, $"The server did not exit on a port that is held. It printed: {run.Error}");
-        Assert.Equal(StartRefusal.PortInUseExitCode, run.ExitCode);
-        var said = $"Weir cannot start: port {port.ToString(CultureInfo.InvariantCulture)} is already in use by another program.";
-        Assert.Contains(said, run.Error, StringComparison.Ordinal);
-        Assert.DoesNotContain("Unhandled exception", run.Error, StringComparison.Ordinal);
-        Assert.False(File.Exists(Path.Join(_home, "startup-error.txt")), "A port in use is not a refusal: the tray must try again.");
-        Assert.Contains($"port {port.ToString(CultureInfo.InvariantCulture)} is already in use", ReadLog(), StringComparison.Ordinal);
+    // Windows lets a bind to every address sit beside one to 127.0.0.1 alone unless the server asks for the address exclusively.
+    [WindowsTheory("A wildcard bind beside a specific one is permitted by Windows only.")]
+    [InlineData("0.0.0.0")]
+    [InlineData("*")]
+    public async Task A_server_on_every_address_refuses_a_port_another_program_holds_on_127_0_0_1_alone(string host)
+    {
+        using var holder = new TcpListener(IPAddress.Loopback, 0);
+        holder.Start();
+
+        await AssertRefusedAsync(host, ((IPEndPoint)holder.LocalEndpoint).Port);
+    }
+
+    [WindowsTheory("Port hijacking by a more specific bind is possible on Windows only.")]
+    [InlineData("0.0.0.0", false)]
+    [InlineData("0.0.0.0", true)]
+    [InlineData("127.0.0.1", false)]
+    [InlineData("127.0.0.1", true)]
+    [InlineData("localhost", false)]
+    [InlineData("localhost", true)]
+    public async Task Nothing_can_bind_beside_a_running_server_on_127_0_0_1(string host, bool reuseAddress)
+    {
+        var port = FreePort();
+        using var server = RealServerProcess.Start(_home, host, port);
+        await AssertReadyAsync(server, "The server did not become ready");
+
+        using var intruder = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        if (reuseAddress)
+        {
+            intruder.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+        }
+
+        var refused = Assert.Throws<SocketException>(() => intruder.Bind(new IPEndPoint(IPAddress.Loopback, port)));
+        Assert.True(
+            refused.SocketErrorCode is SocketError.AddressAlreadyInUse or SocketError.AccessDenied,
+            $"The bind beside the server was refused for an unexpected reason: {refused.SocketErrorCode}.");
+    }
+
+    // Exclusive use must not keep a port from a server started right after another that served requests and was stopped.
+    [Fact]
+    public async Task A_server_that_served_requests_and_was_stopped_can_be_started_again_on_the_same_port_at_once()
+    {
+        var port = FreePort();
+        using (var first = RealServerProcess.Start(_home, "0.0.0.0", port))
+        {
+            await AssertReadyAsync(first, "The first server did not become ready");
+            using var http = new HttpClient();
+            for (var i = 0; i < 5; i++)
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, $"http://127.0.0.1:{port}/ready");
+                request.Headers.ConnectionClose = true;
+                using var response = await http.SendAsync(request);
+                Assert.True(response.IsSuccessStatusCode);
+            }
+        }
+
+        using var second = RealServerProcess.Start(_home, "0.0.0.0", port);
+
+        await AssertReadyAsync(second, "The second server did not become ready on the port the first had used");
     }
 
     [Fact]
@@ -62,44 +113,39 @@ public sealed class PortInUseTests : IDisposable
         Assert.False(PortInUse.Caused(new InvalidOperationException("in use", inUse)));
     }
 
-    private async Task<ServerRun> RunServerAsync(string host, int port)
+    private async Task AssertRefusedAsync(string host, int port)
     {
-        var start = new ProcessStartInfo("dotnet")
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            WorkingDirectory = AppContext.BaseDirectory,
-        };
-        start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "Weir.dll"));
-        start.ArgumentList.Add("--host");
-        start.ArgumentList.Add(host);
-        start.ArgumentList.Add("--port");
-        start.ArgumentList.Add(port.ToString(CultureInfo.InvariantCulture));
-        start.Environment["WEIR_HOME"] = _home;
-        start.Environment["WEIR_ENV"] = "production";
-        start.Environment["WEIR_SESSION_SECRET"] = new string('s', 48);
-        start.Environment["WEIR_CREDENTIALS_SECRET"] = new string('c', 48);
-        start.Environment["WEIR_ARTWORK_GATEWAY_URL"] = "off";
-        start.Environment["WEIR_MEDIA_MANAGER_WORKFLOW_SYNC_ENABLED"] = "0";
+        using var server = RealServerProcess.Start(_home, host, port);
 
-        using var process = Process.Start(start) ?? throw new InvalidOperationException("The server could not be started.");
-        var output = process.StandardOutput.ReadToEndAsync();
-        var error = process.StandardError.ReadToEndAsync();
-        using var cancelled = new CancellationTokenSource(Ceiling);
-        try
+        var exited = await server.ExitsAsync(Ceiling);
+
+        if (!exited)
         {
-            await process.WaitForExitAsync(cancelled.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            process.Kill(entireProcessTree: true);
-            await process.WaitForExitAsync();
-            return new ServerRun(false, process.ExitCode, await output + await error);
+            Assert.Fail($"The server did not exit on a port that is held. It printed: {await Describe(server)}");
         }
 
-        return new ServerRun(true, process.ExitCode, await error);
+        var error = await server.ErrorAsync();
+        Assert.Equal(StartRefusal.PortInUseExitCode, server.ExitCode);
+        var said = $"Weir cannot start: port {port.ToString(CultureInfo.InvariantCulture)} is already in use by another program.";
+        Assert.Contains(said, error, StringComparison.Ordinal);
+        Assert.DoesNotContain("Unhandled exception", error, StringComparison.Ordinal);
+        Assert.False(File.Exists(Path.Join(_home, "startup-error.txt")), "A port in use is not a refusal: the tray must try again.");
+        Assert.Contains($"port {port.ToString(CultureInfo.InvariantCulture)} is already in use", ReadLog(), StringComparison.Ordinal);
+    }
+
+    private static async Task AssertReadyAsync(RealServerProcess server, string what)
+    {
+        if (!await server.BecomesReadyAsync(Ceiling))
+        {
+            Assert.Fail($"{what}. It printed: {await Describe(server)}");
+        }
+    }
+
+    // A server that is still running has written nothing complete to read; stopping it ends its output.
+    private static async Task<string> Describe(RealServerProcess server)
+    {
+        server.Dispose();
+        return await server.EverythingAsync();
     }
 
     private string ReadLog()
@@ -108,5 +154,10 @@ public sealed class PortInUseTests : IDisposable
         return File.Exists(path) ? File.ReadAllText(path) : string.Empty;
     }
 
-    private sealed record ServerRun(bool Exited, int ExitCode, string Error);
+    private static int FreePort()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        return ((IPEndPoint)listener.LocalEndpoint).Port;
+    }
 }
