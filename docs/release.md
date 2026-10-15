@@ -86,7 +86,7 @@ suite, run on the golden VM on the exact commit.
 
 A pass on a commit X counts for a later tagged commit Y when nothing that ships changed between them (the owner,
 16 Oct 2026; Deluno applies the same rule). The run proves the build, so a commit that changes only tests, scripts, docs
-or CI files is the same build and does not need the run again. All of these must hold:
+or test-only CI files is the same build and does not need the run again. All of these must hold:
 
 - X is an ancestor of Y, and X is the nearest commit before Y that has any `golden-path` status. A failure on a commit
   in between, or on Y itself, is the answer; an older pass never covers over it.
@@ -107,11 +107,16 @@ What ships is what the Windows installer and the Docker image are built from:
   `NuGet.Config` and `.editorconfig`;
 - the Windows package: `packaging/windows/**`, and the scripts it runs: `scripts/prune-release-feed.mjs`,
   `find-previous-release.mjs`, `semver.mjs` and `pinned-download.mjs`;
-- the Docker image: `Dockerfile`, `.dockerignore`, `docker/entrypoint.sh` and `.node-version`.
+- the Docker image: `Dockerfile`, `.dockerignore`, `docker/entrypoint.sh` and `.node-version`;
+- the workflows and actions that build or package what ships: `.github/workflows/release.yml`,
+  `.github/workflows/ci-packaging.yml` (the reusable workflow behind the Windows package the scenario suite installs and the
+  Docker candidate) and the composite actions those builds use, `.github/actions/apt-fail-fast` and
+  `.github/actions/setup-ffmpeg-linux`.
 
 Everything else does not ship: the test projects and tools, solution files, docs, release notes, `compose.yaml`, the
-other scripts, and `.github/**` (a workflow decides how a build is run, not what it holds). Test helpers that sit beside
-source files count as shipped, to be safe. A pass is carried over at most 100 commits back.
+other scripts, and the workflows and actions that only test or check (`ci.yml`, which only decides when
+`ci-packaging.yml` runs and passes it the version, `ci-contract.yml`, `ci-stress.yml`, `audit.yml`, `codeql.yml`,
+`docs.yml`, `setup-real-media-tools`). Test helpers that sit beside source files count as shipped, to be safe. A pass is carried over at most 100 commits back.
 
 When the release uses a carried pass its log says so and why: `PASS (carried over): "golden-path" is success on <X>, an
 earlier commit`, then `Between <X> and <Y>: only tests, scripts, docs or CI files changed (5 files), so no file that ships

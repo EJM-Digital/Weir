@@ -18,8 +18,14 @@
 //
 // Not shipped, whatever their folder: every *.test.* file, apps/web/src/test, the test projects and tools under
 // apps/server and apps/tray, the stand-in server, solution files, READMEs, docs, docs-site, release notes, compose.yaml
-// (a file people copy; the image does not read it), the other scripts and every workflow. A workflow decides how a build
-// is run, not what it holds, and the owner's rule is that a CI-only change does not break a pass.
+// (a file people copy; the image does not read it), the other scripts and the workflows that only test or check
+// (ci.yml, ci-contract.yml, ci-stress.yml, audit, codeql, docs, dependabot).
+//
+// A workflow that builds or packages what ships counts as shipped, because changing how the installer or the image is
+// made can change what lands in it: release.yml (builds and publishes both), ci-packaging.yml (the reusable workflow
+// that builds the Windows package the scenario suite installs, and the Docker candidate), and the composite actions
+// those build steps use (apt-fail-fast, setup-ffmpeg-linux). ci.yml itself only decides when ci-packaging.yml runs and
+// passes it the version, so it does not count; setup-real-media-tools is used by test jobs alone.
 //
 // It errs on the side of "ships": a path is exempt only when this file says the build never reads it. Test helpers that
 // sit beside source files (a *-fixtures.ts, a *-test-support.tsx) are not exempt: only *.test.* files and src/test are.
@@ -57,6 +63,11 @@ export const SHIPPED = [
   "scripts/find-previous-release.mjs",
   "scripts/semver.mjs",
   "scripts/pinned-download.mjs",
+  // The workflows and actions that build or package what ships.
+  ".github/workflows/release.yml",
+  ".github/workflows/ci-packaging.yml",
+  ".github/actions/apt-fail-fast/",
+  ".github/actions/setup-ffmpeg-linux/",
 ];
 
 // Inside a shipped folder, what the build never reads.

@@ -73,6 +73,15 @@ test("a change to a file that ships is not carried over", () => {
   assert.match(found.problems.join("\n"), /1 file that ships changed: apps\/server\/src\/Weir\.Core\/Plan\.cs/);
 });
 
+test("a change to release.yml is not carried over", () => {
+  const { git, commit } = repository();
+  const x = commit({ ...base, ".github/workflows/release.yml": "a" }, "base");
+  const y = commit({ ".github/workflows/release.yml": "b" }, "release workflow");
+  const found = find(y, { git, record: recordFor({ [x]: [status()] }) });
+  assert.equal(found.ok, false);
+  assert.match(found.problems.join("\n"), /1 file that ships changed: \.github\/workflows\/release\.yml/);
+});
+
 test("a version change is not carried over", () => {
   const { git, commit } = repository();
   const x = commit(base, "base");

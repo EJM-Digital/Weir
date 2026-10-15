@@ -30,6 +30,10 @@ test("what the installer and the image are built from ships", () => {
     "packaging/windows/build-velopack.ps1",
     "packaging/windows/assets/weir-tray-icon.ico",
     "scripts/prune-release-feed.mjs",
+    ".github/workflows/release.yml",
+    ".github/workflows/ci-packaging.yml",
+    ".github/actions/apt-fail-fast/action.yml",
+    ".github/actions/setup-ffmpeg-linux/action.yml",
   ]) {
     assert.equal(isShippedPath(path), true, path);
   }
@@ -63,8 +67,14 @@ test("tests, scripts, docs, CI and the other repository files do not ship", () =
     "scripts/verify-golden-path-for-release.mjs",
     "scripts/release/shipped-paths.mjs",
     "scripts/check-agent-docs.mjs",
-    ".github/workflows/release.yml",
     ".github/workflows/ci.yml",
+    ".github/workflows/ci-contract.yml",
+    ".github/workflows/ci-stress.yml",
+    ".github/workflows/audit.yml",
+    ".github/workflows/codeql.yml",
+    ".github/workflows/docs.yml",
+    ".github/actions/setup-real-media-tools/action.yml",
+    ".github/dependabot.yml",
     "packaging/brand/weir-mark.svg",
   ]) {
     assert.equal(isShippedPath(path), false, path);
@@ -125,6 +135,37 @@ test("a change to a file that ships makes a different product", () => {
   assert.equal(result.ok, false);
   assert.deepEqual(result.shipped, ["apps/server/src/Weir.Core/Plan.cs"]);
   assert.match(result.reason, /1 file that ships changed: apps\/server\/src\/Weir\.Core\/Plan\.cs/);
+});
+
+test("a change to the release workflow, the packaging workflow or an action they use makes a different product", () => {
+  for (const path of [
+    ".github/workflows/release.yml",
+    ".github/workflows/ci-packaging.yml",
+    ".github/actions/apt-fail-fast/action.yml",
+    ".github/actions/setup-ffmpeg-linux/action.yml",
+  ]) {
+    const { git, commit } = repository();
+    const x = commit({ ...base, [path]: "a" }, "base");
+    const y = commit({ [path]: "b" }, "workflow");
+    const result = sameShippedFiles(x, y, git);
+    assert.equal(result.ok, false, path);
+    assert.deepEqual(result.shipped, [path]);
+  }
+});
+
+test("a change to a workflow that only tests or checks does not make a different product", () => {
+  const { git, commit } = repository();
+  const x = commit(base, "base");
+  const y = commit(
+    {
+      ".github/workflows/ci.yml": "b",
+      ".github/workflows/ci-contract.yml": "b",
+      ".github/workflows/audit.yml": "b",
+      ".github/actions/setup-real-media-tools/action.yml": "b",
+    },
+    "test workflows",
+  );
+  assert.equal(sameShippedFiles(x, y, git).ok, true);
 });
 
 test("a version change makes a different product", () => {
