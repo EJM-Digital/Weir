@@ -17,10 +17,23 @@ internal sealed class ScriptedManager : IManagerHttpHandlerFactory
 {
     private readonly Dictionary<(string Method, string Path), Func<HttpRequestMessage, Task<HttpResponseMessage>>> _routes = new();
 
+    private readonly List<ManagerCall> _calls = [];
     private ConnectionActivityHub? _activity;
     private TimeProvider _time = TimeProvider.System;
 
     public List<HttpRequestMessage> Requests { get; } = [];
+
+    /// <summary>Every request in the order it arrived, its body read as it was sent (the request itself is disposed once the call ends).</summary>
+    public IReadOnlyList<ManagerCall> Calls
+    {
+        get
+        {
+            lock (Requests)
+            {
+                return [.. _calls];
+            }
+        }
+    }
 
     /// <summary>Report the marked calls to <paramref name="activity"/>, as the real transport does.</summary>
     public ScriptedManager ReportingTo(ConnectionActivityHub activity, TimeProvider time)
@@ -44,19 +57,25 @@ internal sealed class ScriptedManager : IManagerHttpHandlerFactory
 
     private sealed class Recording(ScriptedManager owner) : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            var body = request.Content is { } content ? await content.ReadAsStringAsync(cancellationToken) : string.Empty;
+            request.Headers.TryGetValues("X-Api-Key", out var apiKeys);
             lock (owner.Requests)
             {
                 owner.Requests.Add(request);
+                owner._calls.Add(new ManagerCall(request.Method.Method, request.RequestUri!.PathAndQuery, apiKeys?.SingleOrDefault(), body));
             }
 
             return owner._routes.TryGetValue((request.Method.Method, request.RequestUri!.AbsolutePath), out var respond)
-                ? respond(request)
+                ? await respond(request)
                 : throw new HttpRequestException("No connection could be made because the target machine actively refused it.");
         }
     }
 }
+
+/// <summary>One request a <see cref="ScriptedManager"/> received.</summary>
+internal sealed record ManagerCall(string Method, string PathAndQuery, string? ApiKey, string Body);
 
 /// <summary>
 /// Media manager connections, capabilities, intake, hand-off status and reconciliation over the real HTTP

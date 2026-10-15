@@ -15,6 +15,18 @@ public enum RedownloadOutcome
 
     /// <summary>This manager/kind cannot be asked at all (unverified capability, or no manager).</summary>
     Unsupported,
+
+    /// <summary>
+    /// The manager lists no file at the path Weir has, so there is nothing Weir can delete. Nothing was deleted and no search was
+    /// sent: searching anyway would fetch a second copy beside a file Weir could not remove.
+    /// </summary>
+    FileNotMatched,
+
+    /// <summary>
+    /// Asking the manager to delete the file timed out, could not be sent, or got a server error back. The file may or may not be
+    /// gone, so no search was sent and the person is asked to check the manager.
+    /// </summary>
+    DeleteNotConfirmed,
 }
 
 /// <summary>
@@ -49,10 +61,11 @@ public interface IManagerRedownload
     /// Ask <paramref name="connection"/> to redownload the file at <paramref name="filePath"/> for the title
     /// <paramref name="titleId"/> (the id <see cref="IMediaManagerPort.ListLibraryFilesAsync"/> matched).
     /// Never throws for a plain "this manager cannot do this"; throws <see cref="MediaManagerHttpException"/>
-    /// or <see cref="MediaManagerUnreachableException"/> only when a call this method was already committed
-    /// to attempting failed outright (never after the destructive delete step already went through — that
-    /// case is reported as <see cref="RedownloadOutcome.DeletedButSearchFailed"/> instead of thrown, since a
-    /// caller must not lose track of a file that is already gone).
+    /// or <see cref="MediaManagerUnreachableException"/> only when a call failed before it could have deleted
+    /// anything (or the manager refused the delete). Once a delete may have gone through, the failure is reported
+    /// instead of thrown, since a caller must not lose track of a file that may be gone: as
+    /// <see cref="RedownloadOutcome.DeletedButSearchFailed"/> when the delete succeeded and the search failed, and as
+    /// <see cref="RedownloadOutcome.DeleteNotConfirmed"/> when the delete itself may or may not have happened.
     /// </summary>
     Task<RedownloadResult> RequestRedownloadAsync(
         ManagerConnection connection,

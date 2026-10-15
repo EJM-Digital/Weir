@@ -20,6 +20,7 @@ public sealed class SystemLogRulesTests
     [InlineData("library.scan_completed", SystemLogCategories.Scans)]
     [InlineData("library.file_cleaned", SystemLogCategories.Library)]
     [InlineData("library.original_keep_conflict", SystemLogCategories.Library)]
+    [InlineData("library.redownload_requested", SystemLogCategories.Library)]
     [InlineData("library.file_change_notified", SystemLogCategories.Connections)]
     [InlineData("library.file_change_notify_warning", SystemLogCategories.Connections)]
     [InlineData("processing.file_remux_pass_completed", SystemLogCategories.Processing)]

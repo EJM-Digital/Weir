@@ -3896,7 +3896,7 @@ export interface components {
     };
     /**
      * LibraryRedownloadOut
-     * @description Issue #509 step 3's answer: outcome is 'requested', 'deleted_but_search_failed', 'unsupported' (no manager, or issue #551's title matching never resolved this file) or 'failed' (the manager call itself could not be reached).
+     * @description Issue #509 step 3's answer: outcome is 'requested' (the file was deleted, if the manager had one, and a search was sent), 'deleted_but_search_failed' (the file is gone and no search went through), 'delete_not_confirmed' (the delete timed out, could not be sent or failed at the manager, so the file may still be there, and no search was sent), 'file_not_matched' (the manager lists no file at that path, so nothing was deleted or searched for), 'unsupported' (no manager, or issue #551's title matching never resolved this file) or 'failed' (the manager could not be reached, or refused Weir, before anything was deleted).
      */
     LibraryRedownloadOut: {
       /** Message */
@@ -3934,6 +3934,11 @@ export interface components {
        * @description Why can_redownload is false, for a plain-language note instead of hiding the title outright.
        */
       unavailable_reason?: string | null;
+      /**
+       * Waiting Note
+       * @description Set when a past Download again deleted this file at the manager but the search for a new copy did not go through: a plain note saying so. Null otherwise.
+       */
+      waiting_note?: string | null;
     };
     /**
      * LibraryRedownloadsListOut
