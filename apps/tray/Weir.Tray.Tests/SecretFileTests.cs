@@ -83,6 +83,33 @@ public sealed class SecretFileTests : IDisposable
     }
 
     [Fact]
+    public void A_saved_secret_another_program_has_open_for_a_moment_is_read_when_it_lets_go_and_kept()
+    {
+        var saved = new string('k', SecretFile.MinimumLength);
+        File.WriteAllText(SecretPath, saved);
+        var held = new FileStream(SecretPath, FileMode.Open, FileAccess.Read, FileShare.None);
+
+        // A virus scanner holds a file it is looking at; it lets go before the reader's next look.
+        var secret = SecretFile.Ensure(_home.Path, FileName, _ => held.Dispose());
+
+        Assert.Equal(saved, secret);
+        Assert.Equal(saved, File.ReadAllText(SecretPath));
+    }
+
+    [Fact]
+    public void A_saved_secret_that_stays_unreadable_is_an_error_and_is_not_replaced()
+    {
+        var saved = new string('k', SecretFile.MinimumLength);
+        File.WriteAllText(SecretPath, saved);
+        using var held = new FileStream(SecretPath, FileMode.Open, FileAccess.Read, FileShare.None);
+
+        Assert.Throws<InvalidOperationException>(() => SecretFile.Ensure(_home.Path, FileName, _ => { }));
+
+        held.Dispose();
+        Assert.Equal(saved, File.ReadAllText(SecretPath));
+    }
+
+    [Fact]
     public void A_secret_too_short_to_use_is_replaced()
     {
         File.WriteAllText(SecretPath, "short");

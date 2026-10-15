@@ -23,7 +23,7 @@ const admin = { id: 1, username: "alice", role: "admin", app_theme: "dark" };
 type LoginRequest = Record<string, unknown>;
 
 /** A Weir with an account already made, whose sign-in answers as `login` says. */
-function serverSigningIn(login: () => Response | Error) {
+function serverSigningIn(login: () => Response | Error | Promise<Response>) {
   const attempts: LoginRequest[] = [];
   vi.stubGlobal(
     "fetch",
@@ -122,6 +122,53 @@ describe("the sign-in request", () => {
         trusted_device: true,
       },
     ]);
+  });
+});
+
+describe("the sign-in form", () => {
+  it("signs in when the form itself is submitted, as Enter in a field does, and keeps the browser from reloading the page", async () => {
+    const attempts = serverSigningIn(() => json({ user: admin }));
+    renderLogin();
+    fireEvent.change(await screen.findByTestId("login-username"), {
+      target: { value: "alice" },
+    });
+    fireEvent.change(screen.getByTestId("login-password"), {
+      target: { value: "correct horse" },
+    });
+
+    const notPrevented = fireEvent.submit(screen.getByTestId("login-form"));
+
+    expect(notPrevented).toBe(false);
+    expect(await screen.findByText("Signed in home")).toBeInTheDocument();
+    expect(attempts).toHaveLength(1);
+    expect(attempts[0]).toMatchObject({
+      username: "alice",
+      password: "correct horse",
+    });
+  });
+
+  it("holds the Sign in button as Signing in… while the answer is awaited, so a second click sends nothing", async () => {
+    let answer: (reply: Response) => void = () => undefined;
+    const attempts = serverSigningIn(
+      () =>
+        new Promise<Response>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    renderLogin();
+
+    await signInWith("alice", "correct horse");
+
+    await waitFor(() => expect(attempts).toHaveLength(1));
+    const submit = screen.getByTestId("login-submit");
+    await waitFor(() => expect(submit).toBeDisabled());
+    expect(submit).toHaveTextContent("Signing in…");
+    fireEvent.click(submit);
+    expect(attempts).toHaveLength(1);
+
+    answer(json({ user: admin }));
+    expect(await screen.findByText("Signed in home")).toBeInTheDocument();
+    expect(attempts).toHaveLength(1);
   });
 });
 

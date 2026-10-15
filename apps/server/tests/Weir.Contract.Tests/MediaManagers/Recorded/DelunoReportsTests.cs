@@ -41,7 +41,7 @@ public sealed class DelunoReportsTests
 
         Assert.Equal(
             recorded.Exchanges.Select(exchange => $"Told {Deluno(world)} that {FileNameIn((string)exchange.Request.Body!["outputPath"]!)} is ready to import").Order(),
-            (await world.Scenario.ActivityAsync("processing.handoff_reported")).Select(entry => (string)entry["title"]!).Order());
+            (await RecordedReportsAsync(world, handoffs.Count)).Select(entry => (string)entry["title"]!).Order());
         Assert.Empty(await OwedAsync(world, ids));
     }
 
@@ -135,7 +135,7 @@ public sealed class DelunoReportsTests
         // Deluno answered, so Weir does not say it could not reach it or that its address or key are wrong: it says Deluno had already
         // stopped waiting, and that no import was queued, and does not ask a person to check anything.
         var file = DelunoSide.ReleaseNameOf(tooLate.Exchanges[0]);
-        var entry = Assert.Single(await world.Scenario.ActivityAsync("processing.handoff_reported"));
+        var entry = Assert.Single(await RecordedReportsAsync(world, 1));
         Assert.Equal($"{Deluno(world)} had already stopped waiting for {file}", (string)entry["title"]!);
         var detail = JsonNode.Parse((string)entry["detail"]!)!.AsObject();
         Assert.Equal("skipped", (string)detail["result"]!);
@@ -224,7 +224,7 @@ public sealed class DelunoReportsTests
         var report = await ReportAsync(world, hand.HandoffId());
         EmittedReport.AssertMatches(DelunoSide.Request("events-completed"), 0, report.Body);
         var file = FileNameIn((string)report.Body["outputPath"]!);
-        var entry = Assert.Single(await world.Scenario.ActivityAsync("processing.handoff_reported"));
+        var entry = Assert.Single(await RecordedReportsAsync(world, 1));
         Assert.Equal($"Weir could not tell {Deluno(world)} about {file}", (string)entry["title"]!);
         var detail = JsonNode.Parse((string)entry["detail"]!)!.AsObject();
         Assert.Equal("failed", (string)detail["result"]!);
@@ -281,6 +281,16 @@ public sealed class DelunoReportsTests
             $"Weir's report of {handoffId}");
         return new Sent(request, (JsonObject)request.Json!);
     }
+
+    /// <summary>
+    /// The Activity lines for the reports Weir has settled, once there are <paramref name="count"/>. Weir records a report, and stops owing
+    /// it, after the manager has answered it, in one write; the manager has the report before that, so a test that reads either as soon
+    /// as the manager has the report reads them too early. The wait lasts as long as a worker has the job (see <see cref="JobWait"/>).
+    /// </summary>
+    private static async Task<List<JsonObject>> RecordedReportsAsync(RecordedWorld world, int count) =>
+        await world.Scenario.WaitWhileWorkedOnAsync(
+            async () => await world.Scenario.ActivityAsync("processing.handoff_reported") is { } lines && lines.Count >= count ? lines : null,
+            $"Weir to record {count} report(s) in Activity");
 
     /// <summary>Of these hand-offs, those Weir still holds a report for to send, read from its database while it is stopped.</summary>
     private static async Task<List<string>> OwedAsync(RecordedWorld world, IEnumerable<string> handoffIds)
