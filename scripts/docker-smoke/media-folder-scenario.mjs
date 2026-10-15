@@ -56,12 +56,12 @@ async function deliver({ client, source, delivered, relativePath }) {
 function expectDelivered({ delivered, fixtureHash, host }) {
   const file = statSync(delivered);
   assert.deepEqual([file.uid, file.gid], [REMAPPED.uid, REMAPPED.gid], `${delivered} does not belong to the ids the server runs as`);
-  assert.equal((file.mode & PERMISSIONS).toString(8), FILE_MODE.toString(8), `${delivered} does not have WEIR_FILE_MODE_OUTPUT's mode`);
+  assert.equal((file.mode & PERMISSIONS).toString(8), FILE_MODE.toString(8), `${delivered} has mode ${(file.mode & PERMISSIONS).toString(8)}, not WEIR_FILE_MODE_OUTPUT's ${FILE_MODE.toString(8)}`);
   assert.equal(sha256(delivered), fixtureHash, `${delivered} is not the file that was passed through`);
 
   const folder = statSync(join(delivered, ".."));
   assert.deepEqual([folder.uid, folder.gid], [REMAPPED.uid, REMAPPED.gid], "the folder made for the file does not belong to the ids the server runs as");
-  assert.equal((folder.mode & PERMISSIONS).toString(8), FOLDER_MODE.toString(8), "the folder made for the file does not have WEIR_DIR_MODE_OUTPUT's mode");
+  assert.equal((folder.mode & PERMISSIONS).toString(8), FOLDER_MODE.toString(8), `the folder made for the file has mode ${(folder.mode & PERMISSIONS).toString(8)}, not WEIR_DIR_MODE_OUTPUT's ${FOLDER_MODE.toString(8)}`);
 
   // Readable by a user who is neither the server's account nor in its group, so the modes are what let this user in.
   assert.ok(host.uid !== REMAPPED.uid && host.gid !== REMAPPED.gid, "this smoke must not run as the ids it gives the server");
