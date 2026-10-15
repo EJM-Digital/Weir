@@ -89,10 +89,13 @@ public sealed class RejectedFileActionTests
         await FolderLink.CreateAsync(link, elsewhere);
         try
         {
-            var row = await RejectAsync(scenario, library);
+            await scenario.EnqueueFilePassAsync(RelativePath, library);
+            await new JobWait().UntilAsync(
+                scenario.JobStatusesAsync,
+                async () => await scenario.FileRowAsync(library, RelativePath) is { } found && ((string)found["status_reason"]!).Contains("did not delete the rejected file", StringComparison.Ordinal) ? found : null,
+                "the refusal to delete the file to be recorded");
 
             Assert.True(File.Exists(outside), "A file that lives outside the watched folder is never deleted.");
-            Assert.Contains("did not delete the rejected file", (string)row["status_reason"]!, StringComparison.Ordinal);
         }
         finally
         {
