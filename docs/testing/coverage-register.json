@@ -50599,9 +50599,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/HeldFileReturnTests.Resend.cs",
           "name": "HeldFileReturnTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.cs",
+          "name": "A_held_file_that_is_back_when_Deluno_sends_the_release_again_is_cleaned_at_once_and_reported_as_Deluno_recorded"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.cs",
+          "name": "A_held_file_that_comes_back_on_its_own_is_cleaned_when_Weir_next_looks_and_reported_as_Deluno_recorded"
         }
       ],
-      "issue": 1067,
       "audit": {
         "id": "FL-32",
         "verdict": "Covered"
@@ -51029,9 +51038,13 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/PauseGuardTests.cs",
           "name": "A_job_the_claim_let_through_while_paused_is_put_back_unrun_with_its_attempt_given_back"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/PauseGuardTests.cs",
+          "name": "A_job_put_back_for_a_pause_leaves_the_media_file_exactly_as_it_was_and_says_so_in_the_log"
         }
       ],
-      "issue": 1067,
       "audit": {
         "id": "FL-42",
         "verdict": "Covered"

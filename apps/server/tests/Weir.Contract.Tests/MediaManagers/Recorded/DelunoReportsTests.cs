@@ -118,6 +118,50 @@ public sealed partial class DelunoReportsTests
     }
 
     [Fact]
+    public async Task A_held_file_that_is_back_when_Deluno_sends_the_release_again_is_cleaned_at_once_and_reported_as_Deluno_recorded()
+    {
+        await using var world = await DelunoSide.StartWorldAsync();
+        var recorded = DelunoSide.Request("events-completed-resent");
+        world.Deluno.AnswerReportsAsRecorded(recorded);
+        var first = HandoffFor(DelunoSide.Request("events-too-late"), 1);
+        var again = HandoffFor(recorded, 1);
+        await HoldAsGoneAsync(world, first);
+        var booked = await BookedLookAsync(world);
+
+        world.PutFilm(again.SourcePath(), needsWork: true);
+        await HandOffAsync(world, again);
+
+        // The booked look is minutes away, and nothing here moves it: the resend itself started the look.
+        var report = await ReportAsync(world, again.HandoffId());
+        EmittedReport.AssertMatches(recorded, 1, report.Body);
+        Assert.True(string.CompareOrdinal(booked, Handoffs.StoredTime(DateTime.UtcNow)) > 0, "the look was not booked for later");
+        Assert.Equal("completed", (string)(await world.Scenario.WaitForHandoffStateAsync(again.HandoffId(), "completed"))["state"]!);
+        Assert.Equal("cancelled", (string)(await world.Scenario.HandoffStatusAsync(first.HandoffId()))["state"]!);
+        Assert.Empty(await BookedLooksAsync(world));
+    }
+
+    [Fact]
+    public async Task A_held_file_that_comes_back_on_its_own_is_cleaned_when_Weir_next_looks_and_reported_as_Deluno_recorded()
+    {
+        await using var world = await DelunoSide.StartWorldAsync();
+        var recorded = DelunoSide.Request("events-completed");
+        world.Deluno.AnswerReportsAsRecorded(recorded);
+        var hand = HandoffFor(recorded, 0);
+        await HoldAsGoneAsync(world, hand);
+        var booked = await BookedLookAsync(world);
+
+        // The file is back, and nothing tells Weir so: it finds out when it next looks for vanished files, which it does as it starts.
+        world.PutFilm(hand.SourcePath(), needsWork: true);
+        await world.Scenario.RestartServerAsync();
+
+        var report = await ReportAsync(world, hand.HandoffId());
+        EmittedReport.AssertMatches(recorded, 0, report.Body);
+        Assert.True(string.CompareOrdinal(booked, Handoffs.StoredTime(DateTime.UtcNow)) > 0, "the look was not booked for later");
+        await world.Scenario.WaitForHandoffStateAsync(hand.HandoffId(), "completed");
+        Assert.Empty(await BookedLooksAsync(world));
+    }
+
+    [Fact]
     public async Task A_report_of_a_release_Deluno_removed_is_answered_409_dismissed_and_Weir_stops_owing_it()
     {
         await using var world = await DelunoSide.StartWorldAsync();
@@ -250,6 +294,27 @@ public sealed partial class DelunoReportsTests
         var accepted = await world.Replay.SendCallAsync(hand);
         Assert.True(accepted.Status == System.Net.HttpStatusCode.OK, accepted.ToString());
     }
+
+    /// <summary>Hands the release off while the file is there, takes the file away, and waits until Weir holds it as gone with a look booked for later.</summary>
+    private static async Task HoldAsGoneAsync(RecordedWorld world, RecordedCall hand)
+    {
+        await world.Scenario.SetPauseAsync(paused: true);
+        var path = world.PutFilm(hand.SourcePath(), needsWork: true);
+        await HandOffAsync(world, hand);
+        File.Delete(path);
+        await world.Scenario.SetPauseAsync(paused: false);
+        await Poll.UntilAsync(
+            async () => (bool?)(await world.Scenario.FileRowAsync(world.Movies, Path.GetFileName(path)))?["source_gone"] is true ? "held as gone" : null,
+            "Weir to hold the file as gone after its first look");
+    }
+
+    /// <summary>When the look at the gone file is booked for, once it is. The file shows as gone a moment before the look is booked, so the server is asked again until it is there.</summary>
+    private static async Task<string> BookedLookAsync(RecordedWorld world) =>
+        await Poll.UntilAsync(async () => (await BookedLooksAsync(world)).FirstOrDefault(), "Weir to book a look at the gone file");
+
+    private static async Task<List<string>> BookedLooksAsync(RecordedWorld world) =>
+        [.. (await world.Scenario.RowsAfterStopAsync("SELECT not_before FROM jobs WHERE status = 'pending' AND not_before IS NOT NULL AND dedupe_key LIKE '%:gone-wait:%'"))
+            .Select(row => (string)row["not_before"]!)];
 
     /// <summary>The name of the file at the end of a path as Deluno's Windows machine writes it.</summary>
     private static string FileNameIn(string windowsPath) => windowsPath[(windowsPath.LastIndexOf('\\') + 1)..];
