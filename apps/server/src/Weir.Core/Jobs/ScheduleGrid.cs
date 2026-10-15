@@ -106,12 +106,13 @@ public static class ScheduleGrid
             return string.Empty;
         }
 
-        var startSlot = (startHour * SlotsPerHour) + FloorDiv(startMinute, SlotMinutes);
-        var endSlot = (endHour * SlotsPerHour) + FloorDiv(endMinute, SlotMinutes);
-        if (startSlot is < 0 or >= SlotsPerDay || endSlot is < 0 or >= SlotsPerDay)
+        if (!IsTimeOfDay(startHour, startMinute) || !IsTimeOfDay(endHour, endMinute))
         {
             return string.Empty;
         }
+
+        var startSlot = (startHour * SlotsPerHour) + FloorDiv(startMinute, SlotMinutes);
+        var endSlot = (endHour * SlotsPerHour) + FloorDiv(endMinute, SlotMinutes);
 
         var slots = Enumerable.Repeat('0', SlotsPerWeek).ToArray();
         for (var dayIndex = 0; dayIndex < DayNames.Count; dayIndex++)
@@ -186,6 +187,8 @@ public static class ScheduleGrid
 
     /// <summary>The Monday-first day index the grid uses: Monday is 0, Sunday is 6.</summary>
     public static int MondayFirstDayIndex(DayOfWeek day) => ((int)day + 6) % 7;
+
+    private static bool IsTimeOfDay(int hour, int minute) => hour is >= 0 and <= 23 && minute is >= 0 and <= 59;
 
     private static string Prefix3(string value) => value.Length <= 3 ? value : value[..3];
 

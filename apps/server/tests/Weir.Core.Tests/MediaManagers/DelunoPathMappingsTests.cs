@@ -19,6 +19,14 @@ public sealed class DelunoPathMappingsTests
     }
 
     [Fact]
+    public void A_mapping_onto_the_weir_side_filesystem_root_keeps_the_folders_below_the_mapped_one()
+    {
+        var mapped = Apply("/mnt/nas/complete/tv", ("/mnt/nas", "/"));
+
+        Assert.Equal("/complete/tv", mapped.Path);
+    }
+
+    [Fact]
     public void A_folder_no_mapping_covers_is_left_as_it_is()
     {
         var mapped = Apply("/srv/other", ("/mnt/nas", "/media"));

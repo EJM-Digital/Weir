@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="FsCheck" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
@@ -14,6 +15,11 @@
     <ProjectReference Include="..\..\src\Weir.Infrastructure\Weir.Infrastructure.csproj" />
     <!-- The slow-tool stand-in the process runner tests start; its apphost is copied next to the test assembly. -->
     <ProjectReference Include="..\Weir.TestChild\Weir.TestChild.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The property-test runner and its path generators, compiled into each test project that has property tests. -->
+    <Compile Include="..\Weir.Core.Tests\TestSupport\PropertyChecks.cs" Link="TestSupport\PropertyChecks.cs" />
+    <Compile Include="..\Weir.Core.Tests\TestSupport\PathGenerators.cs" Link="TestSupport\PathGenerators.cs" />
   </ItemGroup>
   <ItemGroup>
     <!-- A configuration bundle exported by an older release (format version 4): a frozen compatibility fixture. -->
