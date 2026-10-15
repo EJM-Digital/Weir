@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Time.Testing;
 using Weir.Infrastructure.Processes;
+using Weir.Infrastructure.Runtime;
 
 namespace Weir.Infrastructure.Tests;
 
@@ -7,16 +8,23 @@ namespace Weir.Infrastructure.Tests;
 /// A stand-in child whose pace, and the clock the runner's idle limit reads, both belong to the test. The child prints its next line
 /// only when the test has seen the last one (<see cref="Pace"/>), and the test moves the clock by hand (<see cref="Tick"/>), so how
 /// long a busy machine takes to start the child, run its timers or schedule the reader decides nothing: the limit is measured in
-/// the lines the test has seen, not in seconds that other work can eat.
+/// the lines the test has seen, not in seconds that other work can eat. The pulse the runner counts awake time by notes the clock at
+/// every step of <see cref="Tick"/>, and not at all during <see cref="Sleep"/>.
 /// </summary>
 internal sealed class PacedChild : IDisposable
 {
     private readonly TempDirectory _acks = new();
 
-    public PacedChild() => Runner = new ProcessRunner(time: Time);
+    public PacedChild()
+    {
+        Pulse = new ProcessPulse(Time);
+        Runner = new ProcessRunner(time: Time, pulse: Pulse);
+    }
 
     /// <summary>The clock the runner's idle limit reads.</summary>
     public FakeTimeProvider Time { get; } = new();
+
+    public ProcessPulse Pulse { get; }
 
     public ProcessRunner Runner { get; }
 
@@ -26,9 +34,25 @@ internal sealed class PacedChild : IDisposable
     /// <summary>Lets <paramref name="seen"/> lines' worth of time pass and tells the child that many have been seen, so it prints the next.</summary>
     public void Tick(TimeSpan elapsed, int seen)
     {
-        Time.Advance(elapsed);
+        for (var left = elapsed; left > TimeSpan.Zero; left -= TimeSpan.FromSeconds(1))
+        {
+            Time.Advance(left < TimeSpan.FromSeconds(1) ? left : TimeSpan.FromSeconds(1));
+            Pulse.Note();
+        }
+
         File.WriteAllBytes(_acks.Join(seen.ToString(System.Globalization.CultureInfo.InvariantCulture)), []);
     }
 
-    public void Dispose() => _acks.Dispose();
+    /// <summary>The computer sleeps for <paramref name="time"/>: the clock moves and nothing in the process runs until it wakes and the pulse notes the time.</summary>
+    public void Sleep(TimeSpan time)
+    {
+        Time.Advance(time);
+        Pulse.Note();
+    }
+
+    public void Dispose()
+    {
+        Pulse.Dispose();
+        _acks.Dispose();
+    }
 }
