@@ -27,7 +27,9 @@
     Inside the VM the scenarios run in the signed-in desktop session (a one-shot scheduled task), so the tray has a desktop. They
     are in Run-WeirScenarios.ps1; docs/release.md says what each proves.
 
-    Everything the run produced is copied to <OutDirectory>\weir-scenarios-<version>-<sha>\: scenario-<version>-<sha>.md (one line
+    Everything the run produced is copied to <OutDirectory>\weir-scenarios-<version>-<sha>\ (a run of chosen scenarios given no
+    -OutDirectory adds the UTC time it started to the folder name, weir-scenarios-<version>-<sha>-only-<ids>-<yyyyMMddTHHmmssZ>, so a
+    second run never overwrites the record of the first): scenario-<version>-<sha>.md (one line
     per scenario, then what each does, what passes, and what was seen), each scenario's evidence, Weir's server and tray logs,
     Deluno's logs when it is installed, and Weir's own request log.
 
@@ -47,9 +49,13 @@
     owner's rule that a bug found by one scenario re-runs that scenario and no other. A scenario makes what it needs itself (the
     build under test installed and running, an account, a workflow of its own named for the run) and reads nothing an earlier scenario
     left, so it can be run alone, and again on the same machine. The phases that run are those the chosen scenarios are in, and a
-    Fresh scenario still starts from the restored clean checkpoint. A run of chosen scenarios keeps its record in a folder of its own
+    Fresh scenario still starts from the restored clean checkpoint (unless -NoRestore). A run of chosen scenarios keeps its record in a folder of its own
     (the version, the commit and the ids), which lists every other scenario as not chosen, and it never sets the golden-path
     status: it can never be a pass for the tag, and its exit code says only whether what it ran passed.
+
+    -NoRestore runs the Fresh phase on the machine as it stands instead of restoring the checkpoint first. It is for proving a second
+    run on the same machine: the first run must have restored the checkpoint, and this one runs the same -Scenarios on what that run
+    left. It needs -Scenarios, and like every run of chosen scenarios it sets no golden-path status.
 
     -WhatIf lists what the run would do, in order, and the scenarios, and touches no machine.
 
@@ -73,6 +79,12 @@
 .PARAMETER Scenarios
     Run only these scenarios, by id (comma separated; * and ? stand for any text). A mistyped id is an error naming the nearest ids.
     With -Phases, only for scenarios inside those phases. Without it, every scenario of the phases runs.
+
+.PARAMETER NoRestore
+    Do not restore -Checkpoint at the start of the Fresh phase: run on the machine exactly as the last run left it. For proving a
+    second run of the same scenarios on the same machine, after a first run that did restore the checkpoint. The VM must exist and
+    answer over PowerShell Direct (it is started if it is off), or the run stops and says which. It needs -Scenarios, because a run
+    that restores nothing is never a pass for the tag. The Update and WithDeluno phases never restore, so it changes nothing for them.
 
 .PARAMETER DelunoUrl
     The Deluno inside the VM (default http://127.0.0.1:7879). No secret is passed to the VM or carried between sessions.
@@ -116,7 +128,8 @@ param(
     [string] $SourceFilm,
     [string] $EvidenceUrl,
     [int] $PhaseTimeoutMinutes = 60,
-    [switch] $NoStatus
+    [switch] $NoStatus,
+    [switch] $NoRestore
 )
 
 $ErrorActionPreference = 'Stop'
@@ -150,7 +163,11 @@ if ($subset) {
     $phases = @($allPhases | Where-Object { @($inRun | ForEach-Object { $_.Phase }) -contains $_ })
     $tag = ($chosen -join '+')
     $runFolder = "$runFolder-only-$($tag.Substring(0, [Math]::Min(80, $tag.Length)))"
+    # A run of chosen scenarios never merges with another, so each gets a folder of its own and a second run cannot overwrite the first's record.
+    # A full run keeps the shared folder: its invocations (Update, then WithDeluno and Fresh) merge into one record there.
+    if (-not $PSBoundParameters.ContainsKey('OutDirectory')) { $runFolder = "$runFolder-$([DateTime]::UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'", [Globalization.CultureInfo]::InvariantCulture))" }
 }
+if ($NoRestore -and -not $subset) { throw "-NoRestore needs -Scenarios. A run that restores nothing is never a pass for the tag, so it is only for running chosen scenarios a second time on the machine the first run left." }
 
 if ($WhatIfPreference) {
     Write-Host "WhatIf: nothing below is done. No machine is touched, no file is written, no status is set."
@@ -175,8 +192,14 @@ if ($WhatIfPreference) {
             Write-Host "     Inside the VM: Deluno is looked for at $DelunoUrl; its API key is read from $DelunoKeyFileInVm and the file deleted (else minted on a Deluno with no account, else not-applicable with the reason); Weir's login, if Weir already has an account, from $WeirLoginFileInVm (read, then deleted). No secret is passed or copied."
         }
         else {
-            Write-Host "Phase ${phase} (last): the clean machine."
-            Write-Host "  1. On the Hyper-V host ${RigHost}: restore checkpoint '$Checkpoint' of VM '$VmName' and start it; wait for PowerShell Direct. (Deluno and the key file are gone.)"
+            if ($NoRestore) {
+                Write-Host "Phase ${phase} (last, NO restore, -NoRestore): the machine as the last run left it, not a clean one."
+                Write-Host "  1. On the Hyper-V host ${RigHost}: check VM '$VmName' exists, start it if it is not running, and wait for PowerShell Direct; restore nothing. The first run must have restored checkpoint '$Checkpoint'."
+            }
+            else {
+                Write-Host "Phase ${phase} (last): the clean machine."
+                Write-Host "  1. On the Hyper-V host ${RigHost}: restore checkpoint '$Checkpoint' of VM '$VmName' and start it; wait for PowerShell Direct. (Deluno and the key file are gone.)"
+            }
             Write-Host "  2. Copy the scenario scripts and the installer$(if ($SourceFilm) { ' and the film' }) into C:\golden\weir (checking their SHA256)."
             Write-Host "  3. Start Run-WeirScenarios.ps1 -Phase $phase$only as a one-shot task in the signed-in desktop session; wait up to $PhaseTimeoutMinutes minutes."
             Write-Host "     Inside the VM each scenario installs the build under test itself when it is not there, starts it and signs in (creating the account when Weir offers to), so a scenario run alone needs no scenario before it."
@@ -279,6 +302,17 @@ function Use-VmAsItIs {
     Wait-VmAnswers
 }
 
+# -NoRestore: the Fresh phase runs on the machine as the last run left it. The VM has to exist; it is started when it is not running.
+function Use-VmWithoutRestore {
+    $state = try { Invoke-Command -Session $rig -ArgumentList $VmName -ScriptBlock { param($n) (Get-VM -Name $n -ErrorAction Stop).State.ToString() } }
+             catch { throw "-NoRestore needs VM '$VmName' on $RigHost, and it could not be found or read there: $($_.Exception.Message)" }
+    if ($state -ne 'Running') {
+        Write-Host "   VM '$VmName' is $state; starting it (nothing is restored)."
+        Invoke-Command -Session $rig -ArgumentList $VmName -ScriptBlock { param($n) Start-VM -Name $n -ErrorAction Stop }
+    }
+    try { Wait-VmAnswers } catch { throw "-NoRestore needs VM '$VmName' to answer over PowerShell Direct, and it does not: $($_.Exception.Message)" }
+}
+
 # --- one phase ------------------------------------------------------------------------------------------------------------
 
 function Invoke-Phase([string] $Phase) {
@@ -287,6 +321,10 @@ function Invoke-Phase([string] $Phase) {
     if ($Phase -in 'Update', 'WithDeluno') {
         Write-Host "== Phase ${Phase}: using $VmName exactly as it was left (no restore)" -ForegroundColor Cyan
         Use-VmAsItIs
+    }
+    elseif ($NoRestore) {
+        Write-Host "== Phase ${Phase}: -NoRestore, so '$Checkpoint' is NOT restored; the run continues on $VmName as it stands" -ForegroundColor Cyan
+        Use-VmWithoutRestore
     }
     else {
         Write-Host "== Phase ${Phase}: restoring '$Checkpoint' on $VmName" -ForegroundColor Cyan
@@ -412,6 +450,7 @@ foreach ($phase in $allPhases) {
     }
 }
 $facts['Installer'] = $InstallerPath
+if ($NoRestore) { $facts['Checkpoint'] = 'not restored (-NoRestore): the run continued on the machine as the last run left it' }
 if ($subset) { $facts['Scenarios chosen'] = $chosen -join ', ' }
 foreach ($name in $phaseErrors.Keys) { $facts["Cut short ($name)"] = $phaseErrors[$name] }
 $resultArray = $results.ToArray()
