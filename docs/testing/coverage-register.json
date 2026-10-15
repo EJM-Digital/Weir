@@ -5188,7 +5188,7 @@
         "kind": "xunit",
         "test": "The release feed JSON is a hand-written fake; no test runs against the real GitHub releases API"
       },
-      "issue": 1040,
+      "issue": 1142,
       "covers": [
         "route:GET /api/v1/suite/update-status"
       ],
@@ -5222,7 +5222,7 @@
         "kind": "xunit",
         "test": "No test shows a PUT then a GET returning the saved mode, no invalid-mode refusal, no contract test; the GET's own auth is not asserted"
       },
-      "issue": 1040,
+      "issue": 1142,
       "covers": [
         "route:GET /api/v1/suite/update-settings"
       ],
@@ -5743,7 +5743,7 @@
         "kind": "xunit",
         "test": "WindowsHostReadingSource and WindowsNative (the readings on the platform people install on) have no test; every reading is asserted on fakes or Linux sources"
       },
-      "issue": 1041,
+      "issue": 1142,
       "covers": [
         "route:GET /api/v1/system/stats"
       ],
@@ -5856,7 +5856,7 @@
         "kind": "xunit",
         "test": "Nothing validates a real response against the schema, so a field the server stops sending (or sends with another type) while the web client types still say otherwise is caught only where a person wrote a key list."
       },
-      "issue": 1041,
+      "issue": 1142,
       "audit": {
         "id": "X-02",
         "verdict": "Gap"
@@ -6120,7 +6120,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Not proven: a Files-at-once value changed while the server runs takes effect after the 30 s cache expiry (all tests set the value before start; the \"needs no restart\" claim in docs/settings-truthfulness-audit.md has no test); the SettingsReadFailureLogInterval throttle (one warning a minute) is untested."
       },
-      "issue": 1036,
+      "issue": 1142,
       "covers": [
         "service:ProcessingWorkerService"
       ],
@@ -6164,7 +6164,7 @@
         "kind": "xunit",
         "test": "[missing: P2] The loop itself has no test: crashed-tick backoff, recovery gate, heartbeat stop on shutdown, and that the lane claims ONLY WorkLanes.UpkeepKinds. WorkLanes.UpkeepKinds (which kinds are upkeep) has no direct test, so a new job kind added to the wrong list would not be caught."
       },
-      "issue": 1036,
+      "issue": 1142,
       "covers": [
         "service:UpkeepWorkerService"
       ],
@@ -6962,7 +6962,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Probing is only ever done by a fake media runner or seeded index rows in the scan tests; no test scans a real library with real ffprobe through the job queue. No VM scenario."
       },
-      "issue": 1036,
+      "issue": 1142,
       "covers": [
         "job:processing.library.scan.v1"
       ],
@@ -7135,7 +7135,7 @@
         "kind": "xunit",
         "test": "[missing: P2] SessionCleanupTask.RunOnceAsync itself (unit-of-work open, commit, the log lines) is never run by any test."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "task:auth-session-cleanup"
       ],
@@ -7179,7 +7179,7 @@
         "kind": "xunit",
         "test": "[missing: P2] LogRetentionTask.TickAsync is never called by a test: the once-a-day gate (MinRunInterval) and \"Prune receives the saved days\" are unproven; the host test only shows the task finished without error."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "task:suite-log-retention"
       ],
@@ -7474,7 +7474,7 @@
         "kind": "xunit",
         "test": "[missing: P2] SystemOverviewChangeTask (the 5 s task that calls RefreshAsync, and its no-client short-circuit) has no test; only the frame class it drives is tested. The first test depends on a 250 ms real sleep heuristic."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "task:system-overview"
       ],
@@ -7599,7 +7599,7 @@
         "kind": "xunit",
         "test": "[missing: P2] JobRowsRetentionTask (reads WEIR_JOB_ROWS_RETENTION_DAYS and the interval from WeirOptions, runs the tick off the pool, logs the counts) is untested; the two environment variables are parse-tested only (SET-E15)."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "task:platform-job-rows-retention"
       ],
@@ -7896,7 +7896,7 @@
         "kind": "xunit",
         "test": "[missing: P2] FileLogRetentionTask (reads file_log_retention_days from the operator settings and passes it to PruneAsync) has no test, so the saved setting reaching the prune is unproven (SET-O09)."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "task:processing-file-log-retention"
       ],
@@ -8147,7 +8147,7 @@
         "kind": "xunit",
         "test": "[missing: P2] The hosted loop against the real ThreadPool is not tested: The_service_starts_and_stops_on_a_thread_of_its_own only asserts no warning was logged (it does not prove a thread of its own or that a real starved pool is noticed). New in the working tree (uncommitted)."
       },
-      "issue": 1036,
+      "issue": 1142,
       "covers": [
         "service:ThreadPoolWatch"
       ],
@@ -8332,7 +8332,7 @@
         "kind": "xunit",
         "test": "[missing: P2] No test crosses a daylight-saving change (ScheduleGridTests use America/New_York only on a fixed August date): a window or the library-mode daily run could be an hour out twice a year. The contract test depends on the machine's wall clock."
       },
-      "issue": 1036,
+      "issue": 1142,
       "audit": {
         "id": "JOB-060",
         "verdict": "Partly"
@@ -8528,7 +8528,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Outside this slice, not audited in depth. One in-scope finding: the periodic update check loop (CheckIntervalMinutes) is never run by any test - every TrayUpdates fixture sets CheckIntervalMinutes = 0 (see SET-U03)."
       },
-      "issue": 1036,
+      "issue": 1142,
       "audit": {
         "id": "JOB-066",
         "verdict": "Partly"
@@ -8710,7 +8710,7 @@
         "kind": "xunit",
         "test": "[missing: P2] The step that joins them is untested: LogRetentionTask.TickAsync reading the saved days and pruning once a day (JOB-031)."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "setting:SuiteSettingsRecord.LogRetentionDays"
       ],
@@ -9223,7 +9223,7 @@
         "kind": "xunit",
         "test": "[missing: P2] No test changes the value while the worker runs (30 s cache) - JOB-002."
       },
-      "issue": 1036,
+      "issue": 1142,
       "covers": [
         "setting:ProcessingOperatorSettingsRecord.MaxConcurrentFiles"
       ],
@@ -9585,7 +9585,7 @@
         "kind": "xunit",
         "test": "[missing: P2] FileLogRetentionTask (setting -> PruneAsync) untested (JOB-049); no test that a changed value is the one the hourly job uses."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "setting:ProcessingOperatorSettingsRecord.FileLogRetentionDays"
       ],
@@ -12721,7 +12721,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Needed: Api test that an exception returns the sanitized body under production and the developer page under development."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_ENV"
       ],
@@ -12755,7 +12755,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Needed: Api test with WEIR_LOG_LEVEL=WARNING asserting an Information line is absent from the log file and a warning is present."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_LOG_LEVEL"
       ],
@@ -12909,7 +12909,7 @@
         "kind": "xunit",
         "test": "A custom name must be both set and read; a mismatch locks every user out. Needed: Api test with WEIR_SESSION_COOKIE_NAME=x: Set-Cookie uses x and the session works."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_SESSION_COOKIE_NAME"
       ],
@@ -12931,7 +12931,7 @@
         "kind": "xunit",
         "test": "Needed: strict and none values asserted on Set-Cookie (none without Secure is dropped by browsers - lock-out risk worth a documented test). Layer: integration."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_SESSION_COOKIE_SAMESITE"
       ],
@@ -13008,7 +13008,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Non-default trusted values never reach a session in any test."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_SESSION_IDLE_MINUTES",
         "setting:env:WEIR_SESSION_ABSOLUTE_DAYS",
@@ -13195,7 +13195,7 @@
         "kind": "xunit",
         "test": "[missing: P2] See JOB-042. Needed: JobRowsRetentionTask test with options of 1 day / 60 s on a fake clock."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_JOB_ROWS_RETENTION_DAYS",
         "setting:env:WEIR_JOB_ROWS_RETENTION_SCHEDULE_INTERVAL_SECONDS"
@@ -13329,7 +13329,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Needed: AT test starting a server with each variable and reading the enqueuer's Interval (like ProcessingEnvironmentSwitchTests does for the switches)."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_WORK_TEMP_STALE_SWEEP_MOVIE_SCHEDULE_INTERVAL_SECONDS",
         "setting:env:WEIR_PROCESSING_WORK_TEMP_STALE_SWEEP_TV_SCHEDULE_INTERVAL_SECONDS"
@@ -13369,7 +13369,7 @@
         "kind": "xunit",
         "test": "[missing: P2] The handler tests prove \"older than the stale age is removed\", not that the environment value is the age used."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_WORK_TEMP_STALE_SWEEP_MIN_STALE_AGE_SECONDS"
       ],
@@ -13432,7 +13432,7 @@
         "kind": "xunit",
         "test": "[missing: P2] WEIR_BACKUP_DIR, WEIR_LOG_DIR and WEIR_TEMP_DIR are parse-tested only: no test starts a server with each and finds backups / the log / temp files there (ConfigurationBackups.Directory and WeirLogFile read the option, untested with a non-default)."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_DB_PATH",
         "setting:env:WEIR_BACKUP_DIR",
@@ -13651,7 +13651,7 @@
         "kind": "xunit",
         "test": "[missing: P2] The environment value reaching ScheduleTask:158 and Watcher:394 is untested."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_WATCHED_FOLDER_REMUX_SCAN_DISPATCH_PERIODIC_ENQUEUE_REMUX_JOBS"
       ],
@@ -13673,7 +13673,7 @@
         "kind": "xunit",
         "test": "Needed: unit test of the ffprobe command line for non-default values (IT/Media/MediaToolsTests.cs style). Wrong values can make probing miss late-starting streams."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_PROBE_SIZE_MB",
         "setting:env:WEIR_PROCESSING_ANALYZE_DURATION_SECONDS"
@@ -13713,7 +13713,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Needed: TV variant and a test that the configured age (not a constant) decides."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_MOVIE_OUTPUT_CLEANUP_MIN_AGE_SECONDS",
         "setting:env:WEIR_PROCESSING_TV_OUTPUT_CLEANUP_MIN_AGE_SECONDS"
@@ -13743,7 +13743,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Sonarr pair is parse-tested only; undocumented outside ADR-0008."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_ARR_RADARR_BASE_URL",
         "setting:env:WEIR_ARR_SONARR_BASE_URL",
@@ -42671,7 +42671,7 @@
         "kind": "xunit",
         "test": "The dictionary in `TrayApp` is private and untested: swapped handlers (data vs logs folder, Allow vs Only-this-PC) or a missing entry pass every test. Needs a tray-unit test through a seam that builds the real click map, or a VM UI-Automation scenario that invokes each real menu item and checks its effect."
       },
-      "issue": 1043,
+      "issue": 1142,
       "covers": [
         "tray:Open",
         "tray:Status",
@@ -43103,7 +43103,7 @@
         "kind": "xunit",
         "test": "The \"one place draws everything so they cannot disagree\" design is the point of the standard and is itself untested; a missed `Render()` call leaves a stale dot or hover. Needs tray-unit tests with `TrayApp` seams (fake `NotifyIcon` host) or a VM UI-Automation scenario that reads the real tooltip/menu after a pause, a stop and an update."
       },
-      "issue": 1043,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-014",
         "verdict": "Gap"
@@ -43170,7 +43170,7 @@
         "kind": "xunit",
         "test": "`e.Button == MouseButtons.Left` filter is in untested `TrayApp`; the standard states \"A middle click does nothing\". Needs the same shell seam/UIA test as TRAY-003."
       },
-      "issue": 1043,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-016",
         "verdict": "Gap"
@@ -43278,7 +43278,7 @@
         "kind": "xunit",
         "test": "`ShowBalloon` / `BalloonTipClicked` / `_balloonClick` are untested; a stale click running the wrong action (e.g. a restart) after an unrelated balloon is plausible and unobserved."
       },
-      "issue": 1043,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-020",
         "verdict": "Gap"
@@ -43423,7 +43423,7 @@
         "kind": "xunit",
         "test": "The texts and click actions live only in `TrayApp.ShowUpdateNotice`/`ApplyUpdateAndRestartAsync`; `TrayUpdatesTests` and `TrayUpdateRequestsTests` assert that `Announce(mode)` is called, never what the person sees or what a click does."
       },
-      "issue": 1043,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-025",
         "verdict": "Gap"
@@ -44438,7 +44438,7 @@
         "kind": "xunit",
         "test": "`FirewallInstallHooks.AskOnFirstRun` (MessageBox, outcome -> marker, Configured -> `LanAccessSetting.Write`) is untested apart from its guard predicate and the marker file. The Velopack `OnFirstRun` wiring is untested (TRAY-080)."
       },
-      "issue": 1043,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-056",
         "verdict": "Gap"
@@ -44480,7 +44480,7 @@
         "kind": "xunit",
         "test": "`LanAccessMenu` (AllowAsync/LimitToThisPcAsync: ordering, activity states, which notice follows which outcome, exception paths) has no test at all."
       },
-      "issue": 1043,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-058",
         "verdict": "Gap"
@@ -44796,7 +44796,7 @@
         "kind": "xunit",
         "test": "No test passes the tray's actual output file to the server's reader (the two sides' fixtures even differ: `+00:00` vs `Z`). It works today only because the server parser (`DateTimeOffset.TryParse`) happens to be lenient. Needs a shared recorded fixture (generated by the tray code, parsed by the server tests, or the reverse) or a VM step that presses the real tray item."
       },
-      "issue": 1044,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-066",
         "verdict": "Gap"
@@ -44815,7 +44815,7 @@
         "kind": "xunit",
         "test": "The keys happen to match today (checked by reading both), but no test would fail if the server renamed a key or the tray changed a name or case rule. Needs a recorded real file from the server fixed in the repo and read by the tray tests, and a VM step that reads the tray's displayed status after pausing a real Weir."
       },
-      "issue": 1044,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-067",
         "verdict": "Gap"
@@ -45401,7 +45401,7 @@
         "kind": "xunit",
         "test": "The multi-user story (second user signs in with Start-with-Windows on, finds the port/data owned by the first) is undocumented-by-test; the VM has one signed-in user. Needs a VM scenario with two accounts (or a documented, tested refusal message)."
       },
-      "issue": 1039,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-086",
         "verdict": "Gap"
@@ -45421,7 +45421,7 @@
         "kind": "xunit",
         "test": "`TrayLog` has no test of its own. The VM's log check (the end of every scenario) tells the tray's trouble lines apart by their text, and reads the time with a regex that a different line format would not match. The log is append-only with no size cap (the server-host log has one). Needs tray-unit tests pinning the format against the scenario regex, the unwritable-log fallback, and a size/rotation decision."
       },
-      "issue": 1044,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-087",
         "verdict": "Gap"
@@ -45440,7 +45440,7 @@
         "kind": "xunit",
         "test": "Every background task in the tray (watchers, update loops, watchdog) relies on `BackgroundWork` to make a failure visible; nothing tests that it does or that the handlers keep the tray alive."
       },
-      "issue": 1044,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-088",
         "verdict": "Gap"
@@ -46728,7 +46728,7 @@
         "kind": "xunit",
         "test": "The gateway is a fake built by the test authors; the real service's replies are never recorded or exercised, in the suite or the VM (a failure shows as missing posters or a wrong original language, which changes which audio is kept)"
       },
-      "issue": 1042,
+      "issue": 1142,
       "audit": {
         "id": "INT-ART",
         "verdict": "Partly"
@@ -46799,7 +46799,7 @@
         "kind": "xunit",
         "test": "Hand-written feed JSON; no run against the real GitHub releases API or a Velopack feed with a newer package (PLAT-05)"
       },
-      "issue": 1040,
+      "issue": 1142,
       "audit": {
         "id": "INT-RELEASEFEED",
         "verdict": "Partly"
@@ -47047,7 +47047,7 @@
         "kind": "scenario",
         "test": "Not asserted anywhere: Start Menu/desktop shortcuts, the data folder created under C:\\ProgramData with the intended access list on a real install, the interactive (non-silent) Setup screens, a second Windows version"
       },
-      "issue": 1039,
+      "issue": 1142,
       "audit": {
         "id": "PLAT-01",
         "verdict": "Partly"
@@ -47273,7 +47273,7 @@
         "kind": "scenario",
         "test": "The interactive dialogs run only in unit tests with the UI faked; no automated run shows them in the signed-in desktop session"
       },
-      "issue": 1039,
+      "issue": 1142,
       "audit": {
         "id": "PLAT-07",
         "verdict": "Partly"
@@ -47413,7 +47413,7 @@
         "kind": "scenario",
         "test": "Registry write/delete against the real HKCU is not exercised by a VM scenario or CI smoke"
       },
-      "issue": 1039,
+      "issue": 1142,
       "audit": {
         "id": "PLAT-10",
         "verdict": "Partly"
@@ -51636,14 +51636,24 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "signs in when the form itself is submitted, as Enter in a field does, and keeps the browser from reloading the page"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "sends the name without stray spaces, the password, the token and a device that is not trusted"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/auth/login-page.tsx#login-form"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -51654,14 +51664,24 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "sends the name without stray spaces, the password, the token and a device that is not trusted"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "shows the server's reason for a wrong name or password, keeps what was typed and lets the person try again"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/auth/login-page.tsx#login-username"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -51672,14 +51692,29 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "sends the name without stray spaces, the password, the token and a device that is not trusted"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "sends trusted_device as true when Trust this device is ticked"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "holds the Sign in button as Signing in… while the answer is awaited, so a second click sends nothing"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/auth/login-page.tsx#login-submit"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
