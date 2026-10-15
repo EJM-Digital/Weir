@@ -2665,7 +2665,14 @@
       "audit": {
         "id": "R-067",
         "verdict": "Gap"
-      }
+      },
+      "partial": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingFileLogDownloadLimitApiTests.cs",
+          "name": "ProcessingFileLogDownloadLimitApiTests"
+        }
+      ]
     },
     {
       "id": "api.processing.get-processing-files-file-id-tracks",
@@ -2866,6 +2873,16 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/QueueChangeAnnouncementTests.cs",
           "name": "QueueChangeAnnouncementTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/MoveToTopWorkflowApiTests.cs",
+          "name": "MoveToTopWorkflowApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/MoveFileToTopTests.cs",
+          "name": "MoveFileToTopTests"
         }
       ],
       "needs": {
