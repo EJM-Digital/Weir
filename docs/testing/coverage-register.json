@@ -19572,9 +19572,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard-address.test.ts",
           "name": "resolveWorkflow"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardWorkflowLinkTests.cs",
+          "name": "A_link_naming_a_workflow_that_is_switched_off_deleted_or_not_a_number_shows_everything"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardWorkflowLinkTests.cs",
+          "name": "A_link_naming_a_workflow_that_is_on_narrows_Live_to_it_and_never_shows_the_others_while_the_list_loads"
         }
       ],
-      "issue": 1071,
       "audit": {
         "id": "WEB-182",
         "verdict": "Covered"
@@ -26882,9 +26891,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-file-actions.test.tsx",
           "name": "says the manager will be told the file will not be imported when keep notifies it"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "With_no_manager_the_dialog_says_Weir_alone_deletes_and_each_choice_sends_exactly_its_resolution"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "A_manager_that_takes_releases_back_is_named_and_Delete_asks_it_for_another_copy"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-441",
         "verdict": "Covered"
@@ -26918,9 +26936,23 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-file-actions.test.tsx",
           "name": "always offers a way to just remove the title without touching the file"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "With_no_manager_the_dialog_says_Weir_alone_deletes_and_each_choice_sends_exactly_its_resolution"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "A_manager_that_takes_releases_back_is_named_and_Delete_asks_it_for_another_copy"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityDialogTests.cs",
+          "name": "Remove_just_from_the_list_sends_one_request_and_forgets_the_row_but_not_the_file"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-442",
         "verdict": "Covered"
@@ -27009,9 +27041,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-file-actions.test.tsx",
           "name": "does not offer to delete the file of a workflow linked to a media manager, and says why"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "A_workflow_linked_to_a_manager_that_cannot_take_it_back_disables_Delete_with_the_reason_and_no_key_chooses_it"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-446",
         "verdict": "Covered"
@@ -30523,14 +30559,46 @@
       }
     },
     {
-      "id": "web-setup-workflows-rules.lib-settings.network-access-put-carries-csrf-and-scope-notification-channel",
+      "id": "web-setup-workflows-rules.lib-settings.network-access-put-carries-csrf-and-scope",
       "area": "web-setup-workflows-rules",
-      "behaviour": "Network access PUT carries csrf and scope; notification channel DELETE carries csrf",
+      "behaviour": "Network access PUT carries csrf and scope",
       "kind": "screen action",
       "severity": "high",
       "touches": "disk",
       "required": "real",
       "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/settings-api.test.ts",
+          "name": "suite settings API paths"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/settings-api.test.ts",
+          "name": "saves who can reach Weir with a CSRF token in the body"
+        }
+      ],
+      "audit": {
+        "id": "WEB-589",
+        "verdict": "Covered"
+      },
+      "vm": true,
+      "issue": 1142
+    },
+    {
+      "id": "web-setup-workflows-rules.lib-settings.network-access-put-carries-csrf-and-scope-notification-channel",
+      "area": "web-setup-workflows-rules",
+      "behaviour": "Notification channel DELETE carries csrf",
+      "kind": "screen action",
+      "severity": "high",
+      "touches": "disk",
+      "required": "real",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/settings-api.test.ts",
+          "name": "sends a CSRF header when deleting a notification channel"
+        },
         {
           "type": "vitest",
           "file": "apps/web/src/lib/settings/settings-api.test.ts",
@@ -30545,9 +30613,13 @@
           "type": "vitest",
           "file": "apps/web/src/lib/settings/settings-api.test.ts",
           "name": "saves who can reach Weir with a CSRF token in the body"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveAlertDialogTests.cs",
+          "name": "Remove_alert_sends_one_request_with_the_CSRF_token_for_that_alert_and_leaves_the_other"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-589",
         "verdict": "Covered"
@@ -31024,9 +31096,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/libraries/libraries-tab.test.tsx",
           "name": "removes a library only once the removal is confirmed, and holds the button while it runs"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveWorkflowDialogTests.cs",
+          "name": "Remove_workflow_sends_one_request_and_the_workflow_goes"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-608",
         "verdict": "Covered"
@@ -32846,9 +32922,23 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.test.tsx",
           "name": "shows a linked workflow as keeping the original, says why, and leaves the saved setting alone"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/OriginalDownloadSwitchTests.cs",
+          "name": "On_a_workflow_only_Weir_feeds_the_switch_is_saved_as_chosen_and_a_pass_removes_or_keeps_the_original_to_match"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/OriginalDownloadSwitchTests.cs",
+          "name": "A_new_workflow_has_the_switch_on"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/OriginalDownloadSwitchTests.cs",
+          "name": "A_linked_workflow_shows_the_switch_off_and_locked_with_the_reason_keeps_what_was_saved_and_keeps_the_original"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-679",
         "verdict": "Covered"
@@ -36438,7 +36528,6 @@
           "name": "Removing_the_workflows_happens_only_when_chosen_and_takes_those_workflows_and_no_folder"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-819",
         "verdict": "Covered"
@@ -37011,9 +37100,23 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-clients-section.test.tsx",
           "name": "only asks for the fields that kind's login actually uses"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "Each_kind_asks_for_exactly_the_fields_its_login_uses"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "Each_kind_is_added_with_the_credentials_typed_and_answers_when_it_is_tested"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "What_was_typed_for_a_kind_the_person_moved_away_from_is_not_saved_with_the_one_they_added"
         }
       ],
-      "issue": 1071,
       "audit": {
         "id": "WEB-839",
         "verdict": "Covered"
@@ -37042,9 +37145,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-clients-section.test.tsx",
           "name": "will not submit a SABnzbd connection with no API key, or a Deluge one with no password"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "The_form_cannot_be_submitted_without_an_address_or_a_secret_its_client_cannot_do_without_and_sends_nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "Each_kind_is_added_with_the_credentials_typed_and_answers_when_it_is_tested"
         }
       ],
-      "issue": 1071,
       "audit": {
         "id": "WEB-840",
         "verdict": "Covered"
@@ -37513,9 +37625,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-clients-section.test.tsx",
           "name": "leaves the connection alone when cancelled"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveDownloadClientDialogTests.cs",
+          "name": "Keep_it_Escape_and_a_click_outside_the_dialog_leave_the_client_alone_and_send_nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveDownloadClientDialogTests.cs",
+          "name": "Remove_download_client_sends_one_request_for_that_client_and_leaves_the_other"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-857",
         "verdict": "Covered"
@@ -38006,9 +38127,18 @@
           "type": "vitest",
           "file": "apps/web/src/lib/settings/settings-api.test.ts",
           "name": "sends a CSRF header when deleting a notification channel"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveAlertDialogTests.cs",
+          "name": "Keep_it_Escape_and_a_click_outside_the_dialog_leave_the_alert_alone_and_send_nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveAlertDialogTests.cs",
+          "name": "Remove_alert_sends_one_request_with_the_CSRF_token_for_that_alert_and_leaves_the_other"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-874",
         "verdict": "Covered"
