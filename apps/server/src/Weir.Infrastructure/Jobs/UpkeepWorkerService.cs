@@ -21,6 +21,7 @@ public sealed class UpkeepWorkerService : BackgroundService
     private readonly ILogger<UpkeepWorkerService> _logger;
     private readonly JobHandlerRegistry _handlers;
     private readonly JobsStartupRecoveryService _recovery;
+    private readonly WorkerWakeSignals _wakeSignals;
 
     public UpkeepWorkerService(
         ProcessingJobProcessor processor,
@@ -29,7 +30,8 @@ public sealed class UpkeepWorkerService : BackgroundService
         TimeProvider time,
         ILogger<UpkeepWorkerService> logger,
         JobHandlerRegistry handlers,
-        JobsStartupRecoveryService recovery)
+        JobsStartupRecoveryService recovery,
+        WorkerWakeSignals? wakeSignals = null)
     {
         _processor = processor;
         _heartbeats = heartbeats;
@@ -38,6 +40,7 @@ public sealed class UpkeepWorkerService : BackgroundService
         _logger = logger;
         _handlers = handlers;
         _recovery = recovery;
+        _wakeSignals = wakeSignals ?? new WorkerWakeSignals();
     }
 
     /// <summary>The <c>lease_owner</c> a slot claims as: <c>{hostname}-{pid}-u{index}</c>, apart from the files lane's <c>w</c>.</summary>
@@ -64,6 +67,9 @@ public sealed class UpkeepWorkerService : BackgroundService
         await Task.WhenAll(slots).ConfigureAwait(false);
     }
 
+    /// <summary>Test seam: called each time a slot has started waiting for work, with its wake taken and its poll timer running.</summary>
+    internal Action? IdleWaiting { get; init; }
+
     /// <summary>One slot: repeatedly claim and run an upkeep job until stopping. Unlike the files lane, no setting gates how many slots take work.</summary>
     internal async Task RunSlotAsync(int workerIndex, ClaimableKinds upkeepKinds, CancellationToken stoppingToken)
     {
@@ -74,6 +80,8 @@ public sealed class UpkeepWorkerService : BackgroundService
             while (!stoppingToken.IsCancellationRequested)
             {
                 _heartbeats.Beat(WorkLanes.UpkeepHeartbeatModule, workerIndex);
+                // Taken before looking for work, so a job queued while this slot looks still wakes it.
+                var wake = _wakeSignals.NextWake(WorkLane.Upkeep, workerIndex);
                 JobProcessOutcome outcome;
                 try
                 {
@@ -104,7 +112,7 @@ public sealed class UpkeepWorkerService : BackgroundService
 
                 if (outcome == JobProcessOutcome.Idle)
                 {
-                    await WorkerIdleWait.RunAsync(WorkLanes.UpkeepHeartbeatModule, workerIndex, _heartbeats, _timings, _time, stoppingToken).ConfigureAwait(false);
+                    await WorkerIdleWait.RunAsync(WorkLanes.UpkeepHeartbeatModule, workerIndex, _heartbeats, wake, _timings, _time, stoppingToken, IdleWaiting).ConfigureAwait(false);
                 }
 
                 // Processed: spin straight on to drain the queue.
