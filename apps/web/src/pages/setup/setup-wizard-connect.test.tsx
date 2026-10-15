@@ -23,6 +23,7 @@ import type {
 } from "../../lib/processing/library-setup-api";
 import { processingKeys } from "../../lib/processing/query-keys";
 import { settingsKeys } from "../../lib/settings/query-keys";
+import { useFakeClock, useRealClock } from "../../test/fake-clock";
 import { SetupWizardPage } from "./setup-wizard-page";
 
 const { navigateMock, saveSettingsMock } = vi.hoisted(() => ({
@@ -193,6 +194,7 @@ function choose(name: string | RegExp) {
 }
 
 beforeEach(() => {
+  useFakeClock();
   navigateMock.mockReset();
   saveSettingsMock.mockReset().mockResolvedValue({});
   scenario = {
@@ -227,12 +229,11 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  useRealClock();
 });
 
 async function foundLibraries() {
-  return within(
-    await screen.findByTestId("setup-wizard-found", {}, { timeout: 3000 }),
-  );
+  return within(await screen.findByTestId("setup-wizard-found"));
 }
 
 describe("first run: connect Deluno first", () => {
@@ -479,11 +480,7 @@ describe("first run: connect Deluno first", () => {
     await foundLibraries();
 
     expect(
-      await screen.findByTestId(
-        "setup-wizard-found-movie-problem",
-        {},
-        { timeout: 3000 },
-      ),
+      await screen.findByTestId("setup-wizard-found-movie-problem"),
     ).toHaveTextContent("Weir can't use its own data folder");
     fireEvent.click(screen.getByRole("button", { name: "Finish setup" }));
 
@@ -523,11 +520,7 @@ describe("first run: connect Deluno first", () => {
     await foundLibraries();
 
     expect(
-      await screen.findByText(
-        /does not exist\. Create it/,
-        {},
-        { timeout: 3000 },
-      ),
+      await screen.findByText(/does not exist\. Create it/),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Finish setup" }));
     await waitFor(() => expect(updateLibrary).toHaveBeenCalledTimes(2));
@@ -569,11 +562,7 @@ describe("first run: connect Deluno first", () => {
     await foundLibraries();
 
     expect(
-      await screen.findByText(
-        /Weir can't see where each download client/,
-        {},
-        { timeout: 3000 },
-      ),
+      await screen.findByText(/Weir can't see where each download client/),
     ).toBeInTheDocument();
     expect(screen.getByText("Not verified:")).toBeInTheDocument();
     expect(screen.queryByText("Fine:")).not.toBeInTheDocument();
@@ -684,8 +673,6 @@ describe("first run: connect Sonarr and Radarr first", () => {
     expect(
       await screen.findByText(
         "Radarr does not say where its downloads are saved.",
-        {},
-        { timeout: 3000 },
       ),
     ).toBeInTheDocument();
     expect(

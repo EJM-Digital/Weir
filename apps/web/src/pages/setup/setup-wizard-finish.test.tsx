@@ -1,5 +1,5 @@
 import { fireEvent, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   CEILING,
@@ -9,10 +9,15 @@ import {
   renderWizard,
   WizardServer,
 } from "./wizard-test-server";
+import { useFakeClock, useRealClock } from "../../test/fake-clock";
 
 vi.setConfig({ testTimeout: TEST_CEILING_MS });
 
+// The wizard settles its folders after a pause; the tests move the clock on instead of waiting for it.
+beforeEach(useFakeClock);
+
 afterEach(() => {
+  useRealClock();
   vi.unstubAllGlobals();
 });
 

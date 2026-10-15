@@ -246,7 +246,7 @@ function renderLive(address = "/") {
 
 describe("ProcessingPage", () => {
   beforeEach(() => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-18T10:00:00Z"));
     files.files = [];
     files.status_counts = {};
