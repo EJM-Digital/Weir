@@ -34,6 +34,7 @@ public sealed partial class HandoffCompletionReporter
     private readonly HandoffTargetStore _targets;
     private readonly LibraryStore _libraries;
     private readonly IManagerHttpHandlerFactory _handlers;
+    private readonly TimeProvider _time;
     private readonly ILogger _logger;
 
     public HandoffCompletionReporter(
@@ -43,6 +44,7 @@ public sealed partial class HandoffCompletionReporter
         HandoffTargetStore targets,
         LibraryStore libraries,
         IManagerHttpHandlerFactory handlers,
+        TimeProvider time,
         ILogger<HandoffCompletionReporter>? logger = null)
     {
         _connections = connections ?? throw new ArgumentNullException(nameof(connections));
@@ -51,6 +53,7 @@ public sealed partial class HandoffCompletionReporter
         _targets = targets ?? throw new ArgumentNullException(nameof(targets));
         _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
         _handlers = handlers ?? throw new ArgumentNullException(nameof(handlers));
+        _time = time ?? throw new ArgumentNullException(nameof(time));
         _logger = (ILogger?)logger ?? NullLogger.Instance;
     }
 
@@ -123,6 +126,7 @@ public sealed partial class HandoffCompletionReporter
         var name = target.Connection.Label;
         int status;
         var tooLate = false;
+        TimeSpan? retryAfter;
         try
         {
             using var client = new HttpClient(_handlers.Handler(followRedirects: false), disposeHandler: false) { Timeout = CompletionReports.Timeout };
@@ -143,6 +147,7 @@ public sealed partial class HandoffCompletionReporter
 
             using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
             status = (int)response.StatusCode;
+            retryAfter = RetryAfterOf(response);
             if (status == (int)HttpStatusCode.Conflict)
             {
                 tooLate = CompletionReports.IsTooLate(status, await ReadAnswerAsync(response, cancellationToken).ConfigureAwait(false));
@@ -160,7 +165,20 @@ public sealed partial class HandoffCompletionReporter
         }
 
         _logger.LogWarning("Hand-off report to {Url} returned HTTP {Status}", target.Url, status);
-        return new HandoffReportDelivery(false, $"failed: {name} answered HTTP {status.ToString(CultureInfo.InvariantCulture)}", tooLate);
+        return new HandoffReportDelivery(false, $"failed: {name} answered HTTP {status.ToString(CultureInfo.InvariantCulture)}", tooLate, retryAfter);
+    }
+
+    /// <summary>How long the manager asked Weir to wait, from a <c>Retry-After</c> in seconds or as a date; null when it gave none or it has passed.</summary>
+    private TimeSpan? RetryAfterOf(HttpResponseMessage response)
+    {
+        var asked = response.Headers.RetryAfter;
+        TimeSpan? wait = asked?.Delta;
+        if (asked?.Date is { } date)
+        {
+            wait = date - _time.GetUtcNow();
+        }
+
+        return wait > TimeSpan.Zero ? wait : null;
     }
 
     /// <summary>What a manager's refusal says, when it is JSON; null when it is not or cannot be read.</summary>
@@ -428,9 +446,9 @@ public sealed partial class HandoffCompletionReporter
                 await RecordHandoffReportAsync(uow, sent.Target, body, sent.Delivery, outcome.Subject).ConfigureAwait(false);
                 if (!string.IsNullOrEmpty(origin.HandoffId))
                 {
-                    var waiting = IsNotAnswering(sent.Delivery);
+                    var waiting = IsTransientFailure(sent.Delivery);
                     var owed = waiting
-                        ? new PendingReport(origin.CallbackPath, origin.ReleaseName, origin.LibraryId, body, outcome.LibraryId, outcome.Subject, outcome.Files).ToJson()
+                        ? ToSendAgain(new PendingReport(origin.CallbackPath, origin.ReleaseName, origin.LibraryId, body, outcome.LibraryId, outcome.Subject, outcome.Files), sent.Delivery, _time.GetUtcNow())?.ToJson()
                         : null;
                     await HandoffLedgerStore.SetPendingReportAsync(uow, origin.SourceKey, origin.HandoffId, owed).ConfigureAwait(false);
                     if (waiting && outcome.LibraryId is { } library)
