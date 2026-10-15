@@ -23,12 +23,12 @@ static class SecretFile
     /// it is looser than owner-only, otherwise a new one written owner-only. A usable saved secret is never
     /// replaced, because sessions and stored credentials depend on it.
     /// </summary>
-    internal static string Ensure(string runtimeHome, string fileName)
+    internal static string Ensure(string runtimeHome, string fileName, Action<TimeSpan>? pause = null)
     {
         var path = Path.Combine(runtimeHome, fileName);
         if (File.Exists(path))
         {
-            var existing = ReadSaved(path);
+            var existing = ReadSaved(path, pause);
             if (existing.Length >= MinimumLength)
             {
                 TryRestrict(path);
@@ -58,19 +58,22 @@ static class SecretFile
         return true;
     }
 
-    private static string ReadSaved(string path)
+    /// <summary>
+    /// The saved secret, read the way a file that is replaced under a reader is (<see cref="ReplacedFile"/>): a virus scanner holding the
+    /// file for a moment is looked past. A file that stays refused is an error and never a reason to write a new secret, which would
+    /// sign everyone out and make the stored credentials unreadable. A file that is gone has no secret.
+    /// </summary>
+    private static string ReadSaved(string path, Action<TimeSpan>? pause)
     {
-        try
+        var reading = ReplacedFile.ReadText(path, pause: pause);
+        return reading.State switch
         {
-            return File.ReadAllText(path).Trim();
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            throw new InvalidOperationException(
-                $"Weir cannot read {path}: it belongs to another Windows account. Start Weir as the account that first "
-                + "ran it, or have an administrator give this account access to the file.",
-                ex);
-        }
+            ReplacedFileState.Read => reading.Text.Trim(),
+            ReplacedFileState.Absent => string.Empty,
+            _ => throw new InvalidOperationException(
+                $"Weir cannot read {path}: it belongs to another Windows account, or another program has it open. Start Weir as the account "
+                + "that first ran it, have an administrator give this account access to the file, or close the program that has it open."),
+        };
     }
 
     private static void TryRestrict(string path)

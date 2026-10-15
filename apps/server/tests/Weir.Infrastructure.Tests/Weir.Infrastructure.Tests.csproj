@@ -22,6 +22,10 @@
     <Compile Include="..\Weir.Core.Tests\TestSupport\PathGenerators.cs" Link="TestSupport\PathGenerators.cs" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Every way Weir can change a media file and what holds it back while paused (docs/coverage/file-changing-paths.json). -->
+    <Compile Include="..\Shared\FileChangingPathsTable.cs" Link="TestSupport\FileChangingPathsTable.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- A configuration bundle exported by an older release (format version 4): a frozen compatibility fixture. -->
     <None Include="Fixtures/*.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- The ffmpeg layer's golden fixtures, shared with Weir.Core.Tests (checked-in .NET fixtures; see apps/server/README.md). -->
