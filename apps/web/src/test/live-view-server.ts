@@ -1,8 +1,5 @@
-import type {
-  ActivityEventItem,
-  ProcessingJobsInspectionOut,
-  SystemReadiness,
-} from "../lib/api/types";
+import type { ActivityEventItem, SystemReadiness } from "../lib/api/types";
+import type { ProcessingJobsInspectionOut } from "../lib/processing/jobs-inspection/types";
 import type { AppSettings } from "../lib/settings/types";
 import type { ProcessingFile } from "../lib/processing/files-api";
 import type { ProcessingLibrary } from "../lib/processing/libraries-api";

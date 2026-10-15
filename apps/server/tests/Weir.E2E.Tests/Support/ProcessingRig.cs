@@ -140,6 +140,29 @@ public sealed class ProcessingRig : IAsyncDisposable
         await PostHandOffAsync(handoffId, source);
     }
 
+    /// <summary>
+    /// Deluno hands over a file ffprobe cannot read, as a download still arriving reads: Weir holds it and looks again later.
+    /// <see cref="FinishArrivingAsync"/> makes it readable.
+    /// </summary>
+    public async Task HandOffUnreadableAsync(string handoffId, string fileName)
+    {
+        var source = Path.Combine(Watched, handoffId, fileName);
+        Directory.CreateDirectory(Path.GetDirectoryName(source)!);
+        await File.WriteAllBytesAsync(source, new byte[2048]);
+        _tools.SetFileRule(fileName, new FileRule { ProbeError = "Invalid data found when processing input" });
+        await PostHandOffAsync(handoffId, source);
+    }
+
+    /// <summary>
+    /// The file <see cref="HandOffUnreadableAsync"/> handed over has finished arriving and reads as <paramref name="probe"/>. A pass over
+    /// it stays under way, once a worker takes it, until <see cref="ReleasePass"/>.
+    /// </summary>
+    public async Task FinishArrivingAsync(string handoffId, string fileName, JsonObject probe)
+    {
+        await File.WriteAllBytesAsync(Path.Combine(Watched, handoffId, fileName), FakeMedia.Bytes(probe));
+        _tools.SetFileRule(fileName, new FileRule { Probe = probe, RemuxReleaseFile = ReleaseFileFor(fileName) });
+    }
+
     /// <summary>Deluno hands over the file it already handed over, which has not changed since: no file is written.</summary>
     public Task HandOffRootFileAgainAsync(string handoffId, string fileName) => PostHandOffAsync(handoffId, Path.Combine(Watched, fileName));
 
@@ -190,6 +213,9 @@ public sealed class ProcessingRig : IAsyncDisposable
 
     /// <summary>How many times ffmpeg has written a cleaned copy since the rig started.</summary>
     public int RemuxCount => _tools.Calls(tool: "ffmpeg", step: "remux").Count;
+
+    /// <summary>The arguments of the latest ffmpeg write of a cleaned copy.</summary>
+    public IReadOnlyList<string> LatestRemuxArguments => _tools.Calls(tool: "ffmpeg", step: "remux")[^1].Arguments;
 
     /// <summary>Lets the pass on <paramref name="fileName"/> finish.</summary>
     public void ReleasePass(string fileName) => File.WriteAllText(ReleaseFileFor(fileName), string.Empty);
