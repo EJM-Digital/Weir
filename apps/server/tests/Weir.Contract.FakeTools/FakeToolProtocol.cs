@@ -9,6 +9,9 @@ internal static class FakeToolProtocol
     /// <summary>A file starting with these bytes carries its own ffprobe answer (JSON) after them.</summary>
     public const string MediaMagic = "FAKEMEDIA:";
 
+    /// <summary>The one argument on which a tool does nothing and logs nothing: a test runs it once so the first real run is not a cold start.</summary>
+    public const string WarmUpArgument = "--warm-up";
+
     /// <summary>Overrides the folder holding the script and the logs; otherwise it is the folder of the tool itself.</summary>
     public const string ToolFolderVariable = "WEIR_CONTRACT_FAKE_TOOL_DIR";
 
@@ -40,6 +43,7 @@ internal static class FakeToolProtocol
     public const string RemuxErrorKey = "remux_error";
     public const string RemuxFailTimesKey = "remux_fail_times";
     public const string RemuxDelaySecondsKey = "remux_delay_seconds";
+    public const string HwaccelsFirstCallDelaySecondsKey = "hwaccels_first_call_delay_seconds";
     public const string RemuxReleaseFileKey = "remux_release_file";
     public const string OutputProbeKey = "output_probe";
 
