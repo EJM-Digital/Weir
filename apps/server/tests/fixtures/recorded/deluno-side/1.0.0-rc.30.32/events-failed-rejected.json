@@ -1,0 +1,40 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "events-failed-rejected",
+  "recordedAt": "2026-10-15T03:09:43Z",
+  "note": "The report Weir sent for an audio-only file under the reject failure policy (status failed, disposition rejected, sourceRemoved False). the proxy answered 202 itself (accept-for-reject); real Deluno, asked as well, said 409.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "c51f4299-ff7e-4999-9c81-f005f5a638e8",
+          "status": "failed",
+          "processorName": "Weir",
+          "libraryId": "01a13d68ae4a7e7b84c06a96fd5d8cc7",
+          "releaseName": "Big Buck Bunny (2008) Recorded AudioOnly",
+          "message": "Weir only processes movie and TV files that contain a video stream. This file contains no video, so it was rejected before any output was written.",
+          "disposition": "rejected",
+          "sourceRemoved": false,
+          "failureClass": "preflight",
+          "outputFiles": []
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "failed",
+          "importJobId": null
+        }
+      }
+    }
+  ]
+}

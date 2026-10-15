@@ -125,6 +125,15 @@ describe("useLiveSync", () => {
     ]);
   });
 
+  it("reads the list of signed-in browsers again when the server says one signed in or out", () => {
+    const { invalidate } = mountSync();
+    current().open();
+
+    current().changed("sessions");
+
+    expect(invalidatedKeys(invalidate)).toEqual([authKeys.sessions]);
+  });
+
   it("ignores a topic it does not know and a frame it cannot read", () => {
     const { invalidate } = mountSync();
     current().open();

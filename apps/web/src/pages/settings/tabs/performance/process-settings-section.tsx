@@ -172,10 +172,20 @@ function ProcessSettingsForm({
           label="Files at once"
           hint={
             filesAtOnce.data ? (
-              <span data-testid="processing-files-at-once-readout">
-                {filesAtOnce.data.running} running now.{" "}
-                {filesAtOnce.data.message || "Nothing is waiting."}
-              </span>
+              <>
+                <span data-testid="processing-files-at-once-readout">
+                  {filesAtOnce.data.running} running now.{" "}
+                  {filesAtOnce.data.message || "Nothing is waiting."}
+                </span>
+                {filesAtOnce.data.slots_note ? (
+                  <span
+                    className="mt-1 block"
+                    data-testid="processing-files-at-once-note"
+                  >
+                    {filesAtOnce.data.slots_note}
+                  </span>
+                ) : null}
+              </>
             ) : undefined
           }
         >

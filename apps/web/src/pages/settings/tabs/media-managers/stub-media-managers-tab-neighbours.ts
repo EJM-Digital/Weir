@@ -1,5 +1,6 @@
 import { vi } from "vitest";
 
+import { signedInAs } from "../../../../test/signed-in-as";
 import * as librariesApi from "../../../../lib/processing/libraries-api";
 import * as folderChainApi from "../../../../lib/processing/library-folder-chain-api";
 import * as settingsQueries from "../../../../lib/settings/queries";
@@ -10,6 +11,7 @@ import * as settingsQueries from "../../../../lib/settings/queries";
  * app timezone all load on their own and have their own tests.
  */
 export function stubMediaManagersTabNeighbours(): void {
+  signedInAs("admin");
   vi.spyOn(librariesApi, "fetchProcessingLibraries").mockResolvedValue([]);
   vi.spyOn(folderChainApi, "fetchConnectionFolderChain").mockResolvedValue([]);
   vi.spyOn(settingsQueries, "useAppSettingsQuery").mockReturnValue({

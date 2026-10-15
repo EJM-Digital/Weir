@@ -57,3 +57,21 @@ export const sabnzbdListed: RecordedReply = {
   status: 200,
   body: `[${sabnzbdAdded.body}]`,
 };
+
+/** Adding a media manager whose address is not an address. */
+export const addressRefused: RecordedReply = {
+  status: 400,
+  body: '{"detail":"That address will not work: URL must be a valid http or https URL."}',
+};
+
+/** Creating a secret for a media manager someone has already removed. */
+export const connectionGone: RecordedReply = {
+  status: 404,
+  body: '{"detail":"That media manager connection does not exist."}',
+};
+
+/** Saving a download client with an address that is not an address. */
+export const downloadClientAddressRefused: RecordedReply = {
+  status: 400,
+  body: '{"detail":"That address will not work: URL must be a valid http or https URL."}',
+};

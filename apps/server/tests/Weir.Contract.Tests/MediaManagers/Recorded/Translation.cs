@@ -28,6 +28,16 @@ internal sealed partial class Translation
         return live;
     }
 
+    /// <summary>The recorded text with only its ids made this test's own; a path in it stays the recorded one.</summary>
+    public JsonNode? Ids(JsonNode? node) => node switch
+    {
+        null => null,
+        JsonObject fields => new JsonObject(fields.Select(field => KeyValuePair.Create(field.Key, Ids(field.Value)))),
+        JsonArray items => new JsonArray([.. items.Select(Ids)]),
+        JsonValue value when value.TryGetValue<string>(out var text) => JsonValue.Create(RecordedId().Replace(text, match => Id(match.Value))),
+        _ => node.DeepClone(),
+    };
+
     /// <summary>Folder <paramref name="live"/> on this machine is what the recording's <paramref name="recorded"/> folder is.</summary>
     public Translation Folder(string recorded, string live)
     {
