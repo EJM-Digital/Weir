@@ -1,9 +1,9 @@
 // node --test scripts/docker-compose-smoke.test.mjs
 // The parts of scripts/docker-compose-smoke.mjs that decide things without Docker: which image is the previous release, which schema
 // revision the build under test ends on, what the server's own log says about the setup code and the upgrade, and how a session cookie
-// is read. The Docker steps themselves run in CI (ci-packaging.yml, release.yml).
+// is read, the override laid over compose.yaml, and how owners, modes and secrets are read. The Docker steps themselves run in CI (ci-packaging.yml, release.yml).
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { test } from "node:test";
@@ -14,6 +14,10 @@ import { headRevision, readRevision, revisionNumber, usernamesIn } from "./docke
 import { upgradeOutcome, parseSetupCode } from "./docker-smoke/server-log.mjs";
 import { previousRelease } from "./docker-smoke/previous-image.mjs";
 import { sessionCookie } from "./docker-smoke/weir-client.mjs";
+import { composeOverride } from "./docker-smoke/override.mjs";
+import { GENERATED_SECRET, asEnvironment, notOwnedBy, parseStat, processIds } from "./docker-smoke/ownership.mjs";
+import { pollUntil } from "./docker-smoke/poll.mjs";
+import { shellQuote } from "./docker-smoke/shell.mjs";
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const schemaMigrator = readFileSync(join(repository, "apps/server/src/Weir.Infrastructure/Sqlite/SchemaMigrator.cs"), "utf8");
@@ -77,4 +81,106 @@ test("a database's recorded revision and accounts are read from the file", () =>
   database.close();
   assert.equal(readRevision(path), "0080_handback_speaker");
   assert.deepEqual(usernamesIn(path), ["composer"]);
+});
+
+test("an override names the variables, folders and platform, and nothing it was not given", () => {
+  assert.equal(composeOverride(), "services:\n  weir:\n");
+  assert.equal(
+    composeOverride({ environment: { WEIR_PUID: "2001", WEIR_NOTE: 'say "hi": #1' }, binds: ["/tmp/media:/media"], platform: "linux/arm64" }),
+    [
+      "services:",
+      "  weir:",
+      '    platform: "linux/arm64"',
+      "    environment:",
+      '      "WEIR_PUID": "2001"',
+      '      "WEIR_NOTE": "say \\"hi\\": #1"',
+      "    volumes:",
+      '      - "/tmp/media:/media"',
+      "",
+    ].join("\n"),
+  );
+});
+
+test("ids become the variables the entrypoint reads", () => {
+  assert.deepEqual(asEnvironment({ uid: 2001, gid: 2002 }), { WEIR_PUID: "2001", WEIR_PGID: "2002" });
+});
+
+test("a shell word keeps what it holds, quotes included", () => {
+  assert.equal(shellQuote("a b"), "'a b'");
+  assert.equal(shellQuote("it's"), "'it'\\''s'");
+});
+
+test("the ids of a process are read from its status", () => {
+  const status = "Name:\tWeir\nUmask:\t0022\nUid:\t2001\t2001\t2001\t2001\nGid:\t2002\t2002\t2002\t2002\nGroups:\t2002\n";
+  assert.deepEqual(processIds(status), { uid: 2001, gid: 2002 });
+  assert.throws(() => processIds("Name:\tWeir\n"), /no Uid line/);
+});
+
+test("stat lines give the owner, group, mode and path of each file", () => {
+  assert.deepEqual(parseStat("2001:2002:600:/data/weir/session.secret\n1000:1000:2775:/media/out dir\n"), [
+    { uid: 2001, gid: 2002, mode: "600", path: "/data/weir/session.secret" },
+    { uid: 1000, gid: 1000, mode: "2775", path: "/media/out dir" },
+  ]);
+  assert.deepEqual(parseStat(""), []);
+  assert.throws(() => parseStat("stat: cannot stat '/x': No such file or directory"), /not a stat line/);
+});
+
+test("a generated secret is 64 URL-safe characters", () => {
+  assert.match("A1_-".repeat(16), GENERATED_SECRET);
+  assert.doesNotMatch("A".repeat(63), GENERATED_SECRET);
+  assert.doesNotMatch("A".repeat(65), GENERATED_SECRET);
+  assert.doesNotMatch("+".repeat(64), GENERATED_SECRET);
+  assert.doesNotMatch(`${"A".repeat(63)}=`, GENERATED_SECRET);
+});
+
+test("a folder is checked down to its last file for an owner that is not the one asked for", () => {
+  const folder = mkdtempSync(join(tmpdir(), "weir-owner-"));
+  mkdirSync(join(folder, "data"));
+  writeFileSync(join(folder, "data", "weir.sqlite3"), "x");
+  const { uid, gid } = statSync(folder);
+  assert.deepEqual(notOwnedBy(folder, { uid, gid }), []);
+  assert.deepEqual(notOwnedBy(folder, { uid: uid + 1, gid }), [
+    `${folder} (${uid}:${gid})`,
+    `${join(folder, "data")} (${uid}:${gid})`,
+    `${join(folder, "data", "weir.sqlite3")} (${uid}:${gid})`,
+  ]);
+});
+
+/** A clock that only moves when something sleeps, so a wait needs no real time. */
+function fakeClock() {
+  let now = 0;
+  const slept = [];
+  return {
+    now: () => now,
+    sleep: async (ms) => {
+      slept.push(ms);
+      now += ms;
+    },
+    slept,
+  };
+}
+
+test("polling returns the first answer and waits only between asks", async () => {
+  const clock = fakeClock();
+  let asked = 0;
+  const found = await pollUntil(async () => (++asked === 3 ? "done" : undefined), { what: "the job", ceilingMs: 10_000, intervalMs: 250, clock });
+  assert.equal(found, "done");
+  assert.deepEqual(clock.slept, [250, 250]);
+});
+
+test("polling gives up at its ceiling and says what it waited for", async () => {
+  const clock = fakeClock();
+  await assert.rejects(pollUntil(async () => undefined, { what: "the job", ceilingMs: 1_000, intervalMs: 250, clock }), /the job did not happen within 1 s/);
+  assert.deepEqual(clock.slept, [250, 250, 250, 250]);
+});
+
+test("a polled check that throws ends the wait with its own error", async () => {
+  const check = async () => {
+    throw new Error("the job failed");
+  };
+  await assert.rejects(pollUntil(check, { what: "the job", ceilingMs: 1_000, intervalMs: 1, clock: fakeClock() }), /the job failed/);
+});
+
+test("an override can replace the shipped pull policy", () => {
+  assert.equal(composeOverride({ pullPolicy: "never" }), 'services:\n  weir:\n    pull_policy: "never"\n');
 });
