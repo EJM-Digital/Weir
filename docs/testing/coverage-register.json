@@ -30295,12 +30295,23 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: open the remove dialog, press Keep it, then Escape, assert deleteProcessingLibrary is never called and the row remains; a failed attempt's error is cleared on cancel."
-      },
-      "issue": 992,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveWorkflowDialogTests.cs",
+          "name": "Keep_it_Escape_and_a_click_outside_the_dialog_leave_the_workflow_alone_and_send_nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveWorkflowDialogTests.cs",
+          "name": "Removing_a_workflow_that_still_has_work_queued_shows_why_and_cancelling_clears_it"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveWorkflowDialogTests.cs",
+          "name": "Remove_workflow_sends_one_request_and_the_workflow_goes"
+        }
+      ],
       "audit": {
         "id": "WEB-609",
         "verdict": "Gap"
@@ -33471,12 +33482,13 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: unused profile, Remove profile, dialog shows the name, Remove profile confirms, deleteProcessingRuleSet(id) called once, notice shown, selection moves to the next profile."
-      },
-      "issue": 992,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveProfileDialogTests.cs",
+          "name": "Remove_profile_sends_one_request_says_so_and_opens_the_next_profile"
+        }
+      ],
       "audit": {
         "id": "WEB-740",
         "verdict": "Gap"
@@ -33490,12 +33502,13 @@
       "severity": "high",
       "touches": "disk",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: open the dialog, Keep it and Escape, assert deleteProcessingRuleSet never called and the profile is still selected."
-      },
-      "issue": 992,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveProfileDialogTests.cs",
+          "name": "Keep_it_and_Escape_leave_the_profile_selected_and_send_nothing"
+        }
+      ],
       "audit": {
         "id": "WEB-741",
         "verdict": "Gap"
@@ -33509,12 +33522,23 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: profile with used_by_library_count 2 shows the disabled button and the locked text; a server refusal of a remove shows 'That profile could not be removed.'."
-      },
-      "issue": 992,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.test.tsx",
+          "name": "says why the server refused to remove a profile and keeps it selected"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.test.tsx",
+          "name": "falls back to a plain sentence when the removal fails without a reason"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveProfileDialogTests.cs",
+          "name": "A_profile_that_workflows_use_has_its_remove_button_locked_and_says_why"
+        }
+      ],
       "audit": {
         "id": "WEB-742",
         "verdict": "Gap"
@@ -35619,6 +35643,21 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/media-manager-nickname.test.tsx",
           "name": "is used in the question before a connection is removed"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Keep_it_Escape_and_a_click_outside_leave_the_connection_and_its_workflows_alone"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Unlinking_the_workflows_happens_only_when_chosen_and_the_question_that_follows_can_still_be_turned_down"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Removing_the_workflows_happens_only_when_chosen_and_takes_those_workflows_and_no_folder"
         }
       ],
       "issue": 1070,
@@ -52348,6 +52387,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
           "name": "lists the workflows and offers the two steps, and changes nothing until one is chosen"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Keep_it_Escape_and_a_click_outside_leave_the_connection_and_its_workflows_alone"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Giving_up_on_a_report_happens_only_when_chosen_and_turning_the_list_down_keeps_the_report_owed"
         }
       ],
       "covers": [
@@ -52381,6 +52430,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
           "name": "offers neither step while a hand-off is in progress"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Unlinking_the_workflows_happens_only_when_chosen_and_the_question_that_follows_can_still_be_turned_down"
         }
       ],
       "covers": [
@@ -52409,6 +52463,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
           "name": "says why a workflow could not be removed and stops there"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Removing_the_workflows_happens_only_when_chosen_and_takes_those_workflows_and_no_folder"
         }
       ],
       "covers": [
@@ -52447,6 +52506,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
           "name": "lists the owed reports beside the workflows and offers to give up on them as its own step"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Giving_up_on_a_report_happens_only_when_chosen_and_turning_the_list_down_keeps_the_report_owed"
         }
       ],
       "covers": [
