@@ -151,5 +151,5 @@ public sealed class ArrManagerRedownload : IManagerRedownload
         RedownloadOutcome.Unsupported,
         DeletedExistingFile: false,
         ExistingFileSizeBytes: null,
-        $"{connection.Label} cannot be asked to redownload a title (#509 only verifies this for Sonarr and Radarr).");
+        $"{connection.Label} cannot be asked to download this title again.");
 }
