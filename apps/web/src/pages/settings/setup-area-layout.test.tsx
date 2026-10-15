@@ -177,12 +177,28 @@ describe("a setup area", () => {
     );
   });
 
-  it("sends a first tab's own name back to the area's address", async () => {
-    const router = await renderAt("/setup/connections/managers");
+  it.each([
+    ["/setup/workflows/workflows", "/setup/workflows", "Workflows content"],
+    [
+      "/setup/connections/managers",
+      "/setup/connections",
+      "Media managers content",
+    ],
+    ["/setup/rules/profiles", "/setup/rules", "Profiles content"],
+    ["/setup/performance/speed", "/setup/performance", "Speed content"],
+  ])(
+    "sends a first tab's own name back to the area's address (%s)",
+    async (address, areaAddress, content) => {
+      const router = await renderAt(address);
 
-    expect(router.state.location.pathname).toBe("/setup/connections");
-    expect(await screen.findByText("Media managers content")).toBeVisible();
-  });
+      expect(router.state.location.pathname).toBe(areaAddress);
+      expect(await screen.findByText(content)).toBeVisible();
+      expect(screen.getAllByRole("tab")[0]).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+    },
+  );
 
   it("leaves /setup itself to the first sign-in", () => {
     const router = createMemoryRouter(
