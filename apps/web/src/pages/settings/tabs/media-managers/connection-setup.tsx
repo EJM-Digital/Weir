@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { useIsAdmin } from "../../../../lib/auth/can-edit";
 import { ConfirmDialog } from "../../../../components/ui/confirm-dialog";
 import { errorMessage } from "../../../../lib/api/error-message";
 import type { MediaManagerConnection } from "../../../../lib/media-managers/media-managers-api";
@@ -109,6 +110,7 @@ export function ConnectionSetup({
   secret: ReturnType<typeof useGenerateMediaManagerWebhookSecret>;
   busy: boolean;
 }) {
+  const admin = useIsAdmin();
   const [revealed, setRevealed] = useState<string | null>(null);
   const [confirmingReplace, setConfirmingReplace] = useState(false);
 
@@ -180,13 +182,18 @@ export function ConnectionSetup({
           type="button"
           data-testid="media-manager-generate-secret"
           className={`mt-3 ${mmActionButtonClass({ variant: "secondary" })}`}
-          disabled={busy}
+          disabled={busy || !admin}
           onClick={startSecret}
         >
           {connection.webhook_secret_is_set
             ? "Replace the secret"
             : "Create a secret"}
         </button>
+        {!admin ? (
+          <p className="mm-quiet-note mt-2">
+            Only an admin can create or replace the secret.
+          </p>
+        ) : null}
 
         {confirmingReplace ? (
           <ReplaceSecretDialog
