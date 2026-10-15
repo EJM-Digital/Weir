@@ -1,7 +1,7 @@
 {
   "version": 1,
   "generatedFrom": "the coverage audit of 14 Oct 2026, brought up to date with main at rc.18, plus the inventories of scripts/coverage/inventory.mjs",
-  "gapCeiling": 856,
+  "gapCeiling": 851,
   "areas": {
     "api": {
       "code": "R",
@@ -1808,9 +1808,13 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
           "name": "A_generated_secret_is_shown_once_and_the_webhook_then_enforces_it_for_that_manager_only"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedWebhookSecretTests.cs",
+          "name": "RecordedWebhookSecretTests"
         }
       ],
-      "issue": 1068,
       "covers": [
         "route:POST /api/v1/media-managers/connections/{connection_id}/webhook-secret"
       ],
@@ -2163,9 +2167,28 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
           "name": "Cancelling_a_hand_offs_job_on_the_jobs_screen_tells_the_manager_it_is_cancelled"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "Stop_waiting_cancels_a_queued_hand_off_with_a_204_and_the_work_is_never_done"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "A_hand_off_waiting_for_its_turn_is_cancelled_with_a_204_and_never_worked"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "An_import_from_the_watched_folder_releases_Weirs_copy_and_leaves_the_watched_folder_alone"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffCancelTests.cs",
+          "name": "A_hand_off_Weir_is_working_on_is_refused_as_recorded_for_a_finished_one_and_the_pass_carries_on"
         }
       ],
-      "issue": 1068,
       "covers": [
         "route:DELETE /api/v1/intake/handoffs/{source_key}/{handoff_id}"
       ],
@@ -12964,9 +12987,13 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Http/RequestBodyLimitsTests.cs",
           "name": "RequestBodyLimitsTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedWebhookSecretTests.cs",
+          "name": "RecordedWebhookSecretTests"
         }
       ],
-      "issue": 1068,
       "covers": [
         "setting:env:WEIR_MEDIA_MANAGER_WEBHOOK_SECRET"
       ],
@@ -45120,9 +45147,28 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
           "name": "Cancelling_a_hand_offs_job_on_the_jobs_screen_tells_the_manager_it_is_cancelled"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "Stop_waiting_cancels_a_queued_hand_off_with_a_204_and_the_work_is_never_done"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "A_hand_off_waiting_for_its_turn_is_cancelled_with_a_204_and_never_worked"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "An_import_from_the_watched_folder_releases_Weirs_copy_and_leaves_the_watched_folder_alone"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffCancelTests.cs",
+          "name": "A_hand_off_Weir_is_working_on_is_refused_as_recorded_for_a_finished_one_and_the_pass_carries_on"
         }
       ],
-      "issue": 1068,
       "audit": {
         "id": "INT-DEL-05",
         "verdict": "Covered"
@@ -49206,9 +49252,13 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingRejectedFilesApiTests.cs",
           "name": "ProcessingRejectedFilesApiTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoOnlyWorkflowTests.cs",
+          "name": "Saving_the_watcher_the_timer_scan_now_and_process_again_all_leave_a_download_Deluno_has_not_handed_over_alone_and_the_hand_off_is_processed"
         }
       ],
-      "issue": 1068,
       "audit": {
         "id": "FL-39",
         "verdict": "Covered"
