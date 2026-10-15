@@ -154,7 +154,8 @@ public sealed class MediaToolTimeLimitTests
                 child.Tick(TimeSpan.FromMilliseconds(100), blocks);
             });
 
-        Assert.True(blocks >= 10);
+        // The stand-in prints the ten blocks it was asked for and then one more, the block that says it has finished.
+        Assert.Equal(11, blocks);
     }
 
     [Fact]

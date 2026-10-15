@@ -34,13 +34,18 @@ internal sealed class PacedChild : IDisposable
     /// <summary>Lets <paramref name="seen"/> lines' worth of time pass and tells the child that many have been seen, so it prints the next.</summary>
     public void Tick(TimeSpan elapsed, int seen)
     {
+        Pass(elapsed);
+        File.WriteAllBytes(_acks.Join(seen.ToString(System.Globalization.CultureInfo.InvariantCulture)), []);
+    }
+
+    /// <summary>Lets <paramref name="elapsed"/> of awake time pass, a second at a time, without telling the child anything: it prints nothing more.</summary>
+    public void Pass(TimeSpan elapsed)
+    {
         for (var left = elapsed; left > TimeSpan.Zero; left -= TimeSpan.FromSeconds(1))
         {
             Time.Advance(left < TimeSpan.FromSeconds(1) ? left : TimeSpan.FromSeconds(1));
             Pulse.Note();
         }
-
-        File.WriteAllBytes(_acks.Join(seen.ToString(System.Globalization.CultureInfo.InvariantCulture)), []);
     }
 
     /// <summary>The computer sleeps for <paramref name="time"/>: the clock moves and nothing in the process runs until it wakes and the pulse notes the time.</summary>

@@ -298,8 +298,10 @@ public sealed class ProcessRunnerTests
         var lines = new List<string>();
         using var started = new StartedProcesses();
 
-        // Lines five seconds apart under a one-minute limit, with a seven-hour sleep after the third: the limit is reached at the
-        // twelfth line's worth of awake time, not at the sleep and not never.
+        // Lines five seconds apart under a one-minute limit, with a seven-hour sleep during the third. The callback for line k starts
+        // after 5 * (k - 1) seconds awake, so the minute is used up as the twelfth line's five seconds pass: not at the sleep, and not never.
+        // The twelfth callback lets those seconds pass without telling the child, which would otherwise print a thirteenth line while the
+        // runner is still killing it; the count is then exactly twelve.
         var result = await child.Runner.RunAsync(new ProcessRequest
         {
             Argv = [StandInPath, "chatter", child.Pace, "40"],
@@ -312,13 +314,20 @@ public sealed class ProcessRunnerTests
                     child.Sleep(TimeSpan.FromHours(7));
                 }
 
-                child.Tick(TimeSpan.FromSeconds(5), lines.Count);
+                if (lines.Count < 12)
+                {
+                    child.Tick(TimeSpan.FromSeconds(5), lines.Count);
+                }
+                else
+                {
+                    child.Pass(TimeSpan.FromSeconds(5));
+                }
             },
             Timeout = TimeSpan.FromMinutes(1),
         });
 
         Assert.Equal(ProcessTimeoutKind.Overall, result.Timeout);
-        Assert.InRange(lines.Count, 12, 13);
+        Assert.Equal(12, lines.Count);
         await started.AllHaveEndedAsync();
     }
 
