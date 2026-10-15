@@ -11,9 +11,6 @@ public sealed class LiveDashboardTests(E2EServer server) : E2ETestBase(server)
     // Long enough for the stream's own safety net to be no part of it: the page is told the moment the change commits.
     private const float PushMs = 10_000;
 
-    // A pass finishing is the server's work, not a push: it spawns the tools and hands the file back first.
-    private const float FinishMs = 30_000;
-
     // The longest any of the read-outs below was once read again by a timer, and a little more.
     private const int QuietMs = 16_000;
 
@@ -108,9 +105,10 @@ public sealed class LiveDashboardTests(E2EServer server) : E2ETestBase(server)
         await Expect(page.GetByTestId("live-working")).ToContainTextAsync("Harbour Lights", new() { Timeout = PushMs });
 
         rig.ReleasePass("Harbour Lights 2024.mkv");
+        await rig.WaitForWorkToEndAsync();
 
-        await Expect(count).ToHaveTextAsync("0", new() { Timeout = FinishMs });
-        await Expect(badge).ToHaveCountAsync(0, new() { Timeout = FinishMs });
+        await Expect(count).ToHaveTextAsync("0", new() { Timeout = PushMs });
+        await Expect(badge).ToHaveCountAsync(0, new() { Timeout = PushMs });
         await AssertNotReloadedAsync(page);
     }
 

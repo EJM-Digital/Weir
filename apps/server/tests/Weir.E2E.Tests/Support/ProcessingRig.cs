@@ -227,6 +227,30 @@ public sealed class ProcessingRig : IAsyncDisposable
     /// <summary>Lets the pass on <paramref name="fileName"/> finish.</summary>
     public void ReleasePass(string fileName) => File.WriteAllText(ReleaseFileFor(fileName), string.Empty);
 
+    /// <summary>
+    /// Waits until ffmpeg has started <paramref name="count"/> writes in all, for as long as a worker has a job. A pass spawns its tools
+    /// one after another, and how long each takes to start depends on how busy the machine is (see <see cref="JobWait"/>).
+    /// </summary>
+    public async Task WaitForWritesStartedAsync(int count) =>
+        await new JobWait().UntilAsync(
+            JobStatusesAsync,
+            () => Task.FromResult(RemuxCount >= count ? "writing" : null),
+            $"ffmpeg to start write {count}");
+
+    /// <summary>Waits until no job is waiting or being worked on, for as long as a worker has one (see <see cref="JobWait"/>).</summary>
+    public async Task WaitForWorkToEndAsync() =>
+        await new JobWait().UntilAsync(
+            JobStatusesAsync,
+            async () => (await JobStatusesAsync()).All(status => status is not ("pending" or "leased")) ? "ended" : null,
+            "Weir to finish its work");
+
+    private async Task<IReadOnlyList<string>> JobStatusesAsync()
+    {
+        var inspection = await _admin.GetAsync($"{WeirClient.Api}/processing/jobs/inspection", ("limit", 100));
+        Assert.True(inspection.Status == HttpStatusCode.OK, inspection.ToString());
+        return [.. inspection.Fields["jobs"]!.AsArray().Select(job => (string)job!["status"]!)];
+    }
+
     /// <summary>Waits until Weir has handed the finished file back to Deluno and told it so.</summary>
     public async Task WaitForReportAsync() =>
         await _deluno.WaitForRequestAsync("POST", CallbackPath);
