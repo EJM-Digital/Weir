@@ -80,7 +80,9 @@ param(
     [switch] $Json,
     [switch] $Rehearsal,
     [string] $ServerUrl,
-    [string] $ToolsFolder
+    [string] $ToolsFolder,
+    # Given by Invoke-WeirScenarios.ps1 to the run it starts in the scenario VM, and checked against the marker it leaves there.
+    [string] $VmToken
 )
 
 $ErrorActionPreference = 'Stop'
@@ -157,6 +159,7 @@ $script:Ctx.DelunoUrl = if ($Rehearsal -and -not $PSBoundParameters.ContainsKey(
 $script:Ctx.SourceFilm = $SourceFilm
 $script:Ctx.ToolsFolder = $ToolsFolder
 $script:Ctx.Rehearsal = [bool]$Rehearsal
+$script:Ctx.VmToken = $VmToken
 $script:Ctx.KnownLogRows = $KnownLogRows
 $script:Ctx.Session = $null
 $script:Ctx.LogWatch = $null

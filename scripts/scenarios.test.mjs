@@ -549,6 +549,59 @@ foreach ($folder in $null, '', '   ') {
   for (const line of lines) assert.match(line, /^REFUSED\|Invoke-InstalledRecover refuses to run without an explicit data folder/);
 });
 
+test("clearing WEIR_HOME for the recover helper is refused anywhere but the scenario VM", { skip }, () => {
+  const run = psFile(String.raw`
+$ErrorActionPreference = 'Stop'
+. '${join(scenarios, "Weir.Scenarios.Lib.ps1")}'
+. '${join(scenarios, "Weir.Scenarios.Context.ps1")}'
+. '${join(scenarios, "Weir.Scenarios.Recover.ps1")}'
+# This machine, as it is: no token from the orchestrator, no marker. If the guard let it through the helper would start this path.
+$script:Ctx.InstallRoot = Join-Path ([IO.Path]::GetTempPath()) 'weir-no-such-install'
+try { Invoke-InstalledRecover -Arguments @('--list') -UseDefaultDataFolder | Out-Null; 'STARTED' }
+catch { 'LOCAL|' + $_.Exception.Message }
+
+# Even handed a token, with no marker in the VM's place, this machine is refused.
+$script:Ctx.VmToken = 'abc123'
+try { Invoke-InstalledRecover -Arguments @('--list') -UseDefaultDataFolder | Out-Null; 'STARTED' }
+catch { 'TOKEN|' + $_.Exception.Message }
+
+# The guard's judgement, on the facts of a machine that is the VM and of machines that differ in one thing each.
+$vm = [pscustomobject]@{ Token = 'abc123'; MarkerToken = 'abc123'; MarkerComputer = 'GOLDEN-VM'; MarkerHost = 'rig-host.example.test'; Computer = 'GOLDEN-VM'; Manufacturer = 'Microsoft Corporation'; Model = 'Virtual Machine' }
+'VM|' + [string](Get-ScenarioVmRefusal -Facts $vm)
+foreach ($change in @{ Token = '' }, @{ MarkerToken = '' }, @{ MarkerToken = 'older' }, @{ MarkerComputer = 'OTHER-PC' }, @{ Computer = 'RIG-HOST' ; MarkerComputer = 'RIG-HOST' }, @{ Manufacturer = 'Dell Inc.' ; Model = 'XPS' }, @{ Model = 'Standard PC' }) {
+    $facts = $vm.PSObject.Copy()
+    foreach ($name in $change.Keys) { $facts.$name = $change[$name] }
+    'OTHER|' + (Get-ScenarioVmRefusal -Facts $facts)
+}
+# This machine's own facts, read for real, are not the VM's.
+'REAL|' + [string](Get-ScenarioVmRefusal -Facts (Get-ScenarioVmFacts))
+`);
+  assert.equal(run.status, 0, run.err + run.out);
+  const lines = run.out.trim().split(/\r?\n/);
+  const refusal = /^(LOCAL|TOKEN)\|Invoke-InstalledRecover refuses to clear WEIR_HOME outside the scenario VM/;
+  assert.match(lines[0], refusal);
+  assert.match(lines[0], /no -VmToken/);
+  assert.match(lines[1], refusal);
+  assert.match(lines[1], /no marker at C:\\golden\\weir\\scenario-vm\.json/);
+  assert.equal(lines[2], "VM|", "the facts of the scenario VM pass the guard");
+  const others = lines.slice(3, 10);
+  assert.equal(others.length, 7);
+  for (const line of others) assert.match(line, /^OTHER\|\S/, `a machine that differs from the VM passed: ${line}`);
+  assert.match(lines[10], /^REAL\|\S/, "this machine passed the guard");
+});
+
+test("the orchestrator leaves the marker and the token in the VM that the recover helper's guard reads", () => {
+  const orchestrator = readFileSync(join(scenarios, "Invoke-WeirScenarios.ps1"), "utf8");
+  const helper = readFileSync(join(scenarios, "Weir.Scenarios.Recover.ps1"), "utf8");
+  const runner = readFileSync(join(scenarios, "Run-WeirScenarios.ps1"), "utf8");
+  const markerPath = "C:\\golden\\weir\\scenario-vm.json";
+  assert.ok(orchestrator.includes(markerPath) && helper.includes(markerPath), "the orchestrator and the guard name different marker files");
+  assert.match(orchestrator, /vm_computer = \$env:COMPUTERNAME/, "the marker is not written with the VM's own computer name");
+  assert.match(orchestrator, /VmToken = \$vmToken/, "the token is not given to the run");
+  assert.match(orchestrator, /@\(\$wrapper, \$vmToken, \$RigHost\)/, "the marker is not written with the token and the host");
+  assert.match(runner, /\$script:Ctx\.VmToken = \$VmToken/, "the run does not keep the token it was given");
+});
+
 test("an invalid -Phases is refused before anything is touched", { skip }, () => {
   const out = mkdtempSync(join(tmpdir(), "weir-scenarios-phases-"));
   const run = powershell([

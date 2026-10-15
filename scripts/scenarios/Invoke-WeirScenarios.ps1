@@ -299,7 +299,8 @@ function Invoke-Phase([string] $Phase) {
     Copy-ToVm $InstallerPath 'C:\golden\weir\candidate'
     if ($SourceFilm) { Copy-ToVm $SourceFilm 'C:\golden\weir\film' }
 
-    $arguments = @{ Phase = $Phase; SetupPath = 'C:\golden\weir\candidate\Weir-win-Setup.exe'; Version = $Version; ShortSha = $shortSha
+    $vmToken = [guid]::NewGuid().ToString('N')
+    $arguments = @{ Phase = $Phase; VmToken = $vmToken; SetupPath = 'C:\golden\weir\candidate\Weir-win-Setup.exe'; Version = $Version; ShortSha = $shortSha
         DelunoUrl = $DelunoUrl; DelunoKeyFileInVm = $DelunoKeyFileInVm; WeirLoginFileInVm = $WeirLoginFileInVm }
     if ($SourceFilm) { $arguments.SourceFilm = Join-Path 'C:\golden\weir\film' (Split-Path $SourceFilm -Leaf) }
     if ($subset) { $arguments.Scenarios = (@($inRun | Where-Object { $_.Phase -eq $Phase } | ForEach-Object { $_.Id }) -join ',') }
@@ -307,11 +308,14 @@ function Invoke-Phase([string] $Phase) {
     $pairs = foreach ($key in $arguments.Keys) { "-$key '" + ([string]$arguments[$key]).Replace("'", "''") + "'" }
     $wrapper = New-PhaseWrapperText -RunFolder 'C:\golden\weir\run' -RunnerPath 'C:\golden\weir\scripts\Run-WeirScenarios.ps1' -Arguments ($pairs -join ' ')
     $started = Invoke-InVm {
-        param($wrapper)
+        param($wrapper, $token, $rigHost)
         $run = 'C:\golden\weir\run'
         Remove-Item $run -Recurse -Force -ErrorAction SilentlyContinue
         New-Item -ItemType Directory -Force -Path $run | Out-Null
         Set-Content -Path 'C:\golden\weir\start.ps1' -Value $wrapper -Encoding UTF8
+        # What tells a run it is in this VM (Get-ScenarioVmRefusal in Weir.Scenarios.Recover.ps1): written here, by the VM itself, for this phase only.
+        $marker = @{ token = $token; vm_computer = $env:COMPUTERNAME; host = $rigHost; written_utc = (Get-Date).ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress
+        Set-Content -Path 'C:\golden\weir\scenario-vm.json' -Value $marker -Encoding UTF8
         $user = "$env:USERDOMAIN\$env:USERNAME"
         $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
         $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
@@ -319,7 +323,7 @@ function Invoke-Phase([string] $Phase) {
         Register-ScheduledTask -TaskName 'WeirScenarios' -Action $action -Principal $principal -Settings $settings -Force | Out-Null
         Start-ScheduledTask -TaskName 'WeirScenarios'
         'started'
-    } @(, $wrapper)
+    } @($wrapper, $vmToken, $RigHost)
     if ($started -ne 'started') { throw 'The scenario task did not start.' }
 
     # Wait for the phase, and whatever happens while waiting, bring back what it had done. A poll that fails (the VM is busy, a read
