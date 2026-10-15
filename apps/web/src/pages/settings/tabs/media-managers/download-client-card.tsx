@@ -8,6 +8,7 @@ import {
   useTestDownloadClientConnection,
   useUpdateDownloadClientConnection,
 } from "../../../../lib/download-clients/queries";
+import { useIsAdmin } from "../../../../lib/auth/can-edit";
 import { connectionTitle } from "../../../../lib/ui/connection-title";
 import { mmActionButtonClass } from "../../../../lib/ui/mm-control-roles";
 import { ConnectionStatusLine } from "./connection-health";
@@ -75,6 +76,7 @@ export function DownloadClientCard({
 }) {
   const update = useUpdateDownloadClientConnection();
   const remove = useDeleteDownloadClientConnection();
+  const admin = useIsAdmin();
   const test = useTestDownloadClientConnection();
   const [confirmingRemoval, setConfirmingRemoval] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -130,7 +132,7 @@ export function DownloadClientCard({
             type="button"
             data-testid="download-client-remove"
             className={mmActionButtonClass({ variant: "danger-outline" })}
-            disabled={locked}
+            disabled={locked || !admin}
             aria-haspopup="dialog"
             onClick={() => {
               remove.reset();
@@ -142,6 +144,15 @@ export function DownloadClientCard({
         </>
       }
     >
+      {!admin ? (
+        <p
+          className="mm-quiet-note mt-2"
+          data-testid="download-client-remove-needs-admin"
+        >
+          Only an admin can remove a download client.
+        </p>
+      ) : null}
+
       {test.isError ? (
         <p
           className="mm-status-text mt-2 text-sm"

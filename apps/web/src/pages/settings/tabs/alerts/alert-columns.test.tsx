@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { signedInAs } from "../../../../test/signed-in-as";
 import * as api from "../../../../lib/settings/settings-api";
 import type { NotificationChannelOut } from "../../../../lib/settings/types";
 import { AlertsTab } from "./alerts-tab";
@@ -52,7 +53,10 @@ function alertNames() {
     .map((row) => row.querySelector("th")?.querySelector("span")?.textContent);
 }
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  signedInAs("admin");
+});
 afterEach(() => vi.restoreAllMocks());
 
 describe("the alerts table", () => {
