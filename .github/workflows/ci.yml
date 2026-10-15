@@ -111,6 +111,8 @@ jobs:
               - 'scripts/wait-for-health.mjs'
               - 'scripts/docker-compose-smoke.mjs'
               - 'scripts/docker-smoke/**'
+              - 'scripts/scenarios-in-ci.mjs'
+              - 'scripts/scenarios-ci/**'
               - 'scripts/find-previous-release.mjs'
               - 'scripts/semver.mjs'
               - 'scripts/ffmpeg-cache-key.mjs'
@@ -297,6 +299,9 @@ jobs:
 
       - name: Docker entrypoint refuses bad settings, keeps the secrets and the server's umask
         run: node --test scripts/docker-entrypoint.test.mjs
+
+      - name: Scenarios in CI - their homes, the film, the logs and the scenarios against a stand-in
+        run: node --test scripts/scenarios-in-ci.test.mjs scripts/docker-compose-smoke.test.mjs
 
       - name: Release and CI gate rules
         run: |
