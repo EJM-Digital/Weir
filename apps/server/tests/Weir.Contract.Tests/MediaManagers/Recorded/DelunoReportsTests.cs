@@ -12,7 +12,7 @@ namespace Weir.Contract.Tests.MediaManagers.Recorded;
 /// answers with the reply Deluno recorded for that report; Weir must read a 202 as delivered and a 409 as Deluno having stopped waiting.
 /// </summary>
 [ContractArea("media_managers")]
-public sealed class DelunoReportsTests
+public sealed partial class DelunoReportsTests
 {
     private const string ReportsTo = Scenario.EventsPath;
 

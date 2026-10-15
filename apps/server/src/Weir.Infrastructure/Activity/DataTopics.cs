@@ -50,4 +50,7 @@ public static class DataTopics
 
     /// <summary>The job queue.</summary>
     public const string Jobs = "jobs";
+
+    /// <summary>The browsers signed in to Weir: one signed in, signed out, or was signed out.</summary>
+    public const string Sessions = "sessions";
 }
