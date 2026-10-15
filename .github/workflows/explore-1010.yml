@@ -21,6 +21,12 @@ jobs:
         run: node --test scripts/docker-entrypoint.test.mjs 2>&1 | tail -25
       - name: The helper tests
         run: node --test scripts/docker-compose-smoke.test.mjs 2>&1 | tail -8
+      - name: The entrypoint tests against main's entrypoint, which says the output settings are ignored
+        run: |
+          git fetch --depth=1 origin main
+          git show FETCH_HEAD:docker/entrypoint.sh > docker/entrypoint.sh
+          node --test scripts/docker-entrypoint.test.mjs 2>&1 | grep -E "^ℹ (pass|fail)|^✖" | head -20 || true
+          git checkout docker/entrypoint.sh
       - name: Each entrypoint check against an entrypoint missing it
         run: sh scripts/explore-1010/mutants.sh node
 
@@ -90,6 +96,12 @@ jobs:
           tags: weir-ci-smoke:arm64
           cache-from: type=gha,scope=weir-ci-arm64
           cache-to: type=gha,mode=max,scope=weir-ci-arm64,ignore-error=true
+      - name: The arm64 check against an image that is not the arm64 image
+        continue-on-error: true
+        run: |
+          docker pull --platform linux/amd64 alpine:3.20
+          docker tag alpine:3.20 weir-not-arm64
+          if node scripts/docker-compose-smoke.mjs arm64 --candidate weir-not-arm64 --logs artifacts/explore-not-arm64; then echo "SURVIVED: the arm64 check passed on an amd64 image"; else echo "KILLED: the arm64 check failed on an amd64 image"; fi
       - name: Start the arm64 image under QEMU
         run: time node scripts/docker-compose-smoke.mjs arm64 --candidate weir-ci-smoke:arm64 --logs artifacts/explore-arm64
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

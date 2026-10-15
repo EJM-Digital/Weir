@@ -63,7 +63,8 @@ function expectDelivered({ delivered, fixtureHash, host }) {
   assert.deepEqual([folder.uid, folder.gid], [REMAPPED.uid, REMAPPED.gid], "the folder made for the file does not belong to the ids the server runs as");
   assert.equal((folder.mode & PERMISSIONS).toString(8), FOLDER_MODE.toString(8), "the folder made for the file does not have WEIR_DIR_MODE_OUTPUT's mode");
 
-  assert.ok(![REMAPPED.uid, 0].includes(host.uid), "this smoke must not run as the ids it gives the server");
+  // Readable by a user who is neither the server's account nor in its group, so the modes are what let this user in.
+  assert.ok(host.uid !== REMAPPED.uid && host.gid !== REMAPPED.gid, "this smoke must not run as the ids it gives the server");
   accessSync(delivered, constants.R_OK);
   accessSync(join(delivered, ".."), constants.R_OK | constants.X_OK);
 }
@@ -100,7 +101,17 @@ export async function deliversIntoMediaFolder({ stack, client, candidate, mediaF
   assert.doesNotMatch(started, /(?:WEIR_CHOWN_OUTPUT|WEIR_FILE_MODE_OUTPUT|WEIR_DIR_MODE_OUTPUT) is set/, "the output settings the server applies were reported as ignored");
 
   await createFirstAccount({ client, stack });
-  await client.createLibrary({ name: "Media folder movies", media_type: "movie", watched_folder: "/media/watched", work_folder: "/media/work", output_folder: "/media/output" });
+  // A pass-through is asked for by a path under the watched folder of the movie workflow every install starts with, so that one is pointed at the media folder.
+  const movies = (await client.libraries()).find((library) => library.media_type === "movie");
+  assert.ok(movies, "a new install has no movie workflow");
+  await client.updateLibrary(movies.id, {
+    name: movies.name,
+    media_type: "movie",
+    watched_folder: "/media/watched",
+    work_folder: "/media/work",
+    output_folder: "/media/output",
+    manager_connection_ids: movies.manager_connection_ids ?? [],
+  });
 
   stack.exec(MAKE_FIXTURE);
   const fixture = join(fixtures, "film.mkv");

@@ -92,6 +92,11 @@ export class WeirClient {
     return this.#write("POST", "/processing/libraries", fields, 201, "creating a workflow");
   }
 
+  /** Saves new fields over a workflow; `fields` is the whole of what the workflow screen sends. */
+  updateLibrary(id, fields) {
+    return this.#write("PUT", `/processing/libraries/${id}`, fields, 200, "saving a workflow");
+  }
+
   libraries() {
     return this.#read("/processing/libraries", "listing workflows");
   }
