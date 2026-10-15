@@ -42,17 +42,6 @@ function Get-ServerVersion {
     (Invoke-RestMethod -Uri "$($script:Ctx.Base)/openapi.json" -TimeoutSec 10).info.version
 }
 
-# True when $Reported is the build under test: the release's own version, and the commit when the build carries one.
-function Test-VersionUnderTest {
-    param([Parameter(Mandatory)] [string] $Reported, [Parameter(Mandatory)] [string] $Expected, [string] $ShortSha)
-    $expectedBase = $Expected.Split('+')[0]
-    $reportedBase = $Reported.Split('+')[0]
-    if ($reportedBase -ne $expectedBase) { return $false }
-    # A build made for the golden path carries its commit (`<version>+<short sha>`); one that does not cannot be tied to the commit.
-    if ($ShortSha) { return $Reported.Contains('+') -and $Reported.Split('+')[1].StartsWith($ShortSha.Substring(0, [Math]::Min(7, $ShortSha.Length))) }
-    $true
-}
-
 # A time as the machine's UTC clock reads it, from a DateTime or from the text a JSON answer carries (with its offset). Windows
 # PowerShell 5.1 leaves ISO text as text and newer versions turn it into a DateTime; either way the instant is the same.
 function ConvertTo-UtcTime {

@@ -964,6 +964,37 @@ test("-NoRestore runs chosen Fresh scenarios on the machine as it stands: no che
   assert.equal(existsSync(join(out, "artifacts")), false);
 });
 
+test("-NoRestore refuses a machine whose Weir is not the build under test unless a chosen scenario installs it, naming both builds", { skip }, () => {
+  const script = [
+    `. '${join(scenarios, "Weir.Scenarios.Lib.ps1")}'`,
+    "$sha = '0123456789abcdef0123456789abcdef01234567'",
+    "function Show($label, $refusal) { $label + '=' + $(if ($refusal) { $refusal } else { 'runs' }) }",
+    "Show 'same' (Get-NoRestoreRefusal -Found '1.0.0-rc.19+0123456' -Version '1.0.0-rc.19' -CommitSha $sha -ScenarioIds 'first-visit-account')",
+    "Show 'older' (Get-NoRestoreRefusal -Found '1.0.0-rc.18+89abcde' -Version '1.0.0-rc.19' -CommitSha $sha -ScenarioIds 'first-visit-account')",
+    "Show 'othercommit' (Get-NoRestoreRefusal -Found '1.0.0-rc.19+89abcde' -Version '1.0.0-rc.19' -CommitSha $sha -ScenarioIds 'first-visit-account')",
+    "Show 'nocommit' (Get-NoRestoreRefusal -Found '1.0.0-rc.19' -Version '1.0.0-rc.19' -CommitSha $sha -ScenarioIds 'first-visit-account')",
+    "Show 'none' (Get-NoRestoreRefusal -Found '' -Version '1.0.0-rc.19' -CommitSha $sha -ScenarioIds 'first-visit-account')",
+    "Show 'installs' (Get-NoRestoreRefusal -Found '1.0.0-rc.18+89abcde' -Version '1.0.0-rc.19' -CommitSha $sha -ScenarioIds 'process-again','fresh-install')",
+  ].join("\n");
+  const run = powershell(["-Command", script]);
+  assert.equal(run.status, 0, run.err);
+  const lines = Object.fromEntries(run.out.trim().split(/\r?\n/).map((line) => [line.slice(0, line.indexOf("=")), line.slice(line.indexOf("=") + 1)]));
+  assert.equal(lines.same, "runs");
+  assert.equal(lines.installs, "runs", "fresh-install installs the build, so the Weir found does not matter");
+  const plain = /^-NoRestore would run on the Weir already on the machine, which is (.+), not the build under test \(1\.0\.0-rc\.19, commit 0123456\)\. None of the chosen scenarios installs the build\. Include fresh-install in -Scenarios, or run without -NoRestore\.$/;
+  assert.match(lines.older, plain);
+  assert.match(lines.older, /which is 1\.0\.0-rc\.18\+89abcde,/);
+  assert.match(lines.othercommit, plain);
+  assert.match(lines.nocommit, plain);
+  assert.match(lines.none, /which is no Weir at all, not the build under test/);
+});
+
+test("-NoRestore reads the installed Weir on the VM and prints it before refusing or running", () => {
+  const source = readFileSync(join(scenarios, "Invoke-WeirScenarios.ps1"), "utf8");
+  assert.match(source, /function Use-VmWithoutRestore[\s\S]*Get-NoRestoreRefusal[\s\S]*\r?\n\}/);
+  assert.match(source, /Weir on \$VmName before the run: /);
+});
+
 test("a run of chosen scenarios given no -OutDirectory gets a record folder of its own per run; a full run and an explicit -OutDirectory keep theirs", { skip }, () => {
   const bare = (...extra) => {
     const run = powershell([
