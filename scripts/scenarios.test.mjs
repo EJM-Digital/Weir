@@ -531,6 +531,24 @@ test("the update scenario compares every Activity entry, paged, not the newest 1
   assert.match(source, /Save-BuildUnderTestMarker/);
 });
 
+test("the recover helper refuses to start the installed server without an explicit data folder", { skip }, () => {
+  const run = psFile(String.raw`
+$ErrorActionPreference = 'Stop'
+. '${join(scenarios, "Weir.Scenarios.Lib.ps1")}'
+. '${join(scenarios, "Weir.Scenarios.Context.ps1")}'
+. '${join(scenarios, "Weir.Scenarios.Recover.ps1")}'
+$script:Ctx.InstallRoot = Join-Path ([IO.Path]::GetTempPath()) 'weir-no-such-install'
+foreach ($folder in $null, '', '   ') {
+    try { Invoke-InstalledRecover -Arguments @('--list') -DataFolder $folder | Out-Null; 'STARTED' }
+    catch { 'REFUSED|' + $_.Exception.Message }
+}
+`);
+  assert.equal(run.status, 0, run.err + run.out);
+  const lines = run.out.trim().split(/\r?\n/);
+  assert.equal(lines.length, 3);
+  for (const line of lines) assert.match(line, /^REFUSED\|Invoke-InstalledRecover refuses to run without an explicit data folder/);
+});
+
 test("an invalid -Phases is refused before anything is touched", { skip }, () => {
   const out = mkdtempSync(join(tmpdir(), "weir-scenarios-phases-"));
   const run = powershell([

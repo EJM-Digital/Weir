@@ -100,6 +100,12 @@ function Assert-Status {
 # Runs WeirServer.exe with the arguments as a person's console would, output captured whole. Never prompts: stdin is closed.
 function Invoke-Recover {
   param([string[]]$Arguments)
+  # The command opens whatever database WEIR_HOME names, and with none this machine's own: it only ever runs on this script's temporary folders.
+  $dataHome = [Environment]::GetEnvironmentVariable("WEIR_HOME")
+  $temp = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
+  if (-not $dataHome -or -not [System.IO.Path]::GetFullPath($dataHome).StartsWith($temp, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "Refusing to run recover: WEIR_HOME ('$dataHome') is not a temporary folder of this script."
+  }
   $info = New-Object System.Diagnostics.ProcessStartInfo
   $info.FileName = $serverExe
   $info.WorkingDirectory = $packagePath

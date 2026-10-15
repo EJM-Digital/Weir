@@ -1,14 +1,17 @@
 <#
     The lock-out recovery on the installed Weir: a person who forgot the only password runs `WeirServer.exe recover` from the install
-    folder, as docs-site/docs/guides/security.md tells them to, with nothing set but what their own console has. The package smoke
+    folder, as docs-site/docs/guides/security.md tells them to. The package smoke
     (scripts/smoke-windows-recover.ps1) runs the same command from the packaged folder against a data folder it chose; this runs it
     against the data folder the installed tray's server really uses.
 #>
 
 # Runs the installed WeirServer.exe with the arguments as a person's console would: stdin closed (nothing can be prompted), and none of
-# the variables the tray gives the server, so the data folder is the install's default. Never throws on the exit code.
+# the variables the tray gives the server. The data folder is always named: the command opens whatever database WEIR_HOME points at, and
+# with no WEIR_HOME it would open this machine's own default, so a call without a folder is refused before anything starts. Never throws on
+# the exit code.
 function Invoke-InstalledRecover {
-    param([Parameter(Mandatory)] [string[]] $Arguments)
+    param([Parameter(Mandatory)] [string[]] $Arguments, [string] $DataFolder)
+    if (-not $DataFolder -or -not $DataFolder.Trim()) { throw 'Invoke-InstalledRecover refuses to run without an explicit data folder: with no WEIR_HOME the command would open this machine''s own Weir database.' }
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = (Get-WeirPaths).ServerExe
     $info.UseShellExecute = $false
@@ -16,7 +19,8 @@ function Invoke-InstalledRecover {
     $info.RedirectStandardInput = $true
     $info.RedirectStandardOutput = $true
     $info.RedirectStandardError = $true
-    foreach ($name in 'WEIR_HOME', 'WEIR_SESSION_SECRET', 'WEIR_SESSION_COOKIE_SECURE', 'WEIR_ENV', 'WEIR_WEB_DIST') { $null = $info.EnvironmentVariables.Remove($name) }
+    $info.EnvironmentVariables['WEIR_HOME'] = $DataFolder
+    foreach ($name in 'WEIR_SESSION_SECRET', 'WEIR_SESSION_COOKIE_SECURE', 'WEIR_ENV', 'WEIR_WEB_DIST') { $null = $info.EnvironmentVariables.Remove($name) }
     # Windows PowerShell 5.1 has no ArgumentList: quote each argument by hand.
     $info.Arguments = (@('recover') + $Arguments | ForEach-Object { if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ } }) -join ' '
     $process = [Diagnostics.Process]::Start($info)
@@ -69,21 +73,21 @@ function Scenario_recover_locked_out_account {
     try {
         Stop-InstalledWeir
 
-        $help = Invoke-InstalledRecover -Arguments @('--help')
+        $help = Invoke-InstalledRecover -DataFolder $script:Ctx.RuntimeHome -Arguments @('--help')
         Save-RecoverOutput -Name 'help' -Result $help
         Assert-That ($help.ExitCode -eq 0) "recover --help exited 0 (it exited $($help.ExitCode))"
         foreach ($wanted in 'usage: Weir recover', '--username USERNAME', '--password PASSWORD', '--list') {
             Assert-That $help.Stdout.Contains($wanted) "recover --help mentions $wanted"
         }
 
-        $list = Invoke-InstalledRecover -Arguments @('--list')
+        $list = Invoke-InstalledRecover -DataFolder $script:Ctx.RuntimeHome -Arguments @('--list')
         Save-RecoverOutput -Name 'list' -Result $list
         Assert-That ($list.ExitCode -eq 0) "recover --list exited 0 (it exited $($list.ExitCode): $($list.Stderr))"
         $database = Join-Path $script:Ctx.RuntimeHome 'data\weir.sqlite3'
-        Assert-That $list.Stdout.Contains("Accounts in ${database}:") "with no variables set, the command finds the data folder the tray's server uses ($database)"
+        Assert-That $list.Stdout.Contains("Accounts in ${database}:") "the command lists the account in the database the tray's server uses ($database)"
         Assert-That ($list.Stdout -match "(?m)^\s+$([regex]::Escape($username))\s+role=admin\s+active\s*$") "recover --list shows $username as an active admin"
 
-        $reset = Invoke-InstalledRecover -Arguments @('--username', $username, '--password', $recovered)
+        $reset = Invoke-InstalledRecover -DataFolder $script:Ctx.RuntimeHome -Arguments @('--username', $username, '--password', $recovered)
         Save-RecoverOutput -Name 'recover' -Result $reset
         Assert-That ($reset.ExitCode -eq 0) "recover exited 0 (it exited $($reset.ExitCode): $($reset.Stderr))"
         Assert-That $reset.Stdout.Contains("Password reset for '$username'.") 'recover says the password was reset'
@@ -117,5 +121,5 @@ function Scenario_recover_locked_out_account {
     Assert-That ($said.Count -eq 1) 'Activity records that the password was recovered from the server'
 
     Get-WeirJson $script:Ctx.Session '/api/v1/suite/settings' -Method PUT -Body @{ app_timezone = $settings.app_timezone; log_retention_days = $original } | Out-Null
-    "WeirServer.exe recover, run from the install with no variables set, listed $username, reset the password and said $endedWords; the forgotten password is refused (401), the new one signs in, $ended earlier sessions are ended, the saved setting is kept and Activity says the password was recovered from the server."
+    "WeirServer.exe recover, run from the install on the run's own data folder, listed $username, reset the password and said $endedWords; the forgotten password is refused (401), the new one signs in, $ended earlier sessions are ended, the saved setting is kept and Activity says the password was recovered from the server."
 }

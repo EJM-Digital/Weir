@@ -100,7 +100,7 @@ $ScenarioCatalog = @(
     [pscustomobject]@{
         Id = 'recover-locked-out-account'; Phase = 'Fresh'; Required = $true
         Title = 'Recovering a locked-out account'
-        Does = 'Starts the installed Weir and signs in (creating the account when it offers to), saves a setting, signs in a second browser, stops Weir, and runs the installed WeirServer.exe recover as a person''s console does, with no variable set: its help, its account list, then a reset of the account''s password. Starts Weir again.'
-        Passes = 'The command finds the data folder the installed server uses, lists the account as an active admin, resets the password and says how many signed-in sessions it ended; afterwards both earlier sessions are refused, the forgotten password is refused, the new password signs in, the saved setting is as it was and Activity says the password was recovered from the server.'
+        Does = 'Starts the installed Weir and signs in (creating the account when it offers to), saves a setting, signs in a second browser, stops Weir, and runs the installed WeirServer.exe recover as a person''s console does, on the run''s own data folder: its help, its account list, then a reset of the account''s password. Starts Weir again.'
+        Passes = 'The command lists the account in the installed server''s database as an active admin, resets the password and says how many signed-in sessions it ended; afterwards both earlier sessions are refused, the forgotten password is refused, the new password signs in, the saved setting is as it was and Activity says the password was recovered from the server.'
     }
 )
