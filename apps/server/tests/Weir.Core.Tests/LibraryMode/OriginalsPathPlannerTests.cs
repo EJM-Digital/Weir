@@ -23,9 +23,36 @@ public sealed class OriginalsPathPlannerTests
     [InlineData("/lib/", "/lib/film.mkv", true)]
     [InlineData("/lib", "/library/film.mkv", false)]
     [InlineData("/lib", "/lib2/film.mkv", false)]
+    [InlineData("/lib", "/lib/../etc/x", false)]
+    [InlineData("/lib", "/lib/a/../../x", false)]
+    [InlineData("/lib", "/lib/../../lib/x", false)]
+    [InlineData("/lib", "/lib/a/../film.mkv", true)]
+    [InlineData("/lib", "/lib/../lib/film.mkv", true)]
+    [InlineData("/lib", "lib/film.mkv", false)]
+    [InlineData("C:\\Media\\Films", "c:/media/films/../Other/film.mkv", false)]
+    [InlineData("C:\\Media\\Films", "c:/media/films/Sub/../film.mkv", true)]
     public void IsWithin_matches_the_folder_itself_and_anything_inside_it_only(string folder, string path, bool expected)
     {
         Assert.Equal(expected, OriginalsPathPlanner.IsWithin(folder, path));
+    }
+
+    [Fact]
+    public void A_kept_original_is_put_at_the_files_normalised_place_below_the_originals_folder()
+    {
+        Assert.Equal(
+            "/lib/.weir-originals/b/film.mkv",
+            OriginalsPathPlanner.DestinationPath("/lib", originalsFolder: null, "/lib/a/../b/film.mkv"));
+        Assert.Equal(
+            "/lib/.weir-originals/b/film.mkv",
+            OriginalsPathPlanner.DestinationPath("/lib", originalsFolder: null, "/lib/../lib/b/film.mkv"));
+    }
+
+    [Fact]
+    public void A_file_that_climbs_out_of_the_library_folder_is_kept_by_its_name_alone()
+    {
+        Assert.Equal(
+            "/lib/.weir-originals/film.mkv",
+            OriginalsPathPlanner.DestinationPath("/lib", originalsFolder: null, "/lib/../etc/film.mkv"));
     }
 
     [Fact]

@@ -17,7 +17,7 @@ public sealed record RuntimePaths(string Home, string DbPath, string BackupDir, 
     public static RuntimePaths Resolve(RuntimeEnvironment runtime)
     {
         ArgumentNullException.ThrowIfNull(runtime);
-        var home = ValueParsing.Resolve(ResolveHome(runtime), runtime);
+        var home = ValueParsing.ResolveVariable("WEIR_HOME", ResolveHome(runtime), runtime);
         return new RuntimePaths(
             home,
             ResolveUnderHome(runtime, home, "WEIR_DB_PATH", "data", "weir.sqlite3"),
@@ -53,10 +53,10 @@ public sealed record RuntimePaths(string Home, string DbPath, string BackupDir, 
         var overrideValue = (runtime.Get(variable) ?? string.Empty).Trim();
         if (overrideValue.Length == 0)
         {
-            return ValueParsing.Resolve(Path.Join([home, .. defaultSegments]), runtime);
+            return ValueParsing.ResolveVariable(variable, Path.Join([home, .. defaultSegments]), runtime);
         }
 
         var expanded = ValueParsing.ExpandUser(overrideValue, runtime);
-        return ValueParsing.Resolve(Path.IsPathFullyQualified(expanded) ? expanded : Path.Join(home, expanded), runtime);
+        return ValueParsing.ResolveVariable(variable, Path.IsPathFullyQualified(expanded) ? expanded : Path.Join(home, expanded), runtime);
     }
 }

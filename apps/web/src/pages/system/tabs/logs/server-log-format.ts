@@ -18,7 +18,9 @@ export function formatRuntimeUptime(seconds: number): string {
 /** Whole milliseconds from 100 up, one decimal below. */
 export function formatAverageMs(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return "0 ms";
-  return `${value >= 100 ? value.toFixed(0) : value.toFixed(1)} ms`;
+  // 99.96 rounds to 100.0, which is read as 100 and printed whole.
+  const tenths = Number(value.toFixed(1));
+  return `${tenths >= 100 ? value.toFixed(0) : tenths.toFixed(1)} ms`;
 }
 
 /**

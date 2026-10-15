@@ -102,6 +102,14 @@ public sealed class ScheduleGridTests
         Assert.Equal(string.Empty, ScheduleGrid.FromDaysAndTimes("mon", "nonsense", "17:00"));
     }
 
+    [Theory]
+    [InlineData("09:75", "17:00")]
+    [InlineData("09:00", "17:-30")]
+    [InlineData("24:00", "17:00")]
+    [InlineData("1073741824:00", "17:00")]
+    public void A_time_that_is_not_a_time_of_day_becomes_no_restriction_not_a_shifted_window(string start, string end) =>
+        Assert.Equal(string.Empty, ScheduleGrid.FromDaysAndTimes("mon", start, end));
+
     [Fact]
     public void A_closed_window_reports_when_it_next_opens()
     {
