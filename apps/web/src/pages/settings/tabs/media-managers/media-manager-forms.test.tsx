@@ -13,15 +13,14 @@ import {
 import {
   addressRefused,
   connectionGone,
-  csrfToken,
   delunoAdded,
   delunoListedWithSecret,
   delunoListedWithoutSecret,
   delunoSecretCreated,
   noConnections,
-  signedInAdmin,
   WEBHOOK_SECRET,
 } from "./connection-replies";
+import { adminMe, csrfToken } from "../../../../test/recorded-admin-session";
 import { MediaManagersTab } from "./media-managers-tab";
 import { stubMediaManagersTabNeighbours } from "./stub-media-managers-tab-neighbours";
 
@@ -59,7 +58,7 @@ function wrapper({ children }: { children: ReactNode }) {
 function serve(routes: RecordedRoutes): RecordedWeir {
   weir = serveRecordedReplies({
     "GET /api/v1/auth/csrf": csrfToken,
-    "GET /api/v1/auth/me": signedInAdmin,
+    "GET /api/v1/auth/me": adminMe,
     ...routes,
   });
   return weir;

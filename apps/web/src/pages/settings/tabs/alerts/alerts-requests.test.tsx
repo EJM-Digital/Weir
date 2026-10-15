@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { adminMe, csrfToken } from "../../../../test/recorded-admin-session";
 import type { NotificationChannelListOut } from "../../../../lib/settings/types";
 import {
   serveRecordedReplies,
@@ -18,14 +19,12 @@ import {
   afterTick,
   afterUntick,
   channelAdded,
-  csrfToken,
   editRefusedForItsAddress,
   editSaved,
   firstOfTwoSwitchedOff,
   noChannels,
   oneChannel,
   savedAsItWas,
-  signedInAdmin,
   testAlertGone,
   testCouldNotResolve,
   testCouldNotResolveToo,
@@ -62,7 +61,7 @@ function wrapper({ children }: { children: ReactNode }) {
 function serve(routes: RecordedRoutes): RecordedWeir {
   weir = serveRecordedReplies({
     "GET /api/v1/auth/csrf": csrfToken,
-    "GET /api/v1/auth/me": signedInAdmin,
+    "GET /api/v1/auth/me": adminMe,
     ...routes,
   });
   return weir;

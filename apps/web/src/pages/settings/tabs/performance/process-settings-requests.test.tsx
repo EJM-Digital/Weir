@@ -10,13 +10,12 @@ import {
 } from "../../../../test/recorded-weir";
 import {
   costsSaved,
-  csrfToken,
   filesAtOnce,
   saveRefusedTokenExpired,
   settingsAfterCosts,
   settingsBudgetOn,
-  signedInAdmin,
 } from "../operator-settings-replies";
+import { adminMe, csrfToken } from "../../../../test/recorded-admin-session";
 import { ProcessSettingsSection } from "./process-settings-section";
 
 const OPERATOR_SETTINGS = "/api/v1/processing/operator-settings";
@@ -44,7 +43,7 @@ async function renderSection(
 ): Promise<RecordedWeir> {
   weir = serveRecordedReplies({
     "GET /api/v1/auth/csrf": csrfToken,
-    "GET /api/v1/auth/me": signedInAdmin,
+    "GET /api/v1/auth/me": adminMe,
     "GET /api/v1/processing/files-at-once": filesAtOnce,
     "GET /api/v1/processing/operator-settings": settingsBudgetOn,
     ...routes,

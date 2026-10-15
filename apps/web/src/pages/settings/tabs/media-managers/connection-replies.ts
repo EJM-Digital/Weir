@@ -75,8 +75,3 @@ export const downloadClientAddressRefused: RecordedReply = {
   status: 400,
   body: '{"detail":"That address will not work: URL must be a valid http or https URL."}',
 };
-
-export const signedInAdmin: RecordedReply = {
-  status: 200,
-  body: '{"user":{"id":1,"username":"recorded-admin","role":"admin","app_theme":null}}',
-};

@@ -5,16 +5,6 @@ import type { RecordedReply } from "../../../test/recorded-weir";
  * Each body is the text the server sent, and each status the one it sent it with.
  */
 
-export const csrfToken: RecordedReply = {
-  status: 200,
-  body: '{"csrf_token":"csrf.session:fa867b1e4139652a91b855f36e38f6e3e37965c8bcce1566c9c1131a23b8227b.atEgaQ.H1CnBaNw5Mb_rtRPhsa2EcgIKMg"}',
-};
-
-export const signedInAdmin: RecordedReply = {
-  status: 200,
-  body: '{"user":{"id":1,"username":"recorded-admin","role":"admin","app_theme":null}}',
-};
-
 /** A Weir that has not been tuned. */
 export const settingsDefault: RecordedReply = {
   status: 200,

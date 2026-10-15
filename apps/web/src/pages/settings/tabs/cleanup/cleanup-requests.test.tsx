@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { adminMe, csrfToken } from "../../../../test/recorded-admin-session";
 import type { MaintenanceState } from "../../../../lib/processing/maintenance-api";
 import * as settingsQueries from "../../../../lib/settings/queries";
 import {
@@ -12,10 +13,8 @@ import {
   type RecordedWeir,
 } from "../../../../test/recorded-weir";
 import {
-  csrfToken,
   saveRefusedTokenExpired,
   settingsDefault,
-  signedInAdmin,
 } from "../operator-settings-replies";
 import { CleanupTab } from "./cleanup-tab";
 import {
@@ -64,7 +63,7 @@ function wrapper({ children }: { children: ReactNode }) {
 function serve(routes: RecordedRoutes = {}): RecordedWeir {
   weir = serveRecordedReplies({
     "GET /api/v1/auth/csrf": csrfToken,
-    "GET /api/v1/auth/me": signedInAdmin,
+    "GET /api/v1/auth/me": adminMe,
     "GET /api/v1/processing/maintenance": maintenance,
     "GET /api/v1/processing/operator-settings": settingsDefault,
     ...routes,
