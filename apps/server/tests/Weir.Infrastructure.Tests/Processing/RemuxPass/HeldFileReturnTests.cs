@@ -145,7 +145,7 @@ public sealed partial class HeldFileReturnTests : IDisposable
     }
 
     private Task SweepAsync() =>
-        new VanishedFileSweepTask(_fixture.Store.Database, _fixture.Store.Options, _fixture.Libraries, _fixture.Store.Clock, NullLogger<VanishedFileSweepTask>.Instance)
+        new VanishedFileSweepTask(_fixture.Store.Database, _fixture.Store.Options, _fixture.Libraries, _fixture.Store.Clock, NullLogger<VanishedFileSweepTask>.Instance, jobs: _fixture.Jobs)
         {
             GoneLookAgain = _ => Task.CompletedTask,
         }.RunOnceAsync(CancellationToken.None);

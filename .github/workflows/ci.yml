@@ -107,6 +107,7 @@ jobs:
               - 'apps/server/src/Weir.Host/**'
               - 'apps/server/tools/Weir.LiveAudit/**'
               - 'scripts/smoke-windows-package.ps1'
+              - 'scripts/smoke-windows-recover.ps1'
               - 'scripts/wait-for-health.mjs'
               - 'scripts/docker-compose-smoke.mjs'
               - 'scripts/docker-smoke/**'
@@ -117,6 +118,8 @@ jobs:
               - 'scripts/install-ffmpeg-linux.mjs'
               - 'apps/server/src/Weir.Infrastructure/Migrations/**'
               - 'apps/server/src/Weir.Infrastructure/Sqlite/**'
+              # The recovery command the package smokes run (PLAT-20).
+              - 'apps/server/src/Weir.Infrastructure/Auth/Recover*'
               - '.github/workflows/ci-packaging.yml'
             # The real ffmpeg, ffprobe and mkvmerge the server tests run against (their pins and installers) and the check
             # that every real-tool test ran. The workflows filter below covers the actions that call them.
@@ -389,6 +392,8 @@ jobs:
 
       # On a self-hosted PC: `bash` resolves to Windows' own bash.exe (WSL) unless Git's comes first on PATH, and
       # the service account's temporary folder is under C:\Windows, where Weir rightly refuses to watch a folder.
+      # Several runners share that PC and its one account, so each keeps its NuGet packages in its own tool cache:
+      # one shared folder let a restore in one job rewrite a package another job's compiler had open (CS0009).
       - name: Self-hosted PC set-up
         if: runner.environment == 'self-hosted'
         shell: powershell
@@ -398,6 +403,8 @@ jobs:
           New-Item -ItemType Directory -Force -Path $temp | Out-Null
           Add-Content -Path $env:GITHUB_ENV -Value "TEMP=$temp"
           Add-Content -Path $env:GITHUB_ENV -Value "TMP=$temp"
+          Add-Content -Path $env:GITHUB_ENV -Value "NUGET_PACKAGES=$env:RUNNER_TOOL_CACHE\nuget\packages"
+          Add-Content -Path $env:GITHUB_ENV -Value "NUGET_HTTP_CACHE_PATH=$env:RUNNER_TOOL_CACHE\nuget\http-cache"
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         # A self-hosted runner's service account cannot write to Program Files; the tool cache is its own.
@@ -652,6 +659,8 @@ jobs:
 
       # On a self-hosted PC: `bash` resolves to Windows' own bash.exe (WSL) unless Git's comes first on PATH, and
       # the service account's temporary folder is under C:\Windows, where Weir rightly refuses to watch a folder.
+      # Several runners share that PC and its one account, so each keeps its NuGet packages in its own tool cache:
+      # one shared folder let a restore in one job rewrite a package another job's compiler had open (CS0009).
       - name: Self-hosted PC set-up
         if: runner.environment == 'self-hosted'
         shell: powershell
@@ -661,6 +670,8 @@ jobs:
           New-Item -ItemType Directory -Force -Path $temp | Out-Null
           Add-Content -Path $env:GITHUB_ENV -Value "TEMP=$temp"
           Add-Content -Path $env:GITHUB_ENV -Value "TMP=$temp"
+          Add-Content -Path $env:GITHUB_ENV -Value "NUGET_PACKAGES=$env:RUNNER_TOOL_CACHE\nuget\packages"
+          Add-Content -Path $env:GITHUB_ENV -Value "NUGET_HTTP_CACHE_PATH=$env:RUNNER_TOOL_CACHE\nuget\http-cache"
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         # A self-hosted runner's service account cannot write to Program Files; the tool cache is its own.

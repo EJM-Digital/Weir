@@ -14,11 +14,13 @@ import {
   postRevokeSession,
 } from "../api/auth-api";
 import type { UserPublic } from "../api/types";
-import { markLoginSucceeded } from "./session-kept";
+import { clearLoginSucceeded, markLoginSucceeded } from "./session-kept";
 import {
   clearSignedIn,
+  finishChangingPassword,
   finishSigningOut,
   markSignedIn,
+  startChangingPassword,
   startSigningOut,
 } from "./signed-in-before";
 import { activityKeys } from "../activity/query-keys";
@@ -100,6 +102,7 @@ export function useLoginMutation() {
       // rejected cookie rather than a silent bounce back to the form (#453).
       markLoginSucceeded();
       markSignedIn();
+      finishChangingPassword();
       // Anonymous /me is cached as `null` (401). Hydrate from the login response — do not invalidate
       // /me here: an immediate refetch can run before the session cookie is visible to fetch(), get
       // 401, and overwrite this cache back to null (E2E/CI flake).
@@ -203,10 +206,17 @@ export function useChangePasswordMutation() {
       currentPassword: string;
       newPassword: string;
     }) => postChangePassword(currentPassword, newPassword),
+    onMutate: () => {
+      // The sign-in may end before the answer arrives, and it must not read as a cookie the browser refused.
+      clearLoginSucceeded();
+      startChangingPassword();
+    },
+    onError: finishChangingPassword,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: authKeys.me });
-      void qc.invalidateQueries({ queryKey: authKeys.session });
-      void qc.invalidateQueries({ queryKey: activityKeys.recent });
+      // The server has ended every sign-in, this one included, so no one is left to ask who is signed in: the page
+      // goes to the sign-in page, which says the password was changed.
+      qc.setQueryData(authKeys.me, null);
+      qc.setQueryData(authKeys.session, null);
     },
   });
 }

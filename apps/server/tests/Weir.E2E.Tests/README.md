@@ -69,5 +69,10 @@ its first failure there too: open the trace before anything is loosened.
 - **`Support/ProcessingRig`** is a second Weir for a test that watches a file move through the screens: one worker over a fake
   ffmpeg, so a pass stays under way until the test releases it, and a fake Deluno. Files arrive and finish through the hand-off
   webhook and the outcome route, as a media manager makes them, never by writing to the database.
+- **`Support/LibraryRig`** is a third Weir for a test that works the Library page: one movie workflow whose library folder holds films the fake ffprobe reads
+  tracks from, the fake ffmpeg to clean them, and optionally a Radarr that lists the films and deletes one when asked. A scan, a clean and a rules change all go through the API.
+- **`Support/RequestLog`** records every request that can change something which a page sends to Weir (anything but a read). A test about a dialog takes a mark when the
+  dialog is open and asks what the page sent since: nothing for a dialog that was cancelled, exactly the request the dialog is for for one that was confirmed. It sits beside the
+  state read back through the API, so a request the page hid and a change the page never sent are both caught.
 - **`Support/Navigation`** is sign-in, the side menu, the tabs of an area, Logs and the Activity chips. **`Support/PageChecks`**
   holds the structural checks and screenshots of the visual smoke tests.

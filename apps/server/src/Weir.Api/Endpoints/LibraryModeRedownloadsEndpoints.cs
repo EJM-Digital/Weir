@@ -141,6 +141,7 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
     public async Task<ApiResult> PostRedownloadAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        var session = await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var libraryId = request.PathInt("library_id", issues);
         var model = new BodyModel(payload, issues);
@@ -150,7 +151,6 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        var session = await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var asker = session.User.Username;
         request.RequireConfirmationToken(csrfToken);
 

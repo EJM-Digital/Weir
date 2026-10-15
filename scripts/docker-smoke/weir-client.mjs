@@ -82,6 +82,23 @@ export class WeirClient {
     this.#cookie = response.cookie;
   }
 
+  /** The status Weir answers a sign-in with, for a password it is expected to refuse; a session is kept only when it signs in. */
+  async loginStatus(username, password) {
+    const response = await this.#send("POST", "/auth/login", { username, password, csrf_token: await this.#csrf() });
+    if (response.status === 200) this.#cookie = response.cookie;
+    return response.status;
+  }
+
+  /** The sessions signed in to the account, as Weir lists them to the one asking. */
+  async activeSessions() {
+    return (await this.#read("/auth/sessions", "listing the signed-in sessions")).items;
+  }
+
+  /** Activity entries of one event type, newest first. */
+  async activity(eventType) {
+    return (await this.#read(`/activity/recent?event_type=${eventType}&limit=20`, "reading Activity")).items;
+  }
+
   /** The signed-in account's user name, or null when the session is not accepted. */
   async signedInAs() {
     const response = await this.#send("GET", "/auth/me");

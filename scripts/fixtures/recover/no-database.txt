@@ -1,0 +1,7 @@
+exit code: 2
+--- stdout ---
+
+--- stderr ---
+Warning: --password stays in your shell history and is visible in the process list while Weir recover runs. Omit it to be prompted instead.
+There is no Weir database at C:\Temp\weir-recover-smoke\data\weir.sqlite3, so there is nothing to recover.
+If Weir keeps its data somewhere else, set WEIR_HOME to that folder and run this again.

@@ -1,10 +1,13 @@
 // Running commands for the smoke, which only ever runs on a Linux machine with Docker.
 import { spawnSync } from "node:child_process";
 
-/** Runs a shell command line and reports how it ended, whether or not it succeeded. `status` is null when `timeoutMs` killed it. */
+/**
+ * Runs a shell command line and reports how it ended, whether or not it succeeded: the exit `status` (null when `timeoutMs` killed it),
+ * `stdout` and `stderr` apart, and `output` as both together.
+ */
 export function runForStatus(command, { env = {}, timeoutMs } = {}) {
   const result = spawnSync("sh", ["-c", command], { encoding: "utf8", env: { ...process.env, ...env }, maxBuffer: 64 * 1024 * 1024, timeout: timeoutMs });
-  return { status: result.status, output: `${result.stdout}${result.stderr}` };
+  return { status: result.status, stdout: result.stdout, stderr: result.stderr, output: `${result.stdout}${result.stderr}` };
 }
 
 /** Runs a shell command line and returns its output (stdout, then stderr). A non-zero exit throws, unless `allowFailure`. */
