@@ -1558,8 +1558,12 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryScheduleApiTests.cs",
+          "name": "LibraryScheduleApiTests"
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryModeScheduleApiTests.cs",
@@ -1581,17 +1585,12 @@
           "name": "LibraryModeScheduleTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Only the happy path in one test; validation, refusals and turning it off are not shown over HTTP"
-      },
-      "issue": 1002,
       "covers": [
         "route:POST /api/v1/processing/libraries/{library_id}/library-schedule"
       ],
       "audit": {
         "id": "R-038",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -2739,26 +2738,30 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "No server test requests /log/download: format, filename, content type, auth, 404"
-      },
-      "issue": 1002,
-      "covers": [
-        "route:GET /api/v1/processing/files/{file_id}/log/download"
-      ],
-      "audit": {
-        "id": "R-067",
-        "verdict": "Gap"
-      },
-      "partial": [
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingFileLogDownloadApiTests.cs",
+          "name": "ProcessingFileLogDownloadApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/FileLogDownloadTests.cs",
+          "name": "FileLogDownloadTests"
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingFileLogDownloadLimitApiTests.cs",
           "name": "ProcessingFileLogDownloadLimitApiTests"
         }
-      ]
+      ],
+      "covers": [
+        "route:GET /api/v1/processing/files/{file_id}/log/download"
+      ],
+      "audit": {
+        "id": "R-067",
+        "verdict": "Covered"
+      }
     },
     {
       "id": "api.processing.get-processing-files-file-id-tracks",
@@ -2943,8 +2946,12 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/MoveToTopApiTests.cs",
+          "name": "MoveToTopApiTests"
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/SessionTouchWriteLockApiTests.cs",
@@ -2971,17 +2978,12 @@
           "name": "MoveFileToTopTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The route's own ordering effect, 404/409 answers, auth and CSRF are not shown over HTTP"
-      },
-      "issue": 1002,
       "covers": [
         "route:POST /api/v1/processing/files/{file_id}/move-to-top"
       ],
       "audit": {
         "id": "R-073",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -3124,25 +3126,24 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/RecoverFinalizeFailedApiTests.cs",
+          "name": "RecoverFinalizeFailedApiTests"
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/SessionTouchWriteLockApiTests.cs",
           "name": "Recovering_a_finalize_failed_job_on_the_request_that_touches_the_session_succeeds"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Only the deadlock regression. No test of what recovery does to the output/source, the refusal for a job not in that state, or viewer/CSRF refusal"
-      },
-      "issue": 1002,
       "covers": [
         "route:POST /api/v1/processing/jobs/{job_id}/recover-finalize-failed"
       ],
       "audit": {
         "id": "R-078",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {

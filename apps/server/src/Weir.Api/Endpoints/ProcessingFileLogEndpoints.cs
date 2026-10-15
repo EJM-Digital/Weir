@@ -103,10 +103,12 @@ internal sealed class ProcessingFileLogEndpointHandlers
             safe = "file";
         }
 
+        var fileName = $"weir-{safe}.log.txt";
+        var quoted = Uri.EscapeDataString(fileName);
         var text = _fileLogs.RenderLogText(rows, retained);
         return new CustomApiResult(context =>
         {
-            context.Response.Headers.ContentDisposition = $"attachment; filename=\"weir-{safe}.log.txt\"";
+            context.Response.Headers.ContentDisposition = quoted != fileName ? $"attachment; filename*=utf-8''{quoted}" : $"attachment; filename=\"{fileName}\"";
             return ApiResponses.WritePlainTextAsync(context, StatusCodes.Status200OK, text);
         });
     }
