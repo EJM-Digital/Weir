@@ -247,7 +247,7 @@
         "report": {
           "available_methods": [],
           "detected": false,
-          "detail": "Weir could not ask ffmpeg which acceleration methods it supports (Command '['ffmpeg', '-hide_banner', '-hwaccels']' timed out after 10.0 seconds).",
+          "detail": "FFmpeg didn't answer in time. Check again in a moment.",
           "vendors": []
         }
       }

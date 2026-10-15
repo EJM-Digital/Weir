@@ -586,8 +586,18 @@ public sealed class ProcessingWatchedFolderWatcherServiceTests
     {
         private readonly ConcurrentDictionary<string, List<FakeFileSystemWatcher>> _created = new(StringComparer.Ordinal);
 
-        public List<FakeFileSystemWatcher> CreatedFor(string folder) =>
-            _created.TryGetValue(Path.GetFullPath(folder), out var list) ? list.ToList() : [];
+        public List<FakeFileSystemWatcher> CreatedFor(string folder)
+        {
+            if (!_created.TryGetValue(Path.GetFullPath(folder), out var list))
+            {
+                return [];
+            }
+
+            lock (list)
+            {
+                return list.ToList();
+            }
+        }
 
         internal override FileSystemWatcher CreateFileSystemWatcher(string folder) => new FakeFileSystemWatcher(folder);
 
