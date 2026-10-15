@@ -4334,6 +4334,31 @@
           "name": "The_hardware_report_needs_a_session_and_then_answers"
         },
         {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MediaToolsTests.cs",
+          "name": "An_ffmpeg_starved_of_the_processor_is_not_reported_as_unreachable"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MediaToolsTests.cs",
+          "name": "The_quick_probe_runs_at_normal_priority_with_the_measured_time_limit"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MediaToolsTests.cs",
+          "name": "A_timeout_says_ffmpeg_did_not_answer_in_time_and_offers_another_check"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Media/HardwareAccelerationTests.cs",
+          "name": "A_slow_ffmpeg_says_it_did_not_answer_in_time_and_does_not_blame_the_ask"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processes/ProcessRunnerTests.cs",
+          "name": "A_tool_asked_for_normal_priority_runs_at_normal_priority"
+        },
+        {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/FakesWithServerTests.cs",
           "name": "FakesWithServerTests"
@@ -4763,6 +4788,16 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteApiTests.cs",
           "name": "Media_tools_are_operator_only_and_always_report_both_tools"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MediaToolVersionReportTests.cs",
+          "name": "Both_version_questions_run_at_normal_priority_with_the_measured_time_limit"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MediaToolVersionReportTests.cs",
+          "name": "Tools_starved_of_the_processor_are_not_reported_as_unknown"
         },
         {
           "type": "xunit",
