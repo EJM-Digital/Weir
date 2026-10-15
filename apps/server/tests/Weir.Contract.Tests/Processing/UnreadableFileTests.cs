@@ -174,7 +174,7 @@ public sealed class UnreadableFileTests
         await scenario.EnqueueFilePassAsync("Already.Clean.2020/film.mkv", library, passThroughUnchanged: true);
 
         // A manual pass with no prior scan may leave no Files row, so the job is what is watched.
-        await Poll.UntilAsync(
+        await scenario.WaitWhileWorkedOnAsync(
             async () => (await scenario.JobsAsync(Scenario.RemuxKind)).Any(job => (string)job["status"]! == "completed"),
             "the pass to finish");
         var completed = Assert.Single(await scenario.ActivityAsync("processing.file_remux_pass_completed"));

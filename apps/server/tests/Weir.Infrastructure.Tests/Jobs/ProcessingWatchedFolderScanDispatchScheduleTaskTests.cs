@@ -21,7 +21,7 @@ public sealed class ProcessingWatchedFolderScanDispatchScheduleTaskTests
 
     /// <summary><c>StoreFixture</c> runs the real migrations, which seed a Movies/TV library each
     /// (ADR-0014) — point the seeded Movies library at these folders rather than creating a second one.</summary>
-    private static async Task<long> CreateLibraryAsync(StoreFixture store, string watched, string output, long scanIntervalSeconds = 10)
+    internal static async Task<long> CreateLibraryAsync(StoreFixture store, string watched, string output, long scanIntervalSeconds = 10)
     {
         await using var uow = await UnitOfWork.OpenAsync(store.Database);
         var seeded = await Libraries.SeededForScopeAsync(uow, ProcessingMediaScopes.Movie) ?? throw new InvalidOperationException("No seeded Movies library.");

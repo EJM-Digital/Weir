@@ -130,11 +130,22 @@ internal sealed class SwapWorld : IAsyncDisposable
         JobsApi.Expect(response, HttpStatusCode.OK);
     }
 
-    /// <summary>Waits until the swap has reached the point it was told to stop at, and returns the name of that point.</summary>
+    /// <summary>
+    /// Waits until the swap has reached the point it was told to stop at, and returns the name of that point. The held clean keeps its
+    /// lease, so this waits as long as a worker has it (see <see cref="WaitWhileWorkedOnAsync{T}"/>).
+    /// </summary>
     public async Task<string> HeldAtAsync() =>
-        await Poll.UntilAsync(
+        await WaitWhileWorkedOnAsync(
             () => Task.FromResult(File.Exists(HeldFile) ? File.ReadAllText(HeldFile) : null),
             "the swap to stop at the point it was told to");
+
+    /// <summary>Waits for <paramref name="result"/> for as long as a worker holds any of the server's jobs (see <see cref="JobWait"/>).</summary>
+    public async Task<T> WaitWhileWorkedOnAsync<T>(Func<Task<T?>> result, string what)
+        where T : class =>
+        await new JobWait().UntilAsync(async () => [.. (await JobsApi.AllJobsAsync(Client)).Select(job => (string)job["status"]!)], result, what);
+
+    public async Task WaitWhileWorkedOnAsync(Func<Task<bool>> condition, string what) =>
+        await WaitWhileWorkedOnAsync(async () => await condition() ? "done" : null, what);
 
     /// <summary>Ends the server's process as a crash or a power cut would, with the swap where it stopped.</summary>
     public Task CrashAsync() => Server.StopAsync();
@@ -204,7 +215,7 @@ internal sealed class SwapWorld : IAsyncDisposable
     {
         var scan = await Client.PostWithCsrfAsync($"{WeirClient.Api}/processing/libraries/{LibraryId}/library-scan", new JsonObject());
         JobsApi.Expect(scan, HttpStatusCode.OK);
-        await Poll.UntilAsync(
+        await WaitWhileWorkedOnAsync(
             async () =>
             {
                 var files = await Client.GetAsync($"{WeirClient.Api}/processing/libraries/{LibraryId}/library-files");

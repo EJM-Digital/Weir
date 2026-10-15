@@ -31,9 +31,9 @@ internal sealed class MediaManagerFixture : IDisposable
         Libraries = new LibraryStore();
         Handback = new HandbackStore();
         Ledger = new HandoffLedgerStore(Store.Clock, Targets, Files);
-        Jobs = new ProcessingJobStore(Store.Database, Store.Clock, changes: Changes);
+        Jobs = new ProcessingJobStore(Store.Database, Store.Clock, wakeSignals: WakeSignals, changes: Changes);
         SkipMarkers = new FileSkipMarkerStore();
-        Reporter = new HandoffCompletionReporter(Connections, ConnectionStore, Ledger, Targets, Libraries, Http);
+        Reporter = new HandoffCompletionReporter(Connections, ConnectionStore, Ledger, Targets, Libraries, Http, Store.Clock);
         Artwork = new ArtworkSubjects(new ArtworkLookupStore(), new ArtworkFileStore());
         Intake = new MediaManagerIntake(Store.Options, Connections, ConnectionStore, Ledger, Targets, Jobs, SkipMarkers, Reporter, Artwork, Store.Clock, Activity);
         OperatorSettings = new OperatorSettingsStore();
@@ -81,6 +81,9 @@ internal sealed class MediaManagerFixture : IDisposable
     public OperatorSettingsStore OperatorSettings { get; }
 
     public DataChangePublisher Changes { get; } = new();
+
+    /// <summary>What the job store wakes when a job becomes claimable.</summary>
+    public WorkerWakeSignals WakeSignals { get; } = new();
 
     public PendingJobCancellation Cancellation { get; }
 
