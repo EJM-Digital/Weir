@@ -48975,6 +48975,11 @@
           "name": "LinuxOutputOwnershipToolsRealFilesystemTests"
         },
         {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassOutputOwnershipTests.cs",
+          "name": "RemuxPassOutputOwnershipTests"
+        },
+        {
           "type": "container-smoke",
           "file": "scripts/docker-compose-smoke.mjs",
           "name": "*"

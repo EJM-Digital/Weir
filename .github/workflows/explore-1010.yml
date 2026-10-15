@@ -64,7 +64,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: node scripts/docker-compose-smoke.mjs media --candidate weir-ci-smoke --logs artifacts/explore
       - name: Each container check against an image missing it
-        if: false
+        if: ${{ !cancelled() }}
         run: sh scripts/explore-1010/mutants.sh container weir-ci-smoke
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: ${{ !cancelled() }}
