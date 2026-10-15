@@ -4,11 +4,15 @@ using Weir.Core.Configuration;
 using Weir.Core.Jobs;
 using Weir.Core.LibraryMode;
 using Weir.Core.Processing;
+using Weir.Core.Time;
 using Weir.Core.Workers;
 using Weir.Infrastructure.Activity;
+using Weir.Infrastructure.Auth;
 using Weir.Infrastructure.Jobs;
 using Weir.Infrastructure.LibraryMode;
 using Weir.Infrastructure.Processing;
+using Weir.Infrastructure.Settings;
+using Weir.Infrastructure.Sqlite;
 
 namespace Weir.Infrastructure.Tests.Jobs;
 
@@ -79,6 +83,40 @@ public sealed class WorkerLaneWakeTests : IDisposable
             _db.Clock.Advance(new WorkerLoopTimings().IdleSleep);
 
             await claimed.Task.WaitAsync(Ceiling);
+        }
+        finally
+        {
+            await service.StopAsync(CancellationToken.None);
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(JobsByLane))]
+    public async Task A_job_held_back_by_a_pause_is_claimed_when_processing_is_resumed_without_the_poll_interval_passing(WorkLane lane, string jobKind)
+    {
+        _db.Pause(scanWhilePaused: false);
+        var claimed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var idle = new IdleSlots(lane == WorkLane.Files ? 1 : WorkLanes.UpkeepSlots);
+        var service = Lane(lane, jobKind, claimed, idle.Waiting);
+        var pausedAt = _db.Clock.GetUtcNow();
+        await service.StartAsync(CancellationToken.None);
+        try
+        {
+            await idle.AllWaiting.WaitAsync(Ceiling);
+            // A row put straight into the table: nothing signals the lane, so only the resume can bring the slots back.
+            _db.InsertRawJob("job:held", jobKind);
+
+            var pause = new SuitePauseService(new SuiteSettingsStore(new AuthStore()), new ActivityStore(), new DataChangePublisher(), _signals);
+            var uow = await UnitOfWork.OpenAsync(_db.Database);
+            await using (uow)
+            {
+                await pause.ChangeAsync(uow, paused: false, minutes: null, keepEnd: false, scanWhilePaused: true, Timestamp.UtcNow(_db.Clock), "alice");
+                await uow.CommitAsync();
+            }
+
+            await claimed.Task.WaitAsync(Ceiling);
+
+            Assert.Equal(pausedAt, _db.Clock.GetUtcNow());
         }
         finally
         {

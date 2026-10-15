@@ -3,6 +3,7 @@ using Weir.Core.Activity;
 using Weir.Core.Settings;
 using Weir.Core.Time;
 using Weir.Infrastructure.Activity;
+using Weir.Infrastructure.Jobs;
 using Weir.Infrastructure.Sqlite;
 
 namespace Weir.Infrastructure.Settings;
@@ -20,12 +21,14 @@ public sealed class SuitePauseService
     private readonly SuiteSettingsStore _settings;
     private readonly ActivityStore _activity;
     private readonly DataChangePublisher _changes;
+    private readonly WorkerWakeSignals? _workers;
 
-    public SuitePauseService(SuiteSettingsStore settings, ActivityStore activity, DataChangePublisher changes)
+    public SuitePauseService(SuiteSettingsStore settings, ActivityStore activity, DataChangePublisher changes, WorkerWakeSignals? workers = null)
     {
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _activity = activity ?? throw new ArgumentNullException(nameof(activity));
         _changes = changes ?? throw new ArgumentNullException(nameof(changes));
+        _workers = workers;
     }
 
     /// <summary>The pause as it stands at <paramref name="now"/>; a timed pause that has run out is lifted, and said so, first.</summary>
@@ -63,6 +66,8 @@ public sealed class SuitePauseService
         else if (!after.Paused && before.Paused)
         {
             await _activity.RecordAsync(uow, ActivityEventTypes.SystemProcessingResumed, "system", "Processing resumed", $"{actor} resumed processing.").ConfigureAwait(false);
+            // Someone resumed it, so the idle slots look now rather than at their next poll. After the commit, so the look sees the resumed state.
+            uow.OnCommitted(() => _workers?.WakeEveryLane());
         }
 
         return after;

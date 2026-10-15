@@ -37,7 +37,7 @@ import { spawnSync } from "node:child_process";
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CONTAINER_SMOKE_FILE, REAL_FS_FILE, TestIndex, read } from "./coverage/testindex.mjs";
+import { CONTAINER_SMOKE_FILE, PACKAGE_SMOKE_FILE, REAL_FS_FILE, TestIndex, read } from "./coverage/testindex.mjs";
 import { buildInventory, countsOf } from "./coverage/inventory.mjs";
 
 export const REGISTER = "docs/testing/coverage-register.json";
@@ -149,7 +149,7 @@ function typeMismatch(p, index) {
     case "contract":
       return p.file.startsWith("apps/server/tests/Weir.Contract.Tests/") ? null : `a contract proof must be a test in Weir.Contract.Tests, not ${p.file}`;
     case "package-smoke":
-      return p.file === "scripts/smoke-windows-package.ps1" || p.file.startsWith("apps/server/tools/Weir.LiveAudit/") ? null : `a package-smoke proof must be the Windows package smoke or the live audit, not ${p.file}`;
+      return PACKAGE_SMOKE_FILE.test(p.file) || p.file.startsWith("apps/server/tools/Weir.LiveAudit/") ? null : `a package-smoke proof must be a Windows package smoke or the live audit, not ${p.file}`;
     case "real-fs":
       return REAL_FS_FILE.test(p.file) ? null : `a real-fs proof must be a C# test of the server or the tray, not ${p.file}`;
     case "container-smoke":

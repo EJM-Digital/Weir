@@ -195,6 +195,7 @@ internal sealed class ProcessingFileTracksEndpointHandlers
     public async Task<ApiResult> PostManualPlanAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        var session = await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("file_id", issues);
         var model = new BodyModel(payload, issues);
@@ -238,7 +239,6 @@ internal sealed class ProcessingFileTracksEndpointHandlers
 
         var choice = new ManualPlanChoice(keep, order);
 
-        var session = await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken, "Invalid or expired CSRF token.");
 
         var uow = await request.DbAsync().ConfigureAwait(false);

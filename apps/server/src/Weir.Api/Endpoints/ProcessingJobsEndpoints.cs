@@ -91,6 +91,7 @@ internal sealed class ProcessingJobsEndpointHandlers
     public async Task<ApiResult> PostCancelPendingAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("job_id", issues);
         var model = new BodyModel(payload, issues);
@@ -98,7 +99,6 @@ internal sealed class ProcessingJobsEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
         // One transaction, this request's own (#643): the job, the file it was for and the hand-off it belonged to change
         // together or not at all. Nothing here opens a second connection, so the session touch RequireUserAsync may have
@@ -132,6 +132,7 @@ internal sealed class ProcessingJobsEndpointHandlers
     public async Task<ApiResult> PostRecoverFinalizeFailedAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        var user = await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("job_id", issues);
         var model = new BodyModel(payload, issues);
@@ -139,7 +140,6 @@ internal sealed class ProcessingJobsEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        var user = await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
         // Same reason as the cancel-pending handler above: the session touch is the only write in this
         // request's transaction, and it must be committed before the store's own connection asks for the lock.

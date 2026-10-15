@@ -209,6 +209,7 @@ internal sealed class ProcessingLibraryEndpointHandlers
     public async Task<ApiResult> PostLibraryAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(payload, issues);
         var csrfToken = model.Str("csrf_token", minLength: 1);
@@ -221,7 +222,6 @@ internal sealed class ProcessingLibraryEndpointHandlers
 
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
 
         var uow = await request.DbAsync().ConfigureAwait(false);
@@ -244,6 +244,7 @@ internal sealed class ProcessingLibraryEndpointHandlers
     public async Task<ApiResult> PutLibraryAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var pathIssues = new ValidationIssues();
         var id = request.PathInt("library_id", pathIssues);
@@ -259,7 +260,6 @@ internal sealed class ProcessingLibraryEndpointHandlers
 
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
 
         var uow = await request.DbAsync().ConfigureAwait(false);
@@ -283,6 +283,7 @@ internal sealed class ProcessingLibraryEndpointHandlers
     public async Task<ApiResult> DeleteLibraryAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("library_id", issues);
         var model = new BodyModel(payload, issues);
@@ -290,7 +291,6 @@ internal sealed class ProcessingLibraryEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
 
         var uow = await request.DbAsync().ConfigureAwait(false);
@@ -320,6 +320,7 @@ internal sealed class ProcessingLibraryEndpointHandlers
     public async Task<ApiResult> PostReorderAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(payload, issues);
         var csrfToken = model.Str("csrf_token", minLength: 1);
@@ -332,7 +333,6 @@ internal sealed class ProcessingLibraryEndpointHandlers
 
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
 
         var uow = await request.DbAsync().ConfigureAwait(false);

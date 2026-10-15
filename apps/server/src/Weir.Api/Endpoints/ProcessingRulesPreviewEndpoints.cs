@@ -55,6 +55,7 @@ internal sealed class ProcessingRulesPreviewEndpointHandlers
     public async Task<ApiResult> PostPreviewAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var pathIssues = new ValidationIssues();
         var libraryId = request.PathInt("library_id", pathIssues);
@@ -89,7 +90,6 @@ internal sealed class ProcessingRulesPreviewEndpointHandlers
         pathIssues.ThrowIfAny();
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
 
         var hasRelative = !string.IsNullOrWhiteSpace(relativePath);

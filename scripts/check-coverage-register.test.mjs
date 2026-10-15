@@ -340,6 +340,22 @@ const PLACEMENT = "apps/server/tests/Weir.Infrastructure.Tests/PlacementTests.cs
 const realFsProof = [{ type: "real-fs", file: PLACEMENT, name: "Places_the_file" }];
 const diskRow = (extra = {}) => ({ area: "file-lifecycle", severity: "high", touches: "disk", required: "real", proofs: realFsProof, ...extra });
 
+describe("e2e proofs", () => {
+  const FILE = "apps/server/tests/Weir.E2E.Tests/ThingTests.cs";
+  const source = (body) => `public sealed class ThingTests\n{\n    [E2EFact]\n    public async Task Opens_the_thing()\n    {\n${body}    }\n}\n`;
+
+  test("a test marked with an attribute that has a digit in its name is found, by its own name", () => {
+    const idx = new TestIndex(fixture({ [FILE]: source("        await page.ClickAsync();\n") }));
+    assert.equal(idx.hasName(FILE, "Opens_the_thing"), true);
+    assert.deepEqual(idx.stubInfo(FILE, "Opens_the_thing"), { stubbed: false, decided: true });
+  });
+
+  test("a test that intercepts requests is stubbed, decided from its own body", () => {
+    const idx = new TestIndex(fixture({ [FILE]: source('        await page.RouteAsync("**/*", route => route.FulfillAsync());\n') }));
+    assert.deepEqual(idx.stubInfo(FILE, "Opens_the_thing"), { stubbed: true, decided: true });
+  });
+});
+
 describe("real-fs proofs", () => {
   const index = (body, setup) => new TestIndex(fixture({ [PLACEMENT]: csTest(body, setup) }));
 

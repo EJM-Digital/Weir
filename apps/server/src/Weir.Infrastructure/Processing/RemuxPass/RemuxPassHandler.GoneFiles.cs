@@ -58,7 +58,7 @@ public sealed partial class RemuxPassHandler
     private async Task LookAgainForGoneFileAsync(
         long jobId, WireObject data, WireObject? origin, WireObject result, (string WatchedFolder, string RelativePath, string MediaScope, long? LibraryId) file, CancellationToken cancellationToken)
     {
-        if (_jobs is null || result.Get("outcome") is not WireString { Value: RemuxPassOutcomes.SourceGone } || result.Get(GoneLooksKey) is not WireInteger { Value: var looks } || looks != 0)
+        if (_jobs is not { } jobs || result.Get("outcome") is not WireString { Value: RemuxPassOutcomes.SourceGone } || result.Get(GoneLooksKey) is not WireInteger { Value: var looks } || looks != 0)
         {
             return;
         }
@@ -76,7 +76,7 @@ public sealed partial class RemuxPassHandler
         {
             await LockedWrites.RunAsync(
                 _database,
-                uow => GoneLooks.StartForFileAsync(uow, file.RelativePath, file.MediaScope, libraryId),
+                uow => GoneLooks.StartForFileAsync(uow, file.RelativePath, file.MediaScope, libraryId, jobs.WakeWorkers),
                 _logger,
                 "start the look at a file that is back",
                 cancellationToken).ConfigureAwait(false);

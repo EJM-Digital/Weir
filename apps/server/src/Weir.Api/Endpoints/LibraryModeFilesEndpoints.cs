@@ -245,6 +245,7 @@ internal sealed class LibraryModeFilesEndpointHandlers
     public async Task<ApiResult> PostCleanAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var libraryId = request.PathInt("library_id", issues);
         var model = new BodyModel(payload, issues);
@@ -261,7 +262,6 @@ internal sealed class LibraryModeFilesEndpointHandlers
             throw new ApiException(StatusCodes.Status400BadRequest, "Select at least one file to clean.");
         }
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
 
         var uow = await request.DbAsync().ConfigureAwait(false);
@@ -374,6 +374,7 @@ internal sealed class LibraryModeFilesEndpointHandlers
     public async Task<ApiResult> PostLeaveAloneAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var libraryId = request.PathInt("library_id", issues);
         var model = new BodyModel(payload, issues);
@@ -383,7 +384,6 @@ internal sealed class LibraryModeFilesEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
         var uow = await request.DbAsync().ConfigureAwait(false);
         var library = await RequireLibraryAsync(uow, _libraries, libraryId, LibraryModeMapping.NoLibraryWithThatId).ConfigureAwait(false);
