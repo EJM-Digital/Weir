@@ -23,7 +23,7 @@ public sealed class WeirServer : IAsyncDisposable
 
     private const string ListenHost = "127.0.0.1";
 
-    private static readonly TimeSpan StartTimeout = TimeSpan.FromSeconds(90);
+    private static readonly TimeSpan OutputGrace = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan ReadyPollInterval = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan ReadyProbeTimeout = TimeSpan.FromSeconds(2);
     private static readonly HttpClient ReadyProbe = new() { Timeout = ReadyProbeTimeout };
@@ -34,6 +34,7 @@ public sealed class WeirServer : IAsyncDisposable
     private readonly List<ServerLog> _logs = [];
     private readonly string? _evidenceName = FailureEvidence.CurrentName;
     private Process? _process;
+    private ServerLog? _current;
     private int? _keptPort;
 
     private WeirServer(ServerBinary binary, string home, Dictionary<string, string> environment, Func<int> pickPort)
@@ -144,6 +145,10 @@ public sealed class WeirServer : IAsyncDisposable
             }
 
             await process.WaitForExitAsync();
+            if (_current is not null)
+            {
+                await OutputInLogAsync(_current);
+            }
         }
         finally
         {
@@ -208,6 +213,7 @@ public sealed class WeirServer : IAsyncDisposable
         BaseUrl = new Uri($"http://{ListenHost}:{port}/");
         var log = new ServerLog(Path.Combine(Home, "contract-logs", $"server-{_logs.Count + 1}.log"));
         _logs.Add(log);
+        _current = log;
         if (note is not null)
         {
             log.Note(note);
@@ -238,14 +244,15 @@ public sealed class WeirServer : IAsyncDisposable
 
     private async Task WaitUntilReadyAsync(Process process, ServerLog log, int port)
     {
-        var deadline = DateTime.UtcNow + StartTimeout;
+        var progress = new StartProgressWatch(process.Id, TimeProvider.System);
         var lastProblem = "no answer yet";
-        while (DateTime.UtcNow < deadline)
+        while (true)
         {
             if (process.HasExited)
             {
                 // Waits for the last of its output to reach the log, which is what says why it exited.
                 await process.WaitForExitAsync();
+                await OutputInLogAsync(log);
                 var message =
                     $"The Weir server exited with code {process.ExitCode} before it was ready.{Environment.NewLine}Last lines of its log ({log.Path}):{Environment.NewLine}{log.StartFailure()}";
                 throw ServerBindFailure.IsPortInUse(log.Text())
@@ -269,12 +276,47 @@ public sealed class WeirServer : IAsyncDisposable
             }
 
             lastProblem = problem;
+            progress.Observe(ReadProgress());
+            if (progress.IsHung(out var silentFor))
+            {
+                throw new TimeoutException(
+                    $"The Weir server did not report ready at {BaseUrl}ready: it has said nothing about its start for {silentFor.TotalSeconds:0}s (last phase {progress.Phase ?? "none"}; {lastProblem}).{Environment.NewLine}Last lines of its log ({log.Path}):{Environment.NewLine}{log.Tail()}");
+            }
 
             await Task.Delay(ReadyPollInterval);
         }
+    }
 
-        throw new TimeoutException(
-            $"The Weir server did not report ready at {BaseUrl}ready within {StartTimeout.TotalSeconds:0}s ({lastProblem}).{Environment.NewLine}Last lines of its log ({log.Path}):{Environment.NewLine}{log.Tail()}");
+    /// <summary>
+    /// Waits for what the server printed before it ended to reach its log. A child of the server that outlives it can hold the
+    /// streams open, so the wait has an end; what has arrived by then is what there is.
+    /// </summary>
+    private static async Task OutputInLogAsync(ServerLog log)
+    {
+        try
+        {
+            await log.OutputEnded.WaitAsync(OutputGrace);
+        }
+        catch (TimeoutException)
+        {
+            // A grandchild kept a pipe open.
+        }
+    }
+
+    /// <summary>The server's progress record as it stands, or null when there is none yet or the file is busy.</summary>
+    private string? ReadProgress()
+    {
+        try
+        {
+            using var stream = new FileStream(Path.Combine(Home, "startup-progress.json"), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        }
+        catch (Exception unavailable) when (unavailable is IOException or UnauthorizedAccessException)
+        {
+            // Not written yet, or being replaced at this moment: the next look finds it.
+            return null;
+        }
     }
 
     /// <summary>Null when the server is ready, otherwise what it answered instead.</summary>
