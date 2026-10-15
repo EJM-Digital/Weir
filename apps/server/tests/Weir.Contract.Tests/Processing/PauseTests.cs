@@ -63,10 +63,11 @@ public sealed class PauseTests
         await scenario.SetPauseAsync(paused: false);
 
         var output = Path.Combine(scenario.Folders.Output, "Paused.Weir.Only.2024", "film.mkv");
-        await Poll.UntilAsync(
+        // Resuming queues nothing: the workflow's next periodic scan takes the waiting file up, so until then that scan is work Weir owes.
+        await scenario.WaitWhileWorkedOnAsync(
             () => Task.FromResult(File.Exists(output) && !Directory.Exists(download.Release)),
             "the waiting file to be cleaned and its original removed once processing resumed",
-            TimeSpan.FromSeconds(60));
+            async () => (string?)(await scenario.FileRowAsync(library, "Paused.Weir.Only.2024/film.mkv"))?["status"] == "out_of_schedule");
         await scenario.WaitForFileStatusAsync(library, "Paused.Weir.Only.2024/film.mkv", "processed");
         Assert.Single(scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux"));
         Assert.Single(await scenario.JobsAsync(Scenario.RemuxKind));

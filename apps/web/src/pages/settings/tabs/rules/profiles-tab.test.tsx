@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
+import { ApiHttpError } from "../../../../lib/api/client";
 import * as authQueries from "../../../../lib/auth/queries";
 import * as librariesApi from "../../../../lib/processing/libraries-api";
 import * as ruleSetsApi from "../../../../lib/processing/rule-sets-api";
@@ -273,5 +274,50 @@ it("asks before switching profiles with unsaved edits, and keeps them when told 
   fireEvent.click(screen.getByTestId("settings-unsaved-changes-confirm"));
   expect(screen.getByPlaceholderText("English feature films")).toHaveValue(
     "TV shows",
+  );
+});
+
+function removalOfAnUnusedProfile() {
+  stubEditableProfile();
+  vi.spyOn(ruleSetsApi, "fetchProcessingRuleSets").mockResolvedValue([
+    { ...ruleSet, used_by_library_count: 0 },
+  ]);
+}
+
+async function confirmRemovingTheProfile() {
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Remove profile" }),
+  );
+  fireEvent.click(screen.getByTestId("remove-rule-set-dialog-confirm"));
+}
+
+it("says why the server refused to remove a profile and keeps it selected", async () => {
+  removalOfAnUnusedProfile();
+  const reason =
+    "Feature films is still used by 1 workflow. Point them at another rule set first.";
+  vi.spyOn(ruleSetsApi, "deleteProcessingRuleSet").mockRejectedValue(
+    new ApiHttpError("/api/v1/processing/rule-sets/4", 409, reason),
+  );
+
+  render(<ProfilesTab />, { wrapper });
+  await confirmRemovingTheProfile();
+
+  expect(await screen.findByRole("status")).toHaveTextContent(reason);
+  expect(screen.getByPlaceholderText("English feature films")).toHaveValue(
+    "Feature films",
+  );
+});
+
+it("falls back to a plain sentence when the removal fails without a reason", async () => {
+  removalOfAnUnusedProfile();
+  vi.spyOn(ruleSetsApi, "deleteProcessingRuleSet").mockRejectedValue(
+    new TypeError("Failed to fetch"),
+  );
+
+  render(<ProfilesTab />, { wrapper });
+  await confirmRemovingTheProfile();
+
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "That profile could not be removed.",
   );
 });

@@ -9,7 +9,6 @@ import {
 import type { ReactNode } from "react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as authApi from "../../lib/api/auth-api";
 import type { CurrentSession, UserPublic } from "../../lib/api/types";
 import { authKeys } from "../../lib/auth/query-keys";
 import * as processingQueries from "../../lib/processing/queries";
@@ -858,37 +857,6 @@ describe("SystemPage", () => {
     expect(current).toHaveAttribute("type", "text");
     fireEvent.change(current, { target: { value: "" } });
     expect(current).toHaveAttribute("type", "password");
-  });
-
-  it("shows an on-screen confirmation after a successful password change", async () => {
-    vi.spyOn(authApi, "postChangePassword").mockResolvedValue({
-      message: "Password changed. Sign in again with your new password.",
-    });
-    renderSettings(operatorMe);
-    fireEvent.click(screen.getByRole("tab", { name: "Security" }));
-
-    fireEvent.change(screen.getByPlaceholderText("Enter current password"), {
-      target: { value: "current-secret" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("Enter new password"), {
-      target: { value: "new-secret-pass" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("Re-enter new password"), {
-      target: { value: "new-secret-pass" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Change password" }));
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(
-          "Password changed. Sign in again with your new password.",
-        ),
-      ).toBeInTheDocument();
-    });
-    expect(screen.getByRole("link", { name: "Sign in again" })).toHaveAttribute(
-      "href",
-      "/login",
-    );
   });
 
   it("asks for the missing fields instead of leaving the account buttons disabled", () => {

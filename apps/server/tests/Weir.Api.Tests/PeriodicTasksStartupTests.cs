@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Weir.Infrastructure.Jobs;
+using Weir.Infrastructure.Runtime;
 using Weir.Infrastructure.Scheduling;
 using Weir.Infrastructure.Sqlite;
 
@@ -20,6 +21,15 @@ public sealed class PeriodicTasksStartupTests
         var hosted = server.Services.GetServices<IHostedService>().ToList();
         Assert.Single(hosted.OfType<PeriodicTaskService>());
         Assert.True(hosted.FindIndex(service => service is JobsStartupRecoveryService) < hosted.FindIndex(service => service is PeriodicTaskService));
+    }
+
+    [Fact]
+    public async Task The_server_runs_one_pulse_that_notes_when_the_whole_process_could_not_run()
+    {
+        await using var server = await WeirTestServer.StartAsync();
+
+        var pulse = server.Services.GetRequiredService<ProcessPulse>();
+        Assert.Same(pulse, Assert.Single(server.Services.GetServices<IHostedService>().OfType<ProcessPulse>()));
     }
 
     [Fact]

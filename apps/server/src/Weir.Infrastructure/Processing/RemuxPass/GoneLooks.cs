@@ -77,26 +77,31 @@ internal static class GoneLooks
         return paths;
     }
 
-    /// <summary>Starts the waiting look at this file, remux or pass-through, if it has one, inside the caller's unit of work. True when one was started.</summary>
-    public static async Task<bool> StartForFileAsync(UnitOfWork uow, string relativePath, string mediaScope, long libraryId)
+    /// <summary>
+    /// Starts the waiting look at this file, remux or pass-through, if it has one, inside the caller's unit of work. True when one was
+    /// started; <paramref name="started"/> is told the kind of each, so the caller can wake the slots that run it.
+    /// </summary>
+    public static async Task<bool> StartForFileAsync(UnitOfWork uow, string relativePath, string mediaScope, long libraryId, Action<string> started)
     {
         ArgumentNullException.ThrowIfNull(uow);
+        ArgumentNullException.ThrowIfNull(started);
         var passThrough = await uow.QueryAsync(
             WaitingPassThroughSql + " AND json_extract(payload_json, '$.relative_media_path') = @path ORDER BY id",
             ProcessingJobStore.ReadJob,
             ("@path", relativePath)).ConfigureAwait(false);
         var looks = (await ActiveRemuxPasses.ForRelativePathAsync(uow, relativePath, mediaScope, libraryId).ConfigureAwait(false))
             .Concat(passThrough.Where(job => Names(job, libraryId, relativePath)));
-        var started = false;
+        var any = false;
         foreach (var look in looks)
         {
             if (IsWaiting(look) && await uow.ExecuteAsync(StartSql, ("@id", look.Id)).ConfigureAwait(false) > 0)
             {
-                started = true;
+                any = true;
+                started(look.JobKind);
             }
         }
 
-        return started;
+        return any;
     }
 
     private static bool Names(ProcessingJob job, long libraryId, string relativePath)

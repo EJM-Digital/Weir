@@ -66,6 +66,7 @@ internal sealed class LibraryModeEndpointHandlers
     public async Task<ApiResult> PutSettingsAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var libraryId = request.PathInt("library_id", issues);
         var model = new BodyModel(payload, issues);
@@ -80,7 +81,6 @@ internal sealed class LibraryModeEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
 
         var uow = await request.DbAsync().ConfigureAwait(false);
@@ -147,6 +147,7 @@ internal sealed class LibraryModeEndpointHandlers
     public async Task<ApiResult> PostScanAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var libraryId = request.PathInt("library_id", issues);
         var model = new BodyModel(payload, issues);
@@ -154,7 +155,6 @@ internal sealed class LibraryModeEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
 
         var uow = await request.DbAsync().ConfigureAwait(false);

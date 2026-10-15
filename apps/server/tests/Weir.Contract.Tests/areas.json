@@ -1,7 +1,7 @@
 {
   "_comment": "One entry per contract area, named as in [ContractArea(\"<name>\")]. CI runs each as its own leg: dotnet test --filter \"Area=<name>\". scripts/check-contract-areas.mjs keeps this list and the test classes in step.",
   "areas": [
-    { "name": "auth", "description": "Sign-in, sessions, CSRF, bootstrap, cookies, CORS and HTTP hardening." },
+    { "name": "auth", "description": "Sign-in, sessions, CSRF, bootstrap, cookies, CORS, HTTP hardening and who may call each route." },
     { "name": "system", "description": "Suite settings, logs, configuration bundle and backups, pause, health and readiness, metrics, notifications, directory browsing, startup schema." },
     { "name": "activity", "description": "Activity feed, stream, export and file history." },
     { "name": "media_managers", "description": "Media manager connections and capabilities, the intake webhook, and hand-off status." },

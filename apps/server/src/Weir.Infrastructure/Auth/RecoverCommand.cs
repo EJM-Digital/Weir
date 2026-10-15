@@ -70,11 +70,22 @@ public static class RecoverCommand
         RuntimeDirectories.Ensure(options);
         RuntimeDirectories.AssertSqliteDbLocationUsable(options.DbPath);
 
+        // Opening a SQLite path that is not there makes an empty database, so a folder Weir never used is refused before it is opened.
+        if (!File.Exists(options.DbPath))
+        {
+            return ReportNoDatabase(options.DbPath, stderr);
+        }
+
         var database = new SqliteDatabase(options.DbPath);
         var users = new AuthStore();
         var uow = await UnitOfWork.OpenAsync(database).ConfigureAwait(false);
         await using (uow.ConfigureAwait(false))
         {
+            if (await uow.CountAsync("SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = 'users'").ConfigureAwait(false) == 0)
+            {
+                return ReportNoDatabase(options.DbPath, stderr);
+            }
+
             var accounts = await users.ListUsersByUsernameAsync(uow).ConfigureAwait(false);
 
             if (parsed.List)
@@ -139,6 +150,13 @@ public static class RecoverCommand
             stdout.WriteLine($"{Plural.Of(revoked, "signed-in session")} {Plural.Noun(revoked, "was", "were")} ended — sign in again with the new password.");
             return ExitOk;
         }
+    }
+
+    private static int ReportNoDatabase(string databasePath, TextWriter stderr)
+    {
+        stderr.WriteLine($"There is no Weir database at {databasePath}, so there is nothing to recover.");
+        stderr.WriteLine("If Weir keeps its data somewhere else, set WEIR_HOME to that folder and run this again.");
+        return ExitFailed;
     }
 
     /// <summary>
