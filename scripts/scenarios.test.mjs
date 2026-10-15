@@ -44,7 +44,7 @@ test("every scenario file parses in Windows PowerShell 5.1", { skip }, () => {
 
 test("every scenario in the catalog has code, a phase, and words for what it does and what passes", { skip }, () => {
   const entries = plan();
-  assert.equal(entries.length, 13);
+  assert.equal(entries.length, 14);
   assert.equal(new Set(entries.map((entry) => entry.Id)).size, entries.length, "scenario ids are unique");
   for (const entry of entries) {
     assert.ok(entry.Implemented, `${entry.Id} has no Scenario_ function`);
@@ -63,7 +63,7 @@ test("the scenarios the issue asks for are all there", { skip }, () => {
   for (const wanted of [
     "update-over-installed-weir", "workflows-from-deluno", "deluno-film-handoff", "deluno-release-with-extra", "deluno-resend",
     "deluno-outcomes", "fresh-install", "first-visit-account", "weir-only-film", "process-again",
-    "pause-resume", "deleted-queued-file", "update-requests",
+    "pause-resume", "deleted-queued-file", "update-requests", "recover-locked-out-account",
   ]) {
     assert.ok(ids.includes(wanted), `missing scenario ${wanted}`);
   }
@@ -531,6 +531,77 @@ test("the update scenario compares every Activity entry, paged, not the newest 1
   assert.match(source, /Save-BuildUnderTestMarker/);
 });
 
+test("the recover helper refuses to start the installed server without an explicit data folder", { skip }, () => {
+  const run = psFile(String.raw`
+$ErrorActionPreference = 'Stop'
+. '${join(scenarios, "Weir.Scenarios.Lib.ps1")}'
+. '${join(scenarios, "Weir.Scenarios.Context.ps1")}'
+. '${join(scenarios, "Weir.Scenarios.Recover.ps1")}'
+$script:Ctx.InstallRoot = Join-Path ([IO.Path]::GetTempPath()) 'weir-no-such-install'
+foreach ($folder in $null, '', '   ') {
+    try { Invoke-InstalledRecover -Arguments @('--list') -DataFolder $folder | Out-Null; 'STARTED' }
+    catch { 'REFUSED|' + $_.Exception.Message }
+}
+`);
+  assert.equal(run.status, 0, run.err + run.out);
+  const lines = run.out.trim().split(/\r?\n/);
+  assert.equal(lines.length, 3);
+  for (const line of lines) assert.match(line, /^REFUSED\|Invoke-InstalledRecover refuses to run without an explicit data folder/);
+});
+
+test("clearing WEIR_HOME for the recover helper is refused anywhere but the scenario VM", { skip }, () => {
+  const run = psFile(String.raw`
+$ErrorActionPreference = 'Stop'
+. '${join(scenarios, "Weir.Scenarios.Lib.ps1")}'
+. '${join(scenarios, "Weir.Scenarios.Context.ps1")}'
+. '${join(scenarios, "Weir.Scenarios.Recover.ps1")}'
+# This machine, as it is: no token from the orchestrator, no marker. If the guard let it through the helper would start this path.
+$script:Ctx.InstallRoot = Join-Path ([IO.Path]::GetTempPath()) 'weir-no-such-install'
+try { Invoke-InstalledRecover -Arguments @('--list') -UseDefaultDataFolder | Out-Null; 'STARTED' }
+catch { 'LOCAL|' + $_.Exception.Message }
+
+# Even handed a token, with no marker in the VM's place, this machine is refused.
+$script:Ctx.VmToken = 'abc123'
+try { Invoke-InstalledRecover -Arguments @('--list') -UseDefaultDataFolder | Out-Null; 'STARTED' }
+catch { 'TOKEN|' + $_.Exception.Message }
+
+# The guard's judgement, on the facts of a machine that is the VM and of machines that differ in one thing each.
+$vm = [pscustomobject]@{ Token = 'abc123'; MarkerToken = 'abc123'; MarkerComputer = 'GOLDEN-VM'; MarkerHost = 'rig-host.example.test'; Computer = 'GOLDEN-VM'; Manufacturer = 'Microsoft Corporation'; Model = 'Virtual Machine' }
+'VM|' + [string](Get-ScenarioVmRefusal -Facts $vm)
+foreach ($change in @{ Token = '' }, @{ MarkerToken = '' }, @{ MarkerToken = 'older' }, @{ MarkerComputer = 'OTHER-PC' }, @{ Computer = 'RIG-HOST' ; MarkerComputer = 'RIG-HOST' }, @{ Manufacturer = 'Dell Inc.' ; Model = 'XPS' }, @{ Model = 'Standard PC' }) {
+    $facts = $vm.PSObject.Copy()
+    foreach ($name in $change.Keys) { $facts.$name = $change[$name] }
+    'OTHER|' + (Get-ScenarioVmRefusal -Facts $facts)
+}
+# This machine's own facts, read for real, are not the VM's.
+'REAL|' + [string](Get-ScenarioVmRefusal -Facts (Get-ScenarioVmFacts))
+`);
+  assert.equal(run.status, 0, run.err + run.out);
+  const lines = run.out.trim().split(/\r?\n/);
+  const refusal = /^(LOCAL|TOKEN)\|Invoke-InstalledRecover refuses to clear WEIR_HOME outside the scenario VM/;
+  assert.match(lines[0], refusal);
+  assert.match(lines[0], /no -VmToken/);
+  assert.match(lines[1], refusal);
+  assert.match(lines[1], /no marker at C:\\golden\\weir\\scenario-vm\.json/);
+  assert.equal(lines[2], "VM|", "the facts of the scenario VM pass the guard");
+  const others = lines.slice(3, 10);
+  assert.equal(others.length, 7);
+  for (const line of others) assert.match(line, /^OTHER\|\S/, `a machine that differs from the VM passed: ${line}`);
+  assert.match(lines[10], /^REAL\|\S/, "this machine passed the guard");
+});
+
+test("the orchestrator leaves the marker and the token in the VM that the recover helper's guard reads", () => {
+  const orchestrator = readFileSync(join(scenarios, "Invoke-WeirScenarios.ps1"), "utf8");
+  const helper = readFileSync(join(scenarios, "Weir.Scenarios.Recover.ps1"), "utf8");
+  const runner = readFileSync(join(scenarios, "Run-WeirScenarios.ps1"), "utf8");
+  const markerPath = "C:\\golden\\weir\\scenario-vm.json";
+  assert.ok(orchestrator.includes(markerPath) && helper.includes(markerPath), "the orchestrator and the guard name different marker files");
+  assert.match(orchestrator, /vm_computer = \$env:COMPUTERNAME/, "the marker is not written with the VM's own computer name");
+  assert.match(orchestrator, /VmToken = \$vmToken/, "the token is not given to the run");
+  assert.match(orchestrator, /@\(\$wrapper, \$vmToken, \$RigHost\)/, "the marker is not written with the token and the host");
+  assert.match(runner, /\$script:Ctx\.VmToken = \$VmToken/, "the run does not keep the token it was given");
+});
+
 test("an invalid -Phases is refused before anything is touched", { skip }, () => {
   const out = mkdtempSync(join(tmpdir(), "weir-scenarios-phases-"));
   const run = powershell([
@@ -603,7 +674,7 @@ test("no scenario names another, calls another, or reads state another left: eac
   const lines = run.out.trim().split(/\r?\n/);
   const found = lines.pop();
   assert.deepEqual(lines, [], `these scenarios depend on another or write the run's shared state:\n${lines.join("\n")}`);
-  assert.equal(found, "FOUND|13", "every scenario of the catalog was read");
+  assert.equal(found, "FOUND|14", "every scenario of the catalog was read");
 });
 
 // The shared helpers, dot-sourced with a context pointing at a temporary place, for the log watch and Fresh setup tests.
@@ -829,11 +900,11 @@ $text = Get-Content -LiteralPath $path -Raw
 'chosen=' + ($text -match '\| Process again \| passed \|')
 'not-chosen=' + ([regex]::Matches($text, '\| not chosen \|').Count)
 'failed-rows=' + ([regex]::Matches($text, '\| failed \|').Count)
-$text -split "\r?\n" | Where-Object { $_ -like '**1 of 13 scenarios passed*' }
+$text -split "\r?\n" | Where-Object { $_ -like '**1 of 14 scenarios passed*' }
 `);
   const run = psFile(source);
   assert.equal(run.status, 0, run.err + run.out);
-  assert.deepEqual(run.out.trim().split(/\r?\n/), ["chosen=True", "not-chosen=12", "failed-rows=0", "**1 of 13 scenarios passed; 0 failed; 12 not run.**"]);
+  assert.deepEqual(run.out.trim().split(/\r?\n/), ["chosen=True", "not-chosen=13", "failed-rows=0", "**1 of 14 scenarios passed; 0 failed; 13 not run.**"]);
 });
 
 // --- the orchestrator and the runner take -Scenarios ------------------------------------------------------------------------

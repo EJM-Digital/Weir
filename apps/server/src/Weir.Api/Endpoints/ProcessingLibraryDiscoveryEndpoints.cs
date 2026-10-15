@@ -85,11 +85,10 @@ internal sealed class ProcessingLibraryDiscoveryEndpointHandlers
     /// after, and whether Weir already has it.</summary>
     public async Task<ApiResult> GetDiscoverableLibrariesAsync(ApiRequest request)
     {
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);
         issues.ThrowIfAny();
-
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
 
         var uow = await request.DbAsync().ConfigureAwait(false);
         var connection = await RequireConnectionAsync(uow, _connectionStore, connectionId).ConfigureAwait(false);
@@ -112,6 +111,7 @@ internal sealed class ProcessingLibraryDiscoveryEndpointHandlers
     public async Task<ApiResult> PostImportLibrariesAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);
         var model = new BodyModel(payload, issues);
@@ -125,7 +125,6 @@ internal sealed class ProcessingLibraryDiscoveryEndpointHandlers
 
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         // Every route in this file refuses a bad token with this exact wording, which clients match on.
         request.RequireConfirmationToken(csrfToken, "Invalid or expired CSRF token.");
 
@@ -157,11 +156,10 @@ internal sealed class ProcessingLibraryDiscoveryEndpointHandlers
     /// and Weir. Reported only — nothing is applied.</summary>
     public async Task<ApiResult> GetLibraryDriftAsync(ApiRequest request)
     {
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);
         issues.ThrowIfAny();
-
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
 
         var uow = await request.DbAsync().ConfigureAwait(false);
         var connection = await RequireConnectionAsync(uow, _connectionStore, connectionId).ConfigureAwait(false);
@@ -184,6 +182,7 @@ internal sealed class ProcessingLibraryDiscoveryEndpointHandlers
     public async Task<ApiResult> PostLibraryUnlinkAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("library_id", issues);
         var model = new BodyModel(payload, issues);
@@ -191,7 +190,6 @@ internal sealed class ProcessingLibraryDiscoveryEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         // Every route in this file refuses a bad token with this exact wording, which clients match on.
         request.RequireConfirmationToken(csrfToken, "Invalid or expired CSRF token.");
 

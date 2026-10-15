@@ -37,6 +37,11 @@
     </AssemblyAttribute>
   </ItemGroup>
   <ItemGroup>
+    <!-- Who may call each route (docs/coverage/route-access.json), checked against the server by RouteAccessTableTests and RouteAccessTests. -->
+    <Compile Include="..\Shared\RouteAccessTable.cs" Link="Harness\RouteAccessTable.cs" />
+    <None Include="..\..\..\..\docs\coverage\route-access.json" Link="route-access.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- The replies other apps recorded for these tests to replay (fixtures/recorded/README.md); the tests read them from beside the test assembly. -->
     <None Include="..\fixtures\recorded\**\*.json" Link="fixtures\recorded\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

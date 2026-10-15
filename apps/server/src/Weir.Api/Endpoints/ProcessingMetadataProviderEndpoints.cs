@@ -54,16 +54,16 @@ internal sealed class ProcessingMetadataProviderEndpointHandlers
 
     public async Task<ApiResult> PutMetadataProviderAsync(ApiRequest request)
     {
-        var csrfToken = await ReadIgnoredBodyAsync(request).ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var csrfToken = await ReadIgnoredBodyAsync(request).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
         return ApiRoutes.Ok(MetadataProviderOut());
     }
 
     public async Task<ApiResult> PostMetadataProviderTestAsync(ApiRequest request)
     {
-        var csrfToken = await ReadIgnoredBodyAsync(request).ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var csrfToken = await ReadIgnoredBodyAsync(request).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
         var result = await CheckGatewayAsync(request.Context.RequestAborted).ConfigureAwait(false);
         return ApiRoutes.Ok(new WireObject().Set("status", result.Status).Set("detail", result.Detail));

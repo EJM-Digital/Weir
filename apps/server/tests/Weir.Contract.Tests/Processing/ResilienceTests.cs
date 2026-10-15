@@ -29,7 +29,7 @@ public sealed class ResilienceTests
         var source = WriteSource(scenario, "Crash.Test.2020");
 
         await scenario.PostHandoffAsync("handoff-crash-1", source);
-        await Poll.UntilAsync(
+        await scenario.WaitWhileWorkedOnAsync(
             () => Task.FromResult(scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux").Count > 0), "the remux to start");
         Assert.Equal("working", (string)(await scenario.HandoffStatusAsync("handoff-crash-1"))["state"]!);
 

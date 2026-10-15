@@ -56,6 +56,13 @@ public sealed class WorkerWakeSignals
         }
     }
 
+    /// <summary>Wakes the idle slots of both lanes, for a change that lets work start that was held back (processing resumed).</summary>
+    public void WakeEveryLane()
+    {
+        Wake(WorkLane.Files);
+        Wake(WorkLane.Upkeep);
+    }
+
     /// <summary>Wakes the slots of the lane that runs <paramref name="jobKind"/>.</summary>
     public void WakeFor(string jobKind) => Wake(WorkLanes.LaneOf(jobKind));
 }

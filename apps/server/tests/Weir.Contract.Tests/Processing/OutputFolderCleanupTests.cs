@@ -78,7 +78,7 @@ public sealed class OutputFolderCleanupTests
     // A manual enqueue with no prior scan may leave no Files row for GET /processing/files to report on, so this watches the
     // job itself, as the Radarr-queue scenario in FailurePoliciesTests does.
     private static async Task WaitForThePassToFinishAsync(Scenario scenario) =>
-        await Poll.UntilAsync(
+        await scenario.WaitWhileWorkedOnAsync(
             async () => (await scenario.JobsAsync(Scenario.RemuxKind)).Any(job => (string)job["status"]! == "completed"),
             "the manual pass to finish");
 }
