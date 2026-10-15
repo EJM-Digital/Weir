@@ -260,12 +260,14 @@ sealed class TrayApp : IDisposable
     private string CouldNotStartText() =>
         _server.StartupError is { } why ? TrayBalloons.CouldNotStartBecause(why)
         : _server.NoPortChosen ? TrayBalloons.NoPortChosenText
+        : _server.GaveUpPortInUse is > 0 and var held ? TrayBalloons.PortInUseText(held, _server.GaveUpAfterAttempts)
         : _server.GaveUpAfterAttempts is > 0 and var tries ? TrayBalloons.GaveUpText(tries)
         : TrayBalloons.CouldNotStartText;
 
     // The same, for a server that ran and then could not be brought back.
     private string StoppedText() =>
         _server.StartupError is { } why ? TrayBalloons.StoppedBecause(why)
+        : _server.GaveUpPortInUse is > 0 and var held ? TrayBalloons.StoppedPortInUseText(held, _server.GaveUpAfterAttempts)
         : _server.GaveUpAfterAttempts is > 0 and var tries ? TrayBalloons.StoppedAfterTriesText(tries)
         : TrayBalloons.StoppedText;
 

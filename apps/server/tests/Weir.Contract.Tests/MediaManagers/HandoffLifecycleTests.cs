@@ -41,14 +41,14 @@ public sealed class HandoffLifecycleTests(HandoffServerFixture fixture) : IClass
         await using var working = await WorkingServer.StartAsync(tools, temp.Path);
         await Handoffs.HandOffAsync(working.Server, "h1", working.Source);
 
-        var body = await Poll.UntilAsync(
+        var body = await new JobWait().UntilAsync(
+            () => RemuxJobs.StatusesForHandoffAsync(working.Admin, "h1"),
             async () =>
             {
                 var answer = await Handoffs.StatusAsync(working.Server, "h1");
                 return (string)answer["state"]! is "queued" or "working" ? null : answer;
             },
-            "the hand-off to finish",
-            TimeSpan.FromSeconds(90));
+            "the hand-off to finish");
 
         await working.Deluno.WaitForRequestAsync("POST", RemuxJobs.CallbackPath);
         Assert.True((string)body["state"]! == "completed", body.ToJsonString());

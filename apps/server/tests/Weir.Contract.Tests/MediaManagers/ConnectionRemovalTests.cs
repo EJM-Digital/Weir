@@ -59,9 +59,10 @@ public sealed class ConnectionRemovalTests
 
     /// <summary>Saving a workflow queues a scan, and a workflow with work queued or running is not removed, so removal waits for it to finish.</summary>
     private static async Task WaitForNoActiveJobsAsync(Scenario scenario) =>
-        await Poll.UntilAsync(
-            async () => (await scenario.JobsAsync()).All(job => (string)job["status"]! is not ("pending" or "leased")) ? "quiet" : null,
-            "the scan queued when the workflow was saved to finish");
+        await new JobWait().UntilAsync(
+            scenario.JobStatusesAsync,
+            async () => (await scenario.JobStatusesAsync()).All(status => status is not ("pending" or "leased")) ? "quiet" : null,
+            "the scan queued when the workflow was saved");
 
     private static async Task AssertConnectionKeptAsync(WeirClient admin, int connectionId) =>
         Assert.Equal([connectionId], (await admin.GetAsync(ManagerConnections.Route)).Elements.Select(row => JsonFields.Id(row!)));
