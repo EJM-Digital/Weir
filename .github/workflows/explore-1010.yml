@@ -28,7 +28,7 @@ jobs:
           node --test scripts/docker-entrypoint.test.mjs 2>&1 | grep -E "^ℹ (pass|fail)|^✖" | head -20 || true
           git checkout docker/entrypoint.sh
       - name: Each entrypoint check against an entrypoint missing it
-        run: sh scripts/explore-1010/mutants.sh node
+        run: ONLY=never-says-ignored sh scripts/explore-1010/mutants.sh node
 
   container:
     runs-on: ubuntu-latest
@@ -65,7 +65,7 @@ jobs:
         run: node scripts/docker-compose-smoke.mjs media --candidate weir-ci-smoke --logs artifacts/explore
       - name: Each container check against an image missing it
         if: ${{ !cancelled() }}
-        run: sh scripts/explore-1010/mutants.sh container weir-ci-smoke
+        run: ONLY=never-says-ignored sh scripts/explore-1010/mutants.sh container weir-ci-smoke
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: ${{ !cancelled() }}
         with:

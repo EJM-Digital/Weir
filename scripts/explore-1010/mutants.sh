@@ -22,12 +22,13 @@ secrets-not-private|identity|s/umask 077/umask 022/
 secret-too-short|identity|s/head -c 48 /head -c 24 /
 port-ignored|none|s/\${PORT:-9347}/9347/
 legacy-puid-ignored|none|s/\${WEIR_PUID:-\${PUID:-1000}}/${WEIR_PUID:-1000}/
-never-says-ignored|media|/log_ignored_folder_setting WEIR_/d
+never-says-ignored|media|s/^  log_info "$1 is set.*/  true/
 says-output-ignored|media|s/if \[ -n "\$WEIR_DIR_MODE_TEMP" \]; then/if [ -n "$WEIR_DIR_MODE_OUTPUT" ]; then log_ignored_folder_setting WEIR_DIR_MODE_OUTPUT; fi; if [ -n "$WEIR_DIR_MODE_TEMP" ]; then/
 '
 
 echo "$MUTANTS" | while IFS='|' read -r name scenario expression; do
   [ -n "$name" ] || continue
+  [ -z "${ONLY:-}" ] || [ "$name" = "$ONLY" ] || continue
   cp "$original" docker/entrypoint.sh
   sed -i -e "$expression" docker/entrypoint.sh
   if cmp -s "$original" docker/entrypoint.sh; then
