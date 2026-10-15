@@ -332,10 +332,26 @@ public sealed class ApiRequest : IAsyncDisposable
     }
 
     /// <summary>
-    /// Read and decode the body now. Handlers call this before their other checks, so a malformed body is
-    /// answered with its 400 or 422 first, the order existing clients and the contract suite expect.
+    /// Read and decode the body of a route that needs a signed-in caller. A route checks who is asking first, then the size of
+    /// the body, its content type and then the body itself, so this refuses to run before <see cref="RequireUserAsync"/> has:
+    /// an anonymous caller, or one who may not use the route, learns nothing about what the route reads.
     /// </summary>
-    public Task<WireValue?> ReadBodyAsync() => ApiRequestBody.ReadAsync(Context);
+    public Task<WireValue?> ReadBodyAsync() =>
+        _user is null
+            ? throw new InvalidOperationException("The body of a route that needs a sign-in is read after RequireUserAsync, so a caller who is not allowed in learns nothing about it.")
+            : ApiRequestBody.ReadAsync(Context);
+
+    /// <summary>
+    /// Read and decode the body of a route that anyone may call, or that its caller proves itself to with something other than
+    /// a session (sign-in, first-run setup, a media manager's webhook secret). Size, content type and body are checked in that order.
+    /// </summary>
+    public Task<WireValue?> ReadAnonymousBodyAsync() => ApiRequestBody.ReadAsync(Context);
+
+    /// <summary>
+    /// For a route that reads nothing from its body: a body larger than Weir accepts is still refused with a 413, after the
+    /// caller has been let in, like the routes that read theirs.
+    /// </summary>
+    public void RefuseOversizedBody() => ApiRequestBody.RefuseOversized(Context);
 
     /// <summary>An <c>int</c> path parameter.</summary>
     public long PathInt(string name, ValidationIssues issues)

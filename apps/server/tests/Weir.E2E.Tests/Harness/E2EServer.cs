@@ -66,6 +66,16 @@ public sealed class E2EServer : IAsyncLifetime
             ("NO_PROXY", string.Empty)));
 
     /// <summary>
+    /// A server of its own whose scheduled tasks (the look at the workflows' folders every 15 s, the lifting of a pause that has run out
+    /// every 30 s) run <paramref name="times"/> times as often, for a test that waits for one of them: it is the server's own test seam
+    /// (<c>WEIR_PERIODIC_TASK_SPEEDUP</c>, refused when <c>WEIR_ENV</c> is production), so the shared server keeps the pace a real install has.
+    /// </summary>
+    public static Task<WeirServer> StartWithQuickTasksAsync(int times) =>
+        WeirServer.StartNewAsync(Environment.With(
+            ("WEIR_ENV", "development"),
+            ("WEIR_PERIODIC_TASK_SPEEDUP", times.ToString(System.Globalization.CultureInfo.InvariantCulture))));
+
+    /// <summary>
     /// A server of its own that probes files with the fake tools, for a test whose files must take as long to look at as it
     /// scripts: the shared server probes with whatever ffprobe the machine has, which answers as fast as the machine does.
     /// </summary>

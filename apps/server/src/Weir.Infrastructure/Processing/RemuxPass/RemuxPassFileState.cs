@@ -178,10 +178,7 @@ public static class RemuxPassFileState
         ArgumentNullException.ThrowIfNull(uow);
         if (await FindAsync(uow, libraryId, relativePath).ConfigureAwait(false) is null)
         {
-            await uow.ExecuteAsync(
-                "INSERT INTO files (library_id, relative_path) VALUES ($library, $path)",
-                ("$library", libraryId),
-                ("$path", relativePath)).ConfigureAwait(false);
+            await InsertFirstRecordAsync(uow, libraryId, relativePath, sourcePath).ConfigureAwait(false);
         }
 
         await uow.ExecuteAsync(
@@ -194,6 +191,44 @@ public static class RemuxPassFileState
             ("$library", libraryId),
             ("$path", relativePath)).ConfigureAwait(false);
         await RecordFingerprintFromPathAsync(uow, libraryId, relativePath, sourcePath).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Records a file nothing has scanned yet, with the size it has on disk. The next scan reads a row whose size differs from the
+    /// file as a file that changed, and starts it again, so a row with a made-up size would lose the outcome it was made to hold.
+    /// </summary>
+    private static async Task InsertFirstRecordAsync(UnitOfWork uow, long libraryId, string relativePath, string? sourcePath)
+    {
+        long size = 0;
+        if (sourcePath is not null)
+        {
+            try
+            {
+                size = SourceFiles.Fingerprint(sourcePath).SizeBytes;
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                // Nothing readable to measure; the scan records the size when it first sees the file.
+            }
+        }
+
+        await uow.ExecuteAsync(
+            "INSERT INTO files (library_id, relative_path, size_bytes) VALUES ($library, $path, $size)",
+            ("$library", libraryId),
+            ("$path", relativePath),
+            ("$size", size)).ConfigureAwait(false);
+    }
+
+    private static string? WatchedSourceOrNull(ProcessingLibraryRecord library, string relativePath)
+    {
+        try
+        {
+            return RemuxPassPaths.ResolveMediaFileUnderRoot(library.WatchedFolder, relativePath);
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
     }
 
     /// <summary>The four failure fields cleared, after a success, a wait or a content rejection.</summary>
@@ -218,10 +253,7 @@ public static class RemuxPassFileState
         var row = await FindAsync(uow, library.Id, relativePath).ConfigureAwait(false);
         if (row is null)
         {
-            await uow.ExecuteAsync(
-                "INSERT INTO files (library_id, relative_path) VALUES ($library, $path)",
-                ("$library", library.Id),
-                ("$path", relativePath)).ConfigureAwait(false);
+            await InsertFirstRecordAsync(uow, library.Id, relativePath, WatchedSourceOrNull(library, relativePath)).ConfigureAwait(false);
             row = (await FindAsync(uow, library.Id, relativePath).ConfigureAwait(false))!;
         }
 

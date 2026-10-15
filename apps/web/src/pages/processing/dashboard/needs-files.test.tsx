@@ -38,7 +38,7 @@ describe("the failed, rejected, held and skipped files the Needs you panel reads
   it("reads those four kinds of file of the workflow it is narrowed to", async () => {
     const { result } = renderHook(() => useNeedsFiles(3), { wrapper });
 
-    await waitFor(() => expect(result.current).toEqual([{ id: 5 }]));
+    await waitFor(() => expect(result.current.files).toEqual([{ id: 5 }]));
     expect(fetchProcessingFiles).toHaveBeenCalledWith({
       file_status: ["processing_failed", "rejected", "on_hold", "skipped"],
       library_id: 3,
@@ -49,7 +49,7 @@ describe("the failed, rejected, held and skipped files the Needs you panel reads
   it("reads every workflow's files when it is not narrowed", async () => {
     const { result } = renderHook(() => useNeedsFiles(null), { wrapper });
 
-    await waitFor(() => expect(result.current).toEqual([{ id: 5 }]));
+    await waitFor(() => expect(result.current.files).toEqual([{ id: 5 }]));
     expect(fetchProcessingFiles).toHaveBeenCalledWith(
       expect.objectContaining({ library_id: undefined }),
     );
@@ -64,7 +64,17 @@ describe("the failed, rejected, held and skipped files the Needs you panel reads
       { wrapper },
     );
 
-    await waitFor(() => expect(result.current).toEqual([{ id: 5 }]));
+    await waitFor(() => expect(result.current.files).toEqual([{ id: 5 }]));
     expect(fetchProcessingFiles).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports why the read failed, with no files, so none is not taken for nothing waiting", async () => {
+    const failure = new Error("The database is busy.");
+    fetchProcessingFiles.mockReset().mockRejectedValue(failure);
+
+    const { result } = renderHook(() => useNeedsFiles(null), { wrapper });
+
+    await waitFor(() => expect(result.current.error).toBe(failure));
+    expect(result.current.files).toEqual([]);
   });
 });

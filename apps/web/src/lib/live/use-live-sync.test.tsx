@@ -200,6 +200,7 @@ describe("useLiveSync", () => {
   });
 
   it("reloads the page on a restart only when the server now serves a different build", async () => {
+    vi.useFakeTimers();
     const reload = vi.fn();
     vi.stubGlobal("location", { ...window.location, reload });
     document.head.innerHTML =
@@ -221,7 +222,7 @@ describe("useLiveSync", () => {
     serve("/assets/a.js");
     current().hello("boot-2");
     await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await vi.advanceTimersByTimeAsync(0);
     expect(reload).not.toHaveBeenCalled();
 
     serve("/assets/b.js");

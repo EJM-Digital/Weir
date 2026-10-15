@@ -84,6 +84,23 @@ public sealed class HandoffLifecycleTests(HandoffServerFixture fixture) : IClass
     }
 
     [Fact]
+    public async Task A_cancel_that_carries_an_oversized_body_is_refused_and_the_hand_off_stays_queued()
+    {
+        var movies = await fixture.MoviesAsync();
+        var handoffId = Handoffs.NewId();
+        await Handoffs.HandOffAsync(Server, handoffId, Path.Combine(movies.Watched, handoffId, "film.mkv"));
+        var nineMegabytes = new byte[9 * 1024 * 1024];
+        using var manager = Server.CreateClient();
+
+        var withoutTheSecret = await manager.RequestRawAsync(HttpMethod.Delete, Handoffs.StatusPath(handoffId), nineMegabytes, "application/json");
+        var withTheSecret = await manager.RequestRawAsync(HttpMethod.Delete, Handoffs.StatusPath(handoffId), nineMegabytes, "application/json", Handoffs.Secret);
+
+        Assert.True(withoutTheSecret.Status is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden, withoutTheSecret.ToString());
+        Assert.True(withTheSecret.Status == HttpStatusCode.RequestEntityTooLarge, withTheSecret.ToString());
+        Assert.Equal("queued", (string)(await Handoffs.StatusAsync(Server, handoffId))["state"]!);
+    }
+
+    [Fact]
     public async Task Work_that_has_started_is_never_cancelled()
     {
         using var temp = new TemporaryFolder();
