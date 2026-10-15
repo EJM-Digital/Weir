@@ -4399,7 +4399,7 @@
             "type": "string"
           },
           "url": {
-            "minLength": 1,
+            "description": "The address to post to. On an update, leave it out or blank to keep the saved one; a new alert needs it.",
             "title": "Url",
             "type": "string"
           }
@@ -4407,7 +4407,6 @@
         "required": [
           "label",
           "provider",
-          "url",
           "csrf_token"
         ],
         "title": "NotificationChannelIn",
@@ -4471,6 +4470,11 @@
             "title": "Events",
             "type": "array"
           },
+          "has_token": {
+            "description": "Whether the saved address has a secret part, which is never returned.",
+            "title": "Has Token",
+            "type": "boolean"
+          },
           "id": {
             "title": "Id",
             "type": "integer"
@@ -4489,6 +4493,7 @@
             "type": "string"
           },
           "url": {
+            "description": "The saved address with its secret part hidden, for example https://discord.com/api/webhooks/<id>/••••.",
             "title": "Url",
             "type": "string"
           }
@@ -4498,6 +4503,7 @@
           "label",
           "provider",
           "url",
+          "has_token",
           "events",
           "enabled",
           "created_at",

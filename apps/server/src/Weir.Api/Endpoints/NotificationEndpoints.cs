@@ -11,6 +11,7 @@ using Weir.Core.Notifications;
 using Weir.Core.Validation;
 using Weir.Infrastructure.Http;
 using Weir.Infrastructure.Notifications;
+using Weir.Infrastructure.Sqlite;
 
 namespace Weir.Api.Endpoints;
 
@@ -52,14 +53,17 @@ internal sealed class NotificationEndpointHandlers
         _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
     }
 
+    private const string AddressTaken = "An alert already sends to that address.";
+
+    // Url is the address as sent; it is empty when an update left it out, which keeps the saved one.
     private sealed record ChannelInput(string CsrfToken, string Label, string Provider, string Url, List<string> Events, bool Enabled);
 
-    private static ChannelInput ReadChannel(WireValue? body, ValidationIssues issues)
+    private static ChannelInput ReadChannel(WireValue? body, ValidationIssues issues, bool addressRequired)
     {
         var model = new BodyModel(body, issues);
         var label = model.Str("label", minLength: 1, maxLength: 255);
         var provider = model.Str("provider");
-        var url = model.Str("url", minLength: 1);
+        var url = addressRequired ? model.Str("url", minLength: 1) : model.OptionalStr("url") ?? string.Empty;
         var events = model.StrList("events", ["job_failed"]);
         var enabled = model.Bool("enabled", defaultValue: true);
         var csrfToken = model.Str("csrf_token");
@@ -79,21 +83,23 @@ internal sealed class NotificationEndpointHandlers
         await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
         var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
-        var input = ReadChannel(body, issues);
+        var input = ReadChannel(body, issues, addressRequired: true);
         issues.ThrowIfAny();
 
         request.RequireConfirmationToken(input.CsrfToken, ConfirmationExpired);
         var uow = await request.DbAsync().ConfigureAwait(false);
+        var address = input.Url.Trim();
         try
         {
-            NotificationRules.Validate(input.Label, input.Provider, input.Url, input.Events);
+            NotificationRules.Validate(input.Label, input.Provider, address, input.Events);
         }
         catch (WireValueException exception)
         {
             throw new ApiException(StatusCodes.Status400BadRequest, exception.Message);
         }
 
-        var row = await _channels.CreateAsync(uow, input.Label, input.Provider, input.Url, input.Events, input.Enabled).ConfigureAwait(false);
+        await RefuseAnAddressInUseAsync(uow, address, exceptId: null).ConfigureAwait(false);
+        var row = await _channels.CreateAsync(uow, input.Label, input.Provider, address, input.Events, input.Enabled).ConfigureAwait(false);
         await request.CommitAsync().ConfigureAwait(false);
         return new JsonApiResult(StatusCodes.Status201Created, NotificationRules.ChannelOut(row));
     }
@@ -104,25 +110,46 @@ internal sealed class NotificationEndpointHandlers
         var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var channelId = request.PathInt("channel_id", issues);
-        var input = ReadChannel(body, issues);
+        var input = ReadChannel(body, issues, addressRequired: false);
         issues.ThrowIfAny();
 
         request.RequireConfirmationToken(input.CsrfToken, ConfirmationExpired);
         var uow = await request.DbAsync().ConfigureAwait(false);
         var row = await _channels.GetAsync(uow, channelId).ConfigureAwait(false)
             ?? throw new ApiException(StatusCodes.Status404NotFound, "Notification channel not found.");
+        var sent = input.Url.Trim();
+        var address = KeepsSavedAddress(row, sent) ? row.Url : sent;
         try
         {
-            NotificationRules.Validate(input.Label, input.Provider, input.Url, input.Events);
+            NotificationRules.Validate(input.Label, input.Provider, address, input.Events);
         }
         catch (WireValueException exception)
         {
             throw new ApiException(StatusCodes.Status400BadRequest, exception.Message);
         }
 
-        var updated = await _channels.UpdateAsync(uow, row, input.Label, input.Provider, input.Url, input.Events, input.Enabled).ConfigureAwait(false);
+        if (!NotificationRules.IsSameAddress(address, row.Url))
+        {
+            await RefuseAnAddressInUseAsync(uow, address, exceptId: row.Id).ConfigureAwait(false);
+        }
+
+        var updated = await _channels.UpdateAsync(uow, row, input.Label, input.Provider, address, input.Events, input.Enabled).ConfigureAwait(false);
         await request.CommitAsync().ConfigureAwait(false);
         return ApiRoutes.Ok(NotificationRules.ChannelOut(updated));
+    }
+
+    /// <summary>An update sends no address, or only the masked one the screen was shown, to keep the one that is saved.</summary>
+    private static bool KeepsSavedAddress(NotificationChannelRecord row, string sent) =>
+        sent.Length == 0 || string.Equals(sent, NotificationRules.MaskAddress(row.Url).Shown, StringComparison.Ordinal);
+
+    /// <summary>Two alerts on one address would send every notification twice.</summary>
+    private async Task RefuseAnAddressInUseAsync(UnitOfWork uow, string address, long? exceptId)
+    {
+        var channels = await _channels.ListAsync(uow).ConfigureAwait(false);
+        if (channels.Any(channel => channel.Id != exceptId && NotificationRules.IsSameAddress(channel.Url, address)))
+        {
+            throw new ApiException(StatusCodes.Status409Conflict, AddressTaken);
+        }
     }
 
     public async Task<ApiResult> DeleteAsync(ApiRequest request)
