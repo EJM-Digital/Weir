@@ -6072,6 +6072,11 @@
         },
         {
           "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.cs",
+          "name": "WorkerLaneWakeTests"
+        },
+        {
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/SystemEndpointsTests.cs",
           "name": "SystemEndpointsTests"
         }
@@ -6092,7 +6097,7 @@
     {
       "id": "services.hosted-services.upkeep-worker-lane-upkeepworkerservice-2-slots-for-scans-and",
       "area": "services",
-      "behaviour": "Upkeep worker lane (UpkeepWorkerService): 2 slots for scans and maintenance sweeps, exempt from Files-at-once, heartbeat module \"upkeep\", waits for RecoveryCompleted, survives a crashed tick",
+      "behaviour": "Upkeep worker lane (UpkeepWorkerService): 2 slots for scans and maintenance sweeps, woken at once when a scan or sweep is queued with the poll as fallback, exempt from Files-at-once, heartbeat module \"upkeep\", waits for RecoveryCompleted, survives a crashed tick",
       "kind": "job",
       "severity": "low",
       "touches": "none",
@@ -6113,6 +6118,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/AdmissionClaimTests.cs",
           "name": "A_second_scan_of_the_same_library_waits_for_the_first"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.cs",
+          "name": "WorkerLaneWakeTests"
         }
       ],
       "needs": {
@@ -6401,7 +6411,7 @@
     {
       "id": "services.periodic-tasks.workerwakesignals-a-queued-job-wakes-idle-slots-at-once",
       "area": "services",
-      "behaviour": "WorkerWakeSignals: a queued job wakes idle slots at once; poll stays as fallback",
+      "behaviour": "WorkerWakeSignals: a queued job wakes the idle slots of the lane that runs it (files or upkeep) at once, never a job that starts later and never other lanes; poll stays as fallback",
       "kind": "job",
       "severity": "medium",
       "touches": "none",
@@ -6416,6 +6426,16 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ScanWakeupsAnnouncementTests.cs",
           "name": "ScanWakeupsAnnouncementTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.cs",
+          "name": "WorkerLaneWakeTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ManualPassWakeApiTests.cs",
+          "name": "ManualPassWakeApiTests"
         }
       ],
       "audit": {
@@ -43168,6 +43188,35 @@
       }
     },
     {
+      "id": "tray.tray.a-port-another-program-holds-ends-the-start-with-exit-code-75",
+      "area": "tray",
+      "behaviour": "A server whose port another program holds ends the start with a plain sentence naming the port and exit code 75 (no startup-error.txt); the tray tries it again like any failed start and, when the tries are used up, names the port in its log, on the icon and in the notice",
+      "kind": "failure-mode",
+      "severity": "medium",
+      "touches": "install",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/PortInUseTests.cs",
+          "name": "PortInUseTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/ServerHostPortInUseTests.cs",
+          "name": "ServerHostPortInUseTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/StartupErrorTests.cs",
+          "name": "The_balloons_for_a_port_another_program_holds_name_the_port_and_say_what_to_do"
+        }
+      ],
+      "audit": {
+        "id": "inventory"
+      }
+    },
+    {
       "id": "tray.tray.hung-silent-detection-by-progress-both-channels-expect-within",
       "area": "tray",
       "behaviour": "Hung / silent detection by progress (both channels, expect_within_s, ceiling 1 h, clock steps back), hung server stopped then killed with its tree, only the tray's own process is ever touched, next attempt waits until the old one is gone",
@@ -46703,6 +46752,11 @@
           "type": "package-smoke",
           "file": "scripts/smoke-windows-package.ps1",
           "name": "*"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/PortInUseTests.cs",
+          "name": "PortInUseTests"
         }
       ],
       "needs": {

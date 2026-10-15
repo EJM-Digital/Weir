@@ -1,25 +1,36 @@
 <#
 .SYNOPSIS
-    Turns a spare Windows PC into a GitHub Actions runner for Weir's Windows test jobs.
+    Turns a spare Windows PC into GitHub Actions runners for Weir's Windows test jobs.
 
 .DESCRIPTION
     Run once, in an elevated Windows PowerShell 5.1 or PowerShell 7 window, on the PC that will run the jobs.
     It installs Git and PowerShell 7 if they are missing, downloads the pinned Actions runner (checked against its
-    SHA-256), registers it with jampat000/Weir under the labels self-hosted, Windows and weir-heavy, and installs it
-    as a Windows service that runs as NETWORK SERVICE, so a job cannot read anyone's own files.
+    SHA-256), registers runners with jampat000/Weir under the labels self-hosted, Windows and weir-heavy, and installs
+    each as a Windows service that runs as NETWORK SERVICE, so a job cannot read anyone's own files.
+
+    Each runner takes one job at a time, so several runners let one PC run several jobs at once. Runner 1 lives in
+    C:\actions-runner-weir and is named weir-windows-1; runner N lives in C:\actions-runner-weir-N and is named
+    weir-windows-N. Running the script again adds the runners that are missing and leaves the others alone.
 
     The one secret is the registration token from the repository's Settings > Actions > Runners > New self-hosted
-    runner page. The script asks for it without echoing it, uses it once, and keeps it nowhere; it is valid for an
-    hour. Everything else the jobs need (the .NET SDK, Node, Playwright's browsers, the pinned FFmpeg and
+    runner page. The script asks for it without echoing it, uses it for every runner it adds, and keeps it nowhere;
+    it is valid for an hour. Everything else the jobs need (the .NET SDK, Node, Playwright's browsers, the pinned FFmpeg and
     MKVToolNix) each job installs for itself, as it does on GitHub's own runners.
 
     docs/self-hosted-runner.md says how the workflows choose this runner, and how to remove it.
 
+.PARAMETER Count
+    How many runners the PC should have in total. Left out, it is one per four logical processors and per 6 GB of
+    memory, whichever allows fewer, from 1 to 8: a server or tray test job keeps about four processors busy and
+    needs up to about 6 GB.
+
 .PARAMETER RunnerRoot
-    Where the runner and its work folder live. Kept out of any user's profile.
+    Where runner 1 and its work folder live; runner N adds -N to it. Kept out of any user's profile.
 #>
 [CmdletBinding()]
 param(
+    [ValidateRange(1, 8)]
+    [int] $Count,
     [string] $RunnerRoot = 'C:\actions-runner-weir'
 )
 
@@ -30,7 +41,7 @@ $RunnerVersion = '2.338.0'
 $RunnerSha256 = 'f48e0750a21812bca5f82de5f7f5aeae71abee647fab5a582f1742d07eba455f'
 $RepositoryUrl = 'https://github.com/jampat000/Weir'
 $Labels = 'weir-heavy'
-$RunnerName = 'weir-windows-1'
+$RunnerNamePrefix = 'weir-windows-'
 
 $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
 if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
@@ -59,12 +70,26 @@ Install-ForMachine -ExePath "$env:ProgramFiles\PowerShell\7\pwsh.exe" -WingetId 
 # Weir's tests build paths deeper than 260 characters.
 Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name LongPathsEnabled -Value 1 -Type DWord
 
-if (Test-Path (Join-Path $RunnerRoot '.runner')) {
-    throw "A runner is already registered in $RunnerRoot. Remove it first (docs/self-hosted-runner.md, 'Removing the runner')."
+if (-not $PSBoundParameters.ContainsKey('Count')) {
+    $processors = [Environment]::ProcessorCount
+    $memoryGb = [math]::Floor((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB)
+    $Count = [math]::Max(1, [math]::Min(8, [math]::Min([math]::Floor($processors / 4), [math]::Floor($memoryGb / 6))))
+    Write-Host "This PC has $processors logical processors and $memoryGb GB of memory: it gets $Count runners."
 }
-New-Item -ItemType Directory -Force -Path $RunnerRoot | Out-Null
 
-$zip = Join-Path $RunnerRoot "actions-runner-win-x64-$RunnerVersion.zip"
+function Get-RunnerFolder([int] $Number) {
+    if ($Number -eq 1) { return $RunnerRoot }
+    return "$RunnerRoot-$Number"
+}
+
+$missing = @(1..$Count | Where-Object { -not (Test-Path (Join-Path (Get-RunnerFolder $_) '.runner')) })
+if ($missing.Count -eq 0) {
+    Write-Host "All $Count runners are already registered. Nothing to do."
+    return
+}
+Write-Host "Adding runner(s) $($missing -join ', ')."
+
+$zip = Join-Path ([IO.Path]::GetTempPath()) "actions-runner-win-x64-$RunnerVersion.zip"
 Write-Host "Downloading Actions runner $RunnerVersion..."
 Invoke-WebRequest -UseBasicParsing -Uri "https://github.com/actions/runner/releases/download/v$RunnerVersion/actions-runner-win-x64-$RunnerVersion.zip" -OutFile $zip
 $actual = (Get-FileHash -Algorithm SHA256 -Path $zip).Hash.ToLowerInvariant()
@@ -72,27 +97,42 @@ if ($actual -ne $RunnerSha256) {
     Remove-Item -Force $zip
     throw "The runner download does not match its pinned SHA-256 (expected $RunnerSha256, got $actual). Nothing was installed."
 }
-Expand-Archive -Path $zip -DestinationPath $RunnerRoot -Force
-Remove-Item -Force $zip
 
 $secure = Read-Host -AsSecureString 'Paste the registration token from Settings > Actions > Runners > New self-hosted runner'
 $token = [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure))
-if ([string]::IsNullOrWhiteSpace($token)) { throw 'No token was pasted. Nothing was registered.' }
+if ([string]::IsNullOrWhiteSpace($token)) {
+    Remove-Item -Force $zip
+    throw 'No token was pasted. Nothing was registered.'
+}
 
-Push-Location $RunnerRoot
 try {
-    & .\config.cmd --unattended --url $RepositoryUrl --token $token --name $RunnerName `
-        --labels $Labels --work '_work' --runasservice --replace
-    if ($LASTEXITCODE -ne 0) { throw "Registering the runner failed (exit code $LASTEXITCODE)." }
+    foreach ($number in $missing) {
+        $folder = Get-RunnerFolder $number
+        $name = "$RunnerNamePrefix$number"
+        New-Item -ItemType Directory -Force -Path $folder | Out-Null
+        Expand-Archive -Path $zip -DestinationPath $folder -Force
+
+        Push-Location $folder
+        try {
+            & .\config.cmd --unattended --url $RepositoryUrl --token $token --name $name `
+                --labels $Labels --work '_work' --runasservice --replace
+            if ($LASTEXITCODE -ne 0) { throw "Registering $name failed (exit code $LASTEXITCODE)." }
+        }
+        finally {
+            Pop-Location
+        }
+
+        $service = Get-Service -Name 'actions.runner.*' | Where-Object { $_.Name -like "*.$name" } | Select-Object -First 1
+        if (-not $service -or $service.Status -ne 'Running') {
+            throw "$name registered but its service is not running. Look in Services for actions.runner.* and start it."
+        }
+        Write-Host "$name is running as a service."
+    }
 }
 finally {
     $token = $null
-    Pop-Location
+    Remove-Item -Force $zip -ErrorAction SilentlyContinue
 }
 
-$service = Get-Service -Name 'actions.runner.*' | Where-Object { $_.Name -like "*$RunnerName*" } | Select-Object -First 1
-if (-not $service -or $service.Status -ne 'Running') {
-    throw 'The runner registered but its service is not running. Look in Services for actions.runner.* and start it.'
-}
-Write-Host "Done. The runner '$($service.DisplayName)' is running as a service and waits for Weir's Windows jobs."
-Write-Host 'Ask for the repository variable WEIR_SELF_HOSTED_WINDOWS to be set to true to send those jobs here.'
+Write-Host "Done. This PC has $Count runners waiting for Weir's Windows jobs."
+Write-Host 'If this is the first install, ask for the repository variable WEIR_SELF_HOSTED_WINDOWS to be set to true to send those jobs here.'

@@ -179,6 +179,32 @@ internal sealed class StartRig : IDisposable
     internal Task LatestStartedAsync(int count) =>
         UntilAsync(() => Starts.Count >= count, "the stand-in server to start");
 
+    /// <summary>
+    /// Waits until every stand-in this rig has started has exited. A kill (TerminateProcess) returns before Windows has finished ending the
+    /// process, so a process that was killed is gone only once its exit is seen: this waits on the process itself, for no longer than a
+    /// ceiling that only a broken test reaches.
+    /// </summary>
+    internal async Task AllExitedAsync()
+    {
+        using var ceiling = new CancellationTokenSource(RealCeiling);
+        foreach (var start in Starts)
+        {
+            try
+            {
+                using var process = Process.GetProcessById(start.Pid);
+                await process.WaitForExitAsync(ceiling.Token);
+            }
+            catch (ArgumentException)
+            {
+                // Already gone.
+            }
+            catch (OperationCanceledException)
+            {
+                throw new TimeoutException($"Gave up waiting for the stand-in server {start.Pid} to exit.");
+            }
+        }
+    }
+
     /// <summary>The process ids of the stand-ins this rig has started that are still running.</summary>
     internal IReadOnlyList<int> Running() => [.. Starts.Select(start => start.Pid).Where(IsRunning)];
 

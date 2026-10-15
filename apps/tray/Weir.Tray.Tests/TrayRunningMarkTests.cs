@@ -12,15 +12,15 @@ public sealed class TrayRunningMarkTests : IDisposable
     private const string Installed = @"C:\Users\someone\AppData\Local\Weir\current\Weir.exe";
 
     private readonly TempDirectory _home = TempDirectory.AsWeirHome();
-    private readonly string _keyPath = $@"Software\WeirTrayMarkTests\{Guid.NewGuid():n}";
+    private readonly TempRegistryKey _key = TempRegistryKey.Under(@"Software\WeirTrayMarkTests");
 
     public void Dispose()
     {
-        Registry.CurrentUser.DeleteSubKeyTree(@"Software\WeirTrayMarkTests", throwOnMissingSubKey: false);
+        _key.Dispose();
         _home.Dispose();
     }
 
-    private TrayRunningMark Mark() => new(_keyPath);
+    private TrayRunningMark Mark() => new(_key.Path);
 
     private static TrayRun Run(int processId, string executable = Installed) => new(processId, 100, executable);
 
@@ -162,7 +162,7 @@ public sealed class TrayRunningMarkTests : IDisposable
     {
         Mark().Set(Run(1234));
 
-        using var key = Registry.CurrentUser.OpenSubKey(_keyPath, writable: true)!;
+        using var key = Registry.CurrentUser.OpenSubKey(_key.Path, writable: true)!;
 
         // Windows keeps a volatile key in memory only, so it is gone with the user's session.
         Assert.True(IsVolatile(key));

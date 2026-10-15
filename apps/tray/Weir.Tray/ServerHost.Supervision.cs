@@ -284,7 +284,9 @@ sealed partial class ServerHost
         }
         else if (decision.GiveUp)
         {
-            Say($"Start attempt {decision.Attempt} failed: {decision.Reason}. Giving up ({failures}); Weir is not running. Restart Weir tries again.");
+            Say(_lastAttemptFoundPortInUse
+                ? $"Start attempt {decision.Attempt} failed: {decision.Reason}. Giving up ({failures}); Weir is not running. Close the program that is using port {_port}, or use Change port, then use Restart Weir."
+                : $"Start attempt {decision.Attempt} failed: {decision.Reason}. Giving up ({failures}); Weir is not running. Restart Weir tries again.");
         }
         else
         {
@@ -303,6 +305,7 @@ sealed partial class ServerHost
     // else why it failed. A hung server is stopped before this returns, so no attempt is left running behind the next.
     private async Task<string?> AttemptAsync(CancellationToken cancellationToken)
     {
+        _lastAttemptFoundPortInUse = false;
         if (_port == 0 && await FindPortAsync(cancellationToken).ConfigureAwait(false) is { } noPort)
         {
             return noPort;
@@ -337,7 +340,9 @@ sealed partial class ServerHost
         {
             ForgetFailedProcess(process);
             var got = watch.Last is { } last ? $" (last phase: {last.Words})" : " (before it reported anything)";
-            return $"exited with code {ex.ExitCode} after running {Seconds(_time.GetElapsedTime(_startedAtStamp))}{got}";
+            _lastAttemptFoundPortInUse = ex.ExitCode == ServerExitCodes.PortInUse;
+            var because = _lastAttemptFoundPortInUse ? $": {PortInUseWords(_port)}" : string.Empty;
+            return $"exited with code {ex.ExitCode} after running {Seconds(_time.GetElapsedTime(_startedAtStamp))}{got}{because}";
         }
         catch (ServerStartHungException ex)
         {
@@ -426,6 +431,8 @@ sealed partial class ServerHost
             process.Dispose();
         }
     }
+
+    private static string PortInUseWords(int port) => string.Create(CultureInfo.InvariantCulture, $"port {port} is in use by another program");
 
     private static string Seconds(TimeSpan duration) =>
         string.Create(CultureInfo.InvariantCulture, $"{duration.TotalSeconds:0.#} s");
