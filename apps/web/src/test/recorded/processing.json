@@ -1,0 +1,2066 @@
+{
+  "GET /api/v1/processing/libraries": {
+    "status": 200,
+    "body": [
+      {
+        "id": 1,
+        "name": "Movies",
+        "enabled": true,
+        "media_type": "movie",
+        "display_order": 0,
+        "watched_folder": "C:/weir-recorded-replies/media/watched",
+        "work_folder": "C:/weir-recorded-replies/media/work",
+        "output_folder": "C:/weir-recorded-replies/media/output",
+        "media_extensions_csv": ".avchd,.avi,.flv,.m4v,.mkv,.mov,.mp4,.mpe,.mpeg,.mpg,.webm,.wmv",
+        "exclude_markers_csv": ".sabnzbd,__admin__,_failed_,_repair_,_unpack_,incomplete",
+        "include_patterns_csv": "",
+        "exclude_patterns_csv": "",
+        "min_file_size_mb": 0,
+        "max_file_size_mb": 0,
+        "rejected_file_action": "leave",
+        "ready_after_seconds": 1,
+        "created_after": null,
+        "created_before": null,
+        "modified_after": null,
+        "modified_before": null,
+        "exclude_hidden": true,
+        "top_level_only": false,
+        "scan_interval_seconds": 300,
+        "sidecar_patterns_csv": ".srt,.ass,.ssa,.sub,.idx,.vtt,.nfo,.jpg,.png",
+        "preserve_original_timestamps": false,
+        "output_collision_policy": "replace",
+        "ffmpeg_strictness": "normal",
+        "remux_writer": "best",
+        "ignore_size_changes": false,
+        "skip_access_tests": false,
+        "file_system_events_enabled": true,
+        "schedule_grid": "",
+        "max_attempts": 3,
+        "retry_backoff_seconds": 300,
+        "retry_execution_failures": true,
+        "retry_preflight_failures": false,
+        "failure_policy": "pass_through",
+        "schedule_enabled": true,
+        "schedule_hours_limited": false,
+        "schedule_days": "",
+        "schedule_start": "00:00",
+        "schedule_end": "23:59",
+        "max_concurrent_files": 0,
+        "effective_max_concurrent_files": 1,
+        "priority": 0,
+        "rule_set_id": 1,
+        "manager_connection_ids": [],
+        "remove_original_after_success": true,
+        "minimum_free_disk_space_mb": 5120,
+        "manager_coverage": "no_upstream_signal",
+        "manager_coverage_detail": "No media manager is linked. Watched-folder remux can still run after local safety gates, but upstream import protection is reduced.",
+        "discovered_from_connection_id": null,
+        "discovered_library_key": null,
+        "folders_synced_from_connection_id": null,
+        "active_job_count": 0,
+        "next_look_at": "2026-10-15T19:30:33.036288Z",
+        "periodic_scan": "scheduled",
+        "next_scan_at": "2026-10-15T19:30:33.036288Z",
+        "updated_at": "2026-10-15T19:25:29"
+      },
+      {
+        "id": 2,
+        "name": "TV",
+        "enabled": true,
+        "media_type": "tv",
+        "display_order": 1,
+        "watched_folder": "",
+        "work_folder": "",
+        "output_folder": "",
+        "media_extensions_csv": ".avchd,.avi,.flv,.m4v,.mkv,.mov,.mp4,.mpe,.mpeg,.mpg,.webm,.wmv",
+        "exclude_markers_csv": ".sabnzbd,__admin__,_failed_,_repair_,_unpack_,incomplete",
+        "include_patterns_csv": "",
+        "exclude_patterns_csv": "",
+        "min_file_size_mb": 50,
+        "max_file_size_mb": 0,
+        "rejected_file_action": "leave",
+        "ready_after_seconds": 60,
+        "created_after": null,
+        "created_before": null,
+        "modified_after": null,
+        "modified_before": null,
+        "exclude_hidden": true,
+        "top_level_only": false,
+        "scan_interval_seconds": 300,
+        "sidecar_patterns_csv": ".srt,.ass,.ssa,.sub,.idx,.vtt,.nfo,.jpg,.png",
+        "preserve_original_timestamps": false,
+        "output_collision_policy": "replace",
+        "ffmpeg_strictness": "normal",
+        "remux_writer": "best",
+        "ignore_size_changes": false,
+        "skip_access_tests": false,
+        "file_system_events_enabled": true,
+        "schedule_grid": "",
+        "max_attempts": 3,
+        "retry_backoff_seconds": 300,
+        "retry_execution_failures": true,
+        "retry_preflight_failures": false,
+        "failure_policy": "pass_through",
+        "schedule_enabled": true,
+        "schedule_hours_limited": false,
+        "schedule_days": "",
+        "schedule_start": "00:00",
+        "schedule_end": "23:59",
+        "max_concurrent_files": 0,
+        "effective_max_concurrent_files": 1,
+        "priority": 0,
+        "rule_set_id": 2,
+        "manager_connection_ids": [],
+        "remove_original_after_success": true,
+        "minimum_free_disk_space_mb": 5120,
+        "manager_coverage": "no_upstream_signal",
+        "manager_coverage_detail": "No media manager is linked. Watched-folder remux can still run after local safety gates, but upstream import protection is reduced.",
+        "discovered_from_connection_id": null,
+        "discovered_library_key": null,
+        "folders_synced_from_connection_id": null,
+        "active_job_count": 0,
+        "next_look_at": "2026-10-15T19:30:27.995768Z",
+        "periodic_scan": "scheduled",
+        "next_scan_at": "2026-10-15T19:30:27.995768Z",
+        "updated_at": "2026-10-15T19:25:27"
+      }
+    ]
+  },
+  "PUT /api/v1/processing/libraries/1": {
+    "status": 200,
+    "body": {
+      "id": 1,
+      "name": "Movies",
+      "enabled": true,
+      "media_type": "movie",
+      "display_order": 0,
+      "watched_folder": "C:/weir-recorded-replies/media/watched",
+      "work_folder": "C:/weir-recorded-replies/media/work",
+      "output_folder": "C:/weir-recorded-replies/media/output",
+      "media_extensions_csv": ".avchd,.avi,.flv,.m4v,.mkv,.mov,.mp4,.mpe,.mpeg,.mpg,.webm,.wmv",
+      "exclude_markers_csv": ".sabnzbd,__admin__,_failed_,_repair_,_unpack_,incomplete",
+      "include_patterns_csv": "",
+      "exclude_patterns_csv": "",
+      "min_file_size_mb": 0,
+      "max_file_size_mb": 0,
+      "rejected_file_action": "leave",
+      "ready_after_seconds": 1,
+      "created_after": null,
+      "created_before": null,
+      "modified_after": null,
+      "modified_before": null,
+      "exclude_hidden": true,
+      "top_level_only": false,
+      "scan_interval_seconds": 300,
+      "sidecar_patterns_csv": ".srt,.ass,.ssa,.sub,.idx,.vtt,.nfo,.jpg,.png",
+      "preserve_original_timestamps": false,
+      "output_collision_policy": "replace",
+      "ffmpeg_strictness": "normal",
+      "remux_writer": "best",
+      "ignore_size_changes": false,
+      "skip_access_tests": false,
+      "file_system_events_enabled": true,
+      "schedule_grid": "",
+      "max_attempts": 3,
+      "retry_backoff_seconds": 300,
+      "retry_execution_failures": true,
+      "retry_preflight_failures": false,
+      "failure_policy": "pass_through",
+      "schedule_enabled": true,
+      "schedule_hours_limited": false,
+      "schedule_days": "",
+      "schedule_start": "00:00",
+      "schedule_end": "23:59",
+      "max_concurrent_files": 0,
+      "effective_max_concurrent_files": 1,
+      "priority": 0,
+      "rule_set_id": 1,
+      "manager_connection_ids": [],
+      "remove_original_after_success": true,
+      "minimum_free_disk_space_mb": 5120,
+      "manager_coverage": "no_upstream_signal",
+      "manager_coverage_detail": "No media manager is linked. Watched-folder remux can still run after local safety gates, but upstream import protection is reduced.",
+      "discovered_from_connection_id": null,
+      "discovered_library_key": null,
+      "folders_synced_from_connection_id": null,
+      "active_job_count": 0,
+      "next_look_at": "2026-10-15T19:30:27.995768Z",
+      "periodic_scan": "scheduled",
+      "next_scan_at": "2026-10-15T19:30:27.995768Z",
+      "updated_at": "2026-10-15T19:25:29"
+    }
+  },
+  "PUT /api/v1/processing/libraries/1/library-settings": {
+    "status": 200,
+    "body": {
+      "library_folders": [
+        "C:/weir-recorded-replies/media/library"
+      ],
+      "library_schedule_enabled": false,
+      "clean_hardlinked_files": false,
+      "skip_if_manager_would_redownload": true,
+      "keep_original_after_clean": false,
+      "originals_folder": "",
+      "library_rule_set_id": null
+    }
+  },
+  "POST /api/v1/processing/libraries/1/library-scan": {
+    "status": 200,
+    "body": {
+      "job_id": 3,
+      "status": "pending",
+      "already_running": false
+    }
+  },
+  "POST /api/v1/processing/jobs/watched-folder-remux-scan-dispatch/enqueue": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "job_id": 4,
+      "dedupe_key": "processing.watched_folder.remux_scan_dispatch.v1:aeaa337fcabd4e439980796af7e9d057",
+      "job_kind": "processing.watched_folder.remux_scan_dispatch.v1"
+    }
+  },
+  "GET /api/v1/processing/files": {
+    "status": 200,
+    "body": {
+      "files": [
+        {
+          "kind": "download",
+          "id": 1,
+          "library_id": 1,
+          "library_name": "Movies",
+          "relative_path": "Recorded Film (2020).mkv",
+          "poster_url": null,
+          "status": "processed",
+          "status_reason": "Finished processing this file.",
+          "source_gone": false,
+          "blocked_by_connection": null,
+          "size_bytes": 22808,
+          "video_codec": "h264",
+          "video_width": 64,
+          "video_height": 64,
+          "audio_track_count": 2,
+          "subtitle_track_count": 0,
+          "duration_seconds": 2.023,
+          "direct_play": [],
+          "progress_percent": null,
+          "progress_message": null,
+          "progress_eta_seconds": null,
+          "progress_status": null,
+          "progress_stage": null,
+          "progress_speed": null,
+          "progress_elapsed_seconds": null,
+          "progress_removed_audio": null,
+          "progress_removed_subtitles": null,
+          "failure_class": null,
+          "skip_kind": null,
+          "failure_attempts": 0,
+          "next_retry_at": null,
+          "output_collision_policy": "replace",
+          "output_collision_action": "write",
+          "output_collision_reason": "No file existed at the output path, so Weir wrote it there.",
+          "hold_until": null,
+          "size_changed_at": "2026-10-15T19:25:30.464628",
+          "created_at": "2026-10-15T19:25:30",
+          "updated_at": "2026-10-15T19:25:33",
+          "last_seen_at": "2026-10-15T19:25:33.038665",
+          "last_attempt_at": "2026-10-15T19:25:33.334645",
+          "handback": {
+            "output_path": "C:\\weir-recorded-replies\\media\\output\\Recorded Film (2020).mkv",
+            "written_at": "2026-10-15T19:25:33.334645Z",
+            "outcome": null,
+            "outcome_by": null,
+            "outcome_at": null,
+            "imported_path": null,
+            "outcome_reason": null,
+            "released_at": null,
+            "settled_at": null,
+            "release_note": null
+          }
+        }
+      ],
+      "status_counts": {
+        "unprocessed": 0,
+        "processing": 0,
+        "processed": 1,
+        "processing_failed": 0,
+        "skipped": 0,
+        "disabled": 0,
+        "on_hold": 0,
+        "out_of_schedule": 0,
+        "blocked_upstream": 0,
+        "passed_through": 0,
+        "rejected": 0,
+        "cancelled": 0
+      },
+      "returned": 1,
+      "limit": 200,
+      "next_cursor": null
+    }
+  },
+  "GET /api/v1/processing/files?library_id=1&file_status=processed&path_contains=Recorded&within_days=30&limit=50&sort=when&direction=desc": {
+    "status": 200,
+    "body": {
+      "files": [
+        {
+          "kind": "download",
+          "id": 1,
+          "library_id": 1,
+          "library_name": "Movies",
+          "relative_path": "Recorded Film (2020).mkv",
+          "poster_url": null,
+          "status": "processed",
+          "status_reason": "Finished processing this file.",
+          "source_gone": false,
+          "blocked_by_connection": null,
+          "size_bytes": 22808,
+          "video_codec": "h264",
+          "video_width": 64,
+          "video_height": 64,
+          "audio_track_count": 2,
+          "subtitle_track_count": 0,
+          "duration_seconds": 2.023,
+          "direct_play": [],
+          "progress_percent": null,
+          "progress_message": null,
+          "progress_eta_seconds": null,
+          "progress_status": null,
+          "progress_stage": null,
+          "progress_speed": null,
+          "progress_elapsed_seconds": null,
+          "progress_removed_audio": null,
+          "progress_removed_subtitles": null,
+          "failure_class": null,
+          "skip_kind": null,
+          "failure_attempts": 0,
+          "next_retry_at": null,
+          "output_collision_policy": "replace",
+          "output_collision_action": "write",
+          "output_collision_reason": "No file existed at the output path, so Weir wrote it there.",
+          "hold_until": null,
+          "size_changed_at": "2026-10-15T19:25:30.464628",
+          "created_at": "2026-10-15T19:25:30",
+          "updated_at": "2026-10-15T19:25:33",
+          "last_seen_at": "2026-10-15T19:25:33.038665",
+          "last_attempt_at": "2026-10-15T19:25:33.334645",
+          "handback": {
+            "output_path": "C:\\weir-recorded-replies\\media\\output\\Recorded Film (2020).mkv",
+            "written_at": "2026-10-15T19:25:33.334645Z",
+            "outcome": null,
+            "outcome_by": null,
+            "outcome_at": null,
+            "imported_path": null,
+            "outcome_reason": null,
+            "released_at": null,
+            "settled_at": null,
+            "release_note": null
+          }
+        }
+      ],
+      "status_counts": {
+        "unprocessed": 0,
+        "processing": 0,
+        "processed": 1,
+        "processing_failed": 0,
+        "skipped": 0,
+        "disabled": 0,
+        "on_hold": 0,
+        "out_of_schedule": 0,
+        "blocked_upstream": 0,
+        "passed_through": 0,
+        "rejected": 0,
+        "cancelled": 0
+      },
+      "returned": 1,
+      "limit": 50,
+      "next_cursor": null
+    }
+  },
+  "GET /api/v1/processing/files/1/remove-options": {
+    "status": 200,
+    "body": {
+      "requires_choice": false,
+      "manager_label": null,
+      "delete_handled_by_manager": false,
+      "keep_notifies_manager": false,
+      "fingerprint_recorded": true,
+      "unconfirmed_size_bytes": null,
+      "unconfirmed_modified_at": null,
+      "delete_refused_reason": null
+    }
+  },
+  "GET /api/v1/processing/files/1/why-held": {
+    "status": 200,
+    "body": {
+      "file_id": 1,
+      "relative_path": "Recorded Film (2020).mkv",
+      "library_name": "Movies",
+      "recorded_status": "processed",
+      "recorded_reason": "Finished processing this file.",
+      "verdict": "no_upstream_signal",
+      "owned": false,
+      "blocked_upstream": false,
+      "blocked_by_connection": null,
+      "queue_row_count": 0,
+      "managers_consulted": 0,
+      "managers_reporting": 0,
+      "managers_without_queue_signal": [],
+      "reasons": [
+        "No media manager is connected for Movies, so Weir had no import check to make. Add one in Setup › Connections › Media managers if you want that safety check."
+      ]
+    }
+  },
+  "GET /api/v1/processing/files/1/log": {
+    "status": 200,
+    "body": {
+      "file_id": 1,
+      "relative_path": "Recorded Film (2020).mkv",
+      "retention_days": 90,
+      "entries": [
+        {
+          "id": 1,
+          "recorded_at": "2026-10-15T19:25:33.341157",
+          "outcome": "live_output_written",
+          "title": "Recorded Film (2020).mkv was processed successfully",
+          "library_name": "Movies",
+          "detail": {
+            "ok": true,
+            "outcome": "live_output_written",
+            "relative_media_path": "Recorded Film (2020).mkv",
+            "inspected_source_path": "C:\\weir-recorded-replies\\media\\watched\\Recorded Film (2020).mkv",
+            "processing_watched_folder_resolved": "C:\\weir-recorded-replies\\media\\watched",
+            "stream_counts": {
+              "video": 1,
+              "audio": 2,
+              "subtitle": 0
+            },
+            "preflight_status": "ok",
+            "preflight_reason": "ffprobe completed and remux plan was evaluated",
+            "preflight_probe_settings": {
+              "probe_size_mb": 10,
+              "analyze_duration_seconds": 10
+            },
+            "plan_summary": "video copy indices: [0] | audio out: #1 eng | subtitles out: none | removed audio: fra aac 1 ch (stream 2): removed (not selected — eng aac 1 ch (stream 1) kept)",
+            "audio_before": "English 1.0 AAC · FRA 1.0 AAC",
+            "audio_after": "English 1.0 AAC",
+            "subs_before": "—",
+            "subs_after": "None",
+            "removed_audio": [
+              "fra aac 1 ch (stream 2): removed (not selected — eng aac 1 ch (stream 1) kept)"
+            ],
+            "removed_subtitles": [],
+            "removed_images": [],
+            "removed_attachments": [],
+            "metadata_removed": "—",
+            "remux_required": true,
+            "pass_through_unchanged": false,
+            "ffmpeg_argv": [
+              "C:\\Projects\\Deluno\\tools\\ffmpeg\\win-x64\\ffmpeg.exe",
+              "-hide_banner",
+              "-loglevel",
+              "error",
+              "-xerror",
+              "-err_detect",
+              "explode",
+              "-nostdin",
+              "-y",
+              "-protocol_whitelist",
+              "file",
+              "-i",
+              "C:\\weir-recorded-replies\\media\\watched\\Recorded Film (2020).mkv",
+              "-map",
+              "0:0",
+              "-map",
+              "0:1",
+              "-map",
+              "0:t?",
+              "-c",
+              "copy",
+              "-disposition:a:0",
+              "+default",
+              "-metadata:s:v:0",
+              "DURATION=",
+              "-metadata:s:v:0",
+              "NUMBER_OF_FRAMES=",
+              "-metadata:s:v:0",
+              "NUMBER_OF_BYTES=",
+              "-metadata:s:v:0",
+              "BPS=",
+              "-metadata:s:v:0",
+              "_STATISTICS_WRITING_APP=",
+              "-metadata:s:v:0",
+              "_STATISTICS_WRITING_DATE_UTC=",
+              "-metadata:s:v:0",
+              "_STATISTICS_TAGS=",
+              "-metadata:s:v:0",
+              "ENCODER=",
+              "-metadata:s:a:0",
+              "DURATION=",
+              "-metadata:s:a:0",
+              "NUMBER_OF_FRAMES=",
+              "-metadata:s:a:0",
+              "NUMBER_OF_BYTES=",
+              "-metadata:s:a:0",
+              "BPS=",
+              "-metadata:s:a:0",
+              "_STATISTICS_WRITING_APP=",
+              "-metadata:s:a:0",
+              "_STATISTICS_WRITING_DATE_UTC=",
+              "-metadata:s:a:0",
+              "_STATISTICS_TAGS=",
+              "-metadata:s:a:0",
+              "ENCODER=",
+              "C:\\weir-recorded-replies\\media\\work\\planned-ffmpeg-destination-placeholder.mkv"
+            ],
+            "audio_selection_notes": [
+              "Track ranking: content tier (main, then dub/audio description, then commentary), then channels highest first, then codec order, then bitrate highest first, then default first.",
+              "Selected eng aac 1 ch (stream 1) as the only track in the first matching language tier.",
+              "Removed non-selected fra aac 1 ch (stream 2) after selecting eng aac 1 ch (stream 1)."
+            ],
+            "media_scope": "movie",
+            "source_fingerprint": {
+              "device": 4005349500,
+              "inode": 844424935652015,
+              "size_bytes": 22808,
+              "modified_time_ns": 1792092327455030800
+            },
+            "source_fingerprint_size": 22808,
+            "source_fingerprint_mtime_ns": 1792092327455030800,
+            "output_file": "C:\\weir-recorded-replies\\media\\output\\Recorded Film (2020).mkv",
+            "output_replaced_existing": false,
+            "processing_output_folder_resolved": "C:\\weir-recorded-replies\\media\\output",
+            "output_collision_policy": "replace",
+            "output_collision_action": "write",
+            "output_collision_reason": "No file existed at the output path, so Weir wrote it there.",
+            "source_size_bytes": 22808,
+            "output_size_bytes": 17503,
+            "after_track_lines_meaning": "Live remux finished; before = source probe; after = planned disposition (copy remux — ffprobe of the written file was used for validation only).",
+            "sidecars_migrated": [],
+            "sidecars_skipped": [],
+            "sidecar_migration_blocked": false,
+            "sidecar_migration_blocked_reason": null,
+            "original_timestamps_note": null,
+            "source_folder_deleted": false,
+            "source_folder_path": null,
+            "source_folder_skip_reason": "The video file sits directly in the watched folder root, so Weir does not remove a release folder here.",
+            "output_completeness_check": null,
+            "cascade_folders_deleted": [],
+            "output_completeness_note": null,
+            "source_deleted_after_success": false,
+            "movie_output_folder_deleted": false,
+            "movie_output_folder_path": null,
+            "movie_output_folder_skip_reason": "The movie file sits directly in the Movies output folder root, so a per-title folder is not removed here.",
+            "movie_output_truth_check": "skipped",
+            "movie_output_truth_note": "The movie file sits directly in the Movies output folder root, so a per-title folder is not removed here.",
+            "movie_output_age_seconds": null,
+            "movie_output_cascade_folders_deleted": [],
+            "movie_output_dry_run": false,
+            "job_id": 6,
+            "library_id": 1,
+            "trigger": "scheduled",
+            "run_id": "scan-5"
+          },
+          "story": [
+            {
+              "heading": "Picked up",
+              "sentence": "Weir took this file as a film in the Movies workflow.",
+              "tone": "neutral"
+            },
+            {
+              "heading": "Looked inside",
+              "sentence": "It found 1 video track, 2 audio tracks and 0 subtitle tracks. Audio: English 1.0 AAC · FRA 1.0 AAC.",
+              "tone": "neutral"
+            },
+            {
+              "heading": "Planned",
+              "sentence": "Weir planned to remove 1 audio track, strip the file's metadata. Audio kept: English 1.0 AAC. The video is copied, not re-encoded, so picture quality is unchanged.",
+              "tone": "neutral"
+            },
+            {
+              "heading": "Why these tracks",
+              "sentence": "Track ranking: content tier (main, then dub/audio description, then commentary), then channels highest first, then codec order, then bitrate highest first, then default first. Selected eng aac 1 ch (stream 1) as the only track in the first matching language tier. Removed non-selected fra aac 1 ch (stream 2) after selecting eng aac 1 ch (stream 1).",
+              "tone": "neutral"
+            },
+            {
+              "heading": "Worked",
+              "sentence": "22.3 KB became 17.1 KB, saving 5.2 KB.",
+              "tone": "good"
+            },
+            {
+              "heading": "An output already existed",
+              "sentence": "No file existed at the output path, so Weir wrote it there.",
+              "tone": "neutral"
+            },
+            {
+              "heading": "Cleaned copy",
+              "sentence": "The cleaned copy is in the output folder, at C:\\weir-recorded-replies\\media\\output\\Recorded Film (2020).mkv.",
+              "tone": "good"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "GET /api/v1/processing/files/1/tracks": {
+    "status": 200,
+    "body": {
+      "file_id": 1,
+      "relative_path": "Recorded Film (2020).mkv",
+      "media_scope": "movie",
+      "source_fingerprint": {
+        "device": 4005349500,
+        "inode": 844424935652015,
+        "size_bytes": 22808,
+        "modified_time_ns": 1792092327455030800
+      },
+      "streams": [
+        {
+          "index": 0,
+          "type": "video",
+          "codec": "h264",
+          "language": null,
+          "title": null,
+          "channels": null,
+          "default": false,
+          "forced": false,
+          "rule_would_keep": true,
+          "rule_reason": "Kept as the video track."
+        },
+        {
+          "index": 1,
+          "type": "audio",
+          "codec": "aac",
+          "language": "eng",
+          "title": null,
+          "channels": 1,
+          "default": true,
+          "forced": false,
+          "rule_would_keep": true,
+          "rule_reason": "Kept: selected as the best audio track (eng aac 1 ch (stream 1))."
+        },
+        {
+          "index": 2,
+          "type": "audio",
+          "codec": "aac",
+          "language": "fra",
+          "title": null,
+          "channels": 1,
+          "default": false,
+          "forced": false,
+          "rule_would_keep": false,
+          "rule_reason": "Removed: not selected (eng aac 1 ch (stream 1) was kept instead)."
+        }
+      ]
+    }
+  },
+  "GET /api/v1/processing/files-at-once": {
+    "status": 200,
+    "body": {
+      "files_at_once": 1,
+      "worker_slots": 10,
+      "effective_files_at_once": 1,
+      "running": 0,
+      "waiting": 0,
+      "waiting_for": "nothing",
+      "message": "",
+      "slots_note": ""
+    }
+  },
+  "GET /api/v1/processing/files/rejected/summary": {
+    "status": 200,
+    "body": {
+      "rejected": 0,
+      "ready": 0
+    }
+  },
+  "GET /api/v1/processing/files/rejected/summary?library_id=1": {
+    "status": 200,
+    "body": {
+      "rejected": 0,
+      "ready": 0
+    }
+  },
+  "GET /api/v1/processing/kept-files": {
+    "status": 200,
+    "body": {
+      "files": []
+    }
+  },
+  "GET /api/v1/processing/rule-sets": {
+    "status": 200,
+    "body": [
+      {
+        "id": 1,
+        "name": "Movies rules",
+        "primary_audio_lang": "eng",
+        "secondary_audio_lang": "jpn",
+        "tertiary_audio_lang": "",
+        "default_audio_slot": "primary",
+        "remove_commentary": true,
+        "subtitle_mode": "remove_all",
+        "subtitle_langs_csv": "",
+        "preserve_forced_subs": true,
+        "preserve_default_subs": true,
+        "audio_preference_mode": "preferred_langs_quality",
+        "audio_sorters_json": "",
+        "subtitle_sorters_json": "",
+        "keep_original_language": false,
+        "original_language_additional_csv": "",
+        "original_language_keep_only_first": true,
+        "original_language_first_if_none": true,
+        "original_language_treat_empty_as_original": false,
+        "remove_images": false,
+        "remove_attachments": false,
+        "remove_title": false,
+        "remove_language_tags": false,
+        "remove_other_metadata": false,
+        "remove_hearing_impaired_subs": false,
+        "audio_keep_mode": "single",
+        "subtitle_max_per_language": 0,
+        "subtitle_quality_strategy": "text_first",
+        "standardize_track_names": false,
+        "track_name_template": "{language}{variant} {channels} {codec}",
+        "track_name_overrides": {
+          "forced": "{language} {flags}",
+          "hearing_impaired": "{language} {flags}",
+          "commentary": "{language} {flags}",
+          "audio_description": "{language} {flags}"
+        },
+        "clear_video_track_names": false,
+        "remove_chapters": false,
+        "used_by_library_count": 1,
+        "updated_at": "2026-10-15T19:25:27"
+      },
+      {
+        "id": 2,
+        "name": "TV rules",
+        "primary_audio_lang": "eng",
+        "secondary_audio_lang": "jpn",
+        "tertiary_audio_lang": "",
+        "default_audio_slot": "primary",
+        "remove_commentary": true,
+        "subtitle_mode": "remove_all",
+        "subtitle_langs_csv": "",
+        "preserve_forced_subs": true,
+        "preserve_default_subs": true,
+        "audio_preference_mode": "preferred_langs_quality",
+        "audio_sorters_json": "",
+        "subtitle_sorters_json": "",
+        "keep_original_language": false,
+        "original_language_additional_csv": "",
+        "original_language_keep_only_first": true,
+        "original_language_first_if_none": true,
+        "original_language_treat_empty_as_original": false,
+        "remove_images": false,
+        "remove_attachments": false,
+        "remove_title": false,
+        "remove_language_tags": false,
+        "remove_other_metadata": false,
+        "remove_hearing_impaired_subs": false,
+        "audio_keep_mode": "single",
+        "subtitle_max_per_language": 0,
+        "subtitle_quality_strategy": "text_first",
+        "standardize_track_names": false,
+        "track_name_template": "{language}{variant} {channels} {codec}",
+        "track_name_overrides": {
+          "forced": "{language} {flags}",
+          "hearing_impaired": "{language} {flags}",
+          "commentary": "{language} {flags}",
+          "audio_description": "{language} {flags}"
+        },
+        "clear_video_track_names": false,
+        "remove_chapters": false,
+        "used_by_library_count": 1,
+        "updated_at": "2026-10-15T19:25:27"
+      }
+    ]
+  },
+  "GET /api/v1/processing/direct-play/devices": {
+    "status": 200,
+    "body": {
+      "devices": [
+        {
+          "id": "apple_tv_4k",
+          "name": "Apple TV 4K",
+          "source": "https://www.apple.com/apple-tv-4k/specs/ (checked 2026-09-17)",
+          "note": "Apple's built-in player. Apps such as Infuse, Swiftfin or Plex can play more.",
+          "selected": false
+        },
+        {
+          "id": "lg_webos",
+          "name": "LG TV (webOS 25)",
+          "source": "https://webostv.developer.lge.com/develop/specifications/video-audio-250 (checked 2026-09-17)",
+          "note": "LG notes that some models do not support DTS, DTS-HD or DTS:X.",
+          "selected": false
+        },
+        {
+          "id": "samsung_tizen_2024",
+          "name": "Samsung TV (2024)",
+          "source": "https://developer.samsung.com/smarttv/develop/specifications/media-specifications/2024-tv-video-specifications.html (checked 2026-09-17)",
+          "note": "Samsung: DTS is not supported on 2024 TVs. HEVC is supported only in MKV, MP4 and TS.",
+          "selected": false
+        },
+        {
+          "id": "iphone_ipad",
+          "name": "iPhone and iPad",
+          "source": "https://jellyfin.org/docs/general/clients/codec-support/ iOS column (checked 2026-09-17)",
+          "note": "Jellyfin's table has no iOS container column, so only Apple's own formats (MP4, M4V, MOV) are listed. Opus and Vorbis need iOS 17 or later / 18.4 or later.",
+          "selected": false
+        },
+        {
+          "id": "chromecast_google_tv",
+          "name": "Chromecast with Google TV",
+          "source": "https://jellyfin.org/docs/general/clients/codec-support/ Android TV column (checked 2026-09-17)",
+          "note": "Google TV runs Android TV. HEVC 10-bit and AV1 are partial there.",
+          "selected": false
+        },
+        {
+          "id": "fire_tv",
+          "name": "Fire TV",
+          "source": "https://jellyfin.org/docs/general/clients/codec-support/ Android TV column (checked 2026-09-17)",
+          "note": "Fire TV runs Android TV. HEVC 10-bit and AV1 are partial there, and vary by model.",
+          "selected": false
+        },
+        {
+          "id": "roku",
+          "name": "Roku",
+          "source": "https://jellyfin.org/docs/general/clients/codec-support/ Roku column (checked 2026-09-17)",
+          "note": "Roku passes DTS through to the TV or receiver. HEVC support is partial.",
+          "selected": false
+        },
+        {
+          "id": "web_browser",
+          "name": "Web browser (Chrome)",
+          "source": "https://jellyfin.org/docs/general/clients/codec-support/ Chrome column (checked 2026-09-17)",
+          "note": "Chrome. Firefox and Safari support less; HEVC depends on the operating system.",
+          "selected": false
+        }
+      ],
+      "customised": false
+    }
+  },
+  "PUT /api/v1/processing/direct-play/devices": {
+    "status": 200,
+    "body": {
+      "devices": [
+        {
+          "id": "apple_tv_4k",
+          "name": "Apple TV 4K",
+          "source": "https://www.apple.com/apple-tv-4k/specs/ (checked 2026-09-17)",
+          "note": "Apple's built-in player. Apps such as Infuse, Swiftfin or Plex can play more.",
+          "selected": true
+        },
+        {
+          "id": "lg_webos",
+          "name": "LG TV (webOS 25)",
+          "source": "https://webostv.developer.lge.com/develop/specifications/video-audio-250 (checked 2026-09-17)",
+          "note": "LG notes that some models do not support DTS, DTS-HD or DTS:X.",
+          "selected": false
+        },
+        {
+          "id": "samsung_tizen_2024",
+          "name": "Samsung TV (2024)",
+          "source": "https://developer.samsung.com/smarttv/develop/specifications/media-specifications/2024-tv-video-specifications.html (checked 2026-09-17)",
+          "note": "Samsung: DTS is not supported on 2024 TVs. HEVC is supported only in MKV, MP4 and TS.",
+          "selected": false
+        },
+        {
+          "id": "iphone_ipad",
+          "name": "iPhone and iPad",
+          "source": "https://jellyfin.org/docs/general/clients/codec-support/ iOS column (checked 2026-09-17)",
+          "note": "Jellyfin's table has no iOS container column, so only Apple's own formats (MP4, M4V, MOV) are listed. Opus and Vorbis need iOS 17 or later / 18.4 or later.",
+          "selected": false
+        },
+        {
+          "id": "chromecast_google_tv",
+          "name": "Chromecast with Google TV",
+          "source": "https://jellyfin.org/docs/general/clients/codec-support/ Android TV column (checked 2026-09-17)",
+          "note": "Google TV runs Android TV. HEVC 10-bit and AV1 are partial there.",
+          "selected": false
+        },
+        {
+          "id": "fire_tv",
+          "name": "Fire TV",
+          "source": "https://jellyfin.org/docs/general/clients/codec-support/ Android TV column (checked 2026-09-17)",
+          "note": "Fire TV runs Android TV. HEVC 10-bit and AV1 are partial there, and vary by model.",
+          "selected": false
+        },
+        {
+          "id": "roku",
+          "name": "Roku",
+          "source": "https://jellyfin.org/docs/general/clients/codec-support/ Roku column (checked 2026-09-17)",
+          "note": "Roku passes DTS through to the TV or receiver. HEVC support is partial.",
+          "selected": false
+        },
+        {
+          "id": "web_browser",
+          "name": "Web browser (Chrome)",
+          "source": "https://jellyfin.org/docs/general/clients/codec-support/ Chrome column (checked 2026-09-17)",
+          "note": "Chrome. Firefox and Safari support less; HEVC depends on the operating system.",
+          "selected": false
+        }
+      ],
+      "customised": false
+    }
+  },
+  "GET /api/v1/processing/libraries/1/folder-chain": {
+    "status": 200,
+    "body": {
+      "library_id": 1,
+      "local": {
+        "ready": true,
+        "lines": [
+          {
+            "state": "ok",
+            "text": "Weir can read the watched folder C:/weir-recorded-replies/media/watched."
+          },
+          {
+            "state": "ok",
+            "text": "Weir can read the work folder C:/weir-recorded-replies/media/work."
+          },
+          {
+            "state": "ok",
+            "text": "Weir can read and write the output folder C:/weir-recorded-replies/media/output."
+          },
+          {
+            "state": "ok",
+            "text": "The work folder and output folder are on the same drive, so a finished file is moved into place instantly."
+          }
+        ]
+      },
+      "managers": [],
+      "download_clients": [],
+      "ready": true
+    }
+  },
+  "GET /api/v1/processing/reject-support": {
+    "status": 200,
+    "body": {
+      "available": false,
+      "reason": "Link a media manager to this workflow first. Rejecting needs a manager that can find a different release."
+    }
+  },
+  "GET /api/v1/processing/manager-setup?media_type=movie&watched_folder=C%3A%2Fweir-recorded-replies%2Fmedia%2Fwatched&output_folder=C%3A%2Fweir-recorded-replies%2Fmedia%2Foutput&remove_original_after_success=true": {
+    "status": 200,
+    "body": {
+      "media_type": "movie",
+      "managers": []
+    }
+  },
+  "GET /api/v1/processing/library-suggestions": {
+    "status": 200,
+    "body": {
+      "libraries": [],
+      "notes": []
+    }
+  },
+  "GET /api/v1/processing/maintenance": {
+    "status": 200,
+    "body": {
+      "families": [
+        {
+          "family": "work_temp_stale_sweep",
+          "enabled": true,
+          "description": "Deletes half-written copies Weir left in its work folders once they have sat for a day, including a failed copy you asked Weir to keep. Never touches a file being written.",
+          "pending": 0,
+          "running": 0,
+          "last_completed_at": "2026-10-15T19:25:28",
+          "last_failed_at": null,
+          "last_error": null,
+          "interval_seconds": 3600,
+          "next_run_at": "2026-10-15T20:25:28.000849Z"
+        },
+        {
+          "family": "unclaimed_handbacks",
+          "enabled": false,
+          "description": "Deletes Weir's own cleaned copy from a hand-back folder when no media manager imported it in time. Only a copy that is still exactly as Weir wrote it; never a download. It stays off until you switch it on.",
+          "pending": 0,
+          "running": 0,
+          "last_completed_at": null,
+          "last_failed_at": null,
+          "last_error": null,
+          "interval_seconds": 21600,
+          "next_run_at": null,
+          "window_days": 14
+        }
+      ]
+    }
+  },
+  "GET /api/v1/processing/operator-settings": {
+    "status": 200,
+    "body": {
+      "max_concurrent_files": 1,
+      "runner_capacity": 1,
+      "runner_cost_sd": 0,
+      "runner_cost_720p": 0,
+      "runner_cost_1080p": 1,
+      "runner_cost_4k": 1,
+      "runner_budget_enabled": false,
+      "work_temp_stale_sweep_enabled": true,
+      "work_temp_stale_sweep_interval_seconds": null,
+      "unclaimed_handback_cleanup_enabled": false,
+      "unclaimed_handback_window_days": 14,
+      "unclaimed_handback_cleanup_interval_seconds": null,
+      "keep_failed_work_files": false,
+      "file_log_retention_days": 90,
+      "movie_schedule_enabled": true,
+      "tv_schedule_enabled": true,
+      "schedule_timezone": "UTC",
+      "updated_at": "2026-10-15T19:25:27"
+    }
+  },
+  "GET /api/v1/processing/libraries/1/library-settings": {
+    "status": 200,
+    "body": {
+      "library_folders": [
+        "C:/weir-recorded-replies/media/library"
+      ],
+      "library_schedule_enabled": false,
+      "clean_hardlinked_files": false,
+      "skip_if_manager_would_redownload": true,
+      "keep_original_after_clean": false,
+      "originals_folder": "",
+      "library_rule_set_id": null
+    }
+  },
+  "GET /api/v1/processing/libraries/1/library-redownloads": {
+    "status": 200,
+    "body": {
+      "library_id": 1,
+      "titles": [],
+      "total": 0
+    }
+  },
+  "GET /api/v1/processing/libraries/1/library-overview": {
+    "status": 200,
+    "body": {
+      "library_id": 1,
+      "folders_configured": 1,
+      "scan": {
+        "job_id": 3,
+        "status": "completed",
+        "running": false,
+        "files_seen": null,
+        "generated_at": 1792092329,
+        "errors": []
+      },
+      "schedule": {
+        "enabled": false,
+        "next_run_at": null
+      },
+      "totals": {
+        "files": 1,
+        "size_bytes": 22808,
+        "matches": 0,
+        "would_change": 1,
+        "cannot_process": 0,
+        "estimated_bytes_saved": 0,
+        "total_removed_audio_tracks": 1,
+        "total_removed_subtitle_tracks": 0,
+        "cleaned": 0,
+        "left_alone": 0,
+        "by_status": {
+          "needs_cleaning": 1,
+          "cleaning": 0,
+          "matches": 0,
+          "cant_clean_yet": 0,
+          "left_alone": 0
+        }
+      },
+      "breakdowns": {
+        "video_codec": [
+          {
+            "value": "h264",
+            "files": 1,
+            "size_bytes": 22808,
+            "share": 1
+          }
+        ],
+        "resolution": [
+          {
+            "value": "sd",
+            "files": 1,
+            "size_bytes": 22808,
+            "share": 1
+          }
+        ],
+        "audio": [
+          {
+            "value": "aac mono",
+            "files": 1,
+            "size_bytes": 22808,
+            "share": 1
+          }
+        ],
+        "audio_language": [
+          {
+            "value": "eng",
+            "files": 1,
+            "size_bytes": 22808,
+            "share": 1
+          },
+          {
+            "value": "fre",
+            "files": 1,
+            "size_bytes": 22808,
+            "share": 1
+          }
+        ],
+        "subtitle_language": []
+      },
+      "problems": []
+    }
+  },
+  "GET /api/v1/processing/libraries/1/library-files": {
+    "status": 200,
+    "body": {
+      "library_id": 1,
+      "scan": {
+        "job_id": 3,
+        "status": "completed",
+        "running": false,
+        "files_seen": null,
+        "generated_at": 1792092329,
+        "errors": []
+      },
+      "summary": {
+        "files": 1,
+        "size_bytes": 22808,
+        "matches": 0,
+        "would_change": 1,
+        "cannot_process": 0,
+        "estimated_bytes_saved": 0,
+        "total_removed_audio_tracks": 1,
+        "total_removed_subtitle_tracks": 0,
+        "cleaned": 0,
+        "left_alone": 0,
+        "by_status": {
+          "needs_cleaning": 1,
+          "cleaning": 0,
+          "matches": 0,
+          "cant_clean_yet": 0,
+          "left_alone": 0
+        }
+      },
+      "filtered": {
+        "files": 1,
+        "size_bytes": 22808,
+        "matches": 0,
+        "would_change": 1,
+        "cannot_process": 0,
+        "estimated_bytes_saved": 0,
+        "total_removed_audio_tracks": 1,
+        "total_removed_subtitle_tracks": 0,
+        "cleaned": 0,
+        "left_alone": 0,
+        "by_status": {
+          "needs_cleaning": 1,
+          "cleaning": 0,
+          "matches": 0,
+          "cant_clean_yet": 0,
+          "left_alone": 0
+        }
+      },
+      "files": [
+        {
+          "path": "C:/weir-recorded-replies/media/library\\Library Film (2019).mkv",
+          "poster_url": null,
+          "size_bytes": 22808,
+          "modified_at": 1792092327,
+          "classification": "would_change",
+          "summary": "Would remove 1 audio track (fra aac 1 ch (stream 2): removed (not selected — eng aac 1 ch (stream 1) kept)).",
+          "reason": null,
+          "removed_audio_tracks": 1,
+          "removed_subtitle_tracks": 0,
+          "estimated_bytes_saved": 0,
+          "manager_kind": null,
+          "manager_title": null,
+          "video_codec": "h264",
+          "video_height": 64,
+          "resolution_class": "sd",
+          "audio_track_count": 2,
+          "subtitle_track_count": 0,
+          "audio_summary": "eng aac mono, fre aac mono",
+          "subtitle_summary": null,
+          "link_count": 1,
+          "problem_kind": null,
+          "cleaned_at": null,
+          "leave_alone": false,
+          "status": "needs_cleaning",
+          "status_reason": null
+        }
+      ],
+      "total": 1,
+      "page": 1,
+      "page_size": 50,
+      "sort": "path",
+      "direction": "asc"
+    }
+  },
+  "GET /api/v1/processing/libraries/1/library-files?status=needs_cleaning&q=Library&sort=size&direction=desc&page_size=25": {
+    "status": 200,
+    "body": {
+      "library_id": 1,
+      "scan": {
+        "job_id": 3,
+        "status": "completed",
+        "running": false,
+        "files_seen": null,
+        "generated_at": 1792092329,
+        "errors": []
+      },
+      "summary": {
+        "files": 1,
+        "size_bytes": 22808,
+        "matches": 0,
+        "would_change": 1,
+        "cannot_process": 0,
+        "estimated_bytes_saved": 0,
+        "total_removed_audio_tracks": 1,
+        "total_removed_subtitle_tracks": 0,
+        "cleaned": 0,
+        "left_alone": 0,
+        "by_status": {
+          "needs_cleaning": 1,
+          "cleaning": 0,
+          "matches": 0,
+          "cant_clean_yet": 0,
+          "left_alone": 0
+        }
+      },
+      "filtered": {
+        "files": 1,
+        "size_bytes": 22808,
+        "matches": 0,
+        "would_change": 1,
+        "cannot_process": 0,
+        "estimated_bytes_saved": 0,
+        "total_removed_audio_tracks": 1,
+        "total_removed_subtitle_tracks": 0,
+        "cleaned": 0,
+        "left_alone": 0,
+        "by_status": {
+          "needs_cleaning": 1,
+          "cleaning": 0,
+          "matches": 0,
+          "cant_clean_yet": 0,
+          "left_alone": 0
+        }
+      },
+      "files": [
+        {
+          "path": "C:/weir-recorded-replies/media/library\\Library Film (2019).mkv",
+          "poster_url": null,
+          "size_bytes": 22808,
+          "modified_at": 1792092327,
+          "classification": "would_change",
+          "summary": "Would remove 1 audio track (fra aac 1 ch (stream 2): removed (not selected — eng aac 1 ch (stream 1) kept)).",
+          "reason": null,
+          "removed_audio_tracks": 1,
+          "removed_subtitle_tracks": 0,
+          "estimated_bytes_saved": 0,
+          "manager_kind": null,
+          "manager_title": null,
+          "video_codec": "h264",
+          "video_height": 64,
+          "resolution_class": "sd",
+          "audio_track_count": 2,
+          "subtitle_track_count": 0,
+          "audio_summary": "eng aac mono, fre aac mono",
+          "subtitle_summary": null,
+          "link_count": 1,
+          "problem_kind": null,
+          "cleaned_at": null,
+          "leave_alone": false,
+          "status": "needs_cleaning",
+          "status_reason": null
+        }
+      ],
+      "total": 1,
+      "page": 1,
+      "page_size": 25,
+      "sort": "size",
+      "direction": "desc"
+    }
+  },
+  "POST /api/v1/processing/library-check": {
+    "status": 200,
+    "body": {
+      "movie": {
+        "problem": "This workflow's watched folder overlaps the watched folder of 'Movies'. Each workflow needs its own folders, neither inside another's.",
+        "chain": null
+      },
+      "tv": null
+    }
+  },
+  "GET /api/v1/processing/files/9999/why-held": {
+    "status": 404,
+    "body": {
+      "detail": "Weir has no record of that file."
+    }
+  },
+  "POST /api/v1/processing/libraries/1/library-files/leave-alone": {
+    "status": 200,
+    "body": {
+      "path": "C:/weir-recorded-replies/media/library\\Library Film (2019).mkv",
+      "leave_alone": true
+    }
+  },
+  "POST /api/v1/processing/libraries/1/library-files/leave-alone (undone)": {
+    "status": 200,
+    "body": {
+      "path": "C:/weir-recorded-replies/media/library\\Library Film (2019).mkv",
+      "leave_alone": false
+    }
+  },
+  "POST /api/v1/processing/libraries/1/library-files/clean (to confirm)": {
+    "status": 400,
+    "body": {
+      "error": "confirm_final_removal_required",
+      "detail": "1 file, 1 track will be removed. Removed tracks are gone for good; getting one back means downloading the title again.",
+      "files_count": 1,
+      "tracks_count": 1,
+      "estimated_bytes_saved": 0,
+      "warnings": []
+    }
+  },
+  "POST /api/v1/processing/libraries/1/library-files/clean": {
+    "status": 200,
+    "body": {
+      "queued": 1,
+      "job_ids": [
+        7
+      ],
+      "files_count": 1,
+      "tracks_count": 1,
+      "estimated_bytes_saved": 0,
+      "skipped_paths": [],
+      "warnings": []
+    }
+  },
+  "GET /api/v1/processing/library-cleans": {
+    "status": 200,
+    "body": {
+      "cleans": [
+        {
+          "kind": "library_clean",
+          "id": 7,
+          "library_id": 1,
+          "library_name": "Movies",
+          "relative_path": "C:/weir-recorded-replies/media/library\\Library Film (2019).mkv",
+          "poster_url": null,
+          "outcome": "cleaned",
+          "detail": "Cleaned Library Film (2019).mkv: removed 1 audio track. Weir wrote it with ffmpeg because mkvmerge could not.",
+          "trigger": null,
+          "recorded_at": "2026-10-15T19:25:34"
+        }
+      ],
+      "returned": 1,
+      "limit": 200
+    }
+  },
+  "GET /api/v1/processing/library-cleans?library_id=1&path_contains=Library&within_days=7&limit=20": {
+    "status": 200,
+    "body": {
+      "cleans": [
+        {
+          "kind": "library_clean",
+          "id": 7,
+          "library_id": 1,
+          "library_name": "Movies",
+          "relative_path": "C:/weir-recorded-replies/media/library\\Library Film (2019).mkv",
+          "poster_url": null,
+          "outcome": "cleaned",
+          "detail": "Cleaned Library Film (2019).mkv: removed 1 audio track. Weir wrote it with ffmpeg because mkvmerge could not.",
+          "trigger": null,
+          "recorded_at": "2026-10-15T19:25:34"
+        }
+      ],
+      "returned": 1,
+      "limit": 20
+    }
+  },
+  "POST /api/v1/processing/libraries/1/library-schedule": {
+    "status": 200,
+    "body": {
+      "library_folders": [
+        "C:/weir-recorded-replies/media/library"
+      ],
+      "library_schedule_enabled": false,
+      "clean_hardlinked_files": false,
+      "skip_if_manager_would_redownload": true,
+      "keep_original_after_clean": false,
+      "originals_folder": "",
+      "library_rule_set_id": null
+    }
+  },
+  "POST /api/v1/processing/libraries/1/library-redownloads": {
+    "status": 200,
+    "body": {
+      "path": "C:/weir-recorded-replies/media/library\\Library Film (2019).mkv",
+      "outcome": "unsupported",
+      "message": "No connected media manager can be asked to download this again. Download it again yourself."
+    }
+  },
+  "POST /api/v1/processing/libraries/1/preview (full path)": {
+    "status": 200,
+    "body": {
+      "library_id": 1,
+      "media_scope": "movie",
+      "inspected_path": "C:\\weir-recorded-replies\\media\\library\\Library Film (2019).mkv",
+      "tracks": [
+        {
+          "index": 0,
+          "type": "video",
+          "codec": "h264",
+          "language": "",
+          "title": "",
+          "channels": 0,
+          "action": "keep",
+          "default": false,
+          "forced": false,
+          "reasons": [
+            "Video track kept unchanged."
+          ]
+        },
+        {
+          "index": 1,
+          "type": "audio",
+          "codec": "aac",
+          "language": "eng",
+          "title": "",
+          "channels": 1,
+          "action": "keep",
+          "default": true,
+          "forced": false,
+          "reasons": [
+            "Selected eng aac 1 ch (stream 1) as the only track in the first matching language tier."
+          ]
+        }
+      ],
+      "notes": [
+        "Track ranking: content tier (main, then dub/audio description, then commentary), then channels highest first, then codec order, then bitrate highest first, then default first.",
+        "Selected eng aac 1 ch (stream 1) as the only track in the first matching language tier."
+      ],
+      "metadata_notes": [],
+      "remux_required": false,
+      "estimated_size_reduction_bytes": null,
+      "estimated_size_reduction_is_estimate": true
+    }
+  },
+  "POST /api/v1/processing/libraries/1/preview (in the watched folder)": {
+    "status": 200,
+    "body": {
+      "library_id": 1,
+      "media_scope": "movie",
+      "inspected_path": "C:\\weir-recorded-replies\\media\\watched\\Recorded Film (2020).mkv",
+      "tracks": [
+        {
+          "index": 0,
+          "type": "video",
+          "codec": "h264",
+          "language": "",
+          "title": "",
+          "channels": 0,
+          "action": "keep",
+          "default": false,
+          "forced": false,
+          "reasons": [
+            "Video track kept unchanged."
+          ]
+        },
+        {
+          "index": 1,
+          "type": "audio",
+          "codec": "aac",
+          "language": "eng",
+          "title": "",
+          "channels": 1,
+          "action": "keep",
+          "default": true,
+          "forced": false,
+          "reasons": [
+            "Selected eng aac 1 ch (stream 1) as the only track in the first matching language tier.",
+            "Removed non-selected fra aac 1 ch (stream 2) after selecting eng aac 1 ch (stream 1)."
+          ]
+        },
+        {
+          "index": 2,
+          "type": "audio",
+          "codec": "aac",
+          "language": "fra",
+          "title": "",
+          "channels": 1,
+          "action": "drop",
+          "default": false,
+          "forced": false,
+          "reasons": [
+            "Removed non-selected fra aac 1 ch (stream 2) after selecting eng aac 1 ch (stream 1)."
+          ]
+        }
+      ],
+      "notes": [
+        "Track ranking: content tier (main, then dub/audio description, then commentary), then channels highest first, then codec order, then bitrate highest first, then default first.",
+        "Selected eng aac 1 ch (stream 1) as the only track in the first matching language tier.",
+        "Removed non-selected fra aac 1 ch (stream 2) after selecting eng aac 1 ch (stream 1)."
+      ],
+      "metadata_notes": [],
+      "remux_required": true,
+      "estimated_size_reduction_bytes": null,
+      "estimated_size_reduction_is_estimate": true
+    }
+  },
+  "POST /api/v1/processing/rule-sets": {
+    "status": 201,
+    "body": {
+      "id": 3,
+      "name": "Recorded profile",
+      "primary_audio_lang": "fre",
+      "secondary_audio_lang": "eng",
+      "tertiary_audio_lang": "",
+      "default_audio_slot": "primary",
+      "remove_commentary": true,
+      "subtitle_mode": "keep_listed",
+      "subtitle_langs_csv": "eng,fre",
+      "preserve_forced_subs": true,
+      "preserve_default_subs": true,
+      "audio_preference_mode": "preferred_langs_quality",
+      "audio_sorters_json": "[{\"field\":\"content_tier\",\"value\":null,\"reversed\":false},{\"field\":\"channels\",\"value\":null,\"reversed\":false},{\"field\":\"codec\",\"value\":null,\"reversed\":false},{\"field\":\"bitrate\",\"value\":null,\"reversed\":false},{\"field\":\"default\",\"value\":null,\"reversed\":false}]",
+      "subtitle_sorters_json": "[{\"field\":\"content_tier\",\"value\":null,\"reversed\":false},{\"field\":\"channels\",\"value\":null,\"reversed\":false},{\"field\":\"codec\",\"value\":null,\"reversed\":false},{\"field\":\"bitrate\",\"value\":null,\"reversed\":false},{\"field\":\"default\",\"value\":null,\"reversed\":false}]",
+      "keep_original_language": false,
+      "original_language_additional_csv": "",
+      "original_language_keep_only_first": true,
+      "original_language_first_if_none": true,
+      "original_language_treat_empty_as_original": false,
+      "remove_images": false,
+      "remove_attachments": false,
+      "remove_title": false,
+      "remove_language_tags": false,
+      "remove_other_metadata": false,
+      "remove_hearing_impaired_subs": false,
+      "audio_keep_mode": "single",
+      "subtitle_max_per_language": 0,
+      "subtitle_quality_strategy": "text_first",
+      "standardize_track_names": false,
+      "track_name_template": "{language}{variant} {channels} {codec}",
+      "track_name_overrides": {
+        "forced": "{language} {flags}",
+        "hearing_impaired": "{language} {flags}",
+        "commentary": "{language} {flags}",
+        "audio_description": "{language} {flags}"
+      },
+      "clear_video_track_names": false,
+      "remove_chapters": false,
+      "used_by_library_count": 0,
+      "updated_at": "2026-10-15T19:25:35"
+    }
+  },
+  "PUT /api/v1/processing/rule-sets/3": {
+    "status": 200,
+    "body": {
+      "id": 3,
+      "name": "Recorded profile",
+      "primary_audio_lang": "eng",
+      "secondary_audio_lang": "jpn",
+      "tertiary_audio_lang": "",
+      "default_audio_slot": "primary",
+      "remove_commentary": false,
+      "subtitle_mode": "remove_all",
+      "subtitle_langs_csv": "",
+      "preserve_forced_subs": true,
+      "preserve_default_subs": true,
+      "audio_preference_mode": "preferred_langs_quality",
+      "audio_sorters_json": "[{\"field\":\"content_tier\",\"value\":null,\"reversed\":false},{\"field\":\"channels\",\"value\":null,\"reversed\":false},{\"field\":\"codec\",\"value\":null,\"reversed\":false},{\"field\":\"bitrate\",\"value\":null,\"reversed\":false},{\"field\":\"default\",\"value\":null,\"reversed\":false}]",
+      "subtitle_sorters_json": "[{\"field\":\"content_tier\",\"value\":null,\"reversed\":false},{\"field\":\"channels\",\"value\":null,\"reversed\":false},{\"field\":\"codec\",\"value\":null,\"reversed\":false},{\"field\":\"bitrate\",\"value\":null,\"reversed\":false},{\"field\":\"default\",\"value\":null,\"reversed\":false}]",
+      "keep_original_language": false,
+      "original_language_additional_csv": "",
+      "original_language_keep_only_first": true,
+      "original_language_first_if_none": true,
+      "original_language_treat_empty_as_original": false,
+      "remove_images": false,
+      "remove_attachments": false,
+      "remove_title": false,
+      "remove_language_tags": false,
+      "remove_other_metadata": false,
+      "remove_hearing_impaired_subs": false,
+      "audio_keep_mode": "single",
+      "subtitle_max_per_language": 0,
+      "subtitle_quality_strategy": "text_first",
+      "standardize_track_names": false,
+      "track_name_template": "{language}{variant} {channels} {codec}",
+      "track_name_overrides": {
+        "forced": "{language} {flags}",
+        "hearing_impaired": "{language} {flags}",
+        "commentary": "{language} {flags}",
+        "audio_description": "{language} {flags}"
+      },
+      "clear_video_track_names": false,
+      "remove_chapters": false,
+      "used_by_library_count": 0,
+      "updated_at": "2026-10-15T19:25:35",
+      "library_rescan_job_ids": []
+    }
+  },
+  "DELETE /api/v1/processing/rule-sets/3": {
+    "status": 204,
+    "body": null
+  },
+  "DELETE /api/v1/processing/rule-sets/1 (in use)": {
+    "status": 409,
+    "body": {
+      "detail": "Movies rules is still used by 1 workflow. Point them at another rule set first — removing it would strip their audio and subtitle handling."
+    }
+  },
+  "POST /api/v1/processing/libraries": {
+    "status": 201,
+    "body": {
+      "id": 3,
+      "name": "Recorded extra",
+      "enabled": true,
+      "media_type": "movie",
+      "display_order": 2,
+      "watched_folder": "",
+      "work_folder": "",
+      "output_folder": "",
+      "media_extensions_csv": "",
+      "exclude_markers_csv": "",
+      "include_patterns_csv": "",
+      "exclude_patterns_csv": "",
+      "min_file_size_mb": 50,
+      "max_file_size_mb": 0,
+      "rejected_file_action": "leave",
+      "ready_after_seconds": 60,
+      "created_after": null,
+      "created_before": null,
+      "modified_after": null,
+      "modified_before": null,
+      "exclude_hidden": true,
+      "top_level_only": false,
+      "scan_interval_seconds": 300,
+      "sidecar_patterns_csv": ".srt,.ass,.ssa,.sub,.idx,.vtt,.nfo,.jpg,.png",
+      "preserve_original_timestamps": false,
+      "output_collision_policy": "replace",
+      "ffmpeg_strictness": "normal",
+      "remux_writer": "best",
+      "ignore_size_changes": false,
+      "skip_access_tests": false,
+      "file_system_events_enabled": true,
+      "schedule_grid": "",
+      "max_attempts": 3,
+      "retry_backoff_seconds": 300,
+      "retry_execution_failures": true,
+      "retry_preflight_failures": false,
+      "failure_policy": "pass_through",
+      "schedule_enabled": true,
+      "schedule_hours_limited": false,
+      "schedule_days": "",
+      "schedule_start": "00:00",
+      "schedule_end": "23:59",
+      "max_concurrent_files": 0,
+      "effective_max_concurrent_files": 1,
+      "priority": 0,
+      "rule_set_id": 1,
+      "manager_connection_ids": [],
+      "remove_original_after_success": true,
+      "minimum_free_disk_space_mb": 5120,
+      "manager_coverage": "no_upstream_signal",
+      "manager_coverage_detail": "No media manager is linked. Watched-folder remux can still run after local safety gates, but upstream import protection is reduced.",
+      "discovered_from_connection_id": null,
+      "discovered_library_key": null,
+      "folders_synced_from_connection_id": null,
+      "active_job_count": 0,
+      "next_look_at": null,
+      "periodic_scan": "scheduled",
+      "next_scan_at": null,
+      "updated_at": "2026-10-15T19:25:35"
+    }
+  },
+  "POST /api/v1/processing/libraries/reorder": {
+    "status": 200,
+    "body": [
+      {
+        "id": 3,
+        "name": "Recorded extra",
+        "enabled": true,
+        "media_type": "movie",
+        "display_order": 0,
+        "watched_folder": "",
+        "work_folder": "",
+        "output_folder": "",
+        "media_extensions_csv": "",
+        "exclude_markers_csv": "",
+        "include_patterns_csv": "",
+        "exclude_patterns_csv": "",
+        "min_file_size_mb": 50,
+        "max_file_size_mb": 0,
+        "rejected_file_action": "leave",
+        "ready_after_seconds": 60,
+        "created_after": null,
+        "created_before": null,
+        "modified_after": null,
+        "modified_before": null,
+        "exclude_hidden": true,
+        "top_level_only": false,
+        "scan_interval_seconds": 300,
+        "sidecar_patterns_csv": ".srt,.ass,.ssa,.sub,.idx,.vtt,.nfo,.jpg,.png",
+        "preserve_original_timestamps": false,
+        "output_collision_policy": "replace",
+        "ffmpeg_strictness": "normal",
+        "remux_writer": "best",
+        "ignore_size_changes": false,
+        "skip_access_tests": false,
+        "file_system_events_enabled": true,
+        "schedule_grid": "",
+        "max_attempts": 3,
+        "retry_backoff_seconds": 300,
+        "retry_execution_failures": true,
+        "retry_preflight_failures": false,
+        "failure_policy": "pass_through",
+        "schedule_enabled": true,
+        "schedule_hours_limited": false,
+        "schedule_days": "",
+        "schedule_start": "00:00",
+        "schedule_end": "23:59",
+        "max_concurrent_files": 0,
+        "effective_max_concurrent_files": 1,
+        "priority": 0,
+        "rule_set_id": 1,
+        "manager_connection_ids": [],
+        "remove_original_after_success": true,
+        "minimum_free_disk_space_mb": 5120,
+        "manager_coverage": "no_upstream_signal",
+        "manager_coverage_detail": "No media manager is linked. Watched-folder remux can still run after local safety gates, but upstream import protection is reduced.",
+        "discovered_from_connection_id": null,
+        "discovered_library_key": null,
+        "folders_synced_from_connection_id": null,
+        "active_job_count": 0,
+        "next_look_at": null,
+        "periodic_scan": "scheduled",
+        "next_scan_at": null,
+        "updated_at": "2026-10-15T19:25:35"
+      },
+      {
+        "id": 1,
+        "name": "Movies",
+        "enabled": true,
+        "media_type": "movie",
+        "display_order": 1,
+        "watched_folder": "C:/weir-recorded-replies/media/watched",
+        "work_folder": "C:/weir-recorded-replies/media/work",
+        "output_folder": "C:/weir-recorded-replies/media/output",
+        "media_extensions_csv": ".avchd,.avi,.flv,.m4v,.mkv,.mov,.mp4,.mpe,.mpeg,.mpg,.webm,.wmv",
+        "exclude_markers_csv": ".sabnzbd,__admin__,_failed_,_repair_,_unpack_,incomplete",
+        "include_patterns_csv": "",
+        "exclude_patterns_csv": "",
+        "min_file_size_mb": 0,
+        "max_file_size_mb": 0,
+        "rejected_file_action": "leave",
+        "ready_after_seconds": 1,
+        "created_after": null,
+        "created_before": null,
+        "modified_after": null,
+        "modified_before": null,
+        "exclude_hidden": true,
+        "top_level_only": false,
+        "scan_interval_seconds": 300,
+        "sidecar_patterns_csv": ".srt,.ass,.ssa,.sub,.idx,.vtt,.nfo,.jpg,.png",
+        "preserve_original_timestamps": false,
+        "output_collision_policy": "replace",
+        "ffmpeg_strictness": "normal",
+        "remux_writer": "best",
+        "ignore_size_changes": false,
+        "skip_access_tests": false,
+        "file_system_events_enabled": true,
+        "schedule_grid": "",
+        "max_attempts": 3,
+        "retry_backoff_seconds": 300,
+        "retry_execution_failures": true,
+        "retry_preflight_failures": false,
+        "failure_policy": "pass_through",
+        "schedule_enabled": true,
+        "schedule_hours_limited": false,
+        "schedule_days": "",
+        "schedule_start": "00:00",
+        "schedule_end": "23:59",
+        "max_concurrent_files": 0,
+        "effective_max_concurrent_files": 1,
+        "priority": 0,
+        "rule_set_id": 1,
+        "manager_connection_ids": [],
+        "remove_original_after_success": true,
+        "minimum_free_disk_space_mb": 5120,
+        "manager_coverage": "no_upstream_signal",
+        "manager_coverage_detail": "No media manager is linked. Watched-folder remux can still run after local safety gates, but upstream import protection is reduced.",
+        "discovered_from_connection_id": null,
+        "discovered_library_key": null,
+        "folders_synced_from_connection_id": null,
+        "active_job_count": 0,
+        "next_look_at": "2026-10-15T19:30:33.036288Z",
+        "periodic_scan": "scheduled",
+        "next_scan_at": "2026-10-15T19:30:33.036288Z",
+        "updated_at": "2026-10-15T19:25:35"
+      },
+      {
+        "id": 2,
+        "name": "TV",
+        "enabled": true,
+        "media_type": "tv",
+        "display_order": 2,
+        "watched_folder": "",
+        "work_folder": "",
+        "output_folder": "",
+        "media_extensions_csv": ".avchd,.avi,.flv,.m4v,.mkv,.mov,.mp4,.mpe,.mpeg,.mpg,.webm,.wmv",
+        "exclude_markers_csv": ".sabnzbd,__admin__,_failed_,_repair_,_unpack_,incomplete",
+        "include_patterns_csv": "",
+        "exclude_patterns_csv": "",
+        "min_file_size_mb": 50,
+        "max_file_size_mb": 0,
+        "rejected_file_action": "leave",
+        "ready_after_seconds": 60,
+        "created_after": null,
+        "created_before": null,
+        "modified_after": null,
+        "modified_before": null,
+        "exclude_hidden": true,
+        "top_level_only": false,
+        "scan_interval_seconds": 300,
+        "sidecar_patterns_csv": ".srt,.ass,.ssa,.sub,.idx,.vtt,.nfo,.jpg,.png",
+        "preserve_original_timestamps": false,
+        "output_collision_policy": "replace",
+        "ffmpeg_strictness": "normal",
+        "remux_writer": "best",
+        "ignore_size_changes": false,
+        "skip_access_tests": false,
+        "file_system_events_enabled": true,
+        "schedule_grid": "",
+        "max_attempts": 3,
+        "retry_backoff_seconds": 300,
+        "retry_execution_failures": true,
+        "retry_preflight_failures": false,
+        "failure_policy": "pass_through",
+        "schedule_enabled": true,
+        "schedule_hours_limited": false,
+        "schedule_days": "",
+        "schedule_start": "00:00",
+        "schedule_end": "23:59",
+        "max_concurrent_files": 0,
+        "effective_max_concurrent_files": 1,
+        "priority": 0,
+        "rule_set_id": 2,
+        "manager_connection_ids": [],
+        "remove_original_after_success": true,
+        "minimum_free_disk_space_mb": 5120,
+        "manager_coverage": "no_upstream_signal",
+        "manager_coverage_detail": "No media manager is linked. Watched-folder remux can still run after local safety gates, but upstream import protection is reduced.",
+        "discovered_from_connection_id": null,
+        "discovered_library_key": null,
+        "folders_synced_from_connection_id": null,
+        "active_job_count": 0,
+        "next_look_at": "2026-10-15T19:30:27.995768Z",
+        "periodic_scan": "scheduled",
+        "next_scan_at": "2026-10-15T19:30:27.995768Z",
+        "updated_at": "2026-10-15T19:25:27"
+      }
+    ]
+  },
+  "POST /api/v1/processing/libraries/3/unlink": {
+    "status": 200,
+    "body": {
+      "id": 3,
+      "name": "Recorded extra",
+      "enabled": true,
+      "media_type": "movie",
+      "display_order": 0,
+      "watched_folder": "",
+      "work_folder": "",
+      "output_folder": "",
+      "media_extensions_csv": "",
+      "exclude_markers_csv": "",
+      "include_patterns_csv": "",
+      "exclude_patterns_csv": "",
+      "min_file_size_mb": 50,
+      "max_file_size_mb": 0,
+      "rejected_file_action": "leave",
+      "ready_after_seconds": 60,
+      "created_after": null,
+      "created_before": null,
+      "modified_after": null,
+      "modified_before": null,
+      "exclude_hidden": true,
+      "top_level_only": false,
+      "scan_interval_seconds": 300,
+      "sidecar_patterns_csv": ".srt,.ass,.ssa,.sub,.idx,.vtt,.nfo,.jpg,.png",
+      "preserve_original_timestamps": false,
+      "output_collision_policy": "replace",
+      "ffmpeg_strictness": "normal",
+      "remux_writer": "best",
+      "ignore_size_changes": false,
+      "skip_access_tests": false,
+      "file_system_events_enabled": true,
+      "schedule_grid": "",
+      "max_attempts": 3,
+      "retry_backoff_seconds": 300,
+      "retry_execution_failures": true,
+      "retry_preflight_failures": false,
+      "failure_policy": "pass_through",
+      "schedule_enabled": true,
+      "schedule_hours_limited": false,
+      "schedule_days": "",
+      "schedule_start": "00:00",
+      "schedule_end": "23:59",
+      "max_concurrent_files": 0,
+      "effective_max_concurrent_files": 1,
+      "priority": 0,
+      "rule_set_id": 1,
+      "manager_connection_ids": [],
+      "remove_original_after_success": true,
+      "minimum_free_disk_space_mb": 5120,
+      "manager_coverage": "no_upstream_signal",
+      "manager_coverage_detail": "No media manager is linked. Watched-folder remux can still run after local safety gates, but upstream import protection is reduced.",
+      "discovered_from_connection_id": null,
+      "discovered_library_key": null,
+      "folders_synced_from_connection_id": null,
+      "active_job_count": 0,
+      "next_look_at": null,
+      "periodic_scan": "scheduled",
+      "next_scan_at": null,
+      "updated_at": "2026-10-15T19:25:35"
+    }
+  },
+  "DELETE /api/v1/processing/libraries/3": {
+    "status": 204,
+    "body": null
+  },
+  "GET /api/v1/processing/libraries/discover/1": {
+    "status": 502,
+    "body": {
+      "detail": "Weir could not reach Deluno on localhost · Recorded at http://localhost:5099. Check the address is right, and that the app is running and reachable from this machine."
+    }
+  },
+  "GET /api/v1/processing/libraries/discover/1/drift": {
+    "status": 502,
+    "body": {
+      "detail": "Weir could not reach Deluno on localhost · Recorded at http://localhost:5099. Check the address is right, and that the app is running and reachable from this machine."
+    }
+  },
+  "POST /api/v1/processing/libraries/discover/1/import": {
+    "status": 400,
+    "body": {
+      "detail": "Weir could not reach Deluno on localhost · Recorded at http://localhost:5099. Check the address is right, and that the app is running and reachable from this machine."
+    }
+  },
+  "GET /api/v1/processing/reject-support?connection_ids=1": {
+    "status": 200,
+    "body": {
+      "available": false,
+      "reason": "Weir could not reach Deluno on localhost · Recorded at http://localhost:5099. Check the address is right, and that the app is running and reachable from this machine."
+    }
+  },
+  "GET /api/v1/processing/reject-support?connection_ids=1&connection_ids=2": {
+    "status": 200,
+    "body": {
+      "available": false,
+      "reason": "Weir could not reach Deluno on localhost · Recorded at http://localhost:5099. Check the address is right, and that the app is running and reachable from this machine."
+    }
+  },
+  "GET /api/v1/processing/manager-setup?media_type=tv&watched_folder=C%3A%2Fweir-recorded-replies%2Fmedia%2Fwatched&output_folder=C%3A%2Fweir-recorded-replies%2Fmedia%2Foutput&remove_original_after_success=false&connection_ids=1&connection_ids=2": {
+    "status": 200,
+    "body": {
+      "media_type": "tv",
+      "managers": [
+        {
+          "connection_id": 1,
+          "kind": "deluno",
+          "name": "Deluno on localhost",
+          "label": "Deluno on localhost · Recorded",
+          "flow": "handoff",
+          "story": {
+            "source_category": null,
+            "manager_library": null,
+            "root_folder": null
+          },
+          "suggested_watched_folder": null,
+          "suggested_output_folder": null,
+          "ready": false,
+          "lines": [
+            {
+              "state": "problem",
+              "text": "Weir could not reach Deluno on localhost · Recorded at http://localhost:5099. Check the address is right, and that the app is running and reachable from this machine."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "POST /api/v1/processing/jobs/file-remux-pass/enqueue": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "job_id": 8,
+      "dedupe_key": "processing.file.remux_pass.v1:e7e38f43f67345faac51f92c8d41550a",
+      "job_kind": "processing.file.remux_pass.v1"
+    }
+  },
+  "POST /api/v1/processing/maintenance/run": {
+    "status": 200,
+    "body": {
+      "queued": true,
+      "detail": "Queued a work file sweep for Movies. It runs as soon as a worker is free."
+    }
+  },
+  "POST /api/v1/processing/files/1/move-to-top": {
+    "status": 200,
+    "body": {
+      "moved": false,
+      "detail": "There is no queued work for this file to move. It may already be running, or it may not have been picked up by a scan yet."
+    }
+  },
+  "POST /api/v1/processing/files/1/manual-plan": {
+    "status": 400,
+    "body": {
+      "detail": "This file is not on hold, so a manual track choice does not apply. Refresh Activity and try again."
+    }
+  },
+  "POST /api/v1/processing/files/1/requeue": {
+    "status": 200,
+    "body": {
+      "requeued": 0,
+      "skipped": 1,
+      "detail": "Weir already cleaned this file, so it skipped it. Already done: cleaned on 2026-10-15 into C:\\weir-recorded-replies\\media\\output\\Recorded Film (2020).mkv."
+    }
+  },
+  "POST /api/v1/processing/files/requeue": {
+    "status": 200,
+    "body": {
+      "requeued": 0,
+      "skipped": 1,
+      "detail": "Nothing was queued: 1 file was already cleaned, so Weir left it alone."
+    }
+  },
+  "POST /api/v1/processing/files/rejected/process-again": {
+    "status": 200,
+    "body": {
+      "requeued": 0,
+      "skipped": 0,
+      "detail": "Nothing matched, so nothing was queued."
+    }
+  },
+  "POST /api/v1/processing/kept-files/9999/process-again": {
+    "status": 404,
+    "body": {
+      "detail": "Weir has no kept file with that id. It may already have been processed again."
+    }
+  },
+  "DELETE /api/v1/processing/files/1 (try again)": {
+    "status": 200,
+    "body": {
+      "done": false,
+      "detail": "Weir already cleaned this file, so it skipped it. Already done: cleaned on 2026-10-15 into C:\\weir-recorded-replies\\media\\output\\Recorded Film (2020).mkv."
+    }
+  },
+  "DELETE /api/v1/processing/files/1": {
+    "status": 204,
+    "body": null
+  }
+}

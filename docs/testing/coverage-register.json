@@ -29711,12 +29711,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "withQuery and fetchProcessingFiles/fetchLibraryCleans URLs are untested, so the filters could be dropped silently."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-558",
         "verdict": "Gap"
@@ -29730,12 +29736,18 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A wrong path or verb would only show up in use."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-559",
         "verdict": "Gap"
@@ -29749,12 +29761,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "fetchLibraryFiles/fetchLibraryOverview/triggerLibraryScan/setLibraryFileLeaveAlone untested at the HTTP level; library-mode-api.test.ts covers only withStatusCounts."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-560",
         "verdict": "Gap"
@@ -29801,13 +29819,25 @@
       "proofs": [],
       "needs": {
         "kind": "vitest",
-        "test": "Fixtures partly cast with 'as'; the stream's processing.progress and system frames have no contract test of their shape."
+        "test": "The files and library files the server sent are replayed through the web's types and readers, and the system, data and connection frames of the Activity stream are replayed through the page's parsers. Still to record: a processing.progress frame with a file in it (the recorded run finished before the stream sent one), and to move the screens' hand-made ProcessingFile fixtures onto the recorded ones."
       },
-      "issue": 1030,
+      "issue": 1142,
       "audit": {
         "id": "WEB-562",
         "verdict": "Partly"
-      }
+      },
+      "partial": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/recorded-replies.test.ts",
+          "name": "what the server really answered fits what its document promises"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/activity/recorded-stream.test.tsx",
+          "name": "*"
+        }
+      ]
     },
     {
       "id": "web-activity-library.cross-cutting-the-wire.no-e2e-clicks-a-control-on-library-scans-are",
@@ -33737,12 +33767,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: New profile, type a name, Create profile, assert createProcessingRuleSet body (all fields, trimmed name) and the saved notice and selection. E2E: create a profile through the UI and read it back."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "creating a profile"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CreateProfileTests.cs",
+          "name": "A_new_profile_is_sent_once_shown_saved_and_selected_and_the_server_reads_back_what_was_typed"
+        }
+      ],
       "audit": {
         "id": "WEB-716",
         "verdict": "Gap"
@@ -33849,12 +33885,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The select and the silent rewrite of audio_sorters_json are not tested in the UI. vitest: change the select, Save, assert audio_preference_mode and the matching audio_sorters_json."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "how audio is chosen"
+        }
+      ],
       "audit": {
         "id": "WEB-721",
         "verdict": "Gap"
@@ -33868,12 +33905,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: change each select, Save, assert primary/secondary/tertiary_audio_lang and default_audio_slot; a saved code outside the list shows as an option; None clears second and third."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "the audio languages"
+        }
+      ],
       "audit": {
         "id": "WEB-722",
         "verdict": "Gap"
@@ -33887,12 +33925,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: toggle and assert remove_commentary in the PUT body."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "removing commentary tracks"
+        }
+      ],
       "audit": {
         "id": "WEB-723",
         "verdict": "Gap"
@@ -33926,12 +33965,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: choose keep_listed (Languages to keep appears), remove_all (toggles hidden), assert subtitle_mode in the body."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "what happens to subtitles"
+        }
+      ],
       "audit": {
         "id": "WEB-725",
         "verdict": "Gap"
@@ -33945,12 +33985,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: pick two languages in the profile, Save, assert subtitle_langs_csv; a saved unknown code stays removable."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "what happens to subtitles"
+        }
+      ],
       "audit": {
         "id": "WEB-726",
         "verdict": "Gap"
@@ -33964,12 +34005,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: toggle each and assert preserve_forced_subs / preserve_default_subs in the body."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "what happens to subtitles"
+        }
+      ],
       "audit": {
         "id": "WEB-727",
         "verdict": "Gap"
@@ -34028,12 +34070,13 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: turn on Keep the original language, change each of the four, Save, assert the four original_language_* fields."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "the original language"
+        }
+      ],
       "audit": {
         "id": "WEB-730",
         "verdict": "Gap"
@@ -34401,12 +34444,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The component has no interaction test: vitest should add a criterion, change its field and value, reverse it, move it up and down (edges disabled), remove it, then Save and assert the JSON for both lists."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "the track order"
+        }
+      ],
       "audit": {
         "id": "WEB-747",
         "verdict": "Gap"
@@ -34841,12 +34885,18 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A fetch-level vitest (stub fetch, like lib/settings/settings-api.test.ts) per request asserting method, path, csrf_token in the body and the JSON body; every screen test mocks these functions, so a wrong URL, verb or field would pass them all."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-768",
         "verdict": "Gap"
@@ -34860,12 +34910,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Same fetch-level tests as above."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-769",
         "verdict": "Gap"
@@ -34879,12 +34935,23 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A test like the libraries one: build a ProcessingRuleSet with every key set to a distinct non-default value and assert writeFromProcessingRuleSet returns them all (a dropped key would silently reset it on every save). Plus fetch-level tests for the four requests."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/processing/rule-sets-api.test.ts",
+          "name": "writeFromProcessingRuleSet"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-770",
         "verdict": "Gap"
@@ -34898,12 +34965,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Fetch-level test of the body for both modes."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-771",
         "verdict": "Gap"
@@ -34917,12 +34990,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Fetch-level tests: the query strings are built by hand (URLSearchParams with connection_ids repeated, media_type, watched_folder, output_folder, remove_original)."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-772",
         "verdict": "Gap"
@@ -34936,12 +35020,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Read-only check found the generated ProcessingLibraryOut also has next_scan_at and periodic_scan, which the hand-written type lacks; no compile-time or test link ties the types to the schema. Add a type-level assertion (extends Schema<'ProcessingLibraryOut'>) or derive the types from the schema."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/hand-kept-types.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-773",
         "verdict": "Gap"
@@ -39109,12 +39194,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "E2E and VM only drive these routes through the contract harness client, not the web's own requests. A wrong method or path in the wrapper would pass every test."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-923",
         "verdict": "Gap"
@@ -39128,12 +39219,18 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Same as above (suggestions are used by the Workflows editor)."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-924",
         "verdict": "Gap"
@@ -39147,8 +39244,18 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-925",
         "verdict": "Gap"
@@ -39162,12 +39269,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Nearest the data-loss surface (a run deletes files for the destructive family)."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-926",
         "verdict": "Gap"
@@ -39221,12 +39334,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Download-client and channel types come from the generated schema (compile-time); media-manager does not."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/recorded-replies.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/hand-kept-types.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-928",
         "verdict": "Gap"

@@ -1,0 +1,774 @@
+{
+  "GET /api/v1/activity/recent?limit=10": {
+    "status": 200,
+    "body": {
+      "items": [
+        {
+          "id": 8,
+          "created_at": "2026-10-15T19:25:35",
+          "event_type": "library.redownload_requested",
+          "module": "library",
+          "title": "Download again for Library Film (2019).mkv: No connected media manager can be asked to download this again. Download it again yourself.",
+          "detail": "{\"module\":\"library\",\"action\":\"redownload\",\"trigger\":\"manual\",\"result\":\"skipped\",\"severity\":\"info\",\"user_message\":\"No connected media manager can be asked to download this again. Download it again yourself.\",\"library_id\":1,\"relative_media_path\":\"C:/weir-recorded-replies/media/library\\\\Library Film (2019).mkv\",\"requested_by\":\"recorded-admin\",\"outcome\":\"unsupported\",\"existing_file\":\"not_deleted\",\"search\":\"not_sent\"}",
+          "trigger": "manual",
+          "result": "skipped",
+          "library_id": 1,
+          "relative_path": "C:/weir-recorded-replies/media/library\\Library Film (2019).mkv",
+          "poster_url": null,
+          "run_key": null
+        },
+        {
+          "id": 7,
+          "created_at": "2026-10-15T19:25:34",
+          "event_type": "library.file_cleaned",
+          "module": "library",
+          "title": "Cleaned Library Film (2019).mkv: removed 1 audio track. Weir wrote it with ffmpeg because mkvmerge could not.",
+          "detail": "{\"library_id\":1,\"relative_media_path\":\"C:/weir-recorded-replies/media/library\\\\Library Film (2019).mkv\",\"result\":\"success\"}",
+          "trigger": null,
+          "result": "success",
+          "library_id": 1,
+          "relative_path": "C:/weir-recorded-replies/media/library\\Library Film (2019).mkv",
+          "poster_url": null,
+          "run_key": null
+        },
+        {
+          "id": 6,
+          "created_at": "2026-10-15T19:25:33",
+          "event_type": "processing.file_remux_pass_completed",
+          "module": "processing",
+          "title": "Recorded Film (2020).mkv was processed successfully",
+          "detail": "{\"ok\":true,\"outcome\":\"live_output_written\",\"relative_media_path\":\"Recorded Film (2020).mkv\",\"inspected_source_path\":\"C:\\\\weir-recorded-replies\\\\media\\\\watched\\\\Recorded Film (2020).mkv\",\"processing_watched_folder_resolved\":\"C:\\\\weir-recorded-replies\\\\media\\\\watched\",\"stream_counts\":{\"video\":1,\"audio\":2,\"subtitle\":0},\"preflight_status\":\"ok\",\"preflight_reason\":\"ffprobe completed and remux plan was evaluated\",\"preflight_probe_settings\":{\"probe_size_mb\":10,\"analyze_duration_seconds\":10},\"plan_summary\":\"video copy indices: [0] | audio out: #1 eng | subtitles out: none | removed audio: fra aac 1 ch (stream 2): removed (not selected \\u2014 eng aac 1 ch (stream 1) kept)\",\"audio_before\":\"English 1.0 AAC \\u00b7 FRA 1.0 AAC\",\"audio_after\":\"English 1.0 AAC\",\"subs_before\":\"\\u2014\",\"subs_after\":\"None\",\"removed_audio\":[\"fra aac 1 ch (stream 2): removed (not selected \\u2014 eng aac 1 ch (stream 1) kept)\"],\"removed_subtitles\":[],\"removed_images\":[],\"removed_attachments\":[],\"metadata_removed\":\"\\u2014\",\"remux_required\":true,\"pass_through_unchanged\":false,\"ffmpeg_argv\":[\"C:\\\\Projects\\\\Deluno\\\\tools\\\\ffmpeg\\\\win-x64\\\\ffmpeg.exe\",\"-hide_banner\",\"-loglevel\",\"error\",\"-xerror\",\"-err_detect\",\"explode\",\"-nostdin\",\"-y\",\"-protocol_whitelist\",\"file\",\"-i\",\"C:\\\\weir-recorded-replies\\\\media\\\\watched\\\\Recorded Film (2020).mkv\",\"-map\",\"0:0\",\"-map\",\"0:1\",\"-map\",\"0:t?\",\"-c\",\"copy\",\"-disposition:a:0\",\"+default\",\"-metadata:s:v:0\",\"DURATION=\",\"-metadata:s:v:0\",\"NUMBER_OF_FRAMES=\",\"-metadata:s:v:0\",\"NUMBER_OF_BYTES=\",\"-metadata:s:v:0\",\"BPS=\",\"-metadata:s:v:0\",\"_STATISTICS_WRITING_APP=\",\"-metadata:s:v:0\",\"_STATISTICS_WRITING_DATE_UTC=\",\"-metadata:s:v:0\",\"_STATISTICS_TAGS=\",\"-metadata:s:v:0\",\"ENCODER=\",\"-metadata:s:a:0\",\"DURATION=\",\"-metadata:s:a:0\",\"NUMBER_OF_FRAMES=\",\"-metadata:s:a:0\",\"NUMBER_OF_BYTES=\",\"-metadata:s:a:0\",\"BPS=\",\"-metadata:s:a:0\",\"_STATISTICS_WRITING_APP=\",\"-metadata:s:a:0\",\"_STATISTICS_WRITING_DATE_UTC=\",\"-metadata:s:a:0\",\"_STATISTICS_TAGS=\",\"-metadata:s:a:0\",\"ENCODER=\",\"C:\\\\weir-recorded-replies\\\\media\\\\work\\\\planned-ffmpeg-destination-placeholder.mkv\"],\"audio_selection_notes\":[\"Track ranking: content tier (main, then dub/audio description, then commentary), then channels highest first, then codec order, then bitrate highest first, then default first.\",\"Selected eng aac 1 ch (stream 1) as the only track in the first matching language tier.\",\"Removed non-selected fra aac 1 ch (stream 2) after selecting eng aac 1 ch (stream 1).\"],\"media_scope\":\"movie\",\"source_fingerprint\":{\"device\":4005349500,\"inode\":844424935652015,\"size_bytes\":22808,\"modified_time_ns\":1792092327455030900},\"source_fingerprint_size\":22808,\"source_fingerprint_mtime_ns\":1792092327455030900,\"output_file\":\"C:\\\\weir-recorded-replies\\\\media\\\\output\\\\Recorded Film (2020).mkv\",\"output_replaced_existing\":false,\"processing_output_folder_resolved\":\"C:\\\\weir-recorded-replies\\\\media\\\\output\",\"output_collision_policy\":\"replace\",\"output_collision_action\":\"write\",\"output_collision_reason\":\"No file existed at the output path, so Weir wrote it there.\",\"source_size_bytes\":22808,\"output_size_bytes\":17503,\"after_track_lines_meaning\":\"Live remux finished; before = source probe; after = planned disposition (copy remux \\u2014 ffprobe of the written file was used for validation only).\",\"sidecars_migrated\":[],\"sidecars_skipped\":[],\"sidecar_migration_blocked\":false,\"sidecar_migration_blocked_reason\":null,\"original_timestamps_note\":null,\"source_folder_deleted\":false,\"source_folder_path\":null,\"source_folder_skip_reason\":\"The video file sits directly in the watched folder root, so Weir does not remove a release folder here.\",\"output_completeness_check\":null,\"cascade_folders_deleted\":[],\"output_completeness_note\":null,\"source_deleted_after_success\":false,\"movie_output_folder_deleted\":false,\"movie_output_folder_path\":null,\"movie_output_folder_skip_reason\":\"The movie file sits directly in the Movies output folder root, so a per-title folder is not removed here.\",\"movie_output_truth_check\":\"skipped\",\"movie_output_truth_note\":\"The movie file sits directly in the Movies output folder root, so a per-title folder is not removed here.\",\"movie_output_age_seconds\":null,\"movie_output_cascade_folders_deleted\":[],\"movie_output_dry_run\":false,\"job_id\":6,\"library_id\":1,\"trigger\":\"scheduled\",\"run_id\":\"scan-5\",\"module\":\"processing\",\"action\":\"remux\",\"result\":\"success\",\"severity\":\"info\",\"media_scope_label\":\"Movies\",\"counts\":{\"audio_removed\":1,\"subtitles_removed\":0},\"user_message\":\"Recorded Film (2020).mkv was processed successfully\"}",
+          "trigger": "scheduled",
+          "result": "success",
+          "library_id": 1,
+          "relative_path": "Recorded Film (2020).mkv",
+          "poster_url": null,
+          "run_key": "run:scan-5"
+        },
+        {
+          "id": 5,
+          "created_at": "2026-10-15T19:25:29",
+          "event_type": "library.scan_completed",
+          "module": "library",
+          "title": "Scanned Movies: 1 file, 1 would change, 0 could not be processed",
+          "detail": "{\"trigger\":\"manual\",\"library_id\":1,\"result\":\"success\",\"queued_to_clean\":0}",
+          "trigger": "manual",
+          "result": "success",
+          "library_id": 1,
+          "relative_path": null,
+          "poster_url": null,
+          "run_key": null
+        },
+        {
+          "id": 4,
+          "created_at": "2026-10-15T19:25:29",
+          "event_type": "auth.login_succeeded",
+          "module": "auth",
+          "title": "Signed in",
+          "detail": "recorded-admin",
+          "trigger": "manual",
+          "result": "success",
+          "library_id": null,
+          "relative_path": null,
+          "poster_url": null,
+          "run_key": null
+        },
+        {
+          "id": 3,
+          "created_at": "2026-10-15T19:25:29",
+          "event_type": "auth.bootstrap_succeeded",
+          "module": "auth",
+          "title": "Initial admin created",
+          "detail": "recorded-admin",
+          "trigger": "manual",
+          "result": "success",
+          "library_id": null,
+          "relative_path": null,
+          "poster_url": null,
+          "run_key": null
+        },
+        {
+          "id": 2,
+          "created_at": "2026-10-15T19:25:28",
+          "event_type": "processing.work_temp_stale_sweep_completed",
+          "module": "processing",
+          "title": "Work files checked (Movies): nothing left behind",
+          "detail": "{\"job_id\":2,\"media_scope\":\"movie\",\"files_removed\":0,\"min_stale_age_seconds\":86400,\"result\":\"success\",\"trigger\":\"scheduled\"}",
+          "trigger": "scheduled",
+          "result": "success",
+          "library_id": null,
+          "relative_path": null,
+          "poster_url": null,
+          "run_key": null
+        },
+        {
+          "id": 1,
+          "created_at": "2026-10-15T19:25:28",
+          "event_type": "processing.work_temp_stale_sweep_completed",
+          "module": "processing",
+          "title": "Work files checked (TV): nothing left behind",
+          "detail": "{\"job_id\":1,\"media_scope\":\"tv\",\"files_removed\":0,\"min_stale_age_seconds\":86400,\"result\":\"success\",\"trigger\":\"scheduled\"}",
+          "trigger": "scheduled",
+          "result": "success",
+          "library_id": null,
+          "relative_path": null,
+          "poster_url": null,
+          "run_key": null
+        }
+      ],
+      "total": 8,
+      "has_more": false,
+      "retention_days": 90,
+      "oldest_event_at": "2026-10-15T19:25:28"
+    }
+  },
+  "GET /api/v1/activity/recent?result=success&library_id=1&about=files&limit=20&current_only=true&with_total=false": {
+    "status": 200,
+    "body": {
+      "items": [
+        {
+          "id": 7,
+          "created_at": "2026-10-15T19:25:34",
+          "event_type": "library.file_cleaned",
+          "module": "library",
+          "title": "Cleaned Library Film (2019).mkv: removed 1 audio track. Weir wrote it with ffmpeg because mkvmerge could not.",
+          "detail": "{\"library_id\":1,\"relative_media_path\":\"C:/weir-recorded-replies/media/library\\\\Library Film (2019).mkv\",\"result\":\"success\"}",
+          "trigger": null,
+          "result": "success",
+          "library_id": 1,
+          "relative_path": "C:/weir-recorded-replies/media/library\\Library Film (2019).mkv",
+          "poster_url": null,
+          "run_key": null
+        },
+        {
+          "id": 6,
+          "created_at": "2026-10-15T19:25:33",
+          "event_type": "processing.file_remux_pass_completed",
+          "module": "processing",
+          "title": "Recorded Film (2020).mkv was processed successfully",
+          "detail": "{\"ok\":true,\"outcome\":\"live_output_written\",\"relative_media_path\":\"Recorded Film (2020).mkv\",\"inspected_source_path\":\"C:\\\\weir-recorded-replies\\\\media\\\\watched\\\\Recorded Film (2020).mkv\",\"processing_watched_folder_resolved\":\"C:\\\\weir-recorded-replies\\\\media\\\\watched\",\"stream_counts\":{\"video\":1,\"audio\":2,\"subtitle\":0},\"preflight_status\":\"ok\",\"preflight_reason\":\"ffprobe completed and remux plan was evaluated\",\"preflight_probe_settings\":{\"probe_size_mb\":10,\"analyze_duration_seconds\":10},\"plan_summary\":\"video copy indices: [0] | audio out: #1 eng | subtitles out: none | removed audio: fra aac 1 ch (stream 2): removed (not selected \\u2014 eng aac 1 ch (stream 1) kept)\",\"audio_before\":\"English 1.0 AAC \\u00b7 FRA 1.0 AAC\",\"audio_after\":\"English 1.0 AAC\",\"subs_before\":\"\\u2014\",\"subs_after\":\"None\",\"removed_audio\":[\"fra aac 1 ch (stream 2): removed (not selected \\u2014 eng aac 1 ch (stream 1) kept)\"],\"removed_subtitles\":[],\"removed_images\":[],\"removed_attachments\":[],\"metadata_removed\":\"\\u2014\",\"remux_required\":true,\"pass_through_unchanged\":false,\"ffmpeg_argv\":[\"C:\\\\Projects\\\\Deluno\\\\tools\\\\ffmpeg\\\\win-x64\\\\ffmpeg.exe\",\"-hide_banner\",\"-loglevel\",\"error\",\"-xerror\",\"-err_detect\",\"explode\",\"-nostdin\",\"-y\",\"-protocol_whitelist\",\"file\",\"-i\",\"C:\\\\weir-recorded-replies\\\\media\\\\watched\\\\Recorded Film (2020).mkv\",\"-map\",\"0:0\",\"-map\",\"0:1\",\"-map\",\"0:t?\",\"-c\",\"copy\",\"-disposition:a:0\",\"+default\",\"-metadata:s:v:0\",\"DURATION=\",\"-metadata:s:v:0\",\"NUMBER_OF_FRAMES=\",\"-metadata:s:v:0\",\"NUMBER_OF_BYTES=\",\"-metadata:s:v:0\",\"BPS=\",\"-metadata:s:v:0\",\"_STATISTICS_WRITING_APP=\",\"-metadata:s:v:0\",\"_STATISTICS_WRITING_DATE_UTC=\",\"-metadata:s:v:0\",\"_STATISTICS_TAGS=\",\"-metadata:s:v:0\",\"ENCODER=\",\"-metadata:s:a:0\",\"DURATION=\",\"-metadata:s:a:0\",\"NUMBER_OF_FRAMES=\",\"-metadata:s:a:0\",\"NUMBER_OF_BYTES=\",\"-metadata:s:a:0\",\"BPS=\",\"-metadata:s:a:0\",\"_STATISTICS_WRITING_APP=\",\"-metadata:s:a:0\",\"_STATISTICS_WRITING_DATE_UTC=\",\"-metadata:s:a:0\",\"_STATISTICS_TAGS=\",\"-metadata:s:a:0\",\"ENCODER=\",\"C:\\\\weir-recorded-replies\\\\media\\\\work\\\\planned-ffmpeg-destination-placeholder.mkv\"],\"audio_selection_notes\":[\"Track ranking: content tier (main, then dub/audio description, then commentary), then channels highest first, then codec order, then bitrate highest first, then default first.\",\"Selected eng aac 1 ch (stream 1) as the only track in the first matching language tier.\",\"Removed non-selected fra aac 1 ch (stream 2) after selecting eng aac 1 ch (stream 1).\"],\"media_scope\":\"movie\",\"source_fingerprint\":{\"device\":4005349500,\"inode\":844424935652015,\"size_bytes\":22808,\"modified_time_ns\":1792092327455030900},\"source_fingerprint_size\":22808,\"source_fingerprint_mtime_ns\":1792092327455030900,\"output_file\":\"C:\\\\weir-recorded-replies\\\\media\\\\output\\\\Recorded Film (2020).mkv\",\"output_replaced_existing\":false,\"processing_output_folder_resolved\":\"C:\\\\weir-recorded-replies\\\\media\\\\output\",\"output_collision_policy\":\"replace\",\"output_collision_action\":\"write\",\"output_collision_reason\":\"No file existed at the output path, so Weir wrote it there.\",\"source_size_bytes\":22808,\"output_size_bytes\":17503,\"after_track_lines_meaning\":\"Live remux finished; before = source probe; after = planned disposition (copy remux \\u2014 ffprobe of the written file was used for validation only).\",\"sidecars_migrated\":[],\"sidecars_skipped\":[],\"sidecar_migration_blocked\":false,\"sidecar_migration_blocked_reason\":null,\"original_timestamps_note\":null,\"source_folder_deleted\":false,\"source_folder_path\":null,\"source_folder_skip_reason\":\"The video file sits directly in the watched folder root, so Weir does not remove a release folder here.\",\"output_completeness_check\":null,\"cascade_folders_deleted\":[],\"output_completeness_note\":null,\"source_deleted_after_success\":false,\"movie_output_folder_deleted\":false,\"movie_output_folder_path\":null,\"movie_output_folder_skip_reason\":\"The movie file sits directly in the Movies output folder root, so a per-title folder is not removed here.\",\"movie_output_truth_check\":\"skipped\",\"movie_output_truth_note\":\"The movie file sits directly in the Movies output folder root, so a per-title folder is not removed here.\",\"movie_output_age_seconds\":null,\"movie_output_cascade_folders_deleted\":[],\"movie_output_dry_run\":false,\"job_id\":6,\"library_id\":1,\"trigger\":\"scheduled\",\"run_id\":\"scan-5\",\"module\":\"processing\",\"action\":\"remux\",\"result\":\"success\",\"severity\":\"info\",\"media_scope_label\":\"Movies\",\"counts\":{\"audio_removed\":1,\"subtitles_removed\":0},\"user_message\":\"Recorded Film (2020).mkv was processed successfully\"}",
+          "trigger": "scheduled",
+          "result": "success",
+          "library_id": 1,
+          "relative_path": "Recorded Film (2020).mkv",
+          "poster_url": null,
+          "run_key": "run:scan-5"
+        }
+      ],
+      "has_more": false,
+      "retention_days": 90,
+      "oldest_event_at": "2026-10-15T19:25:28"
+    }
+  },
+  "GET /api/v1/activity/stream": {
+    "status": 200,
+    "body": {
+      "frames": [
+        {
+          "event": "activity.latest",
+          "data": {
+            "latest_event_id": 4,
+            "activity_revision": 3
+          }
+        },
+        {
+          "event": "server.hello",
+          "data": {
+            "boot_id": "e1b4cc9e-478f-4309-89ba-13df221491a5"
+          }
+        },
+        {
+          "event": "system.stats",
+          "data": {
+            "now": {
+              "at": "2026-10-15T19:25:28.997985Z",
+              "cpu_percent": 66.5,
+              "cores": 16,
+              "memory_used_bytes": 22699544576,
+              "memory_total_bytes": 33408000000,
+              "disk_read_bytes_per_sec": 62717,
+              "disk_write_bytes_per_sec": 282229,
+              "disk_busy_percent": 0.1,
+              "weir_cpu_percent": 5.6,
+              "weir_memory_bytes": 153538560,
+              "tools_cpu_percent": 0,
+              "processing_read_bytes_per_sec": 0,
+              "processing_write_bytes_per_sec": 0,
+              "processing_speed": 0,
+              "running": 0,
+              "slots": 1
+            },
+            "point": {
+              "at": "2026-10-15T19:25:28.997985Z",
+              "cpu_percent": 66.5,
+              "memory_percent": 67.9,
+              "disk_read_bytes_per_sec": 62717,
+              "disk_write_bytes_per_sec": 282229,
+              "processing_read_bytes_per_sec": 0,
+              "processing_write_bytes_per_sec": 0,
+              "processing_speed": 0
+            },
+            "machine": {
+              "os": "Windows 11 Pro",
+              "uptime_seconds": 104014,
+              "reboot_pending": true
+            },
+            "drives": [
+              {
+                "name": "C:",
+                "path": "C:\\",
+                "total_bytes": 1999320903680,
+                "free_bytes": 1234909499392,
+                "weir_bytes": 0,
+                "keep_free_bytes": 5368709120,
+                "full_in_days": null,
+                "read_bytes_per_sec": null,
+                "write_bytes_per_sec": null,
+                "busy_percent": null,
+                "workflows": [
+                  {
+                    "id": 1,
+                    "name": "Movies",
+                    "roles": [
+                      "work"
+                    ]
+                  },
+                  {
+                    "id": 2,
+                    "name": "TV",
+                    "roles": [
+                      "work"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "event": "system.overview",
+          "data": {
+            "version": "0.0.1-dev",
+            "update": {
+              "status": "checking",
+              "latest_version": null
+            },
+            "uptime_seconds": 1,
+            "started_at": "2026-10-15T19:25:27.870846Z",
+            "runs_as": "app",
+            "address": "http://localhost:18911",
+            "data_bytes": 487378,
+            "browsers_live": 1,
+            "requests": {
+              "median_ms": 4.4868,
+              "p95_ms": 542.5913,
+              "errors_today": 0
+            },
+            "jobs_today": {
+              "run": 2,
+              "failed": 0
+            },
+            "restarts_this_week": 0,
+            "checks": {
+              "passing": 4,
+              "total": 4
+            },
+            "last_update_backup": null
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "libraries"
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "jobs"
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "library_scan"
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "jobs"
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "update"
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "library_scan"
+          }
+        },
+        {
+          "event": "activity.latest",
+          "data": {
+            "latest_event_id": 5,
+            "activity_revision": 4
+          }
+        },
+        {
+          "event": "system.stats",
+          "data": {
+            "now": {
+              "at": "2026-10-15T19:25:30.017092Z",
+              "cpu_percent": 81.9,
+              "cores": 16,
+              "memory_used_bytes": 21228511232,
+              "memory_total_bytes": 33408000000,
+              "disk_read_bytes_per_sec": 132256,
+              "disk_write_bytes_per_sec": 3931604,
+              "disk_busy_percent": 1.1,
+              "weir_cpu_percent": 5,
+              "weir_memory_bytes": 173293568,
+              "tools_cpu_percent": 0.3,
+              "processing_read_bytes_per_sec": 0,
+              "processing_write_bytes_per_sec": 0,
+              "processing_speed": 0,
+              "running": 0,
+              "slots": 1
+            },
+            "point": {
+              "at": "2026-10-15T19:25:30.017092Z",
+              "cpu_percent": 81.9,
+              "memory_percent": 63.5,
+              "disk_read_bytes_per_sec": 132256,
+              "disk_write_bytes_per_sec": 3931604,
+              "processing_read_bytes_per_sec": 0,
+              "processing_write_bytes_per_sec": 0,
+              "processing_speed": 0
+            },
+            "machine": {
+              "os": "Windows 11 Pro",
+              "uptime_seconds": 104015,
+              "reboot_pending": true
+            },
+            "drives": [
+              {
+                "name": "C:",
+                "path": "C:\\",
+                "total_bytes": 1999320903680,
+                "free_bytes": 1234909499392,
+                "weir_bytes": 0,
+                "keep_free_bytes": 5368709120,
+                "full_in_days": null,
+                "read_bytes_per_sec": null,
+                "write_bytes_per_sec": null,
+                "busy_percent": null,
+                "workflows": [
+                  {
+                    "id": 1,
+                    "name": "Movies",
+                    "roles": [
+                      "work"
+                    ]
+                  },
+                  {
+                    "id": 2,
+                    "name": "TV",
+                    "roles": [
+                      "work"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "event": "system.tasks",
+          "data": [
+            {
+              "key": "media-manager-heartbeat",
+              "label": "Check media managers",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:27.996404Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T19:26:27.996044Z",
+              "interval_seconds": 60
+            },
+            {
+              "key": "cleanup-leftover-files",
+              "label": "Clear leftover files",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:28.050038Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T20:25:28.000849Z",
+              "interval_seconds": 3600
+            },
+            {
+              "key": "auth-session-cleanup",
+              "label": "Clear old sign-ins",
+              "running": false,
+              "last_run_at": null,
+              "last_ok": null,
+              "last_error": null,
+              "next_run_at": "2026-10-15T20:25:27.993466Z",
+              "interval_seconds": 3600
+            },
+            {
+              "key": "suite-configuration-backup",
+              "label": "Configuration backup check",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:27.999362Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T19:26:27.999361Z",
+              "interval_seconds": 60
+            },
+            {
+              "key": "processing-vanished-file-sweep",
+              "label": "Look for vanished files",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:27.996173Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T19:30:27.995816Z",
+              "interval_seconds": 300
+            },
+            {
+              "key": "processing-file-log-retention",
+              "label": "Prune file history",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:28.047537Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T20:25:28.047535Z",
+              "interval_seconds": 3600
+            },
+            {
+              "key": "scan-1",
+              "label": "Scan Movies",
+              "running": true,
+              "last_run_at": null,
+              "last_ok": null,
+              "last_error": null,
+              "next_run_at": "2026-10-15T19:30:27.995768Z",
+              "interval_seconds": 300
+            },
+            {
+              "key": "scan-2",
+              "label": "Scan TV",
+              "running": false,
+              "last_run_at": null,
+              "last_ok": null,
+              "last_error": null,
+              "next_run_at": "2026-10-15T19:30:27.995768Z",
+              "interval_seconds": 300
+            },
+            {
+              "key": "platform-job-rows-retention",
+              "label": "Tidy finished jobs",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:28.047539Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T20:25:28.047537Z",
+              "interval_seconds": 3600
+            },
+            {
+              "key": "suite-log-retention",
+              "label": "Trim the log",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:28.009920Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T20:25:28.009917Z",
+              "interval_seconds": 3600
+            },
+            {
+              "key": "media-manager-workflow-sync",
+              "label": "Update workflows from media managers",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:27.996413Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T19:30:27.995863Z",
+              "interval_seconds": 300
+            }
+          ]
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "libraries"
+          }
+        },
+        {
+          "event": "system.tasks",
+          "data": [
+            {
+              "key": "media-manager-heartbeat",
+              "label": "Check media managers",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:27.996404Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T19:26:27.996044Z",
+              "interval_seconds": 60
+            },
+            {
+              "key": "cleanup-leftover-files",
+              "label": "Clear leftover files",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:28.050038Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T20:25:28.000849Z",
+              "interval_seconds": 3600
+            },
+            {
+              "key": "auth-session-cleanup",
+              "label": "Clear old sign-ins",
+              "running": false,
+              "last_run_at": null,
+              "last_ok": null,
+              "last_error": null,
+              "next_run_at": "2026-10-15T20:25:27.993466Z",
+              "interval_seconds": 3600
+            },
+            {
+              "key": "suite-configuration-backup",
+              "label": "Configuration backup check",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:27.999362Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T19:26:27.999361Z",
+              "interval_seconds": 60
+            },
+            {
+              "key": "processing-vanished-file-sweep",
+              "label": "Look for vanished files",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:27.996173Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T19:30:27.995816Z",
+              "interval_seconds": 300
+            },
+            {
+              "key": "processing-file-log-retention",
+              "label": "Prune file history",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:28.047537Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T20:25:28.047535Z",
+              "interval_seconds": 3600
+            },
+            {
+              "key": "scan-1",
+              "label": "Scan Movies",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:30.515181Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T19:30:27.995768Z",
+              "interval_seconds": 300
+            },
+            {
+              "key": "scan-2",
+              "label": "Scan TV",
+              "running": false,
+              "last_run_at": null,
+              "last_ok": null,
+              "last_error": null,
+              "next_run_at": "2026-10-15T19:30:27.995768Z",
+              "interval_seconds": 300
+            },
+            {
+              "key": "platform-job-rows-retention",
+              "label": "Tidy finished jobs",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:28.047539Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T20:25:28.047537Z",
+              "interval_seconds": 3600
+            },
+            {
+              "key": "suite-log-retention",
+              "label": "Trim the log",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:28.009920Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T20:25:28.009917Z",
+              "interval_seconds": 3600
+            },
+            {
+              "key": "media-manager-workflow-sync",
+              "label": "Update workflows from media managers",
+              "running": false,
+              "last_run_at": "2026-10-15T19:25:27.996413Z",
+              "last_ok": true,
+              "last_error": null,
+              "next_run_at": "2026-10-15T19:30:27.995863Z",
+              "interval_seconds": 300
+            }
+          ]
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "metrics"
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "readiness"
+          }
+        },
+        {
+          "event": "system.checks",
+          "data": {
+            "folders_checked_at": null,
+            "readiness_checked_at": "2026-10-15T19:25:33.008143Z"
+          }
+        },
+        {
+          "event": "system.overview",
+          "data": {
+            "version": "0.0.1-dev",
+            "update": {
+              "status": "update_available",
+              "latest_version": "1.0.0-rc.18"
+            },
+            "uptime_seconds": 5,
+            "started_at": "2026-10-15T19:25:27.870846Z",
+            "runs_as": "app",
+            "address": "http://localhost:18911",
+            "data_bytes": 487378,
+            "browsers_live": 1,
+            "requests": {
+              "median_ms": 5.4333,
+              "p95_ms": 542.5913,
+              "errors_today": 0
+            },
+            "jobs_today": {
+              "run": 3,
+              "failed": 0
+            },
+            "restarts_this_week": 0,
+            "checks": {
+              "passing": 4,
+              "total": 4
+            },
+            "last_update_backup": null
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "files_at_once"
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "files_at_once"
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "settings"
+          }
+        },
+        {
+          "event": "processing.progress",
+          "data": {
+            "files": []
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "settings"
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "connections"
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "connections"
+          }
+        },
+        {
+          "event": "connection.activity",
+          "data": {
+            "kind": "download_client",
+            "id": 1,
+            "phase": "asked",
+            "direction": "outbound",
+            "at": "2026-10-15T19:25:36.078864Z",
+            "ms": null
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "metrics"
+          }
+        },
+        {
+          "event": "system.checks",
+          "data": {
+            "folders_checked_at": null,
+            "readiness_checked_at": "2026-10-15T19:25:38.020238Z"
+          }
+        },
+        {
+          "event": "connection.activity",
+          "data": {
+            "kind": "download_client",
+            "id": 1,
+            "phase": "failed",
+            "direction": "outbound",
+            "at": "2026-10-15T19:25:40.141228Z",
+            "ms": 4058
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "folder_checks"
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "maintenance"
+          }
+        },
+        {
+          "event": "data.changed",
+          "data": {
+            "topic": "maintenance"
+          }
+        }
+      ]
+    }
+  }
+}

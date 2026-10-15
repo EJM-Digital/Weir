@@ -8630,6 +8630,14 @@
             "title": "Keep Original Language",
             "type": "boolean"
           },
+          "library_rescan_job_ids": {
+            "description": "The background re-plans queued for libraries that use this profile. Sent only when a profile is saved.",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Library Rescan Job Ids",
+            "type": "array"
+          },
           "name": {
             "title": "Name",
             "type": "string"

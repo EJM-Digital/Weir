@@ -5,6 +5,8 @@ export type StubbedRequest = {
   method: string;
   path: string;
   query: URLSearchParams;
+  /** The headers it was sent with, named in lower case. */
+  headers: Record<string, string>;
   /** The JSON body, or undefined for a request with none. */
   body: unknown;
 };
@@ -45,6 +47,7 @@ function parsed(input: RequestInfo | URL, init?: RequestInit): StubbedRequest {
     method: (init?.method ?? "GET").toUpperCase(),
     path: url.pathname,
     query: url.searchParams,
+    headers: Object.fromEntries(new Headers(init?.headers).entries()),
     body: text === undefined ? undefined : (JSON.parse(text) as unknown),
   };
 }
