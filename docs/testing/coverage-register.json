@@ -6826,7 +6826,73 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_with_a_list_of_file_types_takes_only_those_types"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_with_no_list_takes_the_built_in_video_types"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "Finishing_a_movies_removal_keeps_a_release_folder_that_holds_another_video_of_a_type_the_workflow_names"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "Finishing_a_movies_removal_removes_the_whole_release_folder_when_the_other_file_is_not_a_video_the_workflow_takes"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_file_in_a_downloaders_unfinished_folder_is_left_out_when_the_workflow_names_no_folders"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_file_in_a_folder_the_workflow_names_is_left_out"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "The_folders_a_workflow_names_replace_the_built_in_ones"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_date_window_decides_whether_a_scan_queues_the_file"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "Hidden_files_and_files_in_hidden_folders_are_left_out_by_default"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_that_keeps_hidden_files_takes_them"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_that_looks_at_the_top_folder_only_leaves_the_folders_below_alone"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_that_looks_below_the_top_folder_takes_every_folder"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_scan_queues_a_pass_for_each_file_the_workflow_takes_and_none_for_the_rest"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -6899,11 +6965,6 @@
           "name": "deleted-queued-file"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P1] The candidate listing options saved on a workflow are never exercised: WatchedFolderListing.Candidates is called only with (null, null, excludeHidden:false, topLevelOnly:false) - custom media_extensions_csv, exclude_markers_csv, exclude_hidden (default true) and top_level_only have persistence tests only; created/modified date windows (LibraryAdmission.Rejection date branches) have no test at all. See SET-L08, L09, L16, L17, L18."
-      },
-      "issue": 1007,
       "covers": [
         "job:processing.watched_folder.remux_scan_dispatch.v1"
       ],
@@ -9459,7 +9520,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Not proven: RemuxPassHandler copying performance.KeepFailedWorkFiles into the pass request, so a real failed pass with the switch on keeps the copy and with it off removes it (no handler/contract test names the setting); no API test saves it (not in ProcessingOperatorSettingsApiTests)."
       },
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "setting:ProcessingOperatorSettingsRecord.KeepFailedWorkFiles"
       ],
@@ -10131,12 +10192,58 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "A workflow told to take only certain extensions could take or ignore the wrong files. Needed: scan-dispatch handler test with media_extensions_csv set (a listed and an unlisted extension) asserting which are queued; same for ReleaseFolderRemoval / CompletedMovieRemoval which also read it. Layer: integration."
-      },
-      "issue": 1007,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_with_a_list_of_file_types_takes_only_those_types"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_with_no_list_takes_the_built_in_video_types"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "Finishing_a_movies_removal_keeps_a_release_folder_that_holds_another_video_of_a_type_the_workflow_names"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "Finishing_a_movies_removal_removes_the_whole_release_folder_when_the_other_file_is_not_a_video_the_workflow_takes"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassRealFfmpegTests.cs",
+          "name": "A_release_folder_holding_another_video_of_a_type_the_workflow_names_is_kept_when_the_film_is_removed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassRealFfmpegTests.cs",
+          "name": "A_release_folder_holding_a_file_of_a_type_the_workflow_does_not_name_goes_with_the_film"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_workflow_with_a_list_of_file_types_walks_only_those_types"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_workflow_with_no_list_walks_the_built_in_video_types_and_not_the_files_beside_them"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "The_file_types_a_workflow_names_decide_which_files_a_scan_lists"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_scan_queues_a_pass_for_each_file_the_workflow_takes_and_none_for_the_rest"
+        }
+      ],
       "covers": [
         "setting:ProcessingLibraryRecord.MediaExtensionsCsv"
       ],
@@ -10153,12 +10260,48 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "A half-downloaded torrent folder or \".incomplete\" file could be picked up and cleaned/removed mid-download. Needed: listing/handler tests for the default folder markers and for a custom marker list. Layer: integration (contract scenario with a downloader's temp folder would also prove it end to end)."
-      },
-      "issue": 1007,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_file_in_a_downloaders_unfinished_folder_is_left_out_when_the_workflow_names_no_folders"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_file_in_a_folder_the_workflow_names_is_left_out"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "The_folders_a_workflow_names_replace_the_built_in_ones"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_file_in_a_downloaders_unfinished_folder_is_not_walked_when_the_workflow_names_no_folders"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_file_in_a_folder_the_workflow_names_is_not_walked"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_film_whose_title_holds_a_folder_name_is_still_walked"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "The_folders_a_workflow_names_replace_the_built_in_ones"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_workflow_that_names_no_downloader_folders_ignores_the_built_in_ones_and_a_named_folder_replaces_them"
+        }
+      ],
       "covers": [
         "setting:ProcessingLibraryRecord.ExcludeMarkersCsv"
       ],
@@ -10175,7 +10318,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_file_matching_none_of_the_include_patterns_is_skipped_and_not_queued"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_workflow_with_no_include_patterns_takes_every_path"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_file_matching_no_include_pattern_is_skipped_with_its_reason"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -10188,11 +10347,6 @@
           "name": "A_file_not_matching_include_patterns_is_rejected"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Decision function only; no scan/handler test that a non-matching file is recorded as skipped and not queued."
-      },
-      "issue": 1007,
       "covers": [
         "setting:ProcessingLibraryRecord.IncludePatternsCsv"
       ],
@@ -10295,7 +10449,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_file_over_the_maximum_size_is_skipped_for_the_person_to_decide_and_not_queued"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_workflow_with_no_maximum_size_takes_a_file_of_any_size"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_file_over_the_maximum_size_is_skipped_with_no_below_minimum_kind"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -10308,11 +10478,6 @@
           "name": "A_file_above_the_maximum_size_is_rejected"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] No scan-level test; the truthfulness doc says an over-maximum file is \"Needs you\" and a hand-off skips this rule - neither behaviour has a handler/contract test."
-      },
-      "issue": 1007,
       "covers": [
         "setting:ProcessingLibraryRecord.MaxFileSizeMb"
       ],
@@ -10430,12 +10595,23 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Four settings shown in the UI (library-intake-groups.tsx) with no effect test: a file inside/outside the window could be cleaned or skipped wrongly. Needed: Core unit tests for each of the four boundaries (inclusive/exclusive: created_before uses >=) and one scan-level test. Layer: unit + integration."
-      },
-      "issue": 1007,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Processing/LibraryAdmissionDateWindowTests.cs",
+          "name": "LibraryAdmissionDateWindowTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_date_window_decides_whether_a_scan_queues_the_file"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_date_window_decides_whether_a_file_is_taken_or_skipped_with_its_reason"
+        }
+      ],
       "covers": [
         "setting:ProcessingLibraryRecord.CreatedAfter",
         "setting:ProcessingLibraryRecord.CreatedBefore",
@@ -10455,12 +10631,38 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "On by default, so every install depends on it: \".hidden\" files/folders in downloads (and macOS ._ files) must be ignored. Needed: listing test with a hidden file and folder, on and off; and the library-mode walker equivalent. Layer: integration."
-      },
-      "issue": 1007,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "Hidden_files_and_files_in_hidden_folders_are_left_out_by_default"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_that_keeps_hidden_files_takes_them"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "Hidden_files_and_files_in_hidden_folders_are_not_walked_by_default"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_workflow_that_keeps_hidden_files_walks_them"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_library_folder_inside_a_hidden_folder_is_still_walked"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "Hidden_files_are_left_out_unless_the_workflow_keeps_them"
+        }
+      ],
       "covers": [
         "setting:ProcessingLibraryRecord.ExcludeHidden"
       ],
@@ -10477,12 +10679,33 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Needed: listing test with files in sub-folders, on and off (and the same through LibraryFileWalker). Layer: integration."
-      },
-      "issue": 1007,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_that_looks_at_the_top_folder_only_leaves_the_folders_below_alone"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_that_looks_below_the_top_folder_takes_every_folder"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_workflow_that_looks_at_the_top_folder_only_walks_nothing_below_it"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_workflow_that_looks_below_the_top_folder_walks_every_folder"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_workflow_that_looks_at_the_top_folder_only_lists_nothing_below_it"
+        }
+      ],
       "covers": [
         "setting:ProcessingLibraryRecord.TopLevelOnly"
       ],
@@ -10559,7 +10782,7 @@
         "kind": "xunit",
         "test": "[missing: P2] No runner/handler test that the saved flag reaches the helper for a real pass (RemuxPassPaths.cs:240 -> RemuxPassRunner.PostSuccessCleanup.cs:31): output media mtime equals the source's when on, differs when off."
       },
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "setting:ProcessingLibraryRecord.PreserveOriginalTimestamps"
       ],
@@ -10915,7 +11138,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_file_that_cannot_be_opened_waits_and_is_not_queued"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_workflow_that_skips_the_readability_check_queues_a_file_that_cannot_be_opened"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_file_that_cannot_be_opened_waits_unless_the_workflow_skips_the_readability_check"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -10948,11 +11187,6 @@
           "name": "ProcessingRig"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Needed: scan handler test with an unreadable file, skip on and off."
-      },
-      "issue": 1007,
       "covers": [
         "setting:ProcessingLibraryRecord.SkipAccessTests"
       ],
@@ -11098,7 +11332,7 @@
         "kind": "xunit",
         "test": "[missing: P2] No handler or contract test turns it off and shows a tool failure is not retried."
       },
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "setting:ProcessingLibraryRecord.RetryExecutionFailures"
       ],
@@ -11254,7 +11488,7 @@
         "kind": "xunit",
         "test": "Needed: scan two workflows (priorities 0 and 10), assert the queued jobs carry the priority and the higher workflow's file is claimed first. Layer: integration."
       },
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "setting:ProcessingLibraryRecord.Priority"
       ],
@@ -11566,7 +11800,7 @@
         "kind": "xunit",
         "test": "[missing: P2] The \"on\" path (a hardlinked file IS cleaned and the seeding copy stays intact) has no handler/real-FS test."
       },
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "setting:LibrarySettings.CleanHardlinkedFiles"
       ],
@@ -11620,7 +11854,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Evaluator-level; no clean-handler test that a risky file is skipped with the flag on and cleaned (with a warning) with it off."
       },
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "setting:LibrarySettings.SkipIfManagerWouldRedownload"
       ],
@@ -54471,7 +54705,7 @@
       "touches": "none",
       "required": "inproc",
       "proofs": [],
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "event:processing.file_passed_through"
       ],
@@ -54489,7 +54723,7 @@
       "touches": "none",
       "required": "inproc",
       "proofs": [],
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "event:processing.file_pass_through_failed"
       ],
