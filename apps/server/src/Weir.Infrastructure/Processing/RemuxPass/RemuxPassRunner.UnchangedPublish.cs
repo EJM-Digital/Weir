@@ -187,7 +187,6 @@ public sealed partial class RemuxPassRunner
     private async Task<(bool ReplacedExisting, string Method)> CopyUnchangedSourceToOutputAsync(PassContext context, string final, Action<long, long> progress, CancellationToken cancellationToken)
     {
         var src = context.Source;
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(final))!);
         var replacedExisting = File.Exists(final) || Directory.Exists(final);
         if (replacedExisting && RemuxPassPaths.SamePath(RemuxPassPaths.Resolve(final), src))
         {
