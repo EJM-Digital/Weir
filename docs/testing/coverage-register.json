@@ -7639,6 +7639,11 @@
         },
         {
           "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanCatchUpTests.cs",
+          "name": "ProcessingWatchedFolderScanCatchUpTests"
+        },
+        {
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/ScanSettingsChangesApiTests.cs",
           "name": "ScanSettingsChangesApiTests"
         },
@@ -8150,6 +8155,40 @@
         "id": "JOB-057",
         "verdict": "Partly"
       }
+    },
+    {
+      "id": "services.hosted-services.processpulse-note-when-the-whole-process-could-not-run-so-late",
+      "area": "services",
+      "behaviour": "ProcessPulse: note the time once a second on a thread of its own, so work that comes late after the computer slept, a machine was saved or a container was frozen is told as information, and a scheduler that fell behind while Weir ran stays a warning",
+      "kind": "job",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/ProcessPulseTests.cs",
+          "name": "ProcessPulseTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/LeaseRenewalTests.cs",
+          "name": "A_job_whose_lease_ran_out_while_the_computer_slept_is_told_as_information_and_left_for_recovery"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/PeriodicTasksStartupTests.cs",
+          "name": "The_server_runs_one_pulse_that_notes_when_the_whole_process_could_not_run"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanCatchUpTests.cs",
+          "name": "ProcessingWatchedFolderScanCatchUpTests"
+        }
+      ],
+      "covers": [
+        "service:ProcessPulse"
+      ]
     },
     {
       "id": "services.hosted-services.stoprequestlistener-tray-sets-the-process-stop-event-clean-host",
