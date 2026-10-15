@@ -15,11 +15,6 @@ export const bootstrapAllowed: RecordedReply = {
   body: '{"bootstrap_allowed":true,"reason":"no_admin_user","requires_setup_code":false}',
 };
 
-export const bootstrapAlreadyDone: RecordedReply = {
-  status: 200,
-  body: '{"bootstrap_allowed":false,"reason":"admin_already_exists","requires_setup_code":false}',
-};
-
 export const noOneSignedIn: RecordedReply = {
   status: 401,
   body: '{"detail":"Not authenticated."}',
