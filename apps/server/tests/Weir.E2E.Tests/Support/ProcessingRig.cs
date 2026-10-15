@@ -1,5 +1,8 @@
+using System.Globalization;
 using System.Net;
+using System.Text;
 using System.Text.Json.Nodes;
+using Microsoft.Data.Sqlite;
 using Weir.Contract.Tests.Harness;
 using Weir.Contract.Tests.Harness.Fakes;
 using Weir.E2E.Tests.Harness;
@@ -213,6 +216,62 @@ public sealed class ProcessingRig : IAsyncDisposable
 
     /// <summary>How many times ffmpeg has written a cleaned copy since the rig started.</summary>
     public int RemuxCount => _tools.Calls(tool: "ffmpeg", step: "remux").Count;
+
+    /// <summary>
+    /// What a test that failed here needs to say why: the job and file rows with their lease times, the clock, and the end of the
+    /// rig server's log. A pass that is claimed and never finishes shows as a leased job with no log line after it.
+    /// </summary>
+    public string Evidence()
+    {
+        var text = new StringBuilder();
+        text.AppendLine(CultureInfo.InvariantCulture, $"Rig evidence at {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        try
+        {
+            using var connection = new SqliteConnection($"Data Source={_server.DatabasePath};Mode=ReadOnly");
+            connection.Open();
+            Append(text, connection, "jobs", "SELECT id, status, lease_owner, lease_expires_at, attempt_count, not_before, created_at, updated_at, last_error FROM jobs ORDER BY id");
+            Append(text, connection, "files", "SELECT id, relative_path, status, status_reason, updated_at FROM files ORDER BY id");
+        }
+        catch (SqliteException exception)
+        {
+            text.AppendLine(CultureInfo.InvariantCulture, $"The rig's database could not be read: {exception.Message}");
+        }
+
+        text.AppendLine("Server log, last 60 lines:");
+        foreach (var line in _server.LogText().Split(n).TakeLast(60))
+        {
+            text.AppendLine(line.TrimEnd());
+        }
+
+        return text.ToString();
+    }
+
+    /// <summary>Runs a test body, and when it fails says what the rig held, so a result that only happens under load can be explained.</summary>
+    public async Task WithEvidenceAsync(Func<Task> body)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        try
+        {
+            await body();
+        }
+        catch (Exception exception)
+        {
+            throw new InvalidOperationException($"{exception.Message}{Environment.NewLine}{Environment.NewLine}{Evidence()}", exception);
+        }
+    }
+
+    private static void Append(StringBuilder text, SqliteConnection connection, string name, string sql)
+    {
+        text.AppendLine(name + ":");
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var cells = Enumerable.Range(0, reader.FieldCount).Select(index => reader.IsDBNull(index) ? "-" : Convert.ToString(reader.GetValue(index), CultureInfo.InvariantCulture));
+            text.AppendLine("  " + string.Join(" | ", cells));
+        }
+    }
 
     /// <summary>The arguments of the latest ffmpeg write of a cleaned copy.</summary>
     public IReadOnlyList<string> LatestRemuxArguments => _tools.Calls(tool: "ffmpeg", step: "remux")[^1].Arguments;

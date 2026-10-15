@@ -5,7 +5,7 @@ import type {
   ProcessingFileTracks,
   ProcessingManualPlanChoice,
 } from "../../lib/processing/files-api";
-import { heldFileTracks } from "../../test/track-fixtures";
+import { heldFileTracks, track } from "../../test/track-fixtures";
 import { ChooseTracksPanel } from "./choose-tracks-panel";
 
 const onSubmit = vi.fn<(choice: ProcessingManualPlanChoice) => void>();
@@ -232,5 +232,66 @@ describe("Choose tracks: the order of the kept tracks", () => {
       ENGLISH_SUBTITLE,
       JAPANESE_AUDIO,
     ]);
+  });
+});
+
+describe("Choose tracks: the default audio track", () => {
+  const defaultAudios = (choice: ProcessingManualPlanChoice) =>
+    choice.keep
+      .filter((entry) => entry.default && entry.index !== ENGLISH_SUBTITLE)
+      .map((entry) => entry.index);
+
+  it("falls to the only audio track kept when the default one is dropped", () => {
+    open();
+    fireEvent.click(control("keep", JAPANESE_AUDIO));
+
+    fireEvent.click(control("keep", ENGLISH_AUDIO));
+    const choice = submitted();
+
+    expect(control("default", JAPANESE_AUDIO)).toBeChecked();
+    expect(defaultAudios(choice)).toEqual([JAPANESE_AUDIO]);
+  });
+
+  it("falls to the first kept audio track in the order when the default one is dropped from several", () => {
+    const tracks = heldFileTracks();
+    open({
+      ...tracks,
+      streams: [
+        ...tracks.streams.filter((stream) => stream.type === "video"),
+        track({ index: 1, type: "audio", language: "eng", default: true }),
+        track({ index: 2, type: "audio", language: "jpn" }),
+        track({ index: 5, type: "audio", language: "fra" }),
+      ],
+    });
+    fireEvent.click(screen.getByTestId("choose-tracks-move-up-5"));
+    fireEvent.click(screen.getByTestId("choose-tracks-move-up-5"));
+
+    fireEvent.click(control("keep", ENGLISH_AUDIO));
+    const choice = submitted();
+
+    expect(choice.order).toEqual([0, 5, 2]);
+    expect(defaultAudios(choice)).toEqual([5]);
+    expect(control("default", 5)).toBeChecked();
+    expect(control("default", 2)).not.toBeChecked();
+  });
+
+  it("goes back to the first kept audio track when the track made the default is then dropped", () => {
+    open();
+    fireEvent.click(control("keep", JAPANESE_AUDIO));
+    fireEvent.click(control("default", JAPANESE_AUDIO));
+
+    fireEvent.click(control("keep", JAPANESE_AUDIO));
+
+    expect(control("default", ENGLISH_AUDIO)).toBeChecked();
+    expect(defaultAudios(submitted())).toEqual([ENGLISH_AUDIO]);
+  });
+
+  it("submits exactly one default audio track, the one chosen, when one is chosen", () => {
+    open();
+    fireEvent.click(control("keep", JAPANESE_AUDIO));
+
+    fireEvent.click(control("default", JAPANESE_AUDIO));
+
+    expect(defaultAudios(submitted())).toEqual([JAPANESE_AUDIO]);
   });
 });

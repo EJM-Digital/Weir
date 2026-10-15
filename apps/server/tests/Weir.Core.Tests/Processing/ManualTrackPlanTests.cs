@@ -1,3 +1,4 @@
+using Weir.Core.Media;
 using Weir.Core.Processing;
 using Weir.Core.Rules;
 
@@ -159,5 +160,71 @@ public sealed class ManualTrackPlanTests
         Assert.Empty(plan.RemovedImages);
         Assert.Empty(plan.RemovedAttachments);
         Assert.Empty(plan.MetadataNotes);
+    }
+
+    [Fact]
+    public void BuildPlan_makes_the_only_kept_audio_track_the_default_when_the_choice_drops_the_files_default_audio()
+    {
+        // Stream 1 is the file's default audio. The choice keeps only the commentary track and marks nothing default.
+        var choice = new ManualPlanChoice([new ManualKeepEntry(0, false, false), new ManualKeepEntry(2, false, false)], [0, 2]);
+
+        var plan = ManualTrackPlan.BuildPlan(Streams(), choice);
+
+        var audio = Assert.Single(plan.Audio);
+        Assert.Equal(2, audio.InputIndex);
+        Assert.True(audio.Default);
+        Assert.Equal(0, plan.DefaultAudioOutputIndex);
+    }
+
+    [Fact]
+    public void BuildPlan_makes_the_first_kept_audio_track_in_output_order_the_default_when_none_is_chosen()
+    {
+        var choice = new ManualPlanChoice(
+            [new ManualKeepEntry(0, false, false), new ManualKeepEntry(1, false, false), new ManualKeepEntry(2, false, false)],
+            [0, 2, 1]);
+
+        var plan = ManualTrackPlan.BuildPlan(Streams(), choice);
+
+        Assert.Equal([2, 1], plan.Audio.Select(t => t.InputIndex));
+        Assert.Equal([true, false], plan.Audio.Select(t => t.Default));
+        Assert.Equal(0, plan.DefaultAudioOutputIndex);
+    }
+
+    [Fact]
+    public void BuildPlan_keeps_the_chosen_default_audio_track_when_it_is_not_the_first()
+    {
+        var choice = new ManualPlanChoice(
+            [new ManualKeepEntry(0, false, false), new ManualKeepEntry(1, false, false), new ManualKeepEntry(2, true, false)],
+            [0, 1, 2]);
+
+        var plan = ManualTrackPlan.BuildPlan(Streams(), choice);
+
+        Assert.Equal([false, true], plan.Audio.Select(t => t.Default));
+        Assert.Equal(1, plan.DefaultAudioOutputIndex);
+    }
+
+    [Fact]
+    public void BuildPlan_leaves_subtitles_with_no_default_when_none_is_chosen()
+    {
+        var choice = new ManualPlanChoice(
+            [new ManualKeepEntry(0, false, false), new ManualKeepEntry(1, true, false), new ManualKeepEntry(3, false, false)],
+            [0, 1, 3]);
+
+        var plan = ManualTrackPlan.BuildPlan(Streams(), choice);
+
+        Assert.All(plan.Subtitles, track => Assert.False(track.Default));
+    }
+
+    [Fact]
+    public void The_ffmpeg_command_for_a_choice_that_dropped_the_default_audio_marks_the_first_kept_audio_default()
+    {
+        var choice = new ManualPlanChoice([new ManualKeepEntry(0, false, false), new ManualKeepEntry(2, false, false)], [0, 2]);
+        var plan = ManualTrackPlan.BuildPlan(Streams(), choice);
+
+        var argv = FfmpegCommands.BuildRemuxArgv("ffmpeg", "in.mkv", "out.mkv", plan);
+
+        var disposition = argv.ToList().IndexOf("-disposition:a:0");
+        Assert.True(disposition >= 0, "the command sets the first audio track's disposition");
+        Assert.Equal("+default", argv[disposition + 1]);
     }
 }
