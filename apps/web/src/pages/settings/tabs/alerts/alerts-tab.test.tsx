@@ -262,7 +262,7 @@ describe("AlertsTab loading and errors", () => {
   });
 });
 
-describe("who may remove an alert", () => {
+describe("who may add, change or remove an alert", () => {
   it.each(["operator", "viewer"] as const)(
     "a %s cannot, and is told why",
     async (role) => {
@@ -274,11 +274,40 @@ describe("who may remove an alert", () => {
       render(<AlertsTab />, { wrapper });
 
       expect(
-        await screen.findByText("Only an admin can remove an alert."),
+        await screen.findByText(
+          "Only an admin can add, change or remove an alert.",
+        ),
       ).toBeInTheDocument();
-      for (const button of screen.getAllByRole("button", { name: "Remove" })) {
-        expect(button).toBeDisabled();
+      expect(screen.getByRole("button", { name: /Add alert/ })).toBeDisabled();
+      for (const name of ["Remove", "Edit"]) {
+        for (const button of screen.getAllByRole("button", { name })) {
+          expect(button).toBeDisabled();
+        }
       }
+      for (const box of screen.getAllByRole("checkbox")) {
+        expect(box).toBeDisabled();
+      }
+      for (const button of screen.getAllByRole("button", {
+        name: "Send test",
+      })) {
+        expect(button).toBeEnabled();
+      }
+    },
+  );
+
+  it.each(["operator", "viewer"] as const)(
+    "a %s cannot add a first alert",
+    async (role) => {
+      vi.spyOn(api, "fetchNotificationChannels").mockResolvedValue(
+        channelList([]),
+      );
+      signedInAs(role);
+
+      render(<AlertsTab />, { wrapper });
+
+      expect(
+        await screen.findByRole("button", { name: "Add your first alert" }),
+      ).toBeDisabled();
     },
   );
 
@@ -290,9 +319,12 @@ describe("who may remove an alert", () => {
     render(<AlertsTab />, { wrapper });
 
     await screen.findByText("Ops webhook");
-    expect(screen.queryByText(/Only an admin can remove/)).toBeNull();
-    for (const button of screen.getAllByRole("button", { name: "Remove" })) {
-      expect(button).toBeEnabled();
+    expect(screen.queryByText(/Only an admin can/)).toBeNull();
+    expect(screen.getByRole("button", { name: /Add alert/ })).toBeEnabled();
+    for (const name of ["Remove", "Edit"]) {
+      for (const button of screen.getAllByRole("button", { name })) {
+        expect(button).toBeEnabled();
+      }
     }
   });
 });
