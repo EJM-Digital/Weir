@@ -1,83 +1,6 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { StartupGate } from "./startup-gate";
-
-describe("StartupGate", () => {
-  beforeEach(() => {
-    vi.useRealTimers();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-    vi.unstubAllGlobals();
-  });
-
-  it("shows startup state until backend readiness is confirmed", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => ({
-        ok: false,
-        json: async () => ({
-          ready: false,
-          status: "starting",
-          startup_seconds: 0.1,
-          steps: [
-            {
-              name: "database",
-              status: "starting",
-              detail: "Preparing database.",
-            },
-          ],
-        }),
-      })),
-    );
-
-    render(
-      <StartupGate>
-        <div>App mounted</div>
-      </StartupGate>,
-    );
-
-    expect(await screen.findByText("Starting Weir...")).toBeInTheDocument();
-    expect(screen.queryByText("App mounted")).not.toBeInTheDocument();
-    expect(await screen.findByText("Preparing database.")).toBeInTheDocument();
-  });
-
-  it("mounts children after backend readiness is confirmed", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          ready: true,
-          status: "ready",
-          startup_seconds: 0.2,
-          steps: [
-            { name: "database", status: "ready", detail: "Database ready." },
-            { name: "workers", status: "ready", detail: "Workers ready." },
-          ],
-        }),
-      })),
-    );
-
-    render(
-      <StartupGate>
-        <div>App mounted</div>
-      </StartupGate>,
-    );
-
-    await waitFor(() =>
-      expect(screen.getByText("App mounted")).toBeInTheDocument(),
-    );
-    expect(screen.queryByText("Starting Weir...")).not.toBeInTheDocument();
-  });
-});
 
 /** What the server answers on /ready, as the contract tests judge it (SuiteEndpointsContractTests). */
 const READY = { ready: true, status: "ready" };
@@ -165,6 +88,7 @@ describe("StartupGate while Weir is starting", () => {
       expect.objectContaining({ method: "GET" }),
     );
     expect(screen.getByText("Starting Weir...")).toBeInTheDocument();
+    expect(screen.getByText("Waiting for Weir to start.")).toBeInTheDocument();
 
     await elapse(POLL_MS - 1);
     expect(fetchStub).toHaveBeenCalledTimes(1);
