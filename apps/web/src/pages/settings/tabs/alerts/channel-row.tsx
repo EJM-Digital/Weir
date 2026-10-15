@@ -93,7 +93,7 @@ export function ChannelRow({
               variant: "secondary",
               size: "row",
             })}
-            disabled={deleting}
+            disabled={deleting || !admin}
             onClick={onEdit}
           >
             Edit
@@ -127,7 +127,7 @@ export function ChannelRow({
           className={ALERT_CHECKBOX_CLASS}
           aria-label={`${channel.label}: ${eventLabel(event)}`}
           checked={channel.events.includes(event)}
-          disabled={toggling}
+          disabled={toggling || !admin}
           onChange={() => onToggleEvent(event)}
         />
       </td>

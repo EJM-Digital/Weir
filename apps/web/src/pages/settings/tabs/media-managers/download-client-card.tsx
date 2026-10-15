@@ -110,7 +110,7 @@ export function DownloadClientCard({
             type="button"
             data-testid="download-client-edit"
             className={mmActionButtonClass({ variant: "secondary" })}
-            disabled={locked}
+            disabled={locked || !admin}
             onClick={() => setEditing(true)}
           >
             Edit
@@ -118,7 +118,7 @@ export function DownloadClientCard({
           <button
             type="button"
             className={mmActionButtonClass({ variant: "secondary" })}
-            disabled={locked}
+            disabled={locked || !admin}
             onClick={() =>
               update.mutate({
                 id: connection.id,
@@ -144,15 +144,6 @@ export function DownloadClientCard({
         </>
       }
     >
-      {!admin ? (
-        <p
-          className="mm-quiet-note mt-2"
-          data-testid="download-client-remove-needs-admin"
-        >
-          Only an admin can remove a download client.
-        </p>
-      ) : null}
-
       {test.isError ? (
         <p
           className="mm-status-text mt-2 text-sm"

@@ -66,7 +66,7 @@ export function ConnectionCard({
             type="button"
             data-testid="media-manager-edit"
             className={mmActionButtonClass({ variant: "secondary" })}
-            disabled={locked}
+            disabled={locked || !admin}
             onClick={() => setEditing(true)}
           >
             Edit
@@ -74,7 +74,7 @@ export function ConnectionCard({
           <button
             type="button"
             className={mmActionButtonClass({ variant: "secondary" })}
-            disabled={locked}
+            disabled={locked || !admin}
             onClick={() =>
               update.mutate({
                 id: connection.id,
@@ -102,15 +102,6 @@ export function ConnectionCard({
     >
       <FedWorkflows connection={connection} />
       <ConnectionFolderChain connectionId={connection.id} />
-
-      {!admin ? (
-        <p
-          className="mm-quiet-note mt-2"
-          data-testid="media-manager-remove-needs-admin"
-        >
-          Only an admin can remove a connection.
-        </p>
-      ) : null}
 
       {test.isError ? (
         <p

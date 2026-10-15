@@ -4,6 +4,7 @@ import { EmptyState } from "../../../../components/shared/empty-state";
 import { PageLoading } from "../../../../components/shared/page-loading";
 import { SidePanel } from "../../../../components/shared/side-panel";
 import { PageToolbarAddButton } from "../../../../components/shell/page-toolbar-actions";
+import { AdminOnlyNote } from "../../../../components/shared/admin-only-note";
 import { useIsAdmin } from "../../../../lib/auth/can-edit";
 import { errorMessage } from "../../../../lib/api/error-message";
 import {
@@ -69,11 +70,7 @@ export function AlertsTab() {
 
   return (
     <div data-testid="suite-settings-notifications" className="mm-quiet-stack">
-      {channels.length > 0 && !admin ? (
-        <p className="mm-quiet-note" data-testid="alert-remove-needs-admin">
-          Only an admin can remove an alert.
-        </p>
-      ) : null}
+      <AdminOnlyNote what="an alert" testId="alert-needs-admin" />
       {channels.length > 0 ? (
         <ChannelsPanel
           key={supportedEvents.join(",")}
@@ -92,6 +89,7 @@ export function AlertsTab() {
             <button
               type="button"
               className={mmActionButtonClass({ variant: "secondary" })}
+              disabled={!admin}
               onClick={() => setAdding(true)}
             >
               Add your first alert
@@ -106,7 +104,7 @@ export function AlertsTab() {
 
       <PageToolbarAddButton
         label="Add alert"
-        disabled={editingId !== null}
+        disabled={editingId !== null || !admin}
         onClick={() => setAdding(true)}
       />
       {adding ? (
