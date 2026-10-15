@@ -156,6 +156,42 @@ describe("adding a download client", () => {
     expect(screen.getByTestId("download-client-save")).toBeDisabled();
   });
 
+  it("says what is missing beside the disabled Add button, and stops once the form is complete", async () => {
+    vi.spyOn(api, "fetchDownloadClientConnections").mockResolvedValue([]);
+    render(<DownloadClientsSection />, { wrapper });
+    fireEvent.click(await screen.findByTestId("download-client-add"));
+    const save = screen.getByTestId("download-client-save");
+
+    // SABnzbd is the default selection.
+    const reason = screen.getByTestId("download-client-save-reason");
+    expect(reason).toHaveTextContent(
+      "Enter the address and API key to add this client.",
+    );
+    expect(save).toHaveAttribute("aria-describedby", reason.id);
+
+    fireEvent.change(screen.getByTestId("download-client-base-url"), {
+      target: { value: "http://192.0.2.20:8080" },
+    });
+    expect(screen.getByTestId("download-client-save-reason")).toHaveTextContent(
+      "Enter the API key to add this client.",
+    );
+
+    fireEvent.change(screen.getByTestId("download-client-kind"), {
+      target: { value: "deluge" },
+    });
+    expect(screen.getByTestId("download-client-save-reason")).toHaveTextContent(
+      "Enter the password to add this client.",
+    );
+
+    fireEvent.change(screen.getByTestId("download-client-password"), {
+      target: { value: "deluge-secret" },
+    });
+    expect(
+      screen.queryByTestId("download-client-save-reason"),
+    ).not.toBeInTheDocument();
+    expect(save).not.toHaveAttribute("aria-describedby");
+  });
+
   it("asks for no name: the connection is named after its address", async () => {
     vi.spyOn(api, "fetchDownloadClientConnections").mockResolvedValue([]);
     render(<DownloadClientsSection />, { wrapper });

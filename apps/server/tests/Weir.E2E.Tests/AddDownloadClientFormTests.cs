@@ -62,6 +62,11 @@ public sealed class AddDownloadClientFormTests(E2EServer server) : E2ETestBase(s
         var log = RequestLog.Watch(page);
         var mark = log.Mark();
         var save = Fields.Save(panel);
+        var reason = panel.GetByTestId("download-client-save-reason");
+
+        // The form says what is missing, and the button is described by it.
+        await Expect(reason).ToHaveTextAsync("Enter the address and API key to add this client.");
+        await Expect(save).ToHaveAttributeAsync("aria-describedby", await reason.GetAttributeAsync("id") ?? string.Empty);
 
         // No address: no kind can be added, whatever secret it has.
         foreach (var kind in Kinds)
@@ -88,6 +93,8 @@ public sealed class AddDownloadClientFormTests(E2EServer server) : E2ETestBase(s
                 await Fields.FillSecretsAsync(panel, kind);
                 await Expect(save).ToBeEnabledAsync();
             }
+
+            await Expect(reason).ToHaveCountAsync(0);
         }
 
         // Enter in the address with the secret missing is a submit the form refuses.

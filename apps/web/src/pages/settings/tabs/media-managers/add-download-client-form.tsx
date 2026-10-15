@@ -1,4 +1,4 @@
-import { useState, type RefObject } from "react";
+import { useId, useState, type RefObject } from "react";
 
 import { Field } from "../../../../components/shared/field";
 import {
@@ -77,9 +77,18 @@ export function AddDownloadClientFields({
     setForm((current) => ({ ...current, [key]: value }));
   const credentials = DOWNLOAD_CLIENT_KIND_CREDENTIALS[form.kind];
   // SABnzbd's API and Deluge's Web UI always need a credential; the others can run with none.
-  const missingRequiredCredential =
-    (credentials === "api_key" && !form.api_key.trim()) ||
-    (credentials === "password_only" && !form.password.trim());
+  const missing = [
+    !form.base_url.trim() ? "address" : null,
+    credentials === "api_key" && !form.api_key.trim() ? "API key" : null,
+    credentials === "password_only" && !form.password.trim()
+      ? "password"
+      : null,
+  ].filter((what) => what !== null);
+  const reasonId = useId();
+  const reason =
+    missing.length > 0
+      ? `Enter the ${missing.join(" and ")} to add this client.`
+      : null;
 
   return (
     <form
@@ -212,16 +221,23 @@ export function AddDownloadClientFields({
         </p>
       ) : null}
 
+      {reason ? (
+        <p
+          id={reasonId}
+          className="mm-quiet-note mt-2"
+          data-testid="download-client-save-reason"
+        >
+          {reason}
+        </p>
+      ) : null}
+
       <div className={quietActionRowClass}>
         <button
           type="submit"
           data-testid="download-client-save"
           className={mmActionButtonClass({ variant: "primary" })}
-          disabled={
-            create.isPending ||
-            !form.base_url.trim() ||
-            missingRequiredCredential
-          }
+          disabled={create.isPending || reason !== null}
+          aria-describedby={reason === null ? undefined : reasonId}
         >
           {create.isPending ? "Adding…" : "Add"}
         </button>
