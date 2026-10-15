@@ -2,6 +2,18 @@
   "note": "Every wait for the wall clock that scripts/check-wall-clock-waits.mjs lets stand, with how many there are in the file and why each is a poll that ends on its condition and not a guess. The list only shrinks.",
   "allowed": [
     {
+      "file": "apps/server/tests/Weir.Infrastructure.Tests/TestSupport/Eventually.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "The one poll every server unit test shares: it looks every 20 ms, ends the moment the condition holds and gives up at a ceiling that only a hung test reaches."
+    },
+    {
+      "file": "apps/server/tests/Weir.Infrastructure.Tests/TestSupport/PoolStarvationSampler.cs",
+      "kind": "delay",
+      "count": 2,
+      "reason": "A diagnostic that runs only when a stress run asks for it: it sleeps on a thread of its own to measure how late the thread pool wakes it, and no test asserts on how long it slept."
+    },
+    {
       "file": "apps/server/tests/Weir.E2E.Tests/Support/WeirWorkflowApi.cs",
       "kind": "delay",
       "count": 1,

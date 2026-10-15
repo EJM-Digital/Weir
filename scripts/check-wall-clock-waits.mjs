@@ -27,6 +27,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // Which files are looked at, and for what. A new test project is added here.
 const WATCHED = [
   { kind: "csharp", files: /^apps\/(?:server\/tests\/Weir\.E2E\.Tests|tray\/Weir\.Tray\.Tests)\/.+\.cs$/ },
+  { kind: "csharp", files: /^apps\/server\/tests\/Weir\.(?:Core|Infrastructure)\.Tests\/.+\.cs$/ },
   { kind: "web", files: /^apps\/web\/src\/(?:.+\.test\.tsx?|test\/.+|.+-(?:test-server|test-fixtures|test-support)\.tsx?)$/ },
   { kind: "script", files: /^(?:scripts|packaging)\/.+\.ps1$/ },
   // This check's own test holds the waits it looks for, as the text it is tried on.
