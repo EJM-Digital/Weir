@@ -14358,7 +14358,7 @@
         "kind": "vitest",
         "test": "vitest: pending useMeQuery renders PageLoading and no redirect"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-009",
         "verdict": "Gap"
@@ -14460,7 +14460,7 @@
         "kind": "vitest",
         "test": "vitest with memory router: settings pending shows \"Loading setup\"; settings error renders the Outlet; pending state on a non-wizard path redirects, on /setup-wizard does not"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-013",
         "verdict": "Gap"
@@ -14512,7 +14512,7 @@
         "kind": "vitest",
         "test": "E2E or vitest memory router: signed-out GET /whatever lands on /login. NOTE the top-level `path: \"*\"` -> /login route in router.tsx looks unreachable because `/` with a `*` child matches every address first; if so it is dead code"
       },
-      "issue": 1045,
+      "issue": 1142,
       "covers": [
         "web:*"
       ],
@@ -14755,7 +14755,7 @@
         "kind": "vitest",
         "test": "vitest: renders \"Loading Weir\" status inside the fallback frame"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-024",
         "verdict": "Gap"
@@ -14946,7 +14946,7 @@
         "kind": "vitest",
         "test": "vitest: open drawer, click a link, assert sidebar loses mm-sidebar--open and aria-expanded false"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-031",
         "verdict": "Gap"
@@ -15006,7 +15006,7 @@
         "kind": "vitest",
         "test": "vitest with matchMedia stub: laptop width collapses, a stored false choice wins"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-034",
         "verdict": "Gap"
@@ -15050,7 +15050,7 @@
         "kind": "vitest",
         "test": "vitest: open drawer, click the backdrop button, then reopen and click Menu again"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-036",
         "verdict": "Gap"
@@ -15180,7 +15180,7 @@
         "kind": "vitest",
         "test": "vitest: SidebarUser with signingOut true shows \"Signing out…\" and disabled"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-040",
         "verdict": "Gap"
@@ -15199,7 +15199,7 @@
         "kind": "vitest",
         "test": "vitest: click the link, assert location and menu closed"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-041",
         "verdict": "Gap"
@@ -16921,7 +16921,7 @@
         "kind": "vitest",
         "test": "vitest: useMeQuery returns a user -> Navigate to \"/\""
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-103",
         "verdict": "Gap"
@@ -16961,7 +16961,7 @@
         "kind": "vitest",
         "test": "vitest: click toggle, input type text/password, aria-label Show/Hide, cleared on empty"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-105",
         "verdict": "Gap"
@@ -16980,7 +16980,7 @@
         "kind": "vitest",
         "test": "vitest/E2E: submit empty form does not call the mutation"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-106",
         "verdict": "Gap"
@@ -17119,7 +17119,7 @@
         "kind": "vitest",
         "test": "vitest: whitespace-only username submitted -> alert, mutation not called"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-112",
         "verdict": "Gap"
@@ -17138,7 +17138,7 @@
         "kind": "vitest",
         "test": "vitest: edit a field after an error, alert disappears"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-113",
         "verdict": "Gap"
@@ -17213,7 +17213,7 @@
         "kind": "vitest",
         "test": "vitest with pending mutation"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-116",
         "verdict": "Gap"
@@ -17232,7 +17232,7 @@
         "kind": "vitest",
         "test": "vitest memory router, bootstrap_allowed false and a signed-in me. (E2E FirstVisitTests covers the opposite direction only)"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-117",
         "verdict": "Gap"
@@ -17272,7 +17272,7 @@
         "kind": "vitest",
         "test": "vitest: link goes to /login with state.manualSignIn so Login does not bounce back"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-119",
         "verdict": "Gap"
@@ -17291,7 +17291,7 @@
         "kind": "vitest",
         "test": "same as 105"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-120",
         "verdict": "Gap"
@@ -17455,7 +17455,7 @@
         "kind": "vitest",
         "test": "vitest with pending mutations: both buttons disabled, label \"Saving…\""
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-126",
         "verdict": "Gap"
@@ -17737,7 +17737,7 @@
         "kind": "vitest",
         "test": "vitest: dispatch beforeunload while pending -> default prevented; not once completed/skipped"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-134",
         "verdict": "Gap"
@@ -17756,7 +17756,7 @@
         "kind": "vitest",
         "test": "vitest: three cases"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-135",
         "verdict": "Gap"
@@ -18013,7 +18013,7 @@
         "kind": "vitest",
         "test": "vitest: Remove opens the shared dialog, confirm deletes and the row disappears"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-145",
         "verdict": "Gap"
@@ -18032,7 +18032,7 @@
         "kind": "vitest",
         "test": "vitest for both buttons (onBack resets the answer to null)"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-146",
         "verdict": "Gap"
@@ -18051,7 +18051,7 @@
         "kind": "vitest",
         "test": "Wizard glue (justCreated + answering) untested: vitest asserting the prompt appears after a successful create and test in the wizard"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-147",
         "verdict": "Gap"
@@ -18070,7 +18070,7 @@
         "kind": "vitest",
         "test": "vitest for each; the Try again button must call refetch"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-148",
         "verdict": "Gap"
@@ -18089,7 +18089,7 @@
         "kind": "vitest",
         "test": "vitest: Deluno chosen, connection failing, press Finish -> \"Connect and test it first…\", no save"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-149",
         "verdict": "Gap"
@@ -18108,7 +18108,7 @@
         "kind": "vitest",
         "test": "Proves nothing about responsiveness: jsdom does no layout and only UnifiedLog (a System tab) is rendered five times with a changed window.innerWidth. Real checks are the two phone-width E2E assertions (WEB-047). Needed: Playwright overflow/visibility checks of the shell and each screen at 375 and 768"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-150",
         "verdict": "Gap"
@@ -18648,7 +18648,7 @@
         "kind": "vitest",
         "test": "vitest with fake timers: settles only after the delay, restarts on each change, clears on unmount"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-172",
         "verdict": "Gap"
@@ -18667,7 +18667,7 @@
         "kind": "vitest",
         "test": "vitest: visibilityState hidden, prefers-reduced-motion reduce, and resizing class"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-173",
         "verdict": "Gap"
@@ -19031,7 +19031,7 @@
         "kind": "vitest",
         "test": "Needs a vitest that opens the picker, picks \"Library cleaning\" and asserts ?work=library; also that it shows the current value."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-185",
         "verdict": "Gap"
@@ -19208,7 +19208,7 @@
         "kind": "vitest",
         "test": "Needs an E2E at about 375 px asserting no horizontal overflow on / and /?view=system, the pipeline stations stack, and the compact work picker shows."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-190",
         "verdict": "Gap"
@@ -19227,7 +19227,7 @@
         "kind": "vitest",
         "test": "A vitest with the files query pending."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-191",
         "verdict": "Gap"
@@ -19246,7 +19246,7 @@
         "kind": "vitest",
         "test": "A vitest with the files query in error asserting the entry error and its wording."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-192",
         "verdict": "Gap"
@@ -20099,7 +20099,7 @@
         "kind": "vitest",
         "test": "The figure shows \"…\" for ever if the stats/activity read fails (no error state in code or test)."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-220",
         "verdict": "Gap"
@@ -20606,7 +20606,7 @@
         "kind": "vitest",
         "test": "Needs a vitest forcing a narrow measured width (or an E2E at phone width) asserting cards appear under their station headings."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-237",
         "verdict": "Gap"
@@ -20935,7 +20935,7 @@
         "kind": "vitest",
         "test": "Needs a vitest rendering the hook with a new first item and asserting the polite status text, and none on first load."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-248",
         "verdict": "Gap"
@@ -20984,7 +20984,7 @@
         "kind": "vitest",
         "test": "Shows \"Nothing has finished yet.\" for a failed read (no error state in code or test)."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-250",
         "verdict": "Gap"
@@ -21193,7 +21193,7 @@
         "kind": "vitest",
         "test": "Says \"Nothing yet. What Weir does appears here.\" (a wrong statement) when the read failed."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-258",
         "verdict": "Gap"
@@ -21768,7 +21768,7 @@
         "kind": "vitest",
         "test": "Buttons and links are native, but no test drives the panel from the keyboard or checks where focus lands after Remove or Try again removes the row."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-278",
         "verdict": "Gap"
@@ -22116,7 +22116,7 @@
         "kind": "vitest",
         "test": "Needs a vitest with `loading` true."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-290",
         "verdict": "Gap"
@@ -22271,7 +22271,7 @@
         "kind": "vitest",
         "test": "Either wire it from the file and test it, or drop the dead prop; the component is also used by Activity's detail and untested there."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-296",
         "verdict": "Gap"
@@ -22460,7 +22460,7 @@
         "kind": "vitest",
         "test": "Needs a vitest clicking Cancel and asserting `onClose`."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-305",
         "verdict": "Gap"
@@ -22479,7 +22479,7 @@
         "kind": "vitest",
         "test": "Needs a vitest with `submitting` true."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-306",
         "verdict": "Gap"
@@ -22498,7 +22498,7 @@
         "kind": "vitest",
         "test": "Needs a vitest with `submitError`."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-307",
         "verdict": "Gap"
@@ -22538,7 +22538,7 @@
         "kind": "vitest",
         "test": "Needs a vitest with an image stream."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-309",
         "verdict": "Gap"
@@ -22637,7 +22637,7 @@
         "kind": "vitest",
         "test": "Needs a vitest asserting the entry error."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-313",
         "verdict": "Gap"
@@ -22953,7 +22953,7 @@
         "kind": "vitest",
         "test": "The `stats.isError` branch is untested (the other band cards test theirs)."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-325",
         "verdict": "Gap"
@@ -24148,7 +24148,7 @@
         "kind": "vitest",
         "test": "A keyboard user cannot read a trace's values; needs behaviour plus a test."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-369",
         "verdict": "Gap"
@@ -38722,15 +38722,21 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Only the table-layout preference is written to localStorage (use-table-columns). A guard test (render, reveal, assert no console output, storage empty) does not exist."
-      },
-      "issue": 1045,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/secrets-are-not-kept.test.tsx",
+          "name": "never logs, stores or sends on a media manager's webhook secret or API key"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/secrets-are-not-kept.test.tsx",
+          "name": "never logs, stores or sends on a download client's API key beyond saving it"
+        }
+      ],
       "audit": {
         "id": "WEB-934",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -51923,14 +51929,34 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1046,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/work-picker.test.tsx",
+          "name": "shows the kind of work the address names"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/work-picker.test.tsx",
+          "name": "shows Everything when the address names no kind of work"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/work-picker.test.tsx",
+          "name": "offers the same three choices as the switch"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/work-picker.test.tsx",
+          "name": "puts the choice in the address, and leaving Everything takes it out again"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/processing/dashboard/work-picker.tsx#live-filter-compact"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -53434,14 +53460,34 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1045,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-page-requests.test.tsx",
+          "name": "creates the account with the trimmed username and a fresh secure token, then opens the app"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-page-requests.test.tsx",
+          "name": "says Creating... and cannot be pressed again while the server is working"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-page-requests.test.tsx",
+          "name": "shows the server's own reason when it refuses, and can be pressed again"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-page-requests.test.tsx",
+          "name": "sends nothing when the username is only spaces"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/setup/setup-page.tsx#setup-submit"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
