@@ -96,6 +96,24 @@ export class WeirClient {
     return this.#read("/processing/libraries", "listing workflows");
   }
 
+  /** Asks for an unchanged pass-through of a file in a movie workflow's watched folder; returns the job's id. */
+  async enqueuePassThrough(relativeMediaPath) {
+    const queued = await this.#write(
+      "POST",
+      "/processing/jobs/file-remux-pass/enqueue",
+      { relative_media_path: relativeMediaPath, media_scope: "movie", pass_through_unchanged: true },
+      200,
+      "queueing a pass-through",
+    );
+    return queued.job_id;
+  }
+
+  /** The job as the processing inspection lists it (id, status, last_error), or undefined when it is not listed. */
+  async job(id) {
+    const inspection = await this.#read("/processing/jobs/inspection?limit=100", "inspecting the jobs");
+    return inspection.jobs.find((job) => job.id === id);
+  }
+
   suiteSettings() {
     return this.#read("/suite/settings", "reading the saved settings");
   }

@@ -13855,15 +13855,21 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Either remove the variables from the image or test the validation (exit non-zero on a bad value, log line when set). Stale comment in the script says the OUTPUT trio is also ignored. Layer: unit (node test of the shell script)."
-      },
-      "issue": 1010,
+      "proofs": [
+        {
+          "type": "node",
+          "file": "scripts/docker-entrypoint.test.mjs",
+          "name": "*"
+        },
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "SET-E38",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -13874,31 +13880,30 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "node",
           "file": "scripts/docker-entrypoint.test.mjs",
-          "name": "the credentials secret made on the first start is the one used on the next"
+          "name": "*"
+        },
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
         },
         {
           "type": "node",
-          "file": "scripts/docker-entrypoint.test.mjs",
-          "name": "a credentials secret from the environment wins and no file is made"
+          "file": "scripts/docker-compose-smoke.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P1] Docker is a shipped install path and no suite runs the image: the uid remap, \"refuses PUID 0\", the session-secret generation/length check and WEIR_HOME ownership fix are untested; the VM catalog is Windows-only. Needed: container-level smoke (start image, sign in, restart keeps session, PUID remap changes file ownership) at layer vm/ci."
-      },
-      "issue": 1010,
       "covers": [
         "setting:env:WEIR_PUID",
         "setting:env:WEIR_PGID"
       ],
       "audit": {
         "id": "SET-E39",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -46954,15 +46959,21 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "The published arm64 image has never been run by any test; native binaries (SQLite, ffmpeg, mkvmerge) are architecture-specific"
-      },
-      "issue": 1010,
+      "proofs": [
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
+        },
+        {
+          "type": "node",
+          "file": "scripts/docker-compose-smoke.test.mjs",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "PLAT-13",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -46998,22 +47009,26 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "node",
           "file": "scripts/docker-entrypoint.test.mjs",
           "name": "*"
+        },
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
+        },
+        {
+          "type": "node",
+          "file": "scripts/docker-compose-smoke.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "The remap, root refusal, secret persistence across restarts and the chown path are not run; the node test runs the script as a non-root user so the root-only branches are skipped"
-      },
-      "issue": 1010,
       "audit": {
         "id": "PLAT-15",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -48948,8 +48963,7 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/OutputOwnershipTests.cs",
@@ -48959,16 +48973,16 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/LinuxOutputOwnershipToolsRealFilesystemTests.cs",
           "name": "LinuxOutputOwnershipToolsRealFilesystemTests"
+        },
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Applied at the publish points through a fake tool; never run in the Docker container with a real PUID/PGID remap and a real chown across users"
-      },
-      "issue": 1010,
       "audit": {
         "id": "FL-29",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {

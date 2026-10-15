@@ -137,6 +137,7 @@ jobs:
               - 'docker/**'
               - 'Dockerfile'
               - '.dockerignore'
+              - 'scripts/docker-smoke/arm64-scenario.mjs'
             # The floors every test leg is held to: a change to them is checked against a fresh measurement of all three.
             coverage_floors:
               - 'docs/coverage/floors.json'
@@ -284,7 +285,7 @@ jobs:
           retention-days: 7
           path: artifacts/coverage-register.md
 
-      - name: Docker entrypoint keeps the server's umask
+      - name: Docker entrypoint refuses bad settings, keeps the secrets and the server's umask
         run: node --test scripts/docker-entrypoint.test.mjs
 
       - name: Release and CI gate rules
