@@ -4,7 +4,8 @@
 //   * a top-level `permissions:` block that grants no write access, so a job gets write access only by asking
 //     for it on the job itself; and
 //   * `timeout-minutes` on every job (a job that calls a reusable workflow cannot set one; the called
-//     workflow's own jobs must).
+//     workflow's own jobs must); and
+//   * an output compared with a quoted string (`== 'true'`), never a bare boolean, which is never equal.
 //
 // A job with no timeout runs for six hours before GitHub stops it, and a Windows runner bills at twice the rate.
 //
@@ -52,6 +53,13 @@ for (const name of readdirSync(workflowDir).filter((file) => /\.ya?ml$/i.test(fi
     }
   }
   finish();
+
+  // Step and job outputs are always strings, so `outputs.x == true` compares a string with a boolean and is never
+  // true: the step it guards is silently skipped.
+  lines.forEach((line, index) => {
+    const unquoted = line.split("#")[0].match(/outputs\.[A-Za-z0-9_-]+\s*[!=]=\s*(true|false)\b/);
+    if (unquoted) failures.push(`${relative}:${index + 1}: outputs are strings; compare with '${unquoted[1]}' in quotes.`);
+  });
 }
 
 if (failures.length) {
@@ -59,4 +67,4 @@ if (failures.length) {
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
-console.log("Every workflow has least-privilege top-level permissions and a timeout on every job.");
+console.log("Every workflow has least-privilege top-level permissions, a timeout on every job, and compares outputs with quoted strings.");

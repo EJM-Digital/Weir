@@ -661,11 +661,28 @@ jobs:
         with:
           global-json-file: apps/server/global.json
 
-      - name: Download the coverage of every leg that ran
+      # One download per leg, each into its own folder. A pattern that matches a single artifact is unpacked
+      # straight into `path` rather than a folder named after it, so a run where only one leg ran would lose it.
+      - name: Download the server coverage
+        if: needs.changes.outputs.run_server_linux == 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          pattern: coverage-*
+          pattern: coverage-server-*
           path: coverage-input
+
+      - name: Download the tray coverage
+        if: needs.changes.outputs.run_tray == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: coverage-tray
+          path: coverage-input/coverage-tray
+
+      - name: Download the web coverage
+        if: needs.changes.outputs.run_web == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: coverage-web
+          path: coverage-input/coverage-web
 
       - name: Install ReportGenerator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.11
