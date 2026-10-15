@@ -38,9 +38,8 @@ public sealed class FakesWithServerTests
         await using var server = await WeirServer.StartNewAsync(tools.Env);
         using var admin = await server.CreateAdminClientAsync();
 
-        var hardware = await admin.GetAsync($"{WeirClient.Api}/processing/hardware");
+        var hardware = await HardwareReport.OnceFfmpegAnswersAsync(admin);
 
-        Assert.Equal(HttpStatusCode.OK, hardware.Status);
         Assert.True((bool)hardware.Fields["detected"]!, hardware.ToString());
         Assert.Contains(tools.Calls(tool: "ffmpeg"), call => call.Arguments.Contains("-hwaccels"));
     }
