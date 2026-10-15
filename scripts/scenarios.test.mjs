@@ -874,6 +874,43 @@ test("-Scenarios chooses several scenarios across phases, and -Phases may only n
   assert.equal(existsSync(join(out, "artifacts")), false);
 });
 
+test("-NoRestore runs chosen Fresh scenarios on the machine as it stands: no checkpoint restore, the VM checked, and it needs -Scenarios", { skip }, () => {
+  const restoring = whatIf("-Scenarios", "process-again");
+  assert.match(restoring, /restore checkpoint 'clean' of VM/);
+  const kept = whatIf("-Scenarios", "process-again", "-NoRestore");
+  assert.doesNotMatch(kept, /restore checkpoint 'clean' of VM/);
+  assert.match(kept, /Phase Fresh \(last, NO restore, -NoRestore\)/);
+  assert.match(kept, /start it if it is not running, and wait for PowerShell Direct; restore nothing\. The first run must have restored checkpoint 'clean'/);
+  assert.match(kept, /-Phase Fresh -Scenarios process-again as a one-shot/);
+  const out = mkdtempSync(join(tmpdir(), "weir-scenarios-norestore-"));
+  const run = powershell([
+    "-File", join(scenarios, "Invoke-WeirScenarios.ps1"),
+    "-RigHost", "no-such-host", "-InstallerPath", join(out, "x", "Weir-win-Setup.exe"), "-Version", "1.0.0-rc.99",
+    "-CommitSha", "0123456789abcdef0123456789abcdef01234567", "-OutDirectory", join(out, "artifacts"), "-NoRestore", "-WhatIf",
+  ]);
+  assert.notEqual(run.status, 0);
+  assert.match(run.err + run.out, /-NoRestore needs -Scenarios/);
+  assert.equal(existsSync(join(out, "artifacts")), false);
+});
+
+test("a run of chosen scenarios given no -OutDirectory gets a record folder of its own per run; a full run and an explicit -OutDirectory keep theirs", { skip }, () => {
+  const bare = (...extra) => {
+    const run = powershell([
+      "-File", join(scenarios, "Invoke-WeirScenarios.ps1"),
+      "-RigHost", "no-such-host", "-InstallerPath", join(tmpdir(), "x", "Weir-win-Setup.exe"), "-Version", "1.0.0-rc.99",
+      "-CommitSha", "0123456789abcdef0123456789abcdef01234567", "-WhatIf", ...extra,
+    ]);
+    assert.equal(run.status, 0, run.err || run.out);
+    return run.out;
+  };
+  const chosen = bare("-Scenarios", "process-again");
+  assert.match(chosen, /weir-scenarios-1\.0\.0-rc\.99-0123456-only-process-again-\d{8}T\d{6}Z/);
+  const full = bare("-Phases", "Update");
+  assert.match(full, /weir-scenarios-1\.0\.0-rc\.99-0123456(?!-)/);
+  assert.doesNotMatch(full, /weir-scenarios-1\.0\.0-rc\.99-0123456-\d{8}T/);
+  assert.match(whatIf("-Scenarios", "process-again"), /weir-scenarios-1\.0\.0-rc\.99-0123456-only-process-again(?!-\d{8}T)/);
+});
+
 test("a mistyped scenario id is refused before anything is touched, naming the nearest ids", { skip }, () => {
   const out = mkdtempSync(join(tmpdir(), "weir-scenarios-typo-"));
   const run = powershell([
