@@ -29,7 +29,8 @@ internal static class DelunoSide
     public static Recording Reply(string state) => Recording.LoadDelunoSide(Recording.DelunoSideRepliesVersion, state);
 
     /// <summary>The world of the rc.30.30 recordings: Deluno's Movies library by its recorded id, handing back to Deluno's recorded folder.</summary>
-    public static Task<RecordedWorld> StartWorldAsync() => RecordedWorld.StartAsync(MoviesKey, DelunoReadyFolder);
+    public static Task<RecordedWorld> StartWorldAsync(params (string Name, string Value)[] settings) =>
+        RecordedWorld.StartAsync(MoviesKey, DelunoReadyFolder, settings);
 
     /// <summary>
     /// A hand-off for a download the recordings do not hold a hand-off of (a status poll or a report they do hold names its id and
