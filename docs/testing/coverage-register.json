@@ -29816,17 +29816,7 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The files and library files the server sent are replayed through the web's types and readers, and the system, data and connection frames of the Activity stream are replayed through the page's parsers. Still to record: a processing.progress frame with a file in it (the recorded run finished before the stream sent one), and to move the screens' hand-made ProcessingFile fixtures onto the recorded ones."
-      },
-      "issue": 1142,
-      "audit": {
-        "id": "WEB-562",
-        "verdict": "Partly"
-      },
-      "partial": [
+      "proofs": [
         {
           "type": "vitest",
           "file": "apps/web/src/lib/api/recorded-replies.test.ts",
@@ -29836,8 +29826,32 @@
           "type": "vitest",
           "file": "apps/web/src/lib/activity/recorded-stream.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/processing/live-progress-merge.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/processing-page.test.tsx",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/processing-model.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-entries.test.ts",
+          "name": "*"
         }
-      ]
+      ],
+      "audit": {
+        "id": "WEB-562",
+        "verdict": "Partly"
+      }
     },
     {
       "id": "web-activity-library.cross-cutting-the-wire.no-e2e-clicks-a-control-on-library-scans-are",

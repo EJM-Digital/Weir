@@ -118,7 +118,11 @@ async function until(check, what) {
   throw new Error(`Gave up waiting for ${what}.`);
 }
 
-function makeVideo(file) {
+/**
+ * A small test video with an English and a French track. The long one is raw video, which FFmpeg writes without encoding, so
+ * it is two and a half gigabytes that Weir takes a few seconds to copy: long enough for the stream to report its progress.
+ */
+function makeVideo(file, { long = false } = {}) {
   mkdirSync(path.dirname(file), { recursive: true });
   const run = spawnSync(
     ffmpeg,
@@ -129,25 +133,26 @@ function makeVideo(file) {
       "-f",
       "lavfi",
       "-i",
-      "testsrc=size=64x64:rate=5:duration=2",
+      long
+        ? "testsrc=size=640x360:rate=25:duration=300"
+        : "testsrc=size=64x64:rate=5:duration=2",
       "-f",
       "lavfi",
       "-i",
-      "sine=frequency=440:duration=2",
+      `sine=frequency=440:duration=${long ? 300 : 2}`,
       "-f",
       "lavfi",
       "-i",
-      "sine=frequency=880:duration=2",
+      `sine=frequency=880:duration=${long ? 300 : 2}`,
       "-map",
       "0:v",
       "-map",
       "1:a",
       "-map",
       "2:a",
-      "-c:v",
-      "libx264",
-      "-preset",
-      "ultrafast",
+      ...(long
+        ? ["-c:v", "rawvideo", "-pix_fmt", "yuv420p"]
+        : ["-c:v", "libx264", "-preset", "ultrafast"]),
       "-c:a",
       "aac",
       "-b:a",
@@ -188,8 +193,15 @@ function watchStream() {
     const kind =
       fields.event === "data.changed"
         ? `${fields.event} ${data.topic}`
-        : fields.event;
-    const limit = fields.event === "processing.progress" ? 10 : 2;
+        : fields.event === "processing.progress" &&
+            Array.isArray(data.files) &&
+            data.files.length > 0
+          ? `${fields.event} with a file`
+          : fields.event;
+    // A progress frame with no file in it says nothing of its shape, so only a frame that carries a file is kept in numbers.
+    const carriesFile = Array.isArray(data.files) && data.files.length > 0;
+    const limit =
+      fields.event === "processing.progress" && carriesFile ? 10 : 2;
     if ((kept.get(kind) ?? 0) >= limit) return;
     kept.set(kind, (kept.get(kind) ?? 0) + 1);
     frames.push({ event: fields.event, data });
@@ -599,7 +611,9 @@ async function main() {
   rmSync(work, { recursive: true, force: true });
   for (const name of ["watched", "work", "output", "library"])
     mkdirSync(folder(name), { recursive: true });
-  makeVideo(path.join(folder("watched"), "Recorded Film (2020).mkv"));
+  makeVideo(path.join(folder("watched"), "Recorded Film (2020).mkv"), {
+    long: true,
+  });
   makeVideo(path.join(folder("library"), "Library Film (2019).mkv"));
 
   const child = spawn(

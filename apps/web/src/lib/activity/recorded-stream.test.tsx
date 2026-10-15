@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -13,11 +13,25 @@ import { parseSystemChecksFrame } from "../system/system-checks-frame";
 import { parseSystemOverviewFrame } from "../system/system-overview-frame";
 import { parseSystemStatsFrame } from "../system/system-stats-frame";
 import { parseSystemTasksFrame } from "../system/system-tasks-frame";
+import type { ProcessingFilesPage } from "../processing/files-api";
+import { mergeLiveProgress } from "../processing/live-progress-merge";
 import { processingKeys } from "../processing/query-keys";
 import {
   useActivityStreamInvalidations,
   useLiveProgress,
 } from "./use-activity-stream-invalidation";
+
+type ProgressFrame = {
+  files: {
+    relative_path: string;
+    status: string;
+    stage: string | null;
+    percent: number | null;
+    message: string | null;
+    removed_audio: string[];
+    removed_subtitles: string[];
+  }[];
+};
 
 type Frame = { event: string; data: Record<string, unknown> | unknown[] };
 
@@ -97,33 +111,70 @@ describe("the frames Weir really sent on the Activity stream", () => {
     }
   });
 
-  it("reach the page through the stream: progress is read as sent, and a new Activity entry refreshes what shows it", async () => {
+  it("reach the page through the stream: a new Activity entry refreshes what shows it", async () => {
     const stream = stubActivityStream();
     const client = new QueryClient();
     const invalidated = vi.spyOn(client, "invalidateQueries");
     const wrapper = ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
     );
-    const { result } = renderHook(
-      () => {
-        useActivityStreamInvalidations([processingKeys.files]);
-        return useLiveProgress();
-      },
-      { wrapper },
-    );
+    renderHook(() => useActivityStreamInvalidations([processingKeys.files]), {
+      wrapper,
+    });
 
-    for (const frame of framesOf("processing.progress")) {
-      stream.frame(frame.event, frame.data);
-    }
     const [latest] = framesOf("activity.latest");
     stream.frame(latest!.event, latest!.data);
 
     await waitFor(() => expect(invalidated).toHaveBeenCalled());
-    const progress = framesOf("processing.progress").at(-1)!.data as {
-      files: { relative_path: string }[];
-    };
-    expect(Object.keys(result.current)).toEqual(
-      progress.files.map((file) => file.relative_path),
+  });
+
+  it("reach the page through the stream: a pass in progress is read as sent, and ends when the stream says nothing is in progress", () => {
+    const stream = stubActivityStream();
+    const { result } = renderHook(() => useLiveProgress());
+    const [working] = framesOf("processing.progress").filter(
+      (frame) => (frame.data as ProgressFrame).files.length > 0,
     );
+    const [file] = (working!.data as ProgressFrame).files;
+
+    act(() => stream.frame(working!.event, working!.data));
+
+    expect(Object.keys(result.current)).toEqual([file!.relative_path]);
+    expect(result.current[file!.relative_path]).toMatchObject({
+      status: file!.status,
+      stage: file!.stage,
+      percent: file!.percent,
+      message: file!.message,
+      removedAudio: file!.removed_audio,
+      removedSubtitles: file!.removed_subtitles,
+    });
+    act(() => stream.frame("processing.progress", { files: [] }));
+    expect(result.current).toEqual({});
+  });
+
+  it("show a file the list calls waiting as processing, and leave the rest of the recorded file as it was", () => {
+    const stream = stubActivityStream();
+    const { result } = renderHook(() => useLiveProgress());
+    const [working] = framesOf("processing.progress").filter(
+      (frame) => (frame.data as ProgressFrame).files.length > 0,
+    );
+    const [file] = (working!.data as ProgressFrame).files;
+    const [recorded] = recordedBody<ProcessingFilesPage>(
+      "GET /api/v1/processing/files",
+    ).files;
+    const waiting = {
+      ...recorded!,
+      relative_path: file!.relative_path,
+      status: "unprocessed" as const,
+    };
+
+    act(() => stream.frame(working!.event, working!.data));
+    const [merged] = mergeLiveProgress([waiting], result.current);
+
+    expect(merged).toMatchObject({
+      status: "processing",
+      size_bytes: recorded!.size_bytes,
+      progress_stage: file!.stage,
+      progress_percent: file!.percent,
+    });
   });
 });

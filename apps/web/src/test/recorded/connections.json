@@ -10,8 +10,8 @@
         "job_failed"
       ],
       "enabled": true,
-      "created_at": "2026-10-15T19:25:35",
-      "updated_at": "2026-10-15T19:25:35"
+      "created_at": "2026-10-15T19:34:10",
+      "updated_at": "2026-10-15T19:34:10"
     }
   },
   "PUT /api/v1/suite/notification-channels/1": {
@@ -26,8 +26,8 @@
         "job_failed"
       ],
       "enabled": false,
-      "created_at": "2026-10-15T19:25:35",
-      "updated_at": "2026-10-15T19:25:35"
+      "created_at": "2026-10-15T19:34:10",
+      "updated_at": "2026-10-15T19:34:10"
     }
   },
   "POST /api/v1/suite/notification-channels/1/test": {
@@ -51,8 +51,8 @@
             "job_failed"
           ],
           "enabled": false,
-          "created_at": "2026-10-15T19:25:35",
-          "updated_at": "2026-10-15T19:25:35"
+          "created_at": "2026-10-15T19:34:10",
+          "updated_at": "2026-10-15T19:34:10"
         }
       ],
       "supported_events": [
@@ -115,7 +115,7 @@
       "connection_id": 1,
       "ok": false,
       "detail": "Weir could not reach SABnzbd on localhost at http://localhost:8085. Check the address is right, and that the app is running and reachable from this machine.",
-      "checked_at": "2026-10-15T19:25:36.030878Z"
+      "checked_at": "2026-10-15T19:34:10.629609Z"
     }
   },
   "GET /api/v1/download-clients/connections": {
@@ -132,10 +132,10 @@
         "password_is_saved": false,
         "api_key_is_saved": true,
         "last_test_ok": false,
-        "last_test_at": "2026-10-15T19:25:36.030878",
+        "last_test_at": "2026-10-15T19:34:10.629609",
         "last_test_detail": "Weir could not reach SABnzbd on localhost at http://localhost:8085. Check the address is right, and that the app is running and reachable from this machine.",
-        "last_answer_ms": 4058,
-        "last_used_at": "2026-10-15T19:25:40.141228Z"
+        "last_answer_ms": 4104,
+        "last_used_at": "2026-10-15T19:34:14.784427Z"
       }
     ]
   },
@@ -195,14 +195,14 @@
       "connection_id": 1,
       "ok": false,
       "detail": "Weir could not reach Deluno on localhost · Recorded at http://localhost:5099. Check the address is right, and that the app is running and reachable from this machine.",
-      "checked_at": "2026-10-15T19:25:40.294354Z"
+      "checked_at": "2026-10-15T19:34:14.892099Z"
     }
   },
   "POST /api/v1/media-managers/connections/1/webhook-secret": {
     "status": 200,
     "body": {
       "connection_id": 1,
-      "webhook_secret": "Rp4R6hAoMMRi1qXSfsrhVgi2t0AB_xDW59nBgDP1FQE",
+      "webhook_secret": "orUrdUEgte96YkjLUbfWcqwPJ8HzwES7NkrcdeIVGE8",
       "webhook_url_path": "/api/v1/intake/webhook/deluno",
       "header_name": "X-Webhook-Secret"
     }
@@ -222,10 +222,10 @@
         "webhook_url_path": "/api/v1/intake/webhook/deluno",
         "unsigned_webhook_warning": null,
         "last_test_ok": false,
-        "last_test_at": "2026-10-15T19:25:40.294354",
+        "last_test_at": "2026-10-15T19:34:14.892099",
         "last_test_detail": "Weir could not reach Deluno on localhost · Recorded at http://localhost:5099. Check the address is right, and that the app is running and reachable from this machine.",
-        "last_answer_ms": 4044,
-        "last_used_at": "2026-10-15T19:25:44.383849Z",
+        "last_answer_ms": 4029,
+        "last_used_at": "2026-10-15T19:34:18.960908Z",
         "downloaded_scan_enabled": false
       }
     ]

@@ -1,3 +1,7 @@
+import type {
+  ProcessingFile,
+  ProcessingFilesPage,
+} from "../../lib/processing/files-api";
 import activity from "./activity.json?raw";
 import connections from "./connections.json?raw";
 import processing from "./processing.json?raw";
@@ -38,6 +42,16 @@ export function recordedResponse(route: string): Response {
     status,
     headers: body === null ? {} : { "Content-Type": "application/json" },
   });
+}
+
+/**
+ * A file as the server listed it once it was processed, whole: every field it sends, with the values it sent. A test says
+ * only what it needs different from it.
+ */
+export function recordedProcessingFile(): ProcessingFile {
+  return structuredClone(
+    recordedBody<ProcessingFilesPage>("GET /api/v1/processing/files").files[0]!,
+  );
 }
 
 /** The status the server answered `METHOD /path?query` with. */

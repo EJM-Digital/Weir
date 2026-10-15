@@ -58,10 +58,10 @@
         "discovered_library_key": null,
         "folders_synced_from_connection_id": null,
         "active_job_count": 0,
-        "next_look_at": "2026-10-15T19:30:33.036288Z",
+        "next_look_at": "2026-10-15T19:39:05.428854Z",
         "periodic_scan": "scheduled",
-        "next_scan_at": "2026-10-15T19:30:33.036288Z",
-        "updated_at": "2026-10-15T19:25:29"
+        "next_scan_at": "2026-10-15T19:39:05.428854Z",
+        "updated_at": "2026-10-15T19:34:01"
       },
       {
         "id": 2,
@@ -119,10 +119,10 @@
         "discovered_library_key": null,
         "folders_synced_from_connection_id": null,
         "active_job_count": 0,
-        "next_look_at": "2026-10-15T19:30:27.995768Z",
+        "next_look_at": "2026-10-15T19:39:00.361925Z",
         "periodic_scan": "scheduled",
-        "next_scan_at": "2026-10-15T19:30:27.995768Z",
-        "updated_at": "2026-10-15T19:25:27"
+        "next_scan_at": "2026-10-15T19:39:00.361925Z",
+        "updated_at": "2026-10-15T19:34:00"
       }
     ]
   },
@@ -184,10 +184,10 @@
       "discovered_library_key": null,
       "folders_synced_from_connection_id": null,
       "active_job_count": 0,
-      "next_look_at": "2026-10-15T19:30:27.995768Z",
+      "next_look_at": "2026-10-15T19:39:00.361925Z",
       "periodic_scan": "scheduled",
-      "next_scan_at": "2026-10-15T19:30:27.995768Z",
-      "updated_at": "2026-10-15T19:25:29"
+      "next_scan_at": "2026-10-15T19:39:00.361925Z",
+      "updated_at": "2026-10-15T19:34:01"
     }
   },
   "PUT /api/v1/processing/libraries/1/library-settings": {
@@ -217,7 +217,7 @@
     "body": {
       "ok": true,
       "job_id": 4,
-      "dedupe_key": "processing.watched_folder.remux_scan_dispatch.v1:aeaa337fcabd4e439980796af7e9d057",
+      "dedupe_key": "processing.watched_folder.remux_scan_dispatch.v1:55cab102fa5a4e31bcb683735179bd70",
       "job_kind": "processing.watched_folder.remux_scan_dispatch.v1"
     }
   },
@@ -236,13 +236,13 @@
           "status_reason": "Finished processing this file.",
           "source_gone": false,
           "blocked_by_connection": null,
-          "size_bytes": 22808,
-          "video_codec": "h264",
-          "video_width": 64,
-          "video_height": 64,
+          "size_bytes": 2593754690,
+          "video_codec": "rawvideo",
+          "video_width": 640,
+          "video_height": 360,
           "audio_track_count": 2,
           "subtitle_track_count": 0,
-          "duration_seconds": 2.023,
+          "duration_seconds": 300.023,
           "direct_play": [],
           "progress_percent": null,
           "progress_message": null,
@@ -261,14 +261,14 @@
           "output_collision_action": "write",
           "output_collision_reason": "No file existed at the output path, so Weir wrote it there.",
           "hold_until": null,
-          "size_changed_at": "2026-10-15T19:25:30.464628",
-          "created_at": "2026-10-15T19:25:30",
-          "updated_at": "2026-10-15T19:25:33",
-          "last_seen_at": "2026-10-15T19:25:33.038665",
-          "last_attempt_at": "2026-10-15T19:25:33.334645",
+          "size_changed_at": "2026-10-15T19:34:02.679720",
+          "created_at": "2026-10-15T19:34:02",
+          "updated_at": "2026-10-15T19:34:07",
+          "last_seen_at": "2026-10-15T19:34:05.431180",
+          "last_attempt_at": "2026-10-15T19:34:07.722107",
           "handback": {
             "output_path": "C:\\weir-recorded-replies\\media\\output\\Recorded Film (2020).mkv",
-            "written_at": "2026-10-15T19:25:33.334645Z",
+            "written_at": "2026-10-15T19:34:07.722107Z",
             "outcome": null,
             "outcome_by": null,
             "outcome_at": null,
@@ -314,13 +314,13 @@
           "status_reason": "Finished processing this file.",
           "source_gone": false,
           "blocked_by_connection": null,
-          "size_bytes": 22808,
-          "video_codec": "h264",
-          "video_width": 64,
-          "video_height": 64,
+          "size_bytes": 2593754690,
+          "video_codec": "rawvideo",
+          "video_width": 640,
+          "video_height": 360,
           "audio_track_count": 2,
           "subtitle_track_count": 0,
-          "duration_seconds": 2.023,
+          "duration_seconds": 300.023,
           "direct_play": [],
           "progress_percent": null,
           "progress_message": null,
@@ -339,14 +339,14 @@
           "output_collision_action": "write",
           "output_collision_reason": "No file existed at the output path, so Weir wrote it there.",
           "hold_until": null,
-          "size_changed_at": "2026-10-15T19:25:30.464628",
-          "created_at": "2026-10-15T19:25:30",
-          "updated_at": "2026-10-15T19:25:33",
-          "last_seen_at": "2026-10-15T19:25:33.038665",
-          "last_attempt_at": "2026-10-15T19:25:33.334645",
+          "size_changed_at": "2026-10-15T19:34:02.679720",
+          "created_at": "2026-10-15T19:34:02",
+          "updated_at": "2026-10-15T19:34:07",
+          "last_seen_at": "2026-10-15T19:34:05.431180",
+          "last_attempt_at": "2026-10-15T19:34:07.722107",
           "handback": {
             "output_path": "C:\\weir-recorded-replies\\media\\output\\Recorded Film (2020).mkv",
-            "written_at": "2026-10-15T19:25:33.334645Z",
+            "written_at": "2026-10-15T19:34:07.722107Z",
             "outcome": null,
             "outcome_by": null,
             "outcome_at": null,
@@ -420,7 +420,7 @@
       "entries": [
         {
           "id": 1,
-          "recorded_at": "2026-10-15T19:25:33.341157",
+          "recorded_at": "2026-10-15T19:34:07.728953",
           "outcome": "live_output_written",
           "title": "Recorded Film (2020).mkv was processed successfully",
           "library_name": "Movies",
@@ -521,20 +521,20 @@
             "media_scope": "movie",
             "source_fingerprint": {
               "device": 4005349500,
-              "inode": 844424935652015,
-              "size_bytes": 22808,
-              "modified_time_ns": 1792092327455030800
+              "inode": 844424935658542,
+              "size_bytes": 2593754690,
+              "modified_time_ns": 1792092839781794300
             },
-            "source_fingerprint_size": 22808,
-            "source_fingerprint_mtime_ns": 1792092327455030800,
+            "source_fingerprint_size": 2593754690,
+            "source_fingerprint_mtime_ns": 1792092839781794300,
             "output_file": "C:\\weir-recorded-replies\\media\\output\\Recorded Film (2020).mkv",
             "output_replaced_existing": false,
             "processing_output_folder_resolved": "C:\\weir-recorded-replies\\media\\output",
             "output_collision_policy": "replace",
             "output_collision_action": "write",
             "output_collision_reason": "No file existed at the output path, so Weir wrote it there.",
-            "source_size_bytes": 22808,
-            "output_size_bytes": 17503,
+            "source_size_bytes": 2593754690,
+            "output_size_bytes": 2593037558,
             "after_track_lines_meaning": "Live remux finished; before = source probe; after = planned disposition (copy remux — ffprobe of the written file was used for validation only).",
             "sidecars_migrated": [],
             "sidecars_skipped": [],
@@ -584,7 +584,7 @@
             },
             {
               "heading": "Worked",
-              "sentence": "22.3 KB became 17.1 KB, saving 5.2 KB.",
+              "sentence": "2.4 GB became 2.4 GB, saving 700 KB.",
               "tone": "good"
             },
             {
@@ -610,15 +610,15 @@
       "media_scope": "movie",
       "source_fingerprint": {
         "device": 4005349500,
-        "inode": 844424935652015,
-        "size_bytes": 22808,
-        "modified_time_ns": 1792092327455030800
+        "inode": 844424935658542,
+        "size_bytes": 2593754690,
+        "modified_time_ns": 1792092839781794300
       },
       "streams": [
         {
           "index": 0,
           "type": "video",
-          "codec": "h264",
+          "codec": "rawvideo",
           "language": null,
           "title": null,
           "channels": null,
@@ -730,7 +730,7 @@
         "clear_video_track_names": false,
         "remove_chapters": false,
         "used_by_library_count": 1,
-        "updated_at": "2026-10-15T19:25:27"
+        "updated_at": "2026-10-15T19:34:00"
       },
       {
         "id": 2,
@@ -772,7 +772,7 @@
         "clear_video_track_names": false,
         "remove_chapters": false,
         "used_by_library_count": 1,
-        "updated_at": "2026-10-15T19:25:27"
+        "updated_at": "2026-10-15T19:34:00"
       }
     ]
   },
@@ -965,11 +965,11 @@
           "description": "Deletes half-written copies Weir left in its work folders once they have sat for a day, including a failed copy you asked Weir to keep. Never touches a file being written.",
           "pending": 0,
           "running": 0,
-          "last_completed_at": "2026-10-15T19:25:28",
+          "last_completed_at": "2026-10-15T19:34:00",
           "last_failed_at": null,
           "last_error": null,
           "interval_seconds": 3600,
-          "next_run_at": "2026-10-15T20:25:28.000849Z"
+          "next_run_at": "2026-10-15T20:34:00.371351Z"
         },
         {
           "family": "unclaimed_handbacks",
@@ -1007,7 +1007,7 @@
       "movie_schedule_enabled": true,
       "tv_schedule_enabled": true,
       "schedule_timezone": "UTC",
-      "updated_at": "2026-10-15T19:25:27"
+      "updated_at": "2026-10-15T19:34:00"
     }
   },
   "GET /api/v1/processing/libraries/1/library-settings": {
@@ -1042,7 +1042,7 @@
         "status": "completed",
         "running": false,
         "files_seen": null,
-        "generated_at": 1792092329,
+        "generated_at": 1792092841,
         "errors": []
       },
       "schedule": {
@@ -1121,7 +1121,7 @@
         "status": "completed",
         "running": false,
         "files_seen": null,
-        "generated_at": 1792092329,
+        "generated_at": 1792092841,
         "errors": []
       },
       "summary": {
@@ -1167,7 +1167,7 @@
           "path": "C:/weir-recorded-replies/media/library\\Library Film (2019).mkv",
           "poster_url": null,
           "size_bytes": 22808,
-          "modified_at": 1792092327,
+          "modified_at": 1792092839,
           "classification": "would_change",
           "summary": "Would remove 1 audio track (fra aac 1 ch (stream 2): removed (not selected — eng aac 1 ch (stream 1) kept)).",
           "reason": null,
@@ -1207,7 +1207,7 @@
         "status": "completed",
         "running": false,
         "files_seen": null,
-        "generated_at": 1792092329,
+        "generated_at": 1792092841,
         "errors": []
       },
       "summary": {
@@ -1253,7 +1253,7 @@
           "path": "C:/weir-recorded-replies/media/library\\Library Film (2019).mkv",
           "poster_url": null,
           "size_bytes": 22808,
-          "modified_at": 1792092327,
+          "modified_at": 1792092839,
           "classification": "would_change",
           "summary": "Would remove 1 audio track (fra aac 1 ch (stream 2): removed (not selected — eng aac 1 ch (stream 1) kept)).",
           "reason": null,
@@ -1353,7 +1353,7 @@
           "outcome": "cleaned",
           "detail": "Cleaned Library Film (2019).mkv: removed 1 audio track. Weir wrote it with ffmpeg because mkvmerge could not.",
           "trigger": null,
-          "recorded_at": "2026-10-15T19:25:34"
+          "recorded_at": "2026-10-15T19:34:09"
         }
       ],
       "returned": 1,
@@ -1374,7 +1374,7 @@
           "outcome": "cleaned",
           "detail": "Cleaned Library Film (2019).mkv: removed 1 audio track. Weir wrote it with ffmpeg because mkvmerge could not.",
           "trigger": null,
-          "recorded_at": "2026-10-15T19:25:34"
+          "recorded_at": "2026-10-15T19:34:09"
         }
       ],
       "returned": 1,
@@ -1459,7 +1459,7 @@
         {
           "index": 0,
           "type": "video",
-          "codec": "h264",
+          "codec": "rawvideo",
           "language": "",
           "title": "",
           "channels": 0,
@@ -1553,7 +1553,7 @@
       "clear_video_track_names": false,
       "remove_chapters": false,
       "used_by_library_count": 0,
-      "updated_at": "2026-10-15T19:25:35"
+      "updated_at": "2026-10-15T19:34:10"
     }
   },
   "PUT /api/v1/processing/rule-sets/3": {
@@ -1598,7 +1598,7 @@
       "clear_video_track_names": false,
       "remove_chapters": false,
       "used_by_library_count": 0,
-      "updated_at": "2026-10-15T19:25:35",
+      "updated_at": "2026-10-15T19:34:10",
       "library_rescan_job_ids": []
     }
   },
@@ -1673,7 +1673,7 @@
       "next_look_at": null,
       "periodic_scan": "scheduled",
       "next_scan_at": null,
-      "updated_at": "2026-10-15T19:25:35"
+      "updated_at": "2026-10-15T19:34:10"
     }
   },
   "POST /api/v1/processing/libraries/reorder": {
@@ -1738,7 +1738,7 @@
         "next_look_at": null,
         "periodic_scan": "scheduled",
         "next_scan_at": null,
-        "updated_at": "2026-10-15T19:25:35"
+        "updated_at": "2026-10-15T19:34:10"
       },
       {
         "id": 1,
@@ -1796,10 +1796,10 @@
         "discovered_library_key": null,
         "folders_synced_from_connection_id": null,
         "active_job_count": 0,
-        "next_look_at": "2026-10-15T19:30:33.036288Z",
+        "next_look_at": "2026-10-15T19:39:05.428854Z",
         "periodic_scan": "scheduled",
-        "next_scan_at": "2026-10-15T19:30:33.036288Z",
-        "updated_at": "2026-10-15T19:25:35"
+        "next_scan_at": "2026-10-15T19:39:05.428854Z",
+        "updated_at": "2026-10-15T19:34:09"
       },
       {
         "id": 2,
@@ -1857,10 +1857,10 @@
         "discovered_library_key": null,
         "folders_synced_from_connection_id": null,
         "active_job_count": 0,
-        "next_look_at": "2026-10-15T19:30:27.995768Z",
+        "next_look_at": "2026-10-15T19:39:00.361925Z",
         "periodic_scan": "scheduled",
-        "next_scan_at": "2026-10-15T19:30:27.995768Z",
-        "updated_at": "2026-10-15T19:25:27"
+        "next_scan_at": "2026-10-15T19:39:00.361925Z",
+        "updated_at": "2026-10-15T19:34:00"
       }
     ]
   },
@@ -1925,7 +1925,7 @@
       "next_look_at": null,
       "periodic_scan": "scheduled",
       "next_scan_at": null,
-      "updated_at": "2026-10-15T19:25:35"
+      "updated_at": "2026-10-15T19:34:10"
     }
   },
   "DELETE /api/v1/processing/libraries/3": {
@@ -1998,7 +1998,7 @@
     "body": {
       "ok": true,
       "job_id": 8,
-      "dedupe_key": "processing.file.remux_pass.v1:e7e38f43f67345faac51f92c8d41550a",
+      "dedupe_key": "processing.file.remux_pass.v1:581a7a04a95f4ad1ae0bb4f7d43cfe46",
       "job_kind": "processing.file.remux_pass.v1"
     }
   },
