@@ -310,60 +310,21 @@ internal sealed class ProcessingFilesEndpointHandlers
 
         var uow = await request.DbAsync().ConfigureAwait(false);
         var row = await ProcessingFilesEndpoints.RequireFileAsync(uow, _files, id).ConfigureAwait(false);
-        var job = await FindPendingRemuxJobAsync(uow, row.RelativePath).ConfigureAwait(false);
-        if (job is null)
+
+        // Commit before the store is asked, or the request deadlocks against the store's own connection:
+        // RequireUserAsync may have refreshed user_sessions.last_seen_at, and that write holds SQLite's single
+        // write lock until this commit runs, while the store's BEGIN IMMEDIATE waits for it. Everything above is
+        // a read apart from that session touch, so committing here changes nothing else.
+        await request.CommitAsync().ConfigureAwait(false);
+        var outcome = await _jobs.MoveFileToTopAsync(row.LibraryId, row.RelativePath).ConfigureAwait(false);
+        if (outcome != JobActionOutcome.Ok)
         {
-            await request.CommitAsync().ConfigureAwait(false);
             return ApiRoutes.Ok(new WireObject()
                 .Set("moved", false)
                 .Set("detail", "There is no queued work for this file to move. It may already be running, or it may not have been picked up by a scan yet."));
         }
 
-        // Commit before MoveToTopAsync, or the request deadlocks against the store's own connection:
-        // RequireUserAsync may have refreshed user_sessions.last_seen_at, and that write holds SQLite's single
-        // write lock until this commit runs, while the store's BEGIN IMMEDIATE waits for it. Everything above is
-        // a read apart from that session touch, so committing here changes nothing else.
-        await request.CommitAsync().ConfigureAwait(false);
-        var outcome = await _jobs.MoveToTopAsync(job.Value.Id).ConfigureAwait(false);
-        if (outcome != JobActionOutcome.Ok)
-        {
-            return ApiRoutes.Ok(new WireObject().Set("moved", false).Set("detail", "This file's work has already started, so it cannot be moved ahead of anything."));
-        }
-
         return ApiRoutes.Ok(new WireObject().Set("moved", true).Set("detail", "Moved to the front of the queue. It starts as soon as there is capacity for it."));
-    }
-
-    /// <summary>The oldest pending remux job for this path.</summary>
-    private static async Task<(long Id, string PayloadJson)?> FindPendingRemuxJobAsync(UnitOfWork uow, string relativePath)
-    {
-        var rows = await uow.QueryAsync(
-            "SELECT id, payload_json FROM jobs WHERE job_kind = @kind AND status = 'pending' ORDER BY id",
-            reader => (Id: reader.GetInt64(0), Payload: reader.IsDBNull(1) ? null : reader.GetString(1)),
-            ("@kind", RequeueStore.RemuxPassJobKind)).ConfigureAwait(false);
-        foreach (var (id, payloadJson) in rows)
-        {
-            if (string.IsNullOrWhiteSpace(payloadJson))
-            {
-                continue;
-            }
-
-            WireValue parsed;
-            try
-            {
-                parsed = WireJsonParser.Parse(payloadJson);
-            }
-            catch (WireJsonDecodeException)
-            {
-                continue;
-            }
-
-            if (parsed is WireObject dict && dict.TryGetValue("relative_media_path", out var value) && value is WireString s && s.Value == relativePath)
-            {
-                return (id, payloadJson);
-            }
-        }
-
-        return null;
     }
 
     public async Task<ApiResult> RequeueOneAsync(ApiRequest request)

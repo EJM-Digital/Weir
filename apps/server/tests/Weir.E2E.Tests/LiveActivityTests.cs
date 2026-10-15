@@ -11,10 +11,6 @@ public sealed class LiveActivityTests(E2EServer server) : E2ETestBase(server)
     // Long enough for the stream's own safety net to be no part of it: the page is told the moment the change commits.
     private const float PushMs = 10_000;
 
-    // A pass reaching its write, and a pass finishing, are the server's work, not a push: each spawns the tools (a probe, an
-    // integrity check, the remux), and a machine busy with other work can take seconds to start each one.
-    private const float FinishMs = 30_000;
-
     private const string FirstFile = "Harbour Lights 2024.mkv";
     private const string SecondFile = "Paper Lanterns 2023.mkv";
 
@@ -37,11 +33,13 @@ public sealed class LiveActivityTests(E2EServer server) : E2ETestBase(server)
         await rig.HandOffAsync("h-one", FirstFile);
 
         var first = Row(page, FirstFile);
-        await Expect(first).ToContainTextAsync("Writing", new() { Timeout = FinishMs });
+        await rig.WaitForWritesStartedAsync(1);
+        await Expect(first).ToContainTextAsync("Writing", new() { Timeout = PushMs });
 
         rig.ReleasePass(FirstFile);
+        await rig.WaitForWorkToEndAsync();
 
-        await Expect(first).ToContainTextAsync("Done", new() { Timeout = FinishMs });
+        await Expect(first).ToContainTextAsync("Done", new() { Timeout = PushMs });
         await Expect(first).Not.ToContainTextAsync("Writing");
 
         await rig.WaitForReportAsync();
@@ -52,12 +50,14 @@ public sealed class LiveActivityTests(E2EServer server) : E2ETestBase(server)
         await rig.HandOffAsync("h-two", SecondFile);
 
         var second = Row(page, SecondFile);
-        await Expect(second).ToContainTextAsync("Writing", new() { Timeout = FinishMs });
+        await rig.WaitForWritesStartedAsync(2);
+        await Expect(second).ToContainTextAsync("Writing", new() { Timeout = PushMs });
         await Expect(page.GetByRole(AriaRole.Row).Nth(1)).ToContainTextAsync(SecondFile);
         await Expect(first).ToContainTextAsync("Imported by Deluno");
         Assert.True(await page.EvaluateAsync<bool>("() => window.__weirNotReloaded === true"), "The page was reloaded.");
 
         rig.ReleasePass(SecondFile);
-        await Expect(second).ToContainTextAsync("Done", new() { Timeout = FinishMs });
+        await rig.WaitForWorkToEndAsync();
+        await Expect(second).ToContainTextAsync("Done", new() { Timeout = PushMs });
     }
 }

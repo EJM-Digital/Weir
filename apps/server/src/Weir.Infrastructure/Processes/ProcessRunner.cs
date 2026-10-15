@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Weir.Core.Media;
+using Weir.Infrastructure.Runtime;
 
 namespace Weir.Infrastructure.Processes;
 
@@ -338,7 +339,16 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
         }
     }
 
-    private static async Task PumpAsync(Stream stream, OutputSink sink, UniversalNewlineSplitter? lines, Action onOutput)
+    /// <summary>
+    /// Reads one of the child's pipes to its end on a thread of its own. On Windows a read of a redirected pipe, asynchronous or not,
+    /// holds the thread that waits for it until data arrives or the pipe closes. Done on the thread pool, every running tool would
+    /// take two of its threads for as long as it runs, and the pool has as many ready as the machine has processors and adds one only
+    /// every half second after that: a few tools at once would leave every request, timer and callback in the server waiting for a thread.
+    /// </summary>
+    private static Task PumpAsync(Stream stream, OutputSink sink, UniversalNewlineSplitter? lines, Action onOutput) =>
+        BlockingWork.RunAsync(() => Pump(stream, sink, lines, onOutput));
+
+    private static void Pump(Stream stream, OutputSink sink, UniversalNewlineSplitter? lines, Action onOutput)
     {
         var buffer = new byte[16 * 1024];
         while (true)
@@ -346,7 +356,7 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
             int read;
             try
             {
-                read = await stream.ReadAsync(buffer).ConfigureAwait(false);
+                read = stream.Read(buffer);
             }
             catch (IOException)
             {
