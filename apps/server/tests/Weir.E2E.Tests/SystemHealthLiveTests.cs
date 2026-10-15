@@ -61,6 +61,21 @@ public sealed class SystemHealthLiveTests(E2EServer server) : E2ETestBase(server
         }
     }
 
+    // The time of the next look the server tells a stream of the test's own about, later than `after` when one is given.
+    private static async Task<DateTimeOffset> NextFolderLookAsync(SseReader stream, DateTimeOffset? after)
+    {
+        while (true)
+        {
+            var frame = await stream.NextEventNamedAsync("system.checks", TimeSpan.FromMilliseconds(LookAgainMs));
+            if (frame["folders_checked_at"]?.GetValue<string>() is { } text
+                && DateTimeOffset.Parse(text, System.Globalization.CultureInfo.InvariantCulture) is var at
+                && (after is null || at > after))
+            {
+                return at;
+            }
+        }
+    }
+
     [E2EFact]
     public async Task A_workflows_checked_time_is_the_servers_last_look_not_the_pages_last_read_and_a_drive_says_live()
     {
@@ -87,20 +102,26 @@ public sealed class SystemHealthLiveTests(E2EServer server) : E2ETestBase(server
             await Expect(row).ToBeVisibleAsync();
             await Expect(row).ToContainTextAsync("checked");
 
-            // Nothing about the folders changes, so the page reads nothing new, and the age climbs as time passes. The server looks again
-            // all the same, and the page shows the time of that look: the age is set back with no read by the page.
+            // The server's own look times, read from a stream of the test's own and not from the page: the page reads the folders once
+            // and nothing after, so a row that shows the time of its own read grows older than the next look, while a row that shows the
+            // server's look is never older than the interval between looks.
+            using var watcher = new WeirClient(own.BaseUrl);
+            await watcher.LoginAsync(Navigation.BootstrapUser, Navigation.BootstrapPassword);
+            using var stream = await watcher.OpenStreamAsync("/api/v1/activity/stream");
+            var firstLook = await NextFolderLookAsync(stream, after: null);
+            var nextLook = await NextFolderLookAsync(stream, after: firstLook);
+
             await page.WaitForFunctionAsync(
                 """
-                () => {
-                  const row = [...document.querySelectorAll('[data-testid="system-check"]')].find((item) => item.textContent.includes('E2E looked-at films'));
+                ([title, lookAt]) => {
+                  const row = [...document.querySelectorAll('[data-testid="system-check"]')].find((item) => item.textContent.includes(title));
                   const shown = /checked (just now|(\d+)s ago)/.exec(row?.innerText ?? '');
                   if (!shown) return false;
-                  const age = shown[1] === 'just now' ? 0 : Number(shown[2]);
-                  window.__oldestAgeShown = Math.max(window.__oldestAgeShown ?? 0, age);
-                  return window.__oldestAgeShown >= 4 && age < 3;
+                  const sinceLook = (Date.now() - lookAt) / 1000;
+                  return shown[1] === 'just now' ? sinceLook < 4.5 : Math.abs(Number(shown[2]) - sinceLook) <= 2;
                 }
                 """,
-                null,
+                new object[] { "E2E looked-at films", nextLook.ToUnixTimeMilliseconds() },
                 new() { Timeout = LookAgainMs });
 
             await page.GetByRole(AriaRole.Group, new() { Name = "Health areas" }).GetByRole(AriaRole.Button, new() { NameRegex = new Regex("^Storage") }).ClickAsync();
