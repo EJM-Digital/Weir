@@ -50828,7 +50828,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
+          "name": "first-visit-account"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -50840,7 +50846,6 @@
         "kind": "scenario",
         "test": "Built to run alone (`-Scenarios first-visit-account`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
-      "issue": 981,
       "covers": [
         "scenario:first-visit-account"
       ],
@@ -50858,7 +50863,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
+          "name": "weir-only-film"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -50870,7 +50881,6 @@
         "kind": "scenario",
         "test": "Built to run alone (`-Scenarios weir-only-film`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
-      "issue": 981,
       "covers": [
         "scenario:weir-only-film"
       ],
@@ -50888,7 +50898,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
+          "name": "process-again"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -50900,7 +50916,6 @@
         "kind": "scenario",
         "test": "Built to run alone (`-Scenarios process-again`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
-      "issue": 981,
       "covers": [
         "scenario:process-again"
       ],
@@ -50918,7 +50933,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
+          "name": "pause-resume"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -50930,7 +50951,6 @@
         "kind": "scenario",
         "test": "Built to run alone (`-Scenarios pause-resume`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
-      "issue": 981,
       "covers": [
         "scenario:pause-resume"
       ],
@@ -50948,7 +50968,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
+          "name": "deleted-queued-file"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -50960,7 +50986,6 @@
         "kind": "scenario",
         "test": "Built to run alone (`-Scenarios deleted-queued-file`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
-      "issue": 981,
       "covers": [
         "scenario:deleted-queued-file"
       ],
