@@ -115,6 +115,26 @@ public sealed partial class SecuritySessionsTests(E2EServer server) : E2ETestBas
     }
 
     [E2EFact]
+    public async Task A_sign_out_button_is_never_hidden_under_the_panel_beside_the_list()
+    {
+        // Narrow enough that the three dates and the button need more room than the panel gives them.
+        var first = await NewPageAsync(new ViewportSize { Width = 1100, Height = 720 });
+        await Navigation.EnsureSignedInAsync(first, BaseUrl);
+        var second = await NewPageAsync();
+        await Navigation.EnsureSignedInAsync(second, BaseUrl);
+        await SecurityTab.OpenAsync(first);
+        await Expect(SecurityTab.SessionRows(first)).ToHaveCountAsync(2, new() { Timeout = SecurityTab.ServerAnswerMs });
+        var signOut = SecurityTab.SessionsTable(first).GetByRole(AriaRole.Button, new() { Name = "Sign out", Exact = true });
+
+        var revoke = await first.RunAndWaitForRequestAsync(
+            async () => await signOut.ClickAsync(new() { Timeout = SecurityTab.ServerAnswerMs }),
+            request => request.Method == "POST" && RevokeOneUrl().IsMatch(request.Url));
+
+        Assert.Equal(200, (await revoke.ResponseAsync())!.Status);
+        Assert.Equal(401, await SecurityTab.WhoAmIStatusAsync(second.Context, BaseUrl));
+    }
+
+    [E2EFact]
     public async Task Signing_out_one_session_ends_only_that_session()
     {
         var first = await NewPageAsync();

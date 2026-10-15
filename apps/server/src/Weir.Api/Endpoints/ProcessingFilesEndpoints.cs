@@ -14,6 +14,7 @@ using Weir.Infrastructure.MediaManagers;
 using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Processing.DirectPlay;
 using Weir.Infrastructure.Processing.RemuxPass;
+using Weir.Infrastructure.Settings;
 using Weir.Infrastructure.Sqlite;
 
 namespace Weir.Api.Endpoints;
@@ -57,6 +58,7 @@ internal sealed class ProcessingFilesEndpointHandlers
     private readonly ProcessingJobStore _jobs;
     private readonly LibraryStore _libraries;
     private readonly HistoryFileRemovalService _removal;
+    private readonly SuitePauseService _pause;
     private readonly ArtworkPosterUrls _posters;
 
     public ProcessingFilesEndpointHandlers(
@@ -67,6 +69,7 @@ internal sealed class ProcessingFilesEndpointHandlers
         ProcessingJobStore jobs,
         LibraryStore libraries,
         HistoryFileRemovalService removal,
+        SuitePauseService pause,
         ArtworkPosterUrls posters)
     {
         _files = files ?? throw new ArgumentNullException(nameof(files));
@@ -76,6 +79,7 @@ internal sealed class ProcessingFilesEndpointHandlers
         _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
         _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
         _removal = removal ?? throw new ArgumentNullException(nameof(removal));
+        _pause = pause ?? throw new ArgumentNullException(nameof(pause));
         _posters = posters ?? throw new ArgumentNullException(nameof(posters));
     }
 
@@ -277,6 +281,11 @@ internal sealed class ProcessingFilesEndpointHandlers
         if (!options.RequiresChoice)
         {
             return null;
+        }
+
+        if (resolution == FileRemovalResolutions.Delete)
+        {
+            await PausedRequests.RefuseWhilePausedAsync(_pause, request, uow, PausedRequests.DeleteDownload).ConfigureAwait(false);
         }
 
         var outcome = resolution == FileRemovalResolutions.Delete

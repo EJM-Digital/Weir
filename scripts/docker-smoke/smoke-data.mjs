@@ -14,11 +14,11 @@ const KEPT_FIELDS = ["id", "name", "media_type", "watched_folder", "work_folder"
 const pick = (library) => Object.fromEntries(KEPT_FIELDS.map((field) => [field, library[field]]));
 
 /**
- * Creates the first account, a workflow and a saved setting in the running stack, the way an operator does from another device:
- * the setup code comes from Weir's log. Returns what was created, for `expectKept`.
- * @param {{client: import("./weir-client.mjs").WeirClient, stack: {exec(command: string): string, logs(): string}}} world
+ * Creates the first account in the running stack, the way an operator does from another device: the setup code comes from Weir's log.
+ * The client is signed in as it afterwards.
+ * @param {{client: import("./weir-client.mjs").WeirClient, stack: {logs(): string}}} world
  */
-export async function createData({ client, stack }) {
+export async function createFirstAccount({ client, stack }) {
   const status = await client.bootstrapStatus();
   assert.equal(status.bootstrap_allowed, true, "a new volume must offer to create the first account");
   const setupCode = status.requires_setup_code ? parseSetupCode(stack.logs()) : null;
@@ -26,6 +26,15 @@ export async function createData({ client, stack }) {
 
   const password = `Pw-${randomBytes(18).toString("hex")}`;
   await client.bootstrap(USERNAME, password, setupCode);
+  return { username: USERNAME, password };
+}
+
+/**
+ * Creates the first account, a workflow and a saved setting in the running stack. Returns what was created, for `expectKept`.
+ * @param {{client: import("./weir-client.mjs").WeirClient, stack: {exec(command: string): string, logs(): string}}} world
+ */
+export async function createData({ client, stack }) {
+  const { username, password } = await createFirstAccount({ client, stack });
 
   stack.exec(`mkdir -p ${WORKFLOW_FOLDER}/watched ${WORKFLOW_FOLDER}/work ${WORKFLOW_FOLDER}/output`);
   const created = await client.createLibrary({
@@ -39,7 +48,7 @@ export async function createData({ client, stack }) {
   const settings = await client.suiteSettings();
   await client.saveSuiteSettings({ app_timezone: settings.app_timezone, log_retention_days: LOG_RETENTION_DAYS });
 
-  return { username: USERNAME, password, library: pick(created) };
+  return { username, password, library: pick(created) };
 }
 
 /**

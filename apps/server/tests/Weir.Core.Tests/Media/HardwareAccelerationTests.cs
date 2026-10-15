@@ -42,6 +42,17 @@ public sealed class HardwareAccelerationTests
     }
 
     [Fact]
+    public void A_slow_ffmpeg_says_it_did_not_answer_in_time_and_does_not_blame_the_ask()
+    {
+        var report = HardwareAcceleration.ReportForTimeout();
+
+        Assert.False(report.Detected);
+        Assert.Empty(report.AvailableMethods);
+        Assert.Equal("FFmpeg didn't answer in time. Check again in a moment.", report.Detail);
+        Assert.DoesNotContain("could not ask", report.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_failing_ffmpeg_reports_nothing_rather_than_raising()
     {
         var report = HardwareAcceleration.ReportFromHwaccels(1, string.Empty);

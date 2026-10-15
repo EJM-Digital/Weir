@@ -185,7 +185,8 @@ status and is never a pass for the tag. Only a full run of all three phases pass
 **Running the same scenarios a second time on the same machine.** Run them once (the Fresh phase restores the clean checkpoint), then again
 with `-NoRestore`, which skips the restore, starts the VM if it is off, waits for PowerShell Direct, and runs the same scenarios on what the
 first run left. It needs `-Scenarios` (a run that restores nothing is never a pass for the tag), and the record says the checkpoint was not
-restored:
+restored. It prints the Weir version it finds on the VM, and refuses to run when that is not the build under test (the version and the commit)
+unless `fresh-install` is among the chosen scenarios, because nothing else would install the build and the scenarios would judge an older Weir:
 
 ```powershell
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
