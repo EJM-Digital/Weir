@@ -1,7 +1,6 @@
 using Weir.Core.Jobs;
 using Weir.Core.LibraryMode;
 using Weir.Core.Processing;
-using Weir.Core.Workers;
 
 namespace Weir.Infrastructure.Jobs;
 
@@ -47,25 +46,5 @@ public static class WorkLanes
     {
         ArgumentNullException.ThrowIfNull(registry);
         return new ClaimableKinds([.. registry.JobKinds.Where(kind => LaneOf(kind) == WorkLane.Upkeep)], IncludeRefusedKinds: false);
-    }
-}
-
-/// <summary>Beats a slot's heartbeat until <see cref="WorkerLoopTimings.IdleSleep"/> passes or it stops, shared by every worker lane.</summary>
-internal static class WorkerIdleWait
-{
-    public static async Task RunAsync(string heartbeatModule, int workerIndex, WorkerHeartbeats heartbeats, WorkerLoopTimings timings, TimeProvider time, CancellationToken stoppingToken)
-    {
-        var deadline = time.GetTimestamp() + (long)(timings.IdleSleep.TotalSeconds * time.TimestampFrequency);
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            heartbeats.Beat(heartbeatModule, workerIndex);
-            var remaining = TimeSpan.FromSeconds((deadline - time.GetTimestamp()) / (double)time.TimestampFrequency);
-            if (remaining <= TimeSpan.Zero)
-            {
-                break;
-            }
-
-            await Task.Delay(remaining < TimeSpan.FromSeconds(1) ? remaining : TimeSpan.FromSeconds(1), time, stoppingToken).ConfigureAwait(false);
-        }
     }
 }
