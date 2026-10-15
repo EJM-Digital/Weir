@@ -29,7 +29,6 @@ public sealed partial class ProcessingSettingsEndpointsContractTests(LibrariesPa
         using var tools = FakeFfmpeg.Install();
         // The first run of the tool takes longer than the 10 seconds the check allows; the next is quick.
         tools.SetScript(new JsonObject { ["default"] = new JsonObject { [FakeToolProtocol.HwaccelsFirstCallDelaySecondsKey] = 12 } });
-        await tools.WarmUpAsync();
         await using var server = await WeirServer.StartNewAsync(tools.Env);
         using var admin = await server.CreateAdminClientAsync();
 
@@ -45,7 +44,6 @@ public sealed partial class ProcessingSettingsEndpointsContractTests(LibrariesPa
     public async Task Hardware_report_from_the_configured_ffmpeg()
     {
         using var tools = FakeFfmpeg.Install();
-        await tools.WarmUpAsync();
         await using var server = await WeirServer.StartNewAsync(tools.Env);
         using (var anonymous = server.CreateClient())
         {

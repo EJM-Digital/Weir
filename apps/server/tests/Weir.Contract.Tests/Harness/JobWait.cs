@@ -3,9 +3,10 @@ using Xunit.Sdk;
 namespace Weir.Contract.Tests.Harness;
 
 /// <summary>
-/// Waiting for what a job produces, for as long as Weir is working on the job. How long a scan or a clean takes depends on the machine,
-/// and the media tools it runs bound themselves (they are stopped when they go silent), so a job that a worker holds is waited
-/// for. What a test cannot wait on is a job nobody takes up, which fails after <see cref="UnclaimedCeiling"/>, and a job that ended
+/// Waiting for what a job produces, for as long as Weir is working on the job. How long a scan or a clean takes depends on the machine:
+/// the media tools run at below-normal priority so that everything else comes first, and on a saturated machine they are given the
+/// processor in short turns, so a clean of a few seconds of film can take minutes. The tools bound themselves (they are stopped when
+/// they go silent), so a job that a worker holds is waited for. What a test cannot wait on is a job nobody takes up, which fails after <see cref="UnclaimedCeiling"/>, and a job that ended
 /// without producing its result, which fails at once.
 /// </summary>
 internal sealed class JobWait(TimeProvider clock, Action? polled = null)

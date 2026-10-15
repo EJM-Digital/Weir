@@ -69,23 +69,6 @@ public sealed class FakeFfmpeg : IDisposable
         }
     }
 
-    /// <summary>
-    /// Runs each tool once, to completion, so that the first run a server asks for is not a cold start. A tool that has never run
-    /// takes seconds to start on a busy machine, which is longer than the 10 seconds the server allows a hardware check.
-    /// </summary>
-    public async Task WarmUpAsync()
-    {
-        var suffix = OperatingSystem.IsWindows() ? ".exe" : string.Empty;
-        foreach (var tool in new[] { "ffprobe", "ffmpeg" })
-        {
-            var start = new System.Diagnostics.ProcessStartInfo(Path.Combine(Folder, tool + suffix)) { UseShellExecute = false, CreateNoWindow = true };
-            start.ArgumentList.Add(FakeToolProtocol.WarmUpArgument);
-            using var process = System.Diagnostics.Process.Start(start) ?? throw new InvalidOperationException($"{tool} did not start.");
-            await process.WaitForExitAsync();
-            Assert.Equal(0, process.ExitCode);
-        }
-    }
-
     /// <summary>Sets what happens to files whose base name matches <paramref name="pattern"/>, replacing an earlier rule for the same pattern.</summary>
     public void SetFileRule(string pattern, FileRule? rule = null)
     {

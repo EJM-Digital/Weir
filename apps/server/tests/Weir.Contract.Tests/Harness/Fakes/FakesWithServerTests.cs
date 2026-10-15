@@ -35,7 +35,6 @@ public sealed class FakesWithServerTests
     public async Task A_server_started_with_the_fake_tools_folder_asks_the_fake_ffmpeg_what_hardware_it_offers()
     {
         using var tools = FakeFfmpeg.Install();
-        await tools.WarmUpAsync();
         await using var server = await WeirServer.StartNewAsync(tools.Env);
         using var admin = await server.CreateAdminClientAsync();
 
