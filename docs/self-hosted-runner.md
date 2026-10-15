@@ -32,7 +32,7 @@ The script installs Git and PowerShell 7 if they are missing. It downloads the p
 
 A runner takes one job at a time, so the PC gets several. By default it gets one per four logical processors and per 6 GB of memory, whichever allows fewer, from 1 to 8; `-Count` sets the number. Runner 1 is `weir-windows-1` in `C:\actions-runner-weir`, and runner N is `weir-windows-N` in `C:\actions-runner-weir-N`. Running the script again with a fresh token adds the runners that are missing and leaves the others alone.
 
-Jobs running side by side share the PC and its NETWORK SERVICE account, so tests must not share machine-wide state: each test uses its own temporary folder, its own registry key under HKCU and its own named events, and asks the system for a free port.
+Jobs running side by side share the PC and its NETWORK SERVICE account, so tests must not share machine-wide state: each test uses its own temporary folder, its own registry key under HKCU and its own named events, and asks the system for a free port. Each runner also keeps its own NuGet package folder in its tool cache (`NUGET_PACKAGES`), so one job's restore never rewrites a package another job's compiler has open.
 
 Then set the repository variable `WEIR_SELF_HOSTED_WINDOWS` to `true` (Settings > Secrets and variables > Actions > Variables).
 

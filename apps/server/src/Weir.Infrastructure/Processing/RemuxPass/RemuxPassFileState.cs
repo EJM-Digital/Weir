@@ -405,10 +405,13 @@ public static class RemuxPassFileState
             text = WireJsonWriter.Dumps(payload, WireJsonFormat.Response);
         }
 
+        // The pass names its workflow, so the record goes to that workflow's file even when another workflow holds the same path.
+        long? libraryId = detail.Get("library_id") is WireInteger wired ? (long)wired.Value : null;
         var file = await uow.QuerySingleAsync(
-            "SELECT f.id, l.id, l.name FROM files f LEFT JOIN libraries l ON l.id = f.library_id WHERE f.relative_path = $path ORDER BY f.id LIMIT 1",
+            "SELECT f.id, l.id, l.name FROM files f LEFT JOIN libraries l ON l.id = f.library_id " +
+            "WHERE f.relative_path = $path AND ($library IS NULL OR f.library_id = $library) ORDER BY f.id LIMIT 1",
             reader => new object?[] { reader.GetInt64(0), reader.IsDBNull(1) ? null : reader.GetInt64(1), reader.IsDBNull(2) ? null : reader.GetString(2) },
-            ("$path", relativePath)).ConfigureAwait(false);
+            ("$path", relativePath), ("$library", (object?)libraryId ?? DBNull.Value)).ConfigureAwait(false);
         var outcome = detail.Get("outcome") is { IsTruthy: true } value ? WireConvert.Str(value) : string.Empty;
         await uow.ExecuteAsync(
             "INSERT INTO file_logs (file_id, library_id, relative_path, library_name, outcome, title, detail_json, recorded_at) " +

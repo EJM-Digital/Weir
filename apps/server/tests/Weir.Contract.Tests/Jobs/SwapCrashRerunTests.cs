@@ -20,7 +20,7 @@ public sealed class SwapCrashRerunTests
         Assert.False(File.Exists(world.FilePath), "the crash must leave nothing under the film's name for a job that came too soon to find");
 
         await world.RestartAsync(workers: 1);
-        await Poll.UntilAsync(
+        await world.WaitWhileWorkedOnAsync(
             async () => (string?)(await world.CleanJobAsync())["status"] == "completed",
             "the interrupted clean to run again and finish");
 

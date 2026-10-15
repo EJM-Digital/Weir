@@ -14,6 +14,7 @@ using Weir.Infrastructure.MediaManagers;
 using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Processing.DirectPlay;
 using Weir.Infrastructure.Processing.RemuxPass;
+using Weir.Infrastructure.Settings;
 using Weir.Infrastructure.Sqlite;
 
 namespace Weir.Api.Endpoints;
@@ -57,6 +58,7 @@ internal sealed class ProcessingFilesEndpointHandlers
     private readonly ProcessingJobStore _jobs;
     private readonly LibraryStore _libraries;
     private readonly HistoryFileRemovalService _removal;
+    private readonly SuitePauseService _pause;
     private readonly ArtworkPosterUrls _posters;
 
     public ProcessingFilesEndpointHandlers(
@@ -67,6 +69,7 @@ internal sealed class ProcessingFilesEndpointHandlers
         ProcessingJobStore jobs,
         LibraryStore libraries,
         HistoryFileRemovalService removal,
+        SuitePauseService pause,
         ArtworkPosterUrls posters)
     {
         _files = files ?? throw new ArgumentNullException(nameof(files));
@@ -76,6 +79,7 @@ internal sealed class ProcessingFilesEndpointHandlers
         _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
         _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
         _removal = removal ?? throw new ArgumentNullException(nameof(removal));
+        _pause = pause ?? throw new ArgumentNullException(nameof(pause));
         _posters = posters ?? throw new ArgumentNullException(nameof(posters));
     }
 
@@ -210,6 +214,7 @@ internal sealed class ProcessingFilesEndpointHandlers
     public async Task<ApiResult> DeleteFileAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("file_id", issues);
         var model = new BodyModel(payload, issues);
@@ -229,7 +234,6 @@ internal sealed class ProcessingFilesEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
 
         var confirmation = confirmSizeBytes is { } size && confirmModifiedAt is { } modifiedAt
@@ -279,6 +283,11 @@ internal sealed class ProcessingFilesEndpointHandlers
             return null;
         }
 
+        if (resolution == FileRemovalResolutions.Delete)
+        {
+            await PausedRequests.RefuseWhilePausedAsync(_pause, request, uow, PausedRequests.DeleteDownload).ConfigureAwait(false);
+        }
+
         var outcome = resolution == FileRemovalResolutions.Delete
             ? await _removal.DeleteAsync(uow, row, confirmation, request.Context.RequestAborted).ConfigureAwait(false)
             : await _removal.KeepAsync(uow, row, confirmation, request.Context.RequestAborted).ConfigureAwait(false);
@@ -298,6 +307,7 @@ internal sealed class ProcessingFilesEndpointHandlers
     public async Task<ApiResult> MoveToTopAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("file_id", issues);
         var model = new BodyModel(payload, issues);
@@ -305,7 +315,6 @@ internal sealed class ProcessingFilesEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
 
         var uow = await request.DbAsync().ConfigureAwait(false);
@@ -330,6 +339,7 @@ internal sealed class ProcessingFilesEndpointHandlers
     public async Task<ApiResult> RequeueOneAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("file_id", issues);
         var model = new BodyModel(payload, issues);
@@ -337,7 +347,6 @@ internal sealed class ProcessingFilesEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
 
         var uow = await request.DbAsync().ConfigureAwait(false);
@@ -350,6 +359,7 @@ internal sealed class ProcessingFilesEndpointHandlers
     public async Task<ApiResult> RequeueManyAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(payload, issues);
         var csrfToken = model.Str("csrf_token", minLength: 1);
@@ -377,7 +387,6 @@ internal sealed class ProcessingFilesEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
 
         var uow = await request.DbAsync().ConfigureAwait(false);

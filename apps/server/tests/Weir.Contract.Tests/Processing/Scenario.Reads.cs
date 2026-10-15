@@ -60,6 +60,22 @@ internal sealed partial class Scenario
         return [.. (await JobsAsync()).Select(job => (string)job["status"]!)];
     }
 
+    /// <summary>
+    /// Waits for <paramref name="result"/> for as long as a worker holds any of Weir's jobs (see <see cref="JobWait"/>). Every job is
+    /// watched, not only the one that starts the work, so a job it queues before it ends (a reject, a pass-through) keeps the wait going.
+    /// <paramref name="owed"/> says when Weir owes work it queues on its own timer (a periodic scan, a retry once its backoff has passed):
+    /// that counts as a pending job, so the wait gives up only when nothing takes it up within <see cref="JobWait.UnclaimedCeiling"/>.
+    /// </summary>
+    public async Task<T> WaitWhileWorkedOnAsync<T>(Func<Task<T?>> result, string what, Func<Task<bool>>? owed = null)
+        where T : class =>
+        await new JobWait().UntilAsync(
+            async () => owed is not null && await owed() ? [.. await JobStatusesAsync(), "pending"] : await JobStatusesAsync(),
+            result,
+            what);
+
+    public async Task WaitWhileWorkedOnAsync(Func<Task<bool>> condition, string what, Func<Task<bool>>? owed = null) =>
+        await WaitWhileWorkedOnAsync(async () => await condition() ? "done" : null, what, owed);
+
     public async Task<List<JsonObject>> JobsAsync(string? kind = null)
     {
         var inspection = await Admin.GetAsync($"{Api}/processing/jobs/inspection", ("limit", 100));
@@ -71,15 +87,17 @@ internal sealed partial class Scenario
     public async Task<JsonObject> WaitForJobFinishedAsync(int jobId) =>
         await new JobWait().UntilAsync(
             async () => [.. (await JobsAsync()).Where(row => (int)row["id"]! == jobId).Select(row => (string)row["status"]!)],
-            async () =>
-            {
-                // Named explicitly: the default inspection list leaves out completed scan jobs.
-                var inspection = await Admin.GetAsync(
-                    $"{Api}/processing/jobs/inspection", [("limit", 100), .. FinishedJobStatuses.Select(status => ("status", (object)status))]);
-                Assert.True(inspection.Status == HttpStatusCode.OK, inspection.ToString());
-                return JobRows(inspection).FirstOrDefault(row => (int)row["id"]! == jobId);
-            },
+            async () => (await FinishedJobsAsync()).FirstOrDefault(row => (int)row["id"]! == jobId),
             $"job {jobId} to finish");
+
+    /// <summary>The jobs that have ended, of one kind or all. The statuses are named because the default inspection list leaves out completed scan jobs.</summary>
+    public async Task<List<JsonObject>> FinishedJobsAsync(string? kind = null)
+    {
+        var inspection = await Admin.GetAsync(
+            $"{Api}/processing/jobs/inspection", [("limit", 100), .. FinishedJobStatuses.Select(status => ("status", (object)status))]);
+        Assert.True(inspection.Status == HttpStatusCode.OK, inspection.ToString());
+        return JobRows(inspection).Where(row => kind is null || (string)row["job_kind"]! == kind).ToList();
+    }
 
     public async Task<int> EnqueueScanAsync(JsonObject library, bool enqueueRemuxJobs = true)
     {
@@ -178,16 +196,17 @@ internal sealed partial class Scenario
     /// Lets automatic retries happen, as the periodic watched-folder scan would, until <paramref name="probe"/> says yes. A failed
     /// file is picked up again by a scan once its backoff has passed. Rather than wait out the scan timer, the scenario asks for a
     /// scan while a file waits for its retry and no scan is queued. A workflow a fake Deluno feeds is never scanned: its failed
-    /// hand-off queues its own retry, so there the scenario only waits.
+    /// hand-off queues its own retry, so there the scenario only waits. A file waiting for its retry is work Weir owes, so the wait lasts
+    /// as long as there is a retry to come or a worker has a job (see <see cref="WaitWhileWorkedOnAsync{T}"/>).
     /// </summary>
-    public async Task DriveRetriesUntilAsync(JsonObject library, Func<Task<bool>> probe, string what, TimeSpan? timeout = null) =>
-        await DriveRetriesUntilAsync(library, async () => await probe() ? "done" : null, what, timeout);
+    public async Task DriveRetriesUntilAsync(JsonObject library, Func<Task<bool>> probe, string what) =>
+        await DriveRetriesUntilAsync(library, async () => await probe() ? "done" : null, what);
 
-    public async Task<T> DriveRetriesUntilAsync<T>(JsonObject library, Func<Task<T?>> probe, string what, TimeSpan? timeout = null)
+    public async Task<T> DriveRetriesUntilAsync<T>(JsonObject library, Func<Task<T?>> probe, string what)
         where T : class
     {
         var sinceLastScan = new Stopwatch();
-        return await Poll.UntilAsync(
+        return await WaitWhileWorkedOnAsync(
             async () =>
             {
                 if (await probe() is { } found)
@@ -205,11 +224,11 @@ internal sealed partial class Scenario
                 return null;
             },
             what,
-            timeout ?? TimeSpan.FromSeconds(120));
+            async () => (await FilesAsync(library)).Any(row => (string)row["status"]! == "processing_failed" && row["next_retry_at"] is not null));
     }
 
     /// <summary>Drives retries until the file has failed <paramref name="attempts"/> times and is not being worked on.</summary>
-    public async Task<JsonObject> FailureAttemptsReachAsync(JsonObject library, string relativePath, int attempts, TimeSpan? timeout = null) =>
+    public async Task<JsonObject> FailureAttemptsReachAsync(JsonObject library, string relativePath, int attempts) =>
         await DriveRetriesUntilAsync<JsonObject>(
             library,
             async () =>
@@ -217,8 +236,7 @@ internal sealed partial class Scenario
                 var row = await FileRowAsync(library, relativePath);
                 return row is not null && Whole(row["failure_attempts"]) >= attempts && (string)row["status"]! != "processing" ? row : null;
             },
-            $"{relativePath} to fail {attempts} times",
-            timeout);
+            $"{relativePath} to fail {attempts} times");
 
     /// <summary>
     /// Checks for <paramref name="duration"/> and fails as soon as <paramref name="happened"/> says yes. Watching can only show that

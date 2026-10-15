@@ -73,3 +73,45 @@ node scripts/check-coverage-floors.mjs --floors docs/coverage/floors.json --serv
 
 A local figure can differ from CI's: CI's server figure merges Linux and Windows, and tests that need FFmpeg or
 mkvmerge run only where those tools are installed.
+
+## Route access
+
+`route-access.json` says who may call each route the server maps. It is a different kind of coverage: not how much of the code the tests
+run, but whether every route keeps the guard it is meant to have. Two tests hold the server to it.
+
+- `RouteAccessTableTests` (API tests) compares the file with the server's own endpoint table. A route the server maps that the file does
+  not list fails, and so does a line for a route the server no longer maps.
+- `RouteAccessTests` (contract suite, area `auth`) calls every route on a running server, as each kind of caller, and compares the
+  answer with the line.
+
+| `access` | Who may call | What the walk checks |
+| --- | --- | --- |
+| `public` | Anyone, with a `reason` | An anonymous caller is not turned away at the door. |
+| `signed-in` | Any account | An anonymous caller gets 401. A viewer, an operator and an administrator all get past the guard. |
+| `operator` | An operator or an administrator | As above, and a viewer gets 403. |
+| `admin` | An administrator only | As above, and an operator gets 403. |
+| `manager-key` | A media manager presenting its webhook secret, with a `reason` | Neither an anonymous caller nor the administrator's browser session is let in. |
+
+Every write except a `manager-key` one is also called with no token and from an origin the server does not trust: the first has to be
+refused for the token, and the second with a good token has to be refused for the origin. The anonymous, viewer and operator calls send an
+empty body, so the guard has to answer before the server looks at what was asked.
+
+When you add a route, add its line here with the narrowest access that fits. When a write needs fields besides the token, add them to
+`RouteWalk.RequiredFields`, so the walk reaches the token and origin checks instead of stopping at validation.
+
+## Paths that can change a media file
+
+`file-changing-paths.json` lists every way Weir can change a media file and what the pause does to it: a job kind the worker claim refuses
+while paused, a request a person makes by hand that is refused, or a path that is exempt, with the reason. It also lists the server source
+files that do the changing, and which path each serves. Tests hold it to the server.
+
+- `FileChangingPathsTests` (API tests) compares the file with the job kinds the server registers, the routes it maps, and a scan of
+  `apps/server/src` for calls that change files (`File.Delete`, `File.Move`, `Directory.Delete`, a stream opened to write, the swap file
+  system) and for calls to the helpers that change files for someone else (publishing, removing a release folder, asking a media manager to
+  delete). A new call, a new caller of such a helper, or a new job kind fails until you classify it.
+- `PauseGatesTests` (infrastructure tests) pauses every held job kind, attempts it, and shows the file untouched and the job still queued, then
+  shows it run once after resuming. `PausedActionsApiTests` (API tests) does the same for the refused requests.
+
+When it fails, add the path or site to the file with the gate that fits. A new job kind that changes files must be held at the claim, which is
+the default for every kind but the one scan that may run while paused. A request that changes a file must be refused while paused
+(`PausedRequests`). Anything exempt needs its reason in the file.

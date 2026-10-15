@@ -93,7 +93,8 @@ internal sealed class ProcessingOverviewMaintenanceEndpointHandlers
         WireObject Out(MaintenanceFamilyState state, long? saved, int environment)
         {
             var timer = _clock.NextRunFor(_maintenance.JobKindsFor(state.Family));
-            var interval = timer?.Interval ?? TimeSpan.FromSeconds(saved is > 0 ? saved.Value : environment);
+            // A saved interval is the one in force the moment it is saved; the family's timer takes it up at its next check.
+            var interval = saved is > 0 ? TimeSpan.FromSeconds(saved.Value) : timer?.Interval ?? TimeSpan.FromSeconds(environment);
             return FamilyOut(state, interval, state.Enabled ? timer?.NextRunAt : null);
         }
 
@@ -108,6 +109,7 @@ internal sealed class ProcessingOverviewMaintenanceEndpointHandlers
     public async Task<ApiResult> PostMaintenanceRunAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(payload, issues);
         var csrfToken = model.Str("csrf_token", minLength: 1);
@@ -116,7 +118,6 @@ internal sealed class ProcessingOverviewMaintenanceEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         request.RequireConfirmationToken(csrfToken);
 
         var scopeWord = mediaScope == "tv" ? "TV" : "Movies";

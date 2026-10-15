@@ -82,7 +82,8 @@ public static class VanishedFiles
     /// <summary>
     /// Holds the library's rows whose files left the watched folder, forgets those that have been gone long enough, and releases
     /// those held whose files are back. <paramref name="lookAgain"/> waits between the first look at a file and the look that
-    /// acts on it; it is only called when some file needs one.
+    /// acts on it; it is only called when some file needs one. <paramref name="lookStarted"/> is told the kind of a waiting look
+    /// that a returning file started early.
     /// </summary>
     public static async Task<Changes> SettleAsync(
         SqliteDatabase database,
@@ -92,10 +93,12 @@ public static class VanishedFiles
         DateTimeOffset now,
         string trigger,
         Func<CancellationToken, Task> lookAgain,
+        Action<string> lookStarted,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(lookAgain);
+        ArgumentNullException.ThrowIfNull(lookStarted);
         var cutoff = now - Grace;
         var (rows, queued) = await ReadAsync(database, libraryId, mediaScope, cancellationToken).ConfigureAwait(false);
         Step Judge(WaitingRow row) => queued.Contains(row.RelativePath) ? DecideQueued(row, watchedRoot) : Decide(row, cutoff, watchedRoot);
@@ -130,7 +133,7 @@ public static class VanishedFiles
                                 case Step.Release when await ReleaseOneAsync(uow, mediaScope, libraryId, row).ConfigureAwait(false):
                                     released.Add(row.RelativePath);
                                     break;
-                                case Step.StartLook when await GoneLooks.StartForFileAsync(uow, row.RelativePath, mediaScope, libraryId).ConfigureAwait(false):
+                                case Step.StartLook when await GoneLooks.StartForFileAsync(uow, row.RelativePath, mediaScope, libraryId, lookStarted).ConfigureAwait(false):
                                     released.Add(row.RelativePath);
                                     break;
                                 case Step.Forget or Step.ForgetQuietly

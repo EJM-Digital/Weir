@@ -154,6 +154,7 @@ cannot pass without the real-Deluno scenarios. A failure, or a run cut short aft
 | Fresh | Pause and resume from the tray | The tray's pause-request file pauses Weir; a film dropped in during the pause is found and held with nothing cleaned, written or removed; the resume request runs it once; Activity shows both by the tray. |
 | Fresh | A deleted file that was waiting | A file deleted while Weir waits for it to settle becomes "no longer there", never a failure, with no warning in the log. |
 | Fresh | The update buttons | Check for updates and Download update reach the real tray, which takes each flag and brings the update state to an answer. |
+| Fresh | Recovering a locked-out account | The installed `WeirServer.exe recover`, run with Weir stopped and nothing set but what a console has (allowed only inside the scenario VM), finds the install's own data folder, lists the account, resets its password and says how many sessions it ended; the forgotten password is then refused, the new one signs in, the sessions from before are ended, a saved setting is kept and Activity records the reset. |
 
 **Every scenario ends with the log check.** There is no scenario of its own for the logs: when a scenario has passed, the suite compares the warnings
 and errors on System > Logs, in Weir's server log file and in the tray log with those that existed when that scenario began, and the scenario fails
@@ -184,7 +185,8 @@ status and is never a pass for the tag. Only a full run of all three phases pass
 **Running the same scenarios a second time on the same machine.** Run them once (the Fresh phase restores the clean checkpoint), then again
 with `-NoRestore`, which skips the restore, starts the VM if it is off, waits for PowerShell Direct, and runs the same scenarios on what the
 first run left. It needs `-Scenarios` (a run that restores nothing is never a pass for the tag), and the record says the checkpoint was not
-restored:
+restored. It prints the Weir version it finds on the VM, and refuses to run when that is not the build under test (the version and the commit)
+unless `fresh-install` is among the chosen scenarios, because nothing else would install the build and the scenarios would judge an older Weir:
 
 ```powershell
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `

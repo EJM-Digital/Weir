@@ -537,7 +537,7 @@ public sealed class LeftInPlaceOriginalTests : IDisposable
         }
 
         Task<VanishedFiles.Changes> Look(string trigger) => VanishedFiles.SettleAsync(
-            _fixture.Store.Database, _libraryId, _folders.Watched, "movie", _fixture.Store.Clock.GetUtcNow(), trigger, BothHaveLooked, CancellationToken.None);
+            _fixture.Store.Database, _libraryId, _folders.Watched, "movie", _fixture.Store.Clock.GetUtcNow(), trigger, BothHaveLooked, _ => { }, CancellationToken.None);
 
         var looks = await Task.WhenAll(Look("folder_change"), Look("scheduled"));
 

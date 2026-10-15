@@ -130,11 +130,34 @@ internal sealed class SwapWorld : IAsyncDisposable
         JobsApi.Expect(response, HttpStatusCode.OK);
     }
 
-    /// <summary>Waits until the swap has reached the point it was told to stop at, and returns the name of that point.</summary>
+    /// <summary>
+    /// Waits until the swap has reached the point it was told to stop at, and returns the name of that point. The held clean keeps its
+    /// lease, so this waits as long as a worker has it (see <see cref="WaitWhileWorkedOnAsync{T}"/>).
+    /// </summary>
     public async Task<string> HeldAtAsync() =>
-        await Poll.UntilAsync(
-            () => Task.FromResult(File.Exists(HeldFile) ? File.ReadAllText(HeldFile) : null),
+        await WaitWhileWorkedOnAsync(
+            () => Task.FromResult(File.Exists(HeldFile) ? ReadWhileRenamed(HeldFile) : null),
             "the swap to stop at the point it was told to");
+
+    /// <summary>
+    /// The file's text, read with a share mode that lets the server's rename finish: the file appears under its name at the moment of the
+    /// rename, and Windows keeps the renaming handle (it holds delete access) open for an instant after, so a read that does not share
+    /// delete (`File.ReadAllText` does not) is refused as "used by another process" if it lands in that instant.
+    /// </summary>
+    private static string ReadWhileRenamed(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+
+    /// <summary>Waits for <paramref name="result"/> for as long as a worker holds any of the server's jobs (see <see cref="JobWait"/>).</summary>
+    public async Task<T> WaitWhileWorkedOnAsync<T>(Func<Task<T?>> result, string what)
+        where T : class =>
+        await new JobWait().UntilAsync(async () => [.. (await JobsApi.AllJobsAsync(Client)).Select(job => (string)job["status"]!)], result, what);
+
+    public async Task WaitWhileWorkedOnAsync(Func<Task<bool>> condition, string what) =>
+        await WaitWhileWorkedOnAsync(async () => await condition() ? "done" : null, what);
 
     /// <summary>Ends the server's process as a crash or a power cut would, with the swap where it stopped.</summary>
     public Task CrashAsync() => Server.StopAsync();
@@ -204,7 +227,7 @@ internal sealed class SwapWorld : IAsyncDisposable
     {
         var scan = await Client.PostWithCsrfAsync($"{WeirClient.Api}/processing/libraries/{LibraryId}/library-scan", new JsonObject());
         JobsApi.Expect(scan, HttpStatusCode.OK);
-        await Poll.UntilAsync(
+        await WaitWhileWorkedOnAsync(
             async () =>
             {
                 var files = await Client.GetAsync($"{WeirClient.Api}/processing/libraries/{LibraryId}/library-files");

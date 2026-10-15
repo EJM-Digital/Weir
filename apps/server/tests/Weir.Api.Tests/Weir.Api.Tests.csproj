@@ -17,6 +17,15 @@
     <Compile Include="..\Weir.Infrastructure.Tests\TestSupport\MigratedDatabaseTemplate.cs" Link="TestSupport\MigratedDatabaseTemplate.cs" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Who may call each route (docs/coverage/route-access.json), checked against the server by RouteAccessTableTests and RouteAccessTests. -->
+    <Compile Include="..\Shared\RouteAccessTable.cs" Link="TestSupport\RouteAccessTable.cs" />
+    <None Include="..\..\..\..\docs\coverage\route-access.json" Link="route-access.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Every way Weir can change a media file and what holds it back while paused (docs/coverage/file-changing-paths.json), checked against the source and the server by FileChangingPathsTests. -->
+    <Compile Include="..\Shared\FileChangingPathsTable.cs" Link="TestSupport\FileChangingPathsTable.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- A frozen fixture from an older release, shared with the infrastructure tests. -->
     <None Include="..\Weir.Infrastructure.Tests\Fixtures\bundle-v4.json" Link="Fixtures\bundle-v4.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

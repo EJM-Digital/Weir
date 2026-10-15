@@ -8,10 +8,7 @@ import { useMeQuery } from "../../lib/auth/queries";
 import type { ProcessingLibrary } from "../../lib/processing/libraries-api";
 import { useProcessingLibrariesQuery } from "../../lib/processing/libraries-queries";
 import { useAppSettingsQuery } from "../../lib/settings/queries";
-import {
-  curatedTimezoneOptionsSorted,
-  CURATED_TIMEZONE_ID_SET,
-} from "../../lib/settings/timezone-options";
+import { timezoneOptionsFor } from "../../lib/settings/timezone-options";
 import type { AppSettings } from "../../lib/settings/types";
 import { mmActionButtonClass } from "../../lib/ui/mm-control-roles";
 import {
@@ -54,7 +51,7 @@ function initialDraft(
     };
   };
   return {
-    timezone: CURATED_TIMEZONE_ID_SET.has(zone) ? zone : FALLBACK_ZONE,
+    timezone: zone,
     backup: {
       enabled: Boolean(settings.configuration_backup_enabled),
       intervalHours: String(
@@ -135,11 +132,11 @@ function WizardForm({
   });
   const timezoneOptions = useMemo(
     () =>
-      curatedTimezoneOptionsSorted().map((tz) => ({
+      timezoneOptionsFor(settings.app_timezone).map((tz) => ({
         value: tz.id,
         label: tz.label,
       })),
-    [],
+    [settings.app_timezone],
   );
   const setFolders = (key: "movie" | "tv", folders: LibraryFolders) =>
     setDraft((current) => ({ ...current, [key]: folders }));

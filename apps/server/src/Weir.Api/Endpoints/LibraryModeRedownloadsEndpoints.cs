@@ -14,6 +14,7 @@ using Weir.Core.Validation;
 using Weir.Infrastructure.LibraryMode;
 using Weir.Infrastructure.MediaManagers;
 using Weir.Infrastructure.Processing;
+using Weir.Infrastructure.Settings;
 using static Weir.Api.Endpoints.EndpointLookups;
 
 namespace Weir.Api.Endpoints;
@@ -45,6 +46,7 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
     private readonly LibrarySettingsStore _librarySettings;
     private readonly IRedownloadTracker _tracker;
     private readonly IActivityWriter _activity;
+    private readonly SuitePauseService _pause;
     private readonly ILogger<LibraryModeRedownloadsEndpointHandlers> _logger;
 
     public LibraryModeRedownloadsEndpointHandlers(
@@ -56,6 +58,7 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
         LibrarySettingsStore librarySettings,
         IRedownloadTracker tracker,
         IActivityWriter activity,
+        SuitePauseService pause,
         ILogger<LibraryModeRedownloadsEndpointHandlers> logger)
     {
         _scans = scans ?? throw new ArgumentNullException(nameof(scans));
@@ -66,6 +69,7 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
         _librarySettings = librarySettings ?? throw new ArgumentNullException(nameof(librarySettings));
         _tracker = tracker ?? throw new ArgumentNullException(nameof(tracker));
         _activity = activity ?? throw new ArgumentNullException(nameof(activity));
+        _pause = pause ?? throw new ArgumentNullException(nameof(pause));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -141,6 +145,7 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
     public async Task<ApiResult> PostRedownloadAsync(ApiRequest request)
     {
         var payload = await request.ReadBodyAsync().ConfigureAwait(false);
+        var session = await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var libraryId = request.PathInt("library_id", issues);
         var model = new BodyModel(payload, issues);
@@ -150,7 +155,6 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        var session = await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var asker = session.User.Username;
         request.RequireConfirmationToken(csrfToken);
 
@@ -160,6 +164,7 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
         }
 
         var uow = await request.DbAsync().ConfigureAwait(false);
+        await PausedRequests.RefuseWhilePausedAsync(_pause, request, uow, PausedRequests.DownloadAgain).ConfigureAwait(false);
         var library = await RequireLibraryAsync(uow, _libraries, libraryId, LibraryModeMapping.NoLibraryWithThatId).ConfigureAwait(false);
         var scanned = (await _scans.FilesAtPathsAsync(uow, libraryId, [path!]).ConfigureAwait(false)).GetValueOrDefault(path!);
 

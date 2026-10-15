@@ -151,6 +151,17 @@ jobs:
           RELEASING: ${{ inputs.version }}
         run: node scripts/docker-compose-smoke.mjs upgrade --candidate weir-ci-smoke --releasing "$RELEASING"
 
+      # The entrypoint as root: the user mapping, the secrets, who owns the data folder and what a delivered file ends up as (docker/README.md,
+      # "File ownership"), with compose.yaml's own capabilities and a media folder bind-mounted from this runner.
+      - name: Compose entrypoint maps the user, keeps the secrets and owns the folders
+        if: ${{ !cancelled() }}
+        run: node scripts/docker-compose-smoke.mjs entrypoint --candidate weir-ci-smoke
+
+      # A person locked out of Weir runs the recovery command the Docker page gives them; this runs it the same way in the running container.
+      - name: Compose recover resets a forgotten password
+        if: ${{ !cancelled() }}
+        run: node scripts/docker-compose-smoke.mjs recover --candidate weir-ci-smoke
+
       - name: Upload Docker compose smoke logs
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -159,24 +170,49 @@ jobs:
           if-no-files-found: warn
           path: artifacts/docker-compose-smoke/**
 
+  # The arm64 image the release publishes, started under QEMU on an x86-64 runner (PLAT-13). The server is cross-published natively in the
+  # SDK stage; the final stage's apt-get and everything that runs afterwards are emulated, which is why this is its own job: it overlaps the
+  # amd64 smokes instead of following them.
+  docker-arm64-smoke:
+    if: inputs.arm64
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # The smoke script reads SQLite files with node:sqlite, which the runner's default Node may not have.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
-        if: inputs.arm64
         with:
           platforms: arm64
 
-      # The server is cross-published natively in the SDK stage; only the final stage's apt-get runs emulated.
-      # Proves the multi-arch image the release publishes still builds.
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
       - name: Build Weir Docker image (linux/arm64)
-        if: inputs.arm64
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/arm64
+          load: true
           push: false
           tags: weir-ci-smoke:arm64
           cache-from: type=gha,scope=weir-ci-arm64
           cache-to: type=gha,mode=max,scope=weir-ci-arm64,ignore-error=true
+
+      - name: Start the arm64 image under QEMU
+        run: node scripts/docker-compose-smoke.mjs arm64 --candidate weir-ci-smoke:arm64
+
+      - name: Upload arm64 smoke logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: weir-docker-arm64-smoke
+          if-no-files-found: warn
+          path: artifacts/docker-compose-smoke/**
 
   windows-package-smoke:
     # Always GitHub's own runner: this job installs Weir for real, which needs a clean machine every time.
@@ -272,6 +308,19 @@ jobs:
 
       - name: Smoke test packaged Windows server
         run: powershell -ExecutionPolicy Bypass -File scripts/smoke-windows-package.ps1
+
+      # The recovery command a locked-out person runs where Weir is installed, from the packaged server folder: the password is reset,
+      # the forgotten one is refused, the new one signs in, and what the command printed is kept.
+      - name: Recover a locked-out account with the packaged WeirServer.exe
+        run: powershell -ExecutionPolicy Bypass -File scripts/smoke-windows-recover.ps1
+
+      - name: Upload what the recover command printed
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: weir-windows-recover-smoke
+          if-no-files-found: warn
+          path: artifacts/windows-recover-smoke/**
 
       - name: Upload the Windows build of this commit
         if: github.event_name != 'pull_request'

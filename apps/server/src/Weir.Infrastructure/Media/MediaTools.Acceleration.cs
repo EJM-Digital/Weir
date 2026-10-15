@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using Weir.Core.Media;
 using Weir.Infrastructure.Processes;
 
@@ -16,6 +17,10 @@ public sealed partial class MediaTools
     /// like every other tool output this class reads, rather than with the locale encoding, which can raise or
     /// mangle text on a locale that is not UTF-8 (#539 item 5). The method names it detects (<c>cuda</c>,
     /// <c>qsv</c>, …) are ASCII, so a mangled heading line is simply filtered out.
+    /// <para>
+    /// The probe runs at normal priority, not the below-normal priority of a media pass: it is a one-second question, and
+    /// at below normal on a saturated machine it gets the processor only in short turns and outlasts any sensible limit.
+    /// </para>
     /// </remarks>
     public Task<AccelerationReport> DetectAccelerationAsync(string ffmpegBin, CancellationToken cancellationToken = default) =>
         DetectAccelerationAsync(ffmpegBin, TimeSpan.FromSeconds(FfmpegCommands.HwaccelTimeoutSeconds), cancellationToken);
@@ -41,6 +46,7 @@ public sealed partial class MediaTools
                     Stdin = ProcessInput.Inherit,
                     Stdout = ProcessOutput.Capture,
                     Stderr = ProcessOutput.Capture,
+                    Priority = ProcessPriorityClass.Normal,
                 },
                 cancellationToken).ConfigureAwait(false);
         }
@@ -51,7 +57,7 @@ public sealed partial class MediaTools
 
         if (result.TimedOut)
         {
-            return HardwareAcceleration.ReportForRunError(ProbeOutput.TimeoutMessage(argv, timeout.TotalSeconds));
+            return HardwareAcceleration.ReportForTimeout();
         }
 
         return HardwareAcceleration.ReportFromHwaccels(result.ExitCode, ProbeOutput.CapturedText(result.Stdout));

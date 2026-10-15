@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Text;
 using Weir.Core.Media;
 using Weir.Infrastructure.Media;
@@ -116,6 +117,41 @@ public sealed class MediaToolVersionReportTests
 
         Assert.Equal(["/usr/bin/ffmpeg", "-hide_banner", "-version"], runner.Requests[0].Argv);
         Assert.Equal(["/usr/bin/mkvmerge", "--version"], runner.Requests[1].Argv);
+    }
+
+    [Fact]
+    public async Task Both_version_questions_run_at_normal_priority_with_the_measured_time_limit()
+    {
+        var runner = new ScriptedRunner(_ => Printing("v\n"));
+        var tools = new MediaTools(runner, new FixedResolver(mkvmerge: "mkvmerge"), new ListLogger<MediaTools>(), TimeProvider.System);
+
+        await tools.DescribeVersionsAsync();
+
+        Assert.Equal(2, runner.Requests.Count);
+        Assert.All(runner.Requests, request =>
+        {
+            Assert.Equal(ProcessPriorityClass.Normal, request.Priority);
+            Assert.Equal(TimeSpan.FromSeconds(15), request.Timeout);
+        });
+    }
+
+    [Fact]
+    public async Task Tools_starved_of_the_processor_are_not_reported_as_unknown()
+    {
+        // Below normal priority on a saturated machine, a version question gets the processor only in short turns and
+        // outlasts its limit; at normal priority it answers. The fake answers only to a request that asks for normal.
+        var tools = Tools(
+            new FixedResolver(mkvmerge: "mkvmerge"),
+            request => request.Priority != ProcessPriorityClass.Normal
+                ? new ScriptedRun { Timeout = ProcessTimeoutKind.Overall }
+                : request.Argv[0] == "mkvmerge"
+                    ? Printing("mkvmerge v102.0 ('Neon Lights') 64-bit\n")
+                    : Printing("ffmpeg version 8.0\n"));
+
+        var report = await tools.DescribeVersionsAsync();
+
+        Assert.Equal("ffmpeg version 8.0", report.Ffmpeg);
+        Assert.Equal("mkvmerge v102.0 ('Neon Lights') 64-bit", report.Mkvmerge);
     }
 
     private sealed class ThrowingResolver : IMediaToolResolver

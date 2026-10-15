@@ -82,6 +82,23 @@ export class WeirClient {
     this.#cookie = response.cookie;
   }
 
+  /** The status Weir answers a sign-in with, for a password it is expected to refuse; a session is kept only when it signs in. */
+  async loginStatus(username, password) {
+    const response = await this.#send("POST", "/auth/login", { username, password, csrf_token: await this.#csrf() });
+    if (response.status === 200) this.#cookie = response.cookie;
+    return response.status;
+  }
+
+  /** The sessions signed in to the account, as Weir lists them to the one asking. */
+  async activeSessions() {
+    return (await this.#read("/auth/sessions", "listing the signed-in sessions")).items;
+  }
+
+  /** Activity entries of one event type, newest first. */
+  async activity(eventType) {
+    return (await this.#read(`/activity/recent?event_type=${eventType}&limit=20`, "reading Activity")).items;
+  }
+
   /** The signed-in account's user name, or null when the session is not accepted. */
   async signedInAs() {
     const response = await this.#send("GET", "/auth/me");
@@ -92,8 +109,31 @@ export class WeirClient {
     return this.#write("POST", "/processing/libraries", fields, 201, "creating a workflow");
   }
 
+  /** Saves new fields over a workflow; `fields` is the whole of what the workflow screen sends. */
+  updateLibrary(id, fields) {
+    return this.#write("PUT", `/processing/libraries/${id}`, fields, 200, "saving a workflow");
+  }
+
   libraries() {
     return this.#read("/processing/libraries", "listing workflows");
+  }
+
+  /** Asks for an unchanged pass-through of a file in a movie workflow's watched folder; returns the job's id. */
+  async enqueuePassThrough(relativeMediaPath) {
+    const queued = await this.#write(
+      "POST",
+      "/processing/jobs/file-remux-pass/enqueue",
+      { relative_media_path: relativeMediaPath, media_scope: "movie", pass_through_unchanged: true },
+      200,
+      "queueing a pass-through",
+    );
+    return queued.job_id;
+  }
+
+  /** The job as the processing inspection lists it (id, status, last_error), or undefined when it is not listed. */
+  async job(id) {
+    const inspection = await this.#read("/processing/jobs/inspection?limit=100", "inspecting the jobs");
+    return inspection.jobs.find((job) => job.id === id);
   }
 
   suiteSettings() {
