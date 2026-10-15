@@ -177,11 +177,13 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
             return await AnswerAsync(new RedownloadAnswer(libraryId, path!, asker, RedownloadAnswer.Unsupported, ManagerRedownloadRules.NoManagerMessage)).ConfigureAwait(false);
         }
 
+        // Once the manager is asked to delete, the search and the Activity record follow whatever the browser does, so the browser's
+        // abort token is not passed on. Each call to the manager is bounded by the manager client's own timeout.
         RedownloadResult result;
         try
         {
             result = await _redownload
-                .RequestRedownloadAsync(connection, library.MediaType, scanned.ManagerTitleId!, path, request.Context.RequestAborted)
+                .RequestRedownloadAsync(connection, library.MediaType, scanned.ManagerTitleId!, path, CancellationToken.None)
                 .ConfigureAwait(false);
         }
         catch (Exception exception) when (exception is MediaManagerHttpException or MediaManagerUnreachableException)
