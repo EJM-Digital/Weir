@@ -16,3 +16,11 @@ it("keeps the sign and says nothing for a missing size", () => {
   expect(formatBytes(undefined)).toBe("");
   expect(formatBytes(Number.NaN)).toBe("");
 });
+
+it("moves a size that rounds up to 1024 into the next unit", () => {
+  expect(formatBytes(1024 * 1024 - 5)).toBe("1.0 MB");
+  expect(formatBytes(1024 ** 3 - 1)).toBe("1.00 GB");
+  expect(formatBytes(1024 ** 2 - 1024 * 0.4)).toBe("1.0 MB");
+  expect(formatBytes(1024 ** 4 - 1)).toBe("1.00 TB");
+  expect(formatBytes(1023 * 1024)).toBe("1023 KB");
+});

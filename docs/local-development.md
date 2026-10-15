@@ -195,6 +195,29 @@ dotnet run --project apps/server/tools/Weir.LiveAudit -c Release
 
 Its other settings (`WEIR_LIVE_E2E_*`) are described in **[`Weir.LiveAudit/README.md`](../apps/server/tools/Weir.LiveAudit/README.md)**.
 
+## Property tests and the intake fuzz test
+
+Where an input is wide (paths a media manager reports, the settings an operator types, the JSON bodies, the web's sizes, times and
+addresses) the tests state a rule and try it on generated inputs instead of a handful of examples: **FsCheck** in the server
+projects (`*PropertyTests.cs`), **fast-check** in the web app (`*.property.test.ts`). Every run uses the same seed, so a pass or a
+failure can be repeated exactly, and a failure prints the seed and the smallest input that breaks the rule.
+
+| Variable | Does |
+| --- | --- |
+| `WEIR_PROPERTY_SEED` | A whole number to run other inputs than the fixed seed's, or `random` to look for new ones (the seed it picks is in a failure). Set it to a failure's seed to run that failure again. |
+| `WEIR_PROPERTY_RUNS` | How many inputs each property is tried on (100 unless set). |
+
+```powershell
+# Look for failures the fixed seed does not reach
+$env:WEIR_PROPERTY_SEED = "random"; $env:WEIR_PROPERTY_RUNS = "1000"
+dotnet test apps/server/Weir.slnx --filter "FullyQualifiedName~PropertyTests"
+cd apps/web; npx vitest run property
+```
+
+A property that fails is a bug to fix: copy the shrunk input into a plain example test beside the others (so the case stays
+tested whatever the seed), then fix the code. The intake fuzz test (`IntakeFuzzTests`, contract area `media_managers`) sends mutated
+copies of the recorded Deluno bodies to a running server and holds every answer to the statuses the contract documents.
+
 ## Split-origin production
 
 If the static site and API are on **different origins**:

@@ -87,6 +87,19 @@ export function startOfDayAt(ms: number, timeZone: string | undefined): number {
   );
 }
 
+/** Whether the reading names a minute that exists on the calendar: no 13th month, no 31 April, no 25 o'clock. */
+function isRealWallClock({ year, month, day, hour, minute }: WallClock) {
+  const date = new Date(Date.UTC(2000, month - 1, day));
+  date.setUTCFullYear(year);
+  return (
+    hour <= 23 &&
+    minute <= 59 &&
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
 const LOCAL_INPUT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
 
 /** The instant a `datetime-local` value (such as "2026-10-02T08:30") stands for in `timeZone`, or null when it is not one. */
@@ -97,6 +110,7 @@ export function instantFromLocalInput(
   const match = LOCAL_INPUT.exec(value);
   if (!match) return null;
   const [year, month, day, hour, minute] = match.slice(1).map(Number);
+  if (!isRealWallClock({ year, month, day, hour, minute })) return null;
   return instantAtWallClock({ year, month, day, hour, minute }, timeZone);
 }
 

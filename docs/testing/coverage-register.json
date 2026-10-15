@@ -1,7 +1,7 @@
 {
   "version": 1,
   "generatedFrom": "the coverage audit of 14 Oct 2026, brought up to date with main at rc.18, plus the inventories of scripts/coverage/inventory.mjs",
-  "gapCeiling": 855,
+  "gapCeiling": 852,
   "areas": {
     "api": {
       "code": "R",
@@ -44904,7 +44904,7 @@
       "proofs": [],
       "needs": {
         "kind": "xunit",
-        "test": "`TrayLog` has no test of its own. The VM's log check parses the timestamp with a regex; a line that does not match gets `At = MinValue` and is dropped by the `-ge $Since` filter in the Deluno-phase \"logs-clean\" check, hiding real problems. The log is append-only with no size cap (the server-host log has one). Needs tray-unit tests pinning the format against the scenario regex, the unwritable-log fallback, and a size/rotation decision."
+        "test": "`TrayLog` has no test of its own. The VM's log check (the end of every scenario) tells the tray's trouble lines apart by their text, and reads the time with a regex that a different line format would not match. The log is append-only with no size cap (the server-host log has one). Needs tray-unit tests pinning the format against the scenario regex, the unwritable-log fallback, and a size/rotation decision."
       },
       "issue": 1044,
       "audit": {
@@ -47476,7 +47476,7 @@
         {
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
-          "name": "logs-clean"
+          "name": "weir-only-film"
         }
       ],
       "audit": {
@@ -49703,35 +49703,6 @@
       }
     },
     {
-      "id": "scenarios.withdeluno.logs-clean-deluno",
-      "area": "scenarios",
-      "behaviour": "Golden-VM scenario logs-clean-deluno (Logs with no unexpected warnings, with Deluno) runs on its own, on a machine in the state it needs",
-      "kind": "install-update",
-      "severity": "medium",
-      "touches": "other-app",
-      "required": "inproc",
-      "proofs": [],
-      "partial": [
-        {
-          "type": "scenario",
-          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
-          "name": "logs-clean-deluno"
-        }
-      ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
-      },
-      "issue": 982,
-      "covers": [
-        "scenario:logs-clean-deluno"
-      ],
-      "audit": {
-        "id": "SUITE logs-clean-deluno",
-        "verdict": "Partly"
-      }
-    },
-    {
       "id": "scenarios.fresh.fresh-install",
       "area": "scenarios",
       "behaviour": "Golden-VM scenario fresh-install (Fresh install) runs on its own, on a machine in the state it needs",
@@ -49777,7 +49748,7 @@
       ],
       "needs": {
         "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
+        "test": "Built to run alone (`-Scenarios first-visit-account`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
       "issue": 981,
       "covers": [
@@ -49807,7 +49778,7 @@
       ],
       "needs": {
         "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
+        "test": "Built to run alone (`-Scenarios weir-only-film`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
       "issue": 981,
       "covers": [
@@ -49837,7 +49808,7 @@
       ],
       "needs": {
         "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
+        "test": "Built to run alone (`-Scenarios process-again`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
       "issue": 981,
       "covers": [
@@ -49867,7 +49838,7 @@
       ],
       "needs": {
         "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
+        "test": "Built to run alone (`-Scenarios pause-resume`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
       "issue": 981,
       "covers": [
@@ -49897,7 +49868,7 @@
       ],
       "needs": {
         "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
+        "test": "Built to run alone (`-Scenarios deleted-queued-file`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
       "issue": 981,
       "covers": [
@@ -49940,36 +49911,6 @@
       "vm": true
     },
     {
-      "id": "scenarios.fresh.logs-clean",
-      "area": "scenarios",
-      "behaviour": "Golden-VM scenario logs-clean (Logs with no unexpected warnings) runs on its own, on a machine in the state it needs",
-      "kind": "install-update",
-      "severity": "medium",
-      "touches": "install",
-      "required": "inproc",
-      "proofs": [],
-      "partial": [
-        {
-          "type": "scenario",
-          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
-          "name": "logs-clean"
-        }
-      ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
-      },
-      "issue": 981,
-      "covers": [
-        "scenario:logs-clean"
-      ],
-      "audit": {
-        "id": "SUITE logs-clean",
-        "verdict": "Partly"
-      },
-      "vm": true
-    },
-    {
       "id": "scenarios.orchestrator.pick-one-scenario-by-name",
       "area": "scenarios",
       "behaviour": "The scenario orchestrator runs one scenario picked by name, not only whole phases",
@@ -49977,15 +49918,31 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "The orchestrator selects only whole phases with -Phases; it has no way to pick one scenario."
-      },
-      "issue": 981,
+      "proofs": [
+        {
+          "type": "node",
+          "file": "scripts/scenarios.test.mjs",
+          "name": "every scenario can be chosen alone: -WhatIf lists that scenario only, in its own phase, and sets no status"
+        },
+        {
+          "type": "node",
+          "file": "scripts/scenarios.test.mjs",
+          "name": "-Scenarios chooses several scenarios across phases, and -Phases may only name phases they are in"
+        },
+        {
+          "type": "node",
+          "file": "scripts/scenarios.test.mjs",
+          "name": "a mistyped scenario id is refused before anything is touched, naming the nearest ids"
+        },
+        {
+          "type": "node",
+          "file": "scripts/scenarios.test.mjs",
+          "name": "no scenario names another, calls another, or reads state another left: each one makes its own"
+        }
+      ],
       "audit": {
         "id": "SUITE orchestrator",
-        "verdict": "Gap"
+        "verdict": "Covered"
       },
       "vm": true
     },

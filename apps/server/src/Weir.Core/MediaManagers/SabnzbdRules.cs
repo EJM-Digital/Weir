@@ -36,7 +36,13 @@ public static class SabnzbdRules
                 continue;
             }
 
-            folders.Add(new DownloadClientCategoryFolder(name, JoinUnderComplete(completeDir, dir)));
+            // A folder that climbs out with '..' is the client's own text, not a place Weir will suggest.
+            if (DownloadClientPaths.ClimbsOut(dir) || JoinUnderComplete(completeDir, dir) is not { } folder)
+            {
+                continue;
+            }
+
+            folders.Add(new DownloadClientCategoryFolder(name, folder));
         }
 
         return folders;
@@ -44,8 +50,8 @@ public static class SabnzbdRules
 
     private static WireObject? Config(WireValue? payload) => payload is WireObject dict && dict.Get("config") is WireObject config ? config : null;
 
-    private static string JoinUnderComplete(string? completeDir, string relativeOrAbsolute) =>
+    private static string? JoinUnderComplete(string? completeDir, string relativeOrAbsolute) =>
         DownloadClientPaths.IsAbsolute(relativeOrAbsolute) || string.IsNullOrEmpty(completeDir)
             ? relativeOrAbsolute
-            : DownloadClientPaths.Join(completeDir, relativeOrAbsolute);
+            : DownloadClientPaths.Join(completeDir, relativeOrAbsolute).Path;
 }

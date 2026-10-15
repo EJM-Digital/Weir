@@ -31,8 +31,11 @@ public static class OutputCollision
         return Policies.Contains(value, StringComparer.Ordinal) ? value : Replace;
     }
 
-    /// <summary>The next free numbered name: <c>Film (2001).mkv</c> becomes <c>Film (2001) (2).mkv</c>, then <c>(3)</c>, bounded.</summary>
-    public static string NextFreePath(string final, int limit = 999)
+    /// <summary>
+    /// The next free numbered name: <c>Film (2001).mkv</c> becomes <c>Film (2001) (2).mkv</c>, then <c>(3)</c>, up to <paramref name="limit"/>.
+    /// Null when every one of those names is taken, so a name that is taken is never handed back as free.
+    /// </summary>
+    public static string? NextFreePath(string final, int limit = 999)
     {
         var directory = Path.GetDirectoryName(final) ?? string.Empty;
         var (stem, suffix) = StemAndSuffix(Path.GetFileName(final));
@@ -45,7 +48,7 @@ public static class OutputCollision
             }
         }
 
-        return Path.Join(directory, $"{stem} ({limit.ToString(CultureInfo.InvariantCulture)}){suffix}");
+        return null;
     }
 
     /// <summary>Decides, under the collision policy, whether and where the output is written when a file may already be at <paramref name="final"/>.</summary>
@@ -69,6 +72,14 @@ public static class OutputCollision
             case KeepBoth:
             {
                 var destination = NextFreePath(final);
+                if (destination is null)
+                {
+                    return new CollisionDecision(
+                        chosen, "skip", final, false,
+                        $"An output already exists at {name} and so does every numbered copy of it, so Weir kept the one that was already there " +
+                        "and wrote nothing new.");
+                }
+
                 return new CollisionDecision(
                     chosen, "write", destination, false,
                     $"An output already exists at {name}, so Weir wrote this one alongside it as {Path.GetFileName(destination)}.");
