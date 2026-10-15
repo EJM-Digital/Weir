@@ -845,24 +845,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/DownloadClientConnectionsApiTests.cs",
-          "name": "A_connection_is_created_listed_fetched_updated_and_removed_without_ever_exposing_its_secret"
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
         },
         {
-          "type": "e2e",
-          "file": "apps/server/tests/Weir.E2E.Tests/SetupLiveTests.cs",
-          "name": "SetupLiveTests"
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
+          "name": "RouteAccessTableTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No test refuses an anonymous or viewer caller or a missing CSRF token on any download-client route (the media-manager routes have such tests, these have none)"
-      },
-      "issue": 1000,
       "covers": [
         "route:GET /api/v1/download-clients/connections"
       ],
@@ -879,34 +873,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/DownloadClientConnectionsApiTests.cs",
-          "name": "DownloadClientConnectionsApiTests"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/ConnectionNicknameApiTests.cs",
-          "name": "ConnectionNicknameApiTests"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/DownloadClientConnectionServiceTests.cs",
-          "name": "DownloadClientConnectionServiceTests"
-        },
+      "proofs": [
         {
           "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/ConnectionActivityTests.cs",
-          "name": "ConnectionActivityTests"
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
+          "name": "RouteAccessTableTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Same: no auth/role/CSRF refusal test"
-      },
-      "issue": 1000,
       "covers": [
         "route:POST /api/v1/download-clients/connections"
       ],
@@ -923,34 +901,18 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/DownloadClientConnectionsApiTests.cs",
-          "name": "Suggestions_need_a_media_type_and_report_one_entry_per_enabled_connection"
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
         },
         {
           "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/DownloadClientConnectionsApiTests.cs",
-          "name": "An_unreachable_connection_is_left_out_of_suggestions_instead_of_failing_the_whole_list"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/Processing/ManagerSectionTruthApiTests.cs",
-          "name": "ManagerSectionTruthApiTests"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/DownloadClientConnectionServiceTests.cs",
-          "name": "Suggestions_carry_the_folders_and_no_verdict_on_them"
+          "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
+          "name": "RouteAccessTableTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Folders come from fake client servers written from the docs; no auth test"
-      },
-      "issue": 1000,
       "covers": [
         "route:GET /api/v1/download-clients/suggestions"
       ],
@@ -967,24 +929,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/DownloadClientConnectionsApiTests.cs",
-          "name": "DownloadClientConnectionsApiTests"
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
         },
         {
-          "type": "e2e",
-          "file": "apps/server/tests/Weir.E2E.Tests/SetupLiveTests.cs",
-          "name": "SetupLiveTests"
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
+          "name": "RouteAccessTableTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No auth refusal test"
-      },
-      "issue": 1000,
       "covers": [
         "route:GET /api/v1/download-clients/connections/{connection_id}"
       ],
@@ -1184,39 +1140,23 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
-          "type": "e2e",
-          "file": "apps/server/tests/Weir.E2E.Tests/LibraryScanLiveTests.cs",
-          "name": "LibraryScanLiveTests"
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
         },
         {
           "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/Platform/LiveStreamApiTests.cs",
-          "name": "Asking_for_a_library_scan_reaches_an_open_stream_as_a_library_scan_change"
+          "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
+          "name": "RouteAccessTableTests"
         },
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryScanHandlerTests.cs",
-          "name": "LibraryScanHandlerTests"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerTests.cs",
-          "name": "LibraryFileWalkerTests"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileIndexWriterTests.cs",
-          "name": "LibraryFileIndexWriterTests"
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryScanRealFilesTests.cs",
+          "name": "LibraryScanRealFilesTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No refusal test (viewer, anonymous, CSRF); the scan has no contract or VM test on a real Windows library"
-      },
-      "issue": 1000,
       "covers": [
         "route:POST /api/v1/processing/libraries/{library_id}/library-scan"
       ],
@@ -1233,44 +1173,18 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryViewApiTests.cs",
-          "name": "LibraryViewApiTests"
-        },
+      "proofs": [
         {
           "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryViewApiTests.cs",
-          "name": "LibraryViewApiTests"
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
         },
         {
           "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryStatusApiTests.cs",
-          "name": "LibraryStatusApiTests"
-        },
-        {
-          "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryStatusApiTests.cs",
-          "name": "LibraryStatusApiTests"
-        },
-        {
-          "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryViewFilesApiTests.cs",
-          "name": "LibraryViewFilesApiTests"
-        },
-        {
-          "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryViewStatusSortTests.cs",
-          "name": "LibraryViewStatusSortTests"
+          "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
+          "name": "RouteAccessTableTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No anonymous-refused test for this route (only overview and problems have one)"
-      },
-      "issue": 1000,
       "covers": [
         "route:GET /api/v1/processing/libraries/{library_id}/library-files"
       ],
@@ -5877,12 +5791,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "The download-client routes (7), the library-mode writes (scan, clean, leave alone, redownload, schedule), move-to-top, recover-finalize-failed and others have no refusal test at all. A new route can ship open and nothing fails."
-      },
-      "issue": 1000,
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
+          "name": "RouteAccessTableTests"
+        }
+      ],
       "audit": {
         "id": "X-01",
         "verdict": "Gap"
