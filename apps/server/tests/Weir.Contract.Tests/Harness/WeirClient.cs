@@ -31,6 +31,8 @@ public sealed class WeirClient : IDisposable
 
     // defaultHeaders go on every request, such as Origin and X-Requested-With for a browser-like client; a header
     // named here replaces the built-in default of the same name (Accept).
+    public Uri BaseAddress => _baseAddress;
+
     public WeirClient(Uri baseAddress, IReadOnlyDictionary<string, string>? defaultHeaders = null)
     {
         _baseAddress = baseAddress;

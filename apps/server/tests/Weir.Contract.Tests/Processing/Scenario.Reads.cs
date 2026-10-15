@@ -3,6 +3,7 @@ using System.Net;
 using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
 using Weir.Contract.Tests.Harness.Fakes;
+using Weir.Contract.Tests.MediaManagers;
 
 namespace Weir.Contract.Tests.Processing;
 
@@ -21,16 +22,19 @@ internal sealed partial class Scenario
         return status.Fields;
     }
 
-    public async Task<JsonObject> WaitForHandoffStateAsync(string handoffId, string state, TimeSpan? timeout = null) =>
-        await Poll.UntilAsync(
+    /// <summary>
+    /// Waits for the hand-off to reach <paramref name="state"/>, for as long as a worker has its job: how long a pass takes depends on the
+    /// machine (see <see cref="JobWait"/>).
+    /// </summary>
+    public async Task<JsonObject> WaitForHandoffStateAsync(string handoffId, string state) =>
+        await new JobWait().UntilAsync(
+            () => RemuxJobs.StatusesForHandoffAsync(Admin, handoffId),
             async () =>
             {
                 var status = await HandoffStatusAsync(handoffId);
-                Assert.True((string)status["state"]! == state, status.ToJsonString());
-                return status;
+                return (string)status["state"]! == state ? status : null;
             },
-            $"hand-off {handoffId} to reach '{state}'",
-            timeout ?? TimeSpan.FromSeconds(90));
+            $"hand-off {handoffId} to reach '{state}'");
 
     /// <summary>The completion and failure reports the fake manager received for one hand-off.</summary>
     public static List<JsonObject> Callbacks(FakeManager fake, string handoffId) => fake.RequestsTo("POST", EventsPath)
@@ -40,6 +44,22 @@ internal sealed partial class Scenario
         .ToList();
 
     // --- jobs -----------------------------------------------------------------------------------
+
+    /// <summary>
+    /// The status of every job, from a session on the server's current address: stopping the server for its database starts it again on a
+    /// new port, which leaves <see cref="Admin"/> signed in on the old one.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> JobStatusesAsync()
+    {
+        if (Admin.BaseAddress != Server.BaseUrl)
+        {
+            Admin.Dispose();
+            Admin = Server.CreateClient();
+            await Admin.LoginAsync();
+        }
+
+        return [.. (await JobsAsync()).Select(job => (string)job["status"]!)];
+    }
 
     public async Task<List<JsonObject>> JobsAsync(string? kind = null)
     {
