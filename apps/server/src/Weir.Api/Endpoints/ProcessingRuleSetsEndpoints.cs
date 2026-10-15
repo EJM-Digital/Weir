@@ -173,8 +173,8 @@ internal sealed class ProcessingRuleSetsEndpointHandlers
 
     public async Task<ApiResult> PostRuleSetAsync(ApiRequest request)
     {
-        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(payload, issues);
         var csrfToken = model.Str("csrf_token", minLength: 1);
@@ -201,8 +201,8 @@ internal sealed class ProcessingRuleSetsEndpointHandlers
 
     public async Task<ApiResult> PutRuleSetAsync(ApiRequest request)
     {
-        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var pathIssues = new ValidationIssues();
         var id = request.PathInt("rule_set_id", pathIssues);
@@ -249,8 +249,8 @@ internal sealed class ProcessingRuleSetsEndpointHandlers
 
     public async Task<ApiResult> DeleteRuleSetAsync(ApiRequest request)
     {
-        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("rule_set_id", issues);
         var model = new BodyModel(payload, issues);

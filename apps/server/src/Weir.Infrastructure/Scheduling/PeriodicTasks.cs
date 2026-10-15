@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Weir.Core.Configuration;
 using Weir.Infrastructure.Auth;
 using Weir.Infrastructure.Logging;
 using Weir.Infrastructure.Settings;
@@ -142,9 +143,10 @@ public sealed class PeriodicTaskService : BackgroundService
     private readonly ILoggerFactory _loggers;
     private readonly PeriodicTaskRegistry _registry;
 
-    public PeriodicTaskService(IEnumerable<IPeriodicTask> tasks, TimeProvider time, ILoggerFactory loggers, PeriodicTaskRegistry registry)
+    public PeriodicTaskService(IEnumerable<IPeriodicTask> tasks, TimeProvider time, ILoggerFactory loggers, PeriodicTaskRegistry registry, WeirOptions options)
     {
-        _tasks = [.. tasks];
+        ArgumentNullException.ThrowIfNull(options);
+        _tasks = [.. tasks.Select(task => options.PeriodicTaskSpeedUp > 1 ? new SpedUpPeriodicTask(task, options.PeriodicTaskSpeedUp) : task)];
         _time = time;
         _loggers = loggers;
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
@@ -154,6 +156,31 @@ public sealed class PeriodicTaskService : BackgroundService
         Task.WhenAll(_tasks.Select(task => Task.Run(
             () => PeriodicTaskRunner.RunAsync(task, _time, _loggers.CreateLogger($"Weir.Periodic.{task.Name}"), stoppingToken, _registry),
             CancellationToken.None)));
+}
+
+/// <summary>
+/// A task that waits a fraction of the time the task it wraps does, for a test that cannot wait half a minute for the server's next look
+/// (<c>WEIR_PERIODIC_TASK_SPEEDUP</c>, refused in production). What the task does and says is unchanged.
+/// </summary>
+public sealed class SpedUpPeriodicTask(IPeriodicTask inner, int speedUp) : IPeriodicTask
+{
+    private static readonly TimeSpan Shortest = TimeSpan.FromMilliseconds(100);
+
+    public string Name => inner.Name;
+
+    public string? Label => inner.Label;
+
+    public TimeSpan Interval => Quicker(inner.Interval);
+
+    public bool RunAtStart => inner.RunAtStart;
+
+    public TimeSpan? FailureCooldown => inner.FailureCooldown is { } cooldown ? Quicker(cooldown) : null;
+
+    public string FailureMessage => inner.FailureMessage;
+
+    public Task RunOnceAsync(CancellationToken cancellationToken) => inner.RunOnceAsync(cancellationToken);
+
+    private TimeSpan Quicker(TimeSpan wait) => TimeSpan.FromTicks(Math.Max(Shortest.Ticks, wait.Ticks / speedUp));
 }
 
 /// <summary><c>auth-session-cleanup</c>: delete inactive sessions (ones that can never authenticate again), hourly.</summary>

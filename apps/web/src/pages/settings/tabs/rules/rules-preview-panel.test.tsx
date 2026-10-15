@@ -6,6 +6,11 @@ import { afterEach, expect, it, vi } from "vitest";
 import type { ProcessingLibrary } from "../../../../lib/processing/libraries-api";
 import type { ProcessingRuleSetWrite } from "../../../../lib/processing/rule-sets-api";
 import * as librariesQueries from "../../../../lib/processing/libraries-queries";
+import {
+  elapse,
+  useFakeClock,
+  useRealClock,
+} from "../../../../test/fake-clock";
 import * as rulesPreviewApi from "../../../../lib/processing/rules-preview-api";
 import type { ProcessingRulesPreviewResult } from "../../../../lib/processing/rules-preview-api";
 import { RulesPreviewPanel } from "./rules-preview-panel";
@@ -117,8 +122,12 @@ function stubLibraries() {
   } as ReturnType<typeof librariesQueries.useProcessingLibrariesQuery>);
 }
 
+/** How long the rules draft must stay unchanged before the preview runs again. */
+const RERUN_PAUSE_MS = 700;
+
 afterEach(() => {
   vi.restoreAllMocks();
+  useRealClock();
 });
 
 it("stays collapsed until the operator opens it", () => {
@@ -205,6 +214,7 @@ it("offers a folder browser when the file is anywhere on the machine", () => {
 });
 
 it("re-runs automatically a moment after the rules draft changes", async () => {
+  useFakeClock();
   stubLibraries();
   const preview = vi
     .spyOn(rulesPreviewApi, "previewProcessingRules")
@@ -225,9 +235,10 @@ it("re-runs automatically a moment after the rules draft changes", async () => {
     <RulesPreviewPanel rules={{ ...rules, primary_audio_lang: "jpn" }} />,
   );
 
-  await waitFor(() => expect(preview).toHaveBeenCalledTimes(2), {
-    timeout: 3000,
-  });
+  await elapse(RERUN_PAUSE_MS - 1);
+  expect(preview).toHaveBeenCalledTimes(1);
+  await elapse(1);
+  expect(preview).toHaveBeenCalledTimes(2);
   expect(preview.mock.calls[1][0]).toEqual(
     expect.objectContaining({ rules: { ...rules, primary_audio_lang: "jpn" } }),
   );

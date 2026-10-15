@@ -20,6 +20,13 @@ public static class WeirOptionsLoader
         "WEIR_LIBRARY_SWAP_HOLD_AT is a setting for tests only. Set on a real install it would stop every library clean part-way through, " +
         "so Weir will not start while it is set. Remove it and start Weir again.";
 
+    public const string PeriodicTaskSpeedUpInProductionMessage =
+        "WEIR_PERIODIC_TASK_SPEEDUP is a setting for tests only. Set on a real install it would make every scheduled task run far more often than it should, " +
+        "so Weir will not start while it is set. Remove it and start Weir again.";
+
+    /// <summary>The most a test may shorten the periodic tasks' intervals by.</summary>
+    public const int MaxPeriodicTaskSpeedUp = 1000;
+
     private const int SevenDaysSeconds = 7 * 24 * 3600;
     private const int ThirtyDaysSeconds = 30 * 24 * 3600;
 
@@ -77,6 +84,13 @@ public static class WeirOptionsLoader
         if (librarySwapHoldAt is not null && env == "production")
         {
             throw new WeirConfigurationException(LibrarySwapHoldInProductionMessage);
+        }
+
+        // Another test seam, refused in production for the same reason.
+        var periodicTaskSpeedUp = (int)Math.Clamp(EnvInt(runtime, "WEIR_PERIODIC_TASK_SPEEDUP", 1), 1L, MaxPeriodicTaskSpeedUp);
+        if (periodicTaskSpeedUp > 1 && env == "production")
+        {
+            throw new WeirConfigurationException(PeriodicTaskSpeedUpInProductionMessage);
         }
 
         var trustedProxyIps = ParseCsv(runtime.Get("WEIR_TRUSTED_PROXY_IPS"));
@@ -149,6 +163,7 @@ public static class WeirOptionsLoader
             ProcessingWatcherEnabled = watcherEnabled,
             SqliteBusyTimeoutSeconds = ClampSqliteBusyTimeoutSeconds(EnvInt(runtime, "WEIR_SQLITE_BUSY_TIMEOUT_SECONDS", WeirOptions.DefaultSqliteBusyTimeoutSeconds)),
             LibrarySwapHoldAt = librarySwapHoldAt,
+            PeriodicTaskSpeedUp = periodicTaskSpeedUp,
             ManagerWorkflowSyncEnabled = EnvBool(runtime, "WEIR_MEDIA_MANAGER_WORKFLOW_SYNC_ENABLED", true),
             ProcessingWatcherDebounceSeconds = watcherDebounce,
             ProcessingWatchedFolderRemuxScanDispatchScheduleEnabled = EnvBool(

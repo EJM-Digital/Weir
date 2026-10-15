@@ -62,8 +62,8 @@ internal sealed class ProcessingKeptFilesEndpointHandlers
 
     public async Task<ApiResult> PostProcessAgainAsync(ApiRequest request)
     {
-        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("id", issues);
         var model = new BodyModel(payload, issues);

@@ -292,11 +292,9 @@ jobs:
           cd apps/web
           zip -r "$GITHUB_WORKSPACE/weir-web-dist.zip" dist
 
-      # On push to main ci.yml skips its E2E smoke, so a release proves it here, against this build. Browser tests
-      # retry once (docs/ci-standard.md): the retry step runs only the tests that failed in this first attempt.
+      # On push to main ci.yml skips its E2E smoke, so a release proves it here, against this build. A failed browser
+      # test fails the job; nothing is retried.
       - name: Weir E2E smoke (Playwright + real .NET server)
-        id: e2e
-        continue-on-error: true
         working-directory: apps/server
         env:
           WEIR_E2E: "1"
@@ -304,13 +302,7 @@ jobs:
 
       - name: Summarize E2E smoke results
         if: ${{ !cancelled() }}
-        run: node scripts/summarize-test-results.mjs trx apps/server/tests/Weir.E2E.Tests/TestResults "Browser smoke tests, first attempt"
-
-      - name: Retry the failed E2E tests once
-        if: ${{ steps.e2e.outcome == 'failure' }}
-        env:
-          WEIR_E2E: "1"
-        run: node scripts/retry-failed-tests.mjs apps/server/tests/Weir.E2E.Tests "Browser smoke tests, retry"
+        run: node scripts/summarize-test-results.mjs trx apps/server/tests/Weir.E2E.Tests/TestResults "Browser smoke tests"
 
       - name: Upload E2E smoke results
         if: ${{ !cancelled() }}
