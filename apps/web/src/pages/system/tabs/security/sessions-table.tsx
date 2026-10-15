@@ -76,7 +76,11 @@ function SessionRow({
   );
 }
 
-/** The signed-in browsers as a table whose headings sort it and whose columns can be moved. */
+/**
+ * The signed-in browsers as a table whose headings sort it and whose columns can be moved. It sits in the scrolling
+ * wrapper every quiet table has, so a row wider than its panel scrolls inside it instead of running under the panel
+ * beside it.
+ */
 export function SessionsTable({
   sessions,
   columns,
@@ -89,35 +93,37 @@ export function SessionsTable({
   onRevoke: (sessionId: string) => void;
 }) {
   return (
-    <table
-      className="mm-quiet-table mm-sys-table"
-      data-testid="active-sessions"
-      {...columns.tableProps}
-    >
-      <thead>
-        <tr>
-          {columns.order.map((id) => (
-            <SortableColumnHeader
-              key={id}
-              heading={columns.heading(id)}
-              hideLabel={id === "signOut"}
-            />
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {sortRows(sessions, columns.sort, SESSION_SORT_VALUES).map(
-          (session) => (
-            <SessionRow
-              key={session.session_id}
-              session={session}
-              order={columns.order}
-              revoking={revoking}
-              onRevoke={onRevoke}
-            />
-          ),
-        )}
-      </tbody>
-    </table>
+    <div className="mm-quiet-table-wrap">
+      <table
+        className="mm-quiet-table mm-sys-table"
+        data-testid="active-sessions"
+        {...columns.tableProps}
+      >
+        <thead>
+          <tr>
+            {columns.order.map((id) => (
+              <SortableColumnHeader
+                key={id}
+                heading={columns.heading(id)}
+                hideLabel={id === "signOut"}
+              />
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {sortRows(sessions, columns.sort, SESSION_SORT_VALUES).map(
+            (session) => (
+              <SessionRow
+                key={session.session_id}
+                session={session}
+                order={columns.order}
+                revoking={revoking}
+                onRevoke={onRevoke}
+              />
+            ),
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }
