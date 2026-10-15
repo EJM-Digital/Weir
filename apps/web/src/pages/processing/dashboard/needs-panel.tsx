@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import { Panel } from "../../../components/panels/panel";
+import { loadErrorMessage } from "../../../lib/api/error-message";
 import type { ProcessingFile } from "../../../lib/processing/files-api";
 import { classNames } from "../../../lib/ui/class-names";
 import { useProcessingLibrariesQuery } from "../../../lib/processing/libraries-queries";
@@ -136,6 +137,19 @@ function AllClear({ filter }: { filter: Filter }) {
   );
 }
 
+/** Said when the files could not be read: nothing listed is then proof that nothing waits on a person. */
+function ReadFailed({ error }: { error: unknown }) {
+  return (
+    <p
+      className="mm-needs__notice mm-status-text"
+      data-status="broken"
+      role="alert"
+    >
+      {loadErrorMessage(error, "the files that need you")}
+    </p>
+  );
+}
+
 type NeedsPanelProps = {
   /** Narrows the panel to one workflow's files. */
   workflowId?: number | null;
@@ -155,7 +169,7 @@ export function NeedsPanel({
   onOpen,
 }: NeedsPanelProps) {
   const workflows = useProcessingLibrariesQuery().data;
-  const { groups, files } = useNeedsYou(workflowId, filter);
+  const { groups, files, filesError } = useNeedsYou(workflowId, filter);
   const count = files.length;
   const [notice, setNotice] = useState<NeedNotice | null>(null);
   const [listRef, fits] = useFittingRows();
@@ -200,8 +214,11 @@ export function NeedsPanel({
       {/* The host is always there, so its height is watched from the first paint, before there is anything to list. */}
       <div className="mm-needs">
         <div ref={listRef} className="mm-needs__fit">
+          {filesError ? <ReadFailed error={filesError} /> : null}
           {groups.length === 0 ? (
-            <AllClear filter={filter} />
+            filesError ? null : (
+              <AllClear filter={filter} />
+            )
           ) : (
             <div className="mm-needs__list" data-testid="live-needs">
               {groups.map((group) => (

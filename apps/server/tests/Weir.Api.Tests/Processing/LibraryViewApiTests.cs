@@ -29,6 +29,14 @@ public sealed class LibraryViewApiTests
     ]}
     """;
 
+    /// <summary>A show whose one audio track is already marked default, as a file that has been through Weir is.</summary>
+    private const string DefaultAudioShowProbe = """
+    {"streams": [
+      {"index": 0, "codec_type": "video", "codec_name": "h264", "width": 1920, "height": 1080},
+      {"index": 1, "codec_type": "audio", "codec_name": "ac3", "channels": 6, "tags": {"language": "eng"}, "disposition": {"default": 1}}
+    ]}
+    """;
+
     private static string OverviewPath(long libraryId) => $"/api/v1/processing/libraries/{libraryId}/library-overview";
 
     private static string ProblemsPath(long libraryId) => $"/api/v1/processing/libraries/{libraryId}/library-problems";
@@ -458,12 +466,35 @@ public sealed class LibraryViewApiTests
     }
 
     [Fact]
+    public async Task A_choice_that_marks_no_default_audio_on_a_file_with_none_is_queued_to_give_it_one()
+    {
+        var (server, client, libraryId) = await StartAsync();
+        await using var _ = server;
+        await SeedFileAsync(server, libraryId, "/lib/show.mkv", "matches", ShowProbe);
+
+        using var response = await client.PostAsync(
+            CleanPath(libraryId),
+            new
+            {
+                csrf_token = await client.CsrfAsync(),
+                paths = new[] { "/lib/show.mkv" },
+                confirm_final_removal = true,
+                manual_plan = new { keep = new[] { new { index = 0, @default = false, forced = false }, new { index = 1, @default = false, forced = false } }, order = new[] { 0, 1 } },
+            });
+
+        var body = await Json(response);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, body["queued"]!.GetValue<int>());
+    }
+
+    [Fact]
     public async Task A_track_choice_that_cannot_apply_is_refused_rather_than_queued()
     {
         var (server, client, libraryId) = await StartAsync();
         await using var _ = server;
         await SeedFileAsync(server, libraryId, "/lib/film.mkv", "would_change", FilmProbe);
         await SeedFileAsync(server, libraryId, "/lib/show.mkv", "would_change", ShowProbe);
+        await SeedFileAsync(server, libraryId, "/lib/settled.mkv", "would_change", DefaultAudioShowProbe);
         var csrf = await client.CsrfAsync();
 
         // One file at a time: track numbers mean nothing across two files.
@@ -490,9 +521,9 @@ public sealed class LibraryViewApiTests
             new
             {
                 csrf_token = csrf,
-                paths = new[] { "/lib/show.mkv" },
+                paths = new[] { "/lib/settled.mkv" },
                 confirm_final_removal = true,
-                manual_plan = new { keep = new[] { new { index = 0, @default = false, forced = false }, new { index = 1, @default = false, forced = false } }, order = new[] { 0, 1 } },
+                manual_plan = new { keep = new[] { new { index = 0, @default = false, forced = false }, new { index = 1, @default = true, forced = false } }, order = new[] { 0, 1 } },
             });
         Assert.Equal(HttpStatusCode.BadRequest, nothingToDo.StatusCode);
 
