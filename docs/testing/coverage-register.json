@@ -50123,8 +50123,22 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/FileChangingPathsTests.cs",
+          "name": "FileChangingPathsTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/PauseGatesTests.cs",
+          "name": "PauseGatesTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/PausedActionsApiTests.cs",
+          "name": "PausedActionsApiTests"
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ScanWhilePausedTests.cs",
@@ -50141,14 +50155,9 @@
           "name": "PauseTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The pin is by example (scan removal, reject deletion, new file). No test enumerates every code path that can change a media file, so a new one can ship unpaused; maintenance sweeps, work-file sweep, output cleanup under pause are not each shown"
-      },
-      "issue": 1012,
       "audit": {
         "id": "FL-44",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
