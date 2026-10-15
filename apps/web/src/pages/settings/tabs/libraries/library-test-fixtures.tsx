@@ -133,7 +133,7 @@ function answerEditorChecksAsUnavailable() {
 
 /**
  * Lets the folders a test rendered settle so their check starts, without waiting for it in real
- * time. The test must have installed fake timers with `vi.useFakeTimers({ shouldAdvanceTime: true })`.
+ * time. The test must have installed fake timers with `useFakeClock()`.
  */
 export async function settleFolderChecks() {
   await act(async () => {

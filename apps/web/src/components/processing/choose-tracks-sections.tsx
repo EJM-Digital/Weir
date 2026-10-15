@@ -56,7 +56,7 @@ function TrackRow({
             <input
               type="radio"
               name={`choose-tracks-default-${type}`}
-              checked={state?.default ?? false}
+              checked={choice.isDefault(track)}
               disabled={!kept}
               onChange={() => choice.setDefault(type, track.index)}
               aria-label={`Make ${label} the default ${type} track`}

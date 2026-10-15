@@ -7,6 +7,7 @@ import * as managersApi from "../../../../lib/processing/library-managers-api";
 import type { ProcessingManagerSetupItem } from "../../../../lib/processing/library-managers-api";
 import { LibraryManagerSetup } from "./library-manager-setup";
 import { settleFolderChecks } from "./library-test-fixtures";
+import { useFakeClock, useRealClock } from "../../../../test/fake-clock";
 
 function wrapper({ children }: { children: ReactNode }) {
   const qc = new QueryClient({
@@ -62,11 +63,11 @@ function setup(managers: ProcessingManagerSetupItem[]) {
 
 // The folders settle after a debounce; the tests move the clock instead of waiting for it.
 beforeEach(() => {
-  vi.useFakeTimers({ shouldAdvanceTime: true });
+  useFakeClock();
 });
 
 afterEach(() => {
-  vi.useRealTimers();
+  useRealClock();
   vi.restoreAllMocks();
 });
 

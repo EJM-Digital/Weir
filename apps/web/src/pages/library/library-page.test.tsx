@@ -7,7 +7,7 @@ import {
   within,
 } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   LibraryCleanResult,
   LibraryFile,
@@ -21,6 +21,7 @@ import {
 } from "../../components/shell/shell-header-context";
 import { mmActionButtonClass } from "../../lib/ui/mm-control-roles";
 import { LibraryPage } from "./library-page";
+import { elapse, useFakeClock, useRealClock } from "../../test/fake-clock";
 
 const libraries = [
   {
@@ -248,7 +249,12 @@ function settings(over: Partial<LibrarySettings>): LibrarySettings {
   };
 }
 
+/** How long typing must pause before the search is sent. */
+const SEARCH_PAUSE_MS = 300;
+
 describe("LibraryPage", () => {
+  afterEach(useRealClock);
+
   beforeEach(() => {
     localStorage.clear();
     clean.mockReset();
@@ -954,7 +960,8 @@ describe("LibraryPage", () => {
     expect(localStorage.getItem("weir-table:library-files")).toBeNull();
   });
 
-  it("asks the server for what is typed in the header's search", async () => {
+  it("asks the server for what is typed in the header's search once typing pauses", async () => {
+    useFakeClock();
     renderInShell();
 
     fireEvent.change(
@@ -964,9 +971,10 @@ describe("LibraryPage", () => {
       },
     );
 
-    await waitFor(() =>
-      expect(lastFilters.at(-1)).toMatchObject({ q: "harbour" }),
-    );
+    await elapse(SEARCH_PAUSE_MS - 1);
+    expect(lastFilters.at(-1)).not.toHaveProperty("q");
+    await elapse(1);
+    expect(lastFilters.at(-1)).toMatchObject({ q: "harbour" });
   });
 
   it("puts when the library was last checked in the Files card's header, and Check again with the page's buttons", () => {

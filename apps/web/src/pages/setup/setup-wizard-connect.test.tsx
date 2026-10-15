@@ -24,6 +24,7 @@ import type {
 } from "../../lib/processing/library-setup-api";
 import { processingKeys } from "../../lib/processing/query-keys";
 import { settingsKeys } from "../../lib/settings/query-keys";
+import { useFakeClock, useRealClock } from "../../test/fake-clock";
 import { SetupWizardPage } from "./setup-wizard-page";
 import { CEILING, TEST_CEILING_MS } from "./wizard-test-server";
 
@@ -197,6 +198,7 @@ function choose(name: string | RegExp) {
 }
 
 beforeEach(() => {
+  useFakeClock();
   navigateMock.mockReset();
   saveSettingsMock.mockReset().mockResolvedValue({});
   scenario = {
@@ -233,6 +235,7 @@ afterEach(() => {
   // Unmounting first stops the folder check's settle timer, so nothing asks the api once its stubs are gone.
   cleanup();
   vi.restoreAllMocks();
+  useRealClock();
 });
 
 async function foundLibraries() {
