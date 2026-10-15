@@ -1,7 +1,6 @@
 {
   "version": 1,
   "generatedFrom": "the coverage audit of 14 Oct 2026, brought up to date with main at rc.18, plus the inventories of scripts/coverage/inventory.mjs",
-  "gapCeiling": 856,
   "areas": {
     "api": {
       "code": "R",
@@ -1769,14 +1768,104 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/ConnectionNamesTests.cs",
           "name": "ConnectionNamesTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/ConnectionRemovalHandoffTests.cs",
+          "name": "ConnectionRemovalHandoffTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/ConnectionRemovalTests.cs",
+          "name": "ConnectionRemovalTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/ConnectionRemovalApiTests.cs",
+          "name": "ConnectionRemovalApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ConnectionRemovalBlockersTests.cs",
+          "name": "ConnectionRemovalBlockersTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/ConnectionLinksAreKeptMigrationTests.cs",
+          "name": "ConnectionLinksAreKeptMigrationTests"
         }
       ],
-      "issue": 1068,
       "covers": [
         "route:DELETE /api/v1/media-managers/connections/{connection_id}"
       ],
       "audit": {
         "id": "R-044",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "api.media-managers.post-media-managers-connections-connection-id-unlink-workflows",
+      "area": "api",
+      "behaviour": "POST /api/v1/media-managers/connections/{connection_id}/unlink-workflows",
+      "kind": "API route",
+      "severity": "high",
+      "touches": "other-app",
+      "required": "real",
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/ConnectionRemovalHandoffTests.cs",
+          "name": "ConnectionRemovalHandoffTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/ConnectionRemovalTests.cs",
+          "name": "ConnectionRemovalTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/ConnectionRemovalApiTests.cs",
+          "name": "ConnectionRemovalApiTests"
+        }
+      ],
+      "covers": [
+        "route:POST /api/v1/media-managers/connections/{connection_id}/unlink-workflows"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "api.media-managers.post-media-managers-connections-connection-id-give-up-reports",
+      "area": "api",
+      "behaviour": "POST /api/v1/media-managers/connections/{connection_id}/give-up-reports",
+      "kind": "API route",
+      "severity": "high",
+      "touches": "other-app",
+      "required": "real",
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/ConnectionRemovalHandoffTests.cs",
+          "name": "ConnectionRemovalHandoffTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/ConnectionRemovalApiTests.cs",
+          "name": "ConnectionRemovalApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ConnectionRemovalBlockersTests.cs",
+          "name": "GivenUpReportsTests"
+        }
+      ],
+      "covers": [
+        "route:POST /api/v1/media-managers/connections/{connection_id}/give-up-reports"
+      ],
+      "audit": {
+        "id": "inventory",
         "verdict": "Covered"
       }
     },
@@ -1808,9 +1897,13 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
           "name": "A_generated_secret_is_shown_once_and_the_webhook_then_enforces_it_for_that_manager_only"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedWebhookSecretTests.cs",
+          "name": "RecordedWebhookSecretTests"
         }
       ],
-      "issue": 1068,
       "covers": [
         "route:POST /api/v1/media-managers/connections/{connection_id}/webhook-secret"
       ],
@@ -2163,9 +2256,28 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
           "name": "Cancelling_a_hand_offs_job_on_the_jobs_screen_tells_the_manager_it_is_cancelled"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "Stop_waiting_cancels_a_queued_hand_off_with_a_204_and_the_work_is_never_done"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "A_hand_off_waiting_for_its_turn_is_cancelled_with_a_204_and_never_worked"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "An_import_from_the_watched_folder_releases_Weirs_copy_and_leaves_the_watched_folder_alone"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffCancelTests.cs",
+          "name": "A_hand_off_Weir_is_working_on_is_refused_as_recorded_for_a_finished_one_and_the_pass_carries_on"
         }
       ],
-      "issue": 1068,
       "covers": [
         "route:DELETE /api/v1/intake/handoffs/{source_key}/{handoff_id}"
       ],
@@ -12964,9 +13076,13 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Http/RequestBodyLimitsTests.cs",
           "name": "RequestBodyLimitsTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedWebhookSecretTests.cs",
+          "name": "RecordedWebhookSecretTests"
         }
       ],
-      "issue": 1068,
       "covers": [
         "setting:env:WEIR_MEDIA_MANAGER_WEBHOOK_SECRET"
       ],
@@ -44814,7 +44930,7 @@
       "proofs": [],
       "needs": {
         "kind": "xunit",
-        "test": "`TrayLog` has no test of its own. The VM's log check parses the timestamp with a regex; a line that does not match gets `At = MinValue` and is dropped by the `-ge $Since` filter in the Deluno-phase \"logs-clean\" check, hiding real problems. The log is append-only with no size cap (the server-host log has one). Needs tray-unit tests pinning the format against the scenario regex, the unwritable-log fallback, and a size/rotation decision."
+        "test": "`TrayLog` has no test of its own. The VM's log check (the end of every scenario) tells the tray's trouble lines apart by their text, and reads the time with a regex that a different line format would not match. The log is append-only with no size cap (the server-host log has one). Needs tray-unit tests pinning the format against the scenario regex, the unwritable-log fallback, and a size/rotation decision."
       },
       "issue": 1044,
       "audit": {
@@ -45120,9 +45236,28 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
           "name": "Cancelling_a_hand_offs_job_on_the_jobs_screen_tells_the_manager_it_is_cancelled"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "Stop_waiting_cancels_a_queued_hand_off_with_a_204_and_the_work_is_never_done"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "A_hand_off_waiting_for_its_turn_is_cancelled_with_a_204_and_never_worked"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "An_import_from_the_watched_folder_releases_Weirs_copy_and_leaves_the_watched_folder_alone"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffCancelTests.cs",
+          "name": "A_hand_off_Weir_is_working_on_is_refused_as_recorded_for_a_finished_one_and_the_pass_carries_on"
         }
       ],
-      "issue": 1068,
       "audit": {
         "id": "INT-DEL-05",
         "verdict": "Covered"
@@ -47386,7 +47521,7 @@
         {
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
-          "name": "logs-clean"
+          "name": "weir-only-film"
         }
       ],
       "audit": {
@@ -49166,7 +49301,7 @@
     {
       "id": "file-lifecycle.file-lifecycle.a-workflow-linked-to-deluno-is-processed-only-from",
       "area": "file-lifecycle",
-      "behaviour": "A workflow linked to Deluno is processed only from Deluno's hand-off: no scan queued for it by timer, folder watcher, save, \"scan now\" or \"process again\" (refused with the sentence); a scan job that runs anyway stops; a failed hand-off retries itself",
+      "behaviour": "A workflow linked to Deluno is processed only from Deluno's hand-off: no scan queued for it by timer, folder watcher, save, \"scan now\" or \"process again\" (refused with the sentence)",
       "kind": "file-lifecycle",
       "severity": "high",
       "touches": "other-app",
@@ -49177,6 +49312,37 @@
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/LinkedWorkflowOriginalsTests.cs",
           "name": "A_deluno_workflow_is_not_processed_by_its_own_scan_but_is_by_the_hand_off_and_its_originals_stay"
         },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/LinkedOriginalsTests.cs",
+          "name": "A_deluno_workflow_is_only_processed_from_the_hand_off_and_nothing_is_removed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingRejectedFilesApiTests.cs",
+          "name": "ProcessingRejectedFilesApiTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoOnlyWorkflowTests.cs",
+          "name": "Saving_the_watcher_the_timer_scan_now_and_process_again_all_leave_a_download_Deluno_has_not_handed_over_alone_and_the_hand_off_is_processed"
+        }
+      ],
+      "audit": {
+        "id": "FL-39",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "file-lifecycle.file-lifecycle.a-scan-job-that-runs-for-a-deluno-linked-workflow-stops-and-a-failed",
+      "area": "file-lifecycle",
+      "behaviour": "A scan job that runs anyway for a workflow linked to Deluno stops without queueing work, and a failed hand-off of that workflow retries itself",
+      "kind": "file-lifecycle",
+      "severity": "high",
+      "touches": "other-app",
+      "required": "real",
+      "proofs": [],
+      "partial": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanHandedOffTests.cs",
@@ -49194,20 +49360,14 @@
         },
         {
           "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Processing/LinkedOriginalsTests.cs",
-          "name": "A_deluno_workflow_is_only_processed_from_the_hand_off_and_nothing_is_removed"
-        },
-        {
-          "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/HandoffRetryCorrectnessTests.cs",
           "name": "HandoffRetryCorrectnessTests"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingRejectedFilesApiTests.cs",
-          "name": "ProcessingRejectedFilesApiTests"
         }
       ],
+      "needs": {
+        "kind": "recording-replay",
+        "test": "No test replays Deluno's recorded hand-off through a scan job that runs anyway, or through a failed pass that retries itself; the existing tests use Weir's own fake Deluno (the recorded world has no retry driver)"
+      },
       "issue": 1068,
       "audit": {
         "id": "FL-39",
@@ -49398,6 +49558,46 @@
       }
     },
     {
+      "id": "file-lifecycle.file-lifecycle.a-connection-a-workflow-still-comes-from-is-not-removed",
+      "area": "file-lifecycle",
+      "behaviour": "A media manager connection that a workflow still comes from, that has a hand-off in progress, or that Weir still owes a report is not removed (409 connection_in_use, naming them); unlinking the workflows switches off any that no manager feeds, giving up on the owed reports drops them and records them in Activity, and no step nor the removal touches a folder or file",
+      "kind": "file-lifecycle",
+      "severity": "high",
+      "touches": "other-app",
+      "required": "real",
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/ConnectionRemovalHandoffTests.cs",
+          "name": "ConnectionRemovalHandoffTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/ConnectionRemovalTests.cs",
+          "name": "ConnectionRemovalTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/ConnectionRemovalApiTests.cs",
+          "name": "ConnectionRemovalApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ConnectionRemovalBlockersTests.cs",
+          "name": "ConnectionRemovalBlockersTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/ConnectionLinksAreKeptMigrationTests.cs",
+          "name": "ConnectionLinksAreKeptMigrationTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
       "id": "scenarios.update.update-over-installed-weir",
       "area": "scenarios",
       "behaviour": "Golden-VM scenario update-over-installed-weir (An update over the Weir Deluno installed) runs on its own, on a machine in the state it needs",
@@ -49573,35 +49773,6 @@
       }
     },
     {
-      "id": "scenarios.withdeluno.logs-clean-deluno",
-      "area": "scenarios",
-      "behaviour": "Golden-VM scenario logs-clean-deluno (Logs with no unexpected warnings, with Deluno) runs on its own, on a machine in the state it needs",
-      "kind": "install-update",
-      "severity": "medium",
-      "touches": "other-app",
-      "required": "inproc",
-      "proofs": [],
-      "partial": [
-        {
-          "type": "scenario",
-          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
-          "name": "logs-clean-deluno"
-        }
-      ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
-      },
-      "issue": 982,
-      "covers": [
-        "scenario:logs-clean-deluno"
-      ],
-      "audit": {
-        "id": "SUITE logs-clean-deluno",
-        "verdict": "Partly"
-      }
-    },
-    {
       "id": "scenarios.fresh.fresh-install",
       "area": "scenarios",
       "behaviour": "Golden-VM scenario fresh-install (Fresh install) runs on its own, on a machine in the state it needs",
@@ -49647,7 +49818,7 @@
       ],
       "needs": {
         "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
+        "test": "Built to run alone (`-Scenarios first-visit-account`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
       "issue": 981,
       "covers": [
@@ -49677,7 +49848,7 @@
       ],
       "needs": {
         "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
+        "test": "Built to run alone (`-Scenarios weir-only-film`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
       "issue": 981,
       "covers": [
@@ -49707,7 +49878,7 @@
       ],
       "needs": {
         "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
+        "test": "Built to run alone (`-Scenarios process-again`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
       "issue": 981,
       "covers": [
@@ -49737,7 +49908,7 @@
       ],
       "needs": {
         "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
+        "test": "Built to run alone (`-Scenarios pause-resume`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
       "issue": 981,
       "covers": [
@@ -49767,7 +49938,7 @@
       ],
       "needs": {
         "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
+        "test": "Built to run alone (`-Scenarios deleted-queued-file`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
       "issue": 981,
       "covers": [
@@ -49810,36 +49981,6 @@
       "vm": true
     },
     {
-      "id": "scenarios.fresh.logs-clean",
-      "area": "scenarios",
-      "behaviour": "Golden-VM scenario logs-clean (Logs with no unexpected warnings) runs on its own, on a machine in the state it needs",
-      "kind": "install-update",
-      "severity": "medium",
-      "touches": "install",
-      "required": "inproc",
-      "proofs": [],
-      "partial": [
-        {
-          "type": "scenario",
-          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
-          "name": "logs-clean"
-        }
-      ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
-      },
-      "issue": 981,
-      "covers": [
-        "scenario:logs-clean"
-      ],
-      "audit": {
-        "id": "SUITE logs-clean",
-        "verdict": "Partly"
-      },
-      "vm": true
-    },
-    {
       "id": "scenarios.orchestrator.pick-one-scenario-by-name",
       "area": "scenarios",
       "behaviour": "The scenario orchestrator runs one scenario picked by name, not only whole phases",
@@ -49847,15 +49988,31 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "The orchestrator selects only whole phases with -Phases; it has no way to pick one scenario."
-      },
-      "issue": 981,
+      "proofs": [
+        {
+          "type": "node",
+          "file": "scripts/scenarios.test.mjs",
+          "name": "every scenario can be chosen alone: -WhatIf lists that scenario only, in its own phase, and sets no status"
+        },
+        {
+          "type": "node",
+          "file": "scripts/scenarios.test.mjs",
+          "name": "-Scenarios chooses several scenarios across phases, and -Phases may only name phases they are in"
+        },
+        {
+          "type": "node",
+          "file": "scripts/scenarios.test.mjs",
+          "name": "a mistyped scenario id is refused before anything is touched, naming the nearest ids"
+        },
+        {
+          "type": "node",
+          "file": "scripts/scenarios.test.mjs",
+          "name": "no scenario names another, calls another, or reads state another left: each one makes its own"
+        }
+      ],
       "audit": {
         "id": "SUITE orchestrator",
-        "verdict": "Gap"
+        "verdict": "Covered"
       },
       "vm": true
     },
@@ -51622,6 +51779,133 @@
       ],
       "covers": [
         "action:apps/web/src/pages/settings/tabs/media-managers/connection-card.tsx#media-manager-remove"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-settings-tabs-media-managers-remove-connection-dialog.media-manager-in-use-keep",
+      "area": "web-routes",
+      "behaviour": "Keep it, in the list of what still needs a media manager connection, closes it and changes nothing",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "leaves everything as it is when the person keeps the connection"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "lists the workflows and offers the two steps, and changes nothing until one is chosen"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.tsx#media-manager-in-use-keep"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-settings-tabs-media-managers-remove-connection-dialog.media-manager-in-use-unlink",
+      "area": "web-routes",
+      "behaviour": "Unlink the workflows leaves them as they are, says so, and asks again before removing the connection",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "unlinks the workflows when chosen, says so, and asks again before removing anything"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "says why the workflows could not be unlinked"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "offers neither step while a hand-off is in progress"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.tsx#media-manager-in-use-unlink"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-settings-tabs-media-managers-remove-connection-dialog.media-manager-in-use-remove-workflows",
+      "area": "web-routes",
+      "behaviour": "Remove the workflows removes them one after another, says the folders were not touched, and asks again before removing the connection",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "removes the workflows one after another when chosen, says the folders were not touched, and asks again"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "says why a workflow could not be removed and stops there"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.tsx#media-manager-in-use-remove-workflows"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-settings-tabs-media-managers-remove-connection-dialog.media-manager-in-use-give-up-reports",
+      "area": "web-routes",
+      "behaviour": "Give up on the reports still owed, in the list of what still needs a media manager connection, drops them, says so, and asks again before removing the connection",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "gives up on the reports when chosen, says so, and asks again before removing anything"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "names a single owed report in the singular"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "says why the reports could not be given up"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
+          "name": "lists the owed reports beside the workflows and offers to give up on them as its own step"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.tsx#media-manager-in-use-give-up-reports"
       ],
       "audit": {
         "id": "inventory",
@@ -53424,6 +53708,39 @@
       ],
       "covers": [
         "event:processing.handoff_cancelled"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "events.processing.processing-handoff-reports-dropped",
+      "area": "events",
+      "behaviour": "Weir records \"Reports to your media manager given up\" in Activity, naming the reports dropped (processing.handoff_reports_dropped)",
+      "kind": "event",
+      "severity": "low",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/ConnectionRemovalHandoffTests.cs",
+          "name": "ConnectionRemovalHandoffTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/ConnectionRemovalApiTests.cs",
+          "name": "ConnectionRemovalApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ConnectionRemovalBlockersTests.cs",
+          "name": "GivenUpReportsTests"
+        }
+      ],
+      "covers": [
+        "event:processing.handoff_reports_dropped"
       ],
       "audit": {
         "id": "inventory",

@@ -11,6 +11,11 @@
 
     Every scenario is required. A scenario whose preconditions are not met is recorded `not-applicable` with the reason, and a
     record with any not-applicable scenario sets no success status: a release cannot pass without the real-Deluno scenarios.
+
+    Every scenario runs alone (Invoke-WeirScenarios.ps1 -Scenarios <id>): it makes what it needs itself and reads nothing an
+    earlier scenario left. The Fresh scenarios start from Initialize-FreshScenario (the build under test installed and running, an
+    account the run holds, workflows named for the run); every scenario ends by checking that the logs gained no unexpected warning
+    or error since it began, so there is no scenario of its own for the logs.
 #>
 
 $ScenarioCatalog = @(
@@ -51,12 +56,6 @@ $ScenarioCatalog = @(
         Passes = 'No outcome is pending, refused, never received or given up on, except a hand-off that handed no file back (Weir was down for it), which Deluno closes as not-imported and given-up with nothing owed and says so; for every hand-off the build under test took and Deluno delivered, imported on one side is imported on the other, and not-imported on one is not-imported on the other.'
     }
     [pscustomobject]@{
-        Id = 'logs-clean-deluno'; Phase = 'WithDeluno'; Required = $true
-        Title = 'Logs with no unexpected warnings, with Deluno'
-        Does = 'Reads System > Logs, Weir''s server log file and the tray log for warnings and errors since this phase began.'
-        Passes = 'None is unexplained: the only ones are ones this run caused on purpose and names.'
-    }
-    [pscustomobject]@{
         Id = 'fresh-install'; Phase = 'Fresh'; Required = $true
         Title = 'Fresh install'
         Does = 'Runs Weir-win-Setup.exe --silent on the clean machine, as another program installing Weir does, then starts the installed Weir.exe --port 9347 --silent.'
@@ -65,43 +64,37 @@ $ScenarioCatalog = @(
     [pscustomobject]@{
         Id = 'first-visit-account'; Phase = 'Fresh'; Required = $true
         Title = 'First visit and account creation'
-        Does = 'Opens Weir in a brand-new Microsoft Edge profile (headless) before any account exists, creates the account through Weir''s API, then opens Weir again in another brand-new profile, and signs in.'
+        Does = 'Starts the installed Weir with no account (setting it back to none when it has one), opens it in a brand-new Microsoft Edge profile (headless), creates the account through Weir''s API, then opens Weir again in another brand-new profile, and signs in.'
         Passes = 'The first page is account creation and the second is the sign-in page; neither ever says a session expired; the new account signs in and Weir knows who it is.'
     }
     [pscustomobject]@{
         Id = 'weir-only-film'; Phase = 'Fresh'; Required = $true
         Title = 'A film dropped into a Weir-only workflow'
-        Does = 'Makes a small film (video, three audio languages, two subtitle tracks, an .nfo beside it), makes a workflow with no manager over folders of its own, drops the release into its watched folder and asks Weir to look.'
+        Does = 'Starts the installed Weir and signs in (creating the account when it offers to), makes a small film (video, three audio languages, two subtitle tracks, an .nfo beside it), makes a workflow with no manager over folders of its own, drops the release into its watched folder and asks Weir to look.'
         Passes = 'Weir cleans the film: the cleaned file is in the output folder with the video and the English audio kept and the other audio and the subtitles removed, and is smaller; the original and its .nfo are still where they were; Activity says it was processed.'
     }
     [pscustomobject]@{
         Id = 'process-again'; Phase = 'Fresh'; Required = $true
         Title = 'Process again'
-        Does = 'Asks Weir to process the film it has already cleaned again, as Process again does in the file''s drawer.'
+        Does = 'Starts the installed Weir and signs in (creating the account when it offers to), has Weir clean a film in a workflow of its own, then asks Weir to process that film again, as Process again does in the file''s drawer.'
         Passes = 'The answer says Weir already cleaned this file and skipped it; Activity gets a "Skipped: already done" line; the output is not rewritten and no second job is made.'
     }
     [pscustomobject]@{
         Id = 'pause-resume'; Phase = 'Fresh'; Required = $true
         Title = 'Pause and resume from the tray'
-        Does = 'Writes the tray''s pause-request file to ask Weir to pause until resumed, with "keep looking for new files" on, drops a film into the watched folder during the pause, watches for 20 seconds, then writes the resume request.'
+        Does = 'Starts the installed Weir and signs in (creating the account when it offers to), makes a workflow of its own, writes the tray''s pause-request file to ask Weir to pause until resumed, with "keep looking for new files" on, drops a film into the watched folder during the pause, watches for 20 seconds, then writes the resume request.'
         Passes = 'Weir takes the request and deletes the file; Pause reads paused; Weir finds the film and holds it, and nothing is cleaned, written or removed while paused; after the resume request it is processed once; Activity shows Paused and Resumed by the tray.'
     }
     [pscustomobject]@{
         Id = 'deleted-queued-file'; Phase = 'Fresh'; Required = $true
         Title = 'A deleted file that was waiting'
-        Does = 'Puts a file in a watched folder, lets Weir find it and wait for it to settle, deletes it, and lets Weir look again.'
+        Does = 'Starts the installed Weir and signs in (creating the account when it offers to), makes a workflow of its own, puts a file in its watched folder, lets Weir find it and wait for it to settle, deletes it, and lets Weir look again.'
         Passes = 'Weir says the file is no longer there and stops waiting for it; it is never reported as failed or needing the person, and adds no warning or error to the log.'
     }
     [pscustomobject]@{
         Id = 'update-requests'; Phase = 'Fresh'; Required = $true
         Title = 'The update buttons'
-        Does = 'Presses Check for updates and Download update the way System > About does (their requests to Weir), with the real tray running.'
+        Does = 'Starts the installed Weir and signs in (creating the account when it offers to), then presses Check for updates and Download update the way System > About does (their requests to Weir), with the real tray running.'
         Passes = 'Weir offers the buttons only while the tray is alive; each request leaves its flag file, the tray takes it, and the update state comes to rest with an answer (nothing newer, an update found, or a plain failure message) rather than staying on checking or downloading.'
-    }
-    [pscustomobject]@{
-        Id = 'logs-clean'; Phase = 'Fresh'; Required = $true
-        Title = 'Logs with no unexpected warnings'
-        Does = 'Reads System > Logs for warnings and errors, and the server and tray log files on disk, after everything above.'
-        Passes = 'The only warnings or errors are ones this run caused on purpose and the suite lists by name; none is unexplained.'
     }
 )

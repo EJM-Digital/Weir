@@ -262,3 +262,15 @@ describe("what is set", () => {
     ).toBe(2);
   });
 });
+
+it("asks the server for the text without the white space around it, as the address holds it", () => {
+  const query = logQuery(
+    { ...EMPTY_LOG_FILTERS, text: "  disk full " },
+    NOON,
+    "UTC",
+  );
+  expect(query.q).toBe("disk full");
+  expect(logQuery({ ...EMPTY_LOG_FILTERS, text: "   " }, NOON, "UTC")).toEqual(
+    {},
+  );
+});

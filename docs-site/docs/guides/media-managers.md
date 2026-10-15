@@ -330,6 +330,27 @@ is, so a Deluno-linked workflow relies on Deluno's own per-client lines instead.
 folder Weir can't see from its own computer, for instance a path inside a container or on another
 machine, the line reads **Not verified** rather than **Needs a fix**.
 
+## Removing a connection
+
+Weir will not remove a connection while a workflow still comes from it, a hand-off from it is in progress, or Weir
+still owes it a report. A workflow that comes from a manager keeps its originals and, for Deluno, is fed only by
+Deluno's hand-offs; if the connection simply disappeared, the workflow would become one Weir feeds itself, scan its
+folder, and could remove files the download client is still seeding. So Remove asks first and, when something is in the
+way, says what, in words like "Movies and TV Shows still come from this Deluno", and changes nothing.
+
+You then choose, as separate steps:
+
+- **Unlink the workflows.** They stay, with all their settings and folders. A workflow that no manager feeds any more is
+  switched off, so it does nothing until you decide what it does next (edit it and switch it on, link it to another
+  manager, or remove it).
+- **Remove the workflows first.** Each is removed on its own, with its folders and files left exactly as they are.
+- **Give up on the reports still owed.** A report is owed when Weir finished a hand-off while the manager was not answering. It is
+  sent once the manager answers; if it never comes back, give up on the reports and Weir stops waiting. Nothing is sent, and
+  Activity records which reports were dropped.
+
+A hand-off in progress has to finish, or be cancelled from the jobs list; then Remove goes through. Weir never touches a folder or
+a file when a connection is removed.
+
 ## Anything else
 
 A tool that isn't Deluno, Sonarr or Radarr can still hand files to Weir directly, by posting to its

@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="FsCheck" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <!-- IANA time zone names on Windows, where InvariantGlobalization leaves no ICU to map them (the server does the same). -->
@@ -20,6 +21,9 @@
   <ItemGroup>
     <!-- The names the fake tools and these tests agree on, compiled into both. -->
     <Compile Include="..\Weir.Contract.FakeTools\FakeToolProtocol.cs" Link="Harness\Fakes\FakeToolProtocol.cs" />
+    <!-- The seeded input generators the unit tests use, to build the mutated bodies the fuzz tests send. -->
+    <Compile Include="..\Weir.Core.Tests\TestSupport\PropertyChecks.cs" Link="Harness\Generated\PropertyChecks.cs" />
+    <Compile Include="..\Weir.Core.Tests\TestSupport\PathGenerators.cs" Link="Harness\Generated\PathGenerators.cs" />
   </ItemGroup>
   <ItemGroup>
     <!-- Where the host's build output lands, for ServerBinary to find when WEIR_CONTRACT_SERVER is not set. -->

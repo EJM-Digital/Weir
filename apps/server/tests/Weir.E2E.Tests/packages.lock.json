@@ -56,6 +56,11 @@
         "resolved": "4.0.0",
         "contentHash": "kzLFyBYUnoidpGOXvpNOfIo8C92gVgVR6X8ncHwhcrDYugiOut5rrhDkr0L3cWHd7J2pKXf6LgaeXoBBDlx1ag=="
       },
+      "FSharp.Core": {
+        "type": "Transitive",
+        "resolved": "5.0.2",
+        "contentHash": "DpcajqENgb3VXaHw1FKfVS+TWwEzck1PCajqLwBAVrtd1lfxd7T8JISVZBdV1mX9+2g48+tIgpNaVJWObdMrBw=="
+      },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
         "resolved": "6.0.0",
@@ -162,12 +167,22 @@
       "weir.contract.tests": {
         "type": "Project",
         "dependencies": {
+          "FsCheck": "[3.4.0, )",
           "Microsoft.Data.Sqlite": "[10.0.12, )",
           "Microsoft.NET.Test.Sdk": "[18.10.1, )",
           "TimeZoneConverter": "[7.2.0, )",
           "coverlet.collector": "[10.0.1, )",
           "xunit": "[2.9.3, )",
           "xunit.runner.visualstudio": "[4.0.0, )"
+        }
+      },
+      "FsCheck": {
+        "type": "CentralTransitive",
+        "requested": "[3.4.0, )",
+        "resolved": "3.4.0",
+        "contentHash": "wkWR1DORrKd46W6MEhmS4muo/0kgrtUV/AGW1ohMWemy7WukcRH8T3JjkDpn/daOHk0yVqf0CBvScU17Ab//PA==",
+        "dependencies": {
+          "FSharp.Core": "5.0.2"
         }
       },
       "TimeZoneConverter": {

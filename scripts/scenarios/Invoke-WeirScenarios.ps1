@@ -43,6 +43,14 @@
         invocation that completes the record.
     It needs `gh` signed in with the right to write statuses. -NoStatus keeps the record and sets nothing.
 
+    -Scenarios runs only the scenarios named (their ids, comma separated; * and ? stand for any text), each on its own, after the
+    owner's rule that a bug found by one scenario re-runs that scenario and no other. A scenario makes what it needs itself (the
+    build under test installed and running, an account, a workflow of its own named for the run) and reads nothing an earlier scenario
+    left, so it can be run alone, and again on the same machine. The phases that run are those the chosen scenarios are in, and a
+    Fresh scenario still starts from the restored clean checkpoint. A run of chosen scenarios keeps its record in a folder of its own
+    (the version, the commit and the ids), which lists every other scenario as not chosen, and it never sets the golden-path
+    status: it can never be a pass for the tag, and its exit code says only whether what it ran passed.
+
     -WhatIf lists what the run would do, in order, and the scenarios, and touches no machine.
 
 .PARAMETER RigHost
@@ -61,6 +69,10 @@
 
 .PARAMETER Phases
     Which phases this invocation runs, from Update, WithDeluno and Fresh (always in that order). Default: all three.
+
+.PARAMETER Scenarios
+    Run only these scenarios, by id (comma separated; * and ? stand for any text). A mistyped id is an error naming the nearest ids.
+    With -Phases, only for scenarios inside those phases. Without it, every scenario of the phases runs.
 
 .PARAMETER DelunoUrl
     The Deluno inside the VM (default http://127.0.0.1:7879). No secret is passed to the VM or carried between sessions.
@@ -91,6 +103,7 @@ param(
     [Parameter(Mandatory)] [string] $Version,
     [Parameter(Mandatory)] [ValidatePattern('^[0-9a-f]{40}$')] [string] $CommitSha,
     [string[]] $Phases = @('Update', 'WithDeluno', 'Fresh'),
+    [string[]] $Scenarios = @(),
     [string] $Repository = 'jampat000/Weir',
     [string] $VmName = 'Deluno-GoldenPath',
     [string] $Checkpoint = 'clean',
@@ -124,40 +137,59 @@ $unknown = @($requested | Where-Object { $allPhases -notcontains $_ })
 if ($unknown.Count -gt 0 -or $requested.Count -eq 0) { throw "-Phases takes any of $($allPhases -join ', '); it was given '$($unknown -join ', ')'." }
 $phases = @($allPhases | Where-Object { $requested -contains $_ })
 
+# -Scenarios: some scenarios only, each on its own. The phases that run are those they are in; -Phases, when given, may not leave one out.
+$chosen = @(Resolve-ScenarioSelection -Requested $Scenarios -Catalog $ScenarioCatalog)
+$subset = $chosen.Count -gt 0
+$inRun = @($ScenarioCatalog)
+if ($subset) {
+    $inRun = @($ScenarioCatalog | Where-Object { $chosen -contains $_.Id })
+    if ($PSBoundParameters.ContainsKey('Phases')) {
+        $outside = @($inRun | Where-Object { $phases -notcontains $_.Phase })
+        if ($outside.Count -gt 0) { throw "-Scenarios names $((@($outside | ForEach-Object { "$($_.Id) (phase $($_.Phase))" })) -join ', '), outside -Phases $($phases -join ', ')." }
+    }
+    $phases = @($allPhases | Where-Object { @($inRun | ForEach-Object { $_.Phase }) -contains $_ })
+    $tag = ($chosen -join '+')
+    $runFolder = "$runFolder-only-$($tag.Substring(0, [Math]::Min(80, $tag.Length)))"
+}
+
 if ($WhatIfPreference) {
     Write-Host "WhatIf: nothing below is done. No machine is touched, no file is written, no status is set."
     Write-Host "Build under test: $Version, commit $CommitSha (the installed build must report +$shortSha), installer $InstallerPath"
-    Write-Host "Phases in this invocation: $($phases -join ', ')$(if ($phases.Count -lt $allPhases.Count) { " (the others are left to another invocation; the record merges what is in $runFolder)" })"
+    if ($subset) { Write-Host "Scenarios chosen: $($chosen -join ', '). Each runs alone. The record goes to its own folder, $runFolder, lists the others as not chosen, and no golden-path status is set: it is never a pass for the tag." }
+    Write-Host "Phases in this invocation: $($phases -join ', ')$(if (-not $subset -and $phases.Count -lt $allPhases.Count) { " (the others are left to another invocation; the record merges what is in $runFolder)" })"
     foreach ($phase in $phases) {
+        $only = if ($subset) { " -Scenarios $((@($inRun | Where-Object { $_.Phase -eq $phase } | ForEach-Object { $_.Id })) -join ',')" } else { '' }
         Write-Host ""
         if ($phase -eq 'Update') {
             Write-Host "Phase ${phase} (first, NO restore): the VM as Deluno's picker left it - Deluno set up, Weir installed by Deluno's picker (the previous release)."
             Write-Host "  1. On the Hyper-V host ${RigHost}: check VM '$VmName' is running; restore nothing."
             Write-Host "  2. Copy the scenario scripts and the installer$(if ($SourceFilm) { ' and the film' }) into C:\golden\weir (checking their SHA256)."
-            Write-Host "  3. Start Run-WeirScenarios.ps1 -Phase $phase as a one-shot task in the signed-in desktop session; wait up to $PhaseTimeoutMinutes minutes."
+            Write-Host "  3. Start Run-WeirScenarios.ps1 -Phase $phase$only as a one-shot task in the signed-in desktop session; wait up to $PhaseTimeoutMinutes minutes."
             Write-Host "     Inside the VM: Weir's login, if Weir already has an account, is read from $WeirLoginFileInVm and the file deleted (so leave it again before the next invocation). It leaves C:\golden\weir\build-under-test.json, the moment the build under test began answering. Deluno's suite must make its hand-offs after this phase."
         }
         elseif ($phase -eq 'WithDeluno') {
             Write-Host "Phase ${phase} (next, NO restore): the VM exactly as Deluno's suite left it - Deluno set up, its hand-offs made while the build under test was the Weir installed."
             Write-Host "  1. On the Hyper-V host ${RigHost}: check VM '$VmName' is running; restore nothing."
             Write-Host "  2. Copy the scenario scripts and the installer$(if ($SourceFilm) { ' and the film' }) into C:\golden\weir (checking their SHA256)."
-            Write-Host "  3. Start Run-WeirScenarios.ps1 -Phase $phase as a one-shot task in the signed-in desktop session; wait up to $PhaseTimeoutMinutes minutes."
+            Write-Host "  3. Start Run-WeirScenarios.ps1 -Phase $phase$only as a one-shot task in the signed-in desktop session; wait up to $PhaseTimeoutMinutes minutes."
             Write-Host "     Inside the VM: Deluno is looked for at $DelunoUrl; its API key is read from $DelunoKeyFileInVm and the file deleted (else minted on a Deluno with no account, else not-applicable with the reason); Weir's login, if Weir already has an account, from $WeirLoginFileInVm (read, then deleted). No secret is passed or copied."
         }
         else {
             Write-Host "Phase ${phase} (last): the clean machine."
             Write-Host "  1. On the Hyper-V host ${RigHost}: restore checkpoint '$Checkpoint' of VM '$VmName' and start it; wait for PowerShell Direct. (Deluno and the key file are gone.)"
             Write-Host "  2. Copy the scenario scripts and the installer$(if ($SourceFilm) { ' and the film' }) into C:\golden\weir (checking their SHA256)."
-            Write-Host "  3. Start Run-WeirScenarios.ps1 -Phase $phase as a one-shot task in the signed-in desktop session; wait up to $PhaseTimeoutMinutes minutes."
+            Write-Host "  3. Start Run-WeirScenarios.ps1 -Phase $phase$only as a one-shot task in the signed-in desktop session; wait up to $PhaseTimeoutMinutes minutes."
+            Write-Host "     Inside the VM each scenario installs the build under test itself when it is not there, starts it and signs in (creating the account when Weir offers to), so a scenario run alone needs no scenario before it."
         }
         Write-Host "  4. Copy its results, evidence and logs back to $runFolder\$($phase.ToLowerInvariant())."
-        foreach ($entry in $ScenarioCatalog | Where-Object { $_.Phase -eq $phase }) {
+        foreach ($entry in $inRun | Where-Object { $_.Phase -eq $phase }) {
             Write-Host ("     - {0}" -f $entry.Title)
             Write-Host "         does:   $($entry.Does)"
             Write-Host "         passes: $($entry.Passes)"
         }
     }
     Write-Host ""
+    if ($subset) { Write-Host "Then: write $runFolder\scenario-$Version-$shortSha.md, one line per scenario with the ones not chosen listed as such. No golden-path status is set, whatever the result; the exit code says whether the chosen scenarios passed."; return }
     Write-Host "Then: write $runFolder\scenario-$Version-$shortSha.md; set the golden-path status on $CommitSha$(if ($NoStatus) { ' - not with -NoStatus' }): success only if ALL THREE phases passed every scenario; failure if any failed; pending if none failed but some were not applicable (no success without the real-Deluno scenarios); nothing set by an invocation that ran only some of the phases and found no failure."
     return
 }
@@ -270,6 +302,7 @@ function Invoke-Phase([string] $Phase) {
     $arguments = @{ Phase = $Phase; SetupPath = 'C:\golden\weir\candidate\Weir-win-Setup.exe'; Version = $Version; ShortSha = $shortSha
         DelunoUrl = $DelunoUrl; DelunoKeyFileInVm = $DelunoKeyFileInVm; WeirLoginFileInVm = $WeirLoginFileInVm }
     if ($SourceFilm) { $arguments.SourceFilm = Join-Path 'C:\golden\weir\film' (Split-Path $SourceFilm -Leaf) }
+    if ($subset) { $arguments.Scenarios = (@($inRun | Where-Object { $_.Phase -eq $Phase } | ForEach-Object { $_.Id }) -join ',') }
 
     $pairs = foreach ($key in $arguments.Keys) { "-$key '" + ([string]$arguments[$key]).Replace("'", "''") + "'" }
     $wrapper = New-PhaseWrapperText -RunFolder 'C:\golden\weir\run' -RunnerPath 'C:\golden\weir\scripts\Run-WeirScenarios.ps1' -Arguments ($pairs -join ' ')
@@ -379,29 +412,34 @@ foreach ($phase in $allPhases) {
     }
 }
 $facts['Installer'] = $InstallerPath
+if ($subset) { $facts['Scenarios chosen'] = $chosen -join ', ' }
 foreach ($name in $phaseErrors.Keys) { $facts["Cut short ($name)"] = $phaseErrors[$name] }
 $resultArray = $results.ToArray()
 $recordFile = Join-Path $runFolder "scenario-$Version-$shortSha.md"
 $kept = @(Get-ChildItem -LiteralPath $runFolder -Recurse -File | Where-Object { $_.FullName -ne $recordFile } | ForEach-Object { $_.FullName.Substring($runFolder.Length + 1) })
-$leftToAnother = @($allPhases | Where-Object { $_ -notin $phases -and $_ -notin $phasesWithResults })
-Write-ScenarioRecord -Path $recordFile -Catalog $ScenarioCatalog -Results $resultArray -Facts $facts -Files $kept -NotRunPhases $leftToAnother
+$leftToAnother = if ($subset) { @() } else { @($allPhases | Where-Object { $_ -notin $phases -and $_ -notin $phasesWithResults }) }
+$notChosen = @($ScenarioCatalog | Where-Object { $inRun.Id -notcontains $_.Id } | ForEach-Object { $_.Id })
+Write-ScenarioRecord -Path $recordFile -Catalog $ScenarioCatalog -Results $resultArray -Facts $facts -Files $kept -NotRunPhases $leftToAnother -NotChosenIds $notChosen
 Write-Host "Record: $recordFile"
 
 function Get-ResultOf($Entry) { @($resultArray | Where-Object { $_.Id -eq $Entry.Id }) | Select-Object -First 1 }
-$failed = @($ScenarioCatalog | Where-Object { $r = Get-ResultOf $_; -not $r -or $r.Status -eq 'failed' })
+$failed = @($inRun | Where-Object { $r = Get-ResultOf $_; -not $r -or $r.Status -eq 'failed' })
 $failedForSure = @($resultArray | Where-Object { $_.Status -eq 'failed' })
-$notApplicable = @($ScenarioCatalog | Where-Object { $r = Get-ResultOf $_; $r -and $r.Status -eq 'not-applicable' })
+$notApplicable = @($inRun | Where-Object { $r = Get-ResultOf $_; $r -and $r.Status -eq 'not-applicable' })
 $passedCount = @($resultArray | Where-Object Status -eq 'passed').Count
-$total = @($ScenarioCatalog).Count
-$complete = ($phasesWithResults.Count -eq $allPhases.Count)
+$total = @($inRun).Count
+$complete = $subset -or ($phasesWithResults.Count -eq $allPhases.Count)
 $allPassed = ($failed.Count -eq 0) -and ($notApplicable.Count -eq 0) -and ($phaseErrors.Count -eq 0) -and $complete
 # Some phases are for another invocation, and nothing has gone wrong in the ones that ran.
-$partialAndFine = (-not $complete) -and $failedForSure.Count -eq 0 -and $phaseErrors.Count -eq 0
+$partialAndFine = (-not $subset) -and (-not $complete) -and $failedForSure.Count -eq 0 -and $phaseErrors.Count -eq 0
 
 # --- the pass record --------------------------------------------------------------------------------------------------------
 
 if ($NoStatus) {
     Write-Host "-NoStatus: the golden-path status is not set. Result: $passedCount of $total passed, $($failed.Count) failed or missing, $($notApplicable.Count) not applicable."
+}
+elseif ($subset) {
+    Write-Host "A run of chosen scenarios sets no golden-path status and is never a pass for the tag. Result: $passedCount of $total passed, $($failed.Count) failed or missing, $($notApplicable.Count) not applicable."
 }
 elseif (-not $phaseRan -or ($phaseErrors.Count -gt 0 -and $resultArray.Count -eq 0)) {
     Write-Host 'No scenario ran, so there is nothing to record and the golden-path status is left as it was.' -ForegroundColor Yellow

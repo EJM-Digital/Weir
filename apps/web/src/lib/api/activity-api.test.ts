@@ -57,3 +57,12 @@ describe("activity-api paths", () => {
     expect(url.searchParams.has("before_id")).toBe(false);
   });
 });
+
+it("leaves out a number that is not a number instead of asking for NaN", () => {
+  const path = activityRecentPath({
+    library_id: Number.NaN,
+    before_id: Infinity,
+    limit: Number.NaN,
+  });
+  expect(path).toBe("/api/v1/activity/recent");
+});

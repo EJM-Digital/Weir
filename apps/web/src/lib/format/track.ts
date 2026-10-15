@@ -63,11 +63,11 @@ const SUBTITLE_TYPES: Record<string, string> = {
   dvb_subtitle: "DVB image",
 };
 
-const CHANNEL_LAYOUTS: Record<number, string> = {
-  1: "mono",
-  2: "2.0",
-  6: "5.1",
-  8: "7.1",
+const CHANNEL_LAYOUTS: Record<string, string> = {
+  "1": "mono",
+  "2": "2.0",
+  "6": "5.1",
+  "8": "7.1",
 };
 
 const TRACK_KINDS: Record<string, string> = {
@@ -76,32 +76,37 @@ const TRACK_KINDS: Record<string, string> = {
   subtitle: "Subtitle",
 };
 
+/** What a table holds for a key, or nothing: a name every object has (`constructor`, `toString`) is not an entry. */
+function entry<V>(table: Record<string, V>, key: string): V | undefined {
+  return Object.hasOwn(table, key) ? table[key] : undefined;
+}
+
 /** "fre" or "ger" as "French" or "German"; a name the file already spells out is kept as it is. */
 export function languageName(code: string | null | undefined): string {
   const raw = (code ?? "").trim();
   const lower = raw.toLowerCase();
   if (UNDETERMINED.has(lower)) return UNKNOWN_LANGUAGE;
-  const wanted = LANGUAGE_ALIASES[lower] ?? lower;
+  const wanted = entry(LANGUAGE_ALIASES, lower) ?? lower;
   const hit = PROCESSING_STREAM_LANGUAGE_OPTIONS.find((o) => o.code === wanted);
   return hit ? hit.label : raw;
 }
 
 /** A channel count as the layout people know it: 6 is "5.1". */
 export function channelLayout(channels: number): string {
-  return CHANNEL_LAYOUTS[channels] ?? `${channels} channels`;
+  return entry(CHANNEL_LAYOUTS, String(channels)) ?? `${channels} channels`;
 }
 
 export function audioCodecName(codec: string): string {
-  return AUDIO_CODECS[codec.toLowerCase()] ?? codec.toUpperCase();
+  return entry(AUDIO_CODECS, codec.toLowerCase()) ?? codec.toUpperCase();
 }
 
 export function videoCodecName(codec: string): string {
-  return VIDEO_CODECS[codec.toLowerCase()] ?? codec.toUpperCase();
+  return entry(VIDEO_CODECS, codec.toLowerCase()) ?? codec.toUpperCase();
 }
 
 /** "hdmv_pgs_subtitle" as "PGS image": whether it is text or pictures, and which kind. */
 export function subtitleTypeName(codec: string): string {
-  return SUBTITLE_TYPES[codec.toLowerCase()] ?? codec.toUpperCase();
+  return entry(SUBTITLE_TYPES, codec.toLowerCase()) ?? codec.toUpperCase();
 }
 
 /** The facts about a track that its description is built from, whichever API they came from. */
@@ -132,7 +137,7 @@ function formatOf(track: DescribedTrack): string {
  * however many video and subtitle tracks sit before it in the file.
  */
 export function describeTrack(track: DescribedTrack, position: number): string {
-  const kind = TRACK_KINDS[track.type] ?? "Track";
+  const kind = entry(TRACK_KINDS, track.type) ?? "Track";
   const parts = [`${kind} ${position}`];
   if (track.type !== "video") parts.push(languageName(track.language));
   parts.push(formatOf(track));

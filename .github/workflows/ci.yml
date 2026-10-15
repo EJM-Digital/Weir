@@ -251,19 +251,31 @@ jobs:
       - name: The real media tools - pins, installers and the check that every real-tool test ran
         run: node --test scripts/ffmpeg-pin.test.mjs scripts/pinned-download.test.mjs scripts/mkvtoolnix-pin.test.mjs scripts/install-mkvtoolnix-linux.test.mjs scripts/summarize-test-results.test.mjs scripts/check-real-tool-tests.test.mjs
 
-      # The register is read against the code, and against the open coverage issues and the branch a pull request goes into.
+      # The register is read against the code, against the open coverage issues, and against the register as it was before this change:
+      # on a pull request the base commit's, on a push to main the previous commit's. The gaps may not go up from that count
+      # (scripts/check-coverage-register.mjs), so no gap count is kept in the file for pull requests to conflict on.
       - name: Coverage register accounts for everything and has no more gaps
         env:
           GH_TOKEN: ${{ github.token }}
-          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
         run: |
           node --test scripts/check-coverage-register.test.mjs
-          if [ -n "$BASE_REF" ]; then
-            git fetch --depth=1 origin "$BASE_REF"
-            node scripts/check-coverage-register.mjs --gh --base "origin/$BASE_REF"
+          args=(--gh --report)
+          if [ -n "$BEFORE" ] && git fetch --no-tags --depth=1 origin "$BEFORE"; then
+            args+=(--base FETCH_HEAD)
           else
-            node scripts/check-coverage-register.mjs --gh
+            echo "No earlier commit to compare the register with."
           fi
+          node scripts/check-coverage-register.mjs "${args[@]}"
+
+      - name: Upload the coverage register statistics
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-register
+          if-no-files-found: ignore
+          retention-days: 7
+          path: artifacts/coverage-register.md
 
       - name: Docker entrypoint keeps the server's umask
         run: node --test scripts/docker-entrypoint.test.mjs
@@ -661,11 +673,28 @@ jobs:
         with:
           global-json-file: apps/server/global.json
 
-      - name: Download the coverage of every leg that ran
+      # One download per leg, each into its own folder. A pattern that matches a single artifact is unpacked
+      # straight into `path` rather than a folder named after it, so a run where only one leg ran would lose it.
+      - name: Download the server coverage
+        if: needs.changes.outputs.run_server_linux == 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          pattern: coverage-*
+          pattern: coverage-server-*
           path: coverage-input
+
+      - name: Download the tray coverage
+        if: needs.changes.outputs.run_tray == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: coverage-tray
+          path: coverage-input/coverage-tray
+
+      - name: Download the web coverage
+        if: needs.changes.outputs.run_web == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: coverage-web
+          path: coverage-input/coverage-web
 
       - name: Install ReportGenerator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.11

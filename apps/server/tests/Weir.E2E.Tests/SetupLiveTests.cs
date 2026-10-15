@@ -203,8 +203,7 @@ public sealed class SetupLiveTests(E2EServer server) : E2ETestBase(server)
         }
         finally
         {
-            var removed = await client.DeleteWithCsrfBodyAsync($"{Api}/media-managers/connections/{delunoId}");
-            Assert.Equal(HttpStatusCode.NoContent, removed.Status);
+            await ManagerConnections.RemoveAsync(client, delunoId);
         }
 
         await AssertNotReloadedAsync(page);
