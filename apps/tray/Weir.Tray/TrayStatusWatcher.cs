@@ -26,7 +26,7 @@ sealed class TrayStatusWatcher : IDisposable
     private readonly TimeProvider _clock;
     private readonly TimeSpan _retryAfter;
     private readonly FileSystemWatcher? _watcher;
-    private readonly System.Threading.Timer _settle;
+    private readonly ITimer _settle;
     private bool _retried;
     private long? _lastErrorLogged;
 
@@ -57,7 +57,7 @@ sealed class TrayStatusWatcher : IDisposable
         _log = log;
         _clock = clock;
         _retryAfter = retryAfter;
-        _settle = new System.Threading.Timer(_ => Announce());
+        _settle = clock.CreateTimer(_ => Announce(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         if (watchedFolder is null)
         {
             return;

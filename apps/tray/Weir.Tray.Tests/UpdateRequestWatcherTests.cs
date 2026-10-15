@@ -22,9 +22,11 @@ public sealed class UpdateRequestWatcherTests : IDisposable
         _home.Dispose();
     }
 
-    private UpdateRequestWatcher StartWatching()
+    // On the test's clock, the watcher's timers fire only when the test moves it on. A test that needs the file system to tell
+    // the watcher something passes the system clock, and waits for the look with a ceiling.
+    private UpdateRequestWatcher StartWatching(TimeProvider? clock = null)
     {
-        var watcher = new UpdateRequestWatcher(_home.Path, () => _looks.Add(Interlocked.Increment(ref _looked)), _logged.Add, _clock);
+        var watcher = new UpdateRequestWatcher(_home.Path, () => _looks.Add(Interlocked.Increment(ref _looked)), _logged.Add, clock ?? _clock);
         watcher.Start();
         return watcher;
     }
@@ -41,7 +43,7 @@ public sealed class UpdateRequestWatcherTests : IDisposable
     [InlineData("update-apply-now")]
     public void A_flag_the_server_leaves_is_looked_for_once_the_burst_has_settled(string flag)
     {
-        using var watcher = StartWatching();
+        using var watcher = StartWatching(TimeProvider.System);
         NextLook();
 
         File.WriteAllText(Path.Combine(_home.Path, flag), string.Empty);
@@ -66,6 +68,7 @@ public sealed class UpdateRequestWatcherTests : IDisposable
         NextLook();
 
         watcher.OnWatcherError(new InternalBufferOverflowException("Too many changes at once."));
+        _clock.Advance(UpdateRequestWatcher.Settle);
 
         NextLook();
         Assert.Contains("Too many changes at once.", NextLogged(), StringComparison.Ordinal);
@@ -79,6 +82,7 @@ public sealed class UpdateRequestWatcherTests : IDisposable
 
         watcher.OnWatcherError(new IOException("First."));
         watcher.OnWatcherError(new IOException("Second."));
+        _clock.Advance(UpdateRequestWatcher.Settle);
         NextLook();
         Assert.Contains("First.", NextLogged(), StringComparison.Ordinal);
         _clock.Advance(UpdateRequestWatcher.ErrorLogInterval);
@@ -100,7 +104,7 @@ public sealed class UpdateRequestWatcherTests : IDisposable
     [Fact]
     public void A_watcher_that_failed_is_built_again_and_hears_the_next_flag()
     {
-        using var watcher = StartWatching();
+        using var watcher = StartWatching(TimeProvider.System);
         NextLook();
 
         watcher.OnWatcherError(new IOException("The network name is no longer available."));
@@ -125,9 +129,34 @@ public sealed class UpdateRequestWatcherTests : IDisposable
         NextLook();
 
         watcher.OnWatcherError(new IOException("Gone."));
+        _clock.Advance(UpdateRequestWatcher.Settle);
 
         NextLook();
         Assert.Equal((3, 1), (builds, watcher.Rebuilt));
+    }
+
+    [Fact]
+    public void A_watcher_that_still_cannot_be_built_is_tried_again_every_few_seconds()
+    {
+        var builds = 0;
+        using var watcher = new UpdateRequestWatcher(
+            _home.Path,
+            () => _looks.Add(Interlocked.Increment(ref _looked)),
+            _logged.Add,
+            _clock,
+            () => ++builds is 2 or 3 ? throw new IOException("Not now.") : new FileSystemWatcher(_home.Path, "update-*-now"));
+        watcher.Start();
+        NextLook();
+
+        watcher.OnWatcherError(new IOException("Gone."));
+        _clock.Advance(UpdateRequestWatcher.Settle);
+        Assert.Equal((3, 0, 1), (builds, watcher.Rebuilt, Volatile.Read(ref _looked)));
+        _clock.Advance(UpdateRequestWatcher.RebuildRetry - TimeSpan.FromMilliseconds(1));
+        Assert.Equal((3, 0, 1), (builds, watcher.Rebuilt, Volatile.Read(ref _looked)));
+        _clock.Advance(TimeSpan.FromMilliseconds(1));
+
+        NextLook();
+        Assert.Equal((4, 1), (builds, watcher.Rebuilt));
     }
 
     [Fact]

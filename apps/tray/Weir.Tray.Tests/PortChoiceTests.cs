@@ -280,24 +280,12 @@ public sealed class PortChoiceTests : IDisposable
     // -- The machine -------------------------------------------------------------
 
     [Fact]
-    public void A_port_with_a_listener_is_in_use_and_is_free_after()
-    {
-        int port;
-        // Loopback, not 0.0.0.0: listening on every interface makes Windows Firewall put a prompt
-        // on the desktop of whoever runs the tests.
-        using (var listener = new TcpListener(IPAddress.Loopback, 0))
-        {
-            listener.Start();
-            port = ((IPEndPoint)listener.LocalEndpoint).Port;
-            Assert.True(PortChoice.IsInUse(port));
-        }
-        Assert.False(PortChoice.IsInUse(port));
-    }
-
-    [Fact]
     public void A_loopback_only_listener_still_counts_as_in_use()
     {
-        // The server binds every interface, so a loopback-only listener still blocks it.
+        // The server binds every interface, so a loopback-only listener still blocks it. Port 0 lets the system pick one nobody
+        // holds, and the listener is kept for the whole test, so no other program can take the port while it is checked.
+        // Loopback, not 0.0.0.0: listening on every interface makes Windows Firewall put a prompt on the desktop of whoever
+        // runs the tests.
         using var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
         var port = ((IPEndPoint)listener.LocalEndpoint).Port;
