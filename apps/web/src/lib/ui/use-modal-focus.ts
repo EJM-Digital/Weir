@@ -17,6 +17,62 @@ function topOpenLayer(): HTMLElement | undefined {
   return openLayers[openLayers.length - 1];
 }
 
+/** What a layer sets on everything outside it, so it cannot be clicked, tabbed to or read while the layer is open. */
+const INERT = "inert";
+
+/** Marks a sibling of a modal layer that has to keep working while it is open, such as the backdrop that closes it when clicked. */
+export const MODAL_COMPANION_ATTRIBUTE = "data-modal-companion";
+
+/** Elements this code made inert, and how many open layers want each of them inert. */
+const inertHolds = new Map<Element, number>();
+
+/** Whether `element` is now held inert by this code; one that was inert already is somebody else's to free. */
+function holdInert(element: Element): boolean {
+  const holds = inertHolds.get(element);
+  if (holds !== undefined) {
+    inertHolds.set(element, holds + 1);
+    return true;
+  }
+  if (element.hasAttribute(INERT)) return false;
+  element.setAttribute(INERT, "");
+  inertHolds.set(element, 1);
+  return true;
+}
+
+function releaseInert(element: Element): void {
+  const holds = inertHolds.get(element);
+  if (holds === undefined) return;
+  if (holds > 1) {
+    inertHolds.set(element, holds - 1);
+    return;
+  }
+  inertHolds.delete(element);
+  element.removeAttribute(INERT);
+}
+
+/**
+ * Makes everything outside a modal layer inert: at every level from the layer up to the page, each sibling of the branch the layer
+ * sits on, so the side menu, the header and the page behind a dialog are out of reach of the pointer, the keyboard and a screen reader.
+ * The branch itself stays, and so does anything marked {@link MODAL_COMPANION_ATTRIBUTE}. Returns what frees them again.
+ */
+function makeOutsideInert(layer: HTMLElement): () => void {
+  const held: Element[] = [];
+  for (
+    let branch: Element | null = layer.closest("[aria-modal='true']");
+    branch?.parentElement && branch !== document.documentElement;
+    branch = branch.parentElement
+  ) {
+    for (const sibling of Array.from(branch.parentElement.children)) {
+      const skipped =
+        sibling === branch ||
+        sibling.hasAttribute(MODAL_COMPANION_ATTRIBUTE) ||
+        sibling.matches("head, script, style, link, template");
+      if (!skipped && holdInert(sibling)) held.push(sibling);
+    }
+  }
+  return () => held.forEach(releaseInert);
+}
+
 /** Everything Tab can land on. */
 const TABBABLE = [
   "a[href]",
@@ -64,7 +120,8 @@ function keepTabInside(container: HTMLElement, event: KeyboardEvent): void {
  * Keyboard behaviour for anything modal. On open, focus moves to `initialFocus` when given (a
  * confirmation points it at the safe choice), otherwise to the returned ref's element; Tab stays
  * inside while the layer declares `aria-modal`; Escape closes unless `busy`; on close, focus goes back
- * to whatever had it, if that is still on the page. `lockScroll` stops the page behind a slide-over
+ * to whatever had it, if that is still on the page. A layer that declares `aria-modal` also makes everything outside it inert while it is
+ * open (see {@link makeOutsideInert}). `lockScroll` stops the page behind a slide-over
  * from scrolling.
  */
 export function useModalFocus<T extends HTMLElement>({
@@ -95,6 +152,7 @@ export function useModalFocus<T extends HTMLElement>({
     const returnTo = document.activeElement;
     const locksScroll = latest.current.lockScroll;
     openLayers.push(layer);
+    const freeOutside = makeOutsideInert(layer);
     (latest.current.initialFocus?.current ?? target.current)?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (topOpenLayer() !== layer) return;
@@ -111,6 +169,8 @@ export function useModalFocus<T extends HTMLElement>({
       if (index !== -1) openLayers.splice(index, 1);
       document.removeEventListener("keydown", onKey);
       if (locksScroll) document.body.classList.remove("mm-drawer-open");
+      // Freed first: focus cannot return to a button that is still inert.
+      freeOutside();
       if (returnTo instanceof HTMLElement && returnTo.isConnected) {
         returnTo.focus();
       }
