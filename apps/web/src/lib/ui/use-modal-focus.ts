@@ -73,6 +73,29 @@ function makeOutsideInert(layer: HTMLElement): () => void {
   return () => held.forEach(releaseInert);
 }
 
+/**
+ * The last element that took focus anywhere on the page. A button that disables itself while it loads what a dialog shows loses
+ * focus to the page the moment it does, so by the time the dialog opens nothing has focus; this is who had it before.
+ */
+let lastFocused: Element | null = null;
+if (typeof document !== "undefined") {
+  document.addEventListener(
+    "focusin",
+    (event) => {
+      if (event.target instanceof Element) lastFocused = event.target;
+    },
+    true,
+  );
+}
+
+/** Where focus goes back to when a layer closes: the element that had it as the layer opened, or the last one that did. */
+function focusToReturnTo(): Element | null {
+  const active = document.activeElement;
+  const nothingFocused =
+    !active || active === document.body || active === document.documentElement;
+  return nothingFocused ? lastFocused : active;
+}
+
 /** Everything Tab can land on. */
 const TABBABLE = [
   "a[href]",
@@ -149,7 +172,7 @@ export function useModalFocus<T extends HTMLElement>({
   useEffect(() => {
     const layer = target.current;
     if (!open || !layer) return undefined;
-    const returnTo = document.activeElement;
+    const returnTo = focusToReturnTo();
     const locksScroll = latest.current.lockScroll;
     openLayers.push(layer);
     const freeOutside = makeOutsideInert(layer);

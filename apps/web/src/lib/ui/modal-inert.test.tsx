@@ -105,30 +105,32 @@ it("keeps what was inert before inert after the dialog closes", () => {
 });
 
 function Stacked() {
-  const [outer, setOuter] = useState(true);
-  const [inner, setInner] = useState(true);
+  const [first, setFirst] = useState(true);
+  const [second, setSecond] = useState(false);
   return (
     <>
       <nav aria-label="Menu">
         <button type="button">Menu item</button>
       </nav>
       <main>
-        {outer ? (
+        {first ? (
           <ModalDialog
             title="First"
             testId="first"
-            onClose={() => setOuter(false)}
+            onClose={() => setFirst(false)}
           >
-            <button type="button">In first</button>
-            {inner ? (
-              <ModalDialog
-                title="Second"
-                testId="second"
-                onClose={() => setInner(false)}
-              >
-                <button type="button">In second</button>
-              </ModalDialog>
-            ) : null}
+            <button type="button" onClick={() => setSecond(true)}>
+              In first
+            </button>
+          </ModalDialog>
+        ) : null}
+        {second ? (
+          <ModalDialog
+            title="Second"
+            testId="second"
+            onClose={() => setSecond(false)}
+          >
+            <button type="button">In second</button>
           </ModalDialog>
         ) : null}
       </main>
@@ -136,8 +138,10 @@ function Stacked() {
   );
 }
 
-it("keeps the page behind inert until the last of two stacked dialogs has closed, and the first one reachable again after the second", () => {
+it("keeps the page behind inert until the last of two stacked dialogs has closed, and frees the first one when the second closes", () => {
   render(<Stacked />);
+  expect(inert(screen.getByRole("button", { name: "In first" }))).toBe(false);
+  fireEvent.click(screen.getByRole("button", { name: "In first" }));
   expect(inert(screen.getByRole("button", { name: "In first" }))).toBe(true);
   expect(inert(screen.getByRole("button", { name: "In second" }))).toBe(false);
 
@@ -150,4 +154,37 @@ it("keeps the page behind inert until the last of two stacked dialogs has closed
   fireEvent.keyDown(document, { key: "Escape" });
 
   expect(document.querySelector("[inert]")).toBeNull();
+});
+
+it("hands focus back to a button that lost it when it disabled itself while it loaded what the dialog shows", () => {
+  function Loading() {
+    const [open, setOpen] = useState(false);
+    return (
+      <>
+        <button type="button" onClick={() => setOpen(true)}>
+          Open
+        </button>
+        {open ? (
+          <ModalDialog
+            title="Sure?"
+            testId="dialog"
+            onClose={() => setOpen(false)}
+          >
+            <button type="button">Yes</button>
+          </ModalDialog>
+        ) : null}
+      </>
+    );
+  }
+  render(<Loading />);
+  const opener = screen.getByRole("button", { name: "Open" });
+  opener.focus();
+  // A browser takes focus from a button the moment it is disabled, so by the time the dialog opens nothing has it.
+  opener.blur();
+  fireEvent.click(opener);
+
+  fireEvent.keyDown(document, { key: "Escape" });
+
+  expect(screen.queryByTestId("dialog")).not.toBeInTheDocument();
+  expect(opener).toHaveFocus();
 });
