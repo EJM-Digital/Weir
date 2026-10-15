@@ -6509,7 +6509,7 @@
     {
       "id": "services.periodic-tasks.workerwakesignals-a-queued-job-wakes-idle-slots-at-once",
       "area": "services",
-      "behaviour": "WorkerWakeSignals: a queued job wakes the idle slots of the lane that runs it (files or upkeep) at once, never a job that starts later and never other lanes; poll stays as fallback",
+      "behaviour": "WorkerWakeSignals: a queued job wakes the idle slots of the lane that runs it (files or upkeep) at once, never a job that starts later and never other lanes; resuming processing and a held file coming back also wake the slots; poll stays as fallback",
       "kind": "job",
       "severity": "medium",
       "touches": "none",
@@ -6534,6 +6534,16 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/ManualPassWakeApiTests.cs",
           "name": "ManualPassWakeApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/SuitePauseServiceTests.cs",
+          "name": "SuitePauseServiceTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/HeldFileReturnTests.Wake.cs",
+          "name": "HeldFileReturnTests"
         }
       ],
       "audit": {
