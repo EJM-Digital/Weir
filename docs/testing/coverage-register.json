@@ -46887,6 +46887,16 @@
         },
         {
           "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/AwakeDeadlineTests.cs",
+          "name": "AwakeDeadlineTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processes/ProcessRunnerTests.cs",
+          "name": "A_sleep_longer_than_the_idle_limit_while_a_process_runs_does_not_stop_it"
+        },
+        {
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/WriterChoiceTests.cs",
           "name": "WriterChoiceTests"
         },
