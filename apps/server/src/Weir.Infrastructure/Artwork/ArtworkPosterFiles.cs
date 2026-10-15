@@ -8,6 +8,11 @@ public sealed class ArtworkPosterFiles
 {
     private const string TemporarySuffix = ".partial";
 
+    /// <summary>How many times a poster that is open is tried for, and how long the wait between tries is, before the old one is kept.</summary>
+    internal const int ReplaceAttempts = 5;
+
+    internal static readonly TimeSpan ReplaceLookAgainAfter = TimeSpan.FromMilliseconds(200);
+
     private readonly string _directory;
 
     public ArtworkPosterFiles(WeirOptions options)
@@ -16,14 +21,45 @@ public sealed class ArtworkPosterFiles
         _directory = Path.Join(options.WeirHome, "artwork", "posters");
     }
 
-    /// <summary>Store an image. It becomes visible whole or not at all, so a reader never sees half of it.</summary>
-    public async Task WriteAsync(string posterId, byte[] image, CancellationToken cancellationToken)
+    /// <summary>Waits between tries. A test replaces it.</summary>
+    internal Func<TimeSpan, CancellationToken, Task> Pause { get; set; } = (delay, cancellationToken) => Task.Delay(delay, cancellationToken);
+
+    /// <summary>
+    /// Store an image. It becomes visible whole or not at all, so a reader never sees half of it. An image already stored is replaced by
+    /// renaming the new one over it, which Windows refuses while a request is sending the old one; the rename is tried again as the
+    /// request ends. Returns false when the old image stayed open through every try: it is then kept as it was, and the caller tries again
+    /// on its next pass.
+    /// </summary>
+    public async Task<bool> WriteAsync(string posterId, byte[] image, CancellationToken cancellationToken)
     {
         var path = PathFor(posterId);
         Directory.CreateDirectory(_directory);
         var temporary = path + TemporarySuffix;
         await File.WriteAllBytesAsync(temporary, image, cancellationToken).ConfigureAwait(false);
-        File.Move(temporary, path, overwrite: true);
+        try
+        {
+            for (var attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    File.Move(temporary, path, overwrite: true);
+                    return true;
+                }
+                catch (Exception exception) when ((exception is IOException or UnauthorizedAccessException) && File.Exists(path))
+                {
+                    if (attempt == ReplaceAttempts)
+                    {
+                        return false;
+                    }
+                }
+
+                await Pause(ReplaceLookAgainAfter, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            File.Delete(temporary);
+        }
     }
 
     /// <summary>
