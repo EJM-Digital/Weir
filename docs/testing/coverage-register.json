@@ -4334,6 +4334,31 @@
           "name": "The_hardware_report_needs_a_session_and_then_answers"
         },
         {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MediaToolsTests.cs",
+          "name": "An_ffmpeg_starved_of_the_processor_is_not_reported_as_unreachable"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MediaToolsTests.cs",
+          "name": "The_quick_probe_runs_at_normal_priority_with_the_measured_time_limit"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MediaToolsTests.cs",
+          "name": "A_timeout_says_ffmpeg_did_not_answer_in_time_and_offers_another_check"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Media/HardwareAccelerationTests.cs",
+          "name": "A_slow_ffmpeg_says_it_did_not_answer_in_time_and_does_not_blame_the_ask"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processes/ProcessRunnerTests.cs",
+          "name": "A_tool_asked_for_normal_priority_runs_at_normal_priority"
+        },
+        {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/FakesWithServerTests.cs",
           "name": "FakesWithServerTests"
@@ -4763,6 +4788,16 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteApiTests.cs",
           "name": "Media_tools_are_operator_only_and_always_report_both_tools"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MediaToolVersionReportTests.cs",
+          "name": "Both_version_questions_run_at_normal_priority_with_the_measured_time_limit"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MediaToolVersionReportTests.cs",
+          "name": "Tools_starved_of_the_processor_are_not_reported_as_unknown"
         },
         {
           "type": "xunit",
@@ -14294,15 +14329,21 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Either remove the variables from the image or test the validation (exit non-zero on a bad value, log line when set). Stale comment in the script says the OUTPUT trio is also ignored. Layer: unit (node test of the shell script)."
-      },
-      "issue": 1010,
+      "proofs": [
+        {
+          "type": "node",
+          "file": "scripts/docker-entrypoint.test.mjs",
+          "name": "*"
+        },
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "SET-E38",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -14313,31 +14354,30 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "node",
           "file": "scripts/docker-entrypoint.test.mjs",
-          "name": "the credentials secret made on the first start is the one used on the next"
+          "name": "*"
+        },
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
         },
         {
           "type": "node",
-          "file": "scripts/docker-entrypoint.test.mjs",
-          "name": "a credentials secret from the environment wins and no file is made"
+          "file": "scripts/docker-compose-smoke.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P1] Docker is a shipped install path and no suite runs the image: the uid remap, \"refuses PUID 0\", the session-secret generation/length check and WEIR_HOME ownership fix are untested; the VM catalog is Windows-only. Needed: container-level smoke (start image, sign in, restart keeps session, PUID remap changes file ownership) at layer vm/ci."
-      },
-      "issue": 1010,
       "covers": [
         "setting:env:WEIR_PUID",
         "setting:env:WEIR_PGID"
       ],
       "audit": {
         "id": "SET-E39",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -40808,6 +40848,11 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
           "name": "Signing_out_one_session_ends_only_that_session"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
+          "name": "A_sign_out_button_is_never_hidden_under_the_panel_beside_the_list"
         }
       ],
       "audit": {
@@ -47745,15 +47790,21 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "The published arm64 image has never been run by any test; native binaries (SQLite, ffmpeg, mkvmerge) are architecture-specific"
-      },
-      "issue": 1010,
+      "proofs": [
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
+        },
+        {
+          "type": "node",
+          "file": "scripts/docker-compose-smoke.test.mjs",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "PLAT-13",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -47789,22 +47840,26 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "node",
           "file": "scripts/docker-entrypoint.test.mjs",
           "name": "*"
+        },
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
+        },
+        {
+          "type": "node",
+          "file": "scripts/docker-compose-smoke.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "The remap, root refusal, secret persistence across restarts and the chown path are not run; the node test runs the script as a non-root user so the root-only branches are skipped"
-      },
-      "issue": 1010,
       "audit": {
         "id": "PLAT-15",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -49756,8 +49811,7 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/OutputOwnershipTests.cs",
@@ -49767,16 +49821,21 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/LinuxOutputOwnershipToolsRealFilesystemTests.cs",
           "name": "LinuxOutputOwnershipToolsRealFilesystemTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassOutputOwnershipTests.cs",
+          "name": "RemuxPassOutputOwnershipTests"
+        },
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Applied at the publish points through a fake tool; never run in the Docker container with a real PUID/PGID remap and a real chown across users"
-      },
-      "issue": 1010,
       "audit": {
         "id": "FL-29",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {

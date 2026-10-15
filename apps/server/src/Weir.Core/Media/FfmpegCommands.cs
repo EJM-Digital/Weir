@@ -33,8 +33,12 @@ public static class FfmpegCommands
     /// <summary>How much of ffmpeg's stderr a failure message keeps.</summary>
     public const int FfmpegStderrTailBytes = 32 * 1024;
 
-    /// <summary>A double so a timeout message prints it as <c>10.0</c>, as the golden files expect.</summary>
-    public const double HwaccelTimeoutSeconds = 10.0;
+    /// <summary>
+    /// How long a quick, read-only question to a tool (<c>ffmpeg -hwaccels</c>, <c>--version</c>) may take. Measured with
+    /// ffmpeg 9.0.2 at normal priority on a 16-core PC: 1.1 s for the first run after a pause, 0.2 to 0.4 s warm, and 0.5 to
+    /// 1.2 s with twice as many busy processes as cores. The limit is more than ten times the slowest of those.
+    /// </summary>
+    public const double HwaccelTimeoutSeconds = 15.0;
 
     /// <summary>
     /// Restricts every ffprobe/ffmpeg read of a source file to the local-file protocol, placed right before the

@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using Weir.Core.Media;
 using Weir.Infrastructure.Processes;
 
@@ -49,8 +50,9 @@ public sealed partial class MediaTools
     /// Runs one <c>--version</c> argv and reduces whatever happened to a single string. The timeout is
     /// <see cref="FfmpegCommands.HwaccelTimeoutSeconds"/>, the same one
     /// <see cref="DetectAccelerationAsync(string, CancellationToken)"/> uses for the other "ask the tool about
-    /// itself" call: printing a version does no I/O and no decoding, so a tool that has not answered in ten
-    /// seconds is not going to.
+    /// itself" call: printing a version does no I/O and no decoding, so a tool that has not answered in that
+    /// time is not going to. It runs at normal priority, like that call, so a busy machine does not starve it into
+    /// a false "unknown".
     /// </summary>
     private async Task<string> DescribeToolVersionAsync(IReadOnlyList<string> argv, CancellationToken cancellationToken)
     {
@@ -65,6 +67,7 @@ public sealed partial class MediaTools
                     Stdin = ProcessInput.Inherit,
                     Stdout = ProcessOutput.Capture,
                     Stderr = ProcessOutput.Capture,
+                    Priority = ProcessPriorityClass.Normal,
                 },
                 cancellationToken).ConfigureAwait(false);
         }
