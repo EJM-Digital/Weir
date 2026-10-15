@@ -98,7 +98,7 @@ internal sealed class MediaManagerIntakeEndpointHandlers
 
     public async Task<ApiResult> PostWebhookAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
+        var body = await request.ReadAnonymousBodyAsync().ConfigureAwait(false);
         var sourceKey = request.RouteValue("source_key") ?? string.Empty;
         var presented = request.FirstHeader("X-Webhook-Secret");
         var issues = new ValidationIssues();
@@ -225,6 +225,7 @@ internal sealed class MediaManagerIntakeEndpointHandlers
         var key = Source(sourceKey);
         var uow = await request.DbAsync().ConfigureAwait(false);
         var identity = await RefusalsAsApiErrors(() => _intake.RequireSecretAsync(uow, presented, key)).ConfigureAwait(false);
+        request.RefuseOversizedBody();
         var row = await HandoffLedgerStore.FindAsync(uow, key, handoffId).ConfigureAwait(false)
             ?? throw new ApiException(StatusCodes.Status404NotFound, IntakeRules.NeverReceivedDetail);
 
@@ -283,7 +284,7 @@ internal sealed class MediaManagerIntakeEndpointHandlers
     /// </summary>
     public async Task<ApiResult> PostHandoffOutcomeAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
+        var body = await request.ReadAnonymousBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(body, issues);
         var outcome = model.Literal("outcome", HandbackRules.Outcomes);

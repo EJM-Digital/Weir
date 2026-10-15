@@ -58,6 +58,21 @@ if (-not (Test-Path -LiteralPath $ffmpegExe)) {
 if (-not (Test-Path -LiteralPath $ffprobeExe)) {
   throw "Packaged ffprobe executable not found: $ffprobeExe"
 }
+
+# Removes a folder a process that was just stopped may still hold open, trying again until it is gone. The timeout is a
+# hang guard: the removal ends the moment the last handle is released, and a folder that cannot be removed is only left behind.
+function Remove-FolderWhenFree {
+  param(
+    [Parameter(Mandatory)] [string]$Path,
+    [int]$TimeoutSeconds = 10
+  )
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  do {
+    Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction SilentlyContinue
+    if (-not (Test-Path -LiteralPath $Path)) { return }
+    Start-Sleep -Milliseconds 250
+  } while ((Get-Date) -lt $deadline)
+}
 $indexText = Get-Content -LiteralPath $webIndex -Raw
 if ($indexText -notmatch "Weir") {
   throw "Packaged web index does not look like Weir."
@@ -380,8 +395,7 @@ try {
   }
   if ($null -ne $oldHome) { $env:WEIR_HOME = $oldHome } else { Remove-Item Env:\WEIR_HOME -ErrorAction SilentlyContinue }
   if ($null -ne $oldWeirPort) { $env:WEIR_PORT = $oldWeirPort }
-  Start-Sleep -Milliseconds 500
-  Remove-Item -LiteralPath $trayHome -Recurse -Force -ErrorAction SilentlyContinue
+  Remove-FolderWhenFree -Path $trayHome
 }
 
 # --silent (#779): the flag documented in docs/release.md "Installing Weir from another program" for a program
@@ -437,8 +451,7 @@ try {
   }
   if ($null -ne $oldHome) { $env:WEIR_HOME = $oldHome } else { Remove-Item Env:\WEIR_HOME -ErrorAction SilentlyContinue }
   if ($null -ne $oldWeirPort) { $env:WEIR_PORT = $oldWeirPort }
-  Start-Sleep -Milliseconds 500
-  Remove-Item -LiteralPath $silentHome -Recurse -Force -ErrorAction SilentlyContinue
+  Remove-FolderWhenFree -Path $silentHome
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -540,6 +553,22 @@ function Get-InstalledWeirProcesses {
     Where-Object { $_.Path -and $_.Path.StartsWith($InstallDirectory + "\", [System.StringComparison]::OrdinalIgnoreCase) })
 }
 
+# Waits until nothing of the install's is running and returns what is still running when it gives up (nothing, when it is
+# not). The timeout is a hang guard: the wait ends the moment the last process has gone.
+function Wait-ForNoInstalledWeirProcesses {
+  param(
+    [Parameter(Mandatory)] [string]$InstallDirectory,
+    [Parameter(Mandatory)] [int]$TimeoutSeconds
+  )
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  do {
+    $running = Get-InstalledWeirProcesses -InstallDirectory $InstallDirectory
+    if (-not $running) { return @() }
+    Start-Sleep -Milliseconds 250
+  } while ((Get-Date) -lt $deadline)
+  return $running
+}
+
 # Waits for the installed Weir's /ready to answer {"ready": true}.
 function Wait-ForInstalledReady {
   param(
@@ -559,10 +588,13 @@ function Wait-ForInstalledReady {
   throw "$What did not answer /ready on port $ReadyPort within $TimeoutSeconds s."
 }
 
+# Hang guards, not paces: each wait below ends the moment what it waits for has happened, and these are the longest a wait
+# is given on a busy machine before the run is called hung.
 $setupTimeoutSeconds = 120
 $weirHandleTimeoutSeconds = 30
 $installedHealthTimeoutSeconds = 90
 $lanAccessTimeoutSeconds = 90
+$hookExitTimeoutSeconds = 10
 $localAppData = [Environment]::GetFolderPath("LocalApplicationData")
 $installedTrayExe = Join-Path $localAppData "Weir\current\Weir.exe"
 $installedDirectory = Join-Path $localAppData "Weir"
@@ -602,11 +634,11 @@ try {
     throw "Setup.exe --silent did not install Weir.exe at $installedTrayExe."
   }
   # --silent must not launch the app (docs.velopack.io), and a Weir that was not running from the install is not
-  # started again either (#942); give any hook process a moment to exit, then confirm nothing of the install's is
-  # running before this script starts it deliberately below. The earlier smoke steps ran the package folder's tray
-  # and left it marked as running, which a first install must ignore.
-  Start-Sleep -Seconds 2
-  $leftRunning = Get-InstalledWeirProcesses -InstallDirectory $installedDirectory
+  # started again either (#942). Setup has exited and its output is at end-of-file, so every process it started that
+  # held a pipe has gone; a hook process that held none is waited for until it is gone, and anything of the install's
+  # still running then is a Weir that was launched. The earlier smoke steps ran the package folder's tray and left it
+  # marked as running, which a first install must ignore.
+  $leftRunning = Wait-ForNoInstalledWeirProcesses -InstallDirectory $installedDirectory -TimeoutSeconds $hookExitTimeoutSeconds
   if ($leftRunning) {
     throw "Weir-win-Setup.exe --silent left Weir running (pid(s): $($leftRunning.Id -join ', ')); --silent must never launch the app."
   }
