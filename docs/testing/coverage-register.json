@@ -34099,6 +34099,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Activity/SetupDataChangeTests.cs",
           "name": "Choosing_playback_devices_publishes_the_devices_and_not_the_settings"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PlaybackDevicesLiveTests.cs",
+          "name": "A_device_chosen_in_one_browser_is_ticked_in_another_without_a_reload"
         }
       ],
       "audit": {
