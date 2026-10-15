@@ -49,6 +49,7 @@ export const EVENT_LABELS: Record<string, string> = {
   "library.file_skipped": "Library file skipped",
   "library.file_failed": "Library file could not be cleaned",
   "library.original_keep_conflict": "Kept original does not match its backup",
+  "library.redownload_requested": "Download again asked of your media manager",
   "library.file_change_notified": "Media manager told about a changed file",
   "library.file_change_notify_skipped": "Media manager notice skipped",
   "library.file_change_notify_warning":

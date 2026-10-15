@@ -85,8 +85,13 @@ public sealed class ArrManagerRedownload : IManagerRedownload
             [new("seriesId", seriesId)],
             cancellationToken).ConfigureAwait(false);
         var match = ManagerValues.Dicts(payload).FirstOrDefault(row => LibraryFileChangeRules.PathsEqual(ManagerValues.Text(row.Get("path")), filePath));
-        var fileId = match is null ? null : ManagerValues.FirstNumber(match, "id");
-        var sizeBytes = match is null ? null : (long?)ManagerValues.FirstNumber(match, "size");
+        if (match is null)
+        {
+            return FileNotMatched(connection);
+        }
+
+        var fileId = ManagerValues.FirstNumber(match, "id");
+        var sizeBytes = (long?)ManagerValues.FirstNumber(match, "size");
 
         return await DeleteThenSearchAsync(
             connection,
@@ -115,7 +120,15 @@ public sealed class ArrManagerRedownload : IManagerRedownload
         var deleted = false;
         if (existingFileId is { } id)
         {
-            await client.DeleteAsync(deletePath(id), cancellationToken: cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await client.DeleteAsync(deletePath(id), cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception exception) when (DeleteMayHaveGoneThrough(exception))
+            {
+                return DeleteNotConfirmed(connection, existingFileSizeBytes);
+            }
+
             deleted = true;
         }
 
@@ -145,6 +158,30 @@ public sealed class ArrManagerRedownload : IManagerRedownload
                 ? $"{connection.Label} deleted the existing file and is searching for a replacement."
                 : $"{connection.Label} is searching for this title; it had no existing file for Weir to delete first.");
     }
+
+    /// <summary>
+    /// Whether a failed delete may still have removed the file: the request could not be sent or timed out (it may have reached the
+    /// manager), or the manager answered with a server error (it may have failed after deleting). Any other answer, such as a
+    /// refused key or a missing file, is the manager saying it did not delete.
+    /// </summary>
+    private static bool DeleteMayHaveGoneThrough(Exception exception) =>
+        exception is MediaManagerUnreachableException or MediaManagerHttpException { StatusCode: >= 500 };
+
+    private static RedownloadResult DeleteNotConfirmed(ManagerConnection connection, long? existingFileSizeBytes) => new(
+        connection,
+        RedownloadOutcome.DeleteNotConfirmed,
+        DeletedExistingFile: false,
+        existingFileSizeBytes,
+        $"{connection.Label} did not confirm that it deleted the file, so Weir cannot tell whether the file is still there. Weir has not asked it to search. " +
+        $"Check {connection.Label} for this title: if the file is still listed, try Download again; if it is gone, search for it in {connection.Label}.");
+
+    private static RedownloadResult FileNotMatched(ManagerConnection connection) => new(
+        connection,
+        RedownloadOutcome.FileNotMatched,
+        DeletedExistingFile: false,
+        ExistingFileSizeBytes: null,
+        $"{connection.Label} does not list a file at that path, so Weir deleted nothing and asked for no search. " +
+        $"Check that {connection.Label} sees this library at the same path Weir does (its path mappings), then try again.");
 
     private static RedownloadResult Unsupported(ManagerConnection connection) => new(
         connection,

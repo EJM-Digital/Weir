@@ -90,10 +90,9 @@ public sealed class LibraryRedownloadFailureApiTests
     }
 
     [Theory]
-    [InlineData(HttpStatusCode.InternalServerError, "did not give Weir the answer it expected when asked whether it can download this again. Check the address points at Radarr on 192.0.2.20 itself, not a page inside it, and that Radarr on 192.0.2.20 is running normally.")]
-    [InlineData(HttpStatusCode.Unauthorized, "refused Weir's API key, so it could not say whether it can download this again. Check the key in Setup › Connections › Media managers and save it again.")]
-    [InlineData(HttpStatusCode.Forbidden, "refused Weir's API key, so it could not say whether it can download this again. Check the key in Setup › Connections › Media managers and save it again.")]
-    public async Task A_manager_that_fails_the_delete_is_never_asked_to_search_and_nothing_is_said_to_be_deleted(HttpStatusCode deleteStatus, string reason)
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.Forbidden)]
+    public async Task A_manager_that_refuses_the_key_on_the_delete_is_never_asked_to_search_and_nothing_is_said_to_be_deleted(HttpStatusCode deleteStatus)
     {
         await using var rig = await RedownloadRig.StartAsync();
         var (libraryId, _) = await rig.AddRadarrFilmAsync();
@@ -106,12 +105,36 @@ public sealed class LibraryRedownloadFailureApiTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await Json(response);
-        Assert.Equal(("failed", $"{RedownloadRig.RadarrName} {reason}"), (body["outcome"]!.GetValue<string>(), body["message"]!.GetValue<string>()));
+        Assert.Equal(
+            ("failed", $"{RedownloadRig.RadarrName} refused Weir's API key, so it could not say whether it can download this again. Check the key in Setup › Connections › Media managers and save it again."),
+            (body["outcome"]!.GetValue<string>(), body["message"]!.GetValue<string>()));
+        Assert.Equal([$"GET {RedownloadScripts.MoviePath}", $"DELETE {RedownloadScripts.MovieFilePath}"], rig.Manager.Asked());
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    [InlineData(HttpStatusCode.BadGateway)]
+    [InlineData(HttpStatusCode.ServiceUnavailable)]
+    [InlineData(HttpStatusCode.GatewayTimeout)]
+    public async Task A_delete_the_manager_fails_with_a_server_error_says_Weir_cannot_tell_whether_the_file_is_still_there_and_sends_no_search(HttpStatusCode deleteStatus)
+    {
+        await using var rig = await RedownloadRig.StartAsync();
+        var (libraryId, _) = await rig.AddRadarrFilmAsync();
+        rig.Manager
+            .Json(HttpMethod.Get, RedownloadScripts.MoviePath, ArrRedownloadReplies.MovieWithFile)
+            .Json(HttpMethod.Delete, RedownloadScripts.MovieFilePath, ArrRedownloadReplies.ManagerError, deleteStatus)
+            .Json(HttpMethod.Post, "/api/v3/command", ArrRedownloadReplies.CommandAccepted, HttpStatusCode.Created);
+
+        using var response = await rig.RedownloadAsync(rig.Admin, libraryId, RedownloadRig.FilmPath);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await Json(response);
+        Assert.Equal(("delete_not_confirmed", NotConfirmed(RedownloadRig.RadarrName)), (body["outcome"]!.GetValue<string>(), body["message"]!.GetValue<string>()));
         Assert.Equal([$"GET {RedownloadScripts.MoviePath}", $"DELETE {RedownloadScripts.MovieFilePath}"], rig.Manager.Asked());
     }
 
     [Fact]
-    public async Task A_delete_that_cannot_be_sent_is_never_followed_by_a_search()
+    public async Task A_delete_that_cannot_be_sent_says_Weir_cannot_tell_whether_the_file_is_still_there_and_sends_no_search()
     {
         await using var rig = await RedownloadRig.StartAsync();
         var (libraryId, _) = await rig.AddRadarrFilmAsync();
@@ -123,10 +146,50 @@ public sealed class LibraryRedownloadFailureApiTests
         using var response = await rig.RedownloadAsync(rig.Admin, libraryId, RedownloadRig.FilmPath);
 
         var body = await Json(response);
-        Assert.Equal("failed", body["outcome"]!.GetValue<string>());
-        Assert.DoesNotContain("deleted the existing file", body["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(("delete_not_confirmed", NotConfirmed(RedownloadRig.RadarrName)), (body["outcome"]!.GetValue<string>(), body["message"]!.GetValue<string>()));
         Assert.Equal([$"GET {RedownloadScripts.MoviePath}", $"DELETE {RedownloadScripts.MovieFilePath}"], rig.Manager.Asked());
     }
+
+    [Fact]
+    public async Task A_delete_that_times_out_says_Weir_cannot_tell_whether_the_file_is_still_there_and_sends_no_search()
+    {
+        await using var rig = await RedownloadRig.StartAsync();
+        var (libraryId, _) = await rig.AddSonarrEpisodeAsync();
+        rig.Manager
+            .Json(HttpMethod.Get, "/api/v3/episodefile", ArrRedownloadReplies.EpisodeFiles(RedownloadRig.EpisodePath, RedownloadRig.OtherEpisodePath))
+            .Route(HttpMethod.Delete, RedownloadScripts.EpisodeFilePath, _ => throw new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout.", new TimeoutException()))
+            .Json(HttpMethod.Post, "/api/v3/command", ArrRedownloadReplies.CommandAccepted, HttpStatusCode.Created);
+
+        using var response = await rig.RedownloadAsync(rig.Admin, libraryId, RedownloadRig.EpisodePath);
+
+        var body = await Json(response);
+        Assert.Equal(("delete_not_confirmed", NotConfirmed(RedownloadRig.SonarrName)), (body["outcome"]!.GetValue<string>(), body["message"]!.GetValue<string>()));
+        Assert.Equal([$"GET /api/v3/episodefile?seriesId=3", $"DELETE {RedownloadScripts.EpisodeFilePath}"], rig.Manager.Asked());
+    }
+
+    [Fact]
+    public async Task A_sonarr_file_the_manager_does_not_list_at_that_path_is_neither_deleted_nor_searched_for_and_the_answer_points_at_the_path_mappings()
+    {
+        await using var rig = await RedownloadRig.StartAsync();
+        var (libraryId, _) = await rig.AddSonarrEpisodeAsync();
+        rig.Manager
+            .Json(HttpMethod.Get, "/api/v3/episodefile", ArrRedownloadReplies.EpisodeFiles("/data/tv/Severance/Season 01/Severance - S01E01.mkv", "/data/tv/Severance/Season 01/Severance - S01E02.mkv"))
+            .Deleting(RedownloadScripts.EpisodeFilePath)
+            .Json(HttpMethod.Post, "/api/v3/command", ArrRedownloadReplies.CommandAccepted, HttpStatusCode.Created);
+
+        using var response = await rig.RedownloadAsync(rig.Admin, libraryId, RedownloadRig.EpisodePath);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await Json(response);
+        Assert.Equal(
+            ("file_not_matched", $"{RedownloadRig.SonarrName} does not list a file at that path, so Weir deleted nothing and asked for no search. Check that {RedownloadRig.SonarrName} sees this library at the same path Weir does (its path mappings), then try again."),
+            (body["outcome"]!.GetValue<string>(), body["message"]!.GetValue<string>()));
+        Assert.Equal(["GET /api/v3/episodefile?seriesId=3"], rig.Manager.Asked());
+    }
+
+    private static string NotConfirmed(string manager) =>
+        $"{manager} did not confirm that it deleted the file, so Weir cannot tell whether the file is still there. Weir has not asked it to search. " +
+        $"Check {manager} for this title: if the file is still listed, try Download again; if it is gone, search for it in {manager}.";
 
     [Fact]
     public async Task A_manager_that_is_rate_limiting_Weir_is_never_asked_to_delete_and_the_answer_says_so()
