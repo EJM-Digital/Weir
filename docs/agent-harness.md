@@ -57,7 +57,7 @@ Weir should be easy for coding agents to inspect, modify, validate, and repair w
 
 ## The coverage register
 
-[`testing/coverage-register.json`](testing/coverage-register.json) lists every route, job kind, hosted service, periodic task, setting, event type, web route, screen control, tray menu item and golden-VM scenario, read from the code, with the tests that prove each. CI fails on new code with no row, on a row for code that is gone, on a proof whose test no longer exists, and on a gap that is added or sits on a closed issue. Add or change the rows in the same pull request as the code, and when a test closes a gap put it in the row's `proofs`, drop its `issue` and lower `gapCeiling`. The rules are in [`testing/COVERAGE.md`](testing/COVERAGE.md).
+[`testing/coverage-register.json`](testing/coverage-register.json) lists every route, job kind, hosted service, periodic task, setting, event type, web route, screen control, tray menu item and golden-VM scenario, read from the code, with the tests that prove each. CI fails on new code with no row, on a row for code that is gone, on a proof whose test no longer exists, and on a gap count above the register's on the branch the change goes into (a reasoned `gapIncrease` entry is the only way up), and on a gap that sits on a closed issue. Add or change the rows in the same pull request as the code, and when a test closes a gap put it in the row's `proofs` and drop its `issue`; no ceiling or totals are kept in the files, so parallel pull requests do not conflict. The rules are in [`testing/COVERAGE.md`](testing/COVERAGE.md).
 
 ## Feedback loops to prefer
 

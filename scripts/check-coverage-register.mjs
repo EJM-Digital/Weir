@@ -5,10 +5,10 @@
 //   node scripts/check-coverage-register.mjs                       run the checks
 //   node scripts/check-coverage-register.mjs --gh                  also fail on a row whose issue GitHub says is not open (needs gh and a token)
 //   node scripts/check-coverage-register.mjs --open-issues 975,976 the same, with the open issues given (for tests and offline runs)
-//   node scripts/check-coverage-register.mjs --base origin/main    also fail when there are more gaps than in the register at that git ref
+//   node scripts/check-coverage-register.mjs --base origin/main    also fail when there are more gaps than in the register at that git ref (the ratchet)
 //   node scripts/check-coverage-register.mjs --strict              also fail on any gap (a row whose proofs do not reach its required level)
 //   node scripts/check-coverage-register.mjs --stubs               print a register row stub for every inventory item without a row
-//   node scripts/check-coverage-register.mjs --write-doc           rewrite the generated totals in docs/testing/COVERAGE.md
+//   node scripts/check-coverage-register.mjs --report [file]       write the statistics as markdown (default artifacts/coverage-register.md, not committed)
 //   node scripts/check-coverage-register.mjs --list-gaps           print every gap, high first
 //   node scripts/check-coverage-register.mjs --json                print the totals as JSON
 //
@@ -19,9 +19,12 @@
 //   (3) a proof names a file or test that does not exist, or claims a type the file does not have (a real-fs claim the check cannot verify
 //       is not one of these: it is refused, counts as inproc and is reported, and --strict fails on it);
 //   (4) a row has no proof and no `issue`;
-//   (5) the number of gaps is above `gapCeiling` (or above the register's count at --base), or below it (lower it, so the ceiling only
-//       ever goes down), or a row names an issue that is not open (--gh, --open-issues);
+//   (5) the number of gaps is above the register's count at --base (the ratchet: the gaps only go down, measured against the branch a change
+//       goes into, so no number is kept in the file for parallel changes to fight over) unless the register carries a `gapIncrease` entry
+//       for exactly that rise, or a row names an issue that is not open (--gh, --open-issues);
 //   (6) the register is malformed.
+// The statistics (totals by severity, area and proof level) are not kept in the repository: they go to $GITHUB_STEP_SUMMARY when that is
+// set, and to the --report file.
 // real-fs: a backend test that runs Weir's real code against real files in a real temp folder (real hard links, moves, deletes, permissions)
 // or a real SQLite database file, with no fake or in-memory file system or store. The check decides it statically (the class setup or the
 // test creates the temp folder or database, does file or database work, and names no fake). It satisfies "real" for a row that touches disk
@@ -31,7 +34,7 @@
 // `issue`: a row proven in part keeps its proofs and names the issue that will prove the rest. Gaps that are not
 // yet on an issue are counted and reported. --strict fails on every gap; Weir turns it on once the gaps are closed.
 import { spawnSync } from "node:child_process";
-import { existsSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CONTAINER_SMOKE_FILE, REAL_FS_FILE, TestIndex, read } from "./coverage/testindex.mjs";
@@ -80,12 +83,23 @@ export const rowLevel = (row, index) => (row.proofs ?? []).reduce((best, p) => M
 /** A gap is a row whose proofs do not reach its required level, or that still names the issue that will finish proving it. */
 export const isGap = (row, index) => row.issue != null || rowLevel(row, index) < requiredLevel(row);
 
+/** A `gapIncrease` entry says which rise it explains and why: { "from": <gaps on the base>, "to": <gaps now>, "reason": "..." }. */
+export function gapIncreaseShape(entry) {
+  if (entry === undefined) return [];
+  const whole = (n) => Number.isInteger(n) && n >= 0;
+  if (!entry || !whole(entry.from) || !whole(entry.to) || entry.to <= entry.from || typeof entry.reason !== "string" || !entry.reason.trim()) {
+    return ['"gapIncrease" must be { "from": <gaps on the base branch>, "to": <gaps now, more than from>, "reason": "<why the gaps go up>" }'];
+  }
+  return [];
+}
+
 /** The register's own shape: ids, enums, and the rule deriving the required level from severity and what the row touches. */
 export function validateShape(register) {
   const problems = [];
   const areas = new Set(Object.keys(register.areas ?? {}));
   const ids = new Set();
-  if (!Number.isInteger(register.gapCeiling) || register.gapCeiling < 0) problems.push('the register needs a "gapCeiling" (a whole number)');
+  if ("gapCeiling" in register) problems.push('"gapCeiling" is not used: the gaps are held to the count on the base branch (--base), so remove it from the register');
+  problems.push(...gapIncreaseShape(register.gapIncrease));
   for (const row of register.rows ?? []) {
     const where = `row ${row.id ?? "(no id)"}`;
     if (!row.id || typeof row.id !== "string") problems.push(`${where}: needs an id`);
@@ -189,13 +203,34 @@ export function issueProblems(register) {
   return problems;
 }
 
-/** (5) the gap count against its ceiling and a base, and rows that name an issue that is not open. */
+/**
+ * (5) the ratchet: the gaps may only go down from the count on the base branch. A rise is allowed only with a `gapIncrease` entry whose
+ * "from" is that count, whose "to" is the count now and whose reason says why (the same rule #976 sets for a lowered coverage floor).
+ * With no base to compare with (a first run, or a base without a register) nothing is held back, and a note says so.
+ */
+export function gapRatchet(register, gapCount, baseGaps) {
+  if (baseGaps === null) return { problems: [], notes: ["No register on the base branch to compare with, so the gaps were not held to a count."] };
+  if (gapCount <= baseGaps) return { problems: [], notes: [] };
+  const entry = register.gapIncrease;
+  const reason = typeof entry?.reason === "string" ? entry.reason.trim() : "";
+  if (entry && entry.from === baseGaps && entry.to === gapCount && reason) {
+    return { problems: [], notes: [`The gaps rise from ${baseGaps} to ${gapCount}: ${reason}`] };
+  }
+  const mismatch = entry && (entry.from !== baseGaps || entry.to !== gapCount) ? ` The "gapIncrease" entry says ${entry.from} to ${entry.to}, which is not this rise.` : "";
+  return {
+    problems: [
+      `there are ${gapCount} gaps, more than the ${baseGaps} in the register on the base branch: a gap cannot be added; give the new row a proof that reaches its required level. ` +
+        `A rise that cannot be avoided is written under "gapIncrease" in ${REGISTER}, in a pull request of its own: { "from": ${baseGaps}, "to": ${gapCount}, "reason": "..." }.${mismatch}`,
+    ],
+    notes: [],
+  };
+}
+
+const gapCountOf = (register, index) => register.rows.filter((row) => isGap(row, index)).length;
+
+/** (5) the ratchet, and rows that name an issue that is not open. */
 export function gapProblems(register, index, { openIssues = null, baseGaps = null } = {}) {
-  const problems = [];
-  const gaps = register.rows.filter((row) => isGap(row, index));
-  if (gaps.length > register.gapCeiling) problems.push(`there are ${gaps.length} gaps, above the ceiling of ${register.gapCeiling}: a gap cannot be added; give the new row a proof that reaches its required level`);
-  if (gaps.length < register.gapCeiling) problems.push(`there are ${gaps.length} gaps, below the ceiling of ${register.gapCeiling}: lower "gapCeiling" to ${gaps.length} so it can only go down`);
-  if (baseGaps !== null && gaps.length > baseGaps) problems.push(`there are ${gaps.length} gaps, more than the ${baseGaps} in the register on the base branch`);
+  const problems = gapRatchet(register, gapCountOf(register, index), baseGaps).problems;
   if (openIssues) {
     for (const row of register.rows) if (row.issue != null && !openIssues.has(row.issue)) problems.push(`row ${row.id} names issue #${row.issue}, which is not open: move the row to the issue that will prove it, or prove it`);
   }
@@ -266,19 +301,20 @@ export function evaluate({ register, inventory, index, openIssues = null, baseGa
     refused: refusedClaims(register, index),
     issueProblems: issueProblems(register),
     gapProblems: gapProblems(register, index, { openIssues, baseGaps }),
+    gapNotes: gapRatchet(register, gapCountOf(register, index), baseGaps).notes,
     totals: totals(register, index),
   };
 }
 
 // ------------------------------------------------------------------------------------------------------------ the report
 
-const START = "<!-- coverage:generated:start -->";
-const END = "<!-- coverage:generated:end -->";
+export const REPORT_FILE = "artifacts/coverage-register.md";
 
-export function generatedSection(register, inventory, t) {
+/** The statistics as markdown, for the CI job summary and the --report file. They are not kept in the repository. */
+export function statisticsReport(register, inventory, t) {
   const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : "-");
   const lines = [];
-  lines.push("Generated by `node scripts/check-coverage-register.mjs --write-doc` from `coverage-register.json`. Do not edit by hand.", "");
+  lines.push("### Coverage register", "", "Generated by `node scripts/check-coverage-register.mjs` from `coverage-register.json`; the rules are in docs/testing/COVERAGE.md.", "");
   lines.push(`**${t.all.rows}** behaviours. **${t.all.proven}** reach their required proof level (${pct(t.all.proven, t.all.rows)}); **${t.all.gaps}** are gaps, **${t.highGaps}** of them high; **${t.untracked.length}** gaps are not on an issue yet.`, "");
   lines.push("### By severity", "", "| Severity | Rows | Reach their level | Gaps |", "| --- | ---: | ---: | ---: |");
   for (const s of SEVERITIES) lines.push(`| ${s} | ${t.bySeverity[s].rows} | ${t.bySeverity[s].proven} | ${t.bySeverity[s].gaps} |`);
@@ -312,13 +348,18 @@ export function generatedSection(register, inventory, t) {
   return lines.join("\n");
 }
 
-export function writeDoc(root, register, inventory, t) {
-  const file = join(root, "docs/testing/COVERAGE.md");
-  const text = existsSync(file) ? read(file) : "";
-  const section = `${START}\n${generatedSection(register, inventory, t)}\n${END}`;
-  const next = text.includes(START) && text.includes(END) ? text.replace(new RegExp(`${START}[\\s\\S]*?${END}`), () => section) : `${text.trimEnd()}\n\n${section}\n`;
-  writeFileSync(file, next);
-  return file;
+/** What the CI job summary shows: the statistics, then what the ratchet noted (a reasoned rise, or no base to compare with). */
+export function jobSummary(register, inventory, t, notes) {
+  const lines = [statisticsReport(register, inventory, t)];
+  for (const note of notes) lines.push("", `- ${note}`);
+  return `${lines.join("\n")}\n`;
+}
+
+export function writeReport(root, file, register, inventory, t) {
+  const target = resolve(root, file);
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, `${statisticsReport(register, inventory, t)}\n`);
+  return target;
 }
 
 const STUB_KIND = { route: "API route", job: "job", service: "job", task: "job", setting: "setting", event: "event", webroute: "screen action", action: "screen action", tray: "tray", scenario: "install-update" };
@@ -342,11 +383,16 @@ function openIssuesFromGh(root) {
   return new Set(JSON.parse(run.stdout).map((i) => i.number));
 }
 
-function baseGapCount(root, ref, index) {
+/** The gaps in the register at a git ref, judged by the tests in this checkout; null when there is no register there to read. */
+export function baseGapCount(root, ref, index) {
   const run = spawnSync("git", ["show", `${ref}:${REGISTER}`], { cwd: root, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
   if (run.status !== 0) return null;
-  const base = JSON.parse(run.stdout);
-  return base.rows.filter((row) => isGap(row, index)).length;
+  try {
+    const base = JSON.parse(run.stdout);
+    return Array.isArray(base.rows) ? gapCountOf(base, index) : null;
+  } catch {
+    return null;
+  }
 }
 
 async function main() {
@@ -370,12 +416,11 @@ async function main() {
   const result = evaluate({ register, inventory, index, openIssues, baseGaps });
   const t = result.totals;
 
+  const reportValue = valueOf("--report");
+  if (args.includes("--report")) console.log(`wrote ${writeReport(root, reportValue && !reportValue.startsWith("--") ? reportValue : REPORT_FILE, register, inventory, t)}`);
+
   if (args.includes("--stubs")) {
     console.log(JSON.stringify(result.unmapped.map(stubFor), null, 2));
-    return;
-  }
-  if (args.includes("--write-doc")) {
-    console.log(`wrote ${writeDoc(root, register, inventory, t)}`);
     return;
   }
   if (args.includes("--json")) {
@@ -399,7 +444,12 @@ async function main() {
   else lines.push("  OK  every proof names a test that exists, of the type it claims");
   if (result.issueProblems.length) fail.push(`(4) ${result.issueProblems.length} row(s) with neither a proof nor an issue:\n    ${shown(result.issueProblems, (x) => x)}`);
   if (result.gapProblems.length) fail.push(`(5) the gaps:\n    ${shown(result.gapProblems, (x) => x)}`);
-  else lines.push(`  OK  ${t.gaps.length} gaps, at the ceiling${baseRef ? (baseGaps === null ? ` (no register at ${baseRef} to compare)` : ` and no more than the ${baseGaps} at ${baseRef}`) : ""}${openIssues ? "; every issue named is open" : ""}`);
+  else {
+    const held = baseGaps === null ? "" : `, no more than the ${baseGaps} at ${baseRef}`;
+    lines.push(`  OK  ${t.gaps.length} gaps${held}${openIssues ? "; every issue named is open" : ""}`);
+  }
+  if (!baseRef) lines.push("  !!  no --base given, so the gaps were not held to the count on the base branch (CI passes it; locally use --base origin/main)");
+  for (const note of result.gapNotes) if (baseRef || baseGaps !== null) lines.push(`  !!  ${note}`);
   const levelLine = `${t.gaps.length} gaps (${t.highGaps} high): ${t.all.proven} of ${t.all.rows} rows reach their required proof level; ${t.untracked.length} gaps are not on an issue yet`;
   lines.push(`  ${t.gaps.length ? "!!" : "OK"}  ${levelLine}`);
   lines.push(`      real-fs proofs ${t.realFs.claims}: ${t.realFs.counted} counted, ${t.realFs.refused} refused (counted inproc), ${t.realFs.noEffect} without effect; vm rows (need a scenario): ${t.realFs.vmRows}, ${t.realFs.vmRowGaps} still gaps; container-smoke proofs ${t.container.claims}: ${t.container.counted} counted, ${t.container.refused} refused`);
@@ -409,6 +459,7 @@ async function main() {
   }
   if (strict && t.gaps.length) fail.push(`${levelLine} (--strict)`);
 
+  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, jobSummary(register, inventory, t, result.gapNotes));
   console.log(lines.join("\n"));
   if (fail.length) {
     console.error(`\nCoverage register check failed:\n  ${fail.join("\n  ")}`);
