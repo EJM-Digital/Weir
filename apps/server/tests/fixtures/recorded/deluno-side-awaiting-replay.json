@@ -1,0 +1,34 @@
+{
+  "events-completed-collision-keep-both-first": {
+    "reason": "Weir sends this report, and its replay against the recording is not written yet.",
+    "issue": 1017
+  },
+  "events-completed-collision-keep-both-second": {
+    "reason": "Weir sends this report, and its replay against the recording is not written yet.",
+    "issue": 1017
+  },
+  "events-completed-collision-replace-first": {
+    "reason": "Weir sends this report, and its replay against the recording is not written yet.",
+    "issue": 1017
+  },
+  "events-completed-collision-replace-second": {
+    "reason": "Weir sends this report, and its replay against the recording is not written yet.",
+    "issue": 1017
+  },
+  "events-completed-season-pack": {
+    "reason": "Weir sends this report, and its replay against the recording is not written yet.",
+    "issue": 1017
+  },
+  "events-failed-partial-season-pack": {
+    "reason": "Weir sends this report, and its replay against the recording is not written yet.",
+    "issue": 1017
+  },
+  "events-failed-partial-season-pack-corrupt": {
+    "reason": "Weir sends this report, and its replay against the recording is not written yet.",
+    "issue": 1017
+  },
+  "events-failed-rejected": {
+    "reason": "Weir sends this report, and its replay against the recording is not written yet.",
+    "issue": 1017
+  }
+}
