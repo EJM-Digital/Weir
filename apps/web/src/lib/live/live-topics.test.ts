@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { authKeys } from "../auth/query-keys";
 import { downloadClientKeys } from "../download-clients/query-keys";
 import { mediaManagerKeys } from "../media-managers/query-keys";
 import { pauseKeys } from "../pause/query-keys";
@@ -28,11 +29,16 @@ describe("LIVE_TOPIC_QUERIES", () => {
       "network_access",
       "pause",
       "readiness",
+      "sessions",
       "settings",
       "update",
     ];
 
     expect(Object.keys(LIVE_TOPIC_QUERIES).sort()).toEqual(topics);
+  });
+
+  it("reads the list of signed-in browsers again when one signs in or out", () => {
+    expect(LIVE_TOPIC_QUERIES.sessions).toEqual([authKeys.sessions]);
   });
 
   it("refreshes the pause queries, and what files wait for, when the pause changes", () => {

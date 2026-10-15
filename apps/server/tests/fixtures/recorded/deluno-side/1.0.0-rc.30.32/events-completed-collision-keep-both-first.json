@@ -1,0 +1,39 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "events-completed-collision-keep-both-first",
+  "recordedAt": "2026-10-15T03:33:55Z",
+  "note": "The report Weir sent for the first of two different single files with the same name, collision policy keep_both. The movie output folder held [Recorded.Weir.Collide.keep-both.mkv] after the first and [Recorded.Weir.Collide.keep-both (2).mkv, Recorded.Weir.Collide.keep-both.mkv] after the second. Deluno answered 409 (it has no row for this hand-off, as the script made it straight to Weir).",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "876dea1d-2607-4c45-88c3-23c587072dcb",
+          "status": "completed",
+          "processorName": "Weir",
+          "libraryId": "01a13d68ae4a7e7b84c06a96fd5d8cc7",
+          "releaseName": "Big Buck Bunny (2008) Recorded Collide",
+          "outputPath": "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Collide.keep-both.mkv",
+          "message": "Remux finished.",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Collide.keep-both.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": "Deluno could not match this processor event to a waiting hand-off. Use the handoff ID from GET /api/integrations/processors/handoffs or the exact source path Deluno recorded. No import was queued."
+        }
+      }
+    }
+  ]
+}
