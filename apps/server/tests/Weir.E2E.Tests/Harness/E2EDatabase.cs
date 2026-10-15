@@ -75,6 +75,15 @@ public static class E2EDatabase
         return id;
     }
 
+    /// <summary>How many finished hand-offs Weir still owes a report: the reports it kept because the manager did not answer.</summary>
+    public static long OwedReportCount(string databasePath)
+    {
+        using var connection = Open(databasePath);
+        return Convert.ToInt64(
+            SeedSql.Scalar(connection, "SELECT COUNT(*) FROM media_manager_handoffs WHERE pending_report_json IS NOT NULL"),
+            CultureInfo.InvariantCulture);
+    }
+
     private static SqliteConnection Open(string databasePath)
     {
         var connection = new SqliteConnection(new SqliteConnectionStringBuilder
