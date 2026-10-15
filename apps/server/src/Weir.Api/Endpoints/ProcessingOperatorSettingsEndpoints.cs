@@ -118,7 +118,8 @@ internal sealed class ProcessingOperatorSettingsEndpointHandlers
                                unclaimedHandbackCleanupEnabled is not null || unclaimedHandbackWindowDays is not null ||
                                unclaimedHandbackCleanupIntervalSeconds is not null ||
                                keepFailedWorkFiles is not null || fileLogRetentionDays is not null || RetiredSettings.Any(model.Has);
-        if (!hasProcessField && movieScheduleEnabled is null && tvScheduleEnabled is null)
+        // A value that was refused reads as missing, so it is already answered; this is for a body that names no setting at all.
+        if (!issues.Any && !hasProcessField && movieScheduleEnabled is null && tvScheduleEnabled is null)
         {
             issues.Add(new ValidationIssue("value_error", ["body"], "Value error, No operator settings fields to update.", WireValue.Null));
         }

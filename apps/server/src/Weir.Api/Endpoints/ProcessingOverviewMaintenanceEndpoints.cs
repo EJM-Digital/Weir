@@ -93,7 +93,8 @@ internal sealed class ProcessingOverviewMaintenanceEndpointHandlers
         WireObject Out(MaintenanceFamilyState state, long? saved, int environment)
         {
             var timer = _clock.NextRunFor(_maintenance.JobKindsFor(state.Family));
-            var interval = timer?.Interval ?? TimeSpan.FromSeconds(saved is > 0 ? saved.Value : environment);
+            // A saved interval is the one in force the moment it is saved; the family's timer takes it up at its next check.
+            var interval = saved is > 0 ? TimeSpan.FromSeconds(saved.Value) : timer?.Interval ?? TimeSpan.FromSeconds(environment);
             return FamilyOut(state, interval, state.Enabled ? timer?.NextRunAt : null);
         }
 
