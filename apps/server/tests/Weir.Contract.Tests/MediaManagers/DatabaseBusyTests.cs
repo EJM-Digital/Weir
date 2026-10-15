@@ -94,6 +94,9 @@ public sealed class DatabaseBusyTests(DatabaseBusyFixture fixture) : IClassFixtu
             AssertBusy(busy);
         }
 
+        await Server.WaitForLogLineAsync(
+            line => line.Contains(marker, StringComparison.Ordinal) && line.Contains("WARNING", StringComparison.Ordinal),
+            "the busy database's warning to reach the log");
         var lines = Server.LogText()
             .Split(Environment.NewLine)
             .Where(line => line.Contains(marker, StringComparison.Ordinal))
@@ -124,7 +127,7 @@ public sealed class DatabaseBusyTests(DatabaseBusyFixture fixture) : IClassFixtu
         Assert.Equal(["code", "detail"], failed.Fields.Select(field => field.Key).Order().ToArray());
         Assert.DoesNotContain("media_manager_handoffs", failed.Text, StringComparison.Ordinal);
         Assert.DoesNotContain("SQLite", failed.Text, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains(UnhandledLogLine, server.LogText(), StringComparison.Ordinal);
+        await server.WaitForLogLineAsync(line => line.Contains(UnhandledLogLine, StringComparison.Ordinal), "the unforeseen failure to reach the log");
     }
 
     private static void AssertBusy(WeirResponse busy)

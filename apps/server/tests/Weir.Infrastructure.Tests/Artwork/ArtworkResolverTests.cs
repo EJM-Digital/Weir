@@ -35,6 +35,33 @@ public sealed class ArtworkResolverTests
         Assert.Equal(ArtworkFixture.ImageBytes.Length, stored!.Length);
     }
 
+    [WindowsFact("Windows refuses a rename over a file that is open; Linux allows it.")]
+    public async Task A_poster_that_cannot_be_replaced_because_it_is_being_sent_keeps_its_title_due_and_is_replaced_on_the_next_pass()
+    {
+        using var fixture = new ArtworkFixture();
+        fixture.ServeSearch(ArtworkFixture.SearchAnswer(PosterFile)).ServeImage(PosterFile);
+        fixture.PosterFiles.Pause = (_, _) => Task.CompletedTask;
+        var library = await fixture.LibraryIdAsync("movie");
+        await fixture.QueueFileAsync(library, FilmPath);
+        var posterId = ArtworkKeys.PosterId(PosterFile);
+        await fixture.PosterFiles.WriteAsync(posterId, [9, 9], CancellationToken.None);
+        var beingSent = fixture.PosterFiles.Open(posterId)!;
+
+        var whileSent = await fixture.Resolver.ResolveDueAsync(10, CancellationToken.None);
+
+        Assert.Equal(0, whileSent);
+        Assert.Equal(2, beingSent.Length);
+        Assert.Empty(await fixture.PosterUrlsForAsync(library, FilmPath));
+
+        await beingSent.DisposeAsync();
+        var afterwards = await fixture.Resolver.ResolveDueAsync(10, CancellationToken.None);
+
+        Assert.Equal(1, afterwards);
+        Assert.Equal(ArtworkOutcomes.Found, await fixture.OutcomeAsync(FilmKey()));
+        await using var stored = fixture.PosterFiles.Open(posterId);
+        Assert.Equal(ArtworkFixture.ImageBytes.Length, stored!.Length);
+    }
+
     [Fact]
     public async Task The_poster_is_fetched_from_the_gateway_at_the_size_weir_shows()
     {

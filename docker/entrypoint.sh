@@ -120,22 +120,18 @@ ensure_runtime_home_ownership() {
   fi
 }
 
-warn_unported_processing_permissions() {
-  # As of #555, Weir.Host applies WEIR_CHOWN_OUTPUT/WEIR_FILE_MODE_OUTPUT/WEIR_DIR_MODE_OUTPUT
-  # itself, directly, right after it writes or creates each output file or folder (see
-  # apps/server/README.md, "Output ownership (#555)") — this script's job for those three is
-  # already done at that point, not here. WEIR_CHOWN_WATCHED/WEIR_CHOWN_TEMP/
-  # WEIR_DIR_MODE_WATCHED/WEIR_DIR_MODE_TEMP still have no .NET equivalent, so the warning below
-  # is still correct for those four; its wording covering all six together is now stale for the
-  # output three specifically. Left as-is (a functional fix, not a doc fix); see docker/README.md.
-  if bool_enabled "$WEIR_CHOWN_WATCHED" || [ -n "$WEIR_DIR_MODE_WATCHED" ] ||
-     bool_enabled "$WEIR_CHOWN_TEMP" || [ -n "$WEIR_DIR_MODE_TEMP" ] ||
-     bool_enabled "$WEIR_CHOWN_OUTPUT" || [ -n "$WEIR_DIR_MODE_OUTPUT" ]; then
-    # The old policy read folders from processing_path_settings, a table removed when folders moved
-    # onto libraries (#363), so it had already stopped changing anything. See docker/README.md.
-    log_info "WEIR_CHOWN_*/WEIR_DIR_MODE_* are set, but this image does not apply the Processing" \
-      "folder ownership policy (see docker/README.md). Ignoring them."
-  fi
+# Weir applies WEIR_CHOWN_OUTPUT, WEIR_FILE_MODE_OUTPUT and WEIR_DIR_MODE_OUTPUT itself, to each file or folder it
+# publishes (apps/server/README.md, "Output ownership"), so none of this script's job. The four settings for the watched
+# and work folders have nothing to apply to (docker/README.md): they are validated above, and said to be ignored here.
+log_ignored_folder_setting() {
+  log_info "$1 is set, but this image does not apply it to your watched or work folders. Ignoring it (see docker/README.md)."
+}
+
+warn_ignored_folder_settings() {
+  if bool_enabled "$WEIR_CHOWN_WATCHED"; then log_ignored_folder_setting WEIR_CHOWN_WATCHED; fi
+  if bool_enabled "$WEIR_CHOWN_TEMP"; then log_ignored_folder_setting WEIR_CHOWN_TEMP; fi
+  if [ -n "$WEIR_DIR_MODE_WATCHED" ]; then log_ignored_folder_setting WEIR_DIR_MODE_WATCHED; fi
+  if [ -n "$WEIR_DIR_MODE_TEMP" ]; then log_ignored_folder_setting WEIR_DIR_MODE_TEMP; fi
 }
 
 run_app() {
@@ -154,7 +150,7 @@ validate_dir_mode "$WEIR_DIR_MODE_WATCHED" "WEIR_DIR_MODE_WATCHED"
 validate_dir_mode "$WEIR_DIR_MODE_TEMP" "WEIR_DIR_MODE_TEMP"
 validate_dir_mode "$WEIR_DIR_MODE_OUTPUT" "WEIR_DIR_MODE_OUTPUT"
 mkdir -p "$WEIR_HOME"
-warn_unported_processing_permissions
+warn_ignored_folder_settings
 
 generate_secret() {
   # No Python interpreter in this image. 48 random bytes, base64url-encoded without padding —

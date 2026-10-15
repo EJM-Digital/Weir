@@ -53,6 +53,15 @@ public sealed class RemuxPassRealFfmpegTests(RealFfmpegFixtures fixtures) : IDis
     private Task<WireObject> Run(string relative) =>
         Runner().RunAsync(new RemuxPassRequest { Runtime = _folders.Runtime(), RelativeMediaPath = relative, RulesConfig = RemuxRules.DefaultConfig(), MinFileAgeSeconds = 0 });
 
+    private Task<WireObject> Run(string relative, string mediaExtensionsCsv) =>
+        Runner().RunAsync(new RemuxPassRequest
+        {
+            Runtime = _folders.Runtime() with { MediaExtensionsCsv = mediaExtensionsCsv },
+            RelativeMediaPath = relative,
+            RulesConfig = RemuxRules.DefaultConfig(),
+            MinFileAgeSeconds = 0,
+        });
+
     private static string Str(WireObject result, string key) => WireConvert.Str(result[key]);
 
     [RequiresFfmpegFact]
@@ -118,5 +127,33 @@ public sealed class RemuxPassRealFfmpegTests(RealFfmpegFixtures fixtures) : IDis
         Assert.NotEqual(RemuxPassOutcomes.LiveSkippedNotRequired, Str(result, "outcome"));
         Assert.False(File.Exists(_folders.Out(Path.Join("Cut", "film.mkv"))));
         Assert.True(File.Exists(truncated));
+    }
+
+    [RequiresFfmpegFact]
+    public async Task A_release_folder_holding_another_video_of_a_type_the_workflow_names_is_kept_when_the_film_is_removed()
+    {
+        var source = await GenerateAsync(Path.Join("Film.2001", "film.mkv"), "eng", "fre");
+        var other = Path.Join(_folders.Watched, "Film.2001", "Cut.ts");
+        await File.WriteAllBytesAsync(other, new byte[16]);
+
+        var result = await Run("Film.2001/film.mkv", "mkv, ts");
+
+        Assert.Equal(RemuxPassOutcomes.LiveOutputWritten, Str(result, "outcome"));
+        Assert.False(File.Exists(source));
+        Assert.True(File.Exists(other));
+    }
+
+    [RequiresFfmpegFact]
+    public async Task A_release_folder_holding_a_file_of_a_type_the_workflow_does_not_name_goes_with_the_film()
+    {
+        var source = await GenerateAsync(Path.Join("Film.2001", "film.mkv"), "eng", "fre");
+        var other = Path.Join(_folders.Watched, "Film.2001", "Cut.ts");
+        await File.WriteAllBytesAsync(other, new byte[16]);
+
+        var result = await Run("Film.2001/film.mkv", string.Empty);
+
+        Assert.Equal(RemuxPassOutcomes.LiveOutputWritten, Str(result, "outcome"));
+        Assert.False(File.Exists(source));
+        Assert.False(Directory.Exists(Path.Join(_folders.Watched, "Film.2001")));
     }
 }
