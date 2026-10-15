@@ -171,7 +171,7 @@ public sealed class FailurePoliciesTests
 
         await scenario.EnqueueFilePassAsync(rel, library);
 
-        var row = await scenario.WaitForFileStatusAsync(library, rel, "rejected", TimeSpan.FromSeconds(30));
+        var row = await scenario.WaitForFileStatusAsync(library, rel, "rejected");
         Assert.Equal(
             "Rejected: this file has no audio tracks, so there would be nothing to keep. The file was left where it is.",
             (string)row["status_reason"]!);

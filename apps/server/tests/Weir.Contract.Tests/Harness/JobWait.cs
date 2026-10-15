@@ -9,7 +9,7 @@ namespace Weir.Contract.Tests.Harness;
 /// they go silent), so a job that a worker holds is waited for. What a test cannot wait on is a job nobody takes up, which fails after <see cref="UnclaimedCeiling"/>, and a job that ended
 /// without producing its result, which fails at once.
 /// </summary>
-internal sealed class JobWait(TimeProvider clock, Action? polled = null)
+public sealed class JobWait(TimeProvider clock, Action? polled = null)
 {
     /// <summary>How long a job may wait for a worker, which picks up work within seconds, before the wait gives up.</summary>
     public static readonly TimeSpan UnclaimedCeiling = TimeSpan.FromSeconds(120);

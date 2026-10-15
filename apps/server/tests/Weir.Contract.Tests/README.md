@@ -21,8 +21,10 @@ dotnet test apps/server/tests/Weir.Contract.Tests                          # eve
 | Keep each server's data folder and log after the run | `WEIR_CONTRACT_KEEP_DATA=1` |
 | A fixed session secret | `WEIR_SESSION_SECRET` (a default is used otherwise) |
 
-A server that does not become ready fails the test with the end of its own log. Each server writes its output to
-`<data folder>/contract-logs/server-<n>.log`.
+A server that does not become ready fails the test with the end of its own log: it exits, or it goes quiet. A start is judged by
+its progress, as the tray judges one (`docs/start-supervision.md`): a server that keeps reporting in its
+`startup-progress.json` is waited for however long it takes, and one whose record has not changed for 30 seconds (longer if it asks
+for more) has hung. Each server writes its output to `<data folder>/contract-logs/server-<n>.log`.
 
 ## When a test fails
 
@@ -60,6 +62,10 @@ Everything is in `Harness/`. Areas live in folders beside it (`Activity/`), one 
   to call a server ready: the process the harness started must also have logged that it listens on its port, because the
   process that won the port may be the server of another test, which answers `/ready` until its own test ends. Disposing a server waits until
   nothing holds its database files before it deletes the folder.
+  `ServerLog` reads a server's output and error on threads of their own, never the thread pool: on Windows the wait for a
+  redirected pipe holds its thread, so two pool threads per running server would leave a suite with more than a handful of
+  servers up with no thread for the fakes' answers, the start wait or any request. Read a long-lived process's output this way, never with
+  `BeginOutputReadLine` or `ReadAsync`.
 - **`ServerEnvironment`** is the quiet default environment: no workers, no watcher, no periodic enqueue, high
   sign-in limits, artwork off. Pass `environment` to add or override. `ServerEnvironment.OperatorDefaults` is what
   an installed Weir runs with instead (ten workers, the watcher, periodic scans, the work-file sweeps), for tests of
