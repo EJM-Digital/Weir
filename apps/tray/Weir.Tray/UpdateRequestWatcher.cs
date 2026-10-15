@@ -30,7 +30,7 @@ sealed class UpdateRequestWatcher : IDisposable
     private readonly Action<string> _log;
     private readonly TimeProvider _clock;
     private readonly Func<FileSystemWatcher> _create;
-    private readonly System.Threading.Timer _settle;
+    private readonly ITimer _settle;
     private readonly Lock _gate = new();
     private FileSystemWatcher? _watcher;
     private bool _disposed;
@@ -49,7 +49,7 @@ sealed class UpdateRequestWatcher : IDisposable
         _log = log;
         _clock = clock;
         _create = create ?? Build;
-        _settle = new System.Threading.Timer(_ => Settled());
+        _settle = clock.CreateTimer(_ => Settled(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _watcher = Make();
     }
 

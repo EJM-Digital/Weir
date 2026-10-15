@@ -26,7 +26,7 @@ vi.mock("../../../lib/processing/jobs-inspection/queries", () => ({
   useProcessingJobsInspectionQuery: () => ({ data: failedJobs }),
 }));
 vi.mock("./needs-files", () => ({
-  useNeedsFiles: () => needFiles.files,
+  useNeedsFiles: () => ({ files: needFiles.files, error: null }),
 }));
 
 function file(overrides: Partial<ProcessingFile>): ProcessingFile {

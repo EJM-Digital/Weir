@@ -98,3 +98,33 @@ empty body, so the guard has to answer before the server looks at what was asked
 
 When you add a route, add its line here with the narrowest access that fits. When a write needs fields besides the token, add them to
 `RouteWalk.RequiredFields`, so the walk reaches the token and origin checks instead of stopping at validation.
+
+### The order of the checks
+
+Every write checks, in this order, who is asking, then the size of the body (413 over 8 MB), its content type (415), and last the body
+itself (422). An anonymous caller therefore learns nothing about what a route reads, and a caller who may not use the route is told
+so before anything about the body. `ApiRequest.ReadBodyAsync` enforces it: it throws if the handler has not called `RequireUserAsync`
+first. A route anyone may call, or that its caller proves itself to with something other than a session (sign-in, first-run setup, a media
+manager's webhook secret), reads its body with `ReadAnonymousBodyAsync`. A route that reads nothing from its body calls
+`RefuseOversizedBody` once the caller is let in.
+
+`RouteCheckOrderTests` (contract suite, area `auth`) sends every write in `route-access.json` an oversized body, a body that is not
+JSON, invalid JSON and a JSON body with the wrong fields, as an anonymous caller, as a caller who may not use the route, and as one who
+may. A write that is not guarded by a sign-in is listed in the test with the reason it keeps its own order.
+
+## Paths that can change a media file
+
+`file-changing-paths.json` lists every way Weir can change a media file and what the pause does to it: a job kind the worker claim refuses
+while paused, a request a person makes by hand that is refused, or a path that is exempt, with the reason. It also lists the server source
+files that do the changing, and which path each serves. Tests hold it to the server.
+
+- `FileChangingPathsTests` (API tests) compares the file with the job kinds the server registers, the routes it maps, and a scan of
+  `apps/server/src` for calls that change files (`File.Delete`, `File.Move`, `Directory.Delete`, a stream opened to write, the swap file
+  system) and for calls to the helpers that change files for someone else (publishing, removing a release folder, asking a media manager to
+  delete). A new call, a new caller of such a helper, or a new job kind fails until you classify it.
+- `PauseGatesTests` (infrastructure tests) pauses every held job kind, attempts it, and shows the file untouched and the job still queued, then
+  shows it run once after resuming. `PausedActionsApiTests` (API tests) does the same for the refused requests.
+
+When it fails, add the path or site to the file with the gate that fits. A new job kind that changes files must be held at the claim, which is
+the default for every kind but the one scan that may run while paused. A request that changes a file must be refused while paused
+(`PausedRequests`). Anything exempt needs its reason in the file.

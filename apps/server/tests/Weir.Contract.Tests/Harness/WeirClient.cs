@@ -92,6 +92,22 @@ public sealed class WeirClient : IDisposable
         HttpMethod method, string path, JsonNode? body = null, IReadOnlyDictionary<string, string>? headers = null) =>
         SendAsync(method, path, JsonBody(body), headers);
 
+    /// <summary>
+    /// Any method with <paramref name="body"/> exactly as given and declared as <paramref name="contentType"/> (no
+    /// <c>Content-Type</c> at all when that is null), whether or not the bytes are what the type says.
+    /// </summary>
+    public Task<WeirResponse> RequestRawAsync(
+        HttpMethod method, string path, byte[] body, string? contentType, IReadOnlyDictionary<string, string>? headers = null)
+    {
+        var content = new ByteArrayContent(body);
+        if (contentType is not null)
+        {
+            content.Headers.TryAddWithoutValidation("Content-Type", contentType);
+        }
+
+        return SendAsync(method, path, content, headers);
+    }
+
     public Task<WeirResponse> PostAsync(string path, JsonNode? body = null, IReadOnlyDictionary<string, string>? headers = null) =>
         SendAsync(HttpMethod.Post, path, JsonBody(body), headers);
 

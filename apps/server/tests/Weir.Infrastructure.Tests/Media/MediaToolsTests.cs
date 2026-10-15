@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -470,14 +471,42 @@ public sealed class MediaToolsTests : IDisposable
     }
 
     [Fact]
-    public async Task A_timeout_reports_nothing_rather_than_raising()
+    public async Task A_timeout_says_ffmpeg_did_not_answer_in_time_and_offers_another_check()
     {
         var runner = new ScriptedRunner(_ => new ScriptedRun { Timeout = ProcessTimeoutKind.Overall, ExitCode = -1 });
 
         var report = await Tools(runner).DetectAccelerationAsync("ffmpeg");
 
         Assert.False(report.Detected);
-        Assert.Equal(TimeSpan.FromSeconds(10), Assert.Single(runner.Requests).Timeout);
+        Assert.Empty(report.AvailableMethods);
+        Assert.Equal("FFmpeg didn't answer in time. Check again in a moment.", report.Detail);
+    }
+
+    [Fact]
+    public async Task The_quick_probe_runs_at_normal_priority_with_the_measured_time_limit()
+    {
+        var runner = new ScriptedRunner(_ => new ScriptedRun { Stdout = "Hardware acceleration methods:\ncuda\n"u8.ToArray() });
+
+        await Tools(runner).DetectAccelerationAsync("ffmpeg");
+
+        var request = Assert.Single(runner.Requests);
+        Assert.Equal(ProcessPriorityClass.Normal, request.Priority);
+        Assert.Equal(TimeSpan.FromSeconds(15), request.Timeout);
+    }
+
+    [Fact]
+    public async Task An_ffmpeg_starved_of_the_processor_is_not_reported_as_unreachable()
+    {
+        // Below normal priority on a saturated machine, the probe gets the processor only in short turns and outlasts
+        // its limit; at normal priority it answers. The fake answers only to a request that asks for normal.
+        var runner = new ScriptedRunner(request => request.Priority != ProcessPriorityClass.Normal
+            ? new ScriptedRun { Timeout = ProcessTimeoutKind.Overall, ExitCode = -1 }
+            : new ScriptedRun { Stdout = "Hardware acceleration methods:\nd3d11va\n"u8.ToArray() });
+
+        var report = await Tools(runner).DetectAccelerationAsync("ffmpeg");
+
+        Assert.True(report.Detected, report.Detail);
+        Assert.Equal(["d3d11va"], report.AvailableMethods);
     }
 
     // --- #500 fixtures for the RemuxToTempFileAsync tests above -----------------------------

@@ -90,9 +90,33 @@ internal sealed class ScriptedTimeProvider(IReadOnlyList<double> seconds) : Time
 
 internal sealed class ListLogger<T> : ILogger<T>
 {
-    public List<(LogLevel Level, string Message)> Entries { get; } = [];
+    private readonly Lock _gate = new();
+    private readonly List<(LogLevel Level, string Message)> _entries = [];
+    private readonly List<Exception> _exceptions = [];
 
-    public List<Exception> Exceptions { get; } = [];
+    /// <summary>What has been logged so far. A copy, because a service logs on its own threads while a test reads.</summary>
+    public List<(LogLevel Level, string Message)> Entries
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return [.. _entries];
+            }
+        }
+    }
+
+    /// <summary>The exceptions logged so far. A copy, for the same reason as <see cref="Entries"/>.</summary>
+    public List<Exception> Exceptions
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return [.. _exceptions];
+            }
+        }
+    }
 
     public IDisposable? BeginScope<TState>(TState state)
         where TState : notnull => null;
@@ -101,10 +125,14 @@ internal sealed class ListLogger<T> : ILogger<T>
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
-        Entries.Add((logLevel, formatter(state, exception)));
-        if (exception is not null)
+        var message = formatter(state, exception);
+        lock (_gate)
         {
-            Exceptions.Add(exception);
+            _entries.Add((logLevel, message));
+            if (exception is not null)
+            {
+                _exceptions.Add(exception);
+            }
         }
     }
 }

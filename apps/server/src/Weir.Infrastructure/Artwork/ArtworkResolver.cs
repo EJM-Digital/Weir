@@ -159,7 +159,11 @@ public sealed class ArtworkResolver : IDisposable
                 return await SettleWithoutPosterAsync(lookup, image.Status, image.RetryAfter, cancellationToken).ConfigureAwait(false);
             }
 
-            await StorePosterAsync(posterId, posterRef, image.Value!, cancellationToken).ConfigureAwait(false);
+            if (!await StorePosterAsync(posterId, posterRef, image.Value!, cancellationToken).ConfigureAwait(false))
+            {
+                _logger.LogInformation("Weir could not replace a poster that is being sent just now, so it kept the old one and will try again.");
+                return false;
+            }
         }
 
         await WriteAsync(uow => _lookups.RecordFoundAsync(uow, lookup.Key, posterId), cancellationToken).ConfigureAwait(false);
@@ -180,10 +184,15 @@ public sealed class ArtworkResolver : IDisposable
         }
     }
 
-    private async Task StorePosterAsync(string posterId, string posterRef, GatewayBody image, CancellationToken cancellationToken)
+    private async Task<bool> StorePosterAsync(string posterId, string posterRef, GatewayBody image, CancellationToken cancellationToken)
     {
-        await _posterFiles.WriteAsync(posterId, image.Bytes, cancellationToken).ConfigureAwait(false);
+        if (!await _posterFiles.WriteAsync(posterId, image.Bytes, cancellationToken).ConfigureAwait(false))
+        {
+            return false;
+        }
+
         await WriteAsync(uow => _lookups.AddPosterAsync(uow, posterId, posterRef, image.ContentType, image.Bytes.Length), cancellationToken).ConfigureAwait(false);
+        return true;
     }
 
     private async Task<bool> SettleWithoutPosterAsync(ArtworkLookup lookup, GatewayStatus status, TimeSpan? retryAfter, CancellationToken cancellationToken)

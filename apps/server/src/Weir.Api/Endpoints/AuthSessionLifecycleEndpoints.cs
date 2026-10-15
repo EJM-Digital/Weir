@@ -68,7 +68,7 @@ internal sealed class AuthSessionLifecycleEndpointHandlers
 
     public async Task<ApiResult> PostLoginAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
+        var body = await request.ReadAnonymousBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(body, issues);
         var username = model.Str("username", minLength: 1, maxLength: 64);
@@ -220,7 +220,7 @@ internal sealed class AuthSessionLifecycleEndpointHandlers
 
     public async Task<ApiResult> PostBootstrapAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
+        var body = await request.ReadAnonymousBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(body, issues);
         var username = model.Str("username", minLength: 1, maxLength: 64);
@@ -305,7 +305,7 @@ internal sealed class AuthSessionLifecycleEndpointHandlers
 
     public async Task<ApiResult> PostLogoutAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
+        var body = await request.ReadAnonymousBodyAsync().ConfigureAwait(false);
         var headerToken = request.FirstHeader("X-CSRF-Token");
         string? bodyToken = null;
         if (body is not null and not WireNull)

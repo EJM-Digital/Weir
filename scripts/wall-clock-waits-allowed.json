@@ -1,0 +1,59 @@
+{
+  "note": "Every wait for the wall clock that scripts/check-wall-clock-waits.mjs lets stand, with how many there are in the file and why each is a poll that ends on its condition and not a guess. The list only shrinks.",
+  "allowed": [
+    {
+      "file": "apps/server/tests/Weir.E2E.Tests/Support/WeirWorkflowApi.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "Removing a workflow is refused while a job of its own is still finishing; this asks again every half second and gives up after 30 seconds, ending at the first answer that is not \"busy\"."
+    },
+    {
+      "file": "apps/tray/Weir.Tray.Tests/ServerOutputTests.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "A poll for a line a real server process has printed, every 25 ms, that ends the moment the line is there and gives up at a ceiling."
+    },
+    {
+      "file": "apps/tray/Weir.Tray.Tests/StartRig.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "The one poll for something a real process has to do, every 10 ms, that ends the moment its condition holds and gives up at a ceiling that only a broken test reaches."
+    },
+    {
+      "file": "packaging/windows/build-velopack.ps1",
+      "kind": "sleep",
+      "count": 1,
+      "reason": "Retry between two /health requests while the published server starts; ends at the first answer and gives up at 30 seconds."
+    },
+    {
+      "file": "scripts/scenarios/Invoke-WeirScenarios.ps1",
+      "kind": "sleep",
+      "count": 2,
+      "reason": "The two waits of the host that drives the VM: five seconds between tries while the VM comes up (15 minutes at most) and twenty seconds between looks at a running phase, which a hang guard of the phase's own timeout ends."
+    },
+    {
+      "file": "scripts/scenarios/Weir.Scenarios.Lib.ps1",
+      "kind": "sleep",
+      "count": 1,
+      "reason": "Wait-Until itself: the interval between two runs of its probe, which ends at the first answer and gives up at the caller's hang guard."
+    },
+    {
+      "file": "scripts/smoke-windows-package.ps1",
+      "kind": "sleep",
+      "count": 11,
+      "reason": "The tries between requests and checks in the smoke's own wait loops (server ready, job complete, listen addresses, log line, folder removal, hook processes gone): each ends the moment its condition holds and gives up at a named hang guard."
+    },
+    {
+      "file": "scripts/smoke-windows-recover.ps1",
+      "kind": "sleep",
+      "count": 1,
+      "reason": "Retry between two /ready requests while the server starts; ends at the first answer and gives up at 60 seconds."
+    },
+    {
+      "file": "scripts/verify-docker-remote.ps1",
+      "kind": "sleep",
+      "count": 1,
+      "reason": "Five seconds between looks for the workflow run that was just triggered on GitHub, which ends the moment the run is listed."
+    }
+  ]
+}

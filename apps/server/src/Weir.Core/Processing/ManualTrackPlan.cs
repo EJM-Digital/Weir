@@ -169,7 +169,14 @@ public static class ManualTrackPlan
 
         var removedAudio = DescribeRemovedAudio(streams.Audio, keepIndices);
         var removedSubtitles = DescribeRemovedSubtitleLangs(streams.Subtitles, keepIndices);
+        // A file always has one default audio track: when the choice marks none (it dropped the track that was), the first kept
+        // audio track in the output order becomes it, as on the automatic path.
         var defaultAudioPosition = audioTracks.FindIndex(t => t.Default);
+        if (defaultAudioPosition < 0 && audioTracks.Count > 0)
+        {
+            defaultAudioPosition = 0;
+            audioTracks[0] = audioTracks[0] with { Default = true };
+        }
 
         return new RemuxPlan
         {

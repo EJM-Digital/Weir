@@ -50,8 +50,8 @@ deletes its own, and each run has a folder of its own, so a failure that does no
 | `browser.log` | The console, page errors, failed requests, responses of 400 and over and every navigation, with times. |
 | `server.log` | The last 2,000 lines the server wrote. |
 
-CI uploads the folder as `e2e-failure-evidence`. A test that passed only on the retry (`docs/ci-standard.md`, item 11) leaves
-its first failure there too: open the trace before anything is loosened.
+CI uploads the folder as `e2e-failure-evidence`. A failed test fails the job and nothing runs it again: an intermittent test is a bug to
+root-cause from the trace, never one to run twice.
 
 ## How it works
 
