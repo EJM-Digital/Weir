@@ -49,8 +49,8 @@ public sealed partial class MediaTools
     /// Runs one <c>--version</c> argv and reduces whatever happened to a single string. The timeout is
     /// <see cref="FfmpegCommands.HwaccelTimeoutSeconds"/>, the same one
     /// <see cref="DetectAccelerationAsync(string, CancellationToken)"/> uses for the other "ask the tool about
-    /// itself" call: printing a version does no I/O and no decoding, so a tool that has not answered in ten
-    /// seconds is not going to.
+    /// itself" call: printing a version does no I/O and no decoding, so a tool that has not answered in that
+    /// time is not going to.
     /// </summary>
     private async Task<string> DescribeToolVersionAsync(IReadOnlyList<string> argv, CancellationToken cancellationToken)
     {
