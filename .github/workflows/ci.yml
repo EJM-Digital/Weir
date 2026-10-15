@@ -107,6 +107,7 @@ jobs:
               - 'apps/server/src/Weir.Host/**'
               - 'apps/server/tools/Weir.LiveAudit/**'
               - 'scripts/smoke-windows-package.ps1'
+              - 'scripts/smoke-windows-recover.ps1'
               - 'scripts/wait-for-health.mjs'
               - 'scripts/docker-compose-smoke.mjs'
               - 'scripts/docker-smoke/**'
@@ -117,6 +118,8 @@ jobs:
               - 'scripts/install-ffmpeg-linux.mjs'
               - 'apps/server/src/Weir.Infrastructure/Migrations/**'
               - 'apps/server/src/Weir.Infrastructure/Sqlite/**'
+              # The recovery command the package smokes run (PLAT-20).
+              - 'apps/server/src/Weir.Infrastructure/Auth/Recover*'
               - '.github/workflows/ci-packaging.yml'
             # The real ffmpeg, ffprobe and mkvmerge the server tests run against (their pins and installers) and the check
             # that every real-tool test ran. The workflows filter below covers the actions that call them.
