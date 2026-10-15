@@ -332,6 +332,35 @@ public sealed partial class LibraryStore
         }
     }
 
+    /// <summary>
+    /// Removes a connection's link to every workflow that has one and returns those workflows. A workflow left with no manager
+    /// at all is switched off: it would otherwise scan its watched folder as Weir's own and may remove the originals the
+    /// download client is still seeding, so it waits until the person has chosen what it does next. The workflows, their
+    /// settings and their folders are not otherwise touched.
+    /// </summary>
+    public async Task<List<ProcessingLibraryRecord>> UnlinkConnectionAsync(UnitOfWork uow, long connectionId)
+    {
+        var linked = await LibrariesForConnectionIdAsync(uow, connectionId).ConfigureAwait(false);
+        foreach (var library in linked)
+        {
+            await uow.ExecuteAsync(
+                "DELETE FROM library_manager_links WHERE library_id = @lib AND connection_id = @conn",
+                ("@lib", library.Id), ("@conn", connectionId)).ConfigureAwait(false);
+            if ((await ManagerConnectionIdsAsync(uow, library.Id).ConfigureAwait(false)).Count == 0)
+            {
+                await uow.ExecuteAsync(
+                    "UPDATE libraries SET enabled = 0, updated_at = CURRENT_TIMESTAMP WHERE id = @id", ("@id", library.Id)).ConfigureAwait(false);
+            }
+        }
+
+        if (linked.Count > 0)
+        {
+            Changed(uow);
+        }
+
+        return linked;
+    }
+
     private void Changed(UnitOfWork uow) => _changes?.PublishOnCommit(uow, DataTopics.Libraries);
 
     /// <summary>The watched and output folders of every library but <paramref name="excludeId"/>, for the overlap check.</summary>
