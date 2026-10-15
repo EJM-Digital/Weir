@@ -46890,6 +46890,36 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "deluno-outcomes"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.Retries.cs",
+          "name": "A_release_sent_twice_is_reported_superseded_for_the_first_send_and_finished_for_the_second_as_Deluno_recorded"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.Releases.cs",
+          "name": "A_second_different_file_with_the_name_of_one_in_the_output_replaces_it_and_is_reported_under_that_name_as_Deluno_recorded"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.Releases.cs",
+          "name": "A_second_different_file_with_the_name_of_one_in_the_output_is_kept_beside_it_and_reported_under_a_numbered_name_as_Deluno_recorded"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.Releases.cs",
+          "name": "A_season_pack_of_two_episodes_is_reported_once_with_the_folder_and_both_files_as_Deluno_recorded"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.Releases.cs",
+          "name": "A_season_pack_with_one_episode_Weir_cannot_read_is_reported_failed_and_held_with_the_two_files_it_finished_as_Deluno_recorded"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.Releases.cs",
+          "name": "A_release_with_no_video_is_rejected_and_reported_failed_rejected_and_left_for_Deluno_to_remove_as_Deluno_recorded"
         }
       ],
       "needs": {
@@ -46960,6 +46990,21 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/HandoffWaitingReportTests.cs",
           "name": "A_report_the_manager_never_answered_for_any_reason_stays_owed_and_goes_when_it_answers"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.Retries.cs",
+          "name": "A_report_Deluno_answered_401_or_403_is_not_owed_any_more_and_the_person_is_told_as_Deluno_recorded"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.Retries.cs",
+          "name": "A_report_Deluno_answered_503_is_kept_owed_with_a_note_that_Weir_is_waiting_as_Deluno_recorded"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/RecordedReportRetryTests.cs",
+          "name": "RecordedReportRetryTests"
         }
       ]
     },

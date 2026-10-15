@@ -9,8 +9,8 @@ recordings of Weir's replies, made by Deluno the other way round, are in `../del
 | | |
 | --- | --- |
 | Source | Deluno repository, `tests/fixtures/recorded/deluno/` |
-| Source commit | `d9339c03a2c5a8b924e7add57d616cf2f6c2c5a4` (Deluno `main`). It carries Deluno #1267, which re-made five recordings so that a body-less 404 means only that the route is missing; every file here is byte-identical to that commit (git blob ids match) |
-| Copied | byte for byte, with Deluno's `MANIFEST.sha256`; 38 recordings |
+| Source commit | `73905126bbf27db1be75b7bdefcb983805fe01bb` (Deluno `main`). It carries Deluno #1267, which re-made five recordings so that a body-less 404 means only that the route is missing, and the reports Weir 1.0.0-rc.18 sent Deluno on the golden VM; every file here is byte-identical to that commit (git blob ids match) |
+| Copied | byte for byte, with Deluno's `MANIFEST.sha256`; 51 recordings |
 | Never edited here | `node scripts/check-recorded-manifest.mjs` fails (CI, `repo-checks`) when a file differs from its line in the manifest, and names the file |
 | Copy again | `git -C <Deluno> archive <commit> tests/fixtures/recorded/deluno` and put the `1.0.0-rc.*` folders and `MANIFEST.sha256` here, then change the commit above |
 
@@ -18,6 +18,7 @@ recordings of Weir's replies, made by Deluno the other way round, are in `../del
 | --- | --- | --- |
 | `1.0.0-rc.30.30/` | Deluno's requests to Weir (`handoff-*`, `outcome-*`, `status-ask-queued`, `cancel-queued`, `capabilities-ask`, `library-folders-ask`) with Weir's replies, and Weir's reports to Deluno (`events-*`) with Deluno's replies | 13 October 2026, a real Deluno rc.30.30 and a real Weir 1.0.0-rc.13 on Deluno's golden VM, with a recording proxy in front of each |
 | `1.0.0-rc.30.32/` | Deluno's own replies (`reply-*`) to the calls Weir makes of it or a person makes with a key: the hand-off list, where downloads land, import the original, send the outcome again, and the refusals of a key | 14 October 2026, from Deluno's server code through its in-process test host, not from the VM |
+| `1.0.0-rc.30.32/` | Weir's reports to Deluno (`events-*`) with Deluno's answers: the send that was replaced, the second send of a release, the two name collisions, a season pack and a partly cleaned one, a rejected release, and a report Deluno answered 503, 401 or 403 and Weir did not send again | 15 October 2026, a real Weir 1.0.0-rc.18 on Deluno's golden VM behind a recording proxy; the 503, 401 and 403 are the proxy's own answers and the request was not passed on |
 
 A recording is `{app, version, state, recordedAt, note, exchanges[{request{method, path, headers, body}, reply{status, headers, body}}]}`.
 A secret is scrubbed (`<scrubbed>`). In the rc.30.32 recordings what differs from run to run is a placeholder: `<id>`, `<utc>`,
@@ -35,6 +36,13 @@ the recorded single-file hand-off with only its id and release changed (`DelunoS
 | `capabilities-ask`, `library-folders-ask`, `handoff-single-file`, `handoff-release-folder`, `handoff-usenet-folder`, `handoff-resend`, `status-ask-queued`, `cancel-queued`, `outcome-imported`, `outcome-not-imported-removed`, `outcome-imported-for-replaced-send` | `DelunoRequestsTests`, `RecordedLibraryFoldersTests` | Deluno's request is sent as recorded (its Idempotency-Key too); Weir's reply is the recorded one, member by member; and Weir's state afterwards is what the call implies: the output where the Deluno table below puts it, the queued hand-off cancelled and never worked, the file's record of what Deluno did |
 | `events-completed`, `events-completed-resent`, `events-failed-under-minimum`, `events-failed-unreadable`, `events-failed-source-gone`, `events-too-late` | `DelunoReportsTests` | A fake Deluno records what Weir POSTs for each ending: the same members, in the same order, of the same types, with the exact words (`status`, `failureClass` `source_gone`, `disposition`, `sourceRemoved`, the ids and the output paths). The fake answers with Deluno's recorded reply and Weir must read it: a 202 is delivered and no longer owed; a 409 `dismissed` is Deluno having stopped waiting, said so in plain words, and not retried |
 | `reply-download-destinations-libraries`, `reply-download-destinations-empty`, `reply-key-without-imports-scope`, `reply-key-with-imports-scope-only`, `reply-no-sign-in` | `DelunoRepliesTests`, `DelunoReportsTests` | A fake Deluno serves each reply to Weir: the folders it names (and the path mappings of the processor connection, and a null one) are read and judged; a 200 with no library, a 404 `library_not_found` (and a 404 with no body, which still means the route is missing), a 401 and both 403 shapes each get a sentence, no crash, and no retry |
+| `events-completed-answered-503-not-repeated` | `DelunoReportsTests`, `RecordedReportRetryTests` | Deluno answers a finished hand-off's report 503, as recorded: Weir's report is the recorded one and stays owed with a note that it is waiting (`DelunoReportsTests`, a running server). `RecordedReportRetryTests` serves the recorded 503 and then the recorded 202 to the production heartbeat on a fake clock: the same report goes again at the first heartbeat a minute later and is then no longer owed. The recording shows rc.18 never sent it again, and the test fails on the code before the fix. The rest of the schedule (doubling to an hour, `Retry-After`, a week) is held by `OwedReportRetryTests` |
+| `events-answered-401-not-repeated`, `events-answered-403-not-repeated` | `DelunoReportsTests`, `RecordedReportRetryTests` | Deluno answers the report 401 or 403 as recorded: Weir stops owing it, says it could not tell Deluno, and sends it once, however long the fake clock then runs |
+| `events-superseded`, `events-completed-after-takeover` | `DelunoReportsTests` | A release sent twice while Weir is working the first: the first send is reported failed with `failureClass` superseded, the second finished with the output, with the members and exact words recorded |
+| `events-completed-collision-replace-first`, `-second`, `events-completed-collision-keep-both-first`, `-second` | `DelunoReportsTests` | Two different films sent under one file name, one after the other, under each collision policy: the second is reported under the same output path (replace) or under the numbered name `... (2).mkv` (keep both) |
+| `events-completed-season-pack` | `DelunoReportsTests` | A season pack of two episodes is reported once, with the folder as `outputPath` and both episodes in `outputFiles` |
+| `events-failed-partial-season-pack`, `events-failed-partial-season-pack-corrupt` | `DelunoReportsTests` | A season pack with one episode Weir cannot read, under the hold policy: reported failed, held, with the two episodes it finished (both recordings hold the same report) |
+| `events-failed-rejected` | `DelunoReportsTests` | A file with no video under the reject policy, with Deluno advertising it can replace a rejected release: reported failed, rejected, `failureClass` preflight, the download left in place |
 | any of the above, changed | `DelunoRecordingComparisonTests` | A recording that stops matching fails naming its file and the JSON path |
 
 A change Weir made on purpose since a recording is never made by editing it: the test pins it as an `ExpectedDifference` with the issue
@@ -64,10 +72,14 @@ and `DelunoReportsTests` to Weir's report.
 
 ## What the recordings could not cover
 
-- Weir's reports `accepted`, `started`, `rejected` and `not_taken`, and the `superseded` report: Deluno never recorded Weir sending them
-  (its `MISSING.md`). Weir's tests build those; they are not held to a recording.
-- A 5xx or 429 from Deluno to a report, and Deluno not answering at all: no reply was recorded. `HandoffWaitingReportTests` covers the
-  connection that fails.
+- Weir's reports `accepted`, `started` and `not_taken`: Deluno never recorded Weir sending them (its `MISSING.md`). Weir's tests build
+  those; they are not held to a recording.
+- Deluno's recorder made the hand-offs for the collision, season pack, partly cleaned pack and rejected-release reports straight to Weir's
+  intake and did not keep them. Each replay builds the hand-off from the recorded single-file one with the id, release, library and path the
+  report names; the audio-only file's name is the recorder's pattern, as the report names no file. `../deluno-side-awaiting-replay.json` lists a
+  recording that is not replayed yet with its open issue; it is empty.
+- A 429 or a 5xx other than 503 from Deluno to a report, and Deluno not answering at all: no reply was recorded. `OwedReportRetryTests` and
+  `HandoffWaitingReportTests` cover them without a recording.
 - Deluno's `external/manifest`, `external/health`, `external/queue` and `external/file-changed` replies: not in this set. The fake
   Deluno answers them with the minimum Weir reads, and the download-destinations tests rely on that manifest.
 - A body-less 404 from an older Deluno: none was recorded. `DelunoRepliesTests` makes it from the `library_not_found` reply with its
