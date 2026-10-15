@@ -19,7 +19,11 @@ public sealed class ProcessingRig : IAsyncDisposable
 {
     private const string WebhookSecret = "e2e-rig-webhook-secret";
     private const string WebhookSecretVariable = "WEIR_MEDIA_MANAGER_WEBHOOK_SECRET";
+    private const int InspectedJobs = 100;
     private const string CallbackPath = "/api/integrations/processors/events";
+
+    // A pass is a few processes to start, which a busy machine stretches; this is where a wait gives up, not how long one takes.
+    private static readonly TimeSpan PassCeiling = TimeSpan.FromMinutes(5);
 
     private static readonly IReadOnlyDictionary<string, string> Secret = new Dictionary<string, string> { ["X-Webhook-Secret"] = WebhookSecret };
 
@@ -40,6 +44,9 @@ public sealed class ProcessingRig : IAsyncDisposable
 
     /// <summary>The server's address without a trailing slash.</summary>
     public string BaseUrl => _server.BaseUrl.GetLeftPart(UriPartial.Authority);
+
+    /// <summary>The rig's admin session, for reading and arranging what the screens show.</summary>
+    public WeirClient Admin => _admin;
 
     private string Watched => Path.Combine(_folders.Path, "watched");
 
@@ -169,6 +176,17 @@ public sealed class ProcessingRig : IAsyncDisposable
     /// <summary>Deluno hands over the file it already handed over, which has not changed since: no file is written.</summary>
     public Task HandOffRootFileAgainAsync(string handoffId, string fileName) => PostHandOffAsync(handoffId, Path.Combine(Watched, fileName));
 
+    /// <summary>The file's row as the server lists it for Activity, read back through the API, or null when Activity does not list it.</summary>
+    public async Task<JsonObject?> ListedFileAsync(string fileName)
+    {
+        var listed = await _admin.GetAsync($"{WeirClient.Api}/processing/files", ("path_contains", fileName));
+        Assert.True(listed.Status == HttpStatusCode.OK, listed.ToString());
+        return listed.Fields["files"]!.AsArray().SingleOrDefault()?.AsObject();
+    }
+
+    /// <summary>Whether the file Deluno handed over is still where it was put, in the watched folder.</summary>
+    public bool WatchedFileExists(string handoffId, string fileName) => File.Exists(Path.Combine(Watched, handoffId, fileName));
+
     /// <summary>Takes the file off Activity's list, as "Remove from the list" does.</summary>
     public async Task ForgetAsync(string fileName)
     {
@@ -238,7 +256,8 @@ public sealed class ProcessingRig : IAsyncDisposable
         }
 
         text.AppendLine("Server log, last 60 lines:");
-        foreach (var line in _server.LogText().Split(n).TakeLast(60))
+        foreach (var line in _server.LogText().Split('
+').TakeLast(60))
         {
             text.AppendLine(line.TrimEnd());
         }
@@ -275,6 +294,32 @@ public sealed class ProcessingRig : IAsyncDisposable
 
     /// <summary>The arguments of the latest ffmpeg write of a cleaned copy.</summary>
     public IReadOnlyList<string> LatestRemuxArguments => _tools.Calls(tool: "ffmpeg", step: "remux")[^1].Arguments;
+
+    /// <summary>Waits until a worker has taken the hand-off's pass, which then stays under way until <see cref="ReleasePass"/>.</summary>
+    public async Task WaitUntilWorkingAsync(string handoffId) =>
+        await Poll.UntilAsync(
+            async () =>
+            {
+                var inspected = await _admin.GetAsync($"{WeirClient.Api}/processing/jobs/inspection", ("limit", InspectedJobs));
+                Assert.True(inspected.Status == HttpStatusCode.OK, inspected.ToString());
+                return inspected.Fields["jobs"]!.AsArray().Any(job =>
+                    (string?)job!["dedupe_key"] == $"processing.file.remux_pass.v1:deluno:handoff:{handoffId}" && (string?)job["status"] == "leased");
+            },
+            $"Weir to start working {handoffId}",
+            PassCeiling);
+
+    /// <summary>Deluno stops answering, so a report Weir has for it cannot be delivered and Weir keeps it.</summary>
+    public void StopDeluno() => _deluno.Dispose();
+
+    /// <summary>Waits until Weir holds a report it owes Deluno because Deluno did not answer.</summary>
+    public async Task WaitForOwedReportAsync() =>
+        await Poll.UntilAsync(
+            () => Task.FromResult(OwedReports > 0),
+            "Weir to keep the report it could not deliver",
+            PassCeiling);
+
+    /// <summary>How many finished hand-offs Weir still owes Deluno a report for.</summary>
+    public long OwedReports => E2EDatabase.OwedReportCount(_server.DatabasePath);
 
     /// <summary>Lets the pass on <paramref name="fileName"/> finish.</summary>
     public void ReleasePass(string fileName) => File.WriteAllText(ReleaseFileFor(fileName), string.Empty);

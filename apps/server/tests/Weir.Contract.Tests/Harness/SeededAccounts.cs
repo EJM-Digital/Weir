@@ -24,12 +24,24 @@ public static class SeededAccounts
     public const string AdminPasswordHash =
         "$argon2id$v=19$m=8,t=1,p=1$crmvJg0OQnYs9UpHYczjHg$z2lZc0sScTtRjmMABkRghwK/izA76Zub+n4ALQehTgQ";
 
+    /// <summary>An operator, who signs in with <see cref="ViewerPassword"/>: the hash is the same.</summary>
+    public const string OperatorUsername = "carol";
+
     /// <summary>Adds the viewer to a stopped database when it has none.</summary>
     public static void EnsureViewer(SqliteConnection connection)
     {
         if (!UserExists(connection, ViewerUsername))
         {
             SeedSql.InsertUser(connection, ViewerUsername, ViewerPasswordHash, "viewer");
+        }
+    }
+
+    /// <summary>Adds the operator to a stopped database when it has none.</summary>
+    public static void EnsureOperator(SqliteConnection connection)
+    {
+        if (!UserExists(connection, OperatorUsername))
+        {
+            SeedSql.InsertUser(connection, OperatorUsername, ViewerPasswordHash, "operator");
         }
     }
 

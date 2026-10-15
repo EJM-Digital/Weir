@@ -1,0 +1,8 @@
+exit code: 0
+--- stdout ---
+Password reset for 'recover-smoke-admin'.
+The account is active and has the admin role.
+1 signed-in session was ended - sign in again with the new password.
+
+--- stderr ---
+Warning: --password stays in your shell history and is visible in the process list while Weir recover runs. Omit it to be prompted instead.

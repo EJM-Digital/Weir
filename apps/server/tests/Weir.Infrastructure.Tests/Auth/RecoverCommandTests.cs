@@ -391,4 +391,63 @@ public sealed class RecoverCommandTests
         Assert.Equal(RecoverCommand.ExitFailed, exit);
         Assert.Contains("argument --username: expected one argument", stderr.ToString());
     }
+
+    [Fact]
+    public async Task A_folder_with_no_database_is_refused_plainly_and_no_database_is_made()
+    {
+        using var home = new TempDirectory();
+        var runtime = RuntimeAt(home.Path);
+        var databasePath = WeirOptionsLoader.Load(runtime).DbPath;
+        var (stdout, stderr) = Writers();
+
+        var exit = await RecoverCommand.RunAsync(
+            ["--password", NewPassword], runtime, stdout, stderr, new FakePasswordPrompt(isInteractive: false));
+
+        Assert.Equal(RecoverCommand.ExitFailed, exit);
+        Assert.Contains($"There is no Weir database at {databasePath}, so there is nothing to recover.", stderr.ToString());
+        Assert.Contains("set WEIR_HOME to that folder", stderr.ToString());
+        Assert.False(File.Exists(databasePath), "recovering a folder Weir never used must not leave a database behind");
+    }
+
+    [Fact]
+    public async Task Listing_a_folder_with_no_database_says_so_and_makes_none()
+    {
+        using var home = new TempDirectory();
+        var runtime = RuntimeAt(home.Path);
+        var databasePath = WeirOptionsLoader.Load(runtime).DbPath;
+        var (stdout, stderr) = Writers();
+
+        var exit = await RecoverCommand.RunAsync(["--list"], runtime, stdout, stderr, new FakePasswordPrompt(isInteractive: false));
+
+        Assert.Equal(RecoverCommand.ExitFailed, exit);
+        Assert.Contains("There is no Weir database at", stderr.ToString());
+        Assert.False(File.Exists(databasePath));
+    }
+
+    [Fact]
+    public async Task A_database_file_Weir_never_filled_is_refused_the_same_way()
+    {
+        using var home = new TempDirectory();
+        var runtime = RuntimeAt(home.Path);
+        var options = WeirOptionsLoader.Load(runtime);
+        RuntimeDirectories.Ensure(options);
+        await File.WriteAllBytesAsync(options.DbPath, []);
+        var (stdout, stderr) = Writers();
+
+        var exit = await RecoverCommand.RunAsync(
+            ["--password", NewPassword], runtime, stdout, stderr, new FakePasswordPrompt(isInteractive: false));
+
+        Assert.Equal(RecoverCommand.ExitFailed, exit);
+        Assert.Contains($"There is no Weir database at {options.DbPath}, so there is nothing to recover.", stderr.ToString());
+    }
+
+    private static RuntimeEnvironment RuntimeAt(string home) => new(
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["WEIR_HOME"] = home,
+            ["WEIR_SESSION_SECRET"] = "recover-tests-session-secret-0123456789",
+        },
+        OperatingSystem.IsWindows(),
+        home,
+        home);
 }

@@ -73,3 +73,28 @@ node scripts/check-coverage-floors.mjs --floors docs/coverage/floors.json --serv
 
 A local figure can differ from CI's: CI's server figure merges Linux and Windows, and tests that need FFmpeg or
 mkvmerge run only where those tools are installed.
+
+## Route access
+
+`route-access.json` says who may call each route the server maps. It is a different kind of coverage: not how much of the code the tests
+run, but whether every route keeps the guard it is meant to have. Two tests hold the server to it.
+
+- `RouteAccessTableTests` (API tests) compares the file with the server's own endpoint table. A route the server maps that the file does
+  not list fails, and so does a line for a route the server no longer maps.
+- `RouteAccessTests` (contract suite, area `auth`) calls every route on a running server, as each kind of caller, and compares the
+  answer with the line.
+
+| `access` | Who may call | What the walk checks |
+| --- | --- | --- |
+| `public` | Anyone, with a `reason` | An anonymous caller is not turned away at the door. |
+| `signed-in` | Any account | An anonymous caller gets 401. A viewer, an operator and an administrator all get past the guard. |
+| `operator` | An operator or an administrator | As above, and a viewer gets 403. |
+| `admin` | An administrator only | As above, and an operator gets 403. |
+| `manager-key` | A media manager presenting its webhook secret, with a `reason` | Neither an anonymous caller nor the administrator's browser session is let in. |
+
+Every write except a `manager-key` one is also called with no token and from an origin the server does not trust: the first has to be
+refused for the token, and the second with a good token has to be refused for the origin. The anonymous, viewer and operator calls send an
+empty body, so the guard has to answer before the server looks at what was asked.
+
+When you add a route, add its line here with the narrowest access that fits. When a write needs fields besides the token, add them to
+`RouteWalk.RequiredFields`, so the walk reaches the token and origin checks instead of stopping at validation.

@@ -9,6 +9,7 @@ using Weir.Core.Observability;
 using Weir.Core.Time;
 using Weir.Infrastructure.Activity;
 using Weir.Infrastructure.Processing.RemuxPass;
+using Weir.Infrastructure.Runtime;
 using Weir.Infrastructure.Scheduling;
 
 namespace Weir.Infrastructure.Jobs;
@@ -32,6 +33,7 @@ public sealed class ProcessingJobProcessor
     private readonly ILogger _logger;
     private readonly PeriodicTaskRegistry? _tasks;
     private readonly DataChangePublisher? _changes;
+    private readonly ProcessPulse? _pulse;
 
     public ProcessingJobProcessor(
         ProcessingJobStore queue,
@@ -42,8 +44,10 @@ public sealed class ProcessingJobProcessor
         TimeProvider time,
         ILogger<ProcessingJobProcessor> logger,
         PeriodicTaskRegistry? tasks = null,
-        DataChangePublisher? changes = null)
+        DataChangePublisher? changes = null,
+        ProcessPulse? pulse = null)
     {
+        _pulse = pulse;
         _queue = queue ?? throw new ArgumentNullException(nameof(queue));
         _handlers = handlers ?? throw new ArgumentNullException(nameof(handlers));
         _activity = activity ?? throw new ArgumentNullException(nameof(activity));
@@ -162,7 +166,18 @@ public sealed class ProcessingJobProcessor
         {
             // The row is left as it is: its lease has run out, so recovery or another worker takes the job from here, and this
             // worker has stopped running it. Failing or completing it now could only be refused or undo that worker's claim.
-            _logger.LogWarning("{Message} The job was stopped and is left for recovery. job_id={JobId}", lost.Message, context.Id);
+            if (WasAway(lost.Since))
+            {
+                _logger.LogInformation(
+                    "Weir was not running, or the computer was asleep, while it worked on {Work}; the job was stopped and will be picked up again. job_id={JobId}",
+                    WorkOn(context),
+                    context.Id);
+            }
+            else
+            {
+                _logger.LogWarning("{Message} The job was stopped and is left for recovery. job_id={JobId}", lost.Message, context.Id);
+            }
+
             ReportRunEnded(taskKey, ok: false, why: "lease_lost");
             return JobProcessOutcome.Processed;
         }
@@ -303,15 +318,15 @@ public sealed class ProcessingJobProcessor
     {
         using var handlerCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         using var renewalCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        using var expiry = new LeaseExpiry(_time, leaseUntil, handlerCts);
-        var heartbeat = RenewLeaseHeartbeatAsync(context.Id, context.LeaseOwner, leaseSeconds, expiry, renewalCts.Token);
+        using var expiry = new LeaseExpiry(_time, leaseUntil, handlerCts, leaseUntil - TimeSpan.FromSeconds(leaseSeconds));
+        var heartbeat = RenewLeaseHeartbeatAsync(context, leaseSeconds, expiry, renewalCts.Token);
         try
         {
             await handler.HandleAsync(context, handlerCts.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (expiry.Lost && !cancellationToken.IsCancellationRequested)
         {
-            throw new LeaseLostException(context.Id);
+            throw new LeaseLostException(context.Id, expiry.Since);
         }
         finally
         {
@@ -321,7 +336,27 @@ public sealed class ProcessingJobProcessor
     }
 
     /// <summary>The job's lease ran out while its renewals could not reach a busy database, so another worker may now hold it.</summary>
-    private sealed class LeaseLostException(long jobId) : Exception($"The lease on job {jobId} ran out before it could be renewed.");
+    private sealed class LeaseLostException(long jobId, DateTimeOffset since) : Exception($"The lease on job {jobId} ran out before it could be renewed.")
+    {
+        /// <summary>When the lease was last confirmed: the claim, or the last renewal the database accepted.</summary>
+        public DateTimeOffset Since { get; } = since;
+    }
+
+    /// <summary>
+    /// Whether the process could not run for most of the time since <paramref name="since"/>: the computer slept, a machine was
+    /// saved or paused, a container was frozen. A lease that ran out then was not neglected, and a person has nothing to do about it.
+    /// </summary>
+    private bool WasAway(DateTimeOffset since)
+    {
+        var now = _time.GetUtcNow();
+        return _pulse is not null && _pulse.AwayWithin(since, now).Within * 2 >= now - since;
+    }
+
+    /// <summary>What a person knows the job by: the file it works on when its payload names one, else just "a background job".</summary>
+    private static string WorkOn(JobWorkContext context) =>
+        JobPayload.StringProperty(JobPayload.ParseObject(context.PayloadJson), "relative_media_path") is { Length: > 0 } path
+            ? MediaPathNames.Name(path, windows: true)
+            : "a background job";
 
     /// <summary>
     /// Cancels the handler once the last lease the database confirmed has run out. A timer on the clock, not a check in the
@@ -332,10 +367,12 @@ public sealed class ProcessingJobProcessor
         private readonly TimeProvider _time;
         private readonly ITimer _timer;
         private volatile bool _lost;
+        private long _sinceTicks;
 
-        public LeaseExpiry(TimeProvider time, DateTimeOffset expiry, CancellationTokenSource handler)
+        public LeaseExpiry(TimeProvider time, DateTimeOffset expiry, CancellationTokenSource handler, DateTimeOffset since)
         {
             _time = time;
+            _sinceTicks = since.UtcTicks;
             _timer = time.CreateTimer(
                 _ =>
                 {
@@ -349,8 +386,15 @@ public sealed class ProcessingJobProcessor
 
         public bool Lost => _lost;
 
-        /// <summary>The database confirmed a lease that runs to <paramref name="expiry"/>.</summary>
-        public void Confirmed(DateTimeOffset expiry) => _timer.Change(Until(expiry), Timeout.InfiniteTimeSpan);
+        /// <summary>When the database last confirmed the lease: the claim, or the last renewal it accepted.</summary>
+        public DateTimeOffset Since => new(Volatile.Read(ref _sinceTicks), TimeSpan.Zero);
+
+        /// <summary>The database confirmed, at <paramref name="at"/>, a lease that runs to <paramref name="expiry"/>.</summary>
+        public void Confirmed(DateTimeOffset at, DateTimeOffset expiry)
+        {
+            Volatile.Write(ref _sinceTicks, at.UtcTicks);
+            _timer.Change(Until(expiry), Timeout.InfiniteTimeSpan);
+        }
 
         /// <summary>The lease is no longer ours to watch: it was taken, or renewing failed for a reason other than a busy database.</summary>
         public void Disarm() => _timer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
@@ -361,8 +405,10 @@ public sealed class ProcessingJobProcessor
     }
 
     /// <summary>The lease-renewal heartbeat itself: sleep, renew, repeat, until cancelled.</summary>
-    private async Task RenewLeaseHeartbeatAsync(long jobId, string leaseOwner, int leaseSeconds, LeaseExpiry leaseExpiry, CancellationToken cancellationToken)
+    private async Task RenewLeaseHeartbeatAsync(JobWorkContext context, int leaseSeconds, LeaseExpiry leaseExpiry, CancellationToken cancellationToken)
     {
+        var jobId = context.Id;
+        var leaseOwner = context.LeaseOwner;
         var interval = TimeSpan.FromSeconds(Math.Max(0.05, leaseSeconds / 3.0));
         try
         {
@@ -391,15 +437,27 @@ public sealed class ProcessingJobProcessor
 
                 if (renewed)
                 {
-                    leaseExpiry.Confirmed(now + TimeSpan.FromSeconds(leaseSeconds));
+                    leaseExpiry.Confirmed(now, now + TimeSpan.FromSeconds(leaseSeconds));
                 }
                 else
                 {
+                    var since = leaseExpiry.Since;
                     leaseExpiry.Disarm();
-                    _logger.LogWarning(
-                        "Lease renewal found the lease no longer held job_id={JobId} owner={Owner}; no longer renewing.",
-                        jobId,
-                        leaseOwner);
+                    if (WasAway(since))
+                    {
+                        _logger.LogInformation(
+                            "Weir was not running, or the computer was asleep, while it worked on {Work}; the job's claim ran out in the meantime. job_id={JobId}",
+                            WorkOn(context),
+                            jobId);
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "Lease renewal found the lease no longer held job_id={JobId} owner={Owner}; no longer renewing.",
+                            jobId,
+                            leaseOwner);
+                    }
+
                     return;
                 }
             }

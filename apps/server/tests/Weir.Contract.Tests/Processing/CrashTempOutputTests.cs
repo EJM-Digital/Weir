@@ -23,7 +23,7 @@ public sealed class CrashTempOutputTests
         await File.WriteAllTextAsync(operatorNote, "an operator's own file that happens to look similar");
 
         await scenario.PostHandoffAsync("handoff-temp-534", source);
-        await Poll.UntilAsync(
+        await scenario.WaitWhileWorkedOnAsync(
             () => Task.FromResult(TempOutputs(scenario).Length > 0),
             "the remux to start writing its temp output in the work folder");
 

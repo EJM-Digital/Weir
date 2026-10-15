@@ -845,24 +845,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/DownloadClientConnectionsApiTests.cs",
-          "name": "A_connection_is_created_listed_fetched_updated_and_removed_without_ever_exposing_its_secret"
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
         },
         {
-          "type": "e2e",
-          "file": "apps/server/tests/Weir.E2E.Tests/SetupLiveTests.cs",
-          "name": "SetupLiveTests"
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
+          "name": "RouteAccessTableTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No test refuses an anonymous or viewer caller or a missing CSRF token on any download-client route (the media-manager routes have such tests, these have none)"
-      },
-      "issue": 1000,
       "covers": [
         "route:GET /api/v1/download-clients/connections"
       ],
@@ -879,34 +873,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/DownloadClientConnectionsApiTests.cs",
-          "name": "DownloadClientConnectionsApiTests"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/ConnectionNicknameApiTests.cs",
-          "name": "ConnectionNicknameApiTests"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/DownloadClientConnectionServiceTests.cs",
-          "name": "DownloadClientConnectionServiceTests"
-        },
+      "proofs": [
         {
           "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/ConnectionActivityTests.cs",
-          "name": "ConnectionActivityTests"
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
+          "name": "RouteAccessTableTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Same: no auth/role/CSRF refusal test"
-      },
-      "issue": 1000,
       "covers": [
         "route:POST /api/v1/download-clients/connections"
       ],
@@ -923,34 +901,18 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/DownloadClientConnectionsApiTests.cs",
-          "name": "Suggestions_need_a_media_type_and_report_one_entry_per_enabled_connection"
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
         },
         {
           "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/DownloadClientConnectionsApiTests.cs",
-          "name": "An_unreachable_connection_is_left_out_of_suggestions_instead_of_failing_the_whole_list"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/Processing/ManagerSectionTruthApiTests.cs",
-          "name": "ManagerSectionTruthApiTests"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/DownloadClientConnectionServiceTests.cs",
-          "name": "Suggestions_carry_the_folders_and_no_verdict_on_them"
+          "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
+          "name": "RouteAccessTableTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Folders come from fake client servers written from the docs; no auth test"
-      },
-      "issue": 1000,
       "covers": [
         "route:GET /api/v1/download-clients/suggestions"
       ],
@@ -967,24 +929,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/DownloadClientConnectionsApiTests.cs",
-          "name": "DownloadClientConnectionsApiTests"
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
         },
         {
-          "type": "e2e",
-          "file": "apps/server/tests/Weir.E2E.Tests/SetupLiveTests.cs",
-          "name": "SetupLiveTests"
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
+          "name": "RouteAccessTableTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No auth refusal test"
-      },
-      "issue": 1000,
       "covers": [
         "route:GET /api/v1/download-clients/connections/{connection_id}"
       ],
@@ -1001,7 +957,23 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientSecretsTests.cs",
+          "name": "DownloadClientSecretsTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientAccessTests.cs",
+          "name": "DownloadClientAccessTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -1014,11 +986,6 @@
           "name": "DownloadClientConnectionServiceTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No auth/CSRF refusal test; no contract test"
-      },
-      "issue": 1001,
       "covers": [
         "route:PUT /api/v1/download-clients/connections/{connection_id}"
       ],
@@ -1035,7 +1002,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientRemovalTests.cs",
+          "name": "DownloadClientRemovalTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientAccessTests.cs",
+          "name": "DownloadClientAccessTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -1048,11 +1026,6 @@
           "name": "SetupLiveTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No auth/CSRF refusal test; nothing shows what happens to a workflow that referenced the client"
-      },
-      "issue": 1001,
       "covers": [
         "route:DELETE /api/v1/download-clients/connections/{connection_id}"
       ],
@@ -1184,39 +1157,23 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
-          "type": "e2e",
-          "file": "apps/server/tests/Weir.E2E.Tests/LibraryScanLiveTests.cs",
-          "name": "LibraryScanLiveTests"
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
         },
         {
           "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/Platform/LiveStreamApiTests.cs",
-          "name": "Asking_for_a_library_scan_reaches_an_open_stream_as_a_library_scan_change"
+          "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
+          "name": "RouteAccessTableTests"
         },
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryScanHandlerTests.cs",
-          "name": "LibraryScanHandlerTests"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerTests.cs",
-          "name": "LibraryFileWalkerTests"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileIndexWriterTests.cs",
-          "name": "LibraryFileIndexWriterTests"
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryScanRealFilesTests.cs",
+          "name": "LibraryScanRealFilesTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No refusal test (viewer, anonymous, CSRF); the scan has no contract or VM test on a real Windows library"
-      },
-      "issue": 1000,
       "covers": [
         "route:POST /api/v1/processing/libraries/{library_id}/library-scan"
       ],
@@ -1233,44 +1190,18 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryViewApiTests.cs",
-          "name": "LibraryViewApiTests"
-        },
+      "proofs": [
         {
           "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryViewApiTests.cs",
-          "name": "LibraryViewApiTests"
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
         },
         {
           "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryStatusApiTests.cs",
-          "name": "LibraryStatusApiTests"
-        },
-        {
-          "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryStatusApiTests.cs",
-          "name": "LibraryStatusApiTests"
-        },
-        {
-          "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryViewFilesApiTests.cs",
-          "name": "LibraryViewFilesApiTests"
-        },
-        {
-          "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryViewStatusSortTests.cs",
-          "name": "LibraryViewStatusSortTests"
+          "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
+          "name": "RouteAccessTableTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No anonymous-refused test for this route (only overview and problems have one)"
-      },
-      "issue": 1000,
       "covers": [
         "route:GET /api/v1/processing/libraries/{library_id}/library-files"
       ],
@@ -1558,8 +1489,12 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryScheduleApiTests.cs",
+          "name": "LibraryScheduleApiTests"
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryModeScheduleApiTests.cs",
@@ -1581,17 +1516,12 @@
           "name": "LibraryModeScheduleTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Only the happy path in one test; validation, refusals and turning it off are not shown over HTTP"
-      },
-      "issue": 1002,
       "covers": [
         "route:POST /api/v1/processing/libraries/{library_id}/library-schedule"
       ],
       "audit": {
         "id": "R-038",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -2739,26 +2669,30 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "No server test requests /log/download: format, filename, content type, auth, 404"
-      },
-      "issue": 1002,
-      "covers": [
-        "route:GET /api/v1/processing/files/{file_id}/log/download"
-      ],
-      "audit": {
-        "id": "R-067",
-        "verdict": "Gap"
-      },
-      "partial": [
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingFileLogDownloadApiTests.cs",
+          "name": "ProcessingFileLogDownloadApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/FileLogDownloadTests.cs",
+          "name": "FileLogDownloadTests"
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingFileLogDownloadLimitApiTests.cs",
           "name": "ProcessingFileLogDownloadLimitApiTests"
         }
-      ]
+      ],
+      "covers": [
+        "route:GET /api/v1/processing/files/{file_id}/log/download"
+      ],
+      "audit": {
+        "id": "R-067",
+        "verdict": "Covered"
+      }
     },
     {
       "id": "api.processing.get-processing-files-file-id-tracks",
@@ -2943,8 +2877,12 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/MoveToTopApiTests.cs",
+          "name": "MoveToTopApiTests"
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/SessionTouchWriteLockApiTests.cs",
@@ -2971,17 +2909,12 @@
           "name": "MoveFileToTopTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The route's own ordering effect, 404/409 answers, auth and CSRF are not shown over HTTP"
-      },
-      "issue": 1002,
       "covers": [
         "route:POST /api/v1/processing/files/{file_id}/move-to-top"
       ],
       "audit": {
         "id": "R-073",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -3124,25 +3057,24 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/RecoverFinalizeFailedApiTests.cs",
+          "name": "RecoverFinalizeFailedApiTests"
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/SessionTouchWriteLockApiTests.cs",
           "name": "Recovering_a_finalize_failed_job_on_the_request_that_touches_the_session_succeeds"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Only the deadlock regression. No test of what recovery does to the output/source, the refusal for a job not in that state, or viewer/CSRF refusal"
-      },
-      "issue": 1002,
       "covers": [
         "route:POST /api/v1/processing/jobs/{job_id}/recover-finalize-failed"
       ],
       "audit": {
         "id": "R-078",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -5894,12 +5826,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "The download-client routes (7), the library-mode writes (scan, clean, leave alone, redownload, schedule), move-to-top, recover-finalize-failed and others have no refusal test at all. A new route can ship open and nothing fails."
-      },
-      "issue": 1000,
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
+          "name": "RouteAccessTableTests"
+        }
+      ],
       "audit": {
         "id": "X-01",
         "verdict": "Gap"
@@ -6508,7 +6446,7 @@
     {
       "id": "services.periodic-tasks.workerwakesignals-a-queued-job-wakes-idle-slots-at-once",
       "area": "services",
-      "behaviour": "WorkerWakeSignals: a queued job wakes the idle slots of the lane that runs it (files or upkeep) at once, never a job that starts later and never other lanes; poll stays as fallback",
+      "behaviour": "WorkerWakeSignals: a queued job wakes the idle slots of the lane that runs it (files or upkeep) at once, never a job that starts later and never other lanes; resuming processing and a held file coming back also wake the slots; poll stays as fallback",
       "kind": "job",
       "severity": "medium",
       "touches": "none",
@@ -6533,6 +6471,16 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/ManualPassWakeApiTests.cs",
           "name": "ManualPassWakeApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/SuitePauseServiceTests.cs",
+          "name": "SuitePauseServiceTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/HeldFileReturnTests.Wake.cs",
+          "name": "HeldFileReturnTests"
         }
       ],
       "audit": {
@@ -7691,6 +7639,11 @@
         },
         {
           "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanCatchUpTests.cs",
+          "name": "ProcessingWatchedFolderScanCatchUpTests"
+        },
+        {
+          "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/ScanSettingsChangesApiTests.cs",
           "name": "ScanSettingsChangesApiTests"
         },
@@ -8202,6 +8155,40 @@
         "id": "JOB-057",
         "verdict": "Partly"
       }
+    },
+    {
+      "id": "services.hosted-services.processpulse-note-when-the-whole-process-could-not-run-so-late",
+      "area": "services",
+      "behaviour": "ProcessPulse: note the time once a second on a thread of its own, so work that comes late after the computer slept, a machine was saved or a container was frozen is told as information, and a scheduler that fell behind while Weir ran stays a warning",
+      "kind": "job",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/ProcessPulseTests.cs",
+          "name": "ProcessPulseTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/LeaseRenewalTests.cs",
+          "name": "A_job_whose_lease_ran_out_while_the_computer_slept_is_told_as_information_and_left_for_recovery"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/PeriodicTasksStartupTests.cs",
+          "name": "The_server_runs_one_pulse_that_notes_when_the_whole_process_could_not_run"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanCatchUpTests.cs",
+          "name": "ProcessingWatchedFolderScanCatchUpTests"
+        }
+      ],
+      "covers": [
+        "service:ProcessPulse"
+      ]
     },
     {
       "id": "services.hosted-services.stoprequestlistener-tray-sets-the-process-stop-event-clean-host",
@@ -12490,12 +12477,23 @@
     {
       "id": "settings.connection.download-client-connections-qbittorrent-sabnzbd-nzbget-transmission-deluge-url",
       "area": "settings",
-      "behaviour": "Download-client connections (qBittorrent, SABnzbd, NZBGet, Transmission, Deluge): url, credentials, enabled, nickname, path mappings",
+      "behaviour": "Download-client connections (qBittorrent, SABnzbd, NZBGet, Transmission, Deluge): url, credentials, enabled, nickname",
       "kind": "setting",
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientSecretsTests.cs",
+          "name": "DownloadClientSecretsTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -12533,14 +12531,164 @@
           "name": "LiveConnectionTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Not audited field by field. Only qBittorrent has a fake server with a real HTTP session; SABnzbd/NZBGet/Transmission/Deluge are covered by recorded-reply rules tests, never by a running Weir against a fake client."
-      },
-      "issue": 1001,
       "audit": {
         "id": "SET-X04",
         "verdict": "Partly"
+      }
+    },
+    {
+      "id": "settings.connection.download-client-connection-kind",
+      "area": "settings",
+      "behaviour": "Download-client connection kind: one of qBittorrent, SABnzbd, NZBGet, Transmission or Deluge, chosen when it is created",
+      "kind": "setting",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "settings.connection.download-client-connection-base-url",
+      "area": "settings",
+      "behaviour": "Download-client connection address: kept, changed, normalised into the connection name, and refused when it will not work",
+      "kind": "setting",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "settings.connection.download-client-connection-enabled",
+      "area": "settings",
+      "behaviour": "Download-client connection on/off switch",
+      "kind": "setting",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "settings.connection.download-client-connection-username",
+      "area": "settings",
+      "behaviour": "Download-client connection user name (qBittorrent, NZBGet, Transmission): set, changed and cleared",
+      "kind": "setting",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientSecretsTests.cs",
+          "name": "DownloadClientSecretsTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "settings.connection.download-client-connection-password",
+      "area": "settings",
+      "behaviour": "Download-client connection password: write-only, kept when an update leaves it out, cleared by an empty one, replaced by a new one",
+      "kind": "setting",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientSecretsTests.cs",
+          "name": "DownloadClientSecretsTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "settings.connection.download-client-connection-api-key",
+      "area": "settings",
+      "behaviour": "Download-client connection API key (SABnzbd): write-only, kept when an update leaves it out, replaced by a new one, never cleared where the client cannot work without it",
+      "kind": "setting",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientSecretsTests.cs",
+          "name": "DownloadClientSecretsTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "settings.connection.download-client-connection-nickname",
+      "area": "settings",
+      "behaviour": "Download-client connection nickname: set, changed and cleared",
+      "kind": "setting",
+      "severity": "low",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
       }
     },
     {
@@ -16460,11 +16608,36 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "Active sessions: signing out one browser"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "Active sessions: Sign out other sessions"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "Change password"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "Change username"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/change-password-flow.test.tsx",
+          "name": "Changing the password ends this sign-in"
+        }
+      ],
       "audit": {
         "id": "WEB-092",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -17291,12 +17464,33 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: TV watched set, output empty -> \"Add a TV output folder…\" and no mutation; same for Movies"
-      },
-      "issue": 1023,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "Finish refuses a watched folder with no output folder"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "says so for $type and sends nothing"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "counts an output folder of only spaces as missing"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "asks about TV first when both are missing an output folder"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "saves once the output folder is added, and clears the refusal"
+        }
+      ],
       "audit": {
         "id": "WEB-128",
         "verdict": "Gap"
@@ -17335,12 +17529,43 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: first Finish creates a library then the settings save fails; second Finish must update that library rather than create another (same watched folder, trailing slash and case differences)"
-      },
-      "issue": 1023,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "Finish retried after the settings could not be saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "updates the workflow the first attempt created instead of adding another"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "leaves the created workflow as it is when nothing changed, and saves the settings"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-offered-retry.test.tsx",
+          "name": "Finish retried after the settings could not be saved, with offered workflows"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-offered-retry.test.tsx",
+          "name": "fills in the workflow the first attempt added instead of adding it twice"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-offered-retry.test.tsx",
+          "name": "an offered workflow already sitting at its watched folder"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-offered-retry.test.tsx",
+          "name": "is added as a new one next to %s"
+        }
+      ],
       "audit": {
         "id": "WEB-130",
         "verdict": "Gap"
@@ -17354,12 +17579,33 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: pick a zone in the listbox, Finish, assert app_timezone in the settings write. A wrong zone mis-schedules everything"
-      },
-      "issue": 1023,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "the time zone"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "saves the zone picked in the list as app_timezone"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "shows the saved zone as chosen and keeps it when it is not changed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "falls back to UTC for a saved zone of %j"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "lets a zone be picked after an unknown one fell back to UTC"
+        }
+      ],
       "audit": {
         "id": "WEB-131",
         "verdict": "Gap"
@@ -26086,12 +26332,13 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The Delete resolution removes the file from disk; no test proves Cancel closes the dialog without calling the server."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityDialogTests.cs",
+          "name": "RemoveFromActivityDialogTests"
+        }
+      ],
       "audit": {
         "id": "WEB-447",
         "verdict": "Gap"
@@ -26135,12 +26382,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "busy/busyLabel never asserted."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/use-file-removal.test.tsx",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-449",
         "verdict": "Gap"
@@ -26154,12 +26402,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Both onProblem paths are untested."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/use-file-removal.test.tsx",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-450",
         "verdict": "Gap"
@@ -27379,12 +27628,13 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Cleaning removes audio and subtitle tracks for good; no test proves Not now closes the dialog and sends nothing further."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanConfirmationTests.cs",
+          "name": "LibraryCleanConfirmationTests"
+        }
+      ],
       "audit": {
         "id": "WEB-495",
         "verdict": "Gap"
@@ -27491,12 +27741,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "None of the three is clicked or asserted."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanConfirmationTests.cs",
+          "name": "LibraryCleanConfirmationTests"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-clean-actions.test.tsx",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-500",
         "verdict": "Gap"
@@ -27510,12 +27766,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "onCleaned clearing for source 'selection' is untested."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanConfirmationTests.cs",
+          "name": "LibraryCleanConfirmationTests"
+        }
+      ],
       "audit": {
         "id": "WEB-501",
         "verdict": "Gap"
@@ -27997,12 +28254,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The path sent, confirm_destructive, the dialog wording and the busy state are untested; the manager deletes the file."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryRedownloadDialogTests.cs",
+          "name": "LibraryRedownloadDialogTests"
+        }
+      ],
       "audit": {
         "id": "WEB-523",
         "verdict": "Gap"
@@ -28016,12 +28274,13 @@
       "severity": "high",
       "touches": "disk",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Cancel path of a destructive confirm is untested."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryRedownloadDialogTests.cs",
+          "name": "LibraryRedownloadDialogTests"
+        }
+      ],
       "audit": {
         "id": "WEB-524",
         "verdict": "Gap"
@@ -28054,12 +28313,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Both notes untested."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-redownload-notices.test.tsx",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-526",
         "verdict": "Gap"
@@ -28399,12 +28659,13 @@
       "severity": "high",
       "touches": "disk",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Switching on automatic, unattended track removal; the Cancel branch is untested."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryDailyCleanWarningTests.cs",
+          "name": "LibraryDailyCleanWarningTests"
+        }
+      ],
       "audit": {
         "id": "WEB-540",
         "verdict": "Gap"
@@ -30070,12 +30331,23 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: open the remove dialog, press Keep it, then Escape, assert deleteProcessingLibrary is never called and the row remains; a failed attempt's error is cleared on cancel."
-      },
-      "issue": 992,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveWorkflowDialogTests.cs",
+          "name": "Keep_it_Escape_and_a_click_outside_the_dialog_leave_the_workflow_alone_and_send_nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveWorkflowDialogTests.cs",
+          "name": "Removing_a_workflow_that_still_has_work_queued_shows_why_and_cancelling_clears_it"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveWorkflowDialogTests.cs",
+          "name": "Remove_workflow_sends_one_request_and_the_workflow_goes"
+        }
+      ],
       "audit": {
         "id": "WEB-609",
         "verdict": "Gap"
@@ -33246,12 +33518,13 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: unused profile, Remove profile, dialog shows the name, Remove profile confirms, deleteProcessingRuleSet(id) called once, notice shown, selection moves to the next profile."
-      },
-      "issue": 992,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveProfileDialogTests.cs",
+          "name": "Remove_profile_sends_one_request_says_so_and_opens_the_next_profile"
+        }
+      ],
       "audit": {
         "id": "WEB-740",
         "verdict": "Gap"
@@ -33265,12 +33538,13 @@
       "severity": "high",
       "touches": "disk",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: open the dialog, Keep it and Escape, assert deleteProcessingRuleSet never called and the profile is still selected."
-      },
-      "issue": 992,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveProfileDialogTests.cs",
+          "name": "Keep_it_and_Escape_leave_the_profile_selected_and_send_nothing"
+        }
+      ],
       "audit": {
         "id": "WEB-741",
         "verdict": "Gap"
@@ -33284,12 +33558,23 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: profile with used_by_library_count 2 shows the disabled button and the locked text; a server refusal of a remove shows 'That profile could not be removed.'."
-      },
-      "issue": 992,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.test.tsx",
+          "name": "says why the server refused to remove a profile and keeps it selected"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.test.tsx",
+          "name": "falls back to a plain sentence when the removal fails without a reason"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveProfileDialogTests.cs",
+          "name": "A_profile_that_workflows_use_has_its_remove_button_locked_and_says_why"
+        }
+      ],
       "audit": {
         "id": "WEB-742",
         "verdict": "Gap"
@@ -35394,6 +35679,21 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/media-manager-nickname.test.tsx",
           "name": "is used in the question before a connection is removed"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Keep_it_Escape_and_a_click_outside_leave_the_connection_and_its_workflows_alone"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Unlinking_the_workflows_happens_only_when_chosen_and_the_question_that_follows_can_still_be_turned_down"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Removing_the_workflows_happens_only_when_chosen_and_takes_those_workflows_and_no_folder"
         }
       ],
       "issue": 1070,
@@ -40289,15 +40589,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: click Sign out on a non-current row, assert POST `/api/v1/auth/sessions/<id>/revoke`, the message shown, the list refetched, and the failure message (\"It may already be inactive.\"). The API is tested in `Weir.Api.Tests/Platform/AuthApiTests.cs`, not in the contract suite."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "Active sessions: signing out one browser"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
+          "name": "Signing_out_one_session_ends_only_that_session"
+        }
+      ],
       "audit": {
         "id": "WEB-1017",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40308,15 +40614,26 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "ST fixture includes a current row but never asserts the absence of a button in it."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "lists every signed-in browser and marks the one in use, which has no Sign out button"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
+          "name": "A_lone_session_is_listed_as_this_browser_with_nothing_to_sign_out"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
+          "name": "Signing_out_one_session_ends_only_that_session"
+        }
+      ],
       "audit": {
         "id": "WEB-1018",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40327,15 +40644,26 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Lockout / session-loss risk: nothing proves the button revokes only the others, shows only when others exist, or reports failure. vitest: click, assert POST `/api/v1/auth/sessions/revoke-others`, the message, that the current row remains, and the error text; plus an E2E with two browser contexts (the other is signed out, this one is not)."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "Active sessions: Sign out other sessions"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
+          "name": "Signing_out_other_sessions_ends_the_other_browser_and_keeps_this_one"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
+          "name": "The_browser_that_was_signed_out_is_sent_to_the_sign_in_page_on_its_next_action"
+        }
+      ],
       "audit": {
         "id": "WEB-1019",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40346,34 +40674,46 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest for the three states."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "says it is loading until the server answers"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "says the sign-in has ended when the server refuses the list, not that there are no sessions"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "says no sessions were found when the server lists none, with nothing to sign out or arrange"
+        }
+      ],
       "audit": {
         "id": "WEB-1020",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
       "id": "web-system.security-tab.active-sessions-list-stays-current-when-a-session-is",
       "area": "web-system",
-      "behaviour": "Active sessions list stays current when a session is created or revoked elsewhere",
+      "behaviour": "Active sessions list is read again when the person returns to the page (sessions have no live topic)",
       "kind": "screen action",
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The \"live and realtime\" rule has no path here: the list updates only on this page's own revoke or a remount. Needs a server topic (or a documented exception) plus a test."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "is read again when the person comes back to the page, since sessions have no live update"
+        }
+      ],
       "audit": {
         "id": "WEB-1021",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40414,15 +40754,16 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest for both states."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/security-tab.test.tsx",
+          "name": "Security: how sign-in is protected"
+        }
+      ],
       "audit": {
         "id": "WEB-1023",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40453,15 +40794,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "No test submits it. vitest: fill, click, assert POST `/api/v1/auth/change-username` body, success message, cleared fields, and `authKeys.me` invalidated. Contract `AuthUsernameTests` covers the API only."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "sends the trimmed name with the password, clears both fields, confirms and shows the new name"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityUsernameTests.cs",
+          "name": "Renaming_the_account_trims_the_name_clears_the_form_and_changes_who_is_shown_signed_in"
+        }
+      ],
       "audit": {
         "id": "WEB-1025",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40472,15 +40819,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with the POST rejecting; assert the alert."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "Change username"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityUsernameTests.cs",
+          "name": "Each_refusal_from_the_server_is_said_in_plain_words_and_the_account_keeps_its_name"
+        }
+      ],
       "audit": {
         "id": "WEB-1026",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40511,21 +40864,27 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Lockout risk: this is the only guard against setting a mistyped password. vitest: different new/confirm, assert the message and that `postChangePassword` is NOT called."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "refuses new passwords that differ and sends nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityPasswordTests.cs",
+          "name": "New_passwords_that_differ_are_refused_before_anything_is_sent"
+        }
+      ],
       "audit": {
         "id": "WEB-1028",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
       "id": "web-system.security-tab.change-password-success-on-screen-confirmation-sign-in-again",
       "area": "web-system",
-      "behaviour": "Change password: success -> on-screen confirmation + \"Sign in again\" link to /login",
+      "behaviour": "Change password: success -> this sign-in ends and the sign-in page says the password was changed",
       "kind": "screen action",
       "severity": "high",
       "touches": "none",
@@ -40533,18 +40892,23 @@
       "proofs": [
         {
           "type": "vitest",
-          "file": "apps/web/src/pages/system/system-page.test.tsx",
-          "name": "shows an on-screen confirmation after a successful password change"
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "sends the current and the new password, clears the fields and leaves nobody signed in to ask about"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/change-password-flow.test.tsx",
+          "name": "Changing the password ends this sign-in"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityPasswordTests.cs",
+          "name": "Changing_the_password_ends_every_sign_in_and_only_the_new_password_signs_in_again"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "P0-weighted. `postChangePassword` is mocked with `mockResolvedValue` and its arguments are never asserted, so swapped current/new passwords would still pass; the POST `/api/v1/auth/change-password` request, fields cleared, and `authKeys.me/session` invalidation are unproven. Contract `AuthApiTests` covers the API."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-1029",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -40555,15 +40919,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with the POST rejecting; assert the alert and that the form stays editable."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "Change password"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityPasswordTests.cs",
+          "name": "Each_refusal_from_the_server_is_said_in_plain_words_and_the_form_stays_editable"
+        }
+      ],
       "audit": {
         "id": "WEB-1030",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40604,15 +40974,26 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with a pending mutation."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "shows Saving… and holds the fields and their Show buttons while the request is out"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "shows Saving… and holds the fields and the Show button while the request is out"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "shows Signing out… and holds every Sign out button while the request is out"
+        }
+      ],
       "audit": {
         "id": "WEB-1032",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -46542,6 +46923,16 @@
         },
         {
           "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/AwakeDeadlineTests.cs",
+          "name": "AwakeDeadlineTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processes/ProcessRunnerTests.cs",
+          "name": "A_sleep_longer_than_the_idle_limit_while_a_process_runs_does_not_stop_it"
+        },
+        {
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/WriterChoiceTests.cs",
           "name": "WriterChoiceTests"
         },
@@ -47466,8 +47857,27 @@
       "severity": "high",
       "touches": "install",
       "required": "real",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
+        },
+        {
+          "type": "package-smoke",
+          "file": "scripts/smoke-windows-recover.ps1",
+          "name": "*"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
+          "name": "recover-locked-out-account"
+        },
+        {
+          "type": "node",
+          "file": "scripts/recover-output.test.mjs",
+          "name": "*"
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Auth/RecoverCommandTests.cs",
@@ -47479,14 +47889,12 @@
           "name": "Recovering_from_an_inactive_admin_leaves_exactly_one"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "The command is called as a class in tests; the packaged WeirServer.exe (Windows install and the Docker image) is never asked to recover an account, so a broken dispatch in Program.cs leaves a locked-out user with no way back"
-      },
-      "issue": 987,
+      "covers": [
+        "scenario:recover-locked-out-account"
+      ],
       "audit": {
         "id": "PLAT-20",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -52040,6 +52448,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
           "name": "lists the workflows and offers the two steps, and changes nothing until one is chosen"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Keep_it_Escape_and_a_click_outside_leave_the_connection_and_its_workflows_alone"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Giving_up_on_a_report_happens_only_when_chosen_and_turning_the_list_down_keeps_the_report_owed"
         }
       ],
       "covers": [
@@ -52073,6 +52491,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
           "name": "offers neither step while a hand-off is in progress"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Unlinking_the_workflows_happens_only_when_chosen_and_the_question_that_follows_can_still_be_turned_down"
         }
       ],
       "covers": [
@@ -52101,6 +52524,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
           "name": "says why a workflow could not be removed and stops there"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Removing_the_workflows_happens_only_when_chosen_and_takes_those_workflows_and_no_folder"
         }
       ],
       "covers": [
@@ -52139,6 +52567,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/remove-connection-dialog.test.tsx",
           "name": "lists the owed reports beside the workflows and offers to give up on them as its own step"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Giving_up_on_a_report_happens_only_when_chosen_and_turning_the_list_down_keeps_the_report_owed"
         }
       ],
       "covers": [
@@ -53482,8 +53915,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityUsernameTests.cs",
+          "name": "Renaming_the_account_is_recorded_in_the_log"
+        }
+      ],
       "covers": [
         "event:auth.username_changed"
       ],
@@ -53500,8 +53938,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
+          "name": "Signing_out_other_sessions_is_recorded_in_the_log"
+        }
+      ],
       "covers": [
         "event:auth.sessions_revoked"
       ],

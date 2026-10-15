@@ -90,10 +90,9 @@ public sealed class LinkedOriginalsTests
 
         await scenario.EnqueueScanAsync(library);
 
-        await Poll.UntilAsync(
+        await scenario.WaitWhileWorkedOnAsync(
             () => Task.FromResult(File.Exists(Path.Combine(scenario.Folders.Output, "Radarr.Film.2024", "film.mkv"))),
-            "the scan to process the film",
-            TimeSpan.FromSeconds(60));
+            "the scan to process the film");
         await scenario.WaitForFileStatusAsync(library, "Radarr.Film.2024/film.mkv", "processed");
         AssertDownloadIntact(download);
         var completed = Assert.Single(await scenario.ActivityAsync("processing.file_remux_pass_completed"));
@@ -109,10 +108,9 @@ public sealed class LinkedOriginalsTests
 
         await scenario.EnqueueScanAsync(library);
 
-        await Poll.UntilAsync(
+        await scenario.WaitWhileWorkedOnAsync(
             () => Task.FromResult(!Directory.Exists(download.Release)),
-            "the cleaned release folder to be removed",
-            TimeSpan.FromSeconds(60));
+            "the cleaned release folder to be removed");
         Assert.True(File.Exists(Path.Combine(scenario.Folders.Output, "Weir.Only.2024", "film.mkv")));
         Assert.False(File.Exists(download.Nfo));
         Assert.False(File.Exists(download.Txt));

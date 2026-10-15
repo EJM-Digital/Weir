@@ -2,7 +2,10 @@ using Microsoft.Extensions.Logging;
 using Weir.Core.Configuration;
 using Weir.Core.Jobs;
 using Weir.Core.Processing;
+using Weir.Core.Settings;
+using Weir.Core.Text;
 using Weir.Infrastructure.Processing;
+using Weir.Infrastructure.Runtime;
 using Weir.Infrastructure.Scheduling;
 using Weir.Infrastructure.Sqlite;
 
@@ -35,6 +38,7 @@ public sealed class ProcessingWatchedFolderScanDispatchScheduleTask : IPeriodicT
     private readonly ScanWakeups? _wakeups;
     private readonly ScanSettingsChanges? _scanSettingsChanges;
     private readonly PeriodicTaskRegistry? _tasks;
+    private readonly ProcessPulse? _pulse;
     private ScheduleInputs? _inputs;
 
     public ProcessingWatchedFolderScanDispatchScheduleTask(
@@ -47,8 +51,10 @@ public sealed class ProcessingWatchedFolderScanDispatchScheduleTask : IPeriodicT
         ILogger<ProcessingWatchedFolderScanDispatchScheduleTask> logger,
         ScanWakeups? wakeups = null,
         ScanSettingsChanges? scanSettingsChanges = null,
-        PeriodicTaskRegistry? tasks = null)
+        PeriodicTaskRegistry? tasks = null,
+        ProcessPulse? pulse = null)
     {
+        _pulse = pulse;
         _tasks = tasks;
         _wakeups = wakeups;
         _scanSettingsChanges = scanSettingsChanges;
@@ -138,17 +144,9 @@ public sealed class ProcessingWatchedFolderScanDispatchScheduleTask : IPeriodicT
             }
 
             var missed = PeriodicSchedule.MissedDueRunCount(now.ToUnixTimeMilliseconds() / 1000.0, due.ToUnixTimeMilliseconds() / 1000.0, interval.TotalSeconds);
-            if (missed == 1)
+            if (missed > 0)
             {
-                _logger.LogWarning(
-                    "Watched-folder scheduler missed {Missed} run for workflow {Library}; enqueueing one catch-up scan",
-                    missed, library.Name);
-            }
-            else if (missed > 1)
-            {
-                _logger.LogWarning(
-                    "Watched-folder scheduler missed {Missed} runs for workflow {Library}; enqueueing one catch-up scan",
-                    missed, library.Name);
+                SayRunsWereMissed(library.Name, missed, due, now);
             }
 
             TimeSpan nextDelay;
@@ -172,6 +170,28 @@ public sealed class ProcessingWatchedFolderScanDispatchScheduleTask : IPeriodicT
             _wakeups?.RecordNextPeriodic(library.Id, now + nextDelay);
             AnnounceNextScan(library, interval, now + nextDelay);
         }
+    }
+
+    /// <summary>
+    /// A scan that comes late is told as information when the process could not run for most of the delay (the computer slept, a
+    /// virtual machine was saved, a container was frozen, Weir was not running): nothing is wrong and there is nothing to do. It is a
+    /// warning when Weir was running and the scheduler fell behind.
+    /// </summary>
+    private void SayRunsWereMissed(string workflow, int missed, DateTimeOffset due, DateTimeOffset now)
+    {
+        var late = now - due;
+        var away = _pulse?.AwayWithin(due, now) ?? Absence.None;
+        if (away.Within * 2 >= late)
+        {
+            _logger.LogInformation(
+                "Weir was not running, or the computer was asleep, for about {Away}, so the scheduled scans of workflow {Library} were missed; one catch-up scan is queued.",
+                SecurityOverview.PlainDuration((long)away.Lasted.TotalSeconds), workflow);
+            return;
+        }
+
+        _logger.LogWarning(
+            "The scheduled scan of workflow {Library} started {Late} late while Weir was running, so {Missed} {Were} missed; one catch-up scan is queued.",
+            workflow, SecurityOverview.PlainDuration((long)late.TotalSeconds), Plural.Of(missed, "scheduled scan"), Plural.Noun(missed, "was", "were"));
     }
 
     /// <summary>Tells the task list when a workflow is next looked at: the earlier of a booked look and its next periodic scan.</summary>

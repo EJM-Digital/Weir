@@ -11,10 +11,11 @@ public static partial class Navigation
     public const string BootstrapPassword = "e2e-shell-pass-min8";
     public const float UrlAssertMs = 20_000;
 
-    // Creating the admin and signing in both hash a password (Argon2id), and skipping the setup wizard saves
-    // several settings. Each submit waits for its own form to go away, so a pending request is never clicked
-    // again and a failed one fails here instead of in the next step.
-    private const float SubmitSettleMs = 15_000;
+    // Creating the admin and signing in both hash a password (Argon2id, in the debug build the tests run, on a
+    // machine that other work shares), and skipping the setup wizard saves several settings. Each submit waits for
+    // its own form to go away, so a pending request is never clicked again and a failed one fails here instead of in
+    // the next step. This is a ceiling, not a delay: a submit that settles sooner returns sooner.
+    private const float SubmitSettleMs = 60_000;
 
     // First-run setup, sign-in, the setup wizard, then the shell: each screen at most once, plus spare turns
     // for a screen that was replaced between being seen and being checked.

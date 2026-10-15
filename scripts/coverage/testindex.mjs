@@ -30,7 +30,8 @@ export const read = (file) => readFileSync(file, "utf8").replace(/^\uFEFF/, "");
 const E2E_TESTS = "apps/server/tests/Weir.E2E.Tests/";
 const CONTRACT_TESTS = "apps/server/tests/Weir.Contract.Tests/";
 const SCENARIOS = "scripts/scenarios/";
-const PACKAGE_SMOKE = "scripts/smoke-windows-package.ps1";
+/** The Windows package smokes: the package itself and the recovery command. */
+export const PACKAGE_SMOKE_FILE = /^scripts\/smoke-windows-[a-z]+\.ps1$/;
 const LIVE_AUDIT = "apps/server/tools/Weir.LiveAudit/";
 /** A packaging script that starts the shipped container (and, below, the workflows whose steps do). */
 const CONTAINER_SCRIPT = /(?:^|\/)scripts\/(?:[^/]*\/)*[^/]*(?:docker|compose|container)[^/]*\.(?:mjs|ps1|sh)$/;
@@ -44,13 +45,13 @@ export function testFiles(root) {
   add("apps/tray/Weir.Tray.Tests", (f) => f.endsWith(".cs"));
   add("apps/server/tools/Weir.LiveAudit", (f) => f.endsWith(".cs"));
   add("apps/web/src", (f) => /\.test\.tsx?$/.test(f));
-  add("scripts", (f) => /\.test\.mjs$/.test(f) || /[\\/]scenarios[\\/].*\.ps1$/.test(f) || f.endsWith("smoke-windows-package.ps1") || CONTAINER_SCRIPT.test(slash(f)));
+  add("scripts", (f) => /\.test\.mjs$/.test(f) || /[\\/]scenarios[\\/].*\.ps1$/.test(f) || /scripts[\\/]smoke-windows-[a-z]+\.ps1$/.test(f) || CONTAINER_SCRIPT.test(slash(f)));
   add(".github/workflows", (f) => /\.ya?ml$/.test(f));
   return files.map((f) => slash(relative(root, f)));
 }
 
 const TS_TITLE = /\b(?:it|test|describe)(?:\.(?:each|skip|only|fixme|fails|concurrent|serial|describe|configure))*(?:\([^)]*\))?\(\s*(['"`])((?:\\.|(?!\1)[^\\\n])+)\1/g;
-const CS_METHOD = /\[(?:[A-Za-z]*Fact|[A-Za-z]*Theory)\b[^\]]*\]\s*(?:\[[^\]]*\]\s*)*(?:public\s+|internal\s+)?(?:static\s+)?(?:async\s+)?(?:Task|void|ValueTask)\s+(\w+)/g;
+const CS_METHOD = /\[(?:[A-Za-z0-9]*Fact|[A-Za-z0-9]*Theory)\b[^\]]*\]\s*(?:\[[^\]]*\]\s*)*(?:public\s+|internal\s+)?(?:static\s+)?(?:async\s+)?(?:Task|void|ValueTask)\s+(\w+)/g;
 const CS_CLASS = /\b(?:class|record)\s+(\w+)/g;
 const RECORDING = /\bRecordedDeluno\b|\bDelunoSide\b|\bRecordedWorld\b|\bRecordedReplies\b|fixtures[\\/]+recorded/;
 
@@ -233,10 +234,10 @@ function csBodies(file, text) {
  * The kind of proof a file is: xunit (the server's and the tray's unit, integration and API tests), contract (the contract suite),
  * e2e (Playwright for .NET against the real host), vitest, node (the repository scripts' tests), scenario (a golden-VM scenario),
  * recording-replay (a test that replays Deluno's recorded real reply), real-fs (a test the check verifies runs on a real temp folder or
- * SQLite file with no fake), package-smoke (the Windows package smoke and the live audit).
+ * SQLite file with no fake), package-smoke (the Windows package smokes and the live audit).
  */
 export function proofTypeOf(file, index, name) {
-  if (file === PACKAGE_SMOKE || file.startsWith(LIVE_AUDIT)) return "package-smoke";
+  if (PACKAGE_SMOKE_FILE.test(file) || file.startsWith(LIVE_AUDIT)) return "package-smoke";
   if (file.startsWith(SCENARIOS) && file.endsWith(".ps1")) return "scenario";
   if (file.startsWith(E2E_TESTS)) return "e2e";
   if (/\.test\.tsx?$/.test(file)) return "vitest";
