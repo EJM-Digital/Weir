@@ -329,7 +329,7 @@ jobs:
   # Actions cache (not a registry), so publish-docker rebuilds from them instead of from scratch.
   docker-candidate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     permissions:
       contents: read
     env:
@@ -343,6 +343,11 @@ jobs:
       - name: Normalize tag version
         id: version
         run: echo "plain=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      # The compose smokes read SQLite files with node:sqlite, which the runner's default Node may not have.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
@@ -431,6 +436,25 @@ jobs:
       - name: Cleanup unpushed Docker release candidate
         if: always()
         run: docker rm -f weir-release-candidate >/dev/null 2>&1 || true
+
+      # The shipped compose.yaml, run with the release candidate; then the previous release's image upgraded to it on one volume.
+      - name: Compose restart keeps the data of the release candidate
+        if: ${{ !cancelled() }}
+        run: node scripts/docker-compose-smoke.mjs restart --candidate "weir-release-candidate:${{ steps.version.outputs.plain }}"
+
+      - name: Compose upgrade from the previous release to the release candidate keeps the data
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/docker-compose-smoke.mjs upgrade --candidate "weir-release-candidate:${{ steps.version.outputs.plain }}" --releasing "${{ steps.version.outputs.plain }}"
+
+      - name: Upload Docker compose smoke logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: weir-docker-release-candidate-compose-smoke
+          if-no-files-found: warn
+          path: artifacts/docker-compose-smoke/**
 
   # The arm64 variant of the same candidate must build before anything is pushed. Separate from the
   # amd64 job so its ~4 minutes under QEMU overlap everything else instead of following it.

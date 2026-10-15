@@ -1461,13 +1461,7 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadApiTests.cs",
-          "name": "LibraryRedownloadApiTests"
-        },
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/LibraryMode/RedownloadRiskEvaluatorTests.cs",
@@ -1482,13 +1476,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/RedownloadRiskGatewayTests.cs",
           "name": "RedownloadRiskGatewayTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadApiTests.cs",
+          "name": "LibraryRedownloadApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadListingApiTests.cs",
+          "name": "LibraryRedownloadListingApiTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Only the \"no manager\" listing is shown over HTTP; no listing for a library with Sonarr/Radarr linked; no auth test"
-      },
-      "issue": 985,
       "covers": [
         "route:GET /api/v1/processing/libraries/{library_id}/library-redownloads"
       ],
@@ -1516,11 +1515,31 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/ArrManagerRedownloadTests.cs",
           "name": "ArrManagerRedownloadTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadRequestApiTests.cs",
+          "name": "LibraryRedownloadRequestApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadFailureApiTests.cs",
+          "name": "LibraryRedownloadFailureApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadRefusalApiTests.cs",
+          "name": "LibraryRedownloadRefusalApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadRecordApiTests.cs",
+          "name": "LibraryRedownloadRecordApiTests"
         }
       ],
       "needs": {
-        "kind": "xunit",
-        "test": "The success path (delete the library file, then search) has never been run over HTTP: no test calls it with confirm_destructive true, and the fake arr is hand-written. It deletes a user's file."
+        "kind": "recording-replay",
+        "test": "Proved over HTTP against a scripted Sonarr and Radarr whose replies are assumed shapes (ArrRedownloadReplies.cs). Still open: the recorded Sonarr (#1013) and Radarr (#1014) replies must replace them, and a real redownload on the VM must delete the file at the real manager and ask for the search."
       },
       "issue": 985,
       "covers": [
@@ -43229,6 +43248,35 @@
       }
     },
     {
+      "id": "tray.tray.a-port-another-program-holds-ends-the-start-with-exit-code-75",
+      "area": "tray",
+      "behaviour": "A server whose port another program holds ends the start with a plain sentence naming the port and exit code 75 (no startup-error.txt); the tray tries it again like any failed start and, when the tries are used up, names the port in its log, on the icon and in the notice",
+      "kind": "failure-mode",
+      "severity": "medium",
+      "touches": "install",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/PortInUseTests.cs",
+          "name": "PortInUseTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/ServerHostPortInUseTests.cs",
+          "name": "ServerHostPortInUseTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/StartupErrorTests.cs",
+          "name": "The_balloons_for_a_port_another_program_holds_name_the_port_and_say_what_to_do"
+        }
+      ],
+      "audit": {
+        "id": "inventory"
+      }
+    },
+    {
       "id": "tray.tray.hung-silent-detection-by-progress-both-channels-expect-within",
       "area": "tray",
       "behaviour": "Hung / silent detection by progress (both channels, expect_within_s, ceiling 1 h, clock steps back), hung server stopped then killed with its tree, only the tray's own process is ever touched, next attempt waits until the old one is gone",
@@ -46764,6 +46812,11 @@
           "type": "package-smoke",
           "file": "scripts/smoke-windows-package.ps1",
           "name": "*"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/PortInUseTests.cs",
+          "name": "PortInUseTests"
         }
       ],
       "needs": {
@@ -46954,15 +47007,21 @@
       "severity": "high",
       "touches": "install",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "If one capability the entrypoint needs is missing from the shipped file, Weir does not start for every Compose user. Needs a CI step that runs `docker compose up -d` on the shipped file with the candidate image and waits for health"
-      },
-      "issue": 986,
+      "proofs": [
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
+        },
+        {
+          "type": "node",
+          "file": "scripts/docker-compose-smoke.test.mjs",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "PLAT-14",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -46999,15 +47058,21 @@
       "severity": "high",
       "touches": "install",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "Needs a CI/release step: run the previous tag, create an account and workflow, stop, run the candidate on the same volume, check everything is still there and the pre-update copy exists"
-      },
-      "issue": 986,
+      "proofs": [
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
+        },
+        {
+          "type": "node",
+          "file": "scripts/docker-compose-smoke.test.mjs",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "PLAT-16",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -54179,6 +54244,34 @@
       ],
       "covers": [
         "event:library.file_change_notified"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "events.library.library-redownload-requested",
+      "area": "events",
+      "behaviour": "Weir records \"Download again asked of your media manager\" in Activity (library.redownload_requested)",
+      "kind": "event",
+      "severity": "low",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadRecordApiTests.cs",
+          "name": "A_download_again_that_went_through_is_recorded_with_who_asked_what_was_deleted_and_the_search_sent"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadRecordApiTests.cs",
+          "name": "LibraryRedownloadRecordApiTests"
+        }
+      ],
+      "covers": [
+        "event:library.redownload_requested"
       ],
       "audit": {
         "id": "inventory",

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Weir.Tray;
 
 /// <summary>How long a tray balloon stays: information briefly, a problem the person must read for longer.</summary>
@@ -24,6 +26,14 @@ static class TrayBalloons
     /// <summary>Weir stopped and the supervision could not start it again in several tries. A click tries again.</summary>
     internal static string StoppedAfterTriesText(int attempts) =>
         $"Weir stopped and didn't start again after {Tries(attempts)}. The details are in the tray log. Click to try again.";
+
+    /// <summary>The supervision tried several times and stopped, because another program holds the port. A click tries again.</summary>
+    internal static string PortInUseText(int port, int attempts) =>
+        string.Create(CultureInfo.InvariantCulture, $"Weir didn't start after {Tries(attempts)} because another program is using port {port}. Close that program, or use Change port, then click to try again.");
+
+    /// <summary>Weir stopped and could not start again, because another program holds the port. A click tries again.</summary>
+    internal static string StoppedPortInUseText(int port, int attempts) =>
+        string.Create(CultureInfo.InvariantCulture, $"Weir stopped and didn't start again after {Tries(attempts)} because another program is using port {port}. Close that program, or use Change port, then click to try again.");
 
     /// <summary>The person closed the window that asks for a port without choosing one, so there was nothing to start on. A click asks again.</summary>
     internal const string NoPortChosenText = "Weir didn't start because you closed the port window without choosing a port. Click to try again.";

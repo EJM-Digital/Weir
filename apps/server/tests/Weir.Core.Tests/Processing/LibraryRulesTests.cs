@@ -240,6 +240,17 @@ public sealed class LibraryRulesTests
         }
 
         var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var windowsFolder = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+
+        // A service account's profile (NETWORK SERVICE, LOCAL SERVICE) lives under the Windows folder, where the
+        // system-folder rule already refuses it and everything inside it.
+        if (userProfile.StartsWith(windowsFolder + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        {
+            var refused = Assert.Throws<ProcessingLibraryException>(() => LibraryRules.ValidateFolderPath("watched", Path.Combine(userProfile, "Downloads")));
+            Assert.Contains("Windows system folder", refused.Message, StringComparison.Ordinal);
+            return;
+        }
+
         var exception = Assert.Throws<ProcessingLibraryException>(() => LibraryRules.ValidateFolderPath("watched", userProfile));
         Assert.Contains("user profile folder", exception.Message, StringComparison.Ordinal);
 

@@ -26,7 +26,7 @@ env:
 jobs:
   docker-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     env:
       WEIR_SESSION_SECRET: ${{ github.run_id }}-${{ github.job }}-${{ github.run_attempt }}-ci-session-secret-32chars-min
       WEIR_LIVE_E2E_FIXTURE_HOST_ROOT: ${{ github.workspace }}/artifacts/docker-ci-fixture
@@ -34,6 +34,11 @@ jobs:
       WEIR_LIVE_E2E_FFMPEG: ffmpeg
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # The compose smokes read SQLite files with node:sqlite, which the runner's default Node may not have.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
@@ -131,6 +136,29 @@ jobs:
         if: always()
         run: docker rm -f weir-ci-smoke >/dev/null 2>&1 || true
 
+      # The file people copy, run as it ships (compose.yaml: its cap_drop, its capabilities, the UID/GID entrypoint) on its named volume.
+      # It publishes the same port as the container above, so it runs after that one is gone. See docs/install-docker.md.
+      - name: Compose restart keeps the data
+        if: ${{ !cancelled() }}
+        run: node scripts/docker-compose-smoke.mjs restart --candidate weir-ci-smoke
+
+      # The previous published release's image on a volume, then this build on the same volume; a release with a predecessor whose
+      # image cannot be pulled fails here rather than skipping.
+      - name: Compose upgrade from the previous release keeps the data
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASING: ${{ inputs.version }}
+        run: node scripts/docker-compose-smoke.mjs upgrade --candidate weir-ci-smoke --releasing "$RELEASING"
+
+      - name: Upload Docker compose smoke logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: weir-docker-compose-smoke
+          if-no-files-found: warn
+          path: artifacts/docker-compose-smoke/**
+
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
         if: inputs.arm64
         with:
@@ -151,10 +179,27 @@ jobs:
           cache-to: type=gha,mode=max,scope=weir-ci-arm64,ignore-error=true
 
   windows-package-smoke:
+    # Always GitHub's own runner: this job installs Weir for real, which needs a clean machine every time.
     runs-on: windows-latest
     timeout-minutes: 30
+    env:
+      # A self-hosted Windows PC keeps Windows' default script policy; this lets the job's own PowerShell run
+      # its scripts without changing the machine's setting. GitHub's runners already allow it.
+      PSExecutionPolicyPreference: Bypass
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # On a self-hosted PC: `bash` resolves to Windows' own bash.exe (WSL) unless Git's comes first on PATH, and
+      # the service account's temporary folder is under C:\Windows, where Weir rightly refuses to watch a folder.
+      - name: Self-hosted PC set-up
+        if: runner.environment == 'self-hosted'
+        shell: powershell
+        run: |
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:ProgramFiles\Git\bin"
+          $temp = Join-Path $env:RUNNER_TEMP 'tmp'
+          New-Item -ItemType Directory -Force -Path $temp | Out-Null
+          Add-Content -Path $env:GITHUB_ENV -Value "TEMP=$temp"
+          Add-Content -Path $env:GITHUB_ENV -Value "TMP=$temp"
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
@@ -163,6 +208,9 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        # A self-hosted runner's service account cannot write to Program Files; the tool cache is its own.
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           global-json-file: apps/server/global.json
           cache: true

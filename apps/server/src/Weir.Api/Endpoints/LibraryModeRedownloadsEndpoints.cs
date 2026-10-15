@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Data.Sqlite;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Weir.Api.Http;
+using Weir.Core.Activity;
 using Weir.Core.Auth;
 using Weir.Core.Json;
 using Weir.Core.Library;
@@ -40,6 +43,9 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
     private readonly IManagerRedownload _redownload;
     private readonly LibraryStore _libraries;
     private readonly LibrarySettingsStore _librarySettings;
+    private readonly IRedownloadTracker _tracker;
+    private readonly IActivityWriter _activity;
+    private readonly ILogger<LibraryModeRedownloadsEndpointHandlers> _logger;
 
     public LibraryModeRedownloadsEndpointHandlers(
         LibraryScanStore scans,
@@ -47,7 +53,10 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
         MediaManagerConnectionService connections,
         IManagerRedownload redownload,
         LibraryStore libraries,
-        LibrarySettingsStore librarySettings)
+        LibrarySettingsStore librarySettings,
+        IRedownloadTracker tracker,
+        IActivityWriter activity,
+        ILogger<LibraryModeRedownloadsEndpointHandlers> logger)
     {
         _scans = scans ?? throw new ArgumentNullException(nameof(scans));
         _removedTrackStore = removedTrackStore ?? throw new ArgumentNullException(nameof(removedTrackStore));
@@ -55,6 +64,9 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
         _redownload = redownload ?? throw new ArgumentNullException(nameof(redownload));
         _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
         _librarySettings = librarySettings ?? throw new ArgumentNullException(nameof(librarySettings));
+        _tracker = tracker ?? throw new ArgumentNullException(nameof(tracker));
+        _activity = activity ?? throw new ArgumentNullException(nameof(activity));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     private static WireObject RemovedTrackOut(RemovedTrackRecord track) => new WireObject()
@@ -89,6 +101,7 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
 
         var scannedByPath = await _scans.FilesAtPathsAsync(uow, libraryId, affected.Select(result => result.File.RelativePath)).ConfigureAwait(false);
 
+        var waiting = (await _tracker.ListWaitingAsync().ConfigureAwait(false)).ToDictionary(item => item.File, item => item.Reason);
         var items = affected.Select(result =>
         {
             var path = result.File.RelativePath;
@@ -101,6 +114,7 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
                 .Set("manager_title", scanned?.ManagerTitle)
                 .Set("removed_tracks", new WireArray(result.TracksNowWanted.Select(t => (WireValue)RemovedTrackOut(t))))
                 .Set("can_redownload", canRedownload)
+                .Set("waiting_note", waiting.GetValueOrDefault(result.File))
                 .Set("confirmation_message", canRedownload ? ManagerRedownloadRules.DestructiveConfirmation(titleName, null) : null)
                 .Set("unavailable_reason", canRedownload
                     ? null
@@ -136,7 +150,8 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var session = await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var asker = session.User.Username;
         request.RequireConfirmationToken(csrfToken);
 
         if (!confirmedDestructive)
@@ -151,7 +166,7 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
         if (!ManagerRedownloadRules.CanRedownload(scanned?.ManagerKind, scanned?.ManagerConnectionId, scanned?.ManagerTitleId))
         {
             await request.CommitAsync().ConfigureAwait(false);
-            return ApiRoutes.Ok(new WireObject().Set("path", path).Set("outcome", "unsupported").Set("message", ManagerRedownloadRules.NoManagerMessage));
+            return await AnswerAsync(new RedownloadAnswer(libraryId, path!, asker, RedownloadAnswer.Unsupported, ManagerRedownloadRules.NoManagerMessage)).ConfigureAwait(false);
         }
 
         var resolvedConnections = await _connections.ConnectionsByIdAsync(uow, [scanned!.ManagerConnectionId!.Value]).ConfigureAwait(false);
@@ -159,30 +174,53 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
         await request.CommitAsync().ConfigureAwait(false);
         if (connection is null)
         {
-            return ApiRoutes.Ok(new WireObject().Set("path", path).Set("outcome", "unsupported").Set("message", ManagerRedownloadRules.NoManagerMessage));
+            return await AnswerAsync(new RedownloadAnswer(libraryId, path!, asker, RedownloadAnswer.Unsupported, ManagerRedownloadRules.NoManagerMessage)).ConfigureAwait(false);
         }
 
+        // Once the manager is asked to delete, the search and the Activity record follow whatever the browser does, so the browser's
+        // abort token is not passed on. Each call to the manager is bounded by the manager client's own timeout.
         RedownloadResult result;
         try
         {
             result = await _redownload
-                .RequestRedownloadAsync(connection, library.MediaType, scanned.ManagerTitleId!, path, request.Context.RequestAborted)
+                .RequestRedownloadAsync(connection, library.MediaType, scanned.ManagerTitleId!, path, CancellationToken.None)
                 .ConfigureAwait(false);
         }
         catch (Exception exception) when (exception is MediaManagerHttpException or MediaManagerUnreachableException)
         {
-            return ApiRoutes.Ok(new WireObject()
-                .Set("path", path)
-                .Set("outcome", "failed")
-                .Set("message", ManagerDialectRules.Unreachable(connection, exception, "whether it can download this again")));
+            return await AnswerAsync(new RedownloadAnswer(
+                libraryId, path!, asker, RedownloadAnswer.Failed, ManagerDialectRules.Unreachable(connection, exception, "whether it can download this again"),
+                connection, library.MediaType)).ConfigureAwait(false);
         }
 
-        var outcome = result.Outcome switch
+        return await AnswerAsync(RedownloadAnswer.From(libraryId, path!, asker, result, library.MediaType)).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Records the answer in Activity, keeps the Library's "waiting for a new copy" mark in step with it, and returns it. The manager
+    /// may already have deleted the file by now, so an Activity entry that cannot be written is logged and never hides the answer.
+    /// </summary>
+    private async Task<ApiResult> AnswerAsync(RedownloadAnswer answer)
+    {
+        var file = new RemovedTrackFileKey(answer.LibraryId, answer.FilePath);
+        if (answer.Outcome == RedownloadAnswer.DeletedButSearchFailed)
         {
-            RedownloadOutcome.Requested => "requested",
-            RedownloadOutcome.DeletedButSearchFailed => "deleted_but_search_failed",
-            _ => "unsupported",
-        };
-        return ApiRoutes.Ok(new WireObject().Set("path", path).Set("outcome", outcome).Set("message", result.Summary));
+            await _tracker.MarkWaitingAsync(file, answer.WaitingNote(), CancellationToken.None).ConfigureAwait(false);
+        }
+        else if (answer.Outcome == RedownloadAnswer.Requested)
+        {
+            await _tracker.ClearAsync(file, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        try
+        {
+            await _activity.RecordAsync(answer.ActivityEvent(), CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (exception is SqliteException or InvalidOperationException)
+        {
+            _logger.LogWarning(exception, "Download again could not record its Activity entry; outcome={Outcome} library_id={LibraryId}", answer.Outcome, answer.LibraryId);
+        }
+
+        return ApiRoutes.Ok(new WireObject().Set("path", answer.FilePath).Set("outcome", answer.Outcome).Set("message", answer.Message));
     }
 }
