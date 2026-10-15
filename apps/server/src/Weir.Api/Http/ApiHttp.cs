@@ -141,11 +141,7 @@ public static class ApiRequestBody
     public static async Task<WireValue?> ReadAsync(HttpContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
-        if (context.Request.ContentLength > MaxBodyBytes)
-        {
-            throw new ApiException(StatusCodes.Status413PayloadTooLarge, TooLargeDetail);
-        }
-
+        RefuseOversized(context);
         var bytes = await ReadCappedAsync(context.Request.Body, context.RequestAborted).ConfigureAwait(false);
 
         if (bytes.Length == 0)
@@ -181,6 +177,16 @@ public static class ApiRequestBody
                     "json_invalid", ["body", exception.Position], "JSON decode error", new WireObject(),
                     new WireObject().Set("error", exception.Detail)),
             ]);
+        }
+    }
+
+    /// <summary>A 413 when the request says its body is larger than <see cref="MaxBodyBytes"/>, without reading it.</summary>
+    public static void RefuseOversized(HttpContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        if (context.Request.ContentLength > MaxBodyBytes)
+        {
+            throw new ApiException(StatusCodes.Status413PayloadTooLarge, TooLargeDetail);
         }
     }
 

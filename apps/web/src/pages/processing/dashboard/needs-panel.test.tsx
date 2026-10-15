@@ -70,10 +70,12 @@ vi.mock("../../../lib/activity/use-activity-stream-invalidation", () => ({
   useActivityStreamInvalidations: vi.fn(),
 }));
 vi.mock("./needs-files", () => ({
-  useNeedsFiles: (workflowId: number | null | undefined) =>
-    needFiles.files.filter(
+  useNeedsFiles: (workflowId: number | null | undefined) => ({
+    files: needFiles.files.filter(
       (file) => workflowId == null || file.library_id === workflowId,
     ),
+    error: null,
+  }),
 }));
 vi.mock("../../activity/activity-rejected-again", () => ({
   ProcessRejectedAgain: (props: { libraryId?: number }) => {

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
 using Xunit;
@@ -280,28 +281,26 @@ public sealed class PortChoiceTests : IDisposable
     // -- The machine -------------------------------------------------------------
 
     [Fact]
-    public void A_port_with_a_listener_is_in_use_and_is_free_after()
-    {
-        int port;
-        // Loopback, not 0.0.0.0: listening on every interface makes Windows Firewall put a prompt
-        // on the desktop of whoever runs the tests.
-        using (var listener = new TcpListener(IPAddress.Loopback, 0))
-        {
-            listener.Start();
-            port = ((IPEndPoint)listener.LocalEndpoint).Port;
-            Assert.True(PortChoice.IsInUse(port));
-        }
-        Assert.False(PortChoice.IsInUse(port));
-    }
-
-    [Fact]
     public void A_loopback_only_listener_still_counts_as_in_use()
     {
-        // The server binds every interface, so a loopback-only listener still blocks it.
+        // The server binds every interface, so a loopback-only listener still blocks it. Port 0 lets the system pick one nobody
+        // holds, and the listener is kept for the whole test, so no other program can take the port while it is checked.
+        // Loopback, not 0.0.0.0: listening on every interface makes Windows Firewall put a prompt on the desktop of whoever
+        // runs the tests.
         using var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
         var port = ((IPEndPoint)listener.LocalEndpoint).Port;
 
         Assert.True(PortChoice.IsInUse(port));
+    }
+
+    [Fact]
+    public void A_port_that_nothing_listens_on_is_not_in_use()
+    {
+        // A port the system's own listener table does not list: its answer, not a port this test has just let go of.
+        var listening = IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners().Select(endpoint => endpoint.Port).ToHashSet();
+        var free = Enumerable.Range(50_000, 5_000).First(candidate => !listening.Contains(candidate));
+
+        Assert.False(PortChoice.IsInUse(free));
     }
 }

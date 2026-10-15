@@ -201,7 +201,8 @@ internal sealed class ProcessingFilesEndpointHandlers
             .Set("keep_notifies_manager", options.KeepNotifiesManager)
             .Set("fingerprint_recorded", options.FingerprintRecorded)
             .Set("unconfirmed_size_bytes", options.UnconfirmedSizeBytes)
-            .Set("unconfirmed_modified_at", options.UnconfirmedModifiedAt));
+            .Set("unconfirmed_modified_at", options.UnconfirmedModifiedAt)
+            .Set("delete_refused_reason", options.DeleteRefusedReason));
     }
 
     /// <summary>
@@ -213,8 +214,8 @@ internal sealed class ProcessingFilesEndpointHandlers
     /// </summary>
     public async Task<ApiResult> DeleteFileAsync(ApiRequest request)
     {
-        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("file_id", issues);
         var model = new BodyModel(payload, issues);
@@ -306,8 +307,8 @@ internal sealed class ProcessingFilesEndpointHandlers
 
     public async Task<ApiResult> MoveToTopAsync(ApiRequest request)
     {
-        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("file_id", issues);
         var model = new BodyModel(payload, issues);
@@ -338,8 +339,8 @@ internal sealed class ProcessingFilesEndpointHandlers
 
     public async Task<ApiResult> RequeueOneAsync(ApiRequest request)
     {
-        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("file_id", issues);
         var model = new BodyModel(payload, issues);
@@ -358,8 +359,8 @@ internal sealed class ProcessingFilesEndpointHandlers
 
     public async Task<ApiResult> RequeueManyAsync(ApiRequest request)
     {
-        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(payload, issues);
         var csrfToken = model.Str("csrf_token", minLength: 1);

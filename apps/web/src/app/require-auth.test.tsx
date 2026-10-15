@@ -72,6 +72,7 @@ function renderSignedOut() {
 
 afterEach(() => {
   clearSignedIn();
+  vi.useRealTimers();
   vi.restoreAllMocks();
   mutate.mockReset();
   localStorage.removeItem(APP_THEME_STORAGE_KEY);
@@ -130,6 +131,7 @@ it("sends a visitor who never had a session to a plain sign-in", () => {
 });
 
 it("forgets a session whose cookie the browser dropped, so it never later reads as expired", () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
   markSignedIn();
   markLoginSucceeded();
 

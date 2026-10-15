@@ -67,6 +67,7 @@ internal sealed class AuthSessionEndpointHandlers
     public async Task<ApiResult> PostRevokeOthersAsync(ApiRequest request)
     {
         var user = await request.RequireUserAsync().ConfigureAwait(false);
+        request.RefuseOversizedBody();
         var headerToken = request.FirstHeader("X-CSRF-Token");
         request.ValidateBrowserPostOrigin();
         var secret = request.RequireSessionSecret();
@@ -89,6 +90,7 @@ internal sealed class AuthSessionEndpointHandlers
     public async Task<ApiResult> PostRevokeSessionAsync(ApiRequest request)
     {
         var user = await request.RequireUserAsync().ConfigureAwait(false);
+        request.RefuseOversizedBody();
         var headerToken = request.FirstHeader("X-CSRF-Token");
         var issues = new ValidationIssues();
         FieldRules.TryUuid(request.RouteValue("session_id") ?? string.Empty, ["path", "session_id"], issues, out var sessionId);
