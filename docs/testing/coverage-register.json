@@ -17275,12 +17275,33 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: TV watched set, output empty -> \"Add a TV output folder…\" and no mutation; same for Movies"
-      },
-      "issue": 1023,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "Finish refuses a watched folder with no output folder"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "says so for $type and sends nothing"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "counts an output folder of only spaces as missing"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "asks about TV first when both are missing an output folder"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "saves once the output folder is added, and clears the refusal"
+        }
+      ],
       "audit": {
         "id": "WEB-128",
         "verdict": "Gap"
@@ -17319,12 +17340,43 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: first Finish creates a library then the settings save fails; second Finish must update that library rather than create another (same watched folder, trailing slash and case differences)"
-      },
-      "issue": 1023,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "Finish retried after the settings could not be saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "updates the workflow the first attempt created instead of adding another"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "leaves the created workflow as it is when nothing changed, and saves the settings"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-offered-retry.test.tsx",
+          "name": "Finish retried after the settings could not be saved, with offered workflows"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-offered-retry.test.tsx",
+          "name": "fills in the workflow the first attempt added instead of adding it twice"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-offered-retry.test.tsx",
+          "name": "an offered workflow already sitting at its watched folder"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-offered-retry.test.tsx",
+          "name": "is added as a new one next to %s"
+        }
+      ],
       "audit": {
         "id": "WEB-130",
         "verdict": "Gap"
@@ -17338,12 +17390,33 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: pick a zone in the listbox, Finish, assert app_timezone in the settings write. A wrong zone mis-schedules everything"
-      },
-      "issue": 1023,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "the time zone"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "saves the zone picked in the list as app_timezone"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "shows the saved zone as chosen and keeps it when it is not changed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "falls back to UTC for a saved zone of %j"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "lets a zone be picked after an unknown one fell back to UTC"
+        }
+      ],
       "audit": {
         "id": "WEB-131",
         "verdict": "Gap"
