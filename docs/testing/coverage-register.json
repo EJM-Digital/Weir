@@ -46997,15 +46997,21 @@
       "severity": "high",
       "touches": "install",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "If one capability the entrypoint needs is missing from the shipped file, Weir does not start for every Compose user. Needs a CI step that runs `docker compose up -d` on the shipped file with the candidate image and waits for health"
-      },
-      "issue": 986,
+      "proofs": [
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
+        },
+        {
+          "type": "node",
+          "file": "scripts/docker-compose-smoke.test.mjs",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "PLAT-14",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -47042,15 +47048,21 @@
       "severity": "high",
       "touches": "install",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "Needs a CI/release step: run the previous tag, create an account and workflow, stop, run the candidate on the same volume, check everything is still there and the pre-update copy exists"
-      },
-      "issue": 986,
+      "proofs": [
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
+        },
+        {
+          "type": "node",
+          "file": "scripts/docker-compose-smoke.test.mjs",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "PLAT-16",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {

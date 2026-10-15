@@ -29,6 +29,7 @@ public sealed class ActivityStreamTests(ServerFixture fixture) : IClassFixture<S
     public async Task Activity_stream_authenticated_emits_latest_format()
     {
         using var admin = await Server.CreateAdminClientAsync();
+        var before = await LatestActivityIdAsync(admin);
 
         using var stream = await admin.OpenStreamAsync(Stream);
 
@@ -41,7 +42,9 @@ public sealed class ActivityStreamTests(ServerFixture fixture) : IClassFixture<S
         // The system.stats frame is sent at once too, so the frame is looked for by name.
         var data = (await stream.NextEventNamedAsync(LatestEvent)).AsObject();
         Assert.Equal(new HashSet<string> { "latest_event_id", "activity_revision" }, data.Select(field => field.Key).ToHashSet());
-        Assert.Equal(await LatestActivityIdAsync(admin), (long)data["latest_event_id"]!);
+        // Work Weir queued earlier can record an Activity event at any moment, so the frame carries an id from between the two reads.
+        var after = await LatestActivityIdAsync(admin);
+        Assert.InRange((long)data["latest_event_id"]!, before, after);
         Assert.True(data["activity_revision"]!.AsValue().TryGetValue<long>(out _));
     }
 
@@ -93,12 +96,35 @@ public sealed class ActivityStreamTests(ServerFixture fixture) : IClassFixture<S
 
         var paused = await admin.PutWithCsrfAsync($"{WeirClient.Api}/pause", new JsonObject { ["paused"] = true });
         Assert.True(paused.Status == HttpStatusCode.OK, paused.ToString());
-        var pausedFrame = (await stream.NextEventNamedAsync("data.changed")).AsObject();
+        var pausedFrame = await NextChangeOfAsync(stream, "pause");
         var resumed = await admin.PutWithCsrfAsync($"{WeirClient.Api}/pause", new JsonObject { ["paused"] = false });
         Assert.True(resumed.Status == HttpStatusCode.OK, resumed.ToString());
-        var resumedFrame = (await stream.NextEventNamedAsync("data.changed")).AsObject();
+        var resumedFrame = await NextChangeOfAsync(stream, "pause");
 
         Assert.Equal(["topic"], pausedFrame.Select(field => field.Key));
+        Assert.Equal("pause", (string)pausedFrame["topic"]!);
+        Assert.Equal("pause", (string)resumedFrame["topic"]!);
+    }
+
+    [Fact]
+    public async Task A_data_changed_frame_for_another_topic_just_before_a_pause_does_not_hide_the_pause_frame()
+    {
+        using var admin = await Server.CreateAdminClientAsync();
+        using var stream = await admin.OpenStreamAsync(Stream);
+        await stream.NextEventNamedAsync("server.hello");
+
+        // Weir's own tasks announce readiness and the request counters at any moment while a stream is open. Queuing a
+        // maintenance sweep puts two other topics on the stream, ahead of the pause, at a moment the test chooses.
+        var queued = await admin.PostWithCsrfAsync(
+            $"{WeirClient.Api}/processing/maintenance/run", new JsonObject { ["family"] = "work_temp_stale_sweep" });
+        JobsApi.Expect(queued, HttpStatusCode.OK);
+        var paused = await admin.PutWithCsrfAsync($"{WeirClient.Api}/pause", new JsonObject { ["paused"] = true });
+        Assert.True(paused.Status == HttpStatusCode.OK, paused.ToString());
+        var pausedFrame = await NextChangeOfAsync(stream, "pause");
+        var resumed = await admin.PutWithCsrfAsync($"{WeirClient.Api}/pause", new JsonObject { ["paused"] = false });
+        Assert.True(resumed.Status == HttpStatusCode.OK, resumed.ToString());
+        var resumedFrame = await NextChangeOfAsync(stream, "pause");
+
         Assert.Equal("pause", (string)pausedFrame["topic"]!);
         Assert.Equal("pause", (string)resumedFrame["topic"]!);
     }
@@ -168,6 +194,22 @@ public sealed class ActivityStreamTests(ServerFixture fixture) : IClassFixture<S
         var items = response.Fields["items"]!.AsArray();
         Assert.Contains(title, items.Select(item => (string)item!["title"]!));
         Assert.Contains(items, item => (string)item!["module"]! == "auth");
+    }
+
+    /// <summary>
+    /// The next <c>data.changed</c> frame for <paramref name="topic"/>. Weir announces readiness, its request counters and
+    /// more on its own schedule while a stream is open, so the first frame after an action is not always the action's.
+    /// </summary>
+    private static async Task<JsonObject> NextChangeOfAsync(SseReader stream, string topic)
+    {
+        while (true)
+        {
+            var frame = (await stream.NextEventNamedAsync("data.changed")).AsObject();
+            if ((string?)frame["topic"] == topic)
+            {
+                return frame;
+            }
+        }
     }
 
     /// <summary>The <c>data.changed</c> topics the stream sends until every one in <paramref name="expected"/> has come, sorted.</summary>
