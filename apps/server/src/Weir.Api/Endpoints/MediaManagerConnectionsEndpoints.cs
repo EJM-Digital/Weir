@@ -240,7 +240,7 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
 
     public async Task<ApiResult> DeleteConnectionAsync(ApiRequest request)
     {
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
         var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);
@@ -283,7 +283,7 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
     /// </summary>
     public async Task<ApiResult> PostUnlinkWorkflowsAsync(ApiRequest request)
     {
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
         var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);
@@ -324,7 +324,7 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
     /// </summary>
     public async Task<ApiResult> PostGiveUpReportsAsync(ApiRequest request)
     {
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
         var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { signedInAs } from "../../../../test/signed-in-as";
 import * as settingsQueries from "../../../../lib/settings/queries";
 import {
   serveRecordedReplies,
@@ -134,6 +135,7 @@ describe("the Connections screens keep secrets to themselves", () => {
 
   it("never logs, stores or sends on a download client's API key beyond saving it", async () => {
     const typedKey = "typed-sabnzbd-api-key";
+    signedInAs("admin");
     weir = serveRecordedReplies({
       "GET /api/v1/auth/csrf": csrfToken,
       "GET /api/v1/download-clients/connections": [
