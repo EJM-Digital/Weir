@@ -92,6 +92,7 @@ internal sealed class ProcessingFileLogEndpointHandlers
         var uow = await request.DbAsync().ConfigureAwait(false);
         var row = await ProcessingFilesEndpoints.RequireFileAsync(uow, _files, id).ConfigureAwait(false);
         var rows = await _fileLogs.LogsForFileAsync(uow, row.RelativePath, 500).ConfigureAwait(false);
+        var retained = await _fileLogs.CountForFileAsync(uow, row.RelativePath).ConfigureAwait(false);
         await request.CommitAsync().ConfigureAwait(false);
 
         var safe = new string([.. row.RelativePath.Where(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_' or '.')]);
@@ -102,7 +103,7 @@ internal sealed class ProcessingFileLogEndpointHandlers
             safe = "file";
         }
 
-        var text = _fileLogs.RenderLogText(rows);
+        var text = _fileLogs.RenderLogText(rows, retained);
         return new CustomApiResult(context =>
         {
             context.Response.Headers.ContentDisposition = $"attachment; filename=\"weir-{safe}.log.txt\"";
