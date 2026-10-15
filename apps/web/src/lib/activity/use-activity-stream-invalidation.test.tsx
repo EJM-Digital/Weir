@@ -742,7 +742,8 @@ describe("invalidateLive", () => {
     invalidateLive(qc, { queryKey: ["live"] });
 
     await waitFor(() => expect(observer.getCurrentResult().data).toBe(2));
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // A second read would have begun in the very step that landed the first one's answer.
+    expect(qc.isFetching()).toBe(0);
     expect(reads).toBe(2);
     stop();
   });

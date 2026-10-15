@@ -42,7 +42,7 @@ export function pendingSettings(over: Partial<AppSettings> = {}): AppSettings {
   };
 }
 
-/** The most a screen is given to show what a request led to; a poll ends the moment it does. */
+/** A hang guard, not a pace: the most a screen is given to show what a request led to, on the fake clock; a poll ends the moment it does. */
 export const CEILING = { timeout: 10_000 };
 
 /** A test renders the whole wizard and waits on several requests, so it is given room well past its longest wait. */

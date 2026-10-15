@@ -44599,7 +44599,12 @@
         {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/PortChoiceTests.cs",
-          "name": "A_port_with_a_listener_is_in_use_and_is_free_after"
+          "name": "A_loopback_only_listener_still_counts_as_in_use"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/PortChoiceTests.cs",
+          "name": "A_port_that_nothing_listens_on_is_not_in_use"
         },
         {
           "type": "xunit",
@@ -56882,6 +56887,41 @@
       ],
       "covers": [
         "setting:env:WEIR_LIBRARY_SWAP_HOLD_AT"
+      ]
+    },
+    {
+      "id": "settings.env.periodic-task-speedup",
+      "area": "settings",
+      "behaviour": "WEIR_PERIODIC_TASK_SPEEDUP (tests only): every scheduled task runs that many times as often (1 to 1000, never faster than every tenth of a second), so a browser test waits for the server's next look at a folder or a lapsed pause in seconds; any value above 1 is refused at start when WEIR_ENV is production, so a real install never honours it",
+      "kind": "setting",
+      "severity": "low",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Configuration/WeirOptionsParsingTests.cs",
+          "name": "The_periodic_task_speed_up_is_a_whole_number_from_one_to_a_thousand"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Configuration/WeirOptionsParsingTests.cs",
+          "name": "A_periodic_task_speed_up_is_refused_at_start_in_production"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Scheduling/PeriodicTaskTests.cs",
+          "name": "A_task_sped_up_for_a_test_waits_that_many_times_less"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Scheduling/PeriodicTaskTests.cs",
+          "name": "The_host_runs_its_tasks_at_the_pace_a_test_asked_for"
+        }
+      ],
+      "covers": [
+        "setting:env:WEIR_PERIODIC_TASK_SPEEDUP",
+        "task:SpedUpPeriodicTask"
       ]
     }
   ]

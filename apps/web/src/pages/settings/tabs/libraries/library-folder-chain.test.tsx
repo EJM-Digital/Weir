@@ -7,6 +7,7 @@ import * as chainApi from "../../../../lib/processing/library-folder-chain-api";
 import type { LibraryFolderChain as LibraryFolderChainData } from "../../../../lib/processing/library-folder-chain-api";
 import { LibraryFolderChain } from "./library-folder-chain";
 import { settleFolderChecks } from "./library-test-fixtures";
+import { useFakeClock, useRealClock } from "../../../../test/fake-clock";
 
 function wrapper({ children }: { children: ReactNode }) {
   const qc = new QueryClient({
@@ -35,11 +36,11 @@ function chain(
 
 // The folders settle after a debounce; the tests move the clock instead of waiting for it.
 beforeEach(() => {
-  vi.useFakeTimers({ shouldAdvanceTime: true });
+  useFakeClock();
 });
 
 afterEach(() => {
-  vi.useRealTimers();
+  useRealClock();
   vi.restoreAllMocks();
 });
 

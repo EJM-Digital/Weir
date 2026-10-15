@@ -101,6 +101,13 @@ public sealed record WeirOptions
     public string? LibrarySwapHoldAt { get; init; }
 
     /// <summary>
+    /// For tests only (<c>WEIR_PERIODIC_TASK_SPEEDUP</c>): how many times shorter every periodic task's interval is, so a browser test
+    /// waits for the server's next look at a folder or a pause that has run out in a second or two instead of half a minute. 1 on a real
+    /// install: the loader refuses any other value when <c>WEIR_ENV</c> is production.
+    /// </summary>
+    public int PeriodicTaskSpeedUp { get; init; } = 1;
+
+    /// <summary>
     /// Whether Weir sets up its workflows from a media manager that reports its folders (Deluno) and keeps them in step
     /// (<c>WEIR_MEDIA_MANAGER_WORKFLOW_SYNC_ENABLED</c>, default on). Off leaves every workflow's folders to be typed.
     /// </summary>
