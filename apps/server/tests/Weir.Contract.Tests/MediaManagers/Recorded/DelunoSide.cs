@@ -16,6 +16,9 @@ internal static class DelunoSide
     /// <summary>Deluno's id for its Movies library in the session the rc.30.32 reports (the retries, the takeover) were recorded in.</summary>
     public const string ReportsMoviesKey = "01a13d68ae4a7e7b84c06a96fd5d8cc7";
 
+    /// <summary>Deluno's id for its TV library in the session the rc.30.32 reports were recorded in.</summary>
+    public const string ReportsTvKey = "01a13d68af9170839d883349df5773a8";
+
     /// <summary>Deluno's id for its TV library in that session.</summary>
     public const string TvKey = "01a136e9255c79f9b93c4e6b81736481";
 
@@ -35,12 +38,12 @@ internal static class DelunoSide
     public static Recording Report(string state) => Recording.LoadDelunoSide(Recording.DelunoSideRepliesVersion, state);
 
     /// <summary>The world of the rc.30.32 report recordings: Deluno's Movies library by the id of that session, handing back to Deluno's recorded folder.</summary>
-    public static Task<RecordedWorld> StartReportsWorldAsync(params (string Name, string Value)[] settings) =>
-        RecordedWorld.StartAsync(ReportsMoviesKey, DelunoReadyFolder, settings);
+    public static Task<RecordedWorld> StartReportsWorldAsync(bool withTv = false, params (string Name, string Value)[] settings) =>
+        RecordedWorld.StartAsync(ReportsMoviesKey, DelunoReadyFolder, tvKey: withTv ? ReportsTvKey : null, settings: settings);
 
     /// <summary>The world of the rc.30.30 recordings: Deluno's Movies library by its recorded id, handing back to Deluno's recorded folder.</summary>
     public static Task<RecordedWorld> StartWorldAsync(params (string Name, string Value)[] settings) =>
-        RecordedWorld.StartAsync(MoviesKey, DelunoReadyFolder, settings);
+        RecordedWorld.StartAsync(MoviesKey, DelunoReadyFolder, settings: settings);
 
     /// <summary>
     /// A hand-off for a download the recordings do not hold a hand-off of (a status poll or a report they do hold names its id and
@@ -68,6 +71,21 @@ internal static class DelunoSide
         var sent = (JsonObject)report.Request.Body!;
         var hand = HandoffLike((string)sent["handoffId"]!, (string)sent["releaseName"]!, fileName ?? FileNameOf((string)sent["outputPath"]!));
         hand.Body!["libraryId"] = (string)sent["libraryId"]!;
+        return hand;
+    }
+
+    /// <summary>
+    /// The hand-off Deluno made for a TV release folder a report recording names: the recorded single-file hand-off with that id, release and
+    /// library, for the TV workflow's watched folder and <paramref name="folderName"/> (a season pack names no files, Weir finds them).
+    /// </summary>
+    public static RecordedCall PackHandoffFor(RecordedExchange report, string folderName)
+    {
+        var sent = (JsonObject)report.Request.Body!;
+        var hand = HandoffLike((string)sent["handoffId"]!, (string)sent["releaseName"]!);
+        hand.Body!["libraryId"] = (string)sent["libraryId"]!;
+        hand.Body["mediaType"] = "tv";
+        hand.Body["season"] = 1;
+        hand.Body["sourcePath"] = $@"{RecordedWorld.RecordedTvWatched}\{folderName}";
         return hand;
     }
 

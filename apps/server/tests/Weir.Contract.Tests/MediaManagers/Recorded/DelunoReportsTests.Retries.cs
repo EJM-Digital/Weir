@@ -4,42 +4,40 @@ using Weir.Contract.Tests.Harness;
 namespace Weir.Contract.Tests.MediaManagers.Recorded;
 
 /// <summary>
-/// The reports Weir sends Deluno that Deluno answered with a refusal or a 409, replayed from the rc.30.32 recordings: the 503 Weir sends
-/// again and the 401 and 403 it does not, and the two sends of one release, the first reported superseded and the second finished.
+/// The reports Weir sends Deluno that Deluno answered with a refusal or a 409, replayed from the rc.30.32 recordings: the 503 Weir keeps owed
+/// and the 401 and 403 it does not (when it sends the 503 again is held on a fake clock by <c>RecordedReportRetryTests</c>, which a running
+/// server cannot have), and the two sends of one release, the first reported superseded and the second finished.
 /// The recorded ids are Deluno's; this test makes them its own (<see cref="Translation.Id"/>), as it does for a recorded request.
 /// </summary>
 public sealed partial class DelunoReportsTests
 {
-    /// <summary>The longest a report owed to the heartbeat is waited for: the heartbeat runs every minute and the first wait is one.</summary>
-    private static readonly TimeSpan HeartbeatCeiling = TimeSpan.FromMinutes(4);
+    /// <summary>
+    /// How long the report of a replaced send is waited for: it is owed and goes with the next run of the media manager heartbeat, which is a
+    /// minute apart (<c>ManagerHeartbeatTask.Interval</c>), so the wait ends at the first run, not after a guessed delay.
+    /// </summary>
+    private static readonly TimeSpan NextHeartbeat = TimeSpan.FromMinutes(2);
 
     [Fact]
-    public async Task A_report_Deluno_answered_503_is_kept_and_sent_again_by_the_heartbeat_as_Deluno_recorded()
+    public async Task A_report_Deluno_answered_503_is_kept_owed_with_a_note_that_Weir_is_waiting_as_Deluno_recorded()
     {
         await using var world = await DelunoSide.StartReportsWorldAsync();
         var recorded = DelunoSide.Report("events-completed-answered-503-not-repeated");
-        var accepted = DelunoSide.Request("events-completed").Exchanges[0].Reply;
-        var answered = 0;
-        world.Deluno.Route("POST", ReportsTo, _ => DelunoSide.AnswerOf(Interlocked.Increment(ref answered) == 1 ? recorded.Exchanges[0].Reply : accepted));
+        world.Deluno.Route("POST", ReportsTo, DelunoSide.AnswerOf(recorded.Exchanges[0].Reply));
         var hand = DelunoSide.HandoffFor(recorded.Exchanges[0]);
         var id = world.Translation.Id(hand.HandoffId());
-        world.PutFilm(hand.SourcePath(), needsWork: true);
+        var path = world.PutFilm(hand.SourcePath(), needsWork: true);
 
         await HandOffAsync(world, hand);
 
-        var first = await ReportAsync(world, id);
-        EmittedReport.AssertMatches(recorded, 0, first.Body, world.Translation);
-        var sent = await Poll.UntilAsync(
-            () => Task.FromResult(world.Deluno.RequestsTo("POST", ReportsTo) is { Count: >= 2 } requests ? requests : null),
-            "Weir to send the report Deluno answered 503 again",
-            HeartbeatCeiling);
-        Assert.Equal(2, sent.Count);
-        Assert.Equal(first.Body.ToJsonString(), ((JsonObject)sent[1].Json!).ToJsonString());
-        var file = DelunoSide.FileNameOf((string)first.Body["outputPath"]!);
-        var entry = Assert.Single(await RecordedReportsAsync(world, 1));
-        Assert.Equal($"Told {Deluno(world)} that {file} is ready to import", (string)entry["title"]!);
-        Assert.Empty(await OwedAsync(world, [id]));
-        Assert.Equal(2, world.Deluno.RequestsTo("POST", ReportsTo).Count);
+        var report = await ReportAsync(world, id);
+        EmittedReport.AssertMatches(recorded, 0, report.Body, world.Translation);
+        // Weir writes that it is waiting in the file's own words in the same step that keeps the report owed.
+        await Poll.UntilAsync(
+            async () => ((string?)(await world.Scenario.FileRowAsync(world.Movies, Path.GetFileName(path)))?["status_reason"])?.Contains("Weir will tell it this file is ready when it answers", StringComparison.Ordinal) == true ? "waiting" : null,
+            "Weir to say it is waiting to tell Deluno");
+        Assert.Single(world.Deluno.RequestsTo("POST", ReportsTo));
+        Assert.Empty(await world.Scenario.ActivityAsync("processing.handoff_reported"));
+        Assert.Equal([id], await OwedAsync(world, [id]));
     }
 
     [Theory]
@@ -89,7 +87,7 @@ public sealed partial class DelunoReportsTests
         var replaced = await Poll.UntilAsync(
             () => Task.FromResult(world.Deluno.RequestsTo("POST", ReportsTo).FirstOrDefault(sent => ((JsonObject)sent.Json!)["handoffId"]!.ToString() == firstId)),
             "Weir to tell Deluno the first send was replaced",
-            HeartbeatCeiling);
+            NextHeartbeat);
         EmittedReport.AssertMatches(superseded, 0, (JsonObject)replaced.Json!, world.Translation);
         Assert.Equal("cancelled", (string)(await world.Scenario.HandoffStatusAsync(firstId))["state"]!);
     }
