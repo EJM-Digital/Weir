@@ -45,6 +45,29 @@ public sealed class DatabaseBusyTests(DatabaseBusyFixture fixture) : IClassFixtu
     }
 
     [Fact]
+    public async Task A_hand_off_no_workflow_watches_is_refused_400_before_it_writes_whether_or_not_the_database_is_locked()
+    {
+        var movies = await fixture.MoviesAsync();
+        var handoffId = Handoffs.NewId();
+        var nowhere = Path.Combine(Path.GetDirectoryName(movies.Watched)!, "no-workflow-watches-this", "film.mkv");
+        var unlocked = await Handoffs.HandOffResponseAsync(Server, handoffId, nowhere);
+        WeirResponse locked;
+        using (HeldWriteLock.Take(Server))
+        {
+            locked = await Handoffs.HandOffResponseAsync(Server, handoffId, nowhere);
+        }
+
+        // The refusal is about the folder, so it is a client error with or without the lock, and says so in the same words; a busy
+        // database is 503 with a Retry-After and the busy code, never this.
+        Assert.True(unlocked.Status == HttpStatusCode.BadRequest, unlocked.ToString());
+        Assert.True(locked.Status == HttpStatusCode.BadRequest, locked.ToString());
+        Assert.Equal((string?)unlocked.Fields["detail"], (string?)locked.Fields["detail"]);
+        Assert.Null(locked.Fields["code"]);
+        Assert.Null(locked.Header("Retry-After"));
+        Assert.Equal(HttpStatusCode.NotFound, (await Handoffs.StatusResponseAsync(Server, handoffId)).Status);
+    }
+
+    [Fact]
     public async Task An_outcome_sent_while_the_database_is_locked_is_answered_503_with_a_retry_after()
     {
         WeirResponse busy;
