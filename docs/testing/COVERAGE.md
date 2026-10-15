@@ -6,8 +6,8 @@ ids under `contract.` are shared with it, and the proof types follow each app's 
 
 ## The schema (shared with Deluno's register)
 
-`coverage-register.json` is `{ "version": 1, "generatedFrom": string, "gapCeiling": number, "areas": { <area>: { "code": string, "name": string } }, "rows": [ ... ] }`.
-(`gapCeiling` is Weir's addition: see "The gaps" below.) One row is one behaviour a person or another app can rely on:
+`coverage-register.json` is `{ "version": 1, "generatedFrom": string, "areas": { <area>: { "code": string, "name": string } }, "rows": [ ... ], "gapIncrease"?: { "from": number, "to": number, "reason": string } }`.
+(`gapIncrease` is optional and rare: see rule 5.) One row is one behaviour a person or another app can rely on:
 
 | Field | Required | Allowed values |
 | --- | --- | --- |
@@ -87,11 +87,14 @@ A row is **proven** when its best proof reaches `required` and it names no `issu
 2. **Everything mapped still exists.** A row that covers something the code no longer has fails CI.
 3. **Every proof exists.** The file is in the repository, the name is in the file, and the type is true of it. A renamed or deleted test fails CI until the row is fixed; the row is then a gap.
 4. **Every gap names its issue.** A row with no proof carries the number of the open coverage issue that will prove it. A row whose proofs reach the level and whose issue has landed loses the issue.
-5. **The gaps only go down.** A gap is a row whose proofs do not reach `required`, or that names an `issue`. `gapCeiling` is their number, and CI fails when there are more (so a gap cannot be added), when there are fewer
-   (so the ceiling is lowered in the same change), when there are more than on the branch a pull request is going into, or when a row names an issue that is closed.
+5. **The gaps only go down, measured against the branch a change goes into.** A gap is a row whose proofs do not reach `required`, or that names an `issue`. CI counts the gaps in the
+   register on the base branch (the pull request's base commit, or the previous commit on a push to main) and fails when this branch has more, or when a row names an issue that is closed.
+   No count is stored in the register, so two pull requests that each close gaps do not edit the same line and cannot conflict on it. A rise that cannot be avoided is written under
+   `gapIncrease` as `{ "from": <gaps on the base>, "to": <gaps now>, "reason": "..." }`, in a pull request of its own, the same rule as a lowered coverage floor
+   (`docs/coverage/floors.json`); the entry only counts for exactly that rise and is removed in the next pull request. With no base to compare with (a first run) the check passes and says so.
 6. **`--strict` fails on any gap.** Weir turns it on in CI once the gaps are closed.
 
-Gaps that are not on an issue yet are counted below; they are rows the 14 October audit called covered, but whose proofs are below the level the shared rule asks for (a high row that
+Gaps that are not on an issue yet are counted in the statistics (below); they are rows the 14 October audit called covered, but whose proofs are below the level the shared rule asks for (a high row that
 touches another app, the disk or an install needs a real proof). Each needs an owner's decision on how it is proven, and then an issue.
 
 ## Commands
@@ -99,179 +102,20 @@ touches another app, the disk or an install needs a real proof). Each needs an o
 ```
 node scripts/check-coverage-register.mjs               # the check CI runs
 node scripts/check-coverage-register.mjs --gh          # also checks that every issue a row names is open (needs gh and a token)
-node scripts/check-coverage-register.mjs --base origin/main   # also fails on more gaps than the register at that ref has
+node scripts/check-coverage-register.mjs --base origin/main   # also fails on more gaps than the register at that ref has (CI passes this)
 node scripts/check-coverage-register.mjs --strict      # also fails on any gap
 node scripts/check-coverage-register.mjs --list-gaps   # every gap, high first
 node scripts/check-coverage-register.mjs --stubs       # row stubs for code that has no row
-node scripts/check-coverage-register.mjs --write-doc   # rewrites the totals below
+node scripts/check-coverage-register.mjs --report      # writes the statistics to artifacts/coverage-register.md (not committed)
 node scripts/coverage/inventory.mjs --list             # the inventory
 node --test scripts/check-coverage-register.test.mjs   # the check's own tests
 ```
 
 When you add a route, job, setting, event type, web route, screen control, tray menu item or scenario: add its row (with the key in `covers` and the proof that proves it) in the same change.
-When you add a test that closes a gap, put it in `proofs`, drop the row's `issue` and `needs`, and lower `gapCeiling`. When a test is renamed, change the proof with it.
+When you add a test that closes a gap, put it in `proofs` and drop the row's `issue` and `needs`; nothing else in the register changes. When a test is renamed, change the proof with it.
 
-## Totals
+## Statistics
 
-<!-- coverage:generated:start -->
-Generated by `node scripts/check-coverage-register.mjs --write-doc` from `coverage-register.json`. Do not edit by hand.
-
-**1863** behaviours. **1012** reach their required proof level (54%); **851** are gaps, **82** of them high; **0** gaps are not on an issue yet.
-
-### By severity
-
-| Severity | Rows | Reach their level | Gaps |
-| --- | ---: | ---: | ---: |
-| high | 174 | 92 | 82 |
-| medium | 1323 | 877 | 446 |
-| low | 366 | 43 | 323 |
-
-### High rows by what they touch (these need `real`, except `none`, which needs `inproc`)
-
-| Touches | High rows | High gaps |
-| --- | ---: | ---: |
-| other-app | 63 | 31 |
-| disk | 54 | 23 |
-| install | 14 | 11 |
-| none | 43 | 17 |
-
-### By best proof a row has
-
-| Best proof | Rows |
-| --- | ---: |
-| none (a gap) | 540 |
-| inproc | 1024 |
-| real | 299 |
-
-E2E proofs: **191**; unstubbed (can reach `real` for a screen behaviour) **191**; stubbed **0**; not decidable statically, counted as stubbed **0**.
-
-Real-fs proofs: **191** claimed; **191** verified and counted as real; **0** refused (the check could not verify a real temp folder or database file with no fake, so they count as inproc); **0** verified but without effect (the row is "vm", or does not touch disk or install). **74** rows are "vm" (only a real install can prove them, so they need a scenario); **56** of them are still gaps.
-
-Container-smoke proofs: **0** claimed; **0** verified and counted as real; **0** refused (the named step or script does not start the container image, so they count as inproc); **0** verified but without effect (the row is "vm", or does not touch disk or install).
-
-### By area
-
-| Area | What | Rows | Reach their level | Gaps | High rows | High gaps | No proof | Inproc | Real |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| api | API routes and what applies across them | 160 | 132 | 28 | 17 | 5 | 23 | 103 | 34 |
-| contract | Deluno-Weir contract: Weir's side of every call, reply and report (ids shared with Deluno) | 57 | 32 | 25 | 39 | 16 | 25 | 0 | 32 |
-| events | Activity event types | 45 | 38 | 7 | 0 | 0 | 7 | 34 | 4 |
-| file-lifecycle | File lifecycle rules (docs/file-lifecycle-contract.md) | 45 | 29 | 16 | 38 | 9 | 8 | 8 | 29 |
-| integrations | Integrations crossed with their operations | 29 | 7 | 22 | 2 | 2 | 17 | 6 | 6 |
-| platform | Install, update, uninstall, ports, firewall, Docker, packaging | 29 | 10 | 19 | 6 | 5 | 19 | 2 | 8 |
-| scenarios | Golden-VM scenarios | 14 | 2 | 12 | 0 | 0 | 12 | 1 | 1 |
-| services | Jobs, hosted services, periodic tasks and schedules | 56 | 42 | 14 | 2 | 0 | 13 | 29 | 14 |
-| settings | Settings: stored fields and environment variables | 133 | 82 | 51 | 7 | 1 | 47 | 63 | 23 |
-| tray | Windows tray: menu, icon, balloons, supervision, updates | 91 | 39 | 52 | 8 | 6 | 21 | 51 | 19 |
-| web-activity-library | Web: Activity and Library | 194 | 74 | 120 | 12 | 12 | 78 | 98 | 18 |
-| web-dashboard | Web: Dashboard (Live and System views) | 198 | 136 | 62 | 1 | 1 | 25 | 149 | 24 |
-| web-routes | Web routes and the controls that carry a test id | 111 | 93 | 18 | 0 | 0 | 18 | 93 | 0 |
-| web-setup-connections-performance | Web: Setup: Connections, Alerts, Performance | 159 | 56 | 103 | 17 | 10 | 55 | 96 | 8 |
-| web-setup-workflows-rules | Web: Setup: Workflows, Schedule, Rules, Playback devices | 209 | 81 | 128 | 6 | 6 | 73 | 118 | 18 |
-| web-shell | Web: boot, shell, sign-in, first-run setup, wizard, shared widgets, live connection | 174 | 90 | 84 | 11 | 4 | 43 | 89 | 42 |
-| web-system | Web: System: About, Backups, Security, Logs | 159 | 69 | 90 | 8 | 5 | 56 | 84 | 19 |
-
-### Gaps with an open issue
-
-| Issue | Rows | High rows |
-| --- | ---: | ---: |
-| #979 | 1 | 0 |
-| #981 | 5 | 0 |
-| #982 | 7 | 0 |
-| #985 | 1 | 1 |
-| #986 | 2 | 2 |
-| #987 | 1 | 1 |
-| #988 | 3 | 2 |
-| #989 | 5 | 2 |
-| #990 | 1 | 1 |
-| #991 | 10 | 5 |
-| #992 | 4 | 2 |
-| #993 | 4 | 4 |
-| #994 | 14 | 3 |
-| #995 | 1 | 0 |
-| #1000 | 7 | 0 |
-| #1001 | 3 | 0 |
-| #1002 | 4 | 0 |
-| #1003 | 4 | 0 |
-| #1004 | 2 | 0 |
-| #1005 | 1 | 0 |
-| #1006 | 6 | 0 |
-| #1007 | 9 | 0 |
-| #1008 | 9 | 0 |
-| #1009 | 2 | 0 |
-| #1010 | 5 | 0 |
-| #1011 | 4 | 0 |
-| #1012 | 1 | 0 |
-| #1013 | 2 | 0 |
-| #1014 | 1 | 0 |
-| #1015 | 6 | 0 |
-| #1016 | 1 | 0 |
-| #1017 | 30 | 16 |
-| #1018 | 2 | 0 |
-| #1019 | 4 | 0 |
-| #1020 | 3 | 0 |
-| #1021 | 3 | 0 |
-| #1022 | 12 | 0 |
-| #1023 | 3 | 0 |
-| #1024 | 10 | 0 |
-| #1025 | 7 | 0 |
-| #1026 | 11 | 0 |
-| #1027 | 6 | 0 |
-| #1028 | 8 | 0 |
-| #1029 | 9 | 0 |
-| #1030 | 15 | 0 |
-| #1031 | 12 | 0 |
-| #1032 | 5 | 0 |
-| #1033 | 8 | 0 |
-| #1034 | 8 | 0 |
-| #1035 | 8 | 0 |
-| #1036 | 7 | 0 |
-| #1037 | 4 | 0 |
-| #1038 | 12 | 0 |
-| #1039 | 4 | 0 |
-| #1040 | 3 | 0 |
-| #1041 | 2 | 0 |
-| #1042 | 1 | 0 |
-| #1043 | 7 | 0 |
-| #1044 | 4 | 0 |
-| #1045 | 31 | 1 |
-| #1046 | 20 | 0 |
-| #1047 | 36 | 0 |
-| #1048 | 48 | 0 |
-| #1049 | 36 | 0 |
-| #1050 | 34 | 0 |
-| #1051 | 15 | 3 |
-| #1052 | 36 | 0 |
-| #1053 | 14 | 0 |
-| #1054 | 25 | 0 |
-| #1055 | 72 | 5 |
-| #1056 | 32 | 3 |
-| #1057 | 27 | 0 |
-| #1058 | 26 | 0 |
-| #1059 | 30 | 3 |
-| #1064 | 6 | 0 |
-| #1065 | 1 | 1 |
-| #1066 | 2 | 2 |
-| #1067 | 2 | 2 |
-| #1068 | 8 | 8 |
-| #1069 | 2 | 2 |
-| #1070 | 9 | 9 |
-| #1071 | 3 | 3 |
-| #1072 | 1 | 1 |
-| #1073 | 1 | 0 |
-
-### Inventories (generated from source by `scripts/coverage/inventory.mjs`)
-
-| Kind | Items |
-| --- | ---: |
-| route | 155 |
-| job | 8 |
-| service | 15 |
-| task | 20 |
-| setting | 190 |
-| event | 45 |
-| webroute | 27 |
-| action | 97 |
-| tray | 15 |
-| scenario | 13 |
-<!-- coverage:generated:end -->
+The totals (rows and gaps by severity, area and best proof, the real-fs and e2e counts, the inventories) are not kept in this page, because a number that every change moves makes
+every second pull request conflict. The check writes them to the job summary of the CI run (`repo-checks`), and CI uploads the same text as the `coverage-register` artifact. Locally,
+`node scripts/check-coverage-register.mjs --report` writes it to `artifacts/coverage-register.md`, which is not committed.
