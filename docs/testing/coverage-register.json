@@ -29289,7 +29289,7 @@
         {
           "type": "vitest",
           "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
-          "name": "sends a first tab's own name back to the area's address"
+          "name": "sends a first tab's own name back to the area's address (%s)"
         }
       ],
       "covers": [
@@ -34374,7 +34374,7 @@
         {
           "type": "vitest",
           "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
-          "name": "sends a first tab's own name back to the area's address"
+          "name": "sends a first tab's own name back to the area's address (%s)"
         },
         {
           "type": "e2e",
@@ -50750,14 +50750,24 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1048,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
+          "name": "a setup area"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
+          "name": "sends a first tab's own name back to the area's address (%s)"
+        }
+      ],
       "covers": [
         "web:/setup/workflows/workflows"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -50895,14 +50905,24 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1048,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
+          "name": "a setup area"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
+          "name": "sends a first tab's own name back to the area's address (%s)"
+        }
+      ],
       "covers": [
         "web:/setup/rules/profiles"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
