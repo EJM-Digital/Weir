@@ -79,6 +79,20 @@ describe.each(["operator", "viewer"] as const)("signed in as a %s", (role) => {
     expect(screen.getByTestId("media-manager-test")).toBeEnabled();
   });
 
+  it("cannot create or replace a media manager's secret, and is told why", async () => {
+    vi.spyOn(api, "fetchMediaManagerConnections").mockResolvedValue([MANAGER]);
+    signedInAs(role);
+
+    render(<MediaManagersTab />, { wrapper });
+
+    expect(
+      await screen.findByTestId("media-manager-generate-secret"),
+    ).toBeDisabled();
+    expect(
+      screen.getByText("Only an admin can create or replace the secret."),
+    ).toBeInTheDocument();
+  });
+
   it("cannot add a first media manager", async () => {
     vi.spyOn(api, "fetchMediaManagerConnections").mockResolvedValue([]);
     signedInAs(role);
@@ -140,6 +154,7 @@ describe("signed in as an admin", () => {
     expect(await screen.findByTestId("media-manager-remove")).toBeEnabled();
     expect(screen.getByTestId("media-manager-edit")).toBeEnabled();
     expect(screen.getByTestId("media-manager-add")).toBeEnabled();
+    expect(screen.getByTestId("media-manager-generate-secret")).toBeEnabled();
     expect(screen.queryByText(/Only an admin can/)).toBeNull();
   });
 
