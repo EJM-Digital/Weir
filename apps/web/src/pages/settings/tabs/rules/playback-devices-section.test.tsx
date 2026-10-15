@@ -1,8 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 
+import { LIVE_TOPIC_QUERIES } from "../../../../lib/live/live-topics";
 import * as authQueries from "../../../../lib/auth/queries";
 import * as api from "../../../../lib/processing/direct-play-api";
 import type { DirectPlayDevices } from "../../../../lib/processing/direct-play-api";
@@ -28,11 +35,15 @@ const devices: DirectPlayDevices = {
   ],
 };
 
-function wrapper({ children }: { children: ReactNode }) {
-  const client = new QueryClient({
+const queryClient = () =>
+  new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+
+function wrapper({ children }: { children: ReactNode }) {
+  return (
+    <QueryClientProvider client={queryClient()}>{children}</QueryClientProvider>
+  );
 }
 
 function asRole(role: string) {
@@ -136,4 +147,43 @@ it("shows a viewer the list read-only", async () => {
   expect(
     screen.getByText(/Only an operator or admin can change/),
   ).toBeInTheDocument();
+});
+
+it("shows a selection saved in another browser when the server says the devices changed", async () => {
+  asRole("operator");
+  const fetch = vi
+    .spyOn(api, "fetchDirectPlayDevices")
+    .mockResolvedValue(devices);
+  const client = queryClient();
+
+  render(<PlaybackDevicesSection />, {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    ),
+  });
+  expect(
+    await screen.findByRole("checkbox", { name: "Apple TV 4K", checked: true }),
+  ).toBeInTheDocument();
+
+  fetch.mockResolvedValue({
+    ...devices,
+    devices: devices.devices.map((d) => ({
+      ...d,
+      selected: d.id === "iphone",
+    })),
+  });
+  await act(async () => {
+    await Promise.all(
+      LIVE_TOPIC_QUERIES.direct_play_devices.map((queryKey) =>
+        client.invalidateQueries({ queryKey }),
+      ),
+    );
+  });
+
+  expect(
+    await screen.findByRole("checkbox", { name: "iPhone", checked: true }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("checkbox", { name: "Apple TV 4K" }),
+  ).not.toBeChecked();
 });

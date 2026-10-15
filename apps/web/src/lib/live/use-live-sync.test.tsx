@@ -125,6 +125,18 @@ describe("useLiveSync", () => {
     ]);
   });
 
+  it("reads the playback devices and the files again when the chosen devices change in another browser", () => {
+    const { invalidate } = mountSync();
+    current().open();
+
+    current().changed("direct_play_devices");
+
+    expect(invalidatedKeys(invalidate)).toEqual([
+      processingKeys.directPlayDevices,
+      processingKeys.files,
+    ]);
+  });
+
   it("ignores a topic it does not know and a frame it cannot read", () => {
     const { invalidate } = mountSync();
     current().open();

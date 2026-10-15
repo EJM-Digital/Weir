@@ -39,6 +39,9 @@ public static class DataTopics
     /// <summary>Weir's own settings.</summary>
     public const string Settings = "settings";
 
+    /// <summary>Which devices are chosen for the Direct Play badge.</summary>
+    public const string DirectPlayDevices = "direct_play_devices";
+
     /// <summary>Configuration backups.</summary>
     public const string Backups = "backups";
 
