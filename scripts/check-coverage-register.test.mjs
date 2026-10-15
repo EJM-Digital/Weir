@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, describe, test } from "node:test";
@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { buildInventory } from "./coverage/inventory.mjs";
 import { TestIndex } from "./coverage/testindex.mjs";
-import { evaluate, generatedSection, isGap, proofLevel, requiredFor, validateShape } from "./check-coverage-register.mjs";
+import { evaluate, statisticsReport, isGap, proofLevel, requiredFor, validateShape } from "./check-coverage-register.mjs";
 
 const script = path.join(path.dirname(fileURLToPath(import.meta.url)), "check-coverage-register.mjs");
 const made = [];
@@ -62,7 +62,7 @@ const COVERS = [
 
 function register(overrides = {}) {
   const rows = COVERS.map((covers, i) => row(`row.${i}`, covers));
-  const base = { version: 1, gapCeiling: 0, areas: { api: { code: "R", name: "API" } }, rows };
+  const base = { version: 1, areas: { api: { code: "R", name: "API" } }, rows };
   return { ...base, ...overrides };
 }
 
@@ -194,7 +194,7 @@ describe("(3) a proof that has gone", () => {
 
 describe("(4) a row with neither a proof nor an issue", () => {
   test("is named", () => {
-    const reg = register({ gapCeiling: 1 });
+    const reg = register();
     reg.rows[0].proofs = [];
     const result = check(fixture(), reg);
     assert.equal(result.issueProblems.length, 1);
@@ -202,14 +202,14 @@ describe("(4) a row with neither a proof nor an issue", () => {
   });
 
   test("a gap that names its issue passes", () => {
-    const reg = register({ gapCeiling: 1 });
+    const reg = register();
     reg.rows[0].proofs = [];
     reg.rows[0].issue = 975;
     clean(check(fixture(), reg, { openIssues: new Set([975]) }));
   });
 
   test("a row proven in part keeps its proofs, names the issue that will prove the rest, and is a gap", () => {
-    const reg = register({ gapCeiling: 1 });
+    const reg = register();
     reg.rows[0].issue = 975;
     const result = check(fixture(), reg, { openIssues: new Set([975]) });
     clean(result);
@@ -217,52 +217,86 @@ describe("(4) a row with neither a proof nor an issue", () => {
     assert.equal(result.totals.untracked.length, 0);
     assert.equal(result.totals.gaps[0].proofs.length, 1);
   });
-
-  test("the same row is a gap that cannot be added without lifting the ceiling", () => {
-    const reg = register();
-    reg.rows[0].issue = 975;
-    assert.match(check(fixture(), reg).gapProblems[0], /1 gaps, above the ceiling of 0/);
-  });
 });
 
-describe("(5) the gaps", () => {
-  const gapRegister = (ceiling) => {
-    const reg = register({ gapCeiling: ceiling });
+describe("(5) the gaps only go down from the base branch", () => {
+  /** A register with one gap, the row proven in part and naming its issue. */
+  const gapRegister = (extra = {}) => {
+    const reg = register(extra);
     reg.rows[0].proofs = [];
     reg.rows[0].issue = 975;
     return reg;
   };
+  const open = new Set([975]);
 
-  test("a gap above the ceiling fails", () => {
-    const result = check(fixture(), gapRegister(0));
-    assert.match(result.gapProblems[0], /1 gaps, above the ceiling of 0/);
+  test("more gaps than the base fails, and says how to explain a rise that cannot be avoided", () => {
+    const result = check(fixture(), gapRegister(), { baseGaps: 0, openIssues: open });
+    assert.equal(result.gapProblems.length, 1);
+    assert.match(result.gapProblems[0], /1 gaps, more than the 0 in the register on the base branch/);
+    assert.match(result.gapProblems[0], /"gapIncrease".*"from": 0, "to": 1/);
+    assert.deepEqual(result.gapNotes, []);
   });
 
-  test("a ceiling above the gaps fails, so the ceiling only goes down", () => {
-    const result = check(fixture(), gapRegister(2));
-    assert.match(result.gapProblems[0], /below the ceiling of 2: lower "gapCeiling" to 1/);
+  test("equal gaps pass", () => {
+    const result = check(fixture(), gapRegister(), { baseGaps: 1, openIssues: open });
+    clean(result);
+    assert.deepEqual(result.gapNotes, []);
   });
 
-  test("more gaps than the base branch fails", () => {
-    const result = check(fixture(), gapRegister(1), { baseGaps: 0 });
-    assert.match(result.gapProblems[0], /more than the 0 in the register on the base branch/);
+  test("fewer gaps pass, with nothing to lower in the file", () => {
+    clean(check(fixture(), register(), { baseGaps: 3 }));
   });
 
-  test("no more gaps than the base branch passes", () => {
-    clean(check(fixture(), gapRegister(1), { baseGaps: 1, openIssues: new Set([975]) }));
+  describe("a reasoned increase", () => {
+    const rise = (entry) => gapRegister({ gapIncrease: entry });
+    const reasoned = { from: 0, to: 1, reason: "The new export needs a real Windows install to prove, which the rig cannot give yet." };
+
+    test("passes with its entry, and the reason is noted", () => {
+      const result = check(fixture(), rise(reasoned), { baseGaps: 0, openIssues: open });
+      clean(result);
+      assert.deepEqual(result.gapNotes, [`The gaps rise from 0 to 1: ${reasoned.reason}`]);
+    });
+
+    test("fails without an entry", () => {
+      assert.match(check(fixture(), gapRegister(), { baseGaps: 0, openIssues: open }).gapProblems[0], /more than the 0/);
+    });
+
+    test("fails when the entry is for a different rise, and names it", () => {
+      for (const entry of [{ ...reasoned, from: 5, to: 6 }, { ...reasoned, to: 4 }, { ...reasoned, from: 1 }]) {
+        const problem = check(fixture(), rise(entry), { baseGaps: 0, openIssues: open }).gapProblems[0];
+        assert.match(problem, new RegExp(`The "gapIncrease" entry says ${entry.from} to ${entry.to}, which is not this rise`));
+      }
+    });
+
+    test("fails when the entry has no reason", () => {
+      for (const reason of ["", "   ", undefined]) {
+        assert.match(check(fixture(), rise({ ...reasoned, reason }), { baseGaps: 0, openIssues: open }).gapProblems[0], /more than the 0/);
+      }
+    });
+
+    test("an entry left over from an earlier rise changes nothing", () => {
+      clean(check(fixture(), gapRegister({ gapIncrease: { from: 0, to: 1, reason: "Earlier." } }), { baseGaps: 1, openIssues: open }));
+    });
+  });
+
+  test("no base to compare with passes, with a note that the gaps were not held to a count", () => {
+    const result = check(fixture(), gapRegister(), { baseGaps: null, openIssues: open });
+    clean(result);
+    assert.equal(result.gapNotes.length, 1);
+    assert.match(result.gapNotes[0], /No register on the base branch to compare with/);
   });
 
   test("a gap that names a closed issue fails", () => {
-    const result = check(fixture(), gapRegister(1), { openIssues: new Set([976]) });
+    const result = check(fixture(), gapRegister(), { baseGaps: 1, openIssues: new Set([976]) });
     assert.match(result.gapProblems[0], /row row\.0 names issue #975, which is not open/);
   });
 
   test("a gap with proofs that fall short of the level counts, and may have no issue yet", () => {
-    const reg = register({ gapCeiling: 1 });
+    const reg = register();
     reg.rows[0].severity = "high";
     reg.rows[0].touches = "disk";
     reg.rows[0].required = "real";
-    const result = check(fixture(), reg);
+    const result = check(fixture(), reg, { baseGaps: 1 });
     assert.deepEqual(result.gapProblems, []);
     assert.equal(result.totals.gaps.length, 1);
     assert.equal(result.totals.untracked.length, 1);
@@ -356,7 +390,7 @@ describe("real-fs proofs", () => {
   });
 
   test("a claim the check cannot verify counts as inproc and is reported, without failing the run", () => {
-    const reg = register({ gapCeiling: 1 });
+    const reg = register();
     reg.rows[0] = { ...reg.rows[0], severity: "high", touches: "disk", required: "real", proofs: realFsProof };
     const result = check(fixture({ [PLACEMENT]: csTest('        File.WriteAllText("a.mkv", "x");\n') }), reg);
     assert.deepEqual(result.missing, []);
@@ -376,12 +410,12 @@ describe("real-fs proofs", () => {
   });
 
   test("the totals count claims, counted proofs and proofs without effect", () => {
-    const reg = register({ gapCeiling: 1 });
+    const reg = register();
     reg.rows[0] = { ...reg.rows[0], severity: "high", touches: "disk", required: "real", proofs: realFsProof };
     reg.rows[1] = { ...reg.rows[1], severity: "high", touches: "disk", required: "real", vm: true, proofs: realFsProof };
     const result = check(fixture({ [PLACEMENT]: csTest(REAL_BODY) }), reg);
     assert.deepEqual({ ...result.totals.realFs }, { claims: 2, counted: 1, refused: 0, noEffect: 1, vmRows: 1, vmRowGaps: 1 });
-    assert.match(generatedSection(reg, buildInventory(fixture()), result.totals), /Real-fs proofs: \*\*2\*\* claimed; \*\*1\*\* verified/);
+    assert.match(statisticsReport(reg, buildInventory(fixture()), result.totals), /Real-fs proofs: \*\*2\*\* claimed; \*\*1\*\* verified/);
   });
 });
 
@@ -436,10 +470,9 @@ describe("container-smoke proofs", () => {
     const idx = index();
     assert.equal(proofLevel(dockerRow("Start Weir Docker candidate").proofs[0], dockerRow("Start Weir Docker candidate", { vm: true }), idx), 1);
     assert.equal(proofLevel(dockerRow("Start Weir Docker candidate").proofs[0], dockerRow("Start Weir Docker candidate", { touches: "other-app" }), idx), 1);
-    const reg = register({ gapCeiling: 0 });
+    const reg = register();
     reg.rows[0] = { ...reg.rows[0], area: "api", severity: "high", touches: "install", required: "real", proofs: dockerRow("Start Weir Docker candidate").proofs };
     reg.rows[1] = { ...reg.rows[1], area: "api", severity: "high", touches: "install", required: "real", proofs: dockerRow("Trivy scan of the Docker candidate").proofs };
-    reg.gapCeiling = 1;
     const result = check(fixture({ [WORKFLOW]: STEPS }), reg);
     assert.deepEqual({ ...result.totals.container }, { claims: 2, counted: 1, refused: 1, noEffect: 0 });
     assert.equal(result.refused.length, 1);
@@ -493,10 +526,18 @@ describe("the register's shape", () => {
     assert.match(problems, /area "nowhere"/);
   });
 
-  test("a register with no ceiling is malformed", () => {
-    const reg = register();
-    delete reg.gapCeiling;
-    assert.match(validateShape(reg)[0], /gapCeiling/);
+  test("a gapCeiling left in the register is refused: the count comes from the base branch", () => {
+    const reg = register({ gapCeiling: 853 });
+    assert.match(validateShape(reg)[0], /"gapCeiling" is not used.*--base/);
+    assert.deepEqual(validateShape(register()), []);
+  });
+
+  test("a gapIncrease needs a from, a higher to and a reason", () => {
+    const good = { from: 3, to: 5, reason: "Two rows wait for the Windows install proof." };
+    assert.deepEqual(validateShape(register({ gapIncrease: good })), []);
+    for (const entry of [null, "yes", {}, { ...good, from: "3" }, { ...good, to: 3 }, { ...good, to: 2 }, { ...good, reason: " " }, { from: 3, to: 5 }]) {
+      assert.match(validateShape(register({ gapIncrease: entry }))[0], /"gapIncrease" must be/);
+    }
   });
 });
 
@@ -524,7 +565,7 @@ describe("the command", () => {
 
   test("--strict fails on a gap that the plain run lets through", () => {
     const root = fixture();
-    const reg = register({ gapCeiling: 1 });
+    const reg = register();
     reg.rows[0].proofs = [];
     reg.rows[0].issue = 975;
     writeRegister(root, reg);
@@ -532,21 +573,110 @@ describe("the command", () => {
     assert.equal(run(root, "--open-issues", "975", "--strict").status, 1);
   });
 
-  test("--base fails when the register has more gaps than it had at that ref", () => {
+  /** A repository whose last commit holds the register `before`, and whose working tree then holds `now`. */
+  const committed = (before, now) => {
     const root = fixture();
-    writeRegister(root, register());
+    writeRegister(root, before);
     const git = (...args) => spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.test", ...args], { cwd: root, encoding: "utf8" });
     git("init");
     git("add", "docs/testing/coverage-register.json");
     assert.equal(git("commit", "-m", "base").status, 0);
-    const reg = register({ gapCeiling: 1 });
+    writeRegister(root, now);
+    return root;
+  };
+  const withGap = (extra = {}) => {
+    const reg = register(extra);
     reg.rows[0].proofs = [];
     reg.rows[0].issue = 975;
-    writeRegister(root, reg);
+    return reg;
+  };
+
+  test("--base fails when the register has more gaps than it had at that ref", () => {
+    const root = committed(register(), withGap());
     assert.equal(run(root, "--open-issues", "975").status, 0);
     const result = run(root, "--open-issues", "975", "--base", "HEAD");
     assert.equal(result.status, 1);
     assert.match(result.stderr, /more than the 0 in the register on the base branch/);
+  });
+
+  test("--base passes when the gaps are fewer or the same, and says what it compared with", () => {
+    const fewer = run(committed(withGap(), register()), "--open-issues", "975", "--base", "HEAD");
+    assert.equal(fewer.status, 0, fewer.stderr);
+    const same = run(committed(withGap(), withGap()), "--open-issues", "975", "--base", "HEAD");
+    assert.equal(same.status, 0, same.stderr);
+    assert.match(same.stdout, /1 gaps, no more than the 1 at HEAD/);
+  });
+
+  test("--base passes a rise that has its reasoned entry, and prints the reason", () => {
+    const reason = "A new route waits for the contract suite to gain its recording.";
+    const root = committed(register(), withGap({ gapIncrease: { from: 0, to: 1, reason } }));
+    const result = run(root, "--open-issues", "975", "--base", "HEAD");
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, new RegExp(`The gaps rise from 0 to 1: ${reason}`));
+  });
+
+  test("--base with no register at that ref passes, with a note", () => {
+    const root = fixture();
+    writeRegister(root, withGap());
+    const result = run(root, "--open-issues", "975", "--base", "refs/nothing/here");
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /No register on the base branch to compare with/);
+  });
+
+  test("--base at a ref whose register has no rows counts as no register to compare with", () => {
+    const root = committed({ not: "a register" }, withGap());
+    const result = run(root, "--open-issues", "975", "--base", "HEAD");
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /No register on the base branch to compare with/);
+  });
+
+  test("without --base the gaps are not held to a count, and the run says so", () => {
+    const root = fixture();
+    writeRegister(root, withGap());
+    const result = run(root, "--open-issues", "975");
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /no --base given/);
+  });
+
+  test("a register that still carries gapCeiling fails as malformed", () => {
+    const root = fixture();
+    writeRegister(root, register({ gapCeiling: 0 }));
+    const result = run(root);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /"gapCeiling" is not used/);
+  });
+
+  test("--report writes the statistics to a file and leaves the docs alone", () => {
+    const root = fixture();
+    writeRegister(root, register());
+    const result = run(root, "--report");
+    assert.equal(result.status, 0, result.stderr);
+    const report = readFileSync(path.join(root, "artifacts/coverage-register.md"), "utf8");
+    assert.match(report, /### Coverage register/);
+    assert.match(report, /\*\*11\*\* behaviours\./);
+    assert.equal(existsSync(path.join(root, "docs/testing/COVERAGE.md")), false);
+  });
+
+  test("--report takes a file name, and a flag after it is not mistaken for one", () => {
+    const root = fixture();
+    writeRegister(root, register());
+    assert.equal(run(root, "--report", "out/stats.md").status, 0);
+    assert.equal(existsSync(path.join(root, "out/stats.md")), true);
+    assert.equal(run(root, "--report", "--strict").status, 0);
+    assert.equal(existsSync(path.join(root, "artifacts/coverage-register.md")), true);
+  });
+
+  test("the statistics and the notes go to the CI job summary", () => {
+    const root = committed(register(), withGap({ gapIncrease: { from: 0, to: 1, reason: "Waits for the install proof." } }));
+    const summary = path.join(root, "summary.md");
+    const result = spawnSync(process.execPath, [script, "--root", root, "--open-issues", "975", "--base", "HEAD"], {
+      encoding: "utf8",
+      env: { ...process.env, GITHUB_STEP_SUMMARY: summary },
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const text = readFileSync(summary, "utf8");
+    assert.match(text, /### By severity/);
+    assert.match(text, /- The gaps rise from 0 to 1: Waits for the install proof\./);
   });
 
   test("--stubs prints a row for what has none", () => {
