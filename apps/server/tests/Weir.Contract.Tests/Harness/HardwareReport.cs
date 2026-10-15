@@ -6,14 +6,14 @@ namespace Weir.Contract.Tests.Harness;
 internal static class HardwareReport
 {
     /// <summary>
-    /// How long a test keeps asking. The server stops each check after 10 seconds, and runs ffmpeg at below-normal priority so that
-    /// everything else on the machine comes first: on a saturated machine the tool is given the processor only in short turns, and a
-    /// start can take minutes. The wait ends when the first check is answered in time, so a machine that is not saturated waits for one.
+    /// How long a test keeps asking. The server stops each check after 15 seconds; ffmpeg runs at normal priority, so a check is
+    /// answered in time on any machine that can run the tests at all. The wait ends when the first check is answered in time, so it
+    /// is one request unless the first start of the tool is slow, as it can be on a cold runner.
     /// </summary>
     private static readonly TimeSpan Ceiling = TimeSpan.FromMinutes(5);
 
     /// <summary>
-    /// The report once ffmpeg has answered it within the check's 10 seconds. A check that ran out of time says so, and the next request
+    /// The report once ffmpeg has answered it within the check's 15 seconds. A check that ran out of time says so, and the next request
     /// runs it afresh, so a test that needs the answer asks again.
     /// </summary>
     public static Task<WeirResponse> OnceFfmpegAnswersAsync(WeirClient admin) =>
