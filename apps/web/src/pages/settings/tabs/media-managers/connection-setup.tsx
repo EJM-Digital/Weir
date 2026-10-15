@@ -77,6 +77,7 @@ function ReplaceSecretDialog({
       description={`Replacing the secret stops ${connectionTitle(connection)} reaching Weir until you paste the new one into it.`}
       confirmLabel="Replace secret"
       busy={secret.isPending}
+      busyLabel="Replacing…"
       error={secret.isError ? errorMessage(secret.error, SECRET_FAILURE) : null}
       onCancel={() => {
         secret.reset();
