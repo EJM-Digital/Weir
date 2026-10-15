@@ -72,6 +72,30 @@ public sealed partial class SecuritySessionsTests(E2EServer server) : E2ETestBas
     }
 
     [E2EFact]
+    public async Task The_list_follows_another_browser_signing_in_and_out_without_a_reload()
+    {
+        var first = await NewPageAsync();
+        await first.RunAndWaitForResponseAsync(
+            () => Navigation.EnsureSignedInAsync(first, BaseUrl),
+            response => response.Url.EndsWith("/api/v1/activity/stream", StringComparison.Ordinal));
+        await SecurityTab.OpenAsync(first);
+        await Expect(SecurityTab.SessionRows(first)).ToHaveCountAsync(1, new() { Timeout = SecurityTab.ServerAnswerMs });
+        await first.EvaluateAsync("() => { window.__weirNotReloaded = true; }");
+
+        var second = await NewPageAsync();
+        await Navigation.EnsureSignedInAsync(second, BaseUrl);
+
+        await Expect(SecurityTab.SessionRows(first)).ToHaveCountAsync(2, new() { Timeout = SecurityTab.ServerAnswerMs });
+        await Expect(SecurityTab.SessionRows(first).Filter(new() { HasText = "This browser" })).ToHaveCountAsync(1);
+        await second.GetByTestId("user-menu").ClickAsync();
+        await second.GetByTestId("sign-out").ClickAsync();
+        await Expect(second.GetByTestId("login-username")).ToBeVisibleAsync(new() { Timeout = SecurityTab.ServerAnswerMs });
+
+        await Expect(SecurityTab.SessionRows(first)).ToHaveCountAsync(1, new() { Timeout = SecurityTab.ServerAnswerMs });
+        Assert.True(await first.EvaluateAsync<bool>("() => window.__weirNotReloaded === true"), "The page was reloaded.");
+    }
+
+    [E2EFact]
     public async Task Signing_out_other_sessions_is_recorded_in_the_log()
     {
         var first = await NewPageAsync();

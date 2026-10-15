@@ -148,4 +148,4 @@ says which test replays what.
 - `DelunoRepliesTests` serves Deluno's recorded replies (`DelunoPlaceholders` fills in the placeholders) to Weir's reads and refusals.
 - `DelunoRecordingComparisonTests` proves a recording that stops matching fails naming its file and JSON path.
 - A recording Weir has no behaviour for is listed in `fixtures/recorded/deluno-side-no-weir-behaviour.json`; `scripts/check-recorded-replays.mjs` fails on
-  one that is neither replayed nor listed.
+  one that is neither replayed nor listed, and one that waits on an open issue in `fixtures/recorded/deluno-side-awaiting-replay.json` is listed there until a test replays it.

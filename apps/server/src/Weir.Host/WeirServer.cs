@@ -1,4 +1,5 @@
 using System.Collections;
+using Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Hosting.Systemd;
 using Microsoft.Extensions.Hosting.WindowsServices;
@@ -88,6 +89,7 @@ public static class WeirServer
             EnvironmentName = options.Env == "production" ? Environments.Production : Environments.Development,
         });
 
+        builder.Services.Configure<SocketTransportOptions>(ExclusiveListenSocket.Configure);
         builder.Host.UseWindowsService(service => service.ServiceName = WindowsServiceName);
         builder.Host.UseSystemd();
         builder.WebHost.ConfigureKestrel(kestrel =>

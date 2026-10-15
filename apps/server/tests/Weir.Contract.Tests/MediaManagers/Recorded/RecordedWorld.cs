@@ -21,11 +21,12 @@ internal sealed class RecordedWorld : IAsyncDisposable
     public const string RecordedTvOutput = @"C:\Weir\Ready\TV";
     public const string RecordedElsewhere = @"C:\golden\recorded\weir";
 
-    private RecordedWorld(Scenario scenario, FakeManager deluno, JsonObject movies, Replay replay)
+    private RecordedWorld(Scenario scenario, FakeManager deluno, JsonObject movies, JsonObject tv, Replay replay)
     {
         Scenario = scenario;
         Deluno = deluno;
         Movies = movies;
+        Tv = tv;
         Replay = replay;
     }
 
@@ -35,6 +36,9 @@ internal sealed class RecordedWorld : IAsyncDisposable
     public FakeManager Deluno { get; }
 
     public JsonObject Movies { get; }
+
+    /// <summary>The TV Shows workflow, linked to the fake Deluno.</summary>
+    public JsonObject Tv { get; }
 
     public Replay Replay { get; }
 
@@ -95,10 +99,11 @@ internal sealed class RecordedWorld : IAsyncDisposable
     /// The world of the recordings. <paramref name="moviesKey"/> is Deluno's id for its Movies library, as the recorded hand-offs name it
     /// (it differs from one recording session to the next). <paramref name="delunoOutputRoot"/> is the folder Deluno says Weir hands its
     /// cleaned files back to, as Deluno's machine writes it; null means this machine's own output folder, which is how the rc.13
-    /// recordings were replayed. A Windows path there makes Weir rebuild the paths it reports under it, as it does for a Deluno
+    /// recordings were replayed. <paramref name="tvKey"/> is Deluno's id for its TV library, which the fake Deluno then lists and hands back to
+    /// <see cref="RecordedTvOutput"/>; null lists no TV library. A Windows path there makes Weir rebuild the paths it reports under it, as it does for a Deluno
     /// on another machine. <paramref name="settings"/> are server settings the world starts with besides the usual ones.
     /// </summary>
-    public static async Task<RecordedWorld> StartAsync(string moviesKey = MoviesKey, string? delunoOutputRoot = null, params (string Name, string Value)[] settings)
+    public static async Task<RecordedWorld> StartAsync(string moviesKey = MoviesKey, string? delunoOutputRoot = null, string? tvKey = null, params (string Name, string Value)[] settings)
     {
         var scenario = await Scenario.StartAsync(settings);
         try
@@ -113,17 +118,30 @@ internal sealed class RecordedWorld : IAsyncDisposable
                 ["importWorkflow"] = "refine-before-import",
                 ["processorOutputPath"] = delunoOutputRoot ?? scenario.Folders.Output,
             });
+            var tv = Folders.Make(Path.Combine(scenario.Root, "tv"));
+            if (tvKey is not null)
+            {
+                deluno.Libraries.Add(new JsonObject
+                {
+                    ["id"] = tvKey,
+                    ["name"] = "TV Shows",
+                    ["mediaType"] = "tv",
+                    ["rootPath"] = "/deluno/library/tv",
+                    ["importWorkflow"] = "refine-before-import",
+                    ["processorOutputPath"] = delunoOutputRoot is null ? tv.Output : RecordedTvOutput,
+                });
+            }
+
             var connection = await scenario.CreateConnectionAsync(deluno);
             var movies = await SetUpAsync(scenario, "movie", scenario.Folders, connection["id"]!);
-            var tv = Folders.Make(Path.Combine(scenario.Root, "tv"));
-            await SetUpAsync(scenario, "tv", tv, connection["id"]!, name: "TV Shows");
+            var shows = await SetUpAsync(scenario, "tv", tv, connection["id"]!, name: "TV Shows");
             var translation = new Translation()
                 .Folder(RecordedMoviesWatched, scenario.Folders.Watched)
                 .Folder(RecordedMoviesOutput, scenario.Folders.Output)
                 .Folder(RecordedTvWatched, tv.Watched)
                 .Folder(RecordedTvOutput, tv.Output)
                 .Folder(RecordedElsewhere, Directory.CreateDirectory(Path.Combine(scenario.Root, "elsewhere")).FullName);
-            return new RecordedWorld(scenario, deluno, movies, new Replay(() => scenario.Server.CreateClient(), Scenario.WebhookSecret, translation));
+            return new RecordedWorld(scenario, deluno, movies, shows, new Replay(() => scenario.Server.CreateClient(), Scenario.WebhookSecret, translation));
         }
         catch
         {

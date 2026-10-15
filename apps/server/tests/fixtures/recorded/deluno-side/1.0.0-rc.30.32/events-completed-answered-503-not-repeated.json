@@ -1,0 +1,35 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "events-completed-answered-503-not-repeated",
+  "recordedAt": "2026-10-15T04:04:50Z",
+  "note": "A completed report the proxy answered 503 once. Nothing more arrived in the 300 seconds that followed, so Weir had not sent it again. the proxy answered 503 itself (busy-503); the request was not passed on to Deluno.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {},
+        "body": {
+          "handoffId": "bbf8cd00-040a-4f9c-860d-2c562c177708",
+          "status": "completed",
+          "processorName": "Weir",
+          "libraryId": "01a13d68ae4a7e7b84c06a96fd5d8cc7",
+          "releaseName": "Big Buck Bunny (2008) Recorded Repeat503",
+          "outputPath": "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Repeat503.mkv",
+          "message": "Remux finished.",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Repeat503.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 503,
+        "headers": {
+          "content-type": "text/plain"
+        },
+        "bodyText": "Service Unavailable"
+      }
+    }
+  ]
+}
