@@ -165,6 +165,9 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        # A self-hosted runner's service account cannot write to Program Files; the tool cache is its own.
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           global-json-file: apps/server/global.json
           cache: true
