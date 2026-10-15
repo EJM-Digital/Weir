@@ -79,6 +79,13 @@ public sealed partial class ProcessingJobStore
         return EnqueueOrGet(uow.Connection, await uow.WriteTransactionAsync().ConfigureAwait(false), dedupeKey, jobKind, payloadJson, maxAttempts, runnerCost, priority, notBefore);
     }
 
+    /// <summary>
+    /// Wakes the idle slots of the lane that runs <paramref name="jobKind"/>, for a job that has just become claimable. Called
+    /// before the unit of work commits, which is safe: a woken slot claims under BEGIN IMMEDIATE, so its claim waits for the
+    /// write lock this unit holds and sees the job once it is committed, or nothing if it rolls back.
+    /// </summary>
+    internal void WakeWorkers(string jobKind) => _wakeSignals?.WakeFor(jobKind);
+
     internal ProcessingJob EnqueueOrGet(
         SqliteConnection connection,
         SqliteTransaction transaction,
@@ -117,9 +124,11 @@ public sealed partial class ProcessingJobStore
         {
             RecordQueueDepth(connection, transaction);
             AnnounceQueueChange(transaction, jobKind);
-            // Woken before this transaction commits, which is safe: a woken slot claims under BEGIN IMMEDIATE, so its claim
-            // waits for this write lock and sees the job once it is committed, or nothing if it rolls back.
-            _wakeSignals?.WakeAll();
+            // A job that starts later is claimed by the poll once it is due, so it wakes nobody now.
+            if (notBefore is not { } startsAt || startsAt <= _time.GetUtcNow())
+            {
+                WakeWorkers(jobKind);
+            }
         }
 
         return GetByDedupeKey(connection, transaction, dedupeKey)
