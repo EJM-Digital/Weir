@@ -155,6 +155,22 @@ internal static class ValueParsing
         Path.TrimEndingDirectorySeparator(Path.GetFullPath(path, runtime.CurrentDirectory));
 
     /// <summary>
+    /// <see cref="Resolve"/> for the value of <paramref name="variable"/>: a path the system cannot take (one with a NUL character, or too
+    /// long) refuses the start with a message that names the variable, instead of failing with the system's own exception.
+    /// </summary>
+    public static string ResolveVariable(string variable, string path, RuntimeEnvironment runtime)
+    {
+        try
+        {
+            return Resolve(path, runtime);
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or IOException)
+        {
+            throw new WeirConfigurationException($"{variable} is not a folder path Weir can use. Fix the value and start Weir again.");
+        }
+    }
+
+    /// <summary>
     /// Lexical normalization without touching the file system: separators unified, duplicate
     /// separators and <c>.</c> segments dropped, no trailing separator; an empty path becomes <c>.</c>.
     /// </summary>

@@ -88,6 +88,23 @@ public sealed class OutputCollisionTests : IDisposable
     }
 
     [Fact]
+    public void Keep_both_with_every_numbered_name_taken_keeps_what_is_there_and_writes_nothing_over_it()
+    {
+        var (source, staged, final) = Paths();
+        for (var number = 2; number <= 999; number++)
+        {
+            Write(_root.Join("out", $"Film (2001) ({number}).mkv"), 1);
+        }
+
+        var decision = OutputCollision.Decide(final, source, staged, "keep_both");
+
+        Assert.False(decision.Wrote);
+        Assert.Equal(final, decision.Destination);
+        Assert.False(decision.ReplacedExisting);
+        Assert.Contains("every numbered copy", decision.Reason, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Replace_if_larger_compares_sizes_and_keeps_the_existing_output_when_it_cannot()
     {
         var (source, staged, final) = Paths();

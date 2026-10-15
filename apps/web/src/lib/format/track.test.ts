@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  audioCodecName,
   channelLayout,
   describeTrack,
   languageName,
   positionsByKind,
+  subtitleTypeName,
   videoCodecName,
 } from "./track";
 
@@ -85,4 +87,14 @@ describe("track parts", () => {
     expect(positions.get(2)).toBe(2);
     expect(positions.get(3)).toBe(1);
   });
+});
+
+it("treats a name every object has as a codec or kind nobody listed", () => {
+  expect(audioCodecName("constructor")).toBe("CONSTRUCTOR");
+  expect(videoCodecName("toString")).toBe("TOSTRING");
+  expect(subtitleTypeName("__proto__")).toBe("__PROTO__");
+  expect(languageName("constructor")).toBe("constructor");
+  expect(describeTrack({ type: "constructor" }, 1)).toBe(
+    "Track 1 · Unknown language",
+  );
 });
