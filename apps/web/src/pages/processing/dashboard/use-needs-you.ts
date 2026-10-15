@@ -30,6 +30,8 @@ export type NeedsYou = {
    * Weir itself is a group of its own and is not counted in it.
    */
   files: ProcessingFile[];
+  /** Why the files could not be read, or null when they could. The groups then lack the files that wait on a person. */
+  filesError: unknown;
 };
 
 /**
@@ -50,7 +52,7 @@ export function useNeedsYou(
     FAILED_JOBS_LIMIT,
     true,
   );
-  const files = useNeedsFiles(workflowId);
+  const { files, error: filesError } = useNeedsFiles(workflowId);
   useActivityStreamInvalidations(FAILED_JOBS_KEYS, {
     exact: true,
     throttleMs: STREAM_THROTTLE_MS,
@@ -70,6 +72,15 @@ export function useNeedsYou(
     return {
       groups,
       files: waitingFiles(files, workflowId, filter),
+      filesError,
     };
-  }, [workflowList, workflowId, filter, readinessData, failedJobRows, files]);
+  }, [
+    workflowList,
+    workflowId,
+    filter,
+    readinessData,
+    failedJobRows,
+    files,
+    filesError,
+  ]);
 }
