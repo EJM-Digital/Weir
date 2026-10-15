@@ -50,8 +50,10 @@ function useSaveSetting(onNotice: (notice: string | null) => void) {
         queryKey: processingKeys.maintenance,
       });
       onNotice(said);
+      return true;
     } catch {
       onNotice("That change could not be saved. Refresh and try again.");
+      return false;
     }
   };
   return { saveSetting, saving: save.isPending };
