@@ -167,6 +167,14 @@ public sealed class WeirServer : IAsyncDisposable
 
     public string LogText() => string.Join(Environment.NewLine, _logs.Select(log => log.Text()));
 
+    /// <summary>
+    /// Waits until a line of the log satisfies <paramref name="wanted"/>. A line reaches the log by way of the server's output queue, its
+    /// pipe and the harness's reader, so a request the server has answered can be answered before its log line is here: a test that
+    /// expects a line waits for it.
+    /// </summary>
+    public async Task WaitForLogLineAsync(Func<string, bool> wanted, string what) =>
+        await Poll.UntilAsync(() => Task.FromResult(LogText().Split(Environment.NewLine).Any(wanted)), what);
+
     public async ValueTask DisposeAsync()
     {
         await StopAsync();
