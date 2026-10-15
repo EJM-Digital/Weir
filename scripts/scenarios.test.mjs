@@ -762,16 +762,27 @@ Show 'never-started' { Complete-LogWatch }
   assert.match(lines[7], /^never-started: FAILED The scenario ended with no log watch to judge/);
 });
 
-test("a scenario that begins with no account counts everything Logs holds when it ends; one that signs in notes it first", { skip }, () => {
+test("a scenario that begins with no account judges only the Logs rows written after it began; one that signs in notes the page first", { skip }, () => {
   const { source } = freshHarness(String.raw`
-function Get-WeirJson { param($Session, $Path) [pscustomobject]@{ items = @([pscustomobject]@{ source = 'event'; id = 3; at = '2026-10-11T18:00:00'; title = 'Started with a warning' }); next_cursor = $null } }
+$script:Rows = @([pscustomobject]@{ source = 'event'; id = 3; at = '2026-10-11T18:00:00Z'; title = 'A warning from the previous build' })
+function Get-WeirJson { param($Session, $Path) [pscustomobject]@{ items = $script:Rows; next_cursor = $null } }
 function Show($label, $block) { try { $r = & $block; $label + ': PASSED' } catch { $label + ': FAILED ' + $_.Exception.Message } }
 Set-Content -LiteralPath (Join-Path $script:Ctx.RuntimeHome 'logs\weir.log') -Value '{"level":"INFO","message":"started","timestamp":"2026-10-11T17:00:00Z"}'
 Set-Content -LiteralPath (Join-Path $script:Ctx.RuntimeHome 'tray-host.log') -Value '[2026-10-11 17:00:00] Weir started'
-# Began with no session; the account was made and signed in to inside the scenario (no Set-LogWatchPage).
+# Began with no session; the account was made and signed in to inside the scenario (no Set-LogWatchPage). The old warning was
+# written before the scenario began (the machine was not restored), so it is not the scenario's.
 Start-LogWatch
 $script:Ctx.Session = 'a session'
-Show 'began-without-account' { Complete-LogWatch }
+Show 'old-warning-before-the-mark' { Complete-LogWatch }
+# A warning written after the scenario began is.
+Start-LogWatch
+$script:Rows = @([pscustomobject]@{ source = 'event'; id = 4; at = [DateTime]::UtcNow.AddMinutes(1).ToString('o'); title = 'A warning the build wrote just now' }) + $script:Rows
+Show 'new-warning-after-the-mark' { Complete-LogWatch }
+# An old warning whose time cannot be read is counted, never excused.
+Start-LogWatch
+$script:Rows = @([pscustomobject]@{ source = 'event'; id = 5; at = 'not a time'; title = 'A warning with no readable time' })
+Show 'unreadable-time' { Complete-LogWatch }
+$script:Rows = @([pscustomobject]@{ source = 'event'; id = 3; at = '2026-10-11T18:00:00Z'; title = 'A warning from the previous build' })
 # Signed in at the start of the scenario (Initialize-WeirSession notes the page): what was there is not the scenario's.
 Start-LogWatch
 Set-LogWatchPage
@@ -780,8 +791,35 @@ Show 'began-signed-in' { Complete-LogWatch }
   const run = psFile(source);
   assert.equal(run.status, 0, run.err + run.out);
   const lines = run.out.trim().split(/\r?\n/);
-  assert.match(lines[0], /^began-without-account: FAILED System > Logs gained no unexpected warning or error \(found 1: Started with a warning\)$/);
-  assert.equal(lines[1], "began-signed-in: PASSED");
+  assert.equal(lines[0], "old-warning-before-the-mark: PASSED");
+  assert.match(lines[1], /^new-warning-after-the-mark: FAILED System > Logs gained no unexpected warning or error \(found 1: A warning the build wrote just now\)$/);
+  assert.match(lines[2], /^unreadable-time: FAILED System > Logs gained no unexpected warning or error \(found 1: A warning with no readable time\)$/);
+  assert.equal(lines[3], "began-signed-in: PASSED");
+});
+
+test("a scenario that counts Logs rows itself counts only those written since it began: old warnings are not its, a new one is", { skip }, () => {
+  const { source } = freshHarness(String.raw`
+$script:Rows = @([pscustomobject]@{ source = 'event'; id = 3; at = '2026-10-11T18:00:00Z'; title = 'A warning from the previous build' })
+$script:More = $false
+function Get-WeirJson { param($Session, $Path) [pscustomobject]@{ items = $script:Rows; next_cursor = $(if ($script:More) { 'next' } else { $null }) } }
+function Show($label, $block) { try { $r = & $block; $label + ': ' + $r } catch { $label + ': FAILED ' + $_.Exception.Message } }
+$began = Get-SecondMark
+Show 'old-only' { @(Get-LogPageProblems -Since $began).Count }
+$script:Rows = @([pscustomobject]@{ source = 'event'; id = 4; at = [DateTime]::UtcNow.AddMinutes(1).ToString('o'); title = 'A new warning' }) + $script:Rows
+Show 'new-one' { (@(Get-LogPageProblems -Since $began) | ForEach-Object { $_.title }) -join ',' }
+$script:More = $true
+$script:Rows = @(1..100 | ForEach-Object { [pscustomobject]@{ source = 'event'; id = 100 + $_; at = [DateTime]::UtcNow.AddMinutes(1).ToString('o'); title = 'warning ' + $_ } })
+Show 'page-full-of-new' { @(Get-LogPageProblems -Since $began).Count }
+$script:Rows = @(1..99 | ForEach-Object { [pscustomobject]@{ source = 'event'; id = 100 + $_; at = '2026-10-11T18:00:00Z'; title = 'old ' + $_ } }) + @([pscustomobject]@{ source = 'event'; id = 500; at = '2026-10-11T18:00:00Z'; title = 'old' })
+Show 'page-full-of-old' { @(Get-LogPageProblems -Since $began).Count }
+`);
+  const run = psFile(source);
+  assert.equal(run.status, 0, run.err + run.out);
+  const lines = run.out.trim().split(/\r?\n/);
+  assert.equal(lines[0], "old-only: 0");
+  assert.equal(lines[1], "new-one: A new warning");
+  assert.match(lines[2], /^page-full-of-new: FAILED Logs lists more than 100 warnings and errors since this scenario began/);
+  assert.equal(lines[3], "page-full-of-old: 0");
 });
 
 test("-Scenarios resolves ids in run order, takes commas and wildcards, and names the nearest ids for a mistyped one", { skip }, () => {
