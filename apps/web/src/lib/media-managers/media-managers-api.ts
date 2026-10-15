@@ -1,4 +1,4 @@
-import { sendJson } from "../api/send-json";
+import { sendJson, sendJsonUnchecked } from "../api/send-json";
 import { apiFetch, readJson, requireOk } from "../api/client";
 import type { RequestBody, Schema } from "../api/types";
 
@@ -53,6 +53,11 @@ export type MediaManagerConnectionCreate =
 export type MediaManagerConnectionUpdate =
   RequestBody<"MediaManagerConnectionUpdateIn">;
 export type MediaManagerWebhookSecret = Schema<"MediaManagerWebhookSecretOut">;
+/** What stands in the way of removing a connection: the workflows that still come from it, hand-offs in progress, reports owed. */
+export type ConnectionInUse = Schema<"ConnectionInUseError">;
+export type ConnectionWorkflow = Schema<"ConnectionWorkflowOut">;
+export type UnlinkedWorkflows = Schema<"MediaManagerWorkflowsUnlinkedOut">;
+export type GivenUpReports = Schema<"MediaManagerReportsGivenUpOut">;
 export type MediaManagerConnectionTest =
   Schema<"MediaManagerConnectionTestOut">;
 
@@ -97,9 +102,52 @@ export async function updateMediaManagerConnection(
   return readJson<MediaManagerConnection>(r);
 }
 
-export async function deleteMediaManagerConnection(id: number): Promise<void> {
+/**
+ * Removes a connection, or returns what it is still needed for: the server refuses with a 409 and a code while a workflow
+ * comes from the connection, a hand-off from it is in progress, or Weir owes it a report, and removes nothing.
+ */
+export async function deleteMediaManagerConnection(
+  id: number,
+): Promise<ConnectionInUse | undefined> {
   const path = connectionPath(id);
-  await sendJson(path, "DELETE", {}, "Could not remove that media manager");
+  const r = await sendJsonUnchecked(path, "DELETE", {});
+  if (r.status === 409) {
+    const body = (await r
+      .clone()
+      .json()
+      .catch(() => null)) as ConnectionInUse | null;
+    if (body?.code === "connection_in_use") return body;
+  }
+  await requireOk(path, r, "Could not remove that media manager");
+  return undefined;
+}
+
+/** Unlinks every workflow from the connection. They stay; one no manager feeds any more is switched off. */
+export async function unlinkMediaManagerConnectionWorkflows(
+  id: number,
+): Promise<UnlinkedWorkflows> {
+  const path = `${connectionPath(id)}/unlink-workflows`;
+  const r = await sendJson(
+    path,
+    "POST",
+    {},
+    "Could not unlink those workflows",
+  );
+  return readJson<UnlinkedWorkflows>(r);
+}
+
+/** Stops owing the connection the reports it could not deliver. Nothing is sent to the manager; Activity records what was dropped. */
+export async function giveUpMediaManagerReports(
+  id: number,
+): Promise<GivenUpReports> {
+  const path = `${connectionPath(id)}/give-up-reports`;
+  const r = await sendJson(
+    path,
+    "POST",
+    {},
+    "Could not give up on those reports",
+  );
+  return readJson<GivenUpReports>(r);
 }
 
 export async function testMediaManagerConnection(

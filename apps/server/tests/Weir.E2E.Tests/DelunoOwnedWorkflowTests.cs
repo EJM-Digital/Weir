@@ -151,8 +151,7 @@ public sealed class DelunoOwnedWorkflowTests(E2EServer server) : E2ETestBase(ser
         {
             try
             {
-                var deleted = await Client.DeleteWithCsrfBodyAsync($"{Connections}/{DelunoId}");
-                Assert.Equal(HttpStatusCode.NoContent, deleted.Status);
+                await ManagerConnections.RemoveAsync(Client, DelunoId);
             }
             finally
             {
