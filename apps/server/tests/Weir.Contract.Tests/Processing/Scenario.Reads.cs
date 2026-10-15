@@ -87,15 +87,17 @@ internal sealed partial class Scenario
     public async Task<JsonObject> WaitForJobFinishedAsync(int jobId) =>
         await new JobWait().UntilAsync(
             async () => [.. (await JobsAsync()).Where(row => (int)row["id"]! == jobId).Select(row => (string)row["status"]!)],
-            async () =>
-            {
-                // Named explicitly: the default inspection list leaves out completed scan jobs.
-                var inspection = await Admin.GetAsync(
-                    $"{Api}/processing/jobs/inspection", [("limit", 100), .. FinishedJobStatuses.Select(status => ("status", (object)status))]);
-                Assert.True(inspection.Status == HttpStatusCode.OK, inspection.ToString());
-                return JobRows(inspection).FirstOrDefault(row => (int)row["id"]! == jobId);
-            },
+            async () => (await FinishedJobsAsync()).FirstOrDefault(row => (int)row["id"]! == jobId),
             $"job {jobId} to finish");
+
+    /// <summary>The jobs that have ended, of one kind or all. The statuses are named because the default inspection list leaves out completed scan jobs.</summary>
+    public async Task<List<JsonObject>> FinishedJobsAsync(string? kind = null)
+    {
+        var inspection = await Admin.GetAsync(
+            $"{Api}/processing/jobs/inspection", [("limit", 100), .. FinishedJobStatuses.Select(status => ("status", (object)status))]);
+        Assert.True(inspection.Status == HttpStatusCode.OK, inspection.ToString());
+        return JobRows(inspection).Where(row => kind is null || (string)row["job_kind"]! == kind).ToList();
+    }
 
     public async Task<int> EnqueueScanAsync(JsonObject library, bool enqueueRemuxJobs = true)
     {

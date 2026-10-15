@@ -248,7 +248,7 @@ function Scenario_deleted_queued_file {
     $file = Join-Path $workflow.Watched 'Harbour Lights 2024.mkv'
     [IO.File]::WriteAllBytes($file, [byte[]](1, 2, 3, 4, 5))
     $relative = 'Harbour Lights 2024.mkv'
-    $problemsBefore = @(Get-LogPageProblems).Count
+    $began = Get-SecondMark
 
     Start-WatchedFolderLook -LibraryId $workflow.Id
     $waiting = Wait-Until -What 'Weir to find the file and wait for it to settle' -TimeoutSeconds 90 -IntervalMilliseconds 1000 -Probe {
@@ -267,7 +267,7 @@ function Scenario_deleted_queued_file {
     Assert-That ($counts.processing_failed -eq 0 -and $counts.rejected -eq 0) 'nothing in the workflow needs the person'
     $failures = @(Get-ActivityItems | Where-Object { $_.title -like '*Harbour Lights*' -and $_.result -in 'failed', 'warning', 'error' })
     Assert-That ($failures.Count -eq 0) 'Activity has no failure or warning about the file'
-    $problemsAfter = @(Get-LogPageProblems).Count
-    Assert-That ($problemsAfter -eq $problemsBefore) "the log gained no warning or error ($problemsBefore before, $problemsAfter after)"
+    $newProblems = @(Get-LogPageProblems -Since $began)
+    Assert-That ($newProblems.Count -eq 0) "the log gained no warning or error since the scenario began (found $($newProblems.Count): $((@($newProblems | ForEach-Object { $_.title }) -join ' | ')))"
     "Weir held the 5-byte file while it settled (""$($waiting.status_reason)""), then, once it was deleted, marked it no longer there (status $($gone.status), source_gone true) with no failure, nothing needing the person and no new warning."
 }

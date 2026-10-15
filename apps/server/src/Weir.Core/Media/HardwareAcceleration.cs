@@ -48,6 +48,13 @@ public static class HardwareAcceleration
         Detail = $"Weir could not ask ffmpeg which acceleration methods it supports ({errorText}).",
     };
 
+    /// <summary>The report when ffmpeg ran but did not answer within the time limit.</summary>
+    public static AccelerationReport ReportForTimeout() => new()
+    {
+        Detected = false,
+        Detail = "FFmpeg didn't answer in time. Check again in a moment.",
+    };
+
     /// <summary>The report from <c>ffmpeg -hide_banner -hwaccels</c>'s exit code and stdout.</summary>
     public static AccelerationReport ReportFromHwaccels(int returnCode, string? stdout)
     {

@@ -7,6 +7,12 @@ export type CuratedTimezoneOption = {
 
 export const CURATED_TIMEZONE_OPTIONS: readonly CuratedTimezoneOption[] = [
   {
+    id: "UTC",
+    country: "UTC",
+    city: "Coordinated Universal Time",
+    zoneName: "",
+  },
+  {
     id: "Australia/Sydney",
     country: "Australia",
     city: "Sydney",
@@ -139,7 +145,8 @@ export const CURATED_TIMEZONE_ID_SET: Set<string> = new Set(
   CURATED_TIMEZONE_OPTIONS.map((o) => o.id),
 );
 
-function timezoneOffsetLabel(tz: string): string {
+/** The zone's offset from UTC as the browser reports it ("UTC+10"), or null for a zone the browser does not know. */
+function timezoneOffsetLabel(tz: string): string | null {
   try {
     const formatter = new Intl.DateTimeFormat(undefined, {
       hour: "2-digit",
@@ -150,21 +157,37 @@ function timezoneOffsetLabel(tz: string): string {
     const part = formatter
       .formatToParts(new Date())
       .find((p) => p.type === "timeZoneName");
-    return (part?.value || "UTC+0").replace("GMT", "UTC");
+    const offset = (part?.value || "UTC+0").replace("GMT", "UTC");
+    return offset === "UTC" ? "UTC+0" : offset;
   } catch {
-    return "UTC+0";
+    return null;
   }
 }
 
-export function curatedTimezoneOptionsSorted(): Array<{
-  id: string;
-  label: string;
-}> {
+export type TimezoneOption = { id: string; label: string };
+
+export function curatedTimezoneOptionsSorted(): TimezoneOption[] {
   return CURATED_TIMEZONE_OPTIONS.map((o) => {
     const zone = o.zoneName ? ` (${o.zoneName})` : "";
     return {
       id: o.id,
-      label: `${o.country} — ${o.city}${zone} (${timezoneOffsetLabel(o.id)})`,
+      label: `${o.country} — ${o.city}${zone} (${timezoneOffsetLabel(o.id) ?? "UTC+0"})`,
     };
   }).sort((a, b) => a.label.localeCompare(b.label));
+}
+
+/**
+ * The zones to pick from: the curated list, and first of all the saved zone when the list lacks it. Weir accepts
+ * any zone it can resolve, so a saved zone outside the list is a real choice that must stay selectable.
+ */
+export function timezoneOptionsFor(saved: string): TimezoneOption[] {
+  const options = curatedTimezoneOptionsSorted();
+  const zone = saved.trim();
+  if (!zone || CURATED_TIMEZONE_ID_SET.has(zone)) return options;
+  const offset = timezoneOffsetLabel(zone);
+  const name = zone.replaceAll("_", " ");
+  return [
+    { id: zone, label: offset ? `${name} (${offset})` : name },
+    ...options,
+  ];
 }

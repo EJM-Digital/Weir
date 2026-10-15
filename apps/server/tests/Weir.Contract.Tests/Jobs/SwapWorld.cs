@@ -136,8 +136,20 @@ internal sealed class SwapWorld : IAsyncDisposable
     /// </summary>
     public async Task<string> HeldAtAsync() =>
         await WaitWhileWorkedOnAsync(
-            () => Task.FromResult(File.Exists(HeldFile) ? File.ReadAllText(HeldFile) : null),
+            () => Task.FromResult(File.Exists(HeldFile) ? ReadWhileRenamed(HeldFile) : null),
             "the swap to stop at the point it was told to");
+
+    /// <summary>
+    /// The file's text, read with a share mode that lets the server's rename finish: the file appears under its name at the moment of the
+    /// rename, and Windows keeps the renaming handle (it holds delete access) open for an instant after, so a read that does not share
+    /// delete (`File.ReadAllText` does not) is refused as "used by another process" if it lands in that instant.
+    /// </summary>
+    private static string ReadWhileRenamed(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
 
     /// <summary>Waits for <paramref name="result"/> for as long as a worker holds any of the server's jobs (see <see cref="JobWait"/>).</summary>
     public async Task<T> WaitWhileWorkedOnAsync<T>(Func<Task<T?>> result, string what)

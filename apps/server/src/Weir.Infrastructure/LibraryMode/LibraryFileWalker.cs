@@ -1,5 +1,6 @@
 using Weir.Core.LibraryMode;
 using Weir.Core.Processing;
+using Weir.Infrastructure.Processing;
 
 namespace Weir.Infrastructure.LibraryMode;
 
@@ -7,9 +8,9 @@ namespace Weir.Infrastructure.LibraryMode;
 public sealed record LibraryWalkedFile(string Path, long SizeBytes, long ModifiedTimeUnixSeconds);
 
 /// <summary>
-/// Walks a library's #505 library folders for media files, read-only. Reuses the library's existing media-extension and
-/// exclude-marker filters (the same CSVs the download-pipeline watched-folder scan uses) so "which files count" agrees with
-/// the rest of the library's settings.
+/// Walks a library's #505 library folders for media files, read-only. Applies the library's file types, downloader folders,
+/// hidden-file and top-folder settings the way the watched-folder scan does, so "which files count" agrees with the rest of the
+/// library's settings. Folder names are judged below the library folder, never on the folder's own path.
 /// </summary>
 public static class LibraryFileWalker
 {
@@ -18,7 +19,7 @@ public static class LibraryFileWalker
         ArgumentNullException.ThrowIfNull(library);
         ArgumentNullException.ThrowIfNull(settings);
         var folders = settings.Folders;
-        var extensions = SplitCsv(library.MediaExtensionsCsv).Select(NormalizeExtension).Where(e => e.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var extensions = WatchedFolderListing.ConfiguredExtensions(SplitCsv(library.MediaExtensionsCsv));
         var excludeMarkers = SplitCsv(library.ExcludeMarkersCsv);
         // #735: a kept original sits inside the library folder it came from by default, but it must never be read back
         // in as a library file of its own — each library folder gets its own originals folder excluded here.
@@ -55,7 +56,9 @@ public static class LibraryFileWalker
                 }
 
                 var name = Path.GetFileName(path);
-                if (library.ExcludeHidden && name.StartsWith('.'))
+                var folderNames = Path.GetRelativePath(folder, Path.GetDirectoryName(path)!).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                    .Where(part => part.Length > 0 && part != ".");
+                if (library.ExcludeHidden && (name.StartsWith('.') || folderNames.Any(part => part.StartsWith('.'))))
                 {
                     continue;
                 }
@@ -65,12 +68,13 @@ public static class LibraryFileWalker
                     continue;
                 }
 
-                if (extensions.Count > 0 && !extensions.Contains(NormalizeExtension(Path.GetExtension(name))))
+                var extension = Path.GetExtension(name).ToLowerInvariant();
+                if (!(extensions?.Contains(extension) ?? WatchedFolderListing.IsMediaExtension(extension)))
                 {
                     continue;
                 }
 
-                if (excludeMarkers.Any(marker => marker.Length > 0 && name.Contains(marker, StringComparison.OrdinalIgnoreCase)))
+                if (WatchedFolderListing.HasDownloaderFolder(folderNames, excludeMarkers))
                 {
                     continue;
                 }
@@ -95,8 +99,6 @@ public static class LibraryFileWalker
 
         return found;
     }
-
-    private static string NormalizeExtension(string extension) => extension.Trim().TrimStart('.').ToLowerInvariant();
 
     private static List<string> SplitCsv(string? csv) =>
         (csv ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();

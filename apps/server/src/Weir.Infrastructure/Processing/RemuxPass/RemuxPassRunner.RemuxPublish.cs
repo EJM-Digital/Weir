@@ -103,14 +103,12 @@ public sealed partial class RemuxPassRunner
                 return OutputDriveWait(outputDisk, context, output);
             }
 
-            Directory.CreateDirectory(Path.GetDirectoryName(final)!);
             // The collision policy and the decision are both recorded, so a collision is never silent (#349).
             collision = OutputCollision.Decide(final, src, tmp, collisionPolicy);
             replacedExisting = collision.ReplacedExisting;
             if (collision.Wrote)
             {
                 final = collision.Destination;
-                Directory.CreateDirectory(Path.GetDirectoryName(final)!);
                 await BlockingWork.RunAsync(() => FileLifecycle.SafeFinalizeFile(tmp, final, _ownership)).ConfigureAwait(false);
             }
         }

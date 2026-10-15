@@ -451,6 +451,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/docker-compose-smoke.mjs upgrade --candidate "weir-release-candidate:${{ steps.version.outputs.plain }}" --releasing "${{ steps.version.outputs.plain }}"
 
+      # The entrypoint as root, with the release candidate: the user mapping, the secrets, who owns the data folder and what a delivered file
+      # ends up as.
+      - name: Compose entrypoint maps the user, keeps the secrets and owns the folders of the release candidate
+        if: ${{ !cancelled() }}
+        run: node scripts/docker-compose-smoke.mjs entrypoint --candidate "weir-release-candidate:${{ steps.version.outputs.plain }}"
+
       - name: Compose recover resets a forgotten password on the release candidate
         if: ${{ !cancelled() }}
         run: node scripts/docker-compose-smoke.mjs recover --candidate "weir-release-candidate:${{ steps.version.outputs.plain }}"
@@ -463,11 +469,11 @@ jobs:
           if-no-files-found: warn
           path: artifacts/docker-compose-smoke/**
 
-  # The arm64 variant of the same candidate must build before anything is pushed. Separate from the
-  # amd64 job so its ~4 minutes under QEMU overlap everything else instead of following it.
+  # The arm64 variant of the same candidate must build, start under QEMU and create the first account before anything is pushed.
+  # Separate from the amd64 job so its minutes under QEMU overlap everything else instead of following it.
   docker-arm64:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     permissions:
       contents: read
     steps:
@@ -477,7 +483,12 @@ jobs:
         id: version
         run: echo "plain=${TAG#v}" >> "$GITHUB_OUTPUT"
 
-      # QEMU for the arm64 image's final stage (apt-get). The .NET server is cross-published natively.
+      # The smoke script reads SQLite files with node:sqlite, which the runner's default Node may not have.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+
+      # QEMU runs the arm64 image's final stage (apt-get) and then the image itself. The .NET server is cross-published natively.
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
         with:
           platforms: arm64
@@ -490,11 +501,23 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: linux/arm64
+          load: true
           push: false
           build-args: WEIR_VERSION=${{ steps.version.outputs.plain }}
           tags: weir-release-candidate:${{ steps.version.outputs.plain }}-arm64
           cache-from: type=gha,scope=weir-release-arm64
           cache-to: type=gha,mode=max,scope=weir-release-arm64,ignore-error=true
+
+      - name: Start the unpushed arm64 release candidate under QEMU
+        run: node scripts/docker-compose-smoke.mjs arm64 --candidate "weir-release-candidate:${{ steps.version.outputs.plain }}-arm64"
+
+      - name: Upload arm64 release-candidate smoke logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: weir-docker-arm64-release-candidate-smoke
+          if-no-files-found: warn
+          path: artifacts/docker-compose-smoke/**
 
   # The GitHub Release, from what windows-smoke and validate built. It does not wait for the Docker jobs, and
   # nothing in it touches the registry.
