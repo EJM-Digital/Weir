@@ -84,6 +84,9 @@ public sealed class ProcessingWorkerService : BackgroundService
     /// <summary>How often a slot repeats the same "could not read the files-at-once setting" warning.</summary>
     internal static readonly TimeSpan SettingsReadFailureLogInterval = TimeSpan.FromMinutes(1);
 
+    /// <summary>Test seam: called each time a slot has started waiting for work, with its wake taken and its poll timer running.</summary>
+    internal Action? IdleWaiting { get; init; }
+
     /// <summary>One slot: repeatedly process jobs until stopping.</summary>
     internal async Task RunSlotAsync(int workerIndex, ClaimableKinds filesKinds, CancellationToken stoppingToken)
     {
@@ -128,10 +131,10 @@ public sealed class ProcessingWorkerService : BackgroundService
                 }
 
                 // Taken before looking for work, so a job queued while this slot looks still wakes it.
-                var wake = _wakeSignals.NextWake(workerIndex);
+                var wake = _wakeSignals.NextWake(WorkLane.Files, workerIndex);
                 if (workerIndex >= cachedMaxConcurrent)
                 {
-                    await IdleWithHeartbeatsAsync(workerIndex, wake, stoppingToken).ConfigureAwait(false);
+                    await WorkerIdleWait.RunAsync(HeartbeatModule, workerIndex, _heartbeats, wake, _timings, _time, stoppingToken, IdleWaiting).ConfigureAwait(false);
                     continue;
                 }
 
@@ -160,7 +163,7 @@ public sealed class ProcessingWorkerService : BackgroundService
 
                 if (outcome == JobProcessOutcome.Idle)
                 {
-                    await IdleWithHeartbeatsAsync(workerIndex, wake, stoppingToken).ConfigureAwait(false);
+                    await WorkerIdleWait.RunAsync(HeartbeatModule, workerIndex, _heartbeats, wake, _timings, _time, stoppingToken, IdleWaiting).ConfigureAwait(false);
                 }
 
                 // Processed: spin straight on to drain the queue.
@@ -173,31 +176,6 @@ public sealed class ProcessingWorkerService : BackgroundService
         {
             _heartbeats.Stopped(HeartbeatModule, workerIndex);
         }
-    }
-
-    /// <summary>
-    /// Waits out <see cref="WorkerLoopTimings.IdleSleep"/>, or less when a job is queued. One heartbeat covers the wait,
-    /// which is far shorter than <see cref="WorkerHeartbeats.StaleAfter"/>.
-    /// </summary>
-    private async Task IdleWithHeartbeatsAsync(int workerIndex, Task wake, CancellationToken stoppingToken)
-    {
-        _heartbeats.Beat(HeartbeatModule, workerIndex);
-        await WaitForWorkAsync(wake, _timings.IdleSleep, _time, stoppingToken).ConfigureAwait(false);
-    }
-
-    /// <summary>Returns when <paramref name="wake"/> completes or <paramref name="idle"/> has passed, whichever is first.</summary>
-    internal static async Task WaitForWorkAsync(Task wake, TimeSpan idle, TimeProvider time, CancellationToken stoppingToken)
-    {
-        using var idleTimer = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-        var idleOver = Task.Delay(idle, time, idleTimer.Token);
-        if (await Task.WhenAny(wake, idleOver).ConfigureAwait(false) == idleOver)
-        {
-            // Throws when the host is stopping, which ends the slot as before.
-            await idleOver.ConfigureAwait(false);
-            return;
-        }
-
-        await idleTimer.CancelAsync().ConfigureAwait(false);
     }
 
     /// <summary>The saved "Files at once" value; the operator settings row defaults it to 1. A read, so it never takes the write lock.</summary>

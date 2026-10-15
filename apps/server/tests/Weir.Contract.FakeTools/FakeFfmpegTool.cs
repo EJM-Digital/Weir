@@ -21,6 +21,13 @@ internal static class FakeFfmpegTool
             folder.LogCall("ffmpeg", argv, (FakeToolProtocol.StepKey, FakeToolProtocol.QueryStep));
             if (argv.Contains("-hwaccels"))
             {
+                // A tool that is slow to start the first time it runs, as one is on a busy machine; later runs are quick.
+                var startDelay = FakeFfprobe.Number(script.RuleFor(string.Empty), FakeToolProtocol.HwaccelsFirstCallDelaySecondsKey);
+                if (startDelay > 0 && folder.Bump("hwaccels") == 1)
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(startDelay));
+                }
+
                 Output.Out("Hardware acceleration methods:\n\n");
             }
 

@@ -16,8 +16,6 @@ internal sealed class LibraryCleanWorld : IAsyncDisposable
 {
     public const string LibrariesUrl = Api + "/processing/libraries";
 
-    private static readonly TimeSpan ToolsCeiling = TimeSpan.FromSeconds(120);
-
     private readonly TemporaryFolder _root;
 
     private LibraryCleanWorld(TemporaryFolder root, WeirServer server, WeirClient admin, long libraryId, string folder)
@@ -115,16 +113,15 @@ internal sealed class LibraryCleanWorld : IAsyncDisposable
         var started = await Admin.PostWithCsrfAsync($"{LibrariesUrl}/{LibraryId}/library-scan");
         started.ShouldBe(HttpStatusCode.OK);
         var jobId = (long)started.Fields["job_id"]!;
-        await Poll.UntilAsync(
+        await new JobWait().UntilAsync(
+            async () => [(string)(await JobAsync(jobId))["status"]!],
             async () =>
             {
                 var scan = (await FilesBodyAsync())["scan"]!;
                 Assert.Equal(jobId, (long)scan["job_id"]!);
-                Assert.Equal("completed", (string)scan["status"]!);
-                return scan;
+                return (string)scan["status"]! == "completed" ? scan : null;
             },
-            "the library scan to finish",
-            ToolsCeiling);
+            "the library scan");
     }
 
     /// <summary>The library's files as the Files table lists them.</summary>
@@ -161,9 +158,13 @@ internal sealed class LibraryCleanWorld : IAsyncDisposable
         return (long)response.Fields["job_ids"]![0]!;
     }
 
-    /// <summary>Waits for what the newest clean did to the file at <paramref name="path"/> (Activity's library cleans) and returns that entry.</summary>
+    /// <summary>
+    /// Waits for what the newest clean did to the file at <paramref name="path"/> (Activity's library cleans) and returns that entry, for as
+    /// long as a worker has the clean (see <see cref="JobWait"/>).
+    /// </summary>
     public async Task<JsonObject> WaitForCleanAsync(string path) =>
-        await Poll.UntilAsync(
+        await new JobWait().UntilAsync(
+            async () => [.. (await CleanJobsAsync()).Select(job => (string)job["status"]!)],
             async () =>
             {
                 var response = await Admin.GetAsync($"{Api}/processing/library-cleans", ("library_id", LibraryId));
@@ -171,8 +172,7 @@ internal sealed class LibraryCleanWorld : IAsyncDisposable
                 return response.Fields["cleans"]!.AsArray().Select(clean => clean!.AsObject())
                     .FirstOrDefault(clean => SamePath((string)clean["relative_path"]!, path));
             },
-            $"the clean of {Path.GetFileName(path)} to finish",
-            ToolsCeiling);
+            $"the clean of {Path.GetFileName(path)}");
 
     /// <summary>The job as the inspection list shows it, whatever its status.</summary>
     public async Task<JsonObject> JobAsync(long jobId)
