@@ -29,7 +29,7 @@ public sealed class RealFfmpegClassifiesDamagedMediaTests
             capabilities: ["processor-reject-regrab"], library: [("failure_policy", "reject")]);
 
         await scenario.PostHandoffAsync("handoff-zero-494", source);
-        var row = await scenario.WaitForFileStatusAsync(library, "Zero.Filled.494/film.mkv", "on_hold", TimeSpan.FromSeconds(90));
+        var row = await scenario.WaitForFileStatusAsync(library, "Zero.Filled.494/film.mkv", "on_hold");
 
         // Real ffprobe's text reads as unreadable, so the file waits: a download still arriving reads the same way. Only a file that
         // stays unreadable and unchanged through the looks is rejected (see LeftInPlaceOriginalTests, which can move the clock on).

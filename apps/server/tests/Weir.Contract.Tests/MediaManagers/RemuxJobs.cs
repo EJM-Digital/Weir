@@ -33,16 +33,12 @@ internal static class RemuxJobs
     }
 
     /// <summary>The status of the newest remux job for a hand-off, matched on its payload because cancelling renames the dedupe key.</summary>
-    public static async Task<string?> StatusForHandoffAsync(WeirClient client, string handoffId)
-    {
-        foreach (var job in await ListAsync(client))
-        {
-            if ((string?)Payload(job)["origin"]?["handoff_id"] == handoffId)
-            {
-                return (string?)job["status"];
-            }
-        }
+    public static async Task<string?> StatusForHandoffAsync(WeirClient client, string handoffId) =>
+        await StatusesForHandoffAsync(client, handoffId) is [var newest, ..] ? newest : null;
 
-        return null;
-    }
+    /// <summary>The statuses of every remux job for a hand-off, newest first, matched on the payload as <see cref="StatusForHandoffAsync"/> is.</summary>
+    public static async Task<IReadOnlyList<string>> StatusesForHandoffAsync(WeirClient client, string handoffId) =>
+        [.. (await ListAsync(client))
+            .Where(job => (string?)Payload(job)["origin"]?["handoff_id"] == handoffId)
+            .Select(job => (string)job["status"]!)];
 }
