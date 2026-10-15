@@ -1,7 +1,7 @@
 {
   "version": 1,
   "generatedFrom": "the coverage audit of 14 Oct 2026, brought up to date with main at rc.18, plus the inventories of scripts/coverage/inventory.mjs",
-  "gapCeiling": 852,
+  "gapCeiling": 848,
   "areas": {
     "api": {
       "code": "R",
@@ -1898,9 +1898,13 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
           "name": "A_generated_secret_is_shown_once_and_the_webhook_then_enforces_it_for_that_manager_only"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedWebhookSecretTests.cs",
+          "name": "RecordedWebhookSecretTests"
         }
       ],
-      "issue": 1068,
       "covers": [
         "route:POST /api/v1/media-managers/connections/{connection_id}/webhook-secret"
       ],
@@ -2253,9 +2257,28 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
           "name": "Cancelling_a_hand_offs_job_on_the_jobs_screen_tells_the_manager_it_is_cancelled"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "Stop_waiting_cancels_a_queued_hand_off_with_a_204_and_the_work_is_never_done"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "A_hand_off_waiting_for_its_turn_is_cancelled_with_a_204_and_never_worked"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "An_import_from_the_watched_folder_releases_Weirs_copy_and_leaves_the_watched_folder_alone"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffCancelTests.cs",
+          "name": "A_hand_off_Weir_is_working_on_is_refused_as_recorded_for_a_finished_one_and_the_pass_carries_on"
         }
       ],
-      "issue": 1068,
       "covers": [
         "route:DELETE /api/v1/intake/handoffs/{source_key}/{handoff_id}"
       ],
@@ -13054,9 +13077,13 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Http/RequestBodyLimitsTests.cs",
           "name": "RequestBodyLimitsTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedWebhookSecretTests.cs",
+          "name": "RecordedWebhookSecretTests"
         }
       ],
-      "issue": 1068,
       "covers": [
         "setting:env:WEIR_MEDIA_MANAGER_WEBHOOK_SECRET"
       ],
@@ -45210,9 +45237,28 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
           "name": "Cancelling_a_hand_offs_job_on_the_jobs_screen_tells_the_manager_it_is_cancelled"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "Stop_waiting_cancels_a_queued_hand_off_with_a_204_and_the_work_is_never_done"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "A_hand_off_waiting_for_its_turn_is_cancelled_with_a_204_and_never_worked"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "An_import_from_the_watched_folder_releases_Weirs_copy_and_leaves_the_watched_folder_alone"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffCancelTests.cs",
+          "name": "A_hand_off_Weir_is_working_on_is_refused_as_recorded_for_a_finished_one_and_the_pass_carries_on"
         }
       ],
-      "issue": 1068,
       "audit": {
         "id": "INT-DEL-05",
         "verdict": "Covered"
@@ -49256,7 +49302,7 @@
     {
       "id": "file-lifecycle.file-lifecycle.a-workflow-linked-to-deluno-is-processed-only-from",
       "area": "file-lifecycle",
-      "behaviour": "A workflow linked to Deluno is processed only from Deluno's hand-off: no scan queued for it by timer, folder watcher, save, \"scan now\" or \"process again\" (refused with the sentence); a scan job that runs anyway stops; a failed hand-off retries itself",
+      "behaviour": "A workflow linked to Deluno is processed only from Deluno's hand-off: no scan queued for it by timer, folder watcher, save, \"scan now\" or \"process again\" (refused with the sentence)",
       "kind": "file-lifecycle",
       "severity": "high",
       "touches": "other-app",
@@ -49267,6 +49313,37 @@
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/LinkedWorkflowOriginalsTests.cs",
           "name": "A_deluno_workflow_is_not_processed_by_its_own_scan_but_is_by_the_hand_off_and_its_originals_stay"
         },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/LinkedOriginalsTests.cs",
+          "name": "A_deluno_workflow_is_only_processed_from_the_hand_off_and_nothing_is_removed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingRejectedFilesApiTests.cs",
+          "name": "ProcessingRejectedFilesApiTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoOnlyWorkflowTests.cs",
+          "name": "Saving_the_watcher_the_timer_scan_now_and_process_again_all_leave_a_download_Deluno_has_not_handed_over_alone_and_the_hand_off_is_processed"
+        }
+      ],
+      "audit": {
+        "id": "FL-39",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "file-lifecycle.file-lifecycle.a-scan-job-that-runs-for-a-deluno-linked-workflow-stops-and-a-failed",
+      "area": "file-lifecycle",
+      "behaviour": "A scan job that runs anyway for a workflow linked to Deluno stops without queueing work, and a failed hand-off of that workflow retries itself",
+      "kind": "file-lifecycle",
+      "severity": "high",
+      "touches": "other-app",
+      "required": "real",
+      "proofs": [],
+      "partial": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanHandedOffTests.cs",
@@ -49284,20 +49361,14 @@
         },
         {
           "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Processing/LinkedOriginalsTests.cs",
-          "name": "A_deluno_workflow_is_only_processed_from_the_hand_off_and_nothing_is_removed"
-        },
-        {
-          "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/HandoffRetryCorrectnessTests.cs",
           "name": "HandoffRetryCorrectnessTests"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingRejectedFilesApiTests.cs",
-          "name": "ProcessingRejectedFilesApiTests"
         }
       ],
+      "needs": {
+        "kind": "recording-replay",
+        "test": "No test replays Deluno's recorded hand-off through a scan job that runs anyway, or through a failed pass that retries itself; the existing tests use Weir's own fake Deluno (the recorded world has no retry driver)"
+      },
       "issue": 1068,
       "audit": {
         "id": "FL-39",
