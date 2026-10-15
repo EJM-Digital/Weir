@@ -23,7 +23,8 @@ export class WeirClient {
   }
 
   async #send(method, path, body) {
-    const headers = { Accept: "application/json", Origin: this.#origin, "X-Requested-With": "XMLHttpRequest" };
+    // A connection of its own for each request: one kept alive across a restart of the stack is dead, and fetch reports that as a failure.
+    const headers = { Accept: "application/json", Connection: "close", Origin: this.#origin, "X-Requested-With": "XMLHttpRequest" };
     if (this.#cookie) headers.Cookie = this.#cookie;
     if (body !== undefined) headers["Content-Type"] = "application/json";
     const response = await fetch(this.#origin + API + path, {
@@ -31,6 +32,8 @@ export class WeirClient {
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(30_000),
+    }).catch((error) => {
+      throw new Error(`${method} ${path} did not get an answer: ${error.cause?.code ?? error.cause?.message ?? error.message}`, { cause: error });
     });
     const text = await response.text();
     let json = null;
