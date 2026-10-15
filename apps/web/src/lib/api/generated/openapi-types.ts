@@ -6722,6 +6722,11 @@ export interface components {
       id: number;
       /** Keep Original Language */
       keep_original_language: boolean;
+      /**
+       * Library Rescan Job Ids
+       * @description The background re-plans queued for libraries that use this profile. Sent only when a profile is saved.
+       */
+      library_rescan_job_ids?: number[];
       /** Name */
       name: string;
       /** Original Language Additional Csv */

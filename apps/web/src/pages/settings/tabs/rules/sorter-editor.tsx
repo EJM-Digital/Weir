@@ -134,7 +134,7 @@ export function SorterEditor({
       <ol>
         {rows.map((row, index) => (
           <CriterionRow
-            key={`${row.field}-${index}`}
+            key={index}
             row={row}
             position={index}
             count={rows.length}

@@ -14,9 +14,11 @@ import {
   waitsOnAPerson,
   ACTIVITY_GROUPS,
 } from "./activity-entries";
+import { recordedProcessingFile } from "../../test/recorded";
 
 function file(partial: Partial<ProcessingFile>): ProcessingFile {
   return {
+    ...recordedProcessingFile(),
     id: 1,
     library_id: 1,
     library_name: "TV",
