@@ -272,6 +272,36 @@ public sealed class WeirOptionsParsingTests
     public void A_library_swap_hold_left_empty_in_production_is_not_a_hold_and_starts() =>
         Assert.Null(TestRuntime.Load(("WEIR_ENV", "production"), ("WEIR_LIBRARY_SWAP_HOLD_AT", "")).LibrarySwapHoldAt);
 
+    [Fact]
+    public void Periodic_tasks_run_at_their_own_pace_unless_a_test_speeds_them_up() =>
+        Assert.Equal(1, TestRuntime.Load().PeriodicTaskSpeedUp);
+
+    [Theory]
+    [InlineData("1", 1)]
+    [InlineData("10", 10)]
+    [InlineData("0", 1)]
+    [InlineData("-5", 1)]
+    [InlineData("5000", 1000)]
+    public void The_periodic_task_speed_up_is_a_whole_number_from_one_to_a_thousand(string raw, int expected) =>
+        Assert.Equal(expected, TestRuntime.Load(("WEIR_ENV", "development"), ("WEIR_PERIODIC_TASK_SPEEDUP", raw)).PeriodicTaskSpeedUp);
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("production")]
+    [InlineData(" Production ")]
+    public void A_periodic_task_speed_up_is_refused_at_start_in_production(string? env)
+    {
+        var refused = Assert.Throws<WeirConfigurationException>(() => env is null
+            ? TestRuntime.Load(("WEIR_PERIODIC_TASK_SPEEDUP", "10"))
+            : TestRuntime.Load(("WEIR_ENV", env), ("WEIR_PERIODIC_TASK_SPEEDUP", "10")));
+
+        Assert.Equal(WeirOptionsLoader.PeriodicTaskSpeedUpInProductionMessage, refused.Message);
+    }
+
+    [Fact]
+    public void A_periodic_task_speed_up_of_one_is_no_speed_up_and_starts_in_production() =>
+        Assert.Equal(1, TestRuntime.Load(("WEIR_ENV", "production"), ("WEIR_PERIODIC_TASK_SPEEDUP", "1")).PeriodicTaskSpeedUp);
+
     [Theory]
     [InlineData("0", 0.25)]
     [InlineData("10", 10.0)]

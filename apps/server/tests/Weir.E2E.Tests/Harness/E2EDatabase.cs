@@ -37,6 +37,22 @@ public static class E2EDatabase
         transaction.Commit();
     }
 
+    /// <summary>
+    /// Moves the end of a timed pause a minute into the past, as the passing of that time would: the pause is still on until the server's
+    /// own sweep lifts it, which is what a test of "the pause runs out by itself" waits for.
+    /// </summary>
+    public static void RunTimedPauseOut(string databasePath)
+    {
+        var ended = DateTime.UtcNow.AddMinutes(-1).ToString("yyyy-MM-dd HH:mm:ss.ffffff", CultureInfo.InvariantCulture);
+        using var connection = Open(databasePath);
+        using var transaction = connection.BeginTransaction();
+        SeedSql.Execute(
+            connection,
+            "UPDATE suite_settings SET processing_paused_until = $ended WHERE id = 1 AND processing_paused = 1 AND processing_paused_until IS NOT NULL",
+            ("$ended", ended));
+        transaction.Commit();
+    }
+
     /// <summary>One <c>activity_events</c> row, stamped now in the stored shape (<c>YYYY-MM-DD HH:MM:SS.ffffff</c>, UTC).</summary>
     public static void InsertActivityEvent(string databasePath, string eventType, string module, string title, string? detail = null)
     {

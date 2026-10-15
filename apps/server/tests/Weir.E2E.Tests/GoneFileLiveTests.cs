@@ -10,7 +10,8 @@ namespace Weir.E2E.Tests;
 /// <summary>A file that leaves the watched folder before Weir starts on it stops saying it is waiting, with no reload.</summary>
 public sealed class GoneFileLiveTests(E2EServer server) : E2ETestBase(server)
 {
-    // A scan has to run, and then look again a few seconds later before it believes the file is gone.
+    // A hang guard, not a pace: a scan has to run, and then look again a few seconds later before it believes the file is gone, and
+    // the wait ends the moment the page shows it.
     private const float ScanMs = 45_000;
 
     [E2EFact]

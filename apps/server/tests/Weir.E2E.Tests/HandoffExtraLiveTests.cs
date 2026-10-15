@@ -14,7 +14,8 @@ public sealed class HandoffExtraLiveTests(E2EServer server) : E2ETestBase(server
 {
     private const float PushMs = 10_000;
 
-    // The film waits behind the extra on the one worker, and every tool call is a process to start, which a busy machine stretches.
+    // A hang guard, not a pace: the film waits behind the extra on the one worker, and every tool call is a process to start, which a
+    // busy machine stretches. Each wait ends the moment the page shows what it waits for.
     private const float PassMs = 120_000;
 
     private const string Release = "h-nosferatu";
