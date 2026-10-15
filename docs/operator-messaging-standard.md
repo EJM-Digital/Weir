@@ -11,7 +11,7 @@ Weir activity, status, and job messages are for the person operating the app. Th
 
 Normal work must not be logged or displayed as a warning. Provider-level recoverable failures must identify the provider and show that the rest of the workflow continued.
 
-Catching up after Weir was not running, or the computer was asleep, saved, paused or frozen, is normal work: a person has nothing to do about it, so it is `info`, worded plainly (how long, what is queued). Work that comes late while Weir was running is a real fault and stays a `warning`. Tell the two apart with `ProcessPulse` (`Weir.Infrastructure/Runtime`), which notes whether anything in the process ran during the delay; never with a monotonic clock, which counts a suspended machine on Windows and not on Linux.
+Catching up after Weir was not running, or the computer was asleep, saved, paused or frozen, is normal work: a person has nothing to do about it, so it is `info`, worded plainly (how long, what is queued). Work that comes late while Weir was running is a real fault and stays a `warning`. This covers scheduled scans coming late and a job's lease running out (the job is picked up again). Tell the two apart with `ProcessPulse` (`Weir.Infrastructure/Runtime`), which notes whether anything in the process ran during the delay; never with a monotonic clock, which counts a suspended machine on Windows and not on Linux.
 
 ## Required fields
 
