@@ -63,7 +63,7 @@ public sealed partial class SecuritySessionsTests(E2EServer server) : E2ETestBas
         await Expect(SecurityTab.SessionRows(first)).ToHaveCountAsync(2, new() { Timeout = SecurityTab.ServerAnswerMs });
 
         await SecurityTab.SignOutOthersButton(first).ClickAsync();
-        await Expect(first.GetByRole(AriaRole.Status).Filter(new() { HasText = "Signed out 1 other session." })).ToBeVisibleAsync();
+        await Expect(first.GetByRole(AriaRole.Status).Filter(new() { HasText = "Signed out 1 other session." })).ToBeVisibleAsync(new() { Timeout = SecurityTab.ServerAnswerMs });
 
         await second.ReloadAsync(new PageReloadOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
 

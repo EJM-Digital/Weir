@@ -43,7 +43,7 @@ public static class SecurityTab
     /// <summary>How many events of this type the server has recorded, read as the signed-in person in the context.</summary>
     public static async Task<int> RecordedEventCountAsync(IBrowserContext context, string baseUrl, string eventType)
     {
-        await using var response = await context.APIRequest.GetAsync($"{baseUrl}/api/v1/activity/recent?event_type={eventType}&limit=200");
+        await using var response = await context.APIRequest.GetAsync($"{baseUrl}/api/v1/activity/recent?event_type={eventType}&limit=100");
         Assert.True(response.Ok, $"Reading the recorded {eventType} events answered {response.Status}.");
         return JsonDocument.Parse(await response.TextAsync()).RootElement.GetProperty("items").GetArrayLength();
     }
