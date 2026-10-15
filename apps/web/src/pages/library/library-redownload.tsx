@@ -11,10 +11,7 @@ import {
   useLibraryRedownloadsQuery,
   useRequestLibraryRedownload,
 } from "../../lib/processing/library-mode-queries";
-import type {
-  LibraryRedownloadResult,
-  LibraryRedownloadTitle,
-} from "../../lib/processing/library-redownload-api";
+import type { LibraryRedownloadTitle } from "../../lib/processing/library-redownload-api";
 import { mmActionButtonClass } from "../../lib/ui/mm-control-roles";
 
 /** "French audio, English subtitles": what the file lost that the rules would now keep. */
@@ -24,18 +21,6 @@ function missingTracks(title: LibraryRedownloadTitle): string {
       `${languageName(track.language)} ${track.type === "audio" ? "audio" : "subtitles"}`,
   );
   return [...new Set(kinds)].join(", ");
-}
-
-/** The server's own words for what the manager did, except where they carry the manager's error text. */
-function resultMessage(result: LibraryRedownloadResult): string {
-  switch (result.outcome) {
-    case "failed":
-      return "Weir couldn't reach your media manager, so nothing was deleted. Check it's running, then try again.";
-    case "deleted_but_search_failed":
-      return "Your media manager deleted the file but couldn't start a search for a new copy. Search for the title in your media manager.";
-    default:
-      return result.message;
-  }
 }
 
 export function LibraryRedownload({
@@ -60,8 +45,8 @@ export function LibraryRedownload({
   const title = titles.data?.titles.find((entry) => entry.path === path);
   if (!title && !request.data) return null;
   const them = title?.removed_tracks.length === 1 ? "it" : "them";
-  // Once the manager has the request, asking again would only delete a file it may already be replacing.
-  const asked = request.data !== undefined && request.data.outcome !== "failed";
+  // Once the manager has the request, asking again would only delete a file it may already be replacing. Any other answer leaves the person free to try again.
+  const asked = request.data?.outcome === "requested";
 
   const send = () =>
     request.mutate(path, { onSettled: () => setAsking(false) });
@@ -79,6 +64,11 @@ export function LibraryRedownload({
           back is to download the title again.
         </p>
       ) : null}
+      {title?.waiting_note ? (
+        <p className="mm-drawer__note" data-testid="library-redownload-waiting">
+          {title.waiting_note}
+        </p>
+      ) : null}
       {title?.can_redownload && !asked ? (
         <button
           type="button"
@@ -93,7 +83,7 @@ export function LibraryRedownload({
       ) : null}
       {request.data ? (
         <p className="mm-drawer__status" role="status">
-          {resultMessage(request.data)}
+          {request.data.message}
         </p>
       ) : null}
       {request.isError ? (

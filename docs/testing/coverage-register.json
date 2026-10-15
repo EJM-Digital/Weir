@@ -1461,13 +1461,7 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadApiTests.cs",
-          "name": "LibraryRedownloadApiTests"
-        },
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/LibraryMode/RedownloadRiskEvaluatorTests.cs",
@@ -1482,13 +1476,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/RedownloadRiskGatewayTests.cs",
           "name": "RedownloadRiskGatewayTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadApiTests.cs",
+          "name": "LibraryRedownloadApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadListingApiTests.cs",
+          "name": "LibraryRedownloadListingApiTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Only the \"no manager\" listing is shown over HTTP; no listing for a library with Sonarr/Radarr linked; no auth test"
-      },
-      "issue": 985,
       "covers": [
         "route:GET /api/v1/processing/libraries/{library_id}/library-redownloads"
       ],
@@ -1516,11 +1515,31 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/ArrManagerRedownloadTests.cs",
           "name": "ArrManagerRedownloadTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadRequestApiTests.cs",
+          "name": "LibraryRedownloadRequestApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadFailureApiTests.cs",
+          "name": "LibraryRedownloadFailureApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadRefusalApiTests.cs",
+          "name": "LibraryRedownloadRefusalApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadRecordApiTests.cs",
+          "name": "LibraryRedownloadRecordApiTests"
         }
       ],
       "needs": {
-        "kind": "xunit",
-        "test": "The success path (delete the library file, then search) has never been run over HTTP: no test calls it with confirm_destructive true, and the fake arr is hand-written. It deletes a user's file."
+        "kind": "recording-replay",
+        "test": "Proved over HTTP against a scripted Sonarr and Radarr whose replies are assumed shapes (ArrRedownloadReplies.cs). Still open: the recorded Sonarr (#1013) and Radarr (#1014) replies must replace them, and a real redownload on the VM must delete the file at the real manager and ask for the search."
       },
       "issue": 985,
       "covers": [
@@ -54179,6 +54198,34 @@
       ],
       "covers": [
         "event:library.file_change_notified"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "events.library.library-redownload-requested",
+      "area": "events",
+      "behaviour": "Weir records \"Download again asked of your media manager\" in Activity (library.redownload_requested)",
+      "kind": "event",
+      "severity": "low",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadRecordApiTests.cs",
+          "name": "A_download_again_that_went_through_is_recorded_with_who_asked_what_was_deleted_and_the_search_sent"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadRecordApiTests.cs",
+          "name": "LibraryRedownloadRecordApiTests"
+        }
+      ],
+      "covers": [
+        "event:library.redownload_requested"
       ],
       "audit": {
         "id": "inventory",

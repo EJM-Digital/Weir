@@ -118,6 +118,70 @@ public sealed class ArrManagerRedownloadTests
     }
 
     [Fact]
+    public async Task A_series_file_the_manager_does_not_list_is_neither_deleted_nor_searched_for()
+    {
+        var http = new FakeManagerHttp()
+            .Json(HttpMethod.Get, "/api/v3/episodefile", """[{"id":55,"size":900000000,"path":"/data/tv/Show/S01E01.mkv"}]""");
+        var redownload = new ArrManagerRedownload(http);
+
+        var result = await redownload.RequestRedownloadAsync(Connection("sonarr"), MediaManagerKinds.Tv, "3", "/tv/Show/S01E01.mkv");
+
+        Assert.Equal(RedownloadOutcome.FileNotMatched, result.Outcome);
+        Assert.False(result.DeletedExistingFile);
+        Assert.Equal(["/api/v3/episodefile?seriesId=3"], http.Requests.Select(r => r.PathAndQuery));
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    [InlineData(HttpStatusCode.BadGateway)]
+    [InlineData(HttpStatusCode.GatewayTimeout)]
+    public async Task A_delete_that_gets_a_server_error_is_not_confirmed_and_no_search_is_sent(HttpStatusCode status)
+    {
+        var http = new FakeManagerHttp()
+            .Json(HttpMethod.Get, "/api/v3/movie/7", """{"id":7,"movieFile":{"id":42,"size":100,"path":"/movies/Film/film.mkv"}}""")
+            .Route(HttpMethod.Delete, "/api/v3/moviefile/42", _ => FakeManagerHttp.Response(status, "boom"))
+            .Route(HttpMethod.Post, "/api/v3/command", _ => FakeManagerHttp.Response(HttpStatusCode.Created, """{"id":1}"""));
+        var redownload = new ArrManagerRedownload(http);
+
+        var result = await redownload.RequestRedownloadAsync(Connection("radarr"), MediaManagerKinds.Movie, "7", "/movies/Film/film.mkv");
+
+        Assert.Equal(RedownloadOutcome.DeleteNotConfirmed, result.Outcome);
+        Assert.False(result.DeletedExistingFile);
+        Assert.Empty(http.RequestsTo(HttpMethod.Post, "/api/v3/command"));
+    }
+
+    [Fact]
+    public async Task A_delete_that_cannot_be_sent_is_not_confirmed_and_no_search_is_sent()
+    {
+        var http = new FakeManagerHttp()
+            .Json(HttpMethod.Get, "/api/v3/movie/7", """{"id":7,"movieFile":{"id":42,"size":100,"path":"/movies/Film/film.mkv"}}""")
+            .Route(HttpMethod.Delete, "/api/v3/moviefile/42", _ => throw new HttpRequestException("The connection was reset."))
+            .Route(HttpMethod.Post, "/api/v3/command", _ => FakeManagerHttp.Response(HttpStatusCode.Created, """{"id":1}"""));
+        var redownload = new ArrManagerRedownload(http);
+
+        var result = await redownload.RequestRedownloadAsync(Connection("radarr"), MediaManagerKinds.Movie, "7", "/movies/Film/film.mkv");
+
+        Assert.Equal(RedownloadOutcome.DeleteNotConfirmed, result.Outcome);
+        Assert.Empty(http.RequestsTo(HttpMethod.Post, "/api/v3/command"));
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.Forbidden)]
+    [InlineData(HttpStatusCode.NotFound)]
+    public async Task A_delete_the_manager_refuses_throws_because_nothing_was_deleted(HttpStatusCode status)
+    {
+        var http = new FakeManagerHttp()
+            .Json(HttpMethod.Get, "/api/v3/movie/7", """{"id":7,"movieFile":{"id":42,"size":100,"path":"/movies/Film/film.mkv"}}""")
+            .Route(HttpMethod.Delete, "/api/v3/moviefile/42", _ => FakeManagerHttp.Response(status, "no"));
+        var redownload = new ArrManagerRedownload(http);
+
+        await Assert.ThrowsAsync<MediaManagerHttpException>(
+            () => redownload.RequestRedownloadAsync(Connection("radarr"), MediaManagerKinds.Movie, "7", "/movies/Film/film.mkv"));
+        Assert.Empty(http.RequestsTo(HttpMethod.Post, "/api/v3/command"));
+    }
+
+    [Fact]
     public async Task Deluno_and_a_scope_mismatch_are_unsupported_without_any_network_call()
     {
         var http = new FakeManagerHttp();
