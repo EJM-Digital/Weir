@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Weir.Contract.FakeTools;
 using Weir.Contract.Tests.Harness;
 using Weir.Contract.Tests.Harness.Fakes;
 using static Weir.Contract.Tests.Libraries.LibrariesPartBChecks;
@@ -23,6 +24,23 @@ public sealed partial class ProcessingSettingsEndpointsContractTests(LibrariesPa
     // --- hardware ---------------------------------------------------------------------------------------
 
     [Fact]
+    public async Task A_hardware_check_ffmpeg_was_too_slow_to_answer_says_so_and_the_next_check_asks_again()
+    {
+        using var tools = FakeFfmpeg.Install();
+        // The first run of the tool takes longer than the 10 seconds the check allows; the next is quick.
+        tools.SetScript(new JsonObject { ["default"] = new JsonObject { [FakeToolProtocol.HwaccelsFirstCallDelaySecondsKey] = 12 } });
+        await using var server = await WeirServer.StartNewAsync(tools.Env);
+        using var admin = await server.CreateAdminClientAsync();
+
+        var tooSlow = await admin.GetAsync($"{Api}/processing/hardware");
+        await HardwareReport.OnceFfmpegAnswersAsync(admin);
+
+        Status(tooSlow, HttpStatusCode.OK);
+        Assert.False((bool)tooSlow.Fields["detected"]!, tooSlow.ToString());
+        Assert.Contains("timed out after 10.0 seconds", (string)tooSlow.Fields["detail"]!, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Hardware_report_from_the_configured_ffmpeg()
     {
         using var tools = FakeFfmpeg.Install();
@@ -33,9 +51,8 @@ public sealed partial class ProcessingSettingsEndpointsContractTests(LibrariesPa
         }
 
         using var admin = await server.CreateAdminClientAsync();
-        var response = await admin.GetAsync($"{Api}/processing/hardware");
+        var response = await HardwareReport.OnceFfmpegAnswersAsync(admin);
 
-        Status(response, HttpStatusCode.OK);
         var body = response.Fields;
         HasKeys(body, "detected", "available_methods", "vendors", "selectable_vendors", "strictness_levels", "detail");
         // The fake ffmpeg answers but lists no acceleration methods: asked successfully, nothing on offer.

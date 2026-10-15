@@ -84,6 +84,8 @@ Everything is in `Harness/`. Areas live in folders beside it (`Activity/`), one 
   writes a timestamp the way the schema stores it. `SeededAccounts` holds the admin `alice` and the viewer `bob`
   with precomputed Argon2 hashes (the harness has no hasher); `LibraryBodies.Unchanged` is the body of a whole-library save.
 - **`Poll.UntilAsync`** waits for an outcome with a deadline; never sleep for a fixed time.
+- **`JobWait`** waits for what a job produces (a scan, a clean) for as long as a worker holds the job, because how long a tool takes depends on the machine. It gives up only on a job nobody takes up for two minutes, and at once on jobs that ended without the result. `LibraryCleanWorld` waits this way; use it, not `Poll.UntilAsync`, for work that runs a media tool.
+- **`FakeGateway.HoldSearches`** keeps every metadata search waiting for its answer until `ReleaseSearches`, and `SearchHeldAsync` says when one is waiting: a slow service, on demand. A test that counts searches seeds all its files with one `LibrariesPartBPosters.SeedFilesAsync`, because every stop of the server restarts it and a restarted server looks titles up within seconds.
 - **`ServerLedger`** records every server this run started in the temp folder. The next run stops servers whose
   test run died before teardown; it never touches a server whose run is still alive, so runs side by side are safe.
   Its folder is shared by every fixture and every run, so a read, a delete or a claim that meets someone else's is theirs and
