@@ -1001,7 +1001,23 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientSecretsTests.cs",
+          "name": "DownloadClientSecretsTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientAccessTests.cs",
+          "name": "DownloadClientAccessTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -1014,11 +1030,6 @@
           "name": "DownloadClientConnectionServiceTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No auth/CSRF refusal test; no contract test"
-      },
-      "issue": 1001,
       "covers": [
         "route:PUT /api/v1/download-clients/connections/{connection_id}"
       ],
@@ -1035,7 +1046,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientRemovalTests.cs",
+          "name": "DownloadClientRemovalTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientAccessTests.cs",
+          "name": "DownloadClientAccessTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -1048,11 +1070,6 @@
           "name": "SetupLiveTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No auth/CSRF refusal test; nothing shows what happens to a workflow that referenced the client"
-      },
-      "issue": 1001,
       "covers": [
         "route:DELETE /api/v1/download-clients/connections/{connection_id}"
       ],
@@ -12501,12 +12518,23 @@
     {
       "id": "settings.connection.download-client-connections-qbittorrent-sabnzbd-nzbget-transmission-deluge-url",
       "area": "settings",
-      "behaviour": "Download-client connections (qBittorrent, SABnzbd, NZBGet, Transmission, Deluge): url, credentials, enabled, nickname, path mappings",
+      "behaviour": "Download-client connections (qBittorrent, SABnzbd, NZBGet, Transmission, Deluge): url, credentials, enabled, nickname",
       "kind": "setting",
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientSecretsTests.cs",
+          "name": "DownloadClientSecretsTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -12544,14 +12572,164 @@
           "name": "LiveConnectionTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Not audited field by field. Only qBittorrent has a fake server with a real HTTP session; SABnzbd/NZBGet/Transmission/Deluge are covered by recorded-reply rules tests, never by a running Weir against a fake client."
-      },
-      "issue": 1001,
       "audit": {
         "id": "SET-X04",
         "verdict": "Partly"
+      }
+    },
+    {
+      "id": "settings.connection.download-client-connection-kind",
+      "area": "settings",
+      "behaviour": "Download-client connection kind: one of qBittorrent, SABnzbd, NZBGet, Transmission or Deluge, chosen when it is created",
+      "kind": "setting",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "settings.connection.download-client-connection-base-url",
+      "area": "settings",
+      "behaviour": "Download-client connection address: kept, changed, normalised into the connection name, and refused when it will not work",
+      "kind": "setting",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "settings.connection.download-client-connection-enabled",
+      "area": "settings",
+      "behaviour": "Download-client connection on/off switch",
+      "kind": "setting",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "settings.connection.download-client-connection-username",
+      "area": "settings",
+      "behaviour": "Download-client connection user name (qBittorrent, NZBGet, Transmission): set, changed and cleared",
+      "kind": "setting",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientSecretsTests.cs",
+          "name": "DownloadClientSecretsTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "settings.connection.download-client-connection-password",
+      "area": "settings",
+      "behaviour": "Download-client connection password: write-only, kept when an update leaves it out, cleared by an empty one, replaced by a new one",
+      "kind": "setting",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientSecretsTests.cs",
+          "name": "DownloadClientSecretsTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "settings.connection.download-client-connection-api-key",
+      "area": "settings",
+      "behaviour": "Download-client connection API key (SABnzbd): write-only, kept when an update leaves it out, replaced by a new one, never cleared where the client cannot work without it",
+      "kind": "setting",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientSecretsTests.cs",
+          "name": "DownloadClientSecretsTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "settings.connection.download-client-connection-nickname",
+      "area": "settings",
+      "behaviour": "Download-client connection nickname: set, changed and cleared",
+      "kind": "setting",
+      "severity": "low",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientFieldsTests.cs",
+          "name": "DownloadClientFieldsTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
       }
     },
     {
