@@ -1,2 +1,2 @@
--- Scratch, never merged: a migration that loses the accounts, to show the upgrade smoke fails on it (#986).
-DELETE FROM users;
+-- Scratch, never merged: a migration that renames every account, so the same password no longer finds it (#986).
+UPDATE users SET username = username || '-migrated';
