@@ -42,7 +42,7 @@ public sealed class ServerHostTests
         Assert.Equal(ServerPhase.Stopped, rig.Host.Phase);
         Assert.Equal(Policy.StartLimitBurst, rig.Host.GaveUpAfterAttempts);
         Assert.False(rig.Host.ServerIsRunning);
-        Assert.Empty(rig.Running());
+        await rig.AllExitedAsync();
     }
 
     [Fact(Timeout = TestTimeoutMs)]
@@ -132,7 +132,7 @@ public sealed class ServerHostTests
         // Each stuck process was looked at before it was stopped, and every one is gone.
         Assert.Equal(Policy.StartLimitBurst, CountOf(rig.TrayLog, "did not answer: it had run for"));
         Assert.Contains("loaded", rig.TrayLog, StringComparison.Ordinal);
-        Assert.Empty(rig.Running());
+        await rig.AllExitedAsync();
         Assert.False(rig.Host.ServerIsRunning);
     }
 
@@ -147,7 +147,7 @@ public sealed class ServerHostTests
         var gaveUp = await RunToEndAsync(rig, start, After(rig.LatestListeningAsync));
 
         Assert.Equal("hung before it reported anything for 30 s", gaveUp.Reason);
-        Assert.Empty(rig.Running());
+        await rig.AllExitedAsync();
     }
 
     [Fact(Timeout = TestTimeoutMs)]
@@ -165,7 +165,7 @@ public sealed class ServerHostTests
         Assert.Equal("hung before it reported anything for 30 s", gaveUp.Reason);
         Assert.Equal(ServerPhase.Stopped, rig.Host.Phase);
         Assert.False(rig.Host.ServerIsRunning);
-        Assert.Empty(rig.Running());
+        await rig.AllExitedAsync();
     }
 
     [Fact(Timeout = TestTimeoutMs)]
@@ -306,7 +306,7 @@ public sealed class ServerHostTests
         });
 
         Assert.Equal("hung in phase 'saving a copy of the data' for 30 s", gaveUp.Reason);
-        Assert.Empty(rig.Running());
+        await rig.AllExitedAsync();
     }
 
     [Fact(Timeout = TestTimeoutMs)]
@@ -353,7 +353,7 @@ public sealed class ServerHostTests
             var start = rig.Host.StartAsync(CancellationToken.None);
             await RunToEndAsync(rig, start, After(rig.LatestReportedAsync));
 
-            Assert.Empty(rig.Running());
+            await rig.AllExitedAsync();
             Assert.False(bystander.HasExited, "A server the tray did not start was stopped");
         }
         finally
@@ -548,7 +548,7 @@ public sealed class ServerHostTests
 
         Assert.Equal(StartPolicyBurst, gaveUp.Attempts);
         Assert.StartsWith("hung in phase 'opening the database'", gaveUp.Reason, StringComparison.Ordinal);
-        Assert.Empty(rig.Running());
+        await rig.AllExitedAsync();
     }
 
     [Fact(Timeout = TestTimeoutMs)]
