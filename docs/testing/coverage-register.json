@@ -4843,6 +4843,16 @@
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MediaToolVersionReportTests.cs",
+          "name": "Both_version_questions_run_at_normal_priority_with_the_measured_time_limit"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MediaToolVersionReportTests.cs",
+          "name": "Tools_starved_of_the_processor_are_not_reported_as_unknown"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/MediaToolVersionReportTests.cs",
           "name": "MediaToolVersionReportTests"
         },
         {
