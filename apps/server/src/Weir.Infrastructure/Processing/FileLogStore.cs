@@ -28,6 +28,10 @@ public sealed class FileLogStore
             $"SELECT {Columns} FROM file_logs WHERE relative_path = @path ORDER BY recorded_at DESC, id DESC LIMIT {Math.Max(1, Math.Min(limit, 500))}",
             Read, ("@path", relativePath));
 
+    /// <summary>How many passes over this file are retained, however many a read returns.</summary>
+    public async Task<long> CountForFileAsync(UnitOfWork uow, string relativePath) =>
+        await uow.CountAsync("SELECT count(*) FROM file_logs WHERE relative_path = @path", ("@path", relativePath)).ConfigureAwait(false);
+
     /// <summary>Parse a stored detail payload as a <see cref="WireObject"/>, never raising.</summary>
     public WireObject ParseDetail(string? raw)
     {
@@ -50,8 +54,11 @@ public sealed class FileLogStore
         }
     }
 
-    /// <summary>A plain-text rendering for attaching to a bug report.</summary>
-    public string RenderLogText(IReadOnlyList<ProcessingFileLogRecord> rows)
+    /// <summary>
+    /// A plain-text rendering for attaching to a bug report. <paramref name="retained"/> is how many passes are kept in all: when
+    /// that is more than <paramref name="rows"/> holds, the text says it shows only the newest.
+    /// </summary>
+    public string RenderLogText(IReadOnlyList<ProcessingFileLogRecord> rows, long retained)
     {
         if (rows.Count == 0)
         {
@@ -66,7 +73,9 @@ public sealed class FileLogStore
             lines.Add($"Workflow: {first.LibraryName}");
         }
 
-        lines.Add($"Records retained: {rows.Count} (newest first)");
+        lines.Add(retained > rows.Count
+            ? $"Showing the newest {rows.Count.ToString("N0", CultureInfo.InvariantCulture)} of {retained.ToString("N0", CultureInfo.InvariantCulture)} entries"
+            : $"Records retained: {rows.Count} (newest first)");
         lines.Add(string.Empty);
 
         foreach (var row in rows)
