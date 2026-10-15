@@ -1,7 +1,9 @@
 using Weir.Core.Settings;
 using Weir.Core.Time;
 using Weir.Infrastructure.Activity;
+using Weir.Core.Jobs;
 using Weir.Infrastructure.Auth;
+using Weir.Infrastructure.Jobs;
 using Weir.Infrastructure.Settings;
 using Weir.Infrastructure.Sqlite;
 using Weir.Infrastructure.Tests.Platform;
@@ -17,10 +19,11 @@ public sealed class SuitePauseServiceTests : IDisposable
 
     private readonly StoreFixture _store = new();
     private readonly DataChangePublisher _changes = new();
+    private readonly WorkerWakeSignals _workers = new();
     private readonly SuitePauseService _pause;
 
     public SuitePauseServiceTests() =>
-        _pause = new SuitePauseService(new SuiteSettingsStore(new AuthStore()), new ActivityStore(), _changes);
+        _pause = new SuitePauseService(new SuiteSettingsStore(new AuthStore()), new ActivityStore(), _changes, _workers);
 
     public void Dispose() => _store.Dispose();
 
@@ -48,6 +51,62 @@ public sealed class SuitePauseServiceTests : IDisposable
         using var command = connection.CreateCommand();
         command.CommandText = Entries;
         return (await command.ExecuteScalarAsync() as string)?.Split(" | ") ?? [];
+    }
+
+    [Fact]
+    public async Task Resuming_processing_wakes_the_idle_slots_of_both_lanes_once_it_is_committed()
+    {
+        await ChangeAsync(paused: true);
+        var files = _workers.NextWake(WorkLane.Files, 0);
+        var upkeep = _workers.NextWake(WorkLane.Upkeep, 0);
+        var uow = await UnitOfWork.OpenAsync(_store.Database);
+        await using (uow)
+        {
+            await _pause.ChangeAsync(uow, paused: false, minutes: null, keepEnd: false, scanWhilePaused: true, Now, "alice");
+            var wokenBeforeCommit = files.IsCompleted || upkeep.IsCompleted;
+
+            await uow.CommitAsync();
+
+            Assert.False(wokenBeforeCommit);
+        }
+
+        Assert.True(files.IsCompletedSuccessfully);
+        Assert.True(upkeep.IsCompletedSuccessfully);
+    }
+
+    [Fact]
+    public async Task Pausing_or_changing_a_pause_that_is_still_on_wakes_nobody()
+    {
+        var files = _workers.NextWake(WorkLane.Files, 0);
+        var upkeep = _workers.NextWake(WorkLane.Upkeep, 0);
+
+        await ChangeAsync(paused: true, minutes: 30);
+        await ChangeAsync(paused: true, minutes: 60, keepLooking: false);
+
+        Assert.False(files.IsCompleted);
+        Assert.False(upkeep.IsCompleted);
+    }
+
+    [Fact]
+    public async Task Resuming_when_nothing_was_paused_wakes_nobody()
+    {
+        var files = _workers.NextWake(WorkLane.Files, 0);
+
+        await ChangeAsync(paused: false);
+
+        Assert.False(files.IsCompleted);
+    }
+
+    [Fact]
+    public async Task A_timed_pause_that_runs_out_is_left_to_the_poll()
+    {
+        await ChangeAsync(paused: true, minutes: 30);
+        var files = _workers.NextWake(WorkLane.Files, 0);
+        _store.Clock.Advance(TimeSpan.FromMinutes(31));
+
+        await CurrentAsync();
+
+        Assert.False(files.IsCompleted);
     }
 
     [Fact]
