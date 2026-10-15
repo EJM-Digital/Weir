@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { signedInAs } from "../../../../test/signed-in-as";
 import * as api from "../../../../lib/settings/settings-api";
 import type {
   NotificationChannelListOut,
@@ -58,6 +59,8 @@ async function openRemoveDialogFor(label: string) {
   if (!remove) throw new Error(`no Remove button for ${label}`);
   fireEvent.click(remove);
 }
+
+beforeEach(() => signedInAs("admin"));
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -257,5 +260,72 @@ describe("AlertsTab loading and errors", () => {
       "Weir couldn’t load your alerts. Reload the page to try again.",
     );
     expect(screen.queryByTestId("alerts-empty")).not.toBeInTheDocument();
+  });
+});
+
+describe("who may add, change or remove an alert", () => {
+  it.each(["operator", "viewer"] as const)(
+    "a %s cannot, and is told why",
+    async (role) => {
+      vi.spyOn(api, "fetchNotificationChannels").mockResolvedValue(
+        channelList(threeChannels()),
+      );
+      signedInAs(role);
+
+      render(<AlertsTab />, { wrapper });
+
+      expect(
+        await screen.findByText(
+          "Only an admin can add, change or remove an alert.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Add alert/ })).toBeDisabled();
+      for (const name of ["Remove", "Edit"]) {
+        for (const button of screen.getAllByRole("button", { name })) {
+          expect(button).toBeDisabled();
+        }
+      }
+      for (const box of screen.getAllByRole("checkbox")) {
+        expect(box).toBeDisabled();
+      }
+      for (const button of screen.getAllByRole("button", {
+        name: "Send test",
+      })) {
+        expect(button).toBeEnabled();
+      }
+    },
+  );
+
+  it.each(["operator", "viewer"] as const)(
+    "a %s cannot add a first alert",
+    async (role) => {
+      vi.spyOn(api, "fetchNotificationChannels").mockResolvedValue(
+        channelList([]),
+      );
+      signedInAs(role);
+
+      render(<AlertsTab />, { wrapper });
+
+      expect(
+        await screen.findByRole("button", { name: "Add your first alert" }),
+      ).toBeDisabled();
+    },
+  );
+
+  it("an admin can, with no note", async () => {
+    vi.spyOn(api, "fetchNotificationChannels").mockResolvedValue(
+      channelList(threeChannels()),
+    );
+
+    render(<AlertsTab />, { wrapper });
+
+    await screen.findByText("Ops webhook");
+    expect(screen.queryByText(/Only an admin can/)).toBeNull();
+    expect(screen.getByRole("button", { name: /Add alert/ })).toBeEnabled();
+    for (const name of ["Remove", "Edit"]) {
+      for (const button of screen.getAllByRole("button", { name })) {
+        expect(button).toBeEnabled();
+      }
+    }
   });
 });

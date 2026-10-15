@@ -154,7 +154,7 @@ internal sealed class NotificationEndpointHandlers
 
     public async Task<ApiResult> DeleteAsync(ApiRequest request)
     {
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
         request.RefuseOversizedBody();
         var headerToken = request.FirstHeader("X-CSRF-Token");
         var issues = new ValidationIssues();
