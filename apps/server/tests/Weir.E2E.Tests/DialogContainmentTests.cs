@@ -91,7 +91,8 @@ public sealed class DialogContainmentTests(E2EServer server) : E2ETestBase(serve
         return (page, restore, dialog);
     }
 
-    private static ILocator ActivityLink(IPage page) => page.GetByRole(AriaRole.Link, new() { NameRegex = new Regex("^Activity(?:,|$)") });
+    /// <summary>Found by its address, not its role: a screen reader skips what is inert, and so may the role search, which would hide the very thing this checks.</summary>
+    private static ILocator ActivityLink(IPage page) => page.Locator("#mm-primary-sidebar a[href='/activity']");
 
     /// <summary>A click with the mouse where the element is, which reaches it only if nothing in front of it takes it away; Playwright's own click refuses to try.</summary>
     private static async Task ClickMiddleOfAsync(IPage page, ILocator element)
