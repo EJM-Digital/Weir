@@ -26,11 +26,16 @@ public sealed class ArtworkPosterFiles
         File.Move(temporary, path, overwrite: true);
     }
 
-    /// <summary>The image, opened for reading, or null when it is not on disk.</summary>
+    /// <summary>
+    /// The image, opened for reading, or null when it is not on disk. It is opened sharing delete, so that removing the image (<see cref="Delete"/>)
+    /// while it is being sent does not fail, and opening it as a new copy is renamed into place (<see cref="WriteAsync"/>) is not refused.
+    /// </summary>
     public Stream? Open(string posterId)
     {
         var path = PathFor(posterId);
-        return File.Exists(path) ? new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true) : null;
+        return File.Exists(path)
+            ? new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, bufferSize: 4096, useAsync: true)
+            : null;
     }
 
     /// <summary>Remove an image. An image that is already gone is not an error.</summary>
