@@ -26,7 +26,7 @@ public sealed class RejectWithoutPriorScanTests
         await scenario.PostHandoffAsync("handoff-noscan-532", source);
         await scenario.WaitForHandoffStateAsync("handoff-noscan-532", "rejected");
 
-        var row = await scenario.WaitForFileStatusAsync(library, rel, "rejected", TimeSpan.FromSeconds(30));
+        var row = await scenario.WaitForFileStatusAsync(library, rel, "rejected");
         Assert.Contains("no retainable audio", (string)row["status_reason"]!, StringComparison.Ordinal);
     }
 }

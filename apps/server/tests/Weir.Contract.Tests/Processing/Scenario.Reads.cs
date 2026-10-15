@@ -21,16 +21,19 @@ internal sealed partial class Scenario
         return status.Fields;
     }
 
-    public async Task<JsonObject> WaitForHandoffStateAsync(string handoffId, string state, TimeSpan? timeout = null) =>
-        await Poll.UntilAsync(
+    /// <summary>
+    /// Waits for the hand-off to reach <paramref name="state"/>, for as long as a worker has its job: how long a pass takes depends on the
+    /// machine (see <see cref="JobWait"/>).
+    /// </summary>
+    public async Task<JsonObject> WaitForHandoffStateAsync(string handoffId, string state) =>
+        await new JobWait().UntilAsync(
+            JobStatusesAsync,
             async () =>
             {
                 var status = await HandoffStatusAsync(handoffId);
-                Assert.True((string)status["state"]! == state, status.ToJsonString());
-                return status;
+                return (string)status["state"]! == state ? status : null;
             },
-            $"hand-off {handoffId} to reach '{state}'",
-            timeout ?? TimeSpan.FromSeconds(90));
+            $"hand-off {handoffId} to reach '{state}'");
 
     /// <summary>The completion and failure reports the fake manager received for one hand-off.</summary>
     public static List<JsonObject> Callbacks(FakeManager fake, string handoffId) => fake.RequestsTo("POST", EventsPath)
@@ -41,6 +44,22 @@ internal sealed partial class Scenario
 
     // --- jobs -----------------------------------------------------------------------------------
 
+    /// <summary>
+    /// The status of every job, from a session on the server's current address: stopping the server for its database starts it again on a
+    /// new port, which leaves <see cref="Admin"/> signed in on the old one.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> JobStatusesAsync()
+    {
+        if (Admin.BaseAddress != Server.BaseUrl)
+        {
+            Admin.Dispose();
+            Admin = Server.CreateClient();
+            await Admin.LoginAsync();
+        }
+
+        return [.. (await JobsAsync()).Select(job => (string)job["status"]!)];
+    }
+
     public async Task<List<JsonObject>> JobsAsync(string? kind = null)
     {
         var inspection = await Admin.GetAsync($"{Api}/processing/jobs/inspection", ("limit", 100));
@@ -48,9 +67,10 @@ internal sealed partial class Scenario
         return JobRows(inspection).Where(row => kind is null || (string)row["job_kind"]! == kind).ToList();
     }
 
-    /// <summary>The job's inspection row once it has left <c>pending</c> and <c>leased</c>.</summary>
-    public async Task<JsonObject> WaitForJobFinishedAsync(int jobId, TimeSpan? timeout = null) =>
-        await Poll.UntilAsync(
+    /// <summary>The job's inspection row once it has left <c>pending</c> and <c>leased</c>, for as long as a worker has it (see <see cref="JobWait"/>).</summary>
+    public async Task<JsonObject> WaitForJobFinishedAsync(int jobId) =>
+        await new JobWait().UntilAsync(
+            async () => [.. (await JobsAsync()).Where(row => (int)row["id"]! == jobId).Select(row => (string)row["status"]!)],
             async () =>
             {
                 // Named explicitly: the default inspection list leaves out completed scan jobs.
@@ -59,8 +79,7 @@ internal sealed partial class Scenario
                 Assert.True(inspection.Status == HttpStatusCode.OK, inspection.ToString());
                 return JobRows(inspection).FirstOrDefault(row => (int)row["id"]! == jobId);
             },
-            $"job {jobId} to finish",
-            timeout ?? TimeSpan.FromSeconds(60));
+            $"job {jobId} to finish");
 
     public async Task<int> EnqueueScanAsync(JsonObject library, bool enqueueRemuxJobs = true)
     {
@@ -85,15 +104,19 @@ internal sealed partial class Scenario
         return listing.Fields["files"]!.AsArray().OfType<JsonObject>().FirstOrDefault(row => (string)row["relative_path"]! == relativePath);
     }
 
-    public async Task<JsonObject> WaitForFileStatusAsync(JsonObject library, string relativePath, string status, TimeSpan? timeout = null) =>
-        await Poll.UntilAsync(
+    /// <summary>
+    /// Waits for the file to reach <paramref name="status"/>, for as long as a worker has a job: how long a pass takes depends on the
+    /// machine (see <see cref="JobWait"/>).
+    /// </summary>
+    public async Task<JsonObject> WaitForFileStatusAsync(JsonObject library, string relativePath, string status) =>
+        await new JobWait().UntilAsync(
+            JobStatusesAsync,
             async () =>
             {
                 var row = await FileRowAsync(library, relativePath);
                 return row is not null && (string)row["status"]! == status ? row : null;
             },
-            $"{relativePath} to reach status '{status}'",
-            timeout ?? TimeSpan.FromSeconds(90));
+            $"{relativePath} to reach status '{status}'");
 
     /// <summary>
     /// Lets a scan notice the file (recording its size) without queueing it, as a periodic scan would have. Scenarios that count
