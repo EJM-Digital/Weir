@@ -9,9 +9,6 @@ internal static class FakeToolProtocol
     /// <summary>A file starting with these bytes carries its own ffprobe answer (JSON) after them.</summary>
     public const string MediaMagic = "FAKEMEDIA:";
 
-    /// <summary>The one argument on which a tool does nothing and logs nothing: a test runs it once so the first real run is not a cold start.</summary>
-    public const string WarmUpArgument = "--warm-up";
-
     /// <summary>Overrides the folder holding the script and the logs; otherwise it is the folder of the tool itself.</summary>
     public const string ToolFolderVariable = "WEIR_CONTRACT_FAKE_TOOL_DIR";
 

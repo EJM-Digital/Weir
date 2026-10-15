@@ -68,6 +68,14 @@ internal sealed class RecordedWorld : IAsyncDisposable
     public async Task<JsonObject> HandbackAsync(string relativePath) =>
         (await Scenario.FileRowAsync(Movies, relativePath) ?? throw new InvalidOperationException($"{relativePath} has no row"))["handback"]!.AsObject();
 
+    /// <summary>The id of the connection to the fake Deluno, the only connection in the world.</summary>
+    public async Task<int> ConnectionIdAsync()
+    {
+        var listed = await Scenario.Admin.GetAsync(ManagerConnections.Route);
+        Assert.True(listed.Status == System.Net.HttpStatusCode.OK, listed.ToString());
+        return JsonFields.Id(Assert.Single(listed.Elements)!);
+    }
+
     /// <summary>The titles of Activity's lines of one kind, newest first.</summary>
     public async Task<List<string>> ActivityTitlesAsync(string eventType) =>
         [.. (await Scenario.ActivityAsync(eventType)).Select(entry => (string)entry["title"]!)];
@@ -88,11 +96,11 @@ internal sealed class RecordedWorld : IAsyncDisposable
     /// (it differs from one recording session to the next). <paramref name="delunoOutputRoot"/> is the folder Deluno says Weir hands its
     /// cleaned files back to, as Deluno's machine writes it; null means this machine's own output folder, which is how the rc.13
     /// recordings were replayed. A Windows path there makes Weir rebuild the paths it reports under it, as it does for a Deluno
-    /// on another machine.
+    /// on another machine. <paramref name="settings"/> are server settings the world starts with besides the usual ones.
     /// </summary>
-    public static async Task<RecordedWorld> StartAsync(string moviesKey = MoviesKey, string? delunoOutputRoot = null)
+    public static async Task<RecordedWorld> StartAsync(string moviesKey = MoviesKey, string? delunoOutputRoot = null, params (string Name, string Value)[] settings)
     {
-        var scenario = await Scenario.StartAsync();
+        var scenario = await Scenario.StartAsync(settings);
         try
         {
             var deluno = scenario.Own(FakeManager.StartDeluno());

@@ -374,3 +374,9 @@ describe("the kind of workflow a file belongs to", () => {
     expect(workflowKindLookup(undefined)({ library_id: 1 })).toBeNull();
   });
 });
+
+it("says nothing for a time it cannot read", () => {
+  const now = Date.parse("2026-08-19T04:06:00Z");
+  expect(agoWords("not a time", now)).toBe("");
+  expect(agoWords(" ", now)).toBe("");
+});

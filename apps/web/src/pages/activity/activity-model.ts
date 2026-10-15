@@ -13,7 +13,7 @@ import {
   channelLayout,
   languageName,
 } from "../../lib/format/track";
-import { parseAppDate } from "../../lib/ui/mm-format-date";
+import { parseAppDate, parseAppTime } from "../../lib/ui/mm-format-date";
 import type { StatusMeaning } from "../../lib/ui/status-meaning";
 
 /** A server time as epoch ms. Its times carry no zone and are UTC. */
@@ -23,8 +23,9 @@ export function serverMs(iso: string): number {
 
 /** "just now", "6 min ago", "2 h ago", "3 days ago". */
 export function agoWords(iso: string | null | undefined, now: number): string {
-  if (!iso) return "";
-  const seconds = Math.max(0, Math.round((now - serverMs(iso)) / 1000));
+  const at = parseAppTime(iso);
+  if (at === null) return "";
+  const seconds = Math.max(0, Math.round((now - at) / 1000));
   if (seconds < 60) return "just now";
   const minutes = Math.round(seconds / 60);
   if (minutes < 60) return `${minutes} min ago`;

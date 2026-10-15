@@ -147,7 +147,6 @@ cannot pass without the real-Deluno scenarios. A failure, or a run cut short aft
 | WithDeluno | A release with a small extra | A release the build under test took, whose folder in the download client still holds a film and a video file under the workflow's minimum size: the film is cleaned, the extra is still in the client's folder, Weir wrote nothing for it, and Weir never saw it or left it alone as skipped; nothing in the workflow is failed or rejected. Deluno leaves such an extra out of the hand-off, and must leave the release in the client's completed folder until the scenarios have run. |
 | WithDeluno | A hand-off sent again from Deluno | Deluno's own send-again of an imported outcome really sends it (a new attempt) and is recorded delivered or settled, never refused, and Weir keeps its one answer and raises no failure. |
 | WithDeluno | What Deluno was told about every outcome | No outcome is pending, refused, never received or given up on, except a hand-off that handed no file back (Weir was down for it), which Deluno closes as not-imported and given-up with nothing owed and says so; for the hand-offs the build under test took, Deluno's and Weir's answers for each file agree. |
-| WithDeluno | Logs with no unexpected warnings, with Deluno | System > Logs, the server log and the tray log hold no unexplained warning or error since the phase began. |
 | Fresh | Fresh install | `Setup --silent` exits 0; the installed build reports the version and commit under test; the tray and server run; the server listens on this PC only; no window opens. |
 | Fresh | First visit and account creation | A brand-new Edge profile lands on account creation, then (once the account exists) on sign-in; neither ever says a session expired. |
 | Fresh | A film dropped into a Weir-only workflow | A film with three audio languages and two subtitle tracks dropped in a watched folder is cleaned: the video and the English audio kept, the rest removed, the original and its `.nfo` untouched. |
@@ -155,7 +154,30 @@ cannot pass without the real-Deluno scenarios. A failure, or a run cut short aft
 | Fresh | Pause and resume from the tray | The tray's pause-request file pauses Weir; a film dropped in during the pause is found and held with nothing cleaned, written or removed; the resume request runs it once; Activity shows both by the tray. |
 | Fresh | A deleted file that was waiting | A file deleted while Weir waits for it to settle becomes "no longer there", never a failure, with no warning in the log. |
 | Fresh | The update buttons | Check for updates and Download update reach the real tray, which takes each flag and brings the update state to an answer. |
-| Fresh | Logs with no unexpected warnings | System > Logs, the server log and the tray log hold no warning or error the suite does not name as caused on purpose. |
+
+**Every scenario ends with the log check.** There is no scenario of its own for the logs: when a scenario has passed, the suite compares the warnings
+and errors on System > Logs, in Weir's server log file and in the tray log with those that existed when that scenario began, and the scenario fails
+if any new one is not named in the suite as caused on purpose. So what a scenario is judged on is what it and the Weir under it wrote, whichever scenarios
+ran before. The log files are noted before the scenario does anything (a start of Weir inside it is judged); System > Logs is noted when the scenario
+first has a session, and a scenario that begins with no account (the first visit) counts what Logs holds when it ends. The Fresh install scenario has no
+account to read System > Logs with, so it is judged on the two log files, and the next scenario with a session reads the page.
+
+**Every scenario runs alone.** The owner's rule is that when a bug is found, only the scenario that found it is run again. `-Scenarios <ids>`
+(comma separated; `*` and `?` stand for any text; a mistyped id is an error naming the nearest ids) runs only those scenarios, each on its own:
+
+```powershell
+./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .weir-buildWeir-win-Setup.exe `
+  -Version 1.0.0-rc.18 -CommitSha <the 40-character SHA> -Scenarios process-again
+```
+
+A Fresh scenario restores the clean checkpoint, then makes what it needs itself (`Initialize-FreshScenario`): it installs the build under test when
+it is not there and starts it, signs in (creating the account when Weir offers to; a Weir that has an account the run does not hold is set back to
+having none, its data folder moved aside), and makes the workflow it uses, named for the run, in folders named for the run, so running it again on the
+same machine is never refused as a duplicate. The first visit asks for no account (`Ensure-FreshWeir -NoAccount`). The Update and WithDeluno
+scenarios run on the VM as Deluno left it (they need Deluno's state), so no checkpoint is restored for them. `-Scenarios` with `-Phases` is for
+scenarios inside those phases only. A run of chosen scenarios keeps its record in `weir-scenarios-<version>-<short sha>-only-<ids>`, which lists
+every other scenario as not chosen; it sets no `golden-path` status and is never a pass for the tag. Only a full run of all three phases passes.
+`scripts/scenarios.test.mjs` fails when a scenario reads state another scenario made or names another scenario.
 
 Hand-offs cannot be made by a script: one starts when a download finishes in one of Deluno's clients, so the Deluno scenarios
 follow the real hand-offs Deluno's own suite made, from both ends, and drive what Deluno does offer (its send-again). The
@@ -210,7 +232,7 @@ ticked list.
 ```bash
 gh api repos/jampat000/Weir/statuses/<full sha> \
   -f state=success -f context=golden-path \
-  -f description="Weir scenarios passed: 15 of 15, 1.0.0-rc.18+abc1234" \
+  -f description="Weir scenarios passed: 13 of 13, 1.0.0-rc.18+abc1234" \
   -f target_url="https://github.com/jampat000/Weir/issues/<n>#issuecomment-<id>"
 ```
 

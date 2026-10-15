@@ -95,6 +95,10 @@ public sealed class WeirClient : IDisposable
     public Task<WeirResponse> PostAsync(string path, JsonNode? body = null, IReadOnlyDictionary<string, string>? headers = null) =>
         SendAsync(HttpMethod.Post, path, JsonBody(body), headers);
 
+    /// <summary>POST with <paramref name="text"/> as the body exactly as given, declared as JSON, whether or not it is.</summary>
+    public Task<WeirResponse> PostTextAsync(string path, string text, IReadOnlyDictionary<string, string>? headers = null) =>
+        SendAsync(HttpMethod.Post, path, new StringContent(text, System.Text.Encoding.UTF8, "application/json"), headers);
+
     public Task<WeirResponse> DeleteAsync(string path, IReadOnlyDictionary<string, string>? headers = null) =>
         SendAsync(HttpMethod.Delete, path, content: null, headers);
 

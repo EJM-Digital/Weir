@@ -90,13 +90,14 @@ public readonly record struct ArrOsPath(string Text)
     {
         var rest = Segments.Skip(remote.Segments.Length).ToArray();
         var root = local.Text.TrimEnd('\\', '/');
-        if (root.Length == 0)
+        if (rest.Length == 0)
         {
-            return local;
+            return root.Length == 0 ? local : new ArrOsPath(root);
         }
 
+        // A mapping onto the filesystem root has no folder name left once its separators are trimmed; what is below it still follows.
         var separator = local.IsWindows ? "\\" : "/";
-        return new ArrOsPath(rest.Length == 0 ? root : root + separator + string.Join(separator, rest));
+        return new ArrOsPath(root + separator + string.Join(separator, rest));
     }
 
     public override string ToString() => Text ?? string.Empty;

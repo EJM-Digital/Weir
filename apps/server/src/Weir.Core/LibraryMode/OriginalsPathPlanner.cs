@@ -36,19 +36,15 @@ public static class OriginalsPathPlanner
         return null;
     }
 
-    /// <summary>Whether <paramref name="path"/> is <paramref name="folder"/> itself, or something inside it.</summary>
+    /// <summary>
+    /// Whether <paramref name="path"/> is <paramref name="folder"/> itself, or something inside it, once both are settled as text: <c>.</c> and
+    /// <c>..</c> segments are resolved, so a path that climbs out of the folder is not inside it however it is spelled.
+    /// </summary>
     public static bool IsWithin(string folder, string path)
     {
         ArgumentException.ThrowIfNullOrEmpty(folder);
         ArgumentException.ThrowIfNullOrEmpty(path);
-        var trimmed = TrimTrailingSeparator(folder);
-        if (string.Equals(path, trimmed, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return path.StartsWith(trimmed + '\\', StringComparison.OrdinalIgnoreCase) ||
-               path.StartsWith(trimmed + '/', StringComparison.OrdinalIgnoreCase);
+        return Within(Normalised(folder), Normalised(path));
     }
 
     /// <summary>
@@ -104,22 +100,61 @@ public static class OriginalsPathPlanner
         return $"{directory}{stem} ({attempt}){extension}";
     }
 
-    /// <summary><paramref name="path"/> with <paramref name="folder"/>'s prefix and its separator removed. Falls back to
-    /// just the file name when <paramref name="path"/> is not actually under <paramref name="folder"/> (a defensive case:
-    /// callers normally resolve <paramref name="folder"/> from <see cref="ContainingFolder"/> first).</summary>
+    /// <summary>
+    /// <paramref name="path"/> below <paramref name="folder"/>, settled as text, in the separator the folder uses. Falls back to just the file
+    /// name when <paramref name="path"/> is not actually under <paramref name="folder"/> (a defensive case: callers normally resolve
+    /// <paramref name="folder"/> from <see cref="ContainingFolder"/> first).
+    /// </summary>
     private static string RelativePath(string folder, string path)
     {
-        var trimmed = TrimTrailingSeparator(folder);
-        if (path.Length > trimmed.Length + 1 &&
-            path.StartsWith(trimmed, StringComparison.OrdinalIgnoreCase) &&
-            path[trimmed.Length] is '\\' or '/')
+        var inside = Normalised(folder);
+        var target = Normalised(path);
+        if (Within(inside, target) && target.Parts!.Count > inside.Parts!.Count)
         {
-            return path[(trimmed.Length + 1)..];
+            return string.Join(SeparatorOf(folder), target.Parts.Skip(inside.Parts.Count));
         }
 
-        var lastSeparator = path.LastIndexOfAny(['\\', '/']);
-        return lastSeparator < 0 ? path : path[(lastSeparator + 1)..];
+        // The file's own name; a path that ends in '.' or '..' has no name to keep, and must not become one.
+        return path.Split('\\', '/').LastOrDefault(part => part.Length > 0 && part is not ("." or "..")) ?? "original";
     }
+
+    /// <summary>A path as the parts of its root and its names, with <c>.</c> and <c>..</c> resolved; the parts are null when it climbs above its root.</summary>
+    private readonly record struct Settled(string Root, List<string>? Parts);
+
+    private static Settled Normalised(string path)
+    {
+        var text = path;
+        var root = text.StartsWith("//", StringComparison.Ordinal) || text.StartsWith("\\\\", StringComparison.Ordinal)
+            ? "//"
+            : text.StartsWith('/') || text.StartsWith('\\') ? "/" : string.Empty;
+        var parts = new List<string>();
+        foreach (var part in text.Split('\\', '/'))
+        {
+            if (part.Length == 0 || part == ".")
+            {
+                continue;
+            }
+
+            if (part != "..")
+            {
+                parts.Add(part);
+            }
+            else if (parts.Count == 0)
+            {
+                return new Settled(root, null);
+            }
+            else
+            {
+                parts.RemoveAt(parts.Count - 1);
+            }
+        }
+
+        return new Settled(root, parts);
+    }
+
+    private static bool Within(Settled folder, Settled path) =>
+        folder.Parts is { } inside && path.Parts is { } target && folder.Root == path.Root && target.Count >= inside.Count &&
+        inside.SequenceEqual(target.Take(inside.Count), StringComparer.OrdinalIgnoreCase);
 
     private static string TrimTrailingSeparator(string path) => path.TrimEnd('\\', '/');
 

@@ -535,4 +535,18 @@ public sealed class WeirOptionsParsingTests
         var error = Assert.Throws<WeirConfigurationException>(() => TestRuntime.Load(("WEIR_ARTWORK_GATEWAY_URL", raw)));
         Assert.Equal("WEIR_ARTWORK_GATEWAY_URL must be an http or https address, or off.", error.Message);
     }
+
+    [Theory]
+    [InlineData("WEIR_HOME")]
+    [InlineData("WEIR_DB_PATH")]
+    [InlineData("WEIR_BACKUP_DIR")]
+    [InlineData("WEIR_LOG_DIR")]
+    [InlineData("WEIR_TEMP_DIR")]
+    [InlineData("WEIR_WEB_DIST")]
+    public void A_folder_setting_the_system_cannot_use_refuses_the_start_naming_the_setting(string variable)
+    {
+        var refusal = Assert.Throws<WeirConfigurationException>(() => TestRuntime.Load((variable, "a\0b")));
+
+        Assert.Contains(variable, refusal.Message, StringComparison.Ordinal);
+    }
 }

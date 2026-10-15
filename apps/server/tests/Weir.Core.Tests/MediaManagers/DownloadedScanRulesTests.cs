@@ -28,6 +28,14 @@ public sealed class DownloadedScanRulesTests
     }
 
     [Fact]
+    public void A_mapping_onto_the_managers_filesystem_root_keeps_the_path_below_it()
+    {
+        var mappings = Mappings("""[{"host":"qbittorrent","remotePath":"/","localPath":"/media/downloads/weir","id":1}]""");
+
+        Assert.Equal("/tv/Show.S01E01.mkv", DownloadedScanRules.TranslateOutputPath("/media/downloads/weir/tv/Show.S01E01.mkv", mappings));
+    }
+
+    [Fact]
     public void The_first_matching_mapping_in_the_managers_own_order_wins()
     {
         var mappings = Mappings("""

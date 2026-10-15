@@ -174,7 +174,7 @@ public static class WeirOptionsLoader
             ArrRadarrApiKey = NullIfEmpty(runtime.Get("WEIR_ARR_RADARR_API_KEY")?.Trim()),
             ArrSonarrBaseUrl = NullIfEmpty(HttpUrlOrEmpty(runtime.Get("WEIR_ARR_SONARR_BASE_URL"))),
             ArrSonarrApiKey = NullIfEmpty(runtime.Get("WEIR_ARR_SONARR_API_KEY")?.Trim()),
-            WebDist = webDist.Length == 0 ? null : ValueParsing.Resolve(ValueParsing.ExpandUser(webDist, runtime), runtime),
+            WebDist = webDist.Length == 0 ? null : ValueParsing.ResolveVariable("WEIR_WEB_DIST", ValueParsing.ExpandUser(webDist, runtime), runtime),
             VersionOverride = NullIfEmpty(runtime.Get("WEIR_VERSION")?.Trim()),
             RuntimeKind = runtime.Get("WEIR_RUNTIME"),
             OutputOwnershipChownEnabled = outputOwnershipChown,
