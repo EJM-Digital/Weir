@@ -7830,8 +7830,7 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/FolderHandoffCompletionTests.cs",
@@ -7856,19 +7855,29 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/HeldFileReturnTests.Resend.cs",
           "name": "HeldFileReturnTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/OwedReportRetryTests.cs",
+          "name": "A_report_owed_while_Deluno_was_down_is_sent_on_the_first_heartbeat_that_finds_it_answering"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/OwedReportRetryTests.cs",
+          "name": "A_report_Deluno_answers_503_once_is_sent_again_on_the_next_heartbeat_and_stops_being_owed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/OwedReportRetryTests.cs",
+          "name": "A_heartbeat_that_cannot_look_up_what_is_owed_still_saves_every_managers_answer"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P1] The link that matters is untested: manager down -> report fails -> manager comes back -> the NEXT HEARTBEAT delivers the owed report (ManagerHeartbeatTask.SendWaitingReportsAsync, including swallowing its failure). ManagerHeartbeatTests constructs no reporter. Deluno would otherwise wait for an outcome Weir believes it owes. Needed: integration test that fails a completion callback, restarts the fake manager, runs the heartbeat, and asserts the callback arrived once (contract-level with the fake Deluno would be better)."
-      },
-      "issue": 1008,
       "covers": [
         "task:media-manager-heartbeat"
       ],
       "audit": {
         "id": "JOB-047",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -45615,6 +45624,67 @@
       }
     },
     {
+      "id": "integrations.del-10a.weir-s-reports-to-deluno-refused-for-now-or-for-good",
+      "area": "integrations",
+      "behaviour": "Deluno x Weir's reports to Deluno (POST /api/integrations/processors/events) that Deluno cannot take yet (no answer, 408, 429, any 5xx) stay owed and the manager heartbeat sends them again: after a minute, doubling to an hour, a Retry-After honoured, given up after a week; a refusal for good (400, 401, 403, 404, 409, 422) is not sent again and Activity says Weir could not tell",
+      "kind": "failure-mode",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/OwedReportRetryTests.cs",
+          "name": "A_report_Deluno_answers_503_once_is_sent_again_on_the_next_heartbeat_and_stops_being_owed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/OwedReportRetryTests.cs",
+          "name": "A_report_that_failed_is_not_sent_again_before_the_wait_is_over"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/OwedReportRetryTests.cs",
+          "name": "A_Retry_After_in_seconds_is_waited_out_before_the_report_is_sent_again"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/OwedReportRetryTests.cs",
+          "name": "A_Retry_After_that_is_a_date_is_waited_out_before_the_report_is_sent_again"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/OwedReportRetryTests.cs",
+          "name": "A_report_Deluno_keeps_refusing_is_sent_again_after_a_minute_then_two_then_four"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/OwedReportRetryTests.cs",
+          "name": "A_report_Deluno_refuses_for_a_week_is_given_up_and_the_person_is_told"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/OwedReportRetryTests.cs",
+          "name": "A_report_Deluno_answered_with_a_failure_that_may_pass_stays_owed_and_is_sent_again"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/OwedReportRetryTests.cs",
+          "name": "A_report_Deluno_refused_for_good_is_not_sent_again_and_the_person_is_told"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ReportRetryScheduleTests.cs",
+          "name": "ReportRetryScheduleTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/HandoffWaitingReportTests.cs",
+          "name": "A_report_the_manager_never_answered_for_any_reason_stays_owed_and_goes_when_it_answers"
+        }
+      ]
+    },
+    {
       "id": "integrations.del-11.deluno-x-download-destinations-check-weir-reads-deluno-s",
       "area": "integrations",
       "behaviour": "Deluno x download-destinations check (Weir reads Deluno's destinations and path mappings and says whether its clients save inside the watched folder)",
@@ -54814,6 +54884,11 @@
           "type": "recording-replay",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
           "name": "A_resent_release_after_the_first_send_finished_is_accepted_and_answered_with_the_output"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/HandoffStatusOutputPathTests.cs",
+          "name": "HandoffStatusOutputPathTests"
         }
       ],
       "audit": {
