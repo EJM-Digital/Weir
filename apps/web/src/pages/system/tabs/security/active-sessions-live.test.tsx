@@ -43,11 +43,11 @@ function Page() {
 
 const bodyRows = () => screen.getAllByRole("row").slice(1);
 const streamSays = (topic: string) =>
-  act(() =>
+  act(async () => {
     FakeEventSource.instances
       .at(-1)!
-      .emit("data.changed", JSON.stringify({ topic })),
-  );
+      .emit("data.changed", JSON.stringify({ topic }));
+  });
 
 let weir: RecordedWeir | undefined;
 
