@@ -2656,20 +2656,28 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
-        }
-      ],
-      "partial": [
+        },
         {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/System/SuiteEndpointsContractTests.Channels.cs",
           "name": "Notification_channel_create_update_test_delete"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/AlertDeliveryTests.cs",
+          "name": "AlertDeliveryTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Notifications/NotificationDispatcherTests.cs",
+          "name": "NotificationDispatcherTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/ExternalJsonPosterStandInTests.cs",
+          "name": "ExternalJsonPosterStandInTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Only the failing delivery is shown. Nothing proves a successful webhook or Discord delivery to a listening receiver (payload and headers on the wire)"
-      },
-      "issue": 1003,
       "covers": [
         "route:POST /api/v1/suite/notification-channels/{channel_id}/test"
       ],
@@ -10224,12 +10232,23 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "A channel the owner switched off could keep alerting (or one switched on never alert) with no test noticing. Needed: WebhookJobNotificationsTests case with enabled:false and the matching event, expecting zero posts. Layer: integration."
-      },
-      "issue": 1003,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Notifications/WebhookJobNotificationsTests.cs",
+          "name": "A_channel_switched_off_is_sent_nothing_until_it_is_switched_on"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Notifications/WebhookJobNotificationsTests.cs",
+          "name": "A_channel_switched_off_does_not_stop_the_others_hearing"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/AlertOnJobOutcomeTests.cs",
+          "name": "AlertOnJobOutcomeTests"
+        }
+      ],
       "covers": [
         "setting:NotificationChannelRecord.Enabled"
       ],
@@ -10246,12 +10265,28 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Discord rejects a malformed embed, so a wrong payload means silent loss of every Discord alert. Needed: unit test of DiscordPayload (embeds[0].title/description/color 0x2ECC71 for completed, 0xE74C3C otherwise, fields Module and Job ID, footer = app name) and an integration dispatch to a discord channel via the recording poster. Layer: unit + integration."
-      },
-      "issue": 1003,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Platform/NotificationPayloadTests.cs",
+          "name": "NotificationPayloadTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Notifications/WebhookJobNotificationsTests.cs",
+          "name": "A_discord_channel_is_sent_an_embed_and_a_webhook_channel_the_flat_body"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/AlertDeliveryTests.cs",
+          "name": "AlertDeliveryTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/AlertOnJobOutcomeTests.cs",
+          "name": "AlertOnJobOutcomeTests"
+        }
+      ],
       "covers": [
         "setting:NotificationChannelRecord.Provider"
       ],
@@ -12416,8 +12451,7 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Rules/GoldenParityTests.cs",
@@ -12487,13 +12521,28 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "weir-only-film"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RuleSetEveryFieldMappingTests.cs",
+          "name": "RuleSetEveryFieldMappingTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/RuleSetFieldsRoundTripTests.cs",
+          "name": "RuleSetFieldsRoundTripTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RuleSetRealPassTests.cs",
+          "name": "RuleSetRealPassTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Rules/AudioAndSubtitleSelectionRulesTests.cs",
+          "name": "Per_language_marks_the_track_of_the_slot_the_rule_set_names_as_the_default"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P1] Secondary / tertiary language and default_audio_slot have no save-and-read-back test and no test of RulesConfigFor on them; the VM and contract suites only ever run the built-in default profile through a real pass."
-      },
-      "issue": 1006,
       "covers": [
         "setting:ProcessingRuleSetRecord.PrimaryAudioLang",
         "setting:ProcessingRuleSetRecord.SecondaryAudioLang",
@@ -12513,8 +12562,7 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Rules/RemuxRuleEdgeCaseHandlingTests.cs",
@@ -12544,13 +12592,23 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Rules/TrackSorterTests.cs",
           "name": "TrackSorterTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RuleSetEveryFieldMappingTests.cs",
+          "name": "RuleSetEveryFieldMappingTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/RuleSetFieldsRoundTripTests.cs",
+          "name": "RuleSetFieldsRoundTripTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RuleSetRealPassTests.cs",
+          "name": "RuleSetRealPassTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P1] Save/read-back of audio_sorters_json and the mapping into the pass are unproven (see SET-RS02)."
-      },
-      "issue": 1006,
       "covers": [
         "setting:ProcessingRuleSetRecord.AudioPreferenceMode",
         "setting:ProcessingRuleSetRecord.AudioSortersJson"
@@ -12568,8 +12626,7 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Rules/RemuxTrackExplainTests.cs",
@@ -12594,13 +12651,23 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RuleSetEveryFieldMappingTests.cs",
+          "name": "RuleSetEveryFieldMappingTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/RuleSetFieldsRoundTripTests.cs",
+          "name": "RuleSetFieldsRoundTripTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RuleSetRealPassTests.cs",
+          "name": "RuleSetRealPassTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P1] No API or store save/read-back and no RulesConfigFor test for remove_commentary."
-      },
-      "issue": 1006,
       "covers": [
         "setting:ProcessingRuleSetRecord.RemoveCommentary"
       ],
@@ -12617,8 +12684,7 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Rules/KeepAllSubtitlesTests.cs",
@@ -12678,13 +12744,23 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "weir-only-film"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RuleSetEveryFieldMappingTests.cs",
+          "name": "RuleSetEveryFieldMappingTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/RuleSetFieldsRoundTripTests.cs",
+          "name": "RuleSetFieldsRoundTripTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RuleSetRealPassTests.cs",
+          "name": "RuleSetRealPassTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P1] subtitle_langs_csv (split and trimmed in RulesConfigFor) and the two preserve flags have no save/read-back or mapping test."
-      },
-      "issue": 1006,
       "covers": [
         "setting:ProcessingRuleSetRecord.SubtitleMode",
         "setting:ProcessingRuleSetRecord.SubtitleLangsCsv",
@@ -12732,8 +12808,7 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Rules/OriginalLanguageTests.cs",
@@ -12753,13 +12828,23 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassRunnerTests.cs",
           "name": "The_original_language_decides_the_kept_audio"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RuleSetEveryFieldMappingTests.cs",
+          "name": "RuleSetEveryFieldMappingTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/RuleSetFieldsRoundTripTests.cs",
+          "name": "RuleSetFieldsRoundTripTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RuleSetRealPassTests.cs",
+          "name": "RuleSetRealPassTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P1] Not proven: that the four sub-options survive save/load, and that a saved rule set's original-language flags reach a real pass (RemuxPassPaths.cs:277-283; IT RuleSetFieldsMappingTests covers only the #495/#497/#498 fields). A wrong mapping drops the wrong audio from a file whose original is then deleted. Needed: RuleSetFieldsMappingTests case for the five fields (unit) + a contract scenario: rule set keep_original_language on, fake gateway says \"fr\", film with eng+fre audio -> output keeps fre."
-      },
-      "issue": 1006,
       "covers": [
         "setting:ProcessingRuleSetRecord.KeepOriginalLanguage",
         "setting:ProcessingRuleSetRecord.OriginalLanguageAdditionalCsv",
@@ -12780,8 +12865,7 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Media/MediaGoldenParityTests.cs",
@@ -12821,13 +12905,28 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingSettingsEndpointsContractTests.RuleSets.cs",
           "name": "Rule_set_round_trip"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RuleSetEveryFieldMappingTests.cs",
+          "name": "RuleSetEveryFieldMappingTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/RuleSetFieldsRoundTripTests.cs",
+          "name": "RuleSetFieldsRoundTripTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RuleSetRealPassTests.cs",
+          "name": "RuleSetRealPassTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Media/OtherMetadataKeepsLanguagesTests.cs",
+          "name": "OtherMetadataKeepsLanguagesTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P1] These flags decide what is stripped from a file whose original may then be deleted; the chain API -> row -> RulesConfigFor.Metadata is untested for three of the five. Needed: one table-driven RulesConfigFor test over every ProcessingRuleSetRecord column and an API round trip that sets every field (unit + integration)."
-      },
-      "issue": 1006,
       "covers": [
         "setting:ProcessingRuleSetRecord.RemoveImages",
         "setting:ProcessingRuleSetRecord.RemoveAttachments",
@@ -47635,8 +47734,7 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Notifications/WebhookJobNotificationsTests.cs",
@@ -47656,13 +47754,48 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/System/SuiteEndpointsContractTests.Channels.cs",
           "name": "Notification_channel_create_update_test_delete"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/AlertDeliveryTests.cs",
+          "name": "AlertDeliveryTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/AlertOnJobOutcomeTests.cs",
+          "name": "AlertOnJobOutcomeTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/ExternalJsonPosterStandInTests.cs",
+          "name": "ExternalJsonPosterStandInTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Notifications/NotificationDispatcherTests.cs",
+          "name": "NotificationDispatcherTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassAlertTests.cs",
+          "name": "RemuxPassAlertTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingJobProcessorTests.cs",
+          "name": "A_handler_says_what_the_alert_for_its_finished_job_is"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingJobProcessorTests.cs",
+          "name": "A_handler_that_says_nothing_happened_sends_no_alert_at_all"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Notifications/WebhookJobNotificationsTests.cs",
+          "name": "A_file_that_failed_for_good_in_a_job_that_ended_normally_reaches_the_failure_channels_only"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No test serves a receiver and checks the request that arrives (URL, headers, body, one delivery per event, retry on error). Private/loopback receivers are blocked by the URL policy, so a real receiver needs a public-looking stand-in"
-      },
-      "issue": 1003,
       "audit": {
         "id": "INT-NOTIFY",
         "verdict": "Partly"
@@ -57316,6 +57449,50 @@
       "covers": [
         "setting:env:WEIR_PERIODIC_TASK_SPEEDUP",
         "task:SpedUpPeriodicTask"
+      ]
+    },
+    {
+      "id": "settings.env.notification-stand-in-port",
+      "area": "settings",
+      "behaviour": "WEIR_NOTIFICATION_STAND_IN_PORT (tests only): every alert is delivered to this port on the same PC instead of the address it names, after the address passes the same public-address checks; a value that is not a port, or any value when WEIR_ENV is production, is refused at start, so a real install never honours it",
+      "kind": "setting",
+      "severity": "low",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Configuration/WeirOptionsParsingTests.cs",
+          "name": "A_notification_stand_in_port_is_read_as_written"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Configuration/WeirOptionsParsingTests.cs",
+          "name": "A_notification_stand_in_that_is_not_a_port_is_refused_at_start"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Configuration/WeirOptionsParsingTests.cs",
+          "name": "A_notification_stand_in_is_refused_at_start_in_production"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/ExternalJsonPosterStandInTests.cs",
+          "name": "ExternalJsonPosterStandInTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/FakeAlertReceiverTests.cs",
+          "name": "FakeAlertReceiverTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/AlertDeliveryTests.cs",
+          "name": "AlertDeliveryTests"
+        }
+      ],
+      "covers": [
+        "setting:env:WEIR_NOTIFICATION_STAND_IN_PORT"
       ]
     }
   ]

@@ -2,8 +2,22 @@ using Weir.Core.Json;
 
 namespace Weir.Core.Jobs;
 
+/// <summary>What a person who set up alerts hears about a job whose handler returned without throwing.</summary>
+public enum JobAlert
+{
+    /// <summary>That the job finished, as the job's own end says.</summary>
+    Finished,
+
+    /// <summary>That the work failed and Weir will not try again, though the job itself ended normally (a file the tools could not finish).</summary>
+    FailedForGood,
+
+    /// <summary>Nothing: the work is not over (waiting, trying again) or was not done (left alone, already done).</summary>
+    Nothing,
+}
+
 /// <summary>
-/// Immutable view passed to a job handler after a successful claim, outside the claim transaction.
+/// The view passed to a job handler after a successful claim, outside the claim transaction. It is immutable apart from
+/// <see cref="Alert"/>, which a handler sets when the job's end does not say what happened to the work.
 /// </summary>
 public sealed record JobWorkContext(
     long Id,
@@ -11,7 +25,11 @@ public sealed record JobWorkContext(
     string? PayloadJson,
     string LeaseOwner,
     int AttemptCount = 1,
-    int MaxAttempts = 1);
+    int MaxAttempts = 1)
+{
+    /// <summary>What the alert channels hear once the handler returns; <see cref="JobAlert.Finished"/> unless the handler says otherwise.</summary>
+    public JobAlert Alert { get; set; } = JobAlert.Finished;
+}
 
 /// <summary>
 /// Runs one job kind. Throw to fail the attempt (the worker retries or marks it failed and writes
