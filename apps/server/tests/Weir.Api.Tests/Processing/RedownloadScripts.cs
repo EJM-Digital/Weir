@@ -46,11 +46,21 @@ internal static class RedownloadScripts
     public static ScriptedManager Unreachable(this ScriptedManager manager, HttpMethod method, string path) =>
         manager.Route(method, path, _ => throw new HttpRequestException("No connection could be made because the target machine actively refused it."));
 
-    /// <summary>"METHOD /path?query" for each request the manager received, in order.</summary>
+    /// <summary>
+    /// What Weir asked the manager for on the person's behalf: every request except the connection check that Weir's own
+    /// periodic heartbeat sends to each connected manager (once as the server starts, then every minute), which can land at
+    /// any moment in a test and is not part of the request being tested.
+    /// </summary>
+    public static IReadOnlyList<ManagerCall> Requested(this ScriptedManager manager) =>
+        [.. manager.Calls.Where(call => call.PathAndQuery != HeartbeatCheck)];
+
+    /// <summary>"METHOD /path?query" for each of the <see cref="Requested"/> calls, in order.</summary>
     public static string[] Asked(this ScriptedManager manager) =>
-        [.. manager.Calls.Select(call => $"{call.Method} {call.PathAndQuery}")];
+        [.. manager.Requested().Select(call => $"{call.Method} {call.PathAndQuery}")];
 
     /// <summary>The body of the one search the manager was asked for.</summary>
     public static string SearchBody(this ScriptedManager manager) =>
-        manager.Calls.Single(call => call.Method == "POST" && call.PathAndQuery == "/api/v3/command").Body;
+        manager.Requested().Single(call => call.Method == "POST" && call.PathAndQuery == "/api/v3/command").Body;
+
+    private const string HeartbeatCheck = "/api/v3/system/status";
 }

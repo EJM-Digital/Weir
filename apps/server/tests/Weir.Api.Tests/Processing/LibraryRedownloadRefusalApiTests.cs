@@ -23,7 +23,7 @@ public sealed class LibraryRedownloadRefusalApiTests
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("This action deletes the current file before asking for a new one; confirm_destructive must be true.", await Detail(response));
-        Assert.Empty(rig.Manager.Calls);
+        Assert.Empty(rig.Manager.Asked());
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public sealed class LibraryRedownloadRefusalApiTests
             new { path = RedownloadRig.FilmPath, csrf_token = await rig.Admin.CsrfAsync() });
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-        Assert.Empty(rig.Manager.Calls);
+        Assert.Empty(rig.Manager.Asked());
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public sealed class LibraryRedownloadRefusalApiTests
             new { path = RedownloadRig.FilmPath, confirm_destructive = true, delete_everything = true, csrf_token = await rig.Admin.CsrfAsync() });
 
         Assert.Equal((HttpStatusCode.UnprocessableEntity, HttpStatusCode.UnprocessableEntity), (noPath.StatusCode, extra.StatusCode));
-        Assert.Empty(rig.Manager.Calls);
+        Assert.Empty(rig.Manager.Asked());
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public sealed class LibraryRedownloadRefusalApiTests
             new { path = RedownloadRig.FilmPath, confirm_destructive = true });
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-        Assert.Empty(rig.Manager.Calls);
+        Assert.Empty(rig.Manager.Asked());
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public sealed class LibraryRedownloadRefusalApiTests
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("Your confirmation token expired. Refresh the page and try again.", await Detail(response));
-        Assert.Empty(rig.Manager.Calls);
+        Assert.Empty(rig.Manager.Asked());
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public sealed class LibraryRedownloadRefusalApiTests
         using var response = await rig.RedownloadAsync(viewer, libraryId, RedownloadRig.FilmPath);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        Assert.Empty(rig.Manager.Calls);
+        Assert.Empty(rig.Manager.Asked());
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public sealed class LibraryRedownloadRefusalApiTests
         using var response = await rig.RedownloadAsync(anonymous, libraryId, RedownloadRig.FilmPath);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        Assert.Empty(rig.Manager.Calls);
+        Assert.Empty(rig.Manager.Asked());
     }
 
     [Fact]
@@ -128,7 +128,7 @@ public sealed class LibraryRedownloadRefusalApiTests
         using var response = await rig.RedownloadAsync(rig.Admin, 9999, RedownloadRig.FilmPath);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Empty(rig.Manager.Calls);
+        Assert.Empty(rig.Manager.Asked());
     }
 
     [Fact]
@@ -215,6 +215,6 @@ public sealed class LibraryRedownloadRefusalApiTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await Json(response);
         Assert.Equal(("unsupported", message), (body["outcome"]!.GetValue<string>(), body["message"]!.GetValue<string>()));
-        Assert.Empty(rig.Manager.Calls);
+        Assert.Empty(rig.Manager.Asked());
     }
 }

@@ -53,8 +53,8 @@ public sealed class LibraryRedownloadRequestApiTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("""{"name":"MoviesSearch","movieIds":[7]}""", Compact(rig.Manager.SearchBody()));
-        Assert.All(rig.Manager.Calls, call => Assert.Equal("the-managers-api-key", call.ApiKey));
-        Assert.Empty(rig.Manager.Calls.Single(call => call.Method == "DELETE").Body);
+        Assert.All(rig.Manager.Requested(), call => Assert.Equal("the-managers-api-key", call.ApiKey));
+        Assert.Empty(rig.Manager.Requested().Single(call => call.Method == "DELETE").Body);
     }
 
     [Fact]

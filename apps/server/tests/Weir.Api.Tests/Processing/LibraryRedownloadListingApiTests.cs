@@ -38,7 +38,7 @@ public sealed class LibraryRedownloadListingApiTests
         Assert.Equal(
             ("eng", "audio", "eac3", "Not a language your rules keep"),
             (track["language"]!.GetValue<string>(), track["type"]!.GetValue<string>(), track["codec"]!.GetValue<string>(), track["reason"]!.GetValue<string>()));
-        Assert.Empty(rig.Manager.Calls);
+        Assert.Empty(rig.Manager.Asked());
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public sealed class LibraryRedownloadListingApiTests
                 title["manager_title"]!.GetValue<string>(),
                 title["can_redownload"]!.GetValue<bool>(),
                 title["confirmation_message"]!.GetValue<string>()));
-        Assert.Empty(rig.Manager.Calls);
+        Assert.Empty(rig.Manager.Asked());
     }
 
     [Fact]
