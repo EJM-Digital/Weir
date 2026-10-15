@@ -24890,7 +24890,7 @@
         "kind": "vitest",
         "test": "isLoading branches are never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-391",
         "verdict": "Gap"
@@ -24993,7 +24993,7 @@
         "kind": "vitest",
         "test": "The 1000-row limit note (and 'first N in this order' wording) is never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-395",
         "verdict": "Gap"
@@ -25012,7 +25012,7 @@
         "kind": "vitest",
         "test": "removedNotice is set by callbacks in tests but its clearing in setParam/pickEntry is never asserted."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-396",
         "verdict": "Gap"
@@ -25231,7 +25231,7 @@
         "kind": "vitest",
         "test": "aria-current on the open row is never asserted."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-403",
         "verdict": "Gap"
@@ -25250,7 +25250,7 @@
         "kind": "vitest",
         "test": "Rows are real buttons but no keyboard path is tested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-404",
         "verdict": "Gap"
@@ -25589,7 +25589,7 @@
         "kind": "vitest",
         "test": "activity-direct-play is never rendered with data."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-415",
         "verdict": "Gap"
@@ -25608,7 +25608,7 @@
         "kind": "vitest",
         "test": "WorkingFigures (role=progressbar and the dl) is never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-416",
         "verdict": "Gap"
@@ -25717,7 +25717,7 @@
         "kind": "vitest",
         "test": "The loading branch of RecordSection is never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-420",
         "verdict": "Gap"
@@ -25761,7 +25761,7 @@
         "kind": "vitest",
         "test": "Both empty-record sentences (still working vs older than the File activity setting) are untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-422",
         "verdict": "Gap"
@@ -25780,7 +25780,7 @@
         "kind": "vitest",
         "test": "The href (processingFileLogDownloadPath) is never asserted and the download is never followed."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-423",
         "verdict": "Gap"
@@ -25799,7 +25799,7 @@
         "kind": "vitest",
         "test": "Shown only for a running file; never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-424",
         "verdict": "Gap"
@@ -25848,7 +25848,7 @@
         "kind": "vitest",
         "test": "use-narrow-detail-focus has no test (matchMedia, scrollIntoView, focus, first-render skip)."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-426",
         "verdict": "Gap"
@@ -25867,7 +25867,7 @@
         "kind": "vitest",
         "test": "No role=region/name assertion; the detail is inline, not a modal, so there is no Escape or focus trap to test."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-427",
         "verdict": "Gap"
@@ -25886,7 +25886,7 @@
         "kind": "vitest",
         "test": "ActivityCleanDetail is never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-428",
         "verdict": "Gap"
@@ -25999,7 +25999,7 @@
         "kind": "vitest",
         "test": "Never rendered or clicked."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-432",
         "verdict": "Gap"
@@ -26067,7 +26067,7 @@
         "kind": "vitest",
         "test": "Click, request (media_scope, library_id), 'Checking…' label, success and failure notices are untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-435",
         "verdict": "Gap"
@@ -26086,7 +26086,7 @@
         "kind": "vitest",
         "test": "Only presence is tested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-436",
         "verdict": "Gap"
@@ -26135,7 +26135,7 @@
         "kind": "vitest",
         "test": "anyPending and every pendingLabel are never asserted."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-438",
         "verdict": "Gap"
@@ -26457,7 +26457,7 @@
         "kind": "vitest",
         "test": "setRemovedNotice rendering and selectedEntry falling back to the first row are untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-451",
         "verdict": "Gap"
@@ -26671,7 +26671,7 @@
         "kind": "vitest",
         "test": "KEPT_SORT_VALUES/sortRows never exercised on this table."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-458",
         "verdict": "Gap"
@@ -26765,7 +26765,7 @@
         "kind": "vitest",
         "test": "libraries.isPending branch never rendered (the page tests mock the query as loaded)."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-462",
         "verdict": "Gap"
@@ -26784,7 +26784,7 @@
         "kind": "vitest",
         "test": "The Library page's libraries.isError branch is never rendered; only the shared component is tested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-463",
         "verdict": "Gap"
@@ -26803,7 +26803,7 @@
         "kind": "vitest",
         "test": "NoLibrary never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-464",
         "verdict": "Gap"
@@ -26982,7 +26982,7 @@
         "kind": "vitest",
         "test": "A reload or a shared link loses the search, the page, the reason filter and the open file; ?q= and ?path= on load are not tested either. (Sort is kept in this browser's storage, which is tested.)"
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-470",
         "verdict": "Gap"
@@ -27520,7 +27520,7 @@
         "kind": "vitest",
         "test": "files.isPending and files.isError branches are never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-489",
         "verdict": "Gap"
@@ -27890,7 +27890,7 @@
         "kind": "vitest",
         "test": "preview.isPending and isError never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-505",
         "verdict": "Gap"
@@ -27959,7 +27959,7 @@
         "kind": "vitest",
         "test": "The toggle back from choosing is never clicked."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-508",
         "verdict": "Gap"
@@ -28022,7 +28022,7 @@
         "kind": "vitest",
         "test": "preview.refetch and its 'Checking…' label untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-511",
         "verdict": "Gap"
@@ -28116,7 +28116,7 @@
         "kind": "vitest",
         "test": "href never asserted."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-515",
         "verdict": "Gap"
@@ -28135,7 +28135,7 @@
         "kind": "vitest",
         "test": "FileHistory never rendered with items."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-516",
         "verdict": "Gap"
@@ -28154,7 +28154,7 @@
         "kind": "vitest",
         "test": "Reset on switching file untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-517",
         "verdict": "Gap"
@@ -28512,7 +28512,7 @@
         "kind": "vitest",
         "test": "iconOnly / data-icon-only never asserted; layout fit is jsdom-faked elsewhere."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-532",
         "verdict": "Gap"
@@ -28611,7 +28611,7 @@
         "kind": "vitest",
         "test": "The Enter key, ServerFolderPickerButton onSelect, blank and duplicate handling are untested here."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-536",
         "verdict": "Gap"
@@ -28733,7 +28733,7 @@
         "kind": "vitest",
         "test": "disabled state when folders is empty untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-542",
         "verdict": "Gap"
@@ -28958,7 +28958,7 @@
         "kind": "vitest",
         "test": "Invalidation of settings, files and overview after save is untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-553",
         "verdict": "Gap"
@@ -29178,7 +29178,7 @@
         "kind": "vitest",
         "test": "Layout is jsdom-faked or untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-564",
         "verdict": "Gap"
@@ -29355,7 +29355,7 @@
         {
           "type": "vitest",
           "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
-          "name": "sends a first tab's own name back to the area's address"
+          "name": "sends a first tab's own name back to the area's address (%s)"
         }
       ],
       "covers": [
@@ -29616,7 +29616,7 @@
         "kind": "vitest",
         "test": "Unit test of useUnsavedChangesRegistry: beforeunload default prevented while a panel reports unsaved edits, listener removed once cleared. Layer: vitest."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-579",
         "verdict": "Gap"
@@ -29660,7 +29660,7 @@
         "kind": "vitest",
         "test": "Route test with a rejecting lazy loader for one tab: error element shown, sibling tab still opens. Layer: vitest."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-581",
         "verdict": "Gap"
@@ -29774,7 +29774,7 @@
         "kind": "vitest",
         "test": "One test per panel with a never-resolving fetch asserting the loading label and that no empty-state text shows. Layer: vitest."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-585",
         "verdict": "Gap"
@@ -29793,7 +29793,7 @@
         "kind": "vitest",
         "test": "Note plus test: no test shows a panel leaving the error state when a live push or a refocus refetch succeeds, or what the person can do other than reload. Layer: vitest."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-586",
         "verdict": "Gap"
@@ -29949,7 +29949,7 @@
         "kind": "vitest",
         "test": "Unit test: every curated id is accepted by Intl.DateTimeFormat, labels sort, no duplicate ids, savedZone returns the saved zone, including one outside the list, and UTC when none is saved. Layer: vitest."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-591",
         "verdict": "Gap"
@@ -30567,7 +30567,7 @@
         "kind": "vitest",
         "test": "vitest with a MemoryRouter: after the editor opens, edit/addFrom are gone from the address (replace, no history entry); an unknown or non-positive id opens nothing."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-615",
         "verdict": "Gap"
@@ -30741,7 +30741,7 @@
         "kind": "vitest",
         "test": "vitest: two suggestions for one manager show the Which one? select; picking TV then Continue opens the TV preset."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-623",
         "verdict": "Gap"
@@ -30785,7 +30785,7 @@
         "kind": "vitest",
         "test": "vitest: fetchLibrarySuggestions rejected shows the role=alert text and re-enables Continue; pending shows Asking... and disables Continue."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-625",
         "verdict": "Gap"
@@ -30804,7 +30804,7 @@
         "kind": "vitest",
         "test": "vitest: click Cancel, the choice is gone, no editor, no create."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-626",
         "verdict": "Gap"
@@ -30848,7 +30848,7 @@
         "kind": "vitest",
         "test": "vitest: clear Name, Save disabled; type a name, Save enabled; whitespace-only name still disabled."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-628",
         "verdict": "Gap"
@@ -31315,7 +31315,7 @@
         "kind": "vitest",
         "test": "vitest: edit, Cancel, confirm Leave, editor closes and the list still shows the saved name; reopening shows the saved values."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-646",
         "verdict": "Gap"
@@ -31354,7 +31354,7 @@
         "kind": "vitest",
         "test": "SidePanel has no test file. vitest: with an edited editor, Escape / backdrop / X open the unsaved prompt instead of discarding; focus returns to the Edit button."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-648",
         "verdict": "Gap"
@@ -31373,7 +31373,7 @@
         "kind": "vitest",
         "test": "vitest: asViewer, open Edit (if reachable) or render LibraryEditor with editable=false; all inputs, selects and Save disabled."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-649",
         "verdict": "Gap"
@@ -31591,7 +31591,7 @@
         "kind": "vitest",
         "test": "vitest: pending fetch shows the loading line; rejected fetch shows the alert text; neither hides the folder fields."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-658",
         "verdict": "Gap"
@@ -31745,7 +31745,7 @@
         "kind": "vitest",
         "test": "vitest: pending fetch shows the loading line; click Check again calls fetchLibraryFolderChain a second time and shows Checking… until it settles."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-664",
         "verdict": "Gap"
@@ -32409,7 +32409,7 @@
         "kind": "vitest",
         "test": "vitest: a workflow with no grid says Any time and a workflow with a drawn grid says On the hours chosen for it; the link goes to /setup/workflows/schedule."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-686",
         "verdict": "Gap"
@@ -32458,7 +32458,7 @@
         "kind": "vitest",
         "test": "vitest: drift result with one moved root renders the name, detail and Manager/Weir values; empty result shows the no-differences line."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-688",
         "verdict": "Gap"
@@ -32477,7 +32477,7 @@
         "kind": "vitest",
         "test": "vitest: discoverProcessingLibraries rejected and importDiscoveredProcessingLibraries rejected each show their notice in the page notice area."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-689",
         "verdict": "Gap"
@@ -32496,7 +32496,7 @@
         "kind": "vitest",
         "test": "vitest: discover returns one already imported and one with local_path_problem; both checkboxes disabled with their messages; empty list shows the empty line."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-690",
         "verdict": "Gap"
@@ -32515,7 +32515,7 @@
         "kind": "vitest",
         "test": "vitest: asViewer and no connections each render no Import section."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-691",
         "verdict": "Gap"
@@ -32599,7 +32599,7 @@
         "kind": "vitest",
         "test": "vitest: a disabled workflow shows the label; no workflows shows the empty text."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-695",
         "verdict": "Gap"
@@ -32718,7 +32718,7 @@
         "kind": "vitest",
         "test": "vitest: Save disabled on open, enabled after one cell, Saving… with a pending update."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-700",
         "verdict": "Gap"
@@ -32737,7 +32737,7 @@
         "kind": "vitest",
         "test": "vitest: updateProcessingLibrary rejected shows the alert, editor stays open with the drawn week."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-701",
         "verdict": "Gap"
@@ -32776,7 +32776,7 @@
         "kind": "vitest",
         "test": "vitest: confirm Leave replaces the editor with the other workflow's week; Close on a dirty week asks and Leave discards."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-703",
         "verdict": "Gap"
@@ -32909,7 +32909,7 @@
         "kind": "vitest",
         "test": "vitest: putAppSettings rejected shows the alert and keeps the chosen zone and the Save button."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-708",
         "verdict": "Gap"
@@ -32928,7 +32928,7 @@
         "kind": "vitest",
         "test": "vitest: choose a zone without saving, navigate to another System tab or area, expect the leave prompt."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-709",
         "verdict": "Gap"
@@ -32947,7 +32947,7 @@
         "kind": "vitest",
         "test": "E2E at phone viewport: open Change hours on Schedule, assert no horizontal overflow of the document."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-710",
         "verdict": "Gap"
@@ -33016,7 +33016,7 @@
         "kind": "vitest",
         "test": "vitest: rule sets [] shows the empty text and the New profile button; no editor."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-713",
         "verdict": "Gap"
@@ -33035,7 +33035,7 @@
         "kind": "vitest",
         "test": "vitest: libraries with rule_set_id set list their names in rule-set-used-by; none shows the hint."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-714",
         "verdict": "Gap"
@@ -33098,7 +33098,7 @@
         "kind": "vitest",
         "test": "vitest: clear the name, Save profile, notice shown, create/update not called."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-717",
         "verdict": "Gap"
@@ -33172,7 +33172,7 @@
         "kind": "vitest",
         "test": "vitest: updateProcessingRuleSet rejected shows the notice, draft intact, Save usable again."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-720",
         "verdict": "Gap"
@@ -33389,7 +33389,7 @@
         "kind": "vitest",
         "test": "vitest: a profile with two removals on shows '2 of 5 on' and the fold open."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-731",
         "verdict": "Gap"
@@ -33428,7 +33428,7 @@
         "kind": "vitest",
         "test": "vitest: toggle each and assert remove_attachments, remove_title, remove_language_tags, remove_other_metadata."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-733",
         "verdict": "Gap"
@@ -33527,7 +33527,7 @@
         "kind": "vitest",
         "test": "vitest: edit the name, press New profile, expect the unsaved prompt; Keep editing leaves the profile open."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-737",
         "verdict": "Gap"
@@ -33546,7 +33546,7 @@
         "kind": "vitest",
         "test": "Covered by the integration test named in the scaffolding section; add a case for a new profile, which is dirty from the moment it opens."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-738",
         "verdict": "Gap"
@@ -33565,7 +33565,7 @@
         "kind": "vitest",
         "test": "Behaviour question and test: after New profile there is no Cancel; either add one or pin that leaving is the only way, with the guard prompt."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-739",
         "verdict": "Gap"
@@ -33654,7 +33654,7 @@
         "kind": "vitest",
         "test": "vitest: role viewer, all inputs and buttons disabled, no request on click."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-743",
         "verdict": "Gap"
@@ -33812,7 +33812,7 @@
         "kind": "vitest",
         "test": "vitest: two workflows, pick the second, Preview, assert libraryId 2."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-750",
         "verdict": "Gap"
@@ -33831,7 +33831,7 @@
         "kind": "vitest",
         "test": "vitest: anywhere mode with 'C:\\\\Media\\\\Movies' and 'Movie.mkv' sends C:\\\\Media\\\\Movies\\\\Movie.mkv; with '/media/movies/' and '/Movie.mkv' sends one separator; trailing and leading separators trimmed."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-751",
         "verdict": "Gap"
@@ -33850,7 +33850,7 @@
         "kind": "vitest",
         "test": "vitest: no path means Preview disabled; a pending preview shows Checking… and the role=status text."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-752",
         "verdict": "Gap"
@@ -33954,7 +33954,7 @@
         "kind": "vitest",
         "test": "vitest: render RulesPreviewPanel with disabled; Try on a file disabled."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-757",
         "verdict": "Gap"
@@ -33973,7 +33973,7 @@
         "kind": "vitest",
         "test": "contract or E2E: after a preview, the job queue and the file list are unchanged."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-758",
         "verdict": "Gap"
@@ -34042,7 +34042,7 @@
         "kind": "vitest",
         "test": "vitest: tick then untick, Save disappears; untick the only selected device, Save sends [] and the checklist stays empty."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-761",
         "verdict": "Gap"
@@ -34061,7 +34061,7 @@
         "kind": "vitest",
         "test": "vitest: pending putDirectPlayDevices disables the boxes and shows Saving…; a rejection shows the alert with the reason and keeps the ticks."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-762",
         "verdict": "Gap"
@@ -34145,7 +34145,7 @@
         "kind": "vitest",
         "test": "The panel registers no unsaved-changes guard at all. Add the guard (useUnsavedChanges) and an integration test like the Profiles one."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-766",
         "verdict": "Gap"
@@ -34164,7 +34164,7 @@
         "kind": "vitest",
         "test": "directPlayDevices is in no LIVE_TOPIC_QUERIES entry (checked in lib/live/live-topics.ts), so nothing refetches it on a push. Add the topic and a test like the libraries one."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-767",
         "verdict": "Gap"
@@ -34471,7 +34471,7 @@
         {
           "type": "vitest",
           "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
-          "name": "sends a first tab's own name back to the area's address"
+          "name": "sends a first tab's own name back to the area's address (%s)"
         },
         {
           "type": "e2e",
@@ -50912,14 +50912,24 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1048,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
+          "name": "a setup area"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
+          "name": "sends a first tab's own name back to the area's address (%s)"
+        }
+      ],
       "covers": [
         "web:/setup/workflows/workflows"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -51057,14 +51067,24 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1048,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
+          "name": "a setup area"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
+          "name": "sends a first tab's own name back to the area's address (%s)"
+        }
+      ],
       "covers": [
         "web:/setup/rules/profiles"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
