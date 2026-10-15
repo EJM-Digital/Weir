@@ -7,6 +7,12 @@ public sealed class ServerLog : IDisposable
 {
     private const int TailLines = 40;
 
+    /// <summary>
+    /// How much of the log a server that exited before it was ready shows. Its log is only its start, and a crash prints the reason
+    /// above a stack trace, or twice, which is more than <see cref="TailLines"/> lines.
+    /// </summary>
+    private const int StartFailureLines = 200;
+
     private readonly object _writeLock = new();
     private readonly StreamWriter _writer;
     private bool _disposed;
@@ -48,10 +54,15 @@ public sealed class ServerLog : IDisposable
         Text().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
             .Any(line => line.EndsWith($" listening on {host}:{port}", StringComparison.Ordinal));
 
-    public string Tail()
+    public string Tail() => Last(TailLines);
+
+    /// <summary>The log of a server that exited before it was ready, whole unless it is very long.</summary>
+    public string StartFailure() => Last(StartFailureLines);
+
+    private string Last(int count)
     {
         var lines = Text().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-        return lines.Length == 0 ? "(the log is empty)" : string.Join(Environment.NewLine, lines.TakeLast(TailLines));
+        return lines.Length == 0 ? "(the log is empty)" : string.Join(Environment.NewLine, lines.TakeLast(count));
     }
 
     public void Dispose()

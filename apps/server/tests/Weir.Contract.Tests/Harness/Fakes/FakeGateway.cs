@@ -26,8 +26,10 @@ public sealed class FakeGateway : FakeHttpServer
     private readonly Dictionary<string, Title> _titles = new();
     private readonly Dictionary<int, Title> _byId = new();
     private readonly HashSet<string> _images = [];
+    private readonly TaskCompletionSource _searchHeld = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private int? _busyRetryAfterSeconds;
     private bool _busy;
+    private TaskCompletionSource? _searchesHeldBack;
 
     /// <summary>What a server needs to use this gateway: pass it to <see cref="WeirServer.StartNewAsync"/>.</summary>
     public IReadOnlyDictionary<string, string> Env => new Dictionary<string, string> { ["WEIR_ARTWORK_GATEWAY_URL"] = BaseUrl };
@@ -61,6 +63,35 @@ public sealed class FakeGateway : FakeHttpServer
             _busy = true;
             _busyRetryAfterSeconds = retryAfterSeconds;
         }
+    }
+
+    /// <summary>
+    /// Keeps every search waiting for its answer, the way a slow service does, until <see cref="ReleaseSearches"/>. A held search is not
+    /// in <see cref="FakeHttpServer.Requests"/> until it is answered; <see cref="SearchHeldAsync"/> says when one has arrived.
+    /// </summary>
+    public void HoldSearches()
+    {
+        lock (_gate)
+        {
+            _searchesHeldBack = new TaskCompletionSource();
+        }
+    }
+
+    public void ReleaseSearches()
+    {
+        lock (_gate)
+        {
+            _searchesHeldBack?.TrySetResult();
+        }
+    }
+
+    /// <summary>Completes when a search is waiting for its answer. Call it after <see cref="HoldSearches"/>.</summary>
+    public Task SearchHeldAsync() => _searchHeld.Task;
+
+    public override void Dispose()
+    {
+        ReleaseSearches();
+        base.Dispose();
     }
 
     public void Calm()
@@ -115,6 +146,18 @@ public sealed class FakeGateway : FakeHttpServer
 
     private HttpAnswer AnswerSearch(RecordedRequest request)
     {
+        Task? held;
+        lock (_gate)
+        {
+            held = _searchesHeldBack?.Task;
+        }
+
+        if (held is { IsCompleted: false })
+        {
+            _searchHeld.TrySetResult();
+            held.Wait();
+        }
+
         var query = request.Query.TryGetValue("query", out var queries) ? queries[0] : string.Empty;
         Title? found;
         lock (_gate)

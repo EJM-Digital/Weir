@@ -41,6 +41,7 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
     private volatile StartProgressFeed? _feed;
     private volatile int _gaveUpAttempts;
     private volatile bool _noPortChosen;
+    private volatile bool _lastAttemptFoundPortInUse;
     private Task? _watchdog;
     private Action? _onGaveUp;
     private CancellationToken _watchdogToken;
@@ -110,8 +111,15 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
     /// <summary>The hover text's reason for a server the supervision gave up on, when it did and the server itself said nothing.</summary>
     internal StartupError? GaveUpError =>
         NoPortChosen ? new StartupError("No port chosen", string.Empty)
+        : GaveUpPortInUse > 0 ? new StartupError(string.Create(CultureInfo.InvariantCulture, $"Port {GaveUpPortInUse} is in use"), string.Empty)
         : _gaveUpAttempts > 0 ? new StartupError($"Didn't start after {TrayBalloons.Tries(_gaveUpAttempts)}", string.Empty)
         : null;
+
+    /// <summary>
+    /// The port another program held, while <see cref="Phase"/> is Stopped because the last attempt of the supervision ended on it; 0
+    /// otherwise.
+    /// </summary>
+    internal int GaveUpPortInUse => _gaveUpAttempts > 0 && _lastAttemptFoundPortInUse ? _port : 0;
 
     /// <summary>The person closed the port window without choosing a port, so the start stopped before any server was run.</summary>
     internal bool NoPortChosen => _noPortChosen;
