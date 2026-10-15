@@ -9240,8 +9240,7 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingOperatorSettingsApiTests.cs",
@@ -9276,13 +9275,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Jobs/WorkAdmissionTests.cs",
           "name": "A_file_of_unknown_resolution_costs_what_a_1080p_file_does"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingOperatorSettingsRoundTripTests.cs",
+          "name": "ProcessingOperatorSettingsRoundTripTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/OperatorSettingsReachBehaviourApiTests.cs",
+          "name": "OperatorSettingsReachBehaviourApiTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] No API test saves runner_cost_sd / _720p / _1080p / _4k through PUT /processing/operator-settings and reads them back; the engine tests set the cost columns directly."
-      },
-      "issue": 1037,
       "covers": [
         "setting:ProcessingOperatorSettingsRecord.RunnerCapacity",
         "setting:ProcessingOperatorSettingsRecord.RunnerCostSd",
@@ -9293,7 +9297,7 @@
       ],
       "audit": {
         "id": "SET-O02",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -9304,8 +9308,7 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/CleanupScheduleApiTests.cs",
@@ -9330,20 +9333,25 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkTempStaleSweepHandlerTests.cs",
           "name": "WorkTempStaleSweepHandlerTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingOperatorSettingsRoundTripTests.cs",
+          "name": "ProcessingOperatorSettingsRoundTripTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/OperatorSettingsReachBehaviourApiTests.cs",
+          "name": "OperatorSettingsReachBehaviourApiTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] No test saves work_temp_stale_sweep_enabled through the PUT and reads it back (the web page does it, vitest with a mocked API)."
-      },
-      "issue": 1037,
       "covers": [
         "setting:ProcessingOperatorSettingsRecord.WorkTempStaleSweepEnabled",
         "setting:ProcessingOperatorSettingsRecord.WorkTempStaleSweepIntervalSeconds"
       ],
       "audit": {
         "id": "SET-O03",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -9354,8 +9362,7 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/CleanupScheduleApiTests.cs",
@@ -9365,13 +9372,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/UnclaimedHandbackCleanupHandlerTests.cs",
           "name": "UnclaimedHandbackCleanupHandlerTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingOperatorSettingsRoundTripTests.cs",
+          "name": "ProcessingOperatorSettingsRoundTripTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/OperatorSettingsReachBehaviourApiTests.cs",
+          "name": "OperatorSettingsReachBehaviourApiTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Nothing saves unclaimed_handback_cleanup_enabled or unclaimed_handback_window_days through the PUT; the handler tests write the columns by SQL. (A cleanup that deletes files, so the switch must be proven to turn it on and off through the API.)"
-      },
-      "issue": 1037,
       "covers": [
         "setting:ProcessingOperatorSettingsRecord.UnclaimedHandbackCleanupEnabled",
         "setting:ProcessingOperatorSettingsRecord.UnclaimedHandbackWindowDays",
@@ -9379,7 +9391,7 @@
       ],
       "audit": {
         "id": "SET-O04",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -9602,8 +9614,7 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingRuntimeSettingsApiTests.cs",
@@ -9618,16 +9629,16 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Jobs/FilesAtOnceTests.cs",
           "name": "FilesAtOnceTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingRuntimeSettingsEnvironmentTests.cs",
+          "name": "ProcessingRuntimeSettingsEnvironmentTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Shape only: no test sets an environment variable and reads the same value back (probe size, analyze seconds, cleanup ages, sweep flags/intervals, periodic-enqueue flag). The \"restart-required\" notes are untested wording."
-      },
-      "issue": 1037,
       "audit": {
         "id": "SET-R01",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
