@@ -61,7 +61,7 @@ public sealed class LibraryCleanConfirmationTests(E2EServer server) : E2ETestBas
         var dialog = await AskToCleanSelectionAsync(page, log);
         var mark = log.Mark();
 
-        await page.Mouse.ClickAsync(2, 2);
+        await Backdrop.ClickAsync(page, dialog);
 
         await Expect(dialog).ToBeVisibleAsync();
         await AssertNothingCleanedAsync(rig, log, mark, open);
@@ -182,7 +182,7 @@ public sealed class LibraryCleanConfirmationTests(E2EServer server) : E2ETestBas
     private static async Task AssertNothingCleanedAsync(LibraryRig rig, RequestLog log, int mark, OpenLibrary open)
     {
         var row = await rig.FileRowAsync(open.Film);
-        Assert.Empty(Sent(log, mark));
+        log.AssertNothingSentSince(mark, "/preview");
         Assert.Equal(0, await rig.CleanJobCountAsync());
         Assert.Empty(await rig.CleansAsync());
         Assert.Equal("would_change", (string)row["classification"]!);

@@ -59,7 +59,7 @@ public sealed class RemoveFromActivityDialogTests(E2EServer server) : E2ETestBas
         await delete.CheckAsync();
         var mark = log.Mark();
 
-        await page.Mouse.ClickAsync(2, 2);
+        await Backdrop.ClickAsync(page, dialog);
 
         await Expect(dialog).ToBeVisibleAsync();
         await Expect(delete).ToBeCheckedAsync();
@@ -118,7 +118,7 @@ public sealed class RemoveFromActivityDialogTests(E2EServer server) : E2ETestBas
     private static async Task AssertNothingChangedAsync(ProcessingRig rig, RequestLog log, int mark, JsonObject before)
     {
         var after = await rig.ListedFileAsync(Film);
-        Assert.Empty(log.Since(mark));
+        log.AssertNothingSentSince(mark);
         Assert.NotNull(after);
         Assert.Equal(before.ToJsonString(), after.ToJsonString());
         Assert.True(rig.WatchedFileExists(Release, Film), "The failed file must still be in the watched folder.");

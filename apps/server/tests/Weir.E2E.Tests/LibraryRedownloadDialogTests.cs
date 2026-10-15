@@ -53,7 +53,7 @@ public sealed class LibraryRedownloadDialogTests(E2EServer server) : E2ETestBase
         var dialog = await AskToDownloadAgainAsync(open.Page);
         var (mark, radarrMark) = (open.Log.Mark(), rig.RadarrMark());
 
-        await open.Page.Mouse.ClickAsync(2, 2);
+        await Backdrop.ClickAsync(open.Page, dialog);
 
         await Expect(dialog).ToBeVisibleAsync();
         await AssertNothingAskedAsync(rig, open, mark, radarrMark);
@@ -141,7 +141,7 @@ public sealed class LibraryRedownloadDialogTests(E2EServer server) : E2ETestBase
     private static async Task AssertNothingAskedAsync(LibraryRig rig, OpenFile open, int mark, int radarrMark)
     {
         var title = (await rig.RedownloadsAsync())["titles"]!.AsArray().Single()!;
-        Assert.Empty(open.Log.Since(mark));
+        open.Log.AssertNothingSentSince(mark);
         Assert.Empty(rig.RadarrAskedAboutAFileSince(radarrMark));
         Assert.True((bool)title["can_redownload"]!);
         Assert.Null(title["waiting_note"]);

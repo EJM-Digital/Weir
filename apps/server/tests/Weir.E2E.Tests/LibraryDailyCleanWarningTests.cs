@@ -32,7 +32,7 @@ public sealed class LibraryDailyCleanWarningTests(E2EServer server) : E2ETestBas
         await Expect(daily.GetByRole(AriaRole.Radio, new() { Name = "Off", Exact = true })).ToHaveAttributeAsync("aria-checked", "true");
         await Expect(daily.GetByRole(AriaRole.Radio, new() { Name = "On", Exact = true })).ToHaveAttributeAsync("aria-checked", "false");
         await Expect(page.GetByTestId("library-setup-save")).ToBeDisabledAsync();
-        Assert.Empty(log.Since(mark));
+        log.AssertNothingSentSince(mark);
         Assert.False((bool)(await rig.SettingsAsync())["library_schedule_enabled"]!);
     }
 
@@ -49,7 +49,7 @@ public sealed class LibraryDailyCleanWarningTests(E2EServer server) : E2ETestBas
         await warning.GetByRole(AriaRole.Button, new() { Name = "Switch it on", Exact = true }).ClickAsync();
 
         await Expect(warning).ToHaveCountAsync(0);
-        Assert.Empty(log.Since(mark));
+        log.AssertNothingSentSince(mark);
         Assert.False((bool)(await rig.SettingsAsync())["library_schedule_enabled"]!, "Nothing is switched on until Save.");
         await page.GetByTestId("library-setup-save").ClickAsync();
 
