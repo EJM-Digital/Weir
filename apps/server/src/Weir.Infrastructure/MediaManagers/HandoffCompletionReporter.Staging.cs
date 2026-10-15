@@ -53,7 +53,7 @@ public sealed partial class HandoffCompletionReporter
             return "queued: the report is owed and goes out with the next delivery";
         }
 
-        var delivery = await DeliverOwedReportAsync(uow, origin.SourceKey, origin.HandoffId!, ready.Target, owed!, cancellationToken).ConfigureAwait(false);
+        var (delivery, _) = await DeliverOwedReportAsync(uow, origin.SourceKey, origin.HandoffId!, ready.Target, owed!, cancellationToken).ConfigureAwait(false);
         return delivery.Status;
     }
 
