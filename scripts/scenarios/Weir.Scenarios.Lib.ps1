@@ -315,6 +315,28 @@ function New-PhaseWrapperText {
         "catch { `$_ | Out-String | Add-Content '$RunFolder\runner.out'; Save-ExitCode 3 }") -join "`r`n"
 }
 
+# True when $Reported is the build under test: the release's own version, and the commit when the build carries one.
+function Test-VersionUnderTest {
+    param([Parameter(Mandatory)] [string] $Reported, [Parameter(Mandatory)] [string] $Expected, [string] $ShortSha)
+    $expectedBase = $Expected.Split('+')[0]
+    $reportedBase = $Reported.Split('+')[0]
+    if ($reportedBase -ne $expectedBase) { return $false }
+    # A build made for the golden path carries its commit (`<version>+<short sha>`); one that does not cannot be tied to the commit.
+    if ($ShortSha) { return $Reported.Contains('+') -and $Reported.Split('+')[1].StartsWith($ShortSha.Substring(0, [Math]::Min(7, $ShortSha.Length))) }
+    $true
+}
+
+# Why a -NoRestore run may not go on, or $null when it may. It runs on the Weir already on the machine, so unless a chosen scenario
+# installs the build under test (fresh-install) that Weir has to BE the build under test: the version and the commit.
+function Get-NoRestoreRefusal {
+    param([string] $Found, [Parameter(Mandatory)] [string] $Version, [Parameter(Mandatory)] [string] $CommitSha, [string[]] $ScenarioIds = @())
+    if ($ScenarioIds -contains 'fresh-install') { return $null }
+    $shortSha = $CommitSha.Substring(0, 7)
+    if ($Found -and (Test-VersionUnderTest -Reported $Found -Expected $Version -ShortSha $shortSha)) { return $null }
+    $what = if ($Found) { $Found } else { 'no Weir at all' }
+    "-NoRestore would run on the Weir already on the machine, which is $what, not the build under test ($Version, commit $shortSha). None of the chosen scenarios installs the build. Include fresh-install in -Scenarios, or run without -NoRestore."
+}
+
 # The exit code in the file's text, or $null while there is none (no file yet, or text that is not a number).
 function Read-ExitCodeText {
     param($Text)
