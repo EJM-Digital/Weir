@@ -20,6 +20,7 @@ This note says what it does, which proven practice each part follows, where its 
    the old process is confirmed gone; if it is still running after the kill, the tray stops there and says so, because a second
    server would find the first holding the port and the database.
 5. A failed start is tried again after a capped, jittered wait, until too many fail close together; then the tray gives up and says so.
+   A server that could not listen because another program holds its port counts as a failed start (see "A port another program holds").
 
 ## The practices it follows
 
@@ -33,6 +34,7 @@ This note says what it does, which proven practice each part follows, where its 
 | A startup check separate from a readiness check | Kubernetes startup, liveness and readiness probes | progress (`StartWatch`) and `/ready` |
 | A service lengthens its own start-up time by reporting | systemd `sd_notify EXTEND_TIMEOUT_USEC` | `expect_within_s` in the progress record |
 | Do not restart what restarting cannot fix | systemd `RestartPreventExitStatus=` | a server that wrote `startup-error.txt` is not tried again; this includes a refusal for its settings or its database |
+| Do restart what waiting can fix | systemd leaves an address already in use out of `RestartPreventExitStatus=` and restarts it; BSD sysexits `EX_TEMPFAIL` (75) is "a temporary failure, the user is invited to retry" | a server that cannot listen because another program holds its port exits with code 75 and is tried again like any failed start |
 | Stop politely, then kill the tree | systemd `KillMode=` / `TimeoutStopSec=` | `ServerProcessStop` |
 
 ## The policy
@@ -111,6 +113,28 @@ console itself would wait with it, and the server would never reach its own log,
 exit. So the server does not touch the console on any thread it runs on, and the tray also gives the server pipes of its own and
 reads them (`server-host.log`), and replaces its own standard handles with the null device.
 
+## A port another program holds
+
+When the server cannot listen because another program already holds its port, it says so and exits, and the supervision treats that as
+a **failed start that can be tried again**, not as a refusal.
+
+* **The server** (`PortInUse`, `StartRefusal.ReportPortInUse`). Kestrel reports the bind failure when the server starts listening, with
+  the socket's "address already in use" inside it. The server writes `Weir cannot start: port 8080 is already in use by another program.
+  Close that program, or run Weir on a different port.` to standard error, a critical line to `weir.log`, and exits with code **75**. It
+  does not write `startup-error.txt`: that file means starting again cannot help, and here it can.
+* **Why retry.** The program holding the port is often one that is about to let go: the server that was just stopped for a restart or an
+  update, another Weir shutting down, a program that restarts itself. Refusing at once would turn a few seconds of waiting into a stopped
+  Weir that needs a click. Retrying with back-off is what systemd and Kubernetes do for the same failure, and 75 is the BSD convention
+  for "a temporary failure, try again".
+* **How long.** The same budget as every failed start, with no special case: 5 failures within 15 minutes, the four waits adding up to
+  between 15 and 30 seconds. A program that still holds the port after that is not going to let go by itself, and a longer wait would
+  keep the person looking at a Starting icon.
+* **The tray** (`ServerExitCodes.PortInUse`) words the failure as `exited with code 75 after running 0.4 s (last phase: starting): port
+  8080 is in use by another program`. When the tries are used up it names the port in the tray log, on the icon's hover text (`Weir -
+  Stopped - Port 8080 is in use - choose Restart Weir`) and in the notice (`Weir didn't start after 5 tries because another program is
+  using port 8080. Close that program, or use Change port, then click to try again.`). Clicking it, or Restart Weir, starts over with a
+  fresh budget, and Change port moves Weir to a port that is free.
+
 ## What is logged
 
 `tray-host.log` and `server-host.log` carry every attempt:
@@ -147,6 +171,10 @@ out-of-range records), `ServerHostTests` (real stand-in servers on a fake clock:
 channel, a hung server that will not stop, a port change, the start limit, crash after running, Restart Weir), `ServerOutputLogTests`,
 `InheritedStdioHandlesTests`, `StartupProgressTests`, `StartupProgressChannelsTests`, `NonBlockingConsoleTests`, `StartRefusalTests`, and
 `ServerOutputPipeTests`, which starts the real server with a full pipe nobody reads, once to run and once to refuse its settings.
+`PortInUseTests` (in `Weir.Api.Tests`) starts the real server on a port another listener holds, on loopback, `localhost` and every
+address, and checks the exit code, the sentence, `weir.log` and that no `startup-error.txt` is left. `ServerHostPortInUseTests` runs
+stand-in servers that exit with code 75 through the supervision: tried again with the usual back-off, the port named in the log and on the
+icon, started on a later try once the port is free, and any other exit code not worded as a port.
 
 ## Reading the files that are replaced under a reader
 

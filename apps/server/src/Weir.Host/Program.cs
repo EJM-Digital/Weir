@@ -54,5 +54,16 @@ catch (Exception exception) when (exception is WeirConfigurationException or Dat
     return StartRefusal.Report(exception, WeirServer.CurrentRuntime(), NonBlockingConsole.ForStandardError());
 }
 
-await app.RunAsync().ConfigureAwait(false);
+var listenPort = app.Services.GetRequiredService<ServerListenOptions>().Port;
+var startupLog = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Weir.Host.Startup");
+try
+{
+    await app.RunAsync().ConfigureAwait(false);
+}
+catch (Exception exception) when (PortInUse.Caused(exception))
+{
+    startupLog.LogCritical("Weir cannot listen: port {Port} is already in use by another program", listenPort);
+    return StartRefusal.ReportPortInUse(listenPort, NonBlockingConsole.ForStandardError());
+}
+
 return 0;

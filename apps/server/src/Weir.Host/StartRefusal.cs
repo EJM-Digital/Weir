@@ -13,6 +13,13 @@ namespace Weir.Host;
 /// </summary>
 internal static class StartRefusal
 {
+    /// <summary>
+    /// The exit code of a server that could not listen because another program holds its port: <c>EX_TEMPFAIL</c> in BSD's sysexits (75), "a
+    /// temporary failure, the user is invited to retry". Starting again can succeed once the other program lets go, so the Windows tray
+    /// retries it as it retries any failed start, and it reads this code to say which port.
+    /// </summary>
+    internal const int PortInUseExitCode = 75;
+
     /// <summary>How long the process waits for its last words to reach a console that is taking them.</summary>
     internal static readonly TimeSpan Courtesy = TimeSpan.FromSeconds(2);
 
@@ -39,6 +46,18 @@ internal static class StartRefusal
         error.WriteLine($"Weir cannot start: {exception.Message}");
         error.Drain(Courtesy);
         return 1;
+    }
+
+    /// <summary>
+    /// Reports that the server could not listen because another program holds its port, and returns <see cref="PortInUseExitCode"/>. It
+    /// leaves no <c>startup-error.txt</c>: that file tells the tray that starting again cannot help, and here it can.
+    /// </summary>
+    internal static int ReportPortInUse(int port, NonBlockingConsole error)
+    {
+        ArgumentNullException.ThrowIfNull(error);
+        error.WriteLine($"Weir cannot start: {PortInUse.Sentence(port)}");
+        error.Drain(Courtesy);
+        return PortInUseExitCode;
     }
 
     // Best effort, like every note: when the data folder cannot even be worked out, the tray has the exit code and its own log.
