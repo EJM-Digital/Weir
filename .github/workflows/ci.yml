@@ -93,9 +93,10 @@ jobs:
               - 'apps/server/Directory.Build.props'
             # Only files the package smokes actually exercise: the packaged artefacts (Dockerfile, docker/**,
             # compose.yaml, .dockerignore, packaging/**, the tray), the host entry point that ships inside them
-            # (apps/server/src/Weir.Host/**, not the whole server), the smoke scripts themselves, and the
-            # workflow that runs them. A server or web change that is not in this list still reaches the
-            # packaging smokes on the next push to main (see main_push below), just not on every pull request.
+            # (apps/server/src/Weir.Host/**, not the whole server), the database migrations the upgrade smoke carries an
+            # old volume across, the smoke scripts themselves, and the workflow that runs them. A server or web change
+            # that is not in this list still reaches the packaging smokes on the next push to main (see main_push
+            # below), just not on every pull request.
             packaging:
               - 'Dockerfile'
               - 'docker/**'
@@ -107,9 +108,15 @@ jobs:
               - 'apps/server/tools/Weir.LiveAudit/**'
               - 'scripts/smoke-windows-package.ps1'
               - 'scripts/wait-for-health.mjs'
+              - 'scripts/docker-compose-smoke.mjs'
+              - 'scripts/docker-smoke/**'
+              - 'scripts/find-previous-release.mjs'
+              - 'scripts/semver.mjs'
               - 'scripts/ffmpeg-cache-key.mjs'
               - 'scripts/ffmpeg-pin.mjs'
               - 'scripts/install-ffmpeg-linux.mjs'
+              - 'apps/server/src/Weir.Infrastructure/Migrations/**'
+              - 'apps/server/src/Weir.Infrastructure/Sqlite/**'
               - '.github/workflows/ci-packaging.yml'
             # The real ffmpeg, ffprobe and mkvmerge the server tests run against (their pins and installers) and the check
             # that every real-tool test ran. The workflows filter below covers the actions that call them.
