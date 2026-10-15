@@ -47275,8 +47275,27 @@
       "severity": "high",
       "touches": "install",
       "required": "real",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
+        },
+        {
+          "type": "package-smoke",
+          "file": "scripts/smoke-windows-recover.ps1",
+          "name": "*"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
+          "name": "recover-locked-out-account"
+        },
+        {
+          "type": "node",
+          "file": "scripts/recover-output.test.mjs",
+          "name": "*"
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Auth/RecoverCommandTests.cs",
@@ -47288,14 +47307,12 @@
           "name": "Recovering_from_an_inactive_admin_leaves_exactly_one"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "The command is called as a class in tests; the packaged WeirServer.exe (Windows install and the Docker image) is never asked to recover an account, so a broken dispatch in Program.cs leaves a locked-out user with no way back"
-      },
-      "issue": 987,
+      "covers": [
+        "scenario:recover-locked-out-account"
+      ],
       "audit": {
         "id": "PLAT-20",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {

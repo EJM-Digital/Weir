@@ -93,6 +93,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Update.ps1')
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Deluno.ps1')
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Tray.ps1')
+. (Join-Path $PSScriptRoot 'Weir.Scenarios.Recover.ps1')
 
 # The warnings and errors a run is allowed to cause on purpose, each with why. An unexplained one fails the scenario that was running
 # when it appeared. Empty unless a scenario provokes one deliberately; the scenarios here provoke none.
@@ -165,7 +166,7 @@ Get-RunId | Out-Null
 New-Item -ItemType Directory -Force -Path $MediaRoot | Out-Null
 $runClock = [Diagnostics.Stopwatch]::StartNew()
 # A rehearsal runs no installer and has no Deluno, so these cannot be rehearsed; the scenarios that need only a running Weir can.
-$skippedInRehearsal = 'fresh-install', 'update-over-installed-weir', 'workflows-from-deluno', 'deluno-film-handoff', 'deluno-release-with-extra', 'deluno-resend', 'deluno-outcomes'
+$skippedInRehearsal = 'fresh-install', 'update-over-installed-weir', 'workflows-from-deluno', 'deluno-film-handoff', 'deluno-release-with-extra', 'deluno-resend', 'deluno-outcomes', 'recover-locked-out-account'
 
 foreach ($entry in $phaseScenarios) {
     $script:EvidenceFile = Join-Path $RunFolder "evidence\$($entry.Id).log"

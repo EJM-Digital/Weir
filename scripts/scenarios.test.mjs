@@ -44,7 +44,7 @@ test("every scenario file parses in Windows PowerShell 5.1", { skip }, () => {
 
 test("every scenario in the catalog has code, a phase, and words for what it does and what passes", { skip }, () => {
   const entries = plan();
-  assert.equal(entries.length, 13);
+  assert.equal(entries.length, 14);
   assert.equal(new Set(entries.map((entry) => entry.Id)).size, entries.length, "scenario ids are unique");
   for (const entry of entries) {
     assert.ok(entry.Implemented, `${entry.Id} has no Scenario_ function`);
@@ -63,7 +63,7 @@ test("the scenarios the issue asks for are all there", { skip }, () => {
   for (const wanted of [
     "update-over-installed-weir", "workflows-from-deluno", "deluno-film-handoff", "deluno-release-with-extra", "deluno-resend",
     "deluno-outcomes", "fresh-install", "first-visit-account", "weir-only-film", "process-again",
-    "pause-resume", "deleted-queued-file", "update-requests",
+    "pause-resume", "deleted-queued-file", "update-requests", "recover-locked-out-account",
   ]) {
     assert.ok(ids.includes(wanted), `missing scenario ${wanted}`);
   }
@@ -603,7 +603,7 @@ test("no scenario names another, calls another, or reads state another left: eac
   const lines = run.out.trim().split(/\r?\n/);
   const found = lines.pop();
   assert.deepEqual(lines, [], `these scenarios depend on another or write the run's shared state:\n${lines.join("\n")}`);
-  assert.equal(found, "FOUND|13", "every scenario of the catalog was read");
+  assert.equal(found, "FOUND|14", "every scenario of the catalog was read");
 });
 
 // The shared helpers, dot-sourced with a context pointing at a temporary place, for the log watch and Fresh setup tests.
@@ -829,11 +829,11 @@ $text = Get-Content -LiteralPath $path -Raw
 'chosen=' + ($text -match '\| Process again \| passed \|')
 'not-chosen=' + ([regex]::Matches($text, '\| not chosen \|').Count)
 'failed-rows=' + ([regex]::Matches($text, '\| failed \|').Count)
-$text -split "\r?\n" | Where-Object { $_ -like '**1 of 13 scenarios passed*' }
+$text -split "\r?\n" | Where-Object { $_ -like '**1 of 14 scenarios passed*' }
 `);
   const run = psFile(source);
   assert.equal(run.status, 0, run.err + run.out);
-  assert.deepEqual(run.out.trim().split(/\r?\n/), ["chosen=True", "not-chosen=12", "failed-rows=0", "**1 of 13 scenarios passed; 0 failed; 12 not run.**"]);
+  assert.deepEqual(run.out.trim().split(/\r?\n/), ["chosen=True", "not-chosen=13", "failed-rows=0", "**1 of 14 scenarios passed; 0 failed; 13 not run.**"]);
 });
 
 // --- the orchestrator and the runner take -Scenarios ------------------------------------------------------------------------

@@ -1,0 +1,6 @@
+exit code: 0
+--- stdout ---
+Accounts in C:\Temp\weir-recover-smoke\data\weir.sqlite3:
+  recover-smoke-admin  role=admin  active
+
+--- stderr ---

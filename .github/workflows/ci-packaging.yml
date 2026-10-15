@@ -151,6 +151,11 @@ jobs:
           RELEASING: ${{ inputs.version }}
         run: node scripts/docker-compose-smoke.mjs upgrade --candidate weir-ci-smoke --releasing "$RELEASING"
 
+      # A person locked out of Weir runs the recovery command the Docker page gives them; this runs it the same way in the running container.
+      - name: Compose recover resets a forgotten password
+        if: ${{ !cancelled() }}
+        run: node scripts/docker-compose-smoke.mjs recover --candidate weir-ci-smoke
+
       - name: Upload Docker compose smoke logs
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -272,6 +277,19 @@ jobs:
 
       - name: Smoke test packaged Windows server
         run: powershell -ExecutionPolicy Bypass -File scripts/smoke-windows-package.ps1
+
+      # The recovery command a locked-out person runs where Weir is installed, from the packaged server folder: the password is reset,
+      # the forgotten one is refused, the new one signs in, and what the command printed is kept.
+      - name: Recover a locked-out account with the packaged WeirServer.exe
+        run: powershell -ExecutionPolicy Bypass -File scripts/smoke-windows-recover.ps1
+
+      - name: Upload what the recover command printed
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: weir-windows-recover-smoke
+          if-no-files-found: warn
+          path: artifacts/windows-recover-smoke/**
 
       - name: Upload the Windows build of this commit
         if: github.event_name != 'pull_request'

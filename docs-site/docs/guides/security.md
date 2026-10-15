@@ -95,6 +95,9 @@ On a Windows install, run the server executable, not the tray app:
 From Command Prompt, that is `"%LocalAppData%\Weir\current\server\WeirServer.exe" recover`.
 Building from source, use `dotnet run --project apps/server/src/Weir.Host -- recover`.
 
+If the command says there is no Weir database, it was pointed at a folder Weir has never used: set `WEIR_HOME`
+to the folder Weir keeps its data in and run it again. It makes no database there.
+
 You will be prompted for the new password (typed without being echoed to the screen), which
 keeps it out of your shell history. For scripted use, pass `--password`. To see the accounts
 without changing anything, use `--list`.
