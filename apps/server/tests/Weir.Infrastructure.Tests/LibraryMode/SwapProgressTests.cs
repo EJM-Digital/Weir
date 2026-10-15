@@ -85,9 +85,21 @@ public sealed class SwapProgressTests : IDisposable
         var reached = Task.Factory.StartNew(() => progress.Reached(SwapPoint.CleanedCopyInPlace), TaskCreationOptions.LongRunning);
         await Eventually.ThatAsync(() => File.Exists(held));
 
-        Assert.Equal("CleanedCopyInPlace", await File.ReadAllTextAsync(held));
+        Assert.Equal("CleanedCopyInPlace", await ReadWhileRenamedAsync(held));
         Assert.False(reached.IsCompleted);
         Assert.False(File.Exists(held + ".tmp"));
+    }
+
+    /// <summary>
+    /// The file's text, read with a share mode that lets the writer's rename finish. The file appears under its name at the moment of
+    /// the rename, and Windows keeps the renaming handle (it holds delete access) open for an instant after: a read that does not share
+    /// delete (`File.ReadAllText` does not) is refused as "used by another process" if it lands in that instant.
+    /// </summary>
+    private static async Task<string> ReadWhileRenamedAsync(string path)
+    {
+        await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream);
+        return await reader.ReadToEndAsync();
     }
 
     private static SwapOutputWriter WriteNew(SwapScenario scenario) =>

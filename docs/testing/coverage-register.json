@@ -5223,7 +5223,7 @@
         "kind": "xunit",
         "test": "The release feed JSON is a hand-written fake; no test runs against the real GitHub releases API"
       },
-      "issue": 1040,
+      "issue": 1142,
       "covers": [
         "route:GET /api/v1/suite/update-status"
       ],
@@ -5257,7 +5257,7 @@
         "kind": "xunit",
         "test": "No test shows a PUT then a GET returning the saved mode, no invalid-mode refusal, no contract test; the GET's own auth is not asserted"
       },
-      "issue": 1040,
+      "issue": 1142,
       "covers": [
         "route:GET /api/v1/suite/update-settings"
       ],
@@ -5778,7 +5778,7 @@
         "kind": "xunit",
         "test": "WindowsHostReadingSource and WindowsNative (the readings on the platform people install on) have no test; every reading is asserted on fakes or Linux sources"
       },
-      "issue": 1041,
+      "issue": 1142,
       "covers": [
         "route:GET /api/v1/system/stats"
       ],
@@ -5891,7 +5891,7 @@
         "kind": "xunit",
         "test": "Nothing validates a real response against the schema, so a field the server stops sending (or sends with another type) while the web client types still say otherwise is caught only where a person wrote a key list."
       },
-      "issue": 1041,
+      "issue": 1142,
       "audit": {
         "id": "X-02",
         "verdict": "Gap"
@@ -6155,7 +6155,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Not proven: a Files-at-once value changed while the server runs takes effect after the 30 s cache expiry (all tests set the value before start; the \"needs no restart\" claim in docs/settings-truthfulness-audit.md has no test); the SettingsReadFailureLogInterval throttle (one warning a minute) is untested."
       },
-      "issue": 1036,
+      "issue": 1142,
       "covers": [
         "service:ProcessingWorkerService"
       ],
@@ -6199,7 +6199,7 @@
         "kind": "xunit",
         "test": "[missing: P2] The loop itself has no test: crashed-tick backoff, recovery gate, heartbeat stop on shutdown, and that the lane claims ONLY WorkLanes.UpkeepKinds. WorkLanes.UpkeepKinds (which kinds are upkeep) has no direct test, so a new job kind added to the wrong list would not be caught."
       },
-      "issue": 1036,
+      "issue": 1142,
       "covers": [
         "service:UpkeepWorkerService"
       ],
@@ -6826,7 +6826,73 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_with_a_list_of_file_types_takes_only_those_types"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_with_no_list_takes_the_built_in_video_types"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "Finishing_a_movies_removal_keeps_a_release_folder_that_holds_another_video_of_a_type_the_workflow_names"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "Finishing_a_movies_removal_removes_the_whole_release_folder_when_the_other_file_is_not_a_video_the_workflow_takes"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_file_in_a_downloaders_unfinished_folder_is_left_out_when_the_workflow_names_no_folders"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_file_in_a_folder_the_workflow_names_is_left_out"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "The_folders_a_workflow_names_replace_the_built_in_ones"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_date_window_decides_whether_a_scan_queues_the_file"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "Hidden_files_and_files_in_hidden_folders_are_left_out_by_default"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_that_keeps_hidden_files_takes_them"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_that_looks_at_the_top_folder_only_leaves_the_folders_below_alone"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_that_looks_below_the_top_folder_takes_every_folder"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_scan_queues_a_pass_for_each_file_the_workflow_takes_and_none_for_the_rest"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -6899,11 +6965,6 @@
           "name": "deleted-queued-file"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P1] The candidate listing options saved on a workflow are never exercised: WatchedFolderListing.Candidates is called only with (null, null, excludeHidden:false, topLevelOnly:false) - custom media_extensions_csv, exclude_markers_csv, exclude_hidden (default true) and top_level_only have persistence tests only; created/modified date windows (LibraryAdmission.Rejection date branches) have no test at all. See SET-L08, L09, L16, L17, L18."
-      },
-      "issue": 1007,
       "covers": [
         "job:processing.watched_folder.remux_scan_dispatch.v1"
       ],
@@ -6997,7 +7058,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Probing is only ever done by a fake media runner or seeded index rows in the scan tests; no test scans a real library with real ffprobe through the job queue. No VM scenario."
       },
-      "issue": 1036,
+      "issue": 1142,
       "covers": [
         "job:processing.library.scan.v1"
       ],
@@ -7170,7 +7231,7 @@
         "kind": "xunit",
         "test": "[missing: P2] SessionCleanupTask.RunOnceAsync itself (unit-of-work open, commit, the log lines) is never run by any test."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "task:auth-session-cleanup"
       ],
@@ -7214,7 +7275,7 @@
         "kind": "xunit",
         "test": "[missing: P2] LogRetentionTask.TickAsync is never called by a test: the once-a-day gate (MinRunInterval) and \"Prune receives the saved days\" are unproven; the host test only shows the task finished without error."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "task:suite-log-retention"
       ],
@@ -7509,7 +7570,7 @@
         "kind": "xunit",
         "test": "[missing: P2] SystemOverviewChangeTask (the 5 s task that calls RefreshAsync, and its no-client short-circuit) has no test; only the frame class it drives is tested. The first test depends on a 250 ms real sleep heuristic."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "task:system-overview"
       ],
@@ -7634,7 +7695,7 @@
         "kind": "xunit",
         "test": "[missing: P2] JobRowsRetentionTask (reads WEIR_JOB_ROWS_RETENTION_DAYS and the interval from WeirOptions, runs the tick off the pool, logs the counts) is untested; the two environment variables are parse-tested only (SET-E15)."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "task:platform-job-rows-retention"
       ],
@@ -7931,7 +7992,7 @@
         "kind": "xunit",
         "test": "[missing: P2] FileLogRetentionTask (reads file_log_retention_days from the operator settings and passes it to PruneAsync) has no test, so the saved setting reaching the prune is unproven (SET-O09)."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "task:processing-file-log-retention"
       ],
@@ -8182,7 +8243,7 @@
         "kind": "xunit",
         "test": "[missing: P2] The hosted loop against the real ThreadPool is not tested: The_service_starts_and_stops_on_a_thread_of_its_own only asserts no warning was logged (it does not prove a thread of its own or that a real starved pool is noticed). New in the working tree (uncommitted)."
       },
-      "issue": 1036,
+      "issue": 1142,
       "covers": [
         "service:ThreadPoolWatch"
       ],
@@ -8367,7 +8428,7 @@
         "kind": "xunit",
         "test": "[missing: P2] No test crosses a daylight-saving change (ScheduleGridTests use America/New_York only on a fixed August date): a window or the library-mode daily run could be an hour out twice a year. The contract test depends on the machine's wall clock."
       },
-      "issue": 1036,
+      "issue": 1142,
       "audit": {
         "id": "JOB-060",
         "verdict": "Partly"
@@ -8563,7 +8624,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Outside this slice, not audited in depth. One in-scope finding: the periodic update check loop (CheckIntervalMinutes) is never run by any test - every TrayUpdates fixture sets CheckIntervalMinutes = 0 (see SET-U03)."
       },
-      "issue": 1036,
+      "issue": 1142,
       "audit": {
         "id": "JOB-066",
         "verdict": "Partly"
@@ -8745,7 +8806,7 @@
         "kind": "xunit",
         "test": "[missing: P2] The step that joins them is untested: LogRetentionTask.TickAsync reading the saved days and pruning once a day (JOB-031)."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "setting:SuiteSettingsRecord.LogRetentionDays"
       ],
@@ -9258,7 +9319,7 @@
         "kind": "xunit",
         "test": "[missing: P2] No test changes the value while the worker runs (30 s cache) - JOB-002."
       },
-      "issue": 1036,
+      "issue": 1142,
       "covers": [
         "setting:ProcessingOperatorSettingsRecord.MaxConcurrentFiles"
       ],
@@ -9459,7 +9520,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Not proven: RemuxPassHandler copying performance.KeepFailedWorkFiles into the pass request, so a real failed pass with the switch on keeps the copy and with it off removes it (no handler/contract test names the setting); no API test saves it (not in ProcessingOperatorSettingsApiTests)."
       },
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "setting:ProcessingOperatorSettingsRecord.KeepFailedWorkFiles"
       ],
@@ -9632,7 +9693,7 @@
         "kind": "xunit",
         "test": "[missing: P2] FileLogRetentionTask (setting -> PruneAsync) untested (JOB-049); no test that a changed value is the one the hourly job uses."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "setting:ProcessingOperatorSettingsRecord.FileLogRetentionDays"
       ],
@@ -10131,12 +10192,58 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "A workflow told to take only certain extensions could take or ignore the wrong files. Needed: scan-dispatch handler test with media_extensions_csv set (a listed and an unlisted extension) asserting which are queued; same for ReleaseFolderRemoval / CompletedMovieRemoval which also read it. Layer: integration."
-      },
-      "issue": 1007,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_with_a_list_of_file_types_takes_only_those_types"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_with_no_list_takes_the_built_in_video_types"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "Finishing_a_movies_removal_keeps_a_release_folder_that_holds_another_video_of_a_type_the_workflow_names"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "Finishing_a_movies_removal_removes_the_whole_release_folder_when_the_other_file_is_not_a_video_the_workflow_takes"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassRealFfmpegTests.cs",
+          "name": "A_release_folder_holding_another_video_of_a_type_the_workflow_names_is_kept_when_the_film_is_removed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassRealFfmpegTests.cs",
+          "name": "A_release_folder_holding_a_file_of_a_type_the_workflow_does_not_name_goes_with_the_film"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_workflow_with_a_list_of_file_types_walks_only_those_types"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_workflow_with_no_list_walks_the_built_in_video_types_and_not_the_files_beside_them"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "The_file_types_a_workflow_names_decide_which_files_a_scan_lists"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_scan_queues_a_pass_for_each_file_the_workflow_takes_and_none_for_the_rest"
+        }
+      ],
       "covers": [
         "setting:ProcessingLibraryRecord.MediaExtensionsCsv"
       ],
@@ -10153,12 +10260,48 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "A half-downloaded torrent folder or \".incomplete\" file could be picked up and cleaned/removed mid-download. Needed: listing/handler tests for the default folder markers and for a custom marker list. Layer: integration (contract scenario with a downloader's temp folder would also prove it end to end)."
-      },
-      "issue": 1007,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_file_in_a_downloaders_unfinished_folder_is_left_out_when_the_workflow_names_no_folders"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_file_in_a_folder_the_workflow_names_is_left_out"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "The_folders_a_workflow_names_replace_the_built_in_ones"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_file_in_a_downloaders_unfinished_folder_is_not_walked_when_the_workflow_names_no_folders"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_file_in_a_folder_the_workflow_names_is_not_walked"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_film_whose_title_holds_a_folder_name_is_still_walked"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "The_folders_a_workflow_names_replace_the_built_in_ones"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_workflow_that_names_no_downloader_folders_ignores_the_built_in_ones_and_a_named_folder_replaces_them"
+        }
+      ],
       "covers": [
         "setting:ProcessingLibraryRecord.ExcludeMarkersCsv"
       ],
@@ -10175,7 +10318,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_file_matching_none_of_the_include_patterns_is_skipped_and_not_queued"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_workflow_with_no_include_patterns_takes_every_path"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_file_matching_no_include_pattern_is_skipped_with_its_reason"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -10188,11 +10347,6 @@
           "name": "A_file_not_matching_include_patterns_is_rejected"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Decision function only; no scan/handler test that a non-matching file is recorded as skipped and not queued."
-      },
-      "issue": 1007,
       "covers": [
         "setting:ProcessingLibraryRecord.IncludePatternsCsv"
       ],
@@ -10295,7 +10449,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_file_over_the_maximum_size_is_skipped_for_the_person_to_decide_and_not_queued"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_workflow_with_no_maximum_size_takes_a_file_of_any_size"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_file_over_the_maximum_size_is_skipped_with_no_below_minimum_kind"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -10308,11 +10478,6 @@
           "name": "A_file_above_the_maximum_size_is_rejected"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] No scan-level test; the truthfulness doc says an over-maximum file is \"Needs you\" and a hand-off skips this rule - neither behaviour has a handler/contract test."
-      },
-      "issue": 1007,
       "covers": [
         "setting:ProcessingLibraryRecord.MaxFileSizeMb"
       ],
@@ -10430,12 +10595,23 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Four settings shown in the UI (library-intake-groups.tsx) with no effect test: a file inside/outside the window could be cleaned or skipped wrongly. Needed: Core unit tests for each of the four boundaries (inclusive/exclusive: created_before uses >=) and one scan-level test. Layer: unit + integration."
-      },
-      "issue": 1007,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Processing/LibraryAdmissionDateWindowTests.cs",
+          "name": "LibraryAdmissionDateWindowTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_date_window_decides_whether_a_scan_queues_the_file"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_date_window_decides_whether_a_file_is_taken_or_skipped_with_its_reason"
+        }
+      ],
       "covers": [
         "setting:ProcessingLibraryRecord.CreatedAfter",
         "setting:ProcessingLibraryRecord.CreatedBefore",
@@ -10455,12 +10631,38 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "On by default, so every install depends on it: \".hidden\" files/folders in downloads (and macOS ._ files) must be ignored. Needed: listing test with a hidden file and folder, on and off; and the library-mode walker equivalent. Layer: integration."
-      },
-      "issue": 1007,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "Hidden_files_and_files_in_hidden_folders_are_left_out_by_default"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_that_keeps_hidden_files_takes_them"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "Hidden_files_and_files_in_hidden_folders_are_not_walked_by_default"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_workflow_that_keeps_hidden_files_walks_them"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_library_folder_inside_a_hidden_folder_is_still_walked"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "Hidden_files_are_left_out_unless_the_workflow_keeps_them"
+        }
+      ],
       "covers": [
         "setting:ProcessingLibraryRecord.ExcludeHidden"
       ],
@@ -10477,12 +10679,33 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Needed: listing test with files in sub-folders, on and off (and the same through LibraryFileWalker). Layer: integration."
-      },
-      "issue": 1007,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_that_looks_at_the_top_folder_only_leaves_the_folders_below_alone"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanFileFilterTests.cs",
+          "name": "A_workflow_that_looks_below_the_top_folder_takes_every_folder"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_workflow_that_looks_at_the_top_folder_only_walks_nothing_below_it"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryFileWalkerFilterTests.cs",
+          "name": "A_workflow_that_looks_below_the_top_folder_walks_every_folder"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_workflow_that_looks_at_the_top_folder_only_lists_nothing_below_it"
+        }
+      ],
       "covers": [
         "setting:ProcessingLibraryRecord.TopLevelOnly"
       ],
@@ -10559,7 +10782,7 @@
         "kind": "xunit",
         "test": "[missing: P2] No runner/handler test that the saved flag reaches the helper for a real pass (RemuxPassPaths.cs:240 -> RemuxPassRunner.PostSuccessCleanup.cs:31): output media mtime equals the source's when on, differs when off."
       },
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "setting:ProcessingLibraryRecord.PreserveOriginalTimestamps"
       ],
@@ -10915,7 +11138,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_file_that_cannot_be_opened_waits_and_is_not_queued"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanAdmissionTests.cs",
+          "name": "A_workflow_that_skips_the_readability_check_queues_a_file_that_cannot_be_opened"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/WorkflowIntakeSettingsTests.cs",
+          "name": "A_file_that_cannot_be_opened_waits_unless_the_workflow_skips_the_readability_check"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -10948,11 +11187,6 @@
           "name": "ProcessingRig"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Needed: scan handler test with an unreadable file, skip on and off."
-      },
-      "issue": 1007,
       "covers": [
         "setting:ProcessingLibraryRecord.SkipAccessTests"
       ],
@@ -11098,7 +11332,7 @@
         "kind": "xunit",
         "test": "[missing: P2] No handler or contract test turns it off and shows a tool failure is not retried."
       },
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "setting:ProcessingLibraryRecord.RetryExecutionFailures"
       ],
@@ -11254,7 +11488,7 @@
         "kind": "xunit",
         "test": "Needed: scan two workflows (priorities 0 and 10), assert the queued jobs carry the priority and the higher workflow's file is claimed first. Layer: integration."
       },
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "setting:ProcessingLibraryRecord.Priority"
       ],
@@ -11566,7 +11800,7 @@
         "kind": "xunit",
         "test": "[missing: P2] The \"on\" path (a hardlinked file IS cleaned and the seeding copy stays intact) has no handler/real-FS test."
       },
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "setting:LibrarySettings.CleanHardlinkedFiles"
       ],
@@ -11620,7 +11854,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Evaluator-level; no clean-handler test that a risky file is skipped with the flag on and cleaned (with a warning) with it off."
       },
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "setting:LibrarySettings.SkipIfManagerWouldRedownload"
       ],
@@ -12767,7 +13001,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Needed: Api test that an exception returns the sanitized body under production and the developer page under development."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_ENV"
       ],
@@ -12801,7 +13035,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Needed: Api test with WEIR_LOG_LEVEL=WARNING asserting an Information line is absent from the log file and a warning is present."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_LOG_LEVEL"
       ],
@@ -12955,7 +13189,7 @@
         "kind": "xunit",
         "test": "A custom name must be both set and read; a mismatch locks every user out. Needed: Api test with WEIR_SESSION_COOKIE_NAME=x: Set-Cookie uses x and the session works."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_SESSION_COOKIE_NAME"
       ],
@@ -12977,7 +13211,7 @@
         "kind": "xunit",
         "test": "Needed: strict and none values asserted on Set-Cookie (none without Secure is dropped by browsers - lock-out risk worth a documented test). Layer: integration."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_SESSION_COOKIE_SAMESITE"
       ],
@@ -13054,7 +13288,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Non-default trusted values never reach a session in any test."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_SESSION_IDLE_MINUTES",
         "setting:env:WEIR_SESSION_ABSOLUTE_DAYS",
@@ -13241,7 +13475,7 @@
         "kind": "xunit",
         "test": "[missing: P2] See JOB-042. Needed: JobRowsRetentionTask test with options of 1 day / 60 s on a fake clock."
       },
-      "issue": 1008,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_JOB_ROWS_RETENTION_DAYS",
         "setting:env:WEIR_JOB_ROWS_RETENTION_SCHEDULE_INTERVAL_SECONDS"
@@ -13375,7 +13609,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Needed: AT test starting a server with each variable and reading the enqueuer's Interval (like ProcessingEnvironmentSwitchTests does for the switches)."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_WORK_TEMP_STALE_SWEEP_MOVIE_SCHEDULE_INTERVAL_SECONDS",
         "setting:env:WEIR_PROCESSING_WORK_TEMP_STALE_SWEEP_TV_SCHEDULE_INTERVAL_SECONDS"
@@ -13415,7 +13649,7 @@
         "kind": "xunit",
         "test": "[missing: P2] The handler tests prove \"older than the stale age is removed\", not that the environment value is the age used."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_WORK_TEMP_STALE_SWEEP_MIN_STALE_AGE_SECONDS"
       ],
@@ -13478,7 +13712,7 @@
         "kind": "xunit",
         "test": "[missing: P2] WEIR_BACKUP_DIR, WEIR_LOG_DIR and WEIR_TEMP_DIR are parse-tested only: no test starts a server with each and finds backups / the log / temp files there (ConfigurationBackups.Directory and WeirLogFile read the option, untested with a non-default)."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_DB_PATH",
         "setting:env:WEIR_BACKUP_DIR",
@@ -13697,7 +13931,7 @@
         "kind": "xunit",
         "test": "[missing: P2] The environment value reaching ScheduleTask:158 and Watcher:394 is untested."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_WATCHED_FOLDER_REMUX_SCAN_DISPATCH_PERIODIC_ENQUEUE_REMUX_JOBS"
       ],
@@ -13719,7 +13953,7 @@
         "kind": "xunit",
         "test": "Needed: unit test of the ffprobe command line for non-default values (IT/Media/MediaToolsTests.cs style). Wrong values can make probing miss late-starting streams."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_PROBE_SIZE_MB",
         "setting:env:WEIR_PROCESSING_ANALYZE_DURATION_SECONDS"
@@ -13759,7 +13993,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Needed: TV variant and a test that the configured age (not a constant) decides."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_MOVIE_OUTPUT_CLEANUP_MIN_AGE_SECONDS",
         "setting:env:WEIR_PROCESSING_TV_OUTPUT_CLEANUP_MIN_AGE_SECONDS"
@@ -13789,7 +14023,7 @@
         "kind": "xunit",
         "test": "[missing: P2] Sonarr pair is parse-tested only; undocumented outside ADR-0008."
       },
-      "issue": 1038,
+      "issue": 1142,
       "covers": [
         "setting:env:WEIR_ARR_RADARR_BASE_URL",
         "setting:env:WEIR_ARR_SONARR_BASE_URL",
@@ -14358,7 +14592,7 @@
         "kind": "vitest",
         "test": "vitest: pending useMeQuery renders PageLoading and no redirect"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-009",
         "verdict": "Gap"
@@ -14460,7 +14694,7 @@
         "kind": "vitest",
         "test": "vitest with memory router: settings pending shows \"Loading setup\"; settings error renders the Outlet; pending state on a non-wizard path redirects, on /setup-wizard does not"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-013",
         "verdict": "Gap"
@@ -14512,7 +14746,7 @@
         "kind": "vitest",
         "test": "E2E or vitest memory router: signed-out GET /whatever lands on /login. NOTE the top-level `path: \"*\"` -> /login route in router.tsx looks unreachable because `/` with a `*` child matches every address first; if so it is dead code"
       },
-      "issue": 1045,
+      "issue": 1142,
       "covers": [
         "web:*"
       ],
@@ -14755,7 +14989,7 @@
         "kind": "vitest",
         "test": "vitest: renders \"Loading Weir\" status inside the fallback frame"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-024",
         "verdict": "Gap"
@@ -14946,7 +15180,7 @@
         "kind": "vitest",
         "test": "vitest: open drawer, click a link, assert sidebar loses mm-sidebar--open and aria-expanded false"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-031",
         "verdict": "Gap"
@@ -15006,7 +15240,7 @@
         "kind": "vitest",
         "test": "vitest with matchMedia stub: laptop width collapses, a stored false choice wins"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-034",
         "verdict": "Gap"
@@ -15050,7 +15284,7 @@
         "kind": "vitest",
         "test": "vitest: open drawer, click the backdrop button, then reopen and click Menu again"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-036",
         "verdict": "Gap"
@@ -15180,7 +15414,7 @@
         "kind": "vitest",
         "test": "vitest: SidebarUser with signingOut true shows \"Signing out…\" and disabled"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-040",
         "verdict": "Gap"
@@ -15199,7 +15433,7 @@
         "kind": "vitest",
         "test": "vitest: click the link, assert location and menu closed"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-041",
         "verdict": "Gap"
@@ -16921,7 +17155,7 @@
         "kind": "vitest",
         "test": "vitest: useMeQuery returns a user -> Navigate to \"/\""
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-103",
         "verdict": "Gap"
@@ -16961,7 +17195,7 @@
         "kind": "vitest",
         "test": "vitest: click toggle, input type text/password, aria-label Show/Hide, cleared on empty"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-105",
         "verdict": "Gap"
@@ -16980,7 +17214,7 @@
         "kind": "vitest",
         "test": "vitest/E2E: submit empty form does not call the mutation"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-106",
         "verdict": "Gap"
@@ -17119,7 +17353,7 @@
         "kind": "vitest",
         "test": "vitest: whitespace-only username submitted -> alert, mutation not called"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-112",
         "verdict": "Gap"
@@ -17138,7 +17372,7 @@
         "kind": "vitest",
         "test": "vitest: edit a field after an error, alert disappears"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-113",
         "verdict": "Gap"
@@ -17213,7 +17447,7 @@
         "kind": "vitest",
         "test": "vitest with pending mutation"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-116",
         "verdict": "Gap"
@@ -17232,7 +17466,7 @@
         "kind": "vitest",
         "test": "vitest memory router, bootstrap_allowed false and a signed-in me. (E2E FirstVisitTests covers the opposite direction only)"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-117",
         "verdict": "Gap"
@@ -17272,7 +17506,7 @@
         "kind": "vitest",
         "test": "vitest: link goes to /login with state.manualSignIn so Login does not bounce back"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-119",
         "verdict": "Gap"
@@ -17291,7 +17525,7 @@
         "kind": "vitest",
         "test": "same as 105"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-120",
         "verdict": "Gap"
@@ -17455,7 +17689,7 @@
         "kind": "vitest",
         "test": "vitest with pending mutations: both buttons disabled, label \"Saving…\""
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-126",
         "verdict": "Gap"
@@ -17625,7 +17859,7 @@
     {
       "id": "web-shell.first-run-setup-wizard.time-zone-picker-choose-a-zone-saved-as-app",
       "area": "web-shell",
-      "behaviour": "Time zone picker: choose a zone, saved as app_timezone; unknown saved zone falls back to UTC",
+      "behaviour": "Time zone picker: choose a zone, saved as app_timezone; a saved zone (UTC, listed or not) is shown as the current choice and kept; none saved is UTC",
       "kind": "screen action",
       "severity": "medium",
       "touches": "none",
@@ -17649,12 +17883,27 @@
         {
           "type": "vitest",
           "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
-          "name": "falls back to UTC for a saved zone of %j"
+          "name": "shows UTC as chosen when the server is in UTC, and saves it"
         },
         {
           "type": "vitest",
           "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
-          "name": "lets a zone be picked after an unknown one fell back to UTC"
+          "name": "shows a valid zone the list lacks as chosen, and keeps it when it is not changed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "keeps a saved zone with spaces around it, without them"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "saves UTC when no zone is saved (%j)"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "lets another zone be picked over one the list lacks"
         }
       ],
       "audit": {
@@ -17722,7 +17971,7 @@
         "kind": "vitest",
         "test": "vitest: dispatch beforeunload while pending -> default prevented; not once completed/skipped"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-134",
         "verdict": "Gap"
@@ -17741,7 +17990,7 @@
         "kind": "vitest",
         "test": "vitest: three cases"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-135",
         "verdict": "Gap"
@@ -17998,7 +18247,7 @@
         "kind": "vitest",
         "test": "vitest: Remove opens the shared dialog, confirm deletes and the row disappears"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-145",
         "verdict": "Gap"
@@ -18017,7 +18266,7 @@
         "kind": "vitest",
         "test": "vitest for both buttons (onBack resets the answer to null)"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-146",
         "verdict": "Gap"
@@ -18036,7 +18285,7 @@
         "kind": "vitest",
         "test": "Wizard glue (justCreated + answering) untested: vitest asserting the prompt appears after a successful create and test in the wizard"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-147",
         "verdict": "Gap"
@@ -18055,7 +18304,7 @@
         "kind": "vitest",
         "test": "vitest for each; the Try again button must call refetch"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-148",
         "verdict": "Gap"
@@ -18074,7 +18323,7 @@
         "kind": "vitest",
         "test": "vitest: Deluno chosen, connection failing, press Finish -> \"Connect and test it first…\", no save"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-149",
         "verdict": "Gap"
@@ -18093,7 +18342,7 @@
         "kind": "vitest",
         "test": "Proves nothing about responsiveness: jsdom does no layout and only UnifiedLog (a System tab) is rendered five times with a changed window.innerWidth. Real checks are the two phone-width E2E assertions (WEB-047). Needed: Playwright overflow/visibility checks of the shell and each screen at 375 and 768"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-150",
         "verdict": "Gap"
@@ -18633,7 +18882,7 @@
         "kind": "vitest",
         "test": "vitest with fake timers: settles only after the delay, restarts on each change, clears on unmount"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-172",
         "verdict": "Gap"
@@ -18652,7 +18901,7 @@
         "kind": "vitest",
         "test": "vitest: visibilityState hidden, prefers-reduced-motion reduce, and resizing class"
       },
-      "issue": 1045,
+      "issue": 1142,
       "audit": {
         "id": "WEB-173",
         "verdict": "Gap"
@@ -19016,7 +19265,7 @@
         "kind": "vitest",
         "test": "Needs a vitest that opens the picker, picks \"Library cleaning\" and asserts ?work=library; also that it shows the current value."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-185",
         "verdict": "Gap"
@@ -19193,7 +19442,7 @@
         "kind": "vitest",
         "test": "Needs an E2E at about 375 px asserting no horizontal overflow on / and /?view=system, the pipeline stations stack, and the compact work picker shows."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-190",
         "verdict": "Gap"
@@ -19212,7 +19461,7 @@
         "kind": "vitest",
         "test": "A vitest with the files query pending."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-191",
         "verdict": "Gap"
@@ -19231,7 +19480,7 @@
         "kind": "vitest",
         "test": "A vitest with the files query in error asserting the entry error and its wording."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-192",
         "verdict": "Gap"
@@ -20084,7 +20333,7 @@
         "kind": "vitest",
         "test": "The figure shows \"…\" for ever if the stats/activity read fails (no error state in code or test)."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-220",
         "verdict": "Gap"
@@ -20591,7 +20840,7 @@
         "kind": "vitest",
         "test": "Needs a vitest forcing a narrow measured width (or an E2E at phone width) asserting cards appear under their station headings."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-237",
         "verdict": "Gap"
@@ -20920,7 +21169,7 @@
         "kind": "vitest",
         "test": "Needs a vitest rendering the hook with a new first item and asserting the polite status text, and none on first load."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-248",
         "verdict": "Gap"
@@ -20969,7 +21218,7 @@
         "kind": "vitest",
         "test": "Shows \"Nothing has finished yet.\" for a failed read (no error state in code or test)."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-250",
         "verdict": "Gap"
@@ -21178,7 +21427,7 @@
         "kind": "vitest",
         "test": "Says \"Nothing yet. What Weir does appears here.\" (a wrong statement) when the read failed."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-258",
         "verdict": "Gap"
@@ -21753,7 +22002,7 @@
         "kind": "vitest",
         "test": "Buttons and links are native, but no test drives the panel from the keyboard or checks where focus lands after Remove or Try again removes the row."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-278",
         "verdict": "Gap"
@@ -22101,7 +22350,7 @@
         "kind": "vitest",
         "test": "Needs a vitest with `loading` true."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-290",
         "verdict": "Gap"
@@ -22256,7 +22505,7 @@
         "kind": "vitest",
         "test": "Either wire it from the file and test it, or drop the dead prop; the component is also used by Activity's detail and untested there."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-296",
         "verdict": "Gap"
@@ -22445,7 +22694,7 @@
         "kind": "vitest",
         "test": "Needs a vitest clicking Cancel and asserting `onClose`."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-305",
         "verdict": "Gap"
@@ -22464,7 +22713,7 @@
         "kind": "vitest",
         "test": "Needs a vitest with `submitting` true."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-306",
         "verdict": "Gap"
@@ -22483,7 +22732,7 @@
         "kind": "vitest",
         "test": "Needs a vitest with `submitError`."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-307",
         "verdict": "Gap"
@@ -22523,7 +22772,7 @@
         "kind": "vitest",
         "test": "Needs a vitest with an image stream."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-309",
         "verdict": "Gap"
@@ -22622,7 +22871,7 @@
         "kind": "vitest",
         "test": "Needs a vitest asserting the entry error."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-313",
         "verdict": "Gap"
@@ -22938,7 +23187,7 @@
         "kind": "vitest",
         "test": "The `stats.isError` branch is untested (the other band cards test theirs)."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-325",
         "verdict": "Gap"
@@ -24133,7 +24382,7 @@
         "kind": "vitest",
         "test": "A keyboard user cannot read a trace's values; needs behaviour plus a test."
       },
-      "issue": 1046,
+      "issue": 1142,
       "audit": {
         "id": "WEB-369",
         "verdict": "Gap"
@@ -24875,7 +25124,7 @@
         "kind": "vitest",
         "test": "isLoading branches are never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-391",
         "verdict": "Gap"
@@ -24978,7 +25227,7 @@
         "kind": "vitest",
         "test": "The 1000-row limit note (and 'first N in this order' wording) is never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-395",
         "verdict": "Gap"
@@ -24997,7 +25246,7 @@
         "kind": "vitest",
         "test": "removedNotice is set by callbacks in tests but its clearing in setParam/pickEntry is never asserted."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-396",
         "verdict": "Gap"
@@ -25216,7 +25465,7 @@
         "kind": "vitest",
         "test": "aria-current on the open row is never asserted."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-403",
         "verdict": "Gap"
@@ -25235,7 +25484,7 @@
         "kind": "vitest",
         "test": "Rows are real buttons but no keyboard path is tested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-404",
         "verdict": "Gap"
@@ -25574,7 +25823,7 @@
         "kind": "vitest",
         "test": "activity-direct-play is never rendered with data."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-415",
         "verdict": "Gap"
@@ -25593,7 +25842,7 @@
         "kind": "vitest",
         "test": "WorkingFigures (role=progressbar and the dl) is never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-416",
         "verdict": "Gap"
@@ -25702,7 +25951,7 @@
         "kind": "vitest",
         "test": "The loading branch of RecordSection is never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-420",
         "verdict": "Gap"
@@ -25746,7 +25995,7 @@
         "kind": "vitest",
         "test": "Both empty-record sentences (still working vs older than the File activity setting) are untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-422",
         "verdict": "Gap"
@@ -25765,7 +26014,7 @@
         "kind": "vitest",
         "test": "The href (processingFileLogDownloadPath) is never asserted and the download is never followed."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-423",
         "verdict": "Gap"
@@ -25784,7 +26033,7 @@
         "kind": "vitest",
         "test": "Shown only for a running file; never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-424",
         "verdict": "Gap"
@@ -25833,7 +26082,7 @@
         "kind": "vitest",
         "test": "use-narrow-detail-focus has no test (matchMedia, scrollIntoView, focus, first-render skip)."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-426",
         "verdict": "Gap"
@@ -25852,7 +26101,7 @@
         "kind": "vitest",
         "test": "No role=region/name assertion; the detail is inline, not a modal, so there is no Escape or focus trap to test."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-427",
         "verdict": "Gap"
@@ -25871,7 +26120,7 @@
         "kind": "vitest",
         "test": "ActivityCleanDetail is never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-428",
         "verdict": "Gap"
@@ -25984,7 +26233,7 @@
         "kind": "vitest",
         "test": "Never rendered or clicked."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-432",
         "verdict": "Gap"
@@ -26052,7 +26301,7 @@
         "kind": "vitest",
         "test": "Click, request (media_scope, library_id), 'Checking…' label, success and failure notices are untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-435",
         "verdict": "Gap"
@@ -26071,7 +26320,7 @@
         "kind": "vitest",
         "test": "Only presence is tested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-436",
         "verdict": "Gap"
@@ -26120,7 +26369,7 @@
         "kind": "vitest",
         "test": "anyPending and every pendingLabel are never asserted."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-438",
         "verdict": "Gap"
@@ -26442,7 +26691,7 @@
         "kind": "vitest",
         "test": "setRemovedNotice rendering and selectedEntry falling back to the first row are untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-451",
         "verdict": "Gap"
@@ -26656,7 +26905,7 @@
         "kind": "vitest",
         "test": "KEPT_SORT_VALUES/sortRows never exercised on this table."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-458",
         "verdict": "Gap"
@@ -26750,7 +26999,7 @@
         "kind": "vitest",
         "test": "libraries.isPending branch never rendered (the page tests mock the query as loaded)."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-462",
         "verdict": "Gap"
@@ -26769,7 +27018,7 @@
         "kind": "vitest",
         "test": "The Library page's libraries.isError branch is never rendered; only the shared component is tested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-463",
         "verdict": "Gap"
@@ -26788,7 +27037,7 @@
         "kind": "vitest",
         "test": "NoLibrary never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-464",
         "verdict": "Gap"
@@ -26967,7 +27216,7 @@
         "kind": "vitest",
         "test": "A reload or a shared link loses the search, the page, the reason filter and the open file; ?q= and ?path= on load are not tested either. (Sort is kept in this browser's storage, which is tested.)"
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-470",
         "verdict": "Gap"
@@ -27505,7 +27754,7 @@
         "kind": "vitest",
         "test": "files.isPending and files.isError branches are never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-489",
         "verdict": "Gap"
@@ -27875,7 +28124,7 @@
         "kind": "vitest",
         "test": "preview.isPending and isError never rendered."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-505",
         "verdict": "Gap"
@@ -27944,7 +28193,7 @@
         "kind": "vitest",
         "test": "The toggle back from choosing is never clicked."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-508",
         "verdict": "Gap"
@@ -28007,7 +28256,7 @@
         "kind": "vitest",
         "test": "preview.refetch and its 'Checking…' label untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-511",
         "verdict": "Gap"
@@ -28101,7 +28350,7 @@
         "kind": "vitest",
         "test": "href never asserted."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-515",
         "verdict": "Gap"
@@ -28120,7 +28369,7 @@
         "kind": "vitest",
         "test": "FileHistory never rendered with items."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-516",
         "verdict": "Gap"
@@ -28139,7 +28388,7 @@
         "kind": "vitest",
         "test": "Reset on switching file untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-517",
         "verdict": "Gap"
@@ -28497,7 +28746,7 @@
         "kind": "vitest",
         "test": "iconOnly / data-icon-only never asserted; layout fit is jsdom-faked elsewhere."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-532",
         "verdict": "Gap"
@@ -28596,7 +28845,7 @@
         "kind": "vitest",
         "test": "The Enter key, ServerFolderPickerButton onSelect, blank and duplicate handling are untested here."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-536",
         "verdict": "Gap"
@@ -28718,7 +28967,7 @@
         "kind": "vitest",
         "test": "disabled state when folders is empty untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-542",
         "verdict": "Gap"
@@ -28943,7 +29192,7 @@
         "kind": "vitest",
         "test": "Invalidation of settings, files and overview after save is untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-553",
         "verdict": "Gap"
@@ -29163,7 +29412,7 @@
         "kind": "vitest",
         "test": "Layout is jsdom-faked or untested."
       },
-      "issue": 1047,
+      "issue": 1142,
       "audit": {
         "id": "WEB-564",
         "verdict": "Gap"
@@ -29340,7 +29589,7 @@
         {
           "type": "vitest",
           "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
-          "name": "sends a first tab's own name back to the area's address"
+          "name": "sends a first tab's own name back to the area's address (%s)"
         }
       ],
       "covers": [
@@ -29601,7 +29850,7 @@
         "kind": "vitest",
         "test": "Unit test of useUnsavedChangesRegistry: beforeunload default prevented while a panel reports unsaved edits, listener removed once cleared. Layer: vitest."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-579",
         "verdict": "Gap"
@@ -29645,7 +29894,7 @@
         "kind": "vitest",
         "test": "Route test with a rejecting lazy loader for one tab: error element shown, sibling tab still opens. Layer: vitest."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-581",
         "verdict": "Gap"
@@ -29759,7 +30008,7 @@
         "kind": "vitest",
         "test": "One test per panel with a never-resolving fetch asserting the loading label and that no empty-state text shows. Layer: vitest."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-585",
         "verdict": "Gap"
@@ -29778,7 +30027,7 @@
         "kind": "vitest",
         "test": "Note plus test: no test shows a panel leaving the error state when a live push or a refocus refetch succeeds, or what the person can do other than reload. Layer: vitest."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-586",
         "verdict": "Gap"
@@ -29913,12 +30162,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/timezone-options-for.test.ts",
+          "name": "timezoneOptionsFor"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/timezone-options-for.test.ts",
+          "name": "offers UTC, so a server on UTC has a zone to show"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/timezone-options-for.test.ts",
+          "name": "adds a saved zone the list lacks, first, named with its offset"
+        }
+      ],
       "needs": {
         "kind": "vitest",
-        "test": "Unit test: every curated id is accepted by Intl.DateTimeFormat, labels sort, no duplicate ids, savedZone returns empty for an unlisted zone. Layer: vitest."
+        "test": "Unit test: every curated id is accepted by Intl.DateTimeFormat, labels sort, no duplicate ids, savedZone returns the saved zone, including one outside the list, and UTC when none is saved. Layer: vitest."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-591",
         "verdict": "Gap"
@@ -30536,7 +30801,7 @@
         "kind": "vitest",
         "test": "vitest with a MemoryRouter: after the editor opens, edit/addFrom are gone from the address (replace, no history entry); an unknown or non-positive id opens nothing."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-615",
         "verdict": "Gap"
@@ -30710,7 +30975,7 @@
         "kind": "vitest",
         "test": "vitest: two suggestions for one manager show the Which one? select; picking TV then Continue opens the TV preset."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-623",
         "verdict": "Gap"
@@ -30754,7 +31019,7 @@
         "kind": "vitest",
         "test": "vitest: fetchLibrarySuggestions rejected shows the role=alert text and re-enables Continue; pending shows Asking... and disables Continue."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-625",
         "verdict": "Gap"
@@ -30773,7 +31038,7 @@
         "kind": "vitest",
         "test": "vitest: click Cancel, the choice is gone, no editor, no create."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-626",
         "verdict": "Gap"
@@ -30817,7 +31082,7 @@
         "kind": "vitest",
         "test": "vitest: clear Name, Save disabled; type a name, Save enabled; whitespace-only name still disabled."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-628",
         "verdict": "Gap"
@@ -31284,7 +31549,7 @@
         "kind": "vitest",
         "test": "vitest: edit, Cancel, confirm Leave, editor closes and the list still shows the saved name; reopening shows the saved values."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-646",
         "verdict": "Gap"
@@ -31323,7 +31588,7 @@
         "kind": "vitest",
         "test": "SidePanel has no test file. vitest: with an edited editor, Escape / backdrop / X open the unsaved prompt instead of discarding; focus returns to the Edit button."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-648",
         "verdict": "Gap"
@@ -31342,7 +31607,7 @@
         "kind": "vitest",
         "test": "vitest: asViewer, open Edit (if reachable) or render LibraryEditor with editable=false; all inputs, selects and Save disabled."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-649",
         "verdict": "Gap"
@@ -31560,7 +31825,7 @@
         "kind": "vitest",
         "test": "vitest: pending fetch shows the loading line; rejected fetch shows the alert text; neither hides the folder fields."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-658",
         "verdict": "Gap"
@@ -31714,7 +31979,7 @@
         "kind": "vitest",
         "test": "vitest: pending fetch shows the loading line; click Check again calls fetchLibraryFolderChain a second time and shows Checking… until it settles."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-664",
         "verdict": "Gap"
@@ -32378,7 +32643,7 @@
         "kind": "vitest",
         "test": "vitest: a workflow with no grid says Any time and a workflow with a drawn grid says On the hours chosen for it; the link goes to /setup/workflows/schedule."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-686",
         "verdict": "Gap"
@@ -32427,7 +32692,7 @@
         "kind": "vitest",
         "test": "vitest: drift result with one moved root renders the name, detail and Manager/Weir values; empty result shows the no-differences line."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-688",
         "verdict": "Gap"
@@ -32446,7 +32711,7 @@
         "kind": "vitest",
         "test": "vitest: discoverProcessingLibraries rejected and importDiscoveredProcessingLibraries rejected each show their notice in the page notice area."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-689",
         "verdict": "Gap"
@@ -32465,7 +32730,7 @@
         "kind": "vitest",
         "test": "vitest: discover returns one already imported and one with local_path_problem; both checkboxes disabled with their messages; empty list shows the empty line."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-690",
         "verdict": "Gap"
@@ -32484,7 +32749,7 @@
         "kind": "vitest",
         "test": "vitest: asViewer and no connections each render no Import section."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-691",
         "verdict": "Gap"
@@ -32568,7 +32833,7 @@
         "kind": "vitest",
         "test": "vitest: a disabled workflow shows the label; no workflows shows the empty text."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-695",
         "verdict": "Gap"
@@ -32687,7 +32952,7 @@
         "kind": "vitest",
         "test": "vitest: Save disabled on open, enabled after one cell, Saving… with a pending update."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-700",
         "verdict": "Gap"
@@ -32706,7 +32971,7 @@
         "kind": "vitest",
         "test": "vitest: updateProcessingLibrary rejected shows the alert, editor stays open with the drawn week."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-701",
         "verdict": "Gap"
@@ -32745,7 +33010,7 @@
         "kind": "vitest",
         "test": "vitest: confirm Leave replaces the editor with the other workflow's week; Close on a dirty week asks and Leave discards."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-703",
         "verdict": "Gap"
@@ -32838,11 +33103,26 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/system-page.test.tsx",
           "name": "holds the time zone on About, and saves a different one chosen there"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "the time zone a server is in"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "shows UTC as chosen on a server in UTC"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "offers that zone beside the listed ones, and saves another that is picked"
         }
       ],
       "needs": {
         "kind": "vitest",
-        "test": "The other fields in the body (setup_wizard_state, log_retention_days), the success state (Save disappears, clock text) and a zone not in the curated list are not asserted. No E2E saves a zone."
+        "test": "The other fields in the body (setup_wizard_state, log_retention_days), the success state (Save disappears, clock text) are not asserted. No E2E saves a zone."
       },
       "issue": 1055,
       "audit": {
@@ -32863,7 +33143,7 @@
         "kind": "vitest",
         "test": "vitest: putAppSettings rejected shows the alert and keeps the chosen zone and the Save button."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-708",
         "verdict": "Gap"
@@ -32882,7 +33162,7 @@
         "kind": "vitest",
         "test": "vitest: choose a zone without saving, navigate to another System tab or area, expect the leave prompt."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-709",
         "verdict": "Gap"
@@ -32901,7 +33181,7 @@
         "kind": "vitest",
         "test": "E2E at phone viewport: open Change hours on Schedule, assert no horizontal overflow of the document."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-710",
         "verdict": "Gap"
@@ -32970,7 +33250,7 @@
         "kind": "vitest",
         "test": "vitest: rule sets [] shows the empty text and the New profile button; no editor."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-713",
         "verdict": "Gap"
@@ -32989,7 +33269,7 @@
         "kind": "vitest",
         "test": "vitest: libraries with rule_set_id set list their names in rule-set-used-by; none shows the hint."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-714",
         "verdict": "Gap"
@@ -33052,7 +33332,7 @@
         "kind": "vitest",
         "test": "vitest: clear the name, Save profile, notice shown, create/update not called."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-717",
         "verdict": "Gap"
@@ -33126,7 +33406,7 @@
         "kind": "vitest",
         "test": "vitest: updateProcessingRuleSet rejected shows the notice, draft intact, Save usable again."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-720",
         "verdict": "Gap"
@@ -33343,7 +33623,7 @@
         "kind": "vitest",
         "test": "vitest: a profile with two removals on shows '2 of 5 on' and the fold open."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-731",
         "verdict": "Gap"
@@ -33382,7 +33662,7 @@
         "kind": "vitest",
         "test": "vitest: toggle each and assert remove_attachments, remove_title, remove_language_tags, remove_other_metadata."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-733",
         "verdict": "Gap"
@@ -33481,7 +33761,7 @@
         "kind": "vitest",
         "test": "vitest: edit the name, press New profile, expect the unsaved prompt; Keep editing leaves the profile open."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-737",
         "verdict": "Gap"
@@ -33500,7 +33780,7 @@
         "kind": "vitest",
         "test": "Covered by the integration test named in the scaffolding section; add a case for a new profile, which is dirty from the moment it opens."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-738",
         "verdict": "Gap"
@@ -33519,7 +33799,7 @@
         "kind": "vitest",
         "test": "Behaviour question and test: after New profile there is no Cancel; either add one or pin that leaving is the only way, with the guard prompt."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-739",
         "verdict": "Gap"
@@ -33608,7 +33888,7 @@
         "kind": "vitest",
         "test": "vitest: role viewer, all inputs and buttons disabled, no request on click."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-743",
         "verdict": "Gap"
@@ -33766,7 +34046,7 @@
         "kind": "vitest",
         "test": "vitest: two workflows, pick the second, Preview, assert libraryId 2."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-750",
         "verdict": "Gap"
@@ -33785,7 +34065,7 @@
         "kind": "vitest",
         "test": "vitest: anywhere mode with 'C:\\\\Media\\\\Movies' and 'Movie.mkv' sends C:\\\\Media\\\\Movies\\\\Movie.mkv; with '/media/movies/' and '/Movie.mkv' sends one separator; trailing and leading separators trimmed."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-751",
         "verdict": "Gap"
@@ -33804,7 +34084,7 @@
         "kind": "vitest",
         "test": "vitest: no path means Preview disabled; a pending preview shows Checking… and the role=status text."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-752",
         "verdict": "Gap"
@@ -33908,7 +34188,7 @@
         "kind": "vitest",
         "test": "vitest: render RulesPreviewPanel with disabled; Try on a file disabled."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-757",
         "verdict": "Gap"
@@ -33927,7 +34207,7 @@
         "kind": "vitest",
         "test": "contract or E2E: after a preview, the job queue and the file list are unchanged."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-758",
         "verdict": "Gap"
@@ -33996,7 +34276,7 @@
         "kind": "vitest",
         "test": "vitest: tick then untick, Save disappears; untick the only selected device, Save sends [] and the checklist stays empty."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-761",
         "verdict": "Gap"
@@ -34015,7 +34295,7 @@
         "kind": "vitest",
         "test": "vitest: pending putDirectPlayDevices disables the boxes and shows Saving…; a rejection shows the alert with the reason and keeps the ticks."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-762",
         "verdict": "Gap"
@@ -34099,7 +34379,7 @@
         "kind": "vitest",
         "test": "The panel registers no unsaved-changes guard at all. Add the guard (useUnsavedChanges) and an integration test like the Profiles one."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-766",
         "verdict": "Gap"
@@ -34118,7 +34398,7 @@
         "kind": "vitest",
         "test": "directPlayDevices is in no LIVE_TOPIC_QUERIES entry (checked in lib/live/live-topics.ts), so nothing refetches it on a push. Add the topic and a test like the libraries one."
       },
-      "issue": 1048,
+      "issue": 1142,
       "audit": {
         "id": "WEB-767",
         "verdict": "Gap"
@@ -34425,7 +34705,7 @@
         {
           "type": "vitest",
           "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
-          "name": "sends a first tab's own name back to the area's address"
+          "name": "sends a first tab's own name back to the area's address (%s)"
         },
         {
           "type": "e2e",
@@ -38676,15 +38956,21 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Only the table-layout preference is written to localStorage (use-table-columns). A guard test (render, reveal, assert no console output, storage empty) does not exist."
-      },
-      "issue": 1045,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/secrets-are-not-kept.test.tsx",
+          "name": "never logs, stores or sends on a media manager's webhook secret or API key"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/secrets-are-not-kept.test.tsx",
+          "name": "never logs, stores or sends on a download client's API key beyond saving it"
+        }
+      ],
       "audit": {
         "id": "WEB-934",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -39899,6 +40185,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/system-page.test.tsx",
           "name": "holds the time zone on About, and saves a different one chosen there"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "the time zone a server is in"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "shows a valid zone the list lacks as chosen, with nothing to save"
         }
       ],
       "needs": {
@@ -39910,6 +40206,42 @@
         "id": "WEB-984",
         "verdict": "Partly"
       }
+    },
+    {
+      "id": "web-system.about-tab.time-zone-the-saved-zone-is-always-the-current-choice",
+      "area": "web-system",
+      "behaviour": "Time zone: the saved zone is always the current choice, UTC and any valid zone outside the listed ones included, with no Save until another is picked",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "the time zone a server is in"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "shows UTC as chosen on a server in UTC"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "shows a listed zone as chosen"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "shows a valid zone the list lacks as chosen, with nothing to save"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "reads a saved zone as the zone itself, and a missing one as UTC"
+        }
+      ]
     },
     {
       "id": "web-system.about-tab.time-zone-save-failure-message-the-time-zone-could",
@@ -42727,7 +43059,7 @@
         "kind": "xunit",
         "test": "The dictionary in `TrayApp` is private and untested: swapped handlers (data vs logs folder, Allow vs Only-this-PC) or a missing entry pass every test. Needs a tray-unit test through a seam that builds the real click map, or a VM UI-Automation scenario that invokes each real menu item and checks its effect."
       },
-      "issue": 1043,
+      "issue": 1142,
       "covers": [
         "tray:Open",
         "tray:Status",
@@ -43159,7 +43491,7 @@
         "kind": "xunit",
         "test": "The \"one place draws everything so they cannot disagree\" design is the point of the standard and is itself untested; a missed `Render()` call leaves a stale dot or hover. Needs tray-unit tests with `TrayApp` seams (fake `NotifyIcon` host) or a VM UI-Automation scenario that reads the real tooltip/menu after a pause, a stop and an update."
       },
-      "issue": 1043,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-014",
         "verdict": "Gap"
@@ -43226,7 +43558,7 @@
         "kind": "xunit",
         "test": "`e.Button == MouseButtons.Left` filter is in untested `TrayApp`; the standard states \"A middle click does nothing\". Needs the same shell seam/UIA test as TRAY-003."
       },
-      "issue": 1043,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-016",
         "verdict": "Gap"
@@ -43334,7 +43666,7 @@
         "kind": "xunit",
         "test": "`ShowBalloon` / `BalloonTipClicked` / `_balloonClick` are untested; a stale click running the wrong action (e.g. a restart) after an unrelated balloon is plausible and unobserved."
       },
-      "issue": 1043,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-020",
         "verdict": "Gap"
@@ -43479,7 +43811,7 @@
         "kind": "xunit",
         "test": "The texts and click actions live only in `TrayApp.ShowUpdateNotice`/`ApplyUpdateAndRestartAsync`; `TrayUpdatesTests` and `TrayUpdateRequestsTests` assert that `Announce(mode)` is called, never what the person sees or what a click does."
       },
-      "issue": 1043,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-025",
         "verdict": "Gap"
@@ -44494,7 +44826,7 @@
         "kind": "xunit",
         "test": "`FirewallInstallHooks.AskOnFirstRun` (MessageBox, outcome -> marker, Configured -> `LanAccessSetting.Write`) is untested apart from its guard predicate and the marker file. The Velopack `OnFirstRun` wiring is untested (TRAY-080)."
       },
-      "issue": 1043,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-056",
         "verdict": "Gap"
@@ -44536,7 +44868,7 @@
         "kind": "xunit",
         "test": "`LanAccessMenu` (AllowAsync/LimitToThisPcAsync: ordering, activity states, which notice follows which outcome, exception paths) has no test at all."
       },
-      "issue": 1043,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-058",
         "verdict": "Gap"
@@ -44852,7 +45184,7 @@
         "kind": "xunit",
         "test": "No test passes the tray's actual output file to the server's reader (the two sides' fixtures even differ: `+00:00` vs `Z`). It works today only because the server parser (`DateTimeOffset.TryParse`) happens to be lenient. Needs a shared recorded fixture (generated by the tray code, parsed by the server tests, or the reverse) or a VM step that presses the real tray item."
       },
-      "issue": 1044,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-066",
         "verdict": "Gap"
@@ -44871,7 +45203,7 @@
         "kind": "xunit",
         "test": "The keys happen to match today (checked by reading both), but no test would fail if the server renamed a key or the tray changed a name or case rule. Needs a recorded real file from the server fixed in the repo and read by the tray tests, and a VM step that reads the tray's displayed status after pausing a real Weir."
       },
-      "issue": 1044,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-067",
         "verdict": "Gap"
@@ -45457,7 +45789,7 @@
         "kind": "xunit",
         "test": "The multi-user story (second user signs in with Start-with-Windows on, finds the port/data owned by the first) is undocumented-by-test; the VM has one signed-in user. Needs a VM scenario with two accounts (or a documented, tested refusal message)."
       },
-      "issue": 1039,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-086",
         "verdict": "Gap"
@@ -45477,7 +45809,7 @@
         "kind": "xunit",
         "test": "`TrayLog` has no test of its own. The VM's log check (the end of every scenario) tells the tray's trouble lines apart by their text, and reads the time with a regex that a different line format would not match. The log is append-only with no size cap (the server-host log has one). Needs tray-unit tests pinning the format against the scenario regex, the unwritable-log fallback, and a size/rotation decision."
       },
-      "issue": 1044,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-087",
         "verdict": "Gap"
@@ -45496,7 +45828,7 @@
         "kind": "xunit",
         "test": "Every background task in the tray (watchers, update loops, watchdog) relies on `BackgroundWork` to make a failure visible; nothing tests that it does or that the handlers keep the tray alive."
       },
-      "issue": 1044,
+      "issue": 1142,
       "audit": {
         "id": "TRAY-088",
         "verdict": "Gap"
@@ -46784,7 +47116,7 @@
         "kind": "xunit",
         "test": "The gateway is a fake built by the test authors; the real service's replies are never recorded or exercised, in the suite or the VM (a failure shows as missing posters or a wrong original language, which changes which audio is kept)"
       },
-      "issue": 1042,
+      "issue": 1142,
       "audit": {
         "id": "INT-ART",
         "verdict": "Partly"
@@ -46855,7 +47187,7 @@
         "kind": "xunit",
         "test": "Hand-written feed JSON; no run against the real GitHub releases API or a Velopack feed with a newer package (PLAT-05)"
       },
-      "issue": 1040,
+      "issue": 1142,
       "audit": {
         "id": "INT-RELEASEFEED",
         "verdict": "Partly"
@@ -47103,7 +47435,7 @@
         "kind": "scenario",
         "test": "Not asserted anywhere: Start Menu/desktop shortcuts, the data folder created under C:\\ProgramData with the intended access list on a real install, the interactive (non-silent) Setup screens, a second Windows version"
       },
-      "issue": 1039,
+      "issue": 1142,
       "audit": {
         "id": "PLAT-01",
         "verdict": "Partly"
@@ -47329,7 +47661,7 @@
         "kind": "scenario",
         "test": "The interactive dialogs run only in unit tests with the UI faked; no automated run shows them in the signed-in desktop session"
       },
-      "issue": 1039,
+      "issue": 1142,
       "audit": {
         "id": "PLAT-07",
         "verdict": "Partly"
@@ -47469,7 +47801,7 @@
         "kind": "scenario",
         "test": "Registry write/delete against the real HKCU is not exercised by a VM scenario or CI smoke"
       },
-      "issue": 1039,
+      "issue": 1142,
       "audit": {
         "id": "PLAT-10",
         "verdict": "Partly"
@@ -50193,8 +50525,22 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/FileChangingPathsTests.cs",
+          "name": "FileChangingPathsTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/PauseGatesTests.cs",
+          "name": "PauseGatesTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/PausedActionsApiTests.cs",
+          "name": "PausedActionsApiTests"
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ScanWhilePausedTests.cs",
@@ -50211,14 +50557,9 @@
           "name": "PauseTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The pin is by example (scan removal, reject deletion, new file). No test enumerates every code path that can change a media file, so a new one can ship unpaused; maintenance sweeps, work-file sweep, output cleanup under pause are not each shown"
-      },
-      "issue": 1012,
       "audit": {
         "id": "FL-44",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -50472,7 +50813,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
+          "name": "first-visit-account"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -50484,7 +50831,6 @@
         "kind": "scenario",
         "test": "Built to run alone (`-Scenarios first-visit-account`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
-      "issue": 981,
       "covers": [
         "scenario:first-visit-account"
       ],
@@ -50502,7 +50848,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
+          "name": "weir-only-film"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -50514,7 +50866,6 @@
         "kind": "scenario",
         "test": "Built to run alone (`-Scenarios weir-only-film`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
-      "issue": 981,
       "covers": [
         "scenario:weir-only-film"
       ],
@@ -50532,7 +50883,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
+          "name": "process-again"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -50544,7 +50901,6 @@
         "kind": "scenario",
         "test": "Built to run alone (`-Scenarios process-again`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
-      "issue": 981,
       "covers": [
         "scenario:process-again"
       ],
@@ -50562,7 +50918,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
+          "name": "pause-resume"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -50574,7 +50936,6 @@
         "kind": "scenario",
         "test": "Built to run alone (`-Scenarios pause-resume`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
-      "issue": 981,
       "covers": [
         "scenario:pause-resume"
       ],
@@ -50592,7 +50953,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
+          "name": "deleted-queued-file"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -50604,7 +50971,6 @@
         "kind": "scenario",
         "test": "Built to run alone (`-Scenarios deleted-queued-file`: it installs and starts the build under test, signs in, and makes its own workflow named for the run) and checked by scripts/scenarios.test.mjs and a local rehearsal; it has not yet been run alone from the clean checkpoint on the golden VM."
       },
-      "issue": 981,
       "covers": [
         "scenario:deleted-queued-file"
       ],
@@ -50820,14 +51186,24 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1048,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
+          "name": "a setup area"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
+          "name": "sends a first tab's own name back to the area's address (%s)"
+        }
+      ],
       "covers": [
         "web:/setup/workflows/workflows"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -50965,14 +51341,24 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1048,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
+          "name": "a setup area"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-layout.test.tsx",
+          "name": "sends a first tab's own name back to the area's address (%s)"
+        }
+      ],
       "covers": [
         "web:/setup/rules/profiles"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -51706,14 +52092,24 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "signs in when the form itself is submitted, as Enter in a field does, and keeps the browser from reloading the page"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "sends the name without stray spaces, the password, the token and a device that is not trusted"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/auth/login-page.tsx#login-form"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -51724,14 +52120,24 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "sends the name without stray spaces, the password, the token and a device that is not trusted"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "shows the server's reason for a wrong name or password, keeps what was typed and lets the person try again"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/auth/login-page.tsx#login-username"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -51742,14 +52148,29 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "sends the name without stray spaces, the password, the token and a device that is not trusted"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "sends trusted_device as true when Trust this device is ticked"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "holds the Sign in button as Signing in… while the answer is awaited, so a second click sends nothing"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/auth/login-page.tsx#login-submit"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -51811,14 +52232,34 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1046,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/work-picker.test.tsx",
+          "name": "shows the kind of work the address names"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/work-picker.test.tsx",
+          "name": "shows Everything when the address names no kind of work"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/work-picker.test.tsx",
+          "name": "offers the same three choices as the switch"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/work-picker.test.tsx",
+          "name": "puts the choice in the address, and leaving Everything takes it out again"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/processing/dashboard/work-picker.tsx#live-filter-compact"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -53322,14 +53763,34 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1045,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-page-requests.test.tsx",
+          "name": "creates the account with the trimmed username and a fresh secure token, then opens the app"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-page-requests.test.tsx",
+          "name": "says Creating... and cannot be pressed again while the server is working"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-page-requests.test.tsx",
+          "name": "shows the server's own reason when it refuses, and can be pressed again"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-page-requests.test.tsx",
+          "name": "sends nothing when the username is only spaces"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/setup/setup-page.tsx#setup-submit"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -54269,7 +54730,7 @@
       "touches": "none",
       "required": "inproc",
       "proofs": [],
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "event:processing.file_passed_through"
       ],
@@ -54287,7 +54748,7 @@
       "touches": "none",
       "required": "inproc",
       "proofs": [],
-      "issue": 1035,
+      "issue": 1142,
       "covers": [
         "event:processing.file_pass_through_failed"
       ],

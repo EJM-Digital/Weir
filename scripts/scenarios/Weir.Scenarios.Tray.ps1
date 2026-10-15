@@ -176,7 +176,9 @@ function Get-LogFileProblems {
 
 function Start-LogWatch {
     $files = Get-LogFileProblems
-    $script:Ctx.LogWatch = [pscustomobject]@{ Server = @($files.Server | ForEach-Object { $_.Key }); Tray = @($files.Tray | ForEach-Object { $_.Key }); Page = $null }
+    # Mark is the second the scenario began (UTC). A scenario that begins with no account cannot note the Logs page, and on a machine that
+    # was not restored (-NoRestore) the page holds what earlier runs and builds wrote, so only rows written from the mark on are its own.
+    $script:Ctx.LogWatch = [pscustomobject]@{ Server = @($files.Server | ForEach-Object { $_.Key }); Tray = @($files.Tray | ForEach-Object { $_.Key }); Page = $null; Mark = Get-SecondMark }
 }
 
 # Notes the rows on the Logs page, once, when the scenario first has a session.
@@ -216,7 +218,8 @@ function Complete-LogWatch {
     $onPurpose = if ($known.Count -gt 0) { " (named as caused on purpose: $((@($known | ForEach-Object { $_.Why }) -join '; ')))" } else { '' }
     if (-not $script:Ctx.Session) { return "Logs since it began: no unexpected warning or error in the server log file or the tray log (there was no account to read System > Logs with)$onPurpose." }
     $page = Get-LogPageRows
-    $rows = @($page.Items | ForEach-Object { [pscustomobject]@{ Key = Get-LogPageKey -Row $_; Message = [string]$_.title } })
+    $rows = @($page.Items | ForEach-Object { [pscustomobject]@{ Key = Get-LogPageKey -Row $_; Message = [string]$_.title; At = $_.at } })
+    if ($null -eq $watch.Page) { $rows = @($rows | Where-Object { Test-WrittenFrom -At $_.At -Mark $watch.Mark }) }
     $newRows = @(Select-NewProblems -Problems $rows -Before $watch.Page -Known $known)
     Assert-That (-not ($page.More -and $newRows.Count -ge $rows.Count)) 'System > Logs holds more new warnings and errors than one page shows, which is not a clean run'
     Assert-That ($newRows.Count -eq 0) "System > Logs gained no unexpected warning or error (found $($newRows.Count): $((@($newRows | ForEach-Object { $_.Message }) -join ' | ')))"

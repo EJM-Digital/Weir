@@ -1,0 +1,169 @@
+{
+  "_comment": "Every way Weir can change a media file, and what holds it back while processing is paused (docs/file-lifecycle-contract.md, Pause). 'paths' says what starts each one and how the pause holds it; 'sites' says which server source files do the changing, and which path each serves. FileChangingPathsTests compares the sites with a scan of apps/server/src for file-changing calls, so a new call, a new file that makes one, or a new job kind or route that is not listed here fails until it is classified. gate 'claim': a job kind the worker claim refuses while paused (ProcessingJobStore.AdmissionPredicate), asked again by ProcessingJobProcessor after the claim. gate 'scan': the one job kind that may run while paused (keep looking for new files), whose scan changes nothing. gate 'refused': a request a person makes by hand, answered 409 while paused with nothing touched. gate 'exempt': deliberately not held by the pause, with the reason in 'because'. A site's 'calls' is the number of direct file-changing calls in the file (File.Delete, File.Move, Directory.Delete and the like); 'seams' names the shared helpers it calls that change files or ask a media manager to.",
+  "paths": [
+    {
+      "id": "remux-pass",
+      "what": "Cleans a file: writes the new copy to the output folder, publishes it, then removes the original, its folder and sidecars when the workflow says so.",
+      "jobKind": "processing.file.remux_pass.v1",
+      "gate": "claim"
+    },
+    {
+      "id": "pass-through",
+      "what": "Hands a file on unchanged: copies it to the output folder.",
+      "jobKind": "processing.file.pass_through.v1",
+      "gate": "claim"
+    },
+    {
+      "id": "reject",
+      "what": "Deletes a rejected file, or asks its media manager to remove the download.",
+      "jobKind": "processing.file.reject.v1",
+      "gate": "claim"
+    },
+    {
+      "id": "library-clean",
+      "what": "Replaces a library file with its cleaned copy, and keeps or removes the original.",
+      "jobKind": "processing.library.clean.v1",
+      "gate": "claim"
+    },
+    {
+      "id": "library-scan",
+      "what": "Reads a library's files and records what a clean would do. Changes no file.",
+      "jobKind": "processing.library.scan.v1",
+      "gate": "claim"
+    },
+    {
+      "id": "watched-folder-scan",
+      "what": "Looks through a watched folder, records files and queues passes. While paused it only looks: it never judges a file, so it deletes no rejected file and finishes no movie's original removal.",
+      "jobKind": "processing.watched_folder.remux_scan_dispatch.v1",
+      "gate": "scan",
+      "proofs": [
+        "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ScanWhilePausedTests.cs::A_scan_does_not_finish_removing_a_cleaned_movies_original_while_paused",
+        "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ScanWhilePausedTests.cs::A_scan_does_not_delete_a_rejected_file_while_paused"
+      ]
+    },
+    {
+      "id": "unclaimed-handback-cleanup",
+      "what": "Removes Weir's own hand-back copies that no media manager claimed in time.",
+      "jobKind": "processing.unclaimed_handback_cleanup.v1",
+      "gate": "claim"
+    },
+    {
+      "id": "work-temp-sweep",
+      "what": "Removes Weir's own left-behind temporary outputs from work folders.",
+      "jobKind": "processing.work_temp_stale_sweep.v1",
+      "gate": "claim"
+    },
+    {
+      "id": "delete-download-by-hand",
+      "what": "Activity's remove dialog, 'delete the download': Weir deletes the failed or rejected file, or asks the media manager that owns the download to remove it.",
+      "routes": ["DELETE /api/v1/processing/files/{file_id}"],
+      "gate": "refused",
+      "proofs": [
+        "apps/server/tests/Weir.Api.Tests/Processing/PausedActionsApiTests.cs::Deleting_a_failed_download_by_hand_is_refused_while_paused_and_goes_through_once_resumed"
+      ]
+    },
+    {
+      "id": "download-again",
+      "what": "Library's 'Download again': asks the media manager to delete the current file and search for a new copy.",
+      "routes": ["POST /api/v1/processing/libraries/{library_id}/library-redownloads"],
+      "gate": "refused",
+      "proofs": [
+        "apps/server/tests/Weir.Api.Tests/Processing/PausedActionsApiTests.cs::Download_again_is_refused_while_paused_without_asking_the_manager_and_goes_through_once_resumed"
+      ]
+    },
+    {
+      "id": "manager-word-release",
+      "what": "A media manager says it imported a file Weir handed back, and Weir removes its own hand-back copy.",
+      "routes": ["POST /api/v1/intake/webhook/{source_key}", "POST /api/v1/intake/handoffs/{source_key}/{handoff_id}/outcome"],
+      "gate": "exempt",
+      "because": "It starts from a media manager's word, not from work Weir began. It removes only Weir's own hand-back copy, and only once the manager has said it has the file and the copy is still exactly the file Weir wrote (HandbackStore.Release). Holding it back would leave a duplicate that nothing later removes."
+    },
+    {
+      "id": "repair-temp-artifact",
+      "what": "System's repair action that removes one temporary file a person picked from the reconciliation report.",
+      "routes": ["POST /api/v1/system/reconciliation/repair"],
+      "gate": "exempt",
+      "because": "It removes only a file whose name is one of Weir's own temporary names, inside a work folder, after the person confirms. It never touches a media file."
+    },
+    {
+      "id": "startup-temp-sweep",
+      "what": "At start, removes Weir's own unfinished temporary outputs left by a stop in the middle of a pass.",
+      "entry": "startup",
+      "gate": "exempt",
+      "because": "It removes only Weir's hidden partial and temporary names, which no running job can still be writing at start. It never touches a finished media file."
+    },
+    {
+      "id": "startup-swap-recovery",
+      "what": "At start, finishes or undoes a library clean that was stopped in the middle, so exactly one intact file is left under the original name.",
+      "entry": "startup",
+      "gate": "exempt",
+      "because": "It is the end of work that was already running when Weir stopped, which a pause lets finish, and leaving the library short of a file for the length of a pause would be the greater change."
+    },
+    {
+      "id": "write-probe",
+      "what": "Writes a one-byte hidden probe file in a folder to find out whether Weir can write there, then removes it.",
+      "entry": "folder checks",
+      "gate": "exempt",
+      "because": "The probe is Weir's own file, created and removed at once. It changes no media file."
+    },
+    {
+      "id": "weir-own-files",
+      "what": "Weir's own logs, settings backups, update backups, status files, poster pictures, swap journal and sign-in code file.",
+      "entry": "various",
+      "gate": "exempt",
+      "because": "None of them is a media file; they live in Weir's own folders."
+    }
+  ],
+  "sites": [
+    { "file": "Weir.Api/Endpoints/LibraryModeRedownloadsEndpoints.cs", "seams": ["IManagerRedownload.RequestRedownloadAsync"], "paths": ["download-again"] },
+    { "file": "Weir.Api/Endpoints/MediaManagerReconciliationEndpoints.cs", "seams": ["ReconciliationService.RepairAsync"], "paths": ["repair-temp-artifact"] },
+    { "file": "Weir.Api/Endpoints/SuiteFileEndpoints.cs", "calls": 1, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Artwork/ArtworkPosterFiles.cs", "calls": 3, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Auth/SetupCodeGate.cs", "calls": 3, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Jobs/JobsStartupRecoveryService.cs", "seams": ["SwapRecoverySweep.RunAsync"], "paths": ["startup-swap-recovery"] },
+    { "file": "Weir.Infrastructure/Jobs/StartupRecovery.cs", "calls": 2, "paths": ["startup-temp-sweep"] },
+    { "file": "Weir.Infrastructure/Jobs/UnclaimedHandbackCleanupHandler.cs", "seams": ["HandbackStore.Release"], "paths": ["unclaimed-handback-cleanup"] },
+    { "file": "Weir.Infrastructure/Jobs/WatchedFolderScanRun.cs", "seams": ["RemuxPassPaths.CleanupRejectedFile"], "paths": ["watched-folder-scan"] },
+    { "file": "Weir.Infrastructure/Jobs/WorkTempStaleSweepHandler.cs", "calls": 1, "paths": ["work-temp-sweep"] },
+    { "file": "Weir.Infrastructure/LibraryMode/LibraryCleanHandler.cs", "calls": 1, "seams": ["MediaTools.RemuxToTempFileAsync", "SafeSwap.RunAsync"], "paths": ["library-clean"] },
+    { "file": "Weir.Infrastructure/LibraryMode/LibraryCleanHandler.Outcomes.cs", "calls": 1, "paths": ["library-clean"] },
+    { "file": "Weir.Infrastructure/LibraryMode/OriginalsMover.cs", "calls": 7, "paths": ["library-clean", "startup-swap-recovery"] },
+    { "file": "Weir.Infrastructure/LibraryMode/PhysicalSwapFileSystem.Windows.cs", "calls": 1, "paths": ["library-clean", "startup-swap-recovery"] },
+    { "file": "Weir.Infrastructure/LibraryMode/SafeSwap.cs", "calls": 3, "seams": ["OriginalsMover", "SwapRecoverySweep.RecoverFile"], "paths": ["library-clean"] },
+    { "file": "Weir.Infrastructure/LibraryMode/SafeSwap.Support.cs", "seams": ["OriginalsMover", "SwapRecoverySweep.RecoverFile"], "paths": ["library-clean"] },
+    { "file": "Weir.Infrastructure/LibraryMode/SwapFileSystem.cs", "calls": 10, "paths": ["library-clean", "startup-swap-recovery"] },
+    { "file": "Weir.Infrastructure/LibraryMode/SwapProgress.cs", "calls": 2, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/LibraryMode/SwapRecoverySweep.cs", "calls": 3, "seams": ["OriginalsMover"], "paths": ["startup-swap-recovery"] },
+    { "file": "Weir.Infrastructure/Logging/WeirLogFile.cs", "calls": 6, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Media/MediaTools.Remux.cs", "calls": 2, "paths": ["remux-pass", "library-clean"] },
+    { "file": "Weir.Infrastructure/MediaManagers/FilesystemFolderProbe.cs", "calls": 1, "paths": ["write-probe"] },
+    { "file": "Weir.Infrastructure/MediaManagers/HandbackOutcomes.cs", "seams": ["HandbackStore.Release"], "paths": ["manager-word-release"] },
+    { "file": "Weir.Infrastructure/MediaManagers/HandbackStore.cs", "calls": 1, "paths": ["manager-word-release", "unclaimed-handback-cleanup"] },
+    { "file": "Weir.Infrastructure/MediaManagers/ReconciliationService.cs", "calls": 1, "paths": ["repair-temp-artifact"] },
+    { "file": "Weir.Infrastructure/Processing/OutputOwnership.cs", "calls": 1, "paths": ["remux-pass", "pass-through"] },
+    { "file": "Weir.Infrastructure/Processing/ReleaseFolderRemoval.cs", "calls": 2, "paths": ["remux-pass", "watched-folder-scan"] },
+    { "file": "Weir.Infrastructure/Processing/WatchedFolderScanOps.cs", "calls": 2, "seams": ["ReleaseFolderRemoval.Remove"], "paths": ["watched-folder-scan", "write-probe"] },
+    { "file": "Weir.Infrastructure/Processing/RemuxPass/FileLifecycle.cs", "calls": 11, "paths": ["remux-pass", "pass-through"] },
+    { "file": "Weir.Infrastructure/Processing/RemuxPass/HistoryFileRemovalService.cs", "seams": ["RejectRoutes.Through", "RemuxPassPaths.CleanupRejectedFile"], "paths": ["delete-download-by-hand"] },
+    { "file": "Weir.Infrastructure/Processing/RemuxPass/OutputFolderCleanup.Deletion.cs", "calls": 2, "paths": ["remux-pass"] },
+    { "file": "Weir.Infrastructure/Processing/RemuxPass/PassThroughDelivery.cs", "seams": ["FileLifecycle.SafeCopyToFinalAsync"], "paths": ["pass-through"] },
+    { "file": "Weir.Infrastructure/Processing/RemuxPass/ProcessingRejectHandler.cs", "seams": ["RejectRoutes.Through"], "paths": ["reject"] },
+    { "file": "Weir.Infrastructure/Processing/RemuxPass/RejectRoutes.cs", "seams": ["IMediaManagerPort.RemoveQueueItemAsync", "RemuxPassPaths.CleanupRejectedFile"], "paths": ["reject", "delete-download-by-hand"] },
+    { "file": "Weir.Infrastructure/Processing/RemuxPass/RemuxPassHandler.Recording.cs", "seams": ["RemuxPassPaths.CleanupRejectedFile"], "paths": ["remux-pass"] },
+    { "file": "Weir.Infrastructure/Processing/RemuxPass/RemuxPassPaths.cs", "calls": 2, "paths": ["remux-pass", "reject", "watched-folder-scan", "delete-download-by-hand"] },
+    { "file": "Weir.Infrastructure/Processing/RemuxPass/RemuxPassRunner.PostSuccessCleanup.cs", "seams": ["OutputFolderCleanup.CascadeDeleteEmptyParents", "OutputFolderCleanup.Run", "ReleaseFolderRemoval.Remove", "TvSeasonFolderCleanup.RunAsync"], "paths": ["remux-pass"] },
+    { "file": "Weir.Infrastructure/Processing/RemuxPass/RemuxPassRunner.RemuxPublish.cs", "seams": ["FileLifecycle.SafeFinalizeFile", "MediaTools.RemuxToTempFileAsync"], "paths": ["remux-pass"] },
+    { "file": "Weir.Infrastructure/Processing/RemuxPass/RemuxPassRunner.UnchangedPublish.cs", "seams": ["FileLifecycle.SafeCopyToFinalAsync", "FileLifecycle.TryHardlinkToFinalAsync"], "paths": ["remux-pass"] },
+    { "file": "Weir.Infrastructure/Processing/RemuxPass/SidecarMigration.cs", "calls": 1, "seams": ["FileLifecycle.SafeCopyToFinalAsync"], "paths": ["remux-pass"] },
+    { "file": "Weir.Infrastructure/Processing/RemuxPass/SourceFiles.cs", "calls": 1, "paths": ["write-probe"] },
+    { "file": "Weir.Infrastructure/Processing/RemuxPass/TvSeasonFolderCleanup.cs", "calls": 1, "seams": ["OutputFolderCleanup.CascadeDeleteEmptyParents"], "paths": ["remux-pass"] },
+    { "file": "Weir.Infrastructure/Runtime/AtomicFileWriter.cs", "calls": 3, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Runtime/PreUpdateBackup.cs", "calls": 7, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Runtime/RuntimeDirectories.cs", "calls": 1, "paths": ["write-probe"] },
+    { "file": "Weir.Infrastructure/Runtime/StartupNotes.cs", "calls": 1, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Runtime/SystemServices.cs", "calls": 2, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Runtime/TrayPauseRequestWatcher.cs", "calls": 1, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Runtime/TrayUpdateBackupWatcher.cs", "calls": 2, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Settings/ConfigurationBackups.cs", "calls": 2, "paths": ["weir-own-files"] }
+  ]
+}
