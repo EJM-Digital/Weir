@@ -509,7 +509,7 @@ public sealed class RealFfmpegTests(RealFfmpegFixtures fixtures) : IDisposable, 
     }
 
     /// <summary>
-    /// Wider than <see cref="FfmpegCommands.HwaccelTimeoutSeconds"/> (10s), which is sized for a live settings
+    /// Wider than <see cref="FfmpegCommands.HwaccelTimeoutSeconds"/> which is sized for a live settings
     /// check, not a CI runner sharing the box with every other real-ffmpeg test in this class. Widening it here
     /// keeps a busy runner from making a real, working build look undetected.
     /// </summary>
