@@ -143,6 +143,17 @@ public sealed class ProcessingRig : IAsyncDisposable
     /// <summary>Deluno hands over the file it already handed over, which has not changed since: no file is written.</summary>
     public Task HandOffRootFileAgainAsync(string handoffId, string fileName) => PostHandOffAsync(handoffId, Path.Combine(Watched, fileName));
 
+    /// <summary>The file's row as the server lists it for Activity, read back through the API, or null when Activity does not list it.</summary>
+    public async Task<JsonObject?> ListedFileAsync(string fileName)
+    {
+        var listed = await _admin.GetAsync($"{WeirClient.Api}/processing/files", ("path_contains", fileName));
+        Assert.True(listed.Status == HttpStatusCode.OK, listed.ToString());
+        return listed.Fields["files"]!.AsArray().SingleOrDefault()?.AsObject();
+    }
+
+    /// <summary>Whether the file Deluno handed over is still where it was put, in the watched folder.</summary>
+    public bool WatchedFileExists(string handoffId, string fileName) => File.Exists(Path.Combine(Watched, handoffId, fileName));
+
     /// <summary>Takes the file off Activity's list, as "Remove from the list" does.</summary>
     public async Task ForgetAsync(string fileName)
     {

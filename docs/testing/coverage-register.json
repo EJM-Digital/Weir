@@ -26296,12 +26296,13 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The Delete resolution removes the file from disk; no test proves Cancel closes the dialog without calling the server."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityDialogTests.cs",
+          "name": "RemoveFromActivityDialogTests"
+        }
+      ],
       "audit": {
         "id": "WEB-447",
         "verdict": "Gap"
@@ -26345,12 +26346,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "busy/busyLabel never asserted."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/use-file-removal.test.tsx",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-449",
         "verdict": "Gap"
@@ -26364,12 +26366,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Both onProblem paths are untested."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/use-file-removal.test.tsx",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-450",
         "verdict": "Gap"
@@ -27589,12 +27592,13 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Cleaning removes audio and subtitle tracks for good; no test proves Not now closes the dialog and sends nothing further."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanConfirmationTests.cs",
+          "name": "LibraryCleanConfirmationTests"
+        }
+      ],
       "audit": {
         "id": "WEB-495",
         "verdict": "Gap"
@@ -27701,12 +27705,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "None of the three is clicked or asserted."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanConfirmationTests.cs",
+          "name": "LibraryCleanConfirmationTests"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-clean-actions.test.tsx",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-500",
         "verdict": "Gap"
@@ -27720,12 +27730,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "onCleaned clearing for source 'selection' is untested."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanConfirmationTests.cs",
+          "name": "LibraryCleanConfirmationTests"
+        }
+      ],
       "audit": {
         "id": "WEB-501",
         "verdict": "Gap"
@@ -28207,12 +28218,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The path sent, confirm_destructive, the dialog wording and the busy state are untested; the manager deletes the file."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryRedownloadDialogTests.cs",
+          "name": "LibraryRedownloadDialogTests"
+        }
+      ],
       "audit": {
         "id": "WEB-523",
         "verdict": "Gap"
@@ -28226,12 +28238,13 @@
       "severity": "high",
       "touches": "disk",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Cancel path of a destructive confirm is untested."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryRedownloadDialogTests.cs",
+          "name": "LibraryRedownloadDialogTests"
+        }
+      ],
       "audit": {
         "id": "WEB-524",
         "verdict": "Gap"
@@ -28264,12 +28277,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Both notes untested."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-redownload-notices.test.tsx",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-526",
         "verdict": "Gap"
@@ -28609,12 +28623,13 @@
       "severity": "high",
       "touches": "disk",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Switching on automatic, unattended track removal; the Cancel branch is untested."
-      },
-      "issue": 991,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryDailyCleanWarningTests.cs",
+          "name": "LibraryDailyCleanWarningTests"
+        }
+      ],
       "audit": {
         "id": "WEB-540",
         "verdict": "Gap"
