@@ -1,6 +1,6 @@
 <#
     The scenarios about what the tray and the server leave each other, and the logs: the update buttons, the copy saved before an
-    update (a helper the update scenario uses), and Logs (Fresh phase, and the same check since the update in the Deluno phase).
+    update (a helper the update scenario uses), and the log watch every scenario ends with.
 #>
 
 # Standing in for the tray, for a rehearsal on a machine with no tray: it keeps the heartbeat fresh and takes the update
@@ -36,6 +36,7 @@ function Wait-TrayLogLine {
 # --- update-requests ----------------------------------------------------------------------------------------------------
 
 function Scenario_update_requests {
+    Initialize-FreshScenario
     $session = $script:Ctx.Session
     if ($script:Ctx.Rehearsal) { Invoke-RehearsalTray }
     $state = Wait-Until -What 'the tray to say it is alive' -TimeoutSeconds 90 -Probe {
@@ -141,29 +142,83 @@ function Get-TrayLogProblems {
     }
 }
 
-# The check behind both Logs scenarios: nothing at warning or error on the Logs page, in the server's log file or in the tray's log
-# that the suite does not name as caused on purpose, counting only what was written at or after $Since (UTC) when given.
-function Test-LogsClean {
-    param([datetime] $Since = [datetime]::MinValue)
+# --- the log watch every scenario ends with -----------------------------------------------------------------------------
+#
+# A scenario does not read "the logs of the whole machine": the runner starts a watch when the scenario begins (the warnings and
+# errors that exist then) and, when the scenario has passed, completes it (nothing unexplained is new). So what a scenario is
+# judged on is what it and the Weir under it wrote, whichever scenarios ran before it.
+#
+# The tray and server log files are noted before the scenario does anything, so the start of Weir inside a scenario is judged. The
+# rows on System > Logs need a signed-in session: they are noted when the scenario first has one (Initialize-WeirSession), or, for
+# a scenario that began with no account, taken as none (the Weir had nothing to show). A scenario that never has a session leaves
+# the Logs page to the next one that does.
+
+# The rows on System > Logs at warning or error, newest first, as { Items; More } (More: Logs holds further rows than one page).
+function Get-LogPageRows {
+    $page = Get-WeirJson $script:Ctx.Session '/api/v1/system/log?level=warning,error&limit=100'
+    [pscustomobject]@{ Items = @($page.items); More = [bool]$page.next_cursor }
+}
+
+# What identifies a Logs row, so that a row seen when the watch began is not taken for a new one.
+function Get-LogPageKey {
+    param([Parameter(Mandatory)] $Row)
+    "$($Row.source)|$($Row.id)|$($Row.at)|$($Row.title)"
+}
+
+# The warnings and errors in the two log files now, each with what identifies it.
+function Get-LogFileProblems {
     $paths = Get-WeirPaths
-    $known = @($script:Ctx.KnownLogRows)
-    $page = @(Get-LogPageProblems | Where-Object { [datetime]::Parse($_.at).ToUniversalTime() -ge $Since })
-    $unexpectedPage = @(Get-UnexpectedLogRows -Rows $page -Known $known)
-    Assert-That ($unexpectedPage.Count -eq 0) "System > Logs shows no unexpected warning or error (found $($unexpectedPage.Count): $((@($unexpectedPage | ForEach-Object { $_.title }) -join ' | ')))"
+    [pscustomobject]@{
+        Server = @(Get-ServerLogProblems -Path $paths.ServerLog | ForEach-Object { [pscustomobject]@{ Key = "$($_.At.ToString('o'))|$($_.Level)|$($_.Message)"; Text = "$($_.Level) $($_.Message)"; Message = $_.Message } })
+        Tray   = @(Get-TrayLogProblems | ForEach-Object { [pscustomobject]@{ Key = $_.Line; Text = $_.Line; Message = $_.Line } })
+    }
+}
+
+function Start-LogWatch {
+    $files = Get-LogFileProblems
+    $script:Ctx.LogWatch = [pscustomobject]@{ Server = @($files.Server | ForEach-Object { $_.Key }); Tray = @($files.Tray | ForEach-Object { $_.Key }); Page = $null }
+}
+
+# Notes the rows on the Logs page, once, when the scenario first has a session.
+function Set-LogWatchPage {
+    $watch = $script:Ctx.LogWatch
+    if ($null -eq $watch -or $null -ne $watch.Page) { return }
+    $watch.Page = @((Get-LogPageRows).Items | ForEach-Object { Get-LogPageKey -Row $_ })
+}
+
+# The problems in $Problems that are not in $Before (by key) and that $Known does not name as caused on purpose.
+function Select-NewProblems {
+    param($Problems, $Before, $Known)
+    $seen = New-Object 'System.Collections.Generic.HashSet[string]'
+    foreach ($key in @($Before)) { [void]$seen.Add([string]$key) }
+    @($Problems | Where-Object { -not $seen.Contains($_.Key) } | Where-Object { $row = $_; -not (@($Known | Where-Object { $row.Message -match $_.Pattern }).Count -gt 0) })
+}
+
+# Judges what the scenario that has just passed left in the logs: nothing at warning or error is new on the Logs page, in the
+# server log file or in the tray log, except what the suite names as caused on purpose. Throws what was found; returns what it saw.
+function Complete-LogWatch {
+    $watch = $script:Ctx.LogWatch
+    if ($null -eq $watch) { throw 'The scenario ended with no log watch to judge: Start-LogWatch was not called when it began.' }
+    $script:Ctx.LogWatch = $null
+    $paths = Get-WeirPaths
+    $known = @($script:Ctx.KnownLogRows | Where-Object { $_ })
+    $files = Get-LogFileProblems
 
     $serverText = Get-FileTextOrNull -Path $paths.ServerLog
     Assert-That ($serverText -and $serverText.Length -gt 0) "the server log exists and has lines ($($paths.ServerLog))"
-    $server = @(Get-ServerLogProblems -Path $paths.ServerLog | Where-Object { $_.At -ge $Since })
-    $unexpectedServer = @($server | Where-Object { $row = $_; -not (@($known | Where-Object { $row.Message -match $_.Pattern }).Count -gt 0) })
-    Assert-That ($unexpectedServer.Count -eq 0) "the server log file has no unexpected warning or error (found $($unexpectedServer.Count): $((@($unexpectedServer | ForEach-Object { $_.Level + ' ' + $_.Message }) -join ' | ')))"
+    $newServer = @(Select-NewProblems -Problems $files.Server -Before $watch.Server -Known $known)
+    Assert-That ($newServer.Count -eq 0) "the server log file gained no unexpected warning or error (found $($newServer.Count): $((@($newServer | ForEach-Object { $_.Text }) -join ' | ')))"
 
-    Assert-That ((Get-TrayLogText).Length -gt 0) "the tray log exists and has lines ($($paths.TrayLog))"
-    $tray = @(Get-TrayLogProblems | Where-Object { $_.At -ge $Since } | Where-Object { $row = $_; -not (@($known | Where-Object { $row.Line -match $_.Pattern }).Count -gt 0) })
-    Assert-That ($tray.Count -eq 0) "the tray log has no line reporting trouble (found $($tray.Count): $((@($tray | ForEach-Object { $_.Line }) -join ' | ')))"
-    $onPurpose = if ($known.Count -gt 0) { "$($page.Count + $server.Count - $unexpectedPage.Count - $unexpectedServer.Count) caused on purpose and named in the suite ($((@($known | ForEach-Object { $_.Why }) -join '; ')))" } else { 'none were caused on purpose' }
-    "Logs page: $($page.Count) warning/error row(s); server log file: $(@($server).Count); tray log: no line reporting trouble; $onPurpose."
-}
+    if (-not $script:Ctx.Rehearsal) { Assert-That ((Get-TrayLogText).Length -gt 0) "the tray log exists and has lines ($($paths.TrayLog))" }
+    $newTray = @(Select-NewProblems -Problems $files.Tray -Before $watch.Tray -Known $known)
+    Assert-That ($newTray.Count -eq 0) "the tray log gained no line reporting trouble (found $($newTray.Count): $((@($newTray | ForEach-Object { $_.Text }) -join ' | ')))"
 
-function Scenario_logs_clean {
-    Test-LogsClean
+    $onPurpose = if ($known.Count -gt 0) { " (named as caused on purpose: $((@($known | ForEach-Object { $_.Why }) -join '; ')))" } else { '' }
+    if (-not $script:Ctx.Session) { return "Logs since it began: no unexpected warning or error in the server log file or the tray log (there was no account to read System > Logs with)$onPurpose." }
+    $page = Get-LogPageRows
+    $rows = @($page.Items | ForEach-Object { [pscustomobject]@{ Key = Get-LogPageKey -Row $_; Message = [string]$_.title } })
+    $newRows = @(Select-NewProblems -Problems $rows -Before $watch.Page -Known $known)
+    Assert-That (-not ($page.More -and $newRows.Count -ge $rows.Count)) 'System > Logs holds more new warnings and errors than one page shows, which is not a clean run'
+    Assert-That ($newRows.Count -eq 0) "System > Logs gained no unexpected warning or error (found $($newRows.Count): $((@($newRows | ForEach-Object { $_.Message }) -join ' | ')))"
+    "Logs since it began: no unexpected warning or error on System > Logs, in the server log file or in the tray log$onPurpose."
 }

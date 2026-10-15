@@ -126,21 +126,25 @@ function Get-WeirDelunoConnection {
     @((Get-WeirJson $script:Ctx.Session '/api/v1/media-managers/connections') | Where-Object { $_.kind -eq 'deluno' -and ([uri]$_.base_url).Port -eq $port }) | Select-Object -First 1
 }
 
+# Weir's connection to this Deluno: the one Deluno's Connect Weir already made, else one made here with the key from the key file.
+# Returns { Id; How }.
+function Ensure-WeirDelunoConnection {
+    $connection = Get-WeirDelunoConnection
+    if ($connection) { return [pscustomobject]@{ Id = [int]$connection.id; How = 'found the connection Deluno had already made' } }
+    $created = Invoke-Weir -Session $script:Ctx.Session -Method POST -Path '/api/v1/media-managers/connections' -Body @{ kind = 'deluno'; base_url = $script:Ctx.DelunoUrl; api_key = $script:Ctx.DelunoKey; enabled = $true }
+    Assert-That ($created.Status -in 200, 201) "Weir accepted the connection to Deluno at $($script:Ctx.DelunoUrl) (answered $($created.Status): $($created.Text))"
+    [pscustomobject]@{ Id = [int]$created.Json.id; How = 'connected Weir to Deluno with the key from the key file' }
+}
+
 # --- workflows-from-deluno ----------------------------------------------------------------------------------------------
 
 function Scenario_workflows_from_deluno {
     $unmet = Test-DelunoPreconditions
     if ($unmet) { return $unmet }
     $session = $script:Ctx.Session
-    $connection = Get-WeirDelunoConnection
-    $how = 'found the connection Deluno had already made'
-    if (-not $connection) {
-        $created = Invoke-Weir -Session $session -Method POST -Path '/api/v1/media-managers/connections' -Body @{ kind = 'deluno'; base_url = $script:Ctx.DelunoUrl; api_key = $script:Ctx.DelunoKey; enabled = $true }
-        Assert-That ($created.Status -in 200, 201) "Weir accepted the connection to Deluno at $($script:Ctx.DelunoUrl) (answered $($created.Status): $($created.Text))"
-        $connection = $created.Json
-        $how = 'connected Weir to Deluno with the key from the key file'
-    }
-    $connectionId = [int]$connection.id
+    $connected = Ensure-WeirDelunoConnection
+    $how = $connected.How
+    $connectionId = $connected.Id
     $workflows = Wait-Until -What 'Weir to set up its workflows from Deluno' -TimeoutSeconds 120 -IntervalMilliseconds 2000 -Probe {
         Invoke-Weir -Session $session -Method POST -Path "/api/v1/media-managers/connections/$connectionId/test" -Body @{} | Out-Null
         $linked = @((Get-WeirJson $session '/api/v1/processing/libraries') | Where-Object { $_.folders_synced_from_connection_id -eq $connectionId -and $_.watched_folder -and $_.output_folder })
@@ -152,7 +156,6 @@ function Scenario_workflows_from_deluno {
         $chain = Get-WeirJson $session "/api/v1/processing/libraries/$($workflow.id)/folder-chain"
         Assert-That ($chain.ready -eq $true) "the folder chain for '$($workflow.name)' is ready"
     }
-    $script:Ctx.DelunoConnectionId = $connectionId
     "Weir $how; $($workflows.Count) workflow(s) are set up from Deluno ($(@($workflows | ForEach-Object { $_.name }) -join ', ')), linked, with their folders from Deluno and every step of the folder chain ready."
 }
 
@@ -223,8 +226,8 @@ $script:ExtraExtensions = '.mkv', '.mp4', '.m4v', '.avi', '.mov', '.wmv', '.webm
 function Scenario_deluno_release_with_extra {
     $unmet = Test-DelunoPreconditions
     if ($unmet) { return $unmet }
-    if (-not $script:Ctx.ContainsKey('DelunoConnectionId')) { $script:Ctx.DelunoConnectionId = [int](Get-WeirDelunoConnection).id }
-    $fed = @((Get-WeirJson $script:Ctx.Session '/api/v1/processing/libraries') | Where-Object { @($_.manager_connection_ids) -contains $script:Ctx.DelunoConnectionId })
+    $connectionId = (Ensure-WeirDelunoConnection).Id
+    $fed = @((Get-WeirJson $script:Ctx.Session '/api/v1/processing/libraries') | Where-Object { @($_.manager_connection_ids) -contains $connectionId })
     if ($fed.Count -eq 0) { return New-NotApplicable 'No Weir workflow is fed by this Deluno, so there is no release to look at.' }
     $films = @(Get-CompletedFilmHandoffs)
     if ($films.Count -eq 0) { return New-NotApplicable 'Deluno has made no completed film hand-off, so there is no release to look at.' }
@@ -355,11 +358,4 @@ function Scenario_deluno_outcomes {
     }
     Assert-That ($compared -ge 1) 'at least one outcome Deluno delivered to the build under test could be compared with Weir''s'
     "Read the outcomes of $($withOutcome.Count) hand-off(s) in Deluno: none pending, refused, never received or given up on ($owedNothing closed with nothing owed because no file was handed back); $compared of Weir's files from the $($split.Build.Count) hand-off(s) made after the build under test took over carry the same answer as Deluno. $($split.Previous.Count) made before that, by the previous release, were not compared."
-}
-
-# --- logs-clean-deluno --------------------------------------------------------------------------------------------------
-
-function Scenario_logs_clean_deluno {
-    if (-not (Initialize-WeirSession)) { return New-NotApplicable $script:Ctx.NoSessionReason }
-    Test-LogsClean -Since $script:Ctx.PhaseStartUtc
 }
