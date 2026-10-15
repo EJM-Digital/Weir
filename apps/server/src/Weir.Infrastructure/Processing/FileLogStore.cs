@@ -22,15 +22,23 @@ public sealed class FileLogStore
         "EXISTS (SELECT 1 FROM files f WHERE f.relative_path = file_logs.relative_path " +
         "AND (file_logs.library_id IS NULL OR f.library_id = file_logs.library_id))";
 
-    /// <summary>Every retained pass over this file, newest first, matched by path.</summary>
-    public Task<List<ProcessingFileLogRecord>> LogsForFileAsync(UnitOfWork uow, string relativePath, int limit) =>
-        uow.QueryAsync(
-            $"SELECT {Columns} FROM file_logs WHERE relative_path = @path ORDER BY recorded_at DESC, id DESC LIMIT {Math.Max(1, Math.Min(limit, 500))}",
-            Read, ("@path", relativePath));
+    /// <summary>
+    /// The rows that belong to one file: those written for its workflow and path, and those written before the workflow was known
+    /// (no workflow) only while no other workflow holds the path, since otherwise there is no telling whose they are.
+    /// </summary>
+    private const string BelongsToFile =
+        "relative_path = @path AND (library_id = @library OR (library_id IS NULL AND NOT EXISTS (" +
+        "SELECT 1 FROM files other WHERE other.relative_path = file_logs.relative_path AND other.library_id <> @library)))";
 
-    /// <summary>How many passes over this file are retained, however many a read returns.</summary>
-    public async Task<long> CountForFileAsync(UnitOfWork uow, string relativePath) =>
-        await uow.CountAsync("SELECT count(*) FROM file_logs WHERE relative_path = @path", ("@path", relativePath)).ConfigureAwait(false);
+    /// <summary>Every retained pass over this file of this workflow, newest first.</summary>
+    public Task<List<ProcessingFileLogRecord>> LogsForFileAsync(UnitOfWork uow, long libraryId, string relativePath, int limit) =>
+        uow.QueryAsync(
+            $"SELECT {Columns} FROM file_logs WHERE {BelongsToFile} ORDER BY recorded_at DESC, id DESC LIMIT {Math.Max(1, Math.Min(limit, 500))}",
+            Read, ("@path", relativePath), ("@library", libraryId));
+
+    /// <summary>How many passes over this file of this workflow are retained, however many a read returns.</summary>
+    public async Task<long> CountForFileAsync(UnitOfWork uow, long libraryId, string relativePath) =>
+        await uow.CountAsync($"SELECT count(*) FROM file_logs WHERE {BelongsToFile}", ("@path", relativePath), ("@library", libraryId)).ConfigureAwait(false);
 
     /// <summary>Parse a stored detail payload as a <see cref="WireObject"/>, never raising.</summary>
     public WireObject ParseDetail(string? raw)

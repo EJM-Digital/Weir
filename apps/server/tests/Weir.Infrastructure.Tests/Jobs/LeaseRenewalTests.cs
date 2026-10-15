@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 using Weir.Core.Jobs;
 using Weir.Infrastructure.Jobs;
+using Weir.Infrastructure.Runtime;
 using Weir.Infrastructure.Sqlite;
 
 namespace Weir.Infrastructure.Tests.Jobs;
@@ -212,11 +213,136 @@ public sealed class LeaseRenewalTests : IDisposable
         Assert.Equal(JobProcessOutcome.Processed, await runTask.WaitAsync(TimeSpan.FromSeconds(5)));
     }
 
+    private const string AsleepWhile = "Weir was not running, or the computer was asleep, while it worked on";
+
+    /// <summary>Weir runs for <paramref name="time"/>, a second at a time, so the pulse has no silence.</summary>
+    private void WeirRunsFor(ProcessPulse pulse, TimeSpan time)
+    {
+        for (var elapsed = TimeSpan.Zero; elapsed < time; elapsed += TimeSpan.FromSeconds(1))
+        {
+            _time.Advance(TimeSpan.FromSeconds(1));
+            pulse.Note();
+        }
+    }
+
+    [Fact]
+    public async Task A_job_whose_lease_ran_out_while_the_computer_slept_is_told_as_information_and_left_for_recovery()
+    {
+        await _db.Store.EnqueueOrGetAsync("slept", Kind, payloadJson: "{\"relative_media_path\":\"Heat (1995)/Heat.mkv\"}", maxAttempts: 3);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handler = new UntilCancelledHandler(Kind, started);
+        using var heartbeatWaiting = new SemaphoreSlim(0);
+        var log = new MessageLog();
+        var pulse = new ProcessPulse(_time);
+        var renewalNotBack = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var processor = Processor(handler, heartbeatWaiting, renew: (_, _, _) => renewalNotBack.Task, logger: log, pulse: pulse);
+
+        var runTask = processor.ProcessOneAsync("worker", 3, _time.GetUtcNow());
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await WaitForHeartbeatAsync(heartbeatWaiting);
+
+        _time.Advance(TimeSpan.FromHours(7));
+        await Eventually.ThatAsync(() => handler.Cancelled);
+        renewalNotBack.SetException(new OperationCanceledException());
+
+        Assert.Equal(JobProcessOutcome.Processed, await runTask.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.Empty(log.Said(LogLevel.Warning));
+        Assert.Equal(
+            $"{AsleepWhile} Heat.mkv; the job was stopped and will be picked up again. job_id=1",
+            Assert.Single(log.Said(LogLevel.Information)));
+        Assert.Equal(ProcessingJobStatus.Leased, (await _db.Store.GetAsync(1))!.Status);
+    }
+
+    [Fact]
+    public async Task A_job_whose_lease_ran_out_while_weir_ran_is_still_a_warning()
+    {
+        await _db.Store.EnqueueOrGetAsync("outlived", Kind, maxAttempts: 3);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handler = new UntilCancelledHandler(Kind, started);
+        using var heartbeatWaiting = new SemaphoreSlim(0);
+        var log = new MessageLog();
+        var pulse = new ProcessPulse(_time);
+        var renewalNotBack = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var processor = Processor(handler, heartbeatWaiting, renew: (_, _, _) => renewalNotBack.Task, logger: log, pulse: pulse);
+
+        var runTask = processor.ProcessOneAsync("worker", 3, _time.GetUtcNow());
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await WaitForHeartbeatAsync(heartbeatWaiting);
+
+        WeirRunsFor(pulse, TimeSpan.FromSeconds(4));
+        await Eventually.ThatAsync(() => handler.Cancelled);
+        renewalNotBack.SetException(new OperationCanceledException());
+
+        Assert.Equal(JobProcessOutcome.Processed, await runTask.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.Empty(log.Said(LogLevel.Information));
+        Assert.Contains("ran out before it could be renewed", Assert.Single(log.Said(LogLevel.Warning), message => message.StartsWith("The lease on job", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public async Task A_renewal_that_finds_the_lease_gone_after_the_computer_slept_is_information()
+    {
+        await _db.Store.EnqueueOrGetAsync("woke", Kind, maxAttempts: 3);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handler = new DelegateHandler(Kind, async _ =>
+        {
+            started.TrySetResult();
+            await release.Task;
+        });
+        using var heartbeatWaiting = new SemaphoreSlim(0);
+        var log = new MessageLog();
+        var pulse = new ProcessPulse(_time);
+        var processor = Processor(handler, heartbeatWaiting, renew: (_, _, _) => Task.FromResult(false), logger: log, pulse: pulse);
+
+        var runTask = processor.ProcessOneAsync("worker", 30, _time.GetUtcNow());
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await WaitForHeartbeatAsync(heartbeatWaiting);
+
+        _time.Advance(TimeSpan.FromSeconds(10));
+        await Eventually.ThatAsync(() => log.Said(LogLevel.Information).Any());
+        release.TrySetResult();
+
+        Assert.Equal(JobProcessOutcome.Processed, await runTask.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.Empty(log.Said(LogLevel.Warning));
+        Assert.Equal($"{AsleepWhile} a background job; the job's claim ran out in the meantime. job_id=1", Assert.Single(log.Said(LogLevel.Information)));
+    }
+
+    [Fact]
+    public async Task A_renewal_that_finds_the_lease_gone_while_weir_ran_is_still_a_warning()
+    {
+        await _db.Store.EnqueueOrGetAsync("taken", Kind, maxAttempts: 3);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handler = new DelegateHandler(Kind, async _ =>
+        {
+            started.TrySetResult();
+            await release.Task;
+        });
+        using var heartbeatWaiting = new SemaphoreSlim(0);
+        var log = new MessageLog();
+        var pulse = new ProcessPulse(_time);
+        var processor = Processor(handler, heartbeatWaiting, renew: (_, _, _) => Task.FromResult(false), logger: log, pulse: pulse);
+
+        var runTask = processor.ProcessOneAsync("worker", 30, _time.GetUtcNow());
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await WaitForHeartbeatAsync(heartbeatWaiting);
+
+        WeirRunsFor(pulse, TimeSpan.FromSeconds(10));
+        await Eventually.ThatAsync(() => log.Said(LogLevel.Warning).Any());
+        release.TrySetResult();
+
+        Assert.Equal(JobProcessOutcome.Processed, await runTask.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.Empty(log.Said(LogLevel.Information));
+        Assert.Contains("no longer held", Assert.Single(log.Said(LogLevel.Warning)));
+    }
+
     private sealed class MessageLog : ILogger<ProcessingJobProcessor>
     {
-        private readonly ConcurrentQueue<string> _messages = new();
+        private readonly ConcurrentQueue<(LogLevel Level, string Message)> _entries = new();
 
-        public IEnumerable<string> Messages => _messages;
+        public IEnumerable<string> Messages => _entries.Select(entry => entry.Message);
+
+        public IEnumerable<string> Said(LogLevel level) => _entries.Where(entry => entry.Level == level).Select(entry => entry.Message);
 
         public IDisposable? BeginScope<TState>(TState state)
             where TState : notnull => null;
@@ -224,7 +350,7 @@ public sealed class LeaseRenewalTests : IDisposable
         public bool IsEnabled(LogLevel logLevel) => true;
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
-            _messages.Enqueue(formatter(state, exception));
+            _entries.Enqueue((logLevel, formatter(state, exception)));
     }
 
     private sealed class UntilCancelledHandler(string jobKind, TaskCompletionSource started) : IJobHandler
@@ -257,7 +383,7 @@ public sealed class LeaseRenewalTests : IDisposable
             await heartbeatWaiting.WaitAsync(TimeSpan.FromSeconds(5)),
             "The lease-renewal heartbeat did not renew and wait for its next tick in time.");
 
-    private ProcessingJobProcessor Processor(IJobHandler handler, SemaphoreSlim? heartbeatWaiting = null, Func<long, string, DateTimeOffset, Task<bool>>? renew = null, ILogger<ProcessingJobProcessor>? logger = null) =>
+    private ProcessingJobProcessor Processor(IJobHandler handler, SemaphoreSlim? heartbeatWaiting = null, Func<long, string, DateTimeOffset, Task<bool>>? renew = null, ILogger<ProcessingJobProcessor>? logger = null, ProcessPulse? pulse = null) =>
         new(
             new ProcessingJobStore(new SqliteDatabase(_db.DbPath, pooling: false), _time),
             new JobHandlerRegistry([handler]),
@@ -265,7 +391,8 @@ public sealed class LeaseRenewalTests : IDisposable
             new NoUnhandledJobFailureRecorder(),
             new NoJobNotifications(),
             _time,
-            logger ?? NullLogger<ProcessingJobProcessor>.Instance)
+            logger ?? NullLogger<ProcessingJobProcessor>.Instance,
+            pulse: pulse)
         {
             LeaseRenewalWaiting = heartbeatWaiting is null ? null : () => heartbeatWaiting.Release(),
             RenewOverride = renew,

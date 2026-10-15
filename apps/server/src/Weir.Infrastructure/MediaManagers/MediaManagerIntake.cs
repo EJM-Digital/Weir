@@ -374,6 +374,7 @@ public sealed partial class MediaManagerIntake
             {
                 // A file that was gone and is here again: the pass waiting out the grace has nothing left to wait for.
                 _jobs.AnnounceQueueChange(transaction, active.JobKind);
+                _jobs.WakeWorkers(active.JobKind);
             }
 
             if (library is not null &&

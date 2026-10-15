@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weir.Core.LibraryMode;
 using Weir.Infrastructure.Auth;
@@ -137,6 +138,24 @@ public sealed class LibraryModeScheduleTaskTests : IDisposable
 
         Assert.Equal(2, (await ScansAsync(library)).Count);
         Assert.Equal(back, await _fixture.Db(uow => _scans.LastScheduledRunAtAsync(uow, library), commit: false));
+    }
+
+    [Fact]
+    public async Task A_missed_day_is_told_as_information_never_as_a_warning()
+    {
+        var library = await LibraryAsync();
+        await Timer().RunOnceAsync(CancellationToken.None);
+        await FinishAsync(Assert.Single(await ScansAsync(library)).Id);
+        var log = new CapturingLogger<LibraryModeScheduleTask>();
+        var timer = new LibraryModeScheduleTask(
+            _fixture.Store.Database, _fixture.Jobs, _scans, _librarySettings, _libraries, _fixture.Store.Clock, _suiteSettings, log);
+
+        _fixture.Store.Clock.Advance(TimeSpan.FromDays(3));
+        await timer.RunOnceAsync(CancellationToken.None);
+
+        Assert.Equal(2, (await ScansAsync(library)).Count);
+        Assert.DoesNotContain(log.Messages, message => message.Level >= LogLevel.Warning);
+        Assert.Single(log.Messages, message => message.Level == LogLevel.Information);
     }
 
     [Fact]

@@ -1,0 +1,14 @@
+exit code: 0
+--- stdout ---
+usage: Weir recover [-h] [--username USERNAME] [--password PASSWORD] [--list]
+
+Reset the Weir operator password from the server.
+
+options:
+  -h, --help            show this help message and exit
+  --username USERNAME   Account to reset. Optional while there is only one.
+  --password PASSWORD   New password. Omit to be prompted, which keeps it out
+                        of your shell history.
+  --list                List accounts and exit.
+
+--- stderr ---

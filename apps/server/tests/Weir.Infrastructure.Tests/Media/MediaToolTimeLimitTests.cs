@@ -133,6 +133,32 @@ public sealed class MediaToolTimeLimitTests
     }
 
     [Fact]
+    public async Task An_ffmpeg_that_the_computer_slept_through_is_not_stopped_as_stalled()
+    {
+        using var child = new PacedChild();
+        var blocks = 0;
+
+        // The computer sleeps for seven hours after the fourth block: far longer than the silence limit and the overall bound, yet
+        // no time at all that the tool could have run in.
+        var tools = Tools(child.Runner, silence: TimeSpan.FromSeconds(3));
+
+        await tools.RunFfmpegAsync(
+            [StandInPath, "progress-advancing", child.Pace, "10"],
+            progressCallback: _ =>
+            {
+                if (++blocks == 4)
+                {
+                    child.Sleep(TimeSpan.FromHours(7));
+                }
+
+                child.Tick(TimeSpan.FromMilliseconds(100), blocks);
+            });
+
+        // The stand-in prints the ten blocks it was asked for and then one more, the block that says it has finished.
+        Assert.Equal(11, blocks);
+    }
+
+    [Fact]
     public async Task An_ffmpeg_that_keeps_printing_the_same_progress_block_is_stopped_as_stalled()
     {
         // What ffmpeg 9 does while it waits on a read that never returns: a block every half second, the same numbers in each.

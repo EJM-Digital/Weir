@@ -27,8 +27,9 @@ public sealed partial class VanishedFileSweepTask : IPeriodicTask
     private readonly TimeProvider _time;
     private readonly ILogger<VanishedFileSweepTask> _logger;
     private readonly DataChangePublisher? _changes;
+    private readonly ProcessingJobStore? _jobs;
 
-    public VanishedFileSweepTask(SqliteDatabase database, WeirOptions options, LibraryStore libraries, TimeProvider time, ILogger<VanishedFileSweepTask> logger, DataChangePublisher? changes = null)
+    public VanishedFileSweepTask(SqliteDatabase database, WeirOptions options, LibraryStore libraries, TimeProvider time, ILogger<VanishedFileSweepTask> logger, DataChangePublisher? changes = null, ProcessingJobStore? jobs = null)
     {
         _database = database ?? throw new ArgumentNullException(nameof(database));
         _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -36,6 +37,7 @@ public sealed partial class VanishedFileSweepTask : IPeriodicTask
         _time = time ?? throw new ArgumentNullException(nameof(time));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _changes = changes;
+        _jobs = jobs;
     }
 
     /// <summary>Test seam: the wait between the first look at a file that was not there and the look that believes it is gone.</summary>
@@ -72,7 +74,7 @@ public sealed partial class VanishedFileSweepTask : IPeriodicTask
             }
 
             var changes = await VanishedFiles.SettleAsync(
-                _database, library.Id, runtime.WatchedFolder, ProcessingMediaScopes.Normalize(library.MediaType), now, "scheduled", GoneLookAgain, cancellationToken).ConfigureAwait(false);
+                _database, library.Id, runtime.WatchedFolder, ProcessingMediaScopes.Normalize(library.MediaType), now, "scheduled", GoneLookAgain, WakeForStartedLook, cancellationToken).ConfigureAwait(false);
             if (!changes.Any)
             {
                 continue;
@@ -98,6 +100,9 @@ public sealed partial class VanishedFileSweepTask : IPeriodicTask
             _changes?.Publish(DataTopics.LibraryScan);
         }
     }
+
+    /// <summary>A waiting look that a returning file started is claimable now, so the slots that run it are woken.</summary>
+    private void WakeForStartedLook(string jobKind) => _jobs?.WakeWorkers(jobKind);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "{Count} file(s) of workflow {Library} are no longer in the watched folder and are listed until they have been gone a while: {Paths}")]
     private partial void LogHeld(int count, string library, string paths);

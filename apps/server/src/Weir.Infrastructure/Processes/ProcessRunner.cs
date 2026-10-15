@@ -57,7 +57,10 @@ public sealed record ProcessRequest
     /// <summary>The executable, then its arguments.</summary>
     public required IReadOnlyList<string> Argv { get; init; }
 
-    /// <summary>Wall-clock limit; the whole process tree is killed when it passes. See also <see cref="IdleTimeout"/>.</summary>
+    /// <summary>
+    /// Limit on the time the process could run (see <see cref="AwakeDeadline"/>: a sleep, a saved machine or a frozen container does
+    /// not count); the whole process tree is killed when it passes. See also <see cref="IdleTimeout"/>.
+    /// </summary>
     public TimeSpan? Timeout { get; init; }
 
     public ProcessInput Stdin { get; init; } = ProcessInput.Null;
@@ -137,7 +140,7 @@ public interface IProcessRunner
 }
 
 /// <summary><see cref="IProcessRunner"/> over <see cref="Process"/>, for Windows and Linux.</summary>
-public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null, ToolProcessLedger? tools = null, TimeProvider? time = null) : IProcessRunner
+public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null, ToolProcessLedger? tools = null, TimeProvider? time = null, ProcessPulse? pulse = null) : IProcessRunner
 {
     private readonly TimeProvider _time = time ?? TimeProvider.System;
 
@@ -189,10 +192,10 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
             process.StandardInput.Close();
         }
 
-        using var timeoutSource = request.Timeout is { } timeout ? new CancellationTokenSource(timeout) : new CancellationTokenSource();
-        using var idle = new IdleWatch(request.IdleTimeout, _time);
-        using var lateExit = new CancellationTokenSource();
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutSource.Token, idle.Token, lateExit.Token);
+        using var overall = new AwakeDeadline(request.Timeout, _time, pulse);
+        using var idle = new IdleWatch(request.IdleTimeout, _time, pulse);
+        using var lateExit = new AwakeDeadline(request.ExitAfterFinalLine, _time, pulse, started: false);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, overall.Token, idle.Token, lateExit.Token);
         var anyOutputIsProgress = request.MarksProgress is null;
         Action onOutput = anyOutputIsProgress ? idle.Activity : static () => { };
 
@@ -216,9 +219,9 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
                         idle.Activity();
                     }
 
-                    if (request.ExitAfterFinalLine is { } grace && request.IsFinalLine?.Invoke(line) == true)
+                    if (request.ExitAfterFinalLine is not null && request.IsFinalLine?.Invoke(line) == true)
                     {
-                        lateExit.CancelAfter(grace);
+                        lateExit.Restart();
                     }
                 }
 #pragma warning disable CA1031 // The callback's exception is rethrown to the caller after the kill.
@@ -248,8 +251,8 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
             KillTree(process);
             await DrainAsync(process, stdoutTask, stderrTask).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
-            timedOut = timeoutSource.IsCancellationRequested ? ProcessTimeoutKind.Overall
-                : lateExit.IsCancellationRequested ? ProcessTimeoutKind.NotExitedAfterFinish
+            timedOut = overall.Token.IsCancellationRequested ? ProcessTimeoutKind.Overall
+                : lateExit.Token.IsCancellationRequested ? ProcessTimeoutKind.NotExitedAfterFinish
                 : ProcessTimeoutKind.Idle;
         }
 
@@ -381,30 +384,26 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
     }
 
     /// <summary>
-    /// Cancels its token once nothing has been written for the limit. Output pushes the deadline back, but only when a twentieth
+    /// Cancels its token once nothing has been written for the limit, not counting time the process could not run. Output pushes the deadline back, but only when a twentieth
     /// of the limit has passed since it was last pushed, so a chatty tool does not cost a timer reset per read; a run is therefore
     /// stopped no sooner than 95% of the limit after its last output.
     /// </summary>
     private sealed class IdleWatch : IDisposable
     {
-        private readonly CancellationTokenSource _source;
+        private readonly AwakeDeadline _deadline;
         private readonly TimeProvider _time;
         private readonly TimeSpan? _limit;
         private long _pushedAt;
 
-        public IdleWatch(TimeSpan? limit, TimeProvider time)
+        public IdleWatch(TimeSpan? limit, TimeProvider time, ProcessPulse? pulse)
         {
             _limit = limit;
             _time = time;
-            _source = new CancellationTokenSource(Timeout.InfiniteTimeSpan, time);
-            if (limit is { } span)
-            {
-                _pushedAt = _time.GetTimestamp();
-                _source.CancelAfter(span);
-            }
+            _deadline = new AwakeDeadline(limit, time, pulse);
+            _pushedAt = _time.GetTimestamp();
         }
 
-        public CancellationToken Token => _source.Token;
+        public CancellationToken Token => _deadline.Token;
 
         public void Activity()
         {
@@ -420,17 +419,10 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
             }
 
             Volatile.Write(ref _pushedAt, now);
-            try
-            {
-                _source.CancelAfter(limit);
-            }
-            catch (ObjectDisposedException)
-            {
-                // The run is over; a pipe still being read has nothing left to keep alive.
-            }
+            _deadline.Restart();
         }
 
-        public void Dispose() => _source.Dispose();
+        public void Dispose() => _deadline.Dispose();
     }
 
     /// <summary>Keeps everything, the tail, or nothing.</summary>

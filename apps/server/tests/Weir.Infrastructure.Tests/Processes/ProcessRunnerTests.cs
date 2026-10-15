@@ -220,6 +220,131 @@ public sealed class ProcessRunnerTests
     }
 
     [Fact]
+    public async Task A_sleep_longer_than_the_idle_limit_while_a_process_runs_does_not_stop_it()
+    {
+        using var child = new PacedChild();
+        var lines = new List<string>();
+
+        // The computer sleeps for two hours after the third line; the idle limit is three seconds of the limit's clock.
+        var result = await child.Runner.RunAsync(new ProcessRequest
+        {
+            Argv = [StandInPath, "chatter", child.Pace, "8"],
+            OnStdoutLine = line =>
+            {
+                lines.Add(line);
+                if (lines.Count == 3)
+                {
+                    child.Sleep(TimeSpan.FromHours(2));
+                }
+
+                child.Tick(TimeSpan.FromMilliseconds(100), lines.Count);
+            },
+            IdleTimeout = TimeSpan.FromSeconds(3),
+            Timeout = TimeSpan.FromMinutes(5),
+        });
+
+        Assert.Equal(ProcessTimeoutKind.None, result.Timeout);
+        Assert.Equal(8, lines.Count);
+    }
+
+    [Fact]
+    public async Task A_sleep_and_then_a_stall_while_weir_is_awake_is_stopped_by_the_idle_limit()
+    {
+        using var child = new PacedChild();
+        var lines = new List<string>();
+        using var started = new StartedProcesses();
+
+        // After the fifth line the computer sleeps for two hours and wakes to a tool that says nothing more for longer than the limit.
+        var result = await child.Runner.RunAsync(new ProcessRequest
+        {
+            Argv = [StandInPath, "chatter-then-stall", "50", "5"],
+            OnStarted = started.Remember,
+            OnStdoutLine = line =>
+            {
+                lines.Add(line);
+                if (lines.Count == 5)
+                {
+                    child.Sleep(TimeSpan.FromHours(2));
+                    child.Tick(TimeSpan.FromSeconds(3), lines.Count);
+                }
+            },
+            IdleTimeout = TimeSpan.FromSeconds(2),
+            Timeout = TimeSpan.FromMinutes(5),
+        });
+
+        Assert.Equal(ProcessTimeoutKind.Idle, result.Timeout);
+        Assert.Equal(5, lines.Count);
+        await started.AllHaveEndedAsync();
+    }
+
+    [Fact]
+    public async Task A_sleep_longer_than_the_overall_limit_while_a_process_runs_does_not_stop_it()
+    {
+        using var child = new PacedChild();
+        var lines = new List<string>();
+
+        // Thirty seconds of the limit's clock awake, and a seven-hour sleep in the middle, under a one-minute limit.
+        var result = await child.Runner.RunAsync(new ProcessRequest
+        {
+            Argv = [StandInPath, "chatter", child.Pace, "30"],
+            OnStdoutLine = line =>
+            {
+                lines.Add(line);
+                if (lines.Count == 10)
+                {
+                    child.Sleep(TimeSpan.FromHours(7));
+                }
+
+                child.Tick(TimeSpan.FromSeconds(1), lines.Count);
+            },
+            Timeout = TimeSpan.FromMinutes(1),
+        });
+
+        Assert.Equal(ProcessTimeoutKind.None, result.Timeout);
+        Assert.Equal(30, lines.Count);
+    }
+
+    [Fact]
+    public async Task A_run_that_overran_the_overall_limit_while_weir_was_awake_is_still_stopped_after_a_sleep()
+    {
+        using var child = new PacedChild();
+        var lines = new List<string>();
+        using var started = new StartedProcesses();
+
+        // Lines five seconds apart under a one-minute limit, with a seven-hour sleep during the third. The callback for line k starts
+        // after 5 * (k - 1) seconds awake, so the minute is used up as the twelfth line's five seconds pass: not at the sleep, and not never.
+        // The twelfth callback lets those seconds pass without telling the child, which would otherwise print a thirteenth line while the
+        // runner is still killing it; the count is then exactly twelve.
+        var result = await child.Runner.RunAsync(new ProcessRequest
+        {
+            Argv = [StandInPath, "chatter", child.Pace, "40"],
+            OnStarted = started.Remember,
+            OnStdoutLine = line =>
+            {
+                lines.Add(line);
+                if (lines.Count == 3)
+                {
+                    child.Sleep(TimeSpan.FromHours(7));
+                }
+
+                if (lines.Count < 12)
+                {
+                    child.Tick(TimeSpan.FromSeconds(5), lines.Count);
+                }
+                else
+                {
+                    child.Pass(TimeSpan.FromSeconds(5));
+                }
+            },
+            Timeout = TimeSpan.FromMinutes(1),
+        });
+
+        Assert.Equal(ProcessTimeoutKind.Overall, result.Timeout);
+        Assert.Equal(12, lines.Count);
+        await started.AllHaveEndedAsync();
+    }
+
+    [Fact]
     public async Task A_process_that_stops_talking_part_way_is_killed_by_the_idle_limit_and_what_it_said_is_kept()
     {
         using var child = new PacedChild();

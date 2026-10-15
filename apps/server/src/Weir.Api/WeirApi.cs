@@ -100,6 +100,10 @@ public static class WeirApi
         services.AddHostedService<TrayUpdateBackupWatcher>();
         // Says in the log when requests wait for a thread to start work on, which nothing else shows.
         services.AddHostedService<ThreadPoolWatch>();
+        // Knows when the whole process could not run (the computer asleep, a machine saved or a container frozen), so work that comes
+        // late for that reason is told as information and a scheduler that fell behind while Weir ran is still a warning.
+        services.AddSingleton<ProcessPulse>();
+        services.AddHostedService(provider => provider.GetRequiredService<ProcessPulse>());
         services.AddWeirResponseCompression();
         services.AddRouting();
         return services;

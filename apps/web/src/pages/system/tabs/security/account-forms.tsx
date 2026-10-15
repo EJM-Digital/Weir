@@ -1,5 +1,4 @@
 import { useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
 
 import { errorMessage } from "../../../../lib/api/error-message";
 import {
@@ -160,83 +159,55 @@ export function ChangePasswordForm() {
       title="Change password"
       help="After saving, Weir asks you to sign in again."
     >
-      {changePassword.isSuccess ? (
-        <div className="space-y-3">
-          <p
-            className="mm-status-text text-sm font-semibold"
-            data-status="done"
-            role="status"
-          >
-            Password changed. Sign in again with your new password.
-          </p>
-          <Link
-            to="/login"
-            className={`${mmActionButtonClass({ variant: "primary" })} mm-sys-btn`}
-          >
-            Sign in again
-          </Link>
-        </div>
-      ) : (
-        <>
-          <div className="mm-account-form__fields" key={attempt}>
-            <RevealablePasswordField
-              label="Current password"
-              revealLabel="password"
-              placeholder="Enter current password"
-              autoComplete="current-password"
-              value={fields.current}
-              onChange={set("current")}
-              disabled={busy}
-            />
-            <RevealablePasswordField
-              label="New password (min. 8 characters)"
-              revealLabel="new password"
-              placeholder="Enter new password"
-              autoComplete="new-password"
-              value={fields.next}
-              onChange={set("next")}
-              disabled={busy}
-            />
-            <RevealablePasswordField
-              label="Confirm new password"
-              revealLabel="password confirmation"
-              placeholder="Re-enter new password"
-              autoComplete="new-password"
-              value={fields.confirm}
-              onChange={set("confirm")}
-              disabled={busy}
-            />
-          </div>
-          {changePassword.isError ? (
-            <p
-              className="mm-status-text text-sm"
-              data-status="broken"
-              role="alert"
-            >
-              {errorMessage(changePassword.error, "Could not change password.")}
-            </p>
-          ) : null}
-          {validationError ? (
-            <p
-              className="mm-status-text text-sm"
-              data-status="broken"
-              role="alert"
-            >
-              {validationError}
-            </p>
-          ) : null}
-          <div className="mm-account-form__action">
-            <button
-              type="button"
-              className={`${mmActionButtonClass({ variant: "primary" })} mm-sys-btn`}
-              disabled={busy}
-              onClick={submit}
-            >
-              {busy ? "Saving…" : "Change password"}
-            </button>
-          </div>
-        </>
-      )}
+      <div className="mm-account-form__fields" key={attempt}>
+        <RevealablePasswordField
+          label="Current password"
+          revealLabel="password"
+          placeholder="Enter current password"
+          autoComplete="current-password"
+          value={fields.current}
+          onChange={set("current")}
+          disabled={busy}
+        />
+        <RevealablePasswordField
+          label="New password (min. 8 characters)"
+          revealLabel="new password"
+          placeholder="Enter new password"
+          autoComplete="new-password"
+          value={fields.next}
+          onChange={set("next")}
+          disabled={busy}
+        />
+        <RevealablePasswordField
+          label="Confirm new password"
+          revealLabel="password confirmation"
+          placeholder="Re-enter new password"
+          autoComplete="new-password"
+          value={fields.confirm}
+          onChange={set("confirm")}
+          disabled={busy}
+        />
+      </div>
+      {changePassword.isError ? (
+        <p className="mm-status-text text-sm" data-status="broken" role="alert">
+          {errorMessage(changePassword.error, "Could not change password.")}
+        </p>
+      ) : null}
+      {validationError ? (
+        <p className="mm-status-text text-sm" data-status="broken" role="alert">
+          {validationError}
+        </p>
+      ) : null}
+      <div className="mm-account-form__action">
+        <button
+          type="button"
+          className={`${mmActionButtonClass({ variant: "primary" })} mm-sys-btn`}
+          disabled={busy}
+          onClick={submit}
+        >
+          {busy ? "Saving…" : "Change password"}
+        </button>
+      </div>
     </AccountForm>
   );
 }
