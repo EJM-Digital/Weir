@@ -118,17 +118,29 @@ export function useTrackChoice(tracks: ProcessingFileTracks | undefined) {
     });
   };
 
+  // The default audio track is the kept one marked default, else the first kept in the output order, as the automatic
+  // rules do: a file always has one, so dropping the default track hands it to the next. A subtitle track is default
+  // only when chosen, and only while it is kept.
+  const keptAudio = keptTracks.filter((track) => track.type === "audio");
+  const defaultAudioIndex = (
+    keptAudio.find((track) => rows[track.index]?.default) ?? keptAudio[0]
+  )?.index;
+  const isDefault = (track: ProcessingFileTrack) =>
+    track.type === "audio"
+      ? track.index === defaultAudioIndex
+      : track.type === "subtitle" &&
+        (rows[track.index]?.keep ?? false) &&
+        (rows[track.index]?.default ?? false);
+
   // Default and forced only mean anything for audio and subtitle tracks; a video track always
   // submits false for both, whatever its own disposition on the source said.
   const choice = (): ProcessingManualPlanChoice => ({
-    keep: order.map((index) => {
-      const type = selectable.find((track) => track.index === index)?.type;
-      return {
-        index,
-        default: type === "video" ? false : (rows[index]?.default ?? false),
-        forced: type === "video" ? false : (rows[index]?.forced ?? false),
-      };
-    }),
+    keep: keptTracks.map((track) => ({
+      index: track.index,
+      default: isDefault(track),
+      forced:
+        track.type === "video" ? false : (rows[track.index]?.forced ?? false),
+    })),
     order,
   });
 
@@ -137,12 +149,11 @@ export function useTrackChoice(tracks: ProcessingFileTracks | undefined) {
     /** "Audio 2 · Japanese · 2.0 AAC": the track in words, numbered among its own kind. */
     labelOf: (track: ProcessingFileTrack) =>
       describeTrack(track, positions.get(track.index) ?? 1),
+    /** Whether the track is the default of its kind in what would be submitted. */
+    isDefault,
     /** Whether a kept subtitle is marked default; with none, players show no subtitles until asked. */
     hasDefaultSubtitle: selectable.some(
-      (track) =>
-        track.type === "subtitle" &&
-        (rows[track.index]?.keep ?? false) &&
-        (rows[track.index]?.default ?? false),
+      (track) => track.type === "subtitle" && isDefault(track),
     ),
     selectable,
     other,
