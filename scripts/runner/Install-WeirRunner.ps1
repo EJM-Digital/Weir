@@ -37,21 +37,24 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
     throw 'Run this from an elevated PowerShell window (right-click, Run as administrator): it installs a Windows service.'
 }
 
-function Install-IfMissing([string] $Command, [string] $WingetId) {
-    if (Get-Command $Command -ErrorAction SilentlyContinue) {
-        Write-Host "$Command is already installed."
+# Installed for the whole PC, not one user: the runner service runs as NETWORK SERVICE and only sees machine-wide
+# programs. A copy installed for one person (or from the Microsoft Store) does not count.
+function Install-ForMachine([string] $ExePath, [string] $WingetId) {
+    if (Test-Path -LiteralPath $ExePath) {
+        Write-Host "$WingetId is already installed for the whole PC."
         return
     }
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        throw "$Command is missing and winget is not available to install it. Install $WingetId by hand, then run this again."
+        throw "$WingetId is not installed for the whole PC and winget is not available to install it. Install it by hand for all users, then run this again."
     }
-    Write-Host "Installing $WingetId..."
-    winget install --id $WingetId --exact --silent --accept-package-agreements --accept-source-agreements
+    Write-Host "Installing $WingetId for the whole PC..."
+    winget install --id $WingetId --exact --scope machine --silent --accept-package-agreements --accept-source-agreements
     if ($LASTEXITCODE -ne 0) { throw "winget could not install $WingetId (exit code $LASTEXITCODE)." }
+    if (-not (Test-Path -LiteralPath $ExePath)) { throw "$WingetId installed, but $ExePath is not there." }
 }
 
-Install-IfMissing -Command 'git' -WingetId 'Git.Git'
-Install-IfMissing -Command 'pwsh' -WingetId 'Microsoft.PowerShell'
+Install-ForMachine -ExePath "$env:ProgramFiles\Git\cmd\git.exe" -WingetId 'Git.Git'
+Install-ForMachine -ExePath "$env:ProgramFiles\PowerShell\7\pwsh.exe" -WingetId 'Microsoft.PowerShell'
 
 # Weir's tests build paths deeper than 260 characters.
 Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name LongPathsEnabled -Value 1 -Type DWord

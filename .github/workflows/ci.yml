@@ -382,7 +382,7 @@ jobs:
       # On a self-hosted PC, `bash` resolves to Windows' own bash.exe (WSL) unless Git's comes first on PATH.
       - name: Prefer Git's bash
         if: runner.environment == 'self-hosted'
-        shell: pwsh
+        shell: powershell
         run: Add-Content -Path $env:GITHUB_PATH -Value "$env:ProgramFiles\Git\bin"
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
@@ -639,7 +639,7 @@ jobs:
       # On a self-hosted PC, `bash` resolves to Windows' own bash.exe (WSL) unless Git's comes first on PATH.
       - name: Prefer Git's bash
         if: runner.environment == 'self-hosted'
-        shell: pwsh
+        shell: powershell
         run: Add-Content -Path $env:GITHUB_PATH -Value "$env:ProgramFiles\Git\bin"
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
