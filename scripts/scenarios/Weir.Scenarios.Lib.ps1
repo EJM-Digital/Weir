@@ -56,6 +56,9 @@ function Assert-That {
 }
 
 # Polls $Probe until it returns something other than $null or $false, and returns that. Fails with what was last seen.
+# -TimeoutSeconds is a hang guard, never a pace: it is the longest a wait is given before the run is called hung, and the wait
+# ends the moment $Probe answers. A claim that something did not happen is not made by waiting for it not to: wait for a later,
+# observable event (a look at the folder that has finished, a counter that has moved on) and then check that nothing was done.
 function Wait-Until {
     param(
         [Parameter(Mandatory)] [scriptblock] $Probe,
@@ -75,18 +78,6 @@ function Wait-Until {
     } while ((Get-Date) -lt $deadline)
     $because = if ($lastError) { " Last error: $lastError" } else { '' }
     throw "Timed out after $TimeoutSeconds s waiting for $What.$because"
-}
-
-# Watches for $Duration and fails the moment $Happened returns true. Watching can only show that something did not happen
-# yet, so use it for claims no API can answer directly ("nothing was cleaned while paused").
-function Assert-NeverWithin {
-    param([Parameter(Mandatory)] [scriptblock] $Happened, [Parameter(Mandatory)] [int] $Seconds, [Parameter(Mandatory)] [string] $What)
-    $deadline = (Get-Date).AddSeconds($Seconds)
-    do {
-        if (& $Happened) { throw "$What happened, and it must not." }
-        Start-Sleep -Milliseconds 250
-    } while ((Get-Date) -lt $deadline)
-    Add-Evidence "ok: $What did not happen in $Seconds s"
 }
 
 # --- Weir's HTTP API ------------------------------------------------------------------------------------------------

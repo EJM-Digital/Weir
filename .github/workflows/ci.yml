@@ -227,6 +227,11 @@ jobs:
           node scripts/check-test-console-programs.mjs
           node --test scripts/check-test-console-programs.test.mjs
 
+      - name: No test waits for the wall clock
+        run: |
+          node scripts/check-wall-clock-waits.mjs
+          node --test scripts/check-wall-clock-waits.test.mjs
+
       - name: No Python in the repository
         run: |
           node scripts/check-no-python.mjs
