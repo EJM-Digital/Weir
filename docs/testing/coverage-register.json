@@ -43268,6 +43268,35 @@
       }
     },
     {
+      "id": "tray.tray.a-port-another-program-holds-ends-the-start-with-exit-code-75",
+      "area": "tray",
+      "behaviour": "A server whose port another program holds ends the start with a plain sentence naming the port and exit code 75 (no startup-error.txt); the tray tries it again like any failed start and, when the tries are used up, names the port in its log, on the icon and in the notice",
+      "kind": "failure-mode",
+      "severity": "medium",
+      "touches": "install",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/PortInUseTests.cs",
+          "name": "PortInUseTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/ServerHostPortInUseTests.cs",
+          "name": "ServerHostPortInUseTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/StartupErrorTests.cs",
+          "name": "The_balloons_for_a_port_another_program_holds_name_the_port_and_say_what_to_do"
+        }
+      ],
+      "audit": {
+        "id": "inventory"
+      }
+    },
+    {
       "id": "tray.tray.hung-silent-detection-by-progress-both-channels-expect-within",
       "area": "tray",
       "behaviour": "Hung / silent detection by progress (both channels, expect_within_s, ceiling 1 h, clock steps back), hung server stopped then killed with its tree, only the tray's own process is ever touched, next attempt waits until the old one is gone",
@@ -46803,6 +46832,11 @@
           "type": "package-smoke",
           "file": "scripts/smoke-windows-package.ps1",
           "name": "*"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/PortInUseTests.cs",
+          "name": "PortInUseTests"
         }
       ],
       "needs": {
