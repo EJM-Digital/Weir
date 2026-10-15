@@ -48,9 +48,10 @@ public sealed record HandoffOrigin(string SourceKey, string? HandoffId, string? 
 /// <summary>
 /// Whether a manager accepted a report. <see cref="Accepted"/> is only ever true on a 2xx answer. <see cref="ManagerStoppedWaiting"/> is a
 /// refusal that is not a fault: the manager answered that it had already stopped waiting for the hand-off, so the report came too
-/// late and nothing was queued (<see cref="CompletionReports.IsTooLate"/>).
+/// late and nothing was queued (<see cref="CompletionReports.IsTooLate"/>). <see cref="RetryAfter"/> is how long the manager asked Weir to
+/// wait before sending again, when it said.
 /// </summary>
-public sealed record HandoffReportDelivery(bool Accepted, string Status, bool ManagerStoppedWaiting = false);
+public sealed record HandoffReportDelivery(bool Accepted, string Status, bool ManagerStoppedWaiting = false, TimeSpan? RetryAfter = null);
 
 /// <summary>The completion report body a manager receives, and its wording.</summary>
 public static class CompletionReports
