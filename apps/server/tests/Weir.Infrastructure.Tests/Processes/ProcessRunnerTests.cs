@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using Weir.Infrastructure.Processes;
@@ -73,6 +74,18 @@ public sealed class ProcessRunnerTests
         var result = await Runner.RunAsync(new ProcessRequest { Argv = reportOwnPriority });
 
         Assert.Equal(OperatingSystem.IsWindows() ? "BelowNormal" : "10", Encoding.UTF8.GetString(result.Stdout).Trim());
+    }
+
+    [Fact]
+    public async Task A_tool_asked_for_normal_priority_runs_at_normal_priority()
+    {
+        string[] reportOwnPriority = OperatingSystem.IsWindows()
+            ? ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", "[Console]::In.ReadToEnd() | Out-Null; [System.Diagnostics.Process]::GetCurrentProcess().PriorityClass"]
+            : ["/bin/sh", "-c", "cat > /dev/null; awk '{ print $19 }' /proc/$$/stat"];
+
+        var result = await Runner.RunAsync(new ProcessRequest { Argv = reportOwnPriority, Priority = ProcessPriorityClass.Normal });
+
+        Assert.Equal(OperatingSystem.IsWindows() ? "Normal" : "0", Encoding.UTF8.GetString(result.Stdout).Trim());
     }
 
     [PosixFact("The shell's own argument handling is what this proves; dotnet itself echoes nothing useful on Windows.")]

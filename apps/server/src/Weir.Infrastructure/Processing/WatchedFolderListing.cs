@@ -87,12 +87,19 @@ public static class WatchedFolderListing
             return true;
         }
 
-        var parts = path.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries)
-            .Select(p => p.Trim().ToLowerInvariant()).ToHashSet(StringComparer.Ordinal);
+        return HasDownloaderFolder(path.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries), excludeMarkers);
+    }
+
+    /// <summary>
+    /// Whether any of the folder names is one a downloader uses while a download is unfinished: the workflow's own list of
+    /// folder names, or the built-in list when it names none. Names are compared without regard to case.
+    /// </summary>
+    internal static bool HasDownloaderFolder(IEnumerable<string> folderNames, IReadOnlyCollection<string>? excludeMarkers)
+    {
         var markers = excludeMarkers is { Count: > 0 }
             ? excludeMarkers.Select(m => m.Trim().ToLowerInvariant()).Where(m => m.Length > 0).ToHashSet(StringComparer.Ordinal)
             : DefaultTransientDownloadDirMarkers;
-        return parts.Overlaps(markers);
+        return folderNames.Select(name => name.Trim().ToLowerInvariant()).Any(markers.Contains);
     }
 
     /// <summary>Candidate files under <paramref name="watchedRoot"/>, ordered by path,
@@ -194,7 +201,8 @@ public static class WatchedFolderListing
     private static FileInfo? LinkedFile(FileSystemInfo entry) =>
         entry.LinkTarget is not null && File.Exists(entry.FullName) ? new FileInfo(entry.FullName) : null;
 
-    private static HashSet<string>? ConfiguredExtensions(IReadOnlyCollection<string>? mediaExtensions) =>
+    /// <summary>The extensions a workflow names, lower-case with a leading dot, or null when it names none and the built-in list applies.</summary>
+    internal static HashSet<string>? ConfiguredExtensions(IReadOnlyCollection<string>? mediaExtensions) =>
         mediaExtensions is { Count: > 0 }
             ? mediaExtensions
                 .Select(v => v.Trim())
@@ -203,5 +211,5 @@ public static class WatchedFolderListing
                 .ToHashSet(StringComparer.Ordinal)
             : null;
 
-    private static bool IsMediaExtension(string suffix) => RemuxRules.MediaExtensions.Contains(suffix);
+    internal static bool IsMediaExtension(string suffix) => RemuxRules.MediaExtensions.Contains(suffix);
 }

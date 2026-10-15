@@ -27,8 +27,8 @@ public sealed partial class ProcessingSettingsEndpointsContractTests(LibrariesPa
     public async Task A_hardware_check_ffmpeg_was_too_slow_to_answer_says_so_and_the_next_check_asks_again()
     {
         using var tools = FakeFfmpeg.Install();
-        // The first run of the tool takes longer than the 10 seconds the check allows; the next is quick.
-        tools.SetScript(new JsonObject { ["default"] = new JsonObject { [FakeToolProtocol.HwaccelsFirstCallDelaySecondsKey] = 12 } });
+        // The first run of the tool takes longer than the 15 seconds the check allows; the next is quick.
+        tools.SetScript(new JsonObject { ["default"] = new JsonObject { [FakeToolProtocol.HwaccelsFirstCallDelaySecondsKey] = 18 } });
         await using var server = await WeirServer.StartNewAsync(tools.Env);
         using var admin = await server.CreateAdminClientAsync();
 
@@ -37,7 +37,7 @@ public sealed partial class ProcessingSettingsEndpointsContractTests(LibrariesPa
 
         Status(tooSlow, HttpStatusCode.OK);
         Assert.False((bool)tooSlow.Fields["detected"]!, tooSlow.ToString());
-        Assert.Contains("timed out after 10.0 seconds", (string)tooSlow.Fields["detail"]!, StringComparison.Ordinal);
+        Assert.Equal("FFmpeg didn't answer in time. Check again in a moment.", (string)tooSlow.Fields["detail"]!);
     }
 
     [Fact]
