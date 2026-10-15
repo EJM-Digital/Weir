@@ -1,25 +1,17 @@
 import { type ReactNode, useEffect, useState } from "react";
 
 import { StatusDot } from "../components/panels/status-dot";
-import type { StatusMeaning } from "../lib/ui/status-meaning";
 
-type ReadyStep = {
-  name: string;
-  status: "ready" | "starting" | "failed" | string;
-  detail: string;
-};
-
+/** What the public `/ready` answers, in full: it names no steps, so the gate cannot show any. */
 type ReadyPayload = {
   ready: boolean;
   status: string;
-  startup_seconds: number;
-  steps: ReadyStep[];
 };
 
 type StartupState =
-  | { kind: "starting"; message: string; steps: ReadyStep[]; elapsedMs: number }
+  | { kind: "starting"; message: string; detail: string; elapsedMs: number }
   | { kind: "ready" }
-  | { kind: "failed"; message: string; steps: ReadyStep[] };
+  | { kind: "failed"; message: string };
 
 const READY_PATH = "/ready";
 const POLL_MS = 1000;
@@ -29,16 +21,8 @@ const ESTIMATE_START_PERCENT = 20;
 const ESTIMATE_CAP_PERCENT = 90;
 const ESTIMATE_MS_PER_PERCENT = 750;
 
-const WAITING_STEP: ReadyStep = {
-  name: "server",
-  status: "starting",
-  detail: "Waiting for Weir to start.",
-};
-
-function stepMeaning(step: ReadyStep, failed: boolean): StatusMeaning {
-  if (step.status === "ready") return "done";
-  return failed ? "broken" : "doing";
-}
+const WAITING_TO_START = "Waiting for Weir to start.";
+const WAITING_TO_ANSWER = "Waiting for the Weir server to answer.";
 
 async function fetchReadiness(signal: AbortSignal): Promise<ReadyPayload> {
   const response = await fetch(READY_PATH, {
@@ -47,7 +31,7 @@ async function fetchReadiness(signal: AbortSignal): Promise<ReadyPayload> {
     cache: "no-store",
     signal,
   });
-  // A not-ready answer still carries the steps, so the body is read whatever the status.
+  // A not-ready answer is a 503 with its own body, so the body is read whatever the status.
   return (await response.json()) as ReadyPayload;
 }
 
@@ -55,7 +39,7 @@ export function StartupGate({ children }: { children: ReactNode }) {
   const [state, setState] = useState<StartupState>({
     kind: "starting",
     message: "Starting Weir...",
-    steps: [],
+    detail: WAITING_TO_START,
     elapsedMs: 0,
   });
 
@@ -81,14 +65,13 @@ export function StartupGate({ children }: { children: ReactNode }) {
             kind: "failed",
             message:
               "Weir did not become ready in time. Check that the Weir server is still running, then refresh.",
-            steps: payload.steps ?? [],
           });
           return;
         }
         setState({
           kind: "starting",
           message: "Starting Weir...",
-          steps: payload.steps ?? [],
+          detail: WAITING_TO_START,
           elapsedMs,
         });
         timer = window.setTimeout(poll, POLL_MS);
@@ -102,20 +85,13 @@ export function StartupGate({ children }: { children: ReactNode }) {
             kind: "failed",
             message:
               "Weir did not respond in time. Check that the Weir server is running, then refresh.",
-            steps: [],
           });
           return;
         }
         setState({
           kind: "starting",
           message: "Starting Weir...",
-          steps: [
-            {
-              name: "server",
-              status: "starting",
-              detail: "Waiting for the Weir server to answer.",
-            },
-          ],
+          detail: WAITING_TO_ANSWER,
           elapsedMs,
         });
         timer = window.setTimeout(poll, POLL_MS);
@@ -162,18 +138,18 @@ export function StartupGate({ children }: { children: ReactNode }) {
             />
           </div>
           <ul className="mm-startup__steps space-y-3">
-            {(state.steps.length ? state.steps : [WAITING_STEP]).map((step) => (
-              <li key={step.name} className="mm-startup__step">
-                <StatusDot
-                  className="mm-startup__dot"
-                  meaning={stepMeaning(step, state.kind === "failed")}
-                />
-                <span>
-                  <span className="mm-startup__step-name">{step.name}</span>
-                  <span className="mm-startup__step-detail">{step.detail}</span>
+            <li className="mm-startup__step">
+              <StatusDot
+                className="mm-startup__dot"
+                meaning={state.kind === "failed" ? "broken" : "doing"}
+              />
+              <span>
+                <span className="mm-startup__step-name">server</span>
+                <span className="mm-startup__step-detail">
+                  {state.kind === "failed" ? WAITING_TO_START : state.detail}
                 </span>
-              </li>
-            ))}
+              </span>
+            </li>
           </ul>
         </div>
         {state.kind === "failed" ? (
