@@ -213,9 +213,9 @@ host-mounted media paths match your NAS or Docker user strategy.
 |---|---|
 | `WEIR_PUID` / `PUID` | The UID Weir runs as inside the container. Defaults to `1000`. Set it to the owner of your host media folders so Weir can read and write them. |
 | `WEIR_PGID` / `PGID` | The matching GID. Defaults to `1000`. |
-| `WEIR_CHOWN_OUTPUT` | When enabled, Weir applies `WEIR_FILE_MODE_OUTPUT` / `WEIR_DIR_MODE_OUTPUT` and the `WEIR_PUID`/`WEIR_PGID` ownership directly to each file or folder it publishes, right after it writes it. Off by default. Applies to files landing in your output folders; it does not touch your watched or work folders — set ownership on those yourself on the host, or choose a `WEIR_PUID`/`WEIR_PGID` that can already write to them. |
-| `WEIR_FILE_MODE_OUTPUT` | The file permission mode Weir applies to published files when `WEIR_CHOWN_OUTPUT` is on, as an octal string (e.g. `664`). |
-| `WEIR_DIR_MODE_OUTPUT` | The folder permission mode Weir applies to folders it creates for output, as an octal string (e.g. `775`, or `2775` to also set the group-sticky bit). A malformed value refuses to start, with a clear error. |
+| `WEIR_CHOWN_OUTPUT` | When enabled, Weir hands each file or folder it publishes to `WEIR_PUID`/`WEIR_PGID`, right after it writes it. Off by default. In the container this changes very little: Weir runs as that account, so what it writes already belongs to it, and once it has dropped from root it cannot give a file to any other user. At most it changes the group, and only to a group Weir's own account belongs to. The mode settings below do the real work, and they apply whether or not this is on. It does not touch your watched or work folders. Set ownership on those yourself on the host, or choose a `WEIR_PUID`/`WEIR_PGID` that can already write to them. |
+| `WEIR_FILE_MODE_OUTPUT` | The file permission mode Weir applies to each published file, as an octal string (e.g. `664`). |
+| `WEIR_DIR_MODE_OUTPUT` | The folder permission mode Weir applies to each folder it creates for output, including the folders above it that did not exist, as an octal string (e.g. `775`, or `2775` to also set the group-sticky bit). A malformed value refuses to start, with a clear error. |
 
 `WEIR_CHOWN_WATCHED`, `WEIR_CHOWN_TEMP`, `WEIR_DIR_MODE_WATCHED` and `WEIR_DIR_MODE_TEMP` are
 still validated at startup (a typo still stops the container) but are not applied to anything —
