@@ -10,6 +10,7 @@ import {
   DOWNLOAD_CLIENT_KIND_CREDENTIALS,
   DOWNLOAD_CLIENT_KIND_LABELS,
   type DownloadClientConnection,
+  type DownloadClientConnectionCreate,
   type DownloadClientKind,
 } from "../../../../lib/download-clients/download-clients-api";
 import { useCreateDownloadClientConnection } from "../../../../lib/download-clients/queries";
@@ -42,6 +43,21 @@ const EMPTY_FORM: FormState = {
   nickname: "",
 };
 
+/** What the chosen kind's own login uses, and blank for the rest, so a field typed for a kind the person moved away from is not saved with this one. */
+function credentialsOf(
+  form: FormState,
+): Pick<DownloadClientConnectionCreate, "username" | "password" | "api_key"> {
+  const none = { username: "", password: "", api_key: "" };
+  switch (DOWNLOAD_CLIENT_KIND_CREDENTIALS[form.kind]) {
+    case "api_key":
+      return { ...none, api_key: form.api_key };
+    case "password_only":
+      return { ...none, password: form.password };
+    case "username_password":
+      return { ...none, username: form.username, password: form.password };
+  }
+}
+
 type AddDownloadClientProps = {
   onCancel: () => void;
   onCreated: (connection: DownloadClientConnection) => void;
@@ -73,9 +89,7 @@ export function AddDownloadClientFields({
           {
             kind: form.kind,
             base_url: form.base_url,
-            username: form.username,
-            password: form.password,
-            api_key: form.api_key,
+            ...credentialsOf(form),
             nickname: form.nickname.trim(),
             enabled: true,
           },

@@ -227,6 +227,44 @@ describe("adding a download client", () => {
     ).toHaveTextContent("nothing is applied on its own");
   });
 
+  it("saves only what the chosen kind's login uses, not what was typed for a kind the person moved away from", async () => {
+    vi.spyOn(api, "fetchDownloadClientConnections").mockResolvedValue([]);
+    const create = vi
+      .spyOn(api, "createDownloadClientConnection")
+      .mockResolvedValue(connection({ name: "SABnzbd on 192.0.2.20" }));
+
+    render(<DownloadClientsSection />, { wrapper });
+    fireEvent.click(await screen.findByTestId("download-client-add"));
+    fireEvent.change(screen.getByTestId("download-client-kind"), {
+      target: { value: "qbittorrent" },
+    });
+    fireEvent.change(screen.getByTestId("download-client-username"), {
+      target: { value: "someone" },
+    });
+    fireEvent.change(screen.getByTestId("download-client-password"), {
+      target: { value: "typed-for-qbittorrent" },
+    });
+    fireEvent.change(screen.getByTestId("download-client-kind"), {
+      target: { value: "sabnzbd" },
+    });
+    fireEvent.change(screen.getByTestId("download-client-base-url"), {
+      target: { value: "http://192.0.2.20:8080" },
+    });
+    fireEvent.change(screen.getByTestId("download-client-api-key"), {
+      target: { value: "some-key" },
+    });
+    fireEvent.click(screen.getByTestId("download-client-save"));
+
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+    const sent = create.mock.calls[0]?.[0];
+    expect(sent).toMatchObject({
+      kind: "sabnzbd",
+      api_key: "some-key",
+      username: "",
+      password: "",
+    });
+  });
+
   it("says why adding a connection failed", async () => {
     vi.spyOn(api, "fetchDownloadClientConnections").mockResolvedValue([]);
     vi.spyOn(api, "createDownloadClientConnection").mockRejectedValue(
