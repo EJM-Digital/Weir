@@ -44568,6 +44568,11 @@
         {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/PortChoiceTests.cs",
+          "name": "A_port_that_nothing_listens_on_is_not_in_use"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/PortChoiceTests.cs",
           "name": "A_loopback_only_listener_still_counts_as_in_use"
         },
         {

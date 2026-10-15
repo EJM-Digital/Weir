@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
 using Xunit;
@@ -291,5 +292,15 @@ public sealed class PortChoiceTests : IDisposable
         var port = ((IPEndPoint)listener.LocalEndpoint).Port;
 
         Assert.True(PortChoice.IsInUse(port));
+    }
+
+    [Fact]
+    public void A_port_that_nothing_listens_on_is_not_in_use()
+    {
+        // A port the system's own listener table does not list: its answer, not a port this test has just let go of.
+        var listening = IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners().Select(endpoint => endpoint.Port).ToHashSet();
+        var free = Enumerable.Range(50_000, 5_000).First(candidate => !listening.Contains(candidate));
+
+        Assert.False(PortChoice.IsInUse(free));
     }
 }
