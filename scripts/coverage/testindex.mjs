@@ -50,7 +50,7 @@ export function testFiles(root) {
 }
 
 const TS_TITLE = /\b(?:it|test|describe)(?:\.(?:each|skip|only|fixme|fails|concurrent|serial|describe|configure))*(?:\([^)]*\))?\(\s*(['"`])((?:\\.|(?!\1)[^\\\n])+)\1/g;
-const CS_METHOD = /\[(?:[A-Za-z]*Fact|[A-Za-z]*Theory)\b[^\]]*\]\s*(?:\[[^\]]*\]\s*)*(?:public\s+|internal\s+)?(?:static\s+)?(?:async\s+)?(?:Task|void|ValueTask)\s+(\w+)/g;
+const CS_METHOD = /\[(?:[A-Za-z0-9]*Fact|[A-Za-z0-9]*Theory)\b[^\]]*\]\s*(?:\[[^\]]*\]\s*)*(?:public\s+|internal\s+)?(?:static\s+)?(?:async\s+)?(?:Task|void|ValueTask)\s+(\w+)/g;
 const CS_CLASS = /\b(?:class|record)\s+(\w+)/g;
 const RECORDING = /\bRecordedDeluno\b|\bDelunoSide\b|\bRecordedWorld\b|\bRecordedReplies\b|fixtures[\\/]+recorded/;
 

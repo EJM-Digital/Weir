@@ -76,7 +76,7 @@ public sealed class RemoveWorkflowDialogTests(E2EServer server) : E2ETestBase(se
             // Paused, the scan waits in the queue, and a workflow with work queued cannot be removed.
             await WeirApi.SetPausedAsync(context, BaseUrl, paused: true);
             await WeirWorkflowApi.StartLibraryScanAsync(context, BaseUrl, id);
-            await WaitForQueuedWorkAsync(admin, id);
+            await WorkflowJobs.WaitUntilBusyAsync(admin, id);
             var before = await SetupSnapshot.TakeAsync(admin);
             var (row, dialog, sent) = await OpenFilePathsAsync(page, id);
             var reason = dialog.GetByRole(AriaRole.Alert);
@@ -131,17 +131,6 @@ public sealed class RemoveWorkflowDialogTests(E2EServer server) : E2ETestBase(se
         var gone = await admin.GetAsync($"{WeirClient.Api}/processing/libraries/{id}");
         Assert.Equal(HttpStatusCode.NotFound, gone.Status);
     }
-
-    /// <summary>Waits until the workflow has work queued or running, which is what makes Weir refuse to remove it.</summary>
-    private static async Task WaitForQueuedWorkAsync(WeirClient admin, long id) =>
-        await Poll.UntilAsync(
-            async () =>
-            {
-                var read = await admin.GetAsync($"{WeirClient.Api}/processing/libraries/{id}");
-                Assert.True(read.Status == HttpStatusCode.OK, read.ToString());
-                return (int)read.Fields["active_job_count"]! > 0;
-            },
-            $"workflow {id} to have work queued");
 
     /// <summary>
     /// Confirms the removal, and confirms again each time Weir says it cannot yet because it is looking at the workflow's folders, until

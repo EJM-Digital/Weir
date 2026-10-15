@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json.Nodes;
 using Microsoft.Playwright;
 using Weir.Contract.Tests.Harness;
+using Weir.Contract.Tests.Harness.Fakes;
 using Weir.E2E.Tests.Harness;
 using Weir.E2E.Tests.Support;
 using static Microsoft.Playwright.Assertions;
@@ -131,6 +132,106 @@ public sealed class RemoveConnectionDialogTests(E2EServer server) : E2ETestBase(
         Assert.Equal([refusal, refusal, refusal, refusal, $"POST {Route}/{connection}/give-up-reports"], await sent.SoFarAsync());
         var kept = await rig.Admin.GetAsync(Route);
         Assert.Contains(kept.Elements, row => (long)row!["id"]! == connection);
+    }
+
+    [E2EFact]
+    public async Task Removing_the_workflows_happens_only_when_chosen_and_takes_those_workflows_and_no_folder()
+    {
+        using var folders = new TemporaryFolder();
+        using var deluno = FakeManager.StartDeluno();
+        using var admin = await AdminSession.OpenAsync(BaseUrl);
+        var page = await NewPageAsync();
+        await Navigation.EnsureSignedInAsync(page, BaseUrl);
+        var created = await admin.PostWithCsrfAsync(Route, new JsonObject
+        {
+            ["kind"] = "deluno",
+            ["base_url"] = deluno.BaseUrl,
+            ["api_key"] = deluno.ApiKey,
+            ["enabled"] = true,
+        });
+        Assert.True(created.Status == HttpStatusCode.Created, created.ToString());
+        var connection = (long)created.Fields["id"]!;
+        var name = (string)created.Fields["name"]!;
+        var owned = new List<long>();
+        try
+        {
+            // Two workflows only this test owns come from the connection, so the seeded ones stay out of what is removed.
+            var watched = new List<string>();
+            foreach (var title in new[] { "E2E owned one", "E2E owned two" })
+            {
+                var folder = Directory.CreateDirectory(Path.Join(folders.Path, title, "watched")).FullName;
+                await File.WriteAllTextAsync(Path.Join(folder, "keep.txt"), "kept");
+                watched.Add(folder);
+                var id = await WeirWorkflowApi.CreateAsync(page.Context, BaseUrl, title, folder, Directory.CreateDirectory(Path.Join(folders.Path, title, "output")).FullName);
+                owned.Add(id);
+                await LinkToConnectionAsync(admin, id, connection);
+            }
+
+            foreach (var id in owned)
+            {
+                await WorkflowJobs.WaitUntilIdleAsync(admin, id);
+            }
+
+            var before = await SetupSnapshot.TakeAsync(admin);
+            var card = await OpenMediaManagersAsync(page, BaseUrl);
+            var sent = ChangesSent.Watch(page);
+            var refusal = $"DELETE {Route}/{connection}";
+
+            await OpenInUseAsync(page, card, name);
+            await Expect(page.GetByTestId($"{InUseId}-workflows")).ToContainTextAsync("E2E owned one");
+            await Expect(page.GetByTestId($"{InUseId}-workflows")).ToContainTextAsync("E2E owned two");
+            Assert.Equal([refusal], await sent.SoFarAsync());
+            Assert.Equal(before, await SetupSnapshot.TakeAsync(admin));
+
+            await page.GetByTestId($"{InUseId}-remove-workflows").ClickAsync();
+
+            await Expect(page.GetByTestId("media-manager-remove-outcome")).ToContainTextAsync("were removed. The folders and files they watched were not touched.");
+            Assert.Equal(
+                [refusal, .. owned.Select(id => $"DELETE {WeirClient.Api}/processing/libraries/{id}")],
+                await sent.SoFarAsync());
+            // The seeded workflows are as they were; the profiles they share count the removed ones no more.
+            var remaining = (await SetupSnapshot.TakeAsync(admin)).Where(line => line.StartsWith("workflow ", StringComparison.Ordinal));
+            Assert.Equal(
+                before.Where(line => line.StartsWith("workflow ", StringComparison.Ordinal) && !owned.Any(id => line.StartsWith($"workflow {id} ", StringComparison.Ordinal))),
+                remaining);
+            Assert.All(watched, folder => Assert.True(File.Exists(Path.Join(folder, "keep.txt")), $"{folder} lost a file"));
+
+            await page.GetByTestId($"{AskId}-confirm").ClickAsync();
+
+            await Expect(card).ToHaveCountAsync(0);
+            var gone = await admin.GetAsync($"{Route}/{connection}");
+            Assert.Equal(HttpStatusCode.NotFound, gone.Status);
+        }
+        finally
+        {
+            await RemoveConnectionIfAnyAsync(admin, connection);
+            foreach (var id in owned)
+            {
+                if ((await admin.GetAsync($"{WeirClient.Api}/processing/libraries/{id}")).Status == HttpStatusCode.OK)
+                {
+                    await WeirWorkflowApi.DeleteAsync(page.Context, BaseUrl, id);
+                }
+            }
+        }
+    }
+
+    private static async Task LinkToConnectionAsync(WeirClient admin, long workflow, long connection)
+    {
+        var path = $"{WeirClient.Api}/processing/libraries/{workflow}";
+        var read = await admin.GetAsync(path);
+        Assert.True(read.Status == HttpStatusCode.OK, read.ToString());
+        var body = LibraryBodies.Unchanged(read.Fields);
+        body["manager_connection_ids"] = new JsonArray(connection);
+        var saved = await admin.PutWithCsrfAsync(path, body);
+        Assert.True(saved.Status == HttpStatusCode.OK, saved.ToString());
+    }
+
+    private static async Task RemoveConnectionIfAnyAsync(WeirClient admin, long connection)
+    {
+        if ((await admin.GetAsync($"{Route}/{connection}")).Status == HttpStatusCode.OK)
+        {
+            await ManagerConnections.RemoveAsync(admin, connection);
+        }
     }
 
     /// <summary>Links the Movies workflow to the rig's connection, as choosing the manager in the workflow's editor does; returns the connection's id.</summary>
