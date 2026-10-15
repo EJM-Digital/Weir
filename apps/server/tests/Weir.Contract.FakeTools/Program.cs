@@ -1,5 +1,10 @@
 using Weir.Contract.FakeTools;
 
+if (args is [FakeToolProtocol.WarmUpArgument])
+{
+    return 0;
+}
+
 var folder = ToolFolder.Locate();
 var script = new ToolScript(folder.LoadScript());
 var tool = Path.GetFileNameWithoutExtension(Environment.ProcessPath ?? string.Empty).ToUpperInvariant();

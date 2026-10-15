@@ -136,6 +136,52 @@ public sealed class WeirServerStartTests
         Assert.Equal(expected, log.SaysListeningOn("127.0.0.1", port));
     }
 
+    [Theory]
+    [InlineData("{\"pid\":4242,\"phase\":\"ready\",\"step\":0,\"steps\":0,\"expect_within_s\":0,\"at\":\"2026-10-15T00:15:21.752966Z\"}", 4242, true)]
+    [InlineData("{\"pid\":4242,\"phase\":\"ready\",\"step\":0,\"steps\":0,\"expect_within_s\":0,\"at\":\"2026-10-15T00:15:21.752966Z\"}", 4243, false)]
+    [InlineData("{\"pid\":4242,\"phase\":\"migrating\",\"step\":3,\"steps\":7,\"expect_within_s\":468,\"at\":\"2026-10-15T00:15:21.752966Z\"}", 4242, false)]
+    [InlineData("{\"pid\":4242,", 4242, false)]
+    [InlineData("", 4242, false)]
+    public void Only_a_ready_record_of_the_process_itself_says_the_server_is_up(string record, int processId, bool expected)
+    {
+        using var folder = new TemporaryFolder();
+        File.WriteAllText(Path.Combine(folder.Path, "startup-progress.json"), record);
+
+        Assert.Equal(expected, ServerReadyFile.SaysReady(folder.Path, processId));
+    }
+
+    [Fact]
+    public void A_data_folder_with_no_progress_record_says_nothing()
+    {
+        using var folder = new TemporaryFolder();
+
+        Assert.False(ServerReadyFile.SaysReady(folder.Path, 4242));
+    }
+
+    [Fact]
+    public async Task A_running_server_records_in_its_data_folder_that_it_is_ready()
+    {
+        await using var server = await WeirServer.StartNewAsync();
+
+        Assert.True(ServerReadyFile.SaysReady(server.Home, server.ProcessId));
+        Assert.False(ServerReadyFile.SaysReady(server.Home, server.ProcessId + 1));
+    }
+
+    [Fact]
+    public void A_server_that_exited_before_it_was_ready_shows_a_log_longer_than_the_usual_tail()
+    {
+        using var folder = new TemporaryFolder();
+        using var log = new ServerLog(Path.Combine(folder.Path, "server.log"));
+        log.Note("the reason it stopped");
+        for (var line = 1; line <= 120; line++)
+        {
+            log.Note($"   at frame {line}");
+        }
+
+        Assert.DoesNotContain("the reason it stopped", log.Tail(), StringComparison.Ordinal);
+        Assert.Contains("the reason it stopped", log.StartFailure(), StringComparison.Ordinal);
+    }
+
     private static Occupant Occupy()
     {
         var listener = new TcpListener(IPAddress.Loopback, 0);

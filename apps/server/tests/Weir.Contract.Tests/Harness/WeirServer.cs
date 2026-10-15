@@ -13,8 +13,8 @@ namespace Weir.Contract.Tests.Harness;
 /// create clients after it. A port is chosen by asking the system for a free one and releasing it again, so another
 /// process can take it before the server binds; a server that exits for that reason alone is started again on a new
 /// port, up to <see cref="MaxStartAttempts"/> times in all. A server counts as ready only when the process started here
-/// has said it listens on its port and the port answers, because the process that took the port may be a server of
-/// another test, which answers on it until its own test ends.
+/// has said it listens on its port (in its output, or in the progress record it keeps in its data folder) and the port
+/// answers, because the process that took the port may be a server of another test, which answers on it until its own test ends.
 /// </summary>
 public sealed class WeirServer : IAsyncDisposable
 {
@@ -55,6 +55,9 @@ public sealed class WeirServer : IAsyncDisposable
     public string DatabasePath => Path.Combine(Home, "data", "weir.sqlite3");
 
     public bool IsRunning => _process is { HasExited: false };
+
+    /// <summary>The id of the server's process, or 0 when it is stopped.</summary>
+    internal int ProcessId => _process is { } process ? process.Id : 0;
 
     /// <summary>Starts a server with a fresh data folder and waits until it reports ready.</summary>
     public static Task<WeirServer> StartNewAsync(IReadOnlyDictionary<string, string>? environment = null) =>
@@ -251,18 +254,19 @@ public sealed class WeirServer : IAsyncDisposable
                 await process.WaitForExitAsync();
                 await OutputInLogAsync(log);
                 var message =
-                    $"The Weir server exited with code {process.ExitCode} before it was ready.{Environment.NewLine}Last lines of its log ({log.Path}):{Environment.NewLine}{log.Tail()}";
+                    $"The Weir server exited with code {process.ExitCode} before it was ready.{Environment.NewLine}Last lines of its log ({log.Path}):{Environment.NewLine}{log.StartFailure()}";
                 throw ServerBindFailure.IsPortInUse(log.Text())
                     ? new PortTakenException(port, message)
                     : new InvalidOperationException(message);
             }
 
             var problem = await ProbeReadyAsync();
-            if (problem is null && !log.SaysListeningOn(ListenHost, port))
+            if (problem is null && !log.SaysListeningOn(ListenHost, port) && !ServerReadyFile.SaysReady(Home, process.Id))
             {
                 // Whatever answers at this address is not known to be this process. The port was picked and released before the
                 // server started, so another server may have taken it in between and answer for itself while this one is about to
-                // fail to bind. Only this process saying that it listens there makes the answer its own.
+                // fail to bind. Only this process saying that it listens there makes the answer its own: in its output, or in the
+                // record of its own that it keeps in its data folder, which does not wait for the output to be delivered.
                 problem = "something answers, but this server has not said it is listening there";
             }
 
