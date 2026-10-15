@@ -36,6 +36,13 @@ public sealed class CleanedSourceRepeatTests
             "Activity to say the repeat was left alone",
             TimeSpan.FromSeconds(60)))[0];
 
+    private static void AssertCompletedWith(JsonObject status, string outputPath)
+    {
+        Assert.Equal("completed", (string)status["state"]!);
+        Assert.Equal(outputPath, (string)status["outputPath"]!);
+        Assert.Equal([outputPath], status["outputFiles"]!.AsArray().Select(file => (string)file!).ToArray());
+    }
+
     [Fact]
     public async Task A_file_handed_over_again_is_not_cleaned_twice_and_is_answered_as_the_first_completion()
     {
@@ -57,7 +64,9 @@ public sealed class CleanedSourceRepeatTests
         Assert.Equal("completed", (string)again["status"]!);
         Assert.Equal((string)first["outputPath"]!, (string)again["outputPath"]!);
         Assert.Null(again["disposition"]);
-        Assert.Equal("completed", (string)(await scenario.HandoffStatusAsync("handoff-first"))["state"]!);
+
+        // The status Deluno polls names the same copy, so a resend is never read as completed without an output.
+        AssertCompletedWith(await scenario.HandoffStatusAsync("handoff-first"), (string)first["outputPath"]!);
 
         // Another hand-off for the same download.
         await scenario.PostHandoffAsync("handoff-second", source);
@@ -66,7 +75,7 @@ public sealed class CleanedSourceRepeatTests
         Assert.Equal("completed", (string)other["status"]!);
         Assert.Equal((string)first["outputPath"]!, (string)other["outputPath"]!);
         Assert.Null(other["disposition"]);
-        await scenario.WaitForHandoffStateAsync("handoff-second", "completed");
+        AssertCompletedWith(await scenario.WaitForHandoffStateAsync("handoff-second", "completed"), (string)first["outputPath"]!);
 
         Assert.Single(scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux"));
         Assert.Equal(written, File.GetLastWriteTimeUtc(output));
