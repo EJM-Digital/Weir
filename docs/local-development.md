@@ -182,7 +182,7 @@ The areas are listed in [`areas.json`](../apps/server/tests/Weir.Contract.Tests/
 and published-server switches are in **[`Weir.Contract.Tests/README.md`](../apps/server/tests/Weir.Contract.Tests/README.md)**,
 and the browser tests are in **[`Weir.E2E.Tests/README.md`](../apps/server/tests/Weir.E2E.Tests/README.md)**. The real-FFmpeg
 scenarios run when `ffmpeg` and `ffprobe` are on `PATH` (or in `WEIR_CONTRACT_REAL_FFMPEG_DIR`) and are skipped
-otherwise. A plain `dotnet test apps/server/Weir.slnx --filter "Category!=Stress&Category!=Contract&Category!=E2E"` runs
+otherwise; CI sets `WEIR_REQUIRE_REAL_TOOLS=1`, so there a missing tool fails them instead. A plain `dotnet test apps/server/Weir.slnx --filter "Category!=Stress&Category!=Contract&Category!=E2E"` runs
 only the unit and API tests, which is what the `server-linux` and `server-windows` jobs do.
 
 The packaged live audit (`apps/server/tools/Weir.LiveAudit`) walks every screen of an installed Weir, such as the Docker
