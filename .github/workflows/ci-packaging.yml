@@ -151,7 +151,9 @@ jobs:
           cache-to: type=gha,mode=max,scope=weir-ci-arm64,ignore-error=true
 
   windows-package-smoke:
-    runs-on: windows-latest
+    # The spare Windows PC (docs/self-hosted-runner.md) when the repository variable WEIR_SELF_HOSTED_WINDOWS is 'true',
+    # never for a pull request from a fork; GitHub's own Windows runner otherwise.
+    runs-on: ${{ vars.WEIR_SELF_HOSTED_WINDOWS == 'true' && !github.event.pull_request.head.repo.fork && fromJSON('["self-hosted","Windows","weir-heavy"]') || 'windows-latest' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
