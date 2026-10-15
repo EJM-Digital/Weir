@@ -35,7 +35,7 @@ public sealed class ArtworkResolverTests
         Assert.Equal(ArtworkFixture.ImageBytes.Length, stored!.Length);
     }
 
-    [Fact]
+    [WindowsFact("Windows refuses a rename over a file that is open; Linux allows it.")]
     public async Task A_poster_that_cannot_be_replaced_because_it_is_being_sent_keeps_its_title_due_and_is_replaced_on_the_next_pass()
     {
         using var fixture = new ArtworkFixture();

@@ -22,7 +22,7 @@ public sealed class ArtworkPosterFilesTests
         Assert.False(fixture.PosterFiles.Exists(PosterId));
     }
 
-    [Fact]
+    [WindowsFact("Windows refuses a rename over a file that is open; Linux allows it.")]
     public async Task A_poster_replaced_while_it_is_being_sent_is_replaced_once_the_send_ends()
     {
         using var fixture = new ArtworkFixture();
@@ -45,7 +45,7 @@ public sealed class ArtworkPosterFilesTests
         Assert.Empty(PartialFiles(fixture));
     }
 
-    [Fact]
+    [WindowsFact("Windows refuses a rename over a file that is open; Linux allows it.")]
     public async Task A_poster_that_stays_open_is_kept_as_it_was_and_nothing_half_written_is_left()
     {
         using var fixture = new ArtworkFixture();
@@ -59,6 +59,25 @@ public sealed class ArtworkPosterFilesTests
         var kept = new byte[3];
         await beingSent!.ReadExactlyAsync(kept);
         Assert.Equal<byte>([1, 2, 3], kept);
+        Assert.Empty(PartialFiles(fixture));
+    }
+
+    [PosixFact("Windows refuses a rename over a file that is open; Linux allows it, which the Windows tests cover the other side of.")]
+    public async Task A_poster_replaced_while_it_is_being_sent_is_replaced_at_once_and_the_send_finishes_the_old_one()
+    {
+        using var fixture = new ArtworkFixture();
+        await fixture.PosterFiles.WriteAsync(PosterId, [1, 2, 3], CancellationToken.None);
+        await using var beingSent = fixture.PosterFiles.Open(PosterId);
+        fixture.PosterFiles.Pause = (_, _) => throw new InvalidOperationException("nothing should wait: the rename is not refused");
+
+        var replaced = await fixture.PosterFiles.WriteAsync(PosterId, [4, 5, 6, 7], CancellationToken.None);
+
+        Assert.True(replaced);
+        var sent = new byte[3];
+        await beingSent!.ReadExactlyAsync(sent);
+        Assert.Equal<byte>([1, 2, 3], sent);
+        await using var stored = fixture.PosterFiles.Open(PosterId);
+        Assert.Equal(4, stored!.Length);
         Assert.Empty(PartialFiles(fixture));
     }
 
