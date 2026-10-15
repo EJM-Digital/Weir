@@ -16410,11 +16410,36 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "Active sessions: signing out one browser"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "Active sessions: Sign out other sessions"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "Change password"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "Change username"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/change-password-flow.test.tsx",
+          "name": "Changing the password ends this sign-in"
+        }
+      ],
       "audit": {
         "id": "WEB-092",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -40193,15 +40218,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: click Sign out on a non-current row, assert POST `/api/v1/auth/sessions/<id>/revoke`, the message shown, the list refetched, and the failure message (\"It may already be inactive.\"). The API is tested in `Weir.Api.Tests/Platform/AuthApiTests.cs`, not in the contract suite."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "Active sessions: signing out one browser"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
+          "name": "Signing_out_one_session_ends_only_that_session"
+        }
+      ],
       "audit": {
         "id": "WEB-1017",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40212,15 +40243,26 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "ST fixture includes a current row but never asserts the absence of a button in it."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "lists every signed-in browser and marks the one in use, which has no Sign out button"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
+          "name": "A_lone_session_is_listed_as_this_browser_with_nothing_to_sign_out"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
+          "name": "Signing_out_one_session_ends_only_that_session"
+        }
+      ],
       "audit": {
         "id": "WEB-1018",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40231,15 +40273,26 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Lockout / session-loss risk: nothing proves the button revokes only the others, shows only when others exist, or reports failure. vitest: click, assert POST `/api/v1/auth/sessions/revoke-others`, the message, that the current row remains, and the error text; plus an E2E with two browser contexts (the other is signed out, this one is not)."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "Active sessions: Sign out other sessions"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
+          "name": "Signing_out_other_sessions_ends_the_other_browser_and_keeps_this_one"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
+          "name": "The_browser_that_was_signed_out_is_sent_to_the_sign_in_page_on_its_next_action"
+        }
+      ],
       "audit": {
         "id": "WEB-1019",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40250,34 +40303,46 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest for the three states."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "says it is loading until the server answers"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "says the sign-in has ended when the server refuses the list, not that there are no sessions"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "says no sessions were found when the server lists none, with nothing to sign out or arrange"
+        }
+      ],
       "audit": {
         "id": "WEB-1020",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
       "id": "web-system.security-tab.active-sessions-list-stays-current-when-a-session-is",
       "area": "web-system",
-      "behaviour": "Active sessions list stays current when a session is created or revoked elsewhere",
+      "behaviour": "Active sessions list is read again when the person returns to the page (sessions have no live topic)",
       "kind": "screen action",
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The \"live and realtime\" rule has no path here: the list updates only on this page's own revoke or a remount. Needs a server topic (or a documented exception) plus a test."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "is read again when the person comes back to the page, since sessions have no live update"
+        }
+      ],
       "audit": {
         "id": "WEB-1021",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40318,15 +40383,16 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest for both states."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/security-tab.test.tsx",
+          "name": "Security: how sign-in is protected"
+        }
+      ],
       "audit": {
         "id": "WEB-1023",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40357,15 +40423,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "No test submits it. vitest: fill, click, assert POST `/api/v1/auth/change-username` body, success message, cleared fields, and `authKeys.me` invalidated. Contract `AuthUsernameTests` covers the API only."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "sends the trimmed name with the password, clears both fields, confirms and shows the new name"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityUsernameTests.cs",
+          "name": "Renaming_the_account_trims_the_name_clears_the_form_and_changes_who_is_shown_signed_in"
+        }
+      ],
       "audit": {
         "id": "WEB-1025",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40376,15 +40448,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with the POST rejecting; assert the alert."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "Change username"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityUsernameTests.cs",
+          "name": "Each_refusal_from_the_server_is_said_in_plain_words_and_the_account_keeps_its_name"
+        }
+      ],
       "audit": {
         "id": "WEB-1026",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40415,21 +40493,27 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Lockout risk: this is the only guard against setting a mistyped password. vitest: different new/confirm, assert the message and that `postChangePassword` is NOT called."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "refuses new passwords that differ and sends nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityPasswordTests.cs",
+          "name": "New_passwords_that_differ_are_refused_before_anything_is_sent"
+        }
+      ],
       "audit": {
         "id": "WEB-1028",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
       "id": "web-system.security-tab.change-password-success-on-screen-confirmation-sign-in-again",
       "area": "web-system",
-      "behaviour": "Change password: success -> on-screen confirmation + \"Sign in again\" link to /login",
+      "behaviour": "Change password: success -> this sign-in ends and the sign-in page says the password was changed",
       "kind": "screen action",
       "severity": "high",
       "touches": "none",
@@ -40437,18 +40521,23 @@
       "proofs": [
         {
           "type": "vitest",
-          "file": "apps/web/src/pages/system/system-page.test.tsx",
-          "name": "shows an on-screen confirmation after a successful password change"
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "sends the current and the new password, clears the fields and leaves nobody signed in to ask about"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/change-password-flow.test.tsx",
+          "name": "Changing the password ends this sign-in"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityPasswordTests.cs",
+          "name": "Changing_the_password_ends_every_sign_in_and_only_the_new_password_signs_in_again"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "P0-weighted. `postChangePassword` is mocked with `mockResolvedValue` and its arguments are never asserted, so swapped current/new passwords would still pass; the POST `/api/v1/auth/change-password` request, fields cleared, and `authKeys.me/session` invalidation are unproven. Contract `AuthApiTests` covers the API."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-1029",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -40459,15 +40548,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with the POST rejecting; assert the alert and that the form stays editable."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "Change password"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityPasswordTests.cs",
+          "name": "Each_refusal_from_the_server_is_said_in_plain_words_and_the_form_stays_editable"
+        }
+      ],
       "audit": {
         "id": "WEB-1030",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -40508,15 +40603,26 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with a pending mutation."
-      },
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "shows Saving… and holds the fields and their Show buttons while the request is out"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/account-forms.test.tsx",
+          "name": "shows Saving… and holds the fields and the Show button while the request is out"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
+          "name": "shows Signing out… and holds every Sign out button while the request is out"
+        }
+      ],
       "audit": {
         "id": "WEB-1032",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -53264,8 +53370,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityUsernameTests.cs",
+          "name": "Renaming_the_account_is_recorded_in_the_log"
+        }
+      ],
       "covers": [
         "event:auth.username_changed"
       ],
@@ -53282,8 +53393,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 994,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
+          "name": "Signing_out_other_sessions_is_recorded_in_the_log"
+        }
+      ],
       "covers": [
         "event:auth.sessions_revoked"
       ],
