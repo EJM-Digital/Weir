@@ -9,14 +9,13 @@ import {
   type RecordedRoutes,
   type RecordedWeir,
 } from "../../../../test/recorded-weir";
+import { addressInUse, addressReplaced } from "./alert-address-replies";
 import {
-  addressInUse,
-  addressReplaced,
-  savedKeepingTheAddress,
+  afterTick,
+  savedAsItWas,
   tickSaved,
-  twoAlerts,
-  twoAlertsAfterTick,
-} from "./alert-address-replies";
+  twoChannels,
+} from "./alert-replies";
 import { AlertsTab } from "./alerts-tab";
 
 const CHANNELS = "/api/v1/suite/notification-channels";
@@ -73,7 +72,7 @@ function serve(routes: RecordedRoutes): RecordedWeir {
   weir = serveRecordedReplies({
     "GET /api/v1/auth/csrf": csrfToken,
     "GET /api/v1/auth/me": adminMe,
-    [`GET ${CHANNELS}`]: twoAlerts,
+    [`GET ${CHANNELS}`]: twoChannels,
     ...routes,
   });
   return weir;
@@ -142,7 +141,7 @@ describe("the Edit alert form", () => {
 
   it("saves without sending an address, so the saved one is kept", async () => {
     const server = serve({
-      [`PUT ${CHANNELS}/1`]: savedKeepingTheAddress,
+      [`PUT ${CHANNELS}/1`]: savedAsItWas,
     });
     render(<AlertsTab />, { wrapper });
     const form = await openEditForm("Discord alerts");
@@ -230,7 +229,7 @@ describe("the Edit alert form", () => {
 
   it("goes back to the saved address when Keep the saved address is pressed, and sends none", async () => {
     const server = serve({
-      [`PUT ${CHANNELS}/1`]: savedKeepingTheAddress,
+      [`PUT ${CHANNELS}/1`]: savedAsItWas,
     });
     render(<AlertsTab />, { wrapper });
     const form = await openEditForm("Discord alerts");
@@ -283,7 +282,7 @@ describe("the Edit alert form", () => {
 describe("an event tick in the table", () => {
   it("saves the alert without sending its address", async () => {
     const server = serve({
-      [`GET ${CHANNELS}`]: [twoAlerts, twoAlertsAfterTick],
+      [`GET ${CHANNELS}`]: [twoChannels, afterTick],
       [`PUT ${CHANNELS}/1`]: tickSaved,
     });
     render(<AlertsTab />, { wrapper });

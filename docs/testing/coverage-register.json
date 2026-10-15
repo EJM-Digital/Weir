@@ -19597,9 +19597,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard-address.test.ts",
           "name": "resolveWorkflow"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardWorkflowLinkTests.cs",
+          "name": "A_link_naming_a_workflow_that_is_switched_off_deleted_or_not_a_number_shows_everything"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardWorkflowLinkTests.cs",
+          "name": "A_link_naming_a_workflow_that_is_on_narrows_Live_to_it_and_never_shows_the_others_while_the_list_loads"
         }
       ],
-      "issue": 1071,
       "audit": {
         "id": "WEB-182",
         "verdict": "Covered"
@@ -26907,9 +26916,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-file-actions.test.tsx",
           "name": "says the manager will be told the file will not be imported when keep notifies it"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "With_no_manager_the_dialog_says_Weir_alone_deletes_and_each_choice_sends_exactly_its_resolution"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "A_manager_that_takes_releases_back_is_named_and_Delete_asks_it_for_another_copy"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-441",
         "verdict": "Covered"
@@ -26943,9 +26961,23 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-file-actions.test.tsx",
           "name": "always offers a way to just remove the title without touching the file"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "With_no_manager_the_dialog_says_Weir_alone_deletes_and_each_choice_sends_exactly_its_resolution"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "A_manager_that_takes_releases_back_is_named_and_Delete_asks_it_for_another_copy"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityDialogTests.cs",
+          "name": "Remove_just_from_the_list_sends_one_request_and_forgets_the_row_but_not_the_file"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-442",
         "verdict": "Covered"
@@ -27034,9 +27066,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-file-actions.test.tsx",
           "name": "does not offer to delete the file of a workflow linked to a media manager, and says why"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "A_workflow_linked_to_a_manager_that_cannot_take_it_back_disables_Delete_with_the_reason_and_no_key_chooses_it"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-446",
         "verdict": "Covered"
@@ -30548,14 +30584,46 @@
       }
     },
     {
-      "id": "web-setup-workflows-rules.lib-settings.network-access-put-carries-csrf-and-scope-notification-channel",
+      "id": "web-setup-workflows-rules.lib-settings.network-access-put-carries-csrf-and-scope",
       "area": "web-setup-workflows-rules",
-      "behaviour": "Network access PUT carries csrf and scope; notification channel DELETE carries csrf",
+      "behaviour": "Network access PUT carries csrf and scope",
       "kind": "screen action",
       "severity": "high",
       "touches": "disk",
       "required": "real",
       "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/settings-api.test.ts",
+          "name": "suite settings API paths"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/settings-api.test.ts",
+          "name": "saves who can reach Weir with a CSRF token in the body"
+        }
+      ],
+      "audit": {
+        "id": "WEB-589",
+        "verdict": "Covered"
+      },
+      "vm": true,
+      "issue": 1142
+    },
+    {
+      "id": "web-setup-workflows-rules.lib-settings.network-access-put-carries-csrf-and-scope-notification-channel",
+      "area": "web-setup-workflows-rules",
+      "behaviour": "Notification channel DELETE carries csrf",
+      "kind": "screen action",
+      "severity": "high",
+      "touches": "disk",
+      "required": "real",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/settings-api.test.ts",
+          "name": "sends a CSRF header when deleting a notification channel"
+        },
         {
           "type": "vitest",
           "file": "apps/web/src/lib/settings/settings-api.test.ts",
@@ -30570,9 +30638,13 @@
           "type": "vitest",
           "file": "apps/web/src/lib/settings/settings-api.test.ts",
           "name": "saves who can reach Weir with a CSRF token in the body"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveAlertDialogTests.cs",
+          "name": "Remove_alert_sends_one_request_with_the_CSRF_token_for_that_alert_and_leaves_the_other"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-589",
         "verdict": "Covered"
@@ -31049,9 +31121,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/libraries/libraries-tab.test.tsx",
           "name": "removes a library only once the removal is confirmed, and holds the button while it runs"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveWorkflowDialogTests.cs",
+          "name": "Remove_workflow_sends_one_request_and_the_workflow_goes"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-608",
         "verdict": "Covered"
@@ -32871,9 +32947,23 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.test.tsx",
           "name": "shows a linked workflow as keeping the original, says why, and leaves the saved setting alone"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/OriginalDownloadSwitchTests.cs",
+          "name": "On_a_workflow_only_Weir_feeds_the_switch_is_saved_as_chosen_and_a_pass_removes_or_keeps_the_original_to_match"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/OriginalDownloadSwitchTests.cs",
+          "name": "A_new_workflow_has_the_switch_on"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/OriginalDownloadSwitchTests.cs",
+          "name": "A_linked_workflow_shows_the_switch_off_and_locked_with_the_reason_keeps_what_was_saved_and_keeps_the_original"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-679",
         "verdict": "Covered"
@@ -35512,15 +35602,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The key is the one secret typed on this form; a dropped or mis-named api_key field would silently create a connection that cannot authenticate."
-      },
-      "issue": 1031,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/media-manager-forms.test.tsx",
+          "name": "takes the API key in a masked, optional field and sends it in the new connection"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/media-manager-forms.test.tsx",
+          "name": "can be added without a key, which is sent as empty"
+        }
+      ],
       "audit": {
         "id": "WEB-790",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -35626,15 +35722,16 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Source: create.isError renders role=alert with errorMessage(...). Contract An_address_that_cannot_work_is_refused proves the API side only."
-      },
-      "issue": 1031,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/media-manager-forms.test.tsx",
+          "name": "says why the server refused, and keeps the panel open with what was typed"
+        }
+      ],
       "audit": {
         "id": "WEB-793",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -35760,15 +35857,26 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A silent failure leaves the new webhook unsigned while the person believes a secret exists."
-      },
-      "issue": 1031,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/media-manager-forms.test.tsx",
+          "name": "says why it could not be created, and stays so the secret can be asked for again"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/media-manager-forms.test.tsx",
+          "name": "says Weir cannot be reached when the request never arrives"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/media-manager-forms.test.tsx",
+          "name": "shows the secret once it is created after an earlier try failed"
+        }
+      ],
       "audit": {
         "id": "WEB-799",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -36445,7 +36553,6 @@
           "name": "Removing_the_workflows_happens_only_when_chosen_and_takes_those_workflows_and_no_folder"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-819",
         "verdict": "Covered"
@@ -36669,15 +36776,36 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A replace breaks the manager's webhook until the new secret is pasted in, so proving that Cancel / Escape never call generate matters. Dialog error wiring is Replace-specific code."
-      },
-      "issue": 1031,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/media-manager-forms.test.tsx",
+          "name": "leaves the working secret alone when the dialog is cancelled"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/media-manager-forms.test.tsx",
+          "name": "leaves the working secret alone when Escape closes the dialog"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/media-manager-forms.test.tsx",
+          "name": "says why it could not be replaced and keeps the dialog open"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/media-manager-forms.test.tsx",
+          "name": "does not show an earlier failure when the dialog is opened again"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/media-manager-forms.test.tsx",
+          "name": "says Replacing… and cannot be cancelled or dismissed while the new secret is made"
+        }
+      ],
       "audit": {
         "id": "WEB-827",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -36997,9 +37125,23 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-clients-section.test.tsx",
           "name": "only asks for the fields that kind's login actually uses"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "Each_kind_asks_for_exactly_the_fields_its_login_uses"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "Each_kind_is_added_with_the_credentials_typed_and_answers_when_it_is_tested"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "What_was_typed_for_a_kind_the_person_moved_away_from_is_not_saved_with_the_one_they_added"
         }
       ],
-      "issue": 1071,
       "audit": {
         "id": "WEB-839",
         "verdict": "Covered"
@@ -37028,9 +37170,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-clients-section.test.tsx",
           "name": "will not submit a SABnzbd connection with no API key, or a Deluge one with no password"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "The_form_cannot_be_submitted_without_an_address_or_a_secret_its_client_cannot_do_without_and_sends_nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "Each_kind_is_added_with_the_credentials_typed_and_answers_when_it_is_tested"
         }
       ],
-      "issue": 1071,
       "audit": {
         "id": "WEB-840",
         "verdict": "Covered"
@@ -37434,15 +37585,21 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The media-manager edit form has this test; the download-client one is separate code."
-      },
-      "issue": 1031,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-edit-failure.test.tsx",
+          "name": "says why the server refused the save, and keeps the form open with what was typed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-edit-failure.test.tsx",
+          "name": "says Weir cannot be reached when the request never arrives, and keeps the form open"
+        }
+      ],
       "audit": {
         "id": "WEB-855",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -37493,9 +37650,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-clients-section.test.tsx",
           "name": "leaves the connection alone when cancelled"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveDownloadClientDialogTests.cs",
+          "name": "Keep_it_Escape_and_a_click_outside_the_dialog_leave_the_client_alone_and_send_nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveDownloadClientDialogTests.cs",
+          "name": "Remove_download_client_sends_one_request_for_that_client_and_leaves_the_other"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-857",
         "verdict": "Covered"
@@ -37662,15 +37828,26 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "channel-form.tsx has the incomplete gate and required/maxLength/type=url attributes; all unproven."
-      },
-      "issue": 1031,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "starts with one trigger event and Enabled on, and cannot be saved until it has a label and an address"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "will not save a label that is only spaces"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "cannot be saved once the last trigger event is unticked, and can again when one is ticked"
+        }
+      ],
       "audit": {
         "id": "WEB-864",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -37681,15 +37858,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Contract Notification_channel_create_update_test_delete proves the API accepts a body; nothing proves the web sends it."
-      },
-      "issue": 1031,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "sends the label, provider, address, events and Enabled, shuts the form and shows the new alert"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "sends Enabled as off when it is unticked"
+        }
+      ],
       "audit": {
         "id": "WEB-865",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -37703,18 +37886,23 @@
       "proofs": [
         {
           "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "says why the server refused, keeps the form open with what was typed, and sends nothing else"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "says Saving… and holds every field still while the server answers"
+        },
+        {
+          "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
           "name": "says an alert already sends to the address, keeps the form open with what was typed, and sends it once"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Contract Notification_channel_create_rejects_bad_input is API side only."
-      },
-      "issue": 1031,
       "audit": {
         "id": "WEB-866",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -37820,15 +38008,26 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "PUT with the whole channel and the changed events."
-      },
-      "issue": 1031,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "saves the whole alert with the event added at once, and the box follows the server"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "saves the alert without an event that is unticked"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "keeps the alert switched off"
+        }
+      ],
       "audit": {
         "id": "WEB-869",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -37873,11 +38072,26 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1031,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "sends every changed field, shuts the form, and the row shows the change"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "says why the server refused and keeps the form open with what was typed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "throws away what was typed when it is cancelled, and sends nothing"
+        }
+      ],
       "audit": {
         "id": "WEB-872",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -37888,15 +38102,36 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Test result wording is the operator's only proof an alert works. Contract proves ok and error keys exist (the unreachable hook returns ok false)."
-      },
-      "issue": 1031,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "says Testing… while it waits, then why the test failed, beside that alert only"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "says the test alert was sent when the server delivered it"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "shows a request that fails as a failed test"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "shows a request that never arrives as a failed test"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
+          "name": "clears the last answer when the next test starts"
+        }
+      ],
       "audit": {
         "id": "WEB-873",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -37952,9 +38187,18 @@
           "type": "vitest",
           "file": "apps/web/src/lib/settings/settings-api.test.ts",
           "name": "sends a CSRF header when deleting a notification channel"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveAlertDialogTests.cs",
+          "name": "Keep_it_Escape_and_a_click_outside_the_dialog_leave_the_alert_alone_and_send_nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveAlertDialogTests.cs",
+          "name": "Remove_alert_sends_one_request_with_the_CSRF_token_for_that_alert_and_leaves_the_other"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-874",
         "verdict": "Covered"
@@ -38260,15 +38504,26 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Source renders the alert only when save.isError."
-      },
-      "issue": 1032,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/process-settings-requests.test.tsx",
+          "name": "shows the server's reason, keeps what was typed, and leaves Save available"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/process-settings-requests.test.tsx",
+          "name": "says Weir cannot be reached when the request never arrives"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/process-settings-requests.test.tsx",
+          "name": "can be tried again after it fails"
+        }
+      ],
       "audit": {
         "id": "WEB-886",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -38319,15 +38574,31 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "costs[] is positional (capacity, sd, 720p, 1080p, 4k): a swapped field would silently change throttling. Out-of-range, empty and non-numeric input should disable Save (valid gate) - untested."
-      },
-      "issue": 1032,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/process-settings-requests.test.tsx",
+          "name": "lands each number in its own field of the saved settings"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/process-settings-requests.test.tsx",
+          "name": "a number outside its range, or left blank"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/process-settings-requests.test.tsx",
+          "name": "a number at the edge of its range"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/process-settings-requests.test.tsx",
+          "name": "offers a way back to a saving state after an out-of-range number is corrected"
+        }
+      ],
       "audit": {
         "id": "WEB-889",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -38621,15 +38892,21 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The dialog's own description (server description plus the unrecoverable sentence) is never asserted; it is the last warning before deletion."
-      },
-      "issue": 1032,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-requests.test.tsx",
+          "name": "says what switching it on will delete, and that nothing deleted can be recovered, before anything is saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-requests.test.tsx",
+          "name": "says the same before running it now, and runs nothing until it is confirmed"
+        }
+      ],
       "audit": {
         "id": "WEB-902",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -38710,15 +38987,31 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Catch path of runNow and the running lock are untested."
-      },
-      "issue": 1032,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-requests.test.tsx",
+          "name": "runs the job for movies, then for TV, and says it started"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-requests.test.tsx",
+          "name": "says the job could not be started, and does not try TV, when the movies run is refused"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-requests.test.tsx",
+          "name": "says the job could not be started when only the TV run is refused"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-requests.test.tsx",
+          "name": "cannot be pressed again while a run is waiting for the server"
+        }
+      ],
       "audit": {
         "id": "WEB-906",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -38819,15 +39112,26 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "useSaveSetting swallows the error and DaysSettingRow then runs setDraft(null) on the resolved promise, so after a failed save the input appears to revert to the saved value; untested."
-      },
-      "issue": 1032,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-requests.test.tsx",
+          "name": "says so when a switch cannot be saved, and leaves the switch as it was saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-requests.test.tsx",
+          "name": "says so when a timer cannot be saved, and leaves the timer as it was saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-requests.test.tsx",
+          "name": "says so when the days a copy waits cannot be saved, and keeps what was typed"
+        }
+      ],
       "audit": {
         "id": "WEB-910",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -50661,9 +50965,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/HeldFileReturnTests.Resend.cs",
           "name": "HeldFileReturnTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.cs",
+          "name": "A_held_file_that_is_back_when_Deluno_sends_the_release_again_is_cleaned_at_once_and_reported_as_Deluno_recorded"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.cs",
+          "name": "A_held_file_that_comes_back_on_its_own_is_cleaned_when_Weir_next_looks_and_reported_as_Deluno_recorded"
         }
       ],
-      "issue": 1067,
       "audit": {
         "id": "FL-32",
         "verdict": "Covered"
@@ -51091,9 +51404,13 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/PauseGuardTests.cs",
           "name": "A_job_the_claim_let_through_while_paused_is_put_back_unrun_with_its_attempt_given_back"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/PauseGuardTests.cs",
+          "name": "A_job_put_back_for_a_pause_leaves_the_media_file_exactly_as_it_was_and_says_so_in_the_log"
         }
       ],
-      "issue": 1067,
       "audit": {
         "id": "FL-42",
         "verdict": "Covered"
