@@ -51,8 +51,9 @@ public sealed class RemovingAFileFromActivityTests
         return await scenario.Admin.RequestAsync(HttpMethod.Delete, path, body);
     }
 
+    /// <summary>1 while the file has a row on the Files list, otherwise 0. Read over HTTP: a server restart to read SQLite signs in again, and a sign-in is the dearest request there is.</summary>
     private static async Task<int> RowsOfAsync(Scenario scenario, JsonObject library) =>
-        (await scenario.RowsAfterStopAsync("SELECT id FROM files WHERE library_id = $library AND relative_path = $path", ("$library", (int)library["id"]!), ("$path", RelativePath))).Count;
+        await scenario.FileRowAsync(library, RelativePath) is null ? 0 : 1;
 
     private static async Task<JsonObject> OneActivityAsync(Scenario scenario, string eventType) =>
         Assert.Single(await scenario.ActivityAsync(eventType));

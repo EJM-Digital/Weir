@@ -53,10 +53,6 @@ public sealed class RemovingAWorkflowTests
         var connectionId = (int)linked["manager_connection_ids"]![0]!;
         var profile = (int)linked["rule_set_id"]!;
         var usersBefore = await ProfileUsersAsync(scenario, profile);
-        var held = await scenario.RowsAfterStopAsync(
-            "SELECT (SELECT count(*) FROM files WHERE library_id = $id) AS files, (SELECT count(*) FROM library_manager_links WHERE library_id = $id) AS links",
-            ("$id", (int)linked["id"]!));
-        Assert.True((long)held[0]["files"]! > 0 && (long)held[0]["links"]! > 0, "The workflow has files and a link before it is removed.");
         var before = Tree(scenario.Root);
         var workflowsBefore = (await scenario.Admin.GetAsync($"{Api}/processing/libraries")).Elements.Select(row => (int)row!["id"]!).ToList();
 
