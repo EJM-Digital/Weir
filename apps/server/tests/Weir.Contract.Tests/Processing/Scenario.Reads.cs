@@ -124,6 +124,24 @@ internal sealed partial class Scenario
         return found[0];
     }
 
+    /// <summary>
+    /// Rows read from SQLite with the server stopped. The server is started again, at a new address, and the scenario signs in to it,
+    /// so the scenario goes on working afterwards.
+    /// </summary>
+    public async Task<List<Dictionary<string, object?>>> RowsAfterStopAsync(string sql, params (string Name, object? Value)[] parameters)
+    {
+        List<Dictionary<string, object?>> rows;
+        await using (var database = await Server.StopForDatabaseAsync())
+        {
+            rows = SeedSql.Rows(database.Connection, sql, parameters);
+        }
+
+        Admin.Dispose();
+        Admin = Server.CreateClient();
+        await Admin.LoginAsync();
+        return rows;
+    }
+
     public async Task<List<JsonObject>> ActivityAsync(string eventType)
     {
         var recent = await Admin.GetAsync($"{Api}/activity/recent", ("event_type", eventType), ("limit", 100));

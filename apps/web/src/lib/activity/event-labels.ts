@@ -34,6 +34,8 @@ export const EVENT_LABELS: Record<string, string> = {
   "processing.file_reject_fell_back": "File handed back instead of rejected",
   "processing.handoff_reported": "Result reported to your media manager",
   "processing.handoff_cancelled": "Hand-off cancelled by your media manager",
+  "processing.handoff_reports_dropped":
+    "Reports to your media manager given up",
   "processing.file_manual_plan_queued": "Hand-picked tracks queued",
   "processing.file_left_watched_folder": "File left the watched folder",
   "processing.handback_outcome": "What happened to a cleaned copy",

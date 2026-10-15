@@ -49,6 +49,30 @@ public sealed partial class HandoffCompletionReporter
     }
 
     /// <summary>
+    /// Stops owing the reports <paramref name="owed"/>, because the person told Weir to give up on them: each hand-off stops holding its
+    /// report, and the Activity of each file it covers says Weir will not tell <paramref name="manager"/> about it, in place of the line
+    /// saying it is waiting. Nothing is sent to the manager. Does not commit.
+    /// </summary>
+    public async Task GiveUpOwedReportsAsync(UnitOfWork uow, string manager, IReadOnlyList<OwedReportRow> owed)
+    {
+        ArgumentNullException.ThrowIfNull(uow);
+        ArgumentNullException.ThrowIfNull(owed);
+        foreach (var report in owed)
+        {
+            if (PendingReport.Parse(report.ReportJson) is { LibraryId: { } library } pending)
+            {
+                foreach (var relativePath in pending.Files)
+                {
+                    await ReplaceFileSentenceAsync(
+                        uow, library, relativePath, ManagerWaitMessages.ReportWaiting(manager), ManagerWaitMessages.ReportGivenUp(manager)).ConfigureAwait(false);
+                }
+            }
+
+            await HandoffLedgerStore.SetPendingReportAsync(uow, report.SourceKey, report.HandoffId, null).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
     /// Attempt one delivery of an owed report, and settle it: still not answering, it stays owed and the Activity of
     /// each file it covers says so (added once, whether this is the first attempt or a retry); answered, accepted or
     /// refused, it stops being owed and Activity records it. Commits.

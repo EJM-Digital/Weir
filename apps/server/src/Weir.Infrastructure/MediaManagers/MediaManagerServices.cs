@@ -28,6 +28,8 @@ public static class MediaManagerServices
         services.TryAddSingleton<HandbackStore>();
         services.TryAddSingleton<HandoffTargetStore>();
         services.TryAddSingleton<MediaManagerConnectionService>();
+        // What still depends on a connection, which decides whether it can be removed and lets its workflows go first.
+        services.TryAddSingleton<MediaManagerConnectionDependents>();
         // Every minute, each manager's connection test, so Weir knows within a minute when one goes quiet.
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IPeriodicTask, ManagerHeartbeatTask>());
         services.TryAddSingleton<LibraryDiscoveryService>();

@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-import { ConfirmDialog } from "../../../../components/ui/confirm-dialog";
 import { errorMessage } from "../../../../lib/api/error-message";
 import type { MediaManagerConnection } from "../../../../lib/media-managers/media-managers-api";
 import {
@@ -16,49 +15,10 @@ import { ConnectionFolderChain } from "./connection-folder-chain";
 import { ConnectionRow } from "./connection-row";
 import { ConnectionSetup } from "./connection-setup";
 import { ConnectionStatus, FedWorkflows } from "./connection-status";
+import { RemoveConnectionDialog } from "./remove-connection-dialog";
 
 const TEST_FAILURE = "The media manager could not be tested.";
 const TOGGLE_FAILURE = "This media manager could not be turned on or off.";
-
-export function RemoveConnectionDialog({
-  connection,
-  remove,
-  onClose,
-}: {
-  connection: MediaManagerConnection;
-  remove: ReturnType<typeof useDeleteMediaManagerConnection>;
-  onClose: () => void;
-}) {
-  return (
-    <ConfirmDialog
-      testId="media-manager-remove-confirm"
-      title={`Remove ${connectionTitle(connection)}?`}
-      description={
-        <>
-          <p>
-            Weir will stop accepting files from {connectionTitle(connection)}.
-            Its address, API key and webhook secret go with it, so connecting it
-            again means setting it up from scratch.
-          </p>
-          <p>No media file is touched. This cannot be undone.</p>
-        </>
-      }
-      confirmLabel="Remove media manager"
-      tone="danger"
-      busy={remove.isPending}
-      error={
-        remove.isError
-          ? errorMessage(remove.error, "Could not remove this media manager.")
-          : null
-      }
-      onCancel={() => {
-        remove.reset();
-        onClose();
-      }}
-      onConfirm={() => remove.mutate(connection.id, { onSuccess: onClose })}
-    />
-  );
-}
 
 function toggleLabel(connection: MediaManagerConnection, pending: boolean) {
   if (pending) return connection.enabled ? "Disabling…" : "Enabling…";
