@@ -122,13 +122,16 @@ public sealed class RecordedHandoffTests
         await File.WriteAllTextAsync(release, string.Empty);
 
         var resent = await world.Scenario.WaitForHandoffStateAsync(world.Translation.Id(IdResent), "completed");
-        Assert.Equal(world.Translation.Apply(@"C:\Weir\Ready\Movies\Recorded.Weir.R.mkv"), (string)resent["outputPath"]!);
+        var output = world.Translation.Apply(@"C:\Weir\Ready\Movies\Recorded.Weir.R.mkv");
+        Assert.Equal(output, (string)resent["outputPath"]!);
+        Assert.Equal([output], resent["outputFiles"]!.AsArray().Select(file => (string)file!).ToArray());
         Assert.True(File.Exists((string)resent["outputPath"]!));
 
         // #956: the send that was replaced is closed with its own last answer, and is never read as completed without an output.
         var replaced = await world.Scenario.HandoffStatusAsync(first);
         Assert.Equal("cancelled", (string)replaced["state"]!);
         Assert.Null(replaced["outputPath"]);
+        Assert.Null(replaced["outputFiles"]);
         source.AssertStill();
     }
 
