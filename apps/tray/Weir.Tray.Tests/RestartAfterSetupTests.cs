@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Microsoft.Win32;
 using Xunit;
 
 namespace Weir.Tray.Tests;
@@ -17,19 +16,19 @@ public sealed class RestartAfterSetupTests : IDisposable
     private readonly TempDirectory _home = TempDirectory.AsWeirHome();
     private readonly TempDirectory _root = TempDirectory.Create();
     private readonly StandInServers _servers = new();
-    private readonly string _keyPath = $@"Software\WeirTrayMarkTests\{Guid.NewGuid():n}";
+    private readonly TempRegistryKey _key = TempRegistryKey.Under(@"Software\WeirTrayMarkTests");
     private readonly List<ProcessStartInfo> _started = [];
     private readonly List<string> _log = [];
 
     public void Dispose()
     {
-        Registry.CurrentUser.DeleteSubKeyTree(@"Software\WeirTrayMarkTests", throwOnMissingSubKey: false);
+        _key.Dispose();
         _servers.Dispose();
         _root.Dispose();
         _home.Dispose();
     }
 
-    private TrayRunningMark Mark() => new(_keyPath);
+    private TrayRunningMark Mark() => new(_key.Path);
 
     private static TrayRun Run(int processId, string executable = Executable) => new(processId, 100, executable);
 
