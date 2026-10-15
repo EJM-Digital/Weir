@@ -122,7 +122,7 @@ public sealed class RemoveWorkflowDialogTests(E2EServer server) : E2ETestBase(se
         var (row, dialog, sent) = await OpenFilePathsAsync(page, id);
 
         await OpenDialogAsync(page, id, dialog);
-        await ConfirmUntilRemovedAsync(page, dialog);
+        await ConfirmUntilRemovedAsync(page, id);
 
         await Expect(dialog).ToHaveCountAsync(0);
         await Expect(row).ToHaveCountAsync(0);
@@ -147,15 +147,15 @@ public sealed class RemoveWorkflowDialogTests(E2EServer server) : E2ETestBase(se
     /// Confirms the removal, and confirms again each time Weir says it cannot yet because it is looking at the workflow's folders, until
     /// the dialog closes.
     /// </summary>
-    private static async Task ConfirmUntilRemovedAsync(IPage page, ILocator dialog)
+    private static async Task ConfirmUntilRemovedAsync(IPage page, long id)
     {
-        var answered = $"() => !document.querySelector('[data-testid=\"{DialogId}\"]') || document.querySelector('[data-testid=\"{DialogId}\"] [role=alert]')";
         await Poll.UntilAsync(
             async () =>
             {
-                await page.GetByTestId($"{DialogId}-confirm").ClickAsync();
-                await page.WaitForFunctionAsync(answered);
-                return await dialog.CountAsync() == 0;
+                var answer = await page.RunAndWaitForResponseAsync(
+                    () => page.GetByTestId($"{DialogId}-confirm").ClickAsync(),
+                    response => response.Request.Method == "DELETE" && response.Url.EndsWith($"/processing/libraries/{id}", StringComparison.Ordinal));
+                return answer.Status == (int)HttpStatusCode.NoContent;
             },
             "Weir to remove the workflow");
     }
