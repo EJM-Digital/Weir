@@ -109,13 +109,40 @@ public sealed class DelunoPathMappingsPropertyTests
 
         PropertyChecks.ForAll(joined, found =>
         {
-            var result = DownloadClientPaths.Join(found.basePath, found.relative);
+            var result = DownloadClientPaths.Join(found.basePath, found.relative).Path!;
             var windows = found.basePath.Contains('\\', StringComparison.Ordinal) && !found.basePath.Contains('/', StringComparison.Ordinal);
             var separator = windows ? '\\' : '/';
 
             Assert.StartsWith(found.basePath.TrimEnd('/', '\\'), result, StringComparison.Ordinal);
             Assert.EndsWith(found.relative.TrimStart('/', '\\'), result, StringComparison.Ordinal);
             Assert.Equal(found.basePath.TrimEnd('/', '\\') + separator + found.relative.TrimStart('/', '\\'), result);
+        });
+    }
+
+    [Fact]
+    public void A_download_clients_folder_is_refused_when_any_segment_is_a_parent_and_otherwise_stays_under_the_base_folder()
+    {
+        var cases =
+            from root in Gen.Elements("/", "C:\\", "/downloads/complete", "\\\\nas\\share\\")
+            from count in Gen.Choose(1, 5)
+            from parts in Gen.ArrayOf(PathGenerators.WanderingPart.Where(part => part.Length > 0), count)
+            from separator in Gen.Elements("/", "\\")
+            select (root, relative: string.Join(separator, parts));
+
+        PropertyChecks.ForAll(cases, found =>
+        {
+            var joined = DownloadClientPaths.Join(found.root, found.relative);
+
+            if (found.relative.Split('/', '\\').Contains("..", StringComparer.Ordinal))
+            {
+                Assert.False(joined.Ok);
+                Assert.Contains("'..'", joined.Problem, StringComparison.Ordinal);
+                return;
+            }
+
+            Assert.True(joined.Ok);
+            Assert.StartsWith(found.root.TrimEnd('/', '\\'), joined.Path, StringComparison.Ordinal);
+            Assert.DoesNotContain(joined.Path!.Split('/', '\\'), part => part == "..");
         });
     }
 

@@ -51,6 +51,52 @@ public sealed class OriginalsPathPlannerPropertyTests
     }
 
     [Fact]
+    public void A_path_with_parent_segments_is_inside_a_folder_exactly_when_the_system_settles_it_there()
+    {
+        // No more climbs than the folder is deep, so the system's own settling never meets the top of the filesystem.
+        var wandering =
+            from names in PathGenerators.Names(2, 3)
+            from extra in PathGenerators.Names(1, 2)
+            from count in Gen.Choose(1, 6)
+            from steps in Gen.ArrayOf(Gen.Frequency<string>((4, Gen.Elements([.. names, .. extra])), (3, Gen.Constant("..")), (1, Gen.Constant("."))), count)
+            let climbs = steps.Count(step => step == "..")
+            where climbs <= names.Count
+            select (names, steps);
+
+        PropertyChecks.ForAll(wandering, found =>
+        {
+            var folder = Path.GetFullPath(Path.Join([Path.GetTempPath(), "libraries", .. found.names]));
+            var path = Path.Join([folder, .. found.steps]);
+            var settled = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+            var expected = settled.Equals(folder, StringComparison.OrdinalIgnoreCase) ||
+                           settled.StartsWith(folder + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+
+            Assert.Equal(expected, OriginalsPathPlanner.IsWithin(folder, path));
+        });
+    }
+
+    [Fact]
+    public void A_kept_original_never_has_a_parent_segment_and_is_always_inside_the_originals_folder_whatever_the_file_path_says()
+    {
+        var cases =
+            from library in AnyLibrary
+            from count in Gen.Choose(1, 6)
+            from steps in Gen.ArrayOf(PathGenerators.WanderingPart.Where(step => step.Length > 0), count)
+            from inside in Gen.Elements(true, false)
+            from separator in Gen.Elements("/", "\\")
+            select (library, file: (inside ? library.Folder.TrimEnd('/', '\\') : "/elsewhere") + separator + string.Join(separator, steps));
+
+        PropertyChecks.ForAll(cases, found =>
+        {
+            var destination = OriginalsPathPlanner.DestinationPath(found.library.Folder, found.library.Originals, found.file);
+            var folder = OriginalsPathPlanner.DestinationFolder(found.library.Folder, found.library.Originals);
+
+            Assert.DoesNotContain(destination[folder.TrimEnd('/', '\\').Length..].Split('/', '\\'), part => part == "..");
+            Assert.True(OriginalsPathPlanner.IsWithin(folder, destination), destination);
+        });
+    }
+
+    [Fact]
     public void A_kept_original_is_inside_the_originals_folder_and_is_not_the_file_it_came_from()
     {
         var cases =
