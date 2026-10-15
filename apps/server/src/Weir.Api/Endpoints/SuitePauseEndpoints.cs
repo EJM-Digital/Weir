@@ -40,8 +40,8 @@ internal sealed class SuitePauseEndpointHandlers
 
     public async Task<ApiResult> PutPauseAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var signedIn = await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(body, issues);
         var csrfToken = model.Str("csrf_token", minLength: 1);

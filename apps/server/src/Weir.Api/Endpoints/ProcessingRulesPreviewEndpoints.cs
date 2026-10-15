@@ -54,8 +54,8 @@ internal sealed class ProcessingRulesPreviewEndpointHandlers
 
     public async Task<ApiResult> PostPreviewAsync(ApiRequest request)
     {
-        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var pathIssues = new ValidationIssues();
         var libraryId = request.PathInt("library_id", pathIssues);

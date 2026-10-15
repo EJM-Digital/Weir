@@ -297,6 +297,7 @@ export function checkReleaseGates({ release, ci, ciContract, ciPackaging }) {
       "- name: Full live E2E against unpushed Docker release candidate",
       "- name: Upload Docker release-candidate evidence",
       "- name: Cleanup unpushed Docker release candidate",
+      "- name: Compose entrypoint maps the user, keeps the secrets and owns the folders of the release candidate",
     ],
     `${RELEASE} docker-candidate job`,
   );
@@ -315,14 +316,18 @@ export function checkReleaseGates({ release, ci, ciContract, ciPackaging }) {
     requireText(candidate, marker, `${RELEASE} docker-candidate job`);
   }
 
-  // Both published architectures must build before registry credentials exist.
+  // Both published architectures must build before registry credentials exist, and the arm64 one must start (under QEMU) and create the
+  // first account: an image that builds but cannot run would otherwise ship.
   requireOrder(
     requireJob(release, "docker-arm64", RELEASE),
     [
       "uses: docker/setup-qemu-action@",
       "- name: Build unpushed Docker release candidate (linux/arm64)",
       "platforms: linux/arm64",
+      "load: true",
       "push: false",
+      "- name: Start the unpushed arm64 release candidate under QEMU",
+      "node scripts/docker-compose-smoke.mjs arm64",
     ],
     `${RELEASE} docker-arm64 job`,
   );

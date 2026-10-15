@@ -52,7 +52,12 @@ public sealed class SecondLaunchTests : IDisposable
 
         listening.Subscribe(() => _heard.Release());
 
-        Assert.False(_heard.Wait(TimeSpan.FromMilliseconds(200)));
+        // A told launch is delivered on the thread that subscribes, so it is already in the count if it was told twice. A launch
+        // that follows is the proof the listener still hears new ones, and it is told once.
+        Assert.Equal(0, _heard.CurrentCount);
+        SecondLaunchSignal.Raise(_name);
+        Assert.True(_heard.Wait(Ceiling));
+        Assert.Equal(0, _heard.CurrentCount);
     }
 
     [Fact]

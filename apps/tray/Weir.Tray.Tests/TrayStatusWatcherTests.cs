@@ -11,6 +11,7 @@ public sealed class TrayStatusWatcherTests : IDisposable
     private static readonly TimeSpan QuickRetry = TimeSpan.FromMilliseconds(20);
 
     private readonly TempDirectory _home = TempDirectory.AsWeirHome();
+    private readonly FakeTimeProvider _clock = new();
     private readonly BlockingCollection<TrayStatusReading> _heard = [];
     private readonly BlockingCollection<string> _logged = [];
 
@@ -34,7 +35,8 @@ public sealed class TrayStatusWatcherTests : IDisposable
         return watcher;
     }
 
-    // A watcher whose reading the test controls: it answers from a queue, then keeps giving the last answer.
+    // A watcher whose reading the test controls: it answers from a queue, then keeps giving the last answer. Its settle and
+    // retry timers are on the test's clock, so nothing happens until the test moves the clock on.
     private TrayStatusWatcher WatchingReadings(params TrayStatusReading[] readings)
     {
         var queue = new Queue<TrayStatusReading>(readings);
@@ -50,7 +52,7 @@ public sealed class TrayStatusWatcherTests : IDisposable
             },
             _heard.Add,
             _logged.Add,
-            TimeProvider.System,
+            _clock,
             QuickRetry);
         watcher.Start();
         return watcher;
@@ -130,6 +132,9 @@ public sealed class TrayStatusWatcherTests : IDisposable
     public void A_read_that_fails_is_tried_once_more_and_the_second_answer_is_reported()
     {
         using var watcher = WatchingReadings(TrayStatusReading.Unreadable, Reading(paused: true));
+        Assert.Empty(_heard);
+
+        _clock.Advance(QuickRetry);
 
         Assert.True(NextHeard().Status!.Paused);
     }
@@ -141,9 +146,12 @@ public sealed class TrayStatusWatcherTests : IDisposable
         Assert.True(NextHeard().Status!.Paused);
 
         watcher.OnWatcherError(new IOException("changed"));
-        Assert.Contains("keeps the status it has", NextLoggedAbout("still could not be read"), StringComparison.Ordinal);
+        _clock.Advance(TrayStatusWatcher.Settle);
+        Assert.Empty(_heard);
+        _clock.Advance(QuickRetry);
 
-        Assert.False(_heard.TryTake(out _, TimeSpan.Zero));
+        Assert.Contains("keeps the status it has", NextLoggedAbout("still could not be read"), StringComparison.Ordinal);
+        Assert.Empty(_heard);
     }
 
     // Skips the log lines about the watcher's own error to reach the one about the file.
@@ -183,6 +191,7 @@ public sealed class TrayStatusWatcherTests : IDisposable
         Assert.Contains("too many changes", NextLogged(), StringComparison.Ordinal);
 
         // Each error also has the file read again, once the burst has settled.
+        clock.Advance(TrayStatusWatcher.Settle);
         Assert.False(NextHeard().Failed);
     }
 

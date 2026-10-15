@@ -125,6 +125,15 @@ describe("useLiveSync", () => {
     ]);
   });
 
+  it("reads the list of signed-in browsers again when the server says one signed in or out", () => {
+    const { invalidate } = mountSync();
+    current().open();
+
+    current().changed("sessions");
+
+    expect(invalidatedKeys(invalidate)).toEqual([authKeys.sessions]);
+  });
+
   it("ignores a topic it does not know and a frame it cannot read", () => {
     const { invalidate } = mountSync();
     current().open();
@@ -200,6 +209,7 @@ describe("useLiveSync", () => {
   });
 
   it("reloads the page on a restart only when the server now serves a different build", async () => {
+    vi.useFakeTimers();
     const reload = vi.fn();
     vi.stubGlobal("location", { ...window.location, reload });
     document.head.innerHTML =
@@ -221,7 +231,7 @@ describe("useLiveSync", () => {
     serve("/assets/a.js");
     current().hello("boot-2");
     await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await vi.advanceTimersByTimeAsync(0);
     expect(reload).not.toHaveBeenCalled();
 
     serve("/assets/b.js");

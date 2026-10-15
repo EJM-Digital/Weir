@@ -42,8 +42,8 @@ internal sealed class SuiteFileEndpointHandlers
 
     public async Task<ApiResult> PostBackupAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(body, issues);
         var csrfToken = model.Str("csrf_token", minLength: 1);

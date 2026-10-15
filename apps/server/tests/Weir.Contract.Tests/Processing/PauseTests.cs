@@ -44,9 +44,12 @@ public sealed class PauseTests
     public async Task Looking_for_new_files_while_paused_never_processes_or_removes_one()
     {
         await using var scenario = await Scenario.StartAsync(ScansEverywhere);
+        // Paused before the workflow and the download exist. A workflow is scanned within a second of being saved, and the watcher scans a
+        // new file after its burst delay; a scan that read the pause setting before it was set queues the file's pass, which is Weir
+        // finishing work it had begun, not the looking this test judges.
+        await scenario.SetPauseAsync(paused: true, keepLooking: true);
         var library = await scenario.CreateLibraryAsync(("remove_original_after_success", true), ("scan_interval_seconds", 10));
         var download = WriteDownload(scenario, "Paused.Weir.Only.2024");
-        await scenario.SetPauseAsync(paused: true, keepLooking: true);
 
         var scan = await scenario.EnqueueScanAsync(library);
         await scenario.WaitForJobFinishedAsync(scan);

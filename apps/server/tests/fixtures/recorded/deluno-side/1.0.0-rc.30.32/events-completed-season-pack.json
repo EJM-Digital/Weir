@@ -1,0 +1,40 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "events-completed-season-pack",
+  "recordedAt": "2026-10-15T03:10:16Z",
+  "note": "The report Weir sent for a season-pack folder of two episodes (status completed). Deluno answered 409 (it has no row for this hand-off, as the script made it straight to Weir).",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "70d69a10-205c-425d-9c26-ce4f6f346203",
+          "status": "completed",
+          "processorName": "Weir",
+          "libraryId": "01a13d68af9170839d883349df5773a8",
+          "releaseName": "Recorded Weir Show S01",
+          "outputPath": "C:\\Weir\\Ready\\TV\\Recorded.Weir.Show.S01.1080p.WEB-DL.x264-GOLDEN",
+          "message": "Weir finished 2 files, ready to import from the output folder.",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\TV\\Recorded.Weir.Show.S01.1080p.WEB-DL.x264-GOLDEN\\Recorded.Weir.Show.S01E01.1080p.WEB-DL.x264-GOLDEN.mkv",
+            "C:\\Weir\\Ready\\TV\\Recorded.Weir.Show.S01.1080p.WEB-DL.x264-GOLDEN\\Recorded.Weir.Show.S01E02.1080p.WEB-DL.x264-GOLDEN.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": "Deluno could not match this processor event to a waiting hand-off. Use the handoff ID from GET /api/integrations/processors/handoffs or the exact source path Deluno recorded. No import was queued."
+        }
+      }
+    }
+  ]
+}

@@ -76,8 +76,8 @@ internal sealed class NotificationEndpointHandlers
 
     public async Task<ApiResult> CreateAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var input = ReadChannel(body, issues);
         issues.ThrowIfAny();
@@ -100,8 +100,8 @@ internal sealed class NotificationEndpointHandlers
 
     public async Task<ApiResult> UpdateAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var channelId = request.PathInt("channel_id", issues);
         var input = ReadChannel(body, issues);
@@ -127,7 +127,8 @@ internal sealed class NotificationEndpointHandlers
 
     public async Task<ApiResult> DeleteAsync(ApiRequest request)
     {
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
+        request.RefuseOversizedBody();
         var headerToken = request.FirstHeader("X-CSRF-Token");
         var issues = new ValidationIssues();
         var channelId = request.PathInt("channel_id", issues);
@@ -157,8 +158,8 @@ internal sealed class NotificationEndpointHandlers
 
     public async Task<ApiResult> TestAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var channelId = request.PathInt("channel_id", issues);
         var model = new BodyModel(body, issues);

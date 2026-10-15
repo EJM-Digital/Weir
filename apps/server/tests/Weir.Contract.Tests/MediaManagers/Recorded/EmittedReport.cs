@@ -19,11 +19,14 @@ internal static class EmittedReport
         "handoffId", "status", "processorName", "libraryId", "releaseName", "outputPath", "outputFiles", "disposition", "sourceRemoved", "failureClass",
     ];
 
-    /// <summary>Fails with the recording's file and each difference when <paramref name="sent"/> is not the report <paramref name="exchange"/> records.</summary>
-    public static void AssertMatches(Recording recording, int exchange, JsonObject sent)
+    /// <summary>
+    /// Fails with the recording's file and each difference when <paramref name="sent"/> is not the report <paramref name="exchange"/> records.
+    /// With <paramref name="translation"/>, the ids in the recording are the ones this test made its own for them, and nothing else is changed.
+    /// </summary>
+    public static void AssertMatches(Recording recording, int exchange, JsonObject sent, Translation? translation = null)
     {
         var recorded = recording.Exchanges[exchange].Request;
-        var differences = Differences((JsonObject)recorded.Body!, sent);
+        var differences = Differences((JsonObject)(translation?.Ids(recorded.Body) ?? recorded.Body!), sent);
         if (differences.Count > 0)
         {
             throw new XunitException(

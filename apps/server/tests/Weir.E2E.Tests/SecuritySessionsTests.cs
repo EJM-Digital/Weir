@@ -72,6 +72,30 @@ public sealed partial class SecuritySessionsTests(E2EServer server) : E2ETestBas
     }
 
     [E2EFact]
+    public async Task The_list_follows_another_browser_signing_in_and_out_without_a_reload()
+    {
+        var first = await NewPageAsync();
+        await first.RunAndWaitForResponseAsync(
+            () => Navigation.EnsureSignedInAsync(first, BaseUrl),
+            response => response.Url.EndsWith("/api/v1/activity/stream", StringComparison.Ordinal));
+        await SecurityTab.OpenAsync(first);
+        await Expect(SecurityTab.SessionRows(first)).ToHaveCountAsync(1, new() { Timeout = SecurityTab.ServerAnswerMs });
+        await first.EvaluateAsync("() => { window.__weirNotReloaded = true; }");
+
+        var second = await NewPageAsync();
+        await Navigation.EnsureSignedInAsync(second, BaseUrl);
+
+        await Expect(SecurityTab.SessionRows(first)).ToHaveCountAsync(2, new() { Timeout = SecurityTab.ServerAnswerMs });
+        await Expect(SecurityTab.SessionRows(first).Filter(new() { HasText = "This browser" })).ToHaveCountAsync(1);
+        await second.GetByTestId("user-menu").ClickAsync();
+        await second.GetByTestId("sign-out").ClickAsync();
+        await Expect(second.GetByTestId("login-username")).ToBeVisibleAsync(new() { Timeout = SecurityTab.ServerAnswerMs });
+
+        await Expect(SecurityTab.SessionRows(first)).ToHaveCountAsync(1, new() { Timeout = SecurityTab.ServerAnswerMs });
+        Assert.True(await first.EvaluateAsync<bool>("() => window.__weirNotReloaded === true"), "The page was reloaded.");
+    }
+
+    [E2EFact]
     public async Task Signing_out_other_sessions_is_recorded_in_the_log()
     {
         var first = await NewPageAsync();
@@ -88,6 +112,26 @@ public sealed partial class SecuritySessionsTests(E2EServer server) : E2ETestBas
         Assert.Equal(recordedBefore + 1, await SecurityTab.RecordedEventCountAsync(first.Context, BaseUrl, SessionsRevoked));
         await Navigation.OpenLogsAsync(first, "Events");
         await Expect(first.GetByRole(AriaRole.Row).Filter(new() { HasText = "Sessions signed out" }).First).ToBeVisibleAsync(new() { Timeout = SecurityTab.ServerAnswerMs });
+    }
+
+    [E2EFact]
+    public async Task A_sign_out_button_is_never_hidden_under_the_panel_beside_the_list()
+    {
+        // Narrow enough that the three dates and the button need more room than the panel gives them.
+        var first = await NewPageAsync(new ViewportSize { Width = 1100, Height = 720 });
+        await Navigation.EnsureSignedInAsync(first, BaseUrl);
+        var second = await NewPageAsync();
+        await Navigation.EnsureSignedInAsync(second, BaseUrl);
+        await SecurityTab.OpenAsync(first);
+        await Expect(SecurityTab.SessionRows(first)).ToHaveCountAsync(2, new() { Timeout = SecurityTab.ServerAnswerMs });
+        var signOut = SecurityTab.SessionsTable(first).GetByRole(AriaRole.Button, new() { Name = "Sign out", Exact = true });
+
+        var revoke = await first.RunAndWaitForRequestAsync(
+            async () => await signOut.ClickAsync(new() { Timeout = SecurityTab.ServerAnswerMs }),
+            request => request.Method == "POST" && RevokeOneUrl().IsMatch(request.Url));
+
+        Assert.Equal(200, (await revoke.ResponseAsync())!.Status);
+        Assert.Equal(401, await SecurityTab.WhoAmIStatusAsync(second.Context, BaseUrl));
     }
 
     [E2EFact]

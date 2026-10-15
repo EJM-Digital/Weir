@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { signedInAs } from "../../../../test/signed-in-as";
 import * as api from "../../../../lib/download-clients/download-clients-api";
 import type { DownloadClientConnection } from "../../../../lib/download-clients/download-clients-api";
 import * as settingsQueries from "../../../../lib/settings/queries";
@@ -35,6 +36,7 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 beforeEach(() => {
+  signedInAs("admin");
   vi.spyOn(settingsQueries, "useAppSettingsQuery").mockReturnValue({
     data: undefined,
   } as ReturnType<typeof settingsQueries.useAppSettingsQuery>);

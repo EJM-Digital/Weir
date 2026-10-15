@@ -12,7 +12,7 @@ namespace Weir.Contract.Tests.MediaManagers.Recorded;
 /// answers with the reply Deluno recorded for that report; Weir must read a 202 as delivered and a 409 as Deluno having stopped waiting.
 /// </summary>
 [ContractArea("media_managers")]
-public sealed class DelunoReportsTests
+public sealed partial class DelunoReportsTests
 {
     private const string ReportsTo = Scenario.EventsPath;
 
@@ -41,7 +41,7 @@ public sealed class DelunoReportsTests
 
         Assert.Equal(
             recorded.Exchanges.Select(exchange => $"Told {Deluno(world)} that {FileNameIn((string)exchange.Request.Body!["outputPath"]!)} is ready to import").Order(),
-            (await world.Scenario.ActivityAsync("processing.handoff_reported")).Select(entry => (string)entry["title"]!).Order());
+            (await RecordedReportsAsync(world, handoffs.Count)).Select(entry => (string)entry["title"]!).Order());
         Assert.Empty(await OwedAsync(world, ids));
     }
 
@@ -118,6 +118,50 @@ public sealed class DelunoReportsTests
     }
 
     [Fact]
+    public async Task A_held_file_that_is_back_when_Deluno_sends_the_release_again_is_cleaned_at_once_and_reported_as_Deluno_recorded()
+    {
+        await using var world = await DelunoSide.StartWorldAsync();
+        var recorded = DelunoSide.Request("events-completed-resent");
+        world.Deluno.AnswerReportsAsRecorded(recorded);
+        var first = HandoffFor(DelunoSide.Request("events-too-late"), 1);
+        var again = HandoffFor(recorded, 1);
+        await HoldAsGoneAsync(world, first);
+        var booked = await BookedLookAsync(world);
+
+        world.PutFilm(again.SourcePath(), needsWork: true);
+        await HandOffAsync(world, again);
+
+        // The booked look is minutes away, and nothing here moves it: the resend itself started the look.
+        var report = await ReportAsync(world, again.HandoffId());
+        EmittedReport.AssertMatches(recorded, 1, report.Body);
+        Assert.True(string.CompareOrdinal(booked, Handoffs.StoredTime(DateTime.UtcNow)) > 0, "the look was not booked for later");
+        Assert.Equal("completed", (string)(await world.Scenario.WaitForHandoffStateAsync(again.HandoffId(), "completed"))["state"]!);
+        Assert.Equal("cancelled", (string)(await world.Scenario.HandoffStatusAsync(first.HandoffId()))["state"]!);
+        Assert.Empty(await BookedLooksAsync(world));
+    }
+
+    [Fact]
+    public async Task A_held_file_that_comes_back_on_its_own_is_cleaned_when_Weir_next_looks_and_reported_as_Deluno_recorded()
+    {
+        await using var world = await DelunoSide.StartWorldAsync();
+        var recorded = DelunoSide.Request("events-completed");
+        world.Deluno.AnswerReportsAsRecorded(recorded);
+        var hand = HandoffFor(recorded, 0);
+        await HoldAsGoneAsync(world, hand);
+        var booked = await BookedLookAsync(world);
+
+        // The file is back, and nothing tells Weir so: it finds out when it next looks for vanished files, which it does as it starts.
+        world.PutFilm(hand.SourcePath(), needsWork: true);
+        await world.Scenario.RestartServerAsync();
+
+        var report = await ReportAsync(world, hand.HandoffId());
+        EmittedReport.AssertMatches(recorded, 0, report.Body);
+        Assert.True(string.CompareOrdinal(booked, Handoffs.StoredTime(DateTime.UtcNow)) > 0, "the look was not booked for later");
+        await world.Scenario.WaitForHandoffStateAsync(hand.HandoffId(), "completed");
+        Assert.Empty(await BookedLooksAsync(world));
+    }
+
+    [Fact]
     public async Task A_report_of_a_release_Deluno_removed_is_answered_409_dismissed_and_Weir_stops_owing_it()
     {
         await using var world = await DelunoSide.StartWorldAsync();
@@ -135,7 +179,7 @@ public sealed class DelunoReportsTests
         // Deluno answered, so Weir does not say it could not reach it or that its address or key are wrong: it says Deluno had already
         // stopped waiting, and that no import was queued, and does not ask a person to check anything.
         var file = DelunoSide.ReleaseNameOf(tooLate.Exchanges[0]);
-        var entry = Assert.Single(await world.Scenario.ActivityAsync("processing.handoff_reported"));
+        var entry = Assert.Single(await RecordedReportsAsync(world, 1));
         Assert.Equal($"{Deluno(world)} had already stopped waiting for {file}", (string)entry["title"]!);
         var detail = JsonNode.Parse((string)entry["detail"]!)!.AsObject();
         Assert.Equal("skipped", (string)detail["result"]!);
@@ -224,7 +268,7 @@ public sealed class DelunoReportsTests
         var report = await ReportAsync(world, hand.HandoffId());
         EmittedReport.AssertMatches(DelunoSide.Request("events-completed"), 0, report.Body);
         var file = FileNameIn((string)report.Body["outputPath"]!);
-        var entry = Assert.Single(await world.Scenario.ActivityAsync("processing.handoff_reported"));
+        var entry = Assert.Single(await RecordedReportsAsync(world, 1));
         Assert.Equal($"Weir could not tell {Deluno(world)} about {file}", (string)entry["title"]!);
         var detail = JsonNode.Parse((string)entry["detail"]!)!.AsObject();
         Assert.Equal("failed", (string)detail["result"]!);
@@ -250,6 +294,27 @@ public sealed class DelunoReportsTests
         var accepted = await world.Replay.SendCallAsync(hand);
         Assert.True(accepted.Status == System.Net.HttpStatusCode.OK, accepted.ToString());
     }
+
+    /// <summary>Hands the release off while the file is there, takes the file away, and waits until Weir holds it as gone with a look booked for later.</summary>
+    private static async Task HoldAsGoneAsync(RecordedWorld world, RecordedCall hand)
+    {
+        await world.Scenario.SetPauseAsync(paused: true);
+        var path = world.PutFilm(hand.SourcePath(), needsWork: true);
+        await HandOffAsync(world, hand);
+        File.Delete(path);
+        await world.Scenario.SetPauseAsync(paused: false);
+        await Poll.UntilAsync(
+            async () => (bool?)(await world.Scenario.FileRowAsync(world.Movies, Path.GetFileName(path)))?["source_gone"] is true ? "held as gone" : null,
+            "Weir to hold the file as gone after its first look");
+    }
+
+    /// <summary>When the look at the gone file is booked for, once it is. The file shows as gone a moment before the look is booked, so the server is asked again until it is there.</summary>
+    private static async Task<string> BookedLookAsync(RecordedWorld world) =>
+        await Poll.UntilAsync(async () => (await BookedLooksAsync(world)).FirstOrDefault(), "Weir to book a look at the gone file");
+
+    private static async Task<List<string>> BookedLooksAsync(RecordedWorld world) =>
+        [.. (await world.Scenario.RowsAfterStopAsync("SELECT not_before FROM jobs WHERE status = 'pending' AND not_before IS NOT NULL AND dedupe_key LIKE '%:gone-wait:%'"))
+            .Select(row => (string)row["not_before"]!)];
 
     /// <summary>The name of the file at the end of a path as Deluno's Windows machine writes it.</summary>
     private static string FileNameIn(string windowsPath) => windowsPath[(windowsPath.LastIndexOf('\\') + 1)..];
@@ -281,6 +346,16 @@ public sealed class DelunoReportsTests
             $"Weir's report of {handoffId}");
         return new Sent(request, (JsonObject)request.Json!);
     }
+
+    /// <summary>
+    /// The Activity lines for the reports Weir has settled, once there are <paramref name="count"/>. Weir records a report, and stops owing
+    /// it, after the manager has answered it, in one write; the manager has the report before that, so a test that reads either as soon
+    /// as the manager has the report reads them too early. The wait lasts as long as a worker has the job (see <see cref="JobWait"/>).
+    /// </summary>
+    private static async Task<List<JsonObject>> RecordedReportsAsync(RecordedWorld world, int count) =>
+        await world.Scenario.WaitWhileWorkedOnAsync(
+            async () => await world.Scenario.ActivityAsync("processing.handoff_reported") is { } lines && lines.Count >= count ? lines : null,
+            $"Weir to record {count} report(s) in Activity");
 
     /// <summary>Of these hand-offs, those Weir still holds a report for to send, read from its database while it is stopped.</summary>
     private static async Task<List<string>> OwedAsync(RecordedWorld world, IEnumerable<string> handoffIds)

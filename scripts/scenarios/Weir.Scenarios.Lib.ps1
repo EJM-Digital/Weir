@@ -56,6 +56,9 @@ function Assert-That {
 }
 
 # Polls $Probe until it returns something other than $null or $false, and returns that. Fails with what was last seen.
+# -TimeoutSeconds is a hang guard, never a pace: it is the longest a wait is given before the run is called hung, and the wait
+# ends the moment $Probe answers. A claim that something did not happen is not made by waiting for it not to: wait for a later,
+# observable event (a look at the folder that has finished, a counter that has moved on) and then check that nothing was done.
 function Wait-Until {
     param(
         [Parameter(Mandatory)] [scriptblock] $Probe,
@@ -75,18 +78,6 @@ function Wait-Until {
     } while ((Get-Date) -lt $deadline)
     $because = if ($lastError) { " Last error: $lastError" } else { '' }
     throw "Timed out after $TimeoutSeconds s waiting for $What.$because"
-}
-
-# Watches for $Duration and fails the moment $Happened returns true. Watching can only show that something did not happen
-# yet, so use it for claims no API can answer directly ("nothing was cleaned while paused").
-function Assert-NeverWithin {
-    param([Parameter(Mandatory)] [scriptblock] $Happened, [Parameter(Mandatory)] [int] $Seconds, [Parameter(Mandatory)] [string] $What)
-    $deadline = (Get-Date).AddSeconds($Seconds)
-    do {
-        if (& $Happened) { throw "$What happened, and it must not." }
-        Start-Sleep -Milliseconds 250
-    } while ((Get-Date) -lt $deadline)
-    Add-Evidence "ok: $What did not happen in $Seconds s"
 }
 
 # --- Weir's HTTP API ------------------------------------------------------------------------------------------------
@@ -313,6 +304,28 @@ function New-PhaseWrapperText {
         "function Save-ExitCode(`$code) { `$part = '$RunFolder\exitcode.part'; [IO.File]::WriteAllText(`$part, [string]`$code); Move-Item -LiteralPath `$part -Destination '$RunFolder\exitcode.txt' -Force }",
         "try { & '$RunnerPath' $Arguments *> '$RunFolder\runner.out'; `$code = `$LASTEXITCODE; Save-ExitCode `$(if (`$null -eq `$code) { 4 } else { `$code }) }",
         "catch { `$_ | Out-String | Add-Content '$RunFolder\runner.out'; Save-ExitCode 3 }") -join "`r`n"
+}
+
+# True when $Reported is the build under test: the release's own version, and the commit when the build carries one.
+function Test-VersionUnderTest {
+    param([Parameter(Mandatory)] [string] $Reported, [Parameter(Mandatory)] [string] $Expected, [string] $ShortSha)
+    $expectedBase = $Expected.Split('+')[0]
+    $reportedBase = $Reported.Split('+')[0]
+    if ($reportedBase -ne $expectedBase) { return $false }
+    # A build made for the golden path carries its commit (`<version>+<short sha>`); one that does not cannot be tied to the commit.
+    if ($ShortSha) { return $Reported.Contains('+') -and $Reported.Split('+')[1].StartsWith($ShortSha.Substring(0, [Math]::Min(7, $ShortSha.Length))) }
+    $true
+}
+
+# Why a -NoRestore run may not go on, or $null when it may. It runs on the Weir already on the machine, so unless a chosen scenario
+# installs the build under test (fresh-install) that Weir has to BE the build under test: the version and the commit.
+function Get-NoRestoreRefusal {
+    param([string] $Found, [Parameter(Mandatory)] [string] $Version, [Parameter(Mandatory)] [string] $CommitSha, [string[]] $ScenarioIds = @())
+    if ($ScenarioIds -contains 'fresh-install') { return $null }
+    $shortSha = $CommitSha.Substring(0, 7)
+    if ($Found -and (Test-VersionUnderTest -Reported $Found -Expected $Version -ShortSha $shortSha)) { return $null }
+    $what = if ($Found) { $Found } else { 'no Weir at all' }
+    "-NoRestore would run on the Weir already on the machine, which is $what, not the build under test ($Version, commit $shortSha). None of the chosen scenarios installs the build. Include fresh-install in -Scenarios, or run without -NoRestore."
 }
 
 # The exit code in the file's text, or $null while there is none (no file yet, or text that is not a number).

@@ -13,13 +13,19 @@ const NO_FILES: ProcessingFile[] = [];
 /** A file failed, turned away or held changes only when Weir looks at it, so the list follows the stream gently. */
 const STREAM_THROTTLE_MS = 3_000;
 
+export type NeedsFiles = {
+  files: ProcessingFile[];
+  /** Why the latest read failed, or null when it worked. The files are then the last that were read, or none. */
+  error: unknown;
+};
+
 /**
  * The files that may wait on a person: failed, rejected, held and skipped, newest first. Which of them do
- * is the model's to say.
+ * is the model's to say. A read that failed is reported with them, since no files is not the same as none waiting.
  */
 export function useNeedsFiles(
   workflowId: number | null | undefined,
-): ProcessingFile[] {
+): NeedsFiles {
   const { query, queryKeys } = useMemo(() => {
     const read = {
       file_status: [...NEEDS_FILE_STATUSES],
@@ -37,5 +43,5 @@ export function useNeedsFiles(
     exact: true,
     throttleMs: STREAM_THROTTLE_MS,
   });
-  return files.data?.files ?? NO_FILES;
+  return { files: files.data?.files ?? NO_FILES, error: files.error };
 }

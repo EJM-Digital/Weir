@@ -53,6 +53,8 @@ $env:WEIR_E2E = "1"
 dotnet test apps/server/tests/Weir.E2E.Tests
 ```
 
+A failed browser test fails the CI job and is not run again. A test never waits for the wall clock: it waits for a signal, moves a fake clock, or polls with a ceiling it names a hang guard, and `node scripts/check-wall-clock-waits.mjs` fails on a new sleep or guessed delay (`scripts/README.md`). The browser tests drive the server's own clocks through its test-only `WEIR_PERIODIC_TASK_SPEEDUP` and the page's through Playwright's clock.
+
 The server's own unit and API tests leave both out: `dotnet test apps/server/Weir.slnx --filter "Category!=Stress&Category!=Contract&Category!=E2E"`, which is what the CI server jobs run.
 
 Tray (Windows): `dotnet build apps/tray/Weir.Tray.slnx` and `dotnet test apps/tray/Weir.Tray.slnx`.

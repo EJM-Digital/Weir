@@ -54,6 +54,25 @@ public static partial class FileLifecycle
     private static long AvailableFreeBytes(string path) => new DriveInfo(Path.GetFullPath(path)).AvailableFreeSpace;
 
     /// <summary>
+    /// Creates a folder to publish into and every missing folder above it, and gives the output ownership policy to each one it made,
+    /// the topmost first. A folder that was already there is left as it is.
+    /// </summary>
+    public static void EnsureOutputDirectory(string directory, IOutputOwnership? ownership)
+    {
+        var missing = new Stack<string>();
+        for (var folder = directory; !string.IsNullOrEmpty(folder) && !Directory.Exists(folder); folder = Path.GetDirectoryName(folder))
+        {
+            missing.Push(folder);
+        }
+
+        Directory.CreateDirectory(directory);
+        foreach (var created in missing)
+        {
+            ownership?.ApplyToDirectory(created);
+        }
+    }
+
+    /// <summary>
     /// Copies into a hidden <c>.{name}.XXXXXXXX.partial</c> beside the destination, validates it, then atomically
     /// replaces the destination. A failed or cancelled copy, or a failed validation, leaves nothing behind.
     /// </summary>
@@ -68,12 +87,7 @@ public static partial class FileLifecycle
     {
         var src = Path.GetFullPath(source);
         var directory = Path.GetDirectoryName(Path.GetFullPath(final))!;
-        var directoryExisted = Directory.Exists(directory);
-        Directory.CreateDirectory(directory);
-        if (!directoryExisted)
-        {
-            ownership?.ApplyToDirectory(directory);
-        }
+        EnsureOutputDirectory(directory, ownership);
 
         var tmp = CreateTempFile(directory, "." + Path.GetFileName(final) + ".", ".partial");
         try
@@ -180,12 +194,7 @@ public static partial class FileLifecycle
     {
         var src = Path.GetFullPath(source);
         var directory = Path.GetDirectoryName(Path.GetFullPath(final))!;
-        var directoryExisted = Directory.Exists(directory);
-        Directory.CreateDirectory(directory);
-        if (!directoryExisted)
-        {
-            ownership?.ApplyToDirectory(directory);
-        }
+        EnsureOutputDirectory(directory, ownership);
 
         var tmp = CreateTempFile(directory, "." + Path.GetFileName(final) + ".", ".link");
         BestEffortDelete(tmp);
@@ -239,12 +248,7 @@ public static partial class FileLifecycle
         var src = Path.GetFullPath(staged);
         var destination = Path.GetFullPath(final);
         var directory = Path.GetDirectoryName(destination)!;
-        var directoryExisted = Directory.Exists(directory);
-        Directory.CreateDirectory(directory);
-        if (!directoryExisted)
-        {
-            ownership?.ApplyToDirectory(directory);
-        }
+        EnsureOutputDirectory(directory, ownership);
 
         var tmp = CreateTempFile(directory, "." + Path.GetFileName(destination) + ".", ".partial");
         try

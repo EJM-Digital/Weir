@@ -111,8 +111,8 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
 
     public async Task<ApiResult> CreateConnectionAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(body, issues);
         var csrfToken = model.Str("csrf_token", minLength: 1);
@@ -202,8 +202,8 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
 
     public async Task<ApiResult> UpdateConnectionAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);
         var model = new BodyModel(body, issues);
@@ -240,8 +240,8 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
 
     public async Task<ApiResult> DeleteConnectionAsync(ApiRequest request)
     {
+        await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
         var body = await request.ReadBodyAsync().ConfigureAwait(false);
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);
         var model = new BodyModel(body, issues);
@@ -283,8 +283,8 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
     /// </summary>
     public async Task<ApiResult> PostUnlinkWorkflowsAsync(ApiRequest request)
     {
+        await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
         var body = await request.ReadBodyAsync().ConfigureAwait(false);
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);
         var model = new BodyModel(body, issues);
@@ -324,8 +324,8 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
     /// </summary>
     public async Task<ApiResult> PostGiveUpReportsAsync(ApiRequest request)
     {
+        await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
         var body = await request.ReadBodyAsync().ConfigureAwait(false);
-        await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);
         var model = new BodyModel(body, issues);
@@ -344,8 +344,8 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
 
     public async Task<ApiResult> PostWebhookSecretAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);
         var model = new BodyModel(body, issues);
@@ -377,8 +377,8 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
 
     public async Task<ApiResult> PutLaneAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);
         FieldRules.TryLiteral(new WireString(request.RouteValue("lane") ?? string.Empty), ["path", "lane"], MediaManagerKinds.RetiredSearchLanes, issues, out _);
@@ -399,8 +399,8 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
 
     public async Task<ApiResult> PostConnectionTestAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);
         var model = new BodyModel(body, issues);
