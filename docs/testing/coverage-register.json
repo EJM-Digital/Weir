@@ -37417,6 +37417,31 @@
       }
     },
     {
+      "id": "web-setup-connections-performance.speed.files-at-once-capped-by-worker-slots-note",
+      "area": "web-setup-connections-performance",
+      "behaviour": "Files at once: when the server runs fewer at once than it is set to because it has fewer worker slots, the Speed tab shows the server's note beside it; with enough slots it shows none",
+      "kind": "state",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/speed-slots-note.test.tsx",
+          "name": "says why Files at once runs fewer than it asks for, in the words the server gave"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/speed-slots-note.test.tsx",
+          "name": "says nothing about slots while the server has enough of them"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Gap"
+      }
+    },
+    {
       "id": "web-setup-connections-performance.speed.save-failure-save-failed-or-the-server-s-reason",
       "area": "web-setup-connections-performance",
       "behaviour": "Save failure: 'Save failed.' or the server's reason as an alert; Save stays available",
