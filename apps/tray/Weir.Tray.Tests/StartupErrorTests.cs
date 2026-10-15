@@ -129,6 +129,18 @@ public sealed class StartupErrorTests : IDisposable
     }
 
     [Fact]
+    public void The_balloons_for_a_port_another_program_holds_name_the_port_and_say_what_to_do()
+    {
+        Assert.Equal(
+            "Weir didn't start after 5 tries because another program is using port 8080. Close that program, or use Change port, then click to try again.",
+            TrayBalloons.PortInUseText(8080, 5));
+        Assert.Equal(
+            "Weir stopped and didn't start again after 5 tries because another program is using port 8080. Close that program, or use Change port, then click to try again.",
+            TrayBalloons.StoppedPortInUseText(8080, 5));
+        Assert.StartsWith("Weir didn't start after 1 try because", TrayBalloons.PortInUseText(8080, 1), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void The_hover_text_of_a_server_the_supervision_gave_up_on_says_so()
     {
         var state = new TrayState(ServerPhase.Stopped, null, null, 9347, StartupError: new StartupError("Didn't start after 5 tries", string.Empty));

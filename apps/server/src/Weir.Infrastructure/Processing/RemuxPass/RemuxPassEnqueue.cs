@@ -96,6 +96,7 @@ public static class RemuxPassEnqueue
                 ("$payload", json),
                 ("$id", pending.Id)).ConfigureAwait(false);
             jobs.AnnounceOnCommit(uow, RemuxPassOutcomes.JobKind);
+            jobs.WakeWorkers(RemuxPassOutcomes.JobKind);
             return pending with { PayloadJson = json };
         }
 
