@@ -5,7 +5,8 @@ import { randomBytes } from "node:crypto";
 import { parseSetupCode } from "./server-log.mjs";
 
 const USERNAME = "composer";
-const WORKFLOW_FOLDER = "/data/weir/smoke";
+// Outside the data volume, which Weir refuses as a watched folder; the shipped compose.yaml mounts nothing else.
+const WORKFLOW_FOLDER = "/tmp/weir-smoke";
 // A value the settings screen would never default to, so a database that came back with its defaults cannot pass for one that kept it.
 const LOG_RETENTION_DAYS = 17;
 const KEPT_FIELDS = ["id", "name", "media_type", "watched_folder", "work_folder", "output_folder"];
