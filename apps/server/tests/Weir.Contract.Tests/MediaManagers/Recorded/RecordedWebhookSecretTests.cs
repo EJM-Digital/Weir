@@ -124,7 +124,8 @@ public sealed class RecordedWebhookSecretTests
         Assert.Equal(HttpStatusCode.Forbidden, polled.Status);
         Assert.Equal("Set a webhook secret in Weir so a media manager can ask about hand-offs.", (string)polled.Fields["detail"]!);
         Assert.Equal(HttpStatusCode.Forbidden, (await world.Replay.SendCallAsync(CancelOf(hand.HandoffId()), Credential.None)).Status);
-        await Poll.UntilAsync(
+        await new JobWait().UntilAsync(
+            () => RemuxJobs.StatusesForHandoffAsync(world.Scenario.Admin, hand.HandoffId()),
             async () => await RemuxJobs.StatusForHandoffAsync(world.Scenario.Admin, hand.HandoffId()) == "completed" ? "done" : null,
             "Weir to finish the unsigned hand-off");
     }
