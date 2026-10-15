@@ -44,7 +44,7 @@ public sealed class LiveTodayFigureTests(E2EServer server) : E2ETestBase(server)
                 .GetByRole(AriaRole.Button, new() { NameRegex = new Regex("harbour lights", RegexOptions.IgnoreCase) });
             await tile.ClickAsync();
 
-            await Expect(page.GetByRole(AriaRole.Dialog)).ToContainTextAsync(new Regex("harbour lights", RegexOptions.IgnoreCase));
+            await Expect(page.GetByRole(AriaRole.Dialog)).ToContainTextAsync("Harbour Lights");
         });
     }
 }

@@ -236,7 +236,7 @@ public sealed class ProcessingRig : IAsyncDisposable
     public int RemuxCount => _tools.Calls(tool: "ffmpeg", step: "remux").Count;
 
     /// <summary>
-    /// What a test that failed here needs to say why: the job and file rows with their lease times, the clock, and the end of the
+    /// What a test that failed here needs to say why (read without pooling, so no connection is left holding the files): the job and file rows with their lease times, the clock, and the end of the
     /// rig server's log. A pass that is claimed and never finishes shows as a leased job with no log line after it.
     /// </summary>
     public string Evidence()
@@ -245,7 +245,7 @@ public sealed class ProcessingRig : IAsyncDisposable
         text.AppendLine(CultureInfo.InvariantCulture, $"Rig evidence at {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
         try
         {
-            using var connection = new SqliteConnection($"Data Source={_server.DatabasePath};Mode=ReadOnly");
+            using var connection = new SqliteConnection($"Data Source={_server.DatabasePath};Mode=ReadOnly;Pooling=False");
             connection.Open();
             Append(text, connection, "jobs", "SELECT id, status, lease_owner, lease_expires_at, attempt_count, not_before, created_at, updated_at, last_error FROM jobs ORDER BY id");
             Append(text, connection, "files", "SELECT id, relative_path, status, status_reason, updated_at FROM files ORDER BY id");
