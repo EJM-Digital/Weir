@@ -29,7 +29,7 @@ public sealed class LeaseRenewalTests
         var source = scenario.WriteRelease("Long.Running.540", "film.mkv", FakeMedia.Bytes(FakeMedia.Probe()));
 
         await scenario.PostHandoffAsync("handoff-lease-540", source);
-        await scenario.WaitForHandoffStateAsync("handoff-lease-540", "completed", TimeSpan.FromSeconds(120));
+        await scenario.WaitForHandoffStateAsync("handoff-lease-540", "completed");
 
         // Only one remux call for this file must ever have started: a second worker claiming the same
         // row mid-write would show up here as two "remux" calls for film.mkv instead of one.
