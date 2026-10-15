@@ -2,6 +2,9 @@
     The scenarios that need no manager: a film dropped into a Weir-only workflow, Process again, pause and resume from the
     tray, and a file deleted while it waits. Also the helpers the update scenario uses to give the old Weir something to keep.
 
+    Each Fresh scenario starts with Initialize-FreshScenario and makes the workflow it uses, named for the run, so it runs alone and
+    runs again on the same machine: no scenario reads a workflow, a film or an account another one made.
+
     The film is made with the FFmpeg the installed Weir ships (or `-SourceFilm`, a real film given to the run), and Weir cleans it
     with that same FFmpeg, so these scenarios prove the installed build's own tools work, not a copy of them.
 #>
@@ -36,7 +39,8 @@ function Get-FilmMaster {
     $script:Ctx.FilmMaster
 }
 
-# A movie workflow with no manager, over folders of its own. Originals are kept so the scenarios can see them.
+# A movie workflow with no manager, over folders of its own. Originals are kept so the scenarios can see them. The workflow's name
+# and its folders carry the run's id, so a run on a machine an earlier run used is never refused as a duplicate.
 function New-ScenarioWorkflow {
     param(
         [Parameter(Mandatory)] [string] $Name,
@@ -44,6 +48,9 @@ function New-ScenarioWorkflow {
         [int] $MinimumMegabytes = 1,
         [int] $ReadyAfterSeconds = 0
     )
+    $runId = Get-RunId
+    $Name = "$Name $runId"
+    $Root = Join-Path $Root $runId
     $folders = @{}
     foreach ($kind in 'watched', 'work', 'output') {
         $folders[$kind] = (New-Item -ItemType Directory -Force -Path (Join-Path $Root $kind)).FullName
@@ -119,21 +126,16 @@ function Invoke-WeirOnlyFilm {
     [pscustomobject]@{ Release = $release; Workflow = $Workflow; Row = $row; Seconds = [int]$clock.Elapsed.TotalSeconds }
 }
 
-function Initialize-FilmsWorkflow {
-    if (-not $script:Ctx.ContainsKey('Films')) { $script:Ctx.Films = New-ScenarioWorkflow -Name 'Scenario films' -Root (Join-Path $script:Ctx.MediaRoot 'films') }
-    $script:Ctx.Films
-}
-
 # --- weir-only-film -----------------------------------------------------------------------------------------------------
 
 function Scenario_weir_only_film {
-    $workflow = Initialize-FilmsWorkflow
+    Initialize-FreshScenario
+    $workflow = New-ScenarioWorkflow -Name 'Scenario films' -Root (Join-Path $script:Ctx.MediaRoot 'films')
     $done = Invoke-WeirOnlyFilm -Name 'Big.Buck.Bunny.2008' -Workflow $workflow
-    $script:Ctx.Cleaned = $done
     $cleaned = Assert-CleanedFilm -OutputPath $done.Release.Output
     Assert-OriginalsKept -Release $done.Release
-    $titles = @(Get-ActivityItems | ForEach-Object { "$($_.event_type)|$($_.title)" })
-    Assert-That (@($titles | Where-Object { $_ -like 'processing.file_remux_pass_completed|*Big.Buck.Bunny.2008.mkv*' }).Count -ge 1) 'Activity says the film was processed'
+    $said = @(Get-ActivityItems -EventType 'processing.file_remux_pass_completed' | Where-Object { $_.library_id -eq $workflow.Id -and $_.title -like '*Big.Buck.Bunny.2008.mkv*' })
+    Assert-That ($said.Count -ge 1) 'Activity says the film was processed'
     $master = Get-FilmMaster
     "A $([int]$master.Summary.Seconds) s film ($($master.Summary.Bytes) bytes, audio $(@($master.Summary.Audio) -join '/'), $(@($master.Summary.Subtitles).Count) subtitle tracks) dropped into a Weir-only workflow was cleaned in $($done.Seconds) s to $($cleaned.Bytes) bytes with audio $(@($cleaned.Audio) -join '/') and no subtitles; the original and its .nfo are untouched; Activity says it was processed."
 }
@@ -141,8 +143,10 @@ function Scenario_weir_only_film {
 # --- process-again ------------------------------------------------------------------------------------------------------
 
 function Scenario_process_again {
-    if (-not $script:Ctx.ContainsKey('Cleaned')) { $script:Ctx.Cleaned = Invoke-WeirOnlyFilm -Name 'Retry.Film.2017' -Workflow (Initialize-FilmsWorkflow) }
-    $cleaned = $script:Ctx.Cleaned
+    Initialize-FreshScenario
+    $workflow = New-ScenarioWorkflow -Name 'Scenario again' -Root (Join-Path $script:Ctx.MediaRoot 'again')
+    $cleaned = Invoke-WeirOnlyFilm -Name 'Retry.Film.2017' -Workflow $workflow
+    Assert-CleanedFilm -OutputPath $cleaned.Release.Output | Out-Null
     $name = Split-Path -Leaf $cleaned.Release.Film
     $skipLinesBefore = @(Get-ActivityItems -EventType 'processing.file_skipped_repeat').Count
     $jobsBefore = @(Get-RemuxJobs).Count
@@ -176,8 +180,25 @@ function Get-StartedRemuxJobCount {
     @(Get-RemuxJobs | Where-Object { $_.status -in 'leased', 'completed', 'failed' }).Count
 }
 
+# Asks Weir to resume, the way the tray does, when it is paused (an earlier run that failed while paused leaves it so).
+function Resume-WeirIfPaused {
+    $session = $script:Ctx.Session
+    if (-not (Get-WeirJson $session '/api/v1/pause').paused) { return }
+    Write-TrayPauseRequest -Paused $false
+    Wait-Until -What 'Weir to resume on the tray''s request' -TimeoutSeconds 30 -Probe { -not (Get-WeirJson $session '/api/v1/pause').paused } | Out-Null
+}
+
 function Scenario_pause_resume {
-    $workflow = Initialize-FilmsWorkflow
+    Initialize-FreshScenario
+    $workflow = New-ScenarioWorkflow -Name 'Scenario pause' -Root (Join-Path $script:Ctx.MediaRoot 'pause')
+    Resume-WeirIfPaused
+    # Whatever happens, Weir is not left paused for the next scenario.
+    try { Test-PauseAndResume -Workflow $workflow }
+    finally { try { Resume-WeirIfPaused } catch { Add-Evidence "could not resume Weir afterwards: $($_.Exception.Message)" } }
+}
+
+function Test-PauseAndResume {
+    param([Parameter(Mandatory)] $Workflow)
     $session = $script:Ctx.Session
     Assert-That ((Get-WeirJson $session '/api/v1/pause').paused -eq $false) 'Weir is not paused to begin with'
 
@@ -221,6 +242,7 @@ function Scenario_pause_resume {
 # --- deleted-queued-file ------------------------------------------------------------------------------------------------
 
 function Scenario_deleted_queued_file {
+    Initialize-FreshScenario
     $root = Join-Path $script:Ctx.MediaRoot 'settling'
     $workflow = New-ScenarioWorkflow -Name 'Scenario settling' -Root $root -MinimumMegabytes 50 -ReadyAfterSeconds 60
     $file = Join-Path $workflow.Watched 'Harbour Lights 2024.mkv'

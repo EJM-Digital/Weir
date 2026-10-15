@@ -125,8 +125,8 @@ Start attempt 5 failed: hung before it reported anything for 30 s. Giving up (5 
 
 A hung server is also described before it is stopped (its processor time, threads and the files it had loaded). A server started on a
 retry is told its attempt number and why the earlier ones failed, and writes a **warning** to `weir.log` and so to System > Logs.
-The scenario suite's "Logs with no unexpected warnings" reads that warning, the `failed` in the tray log, and `weir.log`, so a start that
-only worked on a retry fails it unless the suite names it. When the tray gives up, no server is running to write to `weir.log`; the
+The scenario suite's log check (the end of every scenario) reads that warning, the `failed` in the tray log, and `weir.log`, so a start that
+only worked on a retry fails the scenario it happened in unless the suite names it. When the tray gives up, no server is running to write to `weir.log`; the
 reason is in the two tray logs.
 
 ## What the person sees

@@ -284,7 +284,8 @@ export function logQuery(
   if (filters.statuses.length > 0) query.status = filters.statuses;
   if (filters.workflow !== null) query.workflow = filters.workflow;
   if (filters.job !== null) query.job = filters.job;
-  if (filters.text) query.q = filters.text;
+  const text = filters.text.trim();
+  if (text) query.q = text;
   if (filters.eventType) query.event_type = filters.eventType;
   if (filters.result) query.result = filters.result;
   if (filters.trigger) query.trigger = filters.trigger;

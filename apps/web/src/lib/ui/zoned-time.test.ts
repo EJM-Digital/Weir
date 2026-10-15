@@ -90,3 +90,20 @@ describe("instantFromLocalInput", () => {
     expect(instantFromLocalInput("2026-10-02", "UTC")).toBeNull();
   });
 });
+
+it("reads no instant from a date that is not on the calendar", () => {
+  for (const text of [
+    "2026-04-31T00:00",
+    "2026-02-29T08:00",
+    "2026-13-01T08:00",
+    "2026-00-10T08:00",
+    "2026-10-00T08:00",
+    "2026-10-02T24:00",
+    "2026-10-02T08:60",
+  ]) {
+    expect(instantFromLocalInput(text, "UTC")).toBeNull();
+  }
+  expect(instantFromLocalInput("2028-02-29T08:00", "UTC")).toBe(
+    Date.UTC(2028, 1, 29, 8, 0),
+  );
+});

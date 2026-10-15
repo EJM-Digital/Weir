@@ -30,6 +30,11 @@ export type ActivityRecentFilters = {
   with_total?: boolean;
 };
 
+/** Whether a number can be asked for: one that is not a number (NaN, infinity) is left out of the address, as an unset one is. */
+function isWhole(value: number | undefined): value is number {
+  return value !== undefined && Number.isFinite(value);
+}
+
 /** The filters shared by the feed and the export, as query parameters. */
 function activityFilterParams(
   options?: Omit<ActivityRecentFilters, "limit" | "before_id">,
@@ -42,7 +47,7 @@ function activityFilterParams(
   if (options?.date_to) q.set("date_to", options.date_to);
   if (options?.trigger) q.set("trigger", options.trigger);
   if (options?.result) q.set("result", options.result);
-  if (options?.library_id !== undefined)
+  if (isWhole(options?.library_id))
     q.set("library_id", String(Math.trunc(options.library_id)));
   if (options?.file) q.set("file", options.file);
   if (options?.about) q.set("about", options.about);
@@ -51,11 +56,9 @@ function activityFilterParams(
 
 export function activityRecentPath(options?: ActivityRecentFilters): string {
   const q = activityFilterParams(options);
-  const lim = options?.limit;
-  if (lim !== undefined && Number.isFinite(lim)) {
-    q.set("limit", String(Math.trunc(lim)));
-  }
-  if (options?.before_id !== undefined)
+  if (isWhole(options?.limit))
+    q.set("limit", String(Math.trunc(options.limit)));
+  if (isWhole(options?.before_id))
     q.set("before_id", String(Math.trunc(options.before_id)));
   // Not in activityFilterParams: the export shares that helper, and always wants the complete record.
   if (options?.known_files_only) {

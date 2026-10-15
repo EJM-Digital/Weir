@@ -127,7 +127,26 @@ function Read-WeirLoginFile {
 
 # Makes sure the run has a signed-in session on the Weir that is running. Weir with no account yet gets the run's own; one with an
 # account needs its login from the login file in the VM. Returns $true, or $false with the reason in $script:Ctx.NoSessionReason.
+# The first session of a scenario is also where it notes the rows already on the Logs page (Set-LogWatchPage), which needs one.
 function Initialize-WeirSession {
+    $opened = Open-WeirSession
+    if ($opened) { Set-LogWatchPage }
+    $opened
+}
+
+# What the run is called in the names it gives things in Weir (workflows) and on disk (their folders), so that running the suite
+# again on the same machine never meets what an earlier run left.
+function Get-RunId {
+    if (-not $script:Ctx.ContainsKey('RunId') -or -not $script:Ctx.RunId) { $script:Ctx.RunId = [guid]::NewGuid().ToString('N').Substring(0, 6) }
+    $script:Ctx.RunId
+}
+
+# Signs in again as the account the run holds, for after Weir was restarted under the session (an update).
+function Restart-WeirSession {
+    $script:Ctx.Session = Sign-InScenarioAccount
+}
+
+function Open-WeirSession {
     if ($script:Ctx.Session) { return $true }
     if ($script:Ctx.ContainsKey('Username') -and $script:Ctx.Username) {
         $script:Ctx.Session = Sign-InScenarioAccount
@@ -223,13 +242,4 @@ function Get-LogPageProblems {
     $page = Get-WeirJson $script:Ctx.Session '/api/v1/system/log?level=warning,error&limit=100'
     if ($page.next_cursor) { throw "Logs lists more than 100 warnings and errors ($($page.total) in all), which is not a clean run." }
     @($page.items)
-}
-
-# The warnings and errors on Logs that nothing above explains. $Known is { Pattern; Why } entries, matched against the row's title.
-function Get-UnexpectedLogRows {
-    param($Rows, $Known = @())
-    @($Rows | Where-Object {
-            $title = [string]$_.title
-            -not (@($Known | Where-Object { $title -match $_.Pattern }).Count -gt 0)
-        })
 }
