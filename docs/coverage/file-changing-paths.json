@@ -118,7 +118,7 @@
     { "file": "Weir.Api/Endpoints/LibraryModeRedownloadsEndpoints.cs", "seams": ["IManagerRedownload.RequestRedownloadAsync"], "paths": ["download-again"] },
     { "file": "Weir.Api/Endpoints/MediaManagerReconciliationEndpoints.cs", "seams": ["ReconciliationService.RepairAsync"], "paths": ["repair-temp-artifact"] },
     { "file": "Weir.Api/Endpoints/SuiteFileEndpoints.cs", "calls": 1, "paths": ["weir-own-files"] },
-    { "file": "Weir.Infrastructure/Artwork/ArtworkPosterFiles.cs", "calls": 3, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Artwork/ArtworkPosterFiles.cs", "calls": 4, "paths": ["weir-own-files"] },
     { "file": "Weir.Infrastructure/Auth/SetupCodeGate.cs", "calls": 3, "paths": ["weir-own-files"] },
     { "file": "Weir.Infrastructure/Jobs/JobsStartupRecoveryService.cs", "seams": ["SwapRecoverySweep.RunAsync"], "paths": ["startup-swap-recovery"] },
     { "file": "Weir.Infrastructure/Jobs/StartupRecovery.cs", "calls": 2, "paths": ["startup-temp-sweep"] },

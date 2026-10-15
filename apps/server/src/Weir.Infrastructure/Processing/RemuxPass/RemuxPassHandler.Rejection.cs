@@ -44,10 +44,14 @@ public sealed partial class RemuxPassHandler
             result.Set(
                 "rejected_cleanup_detail",
                 unreadable && chosenDelete ? ToolFailureText.UnreadableKept
-                : weirOnly ? WeirOnlyRejection.LeftInPlace
+                : weirOnly ? WeirOnlyLeftInPlace(chosenDelete, links)
                 : RejectedLeftInPlace(library, links));
         }
     }
+
+    /// <summary>The file stays; when the workflow asked for it to be deleted, a linked manager is why it was not.</summary>
+    private static string WeirOnlyLeftInPlace(bool chosenDelete, WorkflowManagerLinks links) =>
+        chosenDelete && links.KeepsOriginals ? $"{WeirOnlyRejection.LeftInPlace} {links.KeptOriginalReason}" : WeirOnlyRejection.LeftInPlace;
 
     private static string RejectedLeftInPlace(ProcessingLibraryRecord library, WorkflowManagerLinks links) =>
         links.KeepsOriginals && string.Equals(WireStrings.Strip(library.RejectedFileAction ?? string.Empty), RejectedFileActions.DeleteFile, StringComparison.OrdinalIgnoreCase)

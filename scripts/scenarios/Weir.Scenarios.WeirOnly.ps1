@@ -180,6 +180,22 @@ function Get-StartedRemuxJobCount {
     @(Get-RemuxJobs | Where-Object { $_.status -in 'leased', 'completed', 'failed' }).Count
 }
 
+# How many of Weir's looks at its watched folders have finished, counted from the jobs they are: each look that is asked for or made
+# by the schedule adds one when it is done.
+function Get-FinishedWatchedFolderLookCount {
+    @((Get-WeirJson $script:Ctx.Session '/api/v1/processing/jobs/inspection?limit=100&status=completed').jobs |
+        Where-Object { $_.job_kind -like 'processing.watched_folder.remux_scan_dispatch*' }).Count
+}
+
+# Asks for a look at the watched folders and waits for it to finish, so what it did (or left alone) can be judged. The wait is a hang
+# guard: it ends the moment the look has finished.
+function Invoke-WatchedFolderLook {
+    param([Parameter(Mandatory)] [int] $LibraryId, [switch] $QueueFiles)
+    $before = Get-FinishedWatchedFolderLookCount
+    Start-WatchedFolderLook -LibraryId $LibraryId -QueueFiles:$QueueFiles
+    Wait-Until -What 'the look at the watched folder to finish' -TimeoutSeconds 60 -Probe { (Get-FinishedWatchedFolderLookCount) -gt $before } | Out-Null
+}
+
 # Asks Weir to resume, the way the tray does, when it is paused (an earlier run that failed while paused leaves it so).
 function Resume-WeirIfPaused {
     $session = $script:Ctx.Session
@@ -215,17 +231,19 @@ function Test-PauseAndResume {
     }
     Assert-That ($held.status -ne 'processed' -and $held.status -ne 'processing') "Weir found the film and is holding it (status $($held.status): $($held.status_reason))"
     Assert-That ([string]$held.status_reason -like 'Processing is paused*') "the reason it waits is the pause (""$($held.status_reason)"")"
-    Assert-NeverWithin -Seconds 20 -What 'Weir cleaning, writing or removing anything while paused' -Happened {
-        (Get-StartedRemuxJobCount) -ne $startedBefore -or (Test-Path -LiteralPath $release.Output) -or -not (Test-Path -LiteralPath $release.Film) -or -not (Test-Path -LiteralPath $release.Nfo)
-    }
+    # Two more looks go by, each one a chance for Weir to start the film: it does not, and the film and its files are as they were.
+    Invoke-WatchedFolderLook -LibraryId $workflow.Id -QueueFiles
+    Invoke-WatchedFolderLook -LibraryId $workflow.Id -QueueFiles
+    Assert-That ((Get-StartedRemuxJobCount) -eq $startedBefore) 'Weir started no pass while paused'
+    Assert-That (-not (Test-Path -LiteralPath $release.Output)) 'Weir wrote nothing to the output folder while paused'
+    Assert-That ((Test-Path -LiteralPath $release.Film) -and (Test-Path -LiteralPath $release.Nfo)) 'Weir removed nothing from the watched folder while paused'
 
-    Start-Sleep -Seconds 1
     Write-TrayPauseRequest -Paused $false
     Wait-Until -What 'Weir to resume on the tray''s request' -TimeoutSeconds 30 -Probe { -not (Get-WeirJson $session '/api/v1/pause').paused } | Out-Null
-    $look = @{ Asked = $false }
     $watch = [Diagnostics.Stopwatch]::StartNew()
+    # The look a periodic scan would make is asked for at once, rather than after a guessed wait for the schedule.
+    Start-WatchedFolderLook -LibraryId $workflow.Id -QueueFiles
     $row = Wait-Until -What 'the waiting film to be cleaned once Weir resumed' -TimeoutSeconds 180 -IntervalMilliseconds 1000 -Probe {
-        if (-not $look.Asked -and $watch.Elapsed.TotalSeconds -gt 45) { $look.Asked = $true; Start-WatchedFolderLook -LibraryId $workflow.Id -QueueFiles }
         Get-ProcessedFileRow -Workflow $workflow -Release $release
     }
     Assert-CleanedFilm -OutputPath $release.Output | Out-Null
@@ -235,8 +253,7 @@ function Test-PauseAndResume {
     $pausedLines = @(Get-ActivityItems -EventType 'system.processing_paused' | Where-Object { ($_ | ConvertTo-Json -Depth 5 -Compress) -match 'The tray' })
     $resumedLines = @(Get-ActivityItems -EventType 'system.processing_resumed' | Where-Object { ($_ | ConvertTo-Json -Depth 5 -Compress) -match 'The tray' })
     Assert-That ($pausedLines.Count -ge 1 -and $resumedLines.Count -ge 1) 'Activity shows Paused and Resumed, by the tray'
-    $looked = if ($look.Asked) { ' (after a look at the folder was asked for, as a periodic scan would do)' } else { ' (without any further look)' }
-    "Pause and resume requests in the tray's file were taken and deleted; a film dropped in during the pause was found and held (""$($held.status_reason)"") with nothing cleaned, written or removed for 20 s, then cleaned once after the resume$looked in $([int]$watch.Elapsed.TotalSeconds) s; Activity shows both by the tray."
+    "Pause and resume requests in the tray's file were taken and deleted; a film dropped in during the pause was found and held (""$($held.status_reason)"") with nothing cleaned, written or removed through two more looks at the folder, then cleaned once after the resume and a look at the folder, in $([int]$watch.Elapsed.TotalSeconds) s; Activity shows both by the tray."
 }
 
 # --- deleted-queued-file ------------------------------------------------------------------------------------------------
@@ -257,9 +274,8 @@ function Scenario_deleted_queued_file {
     Assert-That ($waiting.status -eq 'on_hold' -and -not $waiting.source_gone) "Weir is waiting for the file to settle (status $($waiting.status): $($waiting.status_reason))"
 
     Remove-Item -LiteralPath $file -Force
-    $gone = Wait-Until -What 'Weir to notice the file is no longer there' -TimeoutSeconds 90 -IntervalMilliseconds 2000 -Probe {
-        Start-WatchedFolderLook -LibraryId $workflow.Id
-        Start-Sleep -Seconds 2
+    $gone = Wait-Until -What 'Weir to notice the file is no longer there' -TimeoutSeconds 90 -IntervalMilliseconds 1000 -Probe {
+        Invoke-WatchedFolderLook -LibraryId $workflow.Id
         Get-ScenarioFiles -LibraryId $workflow.Id | Where-Object { $_.relative_path -eq $relative -and $_.source_gone } | Select-Object -First 1
     }
     Assert-That ($gone.status -ne 'processing_failed' -and $gone.status -ne 'rejected' -and $null -eq $gone.failure_class) "the vanished file is not a failure (status $($gone.status), failure class $($gone.failure_class))"

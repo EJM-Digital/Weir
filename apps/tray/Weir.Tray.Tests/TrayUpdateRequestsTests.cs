@@ -423,6 +423,7 @@ public sealed class TrayUpdateRequestsTests : IDisposable
         updates.Start();
 
         RequestFlag("update-check-now");
+        await SettleWatcherAsync();
         await UntilSettledAsync();
 
         Assert.False(File.Exists(FlagPath("update-check-now")));
@@ -449,6 +450,17 @@ public sealed class TrayUpdateRequestsTests : IDisposable
     // The tray tells the menu of every change; the one that finds the tray idle again ends a check or download.
     private async Task<UpdateMenuAction> NextChangeAsync() =>
         await _changes.Reader.ReadAsync().AsTask().WaitAsync(FinishCeiling);
+
+    // The file system tells the watcher about a flag on its own; the settle that follows is on the test's clock, so the test waits
+    // for the watcher to start it and then moves the clock on.
+    private async Task SettleWatcherAsync()
+    {
+        while (await _clock.NextDelay() != UpdateRequestWatcher.Settle)
+        {
+        }
+
+        _clock.Advance(UpdateRequestWatcher.Settle);
+    }
 
     private async Task UntilSettledAsync()
     {

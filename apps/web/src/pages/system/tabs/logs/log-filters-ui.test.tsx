@@ -10,6 +10,11 @@ import {
 } from "vitest";
 
 import {
+  elapse,
+  useFakeClock,
+  useRealClock,
+} from "../../../../test/fake-clock";
+import {
   JOB_ROW,
   NOW,
   chooseLevels,
@@ -17,6 +22,9 @@ import {
   renderLog,
   stubEventSource,
 } from "./log-test-support";
+
+/** How long typing must pause before the search is sent. */
+const SEARCH_PAUSE_MS = 400;
 
 const mocks = vi.hoisted(() => ({
   fetchSystemLog: vi.fn(),
@@ -60,7 +68,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  vi.useRealTimers();
+  useRealClock();
   vi.clearAllMocks();
 });
 
@@ -286,6 +294,7 @@ describe("the filters", () => {
   });
 
   it("search once typing pauses, with no Apply", async () => {
+    useFakeClock();
     await rendered();
 
     fireEvent.change(
@@ -296,12 +305,10 @@ describe("the filters", () => {
     );
 
     expect(lastRequest()).not.toHaveProperty("q");
-    await waitFor(
-      () => expect(lastRequest()).toMatchObject({ q: "disk full" }),
-      {
-        timeout: 2000,
-      },
-    );
+    await elapse(SEARCH_PAUSE_MS - 1);
+    expect(lastRequest()).not.toHaveProperty("q");
+    await elapse(1);
+    expect(lastRequest()).toMatchObject({ q: "disk full" });
     expect(screen.getByTestId("location")).toHaveTextContent("q=disk+full");
     expect(
       screen.queryByRole("button", { name: /apply/i }),

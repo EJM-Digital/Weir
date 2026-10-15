@@ -37,8 +37,8 @@ internal sealed class AuthAccountEndpointHandlers
 
     public async Task<ApiResult> PostChangeUsernameAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var user = await request.RequireUserAsync().ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(body, issues);
         var currentPassword = model.Str("current_password", minLength: 1);
@@ -74,8 +74,8 @@ internal sealed class AuthAccountEndpointHandlers
 
     public async Task<ApiResult> PostChangePasswordAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var user = await request.RequireUserAsync().ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(body, issues);
         var currentPassword = model.Str("current_password", minLength: 1);
@@ -109,8 +109,8 @@ internal sealed class AuthAccountEndpointHandlers
     /// <summary>Saves the signed-in user's own colour theme, so it follows them to another browser or device.</summary>
     public async Task<ApiResult> PostSetThemeAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var user = await request.RequireUserAsync().ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(body, issues);
         var theme = model.Literal("theme", AppThemes.All);

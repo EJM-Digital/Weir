@@ -90,8 +90,8 @@ internal sealed class ProcessingJobsEndpointHandlers
 
     public async Task<ApiResult> PostCancelPendingAsync(ApiRequest request)
     {
-        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("job_id", issues);
         var model = new BodyModel(payload, issues);
@@ -131,8 +131,8 @@ internal sealed class ProcessingJobsEndpointHandlers
 
     public async Task<ApiResult> PostRecoverFinalizeFailedAsync(ApiRequest request)
     {
-        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         var user = await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var payload = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var id = request.PathInt("job_id", issues);
         var model = new BodyModel(payload, issues);
