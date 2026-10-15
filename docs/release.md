@@ -108,7 +108,7 @@ to do). So in a combined round the Deluno session installs Weir with its picker,
   -Version 1.0.0-rc.18 -CommitSha <the same SHA> -Phases WithDeluno,Fresh
 ```
 
-Both invocations write into the same `artifacts/weir-scenarios-<version>-<short sha>/` folder, and the record merges every
+Both invocations write into the same `artifacts/weir-scenarios-<version>-<short sha>/` folder (a full run has no time in its folder name, so its invocations merge), and the record merges every
 phase found there; the `golden-path` status is set by the invocation that completes the record (or by either one as soon as
 a scenario fails). With no `-Phases` all three run back to back, which is the right way to try the suite but cannot pass: the
 hand-offs Deluno made earlier were the previous release's.
@@ -167,7 +167,7 @@ account to read System > Logs with, so it is judged on the two log files, and th
 (comma separated; `*` and `?` stand for any text; a mistyped id is an error naming the nearest ids) runs only those scenarios, each on its own:
 
 ```powershell
-./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .weir-buildWeir-win-Setup.exe `
+./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
   -Version 1.0.0-rc.18 -CommitSha <the 40-character SHA> -Scenarios process-again
 ```
 
@@ -176,9 +176,21 @@ it is not there and starts it, signs in (creating the account when Weir offers t
 having none, its data folder moved aside), and makes the workflow it uses, named for the run, in folders named for the run, so running it again on the
 same machine is never refused as a duplicate. The first visit asks for no account (`Ensure-FreshWeir -NoAccount`). The Update and WithDeluno
 scenarios run on the VM as Deluno left it (they need Deluno's state), so no checkpoint is restored for them. `-Scenarios` with `-Phases` is for
-scenarios inside those phases only. A run of chosen scenarios keeps its record in `weir-scenarios-<version>-<short sha>-only-<ids>`, which lists
-every other scenario as not chosen; it sets no `golden-path` status and is never a pass for the tag. Only a full run of all three phases passes.
+scenarios inside those phases only. A run of chosen scenarios keeps its record in `weir-scenarios-<version>-<short sha>-only-<ids>-<yyyyMMddTHHmmssZ>` (the UTC time
+the run started, so running the same scenarios again never overwrites the first record; with `-OutDirectory` the folder has no time, and a
+second run into the same `-OutDirectory` replaces the first), which lists every other scenario as not chosen; it sets no `golden-path`
+status and is never a pass for the tag. Only a full run of all three phases passes.
 `scripts/scenarios.test.mjs` fails when a scenario reads state another scenario made or names another scenario.
+
+**Running the same scenarios a second time on the same machine.** Run them once (the Fresh phase restores the clean checkpoint), then again
+with `-NoRestore`, which skips the restore, starts the VM if it is off, waits for PowerShell Direct, and runs the same scenarios on what the
+first run left. It needs `-Scenarios` (a run that restores nothing is never a pass for the tag), and the record says the checkpoint was not
+restored:
+
+```powershell
+./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
+  -Version 1.0.0-rc.18 -CommitSha <the 40-character SHA> -Scenarios process-again -NoRestore
+```
 
 Hand-offs cannot be made by a script: one starts when a download finishes in one of Deluno's clients, so the Deluno scenarios
 follow the real hand-offs Deluno's own suite made, from both ends, and drive what Deluno does offer (its send-again). The
