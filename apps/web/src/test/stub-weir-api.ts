@@ -84,3 +84,15 @@ export function stubWeirApi(routes: Record<string, Route>): StubbedApi {
   );
   return api;
 }
+
+/** What the server answers when it fails in a way nobody planned for: a 500 that says only that, as `ServerErrorMiddleware` words it. */
+export function unexpectedProblem(): Response {
+  return jsonAnswer(
+    {
+      detail:
+        "Weir ran into an unexpected problem and could not finish this request. The details are in Weir's log.",
+      code: "internal_error",
+    },
+    500,
+  );
+}
