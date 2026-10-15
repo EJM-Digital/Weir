@@ -283,8 +283,8 @@ internal sealed class ActivityEndpointHandlers
 
     public async Task<ApiResult> PostFileHistoryRemoveAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(body, issues);
         var libraryId = model.OptionalInt("library_id", ge: 1);

@@ -34,8 +34,8 @@ public static class MediaManagerReconciliationEndpoints
     /// </summary>
     private static async Task<ApiResult> PostReconciliationRepairAsync(ApiRequest request)
     {
-        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         await request.RequireUserAsync(UserRoles.OperatorOrAdmin).ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var model = new BodyModel(body, issues);
         var action = model.Str("action", minLength: 1, maxLength: 100);

@@ -287,6 +287,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Activity/ActivityHistoryTests.cs",
           "name": "Removing_history_needs_an_operator_and_a_fresh_token"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -348,6 +353,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthApiTests.cs",
           "name": "AuthApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -381,6 +391,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthApiTests.cs",
           "name": "Change_password_rejects_wrong_current_password"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -414,6 +429,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/UserAppThemeMigrationTests.cs",
           "name": "UserAppThemeMigrationTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -546,6 +566,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthApiTests.cs",
           "name": "AuthApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -574,6 +599,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthApiTests.cs",
           "name": "AuthApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -693,6 +723,11 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/FirstVisitTests.cs",
           "name": "FirstVisitTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -779,6 +814,11 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "first-visit-account"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -827,6 +867,11 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/AuthShellTests.cs",
           "name": "AuthShellTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -883,6 +928,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/RouteAccessTableTests.cs",
           "name": "RouteAccessTableTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -972,6 +1022,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientAccessTests.cs",
           "name": "DownloadClientAccessTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "partial": [
@@ -1012,6 +1067,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/DownloadClientAccessTests.cs",
           "name": "DownloadClientAccessTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "partial": [
@@ -1042,7 +1102,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -1139,6 +1205,11 @@
           "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibrarySettingsStoreTests.cs",
           "name": "LibrarySettingsStoreTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -1172,6 +1243,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryScanRealFilesTests.cs",
           "name": "LibraryScanRealFilesTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -1228,6 +1304,11 @@
           "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanRefusalTests.cs",
           "name": "LibraryCleanRefusalTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "partial": [
@@ -1313,6 +1394,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryStatusApiTests.cs",
           "name": "A_file_set_aside_is_left_alone_whatever_the_rules_say"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -1435,7 +1521,13 @@
       "severity": "high",
       "touches": "disk",
       "required": "real",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -1514,6 +1606,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/LibraryMode/LibraryModeScheduleTests.cs",
           "name": "LibraryModeScheduleTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -1590,6 +1687,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteApiTests.cs",
           "name": "Install_level_routes_refuse_an_operator_and_allow_only_admin"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -1679,6 +1781,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
           "name": "Enabling_a_connection_re_validates_its_stored_address"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -1742,6 +1849,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/ConnectionLinksAreKeptMigrationTests.cs",
           "name": "ConnectionLinksAreKeptMigrationTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -1775,6 +1887,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/ConnectionRemovalApiTests.cs",
           "name": "ConnectionRemovalApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -1808,6 +1925,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ConnectionRemovalBlockersTests.cs",
           "name": "GivenUpReportsTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -1851,6 +1973,11 @@
           "type": "recording-replay",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedWebhookSecretTests.cs",
           "name": "RecordedWebhookSecretTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -1889,6 +2016,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/RetireUnusedSettingsMigrationTests.cs",
           "name": "RetireUnusedSettingsMigrationTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "audit": {
@@ -1942,6 +2074,11 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "workflows-from-deluno"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -2063,6 +2200,11 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "deluno-film-handoff"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -2225,6 +2367,11 @@
           "type": "recording-replay",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffCancelTests.cs",
           "name": "A_hand_off_Weir_is_working_on_is_refused_as_recorded_for_a_finished_one_and_the_pass_carries_on"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffLifecycleTests.cs",
+          "name": "A_cancel_that_carries_an_oversized_body_is_refused_and_the_hand_off_stays_queued"
         }
       ],
       "covers": [
@@ -2278,6 +2425,11 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "deluno-outcomes"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -2339,6 +2491,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Jobs/ReconciliationServiceTests.cs",
           "name": "ReconciliationServiceTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -2405,6 +2562,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/System/SuiteEndpointsContractTests.Channels.cs",
           "name": "Notification_channel_create_rejects_bad_input"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -2428,6 +2590,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/System/SuiteEndpointsContractTests.Channels.cs",
           "name": "Notification_channel_create_update_test_delete"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -2444,8 +2611,8 @@
       "behaviour": "DELETE /api/v1/suite/notification-channels/{channel_id}",
       "kind": "API route",
       "severity": "high",
-      "touches": "other-app",
-      "required": "real",
+      "touches": "none",
+      "required": "inproc",
       "proofs": [
         {
           "type": "contract",
@@ -2456,9 +2623,18 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/System/SuiteEndpointsContractTests.Channels.cs",
           "name": "Notification_channel_delete_without_csrf_header_is_refused"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelRemovalApiTests.cs",
+          "name": "NotificationChannelRemovalApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
-      "issue": 1069,
       "covers": [
         "route:DELETE /api/v1/suite/notification-channels/{channel_id}"
       ],
@@ -2475,7 +2651,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
+        }
+      ],
       "partial": [
         {
           "type": "contract",
@@ -2623,6 +2805,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/DirectPlayEvaluationTests.cs",
           "name": "DirectPlayEvaluationTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -2750,6 +2937,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Processing/ManualTrackPlanTests.cs",
           "name": "ManualTrackPlanTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -2859,6 +3051,16 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingEndpointsContractTests.cs",
           "name": "ProcessingEndpointsContractTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RemovingAFileFromActivityTests.cs",
+          "name": "RemovingAFileFromActivityTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -2907,6 +3109,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/MoveFileToTopTests.cs",
           "name": "MoveFileToTopTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -2945,6 +3152,11 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "process-again"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -2978,6 +3190,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingEndpointsContractTests.cs",
           "name": "Bulk_requeue"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -3039,6 +3256,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/PendingJobCancellationTests.cs",
           "name": "PendingJobCancellationTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -3067,6 +3289,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/SessionTouchWriteLockApiTests.cs",
           "name": "Recovering_a_finalize_failed_job_on_the_request_that_touches_the_session_succeeds"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -3156,6 +3383,11 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/ProcessAgainTests.cs",
           "name": "ProcessAgainTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -3235,6 +3467,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingLibraryDiscoveryApiTests.cs",
           "name": "ProcessingLibraryDiscoveryApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -3286,6 +3523,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingLibraryDiscoveryApiTests.cs",
           "name": "Unlink_of_an_unknown_library_is_404"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -3372,6 +3614,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/WorkflowFreeSpaceApiTests.cs",
           "name": "WorkflowFreeSpaceApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -3572,6 +3819,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/WorkflowFreeSpaceApiTests.cs",
           "name": "WorkflowFreeSpaceApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -3605,9 +3857,18 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Harness/WeirClientCsrfTests.cs",
           "name": "WeirClientCsrfTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RemovingAWorkflowTests.cs",
+          "name": "RemovingAWorkflowTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
-      "issue": 1069,
       "covers": [
         "route:DELETE /api/v1/processing/libraries/{library_id}"
       ],
@@ -3639,6 +3900,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingLibrariesWorkflowSettingsTests.cs",
           "name": "ProcessingLibrariesApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -3695,6 +3961,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/LibrarySetupApiTests.cs",
           "name": "LibrarySetupApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -3766,6 +4037,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/ArtworkApiTests.cs",
           "name": "A_save_to_the_deprecated_metadata_provider_settings_is_accepted_and_ignored"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -3799,6 +4075,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingSettingsEndpointsContractTests.RuleSets.cs",
           "name": "The_metadata_provider_test_says_when_the_metadata_service_is_switched_off"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -3870,6 +4151,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingOperatorSettingsApiTests.cs",
           "name": "Files_at_once_goes_to_ten_and_no_further"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -3989,6 +4275,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingSettingsEndpointsContractTests.cs",
           "name": "Maintenance_run_rejects_an_unknown_scope"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -4045,6 +4336,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingEndpointsContractTests.cs",
           "name": "Processing_all_rejected_files_again_is_for_operators_with_a_csrf_token"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -4068,6 +4364,11 @@
           "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Jobs/FileRemuxPassManualEnqueueApiTests.cs",
           "name": "Pass_through_converts_an_existing_pending_job_instead_of_duplicating_it"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -4144,6 +4445,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingSettingsEndpointsContractTests.RuleSets.cs",
           "name": "Rule_set_rejects_invalid_fields"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -4172,6 +4478,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingSettingsEndpointsContractTests.RuleSets.cs",
           "name": "Rule_set_round_trip"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -4210,6 +4521,16 @@
           "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/LibraryCleanRulesProfileMigrationTests.cs",
           "name": "A_profile_a_library_cleans_by_cannot_be_deleted"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/RemovingAProfileTests.cs",
+          "name": "RemovingAProfileTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -4243,6 +4564,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Rules/RulesPreviewTests.cs",
           "name": "RulesPreviewTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -4425,6 +4751,11 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "deleted-queued-file"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -4506,6 +4837,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteApiTests.cs",
           "name": "SuiteApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -4592,7 +4928,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
+        }
+      ],
       "partial": [
         {
           "type": "contract",
@@ -4902,6 +5244,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/System/SuiteSettingsApiTests.cs",
           "name": "Suite_configuration_backup_tick_creates_snapshot"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -4986,6 +5333,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/LiveSystemTopicsApiTests.cs",
           "name": "LiveSystemTopicsApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -5047,6 +5399,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteApiTests.cs",
           "name": "SuiteApiTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -5153,6 +5510,11 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "pause-resume"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -5274,7 +5636,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -5381,6 +5749,11 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "update-requests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -5414,6 +5787,11 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "update-requests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -5447,6 +5825,11 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "update-requests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
         }
       ],
       "covers": [
@@ -6808,6 +7191,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/RejectWithoutPriorScanTests.cs",
           "name": "RejectWithoutPriorScanTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RejectedFileActionTests.cs",
+          "name": "RejectedFileActionTests"
         }
       ],
       "covers": [
@@ -10529,6 +10917,11 @@
           "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ScanWhilePausedTests.cs",
           "name": "A_scan_does_not_delete_a_rejected_file_while_paused"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RejectedFileActionTests.cs",
+          "name": "RejectedFileActionTests"
         }
       ],
       "covers": [
@@ -56844,12 +57237,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "One table-driven test over the route table: anonymous and signed-in requests with an oversized body, a non-JSON body, invalid JSON and a wrong-fields body, in that order, on every route that takes a body."
-      },
-      "issue": 1073,
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
+        }
+      ],
       "audit": {
         "id": "route-walk",
         "verdict": "Gap"
