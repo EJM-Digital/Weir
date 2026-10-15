@@ -13,22 +13,23 @@ public sealed class StartWithWindowsTests : IDisposable
 
     private readonly TempDirectory _home = TempDirectory.AsWeirHome();
     private readonly TempDirectory _startupFolder = TempDirectory.Create();
-    private readonly string _runKey = $@"Software\WeirTrayTests\{Guid.NewGuid():n}";
-    private readonly string _answerKey = $@"Software\WeirTrayTests\{Guid.NewGuid():n}";
+    private readonly TempRegistryKey _run = TempRegistryKey.Under(@"Software\WeirTrayTests");
+    private readonly TempRegistryKey _answer = TempRegistryKey.Under(@"Software\WeirTrayTests");
 
     public void Dispose()
     {
-        Registry.CurrentUser.DeleteSubKeyTree(@"Software\WeirTrayTests", throwOnMissingSubKey: false);
+        _answer.Dispose();
+        _run.Dispose();
         _startupFolder.Dispose();
         _home.Dispose();
     }
 
     private StartupRegistration Registration(string? executable = Executable) =>
-        new(_runKey, new StartWithWindowsAnswer(_answerKey), _startupFolder.Path, executable);
+        new(_run.Path, new StartWithWindowsAnswer(_answer.Path), _startupFolder.Path, executable);
 
     private string? RunValue()
     {
-        using var key = Registry.CurrentUser.OpenSubKey(_runKey);
+        using var key = Registry.CurrentUser.OpenSubKey(_run.Path);
         return key?.GetValue("Weir") as string;
     }
 
@@ -171,7 +172,7 @@ public sealed class StartWithWindowsTests : IDisposable
         StartWithWindowsPrompt.AskOnFirstRun([], () => true, () => true, Registration());
         Assert.True(Registration().IsAnswered);
 
-        new StartWithWindowsAnswer(_answerKey).Forget();
+        new StartWithWindowsAnswer(_answer.Path).Forget();
         Assert.False(Registration().IsAnswered);
 
         StartWithWindowsPrompt.AskOnFirstRun([], () => true, () => false, Registration());
@@ -195,7 +196,7 @@ public sealed class StartWithWindowsTests : IDisposable
         Assert.True(Registration().IsAnswered);
         Assert.True(Registration().IsEnabled);
 
-        new StartWithWindowsAnswer(_answerKey).Forget();
+        new StartWithWindowsAnswer(_answer.Path).Forget();
         Registration().Toggle();
         Assert.True(Registration().IsAnswered);
         Assert.False(Registration().IsEnabled);
@@ -282,19 +283,19 @@ public sealed class StartWithWindowsTests : IDisposable
         Registration().Choose(startWithWindows: true);
 
         Registration().Uninstall();
-        using (var gone = Registry.CurrentUser.OpenSubKey(_answerKey))
+        using (var gone = Registry.CurrentUser.OpenSubKey(_answer.Path))
         {
             Assert.Null(gone);
         }
 
-        using (var key = Registry.CurrentUser.CreateSubKey(_answerKey))
+        using (var key = Registry.CurrentUser.CreateSubKey(_answer.Path))
         {
             key.SetValue("Other", 1);
         }
 
         Registration().Choose(startWithWindows: true);
         Registration().Uninstall();
-        using var kept = Registry.CurrentUser.OpenSubKey(_answerKey);
+        using var kept = Registry.CurrentUser.OpenSubKey(_answer.Path);
         Assert.NotNull(kept);
         Assert.Null(kept.GetValue("StartWithWindowsAnswered"));
     }

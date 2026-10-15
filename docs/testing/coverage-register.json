@@ -13989,12 +13989,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with fake timers: first /ready not-ready, advance 1 s, second ready -> children mount and the poll timer stops. A broken retry leaves the user on the Starting page until a manual refresh"
-      },
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/app/startup-gate.test.tsx",
+          "name": "asks /ready again each second until it answers ready, then mounts the app and stops asking"
+        }
+      ],
       "audit": {
         "id": "WEB-003",
         "verdict": "Gap"
@@ -14008,12 +14009,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest fake timers: fetch rejects twice then answers ready; assert the waiting step text, then the app"
-      },
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/app/startup-gate.test.tsx",
+          "name": "says it is waiting for the server when nothing answers, and keeps asking until it does"
+        }
+      ],
       "audit": {
         "id": "WEB-004",
         "verdict": "Gap"
@@ -14027,12 +14029,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest fake timers advancing past 60 s for both the not-ready body branch and the fetch-throws branch; assert the two messages, red steps, and that clicking \"Try again\" calls window.location.reload"
-      },
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/app/startup-gate.test.tsx",
+          "name": "gives up after a minute of not being ready, shows every step as broken, and Try again reloads the page"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/app/startup-gate.test.tsx",
+          "name": "gives up after a minute of no answer at all, with its own words, and Try again reloads the page"
+        }
+      ],
       "audit": {
         "id": "WEB-005",
         "verdict": "Gap"
@@ -15360,12 +15368,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Nothing toggles the checkbox in the header. Needed vitest: click it, assert the mutation body {paused:false, scan_while_paused:false}, the \"Weir couldn't save that\" alert on failure, and that the choice shows after the server answers"
-      },
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shell/pause-scan-while-paused.test.tsx",
+          "name": "saves the choice with the pause left off, and shows it once the server has answered"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shell/pause-scan-while-paused.test.tsx",
+          "name": "keeps the old choice and says it could not save when the server refuses"
+        }
+      ],
       "audit": {
         "id": "WEB-055",
         "verdict": "Gap"
@@ -16485,12 +16499,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: render /login?problem=session-not-kept, assert the alert text. This is the only explanation for a person locked out by a cookie the browser dropped"
-      },
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "explains that the password was right but the session did not stick, and what to set"
+        }
+      ],
       "audit": {
         "id": "WEB-094",
         "verdict": "Gap"
@@ -16504,12 +16519,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Nothing renders the login failure banner. Needed: vitest with a rejecting login mutation (real ApiHttpError 401 \"Invalid username or password.\") asserting role=alert text, fields kept, submit enabled; plus ideally an E2E wrong-password sign-in"
-      },
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "shows the server's reason for a wrong name or password, keeps what was typed and lets the person try again"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SignInRefusalTests.cs",
+          "name": "SignInRefusalTests"
+        }
+      ],
       "audit": {
         "id": "WEB-095",
         "verdict": "Gap"
@@ -16523,12 +16544,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Same missing page-level test as 095, with a 429 ApiHttpError"
-      },
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "tells a person who tried too often to wait and try again, whether the address or the account was limited"
+        }
+      ],
       "audit": {
         "id": "WEB-096",
         "verdict": "Gap"
@@ -16542,12 +16564,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "No login-page test with a network failure"
-      },
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "says Weir can't be reached, not the browser's own words, when the server does not answer"
+        }
+      ],
       "audit": {
         "id": "WEB-097",
         "verdict": "Gap"
@@ -16581,12 +16604,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The web never proves it sends the field (postLogin body untested). Needed: vitest asserting the login request body {username, password, csrf_token, trusted_device:true} with fetch stubbed"
-      },
-      "issue": 1022,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
+          "name": "sends trusted_device as true when Trust this device is ticked"
+        }
+      ],
       "audit": {
         "id": "WEB-099",
         "verdict": "Gap"

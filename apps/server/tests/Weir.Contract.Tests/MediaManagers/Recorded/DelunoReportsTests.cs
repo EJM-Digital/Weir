@@ -272,10 +272,11 @@ public sealed class DelunoReportsTests
 
     private sealed record Sent(RecordedRequest Request, JsonObject Body);
 
-    /// <summary>The report Weir sent for the hand-off, once it has.</summary>
+    /// <summary>The report Weir sent for the hand-off, once it has, for as long as a worker has the job that makes it (see <see cref="JobWait"/>).</summary>
     private static async Task<Sent> ReportAsync(RecordedWorld world, string handoffId)
     {
-        var request = await Poll.UntilAsync(
+        var request = await new JobWait().UntilAsync(
+            world.Scenario.JobStatusesAsync,
             () => Task.FromResult(world.Deluno.RequestsTo("POST", ReportsTo).FirstOrDefault(sent => ((JsonObject)sent.Json!)["handoffId"]!.ToString() == handoffId)),
             $"Weir's report of {handoffId}");
         return new Sent(request, (JsonObject)request.Json!);

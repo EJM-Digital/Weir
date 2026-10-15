@@ -17,7 +17,7 @@ Each of the two jobs says:
 runs-on: ${{ vars.WEIR_SELF_HOSTED_WINDOWS == 'true' && !github.event.pull_request.head.repo.fork && fromJSON('["self-hosted","Windows","weir-heavy"]') || 'windows-latest' }}
 ```
 
-- With the repository variable `WEIR_SELF_HOSTED_WINDOWS` set to `true`, a job runs on a runner labelled `weir-heavy`. Unset, or anything else, and every job uses `windows-latest`, so taking the PC away is one variable.
+- With the repository variable `WEIR_SELF_HOSTED_WINDOWS` set to `true`, a job runs on any free runner labelled `weir-heavy`. Unset, or anything else, and every job uses `windows-latest`, so taking the PC away is one variable.
 - A pull request from a fork never runs there. Its code is a stranger's, and this repository is public. The repository also requires approval before any outside contributor's workflow runs.
 
 ## Setting the PC up
@@ -28,7 +28,11 @@ On the spare PC, in an elevated PowerShell window:
 2. On GitHub, open Settings > Actions > Runners > New self-hosted runner, choose Windows, and copy the token from the "Configure" step. It is valid for one hour.
 3. Run `.\Install-WeirRunner.ps1` and paste the token when asked. It doesn't echo the token and keeps it nowhere.
 
-The script installs Git and PowerShell 7 if they are missing. It downloads the pinned runner and checks its SHA-256, and turns on long paths. It then registers the runner as `weir-windows-1` with the label `weir-heavy`, and installs it as a service running as NETWORK SERVICE, which can't read anyone's own files. Each job installs what it needs itself (the .NET SDK, Node, the pinned FFmpeg and MKVToolNix), as it does on GitHub's runners.
+The script installs Git and PowerShell 7 if they are missing. It downloads the pinned runner and checks its SHA-256, and turns on long paths. It then registers runners with the label `weir-heavy`, and installs each as a service running as NETWORK SERVICE, which can't read anyone's own files. Each job installs what it needs itself (the .NET SDK, Node, the pinned FFmpeg and MKVToolNix), as it does on GitHub's runners.
+
+A runner takes one job at a time, so the PC gets several. By default it gets one per four logical processors and per 6 GB of memory, whichever allows fewer, from 1 to 8; `-Count` sets the number. Runner 1 is `weir-windows-1` in `C:\actions-runner-weir`, and runner N is `weir-windows-N` in `C:\actions-runner-weir-N`. Running the script again with a fresh token adds the runners that are missing and leaves the others alone.
+
+Jobs running side by side share the PC and its NETWORK SERVICE account, so tests must not share machine-wide state: each test uses its own temporary folder, its own registry key under HKCU and its own named events, and asks the system for a free port.
 
 Then set the repository variable `WEIR_SELF_HOSTED_WINDOWS` to `true` (Settings > Secrets and variables > Actions > Variables).
 
@@ -36,15 +40,15 @@ Then set the repository variable `WEIR_SELF_HOSTED_WINDOWS` to `true` (Settings 
 
 - The PC must stay on. A queued job waits for it, so when it goes away for good, unset the variable.
 - The runner updates itself. A new version of the pinned runner in the script is only for new installs.
-- Each job checks out into `C:\actions-runner-weir\_work`. The checkout step cleans it, and its size can be watched there.
+- Each job checks out into its runner's `_work` folder (`C:\actions-runner-weir\_work`, `C:\actions-runner-weir-2\_work` and so on). The checkout step cleans it, and its size can be watched there.
 
 ## Removing the runner
 
-In an elevated window on the PC:
+In an elevated window on the PC, for each runner folder:
 
 ```powershell
 cd C:\actions-runner-weir
 .\config.cmd remove --token <token from Settings > Actions > Runners > the runner > Remove>
 ```
 
-Then unset `WEIR_SELF_HOSTED_WINDOWS`, and delete `C:\actions-runner-weir`.
+Then unset `WEIR_SELF_HOSTED_WINDOWS`, and delete `C:\actions-runner-weir` and each `C:\actions-runner-weir-N`.

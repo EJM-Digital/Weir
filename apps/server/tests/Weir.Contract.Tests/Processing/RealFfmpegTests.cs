@@ -22,7 +22,7 @@ public sealed class RealFfmpegTests
         var (fake, _) = await scenario.DelunoSetupAsync();
 
         await scenario.PostHandoffAsync("handoff-real-1", source);
-        await scenario.WaitForHandoffStateAsync("handoff-real-1", "completed", TimeSpan.FromSeconds(120));
+        await scenario.WaitForHandoffStateAsync("handoff-real-1", "completed");
 
         var output = Path.Combine(scenario.Folders.Output, "Tiny.Real.Film.2024", "tiny.mkv");
         Assert.True(File.Exists(output));
