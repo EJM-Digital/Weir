@@ -61,6 +61,8 @@ export function workflowRow(
     enabled: true,
     media_type: "movie",
     watched_folder: "D:/watched",
+    work_folder: "D:/work",
+    output_folder: "D:/output",
     manager_connection_ids: [],
     display_order: partial.id,
     ...partial,
