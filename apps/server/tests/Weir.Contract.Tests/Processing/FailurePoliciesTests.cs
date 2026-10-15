@@ -77,10 +77,9 @@ public sealed class FailurePoliciesTests
         Assert.True(File.Exists(source));
         Assert.Equal(5, scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux").Count);
         // The fifth attempt's own job is still finishing when its failure is recorded; let it end first, then watch for a sixth.
-        await Poll.UntilAsync(
-            async () => (await scenario.JobsAsync(Scenario.RemuxKind)).All(job => (string)job["status"]! is not ("pending" or "leased")) ? "idle" : null,
-            "the fifth attempt to finish",
-            TimeSpan.FromSeconds(30));
+        await scenario.WaitWhileWorkedOnAsync(
+            async () => (await scenario.JobsAsync(Scenario.RemuxKind)).All(job => (string)job["status"]! is not ("pending" or "leased")),
+            "the fifth attempt to finish");
         Assert.Equal(5, (await scenario.JobsAsync(Scenario.RemuxKind)).Count);
         // Given up means given up: no further attempt is queued, however long Weir waits.
         await Scenario.NeverWithinAsync(
@@ -146,15 +145,16 @@ public sealed class FailurePoliciesTests
 
         await scenario.EnqueueFilePassAsync("Bad.Movie.2019.1080p/Bad.Movie.2019.1080p.mkv", library);
 
-        var deleted = (await radarr.WaitForRequestAsync("DELETE", "/api/v3/queue/4242", timeout: TimeSpan.FromSeconds(60)))[0];
+        var deleted = await scenario.WaitWhileWorkedOnAsync(
+            () => Task.FromResult(radarr.RequestsTo("DELETE", "/api/v3/queue/4242") is [var first, ..] ? first : null),
+            "the reject job to remove the release from Radarr's queue");
         Assert.Equal(
             new Dictionary<string, string[]> { ["removeFromClient"] = ["true"], ["blocklist"] = ["true"] }, deleted.Query);
         Assert.Equal(radarr.ApiKey, deleted.Header("X-Api-Key"));
         Assert.Equal(0, radarr.Queue.Count);
-        await Poll.UntilAsync(
+        await scenario.WaitWhileWorkedOnAsync(
             async () => (await scenario.JobsAsync(Scenario.RejectKind)).Any(job => (string)job["status"]! == "completed"),
-            "the reject job to finish",
-            TimeSpan.FromSeconds(30));
+            "the reject job to finish");
         // The download client removes the data; Weir deletes nothing itself on this route.
         Assert.True(File.Exists(source));
         var rejected = Assert.Single(await scenario.ActivityAsync("processing.file_rejected"));
