@@ -148,6 +148,8 @@ export default defineConfig(({ mode }) => {
       // A test that reads a stylesheet's own text (`?raw`) gets it; every other stylesheet stays empty.
       css: { include: /\.css\?raw$/ },
       globals: true,
+      // Longer than the hang guard for a wait in src/test/setup.ts, so a wait that hangs is reported as that wait.
+      testTimeout: 30_000,
       coverage: {
         provider: "v8",
         // Every source file counts, tested or not: an untested file is a row of zeros in the report.

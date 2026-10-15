@@ -1,5 +1,13 @@
 import "@testing-library/jest-dom/vitest";
+import { configure } from "@testing-library/react";
 import { afterEach } from "vitest";
+
+// A wait for the page (findBy, waitFor) ends the moment what it waits for is there. The time it is given is only a hang
+// guard for a test that is broken, so it is far longer than anything a working test needs. Library default is 1 second, and
+// a stall of the whole machine over that (memory pressure, a busy shared PC) cuts a wait off even though the page was about
+// to be ready: test/hang-guard.test.tsx. vite.config.ts gives the test itself longer still.
+const HANG_GUARD_MS = 15_000;
+configure({ asyncUtilTimeout: HANG_GUARD_MS });
 
 // A test must never reach the network: the answer would depend on what is listening on the test
 // host and how fast it replies. Tests stub the api module (or `fetch` itself) for what they need;
