@@ -60,11 +60,6 @@ export const sessionAlreadyInactive: RecordedReply = {
   body: '{"detail":"Session is no longer active."}',
 };
 
-export const currentSessionRefused: RecordedReply = {
-  status: 400,
-  body: '{"detail":"The current session cannot be revoked here."}',
-};
-
 export const otherSessionsSignedOut: RecordedReply = {
   status: 200,
   body: '{"message":"Signed out 1 other session.","revoked_count":1}',
