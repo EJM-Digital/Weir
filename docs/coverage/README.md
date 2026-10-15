@@ -98,3 +98,16 @@ empty body, so the guard has to answer before the server looks at what was asked
 
 When you add a route, add its line here with the narrowest access that fits. When a write needs fields besides the token, add them to
 `RouteWalk.RequiredFields`, so the walk reaches the token and origin checks instead of stopping at validation.
+
+### The order of the checks
+
+Every write checks, in this order, who is asking, then the size of the body (413 over 8 MB), its content type (415), and last the body
+itself (422). An anonymous caller therefore learns nothing about what a route reads, and a caller who may not use the route is told
+so before anything about the body. `ApiRequest.ReadBodyAsync` enforces it: it throws if the handler has not called `RequireUserAsync`
+first. A route anyone may call, or that its caller proves itself to with something other than a session (sign-in, first-run setup, a media
+manager's webhook secret), reads its body with `ReadAnonymousBodyAsync`. A route that reads nothing from its body calls
+`RefuseOversizedBody` once the caller is let in.
+
+`RouteCheckOrderTests` (contract suite, area `auth`) sends every write in `route-access.json` an oversized body, a body that is not
+JSON, invalid JSON and a JSON body with the wrong fields, as an anonymous caller, as a caller who may not use the route, and as one who
+may. A write that is not guarded by a sign-in is listed in the test with the reason it keeps its own order.

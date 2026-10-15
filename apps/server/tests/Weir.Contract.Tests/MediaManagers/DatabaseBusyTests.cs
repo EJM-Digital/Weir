@@ -94,10 +94,10 @@ public sealed class DatabaseBusyTests(DatabaseBusyFixture fixture) : IClassFixtu
             AssertBusy(busy);
         }
 
-        var lines = Server.LogText()
-            .Split(Environment.NewLine)
-            .Where(line => line.Contains(marker, StringComparison.Ordinal))
-            .ToList();
+        // The server's output reaches the log file after the answer reaches the test, so wait for the line.
+        var lines = await Poll.UntilAsync(
+            () => Task.FromResult(MarkedLines(Server, marker) is { Count: > 0 } found ? found : null),
+            "the server to log the busy warning");
         var warning = Assert.Single(lines, line => line.Contains("WARNING", StringComparison.Ordinal));
         Assert.Contains("/intake/handoffs/{source_key}/{handoff_id}/outcome", warning, StringComparison.Ordinal);
         Assert.Contains("waited", warning, StringComparison.Ordinal);
@@ -124,8 +124,14 @@ public sealed class DatabaseBusyTests(DatabaseBusyFixture fixture) : IClassFixtu
         Assert.Equal(["code", "detail"], failed.Fields.Select(field => field.Key).Order().ToArray());
         Assert.DoesNotContain("media_manager_handoffs", failed.Text, StringComparison.Ordinal);
         Assert.DoesNotContain("SQLite", failed.Text, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains(UnhandledLogLine, server.LogText(), StringComparison.Ordinal);
+        await Poll.UntilAsync(
+            () => Task.FromResult(server.LogText().Contains(UnhandledLogLine, StringComparison.Ordinal) ? UnhandledLogLine : null),
+            "the server to log the unforeseen failure");
     }
+
+    /// <summary>The server's log lines that carry <paramref name="marker"/>, the request id the test sent.</summary>
+    private static List<string> MarkedLines(WeirServer server, string marker) =>
+        [.. server.LogText().Split(Environment.NewLine).Where(line => line.Contains(marker, StringComparison.Ordinal))];
 
     private static void AssertBusy(WeirResponse busy)
     {
