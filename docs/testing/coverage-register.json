@@ -41480,16 +41480,41 @@
     {
       "id": "web-system.security-tab.active-sessions-list-stays-current-when-a-session-is",
       "area": "web-system",
-      "behaviour": "Active sessions list is read again when the person returns to the page (sessions have no live topic)",
+      "behaviour": "Active sessions list stays current when a session is created or revoked elsewhere",
       "kind": "screen action",
       "severity": "low",
       "touches": "none",
       "required": "inproc",
       "proofs": [
         {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/LiveSessionsApiTests.cs",
+          "name": "LiveSessionsApiTests"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/live/live-topics.test.ts",
+          "name": "reads the list of signed-in browsers again when one signs in or out"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/live/use-live-sync.test.tsx",
+          "name": "reads the list of signed-in browsers again when the server says one signed in or out"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/active-sessions-live.test.tsx",
+          "name": "Active sessions: live"
+        },
+        {
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/security/active-sessions-section.test.tsx",
-          "name": "is read again when the person comes back to the page, since sessions have no live update"
+          "name": "is read again when the person comes back to the page"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecuritySessionsTests.cs",
+          "name": "The_list_follows_another_browser_signing_in_and_out_without_a_reload"
         }
       ],
       "audit": {

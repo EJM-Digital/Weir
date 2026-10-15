@@ -2921,7 +2921,7 @@ export interface components {
     DataChangedFrame: {
       /**
        * Topic
-       * @description Which data changed (a topic is named here before it is published): pause (Processing paused, resumed, or a timed pause ran out), readiness, files_at_once, maintenance, libraries, library_scan, folder_checks, update, network_access, connections, settings, backups, kept_files, metrics or jobs.
+       * @description Which data changed (a topic is named here before it is published): pause (Processing paused, resumed, or a timed pause ran out), readiness, files_at_once, maintenance, libraries, library_scan, folder_checks, update, network_access, connections, settings, backups, kept_files, metrics, jobs or sessions (a browser signed in or out of Weir).
        * @enum {string}
        */
       topic:
@@ -2938,6 +2938,7 @@ export interface components {
         | "network_access"
         | "pause"
         | "readiness"
+        | "sessions"
         | "settings"
         | "update";
     };
