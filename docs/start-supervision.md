@@ -122,6 +122,12 @@ a **failed start that can be tried again**, not as a refusal.
   the socket's "address already in use" inside it. The server writes `Weir cannot start: port 8080 is already in use by another program.
   Close that program, or run Weir on a different port.` to standard error, a critical line to `weir.log`, and exits with code **75**. It
   does not write `startup-error.txt`: that file means starting again cannot help, and here it can.
+* **Exclusive use of the port (Windows).** The server binds its listening sockets with `SO_EXCLUSIVEADDRUSE` (`ExclusiveListenSocket`, through
+  Kestrel's `SocketTransportOptions.CreateBoundListenSocket`), as Windows advises for servers. Without it Windows lets a bind to every
+  address sit beside another program's bind to `127.0.0.1` alone, so requests to `localhost` could reach that program while Weir said it was
+  ready, and a program started after Weir could take over its port for callers on this PC. With it, a port held on any overlapping address
+  refuses to bind, which ends the start as a port in use (exit code 75), and nothing can bind beside the running server. Elsewhere the
+  platform's own rules already do this and nothing changes.
 * **Why retry.** The program holding the port is often one that is about to let go: the server that was just stopped for a restart or an
   update, another Weir shutting down, a program that restarts itself. Refusing at once would turn a few seconds of waiting into a stopped
   Weir that needs a click. Retrying with back-off is what systemd and Kubernetes do for the same failure, and 75 is the BSD convention
@@ -172,7 +178,9 @@ channel, a hung server that will not stop, a port change, the start limit, crash
 `InheritedStdioHandlesTests`, `StartupProgressTests`, `StartupProgressChannelsTests`, `NonBlockingConsoleTests`, `StartRefusalTests`, and
 `ServerOutputPipeTests`, which starts the real server with a full pipe nobody reads, once to run and once to refuse its settings.
 `PortInUseTests` (in `Weir.Api.Tests`) starts the real server on a port another listener holds, on loopback, `localhost` and every
-address, and checks the exit code, the sentence, `weir.log` and that no `startup-error.txt` is left. `ServerHostPortInUseTests` runs
+address (on Windows also a port held on `127.0.0.1` alone), and checks the exit code, the sentence, `weir.log` and that no
+`startup-error.txt` is left; on Windows it also checks that nothing can bind beside the running server and that a stopped server's port can be
+used again at once. `ServerHostPortInUseTests` runs
 stand-in servers that exit with code 75 through the supervision: tried again with the usual back-off, the port named in the log and on the
 icon, started on a later try once the port is free, and any other exit code not worded as a port.
 

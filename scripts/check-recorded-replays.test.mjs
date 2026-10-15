@@ -15,7 +15,7 @@ test("a state a test names, and a state with an excuse, are both fine", () => {
 
 test("a state nothing replays and nothing explains is named", () => {
   assert.deepEqual(problems(["status-ask-queued"], 'Request("capabilities-ask")', "", {}), [
-    "status-ask-queued is recorded but no contract test replays it, and deluno-side-no-weir-behaviour.json does not say why not.",
+    "status-ask-queued is recorded but no contract test replays it, and neither deluno-side-no-weir-behaviour.json nor deluno-side-awaiting-replay.json says why not.",
   ]);
 });
 
@@ -36,6 +36,22 @@ test("a route Weir's server code now mentions means the recording must be replay
   const found = problems(["reply-handoffs-listed"], "", 'client.Get("/api/integrations/processors/handoffs")', { "reply-handoffs-listed": excuse });
   assert.deepEqual(found, [
     'reply-handoffs-listed is listed as having no Weir behaviour, but Weir\'s server code now mentions "/processors/handoffs". Replay the recording.',
+  ]);
+});
+
+const waiting = { reason: "The replay is not written yet.", issue: 1017 };
+
+test("a recording that waits on an open issue is fine until a test replays it", () => {
+  assert.deepEqual(problems(["events-superseded"], "", "", {}, { "events-superseded": waiting }), []);
+  assert.deepEqual(problems(["events-superseded"], 'Report("events-superseded")', "", {}, { "events-superseded": waiting }), [
+    "events-superseded is replayed by a contract test, so it must come out of deluno-side-awaiting-replay.json.",
+  ]);
+});
+
+test("a waiting entry needs its reason and the issue, and must be recorded", () => {
+  assert.deepEqual(problems(["events-superseded"], "", "", {}, { "events-superseded": { reason: "Not yet." }, "gone-state": waiting }), [
+    'events-superseded: its entry in deluno-side-awaiting-replay.json needs a "reason" and the number of the "issue" that will replay it.',
+    "deluno-side-awaiting-replay.json lists gone-state, which is not recorded.",
   ]);
 });
 
