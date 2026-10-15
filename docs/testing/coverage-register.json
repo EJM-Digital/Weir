@@ -43321,6 +43321,35 @@
       }
     },
     {
+      "id": "tray.tray.the-server-binds-its-port-for-exclusive-use-on-windows",
+      "area": "tray",
+      "behaviour": "On Windows the server binds its listening sockets for exclusive use of their address, so a port held on 127.0.0.1 alone refuses a server on every address (exit code 75) and nothing can bind beside the running server; a stopped server's port can be used again at once",
+      "kind": "failure-mode",
+      "severity": "medium",
+      "touches": "install",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/PortInUseTests.cs",
+          "name": "A_server_on_every_address_refuses_a_port_another_program_holds_on_127_0_0_1_alone"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/PortInUseTests.cs",
+          "name": "Nothing_can_bind_beside_a_running_server_on_127_0_0_1"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/PortInUseTests.cs",
+          "name": "A_server_that_served_requests_and_was_stopped_can_be_started_again_on_the_same_port_at_once"
+        }
+      ],
+      "audit": {
+        "id": "inventory"
+      }
+    },
+    {
       "id": "tray.tray.hung-silent-detection-by-progress-both-channels-expect-within",
       "area": "tray",
       "behaviour": "Hung / silent detection by progress (both channels, expect_within_s, ceiling 1 h, clock steps back), hung server stopped then killed with its tree, only the tray's own process is ever touched, next attempt waits until the old one is gone",
