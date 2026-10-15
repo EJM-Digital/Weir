@@ -18929,15 +18929,26 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A stale \"cleaned today\" figure or slot count is a wrong result the user sees. Needs a vitest on LiveView asserting the keys and throttle, and an E2E that finishes a pass and sees the Today figure rise."
-      },
-      "issue": 1024,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/live-view.totals.test.tsx",
+          "name": "the Today figure and the slots follow the Activity stream"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/live-view.totals.test.tsx",
+          "name": "the Today figure for one workflow follows the stream"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LiveTodayFigureTests.cs",
+          "name": "LiveTodayFigureTests"
+        }
+      ],
       "audit": {
         "id": "WEB-194",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -19703,15 +19714,16 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A paging bug would silently under-count the chart, the \"N cleaned\" figure for one workflow and \"done in 10 minutes\". Needs a vitest with fetchActivityRecent mocked returning several pages."
-      },
-      "issue": 1024,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/activity/queries.test.tsx",
+          "name": "the Activity window the Today figures count from"
+        }
+      ],
       "audit": {
         "id": "WEB-219",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -20444,15 +20456,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The primary click on Just finished can open nothing or the wrong place unnoticed. Needs a vitest on LiveView: tile for a loaded file opens the story panel; tile for an older file and for a library file navigate with the encoded path."
-      },
-      "issue": 1024,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/live-view.finished.test.tsx",
+          "name": "opening a file from Just finished"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LiveTodayFigureTests.cs",
+          "name": "LiveTodayFigureTests"
+        }
+      ],
       "audit": {
         "id": "WEB-244",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -21372,15 +21390,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "`useNeedsFiles` returns an empty list on error, so the panel says \"All clear / Nothing needs you.\" when the read failed. A failed file is then invisible. Needs a vitest (and a visible error state)."
-      },
-      "issue": 1024,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/needs-panel.read-failure.test.tsx",
+          "name": "the Needs you panel when it cannot read the files"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/needs-files.test.tsx",
+          "name": "reports why the read failed, with no files, so none is not taken for nothing waiting"
+        }
+      ],
       "audit": {
         "id": "WEB-277",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -21938,15 +21962,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "No test opens the panel from the button, asserts `fetchProcessingFileTracks`/`postProcessingManualPlan` requests or the result message. A wrong choice queued for a file is a wrong result. Needs vitest on activity-file-actions (open, submit body {keep, order}, error text) and an E2E on a held fixture."
-      },
-      "issue": 1024,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-file-actions.choose-tracks.test.tsx",
+          "name": "Choose tracks on a held file in Activity"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ChooseTracksLiveTests.cs",
+          "name": "ChooseTracksLiveTests"
+        }
+      ],
       "audit": {
         "id": "WEB-298",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -22064,15 +22094,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The forced and no-default choices change the produced file; neither control is touched by any test. Needs a vitest clicking each and asserting the submitted choice."
-      },
-      "issue": 1024,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/processing/choose-tracks-panel.choices.test.tsx",
+          "name": "Choose tracks: forced subtitles"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/processing/choose-tracks-panel.choices.test.tsx",
+          "name": "Choose tracks: the default subtitle"
+        }
+      ],
       "audit": {
         "id": "WEB-304",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -50574,14 +50610,19 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1024,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/processing/choose-tracks-panel.choices.test.tsx",
+          "name": "Choose tracks: forced subtitles"
+        }
+      ],
       "covers": [
         "action:apps/web/src/components/processing/choose-tracks-sections.tsx#choose-tracks-forced-*"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -50592,14 +50633,19 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1024,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/processing/choose-tracks-panel.choices.test.tsx",
+          "name": "Choose tracks: the default subtitle"
+        }
+      ],
       "covers": [
         "action:apps/web/src/components/processing/choose-tracks-sections.tsx#choose-tracks-default-none"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -50633,14 +50679,19 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1024,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/processing/choose-tracks-panel.choices.test.tsx",
+          "name": "Choose tracks: the order of the kept tracks"
+        }
+      ],
       "covers": [
         "action:apps/web/src/components/processing/choose-tracks-sections.tsx#choose-tracks-move-down-*"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -53786,14 +53837,19 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1024,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingManualTrackApiTests.cs",
+          "name": "A_valid_manual_plan_is_queued_and_recorded_as_activity"
+        }
+      ],
       "covers": [
         "event:processing.file_manual_plan_queued"
       ],
       "audit": {
         "id": "inventory",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {

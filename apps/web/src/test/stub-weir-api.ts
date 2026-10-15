@@ -11,9 +11,10 @@ export type StubbedRequest = {
 
 /** What a route answers: a Response as it is, or anything else as a 200 with that JSON body. */
 export type StubbedAnswer = unknown;
-type Route =
-  | StubbedAnswer
-  | ((request: StubbedRequest) => StubbedAnswer | Promise<StubbedAnswer>);
+type Handler = (
+  request: StubbedRequest,
+) => StubbedAnswer | Promise<StubbedAnswer>;
+type Route = StubbedAnswer | Handler;
 
 /** A JSON answer with a status, for a route that fails or answers something other than a 200. */
 export function jsonAnswer(body: unknown, status = 200): Response {
@@ -76,7 +77,7 @@ export function stubWeirApi(routes: Record<string, Route>): StubbedApi {
       }
       const route = table.get(key);
       const answer = await (typeof route === "function"
-        ? route(request)
+        ? (route as Handler)(request)
         : route);
       return answer instanceof Response ? answer.clone() : jsonAnswer(answer);
     },
