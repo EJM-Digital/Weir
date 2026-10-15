@@ -3,10 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MmListboxPicker } from "../../../../components/ui/mm-listbox-picker";
 import { errorMessage } from "../../../../lib/api/error-message";
 import { useAppSettingsSaveMutation } from "../../../../lib/settings/queries";
-import {
-  CURATED_TIMEZONE_ID_SET,
-  curatedTimezoneOptionsSorted,
-} from "../../../../lib/settings/timezone-options";
+import { timezoneOptionsFor } from "../../../../lib/settings/timezone-options";
 import type { AppSettings } from "../../../../lib/settings/types";
 import { mmActionButtonClass } from "../../../../lib/ui/mm-control-roles";
 import { DAY_NAMES, zoneClock } from "./schedule-model";
@@ -15,11 +12,9 @@ const FALLBACK_ZONE = "UTC";
 
 const twoDigits = (value: number) => String(value).padStart(2, "0");
 
-/** The saved zone when it is one this picker offers, otherwise nothing chosen yet. */
+/** The zone Weir reads every time in: the saved one, or UTC when none is saved. */
 export function savedZone(settings: AppSettings): string {
-  return CURATED_TIMEZONE_ID_SET.has(settings.app_timezone || "")
-    ? settings.app_timezone
-    : "";
+  return (settings.app_timezone || "").trim() || FALLBACK_ZONE;
 }
 
 /**
@@ -44,9 +39,9 @@ export function TimeZoneRow({
   const save = useAppSettingsSaveMutation();
   const saved = savedZone(settings);
   const [zone, setZone] = useState(saved);
-  const options = useMemo(() => curatedTimezoneOptionsSorted(), []);
-  const clock = zoneClock(now, settings.app_timezone || FALLBACK_ZONE);
-  const dirty = zone !== saved && zone !== "";
+  const options = useMemo(() => timezoneOptionsFor(saved), [saved]);
+  const clock = zoneClock(now, saved);
+  const dirty = zone !== saved;
 
   useEffect(() => {
     onUnsavedChange?.(dirty);
