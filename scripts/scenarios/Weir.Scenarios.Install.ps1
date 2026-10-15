@@ -1,5 +1,5 @@
 <#
-    The install scenarios: a fresh install, the first visit and account, and an update over the previous release.
+    The install scenarios: a fresh install and the first visit and account. Each starts from what it needs itself (Weir.Scenarios.FreshWeir.ps1).
     Each Scenario_<id> function returns what it saw, as one sentence for the record, or throws what went wrong.
 #>
 
@@ -54,6 +54,8 @@ function Get-TestIds {
 
 function Scenario_fresh_install {
     $paths = Get-WeirPaths
+    # Setup is judged on a machine with no Weir running; on one that has been used (a rerun) the running Weir is stopped first.
+    Stop-InstalledWeir
     $setup = Invoke-WeirSetup -Path $script:Ctx.SetupPath
     Assert-That ($setup.ExitCode -eq 0) "Setup --silent exited 0 (it exited $($setup.ExitCode))"
     Assert-That (Test-Path -LiteralPath $paths.TrayExe) "Weir.exe is installed at $($paths.TrayExe)"
@@ -85,6 +87,7 @@ function Scenario_fresh_install {
 # --- first-visit-account --------------------------------------------------------------------------------------------------
 
 function Scenario_first_visit_account {
+    Ensure-FreshWeir -NoAccount
     $anonymous = New-WeirSession -BaseUrl $script:Ctx.Base
     $status = Get-WeirJson $anonymous '/api/v1/auth/bootstrap/status'
     Assert-That ($status.bootstrap_allowed -eq $true) "a fresh install has no account yet (bootstrap_allowed is true, reason $($status.reason))"
@@ -103,7 +106,7 @@ function Scenario_first_visit_account {
     Assert-That ($secondIds -contains 'login-username') "a new browser, once an account exists, lands on sign-in (the page has: $($secondIds -join ', '))"
     Assert-That ($second -notmatch '(?i)session expired') 'the new browser is never told a session expired'
 
-    $script:Ctx.Session = Sign-InScenarioAccount
+    Open-WeirSession | Out-Null
     $me = Get-WeirJson $script:Ctx.Session '/api/v1/auth/me'
     Assert-That ($me.user.username -eq $script:Ctx.Username) "the new account signs in and Weir knows who it is ($($me.user.username), $($me.user.role))"
     Set-Content -LiteralPath (Join-Path $script:Ctx.RunFolder 'evidence\first-visit-first-page.html') -Value $first -Encoding UTF8

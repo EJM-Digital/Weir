@@ -323,6 +323,44 @@ function Read-ExitCodeText {
     if ($trimmed -match '^\d+$') { [int]$trimmed } else { $null }
 }
 
+# --- choosing scenarios by name ---------------------------------------------------------------------------------------
+
+# The number of single-character edits between two words, for naming the nearest ids when one is mistyped.
+function Get-EditDistance {
+    param([Parameter(Mandatory)] [string] $A, [Parameter(Mandatory)] [string] $B)
+    $row = New-Object 'int[]' ($B.Length + 1)
+    for ($j = 0; $j -le $B.Length; $j++) { $row[$j] = $j }
+    for ($i = 1; $i -le $A.Length; $i++) {
+        $diagonal = $row[0]
+        $row[0] = $i
+        for ($j = 1; $j -le $B.Length; $j++) {
+            $above = $row[$j]
+            $cost = if ($A[$i - 1] -eq $B[$j - 1]) { 0 } else { 1 }
+            $row[$j] = [Math]::Min([Math]::Min($row[$j] + 1, $row[$j - 1] + 1), $diagonal + $cost)
+            $diagonal = $above
+        }
+    }
+    $row[$B.Length]
+}
+
+# The catalog ids that -Scenarios asks for, in run order. Ids are comma separated (a script started with -File gets them as one
+# string), and * and ? stand for any text. An id that is no scenario is an error naming the nearest ids; nothing is guessed.
+function Resolve-ScenarioSelection {
+    param([string[]] $Requested = @(), [Parameter(Mandatory)] $Catalog)
+    $wanted = @($Requested | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    $ids = @($Catalog | ForEach-Object { $_.Id })
+    $chosen = New-Object System.Collections.Generic.List[string]
+    foreach ($name in $wanted) {
+        $hits = @($ids | Where-Object { $_ -like $name })
+        if ($hits.Count -eq 0) {
+            $nearest = @($ids | Sort-Object { Get-EditDistance -A $name -B $_ } | Select-Object -First 3)
+            throw "-Scenarios names '$name', which is no scenario. The nearest ids are: $($nearest -join ', ')."
+        }
+        foreach ($hit in $hits) { if (-not $chosen.Contains($hit)) { $chosen.Add($hit) } }
+    }
+    @($ids | Where-Object { $chosen.Contains($_) })
+}
+
 # --- the record -----------------------------------------------------------------------------------------------------
 
 function Add-ScenarioResult {
@@ -345,7 +383,9 @@ function Write-ScenarioRecord {
         [Parameter(Mandatory)] [hashtable] $Facts,
         [string[]] $Files = @(),
         # Phases this invocation left to another one and that have no result yet: their scenarios read "not run yet", not "failed".
-        [string[]] $NotRunPhases = @()
+        [string[]] $NotRunPhases = @(),
+        # Scenarios this run did not choose (-Scenarios): they read "not chosen", never "failed".
+        [string[]] $NotChosenIds = @()
     )
     $lines = New-Object System.Collections.Generic.List[string]
     $lines.Add("# Weir scenario suite $($Facts.Version), commit $($Facts.ShortSha)")
@@ -361,17 +401,18 @@ function Write-ScenarioRecord {
     foreach ($entry in $Catalog) {
         $number++
         $result = @($Results | Where-Object { $_.Id -eq $entry.Id }) | Select-Object -First 1
-        $notRunYet = (-not $result) -and ($NotRunPhases -contains $entry.Phase)
-        $status = if ($result) { $result.Status } elseif ($notRunYet) { 'not run yet' } else { 'failed' }
-        $detail = if ($result) { $result.Detail } elseif ($notRunYet) { 'Left to another invocation of the suite (-Phases); this record is not complete.' } else { 'The scenario did not run.' }
+        $notChosen = (-not $result) -and ($NotChosenIds -contains $entry.Id)
+        $notRunYet = (-not $result) -and (-not $notChosen) -and ($NotRunPhases -contains $entry.Phase)
+        $status = if ($result) { $result.Status } elseif ($notChosen) { 'not chosen' } elseif ($notRunYet) { 'not run yet' } else { 'failed' }
+        $detail = if ($result) { $result.Detail } elseif ($notChosen) { 'Not chosen for this run (-Scenarios); this record is of chosen scenarios only and is never a pass for the tag.' } elseif ($notRunYet) { 'Left to another invocation of the suite (-Phases); this record is not complete.' } else { 'The scenario did not run.' }
         $seconds = if ($result) { $result.Seconds } else { 0 }
         $lines.Add(("| {0} | {1} | {2} | {3} | {4} |" -f $number, $entry.Title, $status, $seconds, (($detail -replace '\|', '/') -replace '\r?\n', ' ')))
     }
-    $failed = @($Catalog | Where-Object { $e = $_; $r = @($Results | Where-Object { $_.Id -eq $e.Id }) | Select-Object -First 1; ($r -and $r.Status -eq 'failed') -or (-not $r -and $NotRunPhases -notcontains $e.Phase) })
-    $notRun = @($Catalog | Where-Object { $e = $_; -not (@($Results | Where-Object { $_.Id -eq $e.Id })) -and $NotRunPhases -contains $e.Phase })
+    $failed = @($Catalog | Where-Object { $e = $_; $r = @($Results | Where-Object { $_.Id -eq $e.Id }) | Select-Object -First 1; ($r -and $r.Status -eq 'failed') -or (-not $r -and $NotRunPhases -notcontains $e.Phase -and $NotChosenIds -notcontains $e.Id) })
+    $notRun = @($Catalog | Where-Object { $e = $_; -not (@($Results | Where-Object { $_.Id -eq $e.Id })) -and ($NotRunPhases -contains $e.Phase -or $NotChosenIds -contains $e.Id) })
     $passed = @($Results | Where-Object Status -eq 'passed').Count
     $lines.Add('')
-    $lines.Add("**$passed of $(@($Catalog).Count) scenarios passed; $(@($failed).Count) failed$(if ($notRun.Count -gt 0) { "; $($notRun.Count) not run yet" }).**")
+    $lines.Add("**$passed of $(@($Catalog).Count) scenarios passed; $(@($failed).Count) failed$(if ($notRun.Count -gt 0) { "; $($notRun.Count) not run" }).**")
     $lines.Add('')
     $lines.Add('## What each scenario does and what passes')
     foreach ($entry in $Catalog) {

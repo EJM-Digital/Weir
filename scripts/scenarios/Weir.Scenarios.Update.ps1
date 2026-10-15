@@ -32,7 +32,7 @@ function Scenario_update_over_installed_weir {
     Assert-That ((Get-TrayLogText) -match 'Weir was running before this install') 'the tray log says Weir was running before the install and started again'
 
     # 3. What survived.
-    $script:Ctx.Session = Sign-InScenarioAccount
+    Restart-WeirSession
     $session = $script:Ctx.Session
     $workflowsAfter = @(Get-WeirJson $session '/api/v1/processing/libraries')
     foreach ($kept in $workflowsBefore | Where-Object { $_.watched_folder }) {
