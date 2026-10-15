@@ -13964,12 +13964,7 @@
         {
           "type": "vitest",
           "file": "apps/web/src/app/startup-gate.test.tsx",
-          "name": "StartupGate"
-        },
-        {
-          "type": "vitest",
-          "file": "apps/web/src/app/startup-gate.test.tsx",
-          "name": "mounts children after backend readiness is confirmed"
+          "name": "asks /ready again each second until it answers ready, then mounts the app and stops asking"
         }
       ],
       "audit": {
@@ -13980,7 +13975,7 @@
     {
       "id": "web-shell.boot-startup-gate-providers.startupgate-starting-weir-page-with-the-server-s-steps",
       "area": "web-shell",
-      "behaviour": "StartupGate: \"Starting Weir...\" page with the server's steps while not ready",
+      "behaviour": "StartupGate: \"Starting Weir...\" page while not ready, saying it is waiting for Weir to start",
       "kind": "screen action",
       "severity": "medium",
       "touches": "none",
@@ -13989,12 +13984,7 @@
         {
           "type": "vitest",
           "file": "apps/web/src/app/startup-gate.test.tsx",
-          "name": "StartupGate"
-        },
-        {
-          "type": "vitest",
-          "file": "apps/web/src/app/startup-gate.test.tsx",
-          "name": "shows startup state until backend readiness is confirmed"
+          "name": "asks /ready again each second until it answers ready, then mounts the app and stops asking"
         }
       ],
       "issue": 1058,
