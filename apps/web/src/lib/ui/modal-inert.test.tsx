@@ -60,6 +60,8 @@ it("makes everything outside an open dialog inert, and the dialog and the page a
 
 it("frees everything again when the dialog closes, before it hands focus back to the button that opened it", () => {
   const focused: { element: Element; inert: boolean }[] = [];
+  // The original is called back with the element it was called on, so it is never separated from its `this`.
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   const focus = HTMLElement.prototype.focus;
   vi.spyOn(HTMLElement.prototype, "focus").mockImplementation(function (
     this: HTMLElement,
