@@ -17625,7 +17625,7 @@
     {
       "id": "web-shell.first-run-setup-wizard.time-zone-picker-choose-a-zone-saved-as-app",
       "area": "web-shell",
-      "behaviour": "Time zone picker: choose a zone, saved as app_timezone; unknown saved zone falls back to UTC",
+      "behaviour": "Time zone picker: choose a zone, saved as app_timezone; a saved zone (UTC, listed or not) is shown as the current choice and kept; none saved is UTC",
       "kind": "screen action",
       "severity": "medium",
       "touches": "none",
@@ -17649,12 +17649,27 @@
         {
           "type": "vitest",
           "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
-          "name": "falls back to UTC for a saved zone of %j"
+          "name": "shows UTC as chosen when the server is in UTC, and saves it"
         },
         {
           "type": "vitest",
           "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
-          "name": "lets a zone be picked after an unknown one fell back to UTC"
+          "name": "shows a valid zone the list lacks as chosen, and keeps it when it is not changed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "keeps a saved zone with spaces around it, without them"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "saves UTC when no zone is saved (%j)"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
+          "name": "lets another zone be picked over one the list lacks"
         }
       ],
       "audit": {
@@ -29913,10 +29928,26 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/timezone-options-for.test.ts",
+          "name": "timezoneOptionsFor"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/timezone-options-for.test.ts",
+          "name": "offers UTC, so a server on UTC has a zone to show"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/timezone-options-for.test.ts",
+          "name": "adds a saved zone the list lacks, first, named with its offset"
+        }
+      ],
       "needs": {
         "kind": "vitest",
-        "test": "Unit test: every curated id is accepted by Intl.DateTimeFormat, labels sort, no duplicate ids, savedZone returns empty for an unlisted zone. Layer: vitest."
+        "test": "Unit test: every curated id is accepted by Intl.DateTimeFormat, labels sort, no duplicate ids, savedZone returns the saved zone, including one outside the list, and UTC when none is saved. Layer: vitest."
       },
       "issue": 1048,
       "audit": {
@@ -32838,11 +32869,26 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/system-page.test.tsx",
           "name": "holds the time zone on About, and saves a different one chosen there"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "the time zone a server is in"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "shows UTC as chosen on a server in UTC"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "offers that zone beside the listed ones, and saves another that is picked"
         }
       ],
       "needs": {
         "kind": "vitest",
-        "test": "The other fields in the body (setup_wizard_state, log_retention_days), the success state (Save disappears, clock text) and a zone not in the curated list are not asserted. No E2E saves a zone."
+        "test": "The other fields in the body (setup_wizard_state, log_retention_days), the success state (Save disappears, clock text) are not asserted. No E2E saves a zone."
       },
       "issue": 1055,
       "audit": {
@@ -39899,6 +39945,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/system-page.test.tsx",
           "name": "holds the time zone on About, and saves a different one chosen there"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "the time zone a server is in"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "shows a valid zone the list lacks as chosen, with nothing to save"
         }
       ],
       "needs": {
@@ -39910,6 +39966,42 @@
         "id": "WEB-984",
         "verdict": "Partly"
       }
+    },
+    {
+      "id": "web-system.about-tab.time-zone-the-saved-zone-is-always-the-current-choice",
+      "area": "web-system",
+      "behaviour": "Time zone: the saved zone is always the current choice, UTC and any valid zone outside the listed ones included, with no Save until another is picked",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "the time zone a server is in"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "shows UTC as chosen on a server in UTC"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "shows a listed zone as chosen"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "shows a valid zone the list lacks as chosen, with nothing to save"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
+          "name": "reads a saved zone as the zone itself, and a missing one as UTC"
+        }
+      ]
     },
     {
       "id": "web-system.about-tab.time-zone-save-failure-message-the-time-zone-could",
