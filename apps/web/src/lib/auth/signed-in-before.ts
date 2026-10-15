@@ -9,6 +9,20 @@ const KEY = "mm:signed-in-before";
 /** Signing out on purpose is under way: the sign-in page it leads to has no session to say expired. */
 let signingOut = false;
 
+/**
+ * A password change is under way. The server ends every sign-in with it, this one included, and may do so before it
+ * has answered the request, so a sign-in that ends now is the person's own doing and the sign-in page says so.
+ */
+let changingPassword = false;
+
+export function startChangingPassword(): void {
+  changingPassword = true;
+}
+
+export function finishChangingPassword(): void {
+  changingPassword = false;
+}
+
 export function startSigningOut(): void {
   signingOut = true;
 }
@@ -50,7 +64,11 @@ export function wasSignedIn(): boolean {
   }
 }
 
-/** The sign-in page for someone who is signed out, saying a session expired only when this browser had one. */
+/**
+ * The sign-in page for someone who is signed out: it says the password was changed when this browser just changed it,
+ * and that a session expired only when this browser had one.
+ */
 export function signedOutPath(): string {
+  if (changingPassword) return "/login?password=changed";
   return wasSignedIn() && !signingOut ? "/login?session=expired" : "/login";
 }

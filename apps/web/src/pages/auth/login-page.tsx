@@ -24,6 +24,7 @@ export function LoginPage() {
   const manualSignIn = Boolean(
     (location.state as { manualSignIn?: boolean } | null)?.manualSignIn,
   );
+  const passwordChanged = searchParams.get("password") === "changed";
   const sessionExpired = searchParams.get("session") === "expired";
   const sessionNotKept = searchParams.get("problem") === "session-not-kept";
   const me = useMeQuery();
@@ -91,6 +92,11 @@ export function LoginPage() {
           {fromSetup ? (
             <p className="mm-auth-banner" data-status="done" role="status">
               Initial account created. Sign in with the credentials you chose.
+            </p>
+          ) : null}
+          {passwordChanged ? (
+            <p className="mm-auth-banner" data-status="done" role="status">
+              Password changed. Sign in with your new password.
             </p>
           ) : null}
           {sessionExpired ? (
