@@ -30,8 +30,8 @@ public sealed class DownloadClientRecordedRepliesTests(DownloadClientServerFixtu
     {
         ["qbittorrent"] = (Completed, [("elsewhere-recorder", "/media/elsewhere"), ("tv-recorder", "/downloads/complete/tv")]),
         ["transmission"] = (Completed, []),
-        ["nzbget"] = (Completed, [("Movies", "/downloads/complete/category-one")]),
-        ["sabnzbd"] = (Completed, [("tv-recorder", "/downloads/complete/tv"), ("elsewhere-recorder", "/media/elsewhere")]),
+        ["nzbget"] = (Completed, [("Movies", "/downloads/complete/category-one"), ("Series", "/downloads/complete/Series"), ("Music", "/downloads/complete/Music"), ("Software", "/downloads/complete/Software")]),
+        ["sabnzbd"] = (Completed, [("tv-recorder", "/downloads/complete/tv"), ("elsewhere-recorder", "/media/elsewhere"), ("movies", Completed), ("tv", Completed), ("audio", Completed), ("software", Completed)]),
         ["deluge"] = (Completed, [("tv-recorder", "/downloads/complete/tv")]),
     };
 

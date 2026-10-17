@@ -48,7 +48,14 @@ public sealed class NzbgetRepliesTests
         var folders = await replay.Port(Kind).ReadFoldersAsync(ClientReplay.Right(Kind));
 
         Assert.Equal("/downloads/completed", folders.CompletedFolder);
-        Assert.Equal([new DownloadClientCategoryFolder("Movies", "/downloads/complete/category-one")], folders.CategoryFolders);
+        Assert.Equal(
+            [
+                new DownloadClientCategoryFolder("Movies", "/downloads/complete/category-one"),
+                new DownloadClientCategoryFolder("Series", "/downloads/completed/Series"),
+                new DownloadClientCategoryFolder("Music", "/downloads/completed/Music"),
+                new DownloadClientCategoryFolder("Software", "/downloads/completed/Software"),
+            ],
+            folders.CategoryFolders);
         replay.AssertSentAsRecorded();
     }
 

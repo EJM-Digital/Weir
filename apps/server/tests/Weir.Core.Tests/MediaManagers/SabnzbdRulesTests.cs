@@ -59,7 +59,7 @@ public sealed class SabnzbdRulesTests
     }
 
     [Fact]
-    public void The_default_category_and_the_categories_with_no_folder_are_not_reported_as_folders_of_their_own()
+    public void The_default_category_is_not_reported_as_a_folder_of_its_own()
     {
         var folders = SabnzbdRules.ParseCategoryFolders(Categories, SabnzbdRules.ParseCompleteDir(Misc));
 
@@ -67,6 +67,68 @@ public sealed class SabnzbdRulesTests
 
         Assert.Equal(["*", "tv-recorder", "elsewhere-recorder", "movies", "tv", "audio", "software"], recorded.Select(row => (string)row!["name"]!));
         Assert.Equal(["", "tv", "/media/elsewhere", "", "", "", ""], recorded.Select(row => (string)row!["dir"]!));
-        Assert.Equal(["tv-recorder", "elsewhere-recorder"], folders.Select(folder => folder.Category));
+        Assert.DoesNotContain(folders, folder => folder.Category == "*");
     }
+
+    [Fact]
+    public void A_category_with_no_folder_saves_into_the_completed_folder_itself()
+    {
+        var folders = SabnzbdRules.ParseCategoryFolders(Categories, SabnzbdRules.ParseCompleteDir(Misc));
+
+        Assert.Equal(
+            [
+                new DownloadClientCategoryFolder("tv-recorder", "/downloads/complete/tv"),
+                new DownloadClientCategoryFolder("elsewhere-recorder", "/media/elsewhere"),
+                new DownloadClientCategoryFolder("movies", "/downloads/complete"),
+                new DownloadClientCategoryFolder("tv", "/downloads/complete"),
+                new DownloadClientCategoryFolder("audio", "/downloads/complete"),
+                new DownloadClientCategoryFolder("software", "/downloads/complete"),
+            ],
+            folders);
+    }
+
+    [Fact]
+    public void A_category_with_no_folder_follows_the_default_category_when_that_has_one()
+    {
+        // The recorded reply with a folder on the default category: no run of a real SABnzbd produced this one.
+        var categories = CategoriesWith(("*", "everything"), ("movies", ""), ("tv", "shows"));
+
+        var folders = SabnzbdRules.ParseCategoryFolders(categories, "/downloads/complete");
+
+        Assert.Equal(
+            [new DownloadClientCategoryFolder("movies", "/downloads/complete/everything"), new DownloadClientCategoryFolder("tv", "/downloads/complete/shows")],
+            folders);
+    }
+
+    [Fact]
+    public void A_category_with_no_folder_follows_an_absolute_default_category_folder()
+    {
+        var categories = CategoriesWith(("*", "/media/all"), ("movies", ""));
+
+        var folders = SabnzbdRules.ParseCategoryFolders(categories, "/downloads/complete");
+
+        Assert.Equal([new DownloadClientCategoryFolder("movies", "/media/all")], folders);
+    }
+
+    [Fact]
+    public void A_category_with_no_folder_is_left_out_when_the_completed_folder_is_unknown()
+    {
+        var folders = SabnzbdRules.ParseCategoryFolders(CategoriesWith(("movies", "")), null);
+
+        Assert.Empty(folders);
+    }
+
+    [Fact]
+    public void A_folder_ending_in_an_asterisk_is_the_folder_without_it()
+    {
+        // The asterisk only tells SABnzbd not to make a folder per job: https://sabnzbd.org/wiki/configuration/5.1/categories
+        var folders = SabnzbdRules.ParseCategoryFolders(CategoriesWith(("tv", "shows*")), "/downloads/complete");
+
+        Assert.Equal([new DownloadClientCategoryFolder("tv", "/downloads/complete/shows")], folders);
+    }
+
+    private static WireObject CategoriesWith(params (string Name, string Dir)[] rows) =>
+        new WireObject().Set("config", new WireObject().Set(
+            "categories",
+            new WireArray([.. rows.Select(row => (WireValue)new WireObject().Set("name", row.Name).Set("dir", row.Dir))])));
 }

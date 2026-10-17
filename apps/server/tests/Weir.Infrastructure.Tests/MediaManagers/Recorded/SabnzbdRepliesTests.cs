@@ -49,7 +49,14 @@ public sealed class SabnzbdRepliesTests
 
         Assert.Equal("/downloads/complete", folders.CompletedFolder);
         Assert.Equal(
-            [new DownloadClientCategoryFolder("tv-recorder", "/downloads/complete/tv"), new DownloadClientCategoryFolder("elsewhere-recorder", "/media/elsewhere")],
+            [
+                new DownloadClientCategoryFolder("tv-recorder", "/downloads/complete/tv"),
+                new DownloadClientCategoryFolder("elsewhere-recorder", "/media/elsewhere"),
+                new DownloadClientCategoryFolder("movies", "/downloads/complete"),
+                new DownloadClientCategoryFolder("tv", "/downloads/complete"),
+                new DownloadClientCategoryFolder("audio", "/downloads/complete"),
+                new DownloadClientCategoryFolder("software", "/downloads/complete"),
+            ],
             folders.CategoryFolders);
         replay.AssertSentAsRecorded();
     }
