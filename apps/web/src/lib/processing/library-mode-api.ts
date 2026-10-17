@@ -112,11 +112,23 @@ export async function saveLibrarySettings(
   return readJson<LibrarySettings>(r);
 }
 
+/** What a person is told when a check of the library could not be started and the server gave no reason of its own. */
+export const SCAN_START_FAILED =
+  "Weir couldn't start a check. Try again in a moment.";
+
+/** What a person is told when a clean could not be started and the server gave no reason of its own. */
+export const CLEAN_START_FAILED =
+  "Weir couldn't start the clean. Nothing was changed. Try again.";
+
+/** What a person is told when a file could not be set aside, or taken back, and the server gave no reason of its own. */
+export const LEAVE_ALONE_FAILED =
+  "Weir couldn't save that. The file is as it was; try again.";
+
 export async function triggerLibraryScan(
   libraryId: number,
 ): Promise<LibraryScanTrigger> {
   const path = `/api/v1/processing/libraries/${libraryId}/library-scan`;
-  const r = await sendJson(path, "POST", {}, "Could not start a library scan");
+  const r = await sendJson(path, "POST", {}, SCAN_START_FAILED);
   return readJson<LibraryScanTrigger>(r);
 }
 
@@ -241,7 +253,7 @@ export async function cleanLibraryFiles(
   const result = await readConfirmationOr<Omit<LibraryCleanResult, "kind">>(
     path,
     r,
-    "Could not queue those files to clean",
+    CLEAN_START_FAILED,
   );
   return "kind" in result ? result : { kind: "cleaned", ...result };
 }
@@ -257,7 +269,7 @@ export async function setLibraryFileLeaveAlone(
     path,
     "POST",
     { path: filePath, leave_alone },
-    "Could not change that file",
+    LEAVE_ALONE_FAILED,
   );
   return readJson<{ path: string; leave_alone: boolean }>(r);
 }

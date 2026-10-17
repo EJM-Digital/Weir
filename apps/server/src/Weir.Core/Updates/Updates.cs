@@ -73,18 +73,15 @@ public sealed class ReleaseFetchException : Exception
 /// <summary>Weir's GitHub releases: where they live, how versions compare, and reading the release API's payload.</summary>
 public static class ReleaseCatalog
 {
-    public const string Owner = "jampat000";
-    public const string Repo = "Weir";
-
     /// <summary>
     /// The API's release list, asked only when <see cref="ReleasesFeedUrl"/> cannot be read, as every call counts against an
     /// unauthenticated allowance of 60 an hour for the whole network. The list, not <c>/releases/latest</c>: that endpoint
     /// never returns a pre-release, so it would find nothing while only pre-releases are published.
     /// </summary>
-    public const string ReleasesUrl = "https://api.github.com/repos/jampat000/Weir/releases?per_page=30";
+    public const string ReleasesUrl = ProjectLocation.ApiRepositoryUrl + "/releases?per_page=30";
 
     /// <summary>The public release feed, where the newest release is looked up first: reading it does not count against the API allowance.</summary>
-    public const string ReleasesFeedUrl = "https://github.com/jampat000/Weir/releases.atom";
+    public const string ReleasesFeedUrl = ProjectLocation.RepositoryUrl + "/releases.atom";
     public const string WindowsInstallerAssetName = "Weir-win-Setup.exe";
     public const string LegacyWindowsInstallerAssetName = "WeirSetup.exe";
 
@@ -107,9 +104,9 @@ public static class ReleaseCatalog
 
     /// <summary>Where a file attached to the release tagged <paramref name="tag"/> is downloaded from, which does not count against the API allowance either.</summary>
     public static string DownloadUrl(string tag, string assetName) =>
-        $"https://github.com/{Owner}/{Repo}/releases/download/{Uri.EscapeDataString(tag)}/{Uri.EscapeDataString(assetName)}";
+        $"{ProjectLocation.RepositoryUrl}/releases/download/{Uri.EscapeDataString(tag)}/{Uri.EscapeDataString(assetName)}";
 
-    public static string TagUrl(string tag) => $"https://github.com/{Owner}/{Repo}/releases/tag/{Uri.EscapeDataString(tag)}";
+    public static string TagUrl(string tag) => $"{ProjectLocation.RepositoryUrl}/releases/tag/{Uri.EscapeDataString(tag)}";
 
     public static string TagForVersion(string version)
     {
@@ -183,7 +180,6 @@ public static class ReleaseCatalog
 /// <summary>The update status and update-settings payloads, and the tray's settings and state files.</summary>
 public static class UpdateStatus
 {
-    public const string DockerImage = "ghcr.io/jampat000/weir";
     public const string RateLimitedStatus = "rate_limited";
     public static readonly IReadOnlyList<string> Modes = ["Auto", "DownloadOnly", "NotifyOnly"];
 
@@ -194,7 +190,7 @@ public static class UpdateStatus
             .Set("published_at", (string?)null)
             .Set("release_url", (string?)null)
             .Set("windows_installer_url", (string?)null)
-            .Set("docker_image", installType == "docker" ? DockerImage : null)
+            .Set("docker_image", installType == "docker" ? ProjectLocation.DockerImage : null)
             .Set("docker_tag", (string?)null)
             .Set("docker_update_command", (string?)null)
             .Set("in_app_upgrade_supported", installType == "windows")
@@ -233,7 +229,7 @@ public static class UpdateStatus
             .Set("published_at", release.PublishedAt?.ToWireText())
             .Set("release_url", release.HtmlUrl)
             .Set("windows_installer_url", installer?.BrowserDownloadUrl)
-            .Set("docker_image", installType == "docker" ? DockerImage : null)
+            .Set("docker_image", installType == "docker" ? ProjectLocation.DockerImage : null)
             .Set("docker_tag", dockerTag)
             .Set("docker_update_command", installType == "docker" && dockerTag is not null ? "docker compose pull && docker compose up -d" : null)
             .Set("in_app_upgrade_supported", installType == "windows")

@@ -34,7 +34,7 @@ public sealed class ProcessingLibraryDiscoveryApiTests
         string? ProcessorOutputPath = null,
         string? DownloadsPath = null);
 
-    /// <summary>The confirmed Deluno manifest shape (jampat000/Deluno#331).</summary>
+    /// <summary>The confirmed Deluno manifest shape (Deluno#331).</summary>
     private static string ManifestJson(params ManifestLibrary[] libraries)
     {
         var payload = new

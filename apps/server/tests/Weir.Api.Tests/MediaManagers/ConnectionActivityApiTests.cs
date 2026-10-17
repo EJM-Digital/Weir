@@ -68,13 +68,17 @@ public sealed class ConnectionActivityApiTests
     private static async Task<JsonNode> NextConnectionFrameAsync(StreamReader reader, Func<Task> provoke)
     {
         var pending = ReadConnectionFrameAsync(reader);
-        for (var attempt = 0; attempt < 50 && !pending.IsCompleted; attempt++)
-        {
-            await provoke();
-            await Task.WhenAny(pending, Task.Delay(TimeSpan.FromMilliseconds(200)));
-        }
+        await Eventually.ThatAsync(
+            async () =>
+            {
+                if (!pending.IsCompleted)
+                {
+                    await provoke();
+                }
 
-        return await pending.WaitAsync(TimeSpan.FromSeconds(10));
+                return pending.IsCompleted;
+            });
+        return await pending;
     }
 
     private static async Task<JsonNode> ReadConnectionFrameAsync(StreamReader reader)

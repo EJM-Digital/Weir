@@ -9,6 +9,7 @@ using Weir.Core.MediaManagers;
 using Weir.Core.Processing;
 using Weir.Core.Rules;
 using Weir.Infrastructure.Activity;
+using Weir.Infrastructure.Jobs;
 using Weir.Infrastructure.Media;
 using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Processing.RemuxPass;
@@ -35,6 +36,8 @@ public sealed partial class LibraryCleanHandler : IJobHandler
     private readonly IRemovedTrackStore _removedTrackStore;
     private readonly LibrarySettingsStore _librarySettings;
     private readonly LibraryFileMarksStore _fileMarks;
+    private readonly LibraryScanStore _scans;
+    private readonly ProcessingJobStore _jobs;
     private readonly LibraryStore _libraries;
     private readonly DataChangePublisher _changes;
     private readonly TimeProvider _time;
@@ -49,6 +52,8 @@ public sealed partial class LibraryCleanHandler : IJobHandler
         IRemovedTrackStore removedTrackStore,
         LibrarySettingsStore librarySettings,
         LibraryFileMarksStore fileMarks,
+        LibraryScanStore scans,
+        ProcessingJobStore jobs,
         LibraryStore libraries,
         DataChangePublisher changes,
         TimeProvider time,
@@ -62,6 +67,8 @@ public sealed partial class LibraryCleanHandler : IJobHandler
         _removedTrackStore = removedTrackStore ?? throw new ArgumentNullException(nameof(removedTrackStore));
         _librarySettings = librarySettings ?? throw new ArgumentNullException(nameof(librarySettings));
         _fileMarks = fileMarks ?? throw new ArgumentNullException(nameof(fileMarks));
+        _scans = scans ?? throw new ArgumentNullException(nameof(scans));
+        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
         _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
         _changes = changes ?? throw new ArgumentNullException(nameof(changes));
         _time = time ?? throw new ArgumentNullException(nameof(time));
