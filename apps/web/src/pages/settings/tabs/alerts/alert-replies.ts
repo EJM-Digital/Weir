@@ -12,12 +12,12 @@ export const noChannels: RecordedReply = {
 
 export const channelAdded: RecordedReply = {
   status: 201,
-  body: '{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/s3cr3t-T0ken_abc","events":["job_failed","processing_job_failed"],"enabled":true,"created_at":"2026-10-15T18:50:17","updated_at":"2026-10-15T18:50:17"}',
+  body: '{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/••••","has_token":true,"events":["job_failed","processing_job_failed"],"enabled":true,"created_at":"2026-10-15T19:45:31","updated_at":"2026-10-15T19:45:31"}',
 };
 
 export const oneChannel: RecordedReply = {
   status: 200,
-  body: '{"items":[{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/s3cr3t-T0ken_abc","events":["job_failed","processing_job_failed"],"enabled":true,"created_at":"2026-10-15T18:50:17","updated_at":"2026-10-15T18:50:17"}],"supported_events":["job_completed","job_failed","processing_job_completed","processing_job_failed"],"supported_providers":["webhook","discord"]}',
+  body: '{"items":[{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/••••","has_token":true,"events":["job_failed","processing_job_failed"],"enabled":true,"created_at":"2026-10-15T19:45:31","updated_at":"2026-10-15T19:45:31"}],"supported_events":["job_completed","job_failed","processing_job_completed","processing_job_failed"],"supported_providers":["webhook","discord"]}',
 };
 
 /** Adding an alert whose address points at this machine. */
@@ -29,34 +29,34 @@ export const addRefusedForItsAddress: RecordedReply = {
 /** Ticking a third event on the first alert. */
 export const tickSaved: RecordedReply = {
   status: 200,
-  body: '{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/s3cr3t-T0ken_abc","events":["job_failed","processing_job_failed","processing_job_completed"],"enabled":true,"created_at":"2026-10-15T18:50:17","updated_at":"2026-10-15T18:50:17"}',
+  body: '{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/••••","has_token":true,"events":["job_failed","processing_job_failed","processing_job_completed"],"enabled":true,"created_at":"2026-10-15T19:45:31","updated_at":"2026-10-15T19:45:32"}',
 };
 
 export const afterTick: RecordedReply = {
   status: 200,
-  body: '{"items":[{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/s3cr3t-T0ken_abc","events":["job_failed","processing_job_failed","processing_job_completed"],"enabled":true,"created_at":"2026-10-15T18:50:17","updated_at":"2026-10-15T18:50:17"}],"supported_events":["job_completed","job_failed","processing_job_completed","processing_job_failed"],"supported_providers":["webhook","discord"]}',
+  body: '{"items":[{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/••••","has_token":true,"events":["job_failed","processing_job_failed","processing_job_completed"],"enabled":true,"created_at":"2026-10-15T19:45:31","updated_at":"2026-10-15T19:45:32"}],"supported_events":["job_completed","job_failed","processing_job_completed","processing_job_failed"],"supported_providers":["webhook","discord"]}',
 };
 
 /** Unticking the file-failed event on that alert. */
 export const untickSaved: RecordedReply = {
   status: 200,
-  body: '{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/s3cr3t-T0ken_abc","events":["job_failed","processing_job_completed"],"enabled":true,"created_at":"2026-10-15T18:50:17","updated_at":"2026-10-15T18:50:17"}',
+  body: '{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/••••","has_token":true,"events":["job_failed","processing_job_completed"],"enabled":true,"created_at":"2026-10-15T19:45:31","updated_at":"2026-10-15T19:45:32"}',
 };
 
 export const afterUntick: RecordedReply = {
   status: 200,
-  body: '{"items":[{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/s3cr3t-T0ken_abc","events":["job_failed","processing_job_completed"],"enabled":true,"created_at":"2026-10-15T18:50:17","updated_at":"2026-10-15T18:50:17"}],"supported_events":["job_completed","job_failed","processing_job_completed","processing_job_failed"],"supported_providers":["webhook","discord"]}',
+  body: '{"items":[{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/••••","has_token":true,"events":["job_failed","processing_job_completed"],"enabled":true,"created_at":"2026-10-15T19:45:31","updated_at":"2026-10-15T19:45:32"}],"supported_events":["job_completed","job_failed","processing_job_completed","processing_job_failed"],"supported_providers":["webhook","discord"]}',
 };
 
 /** Editing the first alert: new label, provider, address and events, and switched off. */
 export const editSaved: RecordedReply = {
   status: 200,
-  body: '{"id":1,"label":"Pager bridge","provider":"webhook","url":"https://hooks.weir-recording.invalid/pager/9f2c7a1e-token","events":["processing_job_failed","processing_job_completed"],"enabled":false,"created_at":"2026-10-15T18:50:17","updated_at":"2026-10-15T18:50:17"}',
+  body: '{"id":1,"label":"Pager bridge","provider":"webhook","url":"https://hooks.weir-recording.invalid/pager/••••","has_token":true,"events":["processing_job_failed","processing_job_completed"],"enabled":false,"created_at":"2026-10-15T19:45:31","updated_at":"2026-10-15T19:45:32"}',
 };
 
 export const afterEdit: RecordedReply = {
   status: 200,
-  body: '{"items":[{"id":1,"label":"Pager bridge","provider":"webhook","url":"https://hooks.weir-recording.invalid/pager/9f2c7a1e-token","events":["processing_job_failed","processing_job_completed"],"enabled":false,"created_at":"2026-10-15T18:50:17","updated_at":"2026-10-15T18:50:17"}],"supported_events":["job_completed","job_failed","processing_job_completed","processing_job_failed"],"supported_providers":["webhook","discord"]}',
+  body: '{"items":[{"id":1,"label":"Pager bridge","provider":"webhook","url":"https://hooks.weir-recording.invalid/pager/••••","has_token":true,"events":["processing_job_failed","processing_job_completed"],"enabled":false,"created_at":"2026-10-15T19:45:31","updated_at":"2026-10-15T19:45:32"}],"supported_events":["job_completed","job_failed","processing_job_completed","processing_job_failed"],"supported_providers":["webhook","discord"]}',
 };
 
 /** Editing the first alert to an address that points at this machine. */
@@ -68,12 +68,12 @@ export const editRefusedForItsAddress: RecordedReply = {
 /** Saving the first alert with nothing changed. */
 export const savedAsItWas: RecordedReply = {
   status: 200,
-  body: '{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/s3cr3t-T0ken_abc","events":["job_failed","processing_job_failed"],"enabled":true,"created_at":"2026-10-15T18:50:17","updated_at":"2026-10-15T18:50:17"}',
+  body: '{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/••••","has_token":true,"events":["job_failed","processing_job_failed"],"enabled":true,"created_at":"2026-10-15T19:45:31","updated_at":"2026-10-15T19:45:32"}',
 };
 
 export const twoChannels: RecordedReply = {
   status: 200,
-  body: '{"items":[{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/s3cr3t-T0ken_abc","events":["job_failed","processing_job_failed"],"enabled":true,"created_at":"2026-10-15T18:50:17","updated_at":"2026-10-15T18:50:17"},{"id":2,"label":"Ops webhook","provider":"webhook","url":"https://hooks.weir-recording.invalid/ops/6d41b0c8-token","events":["job_failed"],"enabled":true,"created_at":"2026-10-15T18:50:18","updated_at":"2026-10-15T18:50:18"}],"supported_events":["job_completed","job_failed","processing_job_completed","processing_job_failed"],"supported_providers":["webhook","discord"]}',
+  body: '{"items":[{"id":1,"label":"Discord alerts","provider":"discord","url":"https://hooks.weir-recording.invalid/api/webhooks/1034598712/••••","has_token":true,"events":["job_failed","processing_job_failed"],"enabled":true,"created_at":"2026-10-15T19:45:31","updated_at":"2026-10-15T19:45:32"},{"id":2,"label":"Ops webhook","provider":"webhook","url":"https://hooks.weir-recording.invalid/ops/••••","has_token":true,"events":["job_failed"],"enabled":true,"created_at":"2026-10-15T19:45:32","updated_at":"2026-10-15T19:45:32"}],"supported_events":["job_completed","job_failed","processing_job_completed","processing_job_failed"],"supported_providers":["webhook","discord"]}',
 };
 
 /** Send test to an alert whose address does not resolve. */
@@ -107,16 +107,16 @@ export const testDelivered: RecordedReply = {
 /** The first alert switched off, beside a second one. */
 export const firstOfTwoSwitchedOff: RecordedReply = {
   status: 200,
-  body: '{"items":[{"id":1,"label":"Pager bridge","provider":"webhook","url":"https://hooks.weir-recording.invalid/pager/9f2c7a1e-token","events":["processing_job_failed","processing_job_completed"],"enabled":false,"created_at":"2026-10-15T18:50:17","updated_at":"2026-10-15T18:59:11"},{"id":2,"label":"Ops webhook","provider":"webhook","url":"https://hooks.weir-recording.invalid/ops/6d41b0c8-token","events":["job_failed"],"enabled":true,"created_at":"2026-10-15T18:50:18","updated_at":"2026-10-15T18:50:18"}],"supported_events":["job_completed","job_failed","processing_job_completed","processing_job_failed"],"supported_providers":["webhook","discord"]}',
+  body: '{"items":[{"id":1,"label":"Pager bridge","provider":"webhook","url":"https://hooks.weir-recording.invalid/pager/••••","has_token":true,"events":["processing_job_failed","processing_job_completed"],"enabled":false,"created_at":"2026-10-15T19:45:31","updated_at":"2026-10-15T19:45:32"},{"id":2,"label":"Ops webhook","provider":"webhook","url":"https://hooks.weir-recording.invalid/ops/••••","has_token":true,"events":["job_failed"],"enabled":true,"created_at":"2026-10-15T19:45:32","updated_at":"2026-10-15T19:45:32"}],"supported_events":["job_completed","job_failed","processing_job_completed","processing_job_failed"],"supported_providers":["webhook","discord"]}',
 };
 
 /** Ticking a third event on the alert that is switched off. */
 export const tickOnSwitchedOffSaved: RecordedReply = {
   status: 200,
-  body: '{"id":1,"label":"Pager bridge","provider":"webhook","url":"https://hooks.weir-recording.invalid/pager/9f2c7a1e-token","events":["processing_job_failed","processing_job_completed","job_failed"],"enabled":false,"created_at":"2026-10-15T18:50:17","updated_at":"2026-10-15T18:59:11"}',
+  body: '{"id":1,"label":"Pager bridge","provider":"webhook","url":"https://hooks.weir-recording.invalid/pager/••••","has_token":true,"events":["processing_job_failed","processing_job_completed","job_failed"],"enabled":false,"created_at":"2026-10-15T19:45:31","updated_at":"2026-10-15T19:45:32"}',
 };
 
 export const afterTickOnSwitchedOff: RecordedReply = {
   status: 200,
-  body: '{"items":[{"id":1,"label":"Pager bridge","provider":"webhook","url":"https://hooks.weir-recording.invalid/pager/9f2c7a1e-token","events":["processing_job_failed","processing_job_completed","job_failed"],"enabled":false,"created_at":"2026-10-15T18:50:17","updated_at":"2026-10-15T18:59:11"},{"id":2,"label":"Ops webhook","provider":"webhook","url":"https://hooks.weir-recording.invalid/ops/6d41b0c8-token","events":["job_failed"],"enabled":true,"created_at":"2026-10-15T18:50:18","updated_at":"2026-10-15T18:50:18"}],"supported_events":["job_completed","job_failed","processing_job_completed","processing_job_failed"],"supported_providers":["webhook","discord"]}',
+  body: '{"items":[{"id":1,"label":"Pager bridge","provider":"webhook","url":"https://hooks.weir-recording.invalid/pager/••••","has_token":true,"events":["processing_job_failed","processing_job_completed","job_failed"],"enabled":false,"created_at":"2026-10-15T19:45:31","updated_at":"2026-10-15T19:45:32"},{"id":2,"label":"Ops webhook","provider":"webhook","url":"https://hooks.weir-recording.invalid/ops/••••","has_token":true,"events":["job_failed"],"enabled":true,"created_at":"2026-10-15T19:45:32","updated_at":"2026-10-15T19:45:32"}],"supported_events":["job_completed","job_failed","processing_job_completed","processing_job_failed"],"supported_providers":["webhook","discord"]}',
 };

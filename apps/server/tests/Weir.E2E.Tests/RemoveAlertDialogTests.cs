@@ -139,7 +139,7 @@ public sealed class RemoveAlertDialogTests(E2EServer server) : E2ETestBase(serve
             {
                 ["label"] = label,
                 ["provider"] = "webhook",
-                ["url"] = "https://alerts.example.test/hook",
+                ["url"] = $"https://alerts.example.test/hook/{Uri.EscapeDataString(label)}",
                 ["events"] = new JsonArray("job_failed"),
                 ["enabled"] = true,
             });
