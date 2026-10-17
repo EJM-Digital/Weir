@@ -14,12 +14,21 @@
 // `failure`, `error` or `pending` for the same context withdraws an earlier `success`, so the record always says
 // how the latest run went.
 //
+// A pass also carries over (the owner, 16 Oct 2026). A `success` on an earlier commit X counts for the tagged commit Y
+// when X is an ancestor of Y, no file that ships differs between them (scripts/release/shipped-paths.mjs, the one
+// rule: a change to tests, scripts, docs or CI does not count, a version change or any shipped file does), and the pass
+// was run for the version being tagged (its description ends in <version>+<short sha>). The nearest earlier commit that
+// has any `golden-path` status decides, so a later failure on identical shipped files is never skipped. The checkout
+// needs the full history (fetch-depth: 0).
+//
 // Usage (in release.yml):  node scripts/verify-golden-path-for-release.mjs
 //   env GH_TOKEN (statuses: read), GITHUB_REPOSITORY, GITHUB_REF_NAME (the tag), GITHUB_SHA (else `git rev-parse HEAD`)
 // Options: --sha <sha>, --tag <tag>
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+
+import { sameShippedFiles } from "./release/shipped-paths.mjs";
 
 export const GOLDEN_PATH_CONTEXT = "golden-path";
 
@@ -58,6 +67,58 @@ export function evaluateStatuses(statuses, context = GOLDEN_PATH_CONTEXT) {
   return [];
 }
 
+// How many commits before the tagged one are looked at for a pass to carry over. Each one with identical shipped files
+// costs one status lookup, so the reach is bounded; a pass further back than this is run again.
+export const MAX_CARRY_COMMITS = 100;
+
+// The version a pass was run for: its description ends in <version>+<short sha> (Invoke-WeirScenarios.ps1).
+export function passedVersion(status) {
+  return /(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\+[0-9a-f]{7,40}\s*$/.exec(status?.description ?? "")?.[1] ?? null;
+}
+
+// Finds the pass that counts for `sha`, the commit being tagged as `version`: its own, else the nearest earlier commit's
+// whose shipped files are identical. Returns { ok: true, sha, status, carried, reason } or { ok: false, problems }.
+// listStatuses(commit) returns that commit's statuses; git(args) runs git and throws on a non-zero exit.
+export function findGoldenPathPass({ sha, version, listStatuses, git, maxCommits = MAX_CARRY_COMMITS }) {
+  const own = listStatuses(sha);
+  const ownProblems = evaluateStatuses(own);
+  if (ownProblems.length === 0) return { ok: true, sha, status: latestStatus(own), carried: false, reason: "it is the tagged commit itself" };
+  // A run recorded on this very commit that did not pass is the answer: an older pass cannot override it.
+  if (latestStatus(own)) return { ok: false, problems: ownProblems };
+
+  let earlier;
+  try {
+    earlier = git(["rev-list", `--max-count=${maxCommits + 1}`, sha]).split("\n").map((line) => line.trim()).filter(Boolean).slice(1);
+  } catch (error) {
+    const why = String(error.message).split("\n")[0];
+    return { ok: false, problems: [...ownProblems, `the commits before ${sha} could not be read (${why}); fetch the full history`] };
+  }
+  for (const candidate of earlier) {
+    const same = sameShippedFiles(candidate, sha, git);
+    if (!same.ok) {
+      return { ok: false, problems: [...ownProblems, `no earlier commit with the same shipped files has a golden-path run (stopped at ${candidate}: ${same.reason})`] };
+    }
+    const statuses = listStatuses(candidate);
+    const latest = latestStatus(statuses);
+    if (!latest) continue;
+    const problems = evaluateStatuses(statuses);
+    if (problems.length > 0) {
+      return { ok: false, problems: [...ownProblems, `the nearest earlier commit with the same shipped files, ${candidate}, did not pass: ${problems.join("; ")}`] };
+    }
+    const ranFor = passedVersion(latest);
+    if (ranFor === null) {
+      return { ok: false, problems: [...ownProblems, `the pass on ${candidate} does not say which version it was run for (${latest.description || "no description"}), so it cannot be reused`] };
+    }
+    if (ranFor !== version) {
+      return { ok: false, problems: [...ownProblems, `the pass on ${candidate} was run for ${ranFor}, and this tag is ${version}: a different version is a different build`] };
+    }
+    return { ok: true, sha: candidate, status: latest, carried: true, reason: same.reason };
+  }
+  return { ok: false, problems: [...ownProblems, `none of the ${earlier.length} commits before it has a golden-path run`] };
+}
+
+const runGit = (args) => execFileSync("git", args, { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
+
 function listStatuses(repository, sha) {
   // One compact object per line, so a paginated listing needs no JSON array stitching.
   const output = execFileSync(
@@ -71,27 +132,31 @@ function listStatuses(repository, sha) {
   return output.split("\n").filter((line) => line.trim()).map((line) => JSON.parse(line));
 }
 
-// Judges one tag on one commit and says why. `statusesOf(repository, sha)` lists the commit's statuses; `log` and
-// `error` are where the verdict goes. Returns true when the release may go ahead. Every tag is judged, whatever its
-// pre-release part: a release candidate needs the same record a stable release does.
-export function runGate({ tag, repository, sha, statusesOf = listStatuses, log = console.log, error = console.error }) {
+// Judges one tag on one commit and says why. `statusesOf(repository, sha)` lists the commit's statuses, `git(args)` runs
+// git in the checkout, and `log` and `error` are where the verdict goes. Returns true when the release may go ahead.
+// Every tag is judged, whatever its pre-release part: a release candidate needs the same record a stable release does.
+export function runGate({ tag, repository, sha, statusesOf = listStatuses, git = runGit, log = console.log, error = console.error }) {
   const version = releaseVersion(tag);
   if (!repository) throw new Error("GITHUB_REPOSITORY must be set.");
   if (!/^[0-9a-f]{40}$/.test(sha ?? "")) throw new Error(`Not a full commit SHA: ${sha}`);
   log(`Release gate: Weir's scenario suite must already have passed on ${sha} before ${version} ships.`);
 
-  const statuses = statusesOf(repository, sha);
-  const problems = evaluateStatuses(statuses);
-  if (problems.length === 0) {
-    const passed = latestStatus(statuses);
-    log(`PASS: "${GOLDEN_PATH_CONTEXT}" is success on ${sha}, recorded by ${passed.creator} at ${passed.created_at}.`);
+  const found = findGoldenPathPass({ sha, version, listStatuses: (commit) => statusesOf(repository, commit), git });
+  if (found.ok) {
+    const passed = found.status;
+    if (found.carried) {
+      log(`PASS (carried over): "${GOLDEN_PATH_CONTEXT}" is success on ${found.sha}, an earlier commit, recorded by ${passed.creator} at ${passed.created_at}.`);
+      log(`  Between ${found.sha} and ${sha}: ${found.reason}, so no file that ships changed, and the pass was run for ${version}. That pass is reused for this tag.`);
+    } else {
+      log(`PASS: "${GOLDEN_PATH_CONTEXT}" is success on ${sha}, recorded by ${passed.creator} at ${passed.created_at}.`);
+    }
     if (passed.description) log(`  ${passed.description}`);
     if (passed.target_url) log(`  Evidence: ${passed.target_url}`);
     return true;
   }
 
   error(`::error::${NO_PASSING_RUN}`);
-  for (const problem of problems) error(`  - ${problem}`);
+  for (const problem of found.problems) error(`  - ${problem}`);
   return false;
 }
 

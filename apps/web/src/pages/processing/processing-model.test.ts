@@ -26,11 +26,13 @@ import {
   speedWords,
   timeLeft,
 } from "./processing-words";
+import { recordedProcessingFile } from "../../test/recorded";
 
 const NOW = Date.parse("2026-08-18T10:00:00Z");
 
 function file(overrides: Partial<ProcessingFile>): ProcessingFile {
   return {
+    ...recordedProcessingFile(),
     id: 1,
     library_id: 2,
     library_name: "TV",

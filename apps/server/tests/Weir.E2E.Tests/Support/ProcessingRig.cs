@@ -140,6 +140,19 @@ public sealed partial class ProcessingRig : IAsyncDisposable
     }
 
     /// <summary>
+    /// Deluno hands over a movie whose pass fails every time it is tried, as a file ffmpeg cannot write does. On a rig started with
+    /// <c>holdFailures</c> it stays failed for the person to deal with.
+    /// </summary>
+    public async Task HandOffFailingAsync(string handoffId, string fileName)
+    {
+        var source = Path.Combine(Watched, handoffId, fileName);
+        Directory.CreateDirectory(Path.GetDirectoryName(source)!);
+        await File.WriteAllBytesAsync(source, FakeMedia.Bytes(FakeMedia.Probe()));
+        _tools.SetFileRule(fileName, new FileRule { Probe = FakeMedia.Probe(), RemuxError = "Conversion failed: the fake ffmpeg was told to fail" });
+        await PostHandOffAsync(handoffId, source);
+    }
+
+    /// <summary>
     /// Deluno hands over a single file that sits directly in the watched folder, with no release folder around it, as a
     /// download client leaves one. Its pass stays under way, once a worker takes it, until <see cref="ReleasePass"/>.
     /// </summary>

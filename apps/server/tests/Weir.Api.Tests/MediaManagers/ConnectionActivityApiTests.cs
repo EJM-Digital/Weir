@@ -65,8 +65,21 @@ public sealed class ConnectionActivityApiTests
     }
 
     /// <summary>The next <c>connection.activity</c> frame's data, repeating <paramref name="provoke"/> until one arrives so the test waits out the stream's own start.</summary>
-    private static Task<JsonNode> NextConnectionFrameAsync(StreamReader reader, Func<Task> provoke) =>
-        Eventually.ProvokingAsync(ReadConnectionFrameAsync(reader), provoke);
+    private static async Task<JsonNode> NextConnectionFrameAsync(StreamReader reader, Func<Task> provoke)
+    {
+        var pending = ReadConnectionFrameAsync(reader);
+        await Eventually.ThatAsync(
+            async () =>
+            {
+                if (!pending.IsCompleted)
+                {
+                    await provoke();
+                }
+
+                return pending.IsCompleted;
+            });
+        return await pending;
+    }
 
     private static async Task<JsonNode> ReadConnectionFrameAsync(StreamReader reader)
     {

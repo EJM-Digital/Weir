@@ -534,19 +534,13 @@ public sealed class ActivityApiTests
     }
 
     /// <summary>
-    /// Calls <paramref name="update"/> again every 200ms until the one read it starts completes. Cancelling a read on
+    /// Calls <paramref name="update"/> again until the read it starts completes. Cancelling a read on
     /// the test host's response stream tears the connection down, so this never abandons or replaces that read —
     /// it only repeats the update while waiting for it, in case the first one landed before the stream began
     /// watching for a change.
     /// </summary>
     private static Task<string[]> UpdateUntilFrameArrivesAsync(StreamReader reader, Action update) =>
-        Eventually.ProvokingAsync(
-            NextProcessingBlockAsync(reader, CancellationToken.None),
-            () =>
-            {
-                update();
-                return Task.CompletedTask;
-            });
+        Eventually.ProvokingUntilAsync(NextProcessingBlockAsync(reader, CancellationToken.None), update);
 
     [Fact]
     public async Task Record_activity_event_does_not_prune_history_using_log_retention()

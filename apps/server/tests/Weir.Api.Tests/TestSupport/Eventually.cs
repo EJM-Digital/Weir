@@ -1,22 +1,22 @@
+using Microsoft.Extensions.Time.Testing;
+
 namespace Weir.Api.Tests;
 
 /// <summary>
-/// Polls a condition until it is true or a ceiling elapses, replacing the ad hoc polling loops that used to
-/// be copied into each startup/endpoint test.
+/// Polls a condition until it is true or a ceiling elapses. The ceiling is a hang guard: a test that reaches it has stopped making
+/// progress, and no result ever depends on how long it took to get there.
 /// </summary>
 internal static class Eventually
 {
-    private static readonly TimeSpan DefaultCeiling = TimeSpan.FromSeconds(15);
+    private static readonly TimeSpan HangGuard = TimeSpan.FromSeconds(15);
     private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(50);
-    private static readonly TimeSpan ProvokeInterval = TimeSpan.FromMilliseconds(200);
-    private static readonly TimeSpan HangGuard = TimeSpan.FromSeconds(10);
 
     public static Task ThatAsync(Func<bool> condition, TimeSpan? ceiling = null, string? message = null) =>
         ThatAsync(() => Task.FromResult(condition()), ceiling, message);
 
     public static async Task ThatAsync(Func<Task<bool>> condition, TimeSpan? ceiling = null, string? message = null)
     {
-        var deadline = DateTime.UtcNow + (ceiling ?? DefaultCeiling);
+        var deadline = DateTime.UtcNow + (ceiling ?? HangGuard);
         while (!await condition().ConfigureAwait(false))
         {
             if (DateTime.UtcNow > deadline)
@@ -29,20 +29,42 @@ internal static class Eventually
     }
 
     /// <summary>
-    /// Waits for <paramref name="pending"/>, running <paramref name="provoke"/> again every few hundred milliseconds until it completes:
-    /// for a stream that only reports a change made after it began watching, so a first change can land before it does. It ends the
-    /// moment <paramref name="pending"/> completes; the ceiling is a hang guard.
+    /// Moves <paramref name="clock"/> on by <paramref name="step"/> before each look, so a timer the code under test sets after this
+    /// call starts is fired as soon as it exists; the condition is what ends the wait, never the time that has passed.
     /// </summary>
-    public static async Task<T> ProvokingAsync<T>(Task<T> pending, Func<Task> provoke, TimeSpan? ceiling = null)
+    public static Task ThatAdvancingAsync(FakeTimeProvider clock, TimeSpan step, Func<bool> condition, TimeSpan? ceiling = null)
     {
-        var deadline = DateTime.UtcNow + (ceiling ?? DefaultCeiling);
-        while (!pending.IsCompleted && DateTime.UtcNow < deadline)
-        {
-            await provoke().ConfigureAwait(false);
-            await Task.WhenAny(pending, Task.Delay(ProvokeInterval)).ConfigureAwait(false);
-        }
+        ArgumentNullException.ThrowIfNull(clock);
+        return ThatAsync(
+            () =>
+            {
+                clock.Advance(step);
+                return condition();
+            },
+            ceiling);
+    }
 
-        return await pending.WaitAsync(HangGuard).ConfigureAwait(false);
+    /// <summary>
+    /// Calls <paramref name="provoke"/> at each look until <paramref name="pending"/> completes, then returns its result. For a stream
+    /// that may not be watching yet when the first change is made: the change is made again until the frame it causes arrives. The
+    /// pending read is never abandoned, as cancelling a read on the test host's response stream tears the connection down.
+    /// </summary>
+    public static async Task<T> ProvokingUntilAsync<T>(Task<T> pending, Action provoke, TimeSpan? ceiling = null)
+    {
+        ArgumentNullException.ThrowIfNull(pending);
+        ArgumentNullException.ThrowIfNull(provoke);
+        await ThatAsync(
+            () =>
+            {
+                if (!pending.IsCompleted)
+                {
+                    provoke();
+                }
+
+                return pending.IsCompleted;
+            },
+            ceiling).ConfigureAwait(false);
+        return await pending.ConfigureAwait(false);
     }
 
     /// <summary>Polls until <paramref name="isDone"/> accepts the polled value, and returns that value either
@@ -50,7 +72,7 @@ internal static class Eventually
     /// generic "took too long" message.</summary>
     public static async Task<T> PollAsync<T>(Func<Task<T>> poll, Func<T, bool> isDone, TimeSpan? ceiling = null)
     {
-        var deadline = DateTime.UtcNow + (ceiling ?? DefaultCeiling);
+        var deadline = DateTime.UtcNow + (ceiling ?? HangGuard);
         while (true)
         {
             var value = await poll().ConfigureAwait(false);

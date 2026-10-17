@@ -8,6 +8,24 @@
       "reason": "Removing a workflow is refused while a job of its own is still finishing; this asks again every half second and gives up after 30 seconds, ending at the first answer that is not \"busy\"."
     },
     {
+      "file": "apps/server/tests/Weir.Api.Tests/TestSupport/Eventually.cs",
+      "kind": "delay",
+      "count": 2,
+      "reason": "The two polls every API test shares: they look every 50 ms, end the moment the condition holds and give up at a ceiling that only a hung test reaches."
+    },
+    {
+      "file": "apps/server/tests/Weir.Api.Tests/TestSupport/RealServerProcess.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "A poll every 100 ms for a real server process to start answering; it ends the moment the process answers or exits and gives up at its own ceiling."
+    },
+    {
+      "file": "apps/server/tests/Weir.Api.Tests/TestSupport/UnreadStdoutServer.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "A poll every 100 ms for a real server process to start answering; it ends the moment the process answers or exits and gives up at its own ceiling."
+    },
+    {
       "file": "apps/tray/Weir.Tray.Tests/ServerOutputTests.cs",
       "kind": "delay",
       "count": 1,
@@ -86,40 +104,10 @@
       "reason": "Reads the fake tool log again after 10 ms when a running tool has it open for the moment it takes to append a line; bounded by a read timeout."
     },
     {
-      "file": "apps/server/tests/Weir.Api.Tests/TestSupport/Eventually.cs",
-      "kind": "delay",
-      "count": 3,
-      "reason": "The Api tests' shared polls: each looks every 50 ms (or re-provokes a stream every 200 ms), ends the moment its condition holds or its frame arrives, and gives up at a hang-guard ceiling that only a stalled server reaches."
-    },
-    {
-      "file": "apps/server/tests/Weir.Api.Tests/TestSupport/RealServerProcess.cs",
-      "kind": "delay",
-      "count": 1,
-      "reason": "Looks at the started server's ready address every 100 ms and ends the moment it answers; the caller's deadline is a hang guard for a server that never starts."
-    },
-    {
-      "file": "apps/server/tests/Weir.Api.Tests/TestSupport/UnreadStdoutServer.cs",
-      "kind": "delay",
-      "count": 1,
-      "reason": "Looks at the started server's ready address every 100 ms and ends the moment it answers; the caller's deadline is a hang guard for a server that never starts."
-    },
-    {
-      "file": "apps/server/tests/Weir.Api.Tests/WeirTestServer.cs",
-      "kind": "delay",
-      "count": 1,
-      "reason": "Tries again in 10 ms while the server still holds its database file open, and ends the moment the file is released; a deadline only a stuck server reaches ends it."
-    },
-    {
       "file": "apps/server/tests/Weir.TestChild/Program.cs",
       "kind": "delay",
       "count": 7,
       "reason": "A stand-in for a slow external tool: holding, lingering or pacing its output is the behaviour a test of the process runner needs, and each wait is cut short when the test kills the process or answers with an acknowledgement file."
-    },
-    {
-      "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/DatabaseBusyApiTests.cs",
-      "kind": "delay",
-      "count": 1,
-      "reason": "Gives the request a few milliseconds of real time to reach the write gate between moves of the fake clock; the loop ends the moment the request has given up, and a ceiling ends it for a request that never does."
     },
     {
       "file": "apps/server/tests/Weir.Contract.FakeTools/FakeFfmpegTool.cs",
