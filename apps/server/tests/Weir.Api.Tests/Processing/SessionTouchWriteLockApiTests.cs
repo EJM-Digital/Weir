@@ -25,18 +25,19 @@ namespace Weir.Api.Tests.Processing;
 /// <para>
 /// Each test ages <c>last_seen_at</c> past the touch gap so the next request is guaranteed to write the
 /// session, then asserts the endpoint still <em>succeeds</em>. The server under test runs with
-/// <see cref="ShortBusyTimeoutMilliseconds"/> instead of the production 30 s, so a regression to the deadlock
-/// fails the request (and the test) in well under a second instead of needing a wall-clock stopwatch to
-/// distinguish "slow" from "hung".
+/// <see cref="DeadlockGuardMilliseconds"/> instead of the production 30 s, so a regression to the deadlock
+/// fails the request (and the test) at that guard instead of needing a wall-clock stopwatch to distinguish
+/// "slow" from "hung".
 /// </para>
 /// </summary>
 public sealed class SessionTouchWriteLockApiTests
 {
     /// <summary>
-    /// Long enough for a real, uncontended write; short enough that a regression to the cross-connection
-    /// deadlock this class guards fails fast instead of costing the suite 30 real seconds per test.
+    /// A hang guard, not a measured wait: far longer than any write that is merely slow on a busy machine (the sign-in and the seeding
+    /// are writes too), and shorter than production's 30 s, so a regression to the cross-connection deadlock this class guards fails
+    /// the request at the guard instead of costing the suite 30 real seconds per test.
     /// </summary>
-    private const int ShortBusyTimeoutMilliseconds = 500;
+    private const int DeadlockGuardMilliseconds = 10_000;
 
     /// <summary>
     /// Longer than the 60 s touch gap and far inside the 14-day idle window, so the next request is certain to
@@ -159,14 +160,14 @@ public sealed class SessionTouchWriteLockApiTests
     }
 
     /// <summary>
-    /// A server whose <see cref="SqliteDatabase"/> uses <see cref="ShortBusyTimeoutMilliseconds"/> instead of
-    /// production's 30 s, so the deadlock this class guards against fails the request quickly if it regresses.
+    /// A server whose <see cref="SqliteDatabase"/> uses <see cref="DeadlockGuardMilliseconds"/> instead of
+    /// production's 30 s, so the deadlock this class guards against fails the request at the guard if it regresses.
     /// </summary>
     private static Task<WeirTestServer> StartServerAsync() =>
         WeirTestServer.StartAsync(
             [("WEIR_SESSION_SECRET", ApiTestClient.Secret), ("WEIR_PROCESSING_WORKER_COUNT", "0")],
             configureServices: services => services.AddSingleton(sp =>
-                new SqliteDatabase(sp.GetRequiredService<WeirOptions>().DbPath, busyTimeoutMilliseconds: ShortBusyTimeoutMilliseconds)));
+                new SqliteDatabase(sp.GetRequiredService<WeirOptions>().DbPath, busyTimeoutMilliseconds: DeadlockGuardMilliseconds)));
 
     /// <summary>
     /// Fetch the CSRF token first (that request would otherwise spend the touch), age <c>last_seen_at</c> past

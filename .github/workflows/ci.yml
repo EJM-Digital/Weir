@@ -113,6 +113,8 @@ jobs:
               - 'scripts/docker-smoke/**'
               - 'scripts/find-previous-release.mjs'
               - 'scripts/semver.mjs'
+              - 'scripts/repository.mjs'
+              - 'scripts/repository.ps1'
               - 'scripts/ffmpeg-cache-key.mjs'
               - 'scripts/ffmpeg-pin.mjs'
               - 'scripts/install-ffmpeg-linux.mjs'
@@ -126,6 +128,8 @@ jobs:
             media_tools:
               - 'packaging/windows/build-velopack-vendored-media-tools.ps1'
               - 'packaging/windows/pinned-download.ps1'
+              - 'scripts/repository.mjs'
+              - 'scripts/repository.ps1'
               - 'scripts/check-real-tool-tests.mjs'
               - 'scripts/check-contract-real-tool-tests.mjs'
               - 'scripts/ffmpeg-cache-key.mjs'
@@ -238,6 +242,14 @@ jobs:
         run: |
           node scripts/check-no-python.mjs
           node --test scripts/check-no-python.test.mjs
+
+      # A fork runs its own copy of this workflow under its own name, so only the project's own repository is held to it.
+      - name: The repository's owner and name are written once per language
+        env:
+          RUNNING_REPOSITORY: ${{ github.event.repository.fork == false && github.repository || '' }}
+        run: |
+          node scripts/check-repository-owner.mjs ${RUNNING_REPOSITORY:+--repository "$RUNNING_REPOSITORY"}
+          node --test scripts/check-repository-owner.test.mjs scripts/sweep-repository-owner.test.mjs
 
       - name: Nothing private in the README, the docs and the release notes
         run: |

@@ -21,7 +21,7 @@ Server code places final media files through these seams only, never through dir
 - `TryHardlinkToFinalAsync` is the same-volume fast path: it creates a hidden `.{name}.XXXXXXXX.link` hard link beside the destination, validates it and renames it onto the destination. It returns false when the link is refused, and the caller falls back to `SafeCopyToFinalAsync`.
 - `SafeFinalizeFile` publishes a file Weir has already written in its work folder: the staged file is moved to a hidden `.partial` beside the destination (copied instead if it cannot be moved), then renamed onto the destination. On the same volume this is two renames and no copy.
 
-Remux pass publishing and pass-through delivery both go through these methods. Failures raise `FileLifecycleException` after removing the partial.
+Remux pass publishing and pass-through delivery both go through these methods. Failures, the hard-link path included, raise `FileLifecycleException` after removing the partial. Activity says it in plain words (`ToolFailureText.OutputNotPlaced`: nothing was published, no half-written copy was left, and what to check); the exception's own text, with its paths and the system's words, goes in `technical_detail`. `PublishFailureTests` (the `processing` contract area) blocks the output name with a folder and shows this for a cleaned file, an unchanged copy and an original handed back.
 
 ### Library mode: `Weir.Infrastructure.LibraryMode.SafeSwap`
 

@@ -13,7 +13,7 @@ public static class ManagerDialectRules
     public const string ExternalQueuePath = "/api/integrations/external/queue";
 
     /// <summary>
-    /// Deluno's "a tool changed this library file" endpoint (jampat000/Deluno#528, confirmed against the
+    /// Deluno's "a tool changed this library file" endpoint (Deluno#528, confirmed against the
     /// checkout at commit 177ff18a: <c>src/Deluno.Worker/ExternalFileChangedEndpoints.cs:43</c>). Body is
     /// <c>{"path": "...", "reason": "...", "tool": "Weir"}</c>; it answers 202 Accepted, not one of the
     /// three statuses every other manager call accepts (#507).

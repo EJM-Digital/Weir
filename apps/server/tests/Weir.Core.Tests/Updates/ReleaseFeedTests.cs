@@ -6,7 +6,7 @@ public sealed class ReleaseFeedTests
 {
     private static string Entry(string tag, string updated = "2026-10-05T08:30:00Z", string title = "Weir") =>
         $"<entry><id>tag:github.com,2008:Repository/1/{tag}</id><updated>{updated}</updated>"
-        + $"<link rel=\"alternate\" type=\"text/html\" href=\"https://github.com/jampat000/Weir/releases/tag/{tag}\"/><title>{title}</title></entry>";
+        + $"<link rel=\"alternate\" type=\"text/html\" href=\"{ProjectLocation.RepositoryUrl}/releases/tag/{tag}\"/><title>{title}</title></entry>";
 
     private static string Feed(params string[] entries) =>
         $"<?xml version=\"1.0\" encoding=\"UTF-8\"?><feed xmlns=\"http://www.w3.org/2005/Atom\"><title>Releases</title>{string.Concat(entries)}</feed>";
@@ -19,7 +19,7 @@ public sealed class ReleaseFeedTests
         Assert.Equal("v1.0.0-rc.10", release.TagName);
         Assert.Equal("1.0.0-rc.10", release.Version);
         Assert.Equal("Weir 1.0.0-rc.10", release.ReleaseName);
-        Assert.Equal("https://github.com/jampat000/Weir/releases/tag/v1.0.0-rc.10", release.HtmlUrl);
+        Assert.Equal($"{ProjectLocation.RepositoryUrl}/releases/tag/v1.0.0-rc.10", release.HtmlUrl);
         Assert.Equal("2026-10-08T21:04:05Z", release.PublishedAt?.ToWireText());
         Assert.True(release.Prerelease);
         Assert.False(release.Draft);
@@ -33,7 +33,7 @@ public sealed class ReleaseFeedTests
         var installer = Assert.Single(release.Assets);
         Assert.Same(installer, release.WindowsInstallerAsset());
         Assert.Equal("Weir-win-Setup.exe", installer.Name);
-        Assert.Equal("https://github.com/jampat000/Weir/releases/download/v3.4.0/Weir-win-Setup.exe", installer.BrowserDownloadUrl);
+        Assert.Equal($"{ProjectLocation.RepositoryUrl}/releases/download/v3.4.0/Weir-win-Setup.exe", installer.BrowserDownloadUrl);
         Assert.Null(installer.ApiUrl);
     }
 
@@ -55,7 +55,7 @@ public sealed class ReleaseFeedTests
 
         var release = Assert.Single(ReleaseFeed.Parse(Feed(Elsewhere)));
 
-        Assert.Equal("https://github.com/jampat000/Weir/releases/tag/v3.4.0", release.HtmlUrl);
+        Assert.Equal($"{ProjectLocation.RepositoryUrl}/releases/tag/v3.4.0", release.HtmlUrl);
     }
 
     [Fact]
