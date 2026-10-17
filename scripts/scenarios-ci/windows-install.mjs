@@ -112,6 +112,7 @@ export async function watchLogs(world) {
   const watch = new LogWatch(world.weir, []);
   return {
     expect: (title, options) => watch.expect(title, options),
+    expectMatching: (pattern, options) => watch.expectMatching(pattern, options),
     finish: async () => {
       await ensureSignedIn(world);
       await watch.finish();

@@ -257,7 +257,11 @@ public static class ProcessEnvironment {
 
   /** Takes away the update Velopack has downloaded and not installed, so a quit or a start cannot install it. */
   async discardDownloadedUpdate() {
-    await rm(join(this.paths.installRoot, "packages"), { recursive: true, force: true });
+    const packages = join(this.paths.installRoot, "packages");
+    // Velopack keeps its lock file open for as long as the updater runs; everything else is the downloaded release.
+    for (const entry of await readdir(packages).catch(() => [])) {
+      if (entry !== ".velopack_lock") await rm(join(packages, entry), { recursive: true, force: true });
+    }
   }
 
   /** The files of the data folder named, deleted if they are there. */

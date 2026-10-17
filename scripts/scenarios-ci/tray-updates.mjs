@@ -48,8 +48,11 @@ export async function updateRequests(world) {
       const downloaded = await atRest("the download request to come to an answer", DOWNLOAD_CEILING_MS);
       assert.ok(!(downloaded.state === "failed" && !downloaded.failure), "a failed download does not say why");
       downloadText = downloaded.state === "downloaded" ? `downloaded ${downloaded.pending_version}` : `answered "${downloaded.failure}"`;
-      const apply = await weir.write("POST", "/suite/apply-update");
-      if (downloaded.state !== "downloaded") assert.equal(apply.status, 409, `Restart and apply with nothing downloaded was answered ${apply.status}, not refused with 409`);
+      // Restart and apply is pressed only with nothing downloaded: with an update downloaded it would install it over the build under test.
+      if (downloaded.state !== "downloaded") {
+        const apply = await weir.write("POST", "/suite/apply-update");
+        assert.equal(apply.status, 409, `Restart and apply with nothing downloaded was answered ${apply.status}, not refused with 409`);
+      }
     }
   } finally {
     await weir.write("PUT", "/suite/update-settings", settings(original.mode));
