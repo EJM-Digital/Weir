@@ -218,7 +218,9 @@ export function LibraryRow({
           label={`${library.name} enabled`}
           enabled={library.enabled}
           disabled={!editable}
-          onChange={() => actions.onToggle(library)}
+          onChange={(next) => {
+            if (next !== library.enabled) actions.onToggle(library);
+          }}
           layout="control"
           size="row"
         />
@@ -244,7 +246,7 @@ export function LibraryRow({
               type="button"
               className={secondary}
               onClick={() => actions.onUnlink(library)}
-              disabled={actions.unlinking}
+              disabled={!editable || actions.unlinking}
             >
               Unlink
             </button>

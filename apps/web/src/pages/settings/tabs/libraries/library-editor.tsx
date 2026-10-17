@@ -45,6 +45,18 @@ import {
 import type { LibraryFormBinding } from "./library-settings";
 import { setupTabPath } from "../../../../lib/settings/setup-areas";
 
+/** The edits that still differ from the workflow, so a field put back to what is saved follows the server again. */
+function withoutUnchanged(
+  edits: Partial<LibraryForm>,
+  saved: LibraryForm,
+): Partial<LibraryForm> {
+  return Object.fromEntries(
+    Object.entries(edits).filter(
+      ([key, value]) => value !== saved[key as keyof LibraryForm],
+    ),
+  );
+}
+
 /** When the library may run, read from the schedule that owns its hours. */
 function runHoursText(library: ProcessingLibrary | undefined): string {
   if (!library) return "Any time, until you choose hours. ";
@@ -84,10 +96,16 @@ export function LibraryEditor({
   onSave: (form: LibraryForm) => Promise<unknown>;
   onClose: () => void;
 }) {
-  const [form, setForm] = useState(initial);
+  // Only what the person changed is held here; every other field is the workflow as it is now, so a change made
+  // on the server while the editor is open (a media manager's sync, another browser) shows up and is never saved over.
+  const [edits, setEdits] = useState<Partial<LibraryForm>>({});
+  const form: LibraryForm = { ...initial, ...edits };
   const binding: LibraryFormBinding = {
     form,
-    update: (patch) => setForm((current) => ({ ...current, ...patch })),
+    update: (patch) =>
+      setEdits((current) =>
+        withoutUnchanged({ ...current, ...patch }, initial),
+      ),
     editable,
   };
   const saveAll = useMutation({

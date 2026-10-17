@@ -269,6 +269,10 @@ internal sealed partial class Scenario
             $"a scan of {(string)library["name"]!} queued after job {mark} to finish",
             owed: () => Task.FromResult(true));
 
+    /// <summary>Every scan of <paramref name="library"/> Weir has queued, running or ended. Other workflows' scans share the job kind and come and go on their own timers.</summary>
+    public async Task<List<JsonObject>> ScansOfAsync(JsonObject library) =>
+        [.. (await JobsAsync(ScanKind)).Concat(await FinishedJobsAsync(ScanKind)).Where(row => ScansLibrary(row, (int)library["id"]!))];
+
     private static bool ScansLibrary(JsonObject job, int libraryId) =>
         JsonNode.Parse((string)job["payload_json"]!) is JsonObject payload && payload["library_id"] is { } id && (int)id == libraryId;
 

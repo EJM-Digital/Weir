@@ -83,7 +83,26 @@ public sealed class ProcessRunnerTests
             ? ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", "[Console]::In.ReadToEnd() | Out-Null; [System.Diagnostics.Process]::GetCurrentProcess().PriorityClass"]
             : ["/bin/sh", "-c", "cat > /dev/null; awk '{ print $19 }' /proc/$$/stat"];
 
-        var result = await Runner.RunAsync(new ProcessRequest { Argv = reportOwnPriority, Priority = ProcessPriorityClass.Normal });
+        // A child inherits its parent's class, and CI starts the test host below normal, so run this one from there.
+        using var self = Process.GetCurrentProcess();
+        var parentPriority = OperatingSystem.IsWindows() ? self.PriorityClass : ProcessPriorityClass.Normal;
+        if (OperatingSystem.IsWindows())
+        {
+            self.PriorityClass = ProcessPriorityClass.BelowNormal;
+        }
+
+        ProcessResult result;
+        try
+        {
+            result = await Runner.RunAsync(new ProcessRequest { Argv = reportOwnPriority, Priority = ProcessPriorityClass.Normal });
+        }
+        finally
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                self.PriorityClass = parentPriority;
+            }
+        }
 
         Assert.Equal(OperatingSystem.IsWindows() ? "Normal" : "0", Encoding.UTF8.GetString(result.Stdout).Trim());
     }
