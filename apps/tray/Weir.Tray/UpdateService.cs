@@ -5,8 +5,6 @@ namespace Weir.Tray;
 /// <summary>Checks for, downloads and applies Weir updates from the GitHub releases, through Velopack.</summary>
 sealed class UpdateService : IUpdateService
 {
-    internal const string GitHubRepo = "https://github.com/jampat000/Weir";
-
     private readonly UpdateManager _mgr;
     private readonly Action<string> _log;
     private volatile UpdateInfo? _pendingUpdate;
@@ -21,7 +19,7 @@ sealed class UpdateService : IUpdateService
     internal UpdateService(Action<string> log)
     {
         _log = log;
-        _mgr = new UpdateManager(UpdateChannel.SourceForThisBuild(GitHubRepo));
+        _mgr = new UpdateManager(UpdateChannel.SourceForThisBuild(ProjectLocation.RepositoryUrl));
     }
 
     public bool IsInstalled => _mgr.IsInstalled;

@@ -10,8 +10,10 @@ import { createReadStream, createWriteStream } from "node:fs";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 
-export const weirReleasesUrl = "https://api.github.com/repos/jampat000/Weir/releases?per_page=30";
-export const weirReleasesFeedUrl = "https://github.com/jampat000/Weir/releases.atom";
+import { API_REPOSITORY_URL, REPOSITORY_URL } from "./repository.mjs";
+
+export const weirReleasesUrl = `${API_REPOSITORY_URL}/releases?per_page=30`;
+export const weirReleasesFeedUrl = `${REPOSITORY_URL}/releases.atom`;
 
 const attempts = 4;
 const attemptTimeoutMs = 5 * 60 * 1000;
@@ -84,7 +86,7 @@ async function downloadFromWeirReleases(fileName, file, { fetchImpl, token, retr
     return [];
   });
   for (const tag of tags) {
-    const source = `https://github.com/jampat000/Weir/releases/download/${encodeURIComponent(tag)}/${encodeURIComponent(fileName)}`;
+    const source = `${REPOSITORY_URL}/releases/download/${encodeURIComponent(tag)}/${encodeURIComponent(fileName)}`;
     try {
       await download(source, file, { fetchImpl, retryDelayMs });
       return source;

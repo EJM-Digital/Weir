@@ -238,23 +238,52 @@ internal sealed partial class Scenario
             },
             $"{relativePath} to fail {attempts} times");
 
-    /// <summary>
-    /// Checks for <paramref name="duration"/> and fails as soon as <paramref name="happened"/> says yes. Watching can only show that
-    /// something did not happen yet, so prefer asserting on state the server reports when it has any; use this for claims no API can answer.
-    /// </summary>
-    public static async Task NeverWithinAsync(Func<Task<bool>> happened, TimeSpan duration, string what)
-    {
-        var deadline = DateTime.UtcNow + duration;
-        while (true)
-        {
-            Assert.False(await happened(), $"{what} happened within {duration.TotalSeconds:0}s, but it must not");
-            if (DateTime.UtcNow >= deadline)
-            {
-                return;
-            }
+    // --- showing that something did not happen ---------------------------------------------------
 
-            await Task.Delay(TimeSpan.FromMilliseconds(250));
+    /// <summary>The id of the newest job, whatever its status: the mark a later wait is measured from, as ids only go up.</summary>
+    public async Task<int> LatestJobIdAsync() =>
+        (await JobsAsync()).Concat(await FinishedJobsAsync()).Select(row => (int)row["id"]!).DefaultIfEmpty(0).Max();
+
+    /// <summary>
+    /// Waits for a scan of <paramref name="library"/> that was queued after job <paramref name="mark"/> to finish: the periodic scan, or the
+    /// folder watcher's. A claim that something did not happen while Weir was looking is only worth making after a look that began once
+    /// the claim was in force.
+    /// </summary>
+    public async Task WaitForScanAfterAsync(JsonObject library, int mark) =>
+        await WaitWhileWorkedOnAsync(
+            async () => (await FinishedJobsAsync(ScanKind)).FirstOrDefault(row => (int)row["id"]! > mark && ScansLibrary(row, (int)library["id"]!)),
+            $"a scan of {(string)library["name"]!} queued after job {mark} to finish",
+            owed: () => Task.FromResult(true));
+
+    private static bool ScansLibrary(JsonObject job, int libraryId) =>
+        JsonNode.Parse((string)job["payload_json"]!) is JsonObject payload && payload["library_id"] is { } id && (int)id == libraryId;
+
+    /// <summary>
+    /// Waits until Weir has gone round its periodic scans once more, from a workflow of its own that nothing else in the scenario knows:
+    /// a new file is put in its folder, and Weir has gone round when it has found it. A claim that Weir did not do something it would
+    /// have done by now, if it did it, is made only after this: the round began after the claim was in force, so anything the claim
+    /// forbids that a round would have started has been started by the time this returns. The file is under the workflow's minimum size,
+    /// so the round is all it brings.
+    /// </summary>
+    public async Task WaitForARoundAsync()
+    {
+        if (_sentinel is null)
+        {
+            var folders = Folders.Make(Path.Combine(Root, "sentinel"));
+            _sentinel = await CreateLibraryAsync(
+                ("name", "Round Sentinel"),
+                ("watched_folder", folders.Watched),
+                ("work_folder", folders.Work),
+                ("output_folder", folders.Output),
+                ("scan_interval_seconds", 10),
+                ("min_file_size_mb", 1000));
         }
+
+        var relativePath = $"Round.{++_rounds}.2024/film.mkv";
+        var path = Path.Combine((string)_sentinel["watched_folder"]!, relativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        await File.WriteAllBytesAsync(path, new byte[16]);
+        await Poll.UntilAsync(async () => await FileRowAsync(_sentinel, relativePath), $"Weir to go round its scans and find {relativePath}");
     }
 
     // --- plumbing -------------------------------------------------------------------------------
