@@ -14,10 +14,6 @@
 name: Record the download clients
 
 on:
-  # DEVELOPMENT ONLY: remove before the pull request.
-  push:
-    branches: [coverage/1015-download-client-recordings]
-    paths: [".github/workflows/record-clients.yml", "apps/server/tools/Weir.ClientRecorder/**"]
   workflow_dispatch:
     inputs:
       images:
@@ -140,5 +136,5 @@ jobs:
           if-no-files-found: error
 
       - name: Compare with the checked-in replies
-        if: (github.event_name == 'schedule' || github.event_name == 'push' || inputs.compare) && (success() || failure())
+        if: (github.event_name == 'schedule' || inputs.compare) && (success() || failure())
         run: node scripts/compare-arr-recordings.mjs "$RECORDER_OUT_DIR" --apps "$RECORDER_CLIENT"
