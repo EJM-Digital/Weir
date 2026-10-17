@@ -13,6 +13,12 @@ const SKIPPED_ANSWER = { requeued: 0, skipped: 1, detail: "Weir already cleaned 
  * @param {object} [behaviour.requeue] What Process again answers.
  * @param {boolean} [behaviour.rewritesOnRequeue] Process again writes the output again.
  * @param {string} [behaviour.warnsWhileCleaning] A warning Weir logs when it cleans.
+ * @param {boolean} [behaviour.ignoresPauseRequest] Weir never takes the tray's pause request.
+ * @param {boolean} [behaviour.keepsRequestFile] Weir applies the tray's request and leaves the file.
+ * @param {boolean} [behaviour.cleansWhilePaused] Weir cleans a film although it is paused.
+ * @param {boolean} [behaviour.staysPaused] Weir does not resume on the tray's request.
+ * @param {boolean} [behaviour.failsVanishedFile] Weir reports a file that was deleted while it waited as a failure.
+ * @param {boolean} [behaviour.neverNoticesVanishedFile] Weir never notices that a waiting file is gone.
  */
 export class FakeWorld {
   logRows = [];
@@ -22,6 +28,7 @@ export class FakeWorld {
   #rows = [];
   #activity = [];
   #jobs = [];
+  #paused = false;
   #behaviour;
   #now = 0;
 
@@ -49,6 +56,9 @@ export class FakeWorld {
 
   box = {
     ensureFolders: async () => {},
+    writeFileAtomically: async (path, text) => this.#writeFile(path, text),
+    writeBytes: async (path, bytes) => void this.#files.set(path, { summary: null, sha: "tiny", modified: "t0", tiny: bytes.length }),
+    remove: async (path) => void this.#files.delete(path),
     makeFilm: async ({ path }) => void this.#files.set(path, { summary: ORIGINAL, sha: "master", modified: "t0" }),
     dropRelease: async ({ film, folder, name }) => {
       this.#files.set(`${folder}/${name}.mkv`, { ...this.#files.get(film), modified: "t0" });
@@ -75,12 +85,19 @@ export class FakeWorld {
     switch (url.pathname) {
       case "/system/log":
         return { items: [...this.logRows], next_cursor: this.nextCursor };
-      case "/processing/files":
-        return { files: this.#rows.filter((row) => row.library_id === Number(query.get("library_id"))) };
+      case "/pause":
+        return { paused: this.#paused, scan_while_paused: true };
+      case "/processing/files": {
+        const files = this.#rows.filter((row) => row.library_id === Number(query.get("library_id")));
+        const count = (status) => files.filter((file) => file.status === status).length;
+        return { files, status_counts: { processing_failed: count("processing_failed"), rejected: count("rejected") } };
+      }
       case "/activity/recent":
-        return { items: this.#activity.filter((item) => item.event_type === query.get("event_type")) };
-      case "/processing/jobs/inspection":
-        return { jobs: this.#jobs };
+        return { items: this.#activity.filter((item) => !query.get("event_type") || item.event_type === query.get("event_type")) };
+      case "/processing/jobs/inspection": {
+        const statuses = query.getAll("status");
+        return { jobs: this.#jobs.filter((job) => statuses.length === 0 || statuses.includes(job.status)) };
+      }
       default:
         throw new Error(`The stand-in has no route ${url.pathname}.`);
     }
@@ -88,7 +105,7 @@ export class FakeWorld {
 
   #write(method, path, fields) {
     if (path.endsWith("/watched-folder-remux-scan-dispatch/enqueue")) {
-      this.#look(this.workflows.find((workflow) => workflow.id === fields.library_id));
+      this.#look(this.workflows.find((workflow) => workflow.id === fields.library_id), fields.enqueue_remux_jobs);
       return { status: 200, json: {}, text: "" };
     }
     const requeue = /^\/processing\/files\/(\d+)\/requeue$/.exec(path);
@@ -96,15 +113,44 @@ export class FakeWorld {
     throw new Error(`The stand-in has no ${method} route ${path}.`);
   }
 
-  /** Weir looks at the watched folder: every film it finds is held, or cleaned into the output folder. */
-  #look(workflow) {
-    for (const path of [...this.#files.keys()].filter((name) => name.startsWith(`${workflow.watched_folder}/`) && name.endsWith(".mkv"))) {
+  /** Weir looks at the watched folder: a film it finds is held, or cleaned into the output folder once nothing holds it. */
+  #look(workflow, queueFiles) {
+    const watched = [...this.#files.keys()].filter((name) => name.startsWith(`${workflow.watched_folder}/`));
+    for (const row of this.#rows.filter((candidate) => candidate.library_id === workflow.id && !watched.includes(candidate.source))) this.#noticeGone(row);
+    for (const path of watched.filter((name) => name.endsWith(".mkv"))) {
       const relative = path.slice(workflow.watched_folder.length + 1);
-      if (this.#rows.some((row) => row.library_id === workflow.id && row.relative_path === relative)) continue;
-      const row = { id: this.#rows.length + 1, library_id: workflow.id, relative_path: relative, status: "on_hold", output: `${workflow.output_folder}/${relative}` };
-      this.#rows.push(row);
-      if (!this.#behaviour.neverCleans) this.#clean(row, path);
+      let row = this.#rows.find((candidate) => candidate.library_id === workflow.id && candidate.relative_path === relative);
+      if (!row) {
+        row = { id: this.#rows.length + 1, library_id: workflow.id, relative_path: relative, source: path, status: "on_hold", source_gone: false, output: `${workflow.output_folder}/${relative}` };
+        this.#rows.push(row);
+      }
+      if (row.status !== "on_hold") continue;
+      if (this.#files.get(path).tiny) row.status_reason = "Waiting for the file to settle.";
+      else if (this.#paused && !this.#behaviour.cleansWhilePaused) row.status_reason = "Processing is paused until you resume it.";
+      else if (queueFiles && !this.#behaviour.neverCleans) this.#clean(row, path);
     }
+    this.#jobs.push({ id: this.#jobs.length + 1, job_kind: "processing.watched_folder.remux_scan_dispatch", status: "completed" });
+  }
+
+  #noticeGone(row) {
+    if (this.#behaviour.neverNoticesVanishedFile) return;
+    row.source_gone = true;
+    if (this.#behaviour.failsVanishedFile) Object.assign(row, { status: "processing_failed", failure_class: "source_missing" });
+  }
+
+  #writeFile(path, text) {
+    if (!path.endsWith("/pause-request.json")) {
+      this.#files.set(path, { summary: null, sha: "text", modified: "t0" });
+      return;
+    }
+    if (this.#behaviour.ignoresPauseRequest) {
+      this.#files.set(path, { summary: null, sha: "request", modified: "t0" });
+      return;
+    }
+    const { paused } = JSON.parse(text);
+    if (!(this.#behaviour.staysPaused && !paused)) this.#paused = paused;
+    this.#activity.push({ event_type: paused ? "system.processing_paused" : "system.processing_resumed", title: paused ? "Paused" : "Resumed", detail: "The tray", result: "completed" });
+    if (this.#behaviour.keepsRequestFile) this.#files.set(path, { summary: null, sha: "request", modified: "t0" });
   }
 
   #clean(row, source) {

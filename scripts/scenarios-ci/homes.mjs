@@ -26,6 +26,7 @@ export function problemsWithHomes(homes, catalog) {
     if (!catalog.includes(id)) problems.push(`${id}: not in the catalogue of scenarios/Weir.Scenarios.Catalog.ps1.`);
     if (!HOMES.includes(home)) problems.push(`${id}: home "${home}" is none of ${HOMES.join(", ")}.`);
     if (!STATES.includes(state)) problems.push(`${id}: state "${state}" is none of ${STATES.join(", ")}.`);
+    problems.push(...problemsWithPasses(scenario));
     if (!why || why.trim().length < 10) problems.push(`${id}: ${home} needs a reason (why).`);
     if (home === "not-portable") {
       if (shard) problems.push(`${id}: not-portable must have no shard (it has ${shard}).`);
@@ -37,6 +38,20 @@ export function problemsWithHomes(homes, catalog) {
   }
   for (const id of catalog) {
     if (!seen.has(id)) problems.push(`${id}: in the catalogue but has no home.`);
+  }
+  return problems;
+}
+
+/** A scenario that has not been ported has passed nowhere; one that is green twice has passed on main, in two runs, on different commits. */
+function problemsWithPasses({ id, state, passedInCi = [] }) {
+  const problems = [];
+  if (state === "to-port" && passedInCi.length > 0) problems.push(`${id}: it is to-port but lists runs it passed in.`);
+  for (const pass of passedInCi) {
+    if (!Number.isInteger(pass.run) || !/^[0-9a-f]{40}$/.test(pass.commit ?? "") || !pass.ref) problems.push(`${id}: a pass needs its run number, its full commit and its ref.`);
+  }
+  if (state === "green-twice") {
+    const commits = new Set(passedInCi.filter((pass) => pass.ref === "main").map((pass) => pass.commit));
+    if (commits.size < 2) problems.push(`${id}: green-twice needs passes on main on two different commits (it has ${commits.size}).`);
   }
   return problems;
 }
