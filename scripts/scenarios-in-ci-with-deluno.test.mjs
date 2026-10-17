@@ -188,12 +188,14 @@ test("an indexer whose test fails stops the setup, saying what Deluno answered",
 });
 
 test("qBittorrent signing in with nothing to say (204) is a sign-in, and a refusal or a missing cookie is not", async () => {
-  const answer = (status, text, cookie) => async () => new Response(text === "" ? null : text, { status, headers: cookie ? { "Set-Cookie": "SID=abc; path=/" } : {} });
-  globalThis.fetch = answer(204, "", true);
-  assert.ok(await QbittorrentApi.signIn("http://q", { username: "u", password: "p" }));
-  globalThis.fetch = answer(200, "Fails.", true);
+  const answer = (status, text, cookie) => async () => new Response(text === "" ? null : text, { status, headers: cookie ? { "Set-Cookie": `${cookie}=abc; path=/` } : {} });
+  for (const name of ["SID", "QBT_SID_8080"]) {
+    globalThis.fetch = answer(204, "", name);
+    assert.ok(await QbittorrentApi.signIn("http://q", { username: "u", password: "p" }));
+  }
+  globalThis.fetch = answer(200, "Fails.", "SID");
   await assert.rejects(() => QbittorrentApi.signIn("http://q", { username: "u", password: "p" }), /would not sign in: 200 Fails/);
-  globalThis.fetch = answer(204, "", false);
+  globalThis.fetch = answer(204, "", null);
   await assert.rejects(() => QbittorrentApi.signIn("http://q", { username: "u", password: "p" }), /would not sign in: 204/);
 });
 
