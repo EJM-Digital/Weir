@@ -2537,6 +2537,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteApiTests.cs",
           "name": "Notification_channels_can_be_created_updated_and_deleted"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "The_address_is_shown_with_its_token_hidden_and_says_whether_it_had_one"
         }
       ],
       "covers": [
@@ -2575,6 +2580,16 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "A_second_alert_to_the_same_address_is_refused_in_plain_words"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "A_new_alert_still_needs_an_address"
         }
       ],
       "covers": [
@@ -2603,6 +2618,16 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "An_update_with_no_address_keeps_the_saved_one"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "An_update_to_another_alerts_address_is_refused_and_to_its_own_is_not"
         }
       ],
       "covers": [
@@ -4706,13 +4731,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "route:GET /api/v1/processing/hardware"
       ],
@@ -7108,13 +7138,18 @@
           "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/HandoffScenariosTests.cs",
           "name": "HandoffScenariosTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "job:processing.file.remux_pass.v1"
       ],
@@ -13018,13 +13053,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "setting:ProcessingRuleSetRecord.StandardizeTrackNames",
         "setting:ProcessingRuleSetRecord.TrackNameTemplate",
@@ -13073,13 +13113,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "setting:ProcessingRuleSetRecord.ClearVideoTrackNames",
         "setting:ProcessingRuleSetRecord.RemoveChapters"
@@ -14705,13 +14750,18 @@
           "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "setting:env:WEIR_FFMPEG_DIR",
         "setting:env:WEIR_MKVTOOLNIX_DIR"
@@ -29413,15 +29463,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The Remove button per folder is never clicked; removing the last folder then Save is the path to an empty library."
-      },
-      "issue": 1027,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-setup-panel.requests.test.tsx",
+          "name": "removes a folder only on Save, keeping the others"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-setup-panel.requests.test.tsx",
+          "name": "saves an empty list when the last folder is removed, and says there is nothing to show"
+        }
+      ],
       "audit": {
         "id": "WEB-537",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -29497,15 +29553,16 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The disable path (enabled false, confirm false) is untested."
-      },
-      "issue": 1027,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-setup-panel.requests.test.tsx",
+          "name": "is switched off without a confirmation, and nothing else is saved"
+        }
+      ],
       "audit": {
         "id": "WEB-541",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -29535,15 +29592,21 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The throw on a 'kind' result in save is untested."
-      },
-      "issue": 1027,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-setup-panel.requests.test.tsx",
+          "name": "shows the server's confirmation as the reason when it asks again, and stays open"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-setup-panel.requests.test.tsx",
+          "name": "shows the server's reason when it refuses the daily clean, and stays open"
+        }
+      ],
       "audit": {
         "id": "WEB-543",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -29554,15 +29617,16 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Never toggled; saved payload is only seen at its default."
-      },
-      "issue": 1027,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-setup-panel.requests.test.tsx",
+          "name": "sends the skip switch as it was set, and nothing else changed"
+        }
+      ],
       "audit": {
         "id": "WEB-544",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -29573,15 +29637,16 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Never toggled; payload clean_hardlinked_files untested."
-      },
-      "issue": 1027,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-setup-panel.requests.test.tsx",
+          "name": "sends the seeding switch as it was set, and nothing else changed"
+        }
+      ],
       "audit": {
         "id": "WEB-545",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -29657,15 +29722,16 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Sequential save (settings then schedule) with a failure in the second is untested; the draft vs saved state after a partial failure is unknown."
-      },
-      "issue": 1027,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-setup-panel.requests.test.tsx",
+          "name": "a save that is only half done"
+        }
+      ],
       "audit": {
         "id": "WEB-549",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -30479,15 +30545,26 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Integration test: render setupRoutes with the real LibrariesTab, ScheduleTab and ProfilesTab (api mocked), make an edit, click another tab and a sidebar route, expect settings-unsaved-changes naming the workflow, the week or the profile, and that Leave discards. Layer: vitest."
-      },
-      "issue": 1028,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-unsaved-guard.test.tsx",
+          "name": "a workflow edited in the real editor"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-unsaved-guard.test.tsx",
+          "name": "a week of hours drawn in the real Schedule tab"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-unsaved-guard.test.tsx",
+          "name": "a profile edited in the real Profiles tab"
+        }
+      ],
       "audit": {
         "id": "WEB-578",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -31046,15 +31123,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: flip a switch, assert updateProcessingLibrary(id, body) has enabled flipped and all other fields equal; a rejected update shows the notice. Plus one E2E that switches a workflow off and on and reads the API."
-      },
-      "issue": 1028,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/libraries-tab.requests.test.tsx",
+          "name": "the On / Off switch of a workflow"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/WorkflowRowControlsTests.cs",
+          "name": "The_On_Off_switch_turns_a_workflow_off_and_on_and_the_server_holds_each_change"
+        }
+      ],
       "audit": {
         "id": "WEB-598",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -31065,15 +31148,16 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: click Unlink on a discovered workflow, assert unlinkDiscoveredProcessingLibrary(id), the notice naming the workflow, and the failure notice. E2E optional."
-      },
-      "issue": 1028,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/libraries-tab.requests.test.tsx",
+          "name": "Unlink on a workflow imported from a media manager"
+        }
+      ],
       "audit": {
         "id": "WEB-599",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -31864,15 +31948,16 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: change Media type to TV episodes and Save; assert media_type tv in the create/update body and that the manager-setup and folder-chain queries re-key on it."
-      },
-      "issue": 1028,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.requests.test.tsx",
+          "name": "the Media type of a workflow"
+        }
+      ],
       "audit": {
         "id": "WEB-631",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -31883,15 +31968,16 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: profiles [A,B]; open a workflow with rule_set_id null shows 'Movies default (the default for its kind)', choose B, Save, assert rule_set_id B; choose the default again sends null; TV workflow shows 'TV default'."
-      },
-      "issue": 1028,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.requests.test.tsx",
+          "name": "the Rules profile of a workflow"
+        }
+      ],
       "audit": {
         "id": "WEB-632",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -32314,15 +32400,16 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The editor keeps its first snapshot (form state is set once). vitest: open the editor, push new libraries data, Save; the test must show either the editor picks up manager-owned folders or Save does not overwrite them with the stale values. Decide the behaviour first, then pin it."
-      },
-      "issue": 1028,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.requests.test.tsx",
+          "name": "a workflow that changes on the server while its editor is open"
+        }
+      ],
       "audit": {
         "id": "WEB-650",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -32686,15 +32773,16 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with fake timers: change the watched folder, advance the settle time, assert a second fetch; after Save the chain for the same id is requested again. The result shown must not be the stale one."
-      },
-      "issue": 1028,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.requests.test.tsx",
+          "name": "the folder chain"
+        }
+      ],
       "audit": {
         "id": "WEB-665",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -33731,15 +33819,21 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: click Scan Movies now, assert the enqueue mutation is called with library_id and media_scope, the button reads Starting… then Scan queued; a rejected mutation shows the alert; a workflow with no watched folder has it disabled with the title. E2E: click Scan now and see the Library page count up."
-      },
-      "issue": 1028,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/schedule-tab.scan-now.test.tsx",
+          "name": "Scan now"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/WorkflowRowControlsTests.cs",
+          "name": "Scan_now_makes_Weir_look_at_the_watched_folder_and_the_dashboard_shows_the_file_it_found"
+        }
+      ],
       "audit": {
         "id": "WEB-704",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -38138,6 +38232,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
           "name": "says Saving… and holds every field still while the server answers"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "says an alert already sends to the address, keeps the form open with what was typed, and sends it once"
         }
       ],
       "audit": {
@@ -38148,7 +38247,7 @@
     {
       "id": "web-setup-connections-performance.alerts.row-shows-label-provider-chip-disabled-chip-when-off",
       "area": "web-setup-connections-performance",
-      "behaviour": "Row shows label, provider chip, 'Disabled' chip when off, and the webhook URL masked to host and shape (token never shown)",
+      "behaviour": "Row shows label, provider chip, 'Disabled' chip when off, and the webhook URL as the server shows it, masked to host and shape (token never shown)",
       "kind": "screen action",
       "severity": "medium",
       "touches": "other-app",
@@ -38156,18 +38255,8 @@
       "proofs": [
         {
           "type": "vitest",
-          "file": "apps/web/src/pages/settings/tabs/alerts/webhook-url-mask.test.ts",
-          "name": "collapses a Discord-shaped webhook URL to its host and shape, hiding the token"
-        },
-        {
-          "type": "vitest",
-          "file": "apps/web/src/pages/settings/tabs/alerts/webhook-url-mask.test.ts",
-          "name": "falls back to the host when the path has only one segment"
-        },
-        {
-          "type": "vitest",
-          "file": "apps/web/src/pages/settings/tabs/alerts/webhook-url-mask.test.ts",
-          "name": "masks conservatively when the value is not a parseable URL"
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "shows the address as the server gave it, with the token already hidden"
         },
         {
           "type": "vitest",
@@ -38193,7 +38282,7 @@
     {
       "id": "web-setup-connections-performance.alerts.edit-alert-form-pre-fills-the-full-webhook-url",
       "area": "web-setup-connections-performance",
-      "behaviour": "Edit alert form pre-fills the full webhook URL (token visible in a plain text field)",
+      "behaviour": "Edit alert form shows the address with its token hidden and a Replace the address action; saving without replacing keeps the saved address, a typed one replaces it, and the token is never returned",
       "kind": "screen action",
       "severity": "medium",
       "touches": "other-app",
@@ -38201,8 +38290,48 @@
       "proofs": [
         {
           "type": "vitest",
-          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
-          "name": "shows the saved address in full, and saving without retyping it sends that address again"
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "shows the address with its token hidden and offers to replace it, without a field to type in"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "saves without sending an address, so the saved one is kept"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "asks for the new address once it is to be replaced, and will not save it blank"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "sends the new address when one is typed, and the token is found nowhere on the page afterwards"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "goes back to the saved address when Keep the saved address is pressed, and sends none"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "saves the alert without sending its address"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "No_route_gives_back_the_token_in_an_alerts_address"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "An_update_with_no_address_keeps_the_saved_one"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "An_update_with_a_typed_address_replaces_the_saved_one"
         }
       ],
       "audit": {
@@ -48579,13 +48708,18 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/RealFfmpegClassifiesDamagedMediaTests.cs",
           "name": "RealFfmpegClassifiesDamagedMediaTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "audit": {
         "id": "INT-FFMPEG",
         "verdict": "Partly"

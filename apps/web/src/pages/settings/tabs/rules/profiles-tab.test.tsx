@@ -7,56 +7,8 @@ import { ApiHttpError } from "../../../../lib/api/client";
 import * as authQueries from "../../../../lib/auth/queries";
 import * as librariesApi from "../../../../lib/processing/libraries-api";
 import * as ruleSetsApi from "../../../../lib/processing/rule-sets-api";
-import type { ProcessingRuleSet } from "../../../../lib/processing/rule-sets-api";
 import { ProfilesTab } from "./profiles-tab";
-
-const ruleSet: ProcessingRuleSet = {
-  id: 4,
-  name: "Feature films",
-  primary_audio_lang: "eng",
-  secondary_audio_lang: "jpn",
-  tertiary_audio_lang: "",
-  default_audio_slot: "primary",
-  remove_commentary: true,
-  subtitle_mode: "keep_listed",
-  subtitle_langs_csv: "eng",
-  preserve_forced_subs: true,
-  preserve_default_subs: true,
-  audio_preference_mode: "preferred_langs_quality",
-  audio_sorters_json: JSON.stringify([
-    { field: "language", value: "eng", reversed: false },
-    { field: "channels", value: ">=5.1", reversed: false },
-  ]),
-  subtitle_sorters_json: JSON.stringify([
-    { field: "forced", value: null, reversed: false },
-  ]),
-  keep_original_language: false,
-  original_language_additional_csv: "",
-  original_language_keep_only_first: true,
-  original_language_first_if_none: true,
-  original_language_treat_empty_as_original: false,
-  remove_images: false,
-  remove_attachments: false,
-  remove_title: false,
-  remove_language_tags: false,
-  remove_other_metadata: false,
-  remove_hearing_impaired_subs: false,
-  audio_keep_mode: "single",
-  subtitle_max_per_language: 0,
-  subtitle_quality_strategy: "text_first",
-  standardize_track_names: false,
-  track_name_template: "{language}{variant} {channels} {codec}",
-  track_name_overrides: {
-    forced: "{language} {flags}",
-    hearing_impaired: "{language} {flags}",
-    commentary: "{language} {flags}",
-    audio_description: "{language} {flags}",
-  },
-  clear_video_track_names: false,
-  remove_chapters: false,
-  used_by_library_count: 2,
-  updated_at: "2026-07-28T04:00:00Z",
-};
+import { featureFilms as ruleSet } from "./rule-set-fixtures";
 
 function wrapper({ children }: { children: ReactNode }) {
   const client = new QueryClient({
