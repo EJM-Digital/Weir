@@ -25,6 +25,20 @@ public static class E2EDatabase
         SeedSql.Execute(connection, "DELETE FROM user_sessions");
         SeedSql.Execute(connection, "DELETE FROM users");
         SeedSql.Execute(connection, "DELETE FROM suite_settings");
+        SeedSql.Execute(
+            connection,
+            "UPDATE operator_settings SET work_temp_stale_sweep_enabled = 1, work_temp_stale_sweep_interval_seconds = NULL, " +
+            "unclaimed_handback_cleanup_enabled = 0, unclaimed_handback_window_days = 14, unclaimed_handback_cleanup_interval_seconds = NULL, " +
+            "keep_failed_work_files = 0, runner_budget_enabled = 0 WHERE id = 1");
+        transaction.Commit();
+    }
+
+    /// <summary>Gives the account this role (admin, operator or viewer), as an administrator elsewhere would: Weir has one account, so no screen makes the others.</summary>
+    public static void SetRole(string databasePath, string username, string role)
+    {
+        using var connection = Open(databasePath);
+        using var transaction = connection.BeginTransaction();
+        SeedSql.Execute(connection, "UPDATE users SET role = $role WHERE username = $username", ("$role", role), ("$username", username));
         transaction.Commit();
     }
 

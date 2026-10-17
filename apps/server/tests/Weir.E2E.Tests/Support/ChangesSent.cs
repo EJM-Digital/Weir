@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Microsoft.Playwright;
 
 namespace Weir.E2E.Tests.Support;
@@ -12,6 +13,7 @@ public sealed class ChangesSent
 
     private readonly IPage _page;
     private readonly List<string> _requests = [];
+    private readonly List<(string Request, string? Body)> _bodies = [];
 
     private ChangesSent(IPage page) => _page = page;
 
@@ -25,7 +27,9 @@ public sealed class ChangesSent
             {
                 lock (sent._requests)
                 {
-                    sent._requests.Add($"{request.Method} {new Uri(request.Url).AbsolutePath}");
+                    var line = $"{request.Method} {new Uri(request.Url).AbsolutePath}";
+                    sent._requests.Add(line);
+                    sent._bodies.Add((line, request.PostData));
                 }
             }
         };
@@ -42,6 +46,23 @@ public sealed class ChangesSent
         lock (_requests)
         {
             return [.. _requests];
+        }
+    }
+
+    /// <summary>The JSON each request of this kind ("METHOD /path") carried, in the order they were sent, without the token that proves the request came from the page.</summary>
+    public async Task<IReadOnlyList<JsonObject>> BodiesAsync(string request)
+    {
+        await _page.EvaluateAsync("() => 0");
+        lock (_requests)
+        {
+            return [.. _bodies
+                .Where(sent => sent.Request == request && sent.Body is not null)
+                .Select(sent =>
+                {
+                    var body = JsonNode.Parse(sent.Body!)!.AsObject();
+                    body.Remove("csrf_token");
+                    return body;
+                })];
         }
     }
 }

@@ -34,6 +34,9 @@ public sealed class PublishFailureTests
         Assert.Empty(Directory.EnumerateFiles(scenario.Folders.Work, "*", SearchOption.AllDirectories));
         var reason = (string)row["status_reason"]!;
         AssertPlain(reason);
+        await Poll.UntilAsync(
+            async () => (await scenario.ActivityAsync("processing.file_remux_pass_completed")).FirstOrDefault(),
+            "Activity to say the pass finished");
         var completed = DetailOf(Assert.Single(await scenario.ActivityAsync("processing.file_remux_pass_completed")));
         Assert.Equal("failed", (string)completed["result"]!);
         Assert.Equal("tiny.mkv could not be processed", (string)completed["user_message"]!);

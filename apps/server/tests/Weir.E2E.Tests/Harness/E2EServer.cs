@@ -66,6 +66,10 @@ public sealed class E2EServer : IAsyncLifetime
             ("ALL_PROXY", NoRouteToTheInternet),
             ("NO_PROXY", string.Empty)));
 
+    /// <summary>A server of its own with these settings (environment variables) on top of the shared one's, for a test of a screen that reads the server's startup configuration.</summary>
+    public static Task<WeirServer> StartWithSettingsAsync(params (string Name, string Value)[] settings) =>
+        WeirServer.StartNewAsync(Environment.With(settings));
+
     /// <summary>
     /// A server of its own, set up as the shared one is plus <paramref name="extra"/>, for a test whose changes must not reach the
     /// tests after it (the backups it makes, the log it clears) or that stops and starts the server.
