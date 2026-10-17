@@ -51,7 +51,7 @@ internal sealed class DelugeSession(ClientSettings settings) : ClientSession(set
             version = (string?)(await RpcAsync("web.get_host_status", [hostId]).ConfigureAwait(false)).Result?.AsArray().LastOrDefault() ?? string.Empty;
         }).ConfigureAwait(false);
         return new ClientSetup(
-            Settings.Version ?? (version.Length > 0 ? version : throw new InvalidOperationException("Deluge did not say its version; set RECORDER_VERSION.")),
+            VersionOf(version),
             Connection(DownloadClientKinds.Deluge, Settings.Url, null, Password, null),
             Connection(DownloadClientKinds.Deluge, Settings.Url, null, "not-the-password", null),
             [Password]);

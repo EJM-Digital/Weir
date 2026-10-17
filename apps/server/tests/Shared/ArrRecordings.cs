@@ -95,6 +95,10 @@ internal sealed class ArrRecording
     public ArrExchange To(string method, string path) =>
         Exchanges.First(exchange => exchange.Request.Method == method && exchange.Request.Path == path);
 
+    /// <summary>The first exchange of a JSON-RPC client whose request calls <paramref name="method"/> (Deluge's calls all go to one path).</summary>
+    public ArrExchange Call(string method) =>
+        Exchanges.First(exchange => (string?)exchange.Request.Body?["method"] == method);
+
     /// <summary>The recorded states of <paramref name="app"/> whose name starts with <paramref name="prefix"/>, in name order.</summary>
     public static IReadOnlyList<string> States(string app, string prefix) =>
         [.. Directory.GetFiles(VersionFolder(app), prefix + "*.json").Select(Path.GetFileNameWithoutExtension).OfType<string>().Order(StringComparer.Ordinal)];
@@ -209,10 +213,17 @@ internal sealed class ArrReplayHandler : HttpMessageHandler
     /// </summary>
     public void AssertSentAsRecorded(ArrRecording recording)
     {
+        var seen = new Dictionary<(string Method, string Path, string Query), int>();
         foreach (var exchange in recording.Exchanges)
         {
             var recorded = exchange.Request;
-            var match = Sent.FirstOrDefault(sent => sent.Method == recorded.Method && sent.Path == recorded.Path && sent.Query == recorded.Query)
+            var route = (recorded.Method, recorded.Path, recorded.Query);
+            var nth = seen.GetValueOrDefault(route);
+            seen[route] = nth + 1;
+            var onRoute = Sent.Where(sent => sent.Method == recorded.Method && sent.Path == recorded.Path && sent.Query == recorded.Query).ToList();
+
+            // A route recorded more than once (a handshake, a JSON-RPC path) is matched call by call, in the order Weir made them.
+            var match = onRoute.ElementAtOrDefault(nth) ?? onRoute.FirstOrDefault()
                 ?? throw new Xunit.Sdk.XunitException($"Weir never sent {recorded.Method} {recorded.Target}, which {recording.File} records.");
             Assert.True(
                 recorded.Body is not null && match.Body is not null ? JsonNode.DeepEquals(recorded.Body, match.Body) : recorded.BodyKey == match.BodyKey,

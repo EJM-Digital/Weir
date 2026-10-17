@@ -1,27 +1,25 @@
 using Weir.Core.Json;
 using Weir.Core.MediaManagers;
+using Weir.Tests.Shared;
 
 namespace Weir.Core.Tests.MediaManagers;
 
-/// <summary><see cref="SabnzbdRules"/>: SABnzbd's <c>get_config</c> sections for <c>misc</c> and <c>categories</c> (#768).</summary>
+/// <summary>
+/// <see cref="SabnzbdRules"/>: SABnzbd's <c>get_config</c> sections for <c>misc</c> and <c>categories</c> (#768), read from what a real
+/// SABnzbd answered (<c>fixtures/recorded/sabnzbd</c>). A test that needs a case no run produced builds it and says so.
+/// </summary>
 public sealed class SabnzbdRulesTests
 {
-    private const string Misc = """
-        {"config":{"misc":{"complete_dir":"/downloads/complete","download_dir":"/downloads/incomplete"}}}
-        """;
+    private static readonly ArrRecording Folders = ArrRecording.Load("sabnzbd", "folders");
 
-    private const string Categories = """
-        {"config":{"categories":[
-          {"name":"*","dir":"","priority":0},
-          {"name":"tv-sonarr","dir":"tv","priority":0},
-          {"name":"movies","dir":"/media/movies-complete","priority":0}
-        ]}}
-        """;
+    private static WireValue Misc => WireJsonParser.Parse(Folders.Exchanges[0].Reply.Text);
+
+    private static WireValue Categories => WireJsonParser.Parse(Folders.Exchanges[1].Reply.Text);
 
     [Fact]
     public void The_base_completed_folder_comes_from_the_misc_section()
     {
-        Assert.Equal("/downloads/complete", SabnzbdRules.ParseCompleteDir(WireJsonParser.Parse(Misc)));
+        Assert.Equal("/downloads/complete", SabnzbdRules.ParseCompleteDir(Misc));
     }
 
     [Fact]
@@ -31,19 +29,17 @@ public sealed class SabnzbdRulesTests
     [Fact]
     public void A_relative_category_folder_is_joined_onto_the_base_folder()
     {
-        var completeDir = SabnzbdRules.ParseCompleteDir(WireJsonParser.Parse(Misc));
-        var folders = SabnzbdRules.ParseCategoryFolders(WireJsonParser.Parse(Categories), completeDir);
+        var folders = SabnzbdRules.ParseCategoryFolders(Categories, SabnzbdRules.ParseCompleteDir(Misc));
 
-        Assert.Equal(new DownloadClientCategoryFolder("tv-sonarr", "/downloads/complete/tv"), folders[0]);
+        Assert.Contains(new DownloadClientCategoryFolder("tv-recorder", "/downloads/complete/tv"), folders);
     }
 
     [Fact]
     public void An_absolute_category_folder_replaces_the_base_folder_instead_of_joining_it()
     {
-        var completeDir = SabnzbdRules.ParseCompleteDir(WireJsonParser.Parse(Misc));
-        var folders = SabnzbdRules.ParseCategoryFolders(WireJsonParser.Parse(Categories), completeDir);
+        var folders = SabnzbdRules.ParseCategoryFolders(Categories, SabnzbdRules.ParseCompleteDir(Misc));
 
-        Assert.Equal(new DownloadClientCategoryFolder("movies", "/media/movies-complete"), folders[1]);
+        Assert.Contains(new DownloadClientCategoryFolder("elsewhere-recorder", "/media/elsewhere"), folders);
     }
 
     [Theory]
@@ -63,12 +59,14 @@ public sealed class SabnzbdRulesTests
     }
 
     [Fact]
-    public void The_default_category_is_not_reported_as_a_folder_of_its_own()
+    public void The_default_category_and_the_categories_with_no_folder_are_not_reported_as_folders_of_their_own()
     {
-        var completeDir = SabnzbdRules.ParseCompleteDir(WireJsonParser.Parse(Misc));
-        var folders = SabnzbdRules.ParseCategoryFolders(WireJsonParser.Parse(Categories), completeDir);
+        var folders = SabnzbdRules.ParseCategoryFolders(Categories, SabnzbdRules.ParseCompleteDir(Misc));
 
-        Assert.DoesNotContain(folders, folder => folder.Category == "*");
-        Assert.Equal(2, folders.Count);
+        var recorded = Folders.Exchanges[1].Reply.Body!["config"]!["categories"]!.AsArray();
+
+        Assert.Equal(["*", "tv-recorder", "elsewhere-recorder", "movies", "tv", "audio", "software"], recorded.Select(row => (string)row!["name"]!));
+        Assert.Equal(["", "tv", "/media/elsewhere", "", "", "", ""], recorded.Select(row => (string)row!["dir"]!));
+        Assert.Equal(["tv-recorder", "elsewhere-recorder"], folders.Select(folder => folder.Category));
     }
 }

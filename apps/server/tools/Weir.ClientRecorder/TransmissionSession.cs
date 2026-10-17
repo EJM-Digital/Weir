@@ -29,7 +29,7 @@ internal sealed class TransmissionSession(ClientSettings settings) : ClientSessi
             (version = await VersionAsync(AuthUrl, new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{User}:{Password}")))).ConfigureAwait(false)).Length > 0).ConfigureAwait(false);
 
         return new ClientSetup(
-            Settings.Version ?? version,
+            VersionOf(version),
             Connection(DownloadClientKinds.Transmission, AuthUrl, User, Password, null),
             Connection(DownloadClientKinds.Transmission, AuthUrl, User, "not-the-password", null),
             [Password]);

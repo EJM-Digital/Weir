@@ -42,7 +42,7 @@ internal sealed partial class SabnzbdSession(ClientSettings settings) : ClientSe
         await TryAsync("a category with a folder elsewhere", () => Api($"mode=set_config&section=categories&name=elsewhere-recorder&dir=/media/elsewhere&output=json&apikey={key}")).ConfigureAwait(false);
 
         return new ClientSetup(
-            Settings.Version ?? version,
+            VersionOf(version),
             Connection(DownloadClientKinds.Sabnzbd, Settings.Url, null, null, key),
             Connection(DownloadClientKinds.Sabnzbd, Settings.Url, null, null, WrongKey),
             [key, keys["nzb_key"]]);

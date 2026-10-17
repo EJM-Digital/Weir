@@ -40,7 +40,7 @@ internal sealed class QBittorrentSession(ClientSettings settings) : ClientSessio
         }
 
         return new ClientSetup(
-            Settings.Version ?? version,
+            VersionOf(version),
             Connection(DownloadClientKinds.QBittorrent, Settings.Url, User, Password, null),
             Connection(DownloadClientKinds.QBittorrent, Settings.Url, User, "not-the-password", null),
             [temporary, Password]);

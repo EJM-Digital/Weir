@@ -118,11 +118,6 @@ jobs:
           echo "::add-mask::$password"
           echo "RECORDER_SETUP_PASSWORD=$password" >> "$GITHUB_ENV"
 
-      # Deluge answers its own version only through a daemon call the Web UI may not pass on; the pinned tag says it.
-      - name: Say the version of a Deluge that does not
-        if: env.RECORDER_CLIENT == 'deluge' && matrix.images == 'pinned'
-        run: echo "RECORDER_VERSION=2.2.0" >> "$GITHUB_ENV"
-
       - name: Build the recorder
         run: dotnet build apps/server/tools/Weir.ClientRecorder -c Release -warnaserror
 
@@ -145,5 +140,5 @@ jobs:
           if-no-files-found: error
 
       - name: Compare with the checked-in replies
-        if: (github.event_name == 'schedule' || inputs.compare) && (success() || failure())
+        if: (github.event_name == 'schedule' || github.event_name == 'push' || inputs.compare) && (success() || failure())
         run: node scripts/compare-arr-recordings.mjs "$RECORDER_OUT_DIR" --apps "$RECORDER_CLIENT"

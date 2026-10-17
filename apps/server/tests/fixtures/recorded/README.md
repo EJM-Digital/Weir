@@ -1,6 +1,6 @@
 # Recordings of other apps
 
-What a real Sonarr, a real Radarr and a real Deluno said, kept as the tests found them. A test replays a recording; it never writes
+What a real Sonarr, a real Radarr, a real Deluno and the five download clients said, kept as the tests found them. A test replays a recording; it never writes
 a request or a reply by hand. Where a case has no recording, the test says so and the app's folder lists it (`MISSING.md`).
 
 | Folder | What it holds | Where it came from |
@@ -8,6 +8,7 @@ a request or a reply by hand. Where a case has no recording, the test says so an
 | `deluno/` | Weir's replies to Deluno | Deluno's own recorder (Weir #953) |
 | `deluno-side/` | Deluno's side of its talk with Weir | Deluno's recorder, copied byte for byte (`deluno-side/README.md`, Weir #971) |
 | `sonarr/`, `radarr/` | Weir's manager client code talking to a real Sonarr and a real Radarr, and the webhooks they post | `apps/server/tools/Weir.ArrRecorder`, run by `.github/workflows/record-arr.yml` (Weir #1013, #1014) |
+| `qbittorrent/`, `transmission/`, `deluge/`, `sabnzbd/`, `nzbget/` | Weir's download-client code talking to a real qBittorrent (4.x and 5.x), Transmission, Deluge, SABnzbd and NZBGet | `apps/server/tools/Weir.ClientRecorder`, run by `.github/workflows/record-clients.yml` (Weir #1015) |
 
 ## Sonarr and Radarr
 
@@ -39,3 +40,17 @@ How a recording is made, and what it holds, is in the recorder's `README.md`. Wh
 - `node scripts/check-recorded-replays.mjs` fails when a recorded state is named by no test.
 - Weekly, `record-arr.yml` records again against the pinned images and the newest releases and fails when the replies differ from these
   once times, ids, sizes and the progress of a command are set aside (`node scripts/compare-arr-recordings.mjs`).
+
+## The download clients
+
+Same format. Each client is the published Docker image, pinned by digest in `apps/server/tools/Weir.ClientRecorder/compose.yaml` (Transmission's in `apps/server/tools/Weir.ArrRecorder/compose.yaml`), recorded on a GitHub-hosted Linux runner on 17 October 2026. A secret, and the value of a session cookie, session id or sign-in token, is `<scrubbed>`; the replay tests sign in with `<scrubbed>` so the request they send is the recorded one.
+
+| Client | Version | Recorded states | Replayed by |
+| --- | --- | --- | --- |
+| `qbittorrent/` | 4.6.7 and 5.1.4 | `test`, `test-wrong-password`, `folders` | `QBittorrentRepliesTests` (each version) |
+| `transmission/` | 4.0.6 | `test-open`, `test`, `test-wrong-password`, `test-no-credentials`, `folders` | `TransmissionRepliesTests` |
+| `deluge/` | 2.2.0 | `test`, `test-wrong-password`, `folders-stock`, `folders-move-completed-off`, `folders` | `DelugeRepliesTests`, `DelugeRulesTests`, `SessionCookieTests` |
+| `sabnzbd/` | 5.1.3 | `test`, `test-wrong-key`, `folders`, `folders-wrong-key` | `SabnzbdRepliesTests` |
+| `nzbget/` | 26.3 | `test`, `test-wrong-password`, `folders`, `folders-wrong-password` | `NzbgetRepliesTests` |
+
+All five are also served by the contract suite's fake download client (`FakeDownloadClient`), which answers a running Weir with these replies and decides only whether the secret is the expected one (`DownloadClientRecordedRepliesTests`). What the recorder could not make a client do is in each client's `MISSING.md`.

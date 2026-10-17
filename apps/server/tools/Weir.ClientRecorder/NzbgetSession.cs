@@ -43,7 +43,7 @@ internal sealed class NzbgetSession(ClientSettings settings) : ClientSession(set
         }).ConfigureAwait(false);
 
         return new ClientSetup(
-            Settings.Version ?? version.TrimStart('v'),
+            VersionOf(version.TrimStart('v')),
             Connection(DownloadClientKinds.Nzbget, Settings.Url, User, Password, null),
             Connection(DownloadClientKinds.Nzbget, Settings.Url, User, "not-the-password", null),
             [Password]);

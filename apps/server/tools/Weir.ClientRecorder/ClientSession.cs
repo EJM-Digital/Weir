@@ -82,6 +82,10 @@ internal abstract class ClientSession : IDisposable
     protected static DownloadClientConnection Connection(string kind, string baseUrl, string? username, string? password, string? apiKey) =>
         new(kind, "recorder", baseUrl, username, password, apiKey);
 
+    /// <summary>The version the client reported, or the one the recorder was told when the client did not say.</summary>
+    protected string VersionOf(string reported) =>
+        reported.Length > 0 ? reported : Settings.Version ?? throw new InvalidOperationException("The client did not say its version; set RECORDER_VERSION.");
+
     protected static void Say(string line) => Console.WriteLine($"{DateTime.UtcNow:HH:mm:ss} {line}");
 
     /// <summary>The client's connection test, recorded as <paramref name="state"/>.</summary>
