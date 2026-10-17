@@ -13,6 +13,7 @@ import { DatabaseSync } from "node:sqlite";
 import { headRevision, readRevision, revisionNumber, usernamesIn } from "./docker-smoke/database.mjs";
 import { upgradeOutcome, parseSetupCode } from "./docker-smoke/server-log.mjs";
 import { previousRelease } from "./docker-smoke/previous-image.mjs";
+import { IMAGE_REPOSITORY } from "./repository.mjs";
 import { sessionCookie } from "./docker-smoke/weir-client.mjs";
 import { composeOverride } from "./docker-smoke/override.mjs";
 import { GENERATED_SECRET, asEnvironment, notOwnedBy, parseStat, processIds } from "./docker-smoke/ownership.mjs";
@@ -55,9 +56,9 @@ test("an upgrade is told apart from a start on a database that was already curre
 
 test("the previous release of a version is the newest older one, and with no version it is the newest published", () => {
   const tags = ["v1.0.0-rc.9", "v1.0.0-rc.18", "v1.0.0-rc.10"];
-  assert.deepEqual(previousRelease(tags, "1.0.0-rc.19"), { version: "1.0.0-rc.18", image: "ghcr.io/jampat000/weir:1.0.0-rc.18" });
-  assert.deepEqual(previousRelease(tags, "1.0.0-rc.10"), { version: "1.0.0-rc.9", image: "ghcr.io/jampat000/weir:1.0.0-rc.9" });
-  assert.deepEqual(previousRelease(tags, ""), { version: "1.0.0-rc.18", image: "ghcr.io/jampat000/weir:1.0.0-rc.18" });
+  assert.deepEqual(previousRelease(tags, "1.0.0-rc.19"), { version: "1.0.0-rc.18", image: `${IMAGE_REPOSITORY}:1.0.0-rc.18` });
+  assert.deepEqual(previousRelease(tags, "1.0.0-rc.10"), { version: "1.0.0-rc.9", image: `${IMAGE_REPOSITORY}:1.0.0-rc.9` });
+  assert.deepEqual(previousRelease(tags, ""), { version: "1.0.0-rc.18", image: `${IMAGE_REPOSITORY}:1.0.0-rc.18` });
 });
 
 test("the first release has no previous release to upgrade from", () => {

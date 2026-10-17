@@ -23,9 +23,8 @@ public sealed class HandoffScenariosTests
         Assert.Equal(Scenario.RemuxKind, (string)accepted["enqueued"]!);
 
         var done = await scenario.WaitForHandoffStateAsync("handoff-ok-1", "completed");
-        var report = (await fake.WaitForRequestAsync("POST", Scenario.EventsPath))[0];
-        Assert.Equal(fake.ApiKey, report.Header("X-Api-Key"));
-        var body = (JsonObject)report.Json!;
+        var body = (await scenario.WaitForReportsAsync(fake, "handoff-ok-1"))[0];
+        Assert.Equal(fake.ApiKey, Assert.Single(fake.RequestsTo("POST", Scenario.EventsPath)).Header("X-Api-Key"));
         Assert.Equal("handoff-ok-1", (string)body["handoffId"]!);
         Assert.Equal("completed", (string)body["status"]!);
         Assert.Equal("Weir", (string)body["processorName"]!);

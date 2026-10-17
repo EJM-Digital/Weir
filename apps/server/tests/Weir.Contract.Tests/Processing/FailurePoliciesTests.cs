@@ -81,11 +81,9 @@ public sealed class FailurePoliciesTests
             async () => (await scenario.JobsAsync(Scenario.RemuxKind)).All(job => (string)job["status"]! is not ("pending" or "leased")),
             "the fifth attempt to finish");
         Assert.Equal(5, (await scenario.JobsAsync(Scenario.RemuxKind)).Count);
-        // Given up means given up: no further attempt is queued, however long Weir waits.
-        await Scenario.NeverWithinAsync(
-            async () => (await scenario.JobsAsync(Scenario.RemuxKind)).Any(job => (string)job["status"]! is "pending" or "leased"),
-            TimeSpan.FromSeconds(4),
-            "another attempt at a file Weir gave up on");
+        // Given up means given up: no further attempt is queued once Weir has gone round its scans again.
+        await scenario.WaitForARoundAsync();
+        Assert.DoesNotContain(await scenario.JobsAsync(Scenario.RemuxKind), job => (string)job["status"]! is "pending" or "leased");
         Assert.Equal(5, scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux").Count);
         var failed = await scenario.FileRowAsync(library, rel);
         Assert.NotNull(failed);

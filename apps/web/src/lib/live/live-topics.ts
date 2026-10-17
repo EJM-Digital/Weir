@@ -56,6 +56,7 @@ export const LIVE_TOPIC_QUERIES: Readonly<
     processingKeys.filesAtOnce,
     processingKeys.maintenance,
   ],
+  direct_play_devices: [processingKeys.directPlayDevices, processingKeys.files],
   backups: [settingsKeys.configurationBackups],
   kept_files: [processingKeys.keptFiles],
   metrics: [settingsKeys.metrics],

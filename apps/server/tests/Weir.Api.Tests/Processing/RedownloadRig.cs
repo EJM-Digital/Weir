@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.DependencyInjection;
 using Weir.Api.Tests.MediaManagers;
 using Weir.Api.Tests.Platform;
@@ -97,9 +98,23 @@ internal sealed class RedownloadRig : IAsyncDisposable
             ("$path", path),
             ("$language", language));
 
-    /// <summary>The request the web sends: the file's path and the confirmation, with a CSRF token.</summary>
-    public async Task<HttpResponseMessage> RedownloadAsync(ApiTestClient client, long libraryId, string path, bool confirm = true) =>
-        await client.PostAsync(RedownloadsPath(libraryId), new { path, confirm_destructive = confirm, csrf_token = await client.CsrfAsync() });
+    /// <summary>The request the web sends, as the web tests built it (fixtures/web-bodies): the file's path and the confirmation, with a CSRF token.</summary>
+    public async Task<HttpResponseMessage> RedownloadAsync(ApiTestClient client, long libraryId, string path, bool confirm = true)
+    {
+        var body = WebRequestBody("download-again/confirmed");
+        body["path"] = path;
+        body["confirm_destructive"] = confirm;
+        body["csrf_token"] = await client.CsrfAsync();
+        return await client.PostAsync(RedownloadsPath(libraryId), body);
+    }
+
+    /// <summary>The body the web app sends for the request called <paramref name="name"/> in the fixture its tests write, without the token.</summary>
+    private static JsonObject WebRequestBody(string name)
+    {
+        var file = Path.Combine(AppContext.BaseDirectory, "fixtures", "web-bodies", "destructive-requests.json");
+        var request = JsonNode.Parse(File.ReadAllText(file))!.AsArray().Single(entry => (string?)entry!["name"] == name)!;
+        return (JsonObject)request["body"]!.DeepClone();
+    }
 
     /// <summary>Signs a second user in as a viewer.</summary>
     public async Task<ApiTestClient> ViewerAsync()

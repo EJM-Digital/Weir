@@ -16,9 +16,6 @@ public sealed class ArtworkApiTests(ServerFixture fixture) : IClassFixture<Serve
     private const string Metadata = $"{WeirClient.Api}/processing/metadata-provider";
     private const string Nosferatu = "Nosferatu (1922)/Nosferatu.1922.1080p.mkv";
 
-    // The resolver wakes every five seconds; this is long enough for it to have woken twice.
-    private static readonly TimeSpan TwoPasses = TimeSpan.FromSeconds(11);
-
     [Fact]
     public async Task A_file_shows_the_poster_of_its_title_once_the_title_is_looked_up()
     {
@@ -127,17 +124,18 @@ public sealed class ArtworkApiTests(ServerFixture fixture) : IClassFixture<Serve
     public async Task A_title_the_service_does_not_know_has_no_poster_and_is_not_asked_about_again()
     {
         using var gateway = new FakeGateway();
+        gateway.Knows("zzzr known", "zzzr.jpg");
         await using var server = await WeirServer.StartNewAsync(gateway.Env);
         const string path = "Zzzq Unknown (2001)/Zzzq.Unknown.2001.mkv";
-        await LibrariesPartBPosters.SeedFileAsync(server, path);
+        const string known = "Zzzr Known (2002)/Zzzr.Known.2002.mkv";
+        await LibrariesPartBPosters.SeedFilesAsync(server, [known, path]);
         using var admin = await server.CreateAdminClientAsync();
 
-        await Poll.UntilAsync(
-            () => Task.FromResult(gateway.SearchesFor("zzzq unknown") is { Count: > 0 } searches ? searches : null),
-            "the title to be searched");
+        // The lookups of one pass go from the newest file to the oldest, so once the second title has its poster the first has been asked
+        // about. That it is asked again only after a week is proved on a clock Weir does not own (ArtworkResolverTests).
+        await LibrariesPartBPosters.WaitForPosterAsync(admin, known);
 
-        await LibrariesPartBWaits.NeverWithinAsync(
-            () => gateway.SearchesFor("zzzq unknown").Count > 1, TwoPasses, "a second search for a title the service does not know");
+        Assert.Single(gateway.SearchesFor("zzzq unknown"));
         Assert.Null(await LibrariesPartBPosters.PosterUrlOfAsync(admin, path));
     }
 
@@ -151,11 +149,11 @@ public sealed class ArtworkApiTests(ServerFixture fixture) : IClassFixture<Serve
 
         using var admin = await server.CreateAdminClientAsync();
 
+        // That Weir leaves the service alone for as long as it asked, whatever the clock says, is proved in ArtworkResolverTests.
         await Poll.UntilAsync(
             () => Task.FromResult(gateway.Searches() is { Count: > 0 } searches ? searches : null), "the first search");
 
-        await LibrariesPartBWaits.NeverWithinAsync(
-            () => gateway.Searches().Count > 1, TwoPasses, "another search while the service asked Weir to wait");
+        Assert.Single(gateway.Searches());
         Assert.Null(await LibrariesPartBPosters.PosterUrlOfAsync(admin, "First Film (2010)/First.Film.2010.mkv"));
     }
 
