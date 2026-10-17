@@ -215,13 +215,8 @@ public sealed class NonBlockingConsoleTests
             set => throw new NotSupportedException();
         }
 
-        public async Task WaitForTextAsync(string text)
-        {
-            while (!Text.Contains(text, StringComparison.Ordinal))
-            {
-                await Task.Delay(5, CancellationToken.None);
-            }
-        }
+        public Task WaitForTextAsync(string text) =>
+            Eventually.ThatAsync(() => Text.Contains(text, StringComparison.Ordinal));
 
         public override void Flush()
         {

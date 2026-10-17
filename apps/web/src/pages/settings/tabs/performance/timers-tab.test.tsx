@@ -61,6 +61,15 @@ it("lists Weir's own jobs, each with where to change it", async () => {
   ).toHaveAttribute("href", "/setup/performance/cleanup");
 });
 
+it("says the timers are loading while the settings are still coming", () => {
+  stubSettings({ data: undefined, isPending: true, isError: false });
+
+  render(<TimersTab />, { wrapper });
+
+  expect(screen.getByRole("status")).toHaveTextContent("Loading timers");
+  expect(screen.queryByTestId("schedule-timers")).not.toBeInTheDocument();
+});
+
 it("shows a load error when the settings fail to load", () => {
   stubSettings({ data: undefined, isPending: false, isError: true });
 
