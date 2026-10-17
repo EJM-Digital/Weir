@@ -92,6 +92,10 @@ function gate(tag, statuses, overrides = {}) {
       assert.equal(sha, SHA);
       return statuses;
     },
+    // These records are about the tagged commit alone; the carry-over rule has its own file.
+    git: () => {
+      throw new Error("no history here");
+    },
     log: (line) => out.push(line),
     error: (line) => err.push(line),
     ...overrides,

@@ -8,6 +8,8 @@ export type ActivityAttention = {
   entries: ActivityEntry[];
   /** How many files wait on a person, as the sidebar's badge counts them. */
   count: number;
+  /** Why the files could not be read, or null when they could. No files is then not the same as none waiting. */
+  error: unknown;
 };
 
 /**
@@ -19,7 +21,7 @@ export function useActivityAttention(
   workflowId: number | null,
   search: string,
 ): ActivityAttention {
-  const { files } = useNeedsYou(workflowId);
+  const { files, filesError } = useNeedsYou(workflowId);
   const needle = search.trim().toLowerCase();
   const entries = useMemo(
     () =>
@@ -31,5 +33,5 @@ export function useActivityAttention(
       ),
     [files, needle],
   );
-  return { entries, count: files.length };
+  return { entries, count: files.length, error: filesError };
 }

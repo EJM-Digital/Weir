@@ -7,6 +7,7 @@ import {
   buildLanes,
   type Lanes,
 } from "../processing-model";
+import { recordedProcessingFile } from "../../../test/recorded";
 
 export const NOW = Date.parse("2026-10-02T10:00:00Z");
 
@@ -21,6 +22,7 @@ export function aFile(
   overrides: Partial<ProcessingFile> = {},
 ): ProcessingFile {
   return {
+    ...recordedProcessingFile(),
     id,
     library_id: 2,
     library_name: "TV",
@@ -39,7 +41,7 @@ export function aFile(
     created_at: "2026-10-02T09:50:00",
     updated_at: "2026-10-02T09:59:00",
     ...overrides,
-  } as ProcessingFile;
+  };
 }
 
 /** A pass that is writing the file: the stage and percent the server's progress reports. */

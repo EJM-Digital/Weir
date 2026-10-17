@@ -37,20 +37,28 @@ class FakeEventSource {
 export type ActivityStreamHandle = {
   /** The server says an Activity entry was written: `activity.latest`, with the newest entry's id. */
   entryWritten(latestEventId: number): void;
+  /** Any frame the stream can send, by its name, with the JSON it carries. */
+  frame(type: string, data: unknown): void;
 };
 
 /** Puts the fake stream where the page opens its EventSource. Undo with `vi.unstubAllGlobals()`. */
 export function stubActivityStream(): ActivityStreamHandle {
   FakeEventSource.opened = [];
   vi.stubGlobal("EventSource", FakeEventSource);
+  const opened = () => {
+    const [stream] = FakeEventSource.opened;
+    if (!stream) throw new Error("The page has not opened the stream.");
+    return stream;
+  };
   return {
     entryWritten(latestEventId) {
-      const [stream] = FakeEventSource.opened;
-      if (!stream) throw new Error("The page has not opened the stream.");
-      stream.emit(
+      opened().emit(
         "activity.latest",
         JSON.stringify({ latest_event_id: latestEventId }),
       );
+    },
+    frame(type, data) {
+      opened().emit(type, JSON.stringify(data));
     },
   };
 }

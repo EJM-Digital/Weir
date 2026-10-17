@@ -231,8 +231,16 @@ export function useCreateProcessingRuleSet() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: ProcessingRuleSetWrite) => createProcessingRuleSet(data),
-    onSuccess: () =>
-      void qc.invalidateQueries({ queryKey: processingKeys.ruleSets }),
+    onSuccess: (created) => {
+      // The list is read again below, but the page selects the new profile the moment the save returns, and a list
+      // without it would send the selection back to the first profile.
+      qc.setQueryData<ProcessingRuleSet[]>(processingKeys.ruleSets, (rows) =>
+        rows && !rows.some((row) => row.id === created.id)
+          ? [...rows, created]
+          : rows,
+      );
+      void qc.invalidateQueries({ queryKey: processingKeys.ruleSets });
+    },
   });
 }
 

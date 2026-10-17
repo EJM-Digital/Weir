@@ -52,12 +52,14 @@ export interface ProcessingRuleSet {
   remove_chapters: boolean;
   /** Libraries pointing at this rule set. Deleting one still in use is refused. */
   used_by_library_count: number;
+  /** The background re-plans queued for libraries using this profile. Sent only when a profile is saved. */
+  library_rescan_job_ids?: number[];
   updated_at: string | null;
 }
 
 export type ProcessingRuleSetWrite = Omit<
   ProcessingRuleSet,
-  "id" | "used_by_library_count" | "updated_at"
+  "id" | "used_by_library_count" | "library_rescan_job_ids" | "updated_at"
 >;
 
 /** Strip server-owned fields before a rule set is sent back to the API. */
