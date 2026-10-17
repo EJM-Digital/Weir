@@ -200,7 +200,7 @@ public sealed class ProcessingPassThroughHandler : IJobHandler
         catch (Exception) when (GoneSources.HasLeft(delivery.WatchedFolder, relativePath))
 #pragma warning restore CA1031
         {
-            await Task.Delay(GoneSettle, cancellationToken).ConfigureAwait(false);
+            await Task.Delay(GoneSettle, _time, cancellationToken).ConfigureAwait(false);
         }
 
         return GoneSources.HasLeft(delivery.WatchedFolder, relativePath)

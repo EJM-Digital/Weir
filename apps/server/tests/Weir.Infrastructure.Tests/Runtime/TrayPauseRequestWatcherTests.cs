@@ -55,7 +55,11 @@ public sealed class TrayPauseRequestWatcherTests : IDisposable
     private static string Request(bool paused, string requestedAt = "2026-01-15T10:00:00Z") =>
         $"{{\"paused\": {(paused ? "true" : "false")}, \"requested_at\": \"{requestedAt}\"}}";
 
-    private Task UntilTheRequestIsTakenAwayAsync() => Eventually.ThatAsync(() => !File.Exists(RequestPath));
+    /// <summary>Moves the clock past the watcher's pauses until the request is gone, which it is once the watcher has answered it.</summary>
+    private Task UntilTheRequestIsTakenAwayAsync() => UntilAsync(() => !File.Exists(RequestPath));
+
+    private Task UntilAsync(Func<bool> condition) =>
+        Eventually.ThatAdvancingAsync(_store.Clock, TrayHandOffWatcher.Settle, condition);
 
     /// <summary>Writes the request and waits for the server to take it away, which it does once it has answered.</summary>
     private async Task RequestAsync(string contents)
@@ -147,7 +151,7 @@ public sealed class TrayPauseRequestWatcherTests : IDisposable
         await _watcher.StartAsync(CancellationToken.None);
 
         await File.WriteAllTextAsync(RequestPath, Request(paused: true));
-        await Eventually.ThatAsync(() => _log.Logged(LogLevel.Warning, "could not answer the pause request"));
+        await UntilAsync(() => _log.Logged(LogLevel.Warning, "could not answer the pause request"));
         Assert.True(File.Exists(RequestPath));
 
         await _store.Execute("UPDATE suite_settings SET processing_paused_until = NULL WHERE id = 1");
@@ -161,7 +165,7 @@ public sealed class TrayPauseRequestWatcherTests : IDisposable
         await _watcher.StartAsync(CancellationToken.None);
 
         await File.WriteAllTextAsync(RequestPath, "{\"paused\": tr");
-        await Eventually.ThatAsync(() => _log.Logged(LogLevel.Debug, "cannot be read yet"));
+        await UntilAsync(() => _log.Logged(LogLevel.Debug, "cannot be read yet"));
         await File.WriteAllTextAsync(RequestPath, Request(paused: true));
 
         await UntilTheRequestIsTakenAwayAsync();
@@ -182,7 +186,7 @@ public sealed class TrayPauseRequestWatcherTests : IDisposable
         {
             await holding.ExecuteAsync("UPDATE suite_settings SET app_timezone = app_timezone WHERE id = 1");
             await File.WriteAllTextAsync(RequestPath, Request(paused: true, requestedAt: "2026-01-15T09:59:00Z"));
-            await Task.Delay(TrayHandOffWatcher.Settle + TimeSpan.FromMilliseconds(300));
+            await UntilAsync(() => _watcher.RequestsRead >= 1);
             await File.WriteAllTextAsync(RequestPath, Request(paused: false, requestedAt: "2026-01-15T09:59:30Z"));
             await holding.CommitAsync();
         }
@@ -216,7 +220,7 @@ public sealed class TrayPauseRequestWatcherTests : IDisposable
         var held = new FileStream(RequestPath, FileMode.Open, FileAccess.Read, FileShare.None);
         await _watcher.StartAsync(CancellationToken.None);
 
-        await Eventually.ThatAsync(() => _log.Logged(LogLevel.Debug, "refused for a moment"));
+        await UntilAsync(() => _log.Logged(LogLevel.Debug, "refused for a moment"));
         Assert.False((await CurrentAsync()).Paused);
         Assert.True(File.Exists(RequestPath));
 
