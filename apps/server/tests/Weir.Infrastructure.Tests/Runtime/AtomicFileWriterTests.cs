@@ -29,7 +29,7 @@ public sealed class AtomicFileWriterTests : IDisposable
         Assert.Equal([FilePath], Directory.GetFileSystemEntries(_home.Path));
     }
 
-    [Fact]
+    [WindowsFact("Windows refuses a rename over a file that is open; Linux allows it.")]
     public void A_file_held_open_when_the_write_starts_is_replaced_once_it_is_let_go()
     {
         File.WriteAllText(FilePath, "old");
@@ -47,7 +47,7 @@ public sealed class AtomicFileWriterTests : IDisposable
         Assert.Equal([FilePath], Directory.GetFileSystemEntries(_home.Path));
     }
 
-    [Fact]
+    [WindowsFact("Windows refuses a rename over a file that is open; Linux allows it.")]
     public void A_file_that_stays_held_open_is_given_up_on_after_the_tries_and_leaves_no_scratch_file()
     {
         File.WriteAllText(FilePath, "old");
