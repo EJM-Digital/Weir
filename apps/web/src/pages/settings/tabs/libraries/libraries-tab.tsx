@@ -82,6 +82,11 @@ export function LibrariesTab() {
 
   const rows = inDisplayOrder(libraries.data);
   const managers = connections.data ?? [];
+  // The workflow under edit as the server holds it now, not as it was when the editor opened.
+  const editedLibrary =
+    editing.kind === "editing"
+      ? (rows.find((row) => row.id === editing.library.id) ?? editing.library)
+      : undefined;
 
   /** Runs a change, clearing the last notice first and saying why if it fails. */
   const attempt = (work: Promise<unknown>, failure: string) => {
@@ -90,10 +95,10 @@ export function LibrariesTab() {
   };
 
   const saveLibrary = (form: LibraryForm) =>
-    editing.kind === "editing"
+    editedLibrary
       ? update.mutateAsync({
-          id: editing.library.id,
-          data: writeFrom(form, editing.library),
+          id: editedLibrary.id,
+          data: writeFrom(form, editedLibrary),
         })
       : create.mutateAsync(writeFrom(form));
 
@@ -191,10 +196,10 @@ export function LibrariesTab() {
       {editing.kind === "adding" || editing.kind === "editing" ? (
         <LibraryEditor
           key={editing.kind === "editing" ? editing.library.id : "new"}
-          library={editing.kind === "editing" ? editing.library : undefined}
+          library={editedLibrary}
           initial={
-            editing.kind === "editing"
-              ? { ...formFrom(editing.library), ...editing.preset }
+            editedLibrary
+              ? { ...formFrom(editedLibrary), ...editing.preset }
               : { ...EMPTY_LIBRARY_FORM, ...editing.preset }
           }
           editable={editable}
