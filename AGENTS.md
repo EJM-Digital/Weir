@@ -44,5 +44,5 @@ This file is the short entry point for coding agents. Keep detailed rules in lin
 
 - Encode recurring lessons in docs, scripts, tests, or CI instead of relying on chat memory.
 - Prefer small PRs with focused validation.
-- No user-facing issue closes without live proof on the rig, and every tag, release candidates included, needs a passing scenario-suite record on its exact commit before it is made (no waivers): [`docs/release-governance.md`](docs/release-governance.md), [`docs/release.md`](docs/release.md).
+- No user-facing issue closes without live proof on the rig, and every tag, release candidates included, needs a passing scenario-suite record before it is made, on its exact commit or on an earlier one with the same shipped files and the same version (a change only to tests, scripts, docs or CI keeps a pass; no waivers): [`docs/release-governance.md`](docs/release-governance.md), [`docs/release.md`](docs/release.md).
 - If a task exposes missing tooling or missing repository knowledge, add that capability as part of the fix or open a backlog issue.

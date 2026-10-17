@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { LiveProgressEntry } from "../activity/use-activity-stream-invalidation";
 import type { ProcessingFile } from "./files-api";
 import { mergeLiveProgress } from "./live-progress-merge";
+import { recordedProcessingFile } from "../../test/recorded";
 
 function file(overrides: Partial<ProcessingFile>): ProcessingFile {
   return {
+    ...recordedProcessingFile(),
     id: 1,
     library_id: 2,
     library_name: "TV",
