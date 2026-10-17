@@ -139,18 +139,10 @@ public sealed class ArrLibraryAndRedownloadRepliesTests
         var path = ListedBy(app)[0].Path;
         var redownload = new ArrManagerRedownload(replay);
 
-        if (app == "radarr")
-        {
-            var refused = await Assert.ThrowsAsync<MediaManagerHttpException>(() => redownload.RequestRedownloadAsync(replay.Connection(), ScopeOf(app), titleId, path));
-            Assert.Equal(404, refused.StatusCode);
-        }
-        else
-        {
-            var result = await redownload.RequestRedownloadAsync(replay.Connection(), ScopeOf(app), titleId, path);
-            Assert.Equal(RedownloadOutcome.FileNotMatched, result.Outcome);
-            Assert.False(result.DeletedExistingFile);
-        }
+        var refused = await Assert.ThrowsAsync<MediaManagerHttpException>(() => redownload.RequestRedownloadAsync(replay.Connection(), ScopeOf(app), titleId, path));
 
+        Assert.Equal(404, recording.Only.Reply.Status);
+        Assert.Equal(404, refused.StatusCode);
         Assert.DoesNotContain(replay.Sent, sent => sent.Method is "DELETE" or "POST");
         replay.AssertSentAsRecorded(recording);
     }

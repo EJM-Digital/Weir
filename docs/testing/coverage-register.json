@@ -1526,9 +1526,7 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
-        }
-      ],
-      "partial": [
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadApiTests.cs",
@@ -1558,13 +1556,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadRecordApiTests.cs",
           "name": "LibraryRedownloadRecordApiTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RecordedRedownloadTests.cs",
+          "name": "Download_again_makes_the_app_delete_the_matched_file_and_search_as_recorded"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ArrRedownloadReplies.cs",
+          "name": "ArrRedownloadReplies"
         }
       ],
-      "needs": {
-        "kind": "recording-replay",
-        "test": "Proved over HTTP against a scripted Sonarr and Radarr whose replies are assumed shapes (ArrRedownloadReplies.cs). Still open: the recorded Sonarr (#1013) and Radarr (#1014) replies must replace them, and a real redownload on the VM must delete the file at the real manager and ask for the search."
-      },
-      "issue": 985,
       "covers": [
         "route:POST /api/v1/processing/libraries/{library_id}/library-redownloads"
       ],
@@ -29765,12 +29768,18 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Body never asserted; the manager deletes the file."
-      },
-      "issue": 993,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-redownload.requests.test.tsx",
+          "name": "sends the path with the confirmation, says what the manager did, and stops offering the button"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RecordedRedownloadTests.cs",
+          "name": "Download_again_makes_the_app_delete_the_matched_file_and_search_as_recorded"
+        }
+      ],
       "audit": {
         "id": "WEB-557",
         "verdict": "Gap"
@@ -47678,8 +47687,7 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/FakeManagerTests.cs",
@@ -47749,13 +47757,53 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/LibraryFileChangeNotifierTests.cs",
           "name": "LibraryFileChangeNotifierTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/ArrConnectionAndQueueRepliesTests.cs",
+          "name": "ArrConnectionAndQueueRepliesTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/ArrScanAndSetupRepliesTests.cs",
+          "name": "ArrScanAndSetupRepliesTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/ArrLibraryAndRedownloadRepliesTests.cs",
+          "name": "ArrLibraryAndRedownloadRepliesTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/DownloadedScanRecordedRepliesTests.cs",
+          "name": "DownloadedScanRecordedRepliesTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ArrWebhookRecordedTests.cs",
+          "name": "ArrWebhookRecordedTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/ArrWebhookReplayTests.cs",
+          "name": "An_event_the_app_posts_is_answered_by_the_route_the_app_was_told_to_use_and_changes_nothing"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RecordedRedownloadTests.cs",
+          "name": "Download_again_makes_the_app_delete_the_matched_file_and_search_as_recorded"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/ArrDownloadedScanBusyRepliesTests.cs",
+          "name": "ArrDownloadedScanBusyRepliesTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/LinkedOriginalsTests.cs",
+          "name": "A_sonarr_workflow_is_still_scanned_and_its_originals_are_kept"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No real Sonarr has ever run against Weir in any layer: the VM holds Deluno only, the fakes are hand-written, and the webhook shapes come from reading Sonarr's source. Sonarr is a main integration; nothing proves that what Weir sends and reads matches the real product"
-      },
-      "issue": 1013,
       "audit": {
         "id": "INT-SONARR",
         "verdict": "Partly"
@@ -47769,8 +47817,7 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/FailurePoliciesTests.cs",
@@ -47800,13 +47847,43 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/HandbackOutcomeApiTests.Speakers.cs",
           "name": "HandbackOutcomeApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/ArrConnectionAndQueueRepliesTests.cs",
+          "name": "ArrConnectionAndQueueRepliesTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/ArrScanAndSetupRepliesTests.cs",
+          "name": "ArrScanAndSetupRepliesTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/ArrLibraryAndRedownloadRepliesTests.cs",
+          "name": "ArrLibraryAndRedownloadRepliesTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/DownloadedScanRecordedRepliesTests.cs",
+          "name": "DownloadedScanRecordedRepliesTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ArrWebhookRecordedTests.cs",
+          "name": "ArrWebhookRecordedTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/ArrWebhookReplayTests.cs",
+          "name": "An_event_the_app_posts_is_answered_by_the_route_the_app_was_told_to_use_and_changes_nothing"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RecordedRedownloadTests.cs",
+          "name": "Download_again_makes_the_app_delete_the_matched_file_and_search_as_recorded"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Same: fake Radarr, source-derived payloads, no VM"
-      },
-      "issue": 1014,
       "audit": {
         "id": "INT-RADARR",
         "verdict": "Partly"
@@ -47860,9 +47937,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/MediaManagerServiceTests.cs",
           "name": "MediaManagerServiceTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/ArrWebhookReplayTests.cs",
+          "name": "An_event_the_app_posts_is_answered_by_the_route_the_app_was_told_to_use_and_changes_nothing"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ArrWebhookRecordedTests.cs",
+          "name": "ArrWebhookRecordedTests"
         }
       ],
-      "issue": 1068,
       "audit": {
         "id": "INT-ARR-WEBHOOK",
         "verdict": "Covered"
@@ -51331,9 +51417,18 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/DelunoOwnedWorkflowTests.cs",
           "name": "DelunoOwnedWorkflowTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/LinkedOriginalsTests.cs",
+          "name": "A_radarr_workflow_is_still_scanned_and_its_originals_are_kept"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/LinkedOriginalsTests.cs",
+          "name": "A_sonarr_workflow_is_still_scanned_and_its_originals_are_kept"
         }
       ],
-      "issue": 1068,
       "audit": {
         "id": "FL-37",
         "verdict": "Covered"
@@ -51461,17 +51556,21 @@
       "required": "real",
       "proofs": [
         {
-          "type": "contract",
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/LinkedWorkflowOriginalsTests.cs",
+          "name": "LinkedWorkflowOriginalsTests"
+        },
+        {
+          "type": "recording-replay",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/LinkedOriginalsTests.cs",
           "name": "A_radarr_workflow_is_still_scanned_and_its_originals_are_kept"
         },
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/LinkedWorkflowOriginalsTests.cs",
-          "name": "LinkedWorkflowOriginalsTests"
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/LinkedOriginalsTests.cs",
+          "name": "A_sonarr_workflow_is_still_scanned_and_its_originals_are_kept"
         }
       ],
-      "issue": 1068,
       "audit": {
         "id": "FL-40",
         "verdict": "Covered"
@@ -55704,7 +55803,7 @@
       "touches": "none",
       "required": "inproc",
       "proofs": [],
-      "issue": 1013,
+      "issue": 1142,
       "covers": [
         "event:arr_library.connection_test_succeeded"
       ],

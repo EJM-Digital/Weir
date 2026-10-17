@@ -59,3 +59,13 @@ test("numbers in a path and a query are set aside, text is not", () => {
     path: "/tv/Show/S01E01.mkv",
   });
 });
+
+test("how far along a command is, and the free space on a disk, do not make two runs differ", () => {
+  const command = (status, extra) => ({ name: "RescanSeries", commandName: "Rescan Series", body: { seriesId: 1 }, status, id: 3, ...extra });
+  const before = folder("sonarr", "1.0.0.1", { rescan: recording("sonarr", "1.0.0.1", "rescan", command("queued", { queued: "2026-10-17T10:00:00Z" })) });
+  const now = folder("sonarr", "1.0.0.1", { rescan: recording("sonarr", "1.0.0.1", "rescan", command("started", { started: "2026-10-17T10:00:01Z", duration: "00:00:00.04" })) });
+  assert.deepEqual(problems("sonarr", now, before), []);
+  assert.deepEqual(normalise({ path: "/tv", freeSpace: 90611236864 }), { freeSpace: "<number>", path: "/tv" });
+  const changed = folder("sonarr", "1.0.0.1", { rescan: recording("sonarr", "1.0.0.1", "rescan", command("queued", { body: { seriesId: 1, extra: true } })) });
+  assert.match(problems("sonarr", changed, before)[0], /body/);
+});

@@ -18,6 +18,10 @@
     <Using Include="Xunit" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Recordings of a real Sonarr and Radarr (fixtures/recorded) and the handler that replays them. -->
+    <Compile Include="..\Shared\ArrRecordings.cs" Link="TestSupport\ArrRecordings.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- Answers first recorded from the rules engine's earlier releases; now maintained as .NET fixtures (apps/server/README.md). -->
     <None Include="Rules/golden/*.json" CopyToOutputDirectory="PreserveNewest" LinkBase="Rules/golden" />
     <!-- Issue #537: golden cases whose correct answer now deliberately differs from the one an earlier release recorded. See GoldenParityTests for the mechanism. -->

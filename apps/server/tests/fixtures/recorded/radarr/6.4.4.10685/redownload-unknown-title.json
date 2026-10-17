@@ -1,0 +1,31 @@
+{
+  "app": "radarr",
+  "version": "6.4.4.10685",
+  "state": "redownload-unknown-title",
+  "recordedAt": "2026-10-17T05:26:24Z",
+  "note": "Download again for a title the app does not have.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/movie/987654",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/problem+json; charset=utf-8"
+        },
+        "body": {
+          "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+          "title": "Not Found",
+          "status": 404,
+          "traceId": "00-0ec1689a0ad5e67bdb38cae70c997908-4b0d5b3465a7a2a8-00"
+        }
+      }
+    }
+  ]
+}

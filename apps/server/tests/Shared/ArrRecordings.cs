@@ -58,13 +58,19 @@ internal sealed class ArrRecording
     /// <summary>The file as the repository holds it, which is what a failure names.</summary>
     public string File => $"apps/server/tests/fixtures/recorded/{App}/{Version}/{State}.json";
 
+    /// <summary>
+    /// This recording with other exchanges: the same app, version and state, for a test that has to change a member of a recorded reply to
+    /// reach a case no run produced on demand. The test says which member it changes.
+    /// </summary>
+    public ArrRecording WithExchanges(IEnumerable<ArrExchange> exchanges) => new(App, Version, State, Note, [.. exchanges]);
+
     public ArrExchange Only => Exchanges.Count == 1
         ? Exchanges[0]
         : throw new InvalidOperationException($"{File} holds {Exchanges.Count} exchanges; name the one to use.");
 
-    /// <summary>The exchange of this recording whose request is <paramref name="method"/> <paramref name="path"/>; there must be exactly one.</summary>
+    /// <summary>The first exchange of this recording whose request is <paramref name="method"/> <paramref name="path"/>.</summary>
     public ArrExchange To(string method, string path) =>
-        Exchanges.Single(exchange => exchange.Request.Method == method && exchange.Request.Path == path);
+        Exchanges.First(exchange => exchange.Request.Method == method && exchange.Request.Path == path);
 
     /// <summary>The recorded states of <paramref name="app"/> whose name starts with <paramref name="prefix"/>, in name order.</summary>
     public static IReadOnlyList<string> States(string app, string prefix) =>

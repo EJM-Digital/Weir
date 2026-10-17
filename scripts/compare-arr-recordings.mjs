@@ -24,7 +24,7 @@ export const checkedIn = path.join(repositoryRoot, "apps", "server", "tests", "f
 export const apps = ["sonarr", "radarr"];
 
 /** Members whose value is the app's own bookkeeping: still required, never compared. */
-const VOLATILE_MEMBER = /^(id|.*Id|.*Ids|size|sizeleft|timeleft|sizeOnDisk|.*Count|.*Bytes|runtime|.*Size|.*Seconds|.*Minutes|.*Date|.*Time|added|.*At|age|ageHours|ageMinutes)$/;
+const VOLATILE_MEMBER = /^(id|.*Id|.*Ids|size|sizeleft|timeleft|sizeOnDisk|.*Count|.*Bytes|runtime|.*Size|.*Seconds|.*Minutes|.*Date|.*Time|added|.*At|age|ageHours|ageMinutes|duration|freeSpace|totalSpace)$/;
 
 /** Members that describe a title on a metadata site, and move without the app moving. */
 const METADATA_MEMBER = new Set([
@@ -32,6 +32,7 @@ const METADATA_MEMBER = new Set([
   "previousAiring", "year", "network", "airTime", "originalLanguage", "alternateTitles", "seasons", "tags", "sortTitle", "cleanTitle",
   "titleSlug", "firstAired", "lastAired", "youTubeTrailerId", "studio", "website", "imdbId", "tmdbId", "tvdbId", "tvMazeId", "tvRageId",
   "collection", "inCinemas", "physicalRelease", "digitalRelease", "releaseDate", "secondaryYear", "secondaryYearSourceId", "overview",
+  "description", "traceId",
 ]);
 
 const TIMESTAMP = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?/g;
@@ -47,13 +48,17 @@ export function maskPath(target) {
   return maskText(target).replace(/\/\d+(?=\/|\?|$)/g, "/<id>").replace(/=\d+(?=&|$)/g, "=<n>");
 }
 
+/** What a command's answer says about where it is in its life: it depends on how fast the app was, so it is never compared. */
+const COMMAND_PROGRESS = new Set(["status", "started", "ended", "stateChangeTime", "queued", "duration", "result", "message", "exception"]);
+
 /** The value as the comparison sees it: masked text, volatile members reduced to their type, metadata members dropped. */
 export function normalise(value, member = "") {
   if (Array.isArray(value)) return value.map((item) => normalise(item, member));
   if (value !== null && typeof value === "object") {
     const out = {};
+    const isCommand = typeof value.commandName === "string";
     for (const key of Object.keys(value).sort()) {
-      if (METADATA_MEMBER.has(key)) continue;
+      if (METADATA_MEMBER.has(key) || (isCommand && COMMAND_PROGRESS.has(key))) continue;
       out[key] = normalise(value[key], key);
     }
     return out;
@@ -61,6 +66,11 @@ export function normalise(value, member = "") {
   if (VOLATILE_MEMBER.test(member)) return `<${typeof value}>`;
   if (typeof value === "string") return maskText(value);
   return value;
+}
+
+/** A `location` header names the command or resource the app made: its number is the app's own. */
+function maskLocation(headers) {
+  return typeof headers.location === "string" ? { ...headers, location: maskPath(headers.location) } : headers;
 }
 
 export function normaliseExchange(exchange) {
@@ -73,7 +83,7 @@ export function normaliseExchange(exchange) {
     },
     reply: {
       status: exchange.reply.status,
-      headers: normalise(exchange.reply.headers ?? {}),
+      headers: maskLocation(normalise(exchange.reply.headers ?? {})),
       body: normalise(exchange.reply.body ?? null),
       bodyText: exchange.reply.bodyText === undefined ? null : maskText(exchange.reply.bodyText),
     },

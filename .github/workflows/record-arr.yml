@@ -45,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        images: ${{ fromJSON(github.event_name == 'schedule' && '["pinned","latest"]' || format('["{0}"]', inputs.images || 'pinned')) }}
+        images: ${{ fromJSON(github.event_name != 'workflow_dispatch' && '["pinned","latest"]' || format('["{0}"]', inputs.images || 'pinned')) }}
     env:
       RECORDER_WORK: ${{ github.workspace }}/arr-work
       RECORDER_OUT_DIR: ${{ github.workspace }}/arr-recorded
@@ -115,5 +115,5 @@ jobs:
           if-no-files-found: error
 
       - name: Compare with the checked-in replies
-        if: (github.event_name == 'schedule' || inputs.compare) && (success() || failure())
+        if: (github.event_name != 'workflow_dispatch' || inputs.compare) && (success() || failure())
         run: node scripts/compare-arr-recordings.mjs "$RECORDER_OUT_DIR"
