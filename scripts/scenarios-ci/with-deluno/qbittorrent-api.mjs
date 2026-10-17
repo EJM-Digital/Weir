@@ -14,7 +14,9 @@ export class QbittorrentApi {
   static async signIn(origin, { username, password }) {
     const login = await send(origin, { method: "POST", path: "/api/v2/auth/login", form: { username, password }, what: "qBittorrent" });
     const cookie = login.headers.getSetCookie().map((header) => header.split(";")[0]).find((pair) => pair.startsWith("SID="));
-    if (login.status !== 200 || !/^ok/i.test(login.text.trim()) || !cookie) {
+    // A sign-in that worked is answered 200 "Ok." or, from newer versions, 204 with nothing; either way it sets the session cookie.
+    const said = login.text.trim();
+    if (![200, 204].includes(login.status) || (said !== "" && !/^ok/i.test(said)) || !cookie) {
       throw new Error(`qBittorrent would not sign in: ${login.status} ${login.text.slice(0, 200)}`);
     }
     return new QbittorrentApi(origin, cookie);

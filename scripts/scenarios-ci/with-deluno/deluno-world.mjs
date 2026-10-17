@@ -12,13 +12,19 @@ import { QbittorrentApi } from "./qbittorrent-api.mjs";
 /** Where the stack's applications answer on this machine (with-deluno/compose.yaml publishes these ports). */
 export const DELUNO_ORIGIN = "http://localhost:5099";
 export const QBITTORRENT_ORIGIN = "http://localhost:18081";
+const FIXTURE_ORIGIN = "http://localhost:18765";
 
 /** Where the applications reach one another, on the stack's own network. */
 const DELUNO_INSIDE = "http://deluno:8080";
 const WEIR_INSIDE = "http://weir:9347";
+const FIXTURE_INSIDE = "http://fixture:8765";
 
 export const FOLDERS = { downloads: "/downloads/completed/Movies", library: "/media/Movies", weirOutput: "/weir/Ready/Movies" };
 export const MOVIES_CATEGORY = "deluno-movies";
+/** The folder every container sees the release source's films in: the scenario makes a film here, in Weir's container, and the source offers it. */
+export const FILM_FOLDER = "/work/source";
+// Deluno treats a film shorter than two minutes as a likely sample.
+export const FILM_SECONDS = 130;
 const READY_CEILING_MS = 180_000;
 // qBittorrent keeps a password as PBKDF2-HMAC-SHA512 over 100,000 rounds, written as salt:hash in base64.
 const PBKDF2_ROUNDS = 100_000;
@@ -43,10 +49,12 @@ export class DelunoWorld {
   qbittorrent;
   #weir;
   #library;
+  #indexer;
   #connection = null;
 
-  constructor({ deluno, qbittorrent, weir, library }) {
+  constructor({ deluno, qbittorrent, weir, library, indexer }) {
     this.deluno = deluno;
+    this.#indexer = indexer;
     this.qbittorrent = qbittorrent;
     this.#weir = weir;
     this.#library = library;
@@ -57,6 +65,7 @@ export class DelunoWorld {
     const ready = (origin, path, what) => pollUntil(async () => ((await send(origin, { method: "GET", path, what }).catch(() => ({ status: 0 }))).status === 200 ? true : undefined), { what, ceilingMs: READY_CEILING_MS, intervalMs: 2000, clock });
     await ready(DELUNO_ORIGIN, "/health", "Deluno to answer");
     await ready(QBITTORRENT_ORIGIN, "/", "qBittorrent to answer");
+    await ready(FIXTURE_ORIGIN, "/health", "the release source to answer");
 
     const deluno = new DelunoApi(DELUNO_ORIGIN);
     await deluno.createFirstAccount(logins.deluno);
@@ -105,7 +114,69 @@ export class DelunoWorld {
       retryDelayHours: 6,
       maxItemsPerRun: 10,
     });
-    return new DelunoWorld({ deluno, qbittorrent, weir, library });
+
+    // The release source is a Torznab feed, added as an indexer as a person adds one. Nothing searches it: the scenario sends its release itself.
+    const indexer = await deluno.must("POST", "/api/indexers", {
+      name: "Scenario feed",
+      protocol: "torznab",
+      privacy: "public",
+      baseUrl: FIXTURE_INSIDE,
+      apiKey: "scenario",
+      priority: 25,
+      categories: "2000,2040,5000,5040",
+      mediaScope: "both",
+      isEnabled: true,
+      keepName: true,
+      routeToLibraries: true,
+      rssEnabled: false,
+      automaticSearchEnabled: false,
+    });
+    const indexerTest = await deluno.call("POST", `/api/indexers/${indexer.id}/test`);
+    assert.ok(indexerTest.status >= 200 && indexerTest.status < 300, `Deluno's test of the release source failed: ${indexerTest.status} ${indexerTest.text.slice(0, 400)}`);
+    await deluno.must("PUT", `/api/libraries/${library.id}/routing`, {
+      sources: [{ indexerId: indexer.id, priority: 1, requiredTags: "", excludedTags: "" }],
+      downloadClients: [{ downloadClientId: client.id, priority: 1 }],
+    });
+    // The planner that hands a finished download to Weir is one of the automatic jobs.
+    await deluno.must("PUT", "/api/settings/automation", { isEnabled: true });
+    return new DelunoWorld({ deluno, qbittorrent, weir, library, indexer });
+  }
+
+  /**
+   * Makes a film in Weir's container, as the scenario's film, and has the release source make a release of it that qBittorrent can download:
+   * the film and an .nfo in a folder named like a release, and a torrent that names the source as its web seed.
+   * @returns {Promise<{title: string, year: number, release: string, infohash: string, size: number, url: string}>}
+   */
+  async makeFilm({ box, title, year }) {
+    const source = `${FILM_FOLDER}/${title}.mkv`;
+    await box.makeFilm({ path: source, seconds: FILM_SECONDS });
+    const made = await send(FIXTURE_ORIGIN, { method: "POST", path: "/releases", body: { source, title, year }, what: "The release source" });
+    assert.equal(made.status, 200, `The release source made the release (answered ${made.status}: ${made.text.slice(0, 300)})`);
+    return made.json;
+  }
+
+  /** Adds the film to Deluno and sends its release to qBittorrent, as "Send anyway" on the title's page does. */
+  async sendFilm(film) {
+    const movie = await this.deluno.must("POST", "/api/movies", { title: film.title, releaseYear: film.year, imdbId: null, monitored: true });
+    await this.deluno.must("POST", `/api/movies/${movie.id}/grab`, {
+      releaseName: film.release,
+      indexerId: this.#indexer.id,
+      indexerName: this.#indexer.name,
+      candidateQuality: "WEB 1080p",
+      downloadUrl: film.url,
+      sizeBytes: film.size,
+      seeders: 50,
+      force: true,
+      overrideReason: "Weir scenarios",
+      duplicateAction: null,
+    });
+    return movie;
+  }
+
+  /** The newest hand-off Deluno has for a release, or undefined. */
+  async handoffOf(release) {
+    const all = await this.deluno.handoffs();
+    return all.filter((handoff) => String(handoff.releaseName).includes(release)).sort((a, b) => String(b.createdUtc).localeCompare(String(a.createdUtc)))[0];
   }
 
   /**

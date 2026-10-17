@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { imageEnvironment, imageVariable, loadImages, problemsWithImages } from "./scenarios-ci/images.mjs";
 import { runScenarios } from "./scenarios-ci/run.mjs";
 import { SHARDS } from "./scenarios-ci/shards.mjs";
+import { QbittorrentApi } from "./scenarios-ci/with-deluno/qbittorrent-api.mjs";
 import { DelunoWorld, FOLDERS, newLogins, qbittorrentPasswordHash } from "./scenarios-ci/with-deluno/deluno-world.mjs";
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -17,7 +18,7 @@ const images = loadImages();
 
 // --- the images ---------------------------------------------------------------------------------------------------------
 
-test("Deluno and qBittorrent are pinned by digest, with a label saying what was pinned", () => {
+test("Deluno, qBittorrent and the release source's runtime are pinned by digest, with a label saying what was pinned", () => {
   assert.deepEqual(problemsWithImages(images), []);
   assert.equal(images.DELUNO.reference, "ghcr.io/jampat000/deluno@sha256:beba76803e94b4ae63a1fe0418a9601d1dbc3f6609c1acdb5f8d801d8bd00059");
   assert.match(images.DELUNO.label, /1\.0\.0-rc\.30\.33/);
@@ -37,7 +38,11 @@ test("a reference without a digest, a tag in place of one, or a pin without a la
 });
 
 test("Compose is given each pinned reference under a variable of its name", () => {
-  assert.deepEqual(imageEnvironment(images), { SCENARIO_DELUNO_IMAGE: images.DELUNO.reference, SCENARIO_QBITTORRENT_IMAGE: images.QBITTORRENT.reference });
+  assert.deepEqual(imageEnvironment(images), {
+    SCENARIO_DELUNO_IMAGE: images.DELUNO.reference,
+    SCENARIO_QBITTORRENT_IMAGE: images.QBITTORRENT.reference,
+    SCENARIO_NODE_IMAGE: images.NODE.reference,
+  });
   assert.equal(imageVariable("QBITTORRENT"), "SCENARIO_QBITTORRENT_IMAGE");
 });
 
@@ -97,7 +102,7 @@ afterEach(() => {
 });
 
 /** Answers the routes of Deluno and qBittorrent that the setup calls, and records each request. */
-function standIns({ clientTest = 200 } = {}) {
+function standIns({ clientTest = 200, indexerTest = 200 } = {}) {
   const requests = [];
   globalThis.fetch = async (url, options = {}) => {
     const { origin, pathname } = new URL(url);
@@ -116,6 +121,10 @@ function standIns({ clientTest = 200 } = {}) {
     if (key === "POST /api/download-clients/client-1/test") return json({}, clientTest);
     if (key === "POST /api/quality-profiles") return json({ id: "profile-1" });
     if (key === "POST /api/libraries") return json({ id: "library-1" });
+    if (key === "POST /api/indexers") return json({ id: "indexer-1", name: "Scenario feed" });
+    if (key === "POST /api/indexers/indexer-1/test") return json({}, indexerTest);
+    if (key === "PUT /api/libraries/library-1/routing") return json({});
+    if (key === "PUT /api/settings/automation") return json({});
     if (key === "POST /api/api-keys") return json({ apiKey: "deluno_key" });
     if (key === "POST /api/integrations/processors/connections") return json({ id: "processor-1", name: "Weir" });
     if (key === "PUT /api/libraries/library-1/workflow") return json({});
@@ -147,6 +156,10 @@ test("Deluno is set up as a person sets it up: its account, qBittorrent's folder
     "POST /api/download-clients/client-1/test",
     "POST /api/quality-profiles",
     "POST /api/libraries",
+    "POST /api/indexers",
+    "POST /api/indexers/indexer-1/test",
+    "PUT /api/libraries/library-1/routing",
+    "PUT /api/settings/automation",
   ]);
   const client = requests.find((request) => request.path === "/api/download-clients");
   assert.deepEqual(
@@ -157,6 +170,31 @@ test("Deluno is set up as a person sets it up: its account, qBittorrent's folder
   assert.equal(requests.find((request) => request.path === "/api/v2/app/setPreferences").cookie, "SID=abc");
   const library = requests.find((request) => request.path === "/api/libraries").body;
   assert.deepEqual([library.rootPath, library.downloadsPath, library.qualityProfileId], [FOLDERS.library, FOLDERS.downloads, "profile-1"]);
+});
+
+test("the release source is added to Deluno as a Torznab indexer, tested, and the library is routed to it and to qBittorrent, with automatic jobs on", async () => {
+  const requests = standIns();
+  await DelunoWorld.setUp({ weir: {}, logins: LOGINS, clock: instantClock });
+  const indexer = requests.find((request) => request.path === "/api/indexers").body;
+  assert.deepEqual([indexer.protocol, indexer.baseUrl, indexer.automaticSearchEnabled], ["torznab", "http://fixture:8765", false]);
+  const routing = requests.find((request) => request.path === "/api/libraries/library-1/routing").body;
+  assert.deepEqual([routing.sources[0].indexerId, routing.downloadClients[0].downloadClientId], ["indexer-1", "client-1"]);
+  assert.deepEqual(requests.find((request) => request.path === "/api/settings/automation").body, { isEnabled: true });
+});
+
+test("an indexer whose test fails stops the setup, saying what Deluno answered", async () => {
+  standIns({ indexerTest: 500 });
+  await assert.rejects(() => DelunoWorld.setUp({ weir: {}, logins: LOGINS, clock: instantClock }), /Deluno's test of the release source failed: 500/);
+});
+
+test("qBittorrent signing in with nothing to say (204) is a sign-in, and a refusal or a missing cookie is not", async () => {
+  const answer = (status, text, cookie) => async () => new Response(text === "" ? null : text, { status, headers: cookie ? { "Set-Cookie": "SID=abc; path=/" } : {} });
+  globalThis.fetch = answer(204, "", true);
+  assert.ok(await QbittorrentApi.signIn("http://q", { username: "u", password: "p" }));
+  globalThis.fetch = answer(200, "Fails.", true);
+  await assert.rejects(() => QbittorrentApi.signIn("http://q", { username: "u", password: "p" }), /would not sign in: 200 Fails/);
+  globalThis.fetch = answer(204, "", false);
+  await assert.rejects(() => QbittorrentApi.signIn("http://q", { username: "u", password: "p" }), /would not sign in: 204/);
 });
 
 test("a download client whose test fails stops the setup, saying what Deluno answered", async () => {

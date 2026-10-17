@@ -2,6 +2,7 @@
   "note": "Every image a scenario starts other than the Weir image CI built, by digest. The digest lives here and nowhere else; a label says what was pinned so a person can read it. Bumping one is its own commit, after the weekly drift job shows what changed. Each is passed to Compose as SCENARIO_<NAME>_IMAGE.",
   "images": {
     "DELUNO": { "label": "Deluno 1.0.0-rc.30.33", "reference": "ghcr.io/jampat000/deluno@sha256:beba76803e94b4ae63a1fe0418a9601d1dbc3f6609c1acdb5f8d801d8bd00059" },
-    "QBITTORRENT": { "label": "qBittorrent 5.2.4, as linuxserver publishes it", "reference": "ghcr.io/linuxserver/qbittorrent@sha256:97333cc1ccf903e0bbcd8eb67e3332e4970e9c1ecabe145e499e9c0847ebcaed" }
+    "QBITTORRENT": { "label": "qBittorrent 5.2.4, as linuxserver publishes it", "reference": "ghcr.io/linuxserver/qbittorrent@sha256:97333cc1ccf903e0bbcd8eb67e3332e4970e9c1ecabe145e499e9c0847ebcaed" },
+    "NODE": { "label": "Node.js 22 (slim), what the release source runs on", "reference": "docker.io/library/node@sha256:c3de60bf2f9dd0ac6370e6117950ff62d6e339527e7472301c9c78a017978392" }
   }
 }

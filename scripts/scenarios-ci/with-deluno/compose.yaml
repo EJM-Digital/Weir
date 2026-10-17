@@ -15,7 +15,7 @@ services:
     command:
       - |
         set -e
-        mkdir -p /downloads/completed/Movies /downloads/incomplete /media/Movies /weir/Ready/Movies /config/qBittorrent
+        mkdir -p /downloads/completed/Movies /downloads/incomplete /media/Movies /weir/Ready/Movies /config/qBittorrent /work/source
         cat > /config/qBittorrent/qBittorrent.conf <<CONF
         [LegalNotice]
         Accepted=true
@@ -28,7 +28,7 @@ services:
         WebUI\Username=$$QBITTORRENT_USERNAME
         WebUI\Password_PBKDF2="@ByteArray($$QBITTORRENT_PBKDF2)"
         CONF
-        chown -R 1654:1654 /downloads /media /weir /config
+        chown -R 1654:1654 /downloads /media /weir /config /work
     environment:
       QBITTORRENT_USERNAME: ${SCENARIO_QBITTORRENT_USERNAME:?}
       QBITTORRENT_PBKDF2: ${SCENARIO_QBITTORRENT_PBKDF2:?}
@@ -37,6 +37,7 @@ services:
       - media:/media
       - weir-output:/weir
       - qbittorrent-config:/config
+      - fixture-work:/work
 
   weir:
     depends_on:
@@ -48,6 +49,7 @@ services:
     volumes:
       - downloads:/downloads
       - weir-output:/weir
+      - fixture-work:/work
 
   deluno:
     image: ${SCENARIO_DELUNO_IMAGE:?}
@@ -97,9 +99,34 @@ services:
       start_period: 20s
       retries: 20
 
+  # The release source: the films the scenario makes in Weir's container, offered to Deluno as a torrent that qBittorrent downloads from here.
+  fixture:
+    image: ${SCENARIO_NODE_IMAGE:?}
+    pull_policy: never
+    user: "1654:1654"
+    depends_on:
+      prepare:
+        condition: service_completed_successfully
+    command: ["node", "/fixture/server.mjs"]
+    environment:
+      FIXTURE_PUBLIC_BASE: http://fixture:8765
+      FIXTURE_WORK: /work
+    ports:
+      - "18765:8765"
+    volumes:
+      - ./scripts/scenarios-ci/with-deluno/fixture:/fixture:ro
+      - fixture-work:/work
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8765/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      start_period: 10s
+      retries: 20
+
 volumes:
   deluno-data:
   downloads:
   media:
+  fixture-work:
   qbittorrent-config:
   weir-output:

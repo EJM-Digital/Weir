@@ -20,7 +20,7 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`. `scripts/scenarios-ci/homes.js
 | --- | --- | --- | --- | --- |
 | `update-over-installed-weir` | windows | windows-update | to-port | `Setup --silent` over the previous release's running install, with the tray's pre-update copy. Docker's upgrade smoke covers the volume half. |
 | `workflows-from-deluno` | linux | with-deluno | ported | Weir and Deluno speak HTTP only; Deluno's published image is the same Deluno. |
-| `deluno-film-handoff` | linux | with-deluno | to-port | A hand-off followed through both apps, with the real clients in Compose. |
+| `deluno-film-handoff` | linux | with-deluno | ported | A hand-off followed through both apps, with the real clients in Compose. |
 | `deluno-release-with-extra` | linux | with-deluno | to-port | The extra is read where it stays, through the download client's own API. |
 | `deluno-resend` | linux | with-deluno | to-port | Deluno's send-again is an API call; both sides are read over HTTP. |
 | `deluno-outcomes` | linux | with-deluno | to-port | The outcome each app recorded is compared; both are read over HTTP. |
@@ -91,7 +91,7 @@ A scenario is **green twice** when it passed in two CI runs on `main`, on differ
 
 ### Next
 
-1. `with-deluno`: the other four scenarios and the other clients (Transmission, Deluge, SABnzbd, NZBGet), with the release source `deluno-film-handoff` needs.
+1. `with-deluno`: the other four scenarios and the other clients (Transmission, Deluge, SABnzbd, NZBGet). The release source is `with-deluno/fixture/`: Weir's own, small and Node-only. If Deluno publishes its fixture image, as the agreed shape has it, the shard moves to that and this folder goes.
 2. The Windows shards, starting with `windows-install`.
 3. The drift workflow, and the per-shard paths filter.
 

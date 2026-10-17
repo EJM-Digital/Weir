@@ -52,8 +52,9 @@
       "id": "deluno-film-handoff",
       "home": "linux",
       "shard": "with-deluno",
-      "state": "to-port",
-      "why": "A film Deluno hands over is followed through Weir and back; Deluno's image and the real download clients run in Compose."
+      "state": "ported",
+      "why": "A film Deluno hands over is followed through Weir and back; Deluno's image and the real download clients run in Compose.",
+      "passedInCi": []
     },
     {
       "id": "deluno-release-with-extra",
