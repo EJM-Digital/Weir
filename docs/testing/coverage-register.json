@@ -7598,6 +7598,50 @@
       }
     },
     {
+      "id": "services.job-kinds.job-kind-processing-downloaded-scan-retry-v1-ask-a-busy-sonarr-or-radarr-to-scan-again",
+      "area": "services",
+      "behaviour": "Job kind processing.downloaded_scan_retry.v1 (ask a Sonarr or Radarr again to scan a file Weir wrote, after it said it was busy with another scan: held back with not_before, 15 s, 30 s, 60 s, 2 min, 4 min, a Retry-After honoured, then Weir stops with a plain sentence; no worker waits for the app)",
+      "kind": "job",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/DownloadedScanRetryTests.cs",
+          "name": "A_busy_app_does_not_hold_the_pass_the_next_ask_is_queued_for_fifteen_seconds_later"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/DownloadedScanRetryTests.cs",
+          "name": "The_queued_ask_is_not_taken_before_its_time_and_the_second_ask_is_accepted"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/DownloadedScanRetryTests.cs",
+          "name": "An_app_that_stays_busy_is_asked_after_each_wait_and_then_Weir_stops_with_a_plain_sentence"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/DownloadedScanRetryTests.cs",
+          "name": "A_connection_switched_off_while_the_ask_waited_is_not_asked_again"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/DownloadedScanRetryTests.cs",
+          "name": "An_app_that_says_too_many_requests_with_a_Retry_After_is_asked_again_after_that_long_when_it_is_longer_than_the_wait"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/DownloadedScanRetryScheduleTests.cs",
+          "name": "DownloadedScanRetryScheduleTests"
+        }
+      ],
+      "covers": [
+        "job:processing.downloaded_scan_retry.v1"
+      ]
+    },
+    {
       "id": "services.periodic-tasks.auth-session-cleanup-delete-revoked-expired-sessions",
       "area": "services",
       "behaviour": "auth-session-cleanup: delete revoked / expired sessions",
@@ -47847,6 +47891,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/ArrDownloadedScanBusyRepliesTests.cs",
           "name": "ArrDownloadedScanBusyRepliesTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/DownloadedScanRetryTests.cs",
+          "name": "DownloadedScanRetryTests"
         },
         {
           "type": "recording-replay",

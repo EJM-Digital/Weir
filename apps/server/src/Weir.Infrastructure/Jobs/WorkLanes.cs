@@ -1,6 +1,7 @@
 using Weir.Core.Jobs;
 using Weir.Core.LibraryMode;
 using Weir.Core.Processing;
+using Weir.Infrastructure.MediaManagers;
 
 namespace Weir.Infrastructure.Jobs;
 
@@ -27,6 +28,7 @@ public static class WorkLanes
         LibraryModeJobKinds.ScanKind,
         PeriodicJobKinds.WorkTempStaleSweep,
         PeriodicJobKinds.UnclaimedHandbackCleanup,
+        DownloadedScanRetryHandler.Kind,
     ];
 
     public static WorkLane LaneOf(string jobKind) => UpkeepKinds.Contains(jobKind, StringComparer.Ordinal) ? WorkLane.Upkeep : WorkLane.Files;

@@ -27,7 +27,7 @@ How a recording is made, and what it holds, is in the recorder's `README.md`. Wh
 | `connection-test`, `connection-test-wrong-key` | `ArrConnectionAndQueueRepliesTests` |
 | `describe`, `describe-no-root-folder`, `describe-wrong-key` | `ArrConnectionAndQueueRepliesTests`, and the contract fake manager's root folders (`ArrShapes`) |
 | `queue-empty`, `queue-with-download`, `queue-after-remove`, `queue-remove-and-blocklist`, `queue-remove-unknown-item` | `ArrConnectionAndQueueRepliesTests`, and the contract fake manager's queue (`ArrShapes`) |
-| `downloaded-scan`, `downloaded-scan-with-mapping`, `downloaded-scan-for-download`, `downloaded-scan-refuses-a-number`, `downloaded-scan-next-file`, `command-status-finished` | `ArrScanAndSetupRepliesTests`, `ArrDownloadedScanBusyRepliesTests`, `DownloadedScanRecordedRepliesTests` |
+| `downloaded-scan`, `downloaded-scan-with-mapping`, `downloaded-scan-for-download`, `downloaded-scan-refuses-a-number`, `downloaded-scan-next-file`, `command-status-finished` | `ArrScanAndSetupRepliesTests`, `ArrDownloadedScanBusyRepliesTests`, `DownloadedScanRetryTests`, `DownloadedScanRecordedRepliesTests` |
 | `setup-check` | `ArrScanAndSetupRepliesTests` |
 | `library-listing`, `rescan`, `redownload-risk`, `redownload`, `redownload-unknown-title`, `redownload-file-gone` | `ArrLibraryAndRedownloadRepliesTests`, and the "Download again" tests in `Weir.Api.Tests` (`ArrRedownloadReplies`) |
 | `webhook-*` | `ArrWebhookReplayTests` (posted to a running Weir), `ArrWebhookRecordedTests` (how Weir reads them) |

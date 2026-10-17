@@ -69,15 +69,6 @@ public static class DownloadedScanRules
         return body;
     }
 
-    /// <summary>How many times Weir asks for one scan before it says the manager was too busy.</summary>
-    public const int MaxAttempts = 5;
-
-    /// <summary>How often Weir asks whether the scan that was in the way has finished.</summary>
-    public static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(3);
-
-    /// <summary>How long Weir waits for the scan that was in the way before it asks again.</summary>
-    public static readonly TimeSpan WaitLimit = TimeSpan.FromMinutes(2);
-
     /// <summary>
     /// Sonarr and Radarr keep one Downloaded Scan at a time: asked for a second while the first is queued or running, they answer
     /// 201 with the command that is already there, not with a new one (seen in Sonarr 4.0.20: the reply carries the other scan's id

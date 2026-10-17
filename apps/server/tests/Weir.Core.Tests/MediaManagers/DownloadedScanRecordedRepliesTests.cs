@@ -70,11 +70,4 @@ public sealed class DownloadedScanRecordedRepliesTests
         Assert.False(DownloadedScanRules.IsFinished(WireJsonParser.Parse(started.ToJsonString())));
         Assert.False(DownloadedScanRules.IsFinished(null));
     }
-
-    [Fact]
-    public void Weir_asks_a_few_times_and_polls_more_often_than_it_gives_up()
-    {
-        Assert.True(DownloadedScanRules.PollInterval < DownloadedScanRules.WaitLimit);
-        Assert.True(DownloadedScanRules.MaxAttempts > 1);
-    }
 }
