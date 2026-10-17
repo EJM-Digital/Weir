@@ -211,6 +211,40 @@ public sealed partial class ActivityFileActionsTests(E2EServer server) : E2ETest
         });
     }
 
+    [E2EFact]
+    public async Task While_the_server_takes_the_removal_the_dialog_says_Removing_and_Escape_and_a_click_beside_it_do_nothing_until_the_server_is_done()
+    {
+        await using var rig = await MixedActivity.StartAsync(writesGiveUpQuickly: false);
+        await rig.WithEvidenceAsync(async () =>
+        {
+            var (page, log) = await OpenAsync(rig);
+            var actions = await SelectAsync(page, MixedActivity.Failed);
+            await actions.GetByRole(AriaRole.Button, new() { Name = "Remove from list", Exact = true }).ClickAsync();
+            var dialog = page.GetByTestId("activity-remove-dialog");
+            await dialog.GetByTestId("activity-remove-dialog-choice-keep").GetByRole(AriaRole.Radio).CheckAsync();
+            var confirm = dialog.GetByTestId("activity-remove-dialog-confirm");
+            var mark = log.Mark();
+
+            using (rig.HoldWrites())
+            {
+                await confirm.ClickAsync();
+
+                await Expect(confirm).ToHaveTextAsync("Removing…");
+                await Expect(confirm).ToBeDisabledAsync();
+                await page.Keyboard.PressAsync("Escape");
+                // The layer is marked busy, so the click is made whether or not the browser thinks it can be clicked.
+                var layer = (await dialog.BoundingBoxAsync())!;
+                await dialog.ClickAsync(new() { Position = new() { X = layer.Width - 10, Y = 10 }, Force = true });
+                await Expect(dialog).ToBeVisibleAsync();
+                Assert.NotNull(await rig.ListedFileAsync(MixedActivity.Failed));
+            }
+
+            await Expect(dialog).ToBeHiddenAsync(new() { Timeout = PushMs });
+            Assert.Null(await rig.ListedFileAsync(MixedActivity.Failed));
+            Assert.Equal("DELETE", Assert.Single(log.Since(mark)).Method);
+        });
+    }
+
     private async Task<(IPage Page, RequestLog Log)> OpenAsync(ProcessingRig rig)
     {
         var page = await NewPageAsync(Wide);

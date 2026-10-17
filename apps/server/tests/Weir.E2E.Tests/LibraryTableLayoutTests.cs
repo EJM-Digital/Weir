@@ -115,6 +115,25 @@ public sealed class LibraryTableLayoutTests(E2EServer server) : E2ETestBase(serv
         await AssertCellsUnderTheirHeadingsAsync(page, "Size", "size");
     }
 
+    [E2EFact]
+    public async Task The_Files_card_header_keeps_every_control_inside_the_card_however_narrow_the_window_is()
+    {
+        await using var rig = await StartRigAsync();
+        var page = await OpenLibraryAsync(rig, Desktop);
+        var card = page.GetByRole(AriaRole.Region, new() { Name = "Files" });
+        var columns = card.GetByRole(AriaRole.Button, new() { Name = "Columns", Exact = true });
+
+        foreach (var width in new[] { 1100, 1000, Narrow.Width })
+        {
+            await page.SetViewportSizeAsync(width, Narrow.Height);
+
+            await Expect(columns).ToBeVisibleAsync();
+            var edge = await card.BoundingBoxAsync();
+            var button = await columns.BoundingBoxAsync();
+            Assert.True(button!.X + button.Width <= edge!.X + edge.Width, $"At {width} px the Columns button ends at {button.X + button.Width} but the card ends at {edge.X + edge.Width}.");
+        }
+    }
+
     private static ILocator Heading(IPage page, string name) => page.GetByRole(AriaRole.Columnheader, new() { Name = name, Exact = true });
 
     /// <summary>The columns the headings stand for, in the order they stand in, the box that selects a file left out.</summary>
