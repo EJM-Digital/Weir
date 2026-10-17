@@ -238,6 +238,25 @@ unless `fresh-install` is among the chosen scenarios, because nothing else would
   -Version 1.0.0-rc.18 -CommitSha <the 40-character SHA> -Scenarios process-again -NoRestore
 ```
 
+**Combining a full run with the re-runs of what it failed (the owner, 17 Oct 2026).** A full run that fails only on harness or
+timing problems, where the fix touches no file that ships (`scripts/release/shipped-paths.mjs`), still counts as the gate together with
+the failed scenarios re-run alone and passing on the same build (same version and commit). Any fix to a file that ships still needs a full
+run. Every record names the commit its scenario scripts ran from (the `Scripts commit` line; a working tree with changes reads
+`<sha>+uncommitted` and cannot be combined). Give `scripts/combine-golden-path-records.mjs` the full run's record and then each re-run's, in the
+order they ran (the last re-run of a scenario decides), from a clone that has those commits:
+
+```bash
+node scripts/combine-golden-path-records.mjs <full run record> <re-run record>... [--evidence-url <url>] [--no-status]
+```
+
+It refuses, saying why and leaving the `golden-path` status as it was, unless: the first record is a complete full run that did not pass
+everything; every other record is a run of chosen scenarios made for the same version and build commit; every scenario the full run did
+not pass has a re-run, and its latest re-run passed; and no file that ships differs between the commit the scenario scripts ran from in
+the full run and in each re-run. Then it writes one combined record (`scenario-<version>-<short sha>-combined.md`, beside the full
+run's), which lists the full run, each re-run and, for every scenario, which record its result came from, and only after that sets
+`golden-path` to success on the build commit, with a description that says it was combined and still ends in `<version>+<short sha>`, so
+the release gate reads it like any other pass. `--no-status` writes the record and sets nothing.
+
 Hand-offs cannot be made by a script: one starts when a download finishes in one of Deluno's clients, so the Deluno scenarios
 follow the real hand-offs Deluno's own suite made, from both ends, and drive what Deluno does offer (its send-again). The
 hand-off path through Weir's intake webhook is covered by the contract suite.
@@ -297,7 +316,8 @@ gh api repos/jampat000/Weir/statuses/<full sha> \
 
 A run that fails is recorded the same way with `state=failure`. The newest status for the context is the one that
 counts, so a later failure withdraws an earlier success. A status belongs to the commit it was set on. A fix made after
-a failed run is a new commit and needs its own run, unless the fix changed only tests, scripts, docs or CI. A commit that
+a failed run is a new commit and needs its own run, unless the fix changed only tests, scripts, docs or CI. When that fix changed no file that ships and the run failed only on harness or timing problems, the failed
+scenarios re-run alone and passing on the same build are enough ([combining](#the-scenario-suite), below). A commit that
 changes only the release notes keeps the pass of the commit before it ([A pass carries over](#a-pass-carries-over)).
 
 **5. The release checks it.** The `golden-path` job in `release.yml` (`scripts/verify-golden-path-for-release.mjs`)
