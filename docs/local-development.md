@@ -141,7 +141,8 @@ cares about changed (a manual run always runs everything). Its jobs:
    dead-code guard; an `npm audit` on pull requests.
 6. **`e2e-smoke`**: Playwright for .NET against the real server serving the built web app
    (**`WEIR_E2E=1`**, project [`apps/server/tests/Weir.E2E.Tests`](../apps/server/tests/Weir.E2E.Tests/README.md),
-   same as the local E2E below); pull requests only.
+   same as the local E2E below); pull requests only. The tests are split over jobs by test count
+   (`node scripts/e2e-shards.mjs --summary` shows the split), so each job stays well under its timeout.
 7. **`contract`**: the contract suite against the .NET server, one job per area in
    [`areas.json`](../apps/server/tests/Weir.Contract.Tests/areas.json), in parallel
    (`dotnet test --filter "Area=<area>"`).
