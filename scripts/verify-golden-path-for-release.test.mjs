@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { REPOSITORY } from "./repository.mjs";
 import { NO_PASSING_RUN, evaluateStatuses, latestStatus, releaseVersion, runGate } from "./verify-golden-path-for-release.mjs";
 
 let nextId = 1;
@@ -85,10 +86,10 @@ function gate(tag, statuses, overrides = {}) {
   const err = [];
   const passed = runGate({
     tag,
-    repository: "jampat000/Weir",
+    repository: REPOSITORY,
     sha: SHA,
     statusesOf: (repository, sha) => {
-      assert.equal(repository, "jampat000/Weir");
+      assert.equal(repository, REPOSITORY);
       assert.equal(sha, SHA);
       return statuses;
     },
@@ -118,11 +119,11 @@ test("a release candidate whose only record is another context or a failure is r
 
 test("a release candidate with a passing record goes ahead, and the verdict names the evidence", () => {
   const verdict = gate("v1.0.0-rc.14", [
-    status({ creator: "jampat000", description: "Weir scenarios passed 11 of 11", target_url: "https://example.test/run" }),
+    status({ creator: "release-recorder", description: "Weir scenarios passed 11 of 11", target_url: "https://example.test/run" }),
   ]);
   assert.equal(verdict.passed, true);
   assert.equal(verdict.err, "");
-  assert.match(verdict.out, /PASS: "golden-path" is success on a{40}, recorded by jampat000/);
+  assert.match(verdict.out, /PASS: "golden-path" is success on a{40}, recorded by release-recorder/);
   assert.match(verdict.out, /Weir scenarios passed 11 of 11/);
   assert.match(verdict.out, /Evidence: https:\/\/example\.test\/run/);
 });

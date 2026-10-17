@@ -11,6 +11,7 @@ import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CurrentSession, UserPublic } from "../../lib/api/types";
 import { authKeys } from "../../lib/auth/query-keys";
+import { REPOSITORY_URL } from "../../lib/repository";
 import * as processingQueries from "../../lib/processing/queries";
 import * as settingsApi from "../../lib/settings/settings-api";
 import { settingsKeys } from "../../lib/settings/query-keys";
@@ -74,8 +75,7 @@ const windowsUpdateAvailableStatus: UpdateStatus = {
   summary: "Weir 2.0.8 is available.",
   latest_version: "2.0.8",
   latest_name: "Weir 2.0.8",
-  windows_installer_url:
-    "https://github.com/jampat000/Weir/releases/download/v2.0.8/Weir-win-Setup.exe",
+  windows_installer_url: `${REPOSITORY_URL}/releases/download/v2.0.8/Weir-win-Setup.exe`,
   in_app_upgrade_supported: true,
   in_app_upgrade_summary:
     "Updates are managed by the Weir desktop app via Velopack.",
