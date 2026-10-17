@@ -41611,7 +41611,7 @@
     {
       "id": "web-system.backups-tab.schedule-last-backup-time-and-up-to-date-overdue",
       "area": "web-system",
-      "behaviour": "Schedule: \"Last backup\" time and Up to date / Overdue chip",
+      "behaviour": "Schedule: \"Last backup\" time and whether it was scheduled or by hand, and the Up to date / Overdue chip (a backup by hand does not move the schedule)",
       "kind": "screen action",
       "severity": "medium",
       "touches": "none",
@@ -41631,6 +41631,41 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/backups/backup-freshness.test.ts",
           "name": "is overdue once the next backup is more than an hour late"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.test.tsx",
+          "name": "shows a backup made by hand as the last backup, and leaves the schedule where it was"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/last-backup.test.ts",
+          "name": "is the backup made last, whoever made it"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/last-backup.test.ts",
+          "name": "says whether the schedule or a person made the backup"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Platform/ConfigurationBackupSourceTests.cs",
+          "name": "A_backup_asked_for_by_hand_is_the_newest_and_says_it_was_by_hand"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Platform/ConfigurationBackupSourceTests.cs",
+          "name": "A_backup_by_hand_leaves_the_schedule_where_it_was"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteFileApiTests.cs",
+          "name": "Backing_up_now_writes_a_snapshot_that_is_then_listed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/BackupMadeByMigrationTests.cs",
+          "name": "A_backup_made_before_the_column_is_kept_and_does_not_say_who_made_it"
         }
       ],
       "needs": {
