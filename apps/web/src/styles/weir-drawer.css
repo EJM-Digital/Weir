@@ -24,7 +24,7 @@ body.mm-drawer-open {
   z-index: 41;
   display: flex;
   flex-direction: column;
-  width: min(40rem, 100vw);
+  width: min(40rem, 100%);
   border-left: 1px solid var(--mm-hairline);
   background: var(--mm-card-bg);
   box-shadow: var(--mm-shadow-shell);

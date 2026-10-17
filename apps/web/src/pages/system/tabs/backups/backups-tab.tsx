@@ -51,6 +51,7 @@ export function BackupsTab({
           <BackupScheduleSection
             form={form}
             settings={settings}
+            backups={backupsQ.data?.items}
             onSave={saveSchedule}
             saved={scheduleSaved}
           />

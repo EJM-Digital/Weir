@@ -25,6 +25,41 @@ public static class E2EDatabase
         SeedSql.Execute(connection, "DELETE FROM user_sessions");
         SeedSql.Execute(connection, "DELETE FROM users");
         SeedSql.Execute(connection, "DELETE FROM suite_settings");
+        SeedSql.Execute(
+            connection,
+            "UPDATE operator_settings SET work_temp_stale_sweep_enabled = 1, work_temp_stale_sweep_interval_seconds = NULL, " +
+            "unclaimed_handback_cleanup_enabled = 0, unclaimed_handback_window_days = 14, unclaimed_handback_cleanup_interval_seconds = NULL, " +
+            "keep_failed_work_files = 0, runner_budget_enabled = 0 WHERE id = 1");
+        transaction.Commit();
+    }
+
+    /// <summary>Gives the account this role (admin, operator or viewer), as an administrator elsewhere would: Weir has one account, so no screen makes the others.</summary>
+    public static void SetRole(string databasePath, string username, string role)
+    {
+        using var connection = Open(databasePath);
+        using var transaction = connection.BeginTransaction();
+        SeedSql.Execute(connection, "UPDATE users SET role = $role WHERE username = $username", ("$role", role), ("$username", username));
+        transaction.Commit();
+    }
+
+    /// <summary>Adds an account with a role, as an operator's second process would; the server reads its users afresh on every sign-in.</summary>
+    public static void AddUser(string databasePath, string username, string passwordHash, string role)
+    {
+        using var connection = Open(databasePath);
+        using var transaction = connection.BeginTransaction();
+        SeedSql.InsertUser(connection, username, passwordHash, role);
+        transaction.Commit();
+    }
+
+    /// <summary>
+    /// Points a workflow at a watched folder without Weir's checks, as a media manager's own sync can leave one: the folders then overlap another
+    /// workflow's, which Weir refuses the next time that workflow is saved.
+    /// </summary>
+    public static void SetWatchedFolder(string databasePath, long libraryId, string watchedFolder)
+    {
+        using var connection = Open(databasePath);
+        using var transaction = connection.BeginTransaction();
+        SeedSql.Execute(connection, "UPDATE libraries SET watched_folder = $folder WHERE id = $id", ("$folder", watchedFolder), ("$id", libraryId));
         transaction.Commit();
     }
 

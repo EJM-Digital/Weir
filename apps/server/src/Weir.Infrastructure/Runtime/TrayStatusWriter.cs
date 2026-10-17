@@ -50,6 +50,7 @@ public sealed class TrayStatusWriter : BackgroundService
     private BroadcastSubscription<string>? _heard;
     private TrayStatus? _status;
     private string _written = string.Empty;
+    private long _readings;
 
     public TrayStatusWriter(
         WeirOptions options,
@@ -125,7 +126,7 @@ public sealed class TrayStatusWriter : BackgroundService
         await ReadWriteAndRetryAsync(stoppingToken).ConfigureAwait(false);
         await foreach (var _ in _stale.Reader.ReadAllAsync(stoppingToken).ConfigureAwait(false))
         {
-            await Task.Delay(Settle, stoppingToken).ConfigureAwait(false);
+            await Task.Delay(Settle, _time, stoppingToken).ConfigureAwait(false);
             await ReadWriteAndRetryAsync(stoppingToken).ConfigureAwait(false);
         }
     }
@@ -146,11 +147,16 @@ public sealed class TrayStatusWriter : BackgroundService
         }
     }
 
+    /// <summary>Test seam (<c>InternalsVisibleTo</c> to Weir.Infrastructure.Tests): how many readings have finished, whether or not they changed the file.</summary>
+    internal long Readings => Interlocked.Read(ref _readings);
+
     private async Task ReadWriteAndRetryAsync(CancellationToken stoppingToken)
     {
-        if (!await ReadAndWriteAsync(stoppingToken).ConfigureAwait(false))
+        var written = await ReadAndWriteAsync(stoppingToken).ConfigureAwait(false);
+        Interlocked.Increment(ref _readings);
+        if (!written)
         {
-            await Task.Delay(RetryAfter, stoppingToken).ConfigureAwait(false);
+            await Task.Delay(RetryAfter, _time, stoppingToken).ConfigureAwait(false);
             _stale.Writer.TryWrite(true);
         }
     }
@@ -218,7 +224,7 @@ public sealed class TrayStatusWriter : BackgroundService
                 }
             }
 
-            await Task.Delay(WriteRetryAfter, cancellationToken).ConfigureAwait(false);
+            await Task.Delay(WriteRetryAfter, _time, cancellationToken).ConfigureAwait(false);
         }
     }
 }

@@ -64,6 +64,16 @@ export class WeirClient {
     return this.#expect(await this.#send(method, path, { ...fields, csrf_token: await this.#csrf() }), status, what);
   }
 
+  /** Reads any route; throws unless it answers 200. */
+  get(path) {
+    return this.#read(path, `GET ${path}`);
+  }
+
+  /** Sends a write with the CSRF token and returns the answer whatever its status: `{status, json, text}`. */
+  async write(method, path, fields = {}) {
+    return this.#send(method, path, { ...fields, csrf_token: await this.#csrf() });
+  }
+
   bootstrapStatus() {
     return this.#read("/auth/bootstrap/status", "bootstrap status");
   }

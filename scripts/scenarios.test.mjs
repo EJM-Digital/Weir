@@ -6,9 +6,13 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
+
+import { combineRecords, parseRecord, run as runCombine } from "./combine-golden-path-records.mjs";
+import { repository } from "./release/temporary-repository.mjs";
+import { passedVersion } from "./verify-golden-path-for-release.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const scenarios = join(repoRoot, "scripts", "scenarios");
@@ -1073,4 +1077,156 @@ test("the runner takes -Scenarios (the name Deluno's suite uses) and no longer -
   const orchestrator = readFileSync(join(scenarios, "Invoke-WeirScenarios.ps1"), "utf8");
   assert.match(orchestrator, /\[string\[\]\] \$Scenarios/);
   assert.match(orchestrator, /\$arguments\.Scenarios = /);
+});
+
+// --- combining a full run with the re-runs of what it failed ---------------------------------------------------------------
+
+const TITLES = ["Fresh install", "First visit", "Pause and resume", "Update buttons"];
+const COMMIT = "a".repeat(40);
+
+// A record as Write-ScenarioRecord writes it: a heading, the facts, then one line per scenario.
+function record({ version = "3.2.17", commit = COMMIT, scriptsCommit, chosen, results }) {
+  const facts = { Commit: commit, Rehearsal: "no", ...(scriptsCommit ? { "Scripts commit": scriptsCommit } : {}), ...(chosen ? { "Scenarios chosen": chosen.join(", ") } : {}) };
+  const rows = TITLES.map((title, index) => {
+    const status = results[title] ?? (chosen ? "not chosen" : "failed");
+    return `| ${index + 1} | ${title} | ${status} | ${status === "not chosen" ? 0 : 12} | ${status === "passed" ? "it worked" : status === "not chosen" ? "Not chosen for this run." : "it did not"} |`;
+  });
+  return [`# Weir scenario suite ${version}, commit ${commit.slice(0, 7)}`, "", ...Object.entries(facts).map(([key, value]) => `- **${key}:** ${value}`), "", "| # | Scenario | Result | Seconds | Saw |", "| --- | --- | --- | --- | --- |", ...rows, ""].join("\n");
+}
+
+const everyScenarioPasses = Object.fromEntries(TITLES.map((title) => [title, "passed"]));
+
+// Three real commits: A, then B (a script changed), then C (a server file changed).
+function scriptHistory() {
+  const repo = repository();
+  const a = repo.commit({ "apps/server/src/Weir.Core/Plan.cs": "a", "scripts/scenarios/Weir.Scenarios.Lib.ps1": "a" }, "A");
+  const b = repo.commit({ "scripts/scenarios/Weir.Scenarios.Lib.ps1": "b" }, "B");
+  const c = repo.commit({ "apps/server/src/Weir.Core/Plan.cs": "c" }, "C");
+  return { git: repo.git, a, b, c };
+}
+
+const combine = (git, full, ...reruns) =>
+  combineRecords({ full: { name: "full.md", text: full }, reruns: reruns.map((text, index) => ({ name: `rerun-${index + 1}.md`, text })), git });
+
+test("a full run that failed two scenarios and their re-runs on the same build combine into one record, and the status is set after it", () => {
+  const { git, a, b } = scriptHistory();
+  const files = {
+    "full.md": record({ scriptsCommit: a, results: { ...everyScenarioPasses, "First visit": "failed", "Pause and resume": "failed" } }),
+    "first.md": record({ scriptsCommit: b, chosen: ["first-visit-account"], results: { "First visit": "passed" } }),
+    "second.md": record({ scriptsCommit: b, chosen: ["pause-resume"], results: { "Pause and resume": "passed" } }),
+  };
+  const calls = [];
+  const written = {};
+  const status = runCombine(["records/full.md", "records/first.md", "records/second.md", "--out", "records/combined.md"], {
+    git,
+    read: (path) => files[basename(path)],
+    write: (path, text) => { written[basename(path)] = text; },
+    setStatus: (call) => calls.push({ ...call, recordWritten: "combined.md" in written }),
+    log: () => {},
+    error: (line) => assert.fail(line),
+  });
+
+  assert.equal(status, 0);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].recordWritten, true, "the record is written before the status is set");
+  assert.equal(calls[0].sha, COMMIT);
+  assert.match(calls[0].description, /combined/);
+  assert.equal(passedVersion({ description: calls[0].description }), "3.2.17", "the release gate can still read which version the pass was run for");
+  const text = written["combined.md"];
+  for (const name of ["full.md", "first.md", "second.md"]) assert.ok(text.includes(name), `the combined record names ${name}`);
+  assert.match(text, /\*\*4 of 4 scenarios passed, 2 of them on a re-run alone\.\*\*/);
+  assert.equal([...text.matchAll(/ \| passed \| /g)].length, 4, "every scenario reads passed");
+});
+
+test("a failed scenario with no re-run is refused, naming the scenario, and nothing is written or set", () => {
+  const { git, a, b } = scriptHistory();
+  const files = {
+    "full.md": record({ scriptsCommit: a, results: { ...everyScenarioPasses, "First visit": "failed", "Pause and resume": "failed" } }),
+    "one.md": record({ scriptsCommit: b, chosen: ["first-visit-account"], results: { "First visit": "passed" } }),
+  };
+  const result = combine(git, files["full.md"], files["one.md"]);
+  assert.equal(result.ok, false);
+  assert.match(result.problems.join("\n"), /No re-run is given for 1 scenario the full run did not pass: Pause and resume \(failed\)/);
+
+  const lines = [];
+  const status = runCombine(["full.md", "one.md"], {
+    git,
+    read: (path) => files[basename(path)],
+    write: () => assert.fail("a refused combine writes no record"),
+    setStatus: () => assert.fail("a refused combine sets no status"),
+    log: () => {},
+    error: (line) => lines.push(line),
+  });
+  assert.equal(status, 1);
+  assert.match(lines.join("\n"), /Not combined\. The golden-path status is left as it was\./);
+});
+
+test("a re-run made for a different build is refused, whether the version or the commit differs", () => {
+  const { git, a, b } = scriptHistory();
+  const full = record({ scriptsCommit: a, results: { ...everyScenarioPasses, "First visit": "failed" } });
+  const otherVersion = record({ version: "3.2.18", scriptsCommit: b, chosen: ["first-visit-account"], results: { "First visit": "passed" } });
+  const otherCommit = record({ commit: "b".repeat(40), scriptsCommit: b, chosen: ["first-visit-account"], results: { "First visit": "passed" } });
+  for (const rerun of [otherVersion, otherCommit]) {
+    const result = combine(git, full, rerun);
+    assert.equal(result.ok, false);
+    assert.match(result.problems.join("\n"), /rerun-1\.md was made for 3\.2\.1[78]\+[0-9a-f]{7} \(commit [0-9a-f]{40}\), and full\.md for 3\.2\.17\+aaaaaaa .*: a different build/);
+  }
+});
+
+test("a scenario whose latest re-run failed is refused, and a later passing re-run of it is accepted", () => {
+  const { git, a, b } = scriptHistory();
+  const full = record({ scriptsCommit: a, results: { ...everyScenarioPasses, "First visit": "failed" } });
+  const failed = record({ scriptsCommit: b, chosen: ["first-visit-account"], results: { "First visit": "failed" } });
+  const passed = record({ scriptsCommit: b, chosen: ["first-visit-account"], results: { "First visit": "passed" } });
+  const refused = combine(git, full, failed);
+  assert.equal(refused.ok, false);
+  assert.match(refused.problems.join("\n"), /First visit did not pass when re-run alone: failed in rerun-1\.md/);
+  assert.equal(combine(git, full, failed, passed).ok, true);
+  assert.equal(combine(git, full, passed, failed).ok, false, "the last re-run decides");
+});
+
+test("a change to a file that ships between the scripts of the full run and of a re-run is refused; a change to scripts alone is not", () => {
+  const { git, a, b, c } = scriptHistory();
+  const failedAt = (commit) => record({ scriptsCommit: commit, results: { ...everyScenarioPasses, "First visit": "failed" } });
+  const rerunAt = (commit) => record({ scriptsCommit: commit, chosen: ["first-visit-account"], results: { "First visit": "passed" } });
+  assert.equal(combine(git, failedAt(a), rerunAt(b)).ok, true, "only a script changed");
+  const refused = combine(git, failedAt(a), rerunAt(c));
+  assert.equal(refused.ok, false);
+  assert.match(refused.problems.join("\n"), /1 file that ships changed: apps\/server\/src\/Weir\.Core\/Plan\.cs\. A change to a file that ships needs a full run\./);
+  assert.equal(combine(git, failedAt(c), rerunAt(a)).ok, false, "the same change is found whichever record is older");
+});
+
+test("a record that is not a full run, passed everything, or does not say where its scripts ran from is refused", () => {
+  const { git, a } = scriptHistory();
+  const failedFull = record({ scriptsCommit: a, results: { ...everyScenarioPasses, "First visit": "failed" } });
+  const rerun = record({ scriptsCommit: a, chosen: ["first-visit-account"], results: { "First visit": "passed" } });
+  assert.match(combine(git, rerun, rerun).problems.join("\n"), /full\.md is a run of chosen scenarios, not a full run/);
+  assert.match(combine(git, failedFull, failedFull).problems.join("\n"), /rerun-1\.md is a full run, not a re-run/);
+  assert.match(combine(git, record({ scriptsCommit: a, results: everyScenarioPasses }), rerun).problems.join("\n"), /passed every scenario, so there is nothing to combine/);
+  const unsaid = record({ chosen: ["first-visit-account"], results: { "First visit": "passed" } });
+  assert.match(combine(git, failedFull, unsaid).problems.join("\n"), /rerun-1\.md does not say which commit its scenario scripts ran from/);
+  assert.match(combine(git, "not a record", rerun).problems.join("\n"), /full\.md is not a scenario record/);
+});
+
+test("the combiner reads a record exactly as Write-ScenarioRecord writes it", { skip }, () => {
+  const { source } = freshHarness(String.raw`
+$results = @([pscustomobject]@{ Id = 'process-again'; Status = 'passed'; Detail = 'it did | really'; Seconds = 3 })
+$path = Join-Path $script:Ctx.RunFolder 'record.md'
+$others = @($ScenarioCatalog | Where-Object { $_.Id -ne 'process-again' } | ForEach-Object { $_.Id })
+Write-ScenarioRecord -Path $path -Catalog $ScenarioCatalog -Results $results -Facts @{ Version = '3.2.17'; ShortSha = 'abcdef0'; Commit = ('a' * 40); 'Scripts commit' = ('b' * 40); 'Scenarios chosen' = 'process-again' } -NotChosenIds $others
+Get-Content -LiteralPath $path -Raw
+`);
+  const run = psFile(source);
+  assert.equal(run.status, 0, run.err + run.out);
+  const parsed = parseRecord("record.md", run.out);
+  assert.deepEqual([parsed.version, parsed.shortSha, parsed.commit, parsed.scriptsCommit, parsed.subset], ["3.2.17", "abcdef0", COMMIT, "b".repeat(40), true]);
+  assert.equal(parsed.rows.length, 14);
+  assert.deepEqual(parsed.rows.find((row) => row.status === "passed"), { title: "Process again", status: "passed", detail: "it did / really" });
+});
+
+test("the orchestrator writes which commit its scenario scripts ran from into the record, and says so when the working tree has changes", () => {
+  const source = readFileSync(join(scenarios, "Invoke-WeirScenarios.ps1"), "utf8");
+  assert.match(source, /\$facts\['Scripts commit'\] = /);
+  assert.match(source, /status --porcelain/);
+  assert.match(source, /\+uncommitted/);
 });
