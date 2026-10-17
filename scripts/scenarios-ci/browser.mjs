@@ -38,7 +38,8 @@ export class Browser {
     const context = await this.#browser.newContext();
     try {
       const page = await context.newPage();
-      await page.goto(this.#origin + path, { waitUntil: "networkidle" });
+      // Weir keeps a live connection to the page, so the network never goes idle: the wait is for the page to land, below.
+      await page.goto(this.#origin + path, { waitUntil: "load" });
       let latest = { testIds: [], text: "" };
       const landed = pollUntil(
         async () => {
