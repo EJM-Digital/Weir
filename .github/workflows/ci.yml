@@ -511,6 +511,16 @@ jobs:
           retention-days: 1
           path: apps/web/dist
 
+      # The accessibility checker the browser tests inject into a page (apps/server/tests/Weir.E2E.Tests/Support/Axe.cs); the
+      # browser job has no node_modules of its own.
+      - name: Upload the accessibility checker
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: weir-axe-core
+          if-no-files-found: error
+          retention-days: 1
+          path: apps/web/node_modules/axe-core/axe.min.js
+
   web:
     needs: changes
     if: needs.changes.outputs.run_web == 'true'
@@ -592,6 +602,12 @@ jobs:
         with:
           name: weir-web-dist
           path: apps/web/dist
+
+      - name: Download the accessibility checker
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: weir-axe-core
+          path: apps/web/node_modules/axe-core
 
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
