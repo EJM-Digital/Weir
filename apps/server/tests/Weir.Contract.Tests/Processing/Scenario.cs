@@ -60,8 +60,8 @@ internal sealed partial class Scenario : IAsyncDisposable
         return await StartAsync(tools, tools.Env, extraSettings);
     }
 
-    /// <summary>A working server with the real ffprobe and ffmpeg.</summary>
-    public static Task<Scenario> StartWithRealToolsAsync() => StartAsync(tools: null, RealFfmpeg.Env, []);
+    /// <summary>A working server with the real ffprobe and ffmpeg, and these extra settings.</summary>
+    public static Task<Scenario> StartWithRealToolsAsync(params (string Name, string Value)[] extraSettings) => StartAsync(tools: null, RealFfmpeg.Env, extraSettings);
 
     public async Task RestartServerAsync()
     {

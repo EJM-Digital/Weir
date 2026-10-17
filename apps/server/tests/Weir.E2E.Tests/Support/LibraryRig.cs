@@ -14,7 +14,7 @@ namespace Weir.E2E.Tests.Support;
 /// searches) can be connected. Everything the rig changes goes through Weir's API; what a test reads back comes from the same API
 /// or from the disk, never from the database.
 /// </summary>
-public sealed class LibraryRig : IAsyncDisposable
+public sealed partial class LibraryRig : IAsyncDisposable
 {
     private const string Api = WeirClient.Api;
     private const string CleanJobKind = "processing.library.clean.v1";
@@ -49,7 +49,8 @@ public sealed class LibraryRig : IAsyncDisposable
     public FakeManager Radarr => _radarr ?? throw new InvalidOperationException("The rig was started without a Radarr.");
 
     /// <param name="withRadarr">Connects a Radarr, which lists every film the test adds with <see cref="AddFilmAsync"/>.</param>
-    public static async Task<LibraryRig> StartAsync(bool withRadarr = false)
+    /// <param name="writesGiveUpQuickly">A change the server cannot make because the database is held (see <see cref="HoldWrites"/>) is refused after a second instead of waited for.</param>
+    public static async Task<LibraryRig> StartAsync(bool withRadarr = false, bool writesGiveUpQuickly = false)
     {
         var tools = FakeFfmpeg.Install();
         var folders = new TemporaryFolder();
@@ -62,6 +63,7 @@ public sealed class LibraryRig : IAsyncDisposable
             {
                 ["WEIR_WEB_DIST"] = RepoPaths.WebDist,
                 ["WEIR_PROCESSING_WORKER_COUNT"] = "1",
+                ["WEIR_SQLITE_BUSY_TIMEOUT_SECONDS"] = writesGiveUpQuickly ? "1" : "30",
             });
             admin = new WeirClient(server.BaseUrl);
             await admin.EnsureAdminAsync(Navigation.BootstrapUser, Navigation.BootstrapPassword);
@@ -173,15 +175,18 @@ public sealed class LibraryRig : IAsyncDisposable
     public void ReleaseClean(string film) => File.WriteAllText(ReleaseFileFor(film), string.Empty);
 
     /// <summary>Scans the library and waits until that scan has finished.</summary>
-    public async Task ScanAsync()
+    public Task ScanAsync() => ScanAsync(LibraryId);
+
+    /// <summary>Scans one workflow's library and waits until that scan has finished.</summary>
+    public async Task ScanAsync(long libraryId)
     {
-        var started = await _admin.PostWithCsrfAsync($"{Api}/processing/libraries/{LibraryId}/library-scan");
+        var started = await _admin.PostWithCsrfAsync($"{Api}/processing/libraries/{libraryId}/library-scan");
         Assert.True(started.Status == HttpStatusCode.OK, started.ToString());
         var jobId = (long)started.Fields["job_id"]!;
         await Poll.UntilAsync(
             async () =>
             {
-                var scan = (await FilesAsync()).Fields["scan"]!;
+                var scan = (await FilesOfAsync(libraryId)).Fields["scan"]!;
                 return (long)scan["job_id"]! == jobId && (string)scan["status"]! == "completed" ? scan : null;
             },
             "the library scan to finish",
@@ -226,9 +231,11 @@ public sealed class LibraryRig : IAsyncDisposable
     }
 
     /// <summary>The library files as the Files table lists them, in the order the server gives when it is asked for <paramref name="query"/>.</summary>
-    public async Task<WeirResponse> FilesAsync(params (string Name, object Value)[] query)
+    public Task<WeirResponse> FilesAsync(params (string Name, object Value)[] query) => FilesOfAsync(LibraryId, query);
+
+    private async Task<WeirResponse> FilesOfAsync(long libraryId, params (string Name, object Value)[] query)
     {
-        var response = await _admin.GetAsync($"{Api}/processing/libraries/{LibraryId}/library-files", query);
+        var response = await _admin.GetAsync($"{Api}/processing/libraries/{libraryId}/library-files", query);
         Assert.True(response.Status == HttpStatusCode.OK, response.ToString());
         return response;
     }

@@ -7411,6 +7411,11 @@ export interface components {
       file_name: string;
       /** Id */
       id: number;
+      /**
+       * Made By
+       * @description Who made the backup: the schedule, or a person pressing Back up now. Null for a backup made before this was kept.
+       */
+      made_by: ("schedule" | "manual") | null;
       /** Size Bytes */
       size_bytes: number;
     };

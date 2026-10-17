@@ -44,7 +44,7 @@ public static class WeirWorkflowApi
                 new() { DataObject = new { csrf_token = await CsrfAsync(context, baseUrl) } });
             if (response.Status != StillBusy || DateTime.UtcNow > giveUp)
             {
-                await EnsureOkAsync(response, $"Deleting workflow {libraryId}");
+                await EnsureOkAsync(response, $"Deleting workflow {libraryId}", response.Status == StillBusy ? await JobsAsync(context, baseUrl) : null);
                 return;
             }
 
@@ -94,11 +94,18 @@ public static class WeirWorkflowApi
         return JsonDocument.Parse(await csrf.TextAsync()).RootElement.GetProperty("csrf_token").GetString();
     }
 
-    private static async Task EnsureOkAsync(IAPIResponse response, string what)
+    /// <summary>What the server says its jobs are doing, so a workflow that stays busy names the job that keeps it so.</summary>
+    private static async Task<string> JobsAsync(IBrowserContext context, string baseUrl)
+    {
+        await using var inspection = await context.APIRequest.GetAsync($"{baseUrl}/api/v1/processing/jobs/inspection");
+        return $"Jobs at that moment: {await inspection.TextAsync()}";
+    }
+
+    private static async Task EnsureOkAsync(IAPIResponse response, string what, string? more = null)
     {
         if (!response.Ok)
         {
-            throw new InvalidOperationException($"{what} answered {response.Status}: {await response.TextAsync()}");
+            throw new InvalidOperationException($"{what} answered {response.Status}: {await response.TextAsync()}{(more is null ? string.Empty : $"{Environment.NewLine}{more}")}");
         }
     }
 }

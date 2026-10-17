@@ -14,7 +14,7 @@ The owner and the name are written once per language, and nothing else may write
 | Tray | `apps/tray/Weir.Tray/ProjectLocation.cs` |
 | Web app | `apps/web/src/lib/repository.ts` |
 | Node scripts | `scripts/repository.mjs` |
-| PowerShell scripts | `scripts/repository.ps1` (`scripts/runner/Install-WeirRunner.ps1` keeps its own copy, because it is copied alone to a PC) |
+| PowerShell scripts | `scripts/repository.ps1` |
 | Workflows | `github.repository`, which GitHub fills in; no workflow names the owner |
 
 `node scripts/check-repository-owner.mjs` (run by `repo-checks`) fails when a place differs from `scripts/repository.mjs`, when a source file, test, script or workflow writes the owner, or, once the move is done, when text still names the former owner. CI also passes it `github.repository`, so after a transfer nobody swept, the next build fails and says so. `scripts/sweep-repository-owner.mjs` does the rewrite (below).

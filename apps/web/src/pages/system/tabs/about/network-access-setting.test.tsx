@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import * as settingsQueries from "../../../../lib/settings/queries";
@@ -67,6 +67,7 @@ const option = (name: string) =>
   screen.getByRole("button", { name }) as HTMLButtonElement;
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.restoreAllMocks();
   mutate.mockReset();
   reset.mockReset();
@@ -205,6 +206,44 @@ describe("NetworkAccessSetting", () => {
     expect(
       screen.queryByTestId("network-access-confirm"),
     ).not.toBeInTheDocument();
+  });
+
+  it("says why limiting Weir to this PC could not be saved", () => {
+    setup(allowed, {
+      mutation: {
+        isError: true,
+        error: new Error("Weir couldn’t save that. Try again."),
+      },
+    });
+
+    render(<NetworkAccessSetting editable />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Weir couldn’t save that. Try again.",
+    );
+    expect(
+      screen.queryByTestId("network-access-confirm"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("stops saying Windows may be asking for approval once a minute has passed", () => {
+    vi.useFakeTimers();
+    setup(status({ state: "blocked", scope: "network", firewall: "blocked" }));
+    const asking = "Windows may be asking for approval on MEDIA-PC.";
+
+    render(<NetworkAccessSetting editable />);
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(screen.getByText(asking)).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(59_999);
+    });
+    expect(screen.getByText(asking)).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(screen.queryByText(asking)).not.toBeInTheDocument();
   });
 
   it("does not send anything when the choice already holds", () => {

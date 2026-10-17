@@ -486,18 +486,16 @@ public sealed class LeftInPlaceOriginalTests : IDisposable
         var source = _folders.Source(Path.Join("Film.2024", "Film.2024.mkv"));
         await ScanAsync("movie");
         File.Delete(source);
-        var waited = TimeSpan.Zero;
+        var waited = false;
 
-        await ScanAsync("movie", async cancellationToken =>
+        await ScanAsync("movie", async _ =>
         {
-            var started = System.Diagnostics.Stopwatch.GetTimestamp();
-            await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken);
-            waited = System.Diagnostics.Stopwatch.GetElapsedTime(started);
             Assert.Equal("on_hold", await StatusAsync("Film.2024/Film.2024.mkv"));
             Assert.NotEqual(GoneSourceText.HeldReason, await ReasonAsync("Film.2024/Film.2024.mkv"));
+            waited = true;
         });
 
-        Assert.True(waited >= TimeSpan.FromMilliseconds(200), "the file is not believed gone before the wait is over");
+        Assert.True(waited, "the scan waited before it believed the file was gone");
         Assert.Equal(GoneSourceText.HeldReason, await ReasonAsync("Film.2024/Film.2024.mkv"));
         Assert.Equal(1, await LeftActivityAsync());
     }
