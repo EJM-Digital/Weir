@@ -181,6 +181,27 @@ public sealed class FakeFfmpegTests : IDisposable
     }
 
     [Fact]
+    public async Task A_remux_reports_the_progress_it_is_told_to_on_the_progress_stream_before_it_is_released()
+    {
+        var source = Write("film.mkv", FakeMedia.Bytes(FakeMedia.Probe()));
+        var release = Path.Combine(_files.Path, "release");
+        var output = Path.Combine(_files.Path, "out.mkv");
+        _tools.SetFileRule("film.mkv", new FileRule { RemuxReleaseFile = release, RemuxProgressSeconds = 30 });
+
+        using var process = Start("ffmpeg", "-i", source, "-map", "0:0", "-progress", "pipe:1", output);
+        var first = await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        var second = await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.Equal("out_time_ms=30000000", first);
+        Assert.Equal("progress=continue", second);
+        Assert.False(process.HasExited, "The remux is held open until it is released.");
+
+        await File.WriteAllTextAsync(release, "go");
+        await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        Assert.Equal(0, process.ExitCode);
+    }
+
+    [Fact]
     public async Task Concurrent_tools_log_every_call_without_losing_any()
     {
         var source = Write("film.mkv", FakeMedia.Bytes(FakeMedia.Probe()));

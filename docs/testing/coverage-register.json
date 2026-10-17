@@ -19756,9 +19756,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/processing-page.test.tsx",
           "name": "is given the workflow the page is narrowed to"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardNarrowingTests.cs",
+          "name": "DashboardNarrowingTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-187",
         "verdict": "Partly"
@@ -19792,9 +19796,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/processing-page.test.tsx",
           "name": "says what is narrowed away when there is nothing left to show"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardNarrowingTests.cs",
+          "name": "DashboardNarrowingTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-188",
         "verdict": "Partly"
@@ -19828,9 +19836,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/VisualSmokeTests.cs",
           "name": "VisualSmokeTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardLayoutTests.cs",
+          "name": "DashboardLayoutTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-189",
         "verdict": "Partly"
@@ -19926,9 +19938,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/HandoffExtraLiveTests.cs",
           "name": "HandoffExtraLiveTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PipelineBoardLiveTests.cs",
+          "name": "PipelineBoardLiveTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-193",
         "verdict": "Partly"
@@ -20024,7 +20040,6 @@
           "name": "LiveDashboardTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-195",
         "verdict": "Partly"
@@ -20128,9 +20143,13 @@
           "type": "vitest",
           "file": "apps/web/src/lib/ui/use-now.test.ts",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardClockTests.cs",
+          "name": "DashboardClockTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-198",
         "verdict": "Partly"
@@ -20509,9 +20528,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/use-next-items.test.tsx",
           "name": "does not read a library's clean time on a timer: the server says on `library_scan` when it moves"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardNextTileTests.cs",
+          "name": "DashboardNextTileTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-211",
         "verdict": "Partly"
@@ -20575,9 +20598,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/processing-page.test.tsx",
           "name": "ProcessingPage"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardTodayTileTests.cs",
+          "name": "DashboardTodayTileTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardNarrowingTests.cs",
+          "name": "DashboardNarrowingTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-213",
         "verdict": "Partly"
@@ -20711,9 +20743,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/use-handed-back.test.tsx",
           "name": "counts each download once, as it stands now, the way Just finished lists it"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardTodayTileTests.cs",
+          "name": "DashboardTodayTileTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-218",
         "verdict": "Partly"
@@ -20951,9 +20987,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/pipeline/pipeline-board.test.tsx",
           "name": "opens the file's story when its card is clicked"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PipelineBoardLiveTests.cs",
+          "name": "PipelineBoardLiveTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-227",
         "verdict": "Partly"
@@ -20997,9 +21037,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/pipeline/pipeline-board.test.tsx",
           "name": "says nothing about more when a station fits in its three rows"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PipelineBoardLiveTests.cs",
+          "name": "PipelineBoardLiveTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-229",
         "verdict": "Partly"
@@ -21213,9 +21257,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/pipeline/pipeline-board.test.tsx",
           "name": "is shown full and green as Delivered for as long as it is held"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PipelineBoardLiveTests.cs",
+          "name": "PipelineBoardLiveTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-235",
         "verdict": "Partly"
@@ -21283,9 +21331,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/GoneFileLiveTests.cs",
           "name": "GoneFileLiveTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PipelineBoardLiveTests.cs",
+          "name": "PipelineBoardLiveTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-238",
         "verdict": "Partly"
@@ -22056,9 +22108,13 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingEndpointsContractTests.cs",
           "name": "Requeue_one_file"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/NeedsYouFailedFileTests.cs",
+          "name": "NeedsYouFailedFileTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-264",
         "verdict": "Partly"
@@ -22082,9 +22138,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/needs-panel.test.tsx",
           "name": "calls it Process again for a rejected file"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/NeedsYouSkippedAndRejectedTests.cs",
+          "name": "NeedsYouSkippedAndRejectedTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-265",
         "verdict": "Partly"
@@ -22108,9 +22168,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/needs-panel.test.tsx",
           "name": "says that the workflow is being checked again"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/NeedsYouSkippedAndRejectedTests.cs",
+          "name": "NeedsYouSkippedAndRejectedTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-266",
         "verdict": "Partly"
@@ -22159,9 +22223,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/needs-panel.test.tsx",
           "name": "drops a file that needs no choice from the list straight away"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/NeedsYouFailedFileTests.cs",
+          "name": "NeedsYouFailedFileTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-268",
         "verdict": "Partly"
@@ -22180,9 +22248,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/needs-panel.test.tsx",
           "name": "removes what the person chose in that dialog"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/NeedsYouFailedFileTests.cs",
+          "name": "NeedsYouFailedFileTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-269",
         "verdict": "Partly"
@@ -22281,9 +22353,13 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingEndpointsContractTests.cs",
           "name": "Processing_all_rejected_files_again_is_for_operators_with_a_csrf_token"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/NeedsYouSkippedAndRejectedTests.cs",
+          "name": "NeedsYouSkippedAndRejectedTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-272",
         "verdict": "Partly"
@@ -22362,9 +22438,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/HandoffExtraLiveTests.cs",
           "name": "HandoffExtraLiveTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/NeedsYouFailedFileTests.cs",
+          "name": "NeedsYouFailedFileTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-275",
         "verdict": "Partly"
@@ -22662,9 +22742,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/health-panel.test.tsx",
           "name": "says what the last check found"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardHealthPanelTests.cs",
+          "name": "DashboardHealthPanelTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-285",
         "verdict": "Partly"
@@ -22688,9 +22772,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/use-health.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardNarrowingTests.cs",
+          "name": "DashboardNarrowingTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-286",
         "verdict": "Partly"
@@ -22709,9 +22797,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/health-model.test.ts",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardHealthPanelTests.cs",
+          "name": "DashboardHealthPanelTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardChainReadFailureTests.cs",
+          "name": "DashboardChainReadFailureTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-287",
         "verdict": "Partly"
@@ -22735,9 +22832,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/processing-page.test.tsx",
           "name": "opens a working file's story from its row"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PipelineBoardLiveTests.cs",
+          "name": "PipelineBoardLiveTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-288",
         "verdict": "Partly"
@@ -22885,9 +22986,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/pipeline/file-now.test.ts",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PipelineBoardLiveTests.cs",
+          "name": "PipelineBoardLiveTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-294",
         "verdict": "Partly"
@@ -23050,9 +23155,13 @@
           "type": "vitest",
           "file": "apps/web/src/components/processing/choose-tracks-panel.test.tsx",
           "name": "moves a kept track earlier and later with the order buttons"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ChooseTracksPanelTests.cs",
+          "name": "ChooseTracksPanelTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-301",
         "verdict": "Partly"
@@ -23091,9 +23200,13 @@
           "type": "vitest",
           "file": "apps/web/src/components/processing/choose-tracks-panel.test.tsx",
           "name": "submits exactly the kept indices, their flags and the chosen order"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ChooseTracksPanelTests.cs",
+          "name": "ChooseTracksPanelTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-303",
         "verdict": "Partly"
@@ -23194,9 +23307,13 @@
           "type": "vitest",
           "file": "apps/web/src/components/processing/choose-tracks-panel.test.tsx",
           "name": "shows the load error instead of a table when the probe failed"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ChooseTracksPanelTests.cs",
+          "name": "ChooseTracksPanelTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-308",
         "verdict": "Partly"
@@ -23338,9 +23455,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/dashboard-layout.test.ts",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardLayoutTests.cs",
+          "name": "DashboardLayoutTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-314",
         "verdict": "Partly"
@@ -23454,9 +23575,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/system/this-weir-card.test.tsx",
           "name": "says so when Weir's own reading could not be taken"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardSystemViewTests.cs",
+          "name": "DashboardSystemViewTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-318",
         "verdict": "Partly"
@@ -23859,9 +23984,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/system/health-card.test.tsx",
           "name": "offers Details only on a check about a workflow"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardSystemViewTests.cs",
+          "name": "DashboardSystemViewTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-333",
         "verdict": "Partly"
@@ -23885,9 +24014,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/check-now.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardSystemViewTests.cs",
+          "name": "DashboardSystemViewTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-334",
         "verdict": "Partly"
@@ -24116,9 +24249,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/use-connection-testing.test.ts",
           "name": "testing one connection"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardSystemViewTests.cs",
+          "name": "DashboardSystemViewTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-343",
         "verdict": "Partly"
@@ -24147,9 +24284,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/use-connection-testing.test.ts",
           "name": "testing every connection"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardSystemViewTests.cs",
+          "name": "DashboardSystemViewTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-344",
         "verdict": "Partly"
@@ -24323,9 +24464,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/system/tasks-card.test.tsx",
           "name": "puts the card's order back with Reset columns"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardSystemViewTests.cs",
+          "name": "DashboardSystemViewTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-351",
         "verdict": "Partly"
@@ -24604,9 +24749,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/system/backups-card.test.tsx",
           "name": "says it is backing up while the backup is made"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardSystemViewTests.cs",
+          "name": "DashboardSystemViewTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-360",
         "verdict": "Partly"
