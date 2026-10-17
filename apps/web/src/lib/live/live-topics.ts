@@ -1,6 +1,7 @@
 import type { QueryKey } from "@tanstack/react-query";
 
 import type { Schema } from "../api/types";
+import { authKeys } from "../auth/query-keys";
 import { downloadClientKeys } from "../download-clients/query-keys";
 import { mediaManagerKeys } from "../media-managers/query-keys";
 import { pauseKeys } from "../pause/query-keys";
@@ -60,6 +61,7 @@ export const LIVE_TOPIC_QUERIES: Readonly<
   kept_files: [processingKeys.keptFiles],
   metrics: [settingsKeys.metrics],
   jobs: [processingKeys.jobs, systemKeys.logEntriesAll],
+  sessions: [authKeys.sessions],
 };
 
 function isLiveTopic(value: unknown): value is LiveTopic {

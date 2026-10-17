@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Weir.Core.Auth;
 using Weir.Core.Time;
+using Weir.Infrastructure.Activity;
 using Weir.Infrastructure.Sqlite;
 
 namespace Weir.Infrastructure.Auth;
@@ -12,6 +13,14 @@ public sealed class AuthStore
 
     private const string SessionColumns =
         "id, user_id, token_hash, created_at, absolute_expires_at, is_trusted_device, last_seen_at, revoked_at, client_label";
+
+    private readonly DataChangePublisher? _changes;
+
+    /// <param name="changes">Told, once a write commits, that the signed-in browsers changed, so every open Security page reads them again.</param>
+    public AuthStore(DataChangePublisher? changes = null)
+    {
+        _changes = changes;
+    }
 
     public Task<long> CountActiveAdminsAsync(UnitOfWork uow) =>
         Checked(uow).CountAsync("SELECT count(*) FROM users WHERE users.role = $role AND users.is_active IS 1", ("$role", UserRoles.Admin));
@@ -102,10 +111,10 @@ public sealed class AuthStore
             ("$user", userId),
             ("$id", sessionHexId));
 
-    public Task InsertSessionAsync(UnitOfWork uow, UserSessionRecord row)
+    public async Task InsertSessionAsync(UnitOfWork uow, UserSessionRecord row)
     {
         ArgumentNullException.ThrowIfNull(row);
-        return Checked(uow).ExecuteAsync(
+        await Checked(uow).ExecuteAsync(
             "INSERT INTO user_sessions (id, user_id, token_hash, created_at, absolute_expires_at, is_trusted_device, last_seen_at, revoked_at, client_label) " +
             "VALUES ($id, $user, $hash, $created, $expires, $trusted, $seen, $revoked, $label)",
             ("$id", row.Id),
@@ -116,14 +125,23 @@ public sealed class AuthStore
             ("$trusted", row.IsTrustedDevice ? 1 : 0),
             ("$seen", row.LastSeenAt.ToSqlite()),
             ("$revoked", SqliteValues.ToSqlite(row.RevokedAt)),
-            ("$label", row.ClientLabel));
+            ("$label", row.ClientLabel)).ConfigureAwait(false);
+        SessionsChanged(uow);
     }
 
-    public Task<int> RevokeSessionAsync(UnitOfWork uow, string sessionHexId, Timestamp at) =>
-        Checked(uow).ExecuteAsync(
+    public async Task<int> RevokeSessionAsync(UnitOfWork uow, string sessionHexId, Timestamp at)
+    {
+        var revoked = await Checked(uow).ExecuteAsync(
             "UPDATE user_sessions SET revoked_at=$at WHERE user_sessions.id = $id",
             ("$at", at.ToSqlite()),
-            ("$id", sessionHexId));
+            ("$id", sessionHexId)).ConfigureAwait(false);
+        if (revoked > 0)
+        {
+            SessionsChanged(uow);
+        }
+
+        return revoked;
+    }
 
     public Task<int> TouchSessionAsync(UnitOfWork uow, string sessionHexId, Timestamp at) =>
         Checked(uow).ExecuteAsync(
@@ -132,11 +150,19 @@ public sealed class AuthStore
             ("$id", sessionHexId));
 
     /// <summary>Revokes every unrevoked session of the user.</summary>
-    public Task<int> RevokeActiveSessionsForUserAsync(UnitOfWork uow, long userId, Timestamp at) =>
-        Checked(uow).ExecuteAsync(
+    public async Task<int> RevokeActiveSessionsForUserAsync(UnitOfWork uow, long userId, Timestamp at)
+    {
+        var revoked = await Checked(uow).ExecuteAsync(
             "UPDATE user_sessions SET revoked_at=$at WHERE user_sessions.user_id = $user AND user_sessions.revoked_at IS NULL",
             ("$at", at.ToSqlite()),
-            ("$user", userId));
+            ("$user", userId)).ConfigureAwait(false);
+        if (revoked > 0)
+        {
+            SessionsChanged(uow);
+        }
+
+        return revoked;
+    }
 
     public Task<long> CountActiveSessionsAsync(UnitOfWork uow, long userId, Timestamp now) =>
         Checked(uow).CountAsync(
@@ -179,6 +205,8 @@ public sealed class AuthStore
             ("$now", now.ToSqlite()),
             ("$idle", idleCutoff.ToSqlite()),
             ("$trusted", trustedIdleCutoff.ToSqlite()));
+
+    private void SessionsChanged(UnitOfWork uow) => _changes?.PublishOnCommit(uow, DataTopics.Sessions);
 
     private static UnitOfWork Checked(UnitOfWork uow)
     {

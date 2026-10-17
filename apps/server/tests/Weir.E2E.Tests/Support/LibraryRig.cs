@@ -120,6 +120,24 @@ public sealed class LibraryRig : IAsyncDisposable
     }
 
     /// <summary>
+    /// A film that already is what the rules ask for when they keep only <paramref name="audioLanguage"/> and remove every subtitle: the video and the
+    /// audio are flagged as the defaults, so the scan reads it as matching and there is nothing to reorder or re-tag.
+    /// </summary>
+    public async Task<string> AddMatchingFilmAsync(string relativePath, string audioLanguage)
+    {
+        var path = Path.Combine(LibraryFolder, relativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var probe = FakeMedia.Probe(audioLanguages: [audioLanguage]);
+        foreach (var stream in probe["streams"]!.AsArray())
+        {
+            stream!["disposition"] = new JsonObject { ["default"] = 1, ["forced"] = 0 };
+        }
+
+        await File.WriteAllBytesAsync(path, FakeMedia.Bytes(probe));
+        return path;
+    }
+
+    /// <summary>
     /// The Radarr deletes the file of a movie it is asked about and takes the search that follows, as it does for "Download again".
     /// The movie it answers with is the one it lists, which is the shape Radarr's OpenAPI describes, not a recorded reply.
     /// </summary>
@@ -143,6 +161,16 @@ public sealed class LibraryRig : IAsyncDisposable
                 || request.Path.StartsWith("/api/v3/moviefile", StringComparison.Ordinal)
                 || request.Path == "/api/v3/command")
             .Select(request => $"{request.Method} {request.Path}")];
+
+    /// <summary>
+    /// The clean of this film stays under way, once a worker takes it, until <see cref="ReleaseClean"/>: the Files table shows it as
+    /// cleaning for as long as a test wants to look.
+    /// </summary>
+    public void HoldClean(string film) =>
+        _tools.SetFileRule(Path.GetFileName(film), new FileRule { RemuxReleaseFile = ReleaseFileFor(film) });
+
+    /// <summary>Lets the clean of this film, held by <see cref="HoldClean"/>, finish.</summary>
+    public void ReleaseClean(string film) => File.WriteAllText(ReleaseFileFor(film), string.Empty);
 
     /// <summary>Scans the library and waits until that scan has finished.</summary>
     public async Task ScanAsync()
@@ -197,10 +225,10 @@ public sealed class LibraryRig : IAsyncDisposable
         }
     }
 
-    /// <summary>The library files as the Files table lists them.</summary>
-    public async Task<WeirResponse> FilesAsync()
+    /// <summary>The library files as the Files table lists them, in the order the server gives when it is asked for <paramref name="query"/>.</summary>
+    public async Task<WeirResponse> FilesAsync(params (string Name, object Value)[] query)
     {
-        var response = await _admin.GetAsync($"{Api}/processing/libraries/{LibraryId}/library-files");
+        var response = await _admin.GetAsync($"{Api}/processing/libraries/{LibraryId}/library-files", query);
         Assert.True(response.Status == HttpStatusCode.OK, response.ToString());
         return response;
     }
@@ -260,6 +288,8 @@ public sealed class LibraryRig : IAsyncDisposable
         _tools.Dispose();
         _folders.Dispose();
     }
+
+    private string ReleaseFileFor(string film) => Path.Combine(_folders.Path, $"release-{Path.GetFileName(film)}");
 
     private static string LastSegment(string path) => path[(path.LastIndexOf('/') + 1)..];
 

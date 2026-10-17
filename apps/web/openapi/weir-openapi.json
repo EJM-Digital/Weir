@@ -780,7 +780,7 @@
         "description": "The data of a data.changed frame on GET /activity/stream: one kind of data changed, so every screen showing it should read it again. A topic is published as the screens that show its data are converted, so not every topic listed is sent yet.",
         "properties": {
           "topic": {
-            "description": "Which data changed (a topic is named here before it is published): pause (Processing paused, resumed, or a timed pause ran out), readiness, files_at_once, maintenance, libraries, library_scan, folder_checks, update, network_access, connections, settings, direct_play_devices (the devices chosen for the Direct Play badge), backups, kept_files, metrics or jobs.",
+            "description": "Which data changed (a topic is named here before it is published): pause (Processing paused, resumed, or a timed pause ran out), readiness, files_at_once, maintenance, libraries, library_scan, folder_checks, update, network_access, connections, settings, direct_play_devices (the devices chosen for the Direct Play badge), backups, kept_files, metrics, jobs or sessions (a browser signed in or out of Weir).",
             "enum": [
               "backups",
               "connections",
@@ -796,6 +796,7 @@
               "network_access",
               "pause",
               "readiness",
+              "sessions",
               "settings",
               "update"
             ],
@@ -8630,6 +8631,14 @@
           "keep_original_language": {
             "title": "Keep Original Language",
             "type": "boolean"
+          },
+          "library_rescan_job_ids": {
+            "description": "The background re-plans queued for libraries that use this profile. Sent only when a profile is saved.",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Library Rescan Job Ids",
+            "type": "array"
           },
           "name": {
             "title": "Name",

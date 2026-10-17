@@ -146,7 +146,7 @@ describe("Active sessions: the list", () => {
     expect(weir.requests).toEqual([]);
   });
 
-  it("is read again when the person comes back to the page, since sessions have no live update", async () => {
+  it("is read again when the person comes back to the page", async () => {
     weir = serveRecordedReplies({
       ...APP_SETTINGS,
       [`GET ${SESSIONS}`]: [threeSessions, oneSession],

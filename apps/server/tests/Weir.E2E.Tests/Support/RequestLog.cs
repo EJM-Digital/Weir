@@ -2,8 +2,8 @@ using Microsoft.Playwright;
 
 namespace Weir.E2E.Tests.Support;
 
-/// <summary>One request the page sent to Weir's API: its verb, its path and query, and the body it carried.</summary>
-public sealed record SentRequest(string Method, string PathAndQuery, string? Body)
+/// <summary>One request the page sent to Weir's API: its verb, its path and query, the body it carried, and the CSRF token it carried in a header, if any.</summary>
+public sealed record SentRequest(string Method, string PathAndQuery, string? Body, string? CsrfHeader = null)
 {
     public override string ToString() => $"{Method} {PathAndQuery} {Body}".TrimEnd();
 }
@@ -81,7 +81,7 @@ public sealed class RequestLog
 
         lock (_gate)
         {
-            _logged.Add(new SentRequest(request.Method, url.PathAndQuery, request.PostData));
+            _logged.Add(new SentRequest(request.Method, url.PathAndQuery, request.PostData, request.Headers.GetValueOrDefault("x-csrf-token")));
         }
     }
 }

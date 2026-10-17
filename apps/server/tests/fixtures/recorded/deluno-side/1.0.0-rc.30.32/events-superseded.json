@@ -1,0 +1,38 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "events-superseded",
+  "recordedAt": "2026-10-15T03:03:02Z",
+  "note": "The report Weir sent for the first of two sends of one file (status failed). Deluno answered 409 (it has no row for this hand-off, as the script made it straight to Weir).",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "88649ffd-82e5-4d8c-bf58-19ad731d4fd9",
+          "status": "failed",
+          "processorName": "Weir",
+          "libraryId": "01a13d68ae4a7e7b84c06a96fd5d8cc7",
+          "releaseName": "Big Buck Bunny (2008) Recorded Takeover",
+          "message": "This release was sent again, so Weir is answering the newer send and has nothing to add here.",
+          "sourceRemoved": false,
+          "failureClass": "superseded",
+          "outputFiles": []
+        }
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": "Deluno could not match this processor event to a waiting hand-off. Use the handoff ID from GET /api/integrations/processors/handoffs or the exact source path Deluno recorded. No import was queued."
+        }
+      }
+    }
+  ]
+}

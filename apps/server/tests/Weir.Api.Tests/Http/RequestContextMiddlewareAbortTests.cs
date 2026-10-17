@@ -64,7 +64,7 @@ public sealed class RequestContextMiddlewareAbortTests
         using var aborted = new CancellationTokenSource();
         var middleware = NewMiddleware(new CapturingLoggerFactory(), async _ =>
         {
-            await Task.Delay(50);
+            await Task.Yield();
             await aborted.CancelAsync();
             throw new TaskCanceledException();
         }, metrics);

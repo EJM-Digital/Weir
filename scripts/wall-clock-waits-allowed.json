@@ -8,6 +8,24 @@
       "reason": "Removing a workflow is refused while a job of its own is still finishing; this asks again every half second and gives up after 30 seconds, ending at the first answer that is not \"busy\"."
     },
     {
+      "file": "apps/server/tests/Weir.Api.Tests/TestSupport/Eventually.cs",
+      "kind": "delay",
+      "count": 2,
+      "reason": "The two polls every API test shares: they look every 50 ms, end the moment the condition holds and give up at a ceiling that only a hung test reaches."
+    },
+    {
+      "file": "apps/server/tests/Weir.Api.Tests/TestSupport/RealServerProcess.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "A poll every 100 ms for a real server process to start answering; it ends the moment the process answers or exits and gives up at its own ceiling."
+    },
+    {
+      "file": "apps/server/tests/Weir.Api.Tests/TestSupport/UnreadStdoutServer.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "A poll every 100 ms for a real server process to start answering; it ends the moment the process answers or exits and gives up at its own ceiling."
+    },
+    {
       "file": "apps/tray/Weir.Tray.Tests/ServerOutputTests.cs",
       "kind": "delay",
       "count": 1,

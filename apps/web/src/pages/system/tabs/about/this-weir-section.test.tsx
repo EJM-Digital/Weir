@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppSettings } from "../../../../lib/settings/types";
@@ -111,5 +111,50 @@ describe("System › About: the copy taken before an update", () => {
     expect(note).toHaveTextContent(
       "Weir didn't update because it couldn't save a copy of its data: Drive C: needs about 480 MB free",
     );
+  });
+});
+
+describe("System › About: running the setup wizard again", () => {
+  beforeEach(() => {
+    mocks.overview.mockReset();
+    mocks.updateState.mockReset();
+    mocks.overview.mockReturnValue({ data: testOverview });
+    mocks.updateState.mockReturnValue({ data: undefined });
+  });
+
+  function showWith(setupWizardState: string) {
+    render(
+      <MemoryRouter initialEntries={["/system?tab=about"]}>
+        <Routes>
+          <Route
+            path="/system"
+            element={
+              <ThisWeirSection
+                settings={
+                  { setup_wizard_state: setupWizardState } as AppSettings
+                }
+              />
+            }
+          />
+          <Route path="/setup-wizard" element={<p>The setup wizard</p>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    return screen.getByTestId("suite-settings-open-setup-wizard");
+  }
+
+  it("opens the wizard from the button", () => {
+    fireEvent.click(showWith("completed"));
+
+    expect(screen.getByText("The setup wizard")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["completed", "You finished the wizard."],
+    ["skipped", "You skipped the wizard."],
+    ["pending", "The wizard has not been finished yet."],
+    ["", "The wizard has not been finished yet."],
+  ])("when the wizard is %j, the button says %j", (state, note) => {
+    expect(showWith(state)).toHaveAttribute("title", note);
   });
 });

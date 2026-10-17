@@ -25,3 +25,16 @@ internal sealed class PosixFactAttribute : FactAttribute
         }
     }
 }
+
+/// <summary>A theory that runs only on Windows.</summary>
+[AttributeUsage(AttributeTargets.Method)]
+internal sealed class WindowsTheoryAttribute : TheoryAttribute
+{
+    public WindowsTheoryAttribute(string reason)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Skip = reason;
+        }
+    }
+}

@@ -56,7 +56,7 @@ public sealed class LibraryCleanHandlerTests : IDisposable
         var removedTrackStore = new Weir.Infrastructure.Library.FileLogRemovedTrackStore(_fixture.Store.Database, _fixture.Store.Clock);
         return new LibraryCleanHandler(
             _fixture.Store.Database, tools, swap, notifier, PhysicalHardlinkInspector.Instance, removedTrackStore,
-            _librarySettings, _fileMarks, _libraries, _fixture.Changes, _fixture.Store.Clock, NullLogger<LibraryCleanHandler>.Instance);
+            _librarySettings, _fileMarks, _scans, _fixture.Jobs, _libraries, _fixture.Changes, _fixture.Store.Clock, NullLogger<LibraryCleanHandler>.Instance);
     }
 
     /// <summary>A library whose rule set keeps only English audio, strictly — the same policy proven in
@@ -415,6 +415,63 @@ public sealed class LibraryCleanHandlerTests : IDisposable
         Assert.NotNull(mark);
         Assert.NotNull(mark!.CleanedAt);
         Assert.False(mark.LeaveAlone);
+    }
+
+    private Task<long> PendingScansAsync() =>
+        _fixture.Store.Scalar($"SELECT count(*) FROM jobs WHERE job_kind = '{LibraryModeJobKinds.ScanKind}' AND status = 'pending'");
+
+    [Fact]
+    public async Task A_clean_that_changed_a_file_asks_for_the_library_to_be_scanned_again_so_the_file_reads_as_clean()
+    {
+        // The file list is only as new as the last scan, so without a scan the file would go on reading as needing this very clean.
+        var library = await LibraryAsync();
+        var path = _libraryFolder.Join("film.mkv");
+        await File.WriteAllBytesAsync(path, [1, 2, 3]);
+        _media.Probes["film.mkv"] = FakeMediaRunner.EnglishAndJapanese;
+        Assert.Equal(0, await PendingScansAsync());
+
+        await RunCleanAsync(await EnqueueCleanAsync(library, path, confirmFinalRemoval: true));
+
+        Assert.Equal(1, await PendingScansAsync());
+        var payload = await _fixture.Db(async uow => Convert.ToString(
+            await uow.ScalarAsync($"SELECT payload_json FROM jobs WHERE job_kind = '{LibraryModeJobKinds.ScanKind}'"), CultureInfo.InvariantCulture));
+        Assert.Contains($"\"library_id\":{library}", payload, StringComparison.Ordinal);
+        Assert.Contains("\"trigger\":\"worker\"", payload, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Cleans_that_finish_while_a_scan_is_already_waiting_ask_for_no_second_one()
+    {
+        var library = await LibraryAsync();
+        _media.Probes["first.mkv"] = FakeMediaRunner.EnglishAndJapanese;
+        _media.Probes["second.mkv"] = FakeMediaRunner.EnglishAndJapanese;
+        var queued = new List<long>();
+        foreach (var name in new[] { "first.mkv", "second.mkv" })
+        {
+            var path = _libraryFolder.Join(name);
+            await File.WriteAllBytesAsync(path, [1, 2, 3]);
+            queued.Add(await EnqueueCleanAsync(library, path, confirmFinalRemoval: true));
+        }
+
+        foreach (var jobId in queued)
+        {
+            await RunCleanAsync(jobId);
+        }
+
+        Assert.Equal(1, await PendingScansAsync());
+    }
+
+    [Fact]
+    public async Task A_clean_that_changed_nothing_asks_for_no_scan()
+    {
+        var library = await LibraryAsync();
+        var path = _libraryFolder.Join("film.mkv");
+        await File.WriteAllBytesAsync(path, [1, 2, 3]);
+        _media.Probes["film.mkv"] = FakeMediaRunner.EnglishAndJapanese;
+
+        await RunCleanAsync(await EnqueueCleanAsync(library, path, confirmFinalRemoval: false));
+
+        Assert.Equal(0, await PendingScansAsync());
     }
 
     /// <summary>More than any drive has, so the free-space check always finds the drive short.</summary>

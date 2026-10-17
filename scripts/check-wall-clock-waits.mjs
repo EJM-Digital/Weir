@@ -28,6 +28,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const WATCHED = [
   { kind: "csharp", files: /^apps\/(?:server\/tests\/Weir\.E2E\.Tests|tray\/Weir\.Tray\.Tests)\/.+\.cs$/ },
   { kind: "web", files: /^apps\/web\/src\/(?:.+\.test\.tsx?|test\/.+|.+-(?:test-server|test-fixtures|test-support)\.tsx?)$/ },
+  { kind: "csharp", files: /^apps\/server\/tests\/Weir\.Api\.Tests\/.+\.cs$/ },
   { kind: "script", files: /^(?:scripts|packaging)\/.+\.ps1$/ },
   // This check's own test holds the waits it looks for, as the text it is tried on.
   { kind: "node", files: /^scripts\/(?!check-wall-clock-waits\.test\.mjs$).+\.test\.mjs$/ },

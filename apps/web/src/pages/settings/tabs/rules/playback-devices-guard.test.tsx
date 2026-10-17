@@ -39,7 +39,7 @@ const devices: DirectPlayDevices = {
   ],
 };
 
-/** How long a lazily loaded tab may take on a busy machine before the test gives up. */
+/** A hang guard, not a pace: the most a lazily loaded tab is given on a busy machine; a wait ends the moment the tab shows. */
 const CEILING = { timeout: 10_000 };
 
 async function openDevices() {
