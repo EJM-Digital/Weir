@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 namespace Weir.ArrRecorder;
 
@@ -11,8 +12,12 @@ namespace Weir.ArrRecorder;
 /// the format of Deluno's recordings. Secrets are replaced with <c>&lt;scrubbed&gt;</c>, and so is a title's overview, which is free
 /// text from a metadata site and plays no part in anything Weir reads.
 /// </summary>
-internal sealed class RecordingWriter
+internal sealed partial class RecordingWriter
 {
+    private const int MinimumSecretLength = 8;
+
+    private static readonly string[] CookieAttributes = ["expires", "path", "domain", "max-age", "samesite", "secure", "httponly"];
+
     public const string Scrubbed = "<scrubbed>";
 
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
@@ -89,8 +94,9 @@ internal sealed class RecordingWriter
         new([.. headers.Select(pair => KeyValuePair.Create(pair.Key, (JsonNode?)pair.Value))]);
 
     /// <summary>
-    /// The secrets a session carries in its headers, which only the client knows until it says them: a cookie's value, a session id, the
-    /// token of a <c>Basic</c> or <c>Bearer</c> sign-in.
+    /// The secrets a session carries in its headers, which only the client knows until it says them: the values of the cookies it sets and
+    /// sends back, a session id, the token of a <c>Basic</c> or <c>Bearer</c> sign-in. A value too short to be one is left alone, so it
+    /// cannot take every occurrence of an ordinary word with it.
     /// </summary>
     internal static IEnumerable<string> SessionSecrets(IEnumerable<Exchange> exchanges)
     {
@@ -98,25 +104,34 @@ internal sealed class RecordingWriter
         {
             foreach (var (name, value) in exchange.RequestHeaders.Concat(exchange.ReplyHeaders))
             {
-                string[] pairs = name switch
+                switch (name)
                 {
-                    "set-cookie" => value.Split(';')[..1],
-                    "cookie" => value.Split(';'),
-                    "x-transmission-session-id" => ['=' + value],
-                    "authorization" => ['=' + value[(value.IndexOf(' ', StringComparison.Ordinal) + 1)..]],
-                    _ => [],
-                };
-                foreach (var pair in pairs)
-                {
-                    var secret = pair[(pair.IndexOf('=', StringComparison.Ordinal) + 1)..].Trim();
-                    if (secret.Length > 0)
-                    {
-                        yield return secret;
-                    }
+                    case "set-cookie" or "cookie":
+                        foreach (var secret in CookieValues(value))
+                        {
+                            yield return secret;
+                        }
+
+                        break;
+                    case "x-transmission-session-id":
+                        yield return value;
+                        break;
+                    case "authorization":
+                        yield return value[(value.IndexOf(' ', StringComparison.Ordinal) + 1)..];
+                        break;
                 }
             }
         }
     }
+
+    [GeneratedRegex(@"(?<=^|[,;]\s*)(?<name>[A-Za-z0-9_.\-]+)=(?<value>[^;,\s]+)")]
+    private static partial Regex CookiePair();
+
+    private static IEnumerable<string> CookieValues(string header) =>
+        CookiePair().Matches(header)
+            .Where(pair => !CookieAttributes.Contains(pair.Groups["name"].Value, StringComparer.OrdinalIgnoreCase))
+            .Select(pair => pair.Groups["value"].Value)
+            .Where(secret => secret.Length >= MinimumSecretLength);
 
     private static string Scrub(string text, IEnumerable<string> secrets)
     {

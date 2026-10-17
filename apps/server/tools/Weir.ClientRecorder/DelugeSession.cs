@@ -15,6 +15,8 @@ internal sealed class DelugeSession(ClientSettings settings) : ClientSession(set
     private const string PublishedPassword = "deluge";
     private const string Password = "recorder-deluge-secret";
     private const string CompletedFolder = "/downloads/complete";
+    private const string IncompleteFolder = "/downloads/incomplete";
+    private const string TvFolder = "/downloads/complete/tv";
 
     private int _id;
     private string _cookie = string.Empty;
@@ -41,11 +43,13 @@ internal sealed class DelugeSession(ClientSettings settings) : ClientSession(set
         }).ConfigureAwait(false);
 
         await TryAsync("a password of its own", () => RpcAsync("auth.change_password", [PublishedPassword, Password])).ConfigureAwait(false);
-        await TryAsync("a folder for completed downloads", () => RpcAsync(
-            "core.set_config", [new JsonObject { ["move_completed"] = true, ["move_completed_path"] = CompletedFolder }])).ConfigureAwait(false);
 
         var version = string.Empty;
-        await TryAsync("the daemon's version", async () => version = (string?)(await RpcAsync("daemon.info", []).ConfigureAwait(false)).Result ?? string.Empty).ConfigureAwait(false);
+        await TryAsync("the daemon's version", async () =>
+        {
+            var hostId = (string?)(await RpcAsync("web.get_hosts", []).ConfigureAwait(false)).Result?.AsArray().FirstOrDefault()?[0] ?? throw new RecorderException("the Web UI knows no daemon");
+            version = (string?)(await RpcAsync("web.get_host_status", [hostId]).ConfigureAwait(false)).Result?.AsArray().LastOrDefault() ?? string.Empty;
+        }).ConfigureAwait(false);
         return new ClientSetup(
             Settings.Version ?? (version.Length > 0 ? version : throw new InvalidOperationException("Deluge did not say its version; set RECORDER_VERSION.")),
             Connection(DownloadClientKinds.Deluge, Settings.Url, null, Password, null),
@@ -61,32 +65,34 @@ internal sealed class DelugeSession(ClientSettings settings) : ClientSession(set
         await TestStepAsync("test", "The connection test with the right password.", Prepared.Right, expectConnected: true).ConfigureAwait(false);
 
         await FoldersStepAsync(
-            "folders-without-labels",
-            "Reading the folders of a Deluge whose label plugin is off.",
-            Prepared.Right,
-            folders => folders.CompletedFolder == CompletedFolder && folders.CategoryFolders.Count == 0,
-            $"{CompletedFolder} and no labels").ConfigureAwait(false);
+            "folders-stock", "Reading the folders of a Deluge as it starts: no folder for completed downloads, the label plugin off.", Prepared.Right,
+            folders => folders.CompletedFolder == "/downloads" && folders.CategoryFolders.Count == 0, "its download folder and no labels").ConfigureAwait(false);
 
+        await TryAsync("a folder to move completed downloads to, switched off", () => RpcAsync(
+            "core.set_config", [new JsonObject { ["download_location"] = IncompleteFolder, ["move_completed"] = false, ["move_completed_path"] = CompletedFolder }])).ConfigureAwait(false);
+        await FoldersStepAsync(
+            "folders-move-completed-off", "Reading the folders of a Deluge that has a folder to move completed downloads to but does not use it.", Prepared.Right,
+            folders => folders.CompletedFolder == IncompleteFolder, $"{IncompleteFolder}, where downloads stay").ConfigureAwait(false);
+
+        await TryAsync("moving completed downloads", () => RpcAsync("core.set_config", [new JsonObject { ["move_completed"] = true }])).ConfigureAwait(false);
         await TryAsync("the label plugin", () => RpcAsync("core.enable_plugin", ["Label"])).ConfigureAwait(false);
-        await TryAsync("a label with a folder of its own", async () =>
+        await TryAsync("a label that moves completed downloads", async () =>
         {
             await RpcAsync("label.add", ["tv-recorder"]).ConfigureAwait(false);
-            await RpcAsync("label.set_options", ["tv-recorder", new JsonObject { ["move_completed"] = true, ["move_completed_path"] = "/downloads/complete/tv" }]).ConfigureAwait(false);
+            await RpcAsync("label.set_options", ["tv-recorder", new JsonObject { ["apply_move_completed"] = true, ["move_completed"] = true, ["move_completed_path"] = TvFolder }]).ConfigureAwait(false);
         }).ConfigureAwait(false);
+        await TryAsync("a label with a folder it does not use", async () =>
+        {
+            await RpcAsync("label.add", ["idle-recorder"]).ConfigureAwait(false);
+            await RpcAsync("label.set_options", ["idle-recorder", new JsonObject { ["apply_move_completed"] = true, ["move_completed"] = false, ["move_completed_path"] = "/downloads/idle" }]).ConfigureAwait(false);
+        }).ConfigureAwait(false);
+        await TryAsync("a label with no folder", () => RpcAsync("label.add", ["plain-recorder"])).ConfigureAwait(false);
         await FoldersStepAsync(
             "folders",
-            "Reading the folders of a Deluge whose label plugin is on and has a label with a folder of its own.",
+            "Reading the folders of a Deluge whose label plugin is on, with one label that moves completed downloads, one that does not and one with no folder.",
             Prepared.Right,
-            folders => folders.CompletedFolder == CompletedFolder && folders.CategoryFolders.Count == 1,
-            $"{CompletedFolder} and the label tv-recorder").ConfigureAwait(false);
-
-        await TryAsync("the Web UI disconnected from the daemon", () => RpcAsync("web.disconnect", [])).ConfigureAwait(false);
-        await FoldersStepAsync(
-            "folders-daemon-not-connected",
-            "Reading the folders while the Web UI is not connected to the daemon.",
-            Prepared.Right,
-            _ => true,
-            "whatever Weir makes of it").ConfigureAwait(false);
+            folders => folders.CompletedFolder == CompletedFolder && folders.CategoryFolders.Count == 1 && folders.CategoryFolders[0].Folder == TvFolder,
+            $"{CompletedFolder} and the label tv-recorder, {TvFolder}").ConfigureAwait(false);
     }
 
     /// <summary>One Web UI JSON-RPC call by the recorder, with the session cookie once signed in. Not part of any recording.</summary>

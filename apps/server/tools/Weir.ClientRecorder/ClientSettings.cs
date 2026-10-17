@@ -5,10 +5,11 @@ namespace Weir.ClientRecorder;
 /// <summary>What the recorder was told, read once from the environment.</summary>
 internal sealed class ClientSettings
 {
-    private ClientSettings(string kind, string url, string outputFolder, string? configFolder, string? setupPassword, string? version)
+    private ClientSettings(string kind, string url, string? authUrl, string outputFolder, string? configFolder, string? setupPassword, string? version)
     {
         Kind = kind;
         Url = url;
+        AuthUrl = authUrl;
         OutputFolder = outputFolder;
         ConfigFolder = configFolder;
         SetupPassword = setupPassword;
@@ -20,6 +21,9 @@ internal sealed class ClientSettings
 
     /// <summary>Where the client listens, as the recorder reaches it.</summary>
     public string Url { get; }
+
+    /// <summary>Where a second copy of the client that asks for a user name and password listens, for the client that has to be started that way.</summary>
+    public string? AuthUrl { get; }
 
     /// <summary>The folder the recordings are written under, one folder per client and version.</summary>
     public string OutputFolder { get; }
@@ -44,6 +48,7 @@ internal sealed class ClientSettings
         return new ClientSettings(
             kind,
             Optional("RECORDER_URL") ?? DefaultUrl(kind),
+            Optional("RECORDER_AUTH_URL"),
             Required("RECORDER_OUT_DIR"),
             Optional("RECORDER_CONFIG_DIR"),
             Optional("RECORDER_SETUP_PASSWORD"),

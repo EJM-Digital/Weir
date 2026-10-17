@@ -66,3 +66,17 @@ services:
       - ${RECORDER_WORK}/nzbget/downloads:/downloads
     ports:
       - "127.0.0.1:6789:6789"
+
+  # Transmission asking for a user name and password. The Sonarr and Radarr recorder's copy, which asks for none, is the other half.
+  transmission-auth:
+    extends:
+      file: ../Weir.ArrRecorder/compose.yaml
+      service: transmission
+    environment:
+      USER: recorder
+      PASS: recorder-transmission-secret
+    volumes: !override
+      - ${RECORDER_WORK:?set RECORDER_WORK}/transmission-auth/config:/config
+      - ${RECORDER_WORK}/transmission-auth/downloads:/downloads
+    ports: !override
+      - "127.0.0.1:9092:9091"

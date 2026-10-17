@@ -9,30 +9,29 @@ using Weir.Infrastructure.MediaManagers;
 namespace Weir.ClientRecorder;
 
 /// <summary>
-/// Transmission. It starts open, so Weir is recorded first against a client that asks for no sign-in; the session then switches RPC
-/// authentication on through <c>session-set</c> and records the sign-in, the wrong password and a connection with no credentials saved.
+/// Transmission, in the two ways it is run: with no sign-in (the address in <c>RECORDER_URL</c>) and with a user name and password (the
+/// address in <c>RECORDER_AUTH_URL</c>, a second copy started with them). It has no settings to change over its API that would switch the
+/// sign-in on, so there are two copies.
 /// </summary>
 internal sealed class TransmissionSession(ClientSettings settings) : ClientSession(settings)
 {
     private const string User = "recorder";
     private const string Password = "recorder-transmission-secret";
 
-    private string _sessionId = string.Empty;
+    private string AuthUrl => Settings.AuthUrl ?? throw new InvalidOperationException("RECORDER_AUTH_URL is not set; it is where the Transmission that asks for a sign-in listens.");
 
     protected override async Task<ClientSetup> SetUpAsync()
     {
-        string version = string.Empty;
+        var version = string.Empty;
         await Wait.UntilAsync("Transmission to answer", TimeSpan.FromMinutes(3), async () =>
-        {
-            var session = await RpcAsync(null, new JsonObject { ["method"] = "session-get", ["arguments"] = new JsonObject { ["fields"] = new JsonArray("version") } }).ConfigureAwait(false);
-            version = ((string?)session?["arguments"]?["version"] ?? string.Empty).Split(' ')[0];
-            return version.Length > 0;
-        }).ConfigureAwait(false);
+            (await VersionAsync(Settings.Url, null).ConfigureAwait(false)).Length > 0).ConfigureAwait(false);
+        await Wait.UntilAsync("the Transmission that asks for a sign-in to answer", TimeSpan.FromMinutes(3), async () =>
+            (version = await VersionAsync(AuthUrl, new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{User}:{Password}")))).ConfigureAwait(false)).Length > 0).ConfigureAwait(false);
 
         return new ClientSetup(
             Settings.Version ?? version,
-            Connection(DownloadClientKinds.Transmission, Settings.Url, User, Password, null),
-            Connection(DownloadClientKinds.Transmission, Settings.Url, User, "not-the-password", null),
+            Connection(DownloadClientKinds.Transmission, AuthUrl, User, Password, null),
+            Connection(DownloadClientKinds.Transmission, AuthUrl, User, "not-the-password", null),
             [Password]);
     }
 
@@ -40,41 +39,44 @@ internal sealed class TransmissionSession(ClientSettings settings) : ClientSessi
 
     protected override async Task RecordAsync()
     {
-        var open = Connection(DownloadClientKinds.Transmission, Settings.Url, null, null, null);
-        await TestStepAsync("test-open", "The connection test against a Transmission that asks for no sign-in.", open, expectConnected: true).ConfigureAwait(false);
-        await FoldersStepAsync(
-            "folders", "Reading the folder Transmission saves downloads in.", open, folders => folders.CompletedFolder is { Length: > 0 }, "its download folder").ConfigureAwait(false);
-
-        await TryAsync("RPC authentication", async () => await RpcAsync(
-            null,
-            new JsonObject
-            {
-                ["method"] = "session-set",
-                ["arguments"] = new JsonObject { ["rpc-authentication-required"] = true, ["rpc-username"] = User, ["rpc-password"] = Password },
-            }).ConfigureAwait(false)).ConfigureAwait(false);
-
+        await TestStepAsync(
+            "test-open",
+            "The connection test against a Transmission that asks for no sign-in.",
+            Connection(DownloadClientKinds.Transmission, Settings.Url, null, null, null),
+            expectConnected: true).ConfigureAwait(false);
         await TestStepAsync("test", "The connection test with the right user name and password.", Prepared.Right, expectConnected: true).ConfigureAwait(false);
         await TestStepAsync("test-wrong-password", "The connection test with a password Transmission does not know.", Prepared.Wrong, expectConnected: false).ConfigureAwait(false);
-        await TestStepAsync("test-no-credentials", "The connection test with no user name or password saved, against a Transmission that wants them.", open, expectConnected: false).ConfigureAwait(false);
+        await TestStepAsync(
+            "test-no-credentials",
+            "The connection test with no user name or password saved, against a Transmission that asks for them.",
+            Connection(DownloadClientKinds.Transmission, AuthUrl, null, null, null),
+            expectConnected: false).ConfigureAwait(false);
+        await FoldersStepAsync(
+            "folders", "Reading the folder Transmission saves downloads in.", Prepared.Right, folders => folders.CompletedFolder is { Length: > 0 }, "its download folder").ConfigureAwait(false);
     }
 
-    /// <summary>One RPC call by the recorder, with the 409 handshake and the sign-in when there is one. Not part of any recording.</summary>
-    private async Task<JsonNode?> RpcAsync(AuthenticationHeaderValue? signIn, JsonObject body)
+    /// <summary>The version the Transmission at <paramref name="url"/> reports, or empty when it does not let this call in. Not part of any recording.</summary>
+    private async Task<string> VersionAsync(string url, AuthenticationHeaderValue? signIn)
     {
+        var body = new JsonObject { ["method"] = "session-get", ["arguments"] = new JsonObject { ["fields"] = new JsonArray("version") } };
+        var sessionId = string.Empty;
         for (var attempt = 0; attempt < 2; attempt++)
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, "/transmission/rpc") { Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json") };
-            request.Headers.Authorization = signIn;
-            if (_sessionId.Length > 0)
+            using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(new Uri(url), "/transmission/rpc"))
             {
-                request.Headers.TryAddWithoutValidation("X-Transmission-Session-Id", _sessionId);
+                Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json"),
+            };
+            request.Headers.Authorization = signIn;
+            if (sessionId.Length > 0)
+            {
+                request.Headers.TryAddWithoutValidation("X-Transmission-Session-Id", sessionId);
             }
 
             using var response = await Setup.SendAsync(request).ConfigureAwait(false);
             var text = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             if (response.StatusCode == HttpStatusCode.Conflict && response.Headers.TryGetValues("X-Transmission-Session-Id", out var ids))
             {
-                _sessionId = ids.First();
+                sessionId = ids.First();
                 continue;
             }
 
@@ -83,7 +85,7 @@ internal sealed class TransmissionSession(ClientSettings settings) : ClientSessi
                 throw new RecorderException($"Transmission's RPC answered {(int)response.StatusCode}: {ArrApi.Excerpt(text)}");
             }
 
-            return JsonNode.Parse(text);
+            return ((string?)JsonNode.Parse(text)?["arguments"]?["version"] ?? string.Empty).Split(' ')[0];
         }
 
         throw new RecorderException("Transmission kept refusing the session id it gave.");

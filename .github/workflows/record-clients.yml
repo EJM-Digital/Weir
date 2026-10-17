@@ -85,15 +85,20 @@ jobs:
             echo "RECORDER_SERVICE=$service"
             echo "RECORDER_COMPOSE=$compose"
             echo "RECORDER_URL=$url"
+            if [ "$kind" = transmission ]; then echo "RECORDER_AUTH_URL=http://localhost:9092"; fi
             echo "RECORDER_CONFIG_DIR=$RECORDER_WORK/$kind/config"
           } >> "$GITHUB_ENV"
           if [ "${{ matrix.images }}" = latest ]; then echo "$variable=$image" >> "$GITHUB_ENV"; fi
 
       - name: Start the client
         run: |
-          mkdir -p "$RECORDER_WORK/$RECORDER_CLIENT"/{config,downloads} "$RECORDER_OUT_DIR"
+          mkdir -p "$RECORDER_WORK/$RECORDER_CLIENT"/{config,downloads} "$RECORDER_WORK"/transmission-auth/{config,downloads} "$RECORDER_OUT_DIR"
           export PUID="$(id -u)" PGID="$(id -g)"
           docker compose -f "$RECORDER_COMPOSE" up -d "$RECORDER_SERVICE"
+          # Transmission is recorded twice over: once asking for no sign-in, once asking for one.
+          if [ "$RECORDER_CLIENT" = transmission ]; then
+            docker compose -f apps/server/tools/Weir.ClientRecorder/compose.yaml up -d transmission-auth
+          fi
           docker compose -f "$RECORDER_COMPOSE" ps
 
       # qBittorrent prints a temporary password for its admin user the first time it starts.

@@ -15,19 +15,20 @@ internal sealed partial class SabnzbdSession(ClientSettings settings) : ClientSe
     private const string CompleteDir = "/downloads/complete";
     private const string WrongKey = "0123456789abcdef0123456789abcdef";
 
-    [GeneratedRegex(@"^api_key\s*=\s*(\S+)\s*$", RegexOptions.Multiline)]
-    private static partial Regex ApiKeyLine();
+    [GeneratedRegex(@"^(?<name>api_key|nzb_key)\s*=\s*(?<value>\S+)\s*$", RegexOptions.Multiline)]
+    private static partial Regex KeyLines();
 
     protected override async Task<ClientSetup> SetUpAsync()
     {
         var config = Settings.ConfigFolder ?? throw new InvalidOperationException("RECORDER_CONFIG_DIR is not set; it is SABnzbd's config folder, where sabnzbd.ini appears.");
-        var key = string.Empty;
-        await Wait.UntilAsync("SABnzbd to write its API key", TimeSpan.FromMinutes(3), () =>
+        var keys = new Dictionary<string, string>();
+        await Wait.UntilAsync("SABnzbd to write its keys", TimeSpan.FromMinutes(3), () =>
         {
             var file = Path.Combine(config, "sabnzbd.ini");
-            key = File.Exists(file) && ApiKeyLine().Match(File.ReadAllText(file)) is { Success: true } line ? line.Groups[1].Value : string.Empty;
-            return Task.FromResult(key.Length > 0);
+            keys = File.Exists(file) ? KeyLines().Matches(File.ReadAllText(file)).ToDictionary(line => line.Groups["name"].Value, line => line.Groups["value"].Value) : [];
+            return Task.FromResult(keys.ContainsKey("api_key") && keys.ContainsKey("nzb_key"));
         }).ConfigureAwait(false);
+        var key = keys["api_key"];
 
         string version = string.Empty;
         await Wait.UntilAsync("SABnzbd to answer", TimeSpan.FromMinutes(3), async () =>
@@ -44,7 +45,7 @@ internal sealed partial class SabnzbdSession(ClientSettings settings) : ClientSe
             Settings.Version ?? version,
             Connection(DownloadClientKinds.Sabnzbd, Settings.Url, null, null, key),
             Connection(DownloadClientKinds.Sabnzbd, Settings.Url, null, null, WrongKey),
-            [key]);
+            [key, keys["nzb_key"]]);
     }
 
     protected override IDownloadClientPort CreatePort(IManagerHttpHandlerFactory transport) => new SabnzbdPort(transport);
