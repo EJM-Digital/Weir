@@ -21,14 +21,20 @@ public abstract class FakeHttpServer : IDisposable
     private TaskCompletionSource _arrived = NewSignal();
     private volatile bool _unavailable;
 
-    protected FakeHttpServer()
+    /// <param name="answersAnyHostName">
+    /// Answers a request whatever host name it carries, not only the address it listens on. A listener on Linux holds a request to the host
+    /// of its prefix and refuses any other with a 404, so a fake that stands in for a named destination listens on every address there;
+    /// Windows routes by the address and needs nothing more.
+    /// </param>
+    protected FakeHttpServer(bool answersAnyHostName = false)
     {
+        var host = answersAnyHostName && !OperatingSystem.IsWindows() ? "+" : "127.0.0.1";
         for (var attempt = 1; ; attempt++)
         {
             var port = FreePort();
             // A listener that failed to start cannot be reused (on Linux it is disposed), so each attempt gets its own.
             var listener = new HttpListener();
-            listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+            listener.Prefixes.Add($"http://{host}:{port}/");
             try
             {
                 listener.Start();

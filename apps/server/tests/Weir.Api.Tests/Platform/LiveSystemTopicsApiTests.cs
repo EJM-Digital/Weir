@@ -1,5 +1,7 @@
 using System.Net;
+using Microsoft.Extensions.DependencyInjection;
 using Weir.Infrastructure.Activity;
+using Weir.Infrastructure.Scheduling;
 using static Weir.Api.Tests.Platform.ApiTestClient;
 using static Weir.Api.Tests.Platform.LiveStreamApiTests;
 
@@ -17,9 +19,25 @@ public sealed class LiveSystemTopicsApiTests
     private static async Task<(WeirTestServer Server, ApiTestClient Client, StreamReader Stream)> StartListeningAsync(params (string Name, string Value)[] variables)
     {
         var (server, client) = await StartSignedInAsync(variables);
+        return await ListenAsync(server, client);
+    }
+
+    private static async Task<(WeirTestServer Server, ApiTestClient Client, StreamReader Stream)> ListenAsync(WeirTestServer server, ApiTestClient client)
+    {
         var stream = await OpenStreamAsync(server, client);
         await NextFrameAsync(stream, "server.hello");
         return (server, client, stream);
+    }
+
+    /// <summary>
+    /// Takes the counters' tick out of the server's own schedule, which would wait five real seconds and, on a busy machine, longer than
+    /// the stream is read for. The test runs the very task the schedule runs, when it has something to announce.
+    /// </summary>
+    private static void LeaveMetricsTickToTheTest(IServiceCollection services)
+    {
+        var scheduled = services.Single(service => service.ServiceType == typeof(IPeriodicTask) && service.ImplementationType == typeof(MetricsChangeTask));
+        services.Remove(scheduled);
+        services.AddSingleton<MetricsChangeTask>();
     }
 
     /// <summary>Reads topics until <paramref name="wanted"/> comes by, skipping the others a busy server also sends.</summary>
@@ -81,11 +99,18 @@ public sealed class LiveSystemTopicsApiTests
     [Fact]
     public async Task The_counters_moving_reach_an_open_stream_as_a_metrics_change()
     {
-        var (server, client, stream) = await StartListeningAsync();
+        var server = await WeirTestServer.StartAsync(
+            [("WEIR_SESSION_SECRET", Secret), ("WEIR_PROCESSING_WORKER_COUNT", "0")],
+            configureServices: LeaveMetricsTickToTheTest);
+        await TestDatabase.SeedAdminAsync(server);
+        var client = new ApiTestClient(server);
+        await client.SignInAsync();
+        var (_, _, stream) = await ListenAsync(server, client);
         await using var _server = server;
         using var _stream = stream;
 
         using var request = await client.GetAsync("/api/v1/processing/libraries");
+        await server.Services.GetRequiredService<MetricsChangeTask>().RunOnceAsync(CancellationToken.None);
 
         Assert.Equal(HttpStatusCode.OK, request.StatusCode);
         await NextTopicNamedAsync(stream, DataTopics.Metrics);

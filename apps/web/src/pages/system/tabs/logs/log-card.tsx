@@ -19,6 +19,7 @@ import type { LogColumnId } from "./log-columns";
 import { LogExportMenu } from "./log-export-menu";
 import { anyLogFilterSet, refineCount, type LogFilters } from "./log-filters";
 import { LogList } from "./log-list";
+import type { LogRowActions } from "./log-row";
 import { LogRange } from "./log-range";
 import { LogRefine } from "./log-refine";
 import { logSummaryWords } from "./log-summary";
@@ -222,7 +223,11 @@ export function LogCard({
             expandedId={expandedId}
             onToggle={onToggle}
             onClearFilters={onClearFilters}
-            actions={{ canAct: canClear, onRelated }}
+            actions={{
+              canAct: canClear,
+              onRelated,
+              onJobChanged: () => void entries.reload(),
+            }}
           />
         </section>
         {entries.hasMore ? (
@@ -258,7 +263,7 @@ function LogBody({
   expandedId: string | null;
   onToggle: (id: string) => void;
   onClearFilters: () => void;
-  actions: { canAct: boolean; onRelated: (jobId: number) => void };
+  actions: LogRowActions;
 }) {
   if (entries.error) return <LoadError thing="the log" error={entries.error} />;
   if (entries.rows.length === 0 && entries.loading) {

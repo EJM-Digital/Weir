@@ -92,9 +92,15 @@ function whatWasDone(item: FinishedFile): string {
 const GIB = 1024 ** 3;
 const MIB = 1024 ** 2;
 
-/** A saving in the few characters a caption has: one decimal for GB, whole MB, "1.2 GB", "221 MB". */
+const KIB = 1024;
+
+/** A saving in the few characters a caption has: one decimal for GB, whole MB or KB, "1.2 GB", "221 MB", "318 KB". */
 export function savedSize(bytes: number): string {
   if (bytes >= GIB) return `${(bytes / GIB).toFixed(1)} GB`;
+  if (bytes < MIB) {
+    const kb = Math.max(1, Math.round(bytes / KIB));
+    if (kb < KIB) return `${kb} KB`;
+  }
   const mb = Math.round(bytes / MIB);
   return mb >= 1024 ? "1.0 GB" : `${Math.max(1, mb)} MB`;
 }

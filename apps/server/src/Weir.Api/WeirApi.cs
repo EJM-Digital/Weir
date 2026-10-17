@@ -67,7 +67,7 @@ public static class WeirApi
         services.AddSingleton<MediaManagerIntakeEndpointHandlers>();
         services.AddSingleton<UpdateFiles>();
         services.AddSingleton<IReleaseCatalogClient, GitHubReleaseCatalogClient>();
-        services.AddSingleton<IExternalJsonPoster, ExternalJsonPoster>();
+        services.AddSingleton<IExternalJsonPoster>(new ExternalJsonPoster(options.NotificationStandInPort));
         services.AddSingleton<NotificationDispatcher>();
         // Registered before AddWeirJobs, whose TryAdd would otherwise install the version that sends nothing.
         services.AddSingleton<IJobNotifications, WebhookJobNotifications>();
