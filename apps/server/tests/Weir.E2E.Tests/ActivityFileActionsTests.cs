@@ -93,6 +93,31 @@ public sealed partial class ActivityFileActionsTests(E2EServer server) : E2ETest
     }
 
     [E2EFact]
+    public async Task When_the_server_cannot_queue_it_Process_again_says_so_and_the_finished_file_is_left_as_it_was()
+    {
+        await using var rig = await MixedActivity.StartAsync(writesGiveUpQuickly: true);
+        await rig.WithEvidenceAsync(async () =>
+        {
+            var (page, log) = await OpenAsync(rig);
+            var actions = await SelectAsync(page, MixedActivity.Finished);
+            var processAgain = actions.GetByRole(AriaRole.Button, new() { Name = "Process again", Exact = true });
+            var mark = log.Mark();
+
+            using (rig.HoldWrites())
+            {
+                var refused = await page.RunAndWaitForResponseAsync(() => processAgain.ClickAsync(), response => response.Url.EndsWith("/requeue", StringComparison.Ordinal), new() { Timeout = PushMs });
+
+                Assert.Equal(503, refused.Status);
+                await Expect(actions.GetByRole(AriaRole.Status)).ToHaveTextAsync("Could not queue that file again.", new() { Timeout = PushMs });
+            }
+
+            await Expect(processAgain).ToBeEnabledAsync();
+            Assert.Equal("processed", (string)(await rig.ListedFileAsync(MixedActivity.Finished))!["status"]!);
+            Assert.All(log.Since(mark), sent => Assert.Matches(@"^/api/v1/processing/files/\d+/requeue$", sent.PathAndQuery));
+        });
+    }
+
+    [E2EFact]
     public async Task Pass_through_unchanged_asks_first_Not_now_and_Escape_change_nothing_a_refusal_is_told_and_Yes_queues_it_with_the_choice_in_the_request()
     {
         await using var rig = await MixedActivity.StartAsync(writesGiveUpQuickly: true);

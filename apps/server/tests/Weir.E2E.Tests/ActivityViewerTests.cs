@@ -33,6 +33,9 @@ public sealed partial class ActivityViewerTests(E2EServer server) : E2ETestBase(
             await rig.HandOffReleaseAsync("h-failed", Film, Extra, failFirstPass: true);
             await Poll.UntilAsync(async () => (string?)(await rig.ListedFileAsync(Film))?["status"] == "processing_failed", "the film to fail", TimeSpan.FromMinutes(3));
 
+            // The admin signs in first and sets the first-run wizard aside, as on any real install.
+            var admin = await NewPageAsync(Wide);
+            await Navigation.EnsureSignedInAsync(admin, rig.BaseUrl);
             var viewer = await NewPageAsync(Wide);
             await SignInAsViewerAsync(viewer, rig.BaseUrl);
             await viewer.GotoAsync($"{rig.BaseUrl}/activity?show=failed");
@@ -44,8 +47,6 @@ public sealed partial class ActivityViewerTests(E2EServer server) : E2ETestBase(
             await Expect(viewer.GetByTestId("activity-file-actions")).ToHaveCountAsync(0);
             await Expect(viewer.GetByRole(AriaRole.Button, new() { NameRegex = new("^(Try|Process|Pass through|Remove|Choose|Check again|Move to top)") })).ToHaveCountAsync(0);
 
-            var admin = await NewPageAsync(Wide);
-            await Navigation.EnsureSignedInAsync(admin, rig.BaseUrl);
             await admin.GotoAsync($"{rig.BaseUrl}/activity?show=failed");
             await Rows(admin).Filter(new() { HasText = Film }).GetByRole(AriaRole.Button).ClickAsync();
 
