@@ -1,8 +1,9 @@
 import { useState } from "react";
 
 import { errorMessage } from "../../lib/api/error-message";
-import type {
-  LibraryCleanResult,
+import {
+  CLEAN_START_FAILED,
+  type LibraryCleanResult,
   LibraryConfirmationRequired,
   LibraryManualPlan,
 } from "../../lib/processing/library-mode-api";
@@ -28,9 +29,6 @@ export interface CleanOutcome {
   request: CleanRequest;
   result: LibraryCleanResult;
 }
-
-const START_FAILED =
-  "Weir couldn't start the clean. Nothing was changed. Try again.";
 
 /**
  * One clean at a time, from the selection or from a file's panel, the same way for both: Weir first asks the
@@ -66,7 +64,9 @@ export function useLibraryClean(
       },
     );
 
-  const failed = clean.isError ? errorMessage(clean.error, START_FAILED) : null;
+  const failed = clean.isError
+    ? errorMessage(clean.error, CLEAN_START_FAILED)
+    : null;
 
   return {
     confirming,

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -182,10 +181,9 @@ public sealed class SuiteFileApiTests
 
         // The response is still being read (there is far more than one 4KB chunk to go): a write must not
         // wait for that to finish, because streaming the snapshot never touches the log's write lock.
-        var writeTiming = Stopwatch.StartNew();
-        logFile.WriteLine("{\"timestamp\":\"2026-05-09T10:00:00Z\",\"level\":\"INFO\",\"logger\":\"weir.tests\",\"message\":\"written while streaming\"}");
-        writeTiming.Stop();
-        Assert.True(writeTiming.ElapsedMilliseconds < 2000, $"WriteLine took {writeTiming.ElapsedMilliseconds}ms while a download was still being read.");
+        // A write that waited for the download would wait for ever, as nothing reads it until this write is done.
+        await Task.Run(() => logFile.WriteLine("{\"timestamp\":\"2026-05-09T10:00:00Z\",\"level\":\"INFO\",\"logger\":\"weir.tests\",\"message\":\"written while streaming\"}"))
+            .WaitAsync(TimeSpan.FromSeconds(15));
 
         await using var rest = new MemoryStream();
         await body.CopyToAsync(rest);

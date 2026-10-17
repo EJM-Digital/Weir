@@ -11,8 +11,10 @@
 # without a token, shared by the whole network); the API's release list is asked only when those find
 # nothing. scripts/pinned-download.mjs does the same for the Node scripts.
 
-$weirReleasesUrl = "https://api.github.com/repos/jampat000/Weir/releases?per_page=30"
-$weirReleasesFeedUrl = "https://github.com/jampat000/Weir/releases.atom"
+. "$PSScriptRoot\..\..\scripts\repository.ps1"
+
+$weirReleasesUrl = "$WeirApiRepositoryUrl/releases?per_page=30"
+$weirReleasesFeedUrl = "$WeirRepositoryUrl/releases.atom"
 
 function Save-WeirReleaseAsset {
   # Downloads $FileName into $OutFile from the newest Weir release that carries it and returns where it came
@@ -30,7 +32,7 @@ function Save-WeirReleaseAsset {
     Write-Host "Weir's release feed could not be read ($($_.Exception.Message)); asking the API for the release list instead."
   }
   foreach ($tag in $tags) {
-    $source = "https://github.com/jampat000/Weir/releases/download/$([uri]::EscapeDataString($tag))/$([uri]::EscapeDataString($FileName))"
+    $source = "$WeirRepositoryUrl/releases/download/$([uri]::EscapeDataString($tag))/$([uri]::EscapeDataString($FileName))"
     try {
       Invoke-WebRequest -Uri $source -OutFile $OutFile -UseBasicParsing
       return $source

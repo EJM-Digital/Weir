@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -130,24 +129,26 @@ internal sealed class WeirTestServer : IAsyncDisposable
     {
         var dbPath = Path.Join(Home, "data", "weir.sqlite3");
         var database = Services.GetRequiredService<SqliteDatabase>();
-        var deadline = Stopwatch.StartNew();
-        while (true)
-        {
-            database.ClearPool();
-            SqliteConnection.ClearAllPools();
-            try
+        await Eventually.ThatAsync(
+            () =>
             {
-                File.Delete(dbPath);
-                File.Delete(dbPath + "-wal");
-                File.Delete(dbPath + "-shm");
-                Directory.CreateDirectory(dbPath);
-                return;
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException && deadline.Elapsed < BreakDatabaseDeadline)
-            {
-                await Task.Delay(10);
-            }
-        }
+                database.ClearPool();
+                SqliteConnection.ClearAllPools();
+                try
+                {
+                    File.Delete(dbPath);
+                    File.Delete(dbPath + "-wal");
+                    File.Delete(dbPath + "-shm");
+                    Directory.CreateDirectory(dbPath);
+                    return true;
+                }
+                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+                {
+                    return false;
+                }
+            },
+            BreakDatabaseDeadline,
+            "The database file could not be replaced.");
     }
 
     public async ValueTask DisposeAsync()

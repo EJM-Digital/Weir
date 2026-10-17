@@ -113,6 +113,28 @@ public sealed class LibraryCleanReplacesFileTests
     }
 
     [RealFfmpegFact]
+    public async Task A_file_Weir_has_cleaned_reads_as_matching_the_rules_with_nobody_asking_for_a_scan()
+    {
+        await using var world = await LibraryCleanWorld.StartAsync(workflow: [("remux_writer", "ffmpeg")]);
+        var path = await world.AddFilmAsync(Film, ["eng", "fre"], ["eng"]);
+        await world.ScanAsync();
+        await world.ConfirmedCleanAsync(path);
+        await world.WaitForCleanAsync(path);
+
+        var row = await Poll.UntilAsync(
+            async () =>
+            {
+                var listed = await world.FileAsync(path);
+                return (string)listed["status"]! == "matches" ? listed : null;
+            },
+            "the Files table to list the cleaned film as matching");
+
+        Assert.Equal("matches", (string)row["classification"]!);
+        Assert.Equal(1, (int)row["audio_track_count"]!);
+        Assert.NotNull(row["cleaned_at"]);
+    }
+
+    [RealFfmpegFact]
     public async Task Cleaning_a_file_gives_it_a_new_modification_time_even_when_the_workflow_preserves_original_timestamps()
     {
         // The setting is for the files Weir writes to an output folder. A cleaned library file is a different file to the media

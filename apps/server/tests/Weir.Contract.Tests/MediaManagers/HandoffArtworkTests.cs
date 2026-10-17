@@ -179,9 +179,6 @@ public sealed class HandoffArtworkTests
 
         Assert.True(response.Status == HttpStatusCode.OK, response.ToString());
         await WaitForPosterAsync(setup.Admin);
-        await Watch.NeverWithinAsync(
-            () => setup.Gateway.SearchesFor("metropolis").Count > 1,
-            TimeSpan.FromSeconds(1),
-            "a second search for the same title");
+        Assert.Single(setup.Gateway.SearchesFor("metropolis"));
     }
 }

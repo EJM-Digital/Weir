@@ -11,9 +11,9 @@ namespace Weir.Tray.Tests;
 /// </summary>
 public sealed class ReleaseFeedSourceTests
 {
-    private const string Repo = UpdateService.GitHubRepo;
+    private const string Repo = ProjectLocation.RepositoryUrl;
     private const string Atom = Repo + "/releases.atom";
-    private const string ApiReleases = "https://api.github.com/repos/jampat000/Weir/releases";
+    private const string ApiReleases = ProjectLocation.ApiRepositoryUrl + "/releases";
 
     private static string Feed(params string[] tags) =>
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?><feed xmlns=\"http://www.w3.org/2005/Atom\">"
@@ -145,7 +145,7 @@ public sealed class ReleaseFeedSourceTests
         const string AssetUrl = Repo + "/releases/download/v0.9.5/releases.win.json";
         var web = new FakeWeb
         {
-            [ApiReleases] = $$"""[{"name":"v0.9.5","prerelease":false,"published_at":"2026-10-01T10:00:00Z","assets":[{"url":"https://api.github.com/repos/jampat000/Weir/releases/assets/7","name":"releases.win.json","browser_download_url":"{{AssetUrl}}","content_type":"application/json"}]}]""",
+            [ApiReleases] = $$"""[{"name":"v0.9.5","prerelease":false,"published_at":"2026-10-01T10:00:00Z","assets":[{"url":"{{ApiReleases}}/assets/7","name":"releases.win.json","browser_download_url":"{{AssetUrl}}","content_type":"application/json"}]}]""",
             [AssetUrl] = VelopackFeed("0.9.5"),
         };
         if (feedIsNotXml)

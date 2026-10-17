@@ -130,6 +130,7 @@ public sealed class LibraryScheduleApiTests
         Assert.Equal(1, body["files_count"]!.GetValue<int>());
         Assert.Equal(3, body["tracks_count"]!.GetValue<int>());
         Assert.Equal(5000, body["estimated_bytes_saved"]!.GetValue<long>());
+        Assert.StartsWith("1 file, 3 tracks will be removed.", body["detail"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(await ScheduleIsOnAsync(server, libraryId));
         await RunScheduleTimerAsync(server);
         Assert.Equal(0, await ScheduledScanCountAsync(server, libraryId));

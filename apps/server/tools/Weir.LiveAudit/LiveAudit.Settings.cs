@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Microsoft.Playwright;
+using Weir.Core.Updates;
 
 namespace Weir.LiveAudit;
 
@@ -173,7 +174,7 @@ internal sealed partial class LiveAudit
             "runtime facts are missing from About");
         // The packaged build must still link out to source and licence, not just the dev build.
         Require(
-            await page.GetByTestId("about-source-code-link").GetAttributeAsync("href") == "https://github.com/jampat000/Weir",
+            await page.GetByTestId("about-source-code-link").GetAttributeAsync("href") == ProjectLocation.RepositoryUrl,
             "About is missing the Source code link");
         Require(
             await page.GetByText("AGPL-3.0-or-later").CountAsync() > 0,
