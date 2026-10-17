@@ -114,7 +114,7 @@ test("a parametrised scenario is found by its name before the arguments", () => 
 
 test("fewer scenarios marked in an area than its minimum fails the leg even when none was skipped", () => {
   const { failures } = checkContractRealToolTests([result(scenarios[2].name)], scenarios, "processing", "linux");
-  assert.deepEqual(failures, ["Only 1 real-tool scenarios are marked in the processing area; it holds at least 3."]);
+  assert.deepEqual(failures, [`Only 1 real-tool scenarios are marked in the processing area; it holds at least ${minimumScenarios.processing}.`]);
 });
 
 const script = fileURLToPath(new URL("./check-contract-real-tool-tests.mjs", import.meta.url));
@@ -147,7 +147,8 @@ const processingRun = () => allScenarios().filter((scenario) => scenario.area ==
 test("the command exits 0 when every scenario of the area ran", () => {
   const run = runCheck("processing", processingRun());
   assert.equal(run.status, 0);
-  assert.match(run.stdout, /3 passed, 0 failed, 0 skipped, of 3 real-tool scenarios in the processing area/);
+  const count = minimumScenarios.processing;
+  assert.match(run.stdout, new RegExp(`${count} passed, 0 failed, 0 skipped, of ${count} real-tool scenarios in the processing area`));
 });
 
 test("the command exits 1 and names each scenario that was skipped", () => {
