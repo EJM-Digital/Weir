@@ -50,6 +50,23 @@ test("a scenario that cannot move says why, and has no shard", () => {
   assert.match(problems, /not-portable.*no shard/);
 });
 
+test("a scenario's passes in CI need a run, a commit and a ref, and green twice needs two commits on main", () => {
+  const broken = structuredClone(homes);
+  const [film, again, pause] = ["weir-only-film", "process-again", "pause-resume"].map((id) => broken.scenarios.find((scenario) => scenario.id === id));
+  const on = (ref, commit) => ({ run: 1, commit: commit.repeat(40), ref });
+  film.state = "green-twice";
+  film.passedInCi = [on("main", "a"), on("main", "a"), on("branch", "b")];
+  again.passedInCi = [{ run: "x", commit: "abc", ref: "" }];
+  pause.state = "to-port";
+  pause.passedInCi = [on("main", "c")];
+  const problems = problemsWithHomes(broken, catalog).join("\n");
+  assert.match(problems, /weir-only-film: green-twice needs passes on main on two different commits \(it has 1\)/);
+  assert.match(problems, /process-again: a pass needs its run number/);
+  assert.match(problems, /pause-resume: it is to-port but lists runs/);
+  film.passedInCi = [on("main", "a"), on("main", "b")];
+  assert.doesNotMatch(problemsWithHomes(broken, catalog).join("\n"), /weir-only-film/);
+});
+
 test("the plan's table says what the manifest says, row for row", () => {
   const plan = read("docs/exec-plans/active/PLAN-SCENARIOS-IN-CI.md");
   const rows = new Map([...plan.matchAll(/^\| `([a-z-]+)` \| ([a-z-]+) \| ([a-z-]+|none) \| ([a-z-]+) \|/gm)].map((match) => [match[1], match.slice(2)]));
@@ -65,7 +82,7 @@ test("every ported Linux scenario has code, and every scenario with code is port
 });
 
 test("a shard is its scenarios in catalogue order, and only shards with a ported scenario are in the workflow's matrix", () => {
-  assert.deepEqual(scenariosOfShard(homes, "weir-only").filter((scenario) => scenario.state === "ported").map((scenario) => scenario.id), ["weir-only-film", "process-again"]);
+  assert.deepEqual(scenariosOfShard(homes, "weir-only").filter((scenario) => scenario.state === "ported").map((scenario) => scenario.id), ["weir-only-film", "process-again", "pause-resume", "deleted-queued-file"]);
   const workflow = read(".github/workflows/ci-packaging.yml");
   const listed = /scenarios-linux:[\s\S]*?shard: \[([^\]]*)\]/.exec(workflow)?.[1].split(",").map((name) => name.trim());
   assert.deepEqual(listed, linuxShards(homes));
@@ -211,7 +228,7 @@ test("every scenario chosen runs, whatever the one before it found, and the exit
 });
 
 test("a scenario that is not ported cannot be chosen", async () => {
-  await assert.rejects(() => runScenarios({ ids: ["pause-resume"], registry: SCENARIOS, world: new FakeWorld().asWorld() }), /pause-resume.*not ported/);
+  await assert.rejects(() => runScenarios({ ids: ["fresh-install"], registry: SCENARIOS, world: new FakeWorld().asWorld() }), /fresh-install.*not ported/);
 });
 
 test("the summary is a table of each scenario's verdict and time, with what failed spelled out", () => {

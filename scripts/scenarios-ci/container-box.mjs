@@ -33,6 +33,22 @@ export class ContainerBox {
     this.#stack.exec(`mkdir -p ${shellQuote(plain(folder))} && cp ${source} ${target} && printf 'Scenario release ${name}\\n' > ${nfo}`);
   }
 
+  /** A file written whole or not at all, as a program that hands a file to a watcher writes it: to a neighbour, then renamed into place. */
+  async writeFileAtomically(path, text) {
+    const [target, partial] = [path, `${path}.partial`].map((name) => shellQuote(plain(name)));
+    this.#stack.exec(`printf %s ${shellQuote(text)} > ${partial} && mv ${partial} ${target}`);
+  }
+
+  /** A file holding exactly these bytes. */
+  async writeBytes(path, bytes) {
+    const octal = bytes.map((byte) => `\\${byte.toString(8).padStart(3, "0")}`).join("");
+    this.#stack.exec(`printf '${octal}' > ${shellQuote(plain(path))}`);
+  }
+
+  async remove(path) {
+    this.#stack.exec(`rm -f ${shellQuote(plain(path))}`);
+  }
+
   async probe(path) {
     const result = this.#stack.execResult(`ffprobe -v error -print_format json -show_streams -show_format ${plain(path)}`);
     if (result.status !== 0) throw new Error(`ffprobe could not read ${path}: ${result.output.trim()}`);
