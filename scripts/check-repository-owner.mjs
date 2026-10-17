@@ -50,6 +50,7 @@ export const EXCUSED = [
   { prefix: "docs/release-notes/", why: "history" },
   { prefix: "docs/archive/", why: "history" },
   { prefix: "docs/adr/", why: "history" },
+  { prefix: "apps/server/tests/fixtures/recorded/", why: "real replies kept exactly as they came, so a replay is the real thing" },
   { prefix: "docs-site/docs/architecture/adr/", why: "history" },
   { path: "docs/exec-plans/active/PLAN-ORG-MOVE.md", why: "the plan names the old and the new owner" },
   { path: ".github/CODEOWNERS", why: "names the person who reviews, not the repository" },
