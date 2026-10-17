@@ -21,7 +21,7 @@ public sealed class DownloadedScanNotifier
     private readonly MediaManagerConnectionService _connections;
     private readonly MediaManagerConnectionStore _connectionStore;
     private readonly LibraryStore _libraries;
-    private readonly IManagerHttpHandlerFactory _handlers;
+    private readonly ArrDownloadedScan _scan;
     private readonly ILogger _logger;
 
     public DownloadedScanNotifier(
@@ -34,7 +34,7 @@ public sealed class DownloadedScanNotifier
         _connections = connections ?? throw new ArgumentNullException(nameof(connections));
         _connectionStore = connectionStore ?? throw new ArgumentNullException(nameof(connectionStore));
         _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _handlers = handlers ?? throw new ArgumentNullException(nameof(handlers));
+        _scan = new ArrDownloadedScan(handlers ?? throw new ArgumentNullException(nameof(handlers)));
         _logger = (ILogger?)logger ?? NullLogger.Instance;
     }
 
@@ -81,35 +81,13 @@ public sealed class DownloadedScanNotifier
         UnitOfWork uow, ManagerConnection connection, string arrScope, string outputPath, string relativeMediaPath, int? downloadClientId,
         CancellationToken cancellationToken)
     {
-        var mappings = await MappingsAsync(connection, cancellationToken).ConfigureAwait(false);
-        var managerPath = DownloadedScanRules.TranslateOutputPath(outputPath, mappings);
-        var body = DownloadedScanRules.CommandBody(arrScope, managerPath, downloadClientId);
-        try
+        var result = await _scan.RequestAsync(connection, arrScope, outputPath, downloadClientId, cancellationToken).ConfigureAwait(false);
+        if (!result.Accepted)
         {
-            var client = new MediaManagerHttpClient(connection.BaseUrl, connection.ApiKey, _handlers, ManagerDialectRules.DescribeTimeout, connection.Reference);
-            await client.PostJsonAsync(DownloadedScanRules.CommandPath, body, cancellationToken: cancellationToken).ConfigureAwait(false);
-            await RecordAsync(uow, connection, relativeMediaPath, body, accepted: true, failureReason: null).ConfigureAwait(false);
+            _logger.LogWarning("Downloaded scan request to {Manager} failed: {Error}", connection.Label, result.FailureReason);
         }
-        catch (Exception exception) when (exception is MediaManagerHttpException or MediaManagerUnreachableException)
-        {
-            _logger.LogWarning("Downloaded scan request to {Manager} failed: {Error}", connection.Label, exception.Message);
-            await RecordAsync(uow, connection, relativeMediaPath, body, accepted: false, failureReason: exception.Message).ConfigureAwait(false);
-        }
-    }
 
-    /// <summary>The manager's remote path mappings, or none when they cannot be read; the command is still sent either way.</summary>
-    private async Task<List<RemotePathMappingEntry>> MappingsAsync(ManagerConnection connection, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var client = new MediaManagerHttpClient(connection.BaseUrl, connection.ApiKey, _handlers, ManagerDialectRules.DescribeTimeout, connection.Reference);
-            var raw = await client.GetJsonAsync(ManagerSetupRules.RemotePathMappingPath, cancellationToken: cancellationToken).ConfigureAwait(false);
-            return ManagerSetupRules.ParseMappings(raw);
-        }
-        catch (Exception exception) when (exception is MediaManagerHttpException or MediaManagerUnreachableException)
-        {
-            return [];
-        }
+        await RecordAsync(uow, connection, relativeMediaPath, result.Command, result.Accepted, result.FailureReason).ConfigureAwait(false);
     }
 
     private static Task<long> RecordAsync(UnitOfWork uow, ManagerConnection connection, string relativeMediaPath, WireObject body, bool accepted, string? failureReason)
