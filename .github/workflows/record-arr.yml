@@ -25,7 +25,7 @@ on:
         default: false
   push:
     branches: ["coverage/1013-sonarr-radarr-recordings"]
-    paths: [".github/workflows/record-arr.yml"]
+    paths: [".github/workflows/record-arr.yml", "apps/server/tools/Weir.ArrRecorder/**"]
   schedule:
     # Mondays, 05:41 UTC.
     - cron: "41 5 * * 1"

@@ -60,7 +60,7 @@ internal sealed class RecordingWriter
 
         if (exchange.RequestBody is not null)
         {
-            request["body"] = WithoutOverviews(exchange.RequestBody.DeepClone());
+            request["body"] = WithoutOverviews(exchange.RequestBody);
         }
 
         var reply = new JsonObject { ["status"] = exchange.Status };
@@ -71,7 +71,7 @@ internal sealed class RecordingWriter
 
         if (exchange.ReplyBody is not null)
         {
-            reply["body"] = WithoutOverviews(exchange.ReplyBody.DeepClone());
+            reply["body"] = WithoutOverviews(exchange.ReplyBody);
         }
         else if (exchange.ReplyText is not null)
         {
@@ -94,34 +94,14 @@ internal sealed class RecordingWriter
         return text;
     }
 
-    /// <summary>The node with every string member named <c>overview</c> replaced.</summary>
-    internal static JsonNode? WithoutOverviews(JsonNode? node)
+    /// <summary>A copy of the node with every string member named <c>overview</c> replaced.</summary>
+    internal static JsonNode? WithoutOverviews(JsonNode? node) => node switch
     {
-        switch (node)
-        {
-            case JsonObject members:
-                foreach (var name in members.Select(member => member.Key).ToList())
-                {
-                    if (name == "overview" && members[name] is JsonValue)
-                    {
-                        members[name] = Scrubbed;
-                    }
-                    else
-                    {
-                        members[name] = WithoutOverviews(members[name]);
-                    }
-                }
-
-                break;
-            case JsonArray items:
-                for (var index = 0; index < items.Count; index++)
-                {
-                    items[index] = WithoutOverviews(items[index]);
-                }
-
-                break;
-        }
-
-        return node;
-    }
+        JsonObject members => new JsonObject([.. members.Select(member => KeyValuePair.Create(
+            member.Key,
+            member.Key == "overview" && member.Value is JsonValue ? (JsonNode?)Scrubbed : WithoutOverviews(member.Value)))]),
+        JsonArray items => new JsonArray([.. items.Select(WithoutOverviews)]),
+        JsonValue value => value.DeepClone(),
+        _ => null,
+    };
 }
