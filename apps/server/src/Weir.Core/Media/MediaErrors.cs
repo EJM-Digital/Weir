@@ -1,9 +1,19 @@
 namespace Weir.Core.Media;
 
+/// <summary>A failure whose own message is not for a person, and that carries the sentence a person reads in its place.</summary>
+public interface IPlainFailure
+{
+    /// <summary>
+    /// What a person reads in place of <see cref="Exception.Message"/> when that message is a tool's or the system's own text (stderr,
+    /// file paths, memory addresses), which belongs in technical detail only. Null when the message is a sentence Weir wrote.
+    /// </summary>
+    string? PlainMessage { get; }
+}
+
 /// <summary>
 /// ffprobe or ffmpeg failed, returned nothing usable, or the output did not validate.
 /// </summary>
-public class MediaToolException : Exception
+public class MediaToolException : Exception, IPlainFailure
 {
     public MediaToolException()
     {
@@ -19,10 +29,7 @@ public class MediaToolException : Exception
     {
     }
 
-    /// <summary>
-    /// What a person reads in place of <see cref="Exception.Message"/> when that message is the tool's own text (stderr, file
-    /// paths, memory addresses), which belongs in technical detail only. Null when the message is a sentence Weir wrote.
-    /// </summary>
+    /// <inheritdoc />
     public string? PlainMessage { get; init; }
 }
 

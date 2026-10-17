@@ -45,6 +45,8 @@
   <ItemGroup>
     <!-- The replies other apps recorded for these tests to replay (fixtures/recorded/README.md); the tests read them from beside the test assembly. -->
     <None Include="..\fixtures\recorded\**\*.json" Link="fixtures\recorded\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The requests the web app sends that can delete a file or switch on a clean, written by its own tests (fixtures/web-bodies); sent to a real server by WebBodies. -->
+    <None Include="..\fixtures\web-bodies\*.json" Link="fixtures\web-bodies\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

@@ -1558,6 +1558,11 @@
           "name": "LibraryRedownloadRecordApiTests"
         },
         {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/WebLibraryRequestsTests.cs",
+          "name": "Download_again_for_a_file_no_manager_supplied_says_so_and_leaves_the_file"
+        },
+        {
           "type": "recording-replay",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/RecordedRedownloadTests.cs",
           "name": "Download_again_makes_the_app_delete_the_matched_file_and_search_as_recorded"
@@ -29711,12 +29716,18 @@
       "severity": "high",
       "touches": "disk",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "forgetProcessingFile builds the body that can delete a file; no test checks method, URL or body, so keep could be sent as delete without any test failing."
-      },
-      "issue": 993,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/test/wire/destructive-requests.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RemovingAFileFromActivityTests.cs",
+          "name": "RemovingAFileFromActivityTests"
+        }
+      ],
       "audit": {
         "id": "WEB-554",
         "verdict": "Gap"
@@ -29730,12 +29741,18 @@
       "severity": "high",
       "touches": "disk",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "cleanLibraryFiles and the 400 'confirm_final_removal_required' parsing are untested: a body sending confirm true on the first call would remove tracks without the dialog."
-      },
-      "issue": 993,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/test/wire/destructive-requests.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/WebLibraryRequestsTests.cs",
+          "name": "WebLibraryRequestsTests"
+        }
+      ],
       "audit": {
         "id": "WEB-555",
         "verdict": "Gap"
@@ -29749,12 +29766,18 @@
       "severity": "high",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "setLibrarySchedule/saveLibrarySettings URL, method and body untested; the schedule removes tracks unattended."
-      },
-      "issue": 993,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/test/wire/destructive-requests.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/WebLibraryRequestsTests.cs",
+          "name": "WebLibraryRequestsTests"
+        }
+      ],
       "audit": {
         "id": "WEB-556",
         "verdict": "Gap"
@@ -35028,15 +35051,16 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The panel registers no unsaved-changes guard at all. Add the guard (useUnsavedChanges) and an integration test like the Profiles one."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/playback-devices-guard.test.tsx",
+          "name": "leaving the playback devices tab"
+        }
+      ],
       "audit": {
         "id": "WEB-766",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -35047,15 +35071,41 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "directPlayDevices is in no LIVE_TOPIC_QUERIES entry (checked in lib/live/live-topics.ts), so nothing refetches it on a push. Add the topic and a test like the libraries one."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/live/live-topics.test.ts",
+          "name": "reads the playback devices, and the files that show a Direct Play badge for them, again when the chosen devices change"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/live/use-live-sync.test.tsx",
+          "name": "reads the playback devices and the files again when the chosen devices change in another browser"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/playback-devices-section.test.tsx",
+          "name": "shows a selection saved in another browser when the server says the devices changed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/LiveStreamApiTests.cs",
+          "name": "Choosing_playback_devices_reaches_an_open_stream_as_a_direct_play_devices_change"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Activity/SetupDataChangeTests.cs",
+          "name": "Choosing_playback_devices_publishes_the_devices_and_not_the_settings"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PlaybackDevicesLiveTests.cs",
+          "name": "A_device_chosen_in_one_browser_is_ticked_in_another_without_a_reload"
+        }
+      ],
       "audit": {
         "id": "WEB-767",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -50226,9 +50276,38 @@
           "type": "package-smoke",
           "file": "scripts/smoke-windows-package.ps1",
           "name": "*"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
+          "name": "A_validated_copy_that_cannot_be_published_raises_a_lifecycle_failure_and_removes_the_partial"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
+          "name": "A_hard_link_that_cannot_be_published_raises_a_lifecycle_failure_and_removes_the_link_but_not_the_source"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
+          "name": "A_finalised_file_that_cannot_be_published_raises_a_lifecycle_failure_and_removes_the_partial"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/PublishFailureTests.cs",
+          "name": "A_cleaned_file_that_cannot_be_published_leaves_no_partial_and_Activity_says_so_in_plain_words"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/PublishFailureTests.cs",
+          "name": "An_original_that_cannot_be_handed_back_leaves_no_partial_and_Activity_says_so_in_plain_words"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/PublishFailureTests.cs",
+          "name": "An_unchanged_copy_that_cannot_be_published_leaves_no_partial_and_Activity_says_so_in_plain_words"
         }
       ],
-      "issue": 1065,
       "audit": {
         "id": "FL-09",
         "verdict": "Covered"
@@ -50257,9 +50336,43 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/SwapRecoverySweepTests.cs",
           "name": "A_backup_whose_original_is_missing_is_restored_with_a_warning"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "A_copy_left_by_an_earlier_swap_is_cleared_before_the_next_one_starts"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "A_backup_left_beside_an_original_in_place_is_removed_and_never_put_back_over_it"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "A_backup_left_without_its_original_is_put_back_before_the_next_swap_starts"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "Leftovers_another_program_holds_stop_the_swap_before_any_work"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "Leftovers_in_a_folder_Weir_cannot_change_stop_the_swap_before_any_work"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanLeftoversTests.cs",
+          "name": "A_copy_left_by_an_interrupted_swap_is_cleared_before_the_next_clean"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanLeftoversTests.cs",
+          "name": "A_backup_left_without_its_film_is_put_back_when_Weir_starts"
         }
       ],
-      "issue": 1066,
       "audit": {
         "id": "FL-10",
         "verdict": "Covered"
@@ -50488,9 +50601,33 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/SwapRecoverySweepTests.cs",
           "name": "A_backup_beside_its_original_is_deleted"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "A_real_file_is_replaced_in_place_with_a_new_mtime_and_the_job_row_records_it"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "A_backup_that_cannot_be_deleted_is_left_for_the_sweep_and_the_swap_still_commits"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanKeepsOriginalTests.cs",
+          "name": "With_keep_original_on_the_original_is_kept_whole_beside_the_cleaned_file"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanKeepsOriginalTests.cs",
+          "name": "With_keep_original_off_no_second_copy_is_left"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanLeftoversTests.cs",
+          "name": "A_backup_left_beside_a_film_that_is_in_place_is_removed_when_Weir_starts"
         }
       ],
-      "issue": 1066,
       "audit": {
         "id": "FL-15",
         "verdict": "Covered"
@@ -51377,7 +51514,7 @@
     {
       "id": "file-lifecycle.file-lifecycle.a-linked-workflow-never-has-its-original-removed-or",
       "area": "file-lifecycle",
-      "behaviour": "A linked workflow never has its original removed or moved (Deluno, Sonarr, Radarr, other), whatever remove_original_after_success says; decided from the links every time work starts; the sentence names the manager",
+      "behaviour": "A workflow linked to Sonarr, Radarr or another non-hand-off manager never has its original removed or moved, whatever remove_original_after_success says; decided from the links every time work starts; the sentence names the manager",
       "kind": "file-lifecycle",
       "severity": "high",
       "touches": "other-app",
@@ -51427,6 +51564,30 @@
           "type": "recording-replay",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/LinkedOriginalsTests.cs",
           "name": "A_sonarr_workflow_is_still_scanned_and_its_originals_are_kept"
+        }
+      ],
+      "audit": {
+        "id": "FL-37",
+        "verdict": "Covered"
+      },
+      "needs": {
+        "kind": "recording-replay",
+        "test": "No recorded Sonarr or Radarr exists to replay (#1013, #1014); the tests use Weir's own fake managers."
+      }
+    },
+    {
+      "id": "file-lifecycle.file-lifecycle.a-workflow-linked-to-deluno-never-has-its-original-removed-or-moved",
+      "area": "file-lifecycle",
+      "behaviour": "A workflow linked to Deluno never has the download Deluno handed over removed or moved, whatever remove_original_after_success says, and the pass says it is linked",
+      "kind": "file-lifecycle",
+      "severity": "high",
+      "touches": "other-app",
+      "required": "real",
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoFedWorkflowTests.cs",
+          "name": "A_workflow_asked_to_remove_originals_keeps_the_download_Deluno_handed_over_and_says_it_is_linked"
         }
       ],
       "audit": {
@@ -51513,34 +51674,18 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanHandedOffTests.cs",
-          "name": "ProcessingWatchedFolderScanHandedOffTests"
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoFedWorkflowTests.cs",
+          "name": "A_scan_job_that_runs_anyway_queues_nothing_and_leaves_a_download_Deluno_has_not_handed_over_alone"
         },
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassHandlerGuardrailTests.cs",
-          "name": "RemuxPassHandlerTests"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassHandlerTests.cs",
-          "name": "RemuxPassHandlerTests"
-        },
-        {
-          "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Processing/HandoffRetryCorrectnessTests.cs",
-          "name": "HandoffRetryCorrectnessTests"
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoFedWorkflowTests.cs",
+          "name": "A_hand_off_that_fails_retries_itself_without_any_scan_and_is_finished_as_Deluno_recorded"
         }
       ],
-      "needs": {
-        "kind": "recording-replay",
-        "test": "No test replays Deluno's recorded hand-off through a scan job that runs anyway, or through a failed pass that retries itself; the existing tests use Weir's own fake Deluno (the recorded world has no retry driver)"
-      },
-      "issue": 1068,
       "audit": {
         "id": "FL-39",
         "verdict": "Covered"

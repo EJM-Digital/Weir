@@ -17,6 +17,9 @@ public static class JobQueueRules
     /// <summary>What an operator cancel writes to <c>last_error</c>.</summary>
     public const string CancelledByOperatorError = "Cancelled by operator before a worker claimed this job.";
 
+    /// <summary>What a look replaced by a newer send of the same file writes to <c>last_error</c>.</summary>
+    public const string ReplacedByResendError = "Replaced by a newer send of the same file before a worker claimed this job.";
+
     /// <summary>
     /// Seconds before a failed attempt may be claimed again: 30 × 2^(<c>attempt_count</c> − 1), at most 1800.
     /// </summary>

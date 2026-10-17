@@ -6,6 +6,8 @@
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <!-- The requests the web app sends that can delete a file or switch on a clean, written by its own tests (fixtures/web-bodies). -->
+    <None Include="..\fixtures\web-bodies\*.json" Link="fixtures\web-bodies\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Weir.Api\Weir.Api.csproj" />
