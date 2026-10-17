@@ -26,7 +26,7 @@ sealed class ReleaseFeedSource : IUpdateSource
     private readonly GithubSource _api;
     private volatile IUpdateSource? _serving;
 
-    /// <param name="repoUrl">The repository's address, <c>https://github.com/jampat000/Weir</c>.</param>
+    /// <param name="repoUrl">The repository's address, <see cref="ProjectLocation.RepositoryUrl"/>.</param>
     /// <param name="includePreReleases">Whether pre-releases are offered; <see cref="UpdateChannel.IncludesPreReleases"/> says for an install.</param>
     /// <param name="downloader">Carries every request; the default is Velopack's own.</param>
     internal ReleaseFeedSource(string repoUrl, bool includePreReleases, IFileDownloader? downloader = null)

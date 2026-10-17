@@ -40,13 +40,14 @@ import { restartKeepsData, upgradeKeepsData } from "./docker-smoke/scenarios.mjs
 import { run } from "./docker-smoke/shell.mjs";
 import { ORIGIN, Stack } from "./docker-smoke/stack.mjs";
 import { WeirClient } from "./docker-smoke/weir-client.mjs";
+import { REPOSITORY } from "./repository.mjs";
 
 const SCHEMA_MIGRATOR = "apps/server/src/Weir.Infrastructure/Sqlite/SchemaMigrator.cs";
 const ENTRYPOINT_SCENARIOS = ["identity", "data-folder", "refusals", "media"];
 const SCENARIOS = ["restart", "upgrade", "recover", "entrypoint", ...ENTRYPOINT_SCENARIOS, "arm64"];
 
 function publishedReleaseTags() {
-  const repository = process.env.GITHUB_REPOSITORY || "jampat000/Weir";
+  const repository = process.env.GITHUB_REPOSITORY || REPOSITORY;
   const listing = run(`gh api --paginate repos/${repository}/releases --jq '.[] | select(.draft | not) | .tag_name'`);
   return listing.split(/\r?\n/).filter(Boolean);
 }

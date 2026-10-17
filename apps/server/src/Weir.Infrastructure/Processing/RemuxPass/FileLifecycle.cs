@@ -187,8 +187,8 @@ public static partial class FileLifecycle
     }
 
     /// <summary>
-    /// Validates and atomically exposes a same-volume hard link. False means the link was refused
-    /// and the caller should copy; validation and publication errors still throw.
+    /// Validates and atomically exposes a same-volume hard link. False means the link was refused and the caller should copy. A
+    /// failed validation or publication removes the link and throws, and the source is never touched.
     /// </summary>
     public static async Task<bool> TryHardlinkToFinalAsync(string source, string final, Func<string, Task>? validateStaged = null, IOutputOwnership? ownership = null)
     {
@@ -204,19 +204,27 @@ public static partial class FileLifecycle
             return false;
         }
 
-        try
+        if (validateStaged is not null)
         {
-            if (validateStaged is not null)
+            try
             {
                 await validateStaged(tmp).ConfigureAwait(false);
             }
+            catch
+            {
+                BestEffortDelete(tmp);
+                throw;
+            }
+        }
 
+        try
+        {
             File.Move(tmp, final, overwrite: true);
         }
-        catch
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             BestEffortDelete(tmp);
-            throw;
+            throw new FileLifecycleException($"Could not safely publish the validated link at {final}: {exception.Message}", exception);
         }
 
         // A hard link shares one inode with the source, so the ownership/mode change lands on the source's file

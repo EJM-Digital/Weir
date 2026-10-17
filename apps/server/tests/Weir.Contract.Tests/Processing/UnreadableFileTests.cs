@@ -94,28 +94,21 @@ public sealed class UnreadableFileTests
 
     private static async Task AssertNothingHappenedAsync(Scenario scenario, FakeManager fake, string handoffId, string source, byte[] junk)
     {
-        // Long enough for a wrong verdict to reach the manager; the next look is minutes away. The manager may be told the file is held,
-        // in plain words; it must never be told the release is bad, nor be given the tool's text.
-        await Scenario.NeverWithinAsync(
-            () =>
-            {
-                foreach (var report in Scenario.Callbacks(fake, handoffId))
-                {
-                    Assert.Equal("failed", (string)report["status"]!);
-                    Assert.Equal("held", (string)report["disposition"]!);
-                    Assert.False((bool)report["sourceRemoved"]!);
-                    Assert.Equal(NotReadableYet, (string)report["message"]!);
-                    AssertPlain(report.ToJsonString());
-                }
+        // Once the pass has let go of the job, whatever it told the manager has been told; the next look is minutes away. The manager may
+        // be told the file is held, in plain words; it must never be told the release is bad, nor be given the tool's text.
+        await scenario.WaitWhileWorkedOnAsync(
+            async () => (await scenario.JobsAsync()).All(job => (string)job["status"]! != "leased"),
+            "the pass over the file to let go of its job");
+        foreach (var report in Scenario.Callbacks(fake, handoffId))
+        {
+            Assert.Equal("failed", (string)report["status"]!);
+            Assert.Equal("held", (string)report["disposition"]!);
+            Assert.False((bool)report["sourceRemoved"]!);
+            Assert.Equal(NotReadableYet, (string)report["message"]!);
+            AssertPlain(report.ToJsonString());
+        }
 
-                return Task.FromResult(false);
-            },
-            TimeSpan.FromSeconds(4),
-            "Weir telling the manager anything but that it is waiting for a file it cannot read yet");
-        await Scenario.NeverWithinAsync(
-            async () => (await scenario.JobsAsync(Scenario.RejectKind)).Count > 0,
-            TimeSpan.FromSeconds(1),
-            "Weir queueing a rejection of a file it cannot read yet");
+        Assert.Empty(await scenario.JobsAsync(Scenario.RejectKind));
         Assert.Empty(Directory.GetFileSystemEntries(scenario.Folders.Output));
         Assert.Empty(await scenario.JobsAsync(Scenario.PassThroughKind));
         Assert.Empty(scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux"));

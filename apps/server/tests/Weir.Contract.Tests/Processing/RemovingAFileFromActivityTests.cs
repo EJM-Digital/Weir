@@ -30,25 +30,23 @@ public sealed class RemovingAFileFromActivityTests
         return (library, row, source);
     }
 
-    /// <summary>The request of the remove dialog: the choice, and the file's size and time when the dialog was shown them to confirm.</summary>
-    private static async Task<WeirResponse> RemoveAsync(Scenario scenario, JsonObject row, string? resolution)
+    /// <summary>
+    /// The request of the remove dialog, exactly as the web app builds it: the choice, and the file's size and time when the dialog showed
+    /// them to confirm (<c>fixtures/web-bodies</c>, written by the web tests).
+    /// </summary>
+    private static async Task<WeirResponse> RemoveAsync(Scenario scenario, JsonObject row, string? resolution, long sizeShownOff = 0)
     {
-        var path = $"{Api}/processing/files/{(int)row["id"]!}";
-        var options = await scenario.Admin.GetAsync($"{path}/remove-options");
+        var id = (int)row["id"]!;
+        var options = await scenario.Admin.GetAsync($"{Api}/processing/files/{id}/remove-options");
         Assert.True(options.Status == HttpStatusCode.OK, options.ToString());
-        var body = new JsonObject { ["csrf_token"] = await scenario.Admin.CsrfTokenAsync() };
-        if (resolution is not null)
-        {
-            body["resolution"] = resolution;
-        }
-
-        if (options.Fields["fingerprint_recorded"]!.GetValue<bool>() is false && options.Fields["unconfirmed_size_bytes"] is { } size)
-        {
-            body["confirm_size_bytes"] = size.DeepClone();
-            body["confirm_modified_at"] = options.Fields["unconfirmed_modified_at"]!.DeepClone();
-        }
-
-        return await scenario.Admin.RequestAsync(HttpMethod.Delete, path, body);
+        var confirmed = resolution is not null
+            && options.Fields["fingerprint_recorded"]!.GetValue<bool>() is false
+            && options.Fields["unconfirmed_size_bytes"] is not null;
+        var name = $"remove-file/{resolution ?? "plain"}{(confirmed ? "-unrecorded" : string.Empty)}";
+        var sample = confirmed
+            ? new WebSample(FileId: id, SizeBytes: (long)options.Fields["unconfirmed_size_bytes"]! + sizeShownOff, ModifiedAt: options.Fields["unconfirmed_modified_at"]!.DeepClone())
+            : new WebSample(FileId: id);
+        return await WebBodies.Get(name, sample).SendAsync(scenario.Admin);
     }
 
     /// <summary>1 while the file has a row on the Files list, otherwise 0. Read over HTTP: a server restart to read SQLite signs in again, and a sign-in is the dearest request there is.</summary>
@@ -148,6 +146,46 @@ public sealed class RemovingAFileFromActivityTests
         Assert.Equal(1, await RowsOfAsync(scenario, library));
         var activity = await OneActivityAsync(scenario, "processing.file_removal_deleted");
         Assert.Equal("film.mkv could not be deleted", (string)activity["title"]!);
+    }
+
+    /// <summary>A file Weir rejected before it recorded what a file looked like, as a row from an older Weir is: the dialog asks the person to confirm it.</summary>
+    private static async Task<(JsonObject Library, JsonObject Row, string Source)> RejectedFileWithoutFingerprintAsync(Scenario scenario)
+    {
+        var (library, row, source) = await RejectedFileAsync(scenario);
+        await scenario.ExecuteAfterStopAsync("UPDATE files SET fingerprint_size_bytes = NULL, fingerprint_mtime_ns = NULL");
+        return (library, row, source);
+    }
+
+    [Theory]
+    [InlineData("delete")]
+    [InlineData("keep")]
+    public async Task A_choice_confirmed_against_the_file_the_dialog_showed_is_carried_out(string resolution)
+    {
+        await using var scenario = await Scenario.StartAsync();
+        var (library, row, source) = await RejectedFileWithoutFingerprintAsync(scenario);
+
+        var done = await RemoveAsync(scenario, row, resolution);
+
+        Assert.True(done.Status == HttpStatusCode.OK, done.ToString());
+        Assert.Equal(resolution == "keep", File.Exists(source));
+        Assert.Equal(0, await RowsOfAsync(scenario, library));
+    }
+
+    [Theory]
+    [InlineData("delete")]
+    [InlineData("keep")]
+    public async Task A_choice_confirmed_against_another_file_than_the_one_on_disk_is_refused_and_changes_nothing(string resolution)
+    {
+        await using var scenario = await Scenario.StartAsync();
+        var (library, row, source) = await RejectedFileWithoutFingerprintAsync(scenario);
+        var before = await File.ReadAllBytesAsync(source);
+
+        var refused = await RemoveAsync(scenario, row, resolution, sizeShownOff: 1);
+
+        Assert.True(refused.Status == HttpStatusCode.BadGateway, refused.ToString());
+        Assert.Equal(before, await File.ReadAllBytesAsync(source));
+        Assert.Equal(1, await RowsOfAsync(scenario, library));
+        Assert.Empty((await scenario.Admin.GetAsync($"{Api}/processing/kept-files")).Fields["files"]!.AsArray());
     }
 
     [Fact]
