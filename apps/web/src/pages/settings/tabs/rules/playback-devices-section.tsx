@@ -17,6 +17,7 @@ import { mmActionButtonClass } from "../../../../lib/ui/mm-control-roles";
 import { errorMessage } from "../../../../lib/api/error-message";
 import { SaveModelNote } from "../../save-model-note";
 import { SettingsLoadError } from "../../settings-load-error";
+import { useUnsavedChanges } from "../../unsaved-changes";
 
 /** What the server names the sources that ship with Weir, as opposed to a link to a vendor's page. */
 const BUILT_IN_SOURCE = "builtin";
@@ -106,6 +107,7 @@ function DeviceChecklist({
   );
   const dirty = devices.some((d) => d.selected !== selected.has(d.id));
   const canSave = editable && dirty && !save.isPending;
+  useUnsavedChanges(dirty ? "your playback devices" : null);
 
   const toggle = (id: string) => {
     if (!editable) return;

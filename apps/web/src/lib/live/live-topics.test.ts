@@ -18,6 +18,7 @@ describe("LIVE_TOPIC_QUERIES", () => {
     const topics: LiveTopic[] = [
       "backups",
       "connections",
+      "direct_play_devices",
       "files_at_once",
       "folder_checks",
       "jobs",
@@ -35,6 +36,13 @@ describe("LIVE_TOPIC_QUERIES", () => {
     ];
 
     expect(Object.keys(LIVE_TOPIC_QUERIES).sort()).toEqual(topics);
+  });
+
+  it("reads the playback devices, and the files that show a Direct Play badge for them, again when the chosen devices change", () => {
+    expect(LIVE_TOPIC_QUERIES.direct_play_devices).toEqual([
+      processingKeys.directPlayDevices,
+      processingKeys.files,
+    ]);
   });
 
   it("reads the list of signed-in browsers again when one signs in or out", () => {
@@ -109,6 +117,31 @@ describe("LIVE_TOPIC_QUERIES", () => {
     expect(LIVE_TOPIC_QUERIES.network_access).toEqual([
       settingsKeys.networkAccess,
     ]);
+  });
+
+  it("refreshes the app, alert, operator and runtime settings, and what they decide, when a setting changes", () => {
+    expect(LIVE_TOPIC_QUERIES.settings).toEqual([
+      settingsKeys.app,
+      settingsKeys.notificationChannels,
+      processingKeys.operatorSettings,
+      processingKeys.runtimeSettings,
+      processingKeys.filesAtOnce,
+      processingKeys.maintenance,
+    ]);
+    expect(LIVE_TOPIC_QUERIES.maintenance).toEqual([
+      processingKeys.maintenance,
+    ]);
+    expect(LIVE_TOPIC_QUERIES.files_at_once).toEqual([
+      processingKeys.filesAtOnce,
+    ]);
+  });
+
+  it("refreshes the backups, the kept files and the readiness checks on their own topics", () => {
+    expect(LIVE_TOPIC_QUERIES.backups).toEqual([
+      settingsKeys.configurationBackups,
+    ]);
+    expect(LIVE_TOPIC_QUERIES.kept_files).toEqual([processingKeys.keptFiles]);
+    expect(LIVE_TOPIC_QUERIES.readiness).toEqual([systemKeys.readiness]);
   });
 });
 

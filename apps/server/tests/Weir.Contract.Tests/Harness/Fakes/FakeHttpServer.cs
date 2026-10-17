@@ -19,15 +19,22 @@ public abstract class FakeHttpServer : IDisposable
     private readonly List<RecordedRequest> _requests = [];
     private readonly HttpListener _listener;
     private TaskCompletionSource _arrived = NewSignal();
+    private volatile bool _unavailable;
 
-    protected FakeHttpServer()
+    /// <param name="answersAnyHostName">
+    /// Answers a request whatever host name it carries, not only the address it listens on. A listener on Linux holds a request to the host
+    /// of its prefix and refuses any other with a 404, so a fake that stands in for a named destination listens on every address there;
+    /// Windows routes by the address and needs nothing more.
+    /// </param>
+    protected FakeHttpServer(bool answersAnyHostName = false)
     {
+        var host = answersAnyHostName && !OperatingSystem.IsWindows() ? "+" : "127.0.0.1";
         for (var attempt = 1; ; attempt++)
         {
             var port = FreePort();
             // A listener that failed to start cannot be reused (on Linux it is disposed), so each attempt gets its own.
             var listener = new HttpListener();
-            listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+            listener.Prefixes.Add($"http://{host}:{port}/");
             try
             {
                 listener.Start();
@@ -97,6 +104,12 @@ public abstract class FakeHttpServer : IDisposable
         }
     }
 
+    /// <summary>
+    /// From now on answers every request 503, as a server that is down for its callers, and keeps its port: a stopped fake gives its port
+    /// back, and another fake in the same run can be given it and answer the requests meant for this one.
+    /// </summary>
+    public void GoUnavailable() => _unavailable = true;
+
     protected abstract HttpAnswer Answer(RecordedRequest request);
 
     public virtual void Dispose()
@@ -147,7 +160,7 @@ public abstract class FakeHttpServer : IDisposable
             HttpAnswer answer;
             try
             {
-                answer = Answer(request);
+                answer = _unavailable ? new HttpAnswer(503, []) : Answer(request);
             }
             catch (Exception problem)
             {

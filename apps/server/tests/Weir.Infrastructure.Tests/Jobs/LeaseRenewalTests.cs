@@ -364,7 +364,7 @@ public sealed class LeaseRenewalTests : IDisposable
             started.TrySetResult();
             try
             {
-                await Task.Delay(Timeout.Infinite, cancellationToken);
+                await new TaskCompletionSource().Task.WaitAsync(cancellationToken);
             }
             catch (OperationCanceledException)
             {

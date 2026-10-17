@@ -4,6 +4,7 @@ using Weir.Api.Http;
 using Weir.Core.Json;
 using Weir.Core.LibraryMode;
 using Weir.Core.MediaManagers;
+using Weir.Core.Text;
 using Weir.Infrastructure.LibraryMode;
 using Weir.Infrastructure.MediaManagers;
 using Weir.Infrastructure.Sqlite;
@@ -94,7 +95,7 @@ internal static class LibraryModeMapping
         StatusCodes.Status400BadRequest,
         new WireObject()
             .Set("error", "confirm_final_removal_required")
-            .Set("detail", $"{files} files, {tracks} tracks will be removed. Removed tracks are gone for good; getting one back means downloading the title again.")
+            .Set("detail", $"{Plural.Of(files, "file")}, {Plural.Of(tracks, "track")} will be removed. Removed tracks are gone for good; getting one back means downloading the title again.")
             .Set("files_count", files)
             .Set("tracks_count", tracks)
             .Set("estimated_bytes_saved", bytesSaved)

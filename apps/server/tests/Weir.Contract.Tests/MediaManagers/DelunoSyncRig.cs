@@ -60,12 +60,12 @@ internal static class DelunoSyncRig
         return fake;
     }
 
-    public static void PublishDestinations(FakeManager fake, TemporaryFolder rig, string moviesSaveFolder) =>
+    public static void PublishDestinations(FakeManager fake, TemporaryFolder rig, string moviesSaveFolder, string tvSaveFolder = "Completed/TV") =>
         fake.Route("GET", DestinationsPath, new JsonObject
         {
             ["libraries"] = new JsonArray(
                 Published("lib-movies", "Movies", Directory.CreateDirectory(Path.Join(rig.Path, moviesSaveFolder)).FullName, Path.Join(rig.Path, "Ready", "Movies")),
-                Published("lib-tv", "TV", Directory.CreateDirectory(Path.Join(rig.Path, "Completed", "TV")).FullName, Path.Join(rig.Path, "Ready", "TV"))),
+                Published("lib-tv", "TV", Directory.CreateDirectory(Path.Join(rig.Path, tvSaveFolder)).FullName, Path.Join(rig.Path, "Ready", "TV"))),
         });
 
     /// <summary>Connects <paramref name="fake"/> and returns the connection as the API reports it.</summary>

@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { asSentence } from "../../lib/api/api-error-text";
+import { errorMessage } from "../../lib/api/error-message";
 import type { LibrarySettings } from "../../lib/processing/library-mode-api";
 import {
   useSaveLibrarySettings,
@@ -26,6 +28,12 @@ function settingsChanged(draft: SetupDraft, saved: SetupDraft): boolean {
   );
 }
 
+/** What to tell a person whose other changes went through but whose daily clean change did not, so they do not think nothing was saved. */
+function partialSaveMessage(switchingOn: boolean, error: unknown): string {
+  const reason = errorMessage(error, "Weir could not change it.");
+  return `Your other changes were saved, but the daily clean was not switched ${switchingOn ? "on" : "off"}. ${asSentence(reason)}`;
+}
+
 /**
  * One library's setup, held as a draft so Save and Cancel cover every field of the panel together.
  * The draft starts from the settings the page already read; open the panel again for a fresh one.
@@ -45,7 +53,8 @@ export function useLibrarySetupDraft(libraryId: number, saved: SetupDraft) {
    */
   const save = async (): Promise<void> => {
     if (!dirty) return;
-    if (settingsChanged(draft, saved)) {
+    const savingSettings = settingsChanged(draft, saved);
+    if (savingSettings) {
       await saveSettings.mutateAsync({
         library_folders: draft.library_folders,
         clean_hardlinked_files: draft.clean_hardlinked_files,
@@ -57,11 +66,17 @@ export function useLibrarySetupDraft(libraryId: number, saved: SetupDraft) {
       });
     }
     if (draft.library_schedule_enabled !== saved.library_schedule_enabled) {
-      const result = await setSchedule.mutateAsync({
-        enabled: draft.library_schedule_enabled,
-        confirm: draft.library_schedule_enabled,
-      });
-      if ("kind" in result) throw new Error(result.detail);
+      try {
+        const result = await setSchedule.mutateAsync({
+          enabled: draft.library_schedule_enabled,
+          confirm: draft.library_schedule_enabled,
+        });
+        if ("kind" in result) throw new Error(result.detail);
+      } catch (error) {
+        throw savingSettings
+          ? new Error(partialSaveMessage(draft.library_schedule_enabled, error))
+          : error;
+      }
     }
   };
 

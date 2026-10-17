@@ -59,5 +59,17 @@ public sealed class WebhookJobNotifications : IJobNotifications
         }
     }
 
+    public void DispatchFailedForGood(string moduleName, long jobId, string jobKind)
+    {
+        try
+        {
+            _dispatcher.DispatchJobNotification(_database, moduleName, "failed", jobId, jobKind, Warn, workFailed: true);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or ArgumentException)
+        {
+            _logger.LogWarning(exception, "Could not start alert delivery for job {JobId} ({JobKind}).", jobId, jobKind);
+        }
+    }
+
     private void Warn(string message, Exception? exception) => _logger.LogWarning(exception, "{Message}", message);
 }

@@ -45,9 +45,11 @@ never changes. Cutting a release is:
    This PR touches nothing under `apps/`, `packaging/` or `Dockerfile`, so `CI / ci-passed` on it and
    on its merge to `main` both finish in well under a minute (path-aware CI skips everything but the
    repository checks).
-3. For every tag, release candidates included, run Weir's scenario suite on that exact commit and record that it passed
-   ([Proof before tagging](#proof-before-tagging)). The release refuses to publish without it. There is no
-   pass-through for a release candidate and no waiver (the owner, 11 Oct 2026, #954).
+3. For every tag, release candidates included, make sure Weir's scenario suite has passed on that exact commit or on an
+   earlier one whose shipped files are the same ([Proof before tagging](#proof-before-tagging)), and record the pass.
+   The release refuses to publish without it. There is no pass-through for a release candidate and no waiver
+   (the owner, 11 Oct 2026, #954). Before tagging, `GITHUB_REPOSITORY=<owner>/<repo> node scripts/verify-golden-path-for-release.mjs --sha <commit> --tag vX.Y.Z`
+   (with `GH_TOKEN` set) asks the release's own question and says which commit's pass it would use.
 4. Create an annotated tag on that merge commit:
 
    ```bash
@@ -79,6 +81,49 @@ is proven before its tag, with no waivers.** That holds for every `v*` tag, rele
 pass-through for release candidates (#907) is gone: a `v1.0.0-rc.4` tag on a commit with no passing record fails the
 `golden-path` job and publishes nothing. The proof is automated, so it costs minutes rather than a session: Weir's scenario
 suite, run on the golden VM on the exact commit.
+
+#### A pass carries over
+
+A pass on a commit X counts for a later tagged commit Y when nothing that ships changed between them (the owner,
+16 Oct 2026; Deluno applies the same rule). The run proves the build, so a commit that changes only tests, scripts, docs
+or test-only CI files is the same build and does not need the run again. All of these must hold:
+
+- X is an ancestor of Y, and X is the nearest commit before Y that has any `golden-path` status. A failure on a commit
+  in between, or on Y itself, is the answer; an older pass never covers over it.
+- No file that ships differs between X and Y. `scripts/release/shipped-paths.mjs` is the one rule, used by the release's
+  `golden-path` job and by the pre-tag check above. A shipped file that changed and changed back is not a difference.
+- The pass was run for the version being tagged: its status description ends in `<version>+<short sha>`, as
+  `Invoke-WeirScenarios.ps1` writes it, and the version must be the tag's. Weir takes its version from the tag when it
+  builds, so a pass run as `1.0.0-rc.18` does not cover a `1.0.0-rc.19` build. A change to
+  `apps/server/Directory.Build.props`, where the version placeholder and every build rule live, is a shipped change too.
+
+What ships is what the Windows installer and the Docker image are built from:
+
+- the server: `apps/server/src/**` and the solution-level build files `apps/server/Directory.Build.props`,
+  `Directory.Packages.props`, `global.json`, `NuGet.Config` and `.editorconfig`;
+- the web app: `apps/web/**`, except its tests (`*.test.*`, `src/test/**`), its `README.md`, `.env.example`, lint and
+  dead-code settings, the audit exceptions and the two dev-server scripts; and `scripts/dev-ports.json`, which its build reads;
+- the Windows tray: `apps/tray/Weir.Tray/**` and the tray's `Directory.Build.props`, `Directory.Packages.props`,
+  `NuGet.Config` and `.editorconfig`;
+- the Windows package: `packaging/windows/**`, and the scripts it runs: `scripts/prune-release-feed.mjs`,
+  `find-previous-release.mjs`, `semver.mjs` and `pinned-download.mjs`;
+- the Docker image: `Dockerfile`, `.dockerignore`, `docker/entrypoint.sh` and `.node-version`;
+- the workflows and actions that build or package what ships: `.github/workflows/release.yml`,
+  `.github/workflows/ci-packaging.yml` (the reusable workflow behind the Windows package the scenario suite installs and the
+  Docker candidate) and the composite actions those builds use, `.github/actions/apt-fail-fast` and
+  `.github/actions/setup-ffmpeg-linux`.
+
+Everything else does not ship: the test projects and tools, solution files, docs, release notes, `compose.yaml`, the
+other scripts, and the workflows and actions that only test or check (`ci.yml`, which only decides when
+`ci-packaging.yml` runs and passes it the version, `ci-contract.yml`, `ci-stress.yml`, `audit.yml`, `codeql.yml`,
+`docs.yml`, `setup-real-media-tools`). Test helpers that sit beside source files count as shipped, to be safe. A pass is carried over at most 100 commits back.
+
+When the release uses a carried pass its log says so and why: `PASS (carried over): "golden-path" is success on <X>, an
+earlier commit`, then `Between <X> and <Y>: only tests, scripts, docs or CI files changed (5 files), so no file that ships
+changed, and the pass was run for 1.0.0-rc.18. That pass is reused for this tag.`, then the pass's own description and
+evidence link. When it cannot, the refusal names the first reason: the shipped file that changed (and the commit it
+stopped at), the failed or other-version pass it found, or that history is missing. The `golden-path` job checks out the
+full history for this (`fetch-depth: 0`), and `check-release-workflow-gates.mjs` keeps it that way.
 
 #### The scenario suite
 
@@ -193,6 +238,25 @@ unless `fresh-install` is among the chosen scenarios, because nothing else would
   -Version 1.0.0-rc.18 -CommitSha <the 40-character SHA> -Scenarios process-again -NoRestore
 ```
 
+**Combining a full run with the re-runs of what it failed (the owner, 17 Oct 2026).** A full run that fails only on harness or
+timing problems, where the fix touches no file that ships (`scripts/release/shipped-paths.mjs`), still counts as the gate together with
+the failed scenarios re-run alone and passing on the same build (same version and commit). Any fix to a file that ships still needs a full
+run. Every record names the commit its scenario scripts ran from (the `Scripts commit` line; a working tree with changes reads
+`<sha>+uncommitted` and cannot be combined). Give `scripts/combine-golden-path-records.mjs` the full run's record and then each re-run's, in the
+order they ran (the last re-run of a scenario decides), from a clone that has those commits:
+
+```bash
+node scripts/combine-golden-path-records.mjs <full run record> <re-run record>... [--evidence-url <url>] [--no-status]
+```
+
+It refuses, saying why and leaving the `golden-path` status as it was, unless: the first record is a complete full run that did not pass
+everything; every other record is a run of chosen scenarios made for the same version and build commit; every scenario the full run did
+not pass has a re-run, and its latest re-run passed; and no file that ships differs between the commit the scenario scripts ran from in
+the full run and in each re-run. Then it writes one combined record (`scenario-<version>-<short sha>-combined.md`, beside the full
+run's), which lists the full run, each re-run and, for every scenario, which record its result came from, and only after that sets
+`golden-path` to success on the build commit, with a description that says it was combined and still ends in `<version>+<short sha>`, so
+the release gate reads it like any other pass. `--no-status` writes the record and sets nothing.
+
 Hand-offs cannot be made by a script: one starts when a download finishes in one of Deluno's clients, so the Deluno scenarios
 follow the real hand-offs Deluno's own suite made, from both ends, and drive what Deluno does offer (its send-again). The
 hand-off path through Weir's intake webhook is covered by the contract suite.
@@ -251,11 +315,14 @@ gh api repos/jampat000/Weir/statuses/<full sha> \
 ```
 
 A run that fails is recorded the same way with `state=failure`. The newest status for the context is the one that
-counts, so a later failure withdraws an earlier success. A status belongs to one commit: a fix made after a failed run
-is a new commit, and so is a commit that changes only the release notes, and each needs its own run on record.
+counts, so a later failure withdraws an earlier success. A status belongs to the commit it was set on. A fix made after
+a failed run is a new commit and needs its own run, unless the fix changed only tests, scripts, docs or CI. When that fix changed no file that ships and the run failed only on harness or timing problems, the failed
+scenarios re-run alone and passing on the same build are enough ([combining](#the-scenario-suite), below). A commit that
+changes only the release notes keeps the pass of the commit before it ([A pass carries over](#a-pass-carries-over)).
 
 **5. The release checks it.** The `golden-path` job in `release.yml` (`scripts/verify-golden-path-for-release.mjs`)
-passes only when the tagged commit's newest `golden-path` status is `success`, for a release candidate exactly as for a
+passes only when the tagged commit's newest `golden-path` status is `success` or, failing that, the nearest earlier
+commit's pass counts for it ([A pass carries over](#a-pass-carries-over)), for a release candidate exactly as for a
 stable release. It does not wait, and nothing can skip it (`scripts/check-release-workflow-gates.mjs` refuses an `if:` on it).
 Without one the release stops there, before anything is published, with: "This commit has no passing golden-path run. Run
 Weir's scenario suite on this exact build (see docs/release.md), then re-run the release." Record the result, then re-run the
@@ -326,7 +393,8 @@ The `Release` workflow:
   ```
 
 - **`golden-path`**: for every tag, release candidates included, confirms Weir's scenario suite passed on the exact tagged
-  commit: the newest commit status with the context `golden-path` is `success`
+  commit (the newest commit status with the context `golden-path` is `success`) or on an earlier commit with the same
+  shipped files and the same version ([A pass carries over](#a-pass-carries-over))
   (`scripts/verify-golden-path-for-release.mjs`). It reads statuses only, does not wait, and cannot be skipped. See
   [Proof before tagging](#proof-before-tagging).
 

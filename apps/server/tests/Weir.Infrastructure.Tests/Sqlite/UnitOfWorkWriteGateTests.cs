@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Time.Testing;
 using Weir.Infrastructure.Processing.RemuxPass;
@@ -293,7 +292,7 @@ public sealed class UnitOfWorkWriteGateTests
     public async Task The_wait_for_an_outside_writer_is_what_is_left_of_one_busy_timeout()
     {
         using var db = new JobsTestDatabase();
-        var database = new SqliteDatabase(db.DbPath, busyTimeoutMilliseconds: 4000);
+        var database = new SqliteDatabase(db.DbPath, busyTimeoutMilliseconds: 4000, timeProvider: new FakeTimeProvider());
         await using var outsider = new SqliteConnection(database.ConnectionString);
         await outsider.OpenAsync();
         await using (var begin = outsider.CreateCommand())
@@ -305,16 +304,15 @@ public sealed class UnitOfWorkWriteGateTests
         try
         {
             await using var connection = await database.OpenAsync();
-            var started = Stopwatch.StartNew();
 
             var refused = await Assert.ThrowsAsync<DatabaseBusyException>(
                 () => database.BeginWriteTransactionAsync(connection, TimeSpan.FromMilliseconds(2500), CancellationToken.None)).WaitAsync(Limit);
 
             Assert.Equal(5, refused.SqliteErrorCode);
-            Assert.InRange(started.Elapsed, TimeSpan.FromMilliseconds(1000), TimeSpan.FromMilliseconds(3500));
 
-            // What it says it waited is the time at the gate it was told of plus the time it really spent waiting for the outside writer.
-            Assert.InRange(refused.Waited, TimeSpan.FromMilliseconds(2500) + TimeSpan.FromMilliseconds(1000), TimeSpan.FromMilliseconds(2500) + TimeSpan.FromMilliseconds(3500));
+            // What it says it waited is the time at the gate it was told of plus the time the database's own clock saw it spend waiting
+            // for the outside writer, which is none, as that clock was not moved.
+            Assert.Equal(TimeSpan.FromMilliseconds(2500), refused.Waited);
         }
         finally
         {
@@ -323,6 +321,18 @@ public sealed class UnitOfWorkWriteGateTests
             await rollback.ExecuteNonQueryAsync();
         }
     }
+
+    /// <summary>The wait for an outside writer is whole seconds, as long as what is left of one busy timeout and never less than a second.</summary>
+    [Theory]
+    [InlineData(4000, 10, 4)]
+    [InlineData(4000, 1500, 3)]
+    [InlineData(4000, 2000, 2)]
+    [InlineData(4000, 2500, 2)]
+    [InlineData(4000, 3999, 1)]
+    [InlineData(4000, 4000, 1)]
+    [InlineData(4000, 9000, 1)]
+    public void The_command_timeout_is_what_is_left_of_one_busy_timeout_in_whole_seconds(int busyTimeoutMilliseconds, int waitedMilliseconds, int seconds) =>
+        Assert.Equal(seconds, SqliteDatabase.CommandTimeoutSeconds(busyTimeoutMilliseconds, TimeSpan.FromMilliseconds(waitedMilliseconds)));
 
     /// <summary>
     /// The gate's give-up is timed by the database's <see cref="TimeProvider"/>, so this proves what a refused writer reports with no real

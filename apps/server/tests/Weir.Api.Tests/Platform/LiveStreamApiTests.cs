@@ -214,4 +214,18 @@ public sealed class LiveStreamApiTests
         Assert.Equal(System.Net.HttpStatusCode.NoContent, removed.StatusCode);
         await AssertTopicArrivesAsync(reader, DataTopics.LibraryScan);
     }
+
+    [Fact]
+    public async Task Choosing_playback_devices_reaches_an_open_stream_as_a_direct_play_devices_change()
+    {
+        var (server, client) = await StartSignedInAsync();
+        await using var _server = server;
+        using var reader = await OpenStreamAsync(server, client);
+        await NextFrameAsync(reader, "server.hello");
+
+        using var saved = await client.PutAsync("/api/v1/processing/direct-play/devices", new { selected = new[] { "apple_tv_4k" }, csrf_token = await client.CsrfAsync() });
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, saved.StatusCode);
+        await AssertTopicArrivesAsync(reader, DataTopics.DirectPlayDevices);
+    }
 }

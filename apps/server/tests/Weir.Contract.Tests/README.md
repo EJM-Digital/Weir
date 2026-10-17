@@ -98,6 +98,7 @@ Everything is in `Harness/`. Areas live in folders beside it (`Activity/`), one 
   Its folder is shared by every fixture and every run, so a read, a delete or a claim that meets someone else's is theirs and
   never throws, and an orphan is stopped by the one caller that makes its claim file (`ServerLedgerTests`).
 - **`WEIR_LIBRARY_SWAP_HOLD_AT`** is a server setting for tests, not a harness class: set to the name of a point in a library swap (`OriginalMovedAside`, `CleanedCopyInPlace`, ...) it stops the swap there for good and writes the point's name to `swap-held-at.txt` in the data folder. The test waits for that file, ends the process with `StopAsync`, and starts it again to see what recovery does. `Jobs/SwapWorld` builds a library with one film that needs cleaning and does this; `Jobs/SwapCrashPlan` lists what each point leaves on disk. A value that names no point stops the server from starting, and so does any value at all when `WEIR_ENV` is `production` (the default), so a real install never honours it; `SwapWorld` runs its servers with `WEIR_ENV=development`.
+- **`FakeAlertReceiver`** is the far end of an alert: a local HTTP server that records every post (`PostsTo`, `WaitForPostsAsync`) and answers each path with the status a test sets (`Answers`, `RedirectsTo`; 204 otherwise). Start a server with its `Env` and the server connects every alert to the receiver instead of the internet: `WEIR_NOTIFICATION_STAND_IN_PORT` moves only the connection, so a channel's address is still a public-looking name (`http://hooks.example.com/...`) that the server resolves to a public address and holds to the same rules as for real. Like `WEIR_LIBRARY_SWAP_HOLD_AT`, the setting is refused at start when `WEIR_ENV` is `production`, and so is a value that is not a port; `Env` sets `WEIR_ENV=development`.
 - **`ContractAreaAttribute`** puts a class in an area (`[ContractArea("activity")]`) and in `Category=Contract`.
 
 ## Adding tests and areas
@@ -117,7 +118,8 @@ places and a leg can never run zero tests.
    fixed sleep.
 4. Share only stateless helpers. Area-specific helpers (seed rows, settings bodies) stay in the area's folder.
 5. Scenarios that need the real `ffmpeg` and `ffprobe` use `[RealFfmpegFact]`: they run when both are on `PATH` (or
-   in `WEIR_CONTRACT_REAL_FFMPEG_DIR`) and are skipped otherwise. CI installs ffmpeg so they run there.
+   in `WEIR_CONTRACT_REAL_FFMPEG_DIR`) and are skipped otherwise. CI installs the pinned tools and sets `WEIR_REQUIRE_REAL_TOOLS=1`, which turns a
+   missing tool into a failure that names it, and `scripts/check-contract-real-tool-tests.mjs` fails the leg unless every such scenario ran.
    mkvmerge is found the same way (on `PATH`, or in `WEIR_CONTRACT_REAL_MKVTOOLNIX_DIR`) and the server uses it for Matroska when it is there;
    `[RealMkvmergeFact]` marks a scenario that needs it. `Libraries/LibraryClean*Tests` clean library files in place with these tools: a scan of
    generated media, the clean the web sends, and the file, its leftovers and the kept original read back from disk with ffprobe.
@@ -149,3 +151,12 @@ says which test replays what.
 - `DelunoRecordingComparisonTests` proves a recording that stops matching fails naming its file and JSON path.
 - A recording Weir has no behaviour for is listed in `fixtures/recorded/deluno-side-no-weir-behaviour.json`; `scripts/check-recorded-replays.mjs` fails on
   one that is neither replayed nor listed, and one that waits on an open issue in `fixtures/recorded/deluno-side-awaiting-replay.json` is listed there until a test replays it.
+
+## The web app's destructive requests
+
+The requests the web app sends that can delete a file, remove tracks for good, ask a media manager to delete one or switch on a clean nobody
+watches are not written by hand here. `apps/web/src/test/wire/destructive-requests.ts` builds each one with the web app's own request code, and
+its test checks the result against `apps/server/tests/fixtures/web-bodies/destructive-requests.json`; run `npm run web-bodies:write` in
+`apps/web` to write the file again after the web app changes one, and the web tests fail until you do. `Harness/WebBodies.cs` reads the file,
+puts a real library, file, path, size and time in place of the stand-ins the web tests used, and `WebRequest.SendAsync` sends it with the
+session's token. A server test that changes what these requests must carry then fails with the web app's change, not months later.

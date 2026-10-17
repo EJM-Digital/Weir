@@ -2921,12 +2921,13 @@ export interface components {
     DataChangedFrame: {
       /**
        * Topic
-       * @description Which data changed (a topic is named here before it is published): pause (Processing paused, resumed, or a timed pause ran out), readiness, files_at_once, maintenance, libraries, library_scan, folder_checks, update, network_access, connections, settings, backups, kept_files, metrics, jobs or sessions (a browser signed in or out of Weir).
+       * @description Which data changed (a topic is named here before it is published): pause (Processing paused, resumed, or a timed pause ran out), readiness, files_at_once, maintenance, libraries, library_scan, folder_checks, update, network_access, connections, settings, direct_play_devices (the devices chosen for the Direct Play badge), backups, kept_files, metrics, jobs or sessions (a browser signed in or out of Weir).
        * @enum {string}
        */
       topic:
         | "backups"
         | "connections"
+        | "direct_play_devices"
         | "files_at_once"
         | "folder_checks"
         | "jobs"
@@ -4579,8 +4580,11 @@ export interface components {
       label: string;
       /** Provider */
       provider: string;
-      /** Url */
-      url: string;
+      /**
+       * Url
+       * @description The address to post to. On an update, leave it out or blank to keep the saved one; a new alert needs it.
+       */
+      url?: string;
     };
     /** NotificationChannelListOut */
     NotificationChannelListOut: {
@@ -4616,6 +4620,11 @@ export interface components {
       enabled: boolean;
       /** Events */
       events: string[];
+      /**
+       * Has Token
+       * @description Whether the saved address has a secret part, which is never returned.
+       */
+      has_token: boolean;
       /** Id */
       id: number;
       /** Label */
@@ -4627,7 +4636,10 @@ export interface components {
        * Format: date-time
        */
       updated_at: string;
-      /** Url */
+      /**
+       * Url
+       * @description The saved address with its secret part hidden, for example https://discord.com/api/webhooks/<id>/••••.
+       */
       url: string;
     };
     /** NotificationChannelTestIn */
@@ -6722,6 +6734,11 @@ export interface components {
       id: number;
       /** Keep Original Language */
       keep_original_language: boolean;
+      /**
+       * Library Rescan Job Ids
+       * @description The background re-plans queued for libraries that use this profile. Sent only when a profile is saved.
+       */
+      library_rescan_job_ids?: number[];
       /** Name */
       name: string;
       /** Original Language Additional Csv */
@@ -7394,6 +7411,11 @@ export interface components {
       file_name: string;
       /** Id */
       id: number;
+      /**
+       * Made By
+       * @description Who made the backup: the schedule, or a person pressing Back up now. Null for a backup made before this was kept.
+       */
+      made_by: ("schedule" | "manual") | null;
       /** Size Bytes */
       size_bytes: number;
     };

@@ -238,7 +238,16 @@ public sealed class ProcessingJobProcessor
 
         if (completeOk)
         {
-            _notifications.Dispatch("processing", "completed", context.Id, context.JobKind);
+            switch (context.Alert)
+            {
+                case JobAlert.Finished:
+                    _notifications.Dispatch("processing", "completed", context.Id, context.JobKind);
+                    break;
+                case JobAlert.FailedForGood:
+                    _notifications.DispatchFailedForGood("processing", context.Id, context.JobKind);
+                    break;
+            }
+
             PublishLibraryScanEnded(context.JobKind);
             return JobProcessOutcome.Processed;
         }

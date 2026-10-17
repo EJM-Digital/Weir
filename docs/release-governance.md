@@ -29,7 +29,9 @@ Decided by the owner, 7 Oct 2026 (#903), after bugs kept turning up in things th
 3. **Weir's scenario suite gates every tag, release candidates included.** Before the tag, the exact commit's build is
    installed on the golden VM (first over the Weir Deluno's picker installed, before Deluno's suite makes its hand-offs, then as Deluno's suite leaves it, then on the clean checkpoint) and Weir's scenario suite is run against it (`scripts/scenarios`; `docs/release.md`,
    "Proof before tagging"). The run is recorded as the commit status `golden-path`, and `release.yml` refuses to publish any
-   tag whose commit has no passing one. There is no release-candidate pass-through and no waiver: a release is proven before its
+   tag whose commit has no passing one. A pass on an earlier commit counts when no file that ships changed since and it
+   was run for the same version (the owner, 16 Oct 2026; `docs/release.md`, "A pass carries over"): a change only to
+   tests, scripts, docs or CI keeps it, and a shipped file or a version change does not. A full run that failed only on harness or timing problems, fixed in a way that touches no file that ships, also counts together with the failed scenarios re-run alone and passing on the same build; `scripts/combine-golden-path-records.mjs` checks that and writes the combined record before it sets the status (the owner, 17 Oct 2026; `docs/release.md`). There is no release-candidate pass-through and no waiver: a release is proven before its
    tag, never after it (the owner, 11 Oct 2026, #954; the pass-through added in #907 is gone). An intermittent failure is a bug
    until its root cause is found.
 4. **Broad changes need a full click-through before they ship:** class rewrites, dependency bumps and refactors are
@@ -43,7 +45,7 @@ Decided by the owner, 7 Oct 2026 (#903), after bugs kept turning up in things th
 4. Confirm `.github/dependabot.yml` has no `ignore` hold that conflicts with the workflow pins (version-update pull requests are off; the holds are kept as the record of why a major is not taken).
 5. Confirm open issues tagged `priority: critical` or `priority: high` are either fixed, intentionally deferred, or not release-blocking.
 6. Create `docs/release-notes/vX.Y.Z.md` (`vX.Y.Z-rc.N.md` for a release candidate) from `docs/release-notes/TEMPLATE.md` with plain-language user-facing notes.
-7. Run Weir's scenario suite on the exact commit being tagged (`scripts/scenarios/Invoke-WeirScenarios.ps1`), for a release candidate too, and keep its record. A pass sets the `golden-path` commit status; `release.yml` reads it (`docs/release.md`).
+7. Make sure Weir's scenario suite has passed on the exact commit being tagged, or on an earlier one with the same shipped files and version (`scripts/scenarios/Invoke-WeirScenarios.ps1`), for a release candidate too, and keep its record. A pass sets the `golden-path` commit status; `release.yml` reads it, carrying an earlier pass over when nothing that ships changed (`docs/release.md`). `node scripts/verify-golden-path-for-release.mjs --sha <commit> --tag vX.Y.Z` asks the same question before the tag is made. When a full run failed only on harness or timing problems and nothing that ships was changed to fix it, re-run the failed scenarios alone on the same build and combine the records (`scripts/combine-golden-path-records.mjs`); any shipped-file change needs a full run.
 8. Run the release path from `docs/release.md`.
 
 ## After every release
@@ -55,7 +57,7 @@ Decided by the owner, 7 Oct 2026 (#903), after bugs kept turning up in things th
 3. Confirm the published release body is plain-language and matches the approved `docs/release-notes/vX.Y.Z.md` content.
 4. Confirm the release notes/install guidance names the attached `Weir-win-Setup.exe` installer and explains any one-time upgrade requirement for older installs.
 5. Confirm the GHCR image exists under its version tag (`X.Y.Z` or `X.Y.Z-rc.N`) and can be pulled by it. For a stable release, `X.Y` and `latest` name the same image; they move only after the version's image passed its smoke, and a release candidate moves neither.
-6. Confirm the release workflow completed `ci-passed`, `golden-path`, `validate`, `windows-smoke`, `docker-candidate`, `docker-arm64`, `publish-windows` and `publish-docker`. The two publish jobs do not wait for each other; if one failed, re-run that job alone.
+6. Confirm the release workflow completed `ci-passed`, `golden-path`, `validate`, every `e2e` shard, `windows-smoke`, `docker-candidate`, `docker-arm64`, `publish-windows` and `publish-docker`. The two publish jobs do not wait for each other; if one failed, re-run that job alone.
 7. Download `weir-docker-release-candidate-audit` and confirm its summary has
    no console warnings, console errors, page errors, failed requests, or bad responses;
    confirm `pass-through-proof.json` reports a completed job, byte-identical output,

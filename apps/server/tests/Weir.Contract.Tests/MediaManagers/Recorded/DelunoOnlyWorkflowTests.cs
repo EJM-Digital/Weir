@@ -24,8 +24,6 @@ public sealed class DelunoOnlyWorkflowTests
         ("WEIR_PROCESSING_WATCHED_FOLDER_REMUX_SCAN_DISPATCH_PERIODIC_ENQUEUE_REMUX_JOBS", "1"),
     ];
 
-    private static readonly TimeSpan ScanWindow = TimeSpan.FromSeconds(14);
-
     [Fact]
     public async Task Saving_the_watcher_the_timer_scan_now_and_process_again_all_leave_a_download_Deluno_has_not_handed_over_alone_and_the_hand_off_is_processed()
     {
@@ -53,12 +51,12 @@ public sealed class DelunoOnlyWorkflowTests
         Assert.True(again.Status == HttpStatusCode.OK, again.ToString());
         Assert.Equal($"{Refusal} Weir processes this file when Deluno hands it over.", (string)again.Fields["detail"]!);
 
-        // Long enough for the watcher's burst delay and a periodic tick of this workflow's 10 second interval.
-        await Scenario.NeverWithinAsync(
-            async () => (await world.Scenario.JobsAsync()).Any(job => ((string)job["job_kind"]!).Contains("remux", StringComparison.Ordinal)) ||
-                        await world.Scenario.FileRowAsync(world.Movies, NotHandedOverPath) is not null,
-            ScanWindow,
-            "Weir's own scan queueing or processing a file Deluno has not handed over");
+        // Weir goes round its periodic scans and its folder watcher, and finds nothing to do with a file Deluno has not handed over.
+        await world.Scenario.WaitForARoundAsync();
+        Assert.Empty(await world.Scenario.ScansOfAsync(world.Movies));
+        Assert.Empty(await world.Scenario.JobsAsync(Scenario.RemuxKind));
+        Assert.Empty(await world.Scenario.FinishedJobsAsync(Scenario.RemuxKind));
+        Assert.Null(await world.Scenario.FileRowAsync(world.Movies, NotHandedOverPath));
         Assert.Empty(world.Scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux"));
         Assert.Empty(Directory.GetFileSystemEntries(world.Translation.Apply(RecordedWorld.RecordedMoviesOutput)));
         unhanded.AssertStill();

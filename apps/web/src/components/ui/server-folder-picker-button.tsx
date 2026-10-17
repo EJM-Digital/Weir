@@ -282,6 +282,7 @@ export function ServerFolderPickerButton({
       <button
         type="button"
         className={mmActionButtonClass({ variant: "tertiary" })}
+        title={title}
         disabled={disabled}
         onClick={() => setOpen(true)}
       >

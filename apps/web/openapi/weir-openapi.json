@@ -780,10 +780,11 @@
         "description": "The data of a data.changed frame on GET /activity/stream: one kind of data changed, so every screen showing it should read it again. A topic is published as the screens that show its data are converted, so not every topic listed is sent yet.",
         "properties": {
           "topic": {
-            "description": "Which data changed (a topic is named here before it is published): pause (Processing paused, resumed, or a timed pause ran out), readiness, files_at_once, maintenance, libraries, library_scan, folder_checks, update, network_access, connections, settings, backups, kept_files, metrics, jobs or sessions (a browser signed in or out of Weir).",
+            "description": "Which data changed (a topic is named here before it is published): pause (Processing paused, resumed, or a timed pause ran out), readiness, files_at_once, maintenance, libraries, library_scan, folder_checks, update, network_access, connections, settings, direct_play_devices (the devices chosen for the Direct Play badge), backups, kept_files, metrics, jobs or sessions (a browser signed in or out of Weir).",
             "enum": [
               "backups",
               "connections",
+              "direct_play_devices",
               "files_at_once",
               "folder_checks",
               "jobs",
@@ -4399,7 +4400,7 @@
             "type": "string"
           },
           "url": {
-            "minLength": 1,
+            "description": "The address to post to. On an update, leave it out or blank to keep the saved one; a new alert needs it.",
             "title": "Url",
             "type": "string"
           }
@@ -4407,7 +4408,6 @@
         "required": [
           "label",
           "provider",
-          "url",
           "csrf_token"
         ],
         "title": "NotificationChannelIn",
@@ -4471,6 +4471,11 @@
             "title": "Events",
             "type": "array"
           },
+          "has_token": {
+            "description": "Whether the saved address has a secret part, which is never returned.",
+            "title": "Has Token",
+            "type": "boolean"
+          },
           "id": {
             "title": "Id",
             "type": "integer"
@@ -4489,6 +4494,7 @@
             "type": "string"
           },
           "url": {
+            "description": "The saved address with its secret part hidden, for example https://discord.com/api/webhooks/<id>/••••.",
             "title": "Url",
             "type": "string"
           }
@@ -4498,6 +4504,7 @@
           "label",
           "provider",
           "url",
+          "has_token",
           "events",
           "enabled",
           "created_at",
@@ -8631,6 +8638,14 @@
             "title": "Keep Original Language",
             "type": "boolean"
           },
+          "library_rescan_job_ids": {
+            "description": "The background re-plans queued for libraries that use this profile. Sent only when a profile is saved.",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Library Rescan Job Ids",
+            "type": "array"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -9807,6 +9822,22 @@
             "title": "Id",
             "type": "integer"
           },
+          "made_by": {
+            "anyOf": [
+              {
+                "enum": [
+                  "schedule",
+                  "manual"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Who made the backup: the schedule, or a person pressing Back up now. Null for a backup made before this was kept.",
+            "title": "Made By"
+          },
           "size_bytes": {
             "title": "Size Bytes",
             "type": "integer"
@@ -9816,7 +9847,8 @@
           "id",
           "created_at",
           "file_name",
-          "size_bytes"
+          "size_bytes",
+          "made_by"
         ],
         "title": "SuiteConfigurationBackupItemOut",
         "type": "object"

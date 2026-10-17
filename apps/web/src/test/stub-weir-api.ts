@@ -5,6 +5,8 @@ export type StubbedRequest = {
   method: string;
   path: string;
   query: URLSearchParams;
+  /** The headers it was sent with, named in lower case. */
+  headers: Record<string, string>;
   /** The JSON body, or undefined for a request with none. */
   body: unknown;
 };
@@ -22,6 +24,15 @@ export function jsonAnswer(body: unknown, status = 200): Response {
     status,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+/** The fields a request saves: its JSON body without the CSRF token every change carries. */
+export function savedFields(request: StubbedRequest): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(request.body as Record<string, unknown>).filter(
+      ([field]) => field !== "csrf_token",
+    ),
+  );
 }
 
 export type StubbedApi = {
@@ -45,6 +56,7 @@ function parsed(input: RequestInfo | URL, init?: RequestInit): StubbedRequest {
     method: (init?.method ?? "GET").toUpperCase(),
     path: url.pathname,
     query: url.searchParams,
+    headers: Object.fromEntries(new Headers(init?.headers).entries()),
     body: text === undefined ? undefined : (JSON.parse(text) as unknown),
   };
 }
@@ -83,4 +95,16 @@ export function stubWeirApi(routes: Record<string, Route>): StubbedApi {
     },
   );
   return api;
+}
+
+/** What the server answers when it fails in a way nobody planned for: a 500 that says only that, as `ServerErrorMiddleware` words it. */
+export function unexpectedProblem(): Response {
+  return jsonAnswer(
+    {
+      detail:
+        "Weir ran into an unexpected problem and could not finish this request. The details are in Weir's log.",
+      code: "internal_error",
+    },
+    500,
+  );
 }

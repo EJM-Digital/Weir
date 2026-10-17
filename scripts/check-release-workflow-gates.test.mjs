@@ -66,18 +66,49 @@ test("neither publish job may wait for the other", () => {
 });
 
 test("each publish job needs every shared check and its own build's checks", () => {
-  for (const job of ["ci-passed", "golden-path", "validate", "windows-smoke"]) {
+  for (const job of ["ci-passed", "golden-path", "validate", "e2e", "windows-smoke"]) {
     rejects(
       editJob(real.release, "publish-windows", (body) => withoutNeed(body, job)),
       new RegExp(`publish-windows does not need ${job}`),
     );
   }
-  for (const job of ["ci-passed", "golden-path", "validate", "docker-candidate", "docker-arm64"]) {
+  for (const job of ["ci-passed", "golden-path", "validate", "e2e", "docker-candidate", "docker-arm64"]) {
     rejects(
       editJob(real.release, "publish-docker", (body) => withoutNeed(body, job)),
       new RegExp(`publish-docker does not need ${job}`),
     );
   }
+});
+
+test("a release cannot publish without every browser-test shard", () => {
+  // The shards are the matrix legs of the one `e2e` job, so needing it is needing every shard.
+  for (const job of ["publish-windows", "publish-docker"]) {
+    rejects(editJob(real.release, job, (body) => withoutNeed(body, "e2e")), new RegExp(`${job} does not need e2e`));
+  }
+});
+
+test("the browser-test shards come from scripts/e2e-shards.mjs, so none can be left out", () => {
+  // A matrix written by hand drops a shard the day a new one is needed.
+  rejects(
+    replaceOnce(real.release, "shard: ${{ fromJSON(needs.e2e-shards.outputs.shards) }}", "shard: [1, 2]"),
+    /e2e job .*fromJSON\(needs\.e2e-shards\.outputs\.shards\)/,
+  );
+  rejects(
+    replaceOnce(real.release, "node scripts/e2e-shards.mjs --matrix", "echo '[1]'"),
+    /e2e-shards job .*e2e-shards\.mjs --matrix/,
+  );
+  // Running the whole suite in every leg, or no filter at all, is not a shard.
+  rejects(
+    editJob(real.release, "e2e", (body) => body.replace(/ --filter "\$\(node [^\n]*\)"/, "")),
+    /e2e job .*--shard "\$SHARD"/,
+  );
+  // A failed shard may not cancel the others unread, and the job may not be skipped or its failure waved on.
+  rejects(editJob(real.release, "e2e", (body) => body.replace("fail-fast: false", "fail-fast: true")), /e2e job .*fail-fast: false/);
+  rejects(editJob(real.release, "e2e", (body) => body.replace("    needs:", "    if: always()\n    needs:")), /e2e job may not be skipped/);
+  rejects(
+    editJob(real.release, "e2e", (body) => body.replace("    timeout-minutes: 15\n", "    timeout-minutes: 15\n    continue-on-error: true\n")),
+    /e2e job may not be skipped/,
+  );
 });
 
 test("a publish job may not run past a failed gate", () => {
@@ -211,6 +242,10 @@ test("ci-passed must judge every CI job", () => {
 test("the golden-path job is required and only reads statuses", () => {
   rejects(editJob(real.release, "golden-path", (body) => body.replace("verify-golden-path-for-release.mjs", "something-else.mjs")), /golden-path job/);
   rejects(editJob(real.release, "golden-path", (body) => body.replace("statuses: read", "statuses: write")), /statuses/);
+});
+
+test("the golden-path job checks out the full history, so an earlier commit's pass can be judged", () => {
+  rejects(editJob(real.release, "golden-path", (body) => body.replace("          fetch-depth: 0\n", "")), /full history/);
 });
 
 test("the golden-path job cannot be skipped for a release candidate or anything else", () => {

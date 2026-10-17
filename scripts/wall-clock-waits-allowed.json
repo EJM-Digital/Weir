@@ -2,10 +2,40 @@
   "note": "Every wait for the wall clock that scripts/check-wall-clock-waits.mjs lets stand, with how many there are in the file and why each is a poll that ends on its condition and not a guess. The list only shrinks.",
   "allowed": [
     {
+      "file": "apps/server/tests/Weir.Infrastructure.Tests/TestSupport/Eventually.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "The one poll every server unit test shares: it looks every 20 ms, ends the moment the condition holds and gives up at a ceiling that only a hung test reaches."
+    },
+    {
+      "file": "apps/server/tests/Weir.Infrastructure.Tests/TestSupport/PoolStarvationSampler.cs",
+      "kind": "delay",
+      "count": 2,
+      "reason": "A diagnostic that runs only when a stress run asks for it: it sleeps on a thread of its own to measure how late the thread pool wakes it, and no test asserts on how long it slept."
+    },
+    {
       "file": "apps/server/tests/Weir.E2E.Tests/Support/WeirWorkflowApi.cs",
       "kind": "delay",
       "count": 1,
       "reason": "Removing a workflow is refused while a job of its own is still finishing; this asks again every half second and gives up after 30 seconds, ending at the first answer that is not \"busy\"."
+    },
+    {
+      "file": "apps/server/tests/Weir.Api.Tests/TestSupport/Eventually.cs",
+      "kind": "delay",
+      "count": 2,
+      "reason": "The two polls every API test shares: they look every 50 ms, end the moment the condition holds and give up at a ceiling that only a hung test reaches."
+    },
+    {
+      "file": "apps/server/tests/Weir.Api.Tests/TestSupport/RealServerProcess.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "A poll every 100 ms for a real server process to start answering; it ends the moment the process answers or exits and gives up at its own ceiling."
+    },
+    {
+      "file": "apps/server/tests/Weir.Api.Tests/TestSupport/UnreadStdoutServer.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "A poll every 100 ms for a real server process to start answering; it ends the moment the process answers or exits and gives up at its own ceiling."
     },
     {
       "file": "apps/tray/Weir.Tray.Tests/ServerOutputTests.cs",
@@ -54,6 +84,60 @@
       "kind": "sleep",
       "count": 1,
       "reason": "Five seconds between looks for the workflow run that was just triggered on GitHub, which ends the moment the run is listed."
+    },
+    {
+      "file": "apps/server/tests/Weir.Contract.Tests/Harness/Poll.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "The one poll the contract tests share: it looks every 200 ms, ends the moment the condition holds and gives up at a hang-guard timeout that only a stalled server reaches."
+    },
+    {
+      "file": "apps/server/tests/Weir.Contract.Tests/Harness/JobWait.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "The same poll for what a job produces: it ends the moment the result is there, and gives up only when no worker has held a job for the unclaimed ceiling."
+    },
+    {
+      "file": "apps/server/tests/Weir.Contract.Tests/Harness/WeirServer.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "The poll for a started server to answer on its port: it ends the moment the server says it is listening and gives up when the server has said nothing about its start for 30 seconds."
+    },
+    {
+      "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/FakeHttpServer.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "Wakes every half second at most while waiting for a request to reach a fake; each request that arrives wakes it at once, and it gives up at the limit the caller gave."
+    },
+    {
+      "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/FakeFfmpeg.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "Reads the fake tool log again after 10 ms when a running tool has it open for the moment it takes to append a line; bounded by a read timeout."
+    },
+    {
+      "file": "apps/server/tests/Weir.TestChild/Program.cs",
+      "kind": "delay",
+      "count": 7,
+      "reason": "A stand-in for a slow external tool: holding, lingering or pacing its output is the behaviour a test of the process runner needs, and each wait is cut short when the test kills the process or answers with an acknowledgement file."
+    },
+    {
+      "file": "apps/server/tests/Weir.Contract.FakeTools/FakeFfmpegTool.cs",
+      "kind": "delay",
+      "count": 3,
+      "reason": "A stand-in for a slow ffmpeg: its start-up and its remux take the seconds the test scripts for them, and its hold on the output looks every 50 ms for a release file and ends the moment it exists."
+    },
+    {
+      "file": "apps/server/tests/Weir.Contract.FakeTools/FakeFfprobe.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "A stand-in for a slow ffprobe: it takes the seconds the test scripts for it, which is the slowness the test is about."
+    },
+    {
+      "file": "apps/server/tests/Weir.Contract.FakeTools/ToolFolder.cs",
+      "kind": "delay",
+      "count": 1,
+      "reason": "Tries again in a few milliseconds while another fake tool holds the shared counter file, and ends the moment the file is free; a deadline ends it for one that never lets go."
     }
   ]
 }

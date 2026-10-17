@@ -74,14 +74,84 @@ public static class NotificationRules
         }
     }
 
+    /// <summary>What replaces the secret part of an address wherever the address is shown.</summary>
+    public const string TokenMask = "••••";
+
+    /// <summary>
+    /// An address as it may be shown: the host and the start of the path, with the last part of the path (where a webhook's token
+    /// sits), any query and any fragment hidden, and no sign-in details. <c>HadToken</c> says whether anything was hidden.
+    /// </summary>
+    public static (string Shown, bool HadToken) MaskAddress(string url)
+    {
+        ArgumentNullException.ThrowIfNull(url);
+        SplitUrl parsed;
+        try
+        {
+            parsed = SplitUrl.Parse(url.Trim());
+        }
+        catch (WireValueException)
+        {
+            return (TokenMask, true);
+        }
+
+        if (parsed.Scheme.Length == 0 || parsed.Netloc.Length == 0)
+        {
+            return (TokenMask, true);
+        }
+
+        var host = parsed.Netloc[(parsed.Netloc.LastIndexOf('@') + 1)..];
+        var segments = parsed.Path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var path = parsed.Path;
+        if (segments.Length > 0)
+        {
+            segments[^1] = TokenMask;
+            path = "/" + string.Join('/', segments);
+        }
+
+        var query = parsed.Query.Length > 0 ? "?" + TokenMask : string.Empty;
+        var hidden = segments.Length > 0 || query.Length > 0 || parsed.Fragment.Length > 0 || parsed.HasUserInfo;
+        return ($"{parsed.Scheme}://{host}{path}{query}", hidden);
+    }
+
+    /// <summary>
+    /// An address in the form two alerts are compared in: the scheme and host in lower case, the surrounding spaces and a trailing
+    /// slash ignored. The rest of the path and the query are case-sensitive, as they are to the service that receives them.
+    /// </summary>
+    public static string NormalizeAddress(string url)
+    {
+        ArgumentNullException.ThrowIfNull(url);
+        var trimmed = url.Trim();
+        try
+        {
+            var parsed = SplitUrl.Parse(trimmed);
+            var query = parsed.Query.Length > 0 ? "?" + parsed.Query : string.Empty;
+            var fragment = parsed.Fragment.Length > 0 ? "#" + parsed.Fragment : string.Empty;
+            return $"{parsed.Scheme}://{parsed.Netloc.ToLowerInvariant()}{parsed.Path.TrimEnd('/')}{query}{fragment}";
+        }
+        catch (WireValueException)
+        {
+            return trimmed;
+        }
+    }
+
+    /// <summary>Whether <paramref name="first"/> and <paramref name="second"/> are the same address once normalised.</summary>
+    public static bool IsSameAddress(string first, string second) =>
+        string.Equals(NormalizeAddress(first), NormalizeAddress(second), StringComparison.Ordinal);
+
+    /// <summary>
+    /// A channel as the API shows it. The address is masked, because it carries the token that lets anyone post as the alert, and
+    /// the secret part is never returned (<c>has_token</c> says there is one).
+    /// </summary>
     public static WireObject ChannelOut(NotificationChannelRecord row)
     {
         ArgumentNullException.ThrowIfNull(row);
+        var (shown, hadToken) = MaskAddress(row.Url);
         return new WireObject()
             .Set("id", row.Id)
             .Set("label", row.Label)
             .Set("provider", row.Provider)
-            .Set("url", row.Url)
+            .Set("url", shown)
+            .Set("has_token", hadToken)
             .Set("events", new WireArray(ParseEvents(row.EventsJson).Select(e => (WireValue)new WireString(e))))
             .Set("enabled", row.Enabled)
             .Set("created_at", row.CreatedAt.ToWireText())
@@ -135,7 +205,8 @@ public static class NotificationRules
 
     /// <summary>
     /// The event name, title and detail of a job notification. <paramref name="willRetry"/> is
-    /// meaningless for <c>completed</c> and defaults to <see langword="false"/> for every other caller.
+    /// meaningless for <c>completed</c> and defaults to <see langword="false"/> for every other caller. <paramref name="workFailed"/> is for
+    /// work that failed in a job that itself ended normally, which has no retry attempts to have exhausted.
     /// </summary>
     /// <remarks>
     /// A failure that will be retried says so, with the retry wording <see cref="WorkerFailures"/> uses (#488),
@@ -143,7 +214,7 @@ public static class NotificationRules
     /// permanently-failed check the dispatcher applies.
     /// </remarks>
     public static (string Event, string Title, string Detail) JobNotification(
-        string module, string eventKind, long jobId, string jobKind, string appName, bool willRetry = false)
+        string module, string eventKind, long jobId, string jobKind, string appName, bool willRetry = false, bool workFailed = false)
     {
         ArgumentNullException.ThrowIfNull(module);
         ArgumentNullException.ThrowIfNull(appName);
@@ -157,7 +228,9 @@ public static class NotificationRules
 
         var detail = willRetry
             ? $"Job {jobId} ({jobKind}) failed. {WorkerFailures.WillRetryContinuation}"
-            : $"Job {jobId} ({jobKind}) exhausted all retry attempts.";
+            : workFailed
+                ? $"Job {jobId} ({jobKind}) failed, and Weir has stopped trying."
+                : $"Job {jobId} ({jobKind}) exhausted all retry attempts.";
         return ($"{module}_job_{eventKind}", $"{capitalized} job failed", detail);
     }
 }
@@ -400,4 +473,8 @@ public static class ExternalUrlPolicy
     public const string RedirectRefused = "The notification destination returned a redirect; redirects are disabled.";
     public const string CouldNotDeliver = "Weir could not deliver the notification.";
     public const string GenericDeliveryError = "Weir could not deliver the notification. Check the destination and server logs.";
+
+    /// <summary>What a destination that took the connection and then refused the message answered with.</summary>
+    public static string DestinationRefused(int status) =>
+        $"The notification destination answered with an error (HTTP {status}), so it did not take the message. Check the address.";
 }

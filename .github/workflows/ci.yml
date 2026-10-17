@@ -65,6 +65,7 @@ jobs:
       run_packaging: ${{ steps.flags.outputs.run_packaging }}
       run_arm64: ${{ steps.flags.outputs.run_arm64 }}
       contract_areas: ${{ steps.areas.outputs.areas }}
+      e2e_shards: ${{ steps.e2e_shards.outputs.shards }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -75,6 +76,16 @@ jobs:
           areas="$(jq -c '[.areas[].name]' apps/server/tests/Weir.Contract.Tests/areas.json)"
           echo "Contract areas: $areas"
           echo "areas=$areas" >> "$GITHUB_OUTPUT"
+
+      # The browser tests share one server and run one at a time, so they are split over jobs by test count
+      # (scripts/e2e-shards.mjs): a new test class is in a shard without editing this file, and a shard is added before
+      # one nears its timeout.
+      - name: E2E shards
+        id: e2e_shards
+        run: |
+          shards="$(node scripts/e2e-shards.mjs --matrix)"
+          node scripts/e2e-shards.mjs --summary
+          echo "shards=$shards" >> "$GITHUB_OUTPUT"
 
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
@@ -111,8 +122,12 @@ jobs:
               - 'scripts/wait-for-health.mjs'
               - 'scripts/docker-compose-smoke.mjs'
               - 'scripts/docker-smoke/**'
+              - 'scripts/scenarios-in-ci.mjs'
+              - 'scripts/scenarios-ci/**'
               - 'scripts/find-previous-release.mjs'
               - 'scripts/semver.mjs'
+              - 'scripts/repository.mjs'
+              - 'scripts/repository.ps1'
               - 'scripts/ffmpeg-cache-key.mjs'
               - 'scripts/ffmpeg-pin.mjs'
               - 'scripts/install-ffmpeg-linux.mjs'
@@ -126,7 +141,10 @@ jobs:
             media_tools:
               - 'packaging/windows/build-velopack-vendored-media-tools.ps1'
               - 'packaging/windows/pinned-download.ps1'
+              - 'scripts/repository.mjs'
+              - 'scripts/repository.ps1'
               - 'scripts/check-real-tool-tests.mjs'
+              - 'scripts/check-contract-real-tool-tests.mjs'
               - 'scripts/ffmpeg-cache-key.mjs'
               - 'scripts/ffmpeg-pin.mjs'
               - 'scripts/install-ffmpeg-linux.mjs'
@@ -238,6 +256,14 @@ jobs:
           node scripts/check-no-python.mjs
           node --test scripts/check-no-python.test.mjs
 
+      # A fork runs its own copy of this workflow under its own name, so only the project's own repository is held to it.
+      - name: The repository's owner and name are written once per language
+        env:
+          RUNNING_REPOSITORY: ${{ github.event.repository.fork == false && github.repository || '' }}
+        run: |
+          node scripts/check-repository-owner.mjs ${RUNNING_REPOSITORY:+--repository "$RUNNING_REPOSITORY"}
+          node --test scripts/check-repository-owner.test.mjs scripts/sweep-repository-owner.test.mjs
+
       - name: Nothing private in the README, the docs and the release notes
         run: |
           node scripts/check-public-privacy.mjs
@@ -272,7 +298,7 @@ jobs:
         run: node --test scripts/check-coverage-floors.test.mjs scripts/align-coverage-reports.test.mjs
 
       - name: The real media tools - pins, installers and the check that every real-tool test ran
-        run: node --test scripts/ffmpeg-pin.test.mjs scripts/pinned-download.test.mjs scripts/mkvtoolnix-pin.test.mjs scripts/install-mkvtoolnix-linux.test.mjs scripts/summarize-test-results.test.mjs scripts/check-real-tool-tests.test.mjs
+        run: node --test scripts/ffmpeg-pin.test.mjs scripts/pinned-download.test.mjs scripts/mkvtoolnix-pin.test.mjs scripts/install-mkvtoolnix-linux.test.mjs scripts/summarize-test-results.test.mjs scripts/check-real-tool-tests.test.mjs scripts/check-contract-real-tool-tests.test.mjs
 
       # The register is read against the code, against the open coverage issues, and against the register as it was before this change:
       # on a pull request the base commit's, on a push to main the previous commit's. The gaps may not go up from that count
@@ -303,10 +329,13 @@ jobs:
       - name: Docker entrypoint refuses bad settings, keeps the secrets and the server's umask
         run: node --test scripts/docker-entrypoint.test.mjs
 
+      - name: Scenarios in CI - their homes, the film, the logs and the scenarios against a stand-in
+        run: node --test scripts/scenarios-in-ci.test.mjs scripts/docker-compose-smoke.test.mjs
+
       - name: Release and CI gate rules
         run: |
           node scripts/check-release-workflow-gates.mjs
-          node --test scripts/check-release-workflow-gates.test.mjs scripts/verify-ci-for-release.test.mjs scripts/ci-passed.test.mjs scripts/verify-golden-path-for-release.test.mjs scripts/scenarios.test.mjs
+          node --test scripts/check-release-workflow-gates.test.mjs scripts/verify-ci-for-release.test.mjs scripts/ci-passed.test.mjs scripts/verify-golden-path-for-release.test.mjs scripts/verify-golden-path-carry-over.test.mjs scripts/release/shipped-paths.test.mjs scripts/scenarios.test.mjs
           node --test scripts/semver.test.mjs scripts/check-release-version.test.mjs scripts/find-previous-release.test.mjs scripts/prune-release-feed.test.mjs scripts/check-release-assets-single-version.test.mjs
 
   server-linux:
@@ -391,37 +420,12 @@ jobs:
   server-windows:
     needs: changes
     if: needs.changes.outputs.run_server_windows == 'true'
-    # The spare Windows PC (docs/self-hosted-runner.md) when the repository variable WEIR_SELF_HOSTED_WINDOWS is 'true',
-    # never for a pull request from a fork; GitHub's own Windows runner otherwise.
-    runs-on: ${{ vars.WEIR_SELF_HOSTED_WINDOWS == 'true' && !github.event.pull_request.head.repo.fork && fromJSON('["self-hosted","Windows","weir-heavy"]') || 'windows-latest' }}
+    runs-on: windows-latest
     timeout-minutes: 30
-    env:
-      # A self-hosted Windows PC keeps Windows' default script policy; this lets the job's own PowerShell run
-      # its scripts without changing the machine's setting. GitHub's runners already allow it.
-      PSExecutionPolicyPreference: Bypass
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      # On a self-hosted PC: `bash` resolves to Windows' own bash.exe (WSL) unless Git's comes first on PATH, and
-      # the service account's temporary folder is under C:\Windows, where Weir rightly refuses to watch a folder.
-      # Several runners share that PC and its one account, so each keeps its NuGet packages in its own tool cache:
-      # one shared folder let a restore in one job rewrite a package another job's compiler had open (CS0009).
-      - name: Self-hosted PC set-up
-        if: runner.environment == 'self-hosted'
-        shell: powershell
-        run: |
-          Add-Content -Path $env:GITHUB_PATH -Value "$env:ProgramFiles\Git\bin"
-          $temp = Join-Path $env:RUNNER_TEMP 'tmp'
-          New-Item -ItemType Directory -Force -Path $temp | Out-Null
-          Add-Content -Path $env:GITHUB_ENV -Value "TEMP=$temp"
-          Add-Content -Path $env:GITHUB_ENV -Value "TMP=$temp"
-          Add-Content -Path $env:GITHUB_ENV -Value "NUGET_PACKAGES=$env:RUNNER_TOOL_CACHE\nuget\packages"
-          Add-Content -Path $env:GITHUB_ENV -Value "NUGET_HTTP_CACHE_PATH=$env:RUNNER_TOOL_CACHE\nuget\http-cache"
-
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
-        # A self-hosted runner's service account cannot write to Program Files; the tool cache is its own.
-        env:
-          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           global-json-file: apps/server/global.json
           cache: true
@@ -558,11 +562,17 @@ jobs:
         working-directory: apps/web
         run: node ../../scripts/npm-audit-retry.mjs --level=high --exceptions=dependency-audit-exceptions.json
 
+  # The browser tests, one job per shard (scripts/e2e-shards.mjs), all at once.
   e2e-smoke:
+    name: e2e-smoke (shard ${{ matrix.shard }})
     needs: [changes, web-dist]
     if: needs.changes.outputs.run_e2e == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.changes.outputs.e2e_shards) }}
     env:
       WEIR_SESSION_SECRET: ${{ github.run_id }}-${{ github.job }}-${{ github.run_attempt }}-ci-session-secret-32chars-min
     steps:
@@ -606,21 +616,22 @@ jobs:
           pwsh apps/server/tests/Weir.E2E.Tests/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
 
       # A failed browser test fails the job; nothing is retried (an intermittent test is a bug to root-cause).
-      - name: Weir E2E smoke (Playwright + real .NET server)
+      - name: Weir E2E smoke (Playwright + real .NET server), shard ${{ matrix.shard }}
         working-directory: apps/server
         env:
           WEIR_E2E: "1"
-        run: dotnet test tests/Weir.E2E.Tests --no-build --logger trx
+          SHARD: ${{ matrix.shard }}
+        run: dotnet test tests/Weir.E2E.Tests --no-build --logger trx --filter "$(node ../../scripts/e2e-shards.mjs --shard "$SHARD")"
 
       - name: Summarize E2E smoke results
         if: ${{ !cancelled() }}
-        run: node scripts/summarize-test-results.mjs trx apps/server/tests/Weir.E2E.Tests/TestResults "Browser smoke tests"
+        run: node scripts/summarize-test-results.mjs trx apps/server/tests/Weir.E2E.Tests/TestResults "Browser smoke tests, shard ${{ matrix.shard }}"
 
       - name: Upload E2E smoke results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: e2e-test-results
+          name: e2e-test-results-${{ matrix.shard }}
           if-no-files-found: ignore
           retention-days: 1
           path: apps/server/tests/Weir.E2E.Tests/TestResults*/*.trx
@@ -631,7 +642,7 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: e2e-failure-evidence
+          name: e2e-failure-evidence-${{ matrix.shard }}
           if-no-files-found: ignore
           retention-days: 7
           path: artifacts/e2e-failures
@@ -649,37 +660,12 @@ jobs:
   tray:
     needs: changes
     if: needs.changes.outputs.run_tray == 'true'
-    # The spare Windows PC (docs/self-hosted-runner.md) when the repository variable WEIR_SELF_HOSTED_WINDOWS is 'true',
-    # never for a pull request from a fork; GitHub's own Windows runner otherwise.
-    runs-on: ${{ vars.WEIR_SELF_HOSTED_WINDOWS == 'true' && !github.event.pull_request.head.repo.fork && fromJSON('["self-hosted","Windows","weir-heavy"]') || 'windows-latest' }}
+    runs-on: windows-latest
     timeout-minutes: 10
-    env:
-      # A self-hosted Windows PC keeps Windows' default script policy; this lets the job's own PowerShell run
-      # its scripts without changing the machine's setting. GitHub's runners already allow it.
-      PSExecutionPolicyPreference: Bypass
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      # On a self-hosted PC: `bash` resolves to Windows' own bash.exe (WSL) unless Git's comes first on PATH, and
-      # the service account's temporary folder is under C:\Windows, where Weir rightly refuses to watch a folder.
-      # Several runners share that PC and its one account, so each keeps its NuGet packages in its own tool cache:
-      # one shared folder let a restore in one job rewrite a package another job's compiler had open (CS0009).
-      - name: Self-hosted PC set-up
-        if: runner.environment == 'self-hosted'
-        shell: powershell
-        run: |
-          Add-Content -Path $env:GITHUB_PATH -Value "$env:ProgramFiles\Git\bin"
-          $temp = Join-Path $env:RUNNER_TEMP 'tmp'
-          New-Item -ItemType Directory -Force -Path $temp | Out-Null
-          Add-Content -Path $env:GITHUB_ENV -Value "TEMP=$temp"
-          Add-Content -Path $env:GITHUB_ENV -Value "TMP=$temp"
-          Add-Content -Path $env:GITHUB_ENV -Value "NUGET_PACKAGES=$env:RUNNER_TOOL_CACHE\nuget\packages"
-          Add-Content -Path $env:GITHUB_ENV -Value "NUGET_HTTP_CACHE_PATH=$env:RUNNER_TOOL_CACHE\nuget\http-cache"
-
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
-        # A self-hosted runner's service account cannot write to Program Files; the tool cache is its own.
-        env:
-          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           global-json-file: apps/server/global.json
           cache: true

@@ -133,14 +133,7 @@ public sealed class DatabaseBusyApiTests
     private static async Task<HttpResponseMessage> SendWhileHeldAsync(FakeTimeProvider time, Func<Task<HttpResponseMessage>> send)
     {
         var request = send();
-        var deadline = DateTime.UtcNow + Limit;
-        while (!request.IsCompleted)
-        {
-            Assert.True(DateTime.UtcNow < deadline, "the request was still waiting for the database");
-            time.Advance(TimeSpan.FromSeconds(1));
-            await Task.Delay(5);
-        }
-
+        await Eventually.ThatAdvancingAsync(time, TimeSpan.FromSeconds(1), () => request.IsCompleted, Limit);
         return await request;
     }
 

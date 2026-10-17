@@ -25,6 +25,8 @@ whose source is in [`../docs-site/docs`](../docs-site/docs).
 - [`local-development.md`](local-development.md) - local setup and the development workflow, including how to run the real server with its web app on a fresh data folder.
 - [`triage.md`](triage.md) - issue labels and triage rules.
 - [`exec-plans/README.md`](exec-plans/README.md) - where execution plans live.
+- [`exec-plans/active/PLAN-SCENARIOS-IN-CI.md`](exec-plans/active/PLAN-SCENARIOS-IN-CI.md) - how Weir's scenario suite moves from the VM into CI: where each of the 14 scenarios runs, the shards, the images pinned by digest, the drift job, when a scenario counts as proved, and the clean-up once the VM is gone.
+- [`exec-plans/active/PLAN-ORG-MOVE.md`](exec-plans/active/PLAN-ORG-MOVE.md) - moving Weir to the EJM-Digital organisation: where the owner is written, what GitHub redirects, the sweep, the two image names, the organisation settings and the proof after the move.
 - [`release.md`](release.md) - the release procedure and what each release produces.
 - [`coverage/README.md`](coverage/README.md) - how test coverage is measured on every CI run, the floors that only go up, and how to raise or lower one.
 - [`start-supervision.md`](start-supervision.md) - how the tray supervises every start of the server: progress, hung starts, retries, the start limit, what it logs and shows, and the measurements behind the numbers.
@@ -32,7 +34,6 @@ whose source is in [`../docs-site/docs`](../docs-site/docs).
 - [`ci-standard.md`](ci-standard.md) - the CI and release standard Weir shares, as an identical separate copy, with Deluno.
 - [`tray-standard.md`](tray-standard.md) - what the tray icon shows, its menu and its behaviour, the same in Weir and Deluno (a word-for-word copy).
 - [`golden-path.md`](golden-path.md) - the shared checklist for Deluno's golden path, the same in Weir and Deluno: install on a clean VM, use it like a person, record the pass. Weir's own gate is the scenario suite in `scripts/scenarios` (see `release.md`, "Proof before tagging").
-- [`self-hosted-runner.md`](self-hosted-runner.md) - the spare Windows PC that can run the Windows server and tray CI jobs: how a job chooses it, setting it up, and removing it.
 - [`deluno-weir-contract.md`](deluno-weir-contract.md) - the shared Deluno–Weir contract, the same in Weir and Deluno: every reply Weir gives Deluno, its real recording, what Deluno does with it and the test that proves it.
 - [`release-notes/TEMPLATE.md`](release-notes/TEMPLATE.md) - the template for release notes.
 - [`smoke-checklists.md`](smoke-checklists.md) - manual Windows and Docker smoke checks.

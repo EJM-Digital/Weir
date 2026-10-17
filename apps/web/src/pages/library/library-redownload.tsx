@@ -11,7 +11,10 @@ import {
   useLibraryRedownloadsQuery,
   useRequestLibraryRedownload,
 } from "../../lib/processing/library-mode-queries";
-import type { LibraryRedownloadTitle } from "../../lib/processing/library-redownload-api";
+import {
+  REDOWNLOAD_FAILED,
+  type LibraryRedownloadTitle,
+} from "../../lib/processing/library-redownload-api";
 import { mmActionButtonClass } from "../../lib/ui/mm-control-roles";
 
 /** "French audio, English subtitles": what the file lost that the rules would now keep. */
@@ -88,10 +91,7 @@ export function LibraryRedownload({
       ) : null}
       {request.isError ? (
         <p className="mm-drawer__failure" data-status="broken" role="alert">
-          {errorMessage(
-            request.error,
-            "Weir couldn't ask your media manager. Nothing was deleted; try again.",
-          )}
+          {errorMessage(request.error, REDOWNLOAD_FAILED)}
         </p>
       ) : null}
       {asking && title ? (

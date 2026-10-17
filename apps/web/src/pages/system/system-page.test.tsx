@@ -11,6 +11,7 @@ import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CurrentSession, UserPublic } from "../../lib/api/types";
 import { authKeys } from "../../lib/auth/query-keys";
+import { REPOSITORY_URL } from "../../lib/repository";
 import * as processingQueries from "../../lib/processing/queries";
 import * as settingsApi from "../../lib/settings/settings-api";
 import { settingsKeys } from "../../lib/settings/query-keys";
@@ -74,8 +75,7 @@ const windowsUpdateAvailableStatus: UpdateStatus = {
   summary: "Weir 2.0.8 is available.",
   latest_version: "2.0.8",
   latest_name: "Weir 2.0.8",
-  windows_installer_url:
-    "https://github.com/jampat000/Weir/releases/download/v2.0.8/Weir-win-Setup.exe",
+  windows_installer_url: `${REPOSITORY_URL}/releases/download/v2.0.8/Weir-win-Setup.exe`,
   in_app_upgrade_supported: true,
   in_app_upgrade_summary:
     "Updates are managed by the Weir desktop app via Velopack.",
@@ -328,6 +328,7 @@ describe("SystemPage", () => {
         created_at: "2026-04-12T00:00:00Z",
         size_bytes: 512,
         file_name: "weir-configuration-2026-04-12.json",
+        made_by: "manual",
       });
     renderSettings(operatorMe, { initialEntries: ["/system?tab=backups"] });
 
@@ -337,6 +338,51 @@ describe("SystemPage", () => {
       expect(postNowSpy).toHaveBeenCalledTimes(1);
     });
     expect(await screen.findByText("Backup created.")).toBeInTheDocument();
+  });
+
+  it("shows a backup made by hand as the last backup, and leaves the schedule where it was", async () => {
+    const scheduled = {
+      id: 3,
+      created_at: "2026-04-10T02:00:00Z",
+      size_bytes: 512,
+      file_name: "suite-configuration-20260410-020000.json",
+      made_by: "schedule" as const,
+    };
+    const byHand = {
+      id: 9,
+      created_at: "2026-04-12T12:00:00Z",
+      size_bytes: 512,
+      file_name: "suite-configuration-20260412-120000.json",
+      made_by: "manual" as const,
+    };
+    vi.spyOn(settingsApi, "postConfigurationBackupNow").mockResolvedValue(
+      byHand,
+    );
+    vi.spyOn(settingsApi, "fetchConfigurationBackupList").mockResolvedValue({
+      directory: "C:/Weir/backups/suite-configuration",
+      items: [byHand, scheduled],
+    });
+    renderSettings(operatorMe, {
+      initialEntries: ["/system?tab=backups"],
+      backupItems: [scheduled],
+    });
+    const last = screen.getByTestId("backup-last");
+    expect(last).toHaveTextContent(/(^|[^0-9])10([^0-9]).*2026/);
+    expect(last).toHaveTextContent("scheduled");
+    const time = screen.getByLabelText("At") as HTMLInputElement;
+    expect(time.value).toBe("02:00");
+
+    fireEvent.click(screen.getByRole("button", { name: "Back up now" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("backup-last")).toHaveTextContent(
+        /(^|[^0-9])12([^0-9]).*2026/,
+      );
+    });
+    expect(screen.getByTestId("backup-last")).toHaveTextContent("by hand");
+    expect((screen.getByLabelText("At") as HTMLInputElement).value).toBe(
+      "02:00",
+    );
   });
 
   it("offers restoring a saved backup and confirms in Weir's own dialog, not window.confirm", async () => {

@@ -6,7 +6,7 @@
 //
 // What is looked for, and where:
 //
-//   csharp   Task.Delay, Thread.Sleep and Playwright's WaitForTimeoutAsync in the browser tests and the tray's tests
+//   csharp   Task.Delay, Thread.Sleep and Playwright's WaitForTimeoutAsync in the server's Api and contract tests, its test tools, the browser tests and the tray's tests
 //   web      a bare `new Promise(... setTimeout ...)` sleep, a clock that keeps running (`shouldAdvanceTime`), and a waitFor or
 //            findBy `timeout:` over 1000 ms with no comment naming it a hang guard, in the web app's tests
 //   script   Start-Sleep in the PowerShell scripts (the VM scenarios, the package smoke, the packaging scripts)
@@ -27,8 +27,11 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // Which files are looked at, and for what. A new test project is added here.
 const WATCHED = [
   { kind: "csharp", files: /^apps\/(?:server\/tests\/Weir\.E2E\.Tests|tray\/Weir\.Tray\.Tests)\/.+\.cs$/ },
+  { kind: "csharp", files: /^apps\/server\/tests\/Weir\.(?:Core|Infrastructure)\.Tests\/.+\.cs$/ },
   { kind: "web", files: /^apps\/web\/src\/(?:.+\.test\.tsx?|test\/.+|.+-(?:test-server|test-fixtures|test-support)\.tsx?)$/ },
+  { kind: "csharp", files: /^apps\/server\/tests\/Weir\.Api\.Tests\/.+\.cs$/ },
   { kind: "script", files: /^(?:scripts|packaging)\/.+\.ps1$/ },
+  { kind: "csharp", files: /^apps\/server\/tests\/(?:Weir\.(?:Api|Contract)\.Tests|Weir\.Contract\.FakeTools|Weir\.TestChild)\/.+\.cs$/ },
   // This check's own test holds the waits it looks for, as the text it is tried on.
   { kind: "node", files: /^scripts\/(?!check-wall-clock-waits\.test\.mjs$).+\.test\.mjs$/ },
 ];

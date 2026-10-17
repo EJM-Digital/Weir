@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 
 import {
   createProcessingLibrary,
@@ -139,6 +144,15 @@ export function useConnectionFolderChainQuery(connectionId: number) {
   });
 }
 
+/**
+ * Reads the workflows again after a change to them. A folder chain is a check of the folders and links saved, so
+ * a change that can alter those makes every chain stale, and each is checked again the next time it is shown.
+ */
+function invalidateWorkflowsAndChains(qc: QueryClient) {
+  void qc.invalidateQueries({ queryKey: processingKeys.libraries });
+  void qc.invalidateQueries({ queryKey: processingKeys.libraryFolderChains });
+}
+
 /** The workflows, each with its next look; the server says when either changes (`libraries`). */
 export function useProcessingLibrariesQuery(enabled = true) {
   return useQuery<ProcessingLibrary[]>({
@@ -153,8 +167,7 @@ export function useCreateProcessingLibrary() {
   return useMutation({
     mutationFn: (data: ProcessingLibraryCreate) =>
       createProcessingLibrary(data),
-    onSuccess: () =>
-      void qc.invalidateQueries({ queryKey: processingKeys.libraries }),
+    onSuccess: () => invalidateWorkflowsAndChains(qc),
   });
 }
 
@@ -163,8 +176,7 @@ export function useUpdateProcessingLibrary() {
   return useMutation({
     mutationFn: (vars: { id: number; data: ProcessingLibraryWrite }) =>
       updateProcessingLibrary(vars.id, vars.data),
-    onSuccess: () =>
-      void qc.invalidateQueries({ queryKey: processingKeys.libraries }),
+    onSuccess: () => invalidateWorkflowsAndChains(qc),
   });
 }
 
@@ -199,8 +211,7 @@ export function useImportDiscoveredProcessingLibraries() {
   return useMutation({
     mutationFn: (vars: { connectionId: number; keys: string[] }) =>
       importDiscoveredProcessingLibraries(vars.connectionId, vars.keys),
-    onSuccess: () =>
-      void qc.invalidateQueries({ queryKey: processingKeys.libraries }),
+    onSuccess: () => invalidateWorkflowsAndChains(qc),
   });
 }
 
@@ -215,8 +226,7 @@ export function useUnlinkDiscoveredProcessingLibrary() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => unlinkDiscoveredProcessingLibrary(id),
-    onSuccess: () =>
-      void qc.invalidateQueries({ queryKey: processingKeys.libraries }),
+    onSuccess: () => invalidateWorkflowsAndChains(qc),
   });
 }
 
@@ -231,8 +241,16 @@ export function useCreateProcessingRuleSet() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: ProcessingRuleSetWrite) => createProcessingRuleSet(data),
-    onSuccess: () =>
-      void qc.invalidateQueries({ queryKey: processingKeys.ruleSets }),
+    onSuccess: (created) => {
+      // The list is read again below, but the page selects the new profile the moment the save returns, and a list
+      // without it would send the selection back to the first profile.
+      qc.setQueryData<ProcessingRuleSet[]>(processingKeys.ruleSets, (rows) =>
+        rows && !rows.some((row) => row.id === created.id)
+          ? [...rows, created]
+          : rows,
+      );
+      void qc.invalidateQueries({ queryKey: processingKeys.ruleSets });
+    },
   });
 }
 
