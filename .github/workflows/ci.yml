@@ -598,6 +598,17 @@ jobs:
           name: weir-web-dist
           path: apps/web/dist
 
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      # The accessibility check in the browser tests runs axe-core, which the web app's own tests install.
+      - name: Install the web app's packages (axe-core for the accessibility check)
+        working-directory: apps/web
+        run: npm ci --ignore-scripts
+
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:

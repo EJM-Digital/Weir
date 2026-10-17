@@ -15236,16 +15236,43 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with memory router: settings pending shows \"Loading setup\"; settings error renders the Outlet; pending state on a non-wizard path redirects, on /setup-wizard does not"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/app/require-setup-wizard.test.tsx",
+          "name": "RequireSetupWizard"
+        }
+      ],
       "audit": {
         "id": "WEB-013",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
+    },
+    {
+      "id": "web-shell.boot-startup-gate-providers.requiresetupwizard-viewer-before-setup-is-finished-sees-an-administrator-notice",
+      "area": "web-shell",
+      "behaviour": "RequireSetupWizard and the wizard page: a viewer (anyone who cannot change settings) while the first run is pending sees a plain notice that an administrator must finish setting Weir up, is never sent to the wizard and is never offered Skip",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/app/require-setup-wizard.test.tsx",
+          "name": "RequireSetupWizard"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-page.test.tsx",
+          "name": "SetupWizardPage"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ViewerBeforeSetupTests.cs",
+          "name": "ViewerBeforeSetupTests"
+        }
+      ]
     },
     {
       "id": "web-shell.boot-startup-gate-providers.router-unknown-address-while-signed-in-shows-not-found",
@@ -17272,7 +17299,7 @@
     {
       "id": "web-shell.auth-library-and-api.error-answers-become-plain-sentences-401-anywhere-but-sign",
       "area": "web-shell",
-      "behaviour": "Error answers become plain sentences (401 anywhere but sign-in, 429 wait, 422 field sentences, 5xx fallback, never HTML/status code, manager relays kept)",
+      "behaviour": "Error answers become plain sentences (401 anywhere but sign-in, 429 wait, 422 field sentences, 5xx fallback except a busy database's 503, whose own sentence is shown on every request path and load, never HTML/status code, manager relays kept)",
       "kind": "screen action",
       "severity": "medium",
       "touches": "none",
@@ -19905,9 +19932,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/processing-page.test.tsx",
           "name": "is given the workflow the page is narrowed to"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardNarrowingTests.cs",
+          "name": "DashboardNarrowingTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-187",
         "verdict": "Partly"
@@ -19941,9 +19972,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/processing-page.test.tsx",
           "name": "says what is narrowed away when there is nothing left to show"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardNarrowingTests.cs",
+          "name": "DashboardNarrowingTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-188",
         "verdict": "Partly"
@@ -19977,9 +20012,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/VisualSmokeTests.cs",
           "name": "VisualSmokeTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardLayoutTests.cs",
+          "name": "DashboardLayoutTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-189",
         "verdict": "Partly"
@@ -20075,9 +20114,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/HandoffExtraLiveTests.cs",
           "name": "HandoffExtraLiveTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PipelineBoardLiveTests.cs",
+          "name": "PipelineBoardLiveTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-193",
         "verdict": "Partly"
@@ -20173,7 +20216,6 @@
           "name": "LiveDashboardTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-195",
         "verdict": "Partly"
@@ -20277,9 +20319,13 @@
           "type": "vitest",
           "file": "apps/web/src/lib/ui/use-now.test.ts",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardClockTests.cs",
+          "name": "DashboardClockTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-198",
         "verdict": "Partly"
@@ -20658,9 +20704,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/use-next-items.test.tsx",
           "name": "does not read a library's clean time on a timer: the server says on `library_scan` when it moves"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardNextTileTests.cs",
+          "name": "DashboardNextTileTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-211",
         "verdict": "Partly"
@@ -20724,9 +20774,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/processing-page.test.tsx",
           "name": "ProcessingPage"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardTodayTileTests.cs",
+          "name": "DashboardTodayTileTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardNarrowingTests.cs",
+          "name": "DashboardNarrowingTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-213",
         "verdict": "Partly"
@@ -20860,9 +20919,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/use-handed-back.test.tsx",
           "name": "counts each download once, as it stands now, the way Just finished lists it"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardTodayTileTests.cs",
+          "name": "DashboardTodayTileTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-218",
         "verdict": "Partly"
@@ -21100,9 +21163,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/pipeline/pipeline-board.test.tsx",
           "name": "opens the file's story when its card is clicked"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PipelineBoardLiveTests.cs",
+          "name": "PipelineBoardLiveTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-227",
         "verdict": "Partly"
@@ -21146,9 +21213,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/pipeline/pipeline-board.test.tsx",
           "name": "says nothing about more when a station fits in its three rows"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PipelineBoardLiveTests.cs",
+          "name": "PipelineBoardLiveTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-229",
         "verdict": "Partly"
@@ -21362,9 +21433,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/pipeline/pipeline-board.test.tsx",
           "name": "is shown full and green as Delivered for as long as it is held"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PipelineBoardLiveTests.cs",
+          "name": "PipelineBoardLiveTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-235",
         "verdict": "Partly"
@@ -21432,9 +21507,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/GoneFileLiveTests.cs",
           "name": "GoneFileLiveTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PipelineBoardLiveTests.cs",
+          "name": "PipelineBoardLiveTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-238",
         "verdict": "Partly"
@@ -22205,9 +22284,13 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingEndpointsContractTests.cs",
           "name": "Requeue_one_file"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/NeedsYouFailedFileTests.cs",
+          "name": "NeedsYouFailedFileTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-264",
         "verdict": "Partly"
@@ -22231,9 +22314,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/needs-panel.test.tsx",
           "name": "calls it Process again for a rejected file"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/NeedsYouSkippedAndRejectedTests.cs",
+          "name": "NeedsYouSkippedAndRejectedTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-265",
         "verdict": "Partly"
@@ -22257,9 +22344,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/needs-panel.test.tsx",
           "name": "says that the workflow is being checked again"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/NeedsYouSkippedAndRejectedTests.cs",
+          "name": "NeedsYouSkippedAndRejectedTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-266",
         "verdict": "Partly"
@@ -22308,9 +22399,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/needs-panel.test.tsx",
           "name": "drops a file that needs no choice from the list straight away"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/NeedsYouFailedFileTests.cs",
+          "name": "NeedsYouFailedFileTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-268",
         "verdict": "Partly"
@@ -22329,9 +22424,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/needs-panel.test.tsx",
           "name": "removes what the person chose in that dialog"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/NeedsYouFailedFileTests.cs",
+          "name": "NeedsYouFailedFileTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-269",
         "verdict": "Partly"
@@ -22430,9 +22529,13 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingEndpointsContractTests.cs",
           "name": "Processing_all_rejected_files_again_is_for_operators_with_a_csrf_token"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/NeedsYouSkippedAndRejectedTests.cs",
+          "name": "NeedsYouSkippedAndRejectedTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-272",
         "verdict": "Partly"
@@ -22511,9 +22614,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/HandoffExtraLiveTests.cs",
           "name": "HandoffExtraLiveTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/NeedsYouFailedFileTests.cs",
+          "name": "NeedsYouFailedFileTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-275",
         "verdict": "Partly"
@@ -22811,9 +22918,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/health-panel.test.tsx",
           "name": "says what the last check found"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardHealthPanelTests.cs",
+          "name": "DashboardHealthPanelTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-285",
         "verdict": "Partly"
@@ -22837,9 +22948,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/use-health.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardNarrowingTests.cs",
+          "name": "DashboardNarrowingTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-286",
         "verdict": "Partly"
@@ -22858,9 +22973,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/health-model.test.ts",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardHealthPanelTests.cs",
+          "name": "DashboardHealthPanelTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardChainReadFailureTests.cs",
+          "name": "DashboardChainReadFailureTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-287",
         "verdict": "Partly"
@@ -22884,9 +23008,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/processing-page.test.tsx",
           "name": "opens a working file's story from its row"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PipelineBoardLiveTests.cs",
+          "name": "PipelineBoardLiveTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-288",
         "verdict": "Partly"
@@ -23034,9 +23162,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/pipeline/file-now.test.ts",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PipelineBoardLiveTests.cs",
+          "name": "PipelineBoardLiveTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-294",
         "verdict": "Partly"
@@ -23199,9 +23331,13 @@
           "type": "vitest",
           "file": "apps/web/src/components/processing/choose-tracks-panel.test.tsx",
           "name": "moves a kept track earlier and later with the order buttons"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ChooseTracksPanelTests.cs",
+          "name": "ChooseTracksPanelTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-301",
         "verdict": "Partly"
@@ -23240,9 +23376,13 @@
           "type": "vitest",
           "file": "apps/web/src/components/processing/choose-tracks-panel.test.tsx",
           "name": "submits exactly the kept indices, their flags and the chosen order"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ChooseTracksPanelTests.cs",
+          "name": "ChooseTracksPanelTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-303",
         "verdict": "Partly"
@@ -23343,9 +23483,13 @@
           "type": "vitest",
           "file": "apps/web/src/components/processing/choose-tracks-panel.test.tsx",
           "name": "shows the load error instead of a table when the probe failed"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ChooseTracksPanelTests.cs",
+          "name": "ChooseTracksPanelTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-308",
         "verdict": "Partly"
@@ -23487,9 +23631,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/dashboard-layout.test.ts",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardLayoutTests.cs",
+          "name": "DashboardLayoutTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-314",
         "verdict": "Partly"
@@ -23603,9 +23751,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/system/this-weir-card.test.tsx",
           "name": "says so when Weir's own reading could not be taken"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardSystemViewTests.cs",
+          "name": "DashboardSystemViewTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-318",
         "verdict": "Partly"
@@ -24008,9 +24160,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/system/health-card.test.tsx",
           "name": "offers Details only on a check about a workflow"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardSystemViewTests.cs",
+          "name": "DashboardSystemViewTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-333",
         "verdict": "Partly"
@@ -24034,9 +24190,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/check-now.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardSystemViewTests.cs",
+          "name": "DashboardSystemViewTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-334",
         "verdict": "Partly"
@@ -24265,9 +24425,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/use-connection-testing.test.ts",
           "name": "testing one connection"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardSystemViewTests.cs",
+          "name": "DashboardSystemViewTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-343",
         "verdict": "Partly"
@@ -24296,9 +24460,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/use-connection-testing.test.ts",
           "name": "testing every connection"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardSystemViewTests.cs",
+          "name": "DashboardSystemViewTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-344",
         "verdict": "Partly"
@@ -24472,9 +24640,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/system/tasks-card.test.tsx",
           "name": "puts the card's order back with Reset columns"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardSystemViewTests.cs",
+          "name": "DashboardSystemViewTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-351",
         "verdict": "Partly"
@@ -24753,9 +24925,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard/system/backups-card.test.tsx",
           "name": "says it is backing up while the backup is made"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardSystemViewTests.cs",
+          "name": "DashboardSystemViewTests"
         }
       ],
-      "issue": 1052,
       "audit": {
         "id": "WEB-360",
         "verdict": "Partly"
@@ -25098,13 +25274,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/LiveActivityTests.cs",
           "name": "LiveActivityTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityKindChipsTests.cs",
+          "name": "ActivityKindChipsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The default period (7 days) and the default sort (when, newest first) are never asserted as the request: useFileHistoryQuery is mocked and ignores its arguments. The first row's detail opening by default is only implied."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-373",
         "verdict": "Partly"
@@ -25178,13 +25354,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-entries.test.ts",
           "name": "activityEntries"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityKindChipsTests.cs",
+          "name": "ActivityKindChipsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Count and membership rules are proven; no test opens ?show=working and sees its rows listed."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-375",
         "verdict": "Partly"
@@ -25218,13 +25394,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-entries.test.ts",
           "name": "activityEntries"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityKindChipsTests.cs",
+          "name": "ActivityKindChipsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Count only; no test opens ?show=finished and sees the finished rows."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-376",
         "verdict": "Partly"
@@ -25298,13 +25474,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-page.test.tsx",
           "name": "has a chip between Finished and On hold, counting what the badge counts"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityKindChipsTests.cs",
+          "name": "ActivityKindChipsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Count and order only; no test opens ?show=needs and sees held rows."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-378",
         "verdict": "Partly"
@@ -25338,13 +25514,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-page.test.tsx",
           "name": "keeps a skip out of Failed and gives it its own neutral group"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityKindChipsTests.cs",
+          "name": "ActivityKindChipsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Count and the empty result are proven; no test lists a skipped row under ?show=skipped."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-379",
         "verdict": "Partly"
@@ -25448,13 +25624,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-filters.test.tsx",
           "name": "chooses a folded kind of file from the menu"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityNarrowLayoutTests.cs",
+          "name": "ActivityNarrowLayoutTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Folding is driven by a faked scrollWidth in jsdom; no real-browser (E2E) test at a narrow width."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-382",
         "verdict": "Partly"
@@ -25488,13 +25664,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-page.test.tsx",
           "name": "hands Process all again the workflow Activity is narrowed to"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityFilterControlsTests.cs",
+          "name": "ActivityFilterControlsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Writing ?library= is proven; that the file list and clean list requests carry library_id is never asserted."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-383",
         "verdict": "Partly"
@@ -25518,13 +25694,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-filters.test.tsx",
           "name": "keeps the address parameters each control writes"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityFilterControlsTests.cs",
+          "name": "ActivityFilterControlsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Writing ?within= is proven; that ?within= changes within_days in the request (and 'all' omits it) is never asserted."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-384",
         "verdict": "Partly"
@@ -25553,13 +25729,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/use-activity-attention.test.tsx",
           "name": "narrows the files to a search, ignoring case"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityFilterControlsTests.cs",
+          "name": "ActivityFilterControlsTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityNarrowLayoutTests.cs",
+          "name": "ActivityNarrowLayoutTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Committing on blur (the other way a search is applied) is not tested; path_contains in the file and clean requests is never asserted."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-385",
         "verdict": "Partly"
@@ -25623,13 +25804,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-filters.test.tsx",
           "name": "keeps the pickers on the title line where the page has no card for them"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityNarrowLayoutTests.cs",
+          "name": "ActivityNarrowLayoutTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Faked layout only; no real-browser check at narrow widths."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-387",
         "verdict": "Partly"
@@ -25698,13 +25879,13 @@
           "type": "vitest",
           "file": "apps/web/src/lib/ui/use-table-columns.test.tsx",
           "name": "remembering the layout in this browser"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityFilterControlsTests.cs",
+          "name": "ActivityFilterControlsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The hook is proven generally; Activity's and Kept's own configs (ACTIVITY_COLUMNS, KEPT_COLUMNS, storage keys) are never rendered in a test."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-390",
         "verdict": "Partly"
@@ -25880,13 +26061,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/LiveConnectionTests.cs",
           "name": "LiveConnectionTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityLiveTests.cs",
+          "name": "ActivityLiveTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Global banner and catch-up are proven generically; Activity has no screen-specific state and no test shows its list refreshing after a reconnect."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-397",
         "verdict": "Partly"
@@ -25915,13 +26096,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-kept-list.test.tsx",
           "name": "does not offer Process again to someone who cannot edit"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityViewerTests.cs",
+          "name": "ActivityViewerTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Try the N failed files again being hidden for a viewer is not asserted, nor are the detail's action buttons (ActivityFileActions returns null when not editable)."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-398",
         "verdict": "Partly"
@@ -26010,13 +26191,13 @@
           "type": "vitest",
           "file": "apps/web/src/lib/ui/use-now.test.ts",
           "name": "moves forward on its own while the tab is visible"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityLiveTests.cs",
+          "name": "ActivityLiveTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The words and the clock hook are proven apart; the page-to-row wiring (useNow(15000) into agoWords) is not."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-401",
         "verdict": "Partly"
@@ -26040,13 +26221,18 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/ProcessAgainTests.cs",
           "name": "ProcessAgainTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityKindChipsTests.cs",
+          "name": "ActivityKindChipsTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityLibraryCleanTests.cs",
+          "name": "ActivityLibraryCleanTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Nothing selects a second row and asserts the detail changes, the address changes, or that ?clean= selects a clean; the single-row E2E would pass with the detail default-selected anyway."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-402",
         "verdict": "Partly"
@@ -26208,13 +26394,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/LiveActivityTests.cs",
           "name": "LiveActivityTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityLiveTests.cs",
+          "name": "ActivityLiveTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The processing.progress frame is hand-made in vitest and no contract test checks its shape; the E2E asserts the word Writing but never a changing percent."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-408",
         "verdict": "Partly"
@@ -26288,13 +26474,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-list.test.tsx",
           "name": "shows the initials for a clean in a library, which has no poster of its own"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityLibraryCleanTests.cs",
+          "name": "ActivityLibraryCleanTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The row's outcome chip (Cleaned in place, Already matched the rules, Clean failed) and its group (Finished, Skipped, Failed) on the page are not asserted; groups are proven only in pure activity-entries.test.ts."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-411",
         "verdict": "Partly"
@@ -26749,13 +26935,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/HandoffExtraLiveTests.cs",
           "name": "HandoffExtraLiveTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityFileActionsTests.cs",
+          "name": "ActivityFileActionsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Error notice 'That file could not be queued again.', 'Queueing…' pending label and the whole-row disable are not tested; the POST itself is never asserted on the wire (see cross-cutting)."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-429",
         "verdict": "Partly"
@@ -26789,13 +26975,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/ProcessAgainTests.cs",
           "name": "ProcessAgainTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityFileActionsTests.cs",
+          "name": "ActivityFileActionsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Only the failure path (server refuses) is unproven."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-430",
         "verdict": "Partly"
@@ -26951,13 +27137,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-page.test.tsx",
           "name": "asks before passing a file through unchanged, and does nothing when told not now"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityFileActionsTests.cs",
+          "name": "ActivityFileActionsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Failure notice ('That file could not be queued to pass through…') and Escape on this dialog are untested; the wire request is not asserted."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-437",
         "verdict": "Partly"
@@ -26995,13 +27181,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-file-actions.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityFileButtonsTests.cs",
+          "name": "ActivityFileButtonsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Only the gone and below-minimum cases are checked; a status-by-status matrix is missing."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-439",
         "verdict": "Partly"
@@ -27025,13 +27211,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-file-actions.test.tsx",
           "name": "removes a plain title immediately, with no dialog, when it does not qualify for a choice"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityFileActionsTests.cs",
+          "name": "ActivityFileActionsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The 'Removed from the list. The file on disk is untouched.' notice reaching the page, the selection moving on, and the failure notice are untested; the DELETE on the wire is not asserted."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-440",
         "verdict": "Partly"
@@ -27260,13 +27446,18 @@
           "type": "vitest",
           "file": "apps/web/src/lib/ui/use-modal-focus.test.tsx",
           "name": "ignores Escape while busy"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityDialogTests.cs",
+          "name": "RemoveFromActivityDialogTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityFileActionsTests.cs",
+          "name": "ActivityFileActionsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The hook is proven; the ConfirmDialog/ModalDialog wiring for this destructive dialog (and no removal on Escape) is not."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-448",
         "verdict": "Partly"
@@ -27349,13 +27540,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-page.test.tsx",
           "name": "acts on exactly the failed files shown, not everything matching the filter"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityRetryFailedTests.cs",
+          "name": "ActivityRetryFailedTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The server's notice, the error notice 'Those files could not be queued again.', the pending disable and the singular label are untested."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-452",
         "verdict": "Partly"
@@ -27730,13 +27921,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/library/library-picker.test.tsx",
           "name": "finds a workflow by name once there are enough to search"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryPickerTests.cs",
+          "name": "LibraryPickerTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The test named 'picks with Enter' picks with a click: no key press of Enter or Space is tested; click-outside to close, the 'No workflow by that name.' state and ArrowDown from the search box are untested."
-      },
-      "issue": 1053,
       "audit": {
         "id": "WEB-466",
         "verdict": "Partly"
@@ -27765,13 +27956,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/library/library-page.test.tsx",
           "name": "opens the library last picked here when the address names none"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryPickerTests.cs",
+          "name": "LibraryPickerTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryPagerTests.cs",
+          "name": "LibraryPagerTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The address write, the reset of page 1 / open drawer / selection / setup panel, and the requests for the new library id are never asserted."
-      },
-      "issue": 1053,
       "audit": {
         "id": "WEB-467",
         "verdict": "Partly"
@@ -27984,13 +28180,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/library/library-filters.test.tsx",
           "name": "never folds the status that is chosen"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryTableLayoutTests.cs",
+          "name": "LibraryTableLayoutTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The folded count is passed in as a prop; the real fit (useTitleLineFit with the page's refit key) is only tested in isolation and never in a real browser."
-      },
-      "issue": 1053,
       "audit": {
         "id": "WEB-474",
         "verdict": "Partly"
@@ -28039,13 +28235,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/library/library-page.test.tsx",
           "name": "asks the server for what is typed in the header's search"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryControlsTests.cs",
+          "name": "LibraryControlsTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryPagerTests.cs",
+          "name": "LibraryPagerTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The request carries q after a real-time debounce; returning to page 1 and clearing the selection on a search are untested; the test depends on the wall clock (see timing)."
-      },
-      "issue": 1053,
       "audit": {
         "id": "WEB-476",
         "verdict": "Partly"
@@ -28149,13 +28350,13 @@
           "type": "vitest",
           "file": "apps/web/src/lib/ui/use-table-columns.test.tsx",
           "name": "moving columns from the keyboard"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryTableLayoutTests.cs",
+          "name": "LibraryTableLayoutTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "libraryGrid/NARROW_HIDDEN are never tested, so a moved or hidden column's cells following the heading is unproven."
-      },
-      "issue": 1053,
       "audit": {
         "id": "WEB-480",
         "verdict": "Partly"
@@ -28329,13 +28530,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/library/library-pager.test.tsx",
           "name": "LibraryPager"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryPagerTests.cs",
+          "name": "LibraryPagerTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "turnPage, the page parameter in the files request, the loading (isPlaceholderData) disable, and a 'page that once had files now has none' flow are not tested on the page. A library over 200 files is otherwise unreachable."
-      },
-      "issue": 1053,
       "audit": {
         "id": "WEB-487",
         "verdict": "Partly"
@@ -28364,13 +28565,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/library/library-page.test.tsx",
           "name": "can still be chosen, and the table says so in a line when there is nothing in it"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryEmptyStateTests.cs",
+          "name": "LibraryEmptyStateTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The other empty sentences (no match for the filters, 'has not been scanned yet', each status line) are untested on the page."
-      },
-      "issue": 1053,
       "audit": {
         "id": "WEB-488",
         "verdict": "Partly"
@@ -28563,13 +28764,18 @@
           "type": "vitest",
           "file": "apps/web/src/lib/ui/use-modal-focus.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanConfirmationTests.cs",
+          "name": "LibraryCleanConfirmationTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanBusyTests.cs",
+          "name": "LibraryCleanBusyTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Hook proven; this dialog's wiring (and no clean on Escape) is not."
-      },
-      "issue": 1053,
       "audit": {
         "id": "WEB-496",
         "verdict": "Partly"
@@ -28861,13 +29067,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/library/library-page.test.tsx",
           "name": "LibraryPage"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryFileDrawerTests.cs",
+          "name": "LibraryFileDrawerTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanConfirmationTests.cs",
+          "name": "LibraryCleanConfirmationTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The no-manual-plan single-file path (manual undefined) is only shown as an enabled button; its confirmation and outcome are not run."
-      },
-      "issue": 1053,
       "audit": {
         "id": "WEB-509",
         "verdict": "Partly"
@@ -28975,13 +29186,13 @@
           "type": "vitest",
           "file": "apps/web/src/lib/ui/use-modal-focus.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryFileDrawerTests.cs",
+          "name": "LibraryFileDrawerTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "SidePanel has no test of its own and no Library test presses Escape, clicks the backdrop or checks focus return."
-      },
-      "issue": 1053,
       "audit": {
         "id": "WEB-514",
         "verdict": "Partly"
@@ -29072,13 +29283,13 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryStatusApiTests.cs",
           "name": "A_file_set_aside_is_left_alone_whatever_the_rules_say"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryControlsTests.cs",
+          "name": "LibraryControlsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The 'Saved. Weir will leave this file alone.' status, the Left alone chip and the Clean button locking are not asserted."
-      },
-      "issue": 1053,
       "audit": {
         "id": "WEB-518",
         "verdict": "Partly"
@@ -29357,13 +29568,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/library/library-page.test.tsx",
           "name": "puts when the library was last checked in the Files card's header, and Check again with the page's buttons"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCheckAgainTests.cs",
+          "name": "LibraryCheckAgainTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The POST, the 'Starting a check…' label and disabling while one runs are untested; no E2E clicks it (checks are started through the API)."
-      },
-      "issue": 1053,
       "audit": {
         "id": "WEB-530",
         "verdict": "Partly"
@@ -29754,13 +29965,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/library/library-setup-panel.test.tsx",
           "name": "asks before the daily clean is switched on, and sends the confirmation with it on Save"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibrarySetupPanelTests.cs",
+          "name": "LibrarySetupPanelTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Disabled-when-clean and the pending label are untested; the settings-only success path closing is implied."
-      },
-      "issue": 1053,
       "audit": {
         "id": "WEB-548",
         "verdict": "Partly"
@@ -29819,13 +30030,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/library/library-setup-panel.test.tsx",
           "name": "asks before closing with edits that were not saved"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibrarySetupPanelTests.cs",
+          "name": "LibrarySetupPanelTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Stay-and-keep-editing, the panel's X, the backdrop and Escape with unsaved edits are untested."
-      },
-      "issue": 1053,
       "audit": {
         "id": "WEB-551",
         "verdict": "Partly"
@@ -30073,13 +30284,28 @@
           "type": "vitest",
           "file": "apps/web/src/components/ui/confirm-dialog.test.tsx",
           "name": "leaves the cancel button neutral and focused when the action is destructive"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryFileDrawerTests.cs",
+          "name": "LibraryFileDrawerTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibrarySetupPanelTests.cs",
+          "name": "LibrarySetupPanelTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanBusyTests.cs",
+          "name": "LibraryCleanBusyTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityDialogTests.cs",
+          "name": "RemoveFromActivityDialogTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Cancel, confirm, busy and Escape wiring of the shared components are untested; the screens above inherit this."
-      },
-      "issue": 1054,
       "audit": {
         "id": "WEB-561",
         "verdict": "Partly"
@@ -40777,12 +41003,13 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "No component test at all for `MediaToolsSection`. Needs vitest rendering found / missing ffmpeg / missing mkvmerge / loading and asserting the text and `data-status=\"broken\"`. A missing-FFmpeg warning shown wrongly (or not shown) misleads the person about whether anything can be processed."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/media-tools-section.test.tsx",
+          "name": "MediaToolsSection"
+        }
+      ],
       "audit": {
         "id": "WEB-953",
         "verdict": "Gap"
@@ -41763,12 +41990,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The save test starts with the schedule already enabled and never flips the switch, so `configuration_backup_enabled` is never proven to be sent. vitest: toggle on from off, Save, assert the body has `configuration_backup_enabled:true` (and false)."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.test.tsx",
+          "name": "Backups: the schedule"
+        }
+      ],
       "audit": {
         "id": "WEB-991",
         "verdict": "Gap"
@@ -41807,12 +42035,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with `putAppSettings` rejecting: alert text, Save still available. A silent failed schedule save means no backups are made."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.test.tsx",
+          "name": "Backups: the schedule"
+        }
+      ],
       "audit": {
         "id": "WEB-993",
         "verdict": "Gap"
@@ -41945,12 +42174,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with the POST rejecting; assert the alert. The person believes a backup exists if this is silent."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.test.tsx",
+          "name": "Backups: Back up now"
+        }
+      ],
       "audit": {
         "id": "WEB-997",
         "verdict": "Gap"
@@ -41964,12 +42194,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Click, GET `/api/v1/suite/configuration-bundle`, the saved file name/contents, \"Download started.\" and the failure (\"Could not export.\") are all untested. `saveBlobAs` itself has no test and is mocked everywhere else."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.test.tsx",
+          "name": "Backups: Download settings"
+        }
+      ],
       "audit": {
         "id": "WEB-998",
         "verdict": "Gap"
@@ -42027,12 +42258,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: open the restore dialog, press Keep current settings / Escape, assert `putConfigurationBundle` was never called and the dialog is gone."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.test.tsx",
+          "name": "Backups: Restore from a file"
+        }
+      ],
       "audit": {
         "id": "WEB-1001",
         "verdict": "Gap"
@@ -42046,12 +42278,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The second route into the same data-loss action is unproven: vitest with a valid `{format_version:4,...}` file, assert dialog then PUT with that exact bundle."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.test.tsx",
+          "name": "Backups: Restore from a file"
+        }
+      ],
       "audit": {
         "id": "WEB-1002",
         "verdict": "Gap"
@@ -42104,12 +42337,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with `putConfigurationBundle` rejecting; contract `Configuration_bundle_put_rejects_bad_version` covers the API only."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.test.tsx",
+          "name": "Backups: Restore from a file"
+        }
+      ],
       "audit": {
         "id": "WEB-1005",
         "verdict": "Gap"
@@ -43711,12 +43945,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with each call rejecting; assert the problem line / the dialog error and that the dialog stays open on a failed clear."
-      },
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/log-clear-events.test.tsx",
+          "name": "Clear events"
+        }
+      ],
       "audit": {
         "id": "WEB-1066",
         "verdict": "Gap"
@@ -43795,12 +44030,23 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The log-days edit and the `finalizeLogDays` clamp (blank -> 30, 0 -> 1, 99999 -> 3650, non-number keeps saved) have no test; this setting deletes old log entries, so a wrong clamp removes history early. Needs a `useSystemSettingsForm` / `RetentionSection` vitest per rule and the PUT body."
-      },
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/retention-save.test.tsx",
+          "name": "System log days"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/retention-save.test.tsx",
+          "name": "Events days"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/retention-save.test.tsx",
+          "name": "a System log number that is not a number"
+        }
+      ],
       "audit": {
         "id": "WEB-1069",
         "verdict": "Gap"
@@ -43874,12 +44120,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The settings-PUT success message and failure alert (and \"Saving…\" of that branch) are untested; RS stubs `form.save` as never pending and never failing."
-      },
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/retention-save.test.tsx",
+          "name": "Retention Save"
+        }
+      ],
       "audit": {
         "id": "WEB-1072",
         "verdict": "Gap"
@@ -44071,12 +44318,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "`useLogStreamRefresh` (frame -> throttled `invalidateLive` of the log keys) has no test and no E2E covers a server-log line arriving; the Server source could silently go stale. vitest: emit a `system.log` frame, advance 3 s with fake timers, assert one refetch; E2E: provoke a warning and see it in Server."
-      },
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/server-log-live.test.tsx",
+          "name": "the Server log while it is open"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ServerLogLiveTests.cs",
+          "name": "ServerLogLiveTests"
+        }
+      ],
       "audit": {
         "id": "WEB-1080",
         "verdict": "Gap"
@@ -44313,12 +44566,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest on `readiness-api`: 200, 503 with body returns the body, 500 throws. This feeds the shell's \"not ready\" display."
-      },
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/system/readiness-api.test.ts",
+          "name": "fetchSystemReadiness"
+        }
+      ],
       "audit": {
         "id": "WEB-1090",
         "verdict": "Gap"
@@ -55709,8 +55963,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/log-clear-events.test.tsx",
+          "name": "Clear events"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/system/tabs/logs/log-clear-events.tsx#logs-clear-events"
       ],
@@ -55755,8 +56014,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/log-job-actions.test.tsx",
+          "name": "Cancel pending on a queued job"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/system/tabs/logs/log-job-detail.tsx#processing-jobs-cancel-*"
       ],
@@ -55773,8 +56037,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/log-job-actions.test.tsx",
+          "name": "Recover result on a job whose work finished but whose result was not saved"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/system/tabs/logs/log-job-detail.tsx#processing-jobs-recover-*"
       ],

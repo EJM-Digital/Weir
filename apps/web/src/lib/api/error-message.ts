@@ -1,4 +1,5 @@
 import {
+  DATABASE_BUSY_CODE,
   GENERIC_FAILURE_MESSAGE,
   NETWORK_UNREACHABLE_MESSAGE,
   SIGN_IN_ENDED_MESSAGE,
@@ -31,13 +32,15 @@ export function errorMessage(
 }
 
 /**
- * What a panel says when its data could not be loaded: sign in again, check Weir is running, or
- * reload. `thing` names what was being loaded, as in "Weir couldn't load {thing}."
+ * What a panel says when its data could not be loaded: sign in again, check Weir is running, wait
+ * out a busy Weir for the time it asks, or reload. `thing` names what was being loaded, as in
+ * "Weir couldn't load {thing}."
  */
 export function loadErrorMessage(error: unknown, thing: string): string {
   if (error instanceof ApiHttpError) {
     if (error.networkUnreachable) return NETWORK_UNREACHABLE_MESSAGE;
     if (error.status === UNAUTHORIZED) return SIGN_IN_ENDED_MESSAGE;
+    if (error.code === DATABASE_BUSY_CODE) return error.message;
   }
   return `Weir couldn't load ${thing}. Reload the page to try again.`;
 }
