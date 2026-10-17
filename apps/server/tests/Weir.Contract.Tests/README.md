@@ -117,7 +117,8 @@ places and a leg can never run zero tests.
    fixed sleep.
 4. Share only stateless helpers. Area-specific helpers (seed rows, settings bodies) stay in the area's folder.
 5. Scenarios that need the real `ffmpeg` and `ffprobe` use `[RealFfmpegFact]`: they run when both are on `PATH` (or
-   in `WEIR_CONTRACT_REAL_FFMPEG_DIR`) and are skipped otherwise. CI installs ffmpeg so they run there.
+   in `WEIR_CONTRACT_REAL_FFMPEG_DIR`) and are skipped otherwise. CI installs the pinned tools and sets `WEIR_REQUIRE_REAL_TOOLS=1`, which turns a
+   missing tool into a failure that names it, and `scripts/check-contract-real-tool-tests.mjs` fails the leg unless every such scenario ran.
    mkvmerge is found the same way (on `PATH`, or in `WEIR_CONTRACT_REAL_MKVTOOLNIX_DIR`) and the server uses it for Matroska when it is there;
    `[RealMkvmergeFact]` marks a scenario that needs it. `Libraries/LibraryClean*Tests` clean library files in place with these tools: a scan of
    generated media, the clean the web sends, and the file, its leftovers and the kept original read back from disk with ffprobe.
