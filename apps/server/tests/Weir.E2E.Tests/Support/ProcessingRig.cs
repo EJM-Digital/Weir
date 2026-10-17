@@ -132,14 +132,32 @@ public sealed partial class ProcessingRig : IAsyncDisposable
     /// Deluno hands over a movie. Its pass stays under way, once a worker takes it, until <see cref="ReleasePass"/>. The hand-off
     /// is answered by the server before the file moves anywhere on screen.
     /// </summary>
-    public async Task HandOffAsync(string handoffId, string fileName)
+    /// <param name="handoffId">The hand-off's id.</param>
+    /// <param name="fileName">The film's file name.</param>
+    /// <param name="writtenSeconds">
+    /// How much of the film (it is 60 seconds long) ffmpeg has written, report by report while the pass is under way: the first at once, each of
+    /// the others when <see cref="AdvanceWrite"/> says so.
+    /// </param>
+    public async Task HandOffAsync(string handoffId, string fileName, IReadOnlyList<double>? writtenSeconds = null)
     {
         var source = Path.Combine(Watched, handoffId, fileName);
         Directory.CreateDirectory(Path.GetDirectoryName(source)!);
         await File.WriteAllBytesAsync(source, FakeMedia.Bytes(FakeMedia.Probe()));
-        _tools.SetFileRule(fileName, new FileRule { Probe = FakeMedia.Probe(), RemuxReleaseFile = ReleaseFileFor(fileName) });
+        _tools.SetFileRule(fileName, new FileRule
+        {
+            Probe = FakeMedia.Probe(),
+            RemuxReleaseFile = ReleaseFileFor(fileName),
+            RemuxProgress = writtenSeconds is null
+                ? null
+                : [.. writtenSeconds.Select((seconds, index) => new RemuxProgressStep(seconds, index == 0 ? null : WriteGateFor(fileName, index)))],
+        });
         await PostHandOffAsync(handoffId, source);
     }
+
+    /// <summary>Lets ffmpeg report the next step of the write of <paramref name="fileName"/> (step 1 is the second report, see <see cref="HandOffAsync"/>).</summary>
+    public void AdvanceWrite(string fileName, int step) => File.WriteAllText(WriteGateFor(fileName, step), string.Empty);
+
+    private string WriteGateFor(string fileName, int step) => Path.Combine(_folders.Path, $"write-{step}-{fileName}");
 
     /// <summary>
     /// Deluno hands over a movie whose pass fails every time it is tried, as a file ffmpeg cannot write does. On a rig started with
