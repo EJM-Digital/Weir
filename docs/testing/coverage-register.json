@@ -35019,15 +35019,16 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The panel registers no unsaved-changes guard at all. Add the guard (useUnsavedChanges) and an integration test like the Profiles one."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/playback-devices-guard.test.tsx",
+          "name": "leaving the playback devices tab"
+        }
+      ],
       "audit": {
         "id": "WEB-766",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -35038,15 +35039,41 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "directPlayDevices is in no LIVE_TOPIC_QUERIES entry (checked in lib/live/live-topics.ts), so nothing refetches it on a push. Add the topic and a test like the libraries one."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/live/live-topics.test.ts",
+          "name": "reads the playback devices, and the files that show a Direct Play badge for them, again when the chosen devices change"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/live/use-live-sync.test.tsx",
+          "name": "reads the playback devices and the files again when the chosen devices change in another browser"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/playback-devices-section.test.tsx",
+          "name": "shows a selection saved in another browser when the server says the devices changed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/LiveStreamApiTests.cs",
+          "name": "Choosing_playback_devices_reaches_an_open_stream_as_a_direct_play_devices_change"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Activity/SetupDataChangeTests.cs",
+          "name": "Choosing_playback_devices_publishes_the_devices_and_not_the_settings"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PlaybackDevicesLiveTests.cs",
+          "name": "A_device_chosen_in_one_browser_is_ticked_in_another_without_a_reload"
+        }
+      ],
       "audit": {
         "id": "WEB-767",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
