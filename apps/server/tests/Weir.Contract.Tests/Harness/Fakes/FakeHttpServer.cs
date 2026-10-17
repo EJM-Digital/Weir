@@ -19,6 +19,7 @@ public abstract class FakeHttpServer : IDisposable
     private readonly List<RecordedRequest> _requests = [];
     private readonly HttpListener _listener;
     private TaskCompletionSource _arrived = NewSignal();
+    private volatile bool _answering = true;
 
     protected FakeHttpServer()
     {
@@ -97,6 +98,12 @@ public abstract class FakeHttpServer : IDisposable
         }
     }
 
+    /// <summary>
+    /// From now on drops every connection without an answer, as a server that is down for its callers, and keeps its port: a stopped fake
+    /// gives its port back, and another fake in the same run can be given it and answer the requests meant for this one.
+    /// </summary>
+    public void StopAnswering() => _answering = false;
+
     protected abstract HttpAnswer Answer(RecordedRequest request);
 
     public virtual void Dispose()
@@ -141,6 +148,12 @@ public abstract class FakeHttpServer : IDisposable
 
     private async Task RespondAsync(HttpListenerContext context)
     {
+        if (!_answering)
+        {
+            context.Response.Abort();
+            return;
+        }
+
         try
         {
             var request = await ReadAsync(context.Request);

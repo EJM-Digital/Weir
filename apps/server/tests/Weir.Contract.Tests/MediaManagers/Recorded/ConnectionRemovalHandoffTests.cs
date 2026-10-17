@@ -99,7 +99,7 @@ public sealed class ConnectionRemovalHandoffTests
         var (connectionId, label) = await ConnectionAsync(world);
 
         // Deluno stops answering before the pass ends, so Weir keeps its report to send when it answers again.
-        world.Deluno.Dispose();
+        world.Deluno.StopAnswering();
         await File.WriteAllTextAsync(release, string.Empty);
         await world.Scenario.WaitForHandoffStateAsync(hand.HandoffId(), "completed");
         await Poll.UntilAsync(async () => await OwesReportAsync(world, hand.HandoffId()) ? "owed" : null, "Weir to keep its report for Deluno");

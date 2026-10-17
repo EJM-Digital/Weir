@@ -38,6 +38,20 @@ public sealed class FakeManagerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_fake_that_stopped_answering_drops_every_request_and_keeps_its_port()
+    {
+        using var deluno = FakeManager.StartDeluno();
+        var port = new Uri(deluno.BaseUrl).Port;
+
+        deluno.StopAnswering();
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => _http.GetAsync(new Uri(deluno.BaseUrl + "/api/integrations/external/health")));
+        Assert.Empty(deluno.Requests);
+        using var other = new System.Net.Sockets.TcpListener(IPAddress.Loopback, port);
+        Assert.Throws<System.Net.Sockets.SocketException>(other.Start);
+    }
+
+    [Fact]
     public async Task A_deluno_fake_reflects_libraries_the_test_changes_after_it_started()
     {
         using var deluno = FakeManager.StartDeluno();
