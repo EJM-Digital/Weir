@@ -147,15 +147,17 @@ public sealed class ProcessingPassThroughHandlerTests : IDisposable
         var library = await LibraryAsync();
         await FileRowAsync(library, "blip.mkv");
         var payload = $$"""{"relative_media_path":"blip.mkv","library_id":{{library}},"trigger":"worker"}""";
+        var clock = new TimerWatchingClock(_fixture.Store.Clock);
         var handler = new ProcessingPassThroughHandler(
-            _fixture.Store.Database, TimeProvider.System, NullLogger<ProcessingPassThroughHandler>.Instance, _fixture.Handback, _fixture.Libraries, _fixture.Jobs, _fixture.Reporter)
+            _fixture.Store.Database, clock, NullLogger<ProcessingPassThroughHandler>.Instance, _fixture.Handback, _fixture.Libraries, _fixture.Jobs, _fixture.Reporter)
         {
             GoneSettle = TimeSpan.FromSeconds(1.5),
         };
 
         var handling = handler.HandleAsync(Context(10, payload), CancellationToken.None);
-        await Task.Delay(300);
+        await Eventually.ThatAsync(() => clock.TimersSet >= 1);
         _folders.Source("blip.mkv");
+        _fixture.Store.Clock.Advance(handler.GoneSettle);
         await handling;
 
         Assert.True(File.Exists(_folders.Out("blip.mkv")), "a file that was only briefly missing is still handed back");

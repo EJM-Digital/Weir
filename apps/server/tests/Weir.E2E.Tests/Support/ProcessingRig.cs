@@ -29,7 +29,7 @@ public sealed partial class ProcessingRig : IAsyncDisposable
 
     private readonly FakeFfmpeg _tools;
     private readonly WeirServer _server;
-    private readonly WeirClient _admin;
+    private WeirClient _admin;
     private readonly FakeManager _deluno;
     private readonly TemporaryFolder _folders;
 
@@ -53,7 +53,8 @@ public sealed partial class ProcessingRig : IAsyncDisposable
     /// <param name="minimumFileSizeMb">The Movies workflow's minimum size: a file smaller than this is left alone.</param>
     /// <param name="holdFailures">A file that fails stays failed, for the person to try again, instead of being retried by itself.</param>
     /// <param name="delunoCapabilities">What Deluno says it can do in its manifest, such as taking a rejected release back to search for another.</param>
-    public static async Task<ProcessingRig> StartAsync(int minimumFileSizeMb = 0, bool holdFailures = false, IEnumerable<string>? delunoCapabilities = null)
+    /// <param name="writesGiveUpQuickly">A change the server cannot make because the database is held (see <see cref="HoldWrites"/>) is refused after a second instead of waited for.</param>
+    public static async Task<ProcessingRig> StartAsync(int minimumFileSizeMb = 0, bool holdFailures = false, IEnumerable<string>? delunoCapabilities = null, bool writesGiveUpQuickly = false)
     {
         var tools = FakeFfmpeg.Install();
         var folders = new TemporaryFolder();
@@ -67,6 +68,7 @@ public sealed partial class ProcessingRig : IAsyncDisposable
                 ["WEIR_WEB_DIST"] = RepoPaths.WebDist,
                 ["WEIR_PROCESSING_WORKER_COUNT"] = "1",
                 [WebhookSecretVariable] = WebhookSecret,
+                ["WEIR_SQLITE_BUSY_TIMEOUT_SECONDS"] = writesGiveUpQuickly ? "1" : "30",
             });
             admin = new WeirClient(server.BaseUrl);
             await admin.EnsureAdminAsync(Navigation.BootstrapUser, Navigation.BootstrapPassword);
@@ -130,14 +132,32 @@ public sealed partial class ProcessingRig : IAsyncDisposable
     /// Deluno hands over a movie. Its pass stays under way, once a worker takes it, until <see cref="ReleasePass"/>. The hand-off
     /// is answered by the server before the file moves anywhere on screen.
     /// </summary>
-    public async Task HandOffAsync(string handoffId, string fileName, double? progressSeconds = null)
+    /// <param name="handoffId">The hand-off's id.</param>
+    /// <param name="fileName">The film's file name.</param>
+    /// <param name="writtenSeconds">
+    /// How much of the film (it is 60 seconds long) ffmpeg has written, report by report while the pass is under way: the first at once, each of
+    /// the others when <see cref="AdvanceWrite"/> says so.
+    /// </param>
+    public async Task HandOffAsync(string handoffId, string fileName, IReadOnlyList<double>? writtenSeconds = null)
     {
         var source = Path.Combine(Watched, handoffId, fileName);
         Directory.CreateDirectory(Path.GetDirectoryName(source)!);
         await File.WriteAllBytesAsync(source, FakeMedia.Bytes(FakeMedia.Probe()));
-        _tools.SetFileRule(fileName, new FileRule { Probe = FakeMedia.Probe(), RemuxReleaseFile = ReleaseFileFor(fileName), RemuxProgressSeconds = progressSeconds });
+        _tools.SetFileRule(fileName, new FileRule
+        {
+            Probe = FakeMedia.Probe(),
+            RemuxReleaseFile = ReleaseFileFor(fileName),
+            RemuxProgress = writtenSeconds is null
+                ? null
+                : [.. writtenSeconds.Select((seconds, index) => new RemuxProgressStep(seconds, index == 0 ? null : WriteGateFor(fileName, index)))],
+        });
         await PostHandOffAsync(handoffId, source);
     }
+
+    /// <summary>Lets ffmpeg report the next step of the write of <paramref name="fileName"/> (step 1 is the second report, see <see cref="HandOffAsync"/>).</summary>
+    public void AdvanceWrite(string fileName, int step) => File.WriteAllText(WriteGateFor(fileName, step), string.Empty);
+
+    private string WriteGateFor(string fileName, int step) => Path.Combine(_folders.Path, $"write-{step}-{fileName}");
 
     /// <summary>
     /// Deluno hands over a movie whose pass fails every time it is tried, as a file ffmpeg cannot write does. On a rig started with
@@ -166,13 +186,13 @@ public sealed partial class ProcessingRig : IAsyncDisposable
 
     /// <summary>
     /// Deluno hands over a file ffprobe cannot read, as a download still arriving reads: Weir holds it and looks again later.
-    /// <see cref="FinishArrivingAsync"/> makes it readable.
+    /// <see cref="FinishArrivingAsync"/> makes it readable. <paramref name="sizeBytes"/> is how much of it has arrived; a workflow with a minimum size leaves a smaller one alone.
     /// </summary>
-    public async Task HandOffUnreadableAsync(string handoffId, string fileName)
+    public async Task HandOffUnreadableAsync(string handoffId, string fileName, int sizeBytes = 2048)
     {
         var source = Path.Combine(Watched, handoffId, fileName);
         Directory.CreateDirectory(Path.GetDirectoryName(source)!);
-        await File.WriteAllBytesAsync(source, new byte[2048]);
+        await File.WriteAllBytesAsync(source, new byte[sizeBytes]);
         _tools.SetFileRule(fileName, new FileRule { ProbeError = "Invalid data found when processing input" });
         await PostHandOffAsync(handoffId, source);
     }

@@ -235,10 +235,9 @@ public sealed class SqliteDatabase
             return connection.BeginTransaction(IsolationLevel.Serializable, deferred: false);
         }
 
-        var remaining = (int)Math.Max(1, _busyTimeoutMilliseconds - waitedForGate.TotalMilliseconds);
         var commandTimeout = connection.DefaultTimeout;
         await ExecuteAsync(connection, "PRAGMA busy_timeout=0", cancellationToken).ConfigureAwait(false);
-        connection.DefaultTimeout = Math.Max(1, (remaining + 999) / 1000);
+        connection.DefaultTimeout = CommandTimeoutSeconds(_busyTimeoutMilliseconds, waitedForGate);
         try
         {
             return connection.BeginTransaction(IsolationLevel.Serializable, deferred: false);
@@ -248,6 +247,16 @@ public sealed class SqliteDatabase
             connection.DefaultTimeout = commandTimeout;
             await ExecuteAsync(connection, $"PRAGMA busy_timeout={_busyTimeoutMilliseconds}", CancellationToken.None).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// The command timeout that leaves a writer what is left of one busy timeout after it waited <paramref name="waitedForGate"/>,
+    /// in whole seconds and never less than one, as Microsoft.Data.Sqlite counts it.
+    /// </summary>
+    internal static int CommandTimeoutSeconds(int busyTimeoutMilliseconds, TimeSpan waitedForGate)
+    {
+        var remaining = (int)Math.Max(1, busyTimeoutMilliseconds - waitedForGate.TotalMilliseconds);
+        return Math.Max(1, (remaining + 999) / 1000);
     }
 
     public SqliteConnection Open()

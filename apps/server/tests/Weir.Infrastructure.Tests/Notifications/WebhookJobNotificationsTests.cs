@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weir.Core.Configuration;
 using Weir.Infrastructure.Http;
@@ -45,6 +46,13 @@ public sealed class WebhookJobNotificationsTests : IDisposable
 
     private Task<Weir.Core.Notifications.NotificationChannelRecord> ChannelAsync(string label, params string[] events) =>
         _store.WithUnitOfWork(uow => _channels.CreateAsync(uow, label, "webhook", $"https://alerts.example.com/{label}", events, enabled: true));
+
+    private Task<Weir.Core.Notifications.NotificationChannelRecord> SwitchAsync(long id, bool enabled) =>
+        _store.WithUnitOfWork(async uow =>
+        {
+            var row = (await _channels.GetAsync(uow, id))!;
+            return await _channels.UpdateAsync(uow, row, row.Label, row.Provider, row.Url, Weir.Core.Notifications.NotificationRules.ParseEvents(row.EventsJson), enabled);
+        });
 
     private async Task<long> JobAsync(string kind, string status)
     {
@@ -115,6 +123,77 @@ public sealed class WebhookJobNotificationsTests : IDisposable
 
         var post = Assert.Single(await PostsAsync());
         Assert.Equal("https://alerts.example.com/failures", post.Url);
+    }
+
+    [Fact]
+    public async Task A_file_that_failed_for_good_in_a_job_that_ended_normally_reaches_the_failure_channels_only()
+    {
+        await ChannelAsync("failures", "processing_job_failed");
+        await ChannelAsync("any-failure", "job_failed");
+        await ChannelAsync("finished", "processing_job_completed");
+        var job = await JobAsync(RemuxPass, "completed");
+
+        _notifications.DispatchFailedForGood("processing", job, RemuxPass);
+
+        var posts = await PostsAsync();
+        Assert.Equal(["https://alerts.example.com/any-failure", "https://alerts.example.com/failures"], posts.Select(p => p.Url).Order());
+        Assert.All(posts, post =>
+        {
+            var body = JsonNode.Parse(post.Body)!;
+            Assert.Equal("processing_job_failed", (string?)body["event"]);
+            Assert.Equal("Weir on RIG job failed", (string?)body["title"]);
+            Assert.Equal($"Job {job} ({RemuxPass}) failed, and Weir has stopped trying.", (string?)body["detail"]);
+        });
+    }
+
+    [Fact]
+    public async Task A_channel_switched_off_is_sent_nothing_until_it_is_switched_on()
+    {
+        var channel = await ChannelAsync("files", "processing_job_failed");
+        await SwitchAsync(channel.Id, enabled: false);
+        var job = await JobAsync(RemuxPass, "failed");
+
+        _notifications.Dispatch("processing", "failed", job, RemuxPass);
+        Assert.Empty(await PostsAsync());
+
+        await SwitchAsync(channel.Id, enabled: true);
+        _notifications.Dispatch("processing", "failed", job, RemuxPass);
+
+        var post = Assert.Single(await PostsAsync());
+        Assert.Equal("https://alerts.example.com/files", post.Url);
+    }
+
+    [Fact]
+    public async Task A_channel_switched_off_does_not_stop_the_others_hearing()
+    {
+        await ChannelAsync("on", "processing_job_failed");
+        var off = await ChannelAsync("off", "processing_job_failed");
+        await SwitchAsync(off.Id, enabled: false);
+        var job = await JobAsync(RemuxPass, "failed");
+
+        _notifications.Dispatch("processing", "failed", job, RemuxPass);
+
+        var post = Assert.Single(await PostsAsync());
+        Assert.Equal("https://alerts.example.com/on", post.Url);
+    }
+
+    [Fact]
+    public async Task A_discord_channel_is_sent_an_embed_and_a_webhook_channel_the_flat_body()
+    {
+        await _store.WithUnitOfWork(uow => _channels.CreateAsync(uow, "chat", "discord", "https://discord.example.com/hook", ["processing_job_failed"], enabled: true));
+        await ChannelAsync("flat", "processing_job_failed");
+        var job = await JobAsync(RemuxPass, "failed");
+
+        _notifications.Dispatch("processing", "failed", job, RemuxPass);
+
+        var posts = (await PostsAsync()).ToDictionary(post => post.Url, post => JsonNode.Parse(post.Body)!.AsObject());
+        var embed = Assert.Single(posts["https://discord.example.com/hook"]["embeds"]!.AsArray())!;
+        Assert.Equal("Weir on RIG job failed", (string?)embed["title"]);
+        Assert.Equal(0xE74C3C, (int?)embed["color"]);
+        Assert.Equal("Weir on RIG", (string?)embed["footer"]!["text"]);
+        Assert.False(posts["https://discord.example.com/hook"].ContainsKey("event"));
+        Assert.Equal("processing_job_failed", (string?)posts["https://alerts.example.com/flat"]["event"]);
+        Assert.False(posts["https://alerts.example.com/flat"].ContainsKey("embeds"));
     }
 
     [Fact]

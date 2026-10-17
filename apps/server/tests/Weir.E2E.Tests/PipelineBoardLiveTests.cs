@@ -58,7 +58,7 @@ public sealed partial class PipelineBoardLiveTests(E2EServer server) : E2ETestBa
             var page = await OpenDashboardAsync(rig);
             await Expect(page.GetByTestId("pipeline-board")).ToContainTextAsync("Nothing in progress. New downloads appear here.");
 
-            await rig.HandOffAsync("h-board", FileName, progressSeconds: 30);
+            await rig.HandOffAsync("h-board", FileName, writtenSeconds: [30]);
 
             var card = Card(page, Title);
             await Expect(card).ToHaveAccessibleNameAsync(new Regex(@"^Harbour Lights \(2024\): 50% · "), new() { Timeout = FinishMs });

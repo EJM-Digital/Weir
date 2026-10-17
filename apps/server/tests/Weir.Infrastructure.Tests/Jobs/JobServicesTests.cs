@@ -170,6 +170,7 @@ public sealed class JobServicesTests : IDisposable
     public async Task Periodic_work_temp_sweep_enqueue_keeps_one_row_per_scope()
     {
         var time = new FakeTimeProvider();
+        var clock = new TimerWatchingClock(time);
         var interval = TimeSpan.FromMilliseconds(20);
         var registry = new JobHandlerRegistry([new DelegateHandler(PeriodicJobKinds.WorkTempStaleSweep, _ => { })]);
         IPeriodicEnqueuer[] enqueuers =
@@ -177,17 +178,19 @@ public sealed class JobServicesTests : IDisposable
             new WorkTempStaleSweepEnqueuer(_db.Store, "movie", interval, killSwitch: false),
             new WorkTempStaleSweepEnqueuer(_db.Store, "TV", interval, killSwitch: false),
         ];
-        var service = new PeriodicEnqueueService(enqueuers, registry, time, NullLogger<PeriodicEnqueueService>.Instance);
+        var service = new PeriodicEnqueueService(enqueuers, registry, clock, NullLogger<PeriodicEnqueueService>.Instance);
 
+        // Each family's loop sets one timer when it has finished a pass and parks on it, so a count of timers says how many passes
+        // are done and that every loop is waiting for the clock.
         await service.StartAsync(CancellationToken.None);
-        await Eventually.ThatAsync(() => _db.Count("SELECT count(*) FROM jobs") == 2);
+        await Eventually.ThatAsync(() => clock.TimersSet == enqueuers.Length);
+        Assert.Equal(2, _db.Count("SELECT count(*) FROM jobs"));
 
-        // The dedupe key keeps this to one row per scope; force several more due ticks (an idempotent
-        // enqueuer would otherwise only prove that by luck of how much real time happened to pass).
-        for (var i = 0; i < 5; i++)
+        // The dedupe key keeps this to one row per scope; force several more due ticks, each one finished before the next.
+        for (var i = 1; i <= 5; i++)
         {
             time.Advance(interval);
-            await Task.Delay(10);
+            await Eventually.ThatAsync(() => clock.TimersSet == enqueuers.Length * (i + 1));
         }
 
         await service.StopAsync(CancellationToken.None);

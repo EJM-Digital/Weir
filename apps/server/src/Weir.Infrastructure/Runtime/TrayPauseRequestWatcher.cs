@@ -44,6 +44,7 @@ public sealed class TrayPauseRequestWatcher : BackgroundService
     private readonly Channel<bool> _written = Channel.CreateBounded<bool>(new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropWrite, SingleReader = true });
     private FileSystemWatcher? _watcher;
     private DateTimeOffset _lastApplied = DateTimeOffset.MinValue;
+    private long _requestsRead;
 
     public TrayPauseRequestWatcher(WeirOptions options, SqliteDatabase database, SuitePauseService pause, TimeProvider time, ILogger<TrayPauseRequestWatcher> logger)
     {
@@ -80,10 +81,10 @@ public sealed class TrayPauseRequestWatcher : BackgroundService
             _written.Writer.TryWrite(true);
             await foreach (var _ in _written.Reader.ReadAllAsync(stoppingToken).ConfigureAwait(false))
             {
-                await Task.Delay(TrayHandOffWatcher.Settle, stoppingToken).ConfigureAwait(false);
+                await Task.Delay(TrayHandOffWatcher.Settle, _time, stoppingToken).ConfigureAwait(false);
                 if (!await ApplyAsync(stoppingToken).ConfigureAwait(false))
                 {
-                    await Task.Delay(RetryAfter, stoppingToken).ConfigureAwait(false);
+                    await Task.Delay(RetryAfter, _time, stoppingToken).ConfigureAwait(false);
                     _written.Writer.TryWrite(true);
                 }
             }
@@ -93,6 +94,9 @@ public sealed class TrayPauseRequestWatcher : BackgroundService
             // The server is stopping.
         }
     }
+
+    /// <summary>Test seam (<c>InternalsVisibleTo</c> to Weir.Infrastructure.Tests): how many requests have been read from the file, whether or not they were answered yet.</summary>
+    internal long RequestsRead => Interlocked.Read(ref _requestsRead);
 
     private FileSystemWatcher? TryWatch()
     {
@@ -150,7 +154,7 @@ public sealed class TrayPauseRequestWatcher : BackgroundService
         {
             // The tray may still be writing it.
             _logger.LogDebug("The tray's pause request cannot be read yet; looking again shortly.");
-            await Task.Delay(HalfWrittenWait, stoppingToken).ConfigureAwait(false);
+            await Task.Delay(HalfWrittenWait, _time, stoppingToken).ConfigureAwait(false);
             var again = ReplacedFile.ReadText(path);
             if (again.State != ReplacedFileState.Read)
             {
@@ -159,6 +163,11 @@ public sealed class TrayPauseRequestWatcher : BackgroundService
 
             text = again.Text;
             request = Parse(text);
+        }
+
+        if (request is not null)
+        {
+            Interlocked.Increment(ref _requestsRead);
         }
 
         if (request is null)

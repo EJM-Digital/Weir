@@ -58,15 +58,10 @@ internal static class FakeFfmpegTool
         var output = argv[^1];
         var delay = FakeFfprobe.Number(rule, FakeToolProtocol.RemuxDelaySecondsKey);
         var releaseFile = FakeFfprobe.Text(rule, FakeToolProtocol.RemuxReleaseFileKey);
-        var progressSeconds = FakeFfprobe.Number(rule, FakeToolProtocol.RemuxProgressSecondsKey);
-        if (progressSeconds > 0 && argv.Contains("-progress"))
-        {
-            Output.Out(string.Create(CultureInfo.InvariantCulture, $"out_time_ms={(long)(progressSeconds * 1_000_000)}\nprogress=continue\n"));
-        }
-
         if (delay > 0 || releaseFile is not null)
         {
             File.WriteAllBytes(output, "partial fake output"u8.ToArray());
+            ReportProgress(rule, argv);
             if (delay > 0)
             {
                 Thread.Sleep(TimeSpan.FromSeconds(delay));
@@ -138,6 +133,29 @@ internal static class FakeFfmpegTool
         }
 
         return streams;
+    }
+
+    /// <summary>
+    /// Tells Weir how far the write has got, as ffmpeg does with <c>-progress pipe:1</c>: one report for each step of the rule, each after the
+    /// file it names (if it names one) exists, so a test sets how far the write has come and when.
+    /// </summary>
+    private static void ReportProgress(JsonObject rule, string[] argv)
+    {
+        if (!argv.Contains("-progress") || rule[FakeToolProtocol.RemuxProgressKey] is not JsonArray steps)
+        {
+            return;
+        }
+
+        foreach (var step in steps.OfType<JsonObject>())
+        {
+            if (FakeFfprobe.Text(step, FakeToolProtocol.ProgressAfterFileKey) is { } after)
+            {
+                WaitForRelease(after);
+            }
+
+            var microseconds = (long)(FakeFfprobe.Number(step, FakeToolProtocol.ProgressOutTimeSecondsKey) * 1_000_000);
+            Output.Out($"out_time_ms={microseconds}\nprogress=continue\n");
+        }
     }
 
     private static bool WaitForRelease(string path)

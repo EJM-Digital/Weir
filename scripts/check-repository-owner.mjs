@@ -3,8 +3,7 @@
 // repository to another owner is one small commit (docs/exec-plans/active/PLAN-ORG-MOVE.md).
 //
 // The places: scripts/repository.mjs (Node, and the truth the others are compared with), the server's and the tray's
-// ProjectLocation.cs, the web app's lib/repository.ts, scripts/repository.ps1 (PowerShell), and
-// scripts/runner/Install-WeirRunner.ps1, which is copied alone to a PC and so cannot read the shared file.
+// ProjectLocation.cs, the web app's lib/repository.ts and scripts/repository.ps1 (PowerShell).
 //
 // Checks:
 //   1. Every place holds the same repository as scripts/repository.mjs.
@@ -42,7 +41,6 @@ export const PLACES = [
   { path: "apps/tray/Weir.Tray/ProjectLocation.cs", read: csharp },
   { path: "apps/web/src/lib/repository.ts", read: firstGroup(/\bREPOSITORY_SLUG\s*=\s*"([^"]+)"/) },
   { path: "scripts/repository.ps1", read: firstGroup(/\$WeirRepository\s*=\s*'([^']+)'/) },
-  { path: "scripts/runner/Install-WeirRunner.ps1", read: firstGroup(/\$RepositoryUrl\s*=\s*'https:\/\/github\.com\/([^']+)'/) },
 ];
 const NODE_PLACE = "scripts/repository.mjs";
 

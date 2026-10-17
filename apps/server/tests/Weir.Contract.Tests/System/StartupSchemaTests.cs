@@ -294,6 +294,7 @@ public sealed class StartupSchemaTests(StartupSchemaTests.HeadSchemaFixture fixt
         SeedSql.Execute(connection, "ALTER TABLE handbacks DROP COLUMN outcome_source_key");
         SeedSql.Execute(connection, "ALTER TABLE handbacks DROP COLUMN outcome_connection_id");
         SeedSql.Execute(connection, "ALTER TABLE handbacks DROP COLUMN outcome_authenticated");
+        SeedSql.Execute(connection, "ALTER TABLE suite_configuration_backup DROP COLUMN made_by");
         // ...and bring back what that release still had and the last migration takes away.
         SeedSql.Execute(
             connection,
