@@ -20,18 +20,21 @@ const BACKUPS: ConfigurationBackupItem[] = [
     created_at: "2026-10-02T02:00:00Z",
     file_name: "b1.json",
     size_bytes: 300,
+    made_by: "schedule",
   },
   {
     id: 2,
     created_at: "2026-10-03T02:00:00Z",
     file_name: "b2.json",
     size_bytes: 100,
+    made_by: "schedule",
   },
   {
     id: 3,
     created_at: "2026-10-01T02:00:00Z",
     file_name: "b3.json",
     size_bytes: 200,
+    made_by: "schedule",
   },
 ];
 
