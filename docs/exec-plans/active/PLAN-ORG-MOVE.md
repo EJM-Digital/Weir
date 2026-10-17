@@ -33,7 +33,7 @@ There are 9 uses in 3 places. A copy installed before the move keeps the values 
 | Server: `ReleasesFeedUrl` | The releases feed address | Redirected |
 | Server: asset download URL | The link to a release file | Redirected |
 | Server: `TagUrl` | The link to a release's page | Redirected |
-| Server: `docker_image` (two places) | The image name shown to Docker users in the update notice | Not redirected; the old name works only while the dual publish runs |
+| Server: `docker_image` (two places) | The image name shown to Docker users in the update notice | Not redirected; the old name gets no releases after the move (see Image name) |
 | Tray, `UpdateService.cs` | The Velopack update source: the releases feed, then the API if the feed cannot be read, then `releases/download/<tag>/` | Redirected |
 | Web app, `repository.ts` (two links) | The About page's source and licence links | Redirected |
 
@@ -55,7 +55,7 @@ Redirected, for as long as nobody creates a repository named `jampat000/Weir` ag
 
 Not redirected:
 
-- **Container images.** A `docker pull ghcr.io/jampat000/weir:<tag>` goes to the old package namespace; ghcr does not forward it to `ghcr.io/ejm-digital/weir`. Nothing is published under the old name after the move unless we publish it (below).
+- **Container images.** A `docker pull ghcr.io/jampat000/weir:<tag>` goes to the old package namespace; ghcr does not forward it to `ghcr.io/ejm-digital/weir`. Nothing is published under the old name after the move.
 - The Pages site: `jampat000.github.io/Weir` is not a dependable redirect. The docs site moves to `ejm-digital.github.io/Weir`; links to the old address may break.
 - Repository settings, secrets, variables, rulesets, runners and the Pages configuration need checking after the transfer.
 
@@ -73,22 +73,21 @@ The sweep rewrites the five places and `scripts/repository.mjs`, adds `jampat000
 
 Also by hand in that PR: move this plan to `docs/archive/` and mark it done.
 
-## Dual image publish
+## Image name (decided 17 Oct)
 
-Because ghcr does not redirect, a Docker install that pulls `ghcr.io/jampat000/weir` finds nothing newer unless we keep publishing there.
+The owner decided there is no dual-publish period. Only one person uses the Docker image.
 
-- `release.yml` derives the image name from `github.repository`. After the move it publishes only `ghcr.io/ejm-digital/weir`. The move PR adds a second name for the same build: the same multi-architecture manifest, pushed under both names in one step, with the provenance attestation and the manifest check run for each name. The old name is `ghcr.io/jampat000/weir`.
-- The old ghcr package stays public, and the release job's token must still be able to push to it after the transfer (check this on the first release candidate).
-- How long: until the first stable release after the move has been out for 90 days, or until the owner decides sooner. After that the old name is no longer updated, and the old package stays as it is. This is a decision for the owner (below).
-- Release notes for every release published under both names, in plain words:
+- From the move on, releases publish only `ghcr.io/ejm-digital/weir`. The old name, `ghcr.io/jampat000/weir`, gets no further releases.
+- `release.yml` derives the image name from `github.repository`, so it needs no second push.
+- The first release after the move says, in its notes, to change the image name:
 
-  > Weir's container image has a new home: `ghcr.io/ejm-digital/weir`. The old name, `ghcr.io/jampat000/weir`, keeps getting the same releases until DATE. If you run Weir with Docker, change `image:` in your compose file (or your `docker run` command) to the new name before then, then run `docker compose pull` and `docker compose up -d`. Your settings and data are not touched. Nothing changes for the Windows installer.
+  > Weir's container image has a new home: `ghcr.io/ejm-digital/weir`. From this release on, the old name, `ghcr.io/jampat000/weir`, is no longer updated. If you run Weir with Docker, change `image:` in your compose file (or your `docker run` command) to the new name, then run `docker compose pull` and `docker compose up -d`. Your settings and data are not touched. Nothing changes for the Windows installer.
 
 ## Organisation settings
 
 Set these on `EJM-Digital` before the first release from it:
 
-1. **GitHub-hosted runners only.** Disable self-hosted runners for the organisation (Settings, Actions, Runners and runner groups), so a release is always built on a clean GitHub-hosted machine, as `docs/self-hosted-runner.md` already requires of release jobs. The two Windows CI jobs choose the spare PC with the variable `WEIR_SELF_HOSTED_WINDOWS`; leave it unset after the move, which sends them to `windows-latest`. Remove the PC's runners first (`docs/self-hosted-runner.md`).
+1. **GitHub-hosted runners only.** Disable self-hosted runners for the organisation (Settings, Actions, Runners and runner groups), so a release is always built on a clean GitHub-hosted machine, as `docs/self-hosted-runner.md` already requires of release jobs. The self-hosted runners were removed on 17 Oct (PR #1178), so CI runs only on GitHub-hosted runners. Leave the variable `WEIR_SELF_HOSTED_WINDOWS` unset, which sends the two Windows CI jobs to `windows-latest`.
 2. **Approval for outside pull requests.** Actions, General, "Require approval for all outside collaborators", so no outside contributor's workflow runs without the owner approving it.
 3. **Immutable releases.** Turn on immutable releases for the organisation, or for the repository, so a published tag and its files cannot be changed or replaced. The release flow already fits it: `scripts/publish-release.mjs` attaches every file to a draft and publishes once (`docs/release.md`). The setting does not carry over by itself, so check it is on for the new owner before the first release.
 
@@ -99,12 +98,12 @@ Also check after the transfer: the `main` ruleset and the required `ci-passed` c
 An installed copy from before the move, with no reinstall, finds the next release from the new home. Do both with real releases, not a stand-in.
 
 1. **Windows.** On a clean machine, install the last release made before the move. Publish the first release from `EJM-Digital/Weir`. From the tray, check for updates: the new version is offered, downloads and installs, and the server reports the new version. Record the version before and after, the feed address in the log (it shows the redirect from the old address), and the result.
-2. **Docker.** Start a container from the last image under the old name. Publish the first release (it goes to both names). The update notice shows the new version; pull it under the old name and start it: the version matches. Then pull it under the new name and start it: the same digest.
+2. **Docker.** Start a container from the last image under the old name. Publish the first release (it goes to the new name only). The update notice shows the new version. Change the image name to `ghcr.io/ejm-digital/weir`, pull and start it: the version matches.
 3. **Update check.** On both installs, System, About shows the new version as available before the update, and the source link opens the new repository.
 4. Record the evidence in the PR that closes the move, as `docs/release-governance.md` requires for any change to update behaviour.
 
-## Decisions for the owner
+## Decisions (owner, 17 Oct)
 
-- How long the old image name keeps getting releases (proposed: 90 days after the first stable release from the organisation).
-- Whether the docs site moves to `ejm-digital.github.io/Weir` or gets a custom domain first.
-- Whether the spare PC's runners are removed before the move (the setting above requires it), or the Windows jobs go to `windows-latest` from the day of the move.
+1. **Old image name:** no dual-publish period. From the move on, releases publish only `ghcr.io/ejm-digital/weir`. The first release after the move tells Docker users, in its notes, to change the image name (see Image name above).
+2. **Docs site:** it moves to `ejm-digital.github.io/Weir`. Links in older releases may stop working.
+3. **Runners:** the self-hosted runners were removed on 17 Oct, and CI runs only on GitHub-hosted runners (PR #1178).
