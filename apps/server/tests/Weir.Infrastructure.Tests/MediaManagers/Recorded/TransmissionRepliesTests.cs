@@ -44,7 +44,7 @@ public sealed class TransmissionRepliesTests
 
     [Theory]
     [InlineData("test-wrong-password")]
-    [InlineData("test-no-credentials")]
+    [InlineData("test-nothing-saved")]
     public async Task A_refused_sign_in_is_401_and_says_so_in_plain_words(string state)
     {
         var recording = ArrRecording.Load(Kind, state);

@@ -24,7 +24,7 @@ A secret is written as `<scrubbed>`: the passwords and API keys the session used
 | State | What Weir does |
 | --- | --- |
 | `test`, `test-wrong-password` (`test-wrong-key` for SABnzbd) | The connection test with the right credentials and with ones the client does not know |
-| `test-open`, `test-no-credentials` (Transmission) | The connection test against a Transmission that asks for no sign-in, and with nothing saved against one that wants it |
+| `test-open`, `test-nothing-saved` (Transmission) | The connection test against a Transmission that asks for no sign-in, and with nothing saved against one that wants it |
 | `folders` | Read the folders: the default save path and the categories or labels that have a folder of their own |
 | `folders-wrong-password`, `folders-wrong-key` (NZBGet, SABnzbd) | Read the folders with credentials the client does not know |
 | `folders-stock`, `folders-move-completed-off` (Deluge) | Read the folders of a Deluge as it starts, and of one whose folder for completed downloads is switched off |

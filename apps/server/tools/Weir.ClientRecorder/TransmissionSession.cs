@@ -47,7 +47,7 @@ internal sealed class TransmissionSession(ClientSettings settings) : ClientSessi
         await TestStepAsync("test", "The connection test with the right user name and password.", Prepared.Right, expectConnected: true).ConfigureAwait(false);
         await TestStepAsync("test-wrong-password", "The connection test with a password Transmission does not know.", Prepared.Wrong, expectConnected: false).ConfigureAwait(false);
         await TestStepAsync(
-            "test-no-credentials",
+            "test-nothing-saved",
             "The connection test with no user name or password saved, against a Transmission that asks for them.",
             Connection(DownloadClientKinds.Transmission, AuthUrl, null, null, null),
             expectConnected: false).ConfigureAwait(false);
