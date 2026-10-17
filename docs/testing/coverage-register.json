@@ -19671,9 +19671,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/processing/dashboard-address.test.ts",
           "name": "resolveWorkflow"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardWorkflowLinkTests.cs",
+          "name": "A_link_naming_a_workflow_that_is_switched_off_deleted_or_not_a_number_shows_everything"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardWorkflowLinkTests.cs",
+          "name": "A_link_naming_a_workflow_that_is_on_narrows_Live_to_it_and_never_shows_the_others_while_the_list_loads"
         }
       ],
-      "issue": 1071,
       "audit": {
         "id": "WEB-182",
         "verdict": "Covered"
@@ -25579,15 +25588,16 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "?show and ?file are exercised through the URL; ?within, ?q, ?library and ?clean are never read in a test, and the request they build (within_days, path_contains, library_id) is never asserted."
-      },
-      "issue": 1025,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-page.requests.test.tsx",
+          "name": "what Activity asks the server for, from its address"
+        }
+      ],
       "audit": {
         "id": "WEB-388",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -25598,15 +25608,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "No test clicks an Activity heading, asserts sort/direction in the file request, aria-sort, or the in-browser ordering of library cleans (sortActivityEntries). Server order is proven by contract ProcessingFilesSortingTests only."
-      },
-      "issue": 1025,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-page.requests.test.tsx",
+          "name": "sorting Activity by a heading"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityControlsTests.cs",
+          "name": "ActivityControlsTests"
+        }
+      ],
       "audit": {
         "id": "WEB-389",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -25696,15 +25712,16 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The cleans, libraries and attention queries have no error branch: a failed library-cleans read silently lists Activity without cleans, and failed workflows leave handed-back wording unset, with no message."
-      },
-      "issue": 1025,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-page.requests.test.tsx",
+          "name": "when something Activity reads fails"
+        }
+      ],
       "audit": {
         "id": "WEB-393",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -26737,15 +26754,16 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Never rendered or clicked in any test: payload (relative path, scope, library) and notice unproven."
-      },
-      "issue": 1025,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-file-actions.process-now.test.tsx",
+          "name": "Process now on a file that has not been processed"
+        }
+      ],
       "audit": {
         "id": "WEB-431",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -26775,15 +26793,21 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The button is only checked for presence. openTracks (fetch tracks, load error text), submitTracks (queued notice, close, error text) and the Activity-to-panel wiring are untested."
-      },
-      "issue": 1025,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-file-actions.choose-tracks.test.tsx",
+          "name": "Choose tracks on a held file in Activity"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ChooseTracksLiveTests.cs",
+          "name": "ChooseTracksLiveTests"
+        }
+      ],
       "audit": {
         "id": "WEB-433",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -26981,9 +27005,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-file-actions.test.tsx",
           "name": "says the manager will be told the file will not be imported when keep notifies it"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "With_no_manager_the_dialog_says_Weir_alone_deletes_and_each_choice_sends_exactly_its_resolution"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "A_manager_that_takes_releases_back_is_named_and_Delete_asks_it_for_another_copy"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-441",
         "verdict": "Covered"
@@ -27017,9 +27050,23 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-file-actions.test.tsx",
           "name": "always offers a way to just remove the title without touching the file"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "With_no_manager_the_dialog_says_Weir_alone_deletes_and_each_choice_sends_exactly_its_resolution"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "A_manager_that_takes_releases_back_is_named_and_Delete_asks_it_for_another_copy"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityDialogTests.cs",
+          "name": "Remove_just_from_the_list_sends_one_request_and_forgets_the_row_but_not_the_file"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-442",
         "verdict": "Covered"
@@ -27108,9 +27155,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/activity/activity-file-actions.test.tsx",
           "name": "does not offer to delete the file of a workflow linked to a media manager, and says why"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityChoicesTests.cs",
+          "name": "A_workflow_linked_to_a_manager_that_cannot_take_it_back_disables_Delete_with_the_reason_and_no_key_chooses_it"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-446",
         "verdict": "Covered"
@@ -27953,15 +28004,16 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A selection kept across a filter, sort or page would clean files the person can no longer see. The reset is untested at page level (the pager's note about it is rendered, not the behaviour)."
-      },
-      "issue": 1025,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-page.selection.test.tsx",
+          "name": "a selection of library files belongs to the rows on screen"
+        }
+      ],
       "audit": {
         "id": "WEB-477",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -28321,15 +28373,26 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "invalidateLibraryViews on the clean, leave-alone, redownload, scan and settings mutations is untested, and no E2E or VM scenario runs a clean while watching the Library table."
-      },
-      "issue": 1026,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-page.refresh.test.tsx",
+          "name": "the table and its counts follow what the server holds, with no reload"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanLiveTests.cs",
+          "name": "LibraryCleanLiveTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryControlsTests.cs",
+          "name": "Left_alone_in_a_films_panel_is_saved_by_the_server_stops_the_film_being_cleaned_and_can_be_taken_back"
+        }
+      ],
       "audit": {
         "id": "WEB-491",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -28465,15 +28528,16 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "confirmFailure / START_FAILED never rendered."
-      },
-      "issue": 1026,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-page.clean-failures.test.tsx",
+          "name": "a confirmed clean that cannot start"
+        }
+      ],
       "audit": {
         "id": "WEB-497",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -28484,15 +28548,16 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "failure('selection') never rendered."
-      },
-      "issue": 1026,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-page.clean-failures.test.tsx",
+          "name": "a clean of the selection that cannot start"
+        }
+      ],
       "audit": {
         "id": "WEB-498",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -28578,15 +28643,16 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "No real-server proof of the destructive web flow."
-      },
-      "issue": 1026,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanLiveTests.cs",
+          "name": "LibraryCleanLiveTests"
+        }
+      ],
       "audit": {
         "id": "WEB-502",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -28760,15 +28826,16 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "FileCleanState pending, failure and result are never rendered."
-      },
-      "issue": 1026,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-file-drawer.actions.test.tsx",
+          "name": "cleaning one file from its panel"
+        }
+      ],
       "audit": {
         "id": "WEB-510",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -28970,15 +29037,16 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The undo (leaveAlone false) and its status text are untested."
-      },
-      "issue": 1026,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-file-drawer.actions.test.tsx",
+          "name": "can be cleaned again once the box is unticked, and the panel says so"
+        }
+      ],
       "audit": {
         "id": "WEB-519",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -28989,15 +29057,16 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The alert text is untested."
-      },
-      "issue": 1026,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-file-drawer.actions.test.tsx",
+          "name": "stays as it was, with the reason shown, when the choice cannot be saved"
+        }
+      ],
       "audit": {
         "id": "WEB-520",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -29008,15 +29077,16 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "cannotClean includes leftAlone but it is untested; only the server refuses cleaning it."
-      },
-      "issue": 1026,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-file-drawer.actions.test.tsx",
+          "name": "shows a file that is already Left alone as Left alone, and cannot be cleaned from the panel"
+        }
+      ],
       "audit": {
         "id": "WEB-521",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -29027,15 +29097,16 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "LibraryRedownload is never rendered with a title; Weir.Api.Tests LibraryRedownloadApiTests covers the API only."
-      },
-      "issue": 1026,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-redownload.requests.test.tsx",
+          "name": "Download again is offered only for a file a past clean took tracks from"
+        }
+      ],
       "audit": {
         "id": "WEB-522",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -29086,15 +29157,16 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "resultMessage and the error alert are untested; asking again is blocked after success."
-      },
-      "issue": 1026,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-redownload.requests.test.tsx",
+          "name": "asking the media manager to download a title again"
+        }
+      ],
       "audit": {
         "id": "WEB-525",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -29250,15 +29322,16 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "library-scan-error never rendered."
-      },
-      "issue": 1026,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-page.clean-failures.test.tsx",
+          "name": "Check again that cannot start"
+        }
+      ],
       "audit": {
         "id": "WEB-531",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -29810,12 +29883,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "withQuery and fetchProcessingFiles/fetchLibraryCleans URLs are untested, so the filters could be dropped silently."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-558",
         "verdict": "Gap"
@@ -29829,12 +29908,18 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A wrong path or verb would only show up in use."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-559",
         "verdict": "Gap"
@@ -29848,12 +29933,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "fetchLibraryFiles/fetchLibraryOverview/triggerLibraryScan/setLibraryFileLeaveAlone untested at the HTTP level; library-mode-api.test.ts covers only withStatusCounts."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-560",
         "verdict": "Gap"
@@ -29897,12 +29988,38 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Fixtures partly cast with 'as'; the stream's processing.progress and system frames have no contract test of their shape."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/recorded-replies.test.ts",
+          "name": "what the server really answered fits what its document promises"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/activity/recorded-stream.test.tsx",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/processing/live-progress-merge.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/processing-page.test.tsx",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/processing-model.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-entries.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-562",
         "verdict": "Partly"
@@ -29916,15 +30033,46 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Filters, sort, paging, clean, leave alone, redownload, setup have no real-browser proof; Activity's Remove, Keep, Try again, Pass through, filters and sort have none either."
-      },
-      "issue": 1025,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityControlsTests.cs",
+          "name": "ActivityControlsTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryControlsTests.cs",
+          "name": "LibraryControlsTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanLiveTests.cs",
+          "name": "LibraryCleanLiveTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanConfirmationTests.cs",
+          "name": "LibraryCleanConfirmationTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryRedownloadDialogTests.cs",
+          "name": "LibraryRedownloadDialogTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryDailyCleanWarningTests.cs",
+          "name": "LibraryDailyCleanWarningTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveFromActivityDialogTests.cs",
+          "name": "RemoveFromActivityDialogTests"
+        }
+      ],
       "audit": {
         "id": "WEB-563",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
     },
     {
@@ -30622,14 +30770,46 @@
       }
     },
     {
-      "id": "web-setup-workflows-rules.lib-settings.network-access-put-carries-csrf-and-scope-notification-channel",
+      "id": "web-setup-workflows-rules.lib-settings.network-access-put-carries-csrf-and-scope",
       "area": "web-setup-workflows-rules",
-      "behaviour": "Network access PUT carries csrf and scope; notification channel DELETE carries csrf",
+      "behaviour": "Network access PUT carries csrf and scope",
       "kind": "screen action",
       "severity": "high",
       "touches": "disk",
       "required": "real",
       "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/settings-api.test.ts",
+          "name": "suite settings API paths"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/settings-api.test.ts",
+          "name": "saves who can reach Weir with a CSRF token in the body"
+        }
+      ],
+      "audit": {
+        "id": "WEB-589",
+        "verdict": "Covered"
+      },
+      "vm": true,
+      "issue": 1142
+    },
+    {
+      "id": "web-setup-workflows-rules.lib-settings.network-access-put-carries-csrf-and-scope-notification-channel",
+      "area": "web-setup-workflows-rules",
+      "behaviour": "Notification channel DELETE carries csrf",
+      "kind": "screen action",
+      "severity": "high",
+      "touches": "disk",
+      "required": "real",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/settings-api.test.ts",
+          "name": "sends a CSRF header when deleting a notification channel"
+        },
         {
           "type": "vitest",
           "file": "apps/web/src/lib/settings/settings-api.test.ts",
@@ -30644,9 +30824,13 @@
           "type": "vitest",
           "file": "apps/web/src/lib/settings/settings-api.test.ts",
           "name": "saves who can reach Weir with a CSRF token in the body"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveAlertDialogTests.cs",
+          "name": "Remove_alert_sends_one_request_with_the_CSRF_token_for_that_alert_and_leaves_the_other"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-589",
         "verdict": "Covered"
@@ -31123,9 +31307,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/libraries/libraries-tab.test.tsx",
           "name": "removes a library only once the removal is confirmed, and holds the button while it runs"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveWorkflowDialogTests.cs",
+          "name": "Remove_workflow_sends_one_request_and_the_workflow_goes"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-608",
         "verdict": "Covered"
@@ -32945,9 +33133,23 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.test.tsx",
           "name": "shows a linked workflow as keeping the original, says why, and leaves the saved setting alone"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/OriginalDownloadSwitchTests.cs",
+          "name": "On_a_workflow_only_Weir_feeds_the_switch_is_saved_as_chosen_and_a_pass_removes_or_keeps_the_original_to_match"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/OriginalDownloadSwitchTests.cs",
+          "name": "A_new_workflow_has_the_switch_on"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/OriginalDownloadSwitchTests.cs",
+          "name": "A_linked_workflow_shows_the_switch_off_and_locked_with_the_reason_keeps_what_was_saved_and_keeps_the_original"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-679",
         "verdict": "Covered"
@@ -33836,12 +34038,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: New profile, type a name, Create profile, assert createProcessingRuleSet body (all fields, trimmed name) and the saved notice and selection. E2E: create a profile through the UI and read it back."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "creating a profile"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CreateProfileTests.cs",
+          "name": "A_new_profile_is_sent_once_shown_saved_and_selected_and_the_server_reads_back_what_was_typed"
+        }
+      ],
       "audit": {
         "id": "WEB-716",
         "verdict": "Gap"
@@ -33948,12 +34156,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The select and the silent rewrite of audio_sorters_json are not tested in the UI. vitest: change the select, Save, assert audio_preference_mode and the matching audio_sorters_json."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "how audio is chosen"
+        }
+      ],
       "audit": {
         "id": "WEB-721",
         "verdict": "Gap"
@@ -33967,12 +34176,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: change each select, Save, assert primary/secondary/tertiary_audio_lang and default_audio_slot; a saved code outside the list shows as an option; None clears second and third."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "the audio languages"
+        }
+      ],
       "audit": {
         "id": "WEB-722",
         "verdict": "Gap"
@@ -33986,12 +34196,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: toggle and assert remove_commentary in the PUT body."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "removing commentary tracks"
+        }
+      ],
       "audit": {
         "id": "WEB-723",
         "verdict": "Gap"
@@ -34025,12 +34236,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: choose keep_listed (Languages to keep appears), remove_all (toggles hidden), assert subtitle_mode in the body."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "what happens to subtitles"
+        }
+      ],
       "audit": {
         "id": "WEB-725",
         "verdict": "Gap"
@@ -34044,12 +34256,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: pick two languages in the profile, Save, assert subtitle_langs_csv; a saved unknown code stays removable."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "what happens to subtitles"
+        }
+      ],
       "audit": {
         "id": "WEB-726",
         "verdict": "Gap"
@@ -34063,12 +34276,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: toggle each and assert preserve_forced_subs / preserve_default_subs in the body."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "what happens to subtitles"
+        }
+      ],
       "audit": {
         "id": "WEB-727",
         "verdict": "Gap"
@@ -34127,12 +34341,13 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: turn on Keep the original language, change each of the four, Save, assert the four original_language_* fields."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "the original language"
+        }
+      ],
       "audit": {
         "id": "WEB-730",
         "verdict": "Gap"
@@ -34500,12 +34715,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The component has no interaction test: vitest should add a criterion, change its field and value, reverse it, move it up and down (edges disabled), remove it, then Save and assert the JSON for both lists."
-      },
-      "issue": 1029,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.save-body.test.tsx",
+          "name": "the track order"
+        }
+      ],
       "audit": {
         "id": "WEB-747",
         "verdict": "Gap"
@@ -34940,12 +35156,18 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A fetch-level vitest (stub fetch, like lib/settings/settings-api.test.ts) per request asserting method, path, csrf_token in the body and the JSON body; every screen test mocks these functions, so a wrong URL, verb or field would pass them all."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-768",
         "verdict": "Gap"
@@ -34959,12 +35181,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Same fetch-level tests as above."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-769",
         "verdict": "Gap"
@@ -34978,12 +35206,23 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A test like the libraries one: build a ProcessingRuleSet with every key set to a distinct non-default value and assert writeFromProcessingRuleSet returns them all (a dropped key would silently reset it on every save). Plus fetch-level tests for the four requests."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/processing/rule-sets-api.test.ts",
+          "name": "writeFromProcessingRuleSet"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-770",
         "verdict": "Gap"
@@ -34997,12 +35236,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Fetch-level test of the body for both modes."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-771",
         "verdict": "Gap"
@@ -35016,12 +35261,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Fetch-level tests: the query strings are built by hand (URLSearchParams with connection_ids repeated, media_type, watched_folder, output_folder, remove_original)."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-772",
         "verdict": "Gap"
@@ -35035,12 +35291,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Read-only check found the generated ProcessingLibraryOut also has next_scan_at and periodic_scan, which the hand-written type lacks; no compile-time or test link ties the types to the schema. Add a type-level assertion (extends Schema<'ProcessingLibraryOut'>) or derive the types from the schema."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/hand-kept-types.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-773",
         "verdict": "Gap"
@@ -36537,7 +36794,6 @@
           "name": "Removing_the_workflows_happens_only_when_chosen_and_takes_those_workflows_and_no_folder"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-819",
         "verdict": "Covered"
@@ -37110,9 +37366,23 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-clients-section.test.tsx",
           "name": "only asks for the fields that kind's login actually uses"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "Each_kind_asks_for_exactly_the_fields_its_login_uses"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "Each_kind_is_added_with_the_credentials_typed_and_answers_when_it_is_tested"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "What_was_typed_for_a_kind_the_person_moved_away_from_is_not_saved_with_the_one_they_added"
         }
       ],
-      "issue": 1071,
       "audit": {
         "id": "WEB-839",
         "verdict": "Covered"
@@ -37141,9 +37411,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-clients-section.test.tsx",
           "name": "will not submit a SABnzbd connection with no API key, or a Deluge one with no password"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "The_form_cannot_be_submitted_without_an_address_or_a_secret_its_client_cannot_do_without_and_sends_nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AddDownloadClientFormTests.cs",
+          "name": "Each_kind_is_added_with_the_credentials_typed_and_answers_when_it_is_tested"
         }
       ],
-      "issue": 1071,
       "audit": {
         "id": "WEB-840",
         "verdict": "Covered"
@@ -37612,9 +37891,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-clients-section.test.tsx",
           "name": "leaves the connection alone when cancelled"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveDownloadClientDialogTests.cs",
+          "name": "Keep_it_Escape_and_a_click_outside_the_dialog_leave_the_client_alone_and_send_nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveDownloadClientDialogTests.cs",
+          "name": "Remove_download_client_sends_one_request_for_that_client_and_leaves_the_other"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-857",
         "verdict": "Covered"
@@ -38105,9 +38393,18 @@
           "type": "vitest",
           "file": "apps/web/src/lib/settings/settings-api.test.ts",
           "name": "sends a CSRF header when deleting a notification channel"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveAlertDialogTests.cs",
+          "name": "Keep_it_Escape_and_a_click_outside_the_dialog_leave_the_alert_alone_and_send_nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveAlertDialogTests.cs",
+          "name": "Remove_alert_sends_one_request_with_the_CSRF_token_for_that_alert_and_leaves_the_other"
         }
       ],
-      "issue": 1070,
       "audit": {
         "id": "WEB-874",
         "verdict": "Covered"
@@ -39410,12 +39707,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "E2E and VM only drive these routes through the contract harness client, not the web's own requests. A wrong method or path in the wrapper would pass every test."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-923",
         "verdict": "Gap"
@@ -39429,12 +39732,18 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Same as above (suggestions are used by the Workflows editor)."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-924",
         "verdict": "Gap"
@@ -39448,8 +39757,18 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-925",
         "verdict": "Gap"
@@ -39463,12 +39782,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Nearest the data-loss surface (a run deletes files for the destructive family)."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-926",
         "verdict": "Gap"
@@ -39522,12 +39847,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Download-client and channel types come from the generated schema (compile-time); media-manager does not."
-      },
-      "issue": 1030,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/recorded-replies.test.ts",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/hand-kept-types.test.ts",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-928",
         "verdict": "Gap"
@@ -51482,6 +51813,46 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/ConnectionLinksAreKeptMigrationTests.cs",
           "name": "ConnectionLinksAreKeptMigrationTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "file-lifecycle.library-clean.a-clean-that-changed-a-file-asks-for-the-library-to-be-scanned-again",
+      "area": "file-lifecycle",
+      "behaviour": "A library clean that changed a file asks for the library to be scanned again, once for all the cleans of a selection, so the file reads as matching its rules and not as needing the clean it has just had",
+      "kind": "file-lifecycle",
+      "severity": "medium",
+      "touches": "disk",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
+          "name": "A_clean_that_changed_a_file_asks_for_the_library_to_be_scanned_again_so_the_file_reads_as_clean"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
+          "name": "Cleans_that_finish_while_a_scan_is_already_waiting_ask_for_no_second_one"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
+          "name": "A_clean_that_changed_nothing_asks_for_no_scan"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanReplacesFileTests.cs",
+          "name": "A_file_Weir_has_cleaned_reads_as_matching_the_rules_with_nobody_asking_for_a_scan"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryCleanLiveTests.cs",
+          "name": "LibraryCleanLiveTests"
         }
       ],
       "audit": {

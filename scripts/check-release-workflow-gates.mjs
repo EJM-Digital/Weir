@@ -264,6 +264,9 @@ export function checkReleaseGates({ release, ci, ciContract, ciPackaging }) {
   for (const marker of ["statuses: read", "node scripts/verify-golden-path-for-release.mjs"]) {
     requireText(goldenPath, marker, `${RELEASE} golden-path job`);
   }
+  // A pass on an earlier commit with the same shipped files counts (scripts/release/shipped-paths.mjs), so the job needs
+  // the commits between to compare; a shallow checkout would leave it unable to judge any but the tagged commit.
+  requireText(goldenPath, "fetch-depth: 0", `${RELEASE} golden-path job (it needs the full history to judge an earlier commit's pass)`);
   rejectText(goldenPath, "statuses: write", `${RELEASE} golden-path job (the gate reads the record; it never writes one)`);
   rejectText(goldenPath, "--wait", `${RELEASE} golden-path job (the golden path is run before the tag; the gate does not wait)`);
   // Every tag is held for it, release candidates included (#954): nothing may skip the job or any step of it, and a

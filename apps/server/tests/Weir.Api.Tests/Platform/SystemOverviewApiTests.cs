@@ -21,6 +21,9 @@ public sealed class SystemOverviewApiTests
 {
     private const string Overview = "/api/v1/system/overview";
     private const string Tasks = "/api/v1/system/tasks";
+
+    /// <summary>The longest a wait for something the test has already arranged may take before the test calls it hung.</summary>
+    private static readonly TimeSpan HangGuard = TimeSpan.FromSeconds(15);
     private static readonly DateTimeOffset Noon = new(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
 
     private static async Task<(WeirTestServer Server, ApiTestClient Client)> StartAsync(Action<string>? prepareHome = null)
@@ -41,19 +44,9 @@ public sealed class SystemOverviewApiTests
         return new StreamReader(await response.Content.ReadAsStreamAsync());
     }
 
-    /// <summary>The data of the next frame named <paramref name="name"/>, repeating <paramref name="provoke"/> until one arrives so the test waits out the stream's own start.</summary>
-    /// <summary>The first <paramref name="name"/> frame that <paramref name="settled"/> accepts, provoking until one arrives.</summary>
-    private static async Task<JsonNode> NextFrameAsync(StreamReader reader, string name, Action provoke, Func<JsonNode, bool>? settled = null)
-    {
-        var pending = ReadFrameAsync(reader, name, settled ?? (_ => true));
-        for (var attempt = 0; attempt < 50 && !pending.IsCompleted; attempt++)
-        {
-            provoke();
-            await Task.WhenAny(pending, Task.Delay(TimeSpan.FromMilliseconds(200)));
-        }
-
-        return await pending.WaitAsync(TimeSpan.FromSeconds(10));
-    }
+    /// <summary>The first <paramref name="name"/> frame that <paramref name="settled"/> accepts, repeating <paramref name="provoke"/> until one arrives so the test waits out the stream's own start.</summary>
+    private static Task<JsonNode> NextFrameAsync(StreamReader reader, string name, Action provoke, Func<JsonNode, bool>? settled = null) =>
+        Eventually.ProvokingUntilAsync(ReadFrameAsync(reader, name, settled ?? (_ => true)), provoke);
 
     private static async Task<JsonNode> ReadFrameAsync(StreamReader reader, string name, Func<JsonNode, bool> settled)
     {
@@ -190,13 +183,9 @@ public sealed class SystemOverviewApiTests
         var result = Path.Join(server.Home, TrayUpdateBackupWatcher.ResultFileName);
 
         File.WriteAllText(request, $"{{\"id\": \"abc\", \"requested_at\": \"{DateTimeOffset.UtcNow:O}\", \"target_version\": \"1.0.0-rc.99\"}}");
-        var deadline = DateTime.UtcNow.AddSeconds(15);
-        JsonNode? answer = null;
-        while (DateTime.UtcNow < deadline && (string?)answer?["state"] is not ("saved" or "failed"))
-        {
-            await Task.Delay(50);
-            answer = ReadResult(result);
-        }
+        var answer = await Eventually.PollAsync(
+            () => Task.FromResult(ReadResult(result)),
+            read => (string?)read?["state"] is "saved" or "failed");
 
         Assert.Equal("saved", (string?)answer?["state"]);
         var json = await Json(await client.GetAsync(Overview));
@@ -385,34 +374,50 @@ public sealed class SystemOverviewApiTests
 
         Assert.True(await stream.MoveNextAsync());
         Assert.StartsWith("event: system.overview\ndata: {\"version\":", stream.Current, StringComparison.Ordinal);
-        var next = stream.MoveNextAsync().AsTask();
 
-        // A server that has only just started may still be settling (the update check answering), and says so: wait for looks
-        // that find nothing new, which is the case being tested.
-        var quietLooks = 0;
-        for (var look = 0; look < 20 && quietLooks < 3; look++)
+        // A server that has only just started may still be settling (the update check answering), and says so in frames of its own.
+        // Once the update check has answered, the stream is read up to the frame that carries the facts as they now are; from there a
+        // frame can only be a change.
+        var settled = string.Empty;
+        await Eventually.ThatAsync(async () =>
         {
-            await frames.RefreshAsync(stop.Token);
-            await Task.Delay(TimeSpan.FromMilliseconds(250));
-            if (next.IsCompleted)
-            {
-                quietLooks = 0;
-                Assert.True(await next);
-                next = stream.MoveNextAsync().AsTask();
-            }
-            else
-            {
-                quietLooks++;
-            }
+            settled = await FactsNowAsync(frames, stop.Token);
+            return JsonNode.Parse(settled)!["update"]!["status"]!.GetValue<string>() != "checking";
+        });
+        while (FactsOf(stream.Current) != settled)
+        {
+            Assert.True(await stream.MoveNextAsync());
         }
 
-        Assert.Equal(3, quietLooks);
+        var next = stream.MoveNextAsync().AsTask();
+
+        // Looks that find the same facts send nothing: the next frame is the one the browser opening makes, not a repeat.
+        for (var look = 0; look < 3; look++)
+        {
+            await frames.RefreshAsync(stop.Token);
+        }
 
         using var browser = server.Services.GetRequiredService<ActivityStreamClients>().Open();
         await frames.RefreshAsync(stop.Token);
 
-        Assert.True(await next.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.True(await next.WaitAsync(HangGuard));
         Assert.Contains("\"browsers_live\":1", stream.Current, StringComparison.Ordinal);
+    }
+
+    /// <summary>The facts a frame carries: the overview without its uptime, which counts every second and never makes a frame by itself.</summary>
+    private static string FactsOf(string frame)
+    {
+        var overview = (JsonObject)JsonNode.Parse(frame.Split('\n')[1]["data: ".Length..])!;
+        overview.Remove("uptime_seconds");
+        return overview.ToJsonString();
+    }
+
+    /// <summary>The facts as they are now, read from the first frame of a stream of its own, which is always the overview of the moment.</summary>
+    private static async Task<string> FactsNowAsync(SystemOverviewFrames frames, CancellationToken cancellationToken)
+    {
+        await using var probe = frames.ForAsync(cancellationToken).GetAsyncEnumerator(cancellationToken);
+        Assert.True(await probe.MoveNextAsync());
+        return FactsOf(probe.Current);
     }
 
     [Fact]

@@ -141,7 +141,10 @@ export function useCleanLibraryFiles(libraryId: number) {
       /** Your own choice of tracks, for one file; without it the library's rules decide. */
       manual?: LibraryManualPlan;
     }) => cleanLibraryFiles(libraryId, paths, confirm, manual),
-    onSuccess: () => invalidateLibraryViews(qc, libraryId),
+    // Asking what a clean would remove changes nothing, so the views have nothing to catch up on.
+    onSuccess: (result) => {
+      if (result.kind === "cleaned") invalidateLibraryViews(qc, libraryId);
+    },
   });
 }
 

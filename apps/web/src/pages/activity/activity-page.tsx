@@ -96,9 +96,20 @@ function selectedEntry(
   return chosen ?? entries[0] ?? null;
 }
 
-/** What an empty list says: that nothing needs a person, that nothing has been handled yet, or that nothing matches. */
-function emptyWords(group: ActivityGroup, handled: number): string {
-  if (group === "attention") return "No file is waiting on you.";
+/**
+ * What an empty list says: that nothing needs a person, that nothing has been handled yet, or that nothing matches.
+ * When the files that need a person could not be read, it says only that nothing can be listed, never that none waits.
+ */
+function emptyWords(
+  group: ActivityGroup,
+  handled: number,
+  unread: boolean,
+): string {
+  if (group === "attention") {
+    return unread
+      ? "The files waiting on you cannot be listed until they can be read."
+      : "No file is waiting on you.";
+  }
   return handled === 0
     ? "Nothing yet. Every file Weir picks up will be listed here, from the moment it arrives."
     : "No file matches. Try All, or look further back.";
@@ -214,6 +225,16 @@ export function ActivityPage() {
         cardSlot={pickersSlot}
       />
 
+      {cleans.isError && !needsYou && group !== "kept" ? (
+        <LoadError thing="your library cleans" error={cleans.error} />
+      ) : null}
+      {libraries.isError ? (
+        <LoadError thing="your workflows" error={libraries.error} />
+      ) : null}
+      {needsYou && attention.error ? (
+        <LoadError thing="the files that need you" error={attention.error} />
+      ) : null}
+
       {group === "failed" && editable ? (
         <div className="mm-history-bulks">
           <RetryFailed failed={retryableFailures(shown)} />
@@ -279,7 +300,9 @@ export function ActivityPage() {
           className="mm-history-list"
           aside={pickersAside}
         >
-          <p className="mm-history-empty">{emptyWords(group, all.length)}</p>
+          <p className="mm-history-empty">
+            {emptyWords(group, all.length, needsYou && !!attention.error)}
+          </p>
         </Panel>
       ) : (
         <div className="mm-history-body">
