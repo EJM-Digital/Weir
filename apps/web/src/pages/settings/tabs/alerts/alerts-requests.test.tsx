@@ -24,7 +24,6 @@ import {
   firstOfTwoSwitchedOff,
   noChannels,
   oneChannel,
-  savedAsItWas,
   testAlertGone,
   testCouldNotResolve,
   testCouldNotResolveToo,
@@ -40,6 +39,9 @@ const CHANNELS = "/api/v1/suite/notification-channels";
 const token = (JSON.parse(csrfToken.body) as { csrf_token: string }).csrf_token;
 const [discord] = (JSON.parse(oneChannel.body) as NotificationChannelListOut)
   .items;
+/** The address typed when the first alert was recorded; the server shows it with its token hidden. */
+const DISCORD_ADDRESS =
+  "https://hooks.weir-recording.invalid/api/webhooks/1034598712/s3cr3t-T0ken_abc";
 const WEBHOOK_URL = "https://hooks.weir-recording.invalid/pager/9f2c7a1e-token";
 const ADDRESS_ON_THIS_MACHINE = "http://127.0.0.1:8080/hook";
 
@@ -99,6 +101,12 @@ async function openEditForm(label: string): Promise<HTMLElement> {
   const row = await rowOf(label);
   fireEvent.click(within(row).getByRole("button", { name: "Edit" }));
   return screen.findByRole("region", { name: "Edit alert" });
+}
+
+function replaceTheAddress(form: HTMLElement): void {
+  fireEvent.click(
+    within(form).getByRole("button", { name: "Replace the address" }),
+  );
 }
 
 function fill(form: HTMLElement, label: string, value: string): void {
@@ -187,7 +195,7 @@ describe("the Add alert form", () => {
 
     fill(form, "Label", discord.label);
     fill(form, "Provider", "discord");
-    fill(form, "Webhook URL", discord.url);
+    fill(form, "Webhook URL", DISCORD_ADDRESS);
     fireEvent.click(within(form).getByLabelText("A file failed for good"));
     fireEvent.click(within(form).getByRole("button", { name: "Save alert" }));
 
@@ -198,7 +206,7 @@ describe("the Add alert form", () => {
       {
         label: discord.label,
         provider: "discord",
-        url: discord.url,
+        url: DISCORD_ADDRESS,
         events: ["job_failed", "processing_job_failed"],
         enabled: true,
         csrf_token: token,
@@ -215,7 +223,7 @@ describe("the Add alert form", () => {
     const form = await openAddForm();
 
     fill(form, "Label", discord.label);
-    fill(form, "Webhook URL", discord.url);
+    fill(form, "Webhook URL", DISCORD_ADDRESS);
     fireEvent.click(within(form).getByLabelText("Enabled"));
     fireEvent.click(within(form).getByRole("button", { name: "Save alert" }));
 
@@ -260,7 +268,7 @@ describe("the Add alert form", () => {
     render(<AlertsTab />, { wrapper });
     const form = await openAddForm();
     fill(form, "Label", discord.label);
-    fill(form, "Webhook URL", discord.url);
+    fill(form, "Webhook URL", DISCORD_ADDRESS);
     fireEvent.click(within(form).getByRole("button", { name: "Save alert" }));
 
     expect(
@@ -281,37 +289,6 @@ describe("the Add alert form", () => {
 });
 
 describe("the Edit alert form", () => {
-  it("shows the saved address in full, and saving without retyping it sends that address again", async () => {
-    const server = serve({
-      [`GET ${CHANNELS}`]: oneChannel,
-      [`PUT ${CHANNELS}/1`]: savedAsItWas,
-    });
-    render(<AlertsTab />, { wrapper });
-
-    const form = await openEditForm(discord.label);
-
-    const address = within(form).getByLabelText("Webhook URL");
-    expect(address).toHaveAttribute("type", "url");
-    expect(address).toHaveValue(discord.url);
-    fireEvent.click(within(form).getByRole("button", { name: "Save alert" }));
-
-    await vi.waitFor(() =>
-      expect(
-        screen.queryByRole("region", { name: "Edit alert" }),
-      ).not.toBeInTheDocument(),
-    );
-    expect(server.sent("PUT", `${CHANNELS}/1`).map((r) => r.body)).toEqual([
-      {
-        label: discord.label,
-        provider: discord.provider,
-        url: discord.url,
-        events: discord.events,
-        enabled: true,
-        csrf_token: token,
-      },
-    ]);
-  });
-
   it("sends every changed field, shuts the form, and the row shows the change", async () => {
     const server = serve({
       [`GET ${CHANNELS}`]: [oneChannel, afterEdit],
@@ -322,6 +299,7 @@ describe("the Edit alert form", () => {
 
     fill(form, "Label", "Pager bridge");
     fill(form, "Provider", "webhook");
+    replaceTheAddress(form);
     fill(form, "Webhook URL", WEBHOOK_URL);
     fireEvent.click(within(form).getByLabelText("Anything failed for good"));
     fireEvent.click(within(form).getByLabelText("A file finished"));
@@ -354,6 +332,7 @@ describe("the Edit alert form", () => {
     render(<AlertsTab />, { wrapper });
     const form = await openEditForm(discord.label);
 
+    replaceTheAddress(form);
     fill(form, "Webhook URL", ADDRESS_ON_THIS_MACHINE);
     fireEvent.click(within(form).getByRole("button", { name: "Save alert" }));
 
@@ -407,7 +386,6 @@ describe("an event tick in the table", () => {
       {
         label: discord.label,
         provider: discord.provider,
-        url: discord.url,
         events: [...discord.events, "processing_job_completed"],
         enabled: true,
         csrf_token: token,
@@ -456,7 +434,6 @@ describe("an event tick on an alert that is switched off", () => {
       {
         label: "Pager bridge",
         provider: "webhook",
-        url: WEBHOOK_URL,
         events: [
           "processing_job_failed",
           "processing_job_completed",
