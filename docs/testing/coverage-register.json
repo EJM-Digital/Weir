@@ -40827,12 +40827,13 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "No component test at all for `MediaToolsSection`. Needs vitest rendering found / missing ffmpeg / missing mkvmerge / loading and asserting the text and `data-status=\"broken\"`. A missing-FFmpeg warning shown wrongly (or not shown) misleads the person about whether anything can be processed."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/media-tools-section.test.tsx",
+          "name": "MediaToolsSection"
+        }
+      ],
       "audit": {
         "id": "WEB-953",
         "verdict": "Gap"
@@ -41813,12 +41814,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The save test starts with the schedule already enabled and never flips the switch, so `configuration_backup_enabled` is never proven to be sent. vitest: toggle on from off, Save, assert the body has `configuration_backup_enabled:true` (and false)."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.test.tsx",
+          "name": "Backups: the schedule"
+        }
+      ],
       "audit": {
         "id": "WEB-991",
         "verdict": "Gap"
@@ -41857,12 +41859,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with `putAppSettings` rejecting: alert text, Save still available. A silent failed schedule save means no backups are made."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.test.tsx",
+          "name": "Backups: the schedule"
+        }
+      ],
       "audit": {
         "id": "WEB-993",
         "verdict": "Gap"
@@ -41995,12 +41998,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with the POST rejecting; assert the alert. The person believes a backup exists if this is silent."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.test.tsx",
+          "name": "Backups: Back up now"
+        }
+      ],
       "audit": {
         "id": "WEB-997",
         "verdict": "Gap"
@@ -42014,12 +42018,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Click, GET `/api/v1/suite/configuration-bundle`, the saved file name/contents, \"Download started.\" and the failure (\"Could not export.\") are all untested. `saveBlobAs` itself has no test and is mocked everywhere else."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.test.tsx",
+          "name": "Backups: Download settings"
+        }
+      ],
       "audit": {
         "id": "WEB-998",
         "verdict": "Gap"
@@ -42077,12 +42082,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: open the restore dialog, press Keep current settings / Escape, assert `putConfigurationBundle` was never called and the dialog is gone."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.test.tsx",
+          "name": "Backups: Restore from a file"
+        }
+      ],
       "audit": {
         "id": "WEB-1001",
         "verdict": "Gap"
@@ -42096,12 +42102,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The second route into the same data-loss action is unproven: vitest with a valid `{format_version:4,...}` file, assert dialog then PUT with that exact bundle."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.test.tsx",
+          "name": "Backups: Restore from a file"
+        }
+      ],
       "audit": {
         "id": "WEB-1002",
         "verdict": "Gap"
@@ -42154,12 +42161,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with `putConfigurationBundle` rejecting; contract `Configuration_bundle_put_rejects_bad_version` covers the API only."
-      },
-      "issue": 1033,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.test.tsx",
+          "name": "Backups: Restore from a file"
+        }
+      ],
       "audit": {
         "id": "WEB-1005",
         "verdict": "Gap"
@@ -43761,12 +43769,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with each call rejecting; assert the problem line / the dialog error and that the dialog stays open on a failed clear."
-      },
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/log-clear-events.test.tsx",
+          "name": "Clear events"
+        }
+      ],
       "audit": {
         "id": "WEB-1066",
         "verdict": "Gap"
@@ -43845,12 +43854,23 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The log-days edit and the `finalizeLogDays` clamp (blank -> 30, 0 -> 1, 99999 -> 3650, non-number keeps saved) have no test; this setting deletes old log entries, so a wrong clamp removes history early. Needs a `useSystemSettingsForm` / `RetentionSection` vitest per rule and the PUT body."
-      },
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/retention-save.test.tsx",
+          "name": "System log days"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/retention-save.test.tsx",
+          "name": "Events days"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/retention-save.test.tsx",
+          "name": "a System log number that is not a number"
+        }
+      ],
       "audit": {
         "id": "WEB-1069",
         "verdict": "Gap"
@@ -43924,12 +43944,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The settings-PUT success message and failure alert (and \"Saving…\" of that branch) are untested; RS stubs `form.save` as never pending and never failing."
-      },
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/retention-save.test.tsx",
+          "name": "Retention Save"
+        }
+      ],
       "audit": {
         "id": "WEB-1072",
         "verdict": "Gap"
@@ -44121,12 +44142,18 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "`useLogStreamRefresh` (frame -> throttled `invalidateLive` of the log keys) has no test and no E2E covers a server-log line arriving; the Server source could silently go stale. vitest: emit a `system.log` frame, advance 3 s with fake timers, assert one refetch; E2E: provoke a warning and see it in Server."
-      },
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/server-log-live.test.tsx",
+          "name": "the Server log while it is open"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ServerLogLiveTests.cs",
+          "name": "ServerLogLiveTests"
+        }
+      ],
       "audit": {
         "id": "WEB-1080",
         "verdict": "Gap"
@@ -44363,12 +44390,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest on `readiness-api`: 200, 503 with body returns the body, 500 throws. This feeds the shell's \"not ready\" display."
-      },
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/system/readiness-api.test.ts",
+          "name": "fetchSystemReadiness"
+        }
+      ],
       "audit": {
         "id": "WEB-1090",
         "verdict": "Gap"
@@ -55752,8 +55780,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/log-clear-events.test.tsx",
+          "name": "Clear events"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/system/tabs/logs/log-clear-events.tsx#logs-clear-events"
       ],
@@ -55798,8 +55831,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/log-job-actions.test.tsx",
+          "name": "Cancel pending on a queued job"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/system/tabs/logs/log-job-detail.tsx#processing-jobs-cancel-*"
       ],
@@ -55816,8 +55854,13 @@
       "severity": "medium",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1034,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/log-job-actions.test.tsx",
+          "name": "Recover result on a job whose work finished but whose result was not saved"
+        }
+      ],
       "covers": [
         "action:apps/web/src/pages/system/tabs/logs/log-job-detail.tsx#processing-jobs-recover-*"
       ],
