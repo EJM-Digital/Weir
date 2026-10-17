@@ -1,4 +1,4 @@
-# Records a real Sonarr and a real Radarr (#1013, #1014) and replays nothing: the replay tests read what this records, once it is checked in.
+# Records a real Sonarr and a real Radarr (#1013, #1014). The replay tests read what this records, once it is checked in.
 #
 # The apps are the published Docker images, pinned by digest in apps/server/tools/Weir.ArrRecorder/compose.yaml. The recorder
 # (apps/server/tools/Weir.ArrRecorder) sets each app up through its own API and drives Weir's own manager client code against it, so a
