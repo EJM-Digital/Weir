@@ -155,7 +155,9 @@ public sealed class SetupAreaTests(E2EServer server) : E2ETestBase(server)
             var dialog = page.GetByTestId("settings-unsaved-changes");
             await WorkflowEditor.Text(form, "Name").FillAsync("E2E Guarded workflow, renamed");
 
-            await Navigation.OpenSidebarAsync(page, "Connections");
+            // The editor holds the page still while it is open, so it is left by its own buttons.
+            var cancel = form.GetByRole(AriaRole.Button, new() { Name = "Cancel", Exact = true });
+            await cancel.ClickAsync();
             await Expect(dialog).ToContainTextAsync("You have unsaved changes to E2E Guarded workflow. Leave without saving?");
             await Dialogs.ClickOutsideAsync(dialog);
             await Expect(dialog).ToBeVisibleAsync();
@@ -163,9 +165,9 @@ public sealed class SetupAreaTests(E2EServer server) : E2ETestBase(server)
             await Expect(dialog).ToHaveCountAsync(0);
             await Expect(WorkflowEditor.Text(form, "Name")).ToHaveValueAsync("E2E Guarded workflow, renamed");
 
-            await Navigation.OpenSidebarAsync(page, "Connections");
+            await cancel.ClickAsync();
             await dialog.GetByRole(AriaRole.Button, new() { Name = "Leave without saving" }).ClickAsync();
-            await Expect(Tab(page, "Media managers")).ToHaveAttributeAsync("aria-selected", "true");
+            await Expect(form).ToHaveCountAsync(0);
             Assert.Equal("E2E Guarded workflow", (string)(await WorkflowEditor.ReadAsync(admin, id))["name"]!);
         }
         finally
