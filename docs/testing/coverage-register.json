@@ -15236,16 +15236,43 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with memory router: settings pending shows \"Loading setup\"; settings error renders the Outlet; pending state on a non-wizard path redirects, on /setup-wizard does not"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/app/require-setup-wizard.test.tsx",
+          "name": "RequireSetupWizard"
+        }
+      ],
       "audit": {
         "id": "WEB-013",
-        "verdict": "Gap"
+        "verdict": "Covered"
       }
+    },
+    {
+      "id": "web-shell.boot-startup-gate-providers.requiresetupwizard-viewer-before-setup-is-finished-sees-an-administrator-notice",
+      "area": "web-shell",
+      "behaviour": "RequireSetupWizard and the wizard page: a viewer (anyone who cannot change settings) while the first run is pending sees a plain notice that an administrator must finish setting Weir up, is never sent to the wizard and is never offered Skip",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/app/require-setup-wizard.test.tsx",
+          "name": "RequireSetupWizard"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-page.test.tsx",
+          "name": "SetupWizardPage"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ViewerBeforeSetupTests.cs",
+          "name": "ViewerBeforeSetupTests"
+        }
+      ]
     },
     {
       "id": "web-shell.boot-startup-gate-providers.router-unknown-address-while-signed-in-shows-not-found",
@@ -17272,7 +17299,7 @@
     {
       "id": "web-shell.auth-library-and-api.error-answers-become-plain-sentences-401-anywhere-but-sign",
       "area": "web-shell",
-      "behaviour": "Error answers become plain sentences (401 anywhere but sign-in, 429 wait, 422 field sentences, 5xx fallback, never HTML/status code, manager relays kept)",
+      "behaviour": "Error answers become plain sentences (401 anywhere but sign-in, 429 wait, 422 field sentences, 5xx fallback except a busy database's 503, whose own sentence is shown on every request path and load, never HTML/status code, manager relays kept)",
       "kind": "screen action",
       "severity": "medium",
       "touches": "none",
