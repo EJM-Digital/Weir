@@ -13,8 +13,9 @@ namespace Weir.Infrastructure.Tests.Http;
 public sealed class ExternalJsonPosterStandInTests : IDisposable
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
+    private const string CrLf = "\r\n";
 
-    private readonly HttpListener _listener = new();
+    private readonly TcpListener _listener = new(IPAddress.Loopback, 0);
     private readonly int _port;
     private int _answer = 204;
     private string? _location;
@@ -23,17 +24,13 @@ public sealed class ExternalJsonPosterStandInTests : IDisposable
 
     public ExternalJsonPosterStandInTests()
     {
-        var probe = new TcpListener(IPAddress.Loopback, 0);
-        probe.Start();
-        _port = ((IPEndPoint)probe.LocalEndpoint).Port;
-        probe.Stop();
-        _listener.Prefixes.Add($"http://127.0.0.1:{_port}/");
         _listener.Start();
+        _port = ((IPEndPoint)_listener.LocalEndpoint).Port;
     }
 
     private sealed record Received(string Method, string RawUrl, string Host, string ContentType, string UserAgent);
 
-    public void Dispose() => _listener.Abort();
+    public void Dispose() => _listener.Stop();
 
     private async Task<(int Status, Task Served)> PostAsync(string url, int? standIn)
     {
@@ -43,24 +40,29 @@ public sealed class ExternalJsonPosterStandInTests : IDisposable
         return (status, served);
     }
 
+    /// <summary>Answers one request over a plain socket, so what arrives is exactly what the poster wrote, whatever the host name says.</summary>
     private async Task ServeOneAsync()
     {
-        var context = await _listener.GetContextAsync();
-        using (var reader = new StreamReader(context.Request.InputStream, Encoding.UTF8))
+        using var client = await _listener.AcceptTcpClientAsync();
+        var stream = client.GetStream();
+        using var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true);
+
+        var requestLine = (await reader.ReadLineAsync())!.Split(' ');
+        var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        for (var line = await reader.ReadLineAsync(); !string.IsNullOrEmpty(line); line = await reader.ReadLineAsync())
         {
-            _body = await reader.ReadToEndAsync();
+            var colon = line.IndexOf(':', StringComparison.Ordinal);
+            headers[line[..colon]] = line[(colon + 1)..].Trim();
         }
 
-        var request = context.Request;
-        _request = new Received(request.HttpMethod, request.RawUrl ?? string.Empty, request.UserHostName, request.ContentType ?? string.Empty, request.UserAgent ?? string.Empty);
+        var body = new char[int.Parse(headers.GetValueOrDefault("Content-Length", "0"), System.Globalization.CultureInfo.InvariantCulture)];
+        await reader.ReadBlockAsync(body);
+        _body = new string(body);
+        _request = new Received(requestLine[0], requestLine[1], headers.GetValueOrDefault("Host", string.Empty), headers.GetValueOrDefault("Content-Type", string.Empty), headers.GetValueOrDefault("User-Agent", string.Empty));
 
-        context.Response.StatusCode = _answer;
-        if (_location is not null)
-        {
-            context.Response.AddHeader("Location", _location);
-        }
-
-        context.Response.Close();
+        var location = _location is null ? string.Empty : $"Location: {_location}" + CrLf;
+        var answer = $"HTTP/1.1 {_answer} Answer" + CrLf + "Content-Length: 0" + CrLf + "Connection: close" + CrLf + location + CrLf;
+        await stream.WriteAsync(Encoding.ASCII.GetBytes(answer));
     }
 
     [Fact]
