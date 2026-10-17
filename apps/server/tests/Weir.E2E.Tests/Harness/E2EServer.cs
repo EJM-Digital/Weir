@@ -80,13 +80,6 @@ public sealed class E2EServer : IAsyncLifetime
             ("WEIR_PERIODIC_TASK_SPEEDUP", times.ToString(System.Globalization.CultureInfo.InvariantCulture))));
 
     /// <summary>
-    /// A server of its own with these settings added, for a test that needs what the shared server does not have: a reverse proxy in front of
-    /// it, or sign-in limits low enough to reach.
-    /// </summary>
-    public static Task<WeirServer> StartWithSettingsAsync(params (string Name, string Value)[] settings) =>
-        WeirServer.StartNewAsync(Environment.With(settings));
-
-    /// <summary>
     /// A server of its own that probes files with the fake tools, for a test whose files must take as long to look at as it
     /// scripts: the shared server probes with whatever ffprobe the machine has, which answers as fast as the machine does.
     /// </summary>

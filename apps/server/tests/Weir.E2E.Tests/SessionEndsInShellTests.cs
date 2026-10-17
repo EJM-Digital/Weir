@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Microsoft.Playwright;
+using Weir.Contract.Tests.Harness;
 using Weir.E2E.Tests.Harness;
 using Weir.E2E.Tests.Support;
 using static Microsoft.Playwright.Assertions;
@@ -85,7 +86,8 @@ public sealed class SessionEndsInShellTests(E2EServer server) : E2ETestBase(serv
         await page.GetByTestId("sign-out").ClickAsync();
 
         await Expect(page.GetByTestId("login-username")).ToBeVisibleAsync(new() { Timeout = Navigation.UrlAssertMs });
-        Assert.Equal(401, await SecurityTab.WhoAmIStatusAsync(page.Context, BaseUrl));
+        // The sign-in page shows at once and the session ends on the server behind it.
+        await Poll.UntilAsync(async () => await SecurityTab.WhoAmIStatusAsync(page.Context, BaseUrl) == 401, "the server to end the session");
         await Expect(page.GetByTestId("sign-out-failed")).ToHaveCountAsync(0);
     }
 }
