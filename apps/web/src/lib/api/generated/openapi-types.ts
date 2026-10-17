@@ -4580,8 +4580,11 @@ export interface components {
       label: string;
       /** Provider */
       provider: string;
-      /** Url */
-      url: string;
+      /**
+       * Url
+       * @description The address to post to. On an update, leave it out or blank to keep the saved one; a new alert needs it.
+       */
+      url?: string;
     };
     /** NotificationChannelListOut */
     NotificationChannelListOut: {
@@ -4617,6 +4620,11 @@ export interface components {
       enabled: boolean;
       /** Events */
       events: string[];
+      /**
+       * Has Token
+       * @description Whether the saved address has a secret part, which is never returned.
+       */
+      has_token: boolean;
       /** Id */
       id: number;
       /** Label */
@@ -4628,7 +4636,10 @@ export interface components {
        * Format: date-time
        */
       updated_at: string;
-      /** Url */
+      /**
+       * Url
+       * @description The saved address with its secret part hidden, for example https://discord.com/api/webhooks/<id>/••••.
+       */
       url: string;
     };
     /** NotificationChannelTestIn */
