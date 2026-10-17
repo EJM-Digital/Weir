@@ -14,18 +14,27 @@ import { plural } from "../../lib/ui/mm-plural";
  * "Process all again": after the rules change, every rejected file whose original is still in its watched folder goes
  * back to work in one step. It covers the whole rejected set (of the workflow Activity is narrowed to, if any), not just
  * the rows listed for the period on screen, and the dialog says so along with how many files that is.
+ *
+ * What it did is said beside the button. A page whose list drops the button with the last rejected file (the Dashboard's Needs
+ * you) takes the words with `onNotice` instead, so they outlast the button.
  */
 export function ProcessRejectedAgain({
   libraryId,
   libraryName,
+  onNotice,
 }: {
   libraryId: number | undefined;
   libraryName: string | undefined;
+  onNotice?: (text: string, failed: boolean) => void;
 }) {
   const count = useRejectedFilesSummary();
   const processAgain = useProcessRejectedFilesAgain();
   const [notice, setNotice] = useState<string | null>(null);
   const [asking, setAsking] = useState<RejectedFilesSummary | null>(null);
+  const say = (text: string, failed = false) => {
+    if (onNotice) onNotice(text, failed);
+    else setNotice(text);
+  };
   const scope = libraryName ? `the “${libraryName}” workflow` : "all workflows";
 
   function ask() {
@@ -36,11 +45,11 @@ export function ProcessRejectedAgain({
           processAgain.reset();
           setAsking(summary);
         } else {
-          setNotice(nothingToProcess(summary));
+          say(nothingToProcess(summary));
         }
       },
       onError: (error) =>
-        setNotice(errorMessage(error, "Couldn't count the rejected files.")),
+        say(errorMessage(error, "Couldn't count the rejected files."), true),
     });
   }
 
@@ -48,7 +57,7 @@ export function ProcessRejectedAgain({
     processAgain.mutate(libraryId, {
       onSuccess: (result) => {
         setAsking(null);
-        setNotice(
+        say(
           result.requeued > 0
             ? queuedNotice(result.requeued, result.skipped)
             : result.detail,

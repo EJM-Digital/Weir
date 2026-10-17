@@ -4,6 +4,7 @@ import { Navigate } from "react-router-dom";
 import { AuthBrandStack } from "../../components/brand/auth-brand-stack";
 import { PageLoading } from "../../components/shared/page-loading";
 import { MmListboxPicker } from "../../components/ui/mm-listbox-picker";
+import { canEdit } from "../../lib/auth/can-edit";
 import { useMeQuery } from "../../lib/auth/queries";
 import type { ProcessingLibrary } from "../../lib/processing/libraries-api";
 import { useProcessingLibrariesQuery } from "../../lib/processing/libraries-queries";
@@ -18,6 +19,7 @@ import {
   WizardSection,
   WizardWhatsNext,
 } from "./setup-wizard-parts";
+import { SetupNeedsAdmin } from "./setup-needs-admin";
 import { useSuggestedLibraries } from "./use-suggested-libraries";
 import { useWizardConnections } from "./use-wizard-connections";
 import {
@@ -267,10 +269,21 @@ export function SetupWizardPage() {
   const settingsQ = useAppSettingsQuery();
   const processingQ = useProcessingLibrariesQuery();
   const loading = me.isPending || settingsQ.isPending || processingQ.isPending;
-  useLeaveWarning(!loading && wizardStateOf(settingsQ.data) === "pending");
+  useLeaveWarning(
+    !loading &&
+      canEdit(me.data?.role) &&
+      wizardStateOf(settingsQ.data) === "pending",
+  );
 
   if (loading) return <PageLoading label="Loading setup wizard" />;
   if (!me.data) return <Navigate to="/login" replace />;
   if (settingsQ.isError || !settingsQ.data) return <WizardLoadFailed />;
+  if (!canEdit(me.data.role)) {
+    return wizardStateOf(settingsQ.data) === "pending" ? (
+      <SetupNeedsAdmin />
+    ) : (
+      <Navigate to="/" replace />
+    );
+  }
   return <WizardForm settings={settingsQ.data} libraries={processingQ.data} />;
 }

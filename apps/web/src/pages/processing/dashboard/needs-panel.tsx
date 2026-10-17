@@ -87,6 +87,7 @@ function Group({
           <ProcessRejectedAgain
             libraryId={workflowId ?? undefined}
             libraryName={workflowName}
+            onNotice={(text, failed) => handlers.onNotice({ text, failed })}
           />
         ) : null}
       </header>

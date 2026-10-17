@@ -98,11 +98,11 @@ function chooseNeither() {
   );
 }
 
-function renderWizard(wizardState = "pending") {
+function renderWizard(wizardState = "pending", role = "admin") {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
-  client.setQueryData(authKeys.me, { id: 1, username: "admin", role: "admin" });
+  client.setQueryData(authKeys.me, { id: 1, username: "someone", role });
   client.setQueryData(settingsKeys.app, {
     setup_wizard_state: wizardState,
     app_timezone: "UTC",
@@ -126,6 +126,16 @@ describe("SetupWizardPage", () => {
     settingsMutateAsyncMock.mockResolvedValue({});
     createLibraryMock.mockResolvedValue({});
     updateLibraryMock.mockResolvedValue({});
+  });
+
+  it("shows a viewer who opens the wizard the notice, with no wizard and no Skip to be refused", () => {
+    renderWizard("pending", "viewer");
+
+    expect(
+      screen.getByRole("heading", { name: "Weir isn't set up yet" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("setup-wizard-skip")).not.toBeInTheDocument();
+    expect(screen.queryByText("Set up Weir")).not.toBeInTheDocument();
   });
 
   it("asks how downloads reach Weir first, and will not finish without an answer", async () => {
