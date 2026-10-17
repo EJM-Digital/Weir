@@ -35,12 +35,12 @@ public sealed class AlertsTableTests(E2EServer server) : E2ETestBase(server)
 
             var hook = RowOf(page, "E2E hook");
             await Expect(hook.GetByRole(AriaRole.Rowheader)).ToContainTextAsync("webhook");
-            await Expect(hook.GetByRole(AriaRole.Rowheader)).ToContainTextAsync("hooks.example.test/api/webhooks/…/•••• (saved)");
+            await Expect(hook.GetByRole(AriaRole.Rowheader)).ToContainTextAsync("https://hooks.example.test/api/webhooks/123456/••••");
             await Expect(hook.GetByRole(AriaRole.Rowheader)).Not.ToContainTextAsync("Disabled");
             var off = RowOf(page, "E2E discord");
             await Expect(off.GetByRole(AriaRole.Rowheader)).ToContainTextAsync("discord");
             await Expect(off.GetByRole(AriaRole.Rowheader).Locator(".mm-chip[data-status=idle]")).ToHaveTextAsync("Disabled");
-            await Expect(off.GetByRole(AriaRole.Rowheader)).ToContainTextAsync("discord.com/api/webhooks/…/•••• (saved)");
+            await Expect(off.GetByRole(AriaRole.Rowheader)).ToContainTextAsync("https://discord.com/api/webhooks/987654/••••");
 
             // Each event column is ticked for the alerts that hear of it.
             foreach (var (label, heard) in new[] { ("A file finished", false), ("A file failed for good", true), ("Anything failed for good", true), ("Anything finished", false) })
