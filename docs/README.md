@@ -25,6 +25,7 @@ whose source is in [`../docs-site/docs`](../docs-site/docs).
 - [`local-development.md`](local-development.md) - local setup and the development workflow, including how to run the real server with its web app on a fresh data folder.
 - [`triage.md`](triage.md) - issue labels and triage rules.
 - [`exec-plans/README.md`](exec-plans/README.md) - where execution plans live.
+- [`exec-plans/active/PLAN-SCENARIOS-IN-CI.md`](exec-plans/active/PLAN-SCENARIOS-IN-CI.md) - how Weir's scenario suite moves from the VM into CI: where each of the 14 scenarios runs, the shards, the images pinned by digest, the drift job, when a scenario counts as proved, and the clean-up once the VM is gone.
 - [`exec-plans/active/PLAN-ORG-MOVE.md`](exec-plans/active/PLAN-ORG-MOVE.md) - moving Weir to the EJM-Digital organisation: where the owner is written, what GitHub redirects, the sweep, the two image names, the organisation settings and the proof after the move.
 - [`release.md`](release.md) - the release procedure and what each release produces.
 - [`coverage/README.md`](coverage/README.md) - how test coverage is measured on every CI run, the floors that only go up, and how to raise or lower one.
