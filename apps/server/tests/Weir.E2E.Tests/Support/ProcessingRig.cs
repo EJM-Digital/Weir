@@ -29,7 +29,7 @@ public sealed partial class ProcessingRig : IAsyncDisposable
 
     private readonly FakeFfmpeg _tools;
     private readonly WeirServer _server;
-    private readonly WeirClient _admin;
+    private WeirClient _admin;
     private readonly FakeManager _deluno;
     private readonly TemporaryFolder _folders;
 
@@ -53,7 +53,8 @@ public sealed partial class ProcessingRig : IAsyncDisposable
     /// <param name="minimumFileSizeMb">The Movies workflow's minimum size: a file smaller than this is left alone.</param>
     /// <param name="holdFailures">A file that fails stays failed, for the person to try again, instead of being retried by itself.</param>
     /// <param name="delunoCapabilities">What Deluno says it can do in its manifest, such as taking a rejected release back to search for another.</param>
-    public static async Task<ProcessingRig> StartAsync(int minimumFileSizeMb = 0, bool holdFailures = false, IEnumerable<string>? delunoCapabilities = null)
+    /// <param name="writesGiveUpQuickly">A change the server cannot make because the database is held (see <see cref="HoldWrites"/>) is refused after a second instead of waited for.</param>
+    public static async Task<ProcessingRig> StartAsync(int minimumFileSizeMb = 0, bool holdFailures = false, IEnumerable<string>? delunoCapabilities = null, bool writesGiveUpQuickly = false)
     {
         var tools = FakeFfmpeg.Install();
         var folders = new TemporaryFolder();
@@ -67,6 +68,7 @@ public sealed partial class ProcessingRig : IAsyncDisposable
                 ["WEIR_WEB_DIST"] = RepoPaths.WebDist,
                 ["WEIR_PROCESSING_WORKER_COUNT"] = "1",
                 [WebhookSecretVariable] = WebhookSecret,
+                ["WEIR_SQLITE_BUSY_TIMEOUT_SECONDS"] = writesGiveUpQuickly ? "1" : "30",
             });
             admin = new WeirClient(server.BaseUrl);
             await admin.EnsureAdminAsync(Navigation.BootstrapUser, Navigation.BootstrapPassword);
