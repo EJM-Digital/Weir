@@ -1,10 +1,10 @@
 {
-  "note": "Where each scenario of the VM catalogue (scripts/scenarios/Weir.Scenarios.Catalog.ps1) runs once the VM is gone, in catalogue order. Read by scripts/scenarios-in-ci.mjs and checked against docs/exec-plans/active/PLAN-SCENARIOS-IN-CI.md by scripts/scenarios-in-ci.test.mjs. home: linux (Docker Compose on ubuntu-latest), windows (windows-latest) or not-portable (with the reason). state: to-port, ported (runs in CI), green-twice (passed in two CI runs on main, on different commits, with no failing run between: the VM may stop being the gate for it).",
+  "note": "Where each scenario of the VM catalogue (scripts/scenarios/Weir.Scenarios.Catalog.ps1) runs once the VM is gone, in catalogue order. Read by scripts/scenarios-in-ci.mjs and checked against docs/exec-plans/active/PLAN-SCENARIOS-IN-CI.md by scripts/scenarios-in-ci.test.mjs. home: linux (Docker Compose on ubuntu-latest), windows (windows-latest) or not-portable (with the reason). state: to-port, ported (runs in CI), green-twice (passed in two CI runs on main, on different commits, with no failing run between: the VM may stop being the gate for it). catalogue: false marks a scenario written for CI only, for behaviour the VM suite never covered; it is not in the catalogue.",
   "shards": {
     "weir-only": { "home": "linux", "budgetMinutes": 15, "what": "Weir alone in the Docker image: films dropped into workflows with no manager." },
     "weir-browser": { "home": "linux", "budgetMinutes": 10, "what": "Weir alone in the Docker image, driven through a real browser." },
     "with-deluno": { "home": "linux", "budgetMinutes": 20, "what": "Weir, Deluno and the real download clients, each hand-off followed through both apps." },
-    "windows-install": { "home": "windows", "budgetMinutes": 20, "what": "The Windows installer on a clean runner: install, the server, the recovery command." },
+    "windows-install": { "home": "windows", "budgetMinutes": 20, "what": "The Windows installer on a clean runner: install, the server and its secrets, the recovery command, uninstall and reinstall." },
     "windows-update": { "home": "windows", "budgetMinutes": 20, "what": "The update from the previous release, over a Weir that is running." },
     "windows-tray": { "home": "windows", "budgetMinutes": 20, "what": "The real tray, driven through UI Automation." }
   },
@@ -55,7 +55,7 @@
       "id": "fresh-install",
       "home": "windows",
       "shard": "windows-install",
-      "state": "to-port",
+      "state": "ported",
       "why": "Runs Weir-win-Setup.exe silently and starts the installed Weir.exe with its tray; a clean windows-latest runner is the clean machine."
     },
     {
@@ -104,8 +104,16 @@
       "id": "recover-locked-out-account",
       "home": "windows",
       "shard": "windows-install",
-      "state": "to-port",
+      "state": "ported",
       "why": "Runs the installed WeirServer.exe recover as a person's console does; the Docker form of the command is already proved by the Docker smoke."
+    },
+    {
+      "id": "uninstall-keeps-the-data",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-install",
+      "state": "ported",
+      "why": "The VM suite never ran the uninstaller. Weir is uninstalled twice on a clean runner, stopped and running, and the data folder, the secrets and the account must be as they were."
     }
   ]
 }

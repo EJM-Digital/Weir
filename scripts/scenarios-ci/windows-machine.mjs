@@ -1,0 +1,290 @@
+// The Windows PC under test, as the Windows scenarios ask about it: Setup and the uninstaller run for real, the tray and the server started
+// and stopped, the files, access lists and registry entries read. Every change it makes (installing, uninstalling, stopping Weir, running
+// the recovery command against the machine's own data folder) is meant for a clean GitHub-hosted runner and is refused anywhere else.
+import { execFile, spawn } from "node:child_process";
+import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
+import { mkdir, readdir, readFile, stat } from "node:fs/promises";
+import { join, relative } from "node:path";
+
+import { pollUntil } from "../docker-smoke/poll.mjs";
+
+const POWERSHELL = "powershell.exe";
+// Hang guards: each ends the moment the thing it waits for has happened.
+const SETUP_CEILING_MS = 600_000;
+const RECOVER_CEILING_MS = 120_000;
+const STOP_CEILING_MS = 60_000;
+
+/** Why this is not a machine to install and uninstall Weir on, or null when it is a GitHub-hosted Windows runner. */
+export function whyNotAThrowawayMachine(env, platform) {
+  if (platform !== "win32") return `this is ${platform}, not Windows`;
+  if (env.GITHUB_ACTIONS !== "true" || env.RUNNER_ENVIRONMENT !== "github-hosted") {
+    return "this is not a GitHub-hosted runner, so a clean machine cannot be assumed; installing and uninstalling Weir here would change your own Weir";
+  }
+  return null;
+}
+
+/** The environment a person's console has: nothing Weir's tray gives the server, and no data folder named. */
+export function consoleEnvironment(env) {
+  return Object.fromEntries(Object.entries(env).filter(([name]) => !name.toUpperCase().startsWith("WEIR_")));
+}
+
+function run(program, args, { env = process.env, ceilingMs = 120_000 } = {}) {
+  return new Promise((resolve, reject) => {
+    execFile(program, args, { env, windowsHide: true, timeout: ceilingMs, maxBuffer: 32 * 1024 * 1024 }, (error, stdout, stderr) => {
+      if (error) reject(new Error(`${program} ${args.join(" ")} failed: ${error.message}\n${stderr}`.trim(), { cause: error }));
+      else resolve(stdout);
+    });
+  });
+}
+
+/**
+ * Runs a PowerShell script that writes JSON; what it needs to know arrives in the environment, never spliced into the script. A script that
+ * finds nothing and says nothing succeeds (a failed lookup under -ErrorAction SilentlyContinue would otherwise set the exit code); an error that
+ * stops the script still fails it.
+ */
+async function json(script, values = {}) {
+  const env = { ...process.env, ...Object.fromEntries(Object.entries(values).map(([name, value]) => [`SCENARIO_${name}`, String(value)])) };
+  const text = await run(POWERSHELL, ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", `$ErrorActionPreference = 'Stop'; ${script}
+exit 0`], { env });
+  return text.trim() ? JSON.parse(text) : null;
+}
+
+const sha256 = (path) =>
+  new Promise((resolve, reject) => {
+    const hash = createHash("sha256");
+    createReadStream(path).on("data", (chunk) => hash.update(chunk)).on("error", reject).on("end", () => resolve(hash.digest("hex")));
+  });
+
+async function walk(folder) {
+  const found = [];
+  for (const entry of await readdir(folder, { withFileTypes: true })) {
+    const path = join(folder, entry.name);
+    if (entry.isDirectory()) found.push(...(await walk(path)));
+    else found.push(path);
+  }
+  return found;
+}
+
+export class WindowsMachine {
+  #env;
+
+  /** @param {NodeJS.ProcessEnv} env */
+  constructor(env = process.env) {
+    if (env.WEIR_HOME) throw new Error("WEIR_HOME is set, so the tray would keep its data somewhere other than the default folder this scenario reads.");
+    this.#env = env;
+    const installRoot = join(env.LOCALAPPDATA, "Weir");
+    const runtimeHome = join(env.ProgramData ?? "C:\\ProgramData", "Weir");
+    this.paths = {
+      installRoot,
+      updater: join(installRoot, "Update.exe"),
+      trayExe: join(installRoot, "current", "Weir.exe"),
+      serverExe: join(installRoot, "current", "server", "WeirServer.exe"),
+      runtimeHome,
+      database: join(runtimeHome, "data", "weir.sqlite3"),
+      trayLog: join(runtimeHome, "tray-host.log"),
+      logsFolder: join(runtimeHome, "logs"),
+    };
+  }
+
+  /** Runs Setup the way another program installing Weir does, and waits for Setup's own exit. */
+  async install(setupPath) {
+    const began = Date.now();
+    const exitCode = await this.#exitOf(setupPath, ["--silent"], SETUP_CEILING_MS, "Setup");
+    return { exitCode, seconds: Math.round((Date.now() - began) / 1000) };
+  }
+
+  /** Runs Velopack's own uninstaller, silently. */
+  async uninstall() {
+    return { exitCode: await this.#exitOf(this.paths.updater, ["uninstall", "--silent"], SETUP_CEILING_MS, "The uninstaller") };
+  }
+
+  #exitOf(program, args, ceilingMs, what) {
+    return new Promise((resolve, reject) => {
+      const child = spawn(program, args, { stdio: ["ignore", "pipe", "pipe"], windowsHide: true, env: this.#env });
+      child.stdout.resume();
+      child.stderr.resume();
+      const timer = setTimeout(() => {
+        child.kill();
+        reject(new Error(`${what} was still running after ${ceilingMs / 60_000} minutes.`));
+      }, ceilingMs);
+      child.on("error", (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+      child.on("exit", (code) => {
+        clearTimeout(timer);
+        resolve(code);
+      });
+    });
+  }
+
+  /** Starts the installed tray the way an unattended caller does: no window, a port given. Returns its process id. */
+  startTray(port) {
+    const child = spawn(this.paths.trayExe, ["--port", String(port), "--silent"], {
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true,
+      env: consoleEnvironment(this.#env),
+    });
+    child.unref();
+    return child.pid;
+  }
+
+  /** The tray and server processes running from the install: { name, pid, parentPid, hasWindow }. */
+  processes() {
+    return json(
+      `$root = $env:SCENARIO_ROOT + '\\'
+      ConvertTo-Json -Compress -InputObject @(Get-CimInstance Win32_Process -Filter "Name = 'Weir.exe' OR Name = 'WeirServer.exe'" |
+        Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($root, [StringComparison]::OrdinalIgnoreCase) } |
+        ForEach-Object {
+          $process = Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue
+          [pscustomobject]@{ name = $_.Name; pid = [int]$_.ProcessId; parentPid = [int]$_.ParentProcessId; hasWindow = [bool]($process -and $process.MainWindowHandle -ne [IntPtr]::Zero) }
+        })`,
+      { ROOT: this.paths.installRoot },
+    );
+  }
+
+  /** Stops the install's own tray, then its server, by process id, and waits until neither runs. Nothing else is touched. */
+  async stopWeir() {
+    for (const process of (await this.processes()).toSorted((a, b) => Number(b.name === "Weir.exe") - Number(a.name === "Weir.exe"))) {
+      await run("taskkill.exe", ["/PID", String(process.pid), "/F"]).catch(() => undefined);
+    }
+    await pollUntil(async () => ((await this.processes()).length === 0 ? true : undefined), {
+      what: "the installed Weir to stop",
+      ceilingMs: STOP_CEILING_MS,
+      intervalMs: 500,
+    });
+  }
+
+  /** The addresses something listens on at the port. */
+  listeningAddresses(port) {
+    return json(
+      `ConvertTo-Json -Compress -InputObject @(Get-NetTCPConnection -LocalPort ([int]$env:SCENARIO_PORT) -State Listen -ErrorAction SilentlyContinue | ForEach-Object { $_.LocalAddress } | Sort-Object -Unique)`,
+      { PORT: port },
+    );
+  }
+
+  /** The Windows account the tray runs as. */
+  account() {
+    return json(
+      `$identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+      ConvertTo-Json -Compress -InputObject ([pscustomobject]@{ sid = $identity.User.Value; name = $identity.Name })`,
+    );
+  }
+
+  /** Who a file lets in: whether it inherits nothing, and every rule with the account's security identifier. */
+  accessList(path) {
+    return json(
+      `$acl = Get-Acl -LiteralPath $env:SCENARIO_PATH
+      ConvertTo-Json -Compress -Depth 4 -InputObject ([pscustomobject]@{
+        protected = [bool]$acl.AreAccessRulesProtected
+        rules = @($acl.Access | ForEach-Object {
+          [pscustomobject]@{
+            sid = $_.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+            name = $_.IdentityReference.Value
+            allow = ($_.AccessControlType -eq 'Allow')
+            rights = $_.FileSystemRights.ToString()
+          }
+        })
+      })`,
+      { PATH: path },
+    );
+  }
+
+  /** The shortcuts to Weir on this account's Start Menu and desktop (and the shared ones), as paths. */
+  async shortcuts() {
+    const found = await json(
+      `$places = 'Programs', 'CommonPrograms', 'Desktop', 'CommonDesktopDirectory', 'Startup', 'CommonStartup' | ForEach-Object { [Environment]::GetFolderPath($_) } | Where-Object { $_ -and (Test-Path -LiteralPath $_) }
+      ConvertTo-Json -Compress -InputObject @($places | ForEach-Object { Get-ChildItem -LiteralPath $_ -Filter 'Weir*.lnk' -Recurse -File -ErrorAction SilentlyContinue } | ForEach-Object { $_.FullName })`,
+    );
+    return found ?? [];
+  }
+
+  /** The command line behind the Weir entry of the current account's Run key, or null when there is none. */
+  runEntry() {
+    return json(
+      `$entry = Get-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run' -Name 'Weir' -ErrorAction SilentlyContinue
+      if ($entry) { ConvertTo-Json -Compress -InputObject ([string]$entry.Weir) }`,
+    );
+  }
+
+  /** The mark a running tray leaves in the current account's registry, or null when there is none. */
+  trayMark() {
+    return json(
+      `$mark = Get-ItemProperty -Path 'HKCU:\\SOFTWARE\\WeirTrayRunning' -ErrorAction SilentlyContinue
+      if ($mark) { ConvertTo-Json -Compress -InputObject ([pscustomobject]@{ processId = [int]$mark.ProcessId; executable = [string]$mark.Executable }) }`,
+    );
+  }
+
+  /** Runs `WeirServer.exe --version` and returns what it prints. */
+  async serverVersion() {
+    return (await run(this.paths.serverExe, ["--version"], { env: consoleEnvironment(this.#env) })).trim();
+  }
+
+  /**
+   * Runs the installed `WeirServer.exe recover` as a person's console does: stdin closed so nothing can be prompted, none of the variables
+   * the tray gives the server, and no data folder named, so the command must find the one the installed Weir uses. Never throws on the exit code.
+   */
+  recover(args) {
+    return new Promise((resolve, reject) => {
+      const child = spawn(this.paths.serverExe, ["recover", ...args], { stdio: ["pipe", "pipe", "pipe"], windowsHide: true, env: consoleEnvironment(this.#env) });
+      child.stdin.end();
+      let stdout = "";
+      let stderr = "";
+      child.stdout.on("data", (chunk) => (stdout += chunk));
+      child.stderr.on("data", (chunk) => (stderr += chunk));
+      const timer = setTimeout(() => {
+        child.kill();
+        reject(new Error(`WeirServer.exe recover did not finish within ${RECOVER_CEILING_MS / 1000} s.`));
+      }, RECOVER_CEILING_MS);
+      child.on("error", (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+      child.on("close", (exitCode) => {
+        clearTimeout(timer);
+        resolve({ exitCode, stdout, stderr });
+      });
+    });
+  }
+
+  /** Where the tray keeps a secret of the runtime home, by file name. */
+  secretPath(name) {
+    return join(this.paths.runtimeHome, name);
+  }
+
+  async ensureFolders(...folders) {
+    for (const folder of folders) await mkdir(folder, { recursive: true });
+  }
+
+  exists(path) {
+    return stat(path).then(
+      () => true,
+      () => false,
+    );
+  }
+
+  readText(path) {
+    return readFile(path, "utf8");
+  }
+
+  /** Every file under the folder: path relative to it and size, with the SHA-256 of the bytes when asked. Empty when the folder is not there. */
+  async files(folder, { hash = false } = {}) {
+    if (!(await this.exists(folder))) return [];
+    const listed = await Promise.all(
+      (await walk(folder)).map(async (path) => ({
+        path: relative(folder, path),
+        bytes: (await stat(path)).size,
+        ...(hash ? { sha256: await sha256(path) } : {}),
+      })),
+    );
+    return listed.toSorted((a, b) => a.path.localeCompare(b.path));
+  }
+
+  /** Everything the server has logged, oldest file first. */
+  async serverLogs() {
+    const files = (await this.files(this.paths.logsFolder)).map((file) => join(this.paths.logsFolder, file.path));
+    return (await Promise.all(files.map((file) => readFile(file, "utf8")))).join("\n");
+  }
+}

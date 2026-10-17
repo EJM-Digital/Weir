@@ -263,6 +263,10 @@ jobs:
     # Always GitHub's own runner: this job installs Weir for real, which needs a clean machine every time.
     runs-on: windows-latest
     timeout-minutes: 30
+    outputs:
+      # The version the Setup this job builds must report: the release a golden-path build is meant to become, with the commit, or empty
+      # for the placeholder build, which reports the version the server project declares.
+      version: ${{ steps.build.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -323,6 +327,7 @@ jobs:
               exit 1
             fi
             echo "WEIR_BUILD_VERSION=$RELEASE_VERSION+$short" >> "$GITHUB_ENV"
+            echo "version=$RELEASE_VERSION+$short" >> "$GITHUB_OUTPUT"
           fi
 
       # Builds the web app, publishes the .NET server and the tray, vendors FFmpeg and MKVToolNix, installs the
@@ -348,6 +353,15 @@ jobs:
           if-no-files-found: warn
           path: artifacts/windows-recover-smoke/**
 
+      # The Setup the Windows scenarios install, in every run (a pull request's too), for a day: the next job takes it from here.
+      - name: Keep the Setup for the Windows scenarios
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: weir-windows-setup-under-test
+          if-no-files-found: error
+          retention-days: 1
+          path: dist/windows/releases/Weir-win-Setup.exe
+
       - name: Upload the Windows build of this commit
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -358,3 +372,43 @@ jobs:
           path: |
             dist/windows/releases/Weir-win-Setup.exe
             dist/windows/releases/Weir-win-Portable.zip
+
+  # Weir's Windows scenarios on a clean GitHub-hosted runner, replacing the Hyper-V VM (docs/exec-plans/active/PLAN-SCENARIOS-IN-CI.md): the
+  # Setup the job above built is installed for real, used, and uninstalled. The shards listed here are those with a scenario ported
+  # (scripts/scenarios-ci/homes.json). Always GitHub's own runner: the shard refuses to run on a machine that is not one, because it installs
+  # and uninstalls Weir.
+  scenarios-windows:
+    needs: windows-package-smoke
+    runs-on: windows-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [windows-install]
+    env:
+      SHARD: ${{ matrix.shard }}
+      BUILD_VERSION: ${{ needs.windows-package-smoke.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+
+      - name: Fetch the Setup under test
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: weir-windows-setup-under-test
+          path: setup
+
+      - name: Run the shard's scenarios against the Setup
+        shell: bash
+        run: node scripts/scenarios-in-ci.mjs "$SHARD" --setup setup/Weir-win-Setup.exe --version "$BUILD_VERSION"
+
+      - name: Upload scenario logs and results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: weir-scenarios-${{ matrix.shard }}
+          if-no-files-found: warn
+          path: artifacts/scenarios-in-ci/**

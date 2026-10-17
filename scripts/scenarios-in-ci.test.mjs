@@ -218,7 +218,7 @@ test("the summary is a table of each scenario's verdict and time, with what fail
   const text = summaryMarkdown([
     { id: "weir-only-film", status: "passed", seconds: 12, detail: "A film was cleaned." },
     { id: "process-again", status: "failed", seconds: 3, detail: "it was answered 500" },
-  ], { shard: "weir-only", candidate: "weir-ci-smoke" });
+  ], { shard: "weir-only", value: "weir-ci-smoke" });
   assert.match(text, /^### Scenarios: weir-only/);
   assert.match(text, /\| `weir-only-film` \| passed \| 12 s \| A film was cleaned\. \|/);
   assert.match(text, /\| `process-again` \| FAILED \| 3 s \| it was answered 500 \|/);

@@ -14,7 +14,7 @@
 
 ## Every scenario and its home
 
-The 14 scenarios of `Weir.Scenarios.Catalog.ps1`. `scripts/scenarios-ci/homes.json` is the record the code reads; `scripts/scenarios-in-ci.test.mjs` fails when this table and that file disagree, or when a scenario of the catalogue has no row. **No scenario is wholly unportable.** Two have a part that stays on Windows (the tray's side of Pause and resume, and the installed copy of the recovery command); those parts have their own Windows rows below.
+The 14 scenarios of `Weir.Scenarios.Catalog.ps1`, and the ones written for CI alone (marked `catalogue: false` in `homes.json`, and listed after the catalogue's). `scripts/scenarios-ci/homes.json` is the record the code reads; `scripts/scenarios-in-ci.test.mjs` fails when this table and that file disagree, or when a scenario of the catalogue has no row. **No scenario is wholly unportable.** Two have a part that stays on Windows (the tray's side of Pause and resume, and the installed copy of the recovery command); those parts have their own Windows rows below.
 
 | Scenario | Home | Shard | State | Why it lives there |
 | --- | --- | --- | --- | --- |
@@ -24,14 +24,15 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`. `scripts/scenarios-ci/homes.js
 | `deluno-release-with-extra` | linux | with-deluno | to-port | The extra is read where it stays, through the download client's own API. |
 | `deluno-resend` | linux | with-deluno | to-port | Deluno's send-again is an API call; both sides are read over HTTP. |
 | `deluno-outcomes` | linux | with-deluno | to-port | The outcome each app recorded is compared; both are read over HTTP. |
-| `fresh-install` | windows | windows-install | to-port | Runs `Weir-win-Setup.exe` silently and starts the installed tray; a clean runner is the clean machine. |
+| `fresh-install` | windows | windows-install | ported | Runs `Weir-win-Setup.exe` silently and starts the installed tray; a clean runner is the clean machine. It also reads the tray's two secrets on the real install. |
 | `first-visit-account` | linux | weir-browser | to-port | Nothing in it is Windows: a new browser context sees account creation, then sign-in. Chromium under Playwright takes the place of Edge. |
 | `weir-only-film` | linux | weir-only | ported | The first shard. The server cleans a film with the image's own ffmpeg. |
 | `process-again` | linux | weir-only | ported | The first shard. Asked to process a cleaned film again, the server skips it. |
 | `pause-resume` | linux | weir-only | to-port | The server hears the tray through a file in its data folder, and that watcher is the same on Linux. The tray's side stays with windows-tray. |
 | `deleted-queued-file` | linux | weir-only | to-port | A file deleted while Weir waits for it to settle; nothing in it is Windows. |
 | `update-requests` | windows | windows-tray | to-port | Needs the real tray to take the update flag files. |
-| `recover-locked-out-account` | windows | windows-install | to-port | Runs the installed `WeirServer.exe recover`. The Docker form is already proved by the Docker smoke. |
+| `recover-locked-out-account` | windows | windows-install | ported | Runs the installed `WeirServer.exe recover` with nothing set, so it must find Weir's data folder itself. The Docker form is already proved by the Docker smoke. |
+| `uninstall-keeps-the-data` | windows | windows-install | ported | Written for CI: the VM suite never ran the uninstaller. Uninstalls Weir stopped and running, and finds the data, the secrets and the account afterwards. |
 
 ### Windows-only behaviour with no scenario today
 
@@ -44,7 +45,7 @@ The VM suite does not cover these; the package smokes (`smoke-windows-package.ps
 | weir-only | ubuntu-latest | 15 min | Weir alone in the Docker image: films, Process again, Pause and resume, a deleted file. **Built.** |
 | weir-browser | ubuntu-latest | 10 min | Weir alone, driven through a real browser. |
 | with-deluno | ubuntu-latest | 20 min | Weir, Deluno and the real clients; split by client when it outgrows the budget, as Deluno splits `resend`. |
-| windows-install | windows-latest | 20 min | Install, the installed server, the recovery command, the service and start with Windows. |
+| windows-install | windows-latest | 20 min | Install, the installed server and its secrets, the recovery command, uninstall and reinstall. **Built.** Start with Windows needs the tray's own menu, so it waits for windows-tray. |
 | windows-update | windows-latest | 20 min | The update from the previous release over a running Weir. |
 | windows-tray | windows-latest | 20 min | The real tray through UI Automation, and NTFS behaviour. |
 
@@ -89,12 +90,22 @@ A scenario is **green twice** when it passed in two CI runs on `main`, on differ
 
 `scripts/scenarios-in-ci.mjs weir-only --candidate <image>` starts the shipped `compose.yaml` with the image CI built, makes the first account the way an operator does, and runs `weir-only-film` and `process-again`, each with every check of the VM scenario (the film's tracks, the original and its `.nfo` left alone, the Activity lines, the job count, the output not rewritten). The job is `scenarios-linux` in `ci-packaging.yml`. Docker was not available where it was written, so its first real run is the first CI run of this change; the logic that decides things is covered by `scripts/scenarios-in-ci.test.mjs` against a small stand-in for Weir and the container.
 
+### The windows-install shard
+
+`scripts/scenarios-in-ci.mjs windows-install --setup <Weir-win-Setup.exe>` runs on a GitHub-hosted `windows-latest` runner, which is the clean machine: it refuses to run anywhere else, because it installs, uninstalls and runs the recovery command against the machine's own data folder. The Setup is the one the `windows-package-smoke` job built in the same workflow run. The job is `scenarios-windows` in `ci-packaging.yml`.
+
+- `fresh-install`: Setup `--silent`, the tray started the way an unattended caller starts it, the server's version, no window, loopback only, and the tray's two secrets (`session.secret`, `credentials.secret`) on the real install: long enough, readable only by SYSTEM, the administrators and the installing account, different from each other, and the one the running server signs with.
+- `recover-locked-out-account`: `WeirServer.exe recover` from the install with no variable set, which must find the data folder the installed server uses, list the account, reset the password and end the earlier sessions.
+- `uninstall-keeps-the-data` (added for CI): uninstalls with Weir stopped, then with Weir running; the data folder, the secrets and the account are as they were, the shortcuts, the Run entry and the running mark are gone, and each reinstall signs in and finds the workflow.
+
+The tray is started without its user interface, so what the tray shows is left to `windows-tray`.
+
 ### Next
 
 1. `weir-only`: `pause-resume` (the server half, by writing the request file in the container) and `deleted-queued-file`.
 2. `weir-browser`: `first-visit-account`, with Chromium under Playwright.
 3. `with-deluno`: images pinned by digest, the Compose file, then `workflows-from-deluno` and `deluno-film-handoff` on qBittorrent, then the other four scenarios and the other clients.
-4. The Windows shards, starting with `windows-install`.
+4. `windows-update`, then `windows-tray` (the shards after `windows-install`).
 5. The drift workflow, and the per-shard paths filter.
 
 ## Runners
