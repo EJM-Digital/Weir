@@ -19,7 +19,7 @@ public abstract class FakeHttpServer : IDisposable
     private readonly List<RecordedRequest> _requests = [];
     private readonly HttpListener _listener;
     private TaskCompletionSource _arrived = NewSignal();
-    private volatile bool _answering = true;
+    private volatile bool _unavailable;
 
     protected FakeHttpServer()
     {
@@ -99,10 +99,10 @@ public abstract class FakeHttpServer : IDisposable
     }
 
     /// <summary>
-    /// From now on drops every connection without an answer, as a server that is down for its callers, and keeps its port: a stopped fake
-    /// gives its port back, and another fake in the same run can be given it and answer the requests meant for this one.
+    /// From now on answers every request 503, as a server that is down for its callers, and keeps its port: a stopped fake gives its port
+    /// back, and another fake in the same run can be given it and answer the requests meant for this one.
     /// </summary>
-    public void StopAnswering() => _answering = false;
+    public void GoUnavailable() => _unavailable = true;
 
     protected abstract HttpAnswer Answer(RecordedRequest request);
 
@@ -148,19 +148,13 @@ public abstract class FakeHttpServer : IDisposable
 
     private async Task RespondAsync(HttpListenerContext context)
     {
-        if (!_answering)
-        {
-            context.Response.Abort();
-            return;
-        }
-
         try
         {
             var request = await ReadAsync(context.Request);
             HttpAnswer answer;
             try
             {
-                answer = Answer(request);
+                answer = _unavailable ? new HttpAnswer(503, []) : Answer(request);
             }
             catch (Exception problem)
             {
