@@ -14,6 +14,7 @@ public static class RemuxRuleValues
     public const string SubtitleModeKeepAll = "keep_all";
     public const string DefaultAudioSlotPrimary = "primary";
     public const string DefaultAudioSlotSecondary = "secondary";
+    public const string DefaultAudioSlotTertiary = "tertiary";
     public const string PolicyPreferredLangsQuality = "preferred_langs_quality";
     public const string PolicyPreferredLangsStrict = "preferred_langs_strict";
     public const string PolicyQualityAllLanguages = "quality_all_languages";

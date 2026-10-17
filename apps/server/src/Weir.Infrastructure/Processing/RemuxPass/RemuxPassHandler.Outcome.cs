@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
+using Weir.Core.Jobs;
 using Weir.Core.Json;
 using Weir.Core.Processing;
 using Weir.Core.Processing.RemuxPass;
@@ -179,6 +180,24 @@ public sealed partial class RemuxPassHandler
         }
 
         updates.Set("retry_scheduled", false).Set("failure_next_retry_at", WireNull.Instance).Set("failure_operator_message", reason);
+    }
+
+    /// <summary>
+    /// What an alert should say about a pass that has just been settled. Only a file that was done is a finished one; one that failed for
+    /// good (no retry owed) is a failure; a file still waiting, being tried again, left alone, refused for another release or already
+    /// done is neither, so nothing is sent for it.
+    /// </summary>
+    internal static JobAlert AlertFor(WireObject result)
+    {
+        if (result.Get("rejection_kind") is { IsTruthy: true } ||
+            result.Get("retryable_wait") is WireBool { Value: true } ||
+            result.Get("retry_scheduled") is WireBool { Value: true } ||
+            result.Get("outcome") is WireString { Value: RemuxPassOutcomes.SourceGone or RemuxPassOutcomes.SkippedGuardrail })
+        {
+            return JobAlert.Nothing;
+        }
+
+        return result.Get("ok") is WireBool { Value: false } ? JobAlert.FailedForGood : JobAlert.Finished;
     }
 
     /// <summary>Records a preflight failure through the same Files/Activity contract as a run result.</summary>
