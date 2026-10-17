@@ -41,19 +41,15 @@ public sealed class SystemOverviewApiTests
         return new StreamReader(await response.Content.ReadAsStreamAsync());
     }
 
-    /// <summary>The data of the next frame named <paramref name="name"/>, repeating <paramref name="provoke"/> until one arrives so the test waits out the stream's own start.</summary>
     /// <summary>The first <paramref name="name"/> frame that <paramref name="settled"/> accepts, provoking until one arrives.</summary>
-    private static async Task<JsonNode> NextFrameAsync(StreamReader reader, string name, Action provoke, Func<JsonNode, bool>? settled = null)
-    {
-        var pending = ReadFrameAsync(reader, name, settled ?? (_ => true));
-        for (var attempt = 0; attempt < 50 && !pending.IsCompleted; attempt++)
-        {
-            provoke();
-            await Task.WhenAny(pending, Task.Delay(TimeSpan.FromMilliseconds(200)));
-        }
-
-        return await pending.WaitAsync(TimeSpan.FromSeconds(10));
-    }
+    private static Task<JsonNode> NextFrameAsync(StreamReader reader, string name, Action provoke, Func<JsonNode, bool>? settled = null) =>
+        Eventually.ProvokingAsync(
+            ReadFrameAsync(reader, name, settled ?? (_ => true)),
+            () =>
+            {
+                provoke();
+                return Task.CompletedTask;
+            });
 
     private static async Task<JsonNode> ReadFrameAsync(StreamReader reader, string name, Func<JsonNode, bool> settled)
     {
@@ -190,13 +186,9 @@ public sealed class SystemOverviewApiTests
         var result = Path.Join(server.Home, TrayUpdateBackupWatcher.ResultFileName);
 
         File.WriteAllText(request, $"{{\"id\": \"abc\", \"requested_at\": \"{DateTimeOffset.UtcNow:O}\", \"target_version\": \"1.0.0-rc.99\"}}");
-        var deadline = DateTime.UtcNow.AddSeconds(15);
-        JsonNode? answer = null;
-        while (DateTime.UtcNow < deadline && (string?)answer?["state"] is not ("saved" or "failed"))
-        {
-            await Task.Delay(50);
-            answer = ReadResult(result);
-        }
+        var answer = await Eventually.PollAsync(
+            () => Task.FromResult(ReadResult(result)),
+            written => (string?)written?["state"] is "saved" or "failed");
 
         Assert.Equal("saved", (string?)answer?["state"]);
         var json = await Json(await client.GetAsync(Overview));
@@ -385,34 +377,33 @@ public sealed class SystemOverviewApiTests
 
         Assert.True(await stream.MoveNextAsync());
         Assert.StartsWith("event: system.overview\ndata: {\"version\":", stream.Current, StringComparison.Ordinal);
-        var next = stream.MoveNextAsync().AsTask();
+        var frameFacts = new List<string> { FactsOf(stream.Current) };
 
-        // A server that has only just started may still be settling (the update check answering), and says so: wait for looks
-        // that find nothing new, which is the case being tested.
-        var quietLooks = 0;
-        for (var look = 0; look < 20 && quietLooks < 3; look++)
+        // Frames reach a stream in the order they were sent, so every look before the change is read ahead of the frame that carries
+        // it: a look that found nothing new and still sent a frame would show as two frames in a row with the same facts.
+        for (var look = 0; look < 5; look++)
         {
             await frames.RefreshAsync(stop.Token);
-            await Task.Delay(TimeSpan.FromMilliseconds(250));
-            if (next.IsCompleted)
-            {
-                quietLooks = 0;
-                Assert.True(await next);
-                next = stream.MoveNextAsync().AsTask();
-            }
-            else
-            {
-                quietLooks++;
-            }
         }
-
-        Assert.Equal(3, quietLooks);
 
         using var browser = server.Services.GetRequiredService<ActivityStreamClients>().Open();
         await frames.RefreshAsync(stop.Token);
 
-        Assert.True(await next.WaitAsync(TimeSpan.FromSeconds(10)));
-        Assert.Contains("\"browsers_live\":1", stream.Current, StringComparison.Ordinal);
+        while (!stream.Current.Contains("\"browsers_live\":1", StringComparison.Ordinal))
+        {
+            Assert.True(await stream.MoveNextAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10)));
+            frameFacts.Add(FactsOf(stream.Current));
+        }
+
+        Assert.All(frameFacts.Zip(frameFacts.Skip(1)), pair => Assert.NotEqual(pair.First, pair.Second));
+    }
+
+    /// <summary>What a frame says about Weir, apart from how long it has been up, which differs between any two frames.</summary>
+    private static string FactsOf(string frame)
+    {
+        var facts = (JsonObject)JsonNode.Parse(frame.Split('\n')[1]["data: ".Length..])!;
+        facts.Remove("uptime_seconds");
+        return facts.ToJsonString();
     }
 
     [Fact]

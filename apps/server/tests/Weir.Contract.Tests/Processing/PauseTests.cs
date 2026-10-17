@@ -21,8 +21,6 @@ public sealed class PauseTests
         ("WEIR_PROCESSING_WATCHED_FOLDER_REMUX_SCAN_DISPATCH_PERIODIC_ENQUEUE_REMUX_JOBS", "1"),
     ];
 
-    private static readonly TimeSpan LongEnoughForScans = TimeSpan.FromSeconds(14);
-
     private static (string Video, string Nfo, string Release) WriteDownload(Scenario scenario, string title)
     {
         var video = scenario.WriteRelease(title, "film.mkv", FakeMedia.Bytes(FakeMedia.Probe(audioLanguages: ["eng", "fre"])));
@@ -56,11 +54,9 @@ public sealed class PauseTests
         var waiting = await scenario.WaitForFileStatusAsync(library, "Paused.Weir.Only.2024/film.mkv", "out_of_schedule");
         Assert.StartsWith("Processing is paused", (string)waiting["status_reason"]!, StringComparison.Ordinal);
 
-        // Long enough for the watcher's burst delay and a periodic tick of this workflow's 10 second interval.
-        await Scenario.NeverWithinAsync(
-            async () => (await scenario.JobsAsync(Scenario.RemuxKind)).Count > 0 || !File.Exists(download.Video) || !File.Exists(download.Nfo),
-            LongEnoughForScans,
-            "Weir queueing, cleaning or removing a file while processing is paused");
+        // Weir's next look at this workflow, a periodic tick of its 10 second interval or the folder watcher's, finishes while paused.
+        await scenario.WaitForScanAfterAsync(library, await scenario.LatestJobIdAsync());
+        Assert.Empty(await scenario.JobsAsync(Scenario.RemuxKind));
         AssertNothingProcessed(scenario, download);
 
         await scenario.SetPauseAsync(paused: false);
@@ -92,12 +88,12 @@ public sealed class PauseTests
             $"{WeirClient.Api}/processing/jobs/watched-folder-remux-scan-dispatch/enqueue",
             new JsonObject { ["media_scope"] = "movie", ["library_id"] = (int)library["id"]!, ["enqueue_remux_jobs"] = true });
         Assert.Equal(HttpStatusCode.BadRequest, refused.Status);
-        await Scenario.NeverWithinAsync(
-            async () => (await scenario.JobsAsync(Scenario.RemuxKind)).Any(job => (string)job["status"]! != "pending")
-                || !File.Exists(download.Video)
-                || (await scenario.HandoffStatusAsync("handoff-paused-2"))["state"]!.ToString() != "queued",
-            LongEnoughForScans,
-            "a hand-off being worked, or its original removed, while processing is paused");
+        // Weir goes round its scans while paused, and the hand-off, queued before the round began, is still waiting after it.
+        await scenario.WaitForARoundAsync();
+        Assert.Equal(["pending"], (await scenario.JobsAsync(Scenario.RemuxKind)).Select(job => (string)job["status"]!));
+        Assert.Equal("queued", (string)(await scenario.HandoffStatusAsync("handoff-paused-2"))["state"]!);
+        var readout = await scenario.Admin.GetAsync($"{WeirClient.Api}/processing/files-at-once");
+        Assert.Equal("paused", (string)readout.Fields["waiting_for"]!);
         AssertNothingProcessed(scenario, download);
         Assert.Empty(Scenario.Callbacks(fake, "handoff-paused-2"));
 

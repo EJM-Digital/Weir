@@ -539,17 +539,14 @@ public sealed class ActivityApiTests
     /// it only repeats the update while waiting for it, in case the first one landed before the stream began
     /// watching for a change.
     /// </summary>
-    private static async Task<string[]> UpdateUntilFrameArrivesAsync(StreamReader reader, Action update)
-    {
-        var pending = NextProcessingBlockAsync(reader, CancellationToken.None);
-        for (var attempt = 0; attempt < 25 && !pending.IsCompleted; attempt++)
-        {
-            update();
-            await Task.WhenAny(pending, Task.Delay(TimeSpan.FromMilliseconds(200)));
-        }
-
-        return await pending.WaitAsync(TimeSpan.FromSeconds(10));
-    }
+    private static Task<string[]> UpdateUntilFrameArrivesAsync(StreamReader reader, Action update) =>
+        Eventually.ProvokingAsync(
+            NextProcessingBlockAsync(reader, CancellationToken.None),
+            () =>
+            {
+                update();
+                return Task.CompletedTask;
+            });
 
     [Fact]
     public async Task Record_activity_event_does_not_prune_history_using_log_retention()

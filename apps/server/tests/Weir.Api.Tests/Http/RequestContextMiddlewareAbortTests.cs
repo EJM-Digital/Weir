@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using Weir.Api.Http;
 using Weir.Core.Metrics;
 
@@ -60,14 +61,15 @@ public sealed class RequestContextMiddlewareAbortTests
     [Fact]
     public async Task An_abandoned_request_is_counted_without_adding_to_the_latency_figures()
     {
-        var metrics = new RuntimeMetricsStore(TimeProvider.System);
+        var time = new FakeTimeProvider();
+        var metrics = new RuntimeMetricsStore(time);
         using var aborted = new CancellationTokenSource();
         var middleware = NewMiddleware(new CapturingLoggerFactory(), async _ =>
         {
-            await Task.Delay(50);
+            time.Advance(TimeSpan.FromMilliseconds(50));
             await aborted.CancelAsync();
             throw new TaskCanceledException();
-        }, metrics);
+        }, metrics, time);
 
         await middleware.InvokeAsync(NewContext(aborted.Token));
 
@@ -97,8 +99,8 @@ public sealed class RequestContextMiddlewareAbortTests
         return context;
     }
 
-    private static RequestContextMiddleware NewMiddleware(ILoggerFactory loggerFactory, RequestDelegate next, RuntimeMetricsStore? metrics = null) =>
-        new(next, loggerFactory, metrics ?? new RuntimeMetricsStore(TimeProvider.System), new RouteTable(), TimeProvider.System);
+    private static RequestContextMiddleware NewMiddleware(ILoggerFactory loggerFactory, RequestDelegate next, RuntimeMetricsStore? metrics = null, TimeProvider? time = null) =>
+        new(next, loggerFactory, metrics ?? new RuntimeMetricsStore(time ?? TimeProvider.System), new RouteTable(), time ?? TimeProvider.System);
 
     private sealed class StartedResponseFeature : HttpResponseFeature
     {
