@@ -11,7 +11,6 @@ import {
 } from "./alert-columns";
 import { eventLabel } from "./alert-events";
 import { ALERT_CHECKBOX_CLASS } from "./channel-form";
-import { maskWebhookUrl } from "./webhook-url-mask";
 
 export type TestResult = { ok: boolean; error: string | null };
 
@@ -68,9 +67,7 @@ export function ChannelRow({
         <span>{channel.label}</span>
         <Chip dot={false}>{channel.provider}</Chip>
         {!channel.enabled ? <Chip meaning="idle">Disabled</Chip> : null}
-        <span className="mm-quiet-table__sub font-mono">
-          {maskWebhookUrl(channel.url)}
-        </span>
+        <span className="mm-quiet-table__sub font-mono">{channel.url}</span>
       </th>
     ),
     [ALERT_ACTIONS_COLUMN]: (
