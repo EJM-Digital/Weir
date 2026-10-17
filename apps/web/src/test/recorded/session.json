@@ -1,0 +1,13 @@
+{
+  "GET /api/v1/auth/me": {
+    "status": 200,
+    "body": {
+      "user": {
+        "id": 1,
+        "username": "recorded-admin",
+        "role": "admin",
+        "app_theme": null
+      }
+    }
+  }
+}

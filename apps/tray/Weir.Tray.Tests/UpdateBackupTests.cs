@@ -421,13 +421,23 @@ public sealed class UpdateBackupTests : IDisposable
         await FlagAndWaitAsync(flag, 2, attempts);
     }
 
+    // The file system tells the watcher about the flag on its own thread, and the settle that follows runs on the test's clock, so
+    // the clock is moved on each time the watcher starts one, until the flag has been acted on.
     private async Task FlagAndWaitAsync(string flag, int nth, SemaphoreSlim attempts)
     {
         File.WriteAllText(flag, "apply");
         File.SetLastWriteTimeUtc(flag, new DateTime(2026, 10, 10, 8, 0, nth, DateTimeKind.Utc));
-        _clock.Advance(TimeSpan.FromSeconds(5));
 
-        Assert.True(await attempts.WaitAsync(TimeSpan.FromSeconds(10)), $"The apply-now flag number {nth} was not acted on.");
+        var acted = attempts.WaitAsync(TimeSpan.FromSeconds(10));
+        while (await Task.WhenAny(acted, _clock.DelayWaitingAsync()) != acted)
+        {
+            if (_clock.TryTakeDelay(out var delay) && delay == UpdateRequestWatcher.Settle)
+            {
+                _clock.Advance(UpdateRequestWatcher.Settle);
+            }
+        }
+
+        Assert.True(await acted, $"The apply-now flag number {nth} was not acted on.");
         await Eventually(() => !File.Exists(flag));
     }
 

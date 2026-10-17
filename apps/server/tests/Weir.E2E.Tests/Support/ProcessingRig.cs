@@ -15,7 +15,7 @@ namespace Weir.E2E.Tests.Support;
 /// hand-off's report. Files arrive and finish the way a media manager makes them: a hand-off on the webhook, then the
 /// manager's word on what it did with the copy. Nothing is written to the database.
 /// </summary>
-public sealed class ProcessingRig : IAsyncDisposable
+public sealed partial class ProcessingRig : IAsyncDisposable
 {
     private const string WebhookSecret = "e2e-rig-webhook-secret";
     private const string WebhookSecretVariable = "WEIR_MEDIA_MANAGER_WEBHOOK_SECRET";
@@ -52,11 +52,12 @@ public sealed class ProcessingRig : IAsyncDisposable
 
     /// <param name="minimumFileSizeMb">The Movies workflow's minimum size: a file smaller than this is left alone.</param>
     /// <param name="holdFailures">A file that fails stays failed, for the person to try again, instead of being retried by itself.</param>
-    public static async Task<ProcessingRig> StartAsync(int minimumFileSizeMb = 0, bool holdFailures = false)
+    /// <param name="delunoCapabilities">What Deluno says it can do in its manifest, such as taking a rejected release back to search for another.</param>
+    public static async Task<ProcessingRig> StartAsync(int minimumFileSizeMb = 0, bool holdFailures = false, IEnumerable<string>? delunoCapabilities = null)
     {
         var tools = FakeFfmpeg.Install();
         var folders = new TemporaryFolder();
-        var deluno = FakeManager.StartDeluno();
+        var deluno = FakeManager.StartDeluno(capabilities: delunoCapabilities);
         WeirServer? server = null;
         WeirClient? admin = null;
         try
@@ -135,6 +136,19 @@ public sealed class ProcessingRig : IAsyncDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(source)!);
         await File.WriteAllBytesAsync(source, FakeMedia.Bytes(FakeMedia.Probe()));
         _tools.SetFileRule(fileName, new FileRule { Probe = FakeMedia.Probe(), RemuxReleaseFile = ReleaseFileFor(fileName) });
+        await PostHandOffAsync(handoffId, source);
+    }
+
+    /// <summary>
+    /// Deluno hands over a movie whose pass fails every time it is tried, as a file ffmpeg cannot write does. On a rig started with
+    /// <c>holdFailures</c> it stays failed for the person to deal with.
+    /// </summary>
+    public async Task HandOffFailingAsync(string handoffId, string fileName)
+    {
+        var source = Path.Combine(Watched, handoffId, fileName);
+        Directory.CreateDirectory(Path.GetDirectoryName(source)!);
+        await File.WriteAllBytesAsync(source, FakeMedia.Bytes(FakeMedia.Probe()));
+        _tools.SetFileRule(fileName, new FileRule { Probe = FakeMedia.Probe(), RemuxError = "Conversion failed: the fake ffmpeg was told to fail" });
         await PostHandOffAsync(handoffId, source);
     }
 
@@ -249,6 +263,7 @@ public sealed class ProcessingRig : IAsyncDisposable
             connection.Open();
             Append(text, connection, "jobs", "SELECT id, status, lease_owner, lease_expires_at, attempt_count, not_before, created_at, updated_at, last_error FROM jobs ORDER BY id");
             Append(text, connection, "files", "SELECT id, relative_path, status, status_reason, updated_at FROM files ORDER BY id");
+            Append(text, connection, "activity", "SELECT id, event_type, title, substr(detail, 1, 300) FROM activity_events ORDER BY id");
         }
         catch (SqliteException exception)
         {

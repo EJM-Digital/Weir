@@ -41,6 +41,7 @@ import { recoverResetsPassword } from "./docker-smoke/recover.mjs";
 import { restartKeepsData, upgradeKeepsData } from "./docker-smoke/scenarios.mjs";
 import { run, runForStatus, shellQuote } from "./docker-smoke/shell.mjs";
 import { WeirClient } from "./docker-smoke/weir-client.mjs";
+import { REPOSITORY } from "./repository.mjs";
 
 const ORIGIN = "http://localhost:9347";
 const SCHEMA_MIGRATOR = "apps/server/src/Weir.Infrastructure/Sqlite/SchemaMigrator.cs";
@@ -193,7 +194,7 @@ class Stack {
 }
 
 function publishedReleaseTags() {
-  const repository = process.env.GITHUB_REPOSITORY || "jampat000/Weir";
+  const repository = process.env.GITHUB_REPOSITORY || REPOSITORY;
   const listing = run(`gh api --paginate repos/${repository}/releases --jq '.[] | select(.draft | not) | .tag_name'`);
   return listing.split(/\r?\n/).filter(Boolean);
 }
