@@ -1,4 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
 import { errorMessage } from "../../../../lib/api/error-message";
@@ -7,7 +6,6 @@ import {
   useProcessingJobCancelPendingMutation,
   useProcessingJobRecoverFinalizeFailedMutation,
 } from "../../../../lib/processing/jobs-inspection/queries";
-import { systemKeys } from "../../../../lib/system/query-keys";
 import type { SystemLogRow } from "../../../../lib/system/system-log-api";
 import { mmActionButtonClass } from "../../../../lib/ui/mm-control-roles";
 import { activityFileOfJob, formatPayload } from "./log-job-payload";
@@ -21,12 +19,17 @@ const STATUS_WORDS = Object.fromEntries(
 );
 
 /** What a person can do with a job from its row: take a queued one back, or save the result of one that finished its work. */
-function JobActions({ job, canAct }: { job: Job; canAct: boolean }) {
-  const queryClient = useQueryClient();
+function JobActions({
+  job,
+  canAct,
+  onChanged,
+}: {
+  job: Job;
+  canAct: boolean;
+  onChanged: () => void;
+}) {
   const cancel = useProcessingJobCancelPendingMutation();
   const recover = useProcessingJobRecoverFinalizeFailedMutation();
-  const refreshLog = () =>
-    void queryClient.invalidateQueries({ queryKey: systemKeys.logEntriesAll });
   const failure = cancel.isError
     ? errorMessage(cancel.error, "Cancel failed.")
     : recover.isError
@@ -46,7 +49,7 @@ function JobActions({ job, canAct }: { job: Job; canAct: boolean }) {
           className={mmActionButtonClass({ variant: "tertiary" })}
           disabled={cancel.isPending}
           data-testid={`processing-jobs-cancel-${job.id}`}
-          onClick={() => cancel.mutate(job.id, { onSuccess: refreshLog })}
+          onClick={() => cancel.mutate(job.id, { onSuccess: onChanged })}
         >
           Cancel pending
         </button>
@@ -56,7 +59,7 @@ function JobActions({ job, canAct }: { job: Job; canAct: boolean }) {
           className={mmActionButtonClass({ variant: "secondary" })}
           disabled={recover.isPending}
           data-testid={`processing-jobs-recover-${job.id}`}
-          onClick={() => recover.mutate(job.id, { onSuccess: refreshLog })}
+          onClick={() => recover.mutate(job.id, { onSuccess: onChanged })}
         >
           {recover.isPending ? "Recovering…" : "Recover result"}
         </button>
@@ -80,6 +83,7 @@ export function LogJobDetail({
   canAct,
   time,
   onRelated,
+  onChanged,
 }: {
   job: Job;
   canAct: boolean;
@@ -87,6 +91,8 @@ export function LogJobDetail({
   time: string;
   /** Narrows the log to this job and what mentions it. */
   onRelated: (jobId: number) => void;
+  /** Called once the job has been taken back or its result saved, so the list can show it as it is now. */
+  onChanged: () => void;
 }) {
   const paused = usePauseQuery().data?.paused === true;
   const waitingForResume = paused && job.status === "pending";
@@ -128,7 +134,7 @@ export function LogJobDetail({
         <LogRawText label="Last error" text={job.last_error} />
       ) : null}
       <div className={LOG_ACTIONS}>
-        <JobActions job={job} canAct={canAct} />
+        <JobActions job={job} canAct={canAct} onChanged={onChanged} />
         {file ? (
           <Link className="mm-quiet-link" to={file}>
             Open the file in Activity →

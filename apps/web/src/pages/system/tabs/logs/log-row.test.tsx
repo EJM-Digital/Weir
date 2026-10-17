@@ -15,7 +15,11 @@ function renderRow(expanded: boolean, onToggle = vi.fn()) {
         clock={() => "11:50:00"}
         fullTime={() => "2 Oct 2026 11:50:00"}
         order={LOG_COLUMNS.columns.map((column) => column.id)}
-        actions={{ canAct: true, onRelated: () => undefined }}
+        actions={{
+          canAct: true,
+          onRelated: () => undefined,
+          onChanged: () => undefined,
+        }}
       />
     </ul>,
   );

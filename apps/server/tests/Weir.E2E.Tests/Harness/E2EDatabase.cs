@@ -91,6 +91,39 @@ public static class E2EDatabase
         return id;
     }
 
+    /// <summary>
+    /// A job in <paramref name="status"/>, as the row a worker leaves: for a state the browser cannot reach by pressing buttons, such as a job that did its media
+    /// work and could not record it. Returns its id.
+    /// </summary>
+    public static long InsertJob(string databasePath, string dedupeKey, string jobKind, string status, string? lastError = null)
+    {
+        var at = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.ffffff", CultureInfo.InvariantCulture);
+        using var connection = Open(databasePath);
+        using var transaction = connection.BeginTransaction();
+        var id = Convert.ToInt64(
+            SeedSql.Scalar(
+                connection,
+                "INSERT INTO jobs (dedupe_key, job_kind, payload_json, status, attempt_count, max_attempts, last_error, created_at, updated_at) " +
+                "VALUES ($key, $kind, NULL, $status, 1, 3, $error, $at, $at) RETURNING id",
+                ("$key", dedupeKey),
+                ("$kind", jobKind),
+                ("$status", status),
+                ("$error", lastError),
+                ("$at", at)),
+            CultureInfo.InvariantCulture);
+        transaction.Commit();
+        return id;
+    }
+
+    /// <summary>Moves a job to <paramref name="status"/> as another process of Weir's would, without the page being told.</summary>
+    public static void SetJobStatus(string databasePath, long jobId, string status)
+    {
+        using var connection = Open(databasePath);
+        using var transaction = connection.BeginTransaction();
+        SeedSql.Execute(connection, "UPDATE jobs SET status = $status WHERE id = $id", ("$status", status), ("$id", jobId));
+        transaction.Commit();
+    }
+
     /// <summary>How many finished hand-offs Weir still owes a report: the reports it kept because the manager did not answer.</summary>
     public static long OwedReportCount(string databasePath)
     {

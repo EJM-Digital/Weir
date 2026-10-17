@@ -138,7 +138,8 @@ public sealed partial class ConfigurationBundleStore
 
         // Validated in the same order as a suite settings save, so the same error is reported first:
         // timezone, log retention, then activity and interval.
-        var normalized = SuiteSettingsRules.Normalize(new SuiteSettingsUpdate(timezone, Saturate(logRetention)), zones);
+        var preferredTime = ss.Get("configuration_backup_preferred_time") is WireString time ? time.Value : null;
+        var normalized = SuiteSettingsRules.Normalize(new SuiteSettingsUpdate(timezone, Saturate(logRetention), ConfigurationBackupPreferredTime: preferredTime), zones);
         long? activity = null;
         if (ss.Get("activity_retention_days") is { } activityValue and not WireNull)
         {

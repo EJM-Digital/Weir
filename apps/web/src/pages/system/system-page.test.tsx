@@ -810,6 +810,33 @@ describe("SystemPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("keeps saying Copy when the browser refuses the clipboard", async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error("refused"));
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    const dockerStatus: UpdateStatus = {
+      ...minimalUpdateStatus,
+      install_type: "docker",
+      status: "update_available",
+      docker_update_command: "docker compose pull && docker compose up -d",
+    };
+    render(
+      wrap(<SystemPage />, seededUpdateClient({ updateStatus: dockerStatus })),
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "About" }));
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy the update command" }),
+    );
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    expect(
+      screen.getByRole("button", { name: "Copy the update command" }),
+    ).toHaveTextContent("Copy →");
+  });
+
   it("does not render mojibake in the upgrade panel", () => {
     renderSettings(operatorMe, { updateStatus: windowsUpdateAvailableStatus });
     fireEvent.click(screen.getByRole("tab", { name: "About" }));

@@ -7,16 +7,19 @@ export type LogSummaryInput = {
   /** Rows the filters match, loaded or not. */
   total: number;
   filtered: boolean;
+  /** The live link to Weir is down, so the list is no longer following it. */
+  paused: boolean;
 };
 
 /**
- * One quiet line for the Log card: how many entries, and that the list is live. "212 entries · live", "Showing 50 of 212
- * entries · live", "3 entries matching · live".
+ * One quiet line for the Log card: how many entries, and whether the list is live. "212 entries · live", "Showing 50 of 212
+ * entries · live", "3 entries matching · live"; while the live link is down, "212 entries · live updates paused".
  */
 export function logSummaryWords({
   loaded,
   total,
   filtered,
+  paused,
 }: LogSummaryInput): string {
   const count = plural(total, "entry", "entries");
   const held =
@@ -25,5 +28,5 @@ export function logSummaryWords({
       : filtered
         ? `${count} matching`
         : count;
-  return `${held} · live`;
+  return `${held} · ${paused ? "live updates paused" : "live"}`;
 }

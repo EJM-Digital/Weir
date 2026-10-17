@@ -1,6 +1,7 @@
 using Microsoft.Playwright;
 using Weir.Contract.Tests.Harness;
 using Weir.Contract.Tests.Harness.Fakes;
+using Weir.E2E.Tests.Support;
 
 namespace Weir.E2E.Tests.Harness;
 
@@ -64,6 +65,30 @@ public sealed class E2EServer : IAsyncLifetime
             ("HTTP_PROXY", NoRouteToTheInternet),
             ("ALL_PROXY", NoRouteToTheInternet),
             ("NO_PROXY", string.Empty)));
+
+    /// <summary>
+    /// A server of its own, set up as the shared one is plus <paramref name="extra"/>, for a test whose changes must not reach the
+    /// tests after it (the backups it makes, the log it clears) or that stops and starts the server.
+    /// </summary>
+    public static Task<WeirServer> StartOwnAsync(params (string Name, string Value)[] extra) =>
+        WeirServer.StartNewAsync(Environment.With(extra));
+
+    /// <summary>
+    /// A server of its own that reads its news of releases from <paramref name="feed"/> and runs as <paramref name="version"/> on a <paramref name="runtime"/> install
+    /// (windows, docker or source). GitHub's API, which Weir asks only when the feed cannot answer, goes through a proxy that refuses every connection, so the feed
+    /// is all the Updates card has to go on, whatever Weir has been released since.
+    /// </summary>
+    public static Task<WeirServer> StartWithReleaseFeedAsync(FakeReleaseFeed feed, string version, string runtime)
+    {
+        ArgumentNullException.ThrowIfNull(feed);
+        return StartOwnAsync(
+            ("WEIR_ENV", "development"),
+            ("WEIR_RELEASES_FEED_URL", feed.Url),
+            ("WEIR_VERSION", version),
+            ("WEIR_RUNTIME", runtime),
+            ("HTTPS_PROXY", NoRouteToTheInternet),
+            ("NO_PROXY", string.Empty));
+    }
 
     /// <summary>
     /// A server of its own whose scheduled tasks (the look at the workflows' folders every 15 s, the lifting of a pause that has run out

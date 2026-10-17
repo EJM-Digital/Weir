@@ -24,6 +24,12 @@ public static class WeirOptionsLoader
         "WEIR_PERIODIC_TASK_SPEEDUP is a setting for tests only. Set on a real install it would make every scheduled task run far more often than it should, " +
         "so Weir will not start while it is set. Remove it and start Weir again.";
 
+    public const string ReleasesFeedInProductionMessage =
+        "WEIR_RELEASES_FEED_URL is a setting for tests only. Set on a real install it would take Weir's news of new releases from somewhere other than GitHub, " +
+        "so Weir will not start while it is set. Remove it and start Weir again.";
+
+    public const string ReleasesFeedNotAnAddressMessage = "WEIR_RELEASES_FEED_URL must be an http or https address.";
+
     /// <summary>The most a test may shorten the periodic tasks' intervals by.</summary>
     public const int MaxPeriodicTaskSpeedUp = 1000;
 
@@ -91,6 +97,13 @@ public static class WeirOptionsLoader
         if (periodicTaskSpeedUp > 1 && env == "production")
         {
             throw new WeirConfigurationException(PeriodicTaskSpeedUpInProductionMessage);
+        }
+
+        // A third test seam, refused in production for the same reason.
+        var releasesFeedUrl = ParseReleasesFeedUrl(runtime.Get("WEIR_RELEASES_FEED_URL"));
+        if (releasesFeedUrl is not null && env == "production")
+        {
+            throw new WeirConfigurationException(ReleasesFeedInProductionMessage);
         }
 
         var trustedProxyIps = ParseCsv(runtime.Get("WEIR_TRUSTED_PROXY_IPS"));
@@ -198,6 +211,7 @@ public static class WeirOptionsLoader
             OutputOwnershipFileMode = outputFileMode,
             OutputOwnershipDirectoryMode = outputDirMode,
             ArtworkGatewayUrl = ParseArtworkGatewayUrl(runtime.Get("WEIR_ARTWORK_GATEWAY_URL")),
+            ReleasesFeedUrl = releasesFeedUrl,
         };
     }
 
@@ -351,6 +365,20 @@ public static class WeirOptionsLoader
         }
 
         return value.TrimEnd('/');
+    }
+
+    /// <summary>The release feed a test plays instead of GitHub's: null when unset, otherwise an http or https address. A set but unusable value refuses to start.</summary>
+    internal static string? ParseReleasesFeedUrl(string? raw)
+    {
+        var value = (raw ?? string.Empty).Trim();
+        if (value.Length == 0)
+        {
+            return null;
+        }
+
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" && uri.Host.Length > 0
+            ? value
+            : throw new WeirConfigurationException(ReleasesFeedNotAnAddressMessage);
     }
 
     private static string HttpUrlOrEmpty(string? raw)

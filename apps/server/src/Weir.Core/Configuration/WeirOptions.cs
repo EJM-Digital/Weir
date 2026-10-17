@@ -108,6 +108,12 @@ public sealed record WeirOptions
     public int PeriodicTaskSpeedUp { get; init; } = 1;
 
     /// <summary>
+    /// For tests only (<c>WEIR_RELEASES_FEED_URL</c>): the release feed Weir reads its news of a newer release from, instead of GitHub's own, so a browser
+    /// test can play a recorded feed. Null on a real install: the loader refuses a value when <c>WEIR_ENV</c> is production.
+    /// </summary>
+    public string? ReleasesFeedUrl { get; init; }
+
+    /// <summary>
     /// Whether Weir sets up its workflows from a media manager that reports its folders (Deluno) and keeps them in step
     /// (<c>WEIR_MEDIA_MANAGER_WORKFLOW_SYNC_ENABLED</c>, default on). Off leaves every workflow's folders to be typed.
     /// </summary>
