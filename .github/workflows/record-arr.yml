@@ -23,6 +23,9 @@ on:
         description: "Also fail when the replies differ from the checked-in ones."
         type: boolean
         default: false
+  push:
+    branches: ["coverage/1013-sonarr-radarr-recordings"]
+    paths: [".github/workflows/record-arr.yml"]
   schedule:
     # Mondays, 05:41 UTC.
     - cron: "41 5 * * 1"
@@ -42,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        images: ${{ fromJSON(github.event_name == 'schedule' && '["pinned","latest"]' || format('["{0}"]', inputs.images)) }}
+        images: ${{ fromJSON(github.event_name == 'schedule' && '["pinned","latest"]' || format('["{0}"]', inputs.images || 'pinned')) }}
     env:
       RECORDER_WORK: ${{ github.workspace }}/arr-work
       RECORDER_OUT_DIR: ${{ github.workspace }}/arr-recorded
