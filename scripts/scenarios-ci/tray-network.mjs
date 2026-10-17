@@ -5,10 +5,10 @@
 import assert from "node:assert/strict";
 
 import { choose, openMenu, statusLine } from "./tray-actions.mjs";
-import { lineWith } from "./tray-log.mjs";
+import { failedStarts, lineWith } from "./tray-log.mjs";
 import { atLogLine, browserOn, closeBrowsers, expectNoBrowser, holdPort, installedAndStopped, PORT, restoreWeir, serverOn, startTray } from "./tray-world.mjs";
 import { balloonLine, balloons, menu, status } from "./tray-words.mjs";
-import { ensureSignedIn, wait } from "./windows-install.mjs";
+import { ensureSignedIn, installBuildUnderTest, wait } from "./windows-install.mjs";
 
 const MOVED_PORT = 9352;
 const REFUSED_PORT = 9353;
@@ -40,7 +40,7 @@ async function expectStoppedCleanly(tray, pid, mark) {
 /** tray-change-port: a move to a free port is saved and answers; one that cannot be made goes back and saves nothing; both failing ends Stopped. */
 export async function trayChangePort(world) {
   const { machine, desktop } = world;
-  world.logWatch.expectMatching(STARTING_AGAIN, { times: 10, why: "the server cannot take the port it was moved to, and the tray starts it again where it was" });
+  world.logWatch.expectMatching(STARTING_AGAIN, { times: 10, why: "the server cannot take the port it was moved to, and the tray starts it again where it was; it is ended once on purpose" });
   await installedAndStopped(world);
   const tray = await startTray(world, ["--port", String(PORT), "--no-browser"]);
   const facts = [];
@@ -130,7 +130,13 @@ export async function trayChangePort(world) {
     await choose(world, tray, menu.restart);
     await tray.line("Restart Weir chosen.", { what: "the tray to restart", after: restartMark });
     await wait(world, async () => ((await serverOn(MOVED_PORT).ready()) ? true : undefined), `Weir to answer on port ${MOVED_PORT} after Restart Weir`, 120_000, 500);
-    facts.push(`with the old port taken too, Weir ended Stopped with one balloon saying so, and Restart Weir brought it back on port ${MOVED_PORT}`);
+    // The watchdog is watching again after the failed move and the restart: a server that is ended is started again.
+    const watched = await tray.serverPid();
+    const afterRestart = await tray.lineCount();
+    await machine.killProcess(watched);
+    await wait(world, async () => failedStarts((await tray.log()).slice(afterRestart)).at(0), "the tray to notice the server ended after the failed move", 60_000, 500);
+    await tray.readyAfter(watched, MOVED_PORT);
+    facts.push(`with the old port taken too, Weir ended Stopped with one balloon saying so, and Restart Weir brought it back on port ${MOVED_PORT}, where the watchdog started it again when it was ended`);
   } finally {
     await tray.end();
     await machine.removeFromDataFolder("port.txt", "current-port.txt");
@@ -161,7 +167,10 @@ export async function trayLanAccess(world) {
     const open = await machine.listeningAddresses(PORT);
     assert.ok(open.includes("0.0.0.0"), `Weir listens on ${open.join(", ")}, not on every interface`);
     assert.equal(await machine.firewallRuleExists(), true, "Windows Firewall has no rule for Weir after the elevated step");
-    facts.push(`Allow other devices made the Windows Firewall rule through the elevated step, stopped server ${pid} cleanly, and the new server listens on ${open.join(", ")}`);
+    await choose(world, tray, menu.copyAddress);
+    const machineName = process.env.COMPUTERNAME;
+    await wait(world, async () => ((await world.desktop.clipboardText()).trim().toLowerCase() === `http://${machineName}:${PORT}`.toLowerCase() ? true : undefined), "Copy address to put this PC's name on the clipboard", 30_000, 500);
+    facts.push(`Copy address then put http://${machineName}:${PORT} on the clipboard, and Allow other devices made the Windows Firewall rule through the elevated step, stopped server ${pid} cleanly, and the new server listens on ${open.join(", ")}`);
     pid = next;
 
     // The choice is final: a new tray listens for the network without asking again.
@@ -181,13 +190,26 @@ export async function trayLanAccess(world) {
     } finally {
       await again.end();
     }
+    // The commands the first-run question and the uninstall run: the rule is made and taken away, and the uninstall takes it away itself.
+    const removed = await machine.runTray(["--remove-firewall"]);
+    assert.equal(removed.exitCode, 0, `Weir.exe --remove-firewall exited ${removed.exitCode}: ${removed.stderr}`);
+    assert.equal(await machine.firewallRuleExists(), false, "the Weir firewall rule is still there after --remove-firewall");
+    const configured = await machine.runTray(["--configure-firewall"]);
+    assert.equal(configured.exitCode, 0, `Weir.exe --configure-firewall exited ${configured.exitCode}: ${configured.stderr}`);
+    assert.equal(await machine.firewallRuleExists(), true, "there is no Weir firewall rule after --configure-firewall");
+    await machine.stopWeir();
+    const logBefore = (await machine.readText(machine.paths.trayLog)).length;
+    const uninstall = await machine.uninstall();
+    assert.equal(uninstall.exitCode, 0, `the uninstaller exited ${uninstall.exitCode}`);
+    await wait(world, async () => ((await machine.exists(machine.paths.trayExe)) ? undefined : true), "the uninstaller to remove Weir.exe", 120_000, 1000);
+    assert.equal(await machine.firewallRuleExists(), false, "the uninstall left the Weir firewall rule");
+    assert.ok((await machine.readText(machine.paths.trayLog)).slice(logBefore).includes("Uninstall: removed the Weir firewall rule."), "the uninstall did not log that it removed the rule");
+    facts.push("--remove-firewall and --configure-firewall took the rule away and made it, and the uninstall removed it itself because it ran as an administrator");
+    await installBuildUnderTest(world);
   } finally {
     await tray.end();
-    const removal = await machine.runTray(["--remove-firewall"]).catch((error) => ({ exitCode: -1, stderr: error.message }));
     await machine.removeFromDataFolder("lan-access");
     await restoreWeir(world);
-    assert.equal(removal.exitCode, 0, `Weir.exe --remove-firewall exited ${removal.exitCode}: ${removal.stderr ?? ""}`);
-    assert.equal(await machine.firewallRuleExists(), false, "the Weir firewall rule is still there after --remove-firewall");
   }
-  return `${facts.join("; ")}; Weir.exe --remove-firewall took the rule away again.`;
+  return `${facts.join("; ")}.`;
 }

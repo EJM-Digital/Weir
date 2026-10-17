@@ -138,6 +138,22 @@ async function takenPortAndTheDesktop(world) {
   return facts;
 }
 
+const SYSTEM_SID = "S-1-5-18";
+const ADMINISTRATORS_SID = "S-1-5-32-544";
+
+/** The data folder is readable by SYSTEM, the administrators and the account that runs the tray, and by no one else; it does not take its list from its parent. */
+async function expectHomeOwnerOnly(world) {
+  const { machine } = world;
+  const account = await machine.account();
+  const allowed = new Set([SYSTEM_SID, ADMINISTRATORS_SID, account.sid]);
+  const access = await machine.accessList(machine.paths.runtimeHome);
+  assert.ok(access.protected, "the data folder takes its access list from its parent");
+  const others = access.rules.filter((rule) => rule.allow && !allowed.has(rule.sid)).map((rule) => rule.name);
+  assert.deepEqual(others, [], `the data folder can be read by ${others.join(", ")}`);
+  const file = await machine.accessList(machine.paths.trayLog);
+  assert.equal(file.protected, false, "a file in the data folder does not inherit the folder's access list");
+}
+
 /** Whatever started Weir, nothing opens the browser: a start, a sign-in start, a start that follows Setup. */
 async function noStartOpensTheBrowser(world) {
   const { machine } = world;
@@ -146,17 +162,22 @@ async function noStartOpensTheBrowser(world) {
     await tray.ready();
     const log = await tray.log();
     assert.deepEqual(openedBrowser(log), [], `${what} opened the browser`);
+    assert.deepEqual(linesWith(log, /^Balloon \(info\) Weir: Weir is running at/), [], `${what} told the person Weir is running, which only a start the person made does`);
     await expectNoBrowser(world, `by ${what}`, PORT);
   };
 
-  const quiet = await startTray(world, ["--port", String(PORT), "--silent"]);
+  // The first start of all, with nobody to ask and nothing given: the default port, saved.
+  const quiet = await startTray(world, ["--silent"]);
   await checked(quiet, "a silent start");
+  assert.ok(lineWith(await quiet.log(), `First run with no interactive desktop to ask: using the default port ${PORT}. Saved; Weir will use port ${PORT} from now on.`), "the tray did not use and save the default port");
+  assert.equal((await machine.readText(`${machine.paths.runtimeHome}\port.txt`)).trim(), String(PORT), "the default port was not saved");
+  await expectHomeOwnerOnly(world);
   await machine.stopWeir();
 
   const signIn = await startTray(world, ["--no-browser"]);
   await checked(signIn, "a start at sign-in (--no-browser)");
   await ensureSignedIn(world);
-  facts.push("a silent start and a sign-in start opened no browser");
+  facts.push(`a silent first start used and saved the default port ${PORT} and made the data folder readable by SYSTEM, the administrators and the account only; that start and a sign-in start opened no browser and told no one Weir was running`);
 
   // Setup over a running Weir: it stops Weir, and the tray starts it again by itself once Setup has gone.
   const mark = (await machine.readText(machine.paths.trayLog)).length;

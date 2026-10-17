@@ -193,6 +193,50 @@ export class WindowsMachine {
     );
   }
 
+  /**
+   * The environment a running process of this account was started with, as { NAME: value } (the names in upper case): what the tray gave the
+   * server. It is read from the process's own memory, the way a debugger reads it.
+   */
+  processEnvironment(pid) {
+    return json(
+      `Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+public static class ProcessEnvironment {
+    [StructLayout(LayoutKind.Sequential)] struct Basic { public IntPtr Exit; public IntPtr Peb; public IntPtr Affinity; public IntPtr Priority; public IntPtr Id; public IntPtr Parent; }
+    [DllImport("ntdll.dll")] static extern int NtQueryInformationProcess(IntPtr process, int kind, ref Basic basic, int size, out int returned);
+    [DllImport("kernel32.dll")] static extern IntPtr OpenProcess(int access, bool inherit, int pid);
+    [DllImport("kernel32.dll")] static extern bool ReadProcessMemory(IntPtr process, IntPtr address, byte[] buffer, IntPtr size, out IntPtr read);
+    [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr handle);
+    static IntPtr Pointer(IntPtr process, IntPtr address) {
+        var buffer = new byte[IntPtr.Size]; IntPtr read;
+        if (!ReadProcessMemory(process, address, buffer, (IntPtr)buffer.Length, out read)) throw new InvalidOperationException("The process memory could not be read.");
+        return new IntPtr(BitConverter.ToInt64(buffer, 0));
+    }
+    public static string[] Read(int pid) {
+        var process = OpenProcess(0x0410, false, pid);
+        if (process == IntPtr.Zero) throw new InvalidOperationException("The process could not be opened.");
+        try {
+            var basic = new Basic(); int returned;
+            if (NtQueryInformationProcess(process, 0, ref basic, Marshal.SizeOf(basic), out returned) != 0) throw new InvalidOperationException("The process could not be queried.");
+            var parameters = Pointer(process, IntPtr.Add(basic.Peb, 0x20));
+            var environment = Pointer(process, IntPtr.Add(parameters, 0x80));
+            var size = Pointer(process, IntPtr.Add(parameters, 0x3F0)).ToInt64();
+            var block = new byte[size]; IntPtr read;
+            if (!ReadProcessMemory(process, environment, block, (IntPtr)size, out read)) throw new InvalidOperationException("The environment could not be read.");
+            return Encoding.Unicode.GetString(block).Split(new[] { (char)0 }, StringSplitOptions.RemoveEmptyEntries);
+        } finally { CloseHandle(process); }
+    }
+}
+'@
+      $pairs = @{}
+      foreach ($entry in [ProcessEnvironment]::Read([int]$env:SCENARIO_PID)) { $at = $entry.IndexOf('=', 1); if ($at -gt 0) { $pairs[$entry.Substring(0, $at).ToUpperInvariant()] = $entry.Substring($at + 1) } }
+      ConvertTo-Json -Compress -InputObject $pairs`,
+      { PID: pid },
+    );
+  }
+
   /** Whether Windows Firewall has Weir's own rule. */
   async firewallRuleExists() {
     return (await json(`ConvertTo-Json -Compress -InputObject ([bool](Get-NetFirewallRule -DisplayName 'Weir' -ErrorAction SilentlyContinue))`)) === true;

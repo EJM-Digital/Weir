@@ -21,6 +21,19 @@ async function expectFolderOpened(world, folder, what) {
   await machine.closeExplorerFolders();
 }
 
+/** What the tray gave the server it started: production mode, the data folder, the web app it carries, plain-http cookies and the two secrets on disk. */
+async function expectServerEnvironment(world, serverPid) {
+  const { machine } = world;
+  const env = await machine.processEnvironment(serverPid);
+  assert.equal(env.WEIR_ENV, "production");
+  assert.equal(env.WEIR_HOME?.toLowerCase(), machine.paths.runtimeHome.toLowerCase());
+  assert.ok(env.WEIR_WEB_DIST?.toLowerCase().startsWith(machine.paths.installRoot.toLowerCase()), `WEIR_WEB_DIST is ${env.WEIR_WEB_DIST}, not the bundle in the install`);
+  assert.ok(await machine.exists(`${env.WEIR_WEB_DIST}\index.html`), "the web app bundle the server was given is not there");
+  assert.equal(env.WEIR_SESSION_COOKIE_SECURE, "false");
+  assert.equal(env.WEIR_SESSION_SECRET, (await machine.readText(machine.secretPath("session.secret"))).trim(), "the server was not given the session secret on disk");
+  assert.equal(env.WEIR_CREDENTIALS_SECRET, (await machine.readText(machine.secretPath("credentials.secret"))).trim(), "the server was not given the credentials secret on disk");
+}
+
 /** The person presses the menu's items one after the other, and what each should do has happened. */
 export async function trayMenu(world) {
   const { machine, desktop, weir } = world;
@@ -31,13 +44,14 @@ export async function trayMenu(world) {
   try {
     // The icon is up at once; the server may not have answered yet.
     const first = await iconText(world);
-    assert.match(first, /^Weir - /, `the icon of Weir says "${first}"`);
-    await tray.ready();
+    assert.equal(first, "Weir - Starting...", "the icon was not up, saying Weir is starting, before the server answered");
+    const serverPid = await tray.ready();
     await ensureSignedIn(world);
     await tray.line(balloonLine("info", "Weir", balloons.running(PORT)), { what: "the tray to tell the person Weir is running" });
     await wait(world, async () => ((await iconText(world)) === status.running(PORT) ? true : undefined), "the icon to say Weir is running", 120_000, 1000);
-    facts.push(`the icon was in the notification area ("${first}") and then said "${status.running(PORT)}", and the tray told the person Weir was running`);
+    facts.push(`the server was started with WEIR_ENV=production, WEIR_HOME, the bundled web app, plain-http cookies and both secrets from disk; the icon was in the notification area ("${first}") and then said "${status.running(PORT)}", and the tray told the person Weir was running`);
     await expectNoBrowser(world, "although the start was only announced", PORT);
+    await expectServerEnvironment(world, serverPid);
 
     // The menu as the standard lays it out.
     const items = await openMenu(world, tray);
@@ -77,7 +91,8 @@ export async function trayMenu(world) {
 
     // Start with Windows: a real check item, the menu stays open, and the Run entry follows it.
     await choose(world, tray, menu.startWithWindows);
-    await wait(world, async () => ((await machine.runEntry()) ? true : undefined), "the Run entry to be made", 30_000, 500);
+    const entry = await wait(world, async () => (await machine.runEntry()) ?? undefined, "the Run entry to be made", 30_000, 500);
+    assert.ok(entry.toLowerCase().includes(machine.paths.trayExe.toLowerCase()) && entry.includes("--no-browser"), `the Run entry does not start the installed Weir.exe with --no-browser: ${entry}`);
     const turnedOn = (await desktop.menu(tray.pid))?.items.find((item) => item.name === menu.startWithWindows);
     assert.equal(turnedOn?.toggle, "On", "the menu stayed open and shows Start with Windows on");
     await desktop.invoke(tray.pid, menu.startWithWindows);
@@ -85,6 +100,11 @@ export async function trayMenu(world) {
     assert.equal((await desktop.menu(tray.pid))?.items.find((item) => item.name === menu.startWithWindows)?.toggle, "Off", "the menu shows Start with Windows off again");
     await closeMenu(world, tray);
     facts.push("Start with Windows made the Run entry and stayed open showing it on, and took the entry away again");
+
+    const version = await machine.runTray(["--version"]);
+    assert.equal(version.exitCode, 0);
+    assert.equal(version.stdout.trim().split("+")[0], menuVersion(world.expectedVersion), `Weir.exe --version says ${version.stdout.trim()}`);
+    facts.push(`Weir.exe --version said ${version.stdout.trim()}`);
 
     // Check for updates: the check runs, and an update found is announced with a balloon whose click opens System > About.
     await choose(world, tray, menu.checkForUpdates);
@@ -112,7 +132,11 @@ export async function trayMenu(world) {
     assert.ok((await linesWith(await tray.log(), "Opening Weir in browser")).length > before, "the click opened a browser");
     await browserOn(world, PORT);
     await closeBrowsers(world, PORT);
-    facts.push("Open Weir opened http://127.0.0.1:9347/, and one click-and-double-click gesture on the icon opened one window");
+    const opens = async () => linesWith(await tray.log(), "Opening Weir in browser").length;
+    const afterGesture = await opens();
+    await wait(world, async () => ((await desktop.clickIcon("single"), (await opens()) > afterGesture) ? true : undefined), "a later click on the icon to open Weir again", 60_000, 500);
+    await closeBrowsers(world, PORT);
+    facts.push("Open Weir opened http://127.0.0.1:9347/, one click-and-double-click gesture on the icon opened one window, and a later click opened it again");
 
     // Restart Weir: a clean stop, a new server on the same port, the icon starting in between.
     const oldPid = await tray.serverPid();

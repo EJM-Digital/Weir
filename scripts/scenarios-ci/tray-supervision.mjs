@@ -41,6 +41,8 @@ export async function traySupervision(world) {
   await installedAndStopped(world);
   const tray = await startTray(world, ["--port", String(PORT), "--no-browser"]);
   const facts = [];
+  let orphan = 0;
+  let orphaned = false;
   try {
     let pid = await tray.ready();
     await ensureSignedIn(world);
@@ -61,19 +63,29 @@ export async function traySupervision(world) {
     assert.ok(started, "the tray does not say that Weir started only on a retry, after three failures");
     assert.equal(await machine.readText(`${machine.paths.runtimeHome}\\current-port.txt`), String(PORT), "current-port.txt names the port the server is on");
     assert.equal(await statusLine(world, tray), status.running(PORT), "the icon says Weir is running again");
+    // The tray goes, and its server is left running.
+    orphan = pid;
+    await machine.killProcess(tray.pid);
+    orphaned = true;
+    await tray.exited("the tray to end");
+    assert.ok((await machine.processes()).some((process) => process.pid === orphan), "the server went with the tray, so there is no orphan to find");
     facts.push(
       `the server (pid ${pid}) was ended by its own process id three times; each time the tray logged why ("exited with code"), waited ${failedStarts(log)
         .map((failure) => `${failure.waitSeconds} s`)
         .join(", ")} (growing, inside the policy's bounds), started another server and Weir answered /ready again, with one server running`,
     );
   } finally {
-    await tray.end();
+    if (!orphaned) await tray.end();
   }
 
-  // The port is taken by another program while the server is down.
+  // The tray ends without stopping its server, as a crashed tray does: the next one finds the server it left and stops it.
   const second = await startTray(world, ["--port", String(PORT), "--no-browser"]);
   try {
+    await second.line(new RegExp(`^Startup \\(orphaned server check\\): stopped WeirServer\\.exe \\(pid ${orphan}\\)`), { what: "the new tray to stop the server the last one left" });
     const pid = await second.ready();
+    assert.notEqual(pid, orphan, "the server the old tray left is still the one running");
+    await onlyOneServerRuns(world);
+    facts.push(`a tray that ended without stopping its server (pid ${orphan}) left it running, and the next tray stopped it before starting its own`);
     await machine.killProcess(pid);
     const holder = await holdPort(world, PORT);
     let held = true;
@@ -128,8 +140,8 @@ export async function trayGiveUp(world) {
       await holder.release();
       held = false;
       const mark = await tray.lineCount();
-      await choose(world, tray, menu.restart);
-      await tray.line("Restart: restarting the server on port 9347 (only this PC can connect).", { what: "the tray to restart the server", after: mark });
+      await world.desktop.clickBalloon(tray.pid);
+      await tray.line("Restart: restarting the server on port 9347 (only this PC can connect).", { what: "the click on the balloon to restart the server", after: mark });
       const back = await tray.readyAfter(pid);
       assert.equal(await statusLine(world, tray), status.running(PORT), "the icon does not say Weir is running after Restart Weir");
 
@@ -156,6 +168,6 @@ export async function trayGiveUp(world) {
   }
   return (
     `The server was ended and its port taken: the tray tried five times with growing waits, gave up once ("Giving up (5 of 5 failures"), told the person with the balloon "${balloons.stoppedPortInUse(PORT, 5)}", ` +
-    `and its menu said "${status.stoppedPortInUse(PORT)}"; after the port was freed, Restart Weir started Weir again; another crash was met with another start, counted from one (a fresh budget); Quit stopped the server cleanly and nothing started it again.`
+    `and its menu said "${status.stoppedPortInUse(PORT)}"; after the port was freed, a click on the balloon ("Click to try again") restarted Weir; another crash was met with another start, counted from one (a fresh budget); Quit stopped the server cleanly and nothing started it again.`
   );
 }
