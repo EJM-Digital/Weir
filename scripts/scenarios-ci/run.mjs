@@ -25,6 +25,8 @@ export async function runScenarios({ ids, registry, world }) {
       outcome = { status: "failed", detail: error.message };
     }
     results.push({ id, ...outcome, seconds: Math.round((Date.now() - began) / 1000) });
+    // Said as it happens, so a run that ends before the table is written still shows what each scenario did.
+    console.log(`${id}: ${outcome.status} in ${results.at(-1).seconds} s${outcome.status === "passed" ? "" : `: ${outcome.detail}`}`);
   }
   return results;
 }

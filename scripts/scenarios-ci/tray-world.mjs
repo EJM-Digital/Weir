@@ -205,12 +205,18 @@ export async function holdPort(world, port) {
  * Does something the moment the tray logs a line, without waiting for the next look: a file watch on the log, so a scenario can take a port in
  * the gap between the tray's saying it will use it and the server's trying. `stop` ends the watch; `done` settles with the action's result.
  */
-export function atLogLine(world, tray, wanted, action, skip = 0) {
-  const { machine } = world;
+export function atLogLine(world, tray, wanted, action, skip = 0, ceilingMs = START_CEILING_MS) {
   let stopped = false;
   let watcher;
+  let timer;
   const done = new Promise((resolve, reject) => {
     let running = false;
+    // A hang guard: the line never came.
+    timer = setTimeout(() => {
+      stopped = true;
+      watcher.close();
+      reject(new Error(`the tray did not log ${wanted} within ${ceilingMs / 1000} s.`));
+    }, ceilingMs);
     const look = async () => {
       if (stopped || running) return;
       running = true;
@@ -218,24 +224,29 @@ export function atLogLine(world, tray, wanted, action, skip = 0) {
         if (lineWith((await tray.log()).slice(skip), wanted) !== undefined) {
           stopped = true;
           watcher.close();
+          clearTimeout(timer);
           resolve(await action());
         }
       } catch (error) {
         stopped = true;
         watcher.close();
+        clearTimeout(timer);
         reject(error);
       } finally {
         running = false;
       }
     };
-    watcher = watch(machine.paths.runtimeHome, { persistent: false }, (_, name) => {
+    watcher = watch(world.machine.paths.runtimeHome, (_, name) => {
       if (name === "tray-host.log") void look();
     });
+    // The line may have been logged between the mark and the watch.
+    void look();
   });
   return {
     done,
     stop: () => {
       stopped = true;
+      clearTimeout(timer);
       watcher.close();
     },
   };
