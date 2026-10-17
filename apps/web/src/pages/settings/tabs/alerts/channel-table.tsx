@@ -18,11 +18,11 @@ import {
 import { ChannelForm, type ChannelFormData } from "./channel-form";
 import { ChannelRow, type TestResult } from "./channel-row";
 
+/** The channel as the form edits it. The address is left out: the server shows it hidden, and keeps the saved one. */
 function formDataOf(channel: NotificationChannelOut): ChannelFormData {
   return {
     label: channel.label,
     provider: channel.provider,
-    url: channel.url,
     events: channel.events,
     enabled: channel.enabled,
   };
@@ -143,6 +143,7 @@ export function ChannelTable({
                     <QuietFieldGroup title="Edit alert">
                       <ChannelForm
                         initial={formDataOf(channel)}
+                        savedAddress={channel.url}
                         supportedEvents={supportedEvents}
                         onSave={(data) => save(channel.id, data)}
                         onCancel={() => onEdit(null)}
