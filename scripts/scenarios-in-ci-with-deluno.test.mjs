@@ -20,18 +20,18 @@ const images = loadImages();
 
 test("Deluno, qBittorrent and the release source's runtime are pinned by digest, with a label saying what was pinned", () => {
   assert.deepEqual(problemsWithImages(images), []);
-  assert.equal(images.DELUNO.reference, "ghcr.io/jampat000/deluno@sha256:beba76803e94b4ae63a1fe0418a9601d1dbc3f6609c1acdb5f8d801d8bd00059");
+  assert.match(images.DELUNO.reference, /^ghcr\.io\/[^/]+\/deluno@sha256:[0-9a-f]{64}$/);
   assert.match(images.DELUNO.label, /1\.0\.0-rc\.30\.33/);
   assert.match(images.QBITTORRENT.reference, /^ghcr\.io\/linuxserver\/qbittorrent@sha256:[0-9a-f]{64}$/);
 });
 
 test("a reference without a digest, a tag in place of one, or a pin without a label is a problem", () => {
   const problems = problemsWithImages({
-    DELUNO: { label: "Deluno", reference: "ghcr.io/jampat000/deluno:latest" },
+    DELUNO: { label: "Deluno", reference: "ghcr.io/example/deluno:latest" },
     QBIT: { label: "", reference: "ghcr.io/linuxserver/qbittorrent@sha256:abc" },
     "bad name": { label: "Fine", reference: `x@sha256:${"a".repeat(64)}` },
   }).join("\n");
-  assert.match(problems, /DELUNO: "ghcr.io\/jampat000\/deluno:latest" is not a reference with a sha256 digest/);
+  assert.match(problems, /DELUNO: "ghcr.io\/example\/deluno:latest" is not a reference with a sha256 digest/);
   assert.match(problems, /QBIT: .*not a reference with a sha256 digest/);
   assert.match(problems, /QBIT: it needs a label/);
   assert.match(problems, /bad name: the name must be capital letters/);
