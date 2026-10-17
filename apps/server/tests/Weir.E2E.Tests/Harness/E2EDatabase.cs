@@ -28,6 +28,18 @@ public static class E2EDatabase
         transaction.Commit();
     }
 
+    /// <summary>
+    /// A read-only viewer of this name, added while the server runs and no administrator exists yet: no screen makes one, so a test of
+    /// a name that is taken seeds the row, as an operator's second process would.
+    /// </summary>
+    public static void InsertViewerNamed(string databasePath, string username)
+    {
+        using var connection = Open(databasePath);
+        using var transaction = connection.BeginTransaction();
+        SeedSql.InsertUser(connection, username, SeededAccounts.ViewerPasswordHash, "viewer");
+        transaction.Commit();
+    }
+
     /// <summary>Ends every signed-in session while keeping the accounts, as an expiry does: the next request from a browser is unauthenticated.</summary>
     public static void EndAllSessions(string databasePath)
     {
