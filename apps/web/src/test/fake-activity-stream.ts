@@ -39,6 +39,8 @@ export type ActivityStreamHandle = {
   entryWritten(latestEventId: number): void;
   /** The server wrote a line to its log: a `system.log` frame, whose data is the text the server sent. */
   logLineWritten(frameData: string): void;
+  /** Any frame the stream can send, by its name, with the JSON it carries. */
+  frame(type: string, data: unknown): void;
 };
 
 /** Puts the fake stream where the page opens its EventSource. Undo with `vi.unstubAllGlobals()`. */
@@ -59,6 +61,9 @@ export function stubActivityStream(): ActivityStreamHandle {
     },
     logLineWritten(frameData) {
       opened().emit("system.log", frameData);
+    },
+    frame(type, data) {
+      opened().emit(type, JSON.stringify(data));
     },
   };
 }

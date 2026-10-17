@@ -1,5 +1,4 @@
 using System.Net;
-using Microsoft.Playwright;
 using Weir.Contract.Tests.Harness;
 using Weir.E2E.Tests.Harness;
 using Weir.E2E.Tests.Support;

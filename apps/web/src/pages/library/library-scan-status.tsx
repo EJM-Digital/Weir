@@ -1,9 +1,10 @@
 import type { useTriggerLibraryScan } from "../../lib/processing/library-mode-queries";
 import { StatusDot } from "../../components/panels/status-dot";
 import { errorMessage } from "../../lib/api/error-message";
-import type {
-  LibraryModeSchedule,
-  LibraryScanInfo,
+import {
+  SCAN_START_FAILED,
+  type LibraryModeSchedule,
+  type LibraryScanInfo,
 } from "../../lib/processing/library-mode-api";
 import { plural } from "../../lib/ui/mm-plural";
 import {
@@ -14,8 +15,6 @@ import {
 import { nextScheduled, nextScheduledBrief, scanned } from "./library-model";
 
 type Rescan = ReturnType<typeof useTriggerLibraryScan>;
-
-const START_FAILED = "Weir couldn't start a check. Try again in a moment.";
 
 /** What a running check says: it is under way, and how many files it has looked at so far once it has looked at some. */
 function checking(filesSeen: number | null): string {
@@ -75,10 +74,10 @@ export function LibraryScanStatus({
           className="mm-library-scan__error mm-status-text"
           data-status="broken"
           role="alert"
-          title={errorMessage(rescan.error, START_FAILED)}
+          title={errorMessage(rescan.error, SCAN_START_FAILED)}
           data-testid="library-scan-error"
         >
-          {errorMessage(rescan.error, START_FAILED)}
+          {errorMessage(rescan.error, SCAN_START_FAILED)}
         </span>
       ) : null}
     </>
