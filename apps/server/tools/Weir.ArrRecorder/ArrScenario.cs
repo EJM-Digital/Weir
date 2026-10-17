@@ -57,6 +57,11 @@ internal sealed partial class ArrScenario : IDisposable
 
         await ConnectionSteps().ConfigureAwait(false);
         await SetUpAsync(receiver).ConfigureAwait(false);
+        await StepAsync("connection-test", "The connection test against an app with a root folder.", async () =>
+        {
+            var description = await _port.DescribeAsync(_connection).ConfigureAwait(false);
+            Expect(description.Status == SignalStatus.Reported && description.LibraryRoots.Count == 1, "the app should report its one root folder");
+        }).ConfigureAwait(false);
         await QueueSteps(receiver).ConfigureAwait(false);
         await ImportSteps(receiver).ConfigureAwait(false);
         await LibrarySteps().ConfigureAwait(false);
