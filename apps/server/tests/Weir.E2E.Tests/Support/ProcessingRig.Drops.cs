@@ -101,6 +101,20 @@ public sealed partial class ProcessingRig
     public async Task WaitForStatusAsync(string fileName, string status) =>
         await Poll.UntilAsync(async () => (string?)(await ListedFileAsync(fileName))?["status"] == status, $"{fileName} to be {status}", PassCeiling);
 
+    /// <summary>A second movies workflow of its own, with a watched folder Weir looks at on a schedule; returns its id.</summary>
+    public async Task<long> AddWorkflowAsync(string name)
+    {
+        var created = await _admin.PostWithCsrfAsync(Libraries, new JsonObject
+        {
+            ["name"] = name,
+            ["media_type"] = "movie",
+            ["watched_folder"] = Directory.CreateDirectory(Path.Combine(_folders.Path, name, "watched")).FullName,
+            ["output_folder"] = Directory.CreateDirectory(Path.Combine(_folders.Path, name, "output")).FullName,
+        });
+        Assert.True(created.Status is HttpStatusCode.Created or HttpStatusCode.OK, created.ToString());
+        return (long)created.Fields["id"]!;
+    }
+
     /// <summary>The metadata file <see cref="DropFileAsync"/> leaves beside the film.</summary>
     public const string MetadataFile = "film.nfo";
 
