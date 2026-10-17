@@ -41,7 +41,8 @@ internal sealed class BackupWorld : IAsyncDisposable
 
     public static async Task<BackupWorld> StartAsync()
     {
-        var server = await WeirServer.StartNewAsync();
+        // A machine whose clock is not UTC: the times a backup carries must not move with it.
+        var server = await WeirServer.StartNewAsync(new Dictionary<string, string> { ["TZ"] = "Pacific/Auckland" });
         return new BackupWorld(server, await server.CreateAdminClientAsync());
     }
 
@@ -69,7 +70,7 @@ internal sealed class BackupWorld : IAsyncDisposable
     /// <summary>Sets everything the backup holds to something other than its default, so a restore that forgets a section shows.</summary>
     public async Task SetUpAsync()
     {
-        await SaveSuiteSettingsAsync(timezone: "Pacific/Auckland", logRetention: 45, activityRetention: 120, backupHours: 12);
+        await SaveSuiteSettingsAsync(timezone: "Pacific/Auckland", logRetention: 45, activityRetention: 120, backupHours: 12, backupTime: "03:30");
         await SaveOperatorSettingsAsync(first: true);
         var rules = await SaveRuleSetsAsync(first: true);
         await SaveLibrariesAsync(rules, first: true);
@@ -82,7 +83,7 @@ internal sealed class BackupWorld : IAsyncDisposable
     /// <summary>Changes everything the backup holds, and removes and adds what a person might, so a restore has plenty to put back.</summary>
     public async Task ChangeEverythingAsync()
     {
-        await SaveSuiteSettingsAsync(timezone: "Europe/Paris", logRetention: 7, activityRetention: 0, backupHours: 99);
+        await SaveSuiteSettingsAsync(timezone: "Europe/Paris", logRetention: 7, activityRetention: 0, backupHours: 99, backupTime: "22:15");
         await SaveOperatorSettingsAsync(first: false);
         var rules = await SaveRuleSetsAsync(first: false);
         await SaveLibrariesAsync(rules, first: false);
@@ -106,7 +107,7 @@ internal sealed class BackupWorld : IAsyncDisposable
         Assert.True(edited.Status == HttpStatusCode.OK, edited.ToString());
     }
 
-    private async Task SaveSuiteSettingsAsync(string timezone, int logRetention, int activityRetention, int backupHours)
+    private async Task SaveSuiteSettingsAsync(string timezone, int logRetention, int activityRetention, int backupHours, string backupTime)
     {
         var saved = await Admin.PutWithCsrfAsync(
             $"{Api}/suite/settings",
@@ -117,6 +118,7 @@ internal sealed class BackupWorld : IAsyncDisposable
                 ["activity_retention_days"] = activityRetention,
                 ["configuration_backup_enabled"] = activityRetention != 0,
                 ["configuration_backup_interval_hours"] = Math.Min(backupHours, 720),
+                ["configuration_backup_preferred_time"] = backupTime,
             });
         Assert.True(saved.Status == HttpStatusCode.OK, saved.ToString());
     }
@@ -140,7 +142,7 @@ internal sealed class BackupWorld : IAsyncDisposable
             {
                 var low = (long)(double)value["minimum"]!;
                 var high = (long)(double)value["maximum"]!;
-                body[name] = first ? (current[name]!.GetValue<long>() == high ? low : high) : (low + high) / 2;
+                body[name] = first ? (current[name]?.GetValue<long>() == high ? low : high) : (low + high) / 2;
             }
         }
 

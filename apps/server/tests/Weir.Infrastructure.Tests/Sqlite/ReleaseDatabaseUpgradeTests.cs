@@ -73,7 +73,8 @@ public sealed class ReleaseDatabaseUpgradeTests : IDisposable
 
         Assert.Equal(release.Sha256, ReleaseDatabases.Sha256Of(version));
         Assert.Equal(release.SchemaRevision, Text("SELECT revision FROM schema_version"));
-        Assert.Equal("v" + version, release.Tag);
+        Assert.Equal($"ghcr.io/jampat000/weir:{version}", release.Image);
+        Assert.Matches("^sha256:[0-9a-f]{64}$", release.ImageDigest);
         Assert.NotEqual(SchemaMigrator.HeadRevision, release.SchemaRevision);
         foreach (var (table, rows) in release.Rows)
         {

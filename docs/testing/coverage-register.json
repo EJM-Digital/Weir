@@ -4976,6 +4976,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/ReleaseBackupRestoreTests.cs",
+          "name": "ReleaseBackupRestoreTests"
         }
       ],
       "partial": [
@@ -4995,11 +5000,6 @@
           "name": "ConfigurationBundleIntakeUpgradeTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Restoring a backup taken by an earlier released version is tested with synthetic bundles only (PLAT-RESTORE). No test restores a bundle that differs from the current state and then compares every restored section (rule sets, operator settings, schedules, direct-play devices, alerts); the contract and API round trips restore the same state, and the only value they change is the product name, which restore drops"
-      },
-      "issue": 1004,
       "covers": [
         "route:PUT /api/v1/suite/configuration-bundle"
       ],
@@ -49847,7 +49847,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/ReleaseBackupRestoreTests.cs",
+          "name": "ReleaseBackupRestoreTests"
+        }
+      ],
       "partial": [
         {
           "type": "contract",
@@ -49920,11 +49926,6 @@
           "name": "LiveAudit"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "A backup file written by an earlier released version is restored only from synthetic text in the tests, and no test restores onto a differently configured install and compares every section afterwards (the round-trip tests restore the same state); the UI restore step is manual (docs/smoke-checklists.md 16-17)"
-      },
-      "issue": 1004,
       "audit": {
         "id": "PLAT-21",
         "verdict": "Partly"
@@ -49993,7 +49994,18 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/ReleaseUpgradeTests.cs",
+          "name": "ReleaseUpgradeTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/ReleaseDatabaseUpgradeTests.cs",
+          "name": "ReleaseDatabaseUpgradeTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -50021,11 +50033,6 @@
           "name": "update-over-installed-weir"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "No test upgrades a database written by each earlier released version (rc.1 to rc.15) with real data; per-migration tests cover most data-moving steps (0002-0006, 0027, 0029, 0030, 0031...) but migration 0009 (a 35-statement rebuild of the rule-set and library tables) has no test of its own beyond the full-chain runs"
-      },
-      "issue": 1005,
       "audit": {
         "id": "PLAT-23",
         "verdict": "Partly"

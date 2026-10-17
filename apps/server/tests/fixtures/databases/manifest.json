@@ -2,10 +2,10 @@
   "databases": [
     {
       "version": "1.0.0-rc.10",
-      "tag": "v1.0.0-rc.10",
-      "commit": "e238c5564d9c9ebfcf16c203b7922e9db8527790",
+      "image": "ghcr.io/jampat000/weir:1.0.0-rc.10",
+      "image_digest": "sha256:296086fa99a8047efb2ae24adf815eb6940bb16dcf54221fd45d5768bd56688b",
       "schema_revision": "0075_handoff_target_copy",
-      "sha256": "cedb05e84f121f19a3e147d96909da561c47ca24cfc896ef9f56ee930d882ed5",
+      "sha256": "3cc295e60e3463b7a9200c2f9a063d8edcf7d90b0ac7df0d4b723f05051b2328",
       "rows": {
         "activity_events": 10,
         "arr_library_operator_settings": 1,
@@ -36,10 +36,10 @@
     },
     {
       "version": "1.0.0-rc.11",
-      "tag": "v1.0.0-rc.11",
-      "commit": "98607f3afbcf6689dbedba2af74fe51e1374937b",
+      "image": "ghcr.io/jampat000/weir:1.0.0-rc.11",
+      "image_digest": "sha256:298fd18e95d845b4d1ab9c02a0e366f41e648630bd7c2eb4010f63170b9cc0f9",
       "schema_revision": "0076_handoff_skipped_extras",
-      "sha256": "9484521976da0b4c56b6a831f47d34129993de6caa491289daa54593be09e872",
+      "sha256": "b0e6916f18b254e5af3f6c93aef7e042752fb78024afdc4ccea1af601d53cfd2",
       "rows": {
         "activity_events": 10,
         "arr_library_operator_settings": 1,
@@ -70,10 +70,10 @@
     },
     {
       "version": "1.0.0-rc.12",
-      "tag": "v1.0.0-rc.12",
-      "commit": "67459f96132e2b8a97063d614ce9e752292a1cc0",
+      "image": "ghcr.io/jampat000/weir:1.0.0-rc.12",
+      "image_digest": "sha256:907cbc2a6c45ec254151b3c4a9cda442a7d682b54462dc425b2c5c7c3ece5484",
       "schema_revision": "0078_activity_current_index",
-      "sha256": "bc75dc254d7ac1a1e4f97199dc2d799a9c21ed7c22040e40222f485c95a336f1",
+      "sha256": "25c8edcbda465f398ebef13f49c6fd6310091218dc113527cab3457c18ec733c",
       "rows": {
         "activity_events": 10,
         "arr_library_operator_settings": 1,
@@ -104,10 +104,10 @@
     },
     {
       "version": "1.0.0-rc.13",
-      "tag": "v1.0.0-rc.13",
-      "commit": "63e36df97f7128ab9cd58bd7b3229ad0ee60f662",
+      "image": "ghcr.io/jampat000/weir:1.0.0-rc.13",
+      "image_digest": "sha256:72307d7b814034a65dfd5fdd117c97432c2a9abbd39f5e4bb65e45bb4e934497",
       "schema_revision": "0078_activity_current_index",
-      "sha256": "b4b9748b8eb9218948e1af6f1aaab710ad4d67a26aed72c658d703878195e899",
+      "sha256": "b6e33643e48c543238a95b7bf36d766684002b181fb864d63c32066f2b8d69bf",
       "rows": {
         "activity_events": 10,
         "arr_library_operator_settings": 1,
@@ -138,10 +138,10 @@
     },
     {
       "version": "1.0.0-rc.17",
-      "tag": "v1.0.0-rc.17",
-      "commit": "48c6280a7ec290b7130d2c30e0138fdf9070b559",
+      "image": "ghcr.io/jampat000/weir:1.0.0-rc.17",
+      "image_digest": "sha256:e046550fd51d0d6654e03c693ed4490c8b143b5ccca7ca3b16b065ce6032302f",
       "schema_revision": "0080_handback_speaker",
-      "sha256": "cb654203dbb34264478c9bc39fc0c9518bdeceb929c53503af58686e524ed072",
+      "sha256": "aad4119b227c939fdbfb9a4259a3119266f806da3c8a45af6dac801d25ab629a",
       "rows": {
         "activity_events": 10,
         "arr_library_operator_settings": 1,
@@ -172,10 +172,10 @@
     },
     {
       "version": "1.0.0-rc.18",
-      "tag": "v1.0.0-rc.18",
-      "commit": "bf097e50d417025af8101d3af3c4b4b5de9d029b",
+      "image": "ghcr.io/jampat000/weir:1.0.0-rc.18",
+      "image_digest": "sha256:77a2de6920d6ef7fc3fa3bc4a55dc13ae8318ee46a08d01527eb248362e9f674",
       "schema_revision": "0080_handback_speaker",
-      "sha256": "8b51eaeab0d8aff20e10916739f816de7b20994d3f9b33b7427fe79db4af8c45",
+      "sha256": "d45f64c6a82ab97ee3252c97deaa1cd64fa86c78892baa27678e013c475a5d82",
       "rows": {
         "activity_events": 10,
         "arr_library_operator_settings": 1,

@@ -18,48 +18,7 @@ public sealed class BackupRestoreTests
         "suite_settings", "arr_library_operator_settings", "operator_settings", "rule_sets", "libraries", "media_manager_connections",
     ];
 
-    /// <summary>The fields a restore stamps afresh, which a section's comparison leaves out; every other field must come back as it was.</summary>
-    private static readonly string[] Stamps = ["updated_at", "product_display_name", "configuration_backup_last_run_at"];
-
-    private static JsonNode? Without(JsonNode? section)
-    {
-        var copy = section?.DeepClone();
-        Strip(copy);
-        return copy;
-    }
-
-    private static void Strip(JsonNode? node)
-    {
-        switch (node)
-        {
-            case JsonObject fields:
-                foreach (var stamp in Stamps)
-                {
-                    fields.Remove(stamp);
-                }
-
-                foreach (var child in fields.Select(field => field.Value).ToList())
-                {
-                    Strip(child);
-                }
-
-                break;
-            case JsonArray items:
-                foreach (var child in items)
-                {
-                    Strip(child);
-                }
-
-                break;
-        }
-    }
-
-    private static void AssertSection(string section, JsonObject expected, JsonObject actual)
-    {
-        var want = Without(expected[section]);
-        var got = Without(actual[section]);
-        Assert.True(JsonNode.DeepEquals(want, got), $"{section} came back different.\nWas:  {want?.ToJsonString()}\nNow:  {got?.ToJsonString()}");
-    }
+    private static void AssertSection(string section, JsonObject expected, JsonObject actual) => BundleComparison.AssertSame(section, expected, actual);
 
     [Fact]
     public async Task Every_section_comes_back_exactly_as_it_was_backed_up()
@@ -73,7 +32,7 @@ public sealed class BackupRestoreTests
         var changed = await world.ExportAsync();
         foreach (var section in Sections.Where(section => section is not ("arr_library_operator_settings" or "media_manager_connections")))
         {
-            Assert.False(JsonNode.DeepEquals(Without(backup[section]), Without(changed[section])), $"{section} was not changed, so restoring it proves nothing.");
+            Assert.False(JsonNode.DeepEquals(BundleComparison.Without(backup[section]), BundleComparison.Without(changed[section])), $"{section} was not changed, so restoring it proves nothing.");
         }
 
         var restored = await world.RestoreAsync(backup);
@@ -85,7 +44,7 @@ public sealed class BackupRestoreTests
             AssertSection(section, backup, after);
         }
 
-        Assert.Equal(["roku", "apple_tv_4k"], SelectedDevices(await world.Admin.GetAsync($"{WeirClient.Api}/processing/direct-play/devices")));
+        Assert.Equal(["apple_tv_4k", "roku"], SelectedDevices(await world.Admin.GetAsync($"{WeirClient.Api}/processing/direct-play/devices")));
     }
 
     [Fact]
@@ -127,11 +86,13 @@ public sealed class BackupRestoreTests
 
         Assert.True(restored.Status == HttpStatusCode.OK, restored.ToString());
         var alerts = await world.AlertsAsync();
-        // The one the install still has is left as it is, address and all.
-        Assert.Equal(("https://hooks.example.com/changed", false), ((string)alerts["Webhook alert"]["url"]!, (bool)alerts["Webhook alert"]["enabled"]!));
+        // The one the install still has is left as it is, address (shown hidden) and all.
+        Assert.Equal(("https://hooks.example.com/••••", false), ((string)alerts["Webhook alert"]["url"]!, (bool)alerts["Webhook alert"]["enabled"]!));
         Assert.Equal(["job_completed"], alerts["Webhook alert"]["events"]!.AsArray().Select(name => (string)name!));
-        // The one it lost comes back as it was backed up, switched off and with no address to send to.
-        Assert.Equal(("discord", string.Empty, false), ((string)alerts["Discord alert"]["provider"]!, (string)alerts["Discord alert"]["url"]!, (bool)alerts["Discord alert"]["enabled"]!));
+        // The one it lost comes back as it was backed up, switched off and with no address to send to until one is entered.
+        Assert.Equal(("discord", false), ((string)alerts["Discord alert"]["provider"]!, (bool)alerts["Discord alert"]["enabled"]!));
+        var sent = await world.Admin.PostWithCsrfAsync($"{BackupWorld.Channels}/{(long)alerts["Discord alert"]["id"]!}/test");
+        Assert.False((bool)sent.Fields["ok"]!, "an alert restored without its address cannot send");
         Assert.Equal(["processing_job_failed"], alerts["Discord alert"]["events"]!.AsArray().Select(name => (string)name!));
         // The connections were never touched, so the secrets saved before still sign in.
         Assert.Equal((true, true), await world.SecretsStillWorkAsync());

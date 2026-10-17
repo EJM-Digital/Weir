@@ -6,9 +6,6 @@
 name: Release fixtures
 
 on:
-  push:
-    branches: [coverage/1004-1005]
-    paths: [.github/workflows/release-fixtures.yml]
   workflow_dispatch:
     inputs:
       versions:
