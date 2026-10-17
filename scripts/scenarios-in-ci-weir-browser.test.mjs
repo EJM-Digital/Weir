@@ -95,7 +95,7 @@ test("a visit is a brand-new context, closed afterwards, and waits for the page 
   const { launched, log } = playwrightStub([{ testIds: [], text: "" }, { testIds: ["spinner"], text: "Loading" }, { testIds: ["login-username"], text: "Sign in" }]);
   const seen = await new Browser(launched, "http://localhost:9347", fakeClock()).visit("/");
   assert.deepEqual(seen, { testIds: ["login-username"], text: "Sign in" });
-  assert.deepEqual(log, { contexts: 1, contextsClosed: 1, browserClosed: 0, urls: [["http://localhost:9347/", "networkidle"]] });
+  assert.deepEqual(log, { contexts: 1, contextsClosed: 1, browserClosed: 0, urls: [["http://localhost:9347/", "load"]] });
 });
 
 test("a page that never lands is returned as it stands after the ceiling, for the scenario to judge", async () => {
