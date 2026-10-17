@@ -43,6 +43,7 @@ export function SidePanel({
       <button
         type="button"
         className="mm-drawer-backdrop"
+        data-modal-companion=""
         aria-label="Close"
         onClick={onClose}
       />
