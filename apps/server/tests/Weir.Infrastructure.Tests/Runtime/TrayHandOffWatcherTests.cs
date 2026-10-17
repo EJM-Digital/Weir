@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weir.Infrastructure.Activity;
 using Weir.Infrastructure.Runtime;
@@ -9,17 +8,20 @@ namespace Weir.Infrastructure.Tests.Runtime;
 /// <summary>The tray's answers reach the open screens when the tray writes them: a downloaded update, and the firewall prompt's outcome.</summary>
 public sealed class TrayHandOffWatcherTests : IAsyncLifetime, IDisposable
 {
-    private static readonly TimeSpan LongEnoughToHearNothing = TimeSpan.FromMilliseconds(800);
+    /// <summary>The longest a wait for something the test has already arranged may take before the test calls it hung.</summary>
+    private static readonly TimeSpan HangGuard = TimeSpan.FromSeconds(15);
 
     private readonly StoreFixture _store = new();
     private readonly DataChangePublisher _changes = new();
+    private TimerWatchingClock? _clock;
     private TrayHandOffWatcher? _watcher;
 
     private string Home => _store.Options.WeirHome;
 
     public async Task InitializeAsync()
     {
-        _watcher = new TrayHandOffWatcher(_store.Options, _changes, NullLogger<TrayHandOffWatcher>.Instance);
+        _clock = new TimerWatchingClock(_store.Clock);
+        _watcher = new TrayHandOffWatcher(_store.Options, _changes, _clock, NullLogger<TrayHandOffWatcher>.Instance);
         await _watcher.StartAsync(CancellationToken.None);
     }
 
@@ -34,10 +36,17 @@ public sealed class TrayHandOffWatcherTests : IAsyncLifetime, IDisposable
         _store.Dispose();
     }
 
-    private static async Task<string> NextAsync(BroadcastSubscription<string> heard)
+    /// <summary>The next topic announced, moving the clock past the watcher's settle time until it comes.</summary>
+    private async Task<string> NextAsync(BroadcastSubscription<string> heard)
     {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-        await foreach (var topic in heard.ReadAllAsync(timeout.Token))
+        var next = ReadOneAsync(heard);
+        await Eventually.ThatAdvancingAsync(_store.Clock, TrayHandOffWatcher.Settle, () => next.IsCompleted);
+        return await next;
+    }
+
+    private static async Task<string> ReadOneAsync(BroadcastSubscription<string> heard)
+    {
+        await foreach (var topic in heard.ReadAllAsync(CancellationToken.None))
         {
             return topic;
         }
@@ -45,30 +54,25 @@ public sealed class TrayHandOffWatcherTests : IAsyncLifetime, IDisposable
         throw new InvalidOperationException("The subscription ended.");
     }
 
-    /// <summary>The first <paramref name="count"/> topics, however long the watcher takes to settle, then anything else that follows soon after.</summary>
-    private static async Task<string[]> HeardAsync(BroadcastSubscription<string> heard, int count)
+    /// <summary>Everything announced up to and including <paramref name="last"/>, which the test arranges to be announced after the rest.</summary>
+    private async Task<string[]> HeardUntilAsync(BroadcastSubscription<string> heard, string last)
     {
         var topics = new List<string>();
-        for (var i = 0; i < count; i++)
+        do
         {
             topics.Add(await NextAsync(heard));
         }
+        while (topics[^1] != last);
 
-        topics.AddRange(await HeardAfterAsync(heard, LongEnoughToHearNothing));
         return [.. topics];
     }
 
-    private static async Task<string[]> HeardAfterAsync(BroadcastSubscription<string> heard, TimeSpan wait)
+    /// <summary>Makes the watcher hear <paramref name="fileName"/> and waits until it is holding that write back for the settle time.</summary>
+    private async Task HearAndWaitForSettleAsync(string fileName)
     {
-        await Task.Delay(wait);
-        heard.Dispose();
-        var topics = new List<string>();
-        await foreach (var topic in heard.ReadAllAsync(CancellationToken.None))
-        {
-            topics.Add(topic);
-        }
-
-        return [.. topics];
+        var timers = _clock!.TimersSet;
+        _watcher!.Hear(fileName);
+        await Eventually.ThatAsync(() => _clock.TimersSet > timers);
     }
 
     [Fact]
@@ -108,29 +112,41 @@ public sealed class TrayHandOffWatcherTests : IAsyncLifetime, IDisposable
     {
         using var heard = _changes.Subscribe();
 
-        // Twelve writes, each well inside the settle time of the one before, that together last longer than it. A busy machine
-        // can stretch a gap past the settle time, and a burst split there is announced for each part, so what is promised is
-        // one announcement, plus one for every gap that was that long.
-        var gap = TimeSpan.FromMilliseconds(50);
-        var splits = 0;
-        var last = Stopwatch.GetTimestamp();
-        for (var write = 0; write < 12; write++)
+        // Twelve writes, each heard before the settle time of the one before has passed, that together last longer than it.
+        await HearAndWaitForSettleAsync(UpdateFiles.StateFileName);
+        for (var write = 1; write < 12; write++)
         {
-            await Task.Delay(gap);
-            var now = Stopwatch.GetTimestamp();
-            if (Stopwatch.GetElapsedTime(last, now) >= TrayHandOffWatcher.Settle)
-            {
-                splits++;
-            }
-
-            last = now;
             _watcher!.Hear(UpdateFiles.StateFileName);
+            var timers = _clock!.TimersSet;
+            _store.Clock.Advance(TrayHandOffWatcher.Settle);
+            await Eventually.ThatAsync(() => _clock.TimersSet > timers);
         }
 
-        var announced = await HeardAsync(heard, 1);
+        _store.Clock.Advance(TrayHandOffWatcher.Settle);
+        Assert.Equal(DataTopics.Update, await ReadOneAsync(heard).WaitAsync(HangGuard));
 
-        Assert.All(announced, topic => Assert.Equal(DataTopics.Update, topic));
-        Assert.InRange(announced.Length, 1, 1 + splits);
+        // The next thing announced is a later write to another file, so nothing was announced in between.
+        _watcher!.Hear(LanAccessFile.FileName);
+        Assert.Equal(DataTopics.NetworkAccess, await NextAsync(heard));
+    }
+
+    [Fact]
+    public async Task A_burst_that_never_goes_quiet_is_still_announced_every_most_waited()
+    {
+        using var heard = _changes.Subscribe();
+
+        await HearAndWaitForSettleAsync(UpdateFiles.StateFileName);
+        var announced = ReadOneAsync(heard);
+        for (var held = TimeSpan.Zero; held < TrayHandOffWatcher.MostWaited; held += TrayHandOffWatcher.Settle)
+        {
+            Assert.False(announced.IsCompleted);
+            _watcher!.Hear(UpdateFiles.StateFileName);
+            var timers = _clock!.TimersSet;
+            _store.Clock.Advance(TrayHandOffWatcher.Settle);
+            await Eventually.ThatAsync(() => announced.IsCompleted || _clock.TimersSet > timers);
+        }
+
+        Assert.Equal(DataTopics.Update, await announced.WaitAsync(HangGuard));
     }
 
     [Fact]
@@ -141,9 +157,13 @@ public sealed class TrayHandOffWatcherTests : IAsyncLifetime, IDisposable
         await File.WriteAllTextAsync(Path.Join(Home, UpdateFiles.StateFileName), "{\"downloaded\": false}");
         await File.WriteAllTextAsync(Path.Join(Home, LanAccessFile.FileName), "on");
 
-        Assert.Equal(
-            [DataTopics.NetworkAccess, DataTopics.Update],
-            [.. (await HeardAsync(heard, 2)).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)]);
+        var topics = new HashSet<string>();
+        while (topics.Count < 2)
+        {
+            topics.Add(await NextAsync(heard));
+        }
+
+        Assert.Equal([DataTopics.NetworkAccess, DataTopics.Update], topics.Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -153,8 +173,9 @@ public sealed class TrayHandOffWatcherTests : IAsyncLifetime, IDisposable
 
         await File.WriteAllTextAsync(Path.Join(Home, UpdateFiles.WorkStateFileName), "{}");
         await File.WriteAllTextAsync(Path.Join(Home, "notes.txt"), "not a hand-off");
+        await File.WriteAllTextAsync(Path.Join(Home, LanAccessFile.FileName), "on");
 
-        Assert.Empty(await HeardAfterAsync(heard, LongEnoughToHearNothing));
+        Assert.Equal([DataTopics.NetworkAccess], await HeardUntilAsync(heard, DataTopics.NetworkAccess));
     }
 
     [Fact]
@@ -165,6 +186,6 @@ public sealed class TrayHandOffWatcherTests : IAsyncLifetime, IDisposable
         File.WriteAllText(Path.Join(Home, ".update-state.json.1a2b3c4d.tmp"), "{\"downloaded\": true, \"version\": \"9.9.9\"}");
         File.Move(Path.Join(Home, ".update-state.json.1a2b3c4d.tmp"), Path.Join(Home, UpdateFiles.StateFileName), overwrite: true);
 
-        Assert.Equal([DataTopics.Update], await HeardAsync(heard, 1));
+        Assert.Equal(DataTopics.Update, await NextAsync(heard));
     }
 }

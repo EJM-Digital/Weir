@@ -63,7 +63,7 @@ public sealed class VanishedSourceTests : IDisposable
         _media.Probes["Film.2024.mkv"] = FakeMediaRunner.EnglishAndJapanese;
     }
 
-    private RemuxPassHandler RemuxHandler(TimeSpan? goneSettle = null)
+    private RemuxPassHandler RemuxHandler(Func<CancellationToken, Task>? goneLookAgain = null)
     {
         var data = new SqliteRemuxPassData(_fixture.Store.Database, _fixture.Connections, NullLogger<SqliteRemuxPassData>.Instance);
         var runner = new RemuxPassRunner(
@@ -90,7 +90,8 @@ public sealed class VanishedSourceTests : IDisposable
             _fixture.Reporter,
             _fixture.Jobs)
         {
-            GoneSettle = goneSettle ?? TimeSpan.Zero,
+            GoneSettle = TimeSpan.Zero,
+            GoneLookAgain = goneLookAgain,
         };
     }
 
@@ -342,17 +343,18 @@ public sealed class VanishedSourceTests : IDisposable
         File.Move(source, source + ".away");
         var worker = new ProcessingJobProcessor(
             _fixture.Jobs,
-            new JobHandlerRegistry([RemuxHandler(TimeSpan.FromSeconds(1.5))]),
+            new JobHandlerRegistry([RemuxHandler(_ =>
+            {
+                File.Move(source + ".away", source);
+                return Task.CompletedTask;
+            })]),
             new SqliteActivityWriter(_fixture.Store.Database),
             new NoUnhandledJobFailureRecorder(),
             new NoJobNotifications(),
             _fixture.Store.Clock,
             NullLogger<ProcessingJobProcessor>.Instance);
 
-        var working = worker.ProcessOneAsync("test-worker");
-        await Task.Delay(300);
-        File.Move(source + ".away", source);
-        await working;
+        await worker.ProcessOneAsync("test-worker");
 
         Assert.Equal("processed", await StatusAsync(Rel));
         Assert.Equal(0, await GoneRowsAsync());
