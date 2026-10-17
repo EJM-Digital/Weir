@@ -1,0 +1,68 @@
+# The real download clients the recorder talks to (README.md). The images are pinned by digest, so a recording is of a known release;
+# the weekly drift check overrides them with the newest release to see whether the replies have moved. Transmission is the Sonarr and
+# Radarr recorder's (../Weir.ArrRecorder/compose.yaml), which pins it once.
+#
+#   RECORDER_WORK=/tmp/clients PUID=$(id -u) PGID=$(id -g) docker compose -f compose.yaml up -d qbittorrent5
+#
+# RECORDER_WORK holds one folder per client for its config and downloads. The clients run as PUID:PGID, so the recorder, which runs on
+# the host as that user, can read the API key SABnzbd generates. Start one client at a time: they share the host ports they would
+# otherwise have to be told apart by.
+
+name: weir-client-recorder
+
+services:
+  qbittorrent4:
+    image: ${WEIR_RECORD_QBITTORRENT4_IMAGE:-lscr.io/linuxserver/qbittorrent:4.6.7-r0-ls353@sha256:55f15d44396315551f87294a176efae733b16e283f38980308e46073950257c6}
+    environment: &linuxserver
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: Etc/UTC
+      WEBUI_PORT: "8080"
+    volumes: &qbittorrent-volumes
+      - ${RECORDER_WORK:?set RECORDER_WORK}/qbittorrent/config:/config
+      - ${RECORDER_WORK}/qbittorrent/downloads:/downloads
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  qbittorrent5:
+    image: ${WEIR_RECORD_QBITTORRENT5_IMAGE:-lscr.io/linuxserver/qbittorrent:5.1.4-r3-ls453@sha256:c9990949e968e99333f47f49da7d16e81ba6e1469c8c46807a65b984c9e8b6ff}
+    environment: *linuxserver
+    volumes: *qbittorrent-volumes
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  deluge:
+    image: ${WEIR_RECORD_DELUGE_IMAGE:-lscr.io/linuxserver/deluge:2.2.0-ls384@sha256:bf306ddd5e6d4a85d3d05ce1b947ab6e344e7fca1b7740b77c58ce170118c7ff}
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: Etc/UTC
+    volumes:
+      - ${RECORDER_WORK:?set RECORDER_WORK}/deluge/config:/config
+      - ${RECORDER_WORK}/deluge/downloads:/downloads
+    ports:
+      - "127.0.0.1:8112:8112"
+
+  sabnzbd:
+    image: ${WEIR_RECORD_SABNZBD_IMAGE:-lscr.io/linuxserver/sabnzbd:5.1.3-ls277@sha256:7a13af91cf296399e302d2fb6fc709d6e2ea15e3094f220684611fbe1dd43625}
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: Etc/UTC
+    volumes:
+      - ${RECORDER_WORK:?set RECORDER_WORK}/sabnzbd/config:/config
+      - ${RECORDER_WORK}/sabnzbd/downloads:/downloads
+    ports:
+      - "127.0.0.1:8085:8080"
+
+  nzbget:
+    image: ${WEIR_RECORD_NZBGET_IMAGE:-lscr.io/linuxserver/nzbget:v26.3-ls268@sha256:ab18af1d16027fdf870fc58a39bbc764043b16e9220e06b9d0413e8b56bd622b}
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: Etc/UTC
+    volumes:
+      - ${RECORDER_WORK:?set RECORDER_WORK}/nzbget/config:/config
+      - ${RECORDER_WORK}/nzbget/downloads:/downloads
+    ports:
+      - "127.0.0.1:6789:6789"

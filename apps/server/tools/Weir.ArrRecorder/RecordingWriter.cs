@@ -43,7 +43,7 @@ internal sealed class RecordingWriter
             ["note"] = note,
             ["exchanges"] = new JsonArray([.. exchanges.Select(ExchangeOf)]),
         };
-        var text = Scrub(document.ToJsonString(Options)).Replace("\r\n", "\n", StringComparison.Ordinal) + "\n";
+        var text = Scrub(document.ToJsonString(Options), [.. _secrets, .. SessionSecrets(exchanges)]).Replace("\r\n", "\n", StringComparison.Ordinal) + "\n";
         Directory.CreateDirectory(_folder);
         var path = Path.Combine(_folder, state + ".json");
         File.WriteAllText(path, text, new UTF8Encoding(false));
@@ -61,6 +61,10 @@ internal sealed class RecordingWriter
         if (exchange.RequestBody is not null)
         {
             request["body"] = WithoutOverviews(exchange.RequestBody);
+        }
+        else if (exchange.RequestText is not null)
+        {
+            request["bodyText"] = exchange.RequestText;
         }
 
         var reply = new JsonObject { ["status"] = exchange.Status };
@@ -84,9 +88,39 @@ internal sealed class RecordingWriter
     private static JsonObject HeadersOf(SortedDictionary<string, string> headers) =>
         new([.. headers.Select(pair => KeyValuePair.Create(pair.Key, (JsonNode?)pair.Value))]);
 
-    private string Scrub(string text)
+    /// <summary>
+    /// The secrets a session carries in its headers, which only the client knows until it says them: a cookie's value, a session id, the
+    /// token of a <c>Basic</c> or <c>Bearer</c> sign-in.
+    /// </summary>
+    internal static IEnumerable<string> SessionSecrets(IEnumerable<Exchange> exchanges)
     {
-        foreach (var secret in _secrets)
+        foreach (var exchange in exchanges)
+        {
+            foreach (var (name, value) in exchange.RequestHeaders.Concat(exchange.ReplyHeaders))
+            {
+                string[] pairs = name switch
+                {
+                    "set-cookie" => value.Split(';')[..1],
+                    "cookie" => value.Split(';'),
+                    "x-transmission-session-id" => ['=' + value],
+                    "authorization" => ['=' + value[(value.IndexOf(' ', StringComparison.Ordinal) + 1)..]],
+                    _ => [],
+                };
+                foreach (var pair in pairs)
+                {
+                    var secret = pair[(pair.IndexOf('=', StringComparison.Ordinal) + 1)..].Trim();
+                    if (secret.Length > 0)
+                    {
+                        yield return secret;
+                    }
+                }
+            }
+        }
+    }
+
+    private static string Scrub(string text, IEnumerable<string> secrets)
+    {
+        foreach (var secret in secrets.Where(secret => secret.Length > 0).OrderByDescending(secret => secret.Length))
         {
             text = text.Replace(secret, Scrubbed, StringComparison.Ordinal);
         }

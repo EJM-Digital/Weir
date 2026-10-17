@@ -1,0 +1,144 @@
+# Records the five download clients (#1015): qBittorrent 4.x and 5.x, Transmission, Deluge, SABnzbd and NZBGet. The replay tests read what
+# this records, once it is checked in.
+#
+# The clients are the published Docker images, pinned by digest in apps/server/tools/Weir.ClientRecorder/compose.yaml (Transmission's is
+# in the Sonarr and Radarr recorder's compose.yaml). The recorder (apps/server/tools/Weir.ClientRecorder) sets each client up through its
+# own API and drives Weir's own download-client code against it, so a recording holds exactly what Weir sent and what the client
+# answered. The recordings are uploaded as an artifact; to refresh the checked-in ones, run this by hand and copy each client's folder
+# (qbittorrent/, transmission/, deluge/, sabnzbd/, nzbget/) to apps/server/tests/fixtures/recorded/ unchanged, then regenerate each
+# MANIFEST.sha256 with `node scripts/check-recorded-manifest.mjs --write`.
+#
+# Weekly it is also the drift check: it records against the pinned images and against the newest releases, and fails when either set of
+# replies differs from the checked-in ones once times, ids and sizes are set aside (scripts/compare-arr-recordings.mjs). A failure on the
+# pinned images means the recording is not repeatable; a failure on the newest releases means the client has changed what it says.
+name: Record the download clients
+
+on:
+  # DEVELOPMENT ONLY: remove before the pull request.
+  push:
+    branches: [coverage/1015-download-client-recordings]
+    paths: [".github/workflows/record-clients.yml", "apps/server/tools/Weir.ClientRecorder/**"]
+  workflow_dispatch:
+    inputs:
+      images:
+        description: "Which images to record against: pinned (the digests in the compose files) or latest (the newest release of each client)."
+        type: choice
+        options: [pinned, latest]
+        default: pinned
+      compare:
+        description: "Also fail when the replies differ from the checked-in ones."
+        type: boolean
+        default: false
+  schedule:
+    # Mondays, 06:17 UTC.
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+jobs:
+  record:
+    name: Record ${{ matrix.client }} against ${{ matrix.images }} images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        client: [qbittorrent4, qbittorrent5, transmission, deluge, sabnzbd, nzbget]
+        images: ${{ fromJSON(github.event_name == 'schedule' && '["pinned","latest"]' || format('["{0}"]', inputs.images || 'pinned')) }}
+        exclude:
+          # qBittorrent 4.x is a release line that ended, so there is no newer 4.x to compare with.
+          - client: qbittorrent4
+            images: latest
+    env:
+      RECORDER_WORK: ${{ github.workspace }}/client-work
+      RECORDER_OUT_DIR: ${{ github.workspace }}/client-recorded
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: apps/server/global.json
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+
+      - name: Say which client this is
+        shell: bash
+        run: |
+          compose=apps/server/tools/Weir.ClientRecorder/compose.yaml
+          case "${{ matrix.client }}" in
+            qbittorrent4) kind=qbittorrent; service=qbittorrent4; url=http://localhost:8080; image=lscr.io/linuxserver/qbittorrent:latest; variable=WEIR_RECORD_QBITTORRENT4_IMAGE ;;
+            qbittorrent5) kind=qbittorrent; service=qbittorrent5; url=http://localhost:8080; image=lscr.io/linuxserver/qbittorrent:latest; variable=WEIR_RECORD_QBITTORRENT5_IMAGE ;;
+            transmission) kind=transmission; service=transmission; url=http://localhost:9091; image=lscr.io/linuxserver/transmission:latest; variable=WEIR_RECORD_TRANSMISSION_IMAGE; compose=apps/server/tools/Weir.ArrRecorder/compose.yaml ;;
+            deluge)       kind=deluge;       service=deluge;       url=http://localhost:8112; image=lscr.io/linuxserver/deluge:latest;       variable=WEIR_RECORD_DELUGE_IMAGE ;;
+            sabnzbd)      kind=sabnzbd;      service=sabnzbd;      url=http://localhost:8085; image=lscr.io/linuxserver/sabnzbd:latest;      variable=WEIR_RECORD_SABNZBD_IMAGE ;;
+            nzbget)       kind=nzbget;       service=nzbget;       url=http://localhost:6789; image=lscr.io/linuxserver/nzbget:latest;       variable=WEIR_RECORD_NZBGET_IMAGE ;;
+          esac
+          {
+            echo "RECORDER_CLIENT=$kind"
+            echo "RECORDER_SERVICE=$service"
+            echo "RECORDER_COMPOSE=$compose"
+            echo "RECORDER_URL=$url"
+            echo "RECORDER_CONFIG_DIR=$RECORDER_WORK/$kind/config"
+          } >> "$GITHUB_ENV"
+          if [ "${{ matrix.images }}" = latest ]; then echo "$variable=$image" >> "$GITHUB_ENV"; fi
+
+      - name: Start the client
+        run: |
+          mkdir -p "$RECORDER_WORK/$RECORDER_CLIENT"/{config,downloads} "$RECORDER_OUT_DIR"
+          export PUID="$(id -u)" PGID="$(id -g)"
+          docker compose -f "$RECORDER_COMPOSE" up -d "$RECORDER_SERVICE"
+          docker compose -f "$RECORDER_COMPOSE" ps
+
+      # qBittorrent prints a temporary password for its admin user the first time it starts.
+      - name: Read the temporary password qBittorrent printed
+        if: env.RECORDER_CLIENT == 'qbittorrent'
+        run: |
+          for attempt in $(seq 1 60); do
+            password="$(docker compose -f "$RECORDER_COMPOSE" logs --no-color "$RECORDER_SERVICE" 2>&1 | grep -i 'temporary password' | tail -1 | awk '{print $NF}' | tr -d '\r')"
+            if [ -n "$password" ]; then break; fi
+            sleep 3
+          done
+          if [ -z "$password" ]; then
+            echo "qBittorrent never printed a temporary password:"
+            docker compose -f "$RECORDER_COMPOSE" logs --no-color "$RECORDER_SERVICE"
+            exit 1
+          fi
+          echo "::add-mask::$password"
+          echo "RECORDER_SETUP_PASSWORD=$password" >> "$GITHUB_ENV"
+
+      # Deluge answers its own version only through a daemon call the Web UI may not pass on; the pinned tag says it.
+      - name: Say the version of a Deluge that does not
+        if: env.RECORDER_CLIENT == 'deluge' && matrix.images == 'pinned'
+        run: echo "RECORDER_VERSION=2.2.0" >> "$GITHUB_ENV"
+
+      - name: Build the recorder
+        run: dotnet build apps/server/tools/Weir.ClientRecorder -c Release -warnaserror
+
+      - name: Record the client
+        shell: bash
+        run: dotnet run --no-build --project apps/server/tools/Weir.ClientRecorder -c Release 2>&1 | tee "$RECORDER_OUT_DIR/recorder.log"
+
+      - name: Keep what the client logged
+        if: always()
+        run: |
+          docker compose -f "$RECORDER_COMPOSE" logs --no-color > "$RECORDER_OUT_DIR/container.log" || true
+          cp -r "$RECORDER_WORK/$RECORDER_CLIENT/config/logs" "$RECORDER_OUT_DIR/client-logs" 2>/dev/null || true
+
+      - name: The recordings
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: client-recordings-${{ matrix.client }}-${{ matrix.images }}
+          path: ${{ env.RECORDER_OUT_DIR }}
+          if-no-files-found: error
+
+      - name: Compare with the checked-in replies
+        if: (github.event_name == 'schedule' || inputs.compare) && (success() || failure())
+        run: node scripts/compare-arr-recordings.mjs "$RECORDER_OUT_DIR" --apps "$RECORDER_CLIENT"
