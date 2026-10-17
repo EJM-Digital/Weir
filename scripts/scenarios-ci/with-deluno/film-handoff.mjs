@@ -25,9 +25,30 @@ export function weirFilesFor(handoff, files) {
   });
 }
 
+/** What each application says about the film, for the message of a scenario that stopped: where it stopped is the first thing to know. */
+async function whereItStopped(world, film) {
+  try {
+    const files = (await world.weir.get("/processing/files?limit=1000")).files.filter((file) => file.relative_path.includes(film.title));
+    const rows = files.map((file) => ({ path: file.relative_path, status: file.status, reason: file.status_reason, failure: file.failure_class, handback: file.handback }));
+    const activity = (await world.weir.get("/activity/recent?limit=15")).items.map((item) => `${item.result}: ${item.title}`);
+    const handoff = await world.deluno.handoffOf(film.release);
+    return `Weir shows ${JSON.stringify(rows)}; its recent Activity: ${JSON.stringify(activity)}; Deluno shows ${JSON.stringify(handoff)}.`;
+  } catch (error) {
+    return `(Where it stopped could not be read: ${error.message})`;
+  }
+}
+
 export async function delunoFilmHandoff(world) {
   await syncedWorkflows(world);
   const film = await world.deluno.makeFilm({ box: world.box, title: `Scn${world.runId}Film`, year: 2020 });
+  try {
+    return await follow(world, film);
+  } catch (error) {
+    throw new Error(`${error.message} ${await whereItStopped(world, film)}`, { cause: error });
+  }
+}
+
+async function follow(world, film) {
   await world.deluno.sendFilm(film);
 
   const downloaded = await wait(

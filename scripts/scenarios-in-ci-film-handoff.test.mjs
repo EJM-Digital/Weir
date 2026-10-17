@@ -35,6 +35,7 @@ function world(wrong = {}) {
     get: async (path) => {
       if (path.startsWith("/system/log")) return { items: [], next_cursor: null };
       if (path === "/processing/libraries") return [{ id: 3, name: "Movies", folders_synced_from_connection_id: 7, manager_connection_ids: [7], watched_folder: "/downloads/completed/Movies", output_folder: "/weir/Ready/Movies" }];
+      if (path.startsWith("/activity/recent")) return { items: [{ result: "failed", title: "Cleaning failed" }] };
       if (path.startsWith("/processing/files")) return { files: wrong.weirHasNoFile ? [] : [file] };
       throw new Error(`The stand-in has no route ${path}`);
     },
@@ -76,6 +77,12 @@ test("a hand-off that never settles fails the scenario", async () => {
 test("a hand-off that is not a film fails the scenario", async () => {
   const result = await run(world({ handoff: { mediaType: "tv" } }));
   assert.match(result.detail, /Deluno handed over a film \(it reads tv\)/);
+});
+
+test("a scenario that stops says where: what Weir, its Activity and Deluno show about the film", async () => {
+  const result = await run(world({ handoff: { status: "failed", importJobId: null } }));
+  assert.ok(result.detail.includes(`Weir shows [{"path":"${RELEASE}/${RELEASE}.mkv","status":"processed"`), result.detail);
+  assert.ok(result.detail.includes(`its recent Activity: ["failed: Cleaning failed"]; Deluno shows {"releaseName":"${RELEASE}"`), result.detail);
 });
 
 test("Weir that shows no cleaned file for the hand-off fails the scenario", async () => {
