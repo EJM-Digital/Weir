@@ -25,12 +25,12 @@ public sealed class ArrDownloadedScan
 
     /// <summary>Asks <paramref name="connection"/> to scan <paramref name="outputPath"/>, as the manager sees it through its mappings.</summary>
     public async Task<ArrDownloadedScanResult> RequestAsync(
-        ManagerConnection connection, string arrScope, string outputPath, int? downloadClientId, CancellationToken cancellationToken = default)
+        ManagerConnection connection, string arrScope, string outputPath, string? downloadId, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(connection);
         var mappings = await MappingsAsync(connection, cancellationToken).ConfigureAwait(false);
         var managerPath = DownloadedScanRules.TranslateOutputPath(outputPath, mappings);
-        var body = DownloadedScanRules.CommandBody(arrScope, managerPath, downloadClientId);
+        var body = DownloadedScanRules.CommandBody(arrScope, managerPath, downloadId);
         try
         {
             var client = new MediaManagerHttpClient(connection.BaseUrl, connection.ApiKey, _handlers, ManagerDialectRules.DescribeTimeout, connection.Reference);

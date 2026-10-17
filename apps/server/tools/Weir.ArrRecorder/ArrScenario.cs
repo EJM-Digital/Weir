@@ -28,6 +28,7 @@ internal sealed partial class ArrScenario : IDisposable
     private string _apiKey = string.Empty;
     private long _titleId;
     private long _qualityProfileId;
+    private string? _downloadId;
     private string _filePath = string.Empty;
 
     public ArrScenario(RecorderSettings settings)
@@ -97,6 +98,7 @@ internal sealed partial class ArrScenario : IDisposable
             var signal = await _port.QueueRowsAsync(_connection).ConfigureAwait(false);
             Expect(signal.Status == SignalStatus.Reported && signal.Rows.Count == 1, $"the queue should hold one item, held {signal.Rows.Count}");
             rows = signal.Rows;
+            _downloadId = ManagerValues.Text(signal.Rows[0].Payload.Get("downloadId"));
         }).ConfigureAwait(false);
         Expect(await receiver.WaitForAsync("Grab", TimeSpan.FromSeconds(90)).ConfigureAwait(false), "the app never posted its Grab webhook");
 
@@ -129,7 +131,7 @@ internal sealed partial class ArrScenario : IDisposable
 
     private async Task ImportSteps(WebhookReceiver receiver)
     {
-        MakeDownloadedFile();
+        MakeDownloadedFiles();
         var scan = new ArrDownloadedScan(_transport);
         await StepAsync("downloaded-scan", "Weir asks the app to scan the folder a finished download is in; the app imports it.", async () =>
         {
@@ -153,8 +155,30 @@ internal sealed partial class ArrScenario : IDisposable
 
         await StepAsync("downloaded-scan-with-mapping", "The same scan once the app has a remote path mapping that covers the folder: Weir sends the path the mapping gives.", async () =>
         {
-            var result = await scan.RequestAsync(_connection, _flavour.Scope, "/downloads", _downloadClientId).ConfigureAwait(false);
+            var result = await scan.RequestAsync(_connection, _flavour.Scope, "/downloads", null).ConfigureAwait(false);
             Expect(result.Accepted, $"the scan was refused: {result.FailureReason}");
+        }).ConfigureAwait(false);
+
+        await StepAsync("downloaded-scan-for-download", "The same scan for a download the download client named, which Weir sends as the client's own id for it, as text.", async () =>
+        {
+            Expect(_downloadId is not null, "the queue item carried no downloadId");
+            var result = await scan.RequestAsync(_connection, _flavour.Scope, "/downloads", _downloadId).ConfigureAwait(false);
+            Expect(result.Accepted, $"the scan was refused: {result.FailureReason}");
+        }).ConfigureAwait(false);
+
+        await StepAsync("downloaded-scan-refuses-a-number", "The scan command with the download client's id as a number, which the app answers 500 to; Weir sends text.", async () =>
+        {
+            var client = new MediaManagerHttpClient(_settings.Url, _apiKey, _transport, TimeSpan.FromSeconds(30));
+            var command = DownloadedScanRules.CommandBody(_flavour.Scope, "/downloads", null).Set("downloadClientId", 1L);
+            try
+            {
+                await client.PostJsonAsync(DownloadedScanRules.CommandPath, command).ConfigureAwait(false);
+                Expect(false, "the app should refuse a number");
+            }
+            catch (MediaManagerHttpException exception)
+            {
+                Say($"  refused as expected: {exception.Message}");
+            }
         }).ConfigureAwait(false);
     }
 
@@ -164,12 +188,12 @@ internal sealed partial class ArrScenario : IDisposable
         await StepAsync("library-listing", "Weir lists the files the app keeps, matched to titles, and asks which files it still keeps.", async () =>
         {
             var listing = await _port.ListLibraryFilesAsync(_connection, _flavour.Scope).ConfigureAwait(false);
-            Expect(listing.Status == SignalStatus.Reported && listing.Files.Count == 1, $"the listing should hold one file, was {listing.Status} with {listing.Files.Count}");
+            Expect(listing.Status == SignalStatus.Reported && listing.Files.Count == _flavour.ImportNames.Count, $"the listing should hold {_flavour.ImportNames.Count} file(s), was {listing.Status} with {listing.Files.Count}");
             files = listing.Files;
             var truth = await _port.LibraryTruthAsync(_connection, _flavour.Scope).ConfigureAwait(false);
             Say($"  library truth: {truth.Status}, {truth.LibraryFilePaths.Count} file(s)");
         }).ConfigureAwait(false);
-        if (files.Count != 1)
+        if (files.Count == 0)
         {
             return;
         }

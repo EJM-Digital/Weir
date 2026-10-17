@@ -6,8 +6,6 @@ namespace Weir.ArrRecorder;
 /// <summary>The app's own API, used to put it in the state a session needs. None of these calls is recorded.</summary>
 internal sealed partial class ArrScenario
 {
-    private int _downloadClientId = 1;
-
     private async Task SetUpAsync(WebhookReceiver receiver)
     {
         await _api.PostAsync("/api/v3/rootfolder", new JsonObject { ["path"] = _flavour.RootFolder }).ConfigureAwait(false);
@@ -58,10 +56,9 @@ internal sealed partial class ArrScenario
         SetField(client, "host", "transmission");
         SetField(client, "port", 9091);
         var saved = await _api.PostAsync("/api/v3/downloadclient?forceSave=true", client).ConfigureAwait(false);
-        _downloadClientId = saved!["id"]!.GetValue<int>();
         try
         {
-            await _api.PostAsync("/api/v3/downloadclient/test", saved.AsObject().DeepClone()).ConfigureAwait(false);
+            await _api.PostAsync("/api/v3/downloadclient/test", saved!.AsObject().DeepClone()).ConfigureAwait(false);
             Say("the download client passed the app's own test");
         }
         catch (RecorderException exception)
@@ -126,30 +123,33 @@ internal sealed partial class ArrScenario
         }).ConfigureAwait(false);
     });
 
-    private void MakeDownloadedFile()
+    private void MakeDownloadedFiles()
     {
-        var folder = Path.Combine(_settings.WorkFolder, _flavour.ImportName);
-        Directory.CreateDirectory(folder);
-        var file = Path.Combine(folder, _flavour.ImportName + ".mkv");
+        foreach (var name in _flavour.ImportNames)
+        {
+            var folder = Path.Combine(_settings.WorkFolder, name);
+            Directory.CreateDirectory(folder);
+            var file = Path.Combine(folder, name + ".mkv");
 
-        // Longer than two minutes, so neither app takes it for a sample.
-        var start = new ProcessStartInfo("ffmpeg")
-        {
-            ArgumentList =
+            // Longer than two minutes, so neither app takes it for a sample.
+            var start = new ProcessStartInfo("ffmpeg")
             {
-                "-y", "-loglevel", "error",
-                "-f", "lavfi", "-i", "testsrc=duration=130:size=160x120:rate=2",
-                "-f", "lavfi", "-i", "sine=frequency=440:duration=130",
-                "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac", "-shortest", file,
-            },
-            RedirectStandardError = true,
-        };
-        using var process = Process.Start(start) ?? throw new RecorderException("ffmpeg did not start");
-        var errors = process.StandardError.ReadToEnd();
-        process.WaitForExit();
-        if (process.ExitCode != 0)
-        {
-            Fail("make the downloaded file", new RecorderException(errors));
+                ArgumentList =
+                {
+                    "-y", "-loglevel", "error",
+                    "-f", "lavfi", "-i", "testsrc=duration=130:size=160x120:rate=2",
+                    "-f", "lavfi", "-i", "sine=frequency=440:duration=130",
+                    "-c:v", "mpeg4", "-q:v", "10", "-c:a", "aac", "-shortest", file,
+                },
+                RedirectStandardError = true,
+            };
+            using var process = Process.Start(start) ?? throw new RecorderException("ffmpeg did not start");
+            var errors = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            if (process.ExitCode != 0)
+            {
+                Fail("make the downloaded file", new RecorderException(errors));
+            }
         }
     }
 
@@ -158,7 +158,7 @@ internal sealed partial class ArrScenario
         try
         {
             await Wait.UntilAsync("the app to import the file", TimeSpan.FromMinutes(4), async () => _flavour.IsSonarr
-                ? (await _api.GetAsync($"/api/v3/episodefile?seriesId={_titleId}").ConfigureAwait(false))!.AsArray().Count > 0
+                ? (await _api.GetAsync($"/api/v3/episodefile?seriesId={_titleId}").ConfigureAwait(false))!.AsArray().Count >= _flavour.ImportNames.Count
                 : (await _api.GetAsync($"/api/v3/movie/{_titleId}").ConfigureAwait(false))!["hasFile"]!.GetValue<bool>()).ConfigureAwait(false);
         }
         catch (RecorderException)

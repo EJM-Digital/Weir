@@ -44,7 +44,7 @@ public sealed class DownloadedScanNotifier
     /// <paramref name="uow"/> when it recorded anything.
     /// </summary>
     public async Task NotifyLibraryAsync(
-        UnitOfWork uow, long libraryId, string mediaScope, string outputPath, string relativeMediaPath, int? downloadClientId,
+        UnitOfWork uow, long libraryId, string mediaScope, string outputPath, string relativeMediaPath, string? downloadId,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(uow);
@@ -67,7 +67,7 @@ public sealed class DownloadedScanNotifier
                 continue;
             }
 
-            await NotifyOneAsync(uow, connection, profile.ArrScope, outputPath, relativeMediaPath, downloadClientId, cancellationToken).ConfigureAwait(false);
+            await NotifyOneAsync(uow, connection, profile.ArrScope, outputPath, relativeMediaPath, downloadId, cancellationToken).ConfigureAwait(false);
             wroteAnything = true;
         }
 
@@ -78,10 +78,10 @@ public sealed class DownloadedScanNotifier
     }
 
     private async Task NotifyOneAsync(
-        UnitOfWork uow, ManagerConnection connection, string arrScope, string outputPath, string relativeMediaPath, int? downloadClientId,
+        UnitOfWork uow, ManagerConnection connection, string arrScope, string outputPath, string relativeMediaPath, string? downloadId,
         CancellationToken cancellationToken)
     {
-        var result = await _scan.RequestAsync(connection, arrScope, outputPath, downloadClientId, cancellationToken).ConfigureAwait(false);
+        var result = await _scan.RequestAsync(connection, arrScope, outputPath, downloadId, cancellationToken).ConfigureAwait(false);
         if (!result.Accepted)
         {
             _logger.LogWarning("Downloaded scan request to {Manager} failed: {Error}", connection.Label, result.FailureReason);

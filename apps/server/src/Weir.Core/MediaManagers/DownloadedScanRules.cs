@@ -51,18 +51,19 @@ public static class DownloadedScanRules
     }
 
     /// <summary>
-    /// The <c>POST /api/v3/command</c> body. <c>downloadClientId</c> is present only when Weir knows it; Sonarr and
-    /// Radarr treat a missing field as "unknown", not as zero.
+    /// The <c>POST /api/v3/command</c> body. <c>downloadClientId</c> is the download client's own id for the download (the
+    /// <c>downloadId</c> its queue shows, such as a torrent's hash), as text: Sonarr and Radarr answer 500 to a number. It is present only
+    /// when Weir knows it; a missing field means "not from a download client".
     /// </summary>
-    public static WireObject CommandBody(string arrScope, string managerPath, int? downloadClientId)
+    public static WireObject CommandBody(string arrScope, string managerPath, string? downloadId)
     {
         var body = new WireObject()
             .Set("name", CommandName(arrScope))
             .Set("path", managerPath)
             .Set("importMode", ImportMode);
-        if (downloadClientId is { } id)
+        if (!string.IsNullOrEmpty(downloadId))
         {
-            body.Set("downloadClientId", id);
+            body.Set("downloadClientId", downloadId);
         }
 
         return body;

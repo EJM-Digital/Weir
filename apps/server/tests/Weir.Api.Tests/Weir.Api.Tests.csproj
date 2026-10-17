@@ -24,6 +24,8 @@
   <ItemGroup>
     <!-- Every way Weir can change a media file and what holds it back while paused (docs/coverage/file-changing-paths.json), checked against the source and the server by FileChangingPathsTests. -->
     <Compile Include="..\Shared\FileChangingPathsTable.cs" Link="TestSupport\FileChangingPathsTable.cs" />
+    <!-- Recordings of a real Sonarr and Radarr (fixtures/recorded) and the handler that replays them. -->
+    <Compile Include="..\Shared\ArrRecordings.cs" Link="TestSupport\ArrRecordings.cs" />
   </ItemGroup>
   <ItemGroup>
     <!-- A frozen fixture from an older release, shared with the infrastructure tests. -->
