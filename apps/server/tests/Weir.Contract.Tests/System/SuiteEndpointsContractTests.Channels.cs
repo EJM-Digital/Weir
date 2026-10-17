@@ -13,6 +13,10 @@ public sealed partial class SuiteEndpointsContractTests
     private const string UnreachableHook = "https://weir-contract-test.invalid/hook";
     private const string PublicLookingHook = "https://hooks.weir-contract-test.invalid/other";
 
+    // What the API shows of an address: its token is never returned.
+    private const string MaskedUnreachableHook = "https://weir-contract-test.invalid/••••";
+    private const string MaskedPublicLookingHook = "https://hooks.weir-contract-test.invalid/••••";
+
     // --- /suite/notification-channels ----------------------------------------------------------
 
     [Fact]
@@ -64,10 +68,11 @@ public sealed partial class SuiteEndpointsContractTests
             });
         Assert.True(created.Status == HttpStatusCode.Created, created.ToString());
         var channel = created.Fields;
-        AssertKeys(["id", "label", "provider", "url", "events", "enabled", "created_at", "updated_at"], channel);
+        AssertKeys(["id", "label", "provider", "url", "has_token", "events", "enabled", "created_at", "updated_at"], channel);
         Assert.Equal("Contract hook", (string?)channel["label"]);
         Assert.Equal("webhook", (string?)channel["provider"]);
-        Assert.Equal(UnreachableHook, (string?)channel["url"]);
+        Assert.Equal(MaskedUnreachableHook, (string?)channel["url"]);
+        Assert.True((bool)channel["has_token"]!);
         Assert.Equal(["job_failed"], Strings(channel["events"]));
         Assert.True((bool)channel["enabled"]!);
         var id = (long)channel["id"]!;
@@ -89,7 +94,7 @@ public sealed partial class SuiteEndpointsContractTests
         Assert.True(updated.Status == HttpStatusCode.OK, updated.ToString());
         Assert.Equal("Renamed hook", (string?)updated.Fields["label"]);
         Assert.Equal("discord", (string?)updated.Fields["provider"]);
-        Assert.Equal(PublicLookingHook, (string?)updated.Fields["url"]);
+        Assert.Equal(MaskedPublicLookingHook, (string?)updated.Fields["url"]);
         Assert.Equal(["job_completed", "job_failed"], Strings(updated.Fields["events"]));
         Assert.False((bool)updated.Fields["enabled"]!);
 
@@ -104,6 +109,52 @@ public sealed partial class SuiteEndpointsContractTests
         var remaining = (await admin.GetAsync(Channels)).Fields["items"]!.AsArray();
         Assert.DoesNotContain(id, remaining.Select(item => (long)item!["id"]!));
         Assert.Equal(HttpStatusCode.NotFound, (await admin.DeleteWithCsrfAsync(path)).Status);
+    }
+
+    [Fact]
+    public async Task Notification_channel_update_without_an_address_keeps_the_saved_one()
+    {
+        using var admin = await Server.CreateAdminClientAsync();
+        var created = await admin.PostWithCsrfAsync(
+            Channels,
+            new JsonObject { ["label"] = "Keeps its address", ["provider"] = "webhook", ["url"] = "https://weir-contract-test.invalid/keeps/secret-token", ["events"] = ArrayOf("job_failed") });
+        Assert.True(created.Status == HttpStatusCode.Created, created.ToString());
+        var path = $"{Channels}/{(long)created.Fields["id"]!}";
+        try
+        {
+            var updated = await admin.PutWithCsrfAsync(
+                path, new JsonObject { ["label"] = "Renamed", ["provider"] = "webhook", ["events"] = ArrayOf("job_failed") });
+
+            Assert.True(updated.Status == HttpStatusCode.OK, updated.ToString());
+            Assert.Equal("https://weir-contract-test.invalid/keeps/••••", (string?)updated.Fields["url"]);
+            Assert.DoesNotContain("secret-token", updated.Text, StringComparison.Ordinal);
+            Assert.DoesNotContain("secret-token", (await admin.GetAsync(Channels)).Text, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Assert.Equal(HttpStatusCode.NoContent, (await admin.DeleteWithCsrfAsync(path)).Status);
+        }
+    }
+
+    [Fact]
+    public async Task Notification_channel_create_refuses_an_address_another_alert_already_uses()
+    {
+        using var admin = await Server.CreateAdminClientAsync();
+        var body = new JsonObject { ["label"] = "First", ["provider"] = "webhook", ["url"] = "https://weir-contract-test.invalid/twice", ["events"] = ArrayOf("job_failed") };
+        var first = await admin.PostWithCsrfAsync(Channels, body);
+        Assert.True(first.Status == HttpStatusCode.Created, first.ToString());
+        var path = $"{Channels}/{(long)first.Fields["id"]!}";
+        try
+        {
+            var second = await admin.PostWithCsrfAsync(Channels, With(body, "url", "HTTPS://Weir-Contract-Test.INVALID/twice/"));
+
+            Assert.Equal(HttpStatusCode.Conflict, second.Status);
+            Assert.Equal("An alert already sends to that address.", (string?)second.Fields["detail"]);
+        }
+        finally
+        {
+            Assert.Equal(HttpStatusCode.NoContent, (await admin.DeleteWithCsrfAsync(path)).Status);
+        }
     }
 
     [Fact]
