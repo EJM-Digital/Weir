@@ -1,21 +1,22 @@
 #!/usr/bin/env node
 // Makes the fixtures of a published Weir build: its own database after a short scripted session, and the configuration backup it makes.
 //
-//   node scripts/make-release-fixtures.mjs v1.0.0-rc.18 [v1.0.0-rc.17 ...]
+//   node scripts/make-release-fixtures.mjs 1.0.0-rc.18 [1.0.0-rc.17 ...]
 //
-// For each release tag it
-//   1. checks that tag out in a scratch clone (the repository's own checkout is never touched) and builds its server, the build that
-//      tag's release was made from;
-//   2. runs the contract suite's `ReleaseFixtureSession` against that build (WEIR_CONTRACT_SERVER names its Weir.dll), which drives it
+// For each release version it
+//   1. pulls the image that release published (ghcr.io/jampat000/weir:<version>), records its digest, and copies the Weir program out of
+//      it: the very bytes people run, not a build of the source;
+//   2. runs the contract suite's `ReleaseFixtureSession` against that program (WEIR_CONTRACT_SERVER names it), which drives it
 //      through its API with the real ffmpeg: an alert, a rule set, direct play devices, a workflow a fake media manager feeds (one file
-//      finished and imported, one refused), a workflow of its own with a scanned library, and the backup the build makes;
-//   3. scrubs what it left (sessions, this PC's name and the user's folder, in every text column) and refuses to write a file in which
+//      finished and imported, one refused), a workflow of its own with a scanned library, and the backup the program makes;
+//   3. scrubs what it left (sessions, this machine's name and the user's folder, in every text column) and refuses to write a file in which
 //      any of them survives;
 //   4. writes apps/server/tests/fixtures/databases/<version>.db.gz and
 //      apps/server/tests/fixtures/recorded/backups/<version>/configuration-bundle.json, and a line in databases/manifest.json.
 //
-// Needs git, dotnet 10, node 22 or later (node:sqlite), ffmpeg and ffprobe on PATH (or WEIR_CONTRACT_REAL_FFMPEG_DIR).
-// Run it on a workstation, not in CI: the fixtures are checked in, and `check-release-fixtures.mjs` holds them fresh.
+// Needs docker, dotnet 10, node 22 or later (node:sqlite), and ffmpeg and ffprobe on PATH (or WEIR_CONTRACT_REAL_FFMPEG_DIR). The image is
+// Linux, so run it on Linux: the "Release fixtures" workflow does, and uploads what it made. The fixtures are checked in, and
+// `check-release-fixtures.mjs` holds them fresh.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -45,7 +46,7 @@ const literal = (text) => new RegExp(escapeRegExp(text), "gi");
 
 /**
  * The replacements that scrub a text: this PC's temp folder in the three ways it is written (as a path, inside JSON where every backslash
- * is doubled, and with forward slashes), then this PC's name. The account's name is changed only in a path (Users, then the name), never on its own, because it is also an ordinary word.
+ * is doubled, and with forward slashes), then this PC's name. The account's name is changed only in a path (Users or home, then the name), never on its own, because it is also an ordinary word.
  */
 export function replacements(values) {
   const backslashes = values.tempRoot.replace(/[\\/]+$/, "").replaceAll("/", "\\");
@@ -60,7 +61,7 @@ export function replacements(values) {
   ]);
   list.push([literal(values.hostname), placeholders.machine]);
   // Any other path in the account's folder (where ffmpeg was installed, say), whichever way its separators are written.
-  list.push([new RegExp(`(Users)([\\\\/]+)${escapeRegExp(values.userName)}(?![\\w-])`, "gi"), (_, users, separators) => `${users}${separators}${placeholders.user}`]);
+  list.push([new RegExp(`(Users|home)([\\\\/]+)${escapeRegExp(values.userName)}(?![\\w-])`, "gi"), (_, users, separators) => `${users}${separators}${placeholders.user}`]);
   return list;
 }
 
@@ -72,7 +73,7 @@ export function scrubText(text, rules) {
 export function leftovers(text, values) {
   const found = [];
   if (values.hostname.length > 2 && text.toLowerCase().includes(values.hostname.toLowerCase())) found.push("the PC's name");
-  if (new RegExp(`Users[\\\\/]+${escapeRegExp(values.userName)}(?![\\w-])`, "i").test(text)) found.push("the account's folder");
+  if (new RegExp(`(?:Users|home)[\\\\/]+${escapeRegExp(values.userName)}(?![\\w-])`, "i").test(text)) found.push("the account's folder");
   return found;
 }
 
@@ -171,31 +172,34 @@ export function describeDatabase(file) {
 
 const run = (program, args, options = {}) => execFileSync(program, args, { stdio: "inherit", ...options });
 
-function versionOf(tag) {
-  const match = /^v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/.exec(tag);
-  if (!match) throw new Error(`"${tag}" is not a release tag such as v1.0.0-rc.18.`);
-  return match[1];
+/** The image a release published. */
+export const imageOf = (version) => `ghcr.io/jampat000/weir:${version}`;
+
+/** Pulls the release's image and copies its program out: the program's path, and the image's digest. */
+function fetchRelease(version, scratch) {
+  const image = imageOf(version);
+  run("docker", ["pull", "--quiet", "--platform", "linux/amd64", image]);
+  const digest = execFileSync("docker", ["inspect", "--format", "{{index .RepoDigests 0}}", image], { encoding: "utf8" }).trim().split("@")[1];
+  if (!/^sha256:[0-9a-f]{64}$/.test(digest ?? "")) throw new Error(`Docker gave no digest for ${image}.`);
+  const container = execFileSync("docker", ["create", "--platform", "linux/amd64", image], { encoding: "utf8" }).trim();
+  try {
+    const program = path.join(scratch, "release");
+    run("docker", ["cp", `${container}:/opt/weir/.`, program]);
+    const executable = path.join(program, "Weir");
+    if (!existsSync(executable)) throw new Error(`${image} holds no /opt/weir/Weir.`);
+    return { executable, digest };
+  } finally {
+    execFileSync("docker", ["rm", "--force", container], { stdio: "ignore" });
+  }
 }
 
-function build(tag, version, scratch) {
-  const source = path.join(scratch, "source");
-  run("git", ["clone", "--quiet", "--shared", "--no-checkout", repositoryRoot, source]);
-  run("git", ["-C", source, "checkout", "--quiet", "--detach", tag]);
-  const env = { ...process.env, MSBUILDDISABLENODEREUSE: "1" };
-  const host = path.join(source, "apps", "server", "src", "Weir.Host");
-  run("dotnet", ["build", host, "-c", "Release", "-m:4", `-p:WeirVersion=${version}`], { env });
-  const dll = path.join(host, "bin", "Release", "net10.0", "Weir.dll");
-  if (!existsSync(dll)) throw new Error(`The build of ${tag} left no ${dll}.`);
-  return dll;
-}
-
-function session(dll, scratch) {
+function session(executable, scratch) {
   const raw = path.join(scratch, "session", "weir.sqlite3");
   const bundle = path.join(scratch, "session", "configuration-bundle.json");
   const env = {
     ...process.env,
     MSBUILDDISABLENODEREUSE: "1",
-    WEIR_CONTRACT_SERVER: dll,
+    WEIR_CONTRACT_SERVER: executable,
     WEIR_FIXTURE_DATABASE_OUT: raw,
     WEIR_FIXTURE_BACKUP_OUT: bundle,
   };
@@ -208,21 +212,19 @@ function session(dll, scratch) {
   return { raw, bundle };
 }
 
-/** One release: builds it, runs the session against it, scrubs and writes its fixtures. */
-export function makeFixtures(tag) {
-  const version = versionOf(tag);
+/** One release: pulls it, runs the session against it, scrubs and writes its fixtures. */
+export function makeFixtures(version) {
   const scratch = mkdtempSync(path.join(os.tmpdir(), "weir-fixture-"));
   try {
-    const commit = execFileSync("git", ["-C", repositoryRoot, "rev-list", "-n", "1", tag], { encoding: "utf8" }).trim();
-    const dll = build(tag, version, scratch);
-    const { raw, bundle } = session(dll, scratch);
+    const { executable, digest } = fetchRelease(version, scratch);
+    const { raw, bundle } = session(executable, scratch);
 
     const values = privateValues();
     scrubDatabase(raw, values);
     const survivors = findLeftovers(raw, values);
-    if (survivors.length > 0) throw new Error(`The database of ${tag} still holds something private after scrubbing: ${survivors.join('; ')}.`);
+    if (survivors.length > 0) throw new Error(`The database of ${version} still holds something private after scrubbing: ${survivors.join('; ')}.`);
     const scrubbedBundle = scrubText(readFileSync(bundle, "utf8"), replacements(values));
-    if (leftovers(scrubbedBundle, values).length > 0) throw new Error(`The backup of ${tag} still holds a private value after scrubbing.`);
+    if (leftovers(scrubbedBundle, values).length > 0) throw new Error(`The backup of ${version} still holds a private value after scrubbing.`);
 
     const description = describeDatabase(raw);
     mkdirSync(databasesFolder, { recursive: true });
@@ -235,8 +237,8 @@ export function makeFixtures(tag) {
     const manifest = existsSync(manifestFile) ? JSON.parse(readFileSync(manifestFile, "utf8")) : { databases: [] };
     const entry = {
       version,
-      tag,
-      commit,
+      image: imageOf(version),
+      image_digest: digest,
       schema_revision: description.revision,
       sha256: createHash("sha256").update(compressed).digest("hex"),
       rows: description.rows,
@@ -250,10 +252,10 @@ export function makeFixtures(tag) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
-  const tags = process.argv.slice(2);
-  if (tags.length === 0) {
-    console.error("Usage: node scripts/make-release-fixtures.mjs <release tag> [<release tag> ...]   (for example v1.0.0-rc.18)");
+  const versions = process.argv.slice(2);
+  if (versions.length === 0 || versions.some((version) => !/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(version))) {
+    console.error("Usage: node scripts/make-release-fixtures.mjs <release version> [<release version> ...]   (for example 1.0.0-rc.18)");
     process.exit(2);
   }
-  for (const tag of tags) makeFixtures(tag);
+  for (const version of versions) makeFixtures(version);
 }

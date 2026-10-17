@@ -73,3 +73,10 @@ test("a database is scrubbed in every text column, its sessions end, and it stay
     rmSync(folder, { recursive: true, force: true });
   }
 });
+
+test("a Linux home folder is scrubbed like a Windows account folder", () => {
+  const linux = replacements(privateValues({ hostname: "runner-vm-3", userName: "runner", tempRoot: "/tmp/fixture-session" }));
+
+  assert.equal(scrubText("/home/runner/tools/ffmpeg and /tmp/fixture-session/weir_files_a", linux), "/home/fixture-user/tools/ffmpeg and C:/Fixture/weir_files_a");
+  assert.deepEqual(leftovers("/home/runner/tools", privateValues({ hostname: "runner-vm-3", userName: "runner", tempRoot: "/tmp" })), ["the account's folder"]);
+});
