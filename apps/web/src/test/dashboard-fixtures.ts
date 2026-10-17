@@ -8,12 +8,14 @@ import type {
   ProcessingFilesPage,
 } from "../lib/processing/files-api";
 import type { ProcessingLibrary } from "../lib/processing/libraries-api";
+import { recordedProcessingFile } from "./recorded";
 
 /** A file as the server lists it, with only what a test says set; everything else is what a file Weir just found has. */
 export function processingFile(
   partial: Partial<ProcessingFile> = {},
 ): ProcessingFile {
   return {
+    ...recordedProcessingFile(),
     id: 7,
     library_id: 1,
     library_name: "Movies",

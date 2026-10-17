@@ -9,6 +9,7 @@ import type { NeedsPanel } from "./dashboard/needs-panel";
 import { LEAVING_CARD_MS } from "./leaving-cards";
 import { LIBRARY_CLEAN_JOB_KIND } from "./processing-model";
 import { ProcessingPage } from "./processing-page";
+import { recordedProcessingFile } from "../../test/recorded";
 
 type NeedsPanelProps = ComponentProps<typeof NeedsPanel>;
 
@@ -181,6 +182,7 @@ vi.mock("../activity/activity-rejected-again", () => ({
 
 function file(overrides: Partial<ProcessingFile>): ProcessingFile {
   return {
+    ...recordedProcessingFile(),
     id: 1,
     library_id: 1,
     library_name: "TV",

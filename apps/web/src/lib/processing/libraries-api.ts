@@ -87,6 +87,10 @@ export interface ProcessingLibrary {
   active_job_count: number;
   /** When Weir next looks at the watched folder (the next periodic scan, or sooner when a held file's wait ends). */
   next_look_at?: string | null;
+  /** Whether the periodic scan timer currently runs for this workflow: off, held back by its own hours, or scheduled. */
+  periodic_scan?: "off" | "outside_hours" | "scheduled";
+  /** When the periodic scan next creates a scan; null while it is off, or outside hours with no reopening. */
+  next_scan_at?: string | null;
   updated_at: string | null;
 }
 
