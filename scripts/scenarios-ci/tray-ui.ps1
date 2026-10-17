@@ -4,10 +4,16 @@
 
         tray-ui.ps1 session
         tray-ui.ps1 icons
+        tray-ui.ps1 show-hidden
         tray-ui.ps1 open-menu -TrayProcessId <pid> [-Via taskbar|message]
         tray-ui.ps1 menu -TrayProcessId <pid>
         tray-ui.ps1 invoke -TrayProcessId <pid> -Item <text>
         tray-ui.ps1 close-menu -TrayProcessId <pid>
+        tray-ui.ps1 click-icon -Clicks single|double
+        tray-ui.ps1 click-balloon -TrayProcessId <pid>
+        tray-ui.ps1 window -TrayProcessId <pid>
+        tray-ui.ps1 window-set -TrayProcessId <pid> -Value <text>
+        tray-ui.ps1 window-press -TrayProcessId <pid> -Item <button or option>
         tray-ui.ps1 balloons
         tray-ui.ps1 find-text -Contains <text>
         tray-ui.ps1 dump [-Depth <n>] [-Root desktop|taskbar]
@@ -17,11 +23,14 @@
 #>
 param(
     [Parameter(Mandatory, Position = 0)]
-    [ValidateSet('session', 'icons', 'open-menu', 'menu', 'invoke', 'close-menu', 'balloons', 'find-text', 'dump')]
+    [ValidateSet('session', 'icons', 'show-hidden', 'open-menu', 'menu', 'invoke', 'close-menu', 'click-icon', 'click-balloon', 'window', 'window-set', 'window-press', 'balloons', 'find-text', 'dump')]
     [string] $Command,
     [int] $TrayProcessId = 0,
     [string] $Item = '',
     [string] $Contains = '',
+    [string] $Value = '',
+    [ValidateSet('single', 'double')]
+    [string] $Clicks = 'single',
     [ValidateSet('taskbar', 'message')]
     [string] $Via = 'taskbar',
     [int] $Depth = 4,
@@ -175,9 +184,10 @@ function Get-MenuItems($menu) {
     }
 }
 
-# The tray's hidden window receives the notification area's mouse messages; sending it the same message a right click on the icon makes
-# opens the same menu, for a desktop whose taskbar cannot be reached.
-function Open-MenuByMessage([int] $owner) {
+# The tray's hidden window receives the messages the notification area sends for its icon: a right click (WM_RBUTTONUP, 0x205) opens the
+# menu, and a click on the balloon (NIN_BALLOONUSERCLICK, 0x405) is the click on a notification. Sending the same message does what the
+# click does, for a desktop whose taskbar cannot be reached or whose notifications are not shown.
+function Send-NotifyIconMessage([int] $owner, [int] $mouseMessage) {
     Assert-ThrowawayDesktop
     $windows = New-Object System.Collections.Generic.List[IntPtr]
     $callback = [TrayUiNative+EnumWindowsProc] {
@@ -193,11 +203,35 @@ function Open-MenuByMessage([int] $owner) {
         $name = New-Object System.Text.StringBuilder 256
         [void][TrayUiNative]::GetClassName($window, $name, 256)
         if ($name.ToString() -like 'WindowsForms10.Window*') {
-            # WM_USER + 1024, the callback message of the notification icon, with WM_RBUTTONUP.
-            if ([TrayUiNative]::PostMessage($window, 0x0800, [IntPtr]1, [IntPtr]0x0205)) { $sent++ }
+            # WM_USER + 1024 is the callback message of the notification icon; its lParam says what happened to the icon.
+            if ([TrayUiNative]::PostMessage($window, 0x0800, [IntPtr]1, [IntPtr]$mouseMessage)) { $sent++ }
         }
     }
     $sent
+}
+
+# --- a window of the tray (the question about the port) ----------------------------------------------------------------------------
+
+function Find-Window([int] $owner) {
+    foreach ($child in (Get-Children $automation::RootElement)) {
+        if ($child.Current.ProcessId -eq $owner -and $child.Current.ControlType -eq [System.Windows.Automation.ControlType]::Window) { return $child }
+    }
+    $null
+}
+
+function Find-All($window, $type) {
+    $window.FindAll($tree::Descendants, (New-Object System.Windows.Automation.PropertyCondition($automation::ControlTypeProperty, $type)))
+}
+
+function Get-WindowFacts($window) {
+    $pattern = $null
+    [pscustomobject]@{
+        title   = $window.Current.Name
+        texts   = @(Find-All $window ([System.Windows.Automation.ControlType]::Text) | ForEach-Object { $_.Current.Name } | Where-Object { $_ })
+        edits   = @(Find-All $window ([System.Windows.Automation.ControlType]::Edit) | ForEach-Object { if ($_.TryGetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern, [ref]$pattern)) { $pattern.Current.Value } else { '' } })
+        buttons = @(Find-All $window ([System.Windows.Automation.ControlType]::Button) | ForEach-Object { [pscustomobject]@{ name = $_.Current.Name; enabled = $_.Current.IsEnabled } })
+        options = @(Find-All $window ([System.Windows.Automation.ControlType]::RadioButton) | ForEach-Object { if ($_.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$pattern)) { [pscustomobject]@{ name = $_.Current.Name; enabled = $_.Current.IsEnabled; selected = $pattern.Current.IsSelected } } })
+    }
 }
 
 # --- balloons -------------------------------------------------------------------------------------------------------------------
@@ -243,10 +277,11 @@ function Get-Tree($element, [int] $depth) {
 switch ($Command) {
     'session' { Write-Json (Get-SessionFacts) }
     'icons' { Write-Json @(Find-TrayIcon) }
+    'show-hidden' { Write-Json ([pscustomobject]@{ opened = Show-Overflow }) }
     'open-menu' {
         if ($TrayProcessId -le 0) { throw '-TrayProcessId is needed.' }
         if ($Via -eq 'message') {
-            $sent = Open-MenuByMessage $TrayProcessId
+            $sent = Send-NotifyIconMessage $TrayProcessId 0x0205
             Write-Json ([pscustomobject]@{ via = 'message'; sent = $sent })
             break
         }
@@ -279,6 +314,42 @@ switch ($Command) {
         Assert-ThrowawayDesktop
         [System.Windows.Forms.SendKeys]::SendWait('{ESC}')
         Write-Json ([pscustomobject]@{ closed = $true })
+    }
+    'click-icon' {
+        $icon = Find-TrayIcon | Select-Object -First 1
+        if (-not $icon) { Show-Overflow | Out-Null; $icon = Find-TrayIcon | Select-Object -First 1 }
+        if (-not $icon -or -not $icon.bounds) { Write-Json ([pscustomobject]@{ found = $false }); break }
+        $x, $y = Get-Centre $icon.bounds
+        Click-At $x $y
+        if ($Clicks -eq 'double') { Click-At $x $y }
+        Write-Json ([pscustomobject]@{ found = $true; clicks = $Clicks })
+    }
+    'click-balloon' {
+        Write-Json ([pscustomobject]@{ sent = Send-NotifyIconMessage $TrayProcessId 0x0405 })
+    }
+    'window' {
+        $window = Find-Window $TrayProcessId
+        if (-not $window) { Write-Json $null; break }
+        Write-Json (Get-WindowFacts $window)
+    }
+    'window-set' {
+        $window = Find-Window $TrayProcessId
+        if (-not $window) { throw 'The tray has no window open.' }
+        $edit = Find-All $window ([System.Windows.Automation.ControlType]::Edit) | Select-Object -First 1
+        if (-not $edit) { throw 'The window has no text box.' }
+        $edit.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($Value)
+        Write-Json ([pscustomobject]@{ set = $Value })
+    }
+    'window-press' {
+        $window = Find-Window $TrayProcessId
+        if (-not $window) { throw 'The tray has no window open.' }
+        $found = $window.FindAll($tree::Descendants, (New-Object System.Windows.Automation.PropertyCondition($automation::NameProperty, $Item))) | Select-Object -First 1
+        if (-not $found) { throw "The window has no control named '$Item'." }
+        $pattern = $null
+        if ($found.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) { $pattern.Invoke() }
+        elseif ($found.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$pattern)) { $pattern.Select() }
+        else { throw "'$Item' cannot be pressed." }
+        Write-Json ([pscustomobject]@{ pressed = $Item })
     }
     'balloons' { Write-Json @(Get-Balloons) }
     'find-text' { Write-Json @(Find-Text $Contains) }

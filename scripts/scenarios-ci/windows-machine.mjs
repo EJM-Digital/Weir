@@ -4,7 +4,7 @@
 import { execFile, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 
 import { pollUntil } from "../docker-smoke/poll.mjs";
@@ -14,6 +14,7 @@ const POWERSHELL = "powershell.exe";
 const SETUP_CEILING_MS = 600_000;
 const RECOVER_CEILING_MS = 120_000;
 const STOP_CEILING_MS = 60_000;
+const RUN_CEILING_MS = 120_000;
 
 /** Why this is not a machine to install and uninstall Weir on, or null when it is a GitHub-hosted Windows runner. */
 export function whyNotAThrowawayMachine(env, platform) {
@@ -135,6 +136,93 @@ export class WindowsMachine {
     });
     child.unref();
     return child.pid;
+  }
+
+  /**
+   * Starts the installed tray with these arguments, as the person who owns the desktop would (its windows are shown). `exit` settles with the
+   * tray's exit code when it ends. The variables of Weir's are not passed on unless given.
+   */
+  startTrayWith({ args, env = {} }) {
+    const child = spawn(this.paths.trayExe, args, { detached: true, stdio: "ignore", windowsHide: false, env: { ...consoleEnvironment(this.#env), ...env } });
+    const exit = new Promise((resolve) => child.on("exit", (code) => resolve(code)));
+    child.unref();
+    return { pid: child.pid, exit };
+  }
+
+  /** Runs the installed Weir.exe to the end with these arguments (a second launch, `--version`, the firewall commands) and returns what it said. */
+  runTray(args, { env = {} } = {}) {
+    return new Promise((resolve, reject) => {
+      const child = spawn(this.paths.trayExe, args, { stdio: ["ignore", "pipe", "pipe"], windowsHide: false, env: { ...consoleEnvironment(this.#env), ...env } });
+      let stdout = "";
+      let stderr = "";
+      child.stdout.on("data", (chunk) => (stdout += chunk));
+      child.stderr.on("data", (chunk) => (stderr += chunk));
+      const timer = setTimeout(() => {
+        child.kill();
+        reject(new Error(`Weir.exe ${args.join(" ")} did not end within ${RUN_CEILING_MS / 1000} s.`));
+      }, RUN_CEILING_MS);
+      child.on("error", (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+      child.on("close", (exitCode) => {
+        clearTimeout(timer);
+        resolve({ exitCode, stdout, stderr });
+      });
+    });
+  }
+
+  /** Ends one process, by its id and nothing else; a process that is already gone is not an error. */
+  async killProcess(pid) {
+    await run("taskkill.exe", ["/PID", String(pid), "/F"]).catch(() => undefined);
+  }
+
+  /** Whether the process is still running. */
+  async isRunning(pid) {
+    return (await json(`ConvertTo-Json -Compress -InputObject ([bool](Get-Process -Id ([int]$env:SCENARIO_PID) -ErrorAction SilentlyContinue))`, { PID: pid })) === true;
+  }
+
+  /** Browser processes whose command line names the address: { pid, name, commandLine }. A browser Weir opened is found here. */
+  browsersShowing(addressPart) {
+    return json(
+      `$part = $env:SCENARIO_PART
+      ConvertTo-Json -Compress -InputObject @(Get-CimInstance Win32_Process -Filter "Name = 'msedge.exe' OR Name = 'chrome.exe' OR Name = 'firefox.exe' OR Name = 'iexplore.exe'" |
+        Where-Object { $_.CommandLine -and $_.CommandLine.Contains($part) } |
+        ForEach-Object { [pscustomobject]@{ pid = [int]$_.ProcessId; name = $_.Name; commandLine = $_.CommandLine } })`,
+      { PART: addressPart },
+    );
+  }
+
+  /** Whether Windows Firewall has Weir's own rule. */
+  async firewallRuleExists() {
+    return (await json(`ConvertTo-Json -Compress -InputObject ([bool](Get-NetFirewallRule -DisplayName 'Weir' -ErrorAction SilentlyContinue))`)) === true;
+  }
+
+  /** The folders File Explorer has open: their names. */
+  explorerFolders() {
+    return json(
+      `ConvertTo-Json -Compress -InputObject @((New-Object -ComObject Shell.Application).Windows() | ForEach-Object { try { $_.Document.Folder.Self.Path } catch { } } | Where-Object { $_ })`,
+    );
+  }
+
+  /** Closes the File Explorer windows. */
+  closeExplorerFolders() {
+    return json(`(New-Object -ComObject Shell.Application).Windows() | ForEach-Object { try { $_.Quit() } catch { } }; ConvertTo-Json -Compress -InputObject $true`);
+  }
+
+  /** Takes away the update Velopack has downloaded and not installed, so a quit or a start cannot install it. */
+  async discardDownloadedUpdate() {
+    await rm(join(this.paths.installRoot, "packages"), { recursive: true, force: true });
+  }
+
+  /** The files of the data folder named, deleted if they are there. */
+  async removeFromDataFolder(...names) {
+    for (const name of names) await rm(join(this.paths.runtimeHome, name), { force: true });
+  }
+
+  async writeToDataFolder(name, text) {
+    await mkdir(this.paths.runtimeHome, { recursive: true });
+    await writeFile(join(this.paths.runtimeHome, name), text);
   }
 
   /** The tray and server processes running from the install: { name, pid, parentPid, hasWindow }. */

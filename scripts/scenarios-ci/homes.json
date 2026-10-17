@@ -144,8 +144,9 @@
       "id": "update-requests",
       "home": "windows",
       "shard": "windows-tray",
-      "state": "to-port",
-      "why": "Needs the real tray to take the update flag files; Weir only offers the buttons while a tray is alive."
+      "state": "ported",
+      "why": "Drives the real installed tray: Weir offers the buttons only while the tray is alive, each press leaves a flag file the tray takes, and the state comes to rest with an answer. Run against the release feed, as the VM did.",
+      "passedInCi": []
     },
     {
       "id": "recover-locked-out-account",
@@ -175,6 +176,69 @@
           "ref": "coverage/windows-install-shard"
         }
       ]
+    },
+    {
+      "id": "tray-menu",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-tray",
+      "state": "ported",
+      "why": "The VM suite never pressed a menu item. Every item of the tray menu is pressed through UI Automation on the real installed tray, with its effect on the real server, the PC and tray-host.log (which keeps every balloon).",
+      "passedInCi": []
+    },
+    {
+      "id": "tray-supervision",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-tray",
+      "state": "ported",
+      "why": "The VM suite never ended a server. The real server is ended by its own process id three times, and again with its port taken: the tray brings it back after growing waits and logs why.",
+      "passedInCi": []
+    },
+    {
+      "id": "tray-give-up",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-tray",
+      "state": "ported",
+      "why": "The tray gives up after five failed starts once, with the red icon and a balloon; Restart Weir brings Weir back with a fresh budget, and Quit is never answered with a start.",
+      "passedInCi": []
+    },
+    {
+      "id": "tray-change-port",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-tray",
+      "state": "ported",
+      "why": "Change port through the real window: a move that works is saved and answers, one the server cannot make goes back and saves nothing, and both ports failing ends Stopped.",
+      "passedInCi": []
+    },
+    {
+      "id": "tray-lan-access",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-tray",
+      "state": "ported",
+      "why": "Allow other devices asks Windows for the firewall rule for real (the runner is an administrator) and restarts the server for the network; Only allow this PC takes it back.",
+      "passedInCi": []
+    },
+    {
+      "id": "tray-second-launch",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-tray",
+      "state": "ported",
+      "why": "A second Weir.exe in the same session exits 0 and leaves one tray and one server; the running tray says Weir is already running, and a silent second launch says nothing.",
+      "passedInCi": []
+    },
+    {
+      "id": "tray-start",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-tray",
+      "state": "ported",
+      "why": "The starts nobody sees and the starts a person answers: no start opens the browser, a start with nobody at the desktop that cannot start Weir exits 1 and says why, a taken saved port is asked about, and WEIR_PORT is honoured.",
+      "passedInCi": []
     }
   ]
 }
