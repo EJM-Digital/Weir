@@ -9,6 +9,7 @@
         tray-ui.ps1 invoke -TrayProcessId <pid> -Item <text>
         tray-ui.ps1 close-menu -TrayProcessId <pid>
         tray-ui.ps1 balloons
+        tray-ui.ps1 find-text -Contains <text>
         tray-ui.ps1 dump [-Depth <n>] [-Root desktop|taskbar]
 
     It acts on the desktop of the session it runs in, so it is meant for the clean GitHub-hosted Windows runner (and refuses to move the
@@ -16,10 +17,11 @@
 #>
 param(
     [Parameter(Mandatory, Position = 0)]
-    [ValidateSet('session', 'icons', 'open-menu', 'menu', 'invoke', 'close-menu', 'balloons', 'dump')]
+    [ValidateSet('session', 'icons', 'open-menu', 'menu', 'invoke', 'close-menu', 'balloons', 'find-text', 'dump')]
     [string] $Command,
     [int] $TrayProcessId = 0,
     [string] $Item = '',
+    [string] $Contains = '',
     [ValidateSet('taskbar', 'message')]
     [string] $Via = 'taskbar',
     [int] $Depth = 4,
@@ -139,8 +141,9 @@ function Click-At($x, $y, [switch] $Right) {
 
 function Get-Centre($bounds) { @(($bounds.x + [int]($bounds.width / 2)), ($bounds.y + [int]($bounds.height / 2))) }
 
-# Opens the hidden icons when Weir's icon is not among the visible ones.
+# Opens the hidden icons when Weir's icon is not among the visible ones, unless they are open already.
 function Show-Overflow {
+    if (Find-TaskbarRoots | Where-Object { $_.Current.ClassName -eq 'TopLevelWindowForOverflowXamlIsland' }) { return $false }
     $chevron = Get-NotificationButtons | Where-Object { $_.name -match 'Show Hidden Icons|Notification Chevron|Hidden icons' } | Select-Object -First 1
     if (-not $chevron -or -not $chevron.bounds) { return $false }
     $x, $y = Get-Centre $chevron.bounds
@@ -211,6 +214,20 @@ function Get-Balloons {
     }
 }
 
+# Everything on the desktop whose name holds the text, with the class of the window it sits in.
+function Find-Text([string] $text) {
+    foreach ($top in (Get-Children $automation::RootElement)) {
+        foreach ($element in $top.FindAll($tree::Descendants, [System.Windows.Automation.Condition]::TrueCondition)) {
+            if ($element.Current.Name -like "*$text*") {
+                $summary = Get-Summary $element
+                $summary | Add-Member -NotePropertyName window -NotePropertyValue $top.Current.ClassName
+                $summary | Add-Member -NotePropertyName windowName -NotePropertyValue $top.Current.Name
+                $summary
+            }
+        }
+    }
+}
+
 # --- a look at the tree, for the person reading a failed run ----------------------------------------------------------------------
 
 function Get-Tree($element, [int] $depth) {
@@ -264,6 +281,7 @@ switch ($Command) {
         Write-Json ([pscustomobject]@{ closed = $true })
     }
     'balloons' { Write-Json @(Get-Balloons) }
+    'find-text' { Write-Json @(Find-Text $Contains) }
     'dump' {
         $start = if ($Root -eq 'taskbar') { @(Find-TaskbarRoots) } else { @($automation::RootElement) }
         Write-Json @($start | ForEach-Object { Get-Tree $_ $Depth })
