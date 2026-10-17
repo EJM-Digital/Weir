@@ -17,9 +17,10 @@ export async function runScenarios({ ids, registry, world }) {
     let outcome;
     try {
       const watch = await (world.watchLogs ? world.watchLogs(world) : LogWatch.begin(world.weir));
+      world.logWatch = watch;
       const detail = await registry[id](world);
       await watch.finish();
-      outcome = { status: "passed", detail: `${detail} The logs gained no warning or error.` };
+      outcome = { status: "passed", detail: `${detail} The logs gained no unexpected warning or error.` };
     } catch (error) {
       outcome = { status: "failed", detail: error.message };
     }

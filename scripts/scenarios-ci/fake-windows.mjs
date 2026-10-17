@@ -233,6 +233,10 @@ export class FakeWindows {
     return this.#db;
   }
 
+  get now() {
+    return this.#now;
+  }
+
   get sessions() {
     return this.#sessions;
   }
@@ -274,7 +278,10 @@ class FakeBrowser {
 
   async loginStatus(username, password) {
     const { account } = this.#world.db;
-    if (!account || account.username !== username || account.password !== password) return 401;
+    if (!account || account.username !== username || account.password !== password) {
+      for (const title of ["auth event: login failed", "Sign-in failed"]) this.#world.db.logs.push({ source: "server", id: this.#world.db.logs.length + 1, at: this.#world.now, title });
+      return 401;
+    }
     this.#open(username);
     return 200;
   }

@@ -109,10 +109,12 @@ export async function watchLogs(world) {
     await ensureSignedIn(world);
     return LogWatch.begin(world.weir);
   }
+  const watch = new LogWatch(world.weir, []);
   return {
+    expect: (title, options) => watch.expect(title, options),
     finish: async () => {
       await ensureSignedIn(world);
-      await new LogWatch(world.weir, []).finish();
+      await watch.finish();
     },
   };
 }
@@ -257,6 +259,10 @@ async function recoverLockedOutAccount(world) {
 
   for (const earlier of [weir, other]) {
     assert.equal(await earlier.signedInAs(), null, "a session from before the reset is still accepted");
+  }
+  // Weir writes a warning, and Activity a line, for a sign-in it refuses; this one is refused on purpose.
+  for (const title of ["auth event: login failed", "Sign-in failed"]) {
+    world.logWatch.expect(title, { why: "the forgotten password is tried once, to see that it is refused" });
   }
   const withForgotten = await world.browser().loginStatus(username, forgotten);
   assert.equal(withForgotten, 401, `the forgotten password was answered ${withForgotten}, not refused`);

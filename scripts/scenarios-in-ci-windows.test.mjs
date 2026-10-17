@@ -194,6 +194,15 @@ test("a warning the logs gained while the scenario ran fails it, although it did
   assert.match(await failureOf("uninstall-keeps-the-data", { warnsWhenStarted: "Could not open the update feed" }), /gained .*Could not open the update feed/);
 });
 
+test("the refused sign-in of the recovery scenario is the one warning it may cause, and a second warning fails it", async () => {
+  const healthy = await only("recover-locked-out-account");
+  assert.equal(healthy.status, "passed", healthy.detail);
+  assert.match(healthy.detail, /The logs gained no unexpected warning or error\./);
+  const stand = new FakeWindows({ warnsWhenStarted: "Could not open the update feed" });
+  const [result] = await runScenarios({ ids: ["recover-locked-out-account"], registry: SCENARIOS, world: { ...stand.world(), watchLogs } });
+  assert.match(result.detail, /gained 2 unexpected warning or error \(Could not open the update feed \| Could not open the update feed\)/);
+});
+
 // --- recover-locked-out-account, broken ----------------------------------------------------------------------------------------------
 
 test("a recovery command that does not find the data folder the installed server uses does not pass", async () => {
