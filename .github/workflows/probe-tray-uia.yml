@@ -26,15 +26,15 @@ jobs:
       - name: Probe
         shell: powershell
         run: |
-          $ui = "$PWDscriptsscenarios-ci	ray-ui.ps1"
+          $ui = "$PWD\scripts\scenarios-ci\tray-ui.ps1"
           function Show($title, $text) { Write-Host "::group::$title"; Write-Host $text; Write-Host "::endgroup::" }
           function Ui { param([Parameter(ValueFromRemainingArguments)]$a) powershell -NoProfile -File $ui @a 2>&1 | Out-String }
-          $env:WEIR_HOME = "$env:RUNNER_TEMPweir-home"
-          $tray = Start-Process "$env:RUNNER_TEMPprobe	rayWeir.exe" -ArgumentList "--port","9361" -PassThru
+          $env:WEIR_HOME = "$env:RUNNER_TEMP\weir-home"
+          $tray = Start-Process "$env:RUNNER_TEMP\probe\tray\Weir.exe" -ArgumentList "--port","9361" -PassThru
           Write-Host "tray pid $($tray.Id)"
-          for ($i = 0; $i -lt 8; $i++) {
+          for ($i = 0; $i -lt 6; $i++) {
             Show "find running $i" (Ui find-text -Contains running)
-            Show "desktop children $i" ((Ui dump -Depth 1) -replace bounds:{[^}]*},?,)
+            Show "desktop children $i" ((Ui dump -Depth 1) -replace '"bounds":\{[^}]*\},?','')
           }
           for ($i = 0; $i -lt 5; $i++) {
             Show "open-menu taskbar $i" (Ui open-menu -TrayProcessId $tray.Id -Via taskbar)
@@ -46,16 +46,14 @@ jobs:
           Show "invoke copy" (Ui invoke -TrayProcessId $tray.Id -Item "Copy address")
           Start-Sleep -Seconds 1
           Show "clipboard" (powershell -STA -NoProfile -Command "Get-Clipboard")
-          Show "menu after copy" ((Ui menu -TrayProcessId $tray.Id).Length)
           Show "open-menu again" (Ui open-menu -TrayProcessId $tray.Id -Via taskbar)
           Start-Sleep -Seconds 1
           Show "invoke toggle" (Ui invoke -TrayProcessId $tray.Id -Item "Start with Windows")
           Start-Sleep -Seconds 1
-          Show "run key" ((Get-ItemProperty "HKCU:SoftwareMicrosoftWindowsCurrentVersionRun" -ErrorAction SilentlyContinue | Out-String))
-          Show "menu after toggle" ((Ui menu -TrayProcessId $tray.Id) -replace bounds:{[^}]*},?,)
+          Show "run key" ((Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -ErrorAction SilentlyContinue | Out-String))
+          Show "menu after toggle" ((Ui menu -TrayProcessId $tray.Id) -replace '"bounds":\{[^}]*\},?','')
           Show "invoke change port" (Ui invoke -TrayProcessId $tray.Id -Item "Change port (9361)...")
           Start-Sleep -Seconds 3
           Show "find port window" (Ui find-text -Contains port)
-          Show "dump desktop 6" ((Ui dump -Depth 6) -replace bounds:{[^}]*},?, | ForEach-Object { $_.Substring(0, [Math]::Min(12000, $_.Length)) })
-          Show "tray log" (Get-Content "$env:WEIR_HOME	ray-host.log" | Out-String)
+          Show "tray log" (Get-Content "$env:WEIR_HOME\tray-host.log" | Out-String)
           Stop-Process -Id $tray.Id -Force
