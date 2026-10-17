@@ -96,27 +96,30 @@ public sealed class ProcessingPassThroughHandler : IJobHandler
         {
             delivered = await DeliverUnlessGoneAsync(delivery, relativePath, cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or PassThroughIntegrityException or FileNotFoundException or InvalidOperationException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or PassThroughIntegrityException or FileNotFoundException or InvalidOperationException or FileLifecycleException)
         {
             _logger.LogWarning(exception, "Pass-through could not deliver {Path}.", relativePath);
+            var failure = new WireObject()
+                .Set("job_id", context.Id)
+                .Set("relative_media_path", relativePath)
+                .Set("message", WireStrings.Slice(ToolFailureText.Plain(exception), 1200))
+                .Set("trigger", "worker")
+                .Set("result", "failed")
+                .Set("library_id", delivery.LibraryId)
+                .Set("source_kept", true)
+                .Set("next_action", "The original is untouched in the watched folder. Check that the output folder exists and is writable.");
+            if (ToolFailureText.Plain(exception) != exception.Message)
+            {
+                failure.Set("technical_detail", ToolFailureText.Technical(exception));
+            }
+
             await LockedWrites.RunAsync(
                 _database,
                 uow => SqliteActivityWriter.RecordAsync(uow, new ActivityEventDraft(
                     ActivityEventTypes.ProcessingFilePassThroughFailed,
                     "processing",
                     $"{MediaPathNames.Name(relativePath, OperatingSystem.IsWindows())} could not be handed back",
-                    WireJsonWriter.Dumps(
-                        new WireObject()
-                            .Set("job_id", context.Id)
-                            .Set("relative_media_path", relativePath)
-                            .Set("message", WireStrings.Slice(exception.Message, 1200))
-                            .Set("trigger", "worker")
-                            .Set("result", "failed")
-                            .Set("library_id", delivery.LibraryId)
-                            .Set("source_kept", true)
-                            .Set("next_action",
-                                "The original is untouched in the watched folder. Check that the output folder exists and is writable."),
-                        WireJsonFormat.Compact))),
+                    WireJsonWriter.Dumps(failure, WireJsonFormat.Compact))),
                 _logger,
                 "pass-through failure record",
                 cancellationToken).ConfigureAwait(false);

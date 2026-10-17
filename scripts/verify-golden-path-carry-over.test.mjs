@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { repository } from "./release/temporary-repository.mjs";
+import { REPOSITORY } from "./repository.mjs";
 import { findGoldenPathPass, runGate } from "./verify-golden-path-for-release.mjs";
 
 let nextId = 1;
@@ -185,7 +186,7 @@ function gate({ tag, head, git, byCommit }) {
   const err = [];
   const passed = runGate({
     tag,
-    repository: "jampat000/Weir",
+    repository: REPOSITORY,
     sha: head,
     statusesOf: (_repository, sha) => byCommit[sha] ?? [],
     git,

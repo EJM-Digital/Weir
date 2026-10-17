@@ -58,11 +58,10 @@ public sealed class LinkedOriginalsTests
         Assert.Equal(HttpStatusCode.BadRequest, refused.Status);
         Assert.Contains("hands this workflow its downloads, so Weir does not scan its watched folder", refused.Text, StringComparison.Ordinal);
 
-        // Long enough for the watcher's burst delay and a periodic tick of this workflow's 10 second interval.
-        await Scenario.NeverWithinAsync(
-            async () => (await scenario.JobsAsync(Scenario.RemuxKind)).Count > 0 || (await scenario.FileRowAsync(library, "Seeding.Film.2024/film.mkv")) is not null,
-            TimeSpan.FromSeconds(14),
-            "Weir's own scan processing a file Deluno has not handed over");
+        // Weir goes round its periodic scans and its folder watcher, and finds nothing to do with a file Deluno has not handed over.
+        await scenario.WaitForARoundAsync();
+        Assert.Empty(await scenario.JobsAsync(Scenario.RemuxKind));
+        Assert.Null(await scenario.FileRowAsync(library, "Seeding.Film.2024/film.mkv"));
         Assert.Empty(Directory.GetFileSystemEntries(scenario.Folders.Output));
         Assert.Empty(scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux"));
         AssertDownloadIntact(download);

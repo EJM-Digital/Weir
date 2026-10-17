@@ -33,7 +33,9 @@ public sealed class RemovingAWorkflowTests
     [Fact]
     public async Task Removing_a_workflow_with_files_a_schedule_and_a_link_leaves_every_folder_and_the_rest_of_Weir_alone()
     {
-        await using var scenario = await Scenario.StartAsync();
+        // The scheduler looks at every workflow once it is saved and queues a periodic scan that lands whenever its tick does, which on a slow
+        // machine is after the test has waited for its own scans and before it removes the workflow. The test queues the scans it needs.
+        await using var scenario = await Scenario.StartAsync(("WEIR_PROCESSING_WATCHED_FOLDER_REMUX_SCAN_DISPATCH_SCHEDULE_ENABLED", "0"));
         var media = FakeMedia.Bytes(FakeMedia.Probe(audioLanguages: ["eng", "fre"]));
         var (_, linked) = await scenario.RadarrSetupAsync();
         var otherWatched = Directory.CreateDirectory(Path.Combine(scenario.Root, "other-watched")).FullName;
