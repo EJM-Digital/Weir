@@ -162,7 +162,7 @@ internal sealed partial class ArrScenario : IDisposable
 
         if (_flavour.ImportNames.Count > 1)
         {
-            await FoldedScanStepsAsync(scan).ConfigureAwait(false);
+            await NextFilesAsync(scan).ConfigureAwait(false);
         }
 
         await AddRemotePathMappingAsync().ConfigureAwait(false);
@@ -276,32 +276,30 @@ internal sealed partial class ArrScenario : IDisposable
     }
 
     /// <summary>
-    /// The app keeps one Downloaded Scan at a time and answers a second request with the scan already there. A scan of the second file
-    /// is started behind Weir's back; Weir's request for the third file, made at once, gets that scan's reply.
+    /// The files after the first. The app keeps one Downloaded Scan at a time, so the second file is handed over on its own, unrecorded, and
+    /// Weir asks about the third once the app says the second scan is over.
     /// </summary>
-    private async Task FoldedScanStepsAsync(ArrDownloadedScan scan)
+    private async Task NextFilesAsync(ArrDownloadedScan scan)
     {
-        long? blocker = null;
-        await StepAsync("scan-folded-into-a-running-scan", "A scan asked for while another scan is running: the app answers 201 with the scan that is already there, whose path is not the one asked for.", async () =>
+        long? earlier = null;
+        await TryAsync("hand over the second file", async () =>
         {
             var running = await _api.PostAsync(
                 DownloadedScanRules.CommandPath,
                 new System.Text.Json.Nodes.JsonObject { ["name"] = DownloadedScanRules.CommandName(_flavour.Scope), ["path"] = FileInDownloads(1), ["importMode"] = DownloadedScanRules.ImportMode }).ConfigureAwait(false);
-            blocker = running!["id"]!.GetValue<long>();
-            var client = new MediaManagerHttpClient(_settings.Url, _apiKey, _transport, TimeSpan.FromSeconds(30));
-            var reply = await client.PostJsonAsync(DownloadedScanRules.CommandPath, DownloadedScanRules.CommandBody(_flavour.Scope, FileInDownloads(2), null)).ConfigureAwait(false);
-            Expect(DownloadedScanRules.IsAnotherScan(reply, FileInDownloads(2), out _), "the app should have answered with the scan already running");
+            earlier = running!["id"]!.GetValue<long>();
+            await Wait.UntilAsync("the second scan to finish", TimeSpan.FromMinutes(2), async () =>
+                (await _api.GetAsync($"/api/v3/command/{earlier}").ConfigureAwait(false))?["status"]?.GetValue<string>() is "completed" or "failed" or "aborted").ConfigureAwait(false);
         }).ConfigureAwait(false);
 
-        await TryAsync("wait for the running scan", () => Wait.UntilAsync("the running scan to finish", TimeSpan.FromMinutes(2), async () =>
-            (await _api.GetAsync($"/api/v3/command/{blocker}").ConfigureAwait(false))!["status"]!.GetValue<string>() is "completed" or "failed")).ConfigureAwait(false);
-        await StepAsync("command-status-finished", "Asking the app about the scan that was in the way once it is over.", async () =>
+        await StepAsync("command-status-finished", "Asking the app about a scan it has finished: the status the app gives a command that is over.", async () =>
         {
             var client = new MediaManagerHttpClient(_settings.Url, _apiKey, _transport, TimeSpan.FromSeconds(30));
-            var status = await client.GetJsonAsync($"{DownloadedScanRules.CommandPath}/{blocker}").ConfigureAwait(false);
-            Expect(DownloadedScanRules.IsFinished(status), "the scan in the way should be over");
+            var status = await client.GetJsonAsync($"{DownloadedScanRules.CommandPath}/{earlier}").ConfigureAwait(false);
+            Expect(DownloadedScanRules.IsFinished(status), "the earlier scan should be over");
         }).ConfigureAwait(false);
-        await StepAsync("downloaded-scan-after-the-other-finished", "The scan Weir asked for, asked for again once the other scan was over: the app takes it.", async () =>
+
+        await StepAsync("downloaded-scan-next-file", "Weir asks the app to scan the next file once the earlier scan is over; the app takes it.", async () =>
         {
             var result = await scan.RequestAsync(_connection, _flavour.Scope, FileInDownloads(2), null).ConfigureAwait(false);
             Expect(result.Accepted, $"the scan was refused: {result.FailureReason}");

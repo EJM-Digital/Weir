@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
 using Weir.Contract.Tests.Harness.Fakes;
 
@@ -130,16 +129,15 @@ public sealed class FailurePoliciesTests
         var (radarr, library) = await scenario.RadarrSetupAsync(("failure_policy", "reject"));
         var source = scenario.WriteRelease(
             "Bad.Movie.2019.1080p", "Bad.Movie.2019.1080p.mkv", FakeMedia.Bytes(FakeMedia.Probe(video: 0, audioLanguages: ["eng"])));
-        radarr.Queue.Add(new JsonObject
-        {
-            ["id"] = 4242,
-            ["downloadId"] = "SABnzbd_nzo_contract",
-            ["title"] = "Bad.Movie.2019.1080p",
-            ["status"] = "completed",
-            ["trackedDownloadState"] = "importPending",
-            ["outputPath"] = Path.GetDirectoryName(source),
-            ["movieId"] = 7,
-        });
+        radarr.Queue.Add(ArrShapes.QueueRow(
+            "radarr",
+            ("id", 4242),
+            ("downloadId", "SABnzbd_nzo_contract"),
+            ("title", "Bad.Movie.2019.1080p"),
+            ("status", "completed"),
+            ("trackedDownloadState", "importPending"),
+            ("outputPath", Path.GetDirectoryName(source)),
+            ("movieId", 7)));
 
         await scenario.EnqueueFilePassAsync("Bad.Movie.2019.1080p/Bad.Movie.2019.1080p.mkv", library);
 

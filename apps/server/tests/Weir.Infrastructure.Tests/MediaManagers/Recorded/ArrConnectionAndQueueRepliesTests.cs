@@ -1,6 +1,7 @@
 using Weir.Core.Json;
 using Weir.Core.MediaManagers;
 using Weir.Core.Processing;
+using Weir.Infrastructure.MediaManagers;
 using Weir.Tests.Shared;
 
 namespace Weir.Infrastructure.Tests.MediaManagers.Recorded;
@@ -15,6 +16,39 @@ public sealed class ArrConnectionAndQueueRepliesTests
     public static TheoryData<string> Apps => ["sonarr", "radarr"];
 
     private static string ScopeOf(string app) => app == "sonarr" ? MediaManagerKinds.Tv : MediaManagerKinds.Movie;
+
+    [Theory]
+    [MemberData(nameof(Apps))]
+    public async Task The_connection_test_and_the_heartbeat_say_connected_when_the_app_answers_its_status(string app)
+    {
+        var recording = ArrRecording.Load(app, "connection-test");
+        using var replay = new ArrReplay(app, recording);
+
+        var (ok, detail) = await ManagerHealthProbe.ProbeAsync(
+            replay, "the app", app, replay.Connection().BaseUrl, "a-key-the-recording-never-saw", TimeSpan.FromSeconds(10), connection: null, CancellationToken.None);
+
+        Assert.Equal(200, recording.Only.Reply.Status);
+        Assert.Equal(recording.Version, (string)recording.Only.Reply.Body!["version"]!);
+        Assert.True(ok);
+        Assert.Equal("Connected. Weir can reach the app.", detail);
+        replay.AssertSentAsRecorded(recording);
+    }
+
+    [Theory]
+    [MemberData(nameof(Apps))]
+    public async Task The_connection_test_names_a_refused_key_without_the_apps_words(string app)
+    {
+        var recording = ArrRecording.Load(app, "connection-test-wrong-key");
+        using var replay = new ArrReplay(app, recording);
+
+        var (ok, detail) = await ManagerHealthProbe.ProbeAsync(
+            replay, "the app", app, replay.Connection().BaseUrl, "a-key-the-recording-never-saw", TimeSpan.FromSeconds(10), connection: null, CancellationToken.None);
+
+        Assert.Equal(401, recording.Only.Reply.Status);
+        Assert.False(ok);
+        Assert.Equal("Weir reached the app, but the API key was refused. Check the key and save it again.", detail);
+        replay.AssertSentAsRecorded(recording);
+    }
 
     [Theory]
     [MemberData(nameof(Apps))]
