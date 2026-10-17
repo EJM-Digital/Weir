@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
 using Xunit;
@@ -297,9 +296,15 @@ public sealed class PortChoiceTests : IDisposable
     [Fact]
     public void A_port_that_nothing_listens_on_is_not_in_use()
     {
-        // A port the system's own listener table does not list: its answer, not a port this test has just let go of.
-        var listening = IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners().Select(endpoint => endpoint.Port).ToHashSet();
-        var free = Enumerable.Range(50_000, 5_000).First(candidate => !listening.Contains(candidate));
+        // The system picks the port, so it is one Windows is willing to hand out: not listened on, not held by an outgoing connection and
+        // not inside a range Windows has reserved (Hyper-V and WSL reserve some, and a fixed number can fall in one). Only a socket that
+        // was bound and never listened on has held it, so letting it go leaves nothing behind that could still be counted against it.
+        int free;
+        using (var holder = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) { ExclusiveAddressUse = true })
+        {
+            holder.Bind(new IPEndPoint(IPAddress.Any, 0));
+            free = ((IPEndPoint)holder.LocalEndPoint!).Port;
+        }
 
         Assert.False(PortChoice.IsInUse(free));
     }
