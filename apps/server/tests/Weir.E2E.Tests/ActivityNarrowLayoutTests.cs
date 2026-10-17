@@ -14,6 +14,8 @@ namespace Weir.E2E.Tests;
 public sealed class ActivityNarrowLayoutTests(E2EServer server) : E2ETestBase(server)
 {
     private const float PushMs = 20_000;
+    private const int TitleLineShared = 921;
+    private const int NarrowStep = 20;
     private static readonly ViewportSize Wide = new() { Width = 2560, Height = 1000 };
     private static readonly ViewportSize Short = new() { Width = 1500, Height = 900 };
     private static readonly ViewportSize Phone = new() { Width = 390, Height = 844 };
@@ -39,13 +41,14 @@ public sealed class ActivityNarrowLayoutTests(E2EServer server) : E2ETestBase(se
         await using var rig = await ProcessingRig.StartAsync();
         var page = await OpenActivityAsync(rig, Short);
         var group = page.GetByRole(AriaRole.Group, new() { Name = "Show" });
+        var more = group.GetByRole(AriaRole.Button, new() { NameRegex = new("^More") });
+        await NarrowUntilChipsFoldAsync(page, more);
 
         await Expect(Search(page).Locator("xpath=ancestor::label")).ToHaveAttributeAsync("data-collapsed", "true");
         await Expect(CardPicker(page, "Workflow")).ToBeVisibleAsync();
         await Expect(CardPicker(page, "How far back")).ToBeVisibleAsync();
         await Expect(HeaderPicker(page, "Workflow")).ToHaveCountAsync(0);
         await Expect(group.GetByRole(AriaRole.Button, new() { NameRegex = new("^Kept") })).ToHaveCountAsync(0);
-        var more = group.GetByRole(AriaRole.Button, new() { NameRegex = new("^More") });
         await more.ClickAsync();
         var menu = page.GetByRole(AriaRole.Menu, new() { Name = "More kinds of file" });
         await Expect(menu).ToBeVisibleAsync();
@@ -83,6 +86,25 @@ public sealed class ActivityNarrowLayoutTests(E2EServer server) : E2ETestBase(se
         await Search(page).FillAsync("nothing");
         await Search(page).PressAsync("Enter");
         await Expect(page).ToHaveURLAsync(new Regex(@"[?&]q=nothing(&|$)"), new() { Timeout = PushMs });
+    }
+
+    /// <summary>
+    /// Where the chips run out of room depends on the width of the letters, which differs from one machine's fonts to the next, so this narrows the
+    /// window from <see cref="Short"/> until the last chip has folded. Everything that gives way before the chips (the search, the pickers) has by then.
+    /// </summary>
+    private static async Task NarrowUntilChipsFoldAsync(IPage page, ILocator more)
+    {
+        for (var width = Short.Width; width >= TitleLineShared; width -= NarrowStep)
+        {
+            await page.SetViewportSizeAsync(width, Short.Height);
+            await page.EvaluateAsync("() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))");
+            if (await more.IsVisibleAsync())
+            {
+                return;
+            }
+        }
+
+        Assert.Fail($"No chip had folded into More by {TitleLineShared}px wide, the narrowest window that still shares the title line.");
     }
 
     private static ILocator Search(IPage page) => page.GetByRole(AriaRole.Searchbox, new() { Name = "Find a file" });
