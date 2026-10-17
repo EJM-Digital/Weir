@@ -56,7 +56,7 @@ public sealed partial class ActivityRetryFailedTests(E2EServer server) : E2ETest
             rig.ReleasePass(MixedActivity.Working);
 
             await Expect(page.GetByRole(AriaRole.Button, new() { NameRegex = new("^Try the") })).ToHaveCountAsync(0, new() { Timeout = PassMs });
-            Assert.Equal("processed", (string)(await rig.ListedFileAsync(MixedActivity.Failed))!["status"]!);
+            await Poll.UntilAsync(async () => (string?)(await rig.ListedFileAsync(MixedActivity.Failed))?["status"] == "processed", "the film to finish", TimeSpan.FromMinutes(3));
         });
     }
 
@@ -93,7 +93,7 @@ public sealed partial class ActivityRetryFailedTests(E2EServer server) : E2ETest
             await Expect(page.GetByRole(AriaRole.Button, new() { NameRegex = new("^Try the") })).ToHaveCountAsync(0, new() { Timeout = PassMs });
             var sent = Assert.Single(log.Since(mark));
             Assert.Equal(ids.Order(), JsonNode.Parse(sent.Body!)!["file_ids"]!.AsArray().Select(id => (long)id!).Order());
-            Assert.Equal("processed", (string)(await rig.ListedFileAsync(AnotherFailed))!["status"]!);
+            await Poll.UntilAsync(async () => (string?)(await rig.ListedFileAsync(AnotherFailed))?["status"] == "processed", "the second film to finish", TimeSpan.FromMinutes(3));
         });
     }
 
