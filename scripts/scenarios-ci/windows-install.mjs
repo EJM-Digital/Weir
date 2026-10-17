@@ -36,7 +36,7 @@ const wait = (world, check, what, ceilingMs, intervalMs = 1000) => pollUntil(che
 
 // --- Weir installed, running and signed in to ---------------------------------------------------------------------------------
 
-async function waitReady(world) {
+export async function waitReady(world) {
   await wait(world, async () => ((await world.server.ready()) ? true : undefined), `Weir to answer /ready on port ${PORT}`, START_CEILING_MS);
 }
 
@@ -80,7 +80,7 @@ async function ensureInstalledAndRunning(world) {
 }
 
 /** Creates the first account the way a person does when Weir offers to, or signs in as the one this run made. */
-async function ensureSignedIn(world) {
+export async function ensureSignedIn(world) {
   const { weir, machine } = world;
   const status = await weir.bootstrapStatus();
   if (status.bootstrap_allowed) {

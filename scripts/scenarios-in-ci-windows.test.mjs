@@ -79,11 +79,12 @@ test("the workflow runs the Windows shards that have a ported scenario, against 
   assert.deepEqual(linuxShards(homes).filter((shard) => windowsShards(homes).includes(shard)), []);
   const job = /\n  scenarios-windows:\n([\s\S]*?)(?=\n  [a-z0-9-]+:\n|$)/.exec(workflow)?.[1] ?? "";
   assert.match(job, /runs-on: windows-latest/);
-  assert.match(job, /needs: windows-package-smoke/);
+  assert.match(job, /needs: \[windows-package-smoke, windows-update-package\]/);
   assert.match(job, /timeout-minutes: \d+/);
   assert.match(job, /fail-fast: false/);
   assert.match(job, /name: weir-windows-setup-under-test/);
   assert.match(job, /node scripts\/scenarios-in-ci\.mjs "\$SHARD" --setup setup\/Weir-win-Setup\.exe --version "\$BUILD_VERSION"/);
+  assert.match(job, /node scripts\/scenarios-in-ci\.mjs windows-update --feed feed --previous-setup previous\/Weir-win-Setup\.exe/);
   assert.match(job, /actions\/upload-artifact@/);
   const kept = /Keep the Setup for the Windows scenarios[\s\S]*?path: (\S+)/.exec(workflow)?.[1];
   assert.equal(kept, "dist/windows/releases/Weir-win-Setup.exe");

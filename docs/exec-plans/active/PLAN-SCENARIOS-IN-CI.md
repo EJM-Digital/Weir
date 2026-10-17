@@ -18,7 +18,7 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`, and the ones written for CI al
 
 | Scenario | Home | Shard | State | Why it lives there |
 | --- | --- | --- | --- | --- |
-| `update-over-installed-weir` | windows | windows-update | to-port | `Setup --silent` over the previous release's running install, with the tray's pre-update copy. Docker's upgrade smoke covers the volume half. |
+| `update-over-installed-weir` | windows | windows-update | ported | The newest published release is installed, then updated to this commit's build through the tray's own update code, from a release feed made of the build's packages. Docker's upgrade smoke covers the volume half. |
 | `workflows-from-deluno` | linux | with-deluno | to-port | Weir and Deluno speak HTTP only; Deluno's published image is the same Deluno. |
 | `deluno-film-handoff` | linux | with-deluno | to-port | A hand-off followed through both apps, with the real clients in Compose. |
 | `deluno-release-with-extra` | linux | with-deluno | to-port | The extra is read where it stays, through the download client's own API. |
@@ -33,6 +33,9 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`, and the ones written for CI al
 | `update-requests` | windows | windows-tray | to-port | Needs the real tray to take the update flag files. |
 | `recover-locked-out-account` | windows | windows-install | ported | Runs the installed `WeirServer.exe recover` with nothing set, so it must find Weir's data folder itself. The Docker form is already proved by the Docker smoke. |
 | `uninstall-keeps-the-data` | windows | windows-install | ported | Written for CI: the VM suite never ran the uninstaller. Uninstalls Weir stopped and running, and finds the data, the secrets and the account afterwards. |
+| `update-installs-when-idle` | windows | windows-update | ported | Written for CI: in Automatic mode the tray downloads the full package and installs it once Weir has been idle for 5 minutes, and not before. |
+| `update-left-waiting-installs-at-start` | windows | windows-update | ported | Written for CI: in Download only mode the update waits, and the next start of the tray installs it before the server starts. |
+| `update-failure-leaves-the-old-weir` | windows | windows-update | ported | Written for CI: a package changed after its hash was recorded is refused, and GitHub being down fails the check, each in plain words, with the old Weir still running. |
 
 ### Windows-only behaviour with no scenario today
 
@@ -46,7 +49,7 @@ The VM suite does not cover these; the package smokes (`smoke-windows-package.ps
 | weir-browser | ubuntu-latest | 10 min | Weir alone, driven through a real browser. |
 | with-deluno | ubuntu-latest | 20 min | Weir, Deluno and the real clients; split by client when it outgrows the budget, as Deluno splits `resend`. |
 | windows-install | windows-latest | 20 min | Install, the installed server and its secrets, the recovery command, uninstall and reinstall. **Built.** Start with Windows needs the tray's own menu, so it waits for windows-tray. |
-| windows-update | windows-latest | 20 min | The update from the previous release over a running Weir. |
+| windows-update | windows-latest | 30 min | The newest published release updated to this commit's build through the tray's own update code. **Built.** |
 | windows-tray | windows-latest | 20 min | The real tray through UI Automation, and NTFS behaviour. |
 
 ## The matrix
@@ -100,11 +103,23 @@ A scenario is **green twice** when it passed in two CI runs on `main`, on differ
 
 The tray is started without its user interface, so what the tray shows is left to `windows-tray`. Right after each Setup the shard writes `update-settings.json` with `NotifyOnly`, the file the tray reads: a runner can reach the release feed, and a placeholder build (`0.0.1-dev`) is older than every published release, so otherwise the tray downloads the newest one and replaces the build under test the next time it starts. Every start of Weir in a scenario also checks it is still the build under test.
 
+### The windows-update shard
+
+`scripts/scenarios-in-ci.mjs windows-update --feed <folder> --previous-setup <Setup> --previous-feed <releases.win.json> --previous-version <version> --version <version>` runs on a GitHub-hosted `windows-latest` runner, and installs, updates and uninstalls Weir for real, so it refuses any other machine. It is the `windows-update` leg of `scenarios-windows` in `ci-packaging.yml`.
+
+An update only goes to a newer version, and the build under test carries a placeholder version older than every release. The `windows-update-package` job therefore builds this commit again under the newest published release's version with its patch number plus one (`scenarios-ci/update-versions.mjs`), packed with a delta against that release exactly as `release.yml` packs a release (the package job's own build is not touched). The shard installs the newest published release from its GitHub release page, and then updates it:
+
+- **The feed.** The tray's update code is the shipped one, unchanged: it reads `https://github.com/jampat000/Weir/releases.atom` and each release's download folder. The shard makes a certificate for `github.com` and `api.github.com`, trusts it in the PC's own store, points both names at this PC in the hosts file, and answers on port 443 from the files vpk packed (`scenarios-ci/github-stand-in.mjs`, `github-redirect.mjs`). Both changes are undone at the end. Faults are modes of the stand-in: nothing newer, no delta, a package with one byte changed after its hash was recorded, and GitHub down.
+- `update-over-installed-weir`: with the tray told only to say that updates exist, System > About's **Check now** finds nothing while only the installed release is published, then finds the build; nothing downloads by itself; **Download update** takes only the delta and rebuilds the full package with the hash the feed names; **Restart and apply** saves a copy of the data, applies, and Weir comes back on the build by itself. The session, the workflow and its folders, the saved setting, a saved download client connection with its API key (read back with the credentials secret), all of Activity, and the two secrets (the same bytes) are as before, and System overview names the copy.
+- `update-installs-when-idle` (Automatic mode, the full package, the real 5-minute idle wait), `update-left-waiting-installs-at-start` (Download only; the tray ended by force; the next start installs before the server starts) and `update-failure-leaves-the-old-weir` (a changed package and GitHub down, each in plain words, nothing applied, the release still running).
+
+Not in this shard: **Quit with a downloaded update** (the tray's menu, so `windows-tray`), and a disk too full for the download.
+
 ### Next
 
 1. `weir-browser`: `first-visit-account`, with Chromium under Playwright.
 2. `with-deluno`: images pinned by digest, the Compose file, then `workflows-from-deluno` and `deluno-film-handoff` on qBittorrent, then the other four scenarios and the other clients.
-3. `windows-update`, then `windows-tray` (the shards after `windows-install`).
+3. `windows-tray` (the shard after `windows-update`).
 4. The drift workflow, and the per-shard paths filter.
 
 ## Runners

@@ -4,7 +4,7 @@
 import { execFile, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 
 import { pollUntil } from "../docker-smoke/poll.mjs";
@@ -29,7 +29,7 @@ export function consoleEnvironment(env) {
   return Object.fromEntries(Object.entries(env).filter(([name]) => !name.toUpperCase().startsWith("WEIR_")));
 }
 
-function run(program, args, { env = process.env, ceilingMs = 120_000 } = {}) {
+export function run(program, args, { env = process.env, ceilingMs = 120_000 } = {}) {
   return new Promise((resolve, reject) => {
     execFile(program, args, { env, windowsHide: true, timeout: ceilingMs, maxBuffer: 32 * 1024 * 1024 }, (error, stdout, stderr) => {
       if (error) reject(new Error(`${program} ${args.join(" ")} failed: ${error.message}\n${stderr}`.trim(), { cause: error }));
@@ -43,7 +43,7 @@ function run(program, args, { env = process.env, ceilingMs = 120_000 } = {}) {
  * finds nothing and says nothing succeeds (a failed lookup under -ErrorAction SilentlyContinue would otherwise set the exit code); an error that
  * stops the script still fails it.
  */
-async function json(script, values = {}) {
+export async function json(script, values = {}) {
   const env = { ...process.env, ...Object.fromEntries(Object.entries(values).map(([name, value]) => [`SCENARIO_${name}`, String(value)])) };
   const text = await run(POWERSHELL, ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", `$ErrorActionPreference = 'Stop'; ${script}
 exit 0`], { env });
@@ -78,6 +78,7 @@ export class WindowsMachine {
     this.paths = {
       installRoot,
       updater: join(installRoot, "Update.exe"),
+      packagesFolder: join(installRoot, "packages"),
       trayExe: join(installRoot, "current", "Weir.exe"),
       serverExe: join(installRoot, "current", "server", "WeirServer.exe"),
       runtimeHome,
@@ -94,10 +95,30 @@ export class WindowsMachine {
     return { exitCode, seconds: Math.round((Date.now() - began) / 1000) };
   }
 
-  /** Chooses "only say that an update exists" in update-settings.json, the file the tray reads, so no start of Weir installs a release over the build under test. */
-  async keepUpdatesFromInstalling() {
+  /** Writes update-settings.json, the file the tray reads its update choices from, as the tray or the Settings page would. */
+  async writeUpdateSettings(settings) {
     await mkdir(this.paths.runtimeHome, { recursive: true });
-    await writeFile(join(this.paths.runtimeHome, "update-settings.json"), JSON.stringify({ mode: "NotifyOnly" }));
+    await writeFile(join(this.paths.runtimeHome, "update-settings.json"), JSON.stringify(settings));
+  }
+
+  /** Chooses "only say that an update exists", so no start of Weir installs a release over the build under test. */
+  keepUpdatesFromInstalling() {
+    return this.writeUpdateSettings({ mode: "NotifyOnly" });
+  }
+
+  /** Leaves the machine as a clean runner is: Weir stopped and uninstalled, and its install and data folders gone. */
+  async removeEverything() {
+    await this.stopWeir();
+    if (await this.exists(this.paths.updater)) {
+      const { exitCode } = await this.uninstall();
+      if (exitCode !== 0) throw new Error(`The uninstaller exited ${exitCode}, not 0.`);
+      await pollUntil(async () => ((await this.exists(this.paths.trayExe)) ? undefined : true), {
+        what: "the uninstaller to remove Weir.exe",
+        ceilingMs: STOP_CEILING_MS * 2,
+        intervalMs: 1000,
+      });
+    }
+    for (const folder of [this.paths.runtimeHome, this.paths.installRoot]) await rm(folder, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 });
   }
 
   /** Runs Velopack's own uninstaller, silently. */
