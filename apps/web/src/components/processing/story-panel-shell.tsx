@@ -34,6 +34,7 @@ export function StoryPanelShell({
       <button
         type="button"
         className="mm-story-backdrop"
+        data-modal-companion=""
         aria-label={backdropLabel}
         onClick={onClose}
       />

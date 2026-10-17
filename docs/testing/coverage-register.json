@@ -2534,6 +2534,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteApiTests.cs",
           "name": "Notification_channels_can_be_created_updated_and_deleted"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "The_address_is_shown_with_its_token_hidden_and_says_whether_it_had_one"
         }
       ],
       "covers": [
@@ -2572,6 +2577,16 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "A_second_alert_to_the_same_address_is_refused_in_plain_words"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "A_new_alert_still_needs_an_address"
         }
       ],
       "covers": [
@@ -2600,6 +2615,16 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "An_update_with_no_address_keeps_the_saved_one"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "An_update_to_another_alerts_address_is_refused_and_to_its_own_is_not"
         }
       ],
       "covers": [
@@ -4703,13 +4728,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "route:GET /api/v1/processing/hardware"
       ],
@@ -7105,13 +7135,18 @@
           "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/HandoffScenariosTests.cs",
           "name": "HandoffScenariosTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "job:processing.file.remux_pass.v1"
       ],
@@ -12971,13 +13006,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "setting:ProcessingRuleSetRecord.StandardizeTrackNames",
         "setting:ProcessingRuleSetRecord.TrackNameTemplate",
@@ -13026,13 +13066,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "setting:ProcessingRuleSetRecord.ClearVideoTrackNames",
         "setting:ProcessingRuleSetRecord.RemoveChapters"
@@ -14658,13 +14703,18 @@
           "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "setting:env:WEIR_FFMPEG_DIR",
         "setting:env:WEIR_MKVTOOLNIX_DIR"
@@ -38145,6 +38195,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
           "name": "says Saving… and holds every field still while the server answers"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "says an alert already sends to the address, keeps the form open with what was typed, and sends it once"
         }
       ],
       "audit": {
@@ -38155,7 +38210,7 @@
     {
       "id": "web-setup-connections-performance.alerts.row-shows-label-provider-chip-disabled-chip-when-off",
       "area": "web-setup-connections-performance",
-      "behaviour": "Row shows label, provider chip, 'Disabled' chip when off, and the webhook URL masked to host and shape (token never shown)",
+      "behaviour": "Row shows label, provider chip, 'Disabled' chip when off, and the webhook URL as the server shows it, masked to host and shape (token never shown)",
       "kind": "screen action",
       "severity": "medium",
       "touches": "other-app",
@@ -38163,18 +38218,8 @@
       "proofs": [
         {
           "type": "vitest",
-          "file": "apps/web/src/pages/settings/tabs/alerts/webhook-url-mask.test.ts",
-          "name": "collapses a Discord-shaped webhook URL to its host and shape, hiding the token"
-        },
-        {
-          "type": "vitest",
-          "file": "apps/web/src/pages/settings/tabs/alerts/webhook-url-mask.test.ts",
-          "name": "falls back to the host when the path has only one segment"
-        },
-        {
-          "type": "vitest",
-          "file": "apps/web/src/pages/settings/tabs/alerts/webhook-url-mask.test.ts",
-          "name": "masks conservatively when the value is not a parseable URL"
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "shows the address as the server gave it, with the token already hidden"
         },
         {
           "type": "vitest",
@@ -38200,7 +38245,7 @@
     {
       "id": "web-setup-connections-performance.alerts.edit-alert-form-pre-fills-the-full-webhook-url",
       "area": "web-setup-connections-performance",
-      "behaviour": "Edit alert form pre-fills the full webhook URL (token visible in a plain text field)",
+      "behaviour": "Edit alert form shows the address with its token hidden and a Replace the address action; saving without replacing keeps the saved address, a typed one replaces it, and the token is never returned",
       "kind": "screen action",
       "severity": "medium",
       "touches": "other-app",
@@ -38208,8 +38253,48 @@
       "proofs": [
         {
           "type": "vitest",
-          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
-          "name": "shows the saved address in full, and saving without retyping it sends that address again"
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "shows the address with its token hidden and offers to replace it, without a field to type in"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "saves without sending an address, so the saved one is kept"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "asks for the new address once it is to be replaced, and will not save it blank"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "sends the new address when one is typed, and the token is found nowhere on the page afterwards"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "goes back to the saved address when Keep the saved address is pressed, and sends none"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-address.test.tsx",
+          "name": "saves the alert without sending its address"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "No_route_gives_back_the_token_in_an_alerts_address"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "An_update_with_no_address_keeps_the_saved_one"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/NotificationChannelAddressApiTests.cs",
+          "name": "An_update_with_a_typed_address_replaces_the_saved_one"
         }
       ],
       "audit": {
@@ -48504,13 +48589,18 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/RealFfmpegClassifiesDamagedMediaTests.cs",
           "name": "RealFfmpegClassifiesDamagedMediaTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "audit": {
         "id": "INT-FFMPEG",
         "verdict": "Partly"
