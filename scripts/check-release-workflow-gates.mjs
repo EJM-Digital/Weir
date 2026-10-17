@@ -23,7 +23,7 @@ const PUBLISH_WINDOWS = "publish-windows";
 const PUBLISH_DOCKER = "publish-docker";
 const PUBLISHERS = [PUBLISH_WINDOWS, PUBLISH_DOCKER];
 
-const SHARED_GATES = ["ci-passed", "golden-path", "validate"];
+const SHARED_GATES = ["ci-passed", "golden-path", "validate", "e2e"];
 const WINDOWS_NEEDS = [...SHARED_GATES, "windows-smoke"];
 const DOCKER_NEEDS = [...SHARED_GATES, "docker-candidate", "docker-arm64"];
 
@@ -281,10 +281,33 @@ export function checkReleaseGates({ release, ci, ciContract, ciPackaging }) {
   for (const marker of [
     "- name: Release notes file present",
     "node scripts/check-dotnet-vulnerabilities.mjs",
-    "- name: Weir E2E smoke (Playwright + real .NET server)",
     "name: weir-web-dist",
   ]) {
     requireText(validate, marker, `${RELEASE} validate job`);
+  }
+
+  // The browser tests run as one job per shard, the shards listed by scripts/e2e-shards.mjs from the tests themselves
+  // (so a new test class is in a shard and none can be left out), and both publish jobs need the whole `e2e` job, so
+  // every shard. Nothing may skip a shard or wave a failed one on.
+  const e2eShards = requireJob(release, "e2e-shards", RELEASE);
+  requireText(e2eShards, "node scripts/e2e-shards.mjs --matrix", `${RELEASE} e2e-shards job`);
+  requireText(e2eShards, "shards: ${{ steps.shards.outputs.shards }}", `${RELEASE} e2e-shards job`);
+  const e2e = requireJob(release, "e2e", RELEASE);
+  for (const marker of [
+    "shard: ${{ fromJSON(needs.e2e-shards.outputs.shards) }}",
+    "fail-fast: false",
+    '--filter "$(node ../../scripts/e2e-shards.mjs --shard "$SHARD")"',
+    "SHARD: ${{ matrix.shard }}",
+  ]) {
+    requireText(e2e, marker, `${RELEASE} e2e job (every shard must run, and each shard runs only its own classes)`);
+  }
+  requireExactNeeds(e2e, ["e2e-shards"], `${RELEASE} e2e`);
+  for (const [name, body] of [["e2e-shards", e2eShards], ["e2e", e2e]]) {
+    for (const skip of [/\n {4}if:/, /continue-on-error:/]) {
+      if (skip.test(`\n${body}`)) {
+        throw new Error(`${RELEASE} ${name} job may not be skipped or have a failure waved on (no job-level if:, no continue-on-error:).`);
+      }
+    }
   }
 
   // The amd64 candidate: built unpushed, scanned, started, audited end to end, evidence kept.
@@ -423,7 +446,7 @@ export function checkReleaseGates({ release, ci, ciContract, ciPackaging }) {
 
 export const SUCCESS_MESSAGE =
   "Only publish-windows (the GitHub Release) and publish-docker (the image) can publish, each needs the shared " +
-  "checks plus its own build's and neither waits for the other, the moving tags move last and never for a " +
+  "checks (every browser-test shard included) plus its own build's and neither waits for the other, the moving tags move last and never for a " +
   "release candidate, the Docker candidate's live E2E runs unpushed, every tag (a release candidate too) needs a " +
   "passing golden-path status on the tagged commit with no way to skip it, and ci-passed judges every CI job and still carries the release's evidence.";
 

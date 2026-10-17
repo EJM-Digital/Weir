@@ -468,6 +468,17 @@ foreach ($phase in $allPhases) {
     }
 }
 $facts['Installer'] = $InstallerPath
+# The commit the scenario scripts ran from, so a full run and the re-runs of what it failed can be compared (scripts/combine-golden-path-records.mjs).
+# A working tree with changes is not one commit, so it is said so and the combining refuses it.
+$scriptsCommit = 'unknown (not run from a git checkout)'
+try {
+    $head = (& git -C $repoRoot rev-parse HEAD | Out-String).Trim()
+    if ($LASTEXITCODE -eq 0 -and $head -match '^[0-9a-f]{40}$') {
+        $changes = (& git -C $repoRoot status --porcelain | Out-String).Trim()
+        $scriptsCommit = if ($LASTEXITCODE -eq 0 -and -not $changes) { $head } else { "$head+uncommitted" }
+    }
+} catch { }
+$facts['Scripts commit'] = $scriptsCommit
 if ($NoRestore) { $facts['Checkpoint'] = 'not restored (-NoRestore): the run continued on the machine as the last run left it' }
 if ($subset) { $facts['Scenarios chosen'] = $chosen -join ', ' }
 foreach ($name in $phaseErrors.Keys) { $facts["Cut short ($name)"] = $phaseErrors[$name] }

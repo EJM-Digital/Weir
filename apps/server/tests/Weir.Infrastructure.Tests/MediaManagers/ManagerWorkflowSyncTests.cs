@@ -574,11 +574,7 @@ public sealed class ManagerWorkflowSyncTests
 
         fixture.WorkflowSync.RequestSync();
 
-        var deadline = DateTime.UtcNow.AddSeconds(20);
-        while (DateTime.UtcNow < deadline && (await Workflows(fixture)).All(workflow => workflow.DiscoveredLibraryKey is null))
-        {
-            await Task.Delay(50);
-        }
+        await Eventually.ThatAsync(async () => (await Workflows(fixture)).Any(workflow => workflow.DiscoveredLibraryKey is not null));
 
         Assert.Contains(await Workflows(fixture), workflow => workflow.DiscoveredLibraryKey == "lib-movies");
     }

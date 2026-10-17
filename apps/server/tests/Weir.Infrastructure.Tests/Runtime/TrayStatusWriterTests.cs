@@ -24,6 +24,7 @@ public sealed class TrayStatusWriterTests : IAsyncLifetime, IDisposable
     private readonly SuitePauseService _pause;
     private readonly CapturingLogger<TrayStatusWriter> _log = new();
     private readonly FolderReachability _folders;
+    private readonly TimerWatchingClock _clock;
     private readonly TrayStatusWriter _writer;
     private readonly TempDirectory _shares = new();
 
@@ -33,7 +34,8 @@ public sealed class TrayStatusWriterTests : IAsyncLifetime, IDisposable
         _pause = new SuitePauseService(settings, new ActivityStore(), _changes);
         _folders = new FolderReachability(
             _store.Database, new LibraryStore(), _store.Options, new FilesystemFolderProbe(), _changes, _store.Clock, NullLogger<FolderReachability>.Instance);
-        _writer = new TrayStatusWriter(_store.Options, _store.Database, settings, _folders, new MediaManagerConnectionStore(), _changes, _store.Clock, _log);
+        _clock = new TimerWatchingClock(_store.Clock);
+        _writer = new TrayStatusWriter(_store.Options, _store.Database, settings, _folders, new MediaManagerConnectionStore(), _changes, _clock, _log);
     }
 
     private string StatusPath => Path.Join(_store.Options.WeirHome, TrayStatus.FileName);
@@ -59,6 +61,7 @@ public sealed class TrayStatusWriterTests : IAsyncLifetime, IDisposable
         await _folders.StartAsync(CancellationToken.None);
         await _folders.FirstLook;
         await _writer.StartAsync(CancellationToken.None);
+        await Eventually.ThatAsync(() => _writer.Readings >= 1);
     }
 
     private JsonElement? Status()
@@ -73,8 +76,17 @@ public sealed class TrayStatusWriterTests : IAsyncLifetime, IDisposable
         }
     }
 
+    /// <summary>Moves the clock past the writer's pauses until the status says what the condition asks.</summary>
     private Task UntilAsync(Func<JsonElement, bool> condition) =>
-        Eventually.ThatAsync(() => Status() is { } status && condition(status));
+        Eventually.ThatAdvancingAsync(_store.Clock, TrayStatusWriter.Settle, () => Status() is { } status && condition(status));
+
+    /// <summary>Publishes a change to <paramref name="topic"/> and moves the clock on until the writer has read the status again.</summary>
+    private async Task ReadAgainAfterAsync(string topic)
+    {
+        var readings = _writer.Readings;
+        _changes.Publish(topic);
+        await Eventually.ThatAdvancingAsync(_store.Clock, TrayStatusWriter.Settle, () => _writer.Readings > readings);
+    }
 
     private static string[] Names(JsonElement status, string kind) =>
         [.. status.GetProperty("unreachable").GetProperty(kind).EnumerateArray().Select(name => name.GetString()!)];
@@ -131,9 +143,12 @@ public sealed class TrayStatusWriterTests : IAsyncLifetime, IDisposable
         await StartAsync();
         await UntilAsync(_ => true);
 
+        var pausedAt = _store.Clock.GetUtcNow();
         await PauseAsync(paused: true, minutes: 30);
         await UntilAsync(status => status.GetProperty("paused").GetBoolean());
-        Assert.Equal("2026-01-15T10:30:00Z", Status()!.Value.GetProperty("paused_until").GetString());
+        Assert.Equal(
+            pausedAt.AddMinutes(30).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture),
+            Status()!.Value.GetProperty("paused_until").GetString());
 
         await PauseAsync(paused: false);
         await UntilAsync(status => !status.GetProperty("paused").GetBoolean());
@@ -154,7 +169,7 @@ public sealed class TrayStatusWriterTests : IAsyncLifetime, IDisposable
             ("skipped", "Skipped because this file is 3.0 MB, under the 10 MB minimum.", false));
         _changes.Publish(DataTopics.Jobs);
         _changes.Publish(DataTopics.LibraryScan);
-        await Task.Delay(TrayStatusWriter.Settle * 3);
+        await ReadAgainAfterAsync(DataTopics.Connections);
 
         Assert.Equal(written, File.GetLastWriteTimeUtc(StatusPath));
         Assert.DoesNotContain("files", File.ReadAllText(StatusPath), StringComparison.Ordinal);
@@ -222,15 +237,14 @@ public sealed class TrayStatusWriterTests : IAsyncLifetime, IDisposable
     public async Task The_first_status_waits_for_the_folders_to_have_been_looked_at_but_not_for_ever()
     {
         await _writer.StartAsync(CancellationToken.None);
+        await Eventually.ThatAsync(() => _clock.TimersSet >= 1);
 
-        await Task.Delay(TrayStatusWriter.Settle * 3);
+        _store.Clock.Advance(TrayStatusWriter.FirstLookWait - TimeSpan.FromMilliseconds(1));
+        Assert.Equal(0, _writer.Readings);
         Assert.False(File.Exists(StatusPath));
 
-        await Eventually.ThatAsync(() =>
-        {
-            _store.Clock.Advance(TrayStatusWriter.FirstLookWait);
-            return File.Exists(StatusPath);
-        });
+        _store.Clock.Advance(TimeSpan.FromMilliseconds(1));
+        await Eventually.ThatAsync(() => File.Exists(StatusPath));
     }
 
     [Fact]
@@ -240,10 +254,8 @@ public sealed class TrayStatusWriterTests : IAsyncLifetime, IDisposable
         await UntilAsync(_ => true);
         var written = File.GetLastWriteTimeUtc(StatusPath);
 
-        _changes.Publish(DataTopics.Jobs);
-        _changes.Publish(DataTopics.Connections);
-        _changes.Publish(DataTopics.FolderChecks);
-        await Task.Delay(TrayStatusWriter.Settle * 3);
+        await ReadAgainAfterAsync(DataTopics.Connections);
+        await ReadAgainAfterAsync(DataTopics.FolderChecks);
 
         Assert.Equal(written, File.GetLastWriteTimeUtc(StatusPath));
         Assert.Empty(Directory.GetFiles(_store.Options.WeirHome, ".tray-status.json.*.tmp"));
@@ -289,7 +301,7 @@ public sealed class TrayStatusWriterTests : IAsyncLifetime, IDisposable
         using (new FileStream(StatusPath, FileMode.Open, FileAccess.Read, FileShare.Read))
         {
             await PauseAsync(paused: true);
-            await Eventually.ThatAsync(() => _log.Logged(LogLevel.Warning, "could not tell the tray how it is"));
+            await Eventually.ThatAdvancingAsync(_store.Clock, TrayStatusWriter.Settle, () => _log.Logged(LogLevel.Warning, "could not tell the tray how it is"));
             Assert.False(Status()!.Value.GetProperty("paused").GetBoolean());
         }
 

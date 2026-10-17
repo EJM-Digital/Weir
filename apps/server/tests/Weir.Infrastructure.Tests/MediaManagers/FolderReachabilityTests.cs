@@ -86,12 +86,7 @@ public sealed class FolderReachabilityTests : IAsyncLifetime, IDisposable
     private async Task LookAdvancingAsync()
     {
         var look = LookAsync();
-        while (!look.IsCompleted)
-        {
-            _store.Clock.Advance(FolderReachability.ProbeTimeout);
-            await Task.Delay(10);
-        }
-
+        await Eventually.ThatAdvancingAsync(_store.Clock, FolderReachability.ProbeTimeout, () => look.IsCompleted);
         await look;
     }
 
