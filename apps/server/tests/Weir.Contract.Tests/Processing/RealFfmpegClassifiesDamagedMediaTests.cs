@@ -64,9 +64,10 @@ public sealed class RealFfmpegClassifiesDamagedMediaTests
 
         await scenario.PostHandoffAsync("handoff-truncated-539", source);
 
-        await Scenario.NeverWithinAsync(
-            async () => (string)(await scenario.HandoffStatusAsync("handoff-truncated-539"))["state"]! == "completed",
-            TimeSpan.FromSeconds(20),
-            "a truncated file to be wrongly reported completed with a false, pre-truncation duration");
+        // The first pass over the file ends, whatever it decides, before its verdict is judged.
+        await scenario.WaitWhileWorkedOnAsync(
+            async () => (await scenario.JobsAsync(Scenario.RemuxKind)).Any(pass => (string)pass["status"]! is not ("pending" or "leased")),
+            "the first pass over the truncated file to end");
+        Assert.NotEqual("completed", (string)(await scenario.HandoffStatusAsync("handoff-truncated-539"))["state"]!);
     }
 }
