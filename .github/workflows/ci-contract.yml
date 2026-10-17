@@ -32,10 +32,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      # The real-ffmpeg scenarios (Processing) run when ffmpeg and ffprobe are on PATH, and skip without them, so
-      # a runner that lacks them is fixed here rather than left to pass quietly. The pinned build is always used, so
-      # the Linux and Windows jobs run the same FFmpeg and none of them depends on a package mirror.
-      - uses: ./.github/actions/setup-ffmpeg-linux
+      # The real-tool scenarios (Processing and Libraries) run the real ffmpeg, ffprobe and mkvmerge. They skip themselves
+      # where those are missing, and a skip reads as a pass, so the pinned tools are installed here (the same ones the
+      # server tests use), WEIR_REQUIRE_REAL_TOOLS turns a missing tool into a failure, and the check after the tests
+      # fails the leg unless every scenario of its area ran.
+      - name: Set up the real media tools
+        id: media-tools
+        uses: ./.github/actions/setup-real-media-tools
         timeout-minutes: 10
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
@@ -59,6 +62,9 @@ jobs:
         working-directory: apps/server
         env:
           CONTRACT_AREA: ${{ matrix.area }}
+          WEIR_REQUIRE_REAL_TOOLS: "1"
+          WEIR_CONTRACT_REAL_FFMPEG_DIR: ${{ steps.media-tools.outputs.ffmpeg-dir }}
+          WEIR_CONTRACT_REAL_MKVTOOLNIX_DIR: ${{ steps.media-tools.outputs.mkvtoolnix-dir }}
           # Keep each server's data folder and log (<folder>/contract-logs) until the leg is known to have passed.
           WEIR_CONTRACT_KEEP_DATA: "1"
           # Every server the suite starts gets its data folder under here, so a failed leg can upload them.
@@ -72,6 +78,12 @@ jobs:
         env:
           CONTRACT_AREA: ${{ matrix.area }}
         run: node scripts/summarize-test-results.mjs trx apps/server/tests/Weir.Contract.Tests "Contract suite ($CONTRACT_AREA)"
+
+      - name: Every real-tool scenario ran
+        if: ${{ !cancelled() }}
+        env:
+          CONTRACT_AREA: ${{ matrix.area }}
+        run: node scripts/check-contract-real-tool-tests.mjs "$CONTRACT_AREA" apps/server/tests/Weir.Contract.Tests linux "Real-tool scenarios ($CONTRACT_AREA)"
 
       - name: Upload contract results
         if: ${{ !cancelled() }}

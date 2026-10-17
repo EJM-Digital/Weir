@@ -13,23 +13,17 @@ import {
   type SettingOption,
 } from "./library-settings";
 
-/** A library left on "" gets its kind's default profile, so that is offered first until another is chosen. */
+/** A library left on "" gets its kind's default profile, That choice is always offered first, so a profile once chosen can be undone. */
 function ruleSetOptions(
   binding: LibraryFormBinding,
   ruleSets: ProcessingRuleSet[],
 ): SettingOption[] {
   const { form } = binding;
-  const kindDefault =
-    form.rule_set_id === ""
-      ? [
-          {
-            value: "",
-            label: `${form.media_type === "tv" ? "TV default" : "Movies default"} (the default for its kind)`,
-          },
-        ]
-      : [];
   return [
-    ...kindDefault,
+    {
+      value: "",
+      label: `${form.media_type === "tv" ? "TV default" : "Movies default"} (the default for its kind)`,
+    },
     ...ruleSets.map((ruleSet) => ({
       value: String(ruleSet.id),
       label: ruleSet.name,

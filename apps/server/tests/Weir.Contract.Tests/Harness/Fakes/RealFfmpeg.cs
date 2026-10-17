@@ -6,9 +6,13 @@ namespace Weir.Contract.Tests.Harness.Fakes;
 /// or <see cref="RealFfmpegTheoryAttribute"/> is skipped when they are missing. mkvmerge is found the same way (on PATH, or in
 /// <c>WEIR_CONTRACT_REAL_MKVTOOLNIX_DIR</c>) and is optional, as it is for the server: a scenario marked
 /// <see cref="RealMkvmergeFactAttribute"/> needs it, and a server started with <see cref="Env"/> uses it for Matroska when it is there.
+/// Where <c>WEIR_REQUIRE_REAL_TOOLS=1</c> (CI) none of that skips: a scenario that finds a tool missing fails, naming the tool, so a
+/// leg that lost its install cannot report green with the scenarios unrun.
 /// </summary>
 public static class RealFfmpeg
 {
+    public const string RequireVariable = "WEIR_REQUIRE_REAL_TOOLS";
+
     public const string DirectoryVariable = "WEIR_CONTRACT_REAL_FFMPEG_DIR";
 
     public const string MkvtoolnixDirectoryVariable = "WEIR_CONTRACT_REAL_MKVTOOLNIX_DIR";
@@ -17,8 +21,54 @@ public static class RealFfmpeg
 
     public const string MissingMkvmergeReason = "mkvmerge is not on PATH (or WEIR_CONTRACT_REAL_MKVTOOLNIX_DIR)";
 
+    public const string WindowsOnlyReason = "Only Windows refuses to replace a file another program has open; elsewhere the swap goes ahead.";
+
     private static readonly Lazy<string?> Located = new(Locate);
     private static readonly Lazy<string?> LocatedMkvmerge = new(LocateMkvmerge);
+
+    /// <summary>Whether a missing tool fails the scenarios that need it instead of skipping them.</summary>
+    public static bool Required => IsRequired(Environment.GetEnvironmentVariable(RequireVariable));
+
+    public static bool IsRequired(string? value) => value == "1";
+
+    /// <summary>Why a real-ffmpeg scenario skips, or null when it runs (the tools are there, or are required and the scenario must fail instead).</summary>
+    public static string? SkipReason(bool required, bool ffmpegFound) => required || ffmpegFound ? null : MissingReason;
+
+    /// <summary>Why a real-mkvmerge scenario skips, or null when it runs. ffmpeg is named first, because the scenario's media comes from it.</summary>
+    public static string? MkvmergeSkipReason(bool required, bool ffmpegFound, bool mkvmergeFound)
+    {
+        if (required)
+        {
+            return null;
+        }
+
+        return !ffmpegFound ? MissingReason : mkvmergeFound ? null : MissingMkvmergeReason;
+    }
+
+    /// <summary>Throws, naming each missing tool as its skip would have, when the tools are required and one is missing.</summary>
+    public static void EnsureAvailable(bool required, bool ffmpegFound, bool mkvmergeFound)
+    {
+        if (!required)
+        {
+            return;
+        }
+
+        var missing = new List<string>();
+        if (!ffmpegFound)
+        {
+            missing.Add(MissingReason);
+        }
+
+        if (!mkvmergeFound)
+        {
+            missing.Add(MissingMkvmergeReason);
+        }
+
+        if (missing.Count > 0)
+        {
+            throw new InvalidOperationException($"{RequireVariable}=1, so the real-tool scenarios may not be skipped. {string.Join(" and ", missing)}.");
+        }
+    }
 
     /// <summary>A folder holding both tools, or null.</summary>
     public static string? Folder => Located.Value;
@@ -35,6 +85,7 @@ public static class RealFfmpeg
     {
         get
         {
+            EnsureAvailable(Required, IsAvailable, MkvtoolnixFolder is not null);
             var environment = new Dictionary<string, string> { ["WEIR_FFMPEG_DIR"] = Folder ?? throw new InvalidOperationException(MissingReason) };
             if (MkvtoolnixFolder is { } mkvtoolnix)
             {
@@ -90,50 +141,37 @@ public static class RealFfmpeg
     }
 }
 
-/// <summary>A test that uses the real ffmpeg and ffprobe; it is skipped when they are not available.</summary>
+/// <summary>A test that uses the real ffmpeg and ffprobe; it is skipped when they are not available, unless they are required.</summary>
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class RealFfmpegFactAttribute : FactAttribute
 {
     public RealFfmpegFactAttribute()
     {
-        if (!RealFfmpeg.IsAvailable)
-        {
-            Skip = RealFfmpeg.MissingReason;
-        }
+        Skip = RealFfmpeg.SkipReason(RealFfmpeg.Required, RealFfmpeg.IsAvailable);
     }
 }
 
-/// <summary>A parametrised test that uses the real ffmpeg and ffprobe; it is skipped when they are not available.</summary>
+/// <summary>A parametrised test that uses the real ffmpeg and ffprobe; it is skipped when they are not available, unless they are required.</summary>
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class RealFfmpegTheoryAttribute : TheoryAttribute
 {
     public RealFfmpegTheoryAttribute()
     {
-        if (!RealFfmpeg.IsAvailable)
-        {
-            Skip = RealFfmpeg.MissingReason;
-        }
+        Skip = RealFfmpeg.SkipReason(RealFfmpeg.Required, RealFfmpeg.IsAvailable);
     }
 }
 
-/// <summary>A test that needs the real mkvmerge as well as ffmpeg and ffprobe; it is skipped when any of them is missing.</summary>
+/// <summary>A test that needs the real mkvmerge as well as ffmpeg and ffprobe; it is skipped when any of them is missing, unless they are required.</summary>
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class RealMkvmergeFactAttribute : FactAttribute
 {
     public RealMkvmergeFactAttribute()
     {
-        if (!RealFfmpeg.IsAvailable)
-        {
-            Skip = RealFfmpeg.MissingReason;
-        }
-        else if (!RealFfmpeg.IsMkvmergeAvailable)
-        {
-            Skip = RealFfmpeg.MissingMkvmergeReason;
-        }
+        Skip = RealFfmpeg.MkvmergeSkipReason(RealFfmpeg.Required, RealFfmpeg.IsAvailable, RealFfmpeg.MkvtoolnixFolder is not null);
     }
 }
 
-/// <summary>A test that needs the real ffmpeg and ffprobe on Windows, whose file locks the other platforms have no counterpart for; it is skipped elsewhere.</summary>
+/// <summary>A test that needs the real ffmpeg and ffprobe on Windows, whose file locks the other platforms have no counterpart for; it is skipped elsewhere, and where the tools are required it fails on Windows rather than skipping.</summary>
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class RealFfmpegWindowsFactAttribute : FactAttribute
 {
@@ -141,11 +179,11 @@ public sealed class RealFfmpegWindowsFactAttribute : FactAttribute
     {
         if (!OperatingSystem.IsWindows())
         {
-            Skip = "Only Windows refuses to replace a file another program has open; elsewhere the swap goes ahead.";
+            Skip = RealFfmpeg.WindowsOnlyReason;
         }
-        else if (!RealFfmpeg.IsAvailable)
+        else
         {
-            Skip = RealFfmpeg.MissingReason;
+            Skip = RealFfmpeg.SkipReason(RealFfmpeg.Required, RealFfmpeg.IsAvailable);
         }
     }
 }
