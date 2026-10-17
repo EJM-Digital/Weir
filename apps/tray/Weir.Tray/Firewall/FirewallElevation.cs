@@ -25,9 +25,15 @@ static class FirewallElevation
 
     internal static Outcome RemoveElevated(Action<string> log) => RunElevated(FirewallCommand.RemoveArgument, log);
 
-    private static Outcome RunElevated(string argument, Action<string> log)
+    private static Outcome RunElevated(string argument, Action<string> log) =>
+        RunElevated(argument, log, Environment.ProcessPath, StartForReal);
+
+    /// <summary>
+    /// <paramref name="start"/> starts the process and returns what waits for it to end and gives its exit code, or null when no process
+    /// started. It is a parameter so the reading of each way the step can end is tested without a Windows consent prompt.
+    /// </summary>
+    internal static Outcome RunElevated(string argument, Action<string> log, string? exe, Func<ProcessStartInfo, Func<int>?> start)
     {
-        var exe = Environment.ProcessPath;
         if (string.IsNullOrEmpty(exe))
         {
             log("Could not find Weir's own executable path to relaunch elevated for the firewall step.");
@@ -44,18 +50,18 @@ static class FirewallElevation
 
         try
         {
-            using var process = Process.Start(startInfo);
-            if (process is null)
+            var waitForExit = start(startInfo);
+            if (waitForExit is null)
             {
                 log("The elevated firewall step did not start.");
                 return Outcome.Failed;
             }
-            process.WaitForExit();
-            if (process.ExitCode == FirewallExitCode.Success)
+            var exitCode = waitForExit();
+            if (exitCode == FirewallExitCode.Success)
             {
                 return Outcome.Configured;
             }
-            log($"The elevated firewall step exited with code {process.ExitCode}.");
+            log($"The elevated firewall step exited with code {exitCode}.");
             return Outcome.Failed;
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == CancelledByUser)
@@ -69,5 +75,22 @@ static class FirewallElevation
             log($"Could not start the elevated firewall step: {ex.Message}");
             return Outcome.Failed;
         }
+    }
+
+    private static Func<int>? StartForReal(ProcessStartInfo startInfo)
+    {
+        var process = Process.Start(startInfo);
+        if (process is null)
+        {
+            return null;
+        }
+        return () =>
+        {
+            using (process)
+            {
+                process.WaitForExit();
+                return process.ExitCode;
+            }
+        };
     }
 }
