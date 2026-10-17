@@ -59,11 +59,13 @@ public sealed partial class LibraryCleanHandler
             _logger.LogWarning(exception, "Library clean committed but the manager notify step (#507) failed to run.");
         }
 
-        // The scan rewrites its index from scratch, so "Weir cleaned this" is kept where a rescan cannot reach it.
+        // The scan rewrites its index from scratch, so "Weir cleaned this" is kept where a rescan cannot reach it. The index is also only
+        // as new as the last scan, which would go on listing this file as needing the clean it has just had, so the library is looked at again.
         try
         {
             await using var uow = await UnitOfWork.OpenAsync(_database, cancellationToken).ConfigureAwait(false);
             await _fileMarks.MarkCleanedAsync(uow, library.Id, path, _time.GetUtcNow()).ConfigureAwait(false);
+            await RequestScanAsync(uow, library.Id).ConfigureAwait(false);
             await uow.CommitAsync().ConfigureAwait(false);
         }
 #pragma warning disable CA1031 // Best-effort, like the steps above: a committed clean is never undone by bookkeeping.
@@ -80,6 +82,21 @@ public sealed partial class LibraryCleanHandler
                      (writerNote is null ? string.Empty : " " + writerNote) +
                      keptNote + (warnings.Count > 0 ? " " + string.Join(" ", warnings) : string.Empty);
         await RecordAsync(library.Id, path, null, LibraryActivityEventTypes.FileCleaned, detail, "success", result.KeptOriginalPath).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asks for the library to be scanned again, unless a scan is already waiting to start: it will see every file cleaned so far,
+    /// so the cleans of a whole selection ask for one scan between them. A scan already under way may have passed the file, so it does not count.
+    /// </summary>
+    private async Task RequestScanAsync(UnitOfWork uow, long libraryId)
+    {
+        var active = await _scans.ActiveScanAsync(uow, libraryId).ConfigureAwait(false);
+        if (active is { Status: ProcessingJobStatus.Pending })
+        {
+            return;
+        }
+
+        await _scans.RequestScanAsync(uow, _jobs, libraryId, "worker").ConfigureAwait(false);
     }
 
     /// <summary>
