@@ -28,8 +28,8 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`. `scripts/scenarios-ci/homes.js
 | `first-visit-account` | linux | weir-browser | to-port | Nothing in it is Windows: a new browser context sees account creation, then sign-in. Chromium under Playwright takes the place of Edge. |
 | `weir-only-film` | linux | weir-only | ported | The first shard. The server cleans a film with the image's own ffmpeg. |
 | `process-again` | linux | weir-only | ported | The first shard. Asked to process a cleaned film again, the server skips it. |
-| `pause-resume` | linux | weir-only | to-port | The server hears the tray through a file in its data folder, and that watcher is the same on Linux. The tray's side stays with windows-tray. |
-| `deleted-queued-file` | linux | weir-only | to-port | A file deleted while Weir waits for it to settle; nothing in it is Windows. |
+| `pause-resume` | linux | weir-only | ported | The server hears the tray through a file in its data folder, and that watcher is the same on Linux. The tray's side stays with windows-tray. |
+| `deleted-queued-file` | linux | weir-only | ported | A file deleted while Weir waits for it to settle; nothing in it is Windows. |
 | `update-requests` | windows | windows-tray | to-port | Needs the real tray to take the update flag files. |
 | `recover-locked-out-account` | windows | windows-install | to-port | Runs the installed `WeirServer.exe recover`. The Docker form is already proved by the Docker smoke. |
 
@@ -87,15 +87,14 @@ A scenario is **green twice** when it passed in two CI runs on `main`, on differ
 
 ## The first shard: built in this change
 
-`scripts/scenarios-in-ci.mjs weir-only --candidate <image>` starts the shipped `compose.yaml` with the image CI built, makes the first account the way an operator does, and runs `weir-only-film` and `process-again`, each with every check of the VM scenario (the film's tracks, the original and its `.nfo` left alone, the Activity lines, the job count, the output not rewritten). The job is `scenarios-linux` in `ci-packaging.yml`. Docker was not available where it was written, so its first real run is the first CI run of this change; the logic that decides things is covered by `scripts/scenarios-in-ci.test.mjs` against a small stand-in for Weir and the container.
+`scripts/scenarios-in-ci.mjs weir-only --candidate <image>` starts the shipped `compose.yaml` with the image CI built, makes the first account the way an operator does, and runs `weir-only-film`, `process-again`, `pause-resume` (the tray's request file written in the container) and `deleted-queued-file`, each with every check of the VM scenario (the film's tracks, the original and its `.nfo` left alone, the Activity lines, the job count, the output not rewritten). The job is `scenarios-linux` in `ci-packaging.yml`. Docker was not available where it was written, so its first real run is the first CI run of this change; the logic that decides things is covered by `scripts/scenarios-in-ci.test.mjs` against a small stand-in for Weir and the container.
 
 ### Next
 
-1. `weir-only`: `pause-resume` (the server half, by writing the request file in the container) and `deleted-queued-file`.
-2. `weir-browser`: `first-visit-account`, with Chromium under Playwright.
-3. `with-deluno`: images pinned by digest, the Compose file, then `workflows-from-deluno` and `deluno-film-handoff` on qBittorrent, then the other four scenarios and the other clients.
-4. The Windows shards, starting with `windows-install`.
-5. The drift workflow, and the per-shard paths filter.
+1. `weir-browser`: `first-visit-account`, with Chromium under Playwright.
+2. `with-deluno`: images pinned by digest, the Compose file, then `workflows-from-deluno` and `deluno-film-handoff` on qBittorrent, then the other four scenarios and the other clients.
+3. The Windows shards, starting with `windows-install`.
+4. The drift workflow, and the per-shard paths filter.
 
 ## Runners
 
