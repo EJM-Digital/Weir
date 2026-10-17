@@ -40,16 +40,30 @@ async function waitReady(world) {
   await wait(world, async () => ((await world.server.ready()) ? true : undefined), `Weir to answer /ready on port ${PORT}`, START_CEILING_MS);
 }
 
-async function startInstalledWeir(world) {
-  const pid = world.machine.startTray(PORT);
-  await waitReady(world);
-  return pid;
-}
-
 async function expectBuildUnderTest(world) {
   const reported = await world.server.version();
   assert.equal(reported, world.expectedVersion, `the running server reports ${reported}, not the build under test (${world.expectedVersion})`);
   return reported;
+}
+
+/** Starts the installed tray; every start of Weir in a scenario is a start of the build under test. */
+async function startInstalledWeir(world) {
+  const pid = world.machine.startTray(PORT);
+  await waitReady(world);
+  await expectBuildUnderTest(world);
+  return pid;
+}
+
+/**
+ * Runs Setup --silent, then tells the tray to only announce updates. Weir checks for updates when it starts, and on a runner that can reach the
+ * release feed the build under test (a placeholder version, older than every release) would download the newest release and replace itself
+ * the next time it starts; what a scenario judges is the build, so it must stay.
+ */
+async function installBuildUnderTest(world) {
+  const setup = await world.machine.install(world.setupPath);
+  assert.equal(setup.exitCode, 0, `Setup --silent exited ${setup.exitCode}, not 0`);
+  await world.machine.keepUpdatesFromInstalling();
+  return setup;
 }
 
 /** Installs the build under test if it is not what is installed, and starts it if it is not running. */
@@ -58,8 +72,7 @@ async function ensureInstalledAndRunning(world) {
   if (await world.server.ready()) return expectBuildUnderTest(world);
   if (!(await machine.exists(machine.paths.serverExe))) {
     await machine.stopWeir();
-    const setup = await machine.install(world.setupPath);
-    assert.equal(setup.exitCode, 0, `Setup --silent exited ${setup.exitCode}, not 0`);
+    await installBuildUnderTest(world);
   }
   if ((await machine.processes()).every((process) => process.name !== "Weir.exe")) machine.startTray(PORT);
   await waitReady(world);
@@ -147,8 +160,7 @@ async function expectServerUsesSecrets(world, secrets) {
 async function freshInstall(world) {
   const { machine } = world;
   await machine.stopWeir();
-  const setup = await machine.install(world.setupPath);
-  assert.equal(setup.exitCode, 0, `Setup --silent exited ${setup.exitCode}, not 0`);
+  const setup = await installBuildUnderTest(world);
   assert.ok(await machine.exists(machine.paths.trayExe), `Weir.exe is not installed at ${machine.paths.trayExe}`);
   assert.ok(await machine.exists(machine.paths.serverExe), `WeirServer.exe is not installed at ${machine.paths.serverExe}`);
 
@@ -318,8 +330,7 @@ async function expectUninstalled(world) {
 
 async function reinstallAndSignIn(world, kept) {
   const { machine, weir } = world;
-  const setup = await machine.install(world.setupPath);
-  assert.equal(setup.exitCode, 0, `Setup --silent for the reinstall exited ${setup.exitCode}, not 0`);
+  await installBuildUnderTest(world);
   await startInstalledWeir(world);
   weir.forgetSession();
   await expectKept({ client: weir, kept, sessionKept: false });

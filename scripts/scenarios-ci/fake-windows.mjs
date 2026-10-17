@@ -42,6 +42,7 @@ function signCsrf(secret) {
  * @param {boolean} [behaviour.recoverChangesNothing] It says it reset the password and did not.
  * @param {boolean} [behaviour.recoverKeepsSessions]
  * @param {string} [behaviour.warnsWhenStarted] A warning the server logs when it starts.
+ * @param {boolean} [behaviour.feedHasNewerRelease] A release newer than the build is published, and the tray installs it at its next start unless told only to announce updates.
  */
 export class FakeWindows {
   logRows = [];
@@ -51,6 +52,8 @@ export class FakeWindows {
   #now = 0;
   #pids = 100;
   #secrets = 0;
+  #version = VERSION;
+  #updateWaiting = false;
   #installed = false;
   #tray = null;
   #files = new Map();
@@ -107,7 +110,7 @@ export class FakeWindows {
 
   server = {
     ready: async () => this.#running(),
-    version: async () => this.#behaviour.reportedVersion ?? VERSION,
+    version: async () => this.#behaviour.reportedVersion ?? this.#version,
   };
 
   /** A browser with no session. */
@@ -130,6 +133,10 @@ export class FakeWindows {
       }
       return { exitCode, seconds: 4 };
     },
+    keepUpdatesFromInstalling: async () => {
+      this.calls.push("keepUpdatesFromInstalling");
+      this.#put("update-settings.json", JSON.stringify({ mode: "NotifyOnly" }));
+    },
     uninstall: async () => {
       this.calls.push("uninstall");
       if (this.#running() && !this.#behaviour.uninstallLeavesRunning) this.#stop();
@@ -146,6 +153,7 @@ export class FakeWindows {
     },
     startTray: (port) => {
       this.calls.push(`startTray ${port}`);
+      if (this.#behaviour.feedHasNewerRelease && !this.#files.has("update-settings.json") && this.#updateWaiting) this.#version = "1.0.0-rc.18";
       const trayPid = ++this.#pids;
       this.#tray = { trayPid, serverPid: ++this.#pids };
       this.#mark = { processId: trayPid, executable: this.paths.trayExe };
@@ -172,7 +180,7 @@ export class FakeWindows {
     shortcuts: async () => [...this.#shortcuts],
     runEntry: async () => null,
     trayMark: async () => this.#mark,
-    serverVersion: async () => this.#behaviour.reportedVersion ?? VERSION,
+    serverVersion: async () => this.#behaviour.reportedVersion ?? this.#version,
     recover: async (args) => this.#recover(args),
     secretPath: (name) => join(this.#home, name),
     ensureFolders: async () => undefined,
@@ -198,6 +206,7 @@ export class FakeWindows {
     this.#put(join("data", "weir.sqlite3"), this.#files.get(join("data", "weir.sqlite3")) ?? "database");
     this.#put("tray-host.log", `${this.#files.get("tray-host.log") ?? ""}Using port 9347 from --port\nWeir is healthy on http://127.0.0.1:9347/\n`);
     this.#put(join("logs", "weir.log"), `${this.#files.get(join("logs", "weir.log")) ?? ""}${this.#behaviour.serverLogLine ?? "Weir started"}\n`);
+    this.#updateWaiting = !this.#files.has("update-settings.json");
     this.#db ??= { account: null, settings: { app_timezone: "UTC", log_retention_days: 30 }, libraries: [], activity: [], logs: [] };
     if (this.#behaviour.warnsWhenStarted) this.#db.logs.push({ source: "server", id: this.#db.logs.length + 1, at: this.#now, title: this.#behaviour.warnsWhenStarted });
     this.logRows = this.#db.logs;

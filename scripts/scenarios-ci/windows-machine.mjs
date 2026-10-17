@@ -4,7 +4,7 @@
 import { execFile, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { mkdir, readdir, readFile, stat } from "node:fs/promises";
+import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 
 import { pollUntil } from "../docker-smoke/poll.mjs";
@@ -92,6 +92,12 @@ export class WindowsMachine {
     const began = Date.now();
     const exitCode = await this.#exitOf(setupPath, ["--silent"], SETUP_CEILING_MS, "Setup");
     return { exitCode, seconds: Math.round((Date.now() - began) / 1000) };
+  }
+
+  /** Chooses "only say that an update exists" in update-settings.json, the file the tray reads, so no start of Weir installs a release over the build under test. */
+  async keepUpdatesFromInstalling() {
+    await mkdir(this.paths.runtimeHome, { recursive: true });
+    await writeFile(join(this.paths.runtimeHome, "update-settings.json"), JSON.stringify({ mode: "NotifyOnly" }));
   }
 
   /** Runs Velopack's own uninstaller, silently. */
