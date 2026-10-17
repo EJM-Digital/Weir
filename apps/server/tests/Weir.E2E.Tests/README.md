@@ -61,11 +61,11 @@ root-cause from the trace, never one to run twice.
   that make the server quiet (workers, file watcher, periodic scan, work file sweeps) are put back to their
   defaults, because the Logs tests expect the job rows a running server writes. Without `WEIR_E2E=1` it starts nothing.
 - **`Support/E2ETestBase`** resets per-test state before each test (users, sessions, suite settings and the library
-  folders are cleared) and gives the test a headless Chromium of its own, traced and logged. All test
+  folders are cleared, and the cleanup and resolution-budget settings go back to their defaults) and gives the test a headless Chromium of its own, traced and logged. All test
   classes share one collection, so tests run one at a time against the one server. **`Harness/FailureArtifacts`** and
   **`Harness/FailureKeepingFramework`** keep what a failed test wrote and delete the rest.
 - **`Harness/E2EDatabase`** writes plain SQL to the running server's SQLite file for what the browser cannot create, an
-  activity event the open Logs tab must pick up live.
+  activity event the open Logs tab must pick up live, and an account's role (Weir has one account, so no screen makes a viewer).
 - **`Support/ProcessingRig`** is a second Weir for a test that watches a file move through the screens: one worker over a fake
   ffmpeg, so a pass stays under way until the test releases it, and a fake Deluno. Files arrive and finish through the hand-off
   webhook and the outcome route, as a media manager makes them, never by writing to the database. It can also drop a file nobody handed

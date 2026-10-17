@@ -34403,16 +34403,16 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/VisualSmokeTests.cs",
           "name": "VisualSmokeTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ProfileEditorTests.cs",
+          "name": "ProfileEditorTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Smoke only: the blank defaults (EMPTY_RULE_SET) and the 'A new profile...' line are not asserted."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-715",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -34472,16 +34472,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.test.tsx",
           "name": "asks before switching profiles with unsaved edits, and keeps them when told to stay"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ProfileEditorTests.cs",
+          "name": "ProfileEditorTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "A saved rename and the name appearing in the Profile select are not tested."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-718",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -34502,16 +34502,16 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingSettingsEndpointsContractTests.RuleSets.cs",
           "name": "Rule_set_round_trip"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ProfileEditorTests.cs",
+          "name": "ProfileEditorTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "P1-class: the notice '<name> was saved.' and the form re-sync are not asserted, and no test proves writeFromProcessingRuleSet carries every field (see the API wrapper row). Fields not edited by the test are listed in the rows below."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-719",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -34844,16 +34844,16 @@
           "type": "vitest",
           "file": "apps/web/src/lib/processing/track-name-preview.test.ts",
           "name": "renders flags for each override context"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ProfileEditorTests.cs",
+          "name": "ProfileEditorTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Editing an override in the profile and saving track_name_overrides is not tested."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-735",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -35035,16 +35035,16 @@
           "type": "vitest",
           "file": "apps/web/src/lib/live/live-topics.test.ts",
           "name": "refreshes the workflows, files at once, their profiles and the libraries setup offers when a workflow changes"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ProfileEditorTests.cs",
+          "name": "ProfileEditorTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "No test pushes new rule-set data while a draft is open; a profile changed in a second browser is not shown."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-744",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -35080,16 +35080,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ProfileEditorTests.cs",
+          "name": "ProfileEditorTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Hide, the close-on-switch and stay-open-on-save behaviours (resetKey) are not tested."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-746",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -35125,16 +35125,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/rules/rules-preview-panel.test.tsx",
           "name": "stays collapsed until the operator opens it"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RulesTryOnTests.cs",
+          "name": "RulesTryOnTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Close is not tested."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-748",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -35292,16 +35292,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/rules/rules-preview-panel.test.tsx",
           "name": "previews a file and renders the per-track plan, notes, and estimate"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RulesTryOnTests.cs",
+          "name": "RulesTryOnTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The no-change chip, the hidden-estimate case, original-language note, container changes and plan notes are not asserted."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-756",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -35463,16 +35463,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/rules/playback-devices-section.test.tsx",
           "name": "says when the list comes from the operator's own file"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PlaybackDevicesListTests.cs",
+          "name": "PlaybackDevicesListTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The empty-list text is not asserted."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-764",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -39207,16 +39207,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/performance/process-settings-section.test.tsx",
           "name": "says what waiting files are waiting for, and hides the resolution budget until it is switched on (#633)"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PerformanceTabsTests.cs",
+          "name": "PerformanceTabsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Only Off to On from a saved-off state; On to Off is not clicked."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-888",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -39455,16 +39455,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-tab.test.tsx",
           "name": "switches on a non-destructive job straight away, with no confirmation"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CleanupTabTests.cs",
+          "name": "CleanupTabTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Off direction of the non-destructive job is not tested; the notice text ('is on. It first runs within half a minute.' / 'is off.') is not asserted for it."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-898",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -39525,16 +39525,16 @@
           "type": "vitest",
           "file": "apps/web/src/lib/ui/use-modal-focus.test.tsx",
           "name": "ignores Escape while busy"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CleanupTabTests.cs",
+          "name": "CleanupTabTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Data-loss path. The shared hook and other dialogs prove Escape calls onCancel, but no Cleanup test presses Escape on the enable or the run dialog, nor Cancel on the run dialog."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-901",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -39595,16 +39595,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-tab.test.tsx",
           "name": "runs a job for both kinds of library"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CleanupTabTests.cs",
+          "name": "CleanupTabTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Both scopes are asserted; the success notice is not. The mapping {family, mediaScope} to the POST body {family, media_scope} (maintenance-api) has no web test."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-904",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -39685,16 +39685,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-tab.test.tsx",
           "name": "asks for confirmation before switching on a destructive job, then saves once confirmed"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CleanupTabTests.cs",
+          "name": "CleanupTabTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Leftover work files' list and the 'now runs every' notice are not asserted; everyChoices / everyWords / choiceLabel have no direct test (everyWords is touched only by timer-rows.test)."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-907",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -39745,16 +39745,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-tab.test.tsx",
           "name": "shows the Save button as pending while a day-count setting is saving"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CleanupTabTests.cs",
+          "name": "CleanupTabTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Out-of-range (0, 366, blank) hiding Save and an unchanged value are not tested. A short wait makes more cleaned copies eligible for deletion, so the range gate is the guard."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-909",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -39805,16 +39805,21 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-tab.test.tsx",
           "name": "surfaces the reason a run failed"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CleanupTabTests.cs",
+          "name": "CleanupTabTests"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-tab.test.tsx",
+          "name": "says a queued family is waiting for a free worker"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Queued, completed (formatted in the app time zone) and 'Not yet.' unasserted; lastRunLine has no direct test."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-911",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -39830,16 +39835,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-tab.test.tsx",
           "name": "lists each job with its switch, how often it runs and when it next does"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CleanupTabTests.cs",
+          "name": "CleanupTabTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Time and 'Within half a minute' unasserted."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-912",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -39870,16 +39875,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-jobs-table.test.tsx",
           "name": "keeps the job column first and offers no Run now heading to a reader who cannot run a job"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CleanupTabTests.cs",
+          "name": "CleanupTabTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Job switches, how-often lists and the days field disabled for a viewer are not asserted."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-913",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -39920,16 +39925,16 @@
           "type": "vitest",
           "file": "apps/web/src/lib/ui/use-table-columns.test.tsx",
           "name": "saves a move and a sort, and the next visit finds them"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CleanupTabTests.cs",
+          "name": "CleanupTabTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Sorting by Last run and Next run and the ColumnsMenu hide/show items are untested."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-914",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -39955,16 +39960,16 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Activity/ActivityStreamTests.cs",
           "name": "Queuing_a_maintenance_sweep_sends_data_changed_frames_for_the_job_queue_and_the_maintenance_panel"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CleanupTabTests.cs",
+          "name": "CleanupTabTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Both ends are pinned; no screen-level test (E2E or vitest with a pushed change) shows the Cleanup table updating. The 'settings' topic mapping is unpinned."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-915",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -39980,16 +39985,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/performance/timers-tab.test.tsx",
           "name": "shows a load error when the settings fail to load"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/timers-tab.test.tsx",
+          "name": "says the timers are loading while the settings are still coming"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Loading state untested."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-916",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -40050,16 +40055,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/performance/timer-rows.test.ts",
           "name": "counts the settings backup in hours as seconds"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PerformanceTabsTests.cs",
+          "name": "PerformanceTabsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Pure rows only. The cell rendering (formatDate, 'Not yet', '—', Off) in TimersSection is never asserted; the backup row's 'when' words come from schedule-model (tested elsewhere)."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-918",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -40134,16 +40139,16 @@
           "type": "vitest",
           "file": "apps/web/src/lib/live/live-topics.test.ts",
           "name": "reads the Dashboard's workflows, files and read-outs again when the server says they changed"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PerformanceTabsTests.cs",
+          "name": "PerformanceTabsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "No screen-level proof; the backup row depends on the 'settings' topic, which is unpinned."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-922",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -41518,16 +41523,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/about/network-access-setting.test.tsx",
           "name": "limits Weir to this PC at once, with nothing to confirm"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/network-access-setting.test.tsx",
+          "name": "says why limiting Weir to this PC could not be saved"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The failure message for this immediate change (the `change.isError && !confirming` alert) is untested; only the confirm-dialog error is (next row)."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-977",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -41618,16 +41623,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/about/network-access-setting.test.tsx",
           "name": "says Windows Firewall blocks, and offers to try again"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/network-access-setting.test.tsx",
+          "name": "stops saying Windows may be asking for approval once a minute has passed"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The 60 s expiry of the note (`RETRY_WATCH_MS`) is untested (no fake timers)."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-981",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -41703,16 +41708,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/schedule/time-zone-row.test.tsx",
           "name": "shows a valid zone the list lacks as chosen, with nothing to save"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AboutTimeZoneTests.cs",
+          "name": "AboutTimeZoneTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Function-level spy, body only `toMatchObject({app_timezone})`; the zone list (`lib/settings/timezone-options.ts`, no test) is not checked; the \"Now ...\" clock line after save is not asserted."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-984",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -42374,16 +42379,26 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/security/security-facts.test.ts",
           "name": "currentSignInRows"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityCardsTests.cs",
+          "name": "SecurityCardsTests"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/security-tab.test.tsx",
+          "name": "says it is checking until the server describes this browser's session"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/security-tab.test.tsx",
+          "name": "says this browser's sign-in is unavailable when the server cannot be asked"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Pure rows only; the card component (chip rendering, hover detail) is never rendered by a test."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-1014",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -42404,16 +42419,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/security/sessions-table.test.tsx",
           "name": "sorts a browser with no name by the name it is shown under"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityCardsTests.cs",
+          "name": "SecurityCardsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Trusted chip and the date columns are not asserted (date formatter mocked)."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-1015",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -42619,16 +42634,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/security/security-facts.test.ts",
           "name": "signInProtections"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityCardsTests.cs",
+          "name": "SecurityCardsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The all-healthy summary, note placement and per-row value text are not asserted at component level."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-1022",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -42839,16 +42854,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/system-page.test.tsx",
           "name": "puts the account's two forms in one card, with each password's eye inside its field"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SecurityCardsTests.cs",
+          "name": "SecurityCardsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Only the current-password field's toggle is exercised; the new / confirm / username-form toggles and the remount-after-submit rule are not."
-      },
-      "issue": 1056,
       "audit": {
         "id": "WEB-1031",
-        "verdict": "Partly"
+        "verdict": "Covered"
       }
     },
     {
@@ -47662,7 +47677,7 @@
         "kind": "xunit",
         "test": "The first-time not-imported (refusal) and its replacement by an import are tested with hand-written requests; only the 409 reply is recorded"
       },
-      "issue": 1056,
+      "issue": 1142,
       "audit": {
         "id": "INT-DEL-04",
         "verdict": "Partly"
