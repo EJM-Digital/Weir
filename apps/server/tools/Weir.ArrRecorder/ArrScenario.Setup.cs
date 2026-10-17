@@ -131,14 +131,14 @@ internal sealed partial class ArrScenario
             Directory.CreateDirectory(folder);
             var file = Path.Combine(folder, name + ".mkv");
 
-            // Longer than two minutes, so neither app takes it for a sample.
+            // Longer than ten minutes, so neither app takes it for a sample (Sonarr wants a fraction of the series runtime).
             var start = new ProcessStartInfo("ffmpeg")
             {
                 ArgumentList =
                 {
                     "-y", "-loglevel", "error",
-                    "-f", "lavfi", "-i", "testsrc=duration=130:size=160x120:rate=2",
-                    "-f", "lavfi", "-i", "sine=frequency=440:duration=130",
+                    "-f", "lavfi", "-i", "testsrc=duration=660:size=160x120:rate=1",
+                    "-f", "lavfi", "-i", "sine=frequency=440:duration=660",
                     "-c:v", "mpeg4", "-q:v", "10", "-c:a", "aac", "-shortest", file,
                 },
                 RedirectStandardError = true,

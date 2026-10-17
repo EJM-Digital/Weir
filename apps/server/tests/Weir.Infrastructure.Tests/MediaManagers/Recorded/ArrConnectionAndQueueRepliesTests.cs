@@ -20,7 +20,7 @@ public sealed class ArrConnectionAndQueueRepliesTests
     [MemberData(nameof(Apps))]
     public async Task A_key_the_app_refuses_is_reported_in_plain_words_with_no_status_or_body(string app)
     {
-        var recording = ArrRecording.Load(app, "connection-test-wrong-key");
+        var recording = ArrRecording.Load(app, "describe-wrong-key");
         using var replay = new ArrReplay(app, recording);
 
         var description = await replay.Port().DescribeAsync(replay.Connection());
@@ -38,7 +38,7 @@ public sealed class ArrConnectionAndQueueRepliesTests
     [MemberData(nameof(Apps))]
     public async Task A_fresh_app_with_no_root_folder_answers_the_connection_test_with_nothing_to_manage(string app)
     {
-        var recording = ArrRecording.Load(app, "connection-test-no-root-folder");
+        var recording = ArrRecording.Load(app, "describe-no-root-folder");
         using var replay = new ArrReplay(app, recording);
 
         var description = await replay.Port().DescribeAsync(replay.Connection());
@@ -53,7 +53,7 @@ public sealed class ArrConnectionAndQueueRepliesTests
     [MemberData(nameof(Apps))]
     public async Task The_connection_test_reads_each_root_folder_the_app_names(string app)
     {
-        var recording = ArrRecording.Load(app, "connection-test");
+        var recording = ArrRecording.Load(app, "describe");
         using var replay = new ArrReplay(app, recording);
         var recorded = recording.Only.Reply.Body!.AsArray().Select(folder => folder!.AsObject()).ToList();
 

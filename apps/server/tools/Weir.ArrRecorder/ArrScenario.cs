@@ -57,7 +57,7 @@ internal sealed partial class ArrScenario : IDisposable
 
         await ConnectionSteps().ConfigureAwait(false);
         await SetUpAsync(receiver).ConfigureAwait(false);
-        await StepAsync("connection-test", "The connection test against an app with a root folder.", async () =>
+        await StepAsync("describe", "Asking an app with one root folder which folders it manages.", async () =>
         {
             var description = await _port.DescribeAsync(_connection).ConfigureAwait(false);
             Expect(description.Status == SignalStatus.Reported && description.LibraryRoots.Count == 1, "the app should report its one root folder");
@@ -74,14 +74,27 @@ internal sealed partial class ArrScenario : IDisposable
 
     private async Task ConnectionSteps()
     {
-        await StepAsync("connection-test-wrong-key", "The connection test with an API key the app does not know.", async () =>
+        await StepAsync("connection-test-wrong-key", "The connection test (and the heartbeat) with an API key the app does not know.", async () =>
+        {
+            var wrong = _connection with { ApiKey = "00000000000000000000000000000000" };
+            var (ok, detail) = await ManagerHealthProbe.ProbeAsync(_transport, wrong.Name, wrong.Kind, wrong.BaseUrl, wrong.ApiKey, TimeSpan.FromSeconds(10), null, CancellationToken.None).ConfigureAwait(false);
+            Expect(!ok, $"a wrong key should fail the connection test: {detail}");
+        }).ConfigureAwait(false);
+
+        await StepAsync("connection-test", "The connection test (and the heartbeat) with the right API key.", async () =>
+        {
+            var (ok, detail) = await ManagerHealthProbe.ProbeAsync(_transport, _connection.Name, _connection.Kind, _connection.BaseUrl, _connection.ApiKey, TimeSpan.FromSeconds(10), null, CancellationToken.None).ConfigureAwait(false);
+            Expect(ok, $"the connection test should pass: {detail}");
+        }).ConfigureAwait(false);
+
+        await StepAsync("describe-wrong-key", "Asking which folders the app manages with an API key the app does not know.", async () =>
         {
             var wrong = _connection with { ApiKey = "00000000000000000000000000000000" };
             var description = await _port.DescribeAsync(wrong).ConfigureAwait(false);
             Expect(description.Status == SignalStatus.Unreachable, $"a wrong key should read as unreachable, was {description.Status}");
         }).ConfigureAwait(false);
 
-        await StepAsync("connection-test-no-root-folder", "The connection test against a fresh app with no root folder yet.", async () =>
+        await StepAsync("describe-no-root-folder", "Asking a fresh app which folders it manages, before it has a root folder.", async () =>
         {
             var description = await _port.DescribeAsync(_connection).ConfigureAwait(false);
             Expect(description.Status == SignalStatus.Reported && description.LibraryRoots.Count == 0, "a fresh app should report no folders");
