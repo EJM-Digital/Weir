@@ -31700,13 +31700,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/libraries/workflow-kinds.test.tsx",
           "name": "opens the add choice already on the media manager it was linked from"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/workflow-kinds.test.tsx",
+          "name": "forgets the workflows a media manager offered when another one is chosen, and asks the new one on Continue"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Only the offered list's reset is untested: it needs a media manager that offers two workflows at once (a Deluno with its Movies and TV both new to Weir), which the fake Deluno rig cannot yet produce because connecting it sets the starting workflows up first."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-624",
         "verdict": "Partly"
@@ -35825,13 +35825,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/media-managers-tab.test.tsx",
           "name": "calls a media manager by that name, never an app"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerAddTests.cs",
+          "name": "The_panel_opens_on_the_choice_of_manager_with_Deluno_first_and_a_line_for_each_kind"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Option labels and the four blurbs are never asserted; Radarr and Sonarr are only reached via fireEvent.change in the address tests."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-788",
         "verdict": "Partly"
@@ -35985,13 +35985,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/media-managers-tab.test.tsx",
           "name": "offers to create its secret right away"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerAddTests.cs",
+          "name": "Add_sends_the_kind_address_key_and_nickname_with_the_manager_on_and_the_panel_closes_on_the_new_card"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Only kind and base_url are asserted with objectContaining. enabled, downloaded_scan_enabled and api_key are not; nothing asserts the drawer closes or that the list refreshes to show the new card."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-792",
         "verdict": "Partly"
@@ -36070,13 +36070,13 @@
           "type": "vitest",
           "file": "apps/web/src/lib/ui/use-modal-focus.test.tsx",
           "name": "moves focus in, closes on Escape and hands focus back"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerAddTests.cs",
+          "name": "Closing_the_panel_with_the_cross_Escape_or_a_click_outside_drops_what_was_typed_and_adds_nothing"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Escape/backdrop are shared SidePanel + useModalFocus (SidePanel has no test of its own). No test that closing by those routes creates nothing; there is no unsaved guard (see section 1)."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-796",
         "verdict": "Partly"
@@ -36205,13 +36205,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/media-managers-tab.test.tsx",
           "name": "offers to create its secret right away"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerSecretTests.cs",
+          "name": "A_secret_is_made_once_shown_once_and_found_nowhere_afterwards_and_replacing_it_asks_first"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The words are asserted, the 'once' is not: ConnectionSetup keeps the value in component state so it stays on screen across list refreshes until the card unmounts, and no test reloads, remounts or navigates to prove it is gone. There is no copy button in the source (nothing to test; owner decision whether one is wanted). Secret never in a DOM attribute, URL or log is not asserted (code shows no console or storage use)."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-801",
         "verdict": "Partly"
@@ -36364,13 +36364,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/media-managers-tab.test.tsx",
           "name": "never says Answering when there is no check time behind it"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerCardTests.cs",
+          "name": "Test_asks_that_manager_shows_Testing_while_it_waits_and_then_says_Answering_or_Not_answering_with_the_reason"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DownloadClientCardTests.cs",
+          "name": "A_client_is_Not_tested_yet_until_tested_then_Answering_with_a_time_or_Not_answering_with_the_reason_and_Off_when_switched_off"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The mapping is pinned; the chip rendered on the card is never asserted to carry the meaning."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-806",
         "verdict": "Partly"
@@ -36434,13 +36439,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/media-managers-tab.test.tsx",
           "name": "prevents remove or update while a connection test is running"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerCardTests.cs",
+          "name": "Test_asks_that_manager_shows_Testing_while_it_waits_and_then_says_Answering_or_Not_answering_with_the_reason"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Not asserted: the id passed to testMediaManagerConnection, the 'Testing…' label, that Edit stays disabled, and that the status flips to Answering / Not answering with the detail after the click (the refetch). The result wording is only proven from pre-loaded fixtures."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-808",
         "verdict": "Partly"
@@ -36489,13 +36494,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/connection-card.test.tsx",
           "name": "shows a pending label while the change is in flight"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerCardTests.cs",
+          "name": "Disable_and_Enable_send_the_opposite_of_what_is_on_say_Disabling_and_Enabling_while_they_work_and_the_chip_reads_Off"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The update arguments ({enabled:false}) are never asserted; the Enable direction (off to on) and the 'Enabling…' label are never exercised; E2E flips Off only through the API."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-810",
         "verdict": "Partly"
@@ -36554,13 +36559,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/connection-edit-form.test.tsx",
           "name": "has no field for a name: the connection is named after its address"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerEditTests.cs",
+          "name": "Edit_opens_in_place_with_the_address_a_blank_key_and_no_name_while_the_other_buttons_wait_and_Cancel_closes_it_at_once"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The lock on Test / Edit / Disable / Remove while the form is open (locked = busy or editing) is never asserted."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-812",
         "verdict": "Partly"
@@ -36754,13 +36759,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/connection-edit-form.test.tsx",
           "name": "asks before dropping an edited field"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerEditTests.cs",
+          "name": "Cancel_after_a_change_asks_first_and_Keep_editing_and_Escape_keep_the_edit_while_Leave_drops_it"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "'Keep editing' (stay) and Escape on that dialog are not tested, nor that the edit survives staying; the dirty registration with the area is not tested (section 1)."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-818",
         "verdict": "Partly"
@@ -36864,13 +36869,18 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/SetupLiveTests.cs",
           "name": "SetupLiveTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerRemoveAndLiveTests.cs",
+          "name": "Removing_a_manager_nothing_depends_on_says_Removing_with_both_buttons_waiting_then_the_dialog_closes_and_the_card_goes"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveConnectionDialogTests.cs",
+          "name": "Keep_it_Escape_and_a_click_outside_leave_the_connection_and_its_workflows_alone"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "No vitest asserts the dialog closes after a successful delete or that the card is gone (the mocked refetch always returns the same list); pending label untested."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-820",
         "verdict": "Partly"
@@ -36949,13 +36959,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/media-managers-tab.test.tsx",
           "name": "warns when a manager has no secret, since anyone could post as it"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerSecretTests.cs",
+          "name": "A_secret_is_made_once_shown_once_and_found_nowhere_afterwards_and_replacing_it_asks_first"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Only the 'no secret' wording; the secret-is-set sentence is never asserted."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-823",
         "verdict": "Partly"
@@ -37109,13 +37119,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/media-managers-tab.test.tsx",
           "name": "points Sonarr and Radarr at the library editor's mapping, not at Deluno's hand-off"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerSecretTests.cs",
+          "name": "Sonarr_is_told_where_the_mapping_lives_and_how_to_add_the_import_webhook_with_its_secret_header_and_Deluno_is_not"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The import-webhook paragraph (data-testid media-manager-import-webhook) with the header name is never asserted; it is the text operators follow to wire the secret."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-828",
         "verdict": "Partly"
@@ -37194,13 +37204,23 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/connection-folder-chain.test.tsx",
           "name": "shows a workflow as not verified, never ready, when one of its lines is only a declaration"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerFolderChainTests.cs",
+          "name": "A_workflow_Sonarr_feeds_says_Needs_attention_until_everything_lines_up_and_then_Not_verified_where_Sonarr_cannot_say_a_folder"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerFolderChainTests.cs",
+          "name": "A_workflow_Deluno_feeds_says_Ready_when_its_folders_line_up"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerFolderChainTests.cs",
+          "name": "A_manager_with_no_workflow_linked_says_so_and_offers_to_add_one"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The positive 'Ready' state is never asserted; chain data is hand-made, not a recorded server reply."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-831",
         "verdict": "Partly"
@@ -37378,13 +37398,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-clients-section.test.tsx",
           "name": "only asks for the fields that kind's login actually uses"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DownloadClientCardTests.cs",
+          "name": "Add_opens_a_dialog_on_the_kind_and_sends_the_kind_address_and_that_kinds_credentials_with_the_client_on"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Dialog name and initial focus not asserted (the media-manager equivalent is)."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-838",
         "verdict": "Partly"
@@ -37488,13 +37508,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-clients-section.test.tsx",
           "name": "adds a connection and says it will only be used for suggestions"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DownloadClientCardTests.cs",
+          "name": "Add_opens_a_dialog_on_the_kind_and_sends_the_kind_address_and_that_kinds_credentials_with_the_client_on"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "objectContaining checks kind, base_url, api_key only (SABnzbd). Username/password bodies for the other four kinds, enabled and the drawer closing are not asserted. Source posts every field in form state, so a credential typed for one kind and then a different kind selected is still sent."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-841",
         "verdict": "Partly"
@@ -37643,13 +37663,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-clients-section.test.tsx",
           "name": "shows the failure detail once checked"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DownloadClientCardTests.cs",
+          "name": "A_client_is_Not_tested_yet_until_tested_then_Answering_with_a_time_or_Not_answering_with_the_reason_and_Off_when_switched_off"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Answering (with a time) and Off (disabled) are never asserted for download clients; 'Last checked' time text and chip colour untested; no 'Weir only reads their settings' count line assertion."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-846",
         "verdict": "Partly"
@@ -37673,13 +37693,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-clients-section.test.tsx",
           "name": "shows pending, then success"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DownloadClientCardTests.cs",
+          "name": "A_client_is_Not_tested_yet_until_tested_then_Answering_with_a_time_or_Not_answering_with_the_reason_and_Off_when_switched_off"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Pending label and re-enable are asserted; the call's id and the resulting status (Answering) are not."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-847",
         "verdict": "Partly"
@@ -37728,13 +37748,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-clients-section.test.tsx",
           "name": "shows a pending label while the change is in flight"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DownloadClientCardTests.cs",
+          "name": "A_client_is_Not_tested_yet_until_tested_then_Answering_with_a_time_or_Not_answering_with_the_reason_and_Off_when_switched_off"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Update arguments never asserted; Enable direction untested."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-849",
         "verdict": "Partly"
@@ -37818,13 +37838,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-nickname.test.tsx",
           "name": "is left out of a save that did not touch it"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DownloadClientCardTests.cs",
+          "name": "Edit_sends_the_address_and_only_the_credentials_that_were_typed_or_changed"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Username change, password only when typed, API key only when typed are not asserted (changesFrom branches untested)."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-852",
         "verdict": "Partly"
@@ -37992,13 +38012,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/SetupLiveTests.cs",
           "name": "SetupLiveTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DownloadClientCardTests.cs",
+          "name": "A_test_made_elsewhere_changes_the_clients_status_on_the_open_screen_without_a_reload"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "E2E covers create and delete only; no status change is observed for a download client."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-859",
         "verdict": "Partly"
@@ -38216,13 +38236,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/alerts/alert-columns.test.tsx",
           "name": "lists the alerts as they come until a heading sorts them"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AlertsTableTests.cs",
+          "name": "Each_alert_shows_its_name_provider_and_Disabled_chip_its_address_without_the_token_and_the_four_events_in_reading_order"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Pure mask function is proven. No test renders a row and checks the masked text is what is on screen, that the full token is absent from the row, or the Disabled chip."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-867",
         "verdict": "Partly"
@@ -38470,13 +38490,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/alerts/alerts-tab.test.tsx",
           "name": "keeps the dialog open and says why when the removal fails"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AlertsTableTests.cs",
+          "name": "Removing_an_alert_says_Removing_while_it_works_and_one_that_is_already_gone_keeps_the_question_open_with_the_reason"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveAlertDialogTests.cs",
+          "name": "Remove_alert_sends_one_request_with_the_CSRF_token_for_that_alert_and_leaves_the_other"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Success result and the row-level 'Removing…' state are not asserted."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-875",
         "verdict": "Partly"
@@ -38550,13 +38575,23 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/alerts/alert-columns.test.tsx",
           "name": "puts the alerts that hear of an event first when its column is sorted"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AlertsTableTests.cs",
+          "name": "Each_alert_shows_its_name_provider_and_Disabled_chip_its_address_without_the_token_and_the_four_events_in_reading_order"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-events.test.ts",
+          "name": "shows an event it has no words for as the server names it"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alert-events.test.ts",
+          "name": "keeps a newer event after the known ones, and offers only what the server supports"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "alert-events.ts has no test: the two processing_* labels, the unknown-event fallback and orderedEvents ordering are unproven."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-877",
         "verdict": "Partly"
@@ -39959,13 +39994,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/LiveConnectionTests.cs",
           "name": "LiveConnectionTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerRemoveAndLiveTests.cs",
+          "name": "The_screen_says_when_its_live_link_drops_and_catches_up_with_a_manager_added_meanwhile_when_it_returns"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Shell-level only; no Connections or Performance screen shows or tests its own staleness."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-930",
         "verdict": "Partly"
@@ -39989,13 +40024,23 @@
           "type": "vitest",
           "file": "apps/web/src/lib/ui/use-modal-focus.test.tsx",
           "name": "ignores Escape while busy"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/MediaManagerRemoveAndLiveTests.cs",
+          "name": "Removing_a_manager_nothing_depends_on_says_Removing_with_both_buttons_waiting_then_the_dialog_closes_and_the_card_goes"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AlertsTableTests.cs",
+          "name": "Removing_an_alert_says_Removing_while_it_works_and_one_that_is_already_gone_keeps_the_question_open_with_the_reason"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RemoveWorkflowDialogTests.cs",
+          "name": "Keep_it_Escape_and_a_click_outside_the_dialog_leave_the_workflow_alone_and_send_nothing"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Escape and Escape-while-busy are proven in use-modal-focus.test; the ConfirmDialog has no backdrop. Each feature wires its own onCancel."
-      },
-      "issue": 1055,
       "audit": {
         "id": "WEB-931",
         "verdict": "Partly"

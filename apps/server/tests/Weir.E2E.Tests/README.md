@@ -82,3 +82,4 @@ root-cause from the trace, never one to run twice.
 - **`Support/SonarrFedWorkflow`** is a TV workflow linked to a fake Sonarr whose qBittorrent download client Weir also knows, with the replies Sonarr's own API gives for its
   download clients (the shape the contract suite uses; no recording of Sonarr exists).
 - **`Support/ViewerAccount`** adds a viewer next to the administrator and signs a page in as them, for a test of what a person who may only look can and cannot do.
+- **`Support/MediaManagersPage`** opens Connections › Media managers, finds a connection's card by its title and connects a fake manager through the API.
