@@ -33,6 +33,53 @@ afterEach(() => {
 
 const protections = () => screen.getByTestId("suite-security-posture");
 
+const signedInCard = () =>
+  screen.getByLabelText("How this browser is signed in");
+
+describe("Security: how this browser is signed in", () => {
+  it("says it is checking until the server describes this browser's session", async () => {
+    const held = heldReply(currentSession);
+    weir = serveRecordedReplies({
+      ...APP_SETTINGS,
+      [`GET ${SESSION}`]: held.answer,
+      [`GET ${SESSIONS}`]: oneSession,
+      [`GET ${OVERVIEW}`]: securityOverview,
+    });
+    renderSecurity(<SecurityTab />);
+
+    const value = within(signedInCard()).getByText("Loading...", {
+      selector: ".mm-chip",
+    });
+    expect(value.closest("dd")).toHaveAttribute(
+      "title",
+      "Checking the current sign-in session.",
+    );
+
+    held.release();
+    expect(
+      await within(signedInCard()).findByText("Standard", {
+        selector: ".mm-chip",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("says this browser's sign-in is unavailable when the server cannot be asked", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new TypeError("Failed to fetch")),
+    );
+    renderSecurity(<SecurityTab />);
+
+    const value = await within(signedInCard()).findByText("Unavailable", {
+      selector: ".mm-chip",
+    });
+    expect(value.closest("dd")).toHaveAttribute(
+      "title",
+      "Could not read the current sign-in session.",
+    );
+  });
+});
+
 describe("Security: how sign-in is protected", () => {
   it("says it is loading until the server describes the protections", async () => {
     const held = heldReply(securityOverview);

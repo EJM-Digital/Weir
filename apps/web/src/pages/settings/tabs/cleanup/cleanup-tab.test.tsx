@@ -507,6 +507,31 @@ it("reports a running family rather than showing it as idle", async () => {
   ).toHaveTextContent(/Running now/);
 });
 
+it("says a queued family is waiting for a free worker", async () => {
+  setup(
+    state({
+      families: [
+        {
+          family: "work_temp_stale_sweep",
+          enabled: true,
+          description: "Reclaims stale working files.",
+          pending: 1,
+          running: 0,
+          last_completed_at: null,
+          last_failed_at: null,
+          last_error: null,
+        },
+      ],
+    }),
+  );
+
+  render(<CleanupTab />, { wrapper });
+
+  expect(
+    await screen.findByTestId("processing-maintenance-work_temp_stale_sweep"),
+  ).toHaveTextContent("Queued, waiting for a free worker.");
+});
+
 it("surfaces the reason a run failed", async () => {
   setup(
     state({

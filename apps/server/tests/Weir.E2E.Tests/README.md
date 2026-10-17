@@ -61,11 +61,11 @@ root-cause from the trace, never one to run twice.
   that make the server quiet (workers, file watcher, periodic scan, work file sweeps) are put back to their
   defaults, because the Logs tests expect the job rows a running server writes. Without `WEIR_E2E=1` it starts nothing.
 - **`Support/E2ETestBase`** resets per-test state before each test (users, sessions, suite settings and the library
-  folders are cleared) and gives the test a headless Chromium of its own, traced and logged. All test
+  folders are cleared, and the cleanup and resolution-budget settings go back to their defaults) and gives the test a headless Chromium of its own, traced and logged. All test
   classes share one collection, so tests run one at a time against the one server. **`Harness/FailureArtifacts`** and
   **`Harness/FailureKeepingFramework`** keep what a failed test wrote and delete the rest.
 - **`Harness/E2EDatabase`** writes plain SQL to the running server's SQLite file for what the browser cannot create, an
-  activity event the open Logs tab must pick up live.
+  activity event the open Logs tab must pick up live, and an account's role (Weir has one account, so no screen makes a viewer).
 - **`Support/ProcessingRig`** is a second Weir for a test that watches a file move through the screens: one worker over a fake
   ffmpeg, so a pass stays under way until the test releases it, and a fake Deluno. Files arrive and finish through the hand-off
   webhook and the outcome route, as a media manager makes them, never by writing to the database. It can also drop a file nobody handed
@@ -82,3 +82,9 @@ root-cause from the trace, never one to run twice.
   what they leave behind, read back through the API. **`E2EServer.StartWithSettingsAsync`** starts a server of its own with settings added (a
   reverse proxy in front of it, sign-in limits low enough to reach), and `NewPageAsync(headers: ...)` sends headers with every request the
   browser makes, as such a proxy does.
+- **`Support/WorkflowEditor`** opens the File paths tab, the Add workflow editor or a row's Edit, and the editor's folded groups, and reads a workflow back through the API.
+  **`Support/WorkflowBodies`** is the body the editor sends for a new workflow with nothing filled in, and **`Support/WeekGrids`** builds the weeks the Schedule tab draws.
+- **`Support/SonarrFedWorkflow`** is a TV workflow linked to a fake Sonarr whose qBittorrent download client Weir also knows, with the replies Sonarr's own API gives for its
+  download clients (the shape the contract suite uses; no recording of Sonarr exists).
+- **`Support/ViewerAccount`** adds a viewer next to the administrator and signs a page in as them, for a test of what a person who may only look can and cannot do.
+- **`Support/MediaManagersPage`** opens Connections › Media managers, finds a connection's card by its title and connects a fake manager through the API.

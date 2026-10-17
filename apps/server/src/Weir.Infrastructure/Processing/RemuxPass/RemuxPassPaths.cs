@@ -270,6 +270,7 @@ public static class RemuxPassPaths
             PreserveDefaultSubs = ruleSet.PreserveDefaultSubs,
             AudioPreferenceMode = RemuxRules.NormalizeAudioPreferenceMode(ruleSet.AudioPreferenceMode),
             AudioSortersJson = ruleSet.AudioSortersJson ?? string.Empty,
+            SubtitleSortersJson = ruleSet.SubtitleSortersJson ?? string.Empty,
             RemoveHearingImpairedSubs = ruleSet.RemoveHearingImpairedSubs,
             AudioKeepMode = RemuxRules.NormalizeAudioKeepMode(ruleSet.AudioKeepMode),
             SubtitleMaxPerLanguage = ruleSet.SubtitleMaxPerLanguage,

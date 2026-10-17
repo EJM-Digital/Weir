@@ -1,0 +1,151 @@
+{
+  "note": "Where each scenario of the VM catalogue (scripts/scenarios/Weir.Scenarios.Catalog.ps1) runs once the VM is gone, in catalogue order. Read by scripts/scenarios-in-ci.mjs and checked against docs/exec-plans/active/PLAN-SCENARIOS-IN-CI.md by scripts/scenarios-in-ci.test.mjs. home: linux (Docker Compose on ubuntu-latest), windows (windows-latest) or not-portable (with the reason). state: to-port, ported (runs in CI), green-twice (passed in two CI runs on main, on different commits, with no failing run between: the VM may stop being the gate for it). passedInCi lists the CI runs a ported scenario passed in: the run, the commit and the ref it ran on. green-twice needs two of them on main, on different commits.",
+  "shards": {
+    "weir-only": {
+      "home": "linux",
+      "budgetMinutes": 15,
+      "what": "Weir alone in the Docker image: films dropped into workflows with no manager."
+    },
+    "weir-browser": {
+      "home": "linux",
+      "budgetMinutes": 10,
+      "what": "Weir alone in the Docker image, driven through a real browser."
+    },
+    "with-deluno": {
+      "home": "linux",
+      "budgetMinutes": 20,
+      "what": "Weir, Deluno and the real download clients, each hand-off followed through both apps."
+    },
+    "windows-install": {
+      "home": "windows",
+      "budgetMinutes": 20,
+      "what": "The Windows installer on a clean runner: install, the server, the recovery command."
+    },
+    "windows-update": {
+      "home": "windows",
+      "budgetMinutes": 20,
+      "what": "The update from the previous release, over a Weir that is running."
+    },
+    "windows-tray": {
+      "home": "windows",
+      "budgetMinutes": 20,
+      "what": "The real tray, driven through UI Automation."
+    }
+  },
+  "scenarios": [
+    {
+      "id": "update-over-installed-weir",
+      "home": "windows",
+      "shard": "windows-update",
+      "state": "to-port",
+      "why": "Setup --silent over the previous release's running install, with the tray and its pre-update copy; none of it exists on Linux. Docker's own upgrade smoke already covers the volume half."
+    },
+    {
+      "id": "workflows-from-deluno",
+      "home": "linux",
+      "shard": "with-deluno",
+      "state": "to-port",
+      "why": "Weir talks to Deluno over HTTP only, so Deluno's published image in Compose is the same Deluno."
+    },
+    {
+      "id": "deluno-film-handoff",
+      "home": "linux",
+      "shard": "with-deluno",
+      "state": "to-port",
+      "why": "A film Deluno hands over is followed through Weir and back; Deluno's image and the real download clients run in Compose."
+    },
+    {
+      "id": "deluno-release-with-extra",
+      "home": "linux",
+      "shard": "with-deluno",
+      "state": "to-port",
+      "why": "Needs a release whose folder in a real download client holds a small extra, read through that client's own API."
+    },
+    {
+      "id": "deluno-resend",
+      "home": "linux",
+      "shard": "with-deluno",
+      "state": "to-port",
+      "why": "Deluno's send-again is its own API call; both sides are read over HTTP."
+    },
+    {
+      "id": "deluno-outcomes",
+      "home": "linux",
+      "shard": "with-deluno",
+      "state": "to-port",
+      "why": "Compares the outcome each app recorded for every hand-off; both are read over HTTP."
+    },
+    {
+      "id": "fresh-install",
+      "home": "windows",
+      "shard": "windows-install",
+      "state": "to-port",
+      "why": "Runs Weir-win-Setup.exe silently and starts the installed Weir.exe with its tray; a clean windows-latest runner is the clean machine."
+    },
+    {
+      "id": "first-visit-account",
+      "home": "linux",
+      "shard": "weir-browser",
+      "state": "to-port",
+      "why": "Nothing in it is Windows: a brand-new browser context sees account creation, then sign-in. Chromium under Playwright takes the place of Edge."
+    },
+    {
+      "id": "weir-only-film",
+      "home": "linux",
+      "shard": "weir-only",
+      "state": "ported",
+      "why": "The server cleans a film with the image's own ffmpeg; the first scenario ported, with the checks the VM makes.",
+      "passedInCi": [
+        {
+          "run": 39018476138,
+          "commit": "2b25d02a9d3b009e639d9c4e102a11253ed161d7",
+          "ref": "coverage/scenarios-in-ci"
+        }
+      ]
+    },
+    {
+      "id": "process-again",
+      "home": "linux",
+      "shard": "weir-only",
+      "state": "ported",
+      "why": "The same server behaviour on the same image, asked to process a cleaned film again.",
+      "passedInCi": [
+        {
+          "run": 39018476138,
+          "commit": "2b25d02a9d3b009e639d9c4e102a11253ed161d7",
+          "ref": "coverage/scenarios-in-ci"
+        }
+      ]
+    },
+    {
+      "id": "pause-resume",
+      "home": "linux",
+      "shard": "weir-only",
+      "state": "ported",
+      "why": "The server hears the tray through a file in its data folder, and that watcher is the same on Linux; the file is written in the container. The tray's side stays with windows-tray.",
+      "passedInCi": []
+    },
+    {
+      "id": "deleted-queued-file",
+      "home": "linux",
+      "shard": "weir-only",
+      "state": "ported",
+      "why": "A file is put in a watched folder and deleted while Weir waits for it to settle; nothing in it is Windows.",
+      "passedInCi": []
+    },
+    {
+      "id": "update-requests",
+      "home": "windows",
+      "shard": "windows-tray",
+      "state": "to-port",
+      "why": "Needs the real tray to take the update flag files; Weir only offers the buttons while a tray is alive."
+    },
+    {
+      "id": "recover-locked-out-account",
+      "home": "windows",
+      "shard": "windows-install",
+      "state": "to-port",
+      "why": "Runs the installed WeirServer.exe recover as a person's console does; the Docker form of the command is already proved by the Docker smoke."
+    }
+  ]
+}

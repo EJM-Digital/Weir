@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { EMPTY_LIBRARY_FORM, formFrom, writeFrom } from "./library-form";
 import { library } from "./library-test-fixtures";
@@ -91,5 +91,22 @@ describe("formFrom", () => {
 
     expect(form.min_file_size_mb).toBe("200");
     expect(form.ready_after_seconds).toBe("0");
+  });
+
+  it("reads a detection window the server wrote without a zone as UTC, wherever the browser is", () => {
+    vi.stubEnv("TZ", "Pacific/Auckland");
+    try {
+      const written = formFrom(
+        library({
+          created_after: "2026-03-03T18:06:00",
+          modified_before: null,
+        }),
+      );
+
+      expect(written.created_after).toBe("2026-03-04T07:06");
+      expect(written.modified_before).toBe("");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

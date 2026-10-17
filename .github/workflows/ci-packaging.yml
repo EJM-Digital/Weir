@@ -170,6 +170,51 @@ jobs:
           if-no-files-found: warn
           path: artifacts/docker-compose-smoke/**
 
+  # Weir's scenario suite on GitHub's own runners, replacing the Hyper-V VM (docs/exec-plans/active/PLAN-SCENARIOS-IN-CI.md). One job per
+  # shard, each with a Compose stack of its own, against the image built from this commit with its real ffmpeg. The shards listed here
+  # are those with a scenario ported (scripts/scenarios-ci/homes.json); the VM stays the release gate until each scenario has passed twice here.
+  scenarios-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [weir-only]
+    env:
+      SHARD: ${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # The scenarios read SQLite files with node:sqlite, which the runner's default Node may not have.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      # The same image and cache as the Docker smoke above: the build is a cache hit when both run on one commit.
+      - name: Build Weir Docker image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          push: false
+          tags: weir-ci-smoke
+          cache-from: type=gha,scope=weir-ci-amd64
+          cache-to: type=gha,mode=max,scope=weir-ci-amd64,ignore-error=true
+
+      - name: Run the shard's scenarios against the image
+        run: node scripts/scenarios-in-ci.mjs "$SHARD" --candidate weir-ci-smoke
+
+      - name: Upload scenario logs and results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: weir-scenarios-${{ matrix.shard }}
+          if-no-files-found: warn
+          path: artifacts/scenarios-in-ci/**
+
   # The arm64 image the release publishes, started under QEMU on an x86-64 runner (PLAT-13). The server is cross-published natively in the
   # SDK stage; the final stage's apt-get and everything that runs afterwards are emulated, which is why this is its own job: it overlaps the
   # amd64 smokes instead of following them.
@@ -218,24 +263,8 @@ jobs:
     # Always GitHub's own runner: this job installs Weir for real, which needs a clean machine every time.
     runs-on: windows-latest
     timeout-minutes: 30
-    env:
-      # A self-hosted Windows PC keeps Windows' default script policy; this lets the job's own PowerShell run
-      # its scripts without changing the machine's setting. GitHub's runners already allow it.
-      PSExecutionPolicyPreference: Bypass
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      # On a self-hosted PC: `bash` resolves to Windows' own bash.exe (WSL) unless Git's comes first on PATH, and
-      # the service account's temporary folder is under C:\Windows, where Weir rightly refuses to watch a folder.
-      - name: Self-hosted PC set-up
-        if: runner.environment == 'self-hosted'
-        shell: powershell
-        run: |
-          Add-Content -Path $env:GITHUB_PATH -Value "$env:ProgramFiles\Git\bin"
-          $temp = Join-Path $env:RUNNER_TEMP 'tmp'
-          New-Item -ItemType Directory -Force -Path $temp | Out-Null
-          Add-Content -Path $env:GITHUB_ENV -Value "TEMP=$temp"
-          Add-Content -Path $env:GITHUB_ENV -Value "TMP=$temp"
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
@@ -244,9 +273,6 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
-        # A self-hosted runner's service account cannot write to Program Files; the tool cache is its own.
-        env:
-          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           global-json-file: apps/server/global.json
           cache: true

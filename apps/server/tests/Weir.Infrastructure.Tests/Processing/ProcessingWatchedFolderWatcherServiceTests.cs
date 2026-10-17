@@ -25,6 +25,9 @@ namespace Weir.Infrastructure.Tests.Processing;
 public sealed class ProcessingWatchedFolderWatcherServiceTests
 {
     private const string ScanJobKind = ProcessingWatchedFolderScanDispatchJobKinds.ScanDispatch;
+
+    /// <summary>The longest a wait for something the test has already arranged may take before the test calls it hung.</summary>
+    private static readonly TimeSpan HangGuard = TimeSpan.FromSeconds(15);
     private static readonly LibraryStore Libraries = new();
 
     private static async Task<long> CreateLibraryAsync(
@@ -123,7 +126,7 @@ public sealed class ProcessingWatchedFolderWatcherServiceTests
         var libraryId = await CreateLibraryAsync(store, watched, output);
 
         // The debounce clock is fake, as in the growing-file test, so a slow machine cannot straddle a real second between deletes.
-        var time = new FakeTimeProvider();
+        var time = new TimerWatchingClock(new FakeTimeProvider());
         var state = new WatcherStateStore();
         var service = Service(store, state, time);
         await service.StartAsync(CancellationToken.None);
@@ -142,11 +145,7 @@ public sealed class ProcessingWatchedFolderWatcherServiceTests
                     return ScanJobPayloads(store).Count > 0;
                 },
                 TimeSpan.FromSeconds(5));
-            for (var tick = 0; tick < 6; tick++)
-            {
-                time.Advance(ProcessingWatchedFolderWatcherService.TickInterval);
-                await Task.Delay(100);
-            }
+            await AdvancePastSeveralTicksAsync(time);
 
             Assert.Single(ScanJobPayloads(store));
         }
@@ -210,7 +209,7 @@ public sealed class ProcessingWatchedFolderWatcherServiceTests
         Directory.CreateDirectory(output);
         var libraryId = await CreateLibraryAsync(store, watched, output);
 
-        var time = new FakeTimeProvider();
+        var time = new TimerWatchingClock(new FakeTimeProvider());
         var state = new WatcherStateStore();
         var service = Service(store, state, time);
         await service.StartAsync(CancellationToken.None);
@@ -260,7 +259,7 @@ public sealed class ProcessingWatchedFolderWatcherServiceTests
         Directory.CreateDirectory(output);
         var libraryId = await CreateLibraryAsync(store, watched, output, fileSystemEventsEnabled: false);
 
-        var time = new FakeTimeProvider();
+        var time = new TimerWatchingClock(new FakeTimeProvider());
         var state = new WatcherStateStore();
         var service = Service(store, state, time);
         await service.StartAsync(CancellationToken.None);
@@ -297,17 +296,19 @@ public sealed class ProcessingWatchedFolderWatcherServiceTests
         Directory.CreateDirectory(output);
         await CreateLibraryAsync(store, watched, output);
 
-        var time = new FakeTimeProvider();
+        var time = new TimerWatchingClock(new FakeTimeProvider());
         var state = new WatcherStateStore();
         var service = Service(store, state, time);
         await service.StartAsync(CancellationToken.None);
         try
         {
-            await AdvancePastSeveralTicksAsync(time);
+            // With the watcher switched off the service has nothing to do and ends, so no tick can ever run.
+            await service.ExecuteTask!.WaitAsync(HangGuard);
             Assert.Empty(state.Reports());
 
             await File.WriteAllBytesAsync(Path.Combine(watched, "no-watcher.mkv"), new byte[16]);
-            await AdvancePastSeveralTicksAsync(time);
+            time.Advance(ProcessingWatchedFolderWatcherService.ReconcileInterval);
+            Assert.Equal(0, time.TimersSet);
             Assert.Empty(ScanJobPayloads(store));
         }
         finally
@@ -329,7 +330,7 @@ public sealed class ProcessingWatchedFolderWatcherServiceTests
         Directory.CreateDirectory(watched);
         Directory.CreateDirectory(output);
         var libraryId = await CreateLibraryAsync(store, watched, output, fileSystemEventsEnabled: false);
-        var time = new FakeTimeProvider();
+        var time = new TimerWatchingClock(new FakeTimeProvider());
         var state = new WatcherStateStore();
         var changes = new ScanSettingsChanges();
         var service = new ProcessingWatchedFolderWatcherService(
@@ -355,15 +356,15 @@ public sealed class ProcessingWatchedFolderWatcherServiceTests
 
     /// <summary>
     /// Forces several reconcile ticks on a fake clock, one at a time (a single large advance only wakes the
-    /// one timer already due, not the ones a tick's own continuation goes on to arm), so a "nothing happened"
-    /// assertion reflects several ticks that genuinely ran rather than a hopeful real-time window.
+    /// one timer already due, not the ones a tick's own continuation goes on to arm). A tick is over when the loop
+    /// sets the timer for the next, so a "nothing happened" assertion reflects several ticks that genuinely ran.
     /// </summary>
-    private static async Task AdvancePastSeveralTicksAsync(FakeTimeProvider time)
+    private static async Task AdvancePastSeveralTicksAsync(TimerWatchingClock time)
     {
         for (var i = 0; i < 5; i++)
         {
-            time.Advance(ProcessingWatchedFolderWatcherService.TickInterval);
-            await Task.Delay(20);
+            var timers = time.TimersSet;
+            await Eventually.ThatAdvancingAsync(time.Fake, ProcessingWatchedFolderWatcherService.TickInterval, () => time.TimersSet > timers);
         }
     }
 

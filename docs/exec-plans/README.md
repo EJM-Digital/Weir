@@ -10,4 +10,6 @@ A plan issue should state the goal, the current state, the scope and non-goals, 
 
 Small bug fixes can stay in the PR description if they have clear acceptance criteria and validation.
 
+A plan that is a document in its own right, such as one that moves a whole suite, lives in [`active/`](active/) until it is done and is then moved to the archive.
+
 Completed historical plans are kept in [`../archive/`](../archive/).
