@@ -25,6 +25,7 @@ public sealed class RequestLog
 
     private readonly object _gate = new();
     private readonly List<SentRequest> _logged = [];
+    private readonly List<SentRequest> _reads = [];
 
     private RequestLog()
     {
@@ -44,6 +45,24 @@ public sealed class RequestLog
         lock (_gate)
         {
             return _logged.Count;
+        }
+    }
+
+    /// <summary>A place in the reads the page makes, for <see cref="ReadsSince"/>.</summary>
+    public int ReadMark()
+    {
+        lock (_gate)
+        {
+            return _reads.Count;
+        }
+    }
+
+    /// <summary>The reads of Weir's API (GET requests) the page made after <paramref name="readMark"/>, oldest first, with their query as sent.</summary>
+    public IReadOnlyList<SentRequest> ReadsSince(int readMark)
+    {
+        lock (_gate)
+        {
+            return [.. _reads.Skip(readMark)];
         }
     }
 
@@ -85,8 +104,18 @@ public sealed class RequestLog
     {
         var url = new Uri(request.Url);
         var isToken = url.AbsolutePath == TokenPath;
-        if (!url.AbsolutePath.StartsWith("/api/", StringComparison.Ordinal) || (Reads.Contains(request.Method, StringComparer.OrdinalIgnoreCase) && !isToken))
+        if (!url.AbsolutePath.StartsWith("/api/", StringComparison.Ordinal))
         {
+            return;
+        }
+
+        if (Reads.Contains(request.Method, StringComparer.OrdinalIgnoreCase) && !isToken)
+        {
+            lock (_gate)
+            {
+                _reads.Add(new SentRequest(request.Method, url.PathAndQuery, null));
+            }
+
             return;
         }
 

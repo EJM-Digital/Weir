@@ -72,7 +72,7 @@ public static class WeirApi
             provider.GetRequiredService<ILogger<GitHubReleaseCatalogClient>>(),
             handler: null,
             feedUrl: provider.GetRequiredService<WeirOptions>().ReleasesFeedUrl));
-        services.AddSingleton<IExternalJsonPoster, ExternalJsonPoster>();
+        services.AddSingleton<IExternalJsonPoster>(new ExternalJsonPoster(options.NotificationStandInPort));
         services.AddSingleton<NotificationDispatcher>();
         // Registered before AddWeirJobs, whose TryAdd would otherwise install the version that sends nothing.
         services.AddSingleton<IJobNotifications, WebhookJobNotifications>();

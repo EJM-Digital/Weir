@@ -114,6 +114,14 @@ public sealed record WeirOptions
     public string? ReleasesFeedUrl { get; init; }
 
     /// <summary>
+    /// For tests only (<c>WEIR_NOTIFICATION_STAND_IN_PORT</c>): the port on this machine that every alert is delivered to, so a test can listen
+    /// there and read what an alert looks like on the wire. The address an alert names is still held to the public-address rule (a name must
+    /// resolve to a public address, a number is checked as written); only the connection goes to the stand-in. Null on a real install: the
+    /// loader refuses it when <c>WEIR_ENV</c> is production.
+    /// </summary>
+    public int? NotificationStandInPort { get; init; }
+
+    /// <summary>
     /// Whether Weir sets up its workflows from a media manager that reports its folders (Deluno) and keeps them in step
     /// (<c>WEIR_MEDIA_MANAGER_WORKFLOW_SYNC_ENABLED</c>, default on). Off leaves every workflow's folders to be typed.
     /// </summary>

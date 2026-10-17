@@ -20,6 +20,7 @@ import type { LogColumnId } from "./log-columns";
 import { LogExportMenu } from "./log-export-menu";
 import { anyLogFilterSet, refineCount, type LogFilters } from "./log-filters";
 import { LogList } from "./log-list";
+import type { LogRowActions } from "./log-row";
 import { LogRange } from "./log-range";
 import type { LogRowActions } from "./log-row";
 import { LogRefine } from "./log-refine";
@@ -232,7 +233,7 @@ export function LogCard({
             actions={{
               canAct: canClear,
               onRelated,
-              onChanged: () => void entries.reload(),
+              onJobChanged: () => void entries.reload(),
             }}
           />
         </section>

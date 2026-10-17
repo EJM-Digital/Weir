@@ -21,7 +21,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const contractProject = path.join(root, "apps/server/tests/Weir.Contract.Tests");
 
 /** How many real-tool scenarios each contract area holds. */
-export const minimumScenarios = { libraries: 37, processing: 6 };
+export const minimumScenarios = { libraries: 37, processing: 19 };
 
 /** The reason RealFfmpegWindowsFactAttribute gives off Windows. */
 export const windowsOnlySkipReason = "Only Windows refuses to replace a file another program has open; elsewhere the swap goes ahead.";

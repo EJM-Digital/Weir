@@ -51,28 +51,31 @@ const FILES_LIMIT = 1000;
 function RetryFailed({ failed }: { failed: { id: number }[] }) {
   const requeueFailed = useRequeueProcessingFiles();
   const [notice, setNotice] = useState<string | null>(null);
-  if (failed.length === 0) return null;
+  // Once every failed file is queued they leave the list; what the server said about it stays until the person looks elsewhere.
+  if (failed.length === 0 && notice === null) return null;
   return (
     <div className="mm-history-bulk">
-      <button
-        type="button"
-        className={mmActionButtonClass({ variant: "secondary" })}
-        disabled={requeueFailed.isPending}
-        onClick={() => {
-          setNotice(null);
-          requeueFailed.mutate(
-            { file_ids: failed.map((f) => f.id) },
-            {
-              onSuccess: (result) => setNotice(result.detail),
-              onError: () =>
-                setNotice("Those files could not be queued again."),
-            },
-          );
-        }}
-      >
-        Try the {failed.length} failed {failed.length === 1 ? "file" : "files"}{" "}
-        again
-      </button>
+      {failed.length > 0 ? (
+        <button
+          type="button"
+          className={mmActionButtonClass({ variant: "secondary" })}
+          disabled={requeueFailed.isPending}
+          onClick={() => {
+            setNotice(null);
+            requeueFailed.mutate(
+              { file_ids: failed.map((f) => f.id) },
+              {
+                onSuccess: (result) => setNotice(result.detail),
+                onError: () =>
+                  setNotice("Those files could not be queued again."),
+              },
+            );
+          }}
+        >
+          Try the {failed.length} failed{" "}
+          {failed.length === 1 ? "file" : "files"} again
+        </button>
+      ) : null}
       {notice ? (
         <span className="mm-history-note" role="status">
           {notice}

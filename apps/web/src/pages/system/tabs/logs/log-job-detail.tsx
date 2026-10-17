@@ -91,7 +91,7 @@ export function LogJobDetail({
   time: string;
   /** Narrows the log to this job and what mentions it. */
   onRelated: (jobId: number) => void;
-  /** Called once the job has been taken back or its result saved, so the list can show it as it is now. */
+  /** Called once the job has been cancelled or its result recovered, so the log shows it as it now is. */
   onChanged: () => void;
 }) {
   const paused = usePauseQuery().data?.paused === true;

@@ -41,8 +41,8 @@ export type LogRowActions = {
   canAct: boolean;
   /** Narrows the log to one job and what mentions it. */
   onRelated: (jobId: number) => void;
-  /** Something a row did to the log's own subject (a job taken back, a result saved): the list shows the new state at once, row open or not. */
-  onChanged: () => void;
+  /** Called once a job has been cancelled or its result recovered, so the log shows the job as it now is. */
+  onJobChanged: () => void;
 };
 
 function RowBody({
@@ -70,7 +70,7 @@ function RowBody({
         canAct={actions.canAct}
         time={time}
         onRelated={actions.onRelated}
-        onChanged={actions.onChanged}
+        onChanged={actions.onJobChanged}
       />
     );
   }

@@ -278,7 +278,8 @@ public sealed class ConnectionsTests(NoWebhookSecretFixture fixture) : IClassFix
     public async Task An_older_client_saving_a_lane_is_answered_with_the_connection_and_nothing_is_kept()
     {
         using var admin = await OperatorAsync();
-        var row = (await ManagerConnections.CreateAsync(admin)).Fields;
+        // Switched off, so the minute heartbeat leaves it alone: its answer would change the row the test compares.
+        var row = (await ManagerConnections.CreateAsync(admin, new JsonObject { ["enabled"] = false })).Fields;
         var lane = $"{Route}/{JsonFields.Id(row)}/lanes/missing";
 
         var saved = await admin.PutWithCsrfAsync(lane, OldLaneBody(days: "Mon,Tue", start: "01:00", end: "05:00"));

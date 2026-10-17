@@ -275,6 +275,18 @@
   color: inherit;
 }
 
+/* The header's status, saving line, picker and Columns menu give way before the card's edge does: they wrap onto a second line
+   (right-aligned) rather than run past it. */
+.mm-library-files > .mm-panel__head {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.mm-library-files .mm-panel__aside {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
 /* On a narrow card the header's status, saving line and Columns menu take a line under the title and its count. */
 @media (max-width: 900px) {
   .mm-library-files > .mm-panel__head {

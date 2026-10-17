@@ -340,6 +340,47 @@ public sealed class WeirOptionsParsingTests
         Assert.Equal(1, TestRuntime.Load(("WEIR_ENV", "production"), ("WEIR_PERIODIC_TASK_SPEEDUP", "1")).PeriodicTaskSpeedUp);
 
     [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Alerts_go_where_they_are_addressed_unless_a_test_names_a_port(string? raw) =>
+        Assert.Null(raw is null ? TestRuntime.Load().NotificationStandInPort : TestRuntime.Load(("WEIR_NOTIFICATION_STAND_IN_PORT", raw)).NotificationStandInPort);
+
+    [Fact]
+    public void A_notification_stand_in_port_is_read_as_written() =>
+        Assert.Equal(51234, TestRuntime.Load(("WEIR_ENV", "development"), ("WEIR_NOTIFICATION_STAND_IN_PORT", " 51234 ")).NotificationStandInPort);
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("65536")]
+    [InlineData("-1")]
+    [InlineData("http")]
+    [InlineData("12.5")]
+    public void A_notification_stand_in_that_is_not_a_port_is_refused_at_start(string raw)
+    {
+        var refused = Assert.Throws<WeirConfigurationException>(() => TestRuntime.Load(("WEIR_ENV", "development"), ("WEIR_NOTIFICATION_STAND_IN_PORT", raw)));
+
+        Assert.Equal(WeirOptionsLoader.NotificationStandInNotAPortMessage, refused.Message);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("production")]
+    [InlineData(" Production ")]
+    public void A_notification_stand_in_is_refused_at_start_in_production(string? env)
+    {
+        var refused = Assert.Throws<WeirConfigurationException>(() => env is null
+            ? TestRuntime.Load(("WEIR_NOTIFICATION_STAND_IN_PORT", "51234"))
+            : TestRuntime.Load(("WEIR_ENV", env), ("WEIR_NOTIFICATION_STAND_IN_PORT", "51234")));
+
+        Assert.Equal(WeirOptionsLoader.NotificationStandInInProductionMessage, refused.Message);
+    }
+
+    [Fact]
+    public void A_notification_stand_in_left_empty_in_production_is_not_one_and_starts() =>
+        Assert.Null(TestRuntime.Load(("WEIR_ENV", "production"), ("WEIR_NOTIFICATION_STAND_IN_PORT", "")).NotificationStandInPort);
+
+    [Theory]
     [InlineData("0", 0.25)]
     [InlineData("10", 10.0)]
     [InlineData("1000", 300.0)]

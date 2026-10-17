@@ -30,6 +30,12 @@ public static class WeirOptionsLoader
 
     public const string ReleasesFeedNotAnAddressMessage = "WEIR_RELEASES_FEED_URL must be an http or https address.";
 
+    public const string NotificationStandInInProductionMessage =
+        "WEIR_NOTIFICATION_STAND_IN_PORT is a setting for tests only. Set on a real install it would send every alert to one port on this PC instead of the address you chose, " +
+        "so Weir will not start while it is set. Remove it and start Weir again.";
+
+    public const string NotificationStandInNotAPortMessage = "WEIR_NOTIFICATION_STAND_IN_PORT must be a port number from 1 to 65535.";
+
     /// <summary>The most a test may shorten the periodic tasks' intervals by.</summary>
     public const int MaxPeriodicTaskSpeedUp = 1000;
 
@@ -106,6 +112,21 @@ public static class WeirOptionsLoader
             throw new WeirConfigurationException(ReleasesFeedInProductionMessage);
         }
 
+        // Another test seam, refused in production for the same reason.
+        var notificationStandIn = NullIfEmpty(runtime.Get("WEIR_NOTIFICATION_STAND_IN_PORT")?.Trim());
+        int? notificationStandInPort = null;
+        if (notificationStandIn is not null)
+        {
+            if (env == "production")
+            {
+                throw new WeirConfigurationException(NotificationStandInInProductionMessage);
+            }
+
+            notificationStandInPort = int.TryParse(notificationStandIn, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var port) && port is >= 1 and <= 65535
+                ? port
+                : throw new WeirConfigurationException(NotificationStandInNotAPortMessage);
+        }
+
         var trustedProxyIps = ParseCsv(runtime.Get("WEIR_TRUSTED_PROXY_IPS"));
         var allowedHosts = ParseCsv(runtime.Get("WEIR_ALLOWED_HOSTS"));
         var loginMax = Math.Max(1, EnvInt(runtime, "WEIR_AUTH_LOGIN_RATE_MAX_ATTEMPTS", 10));
@@ -177,6 +198,7 @@ public static class WeirOptionsLoader
             SqliteBusyTimeoutSeconds = ClampSqliteBusyTimeoutSeconds(EnvInt(runtime, "WEIR_SQLITE_BUSY_TIMEOUT_SECONDS", WeirOptions.DefaultSqliteBusyTimeoutSeconds)),
             LibrarySwapHoldAt = librarySwapHoldAt,
             PeriodicTaskSpeedUp = periodicTaskSpeedUp,
+            NotificationStandInPort = notificationStandInPort,
             ManagerWorkflowSyncEnabled = EnvBool(runtime, "WEIR_MEDIA_MANAGER_WORKFLOW_SYNC_ENABLED", true),
             ProcessingWatcherDebounceSeconds = watcherDebounce,
             ProcessingWatchedFolderRemuxScanDispatchScheduleEnabled = EnvBool(

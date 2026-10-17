@@ -418,6 +418,17 @@ internal static class GoldenDivergences
             argv.InsertRange(insertAt, ["-map_metadata:s:t", "0:s:t"]);
         }
 
+        if (rules.RemoveOtherMetadata && !rules.RemoveLanguageTags)
+        {
+            // "-map_metadata -1" erased the tracks' language tags, which is a rule of its own: the command writes the plan's languages
+            // back, after the whole metadata block and the attachment restore.
+            var insertAt = argv.IndexOf("-c") + 2 + MetadataStreams.ArgvFlags(rules).Count + (mapsAttachments ? 2 : 0);
+            var languageTokens = new List<string>();
+            AppendLanguageTokens(languageTokens, 'a', plan.GetProperty("audio"));
+            AppendLanguageTokens(languageTokens, 's', plan.GetProperty("subtitles"));
+            argv.InsertRange(insertAt, languageTokens);
+        }
+
         for (var i = 0; i < argv.Count - 1; i++)
         {
             if (argv[i].StartsWith("-disposition:a:", StringComparison.Ordinal))
@@ -451,6 +462,22 @@ internal static class GoldenDivergences
         var lastDot = dst.LastIndexOf('.');
         var lastSeparator = Math.Max(dst.LastIndexOf('/'), dst.LastIndexOf('\\'));
         return lastDot <= lastSeparator || !AttachmentIncapableExtensions.Contains(dst[lastDot..]);
+    }
+
+    private static void AppendLanguageTokens(List<string> tokens, char streamType, JsonElement tracks)
+    {
+        var position = 0;
+        foreach (var track in tracks.EnumerateArray())
+        {
+            var language = track.GetProperty("lang_label").GetString()!;
+            if (language.Length > 0)
+            {
+                tokens.Add($"-metadata:s:{streamType}:{position.ToString(CultureInfo.InvariantCulture)}");
+                tokens.Add($"language={language}");
+            }
+
+            position++;
+        }
     }
 
     private static void AppendStatsClearTokens(List<string> tokens, char streamType, int count)

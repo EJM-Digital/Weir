@@ -18,7 +18,7 @@ function renderRow(expanded: boolean, onToggle = vi.fn()) {
         actions={{
           canAct: true,
           onRelated: () => undefined,
-          onChanged: () => undefined,
+          onJobChanged: () => undefined,
         }}
       />
     </ul>,

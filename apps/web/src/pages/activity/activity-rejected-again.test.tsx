@@ -224,3 +224,53 @@ it("says the rejected files could not be counted when the server cannot answer",
   expect(await screen.findByText("Weir is not answering.")).toBeInTheDocument();
   expect(screen.queryByTestId(CONFIRM)).not.toBeInTheDocument();
 });
+
+it("hands what it queued to the page instead of saying it beside the button, when the page asks", async () => {
+  vi.spyOn(api, "fetchRejectedFilesSummary").mockResolvedValue({
+    rejected: 1,
+    ready: 1,
+  });
+  vi.spyOn(api, "processRejectedFilesAgain").mockResolvedValue({
+    requeued: 1,
+    skipped: 0,
+    detail: "Queued 1 file again.",
+  });
+  const onNotice = vi.fn();
+  render(
+    <ProcessRejectedAgain
+      libraryId={undefined}
+      libraryName={undefined}
+      onNotice={onNotice}
+    />,
+    { wrapper },
+  );
+  pressProcessAllAgain();
+
+  fireEvent.click(await screen.findByTestId(`${CONFIRM}-confirm`));
+
+  await waitFor(() =>
+    expect(onNotice).toHaveBeenCalledWith("Queued 1 file.", false),
+  );
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+});
+
+it("hands a count that failed to the page as a failure", async () => {
+  vi.spyOn(api, "fetchRejectedFilesSummary").mockRejectedValue(
+    new Error("Weir is not answering."),
+  );
+  const onNotice = vi.fn();
+  render(
+    <ProcessRejectedAgain
+      libraryId={undefined}
+      libraryName={undefined}
+      onNotice={onNotice}
+    />,
+    { wrapper },
+  );
+
+  pressProcessAllAgain();
+
+  await waitFor(() =>
+    expect(onNotice).toHaveBeenCalledWith("Weir is not answering.", true),
+  );
+});
