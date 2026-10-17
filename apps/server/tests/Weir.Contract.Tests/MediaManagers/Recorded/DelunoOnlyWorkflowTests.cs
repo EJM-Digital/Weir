@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
+using Weir.Contract.Tests.Processing;
 
 namespace Weir.Contract.Tests.MediaManagers.Recorded;
 
@@ -52,7 +53,9 @@ public sealed class DelunoOnlyWorkflowTests
 
         // Weir goes round its periodic scans and its folder watcher, and finds nothing to do with a file Deluno has not handed over.
         await world.Scenario.WaitForARoundAsync();
-        Assert.DoesNotContain(await world.Scenario.JobsAsync(), job => ((string)job["job_kind"]!).Contains("remux", StringComparison.Ordinal));
+        Assert.Empty(await world.Scenario.ScansOfAsync(world.Movies));
+        Assert.Empty(await world.Scenario.JobsAsync(Scenario.RemuxKind));
+        Assert.Empty(await world.Scenario.FinishedJobsAsync(Scenario.RemuxKind));
         Assert.Null(await world.Scenario.FileRowAsync(world.Movies, NotHandedOverPath));
         Assert.Empty(world.Scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux"));
         Assert.Empty(Directory.GetFileSystemEntries(world.Translation.Apply(RecordedWorld.RecordedMoviesOutput)));

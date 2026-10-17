@@ -4703,13 +4703,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "route:GET /api/v1/processing/hardware"
       ],
@@ -7105,13 +7110,18 @@
           "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/HandoffScenariosTests.cs",
           "name": "HandoffScenariosTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "job:processing.file.remux_pass.v1"
       ],
@@ -12971,13 +12981,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "setting:ProcessingRuleSetRecord.StandardizeTrackNames",
         "setting:ProcessingRuleSetRecord.TrackNameTemplate",
@@ -13026,13 +13041,18 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Media/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "setting:ProcessingRuleSetRecord.ClearVideoTrackNames",
         "setting:ProcessingRuleSetRecord.RemoveChapters"
@@ -14658,13 +14678,18 @@
           "type": "real-fs",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/RealFfmpegTests.cs",
           "name": "RealFfmpegTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "covers": [
         "setting:env:WEIR_FFMPEG_DIR",
         "setting:env:WEIR_MKVTOOLNIX_DIR"
@@ -48504,13 +48529,18 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/RealFfmpegClassifiesDamagedMediaTests.cs",
           "name": "RealFfmpegClassifiesDamagedMediaTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/RealFfmpegRequirementTests.cs",
+          "name": "RealFfmpegRequirementTests"
+        },
+        {
+          "type": "node",
+          "file": "scripts/check-contract-real-tool-tests.test.mjs",
+          "name": "*"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The contract suite's real-tool scenarios must fail, not skip, when the pinned tools are missing, and CI must count that every one ran."
-      },
-      "issue": 1064,
       "audit": {
         "id": "INT-FFMPEG",
         "verdict": "Partly"

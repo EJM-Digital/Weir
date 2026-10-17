@@ -142,6 +142,7 @@ jobs:
               - 'scripts/repository.mjs'
               - 'scripts/repository.ps1'
               - 'scripts/check-real-tool-tests.mjs'
+              - 'scripts/check-contract-real-tool-tests.mjs'
               - 'scripts/ffmpeg-cache-key.mjs'
               - 'scripts/ffmpeg-pin.mjs'
               - 'scripts/install-ffmpeg-linux.mjs'
@@ -290,7 +291,7 @@ jobs:
         run: node --test scripts/check-coverage-floors.test.mjs scripts/align-coverage-reports.test.mjs
 
       - name: The real media tools - pins, installers and the check that every real-tool test ran
-        run: node --test scripts/ffmpeg-pin.test.mjs scripts/pinned-download.test.mjs scripts/mkvtoolnix-pin.test.mjs scripts/install-mkvtoolnix-linux.test.mjs scripts/summarize-test-results.test.mjs scripts/check-real-tool-tests.test.mjs
+        run: node --test scripts/ffmpeg-pin.test.mjs scripts/pinned-download.test.mjs scripts/mkvtoolnix-pin.test.mjs scripts/install-mkvtoolnix-linux.test.mjs scripts/summarize-test-results.test.mjs scripts/check-real-tool-tests.test.mjs scripts/check-contract-real-tool-tests.test.mjs
 
       # The register is read against the code, against the open coverage issues, and against the register as it was before this change:
       # on a pull request the base commit's, on a push to main the previous commit's. The gaps may not go up from that count
