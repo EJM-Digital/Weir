@@ -12,6 +12,6 @@ export async function postProcessingFileRemuxPassEnqueue(
   body: ProcessingFileRemuxPassManualEnqueueBody,
 ): Promise<ProcessingFileRemuxPassManualEnqueueOut> {
   const path = processingFileRemuxPassEnqueuePath();
-  const r = await sendJson(path, "POST", body, "Could not queue file pass");
+  const r = await sendJson(path, "POST", body, "Could not queue that file");
   return readJson<ProcessingFileRemuxPassManualEnqueueOut>(r);
 }

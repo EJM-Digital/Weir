@@ -205,7 +205,8 @@ public static class NotificationRules
 
     /// <summary>
     /// The event name, title and detail of a job notification. <paramref name="willRetry"/> is
-    /// meaningless for <c>completed</c> and defaults to <see langword="false"/> for every other caller.
+    /// meaningless for <c>completed</c> and defaults to <see langword="false"/> for every other caller. <paramref name="workFailed"/> is for
+    /// work that failed in a job that itself ended normally, which has no retry attempts to have exhausted.
     /// </summary>
     /// <remarks>
     /// A failure that will be retried says so, with the retry wording <see cref="WorkerFailures"/> uses (#488),
@@ -213,7 +214,7 @@ public static class NotificationRules
     /// permanently-failed check the dispatcher applies.
     /// </remarks>
     public static (string Event, string Title, string Detail) JobNotification(
-        string module, string eventKind, long jobId, string jobKind, string appName, bool willRetry = false)
+        string module, string eventKind, long jobId, string jobKind, string appName, bool willRetry = false, bool workFailed = false)
     {
         ArgumentNullException.ThrowIfNull(module);
         ArgumentNullException.ThrowIfNull(appName);
@@ -227,7 +228,9 @@ public static class NotificationRules
 
         var detail = willRetry
             ? $"Job {jobId} ({jobKind}) failed. {WorkerFailures.WillRetryContinuation}"
-            : $"Job {jobId} ({jobKind}) exhausted all retry attempts.";
+            : workFailed
+                ? $"Job {jobId} ({jobKind}) failed, and Weir has stopped trying."
+                : $"Job {jobId} ({jobKind}) exhausted all retry attempts.";
         return ($"{module}_job_{eventKind}", $"{capitalized} job failed", detail);
     }
 }
@@ -470,4 +473,8 @@ public static class ExternalUrlPolicy
     public const string RedirectRefused = "The notification destination returned a redirect; redirects are disabled.";
     public const string CouldNotDeliver = "Weir could not deliver the notification.";
     public const string GenericDeliveryError = "Weir could not deliver the notification. Check the destination and server logs.";
+
+    /// <summary>What a destination that took the connection and then refused the message answered with.</summary>
+    public static string DestinationRefused(int status) =>
+        $"The notification destination answered with an error (HTTP {status}), so it did not take the message. Check the address.";
 }

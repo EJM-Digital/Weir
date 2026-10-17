@@ -18,24 +18,28 @@ describe("latestBackups", () => {
         created_at: "2026-09-29T03:00:00Z",
         file_name: "a",
         size_bytes: 1024,
+        made_by: "schedule",
       },
       {
         id: 4,
         created_at: "2026-10-02T03:00:00Z",
         file_name: "d",
         size_bytes: 3 * 1024 * 1024,
+        made_by: "schedule",
       },
       {
         id: 2,
         created_at: "2026-09-30T03:00:00Z",
         file_name: "b",
         size_bytes: 2048,
+        made_by: "schedule",
       },
       {
         id: 3,
         created_at: "2026-10-01T03:00:00Z",
         file_name: "c",
         size_bytes: 4096,
+        made_by: "schedule",
       },
     ]);
     expect(rows.map((row) => row.id)).toEqual([4, 3, 2]);
@@ -45,7 +49,13 @@ describe("latestBackups", () => {
   it("leaves out a backup whose time cannot be read", () => {
     expect(
       latestBackups([
-        { id: 1, created_at: "never", file_name: "a", size_bytes: 1 },
+        {
+          id: 1,
+          created_at: "never",
+          file_name: "a",
+          size_bytes: 1,
+          made_by: "schedule",
+        },
       ]),
     ).toEqual([]);
   });

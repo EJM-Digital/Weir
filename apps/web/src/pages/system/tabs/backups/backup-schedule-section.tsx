@@ -4,7 +4,10 @@ import { quietActionRowClass } from "../../../../components/shared/quiet-section
 import { SettingRow } from "../../../../components/shared/settings-group";
 import { MmOnOffSwitch } from "../../../../components/ui/mm-on-off-switch";
 import { errorMessage } from "../../../../lib/api/error-message";
-import type { AppSettings } from "../../../../lib/settings/types";
+import type {
+  AppSettings,
+  ConfigurationBackupItem,
+} from "../../../../lib/settings/types";
 import { mmActionButtonClass } from "../../../../lib/ui/mm-control-roles";
 import { useAppDateFormatter } from "../../../../lib/ui/mm-format-date";
 import { useNow } from "../../../../lib/ui/use-now";
@@ -13,6 +16,7 @@ import {
   type SystemSettingsForm,
 } from "../../use-system-settings-form";
 import { BACKUP_FRESHNESS_MEANING, backupFreshness } from "./backup-freshness";
+import { madeByWords, newestBackup } from "./last-backup";
 
 const BACKUP_INTERVAL_HOURS = [6, 12, 24, 48, 72, 168] as const;
 const HOURS_PER_WEEK = 168;
@@ -29,11 +33,14 @@ const WHAT_A_BACKUP_HOLDS =
 export function BackupScheduleSection({
   form,
   settings,
+  backups,
   onSave,
   saved,
 }: {
   form: SystemSettingsForm;
   settings: AppSettings;
+  /** The backups on this machine, or undefined while they are still being read. */
+  backups: readonly ConfigurationBackupItem[] | undefined;
   onSave: () => void;
   saved: boolean;
 }) {
@@ -41,6 +48,8 @@ export function BackupScheduleSection({
   const now = useNow(CLOCK_TICK_MS);
   const { backupSchedule: schedule, save } = form;
   const freshness = backupFreshness(settings, now);
+  const last = backups ? newestBackup(backups) : null;
+  const lastMadeBy = last ? madeByWords(last.made_by) : "";
   const failed = save.isError && form.lastSaveTarget === "backup";
 
   return (
@@ -96,8 +105,11 @@ export function BackupScheduleSection({
           />
         </SettingRow>
         <SettingRow label="Last backup">
-          <span className="mm-sys-value">
-            {formatDate(settings.configuration_backup_last_run_at)}
+          <span className="mm-sys-value" data-testid="backup-last">
+            {backups && !last ? "None yet" : formatDate(last?.created_at)}
+            {lastMadeBy ? (
+              <span className="mm-sys-value__how">({lastMadeBy})</span>
+            ) : null}
             {freshness ? (
               <Chip meaning={BACKUP_FRESHNESS_MEANING[freshness]}>
                 {freshness === "overdue" ? "Overdue" : "Up to date"}

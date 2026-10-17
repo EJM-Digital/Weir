@@ -299,6 +299,10 @@
   font-size: var(--mm-type-body);
 }
 
+.mm-sys-value__how {
+  color: var(--mm-text2);
+}
+
 /* A short table of records and what is done to each. It is not inside a table wrapper, so its heading row always shows,
    whatever the card's width. */
 .mm-sys-table tbody th,

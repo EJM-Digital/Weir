@@ -86,3 +86,9 @@ root-cause from the trace, never one to run twice.
   what they leave behind, read back through the API. **`E2EServer.StartWithSettingsAsync`** starts a server of its own with settings added (a
   reverse proxy in front of it, sign-in limits low enough to reach), and `NewPageAsync(headers: ...)` sends headers with every request the
   browser makes, as such a proxy does.
+- **`Support/WorkflowEditor`** opens the File paths tab, the Add workflow editor or a row's Edit, and the editor's folded groups, and reads a workflow back through the API.
+  **`Support/WorkflowBodies`** is the body the editor sends for a new workflow with nothing filled in, and **`Support/WeekGrids`** builds the weeks the Schedule tab draws.
+- **`Support/SonarrFedWorkflow`** is a TV workflow linked to a fake Sonarr whose qBittorrent download client Weir also knows, with the replies Sonarr's own API gives for its
+  download clients (the shape the contract suite uses; no recording of Sonarr exists).
+- **`Support/ViewerAccount`** adds a viewer next to the administrator and signs a page in as them, for a test of what a person who may only look can and cannot do.
+- **`Support/MediaManagersPage`** opens Connections › Media managers, finds a connection's card by its title and connects a fake manager through the API.
