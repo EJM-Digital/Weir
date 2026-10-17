@@ -15,7 +15,11 @@ export const GENERIC_FAILURE_MESSAGE = "Weir couldn't do that. Try again.";
 const UNAUTHORIZED = 401;
 const TOO_MANY_REQUESTS = 429;
 const BAD_GATEWAY = 502;
+const SERVICE_UNAVAILABLE = 503;
 const FIRST_SERVER_ERROR = 500;
+
+/** The `code` the server gives when a write gave up on a busy database. */
+export const DATABASE_BUSY_CODE = "database_busy";
 
 /**
  * The sign-in form's own path: a 401 there means the name or password was wrong, and the server's
@@ -131,12 +135,27 @@ export function validationText(issues: readonly unknown[]): string {
 }
 
 /**
- * Whether the server's `detail` sentence is meant for the operator. Refusals (4xx) are, and so is a
- * media manager's failure relayed as 502. Weir's own failures (the rest of 5xx) carry text for its
- * log, not for a person.
+ * The `code` the server put on its answer, when it gave one.
  */
-function detailIsForTheOperator(status: number): boolean {
-  return status < FIRST_SERVER_ERROR || status === BAD_GATEWAY;
+export function codeOf(body: unknown): string | undefined {
+  if (typeof body !== "object" || body === null || !("code" in body)) {
+    return undefined;
+  }
+  const { code } = body as { code: unknown };
+  return typeof code === "string" ? code : undefined;
+}
+
+/**
+ * Whether the server's `detail` sentence is meant for the operator. Refusals (4xx) are, and so is a
+ * media manager's failure relayed as 502, and so is a busy database's 503, which says how long to wait.
+ * Weir's own failures (the rest of 5xx) carry text for its log, not for a person.
+ */
+function detailIsForTheOperator(status: number, body: unknown): boolean {
+  return (
+    status < FIRST_SERVER_ERROR ||
+    status === BAD_GATEWAY ||
+    (status === SERVICE_UNAVAILABLE && codeOf(body) === DATABASE_BUSY_CODE)
+  );
 }
 
 /**
@@ -166,7 +185,7 @@ export function responseErrorText({
   if (
     typeof detail === "string" &&
     detail.trim() &&
-    detailIsForTheOperator(status)
+    detailIsForTheOperator(status, body)
   ) {
     return asSentence(detail);
   }

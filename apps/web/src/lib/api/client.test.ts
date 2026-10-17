@@ -171,7 +171,7 @@ describe("apiResponseErrorMessage", () => {
     expect(normalized.message).toBe("Could not save.");
   });
 
-  it("says what failed for a busy database too, and keeps the server's code and wording for a caller that reads them", async () => {
+  it("says the server's own sentence for a busy database, and keeps its code for a caller that reads it", async () => {
     const normalized = await apiResponseErrorMessage(
       SETTINGS,
       jsonResponse(503, {
@@ -182,10 +182,11 @@ describe("apiResponseErrorMessage", () => {
       "Could not save.",
     );
 
-    expect(normalized.message).toBe("Could not save.");
-    expect(normalized.detail).toBe(
+    expect(normalized.message).toBe(
       "Weir is busy with other changes and could not finish this request. Try again in 30 seconds.",
     );
+    expect(normalized.detail).toBe(normalized.message);
+    expect(normalized.code).toBe("database_busy");
   });
 
   it("exposes status and path on ApiHttpError", () => {
