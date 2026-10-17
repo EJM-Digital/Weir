@@ -155,7 +155,7 @@ export function LogRow({
     ),
   };
   return (
-    <li
+    <div
       role="row"
       className={classNames(
         "mm-log-row",
@@ -198,6 +198,6 @@ export function LogRow({
           </div>
         ) : null}
       </div>
-    </li>
+    </div>
   );
 }

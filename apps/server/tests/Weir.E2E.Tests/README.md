@@ -78,7 +78,11 @@ root-cause from the trace, never one to run twice.
 - **`Support/Navigation`** is sign-in, the side menu, the tabs of an area, Logs and the Activity chips. **`Support/PageChecks`**
   holds the structural checks and screenshots of the visual smoke tests.
 - **`Support/Axe`** runs axe-core (the accessibility checker the web app's own tests use, read from `apps/web/node_modules`) on the page as it is
-  shown, so a test can check a state it has just reached. **`Support/SetupWizard`** and **`Support/SetupState`** are the first-run screens and
+  shown, so a test can check a state it has just reached; it waits for transitions that are under way to finish first, so a colour is the one the page ends
+  up with. No rule is switched off. **`AccessibilitySweepTests`** visits every address the signed-in app answers, and the pause menu, the user menu, the phone
+  side menu and the Log settings panel, at a desktop and a phone width in the light and the dark theme (`NewPageAsync(colorScheme: ...)`), and on a phone
+  checks that no page scrolls sideways. A test that reaches a state the sweep cannot (a file open in Activity, a film's panel in Library) calls
+  `Axe.AssertNoViolationsAsync` itself. **`Support/SetupWizard`** and **`Support/SetupState`** are the first-run screens and
   what they leave behind, read back through the API. **`E2EServer.StartWithSettingsAsync`** starts a server of its own with settings added (a
   reverse proxy in front of it, sign-in limits low enough to reach), and `NewPageAsync(headers: ...)` sends headers with every request the
   browser makes, as such a proxy does.

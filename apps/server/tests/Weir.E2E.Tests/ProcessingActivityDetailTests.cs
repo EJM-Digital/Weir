@@ -62,6 +62,7 @@ public sealed class ProcessingActivityDetailTests(E2EServer server) : E2ETestBas
         await Expect(detailCard.GetByText("Audio in file", new() { Exact = true })).ToBeVisibleAsync();
         await Expect(detailCard.GetByText("Audio kept", new() { Exact = true })).ToBeVisibleAsync();
         await Expect(detailCard.GetByText("Audio removed", new() { Exact = true })).ToBeVisibleAsync();
+        await Axe.AssertNoViolationsAsync(page, "A log row opened to its track and cleanup detail");
         await Expect(detailCard.GetByText("Subtitles in file", new() { Exact = true })).ToBeVisibleAsync();
         await Expect(detailCard.GetByText("Subtitles kept", new() { Exact = true })).ToBeVisibleAsync();
         await Expect(detailCard.GetByText("Subtitles removed", new() { Exact = true })).ToBeVisibleAsync();

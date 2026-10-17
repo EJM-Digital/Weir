@@ -40,6 +40,8 @@ public sealed partial class ActivityControlsTests(E2EServer server) : E2ETestBas
             await Expect(row).ToContainTextAsync("Failed", new() { Timeout = PassMs });
             await row.ClickAsync();
             var actions = page.GetByTestId("activity-file-actions");
+            await Expect(actions).ToBeVisibleAsync();
+            await Axe.AssertNoViolationsAsync(page, "Activity with a failed file opened");
             var mark = log.Mark();
 
             await actions.GetByRole(AriaRole.Button, new() { Name = "Try again", Exact = true }).ClickAsync();

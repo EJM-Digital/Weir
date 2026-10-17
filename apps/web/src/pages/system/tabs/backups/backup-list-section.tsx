@@ -46,7 +46,6 @@ export function BackupListSection({
     <Panel
       title="Backups"
       headingId="suite-settings-backup-snapshots-heading"
-      headingLevel={3}
       padded
       count={`Keeps the latest ${SNAPSHOTS_KEPT}`}
       note={
