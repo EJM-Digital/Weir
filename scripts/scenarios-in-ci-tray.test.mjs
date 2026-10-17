@@ -178,9 +178,8 @@ async function logWorld() {
   const runtimeHome = await mkdtemp(join(tmpdir(), "weir-tray-test-"));
   const trayLog = join(runtimeHome, "tray-host.log");
   await writeFile(trayLog, "");
-  const clock = { now: () => Date.now(), sleep: (ms) => new Promise((done) => setTimeout(done, ms)) };
   const machine = { paths: { runtimeHome, trayLog }, readText: (path) => readFile(path, "utf8"), isRunning: async () => true };
-  return { world: { machine, clock }, trayLog, cleanup: () => rm(runtimeHome, { recursive: true, force: true }) };
+  return { world: { machine }, trayLog, cleanup: () => rm(runtimeHome, { recursive: true, force: true }) };
 }
 
 const stamp = (message) => `[2026-10-17 23:00:00] ${message}\n`;

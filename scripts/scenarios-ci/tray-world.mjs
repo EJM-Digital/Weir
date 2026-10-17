@@ -30,7 +30,7 @@ export async function installedAndStopped(world) {
   } else {
     await machine.stopWeir();
   }
-  await machine.keepUpdatesFromInstalling();
+  await machine.keepUpdatesFromInstalling({ onlyWhenAsked: true });
   await machine.removeFromDataFolder(...START_STATE);
 }
 

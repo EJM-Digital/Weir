@@ -95,10 +95,11 @@ export class WindowsMachine {
     return { exitCode, seconds: Math.round((Date.now() - began) / 1000) };
   }
 
-  /** Chooses "only say that an update exists" in update-settings.json, the file the tray reads, so no start of Weir installs a release over the build under test. */
-  async keepUpdatesFromInstalling() {
+  /** Chooses "only say that an update exists" in update-settings.json, the file the tray reads, so no start of Weir installs a release over the build under test. With `onlyWhenAsked` it also checks for updates only when asked, so the menu's update item and the balloons are those of the scenario alone. */
+  async keepUpdatesFromInstalling({ onlyWhenAsked = false } = {}) {
     await mkdir(this.paths.runtimeHome, { recursive: true });
-    await writeFile(join(this.paths.runtimeHome, "update-settings.json"), JSON.stringify({ mode: "NotifyOnly" }));
+    const choice = onlyWhenAsked ? { mode: "NotifyOnly", checkOnStartup: false, checkIntervalMinutes: 0 } : { mode: "NotifyOnly" };
+    await writeFile(join(this.paths.runtimeHome, "update-settings.json"), JSON.stringify(choice));
   }
 
   /** Runs Velopack's own uninstaller, silently. */

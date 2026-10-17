@@ -71,7 +71,8 @@ export async function trayMenu(world) {
     await choose(world, tray, menu.pause);
     await tray.line("Pause processing asked for from the tray menu.", { what: "the tray to log the pause request" });
     await wait(world, async () => ((await weir.get("/pause")).paused ? true : undefined), "Weir to pause on the tray's request", 60_000, 500);
-    await wait(world, async () => ((await statusLine(world, tray)) === status.paused ? true : undefined), `the menu to say "${status.paused}"`, 60_000, 500);
+    await wait(world, async () => ((await iconText(world)) === status.paused ? true : undefined), `the icon to say "${status.paused}"`, 60_000, 500);
+    assert.equal(await statusLine(world, tray), status.paused, "the menu does not say what the icon says");
     await openMenu(world, tray);
     assert.ok((await desktop.menu(tray.pid)).items.some((item) => item.name === menu.resume && item.enabled), "the menu offers Resume processing while paused");
     await closeMenu(world, tray);
