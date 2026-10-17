@@ -57,7 +57,7 @@ Decided by the owner, 7 Oct 2026 (#903), after bugs kept turning up in things th
 3. Confirm the published release body is plain-language and matches the approved `docs/release-notes/vX.Y.Z.md` content.
 4. Confirm the release notes/install guidance names the attached `Weir-win-Setup.exe` installer and explains any one-time upgrade requirement for older installs.
 5. Confirm the GHCR image exists under its version tag (`X.Y.Z` or `X.Y.Z-rc.N`) and can be pulled by it. For a stable release, `X.Y` and `latest` name the same image; they move only after the version's image passed its smoke, and a release candidate moves neither.
-6. Confirm the release workflow completed `ci-passed`, `golden-path`, `validate`, `windows-smoke`, `docker-candidate`, `docker-arm64`, `publish-windows` and `publish-docker`. The two publish jobs do not wait for each other; if one failed, re-run that job alone.
+6. Confirm the release workflow completed `ci-passed`, `golden-path`, `validate`, every `e2e` shard, `windows-smoke`, `docker-candidate`, `docker-arm64`, `publish-windows` and `publish-docker`. The two publish jobs do not wait for each other; if one failed, re-run that job alone.
 7. Download `weir-docker-release-candidate-audit` and confirm its summary has
    no console warnings, console errors, page errors, failed requests, or bad responses;
    confirm `pass-through-proof.json` reports a completed job, byte-identical output,
