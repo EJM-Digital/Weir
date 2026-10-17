@@ -295,15 +295,11 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
 
     /// <summary>
     /// Set straight after start, since <see cref="ProcessStartInfo"/> has no priority. On Linux, BelowNormal is nice 10 on
-    /// the child's main thread, which the threads a tool starts afterwards inherit.
+    /// the child's main thread, which the threads a tool starts afterwards inherit. Normal is set as well, because a child
+    /// otherwise inherits the priority of this process, which can itself run below normal.
     /// </summary>
     private void SetPriority(Process process, ProcessPriorityClass priority, string tool)
     {
-        if (priority == ProcessPriorityClass.Normal)
-        {
-            return;
-        }
-
         try
         {
             process.PriorityClass = priority;
@@ -311,7 +307,7 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
         catch (Exception exception) when (exception is InvalidOperationException or Win32Exception)
         {
             // It has already exited, or this system does not allow it (a locked-down container, say). The tool then runs at
-            // its normal priority, which only slows everything else down.
+            // the priority it started with.
             if (logger is not null)
             {
                 LogPriorityNotSet(logger, exception, tool, priority);
@@ -319,7 +315,7 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
         }
     }
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Could not lower the priority of {Tool} to {Priority}; it runs at normal priority.")]
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Could not set the priority of {Tool} to {Priority}; it runs at the priority it started with.")]
     private static partial void LogPriorityNotSet(ILogger logger, Exception exception, string tool, ProcessPriorityClass priority);
 
     private static void KillTree(Process process)
