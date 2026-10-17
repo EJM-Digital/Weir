@@ -181,11 +181,14 @@ public sealed partial class ProcessingRig : IAsyncDisposable
     /// The file <see cref="HandOffUnreadableAsync"/> handed over has finished arriving and reads as <paramref name="probe"/>. A pass over
     /// it stays under way, once a worker takes it, until <see cref="ReleasePass"/>.
     /// </summary>
-    public async Task FinishArrivingAsync(string handoffId, string fileName, JsonObject probe)
+    public async Task FinishArrivingAsync(string handoffId, string fileName, JsonObject probe, double? probeDelaySeconds = null)
     {
         await File.WriteAllBytesAsync(Path.Combine(Watched, handoffId, fileName), FakeMedia.Bytes(probe));
-        _tools.SetFileRule(fileName, new FileRule { Probe = probe, RemuxReleaseFile = ReleaseFileFor(fileName) });
+        _tools.SetFileRule(fileName, new FileRule { Probe = probe, RemuxReleaseFile = ReleaseFileFor(fileName), ProbeDelaySeconds = probeDelaySeconds });
     }
+
+    /// <summary>The file Deluno handed over is taken out of the watched folder, so nothing is left to read.</summary>
+    public void DeleteHandedOffFile(string handoffId, string fileName) => File.Delete(Path.Combine(Watched, handoffId, fileName));
 
     /// <summary>Deluno hands over the file it already handed over, which has not changed since: no file is written.</summary>
     public Task HandOffRootFileAgainAsync(string handoffId, string fileName) => PostHandOffAsync(handoffId, Path.Combine(Watched, fileName));
