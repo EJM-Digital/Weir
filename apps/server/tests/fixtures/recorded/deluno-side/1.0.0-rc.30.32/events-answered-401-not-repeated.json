@@ -1,0 +1,35 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "events-answered-401-not-repeated",
+  "recordedAt": "2026-10-15T03:15:51Z",
+  "note": "A completed report the proxy answered 401 once. After waiting 130 s Weir had sent it 0 more time(s): a 4xx answer means Weir no longer owes the report.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {},
+        "body": {
+          "handoffId": "c0b777e3-dfe9-40a9-aa2d-0f91bb095025",
+          "status": "completed",
+          "processorName": "Weir",
+          "libraryId": "01a13d68ae4a7e7b84c06a96fd5d8cc7",
+          "releaseName": "Big Buck Bunny (2008) Recorded Answer401",
+          "outputPath": "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Answer401.mkv",
+          "message": "Remux finished.",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Answer401.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 401,
+        "headers": {
+          "content-type": "text/plain"
+        },
+        "bodyText": ""
+      }
+    }
+  ]
+}

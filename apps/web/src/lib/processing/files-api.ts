@@ -117,6 +117,8 @@ export interface ProcessingFileHandback {
 }
 
 export interface ProcessingFile {
+  /** Which kind of Activity entry this is: always a download here. */
+  kind?: "download";
   id: number;
   library_id: number;
   library_name: string;

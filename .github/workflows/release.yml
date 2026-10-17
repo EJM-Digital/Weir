@@ -74,7 +74,9 @@ jobs:
   # Does not wait either: for every tag, a release candidate too, Weir's scenario suite is run on this commit's own
   # build on the golden VM before the tag is made, and the run recorded the result as a commit status. A tag made
   # without a passing one fails at once, saying what to run. There is no pass-through and no waiver (#954;
-  # docs/release.md, "Proof before tagging"). The job has no `if:` and release-workflow-gates keeps it that way.
+  # docs/release.md, "Proof before tagging"). The pass may be an earlier commit's when no file that ships changed since
+  # (scripts/release/shipped-paths.mjs), which is why this checkout holds the full history. The job has no `if:` and
+  # release-workflow-gates keeps it that way.
   golden-path:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -83,6 +85,8 @@ jobs:
       statuses: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
 
       - name: The golden path passed on the tagged commit
         env:

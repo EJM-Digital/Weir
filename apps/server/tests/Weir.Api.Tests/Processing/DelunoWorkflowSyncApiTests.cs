@@ -70,12 +70,12 @@ public sealed class DelunoWorkflowSyncApiTests
         ["downloadsPath"] = string.Empty,
     };
 
-    private static string Destinations(Rig rig, string movies = "Completed/Movies") => JsonSerializer.Serialize(new
+    private static string Destinations(Rig rig, string movies = "Completed/Movies", string tv = "Completed/TV") => JsonSerializer.Serialize(new
     {
         libraries = new[]
         {
             Published("lib-movies", "Movies", rig.Folder(movies), rig.Folder("Ready/Movies")),
-            Published("lib-tv", "TV", rig.Folder("Completed/TV"), rig.Folder("Ready/TV")),
+            Published("lib-tv", "TV", rig.Folder(tv), rig.Folder("Ready/TV")),
         },
     });
 
@@ -137,20 +137,11 @@ public sealed class DelunoWorkflowSyncApiTests
     }
 
     /// <summary>The workflows once Deluno has been asked for them: the sync runs in the background after the connection is saved.</summary>
-    private static async Task<JsonArray> SyncedWorkflowsAsync(ApiTestClient client, int count = 2)
-    {
-        var deadline = DateTime.UtcNow.AddSeconds(30);
-        while (true)
-        {
-            var workflows = await WorkflowsAsync(client);
-            if (workflows.Count(workflow => workflow!["discovered_library_key"] is not null) >= count || DateTime.UtcNow > deadline)
-            {
-                return workflows;
-            }
-
-            await Task.Delay(50);
-        }
-    }
+    private static Task<JsonArray> SyncedWorkflowsAsync(ApiTestClient client, int count = 2) =>
+        Eventually.PollAsync(
+            () => WorkflowsAsync(client),
+            workflows => workflows.Count(workflow => workflow!["discovered_library_key"] is not null) >= count,
+            TimeSpan.FromSeconds(30));
 
     private static JsonNode Workflow(JsonArray workflows, string mediaType) =>
         Assert.Single(workflows, workflow => workflow!["media_type"]!.GetValue<string>() == mediaType)!;
@@ -220,13 +211,12 @@ public sealed class DelunoWorkflowSyncApiTests
         Assert.Equal(HttpStatusCode.OK, test.StatusCode);
 
         var expected = rig.Folder("Completed/Movies 4K");
-        var deadline = DateTime.UtcNow.AddSeconds(30);
-        while (Workflow(await WorkflowsAsync(client), "movie")["watched_folder"]!.GetValue<string>() != expected && DateTime.UtcNow < deadline)
-        {
-            await Task.Delay(50);
-        }
+        var workflows = await Eventually.PollAsync(
+            () => WorkflowsAsync(client),
+            all => Workflow(all, "movie")["watched_folder"]!.GetValue<string>() == expected,
+            TimeSpan.FromSeconds(30));
 
-        Assert.Equal(expected, Workflow(await WorkflowsAsync(client), "movie")["watched_folder"]!.GetValue<string>());
+        Assert.Equal(expected, Workflow(workflows, "movie")["watched_folder"]!.GetValue<string>());
     }
 
     [Fact]
@@ -238,6 +228,7 @@ public sealed class DelunoWorkflowSyncApiTests
         var delunoId = await ConnectAsync(client);
         var movies = Workflow(await SyncedWorkflowsAsync(client), "movie");
         var original = movies["watched_folder"]!.GetValue<string>();
+        var tvBefore = Workflow(await WorkflowsAsync(client), "tv")["watched_folder"]!.GetValue<string>();
 
         using (var unlinked = await client.PostAsync($"{Libraries}/{movies["id"]!.GetValue<long>()}/unlink", new Dictionary<string, object?> { ["csrf_token"] = await client.CsrfAsync() }))
         {
@@ -245,12 +236,18 @@ public sealed class DelunoWorkflowSyncApiTests
             Assert.Null((await Json(unlinked))!["folders_synced_from_connection_id"]?.GetValue<long>());
         }
 
-        manager.Json(HttpMethod.Get, DestinationsPath, Destinations(rig, "Moved/Movies"));
+        manager.Json(HttpMethod.Get, DestinationsPath, Destinations(rig, "Moved/Movies", "Moved/TV"));
         using var test = await client.PostAsync($"{Connections}/{delunoId}/test", new Dictionary<string, object?> { ["csrf_token"] = await client.CsrfAsync() });
         Assert.Equal(HttpStatusCode.OK, test.StatusCode);
-        await Task.Delay(1500);
 
-        Assert.Equal(original, Workflow(await WorkflowsAsync(client), "movie")["watched_folder"]!.GetValue<string>());
+        // The sync saves every workflow of the connection together, so once the linked TV workflow has moved, the pass has finished.
+        var workflows = await Eventually.PollAsync(
+            () => WorkflowsAsync(client),
+            all => Workflow(all, "tv")["watched_folder"]!.GetValue<string>() != tvBefore,
+            TimeSpan.FromSeconds(30));
+
+        Assert.Equal(rig.Folder("Moved/TV"), Workflow(workflows, "tv")["watched_folder"]!.GetValue<string>());
+        Assert.Equal(original, Workflow(workflows, "movie")["watched_folder"]!.GetValue<string>());
     }
 
     [Fact]

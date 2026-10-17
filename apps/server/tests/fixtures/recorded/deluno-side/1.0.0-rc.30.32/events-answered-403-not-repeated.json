@@ -1,0 +1,37 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.32",
+  "state": "events-answered-403-not-repeated",
+  "recordedAt": "2026-10-15T03:19:26Z",
+  "note": "A completed report the proxy answered 403 once. After waiting 130 s Weir had sent it 0 more time(s): a 4xx answer means Weir no longer owes the report.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {},
+        "body": {
+          "handoffId": "1cee445a-3f9d-4049-983c-7fb5d7766a96",
+          "status": "completed",
+          "processorName": "Weir",
+          "libraryId": "01a13d68ae4a7e7b84c06a96fd5d8cc7",
+          "releaseName": "Big Buck Bunny (2008) Recorded Answer403",
+          "outputPath": "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Answer403.mkv",
+          "message": "Remux finished.",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Answer403.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 403,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": "This API key does not include the required scope: imports."
+        }
+      }
+    }
+  ]
+}

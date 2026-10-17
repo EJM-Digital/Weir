@@ -29,7 +29,9 @@ Decided by the owner, 7 Oct 2026 (#903), after bugs kept turning up in things th
 3. **Weir's scenario suite gates every tag, release candidates included.** Before the tag, the exact commit's build is
    installed on the golden VM (first over the Weir Deluno's picker installed, before Deluno's suite makes its hand-offs, then as Deluno's suite leaves it, then on the clean checkpoint) and Weir's scenario suite is run against it (`scripts/scenarios`; `docs/release.md`,
    "Proof before tagging"). The run is recorded as the commit status `golden-path`, and `release.yml` refuses to publish any
-   tag whose commit has no passing one. There is no release-candidate pass-through and no waiver: a release is proven before its
+   tag whose commit has no passing one. A pass on an earlier commit counts when no file that ships changed since and it
+   was run for the same version (the owner, 16 Oct 2026; `docs/release.md`, "A pass carries over"): a change only to
+   tests, scripts, docs or CI keeps it, and a shipped file or a version change does not. There is no release-candidate pass-through and no waiver: a release is proven before its
    tag, never after it (the owner, 11 Oct 2026, #954; the pass-through added in #907 is gone). An intermittent failure is a bug
    until its root cause is found.
 4. **Broad changes need a full click-through before they ship:** class rewrites, dependency bumps and refactors are
@@ -43,7 +45,7 @@ Decided by the owner, 7 Oct 2026 (#903), after bugs kept turning up in things th
 4. Confirm `.github/dependabot.yml` has no `ignore` hold that conflicts with the workflow pins (version-update pull requests are off; the holds are kept as the record of why a major is not taken).
 5. Confirm open issues tagged `priority: critical` or `priority: high` are either fixed, intentionally deferred, or not release-blocking.
 6. Create `docs/release-notes/vX.Y.Z.md` (`vX.Y.Z-rc.N.md` for a release candidate) from `docs/release-notes/TEMPLATE.md` with plain-language user-facing notes.
-7. Run Weir's scenario suite on the exact commit being tagged (`scripts/scenarios/Invoke-WeirScenarios.ps1`), for a release candidate too, and keep its record. A pass sets the `golden-path` commit status; `release.yml` reads it (`docs/release.md`).
+7. Make sure Weir's scenario suite has passed on the exact commit being tagged, or on an earlier one with the same shipped files and version (`scripts/scenarios/Invoke-WeirScenarios.ps1`), for a release candidate too, and keep its record. A pass sets the `golden-path` commit status; `release.yml` reads it, carrying an earlier pass over when nothing that ships changed (`docs/release.md`). `node scripts/verify-golden-path-for-release.mjs --sha <commit> --tag vX.Y.Z` asks the same question before the tag is made.
 8. Run the release path from `docs/release.md`.
 
 ## After every release

@@ -85,6 +85,19 @@ All calls use `credentials: 'include'`. Types are generated from `openapi/weir-o
 | `npm run api:types:check` | Regenerate API types and fail on drift |
 | `npm run ci` | `lint`, `format`, `check:tokens`, `build`, `test` |
 
+## Request tests and recorded replies
+
+Every function that asks the server for something has a case in `src/test/wire/*.cases.ts`, run by `src/lib/api/request-builders.test.ts` against a stub of `fetch`: the method, the path, the query string in its sent order, the JSON body and the CSRF token must be exactly what is written there, and a refusal must reach the caller in the server's words. `request-builders-guard.test.ts` fails when a request function has no case, or when a file that makes requests is neither covered nor listed as still to do.
+
+The answers those cases use are not written by hand. `src/test/recorded/*.json` holds what a running Weir server sent, recorded by `scripts/record-replies.mjs` (it starts the built server on a scratch folder, makes the requests as the web app does, and stops the server by its process id). Run it again after changing a route or its reply:
+
+```
+dotnet build apps/server/src/Weir.Host -c Release
+node apps/web/scripts/record-replies.mjs --work C:/weir-recorded-replies
+```
+
+It needs FFmpeg on the `PATH` (or `--ffmpeg`) to make two small test videos. `recorded-replies.test.ts` checks every recorded answer against the server's document (`openapi/weir-openapi.json`), and `hand-kept-types.test.ts` ties the hand-written types to the same document, so a field the server adds, drops or renames fails the build.
+
 ## CI
 
 The GitHub Actions **Test** workflow runs `npm ci`, `api:types:check`, lint, format, build and unit tests in this directory after the .NET server build and tests, then Playwright E2E (`apps/server/tests/Weir.E2E.Tests`) against the real .NET server serving the built web app (not `vite preview`) (see **`../../docs/local-development.md`**).
