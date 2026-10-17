@@ -10,6 +10,7 @@ public sealed class BlockingWaitGuardTests
     /// <summary>Source files allowed a <c>Thread.Sleep</c>, each with why it never holds a request's thread for long.</summary>
     private static readonly Dictionary<string, string> Sleepers = new(StringComparer.OrdinalIgnoreCase)
     {
+        [Path.Join("Weir.Infrastructure", "Runtime", "AtomicFileWriter.cs")] = "the pause before the rename is tried again when Windows refuses it (at most four pauses of 20 ms, and only while a reader has the file open)",
         [Path.Join("Weir.Infrastructure", "Runtime", "ReplacedFile.cs")] = "the pause between looks at a file that is refused (never one that is not there); only the watchers' reads ask for more than one look",
         [Path.Join("Weir.Infrastructure", "Runtime", "SystemServices.cs")] = "hands ReplacedFile its pause; every read on a request or a timer looks once and keeps the last good reading",
         [Path.Join("Weir.Infrastructure", "Runtime", "LanAccessFile.cs")] = "hands ReplacedFile its pause; every read looks once and keeps the last good choice",

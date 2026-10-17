@@ -177,6 +177,13 @@ public sealed class SetupLiveTests(E2EServer server) : E2ETestBase(server)
         await Expect(syncedNote).ToHaveCountAsync(0);
         await Expect(Workflow(list, "Anime")).ToHaveCountAsync(0);
 
+        // The sync sets the unconfigured TV workflow up and the test renames it; the server is shared, so it is put back as it was.
+        var untouched = (await client.GetAsync($"{Api}/processing/libraries")).Elements
+            .Select(row => row!.AsObject())
+            .Single(row => (string)row["name"]! == "TV");
+        var untouchedId = (long)untouched["id"]!;
+        var untouchedBody = LibraryBodies.Unchanged(untouched);
+
         var delunoId = (long)(await CreatedAsync(client, $"{Api}/media-managers/connections", new JsonObject
         {
             ["kind"] = "deluno",
@@ -204,8 +211,11 @@ public sealed class SetupLiveTests(E2EServer server) : E2ETestBase(server)
         finally
         {
             await ManagerConnections.RemoveAsync(client, delunoId);
+            var restored = await client.PutWithCsrfAsync($"{Api}/processing/libraries/{untouchedId}", untouchedBody);
+            Assert.True(restored.Status == HttpStatusCode.OK, restored.ToString());
         }
 
+        await Expect(Workflow(list, "TV")).ToBeVisibleAsync();
         await AssertNotReloadedAsync(page);
     }
 

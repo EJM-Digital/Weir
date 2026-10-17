@@ -65,6 +65,10 @@ public sealed class E2EServer : IAsyncLifetime
             ("ALL_PROXY", NoRouteToTheInternet),
             ("NO_PROXY", string.Empty)));
 
+    /// <summary>A server of its own with these settings (environment variables) on top of the shared one's, for a test of a screen that reads the server's startup configuration.</summary>
+    public static Task<WeirServer> StartWithSettingsAsync(params (string Name, string Value)[] settings) =>
+        WeirServer.StartNewAsync(Environment.With(settings));
+
     /// <summary>
     /// A server of its own whose scheduled tasks (the look at the workflows' folders every 15 s, the lifting of a pause that has run out
     /// every 30 s) run <paramref name="times"/> times as often, for a test that waits for one of them: it is the server's own test seam

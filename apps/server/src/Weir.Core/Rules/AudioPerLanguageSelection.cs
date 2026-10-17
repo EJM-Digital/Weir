@@ -77,9 +77,13 @@ public static partial class RemuxRules
             notes.Add($"No configured audio language slot matched any track; kept {DescribeCandidate(fallback)} by quality alone (never zero audio).");
         }
 
-        var wantsSecondaryDefault = RulesJson.Lower(WireStrings.Strip(config.DefaultAudioSlot)) == RemuxRuleValues.DefaultAudioSlotSecondary;
-        var defaultSlot = wantsSecondaryDefault && slots.Count > 1 ? slots[1] : slots.Count > 0 ? slots[0] : string.Empty;
-        var defaultIndex = keptSlotLangs.IndexOf(defaultSlot);
+        var defaultSlotLang = RulesJson.Lower(WireStrings.Strip(config.DefaultAudioSlot)) switch
+        {
+            RemuxRuleValues.DefaultAudioSlotSecondary => config.SecondaryAudioLang,
+            RemuxRuleValues.DefaultAudioSlotTertiary => config.TertiaryAudioLang,
+            _ => config.PrimaryAudioLang,
+        };
+        var defaultIndex = keptSlotLangs.IndexOf(LanguageVariants.NormalizeLanguageOrVariant(defaultSlotLang));
         if (defaultIndex < 0)
         {
             defaultIndex = kept.Count > 0 ? 0 : -1;

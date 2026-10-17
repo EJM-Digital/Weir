@@ -12,7 +12,6 @@ const holding = (repository) => ({
   "apps/tray/Weir.Tray/ProjectLocation.cs": `internal const string Owner = "${repository.split("/")[0]}";\n internal const string Repo = "${repository.split("/")[1]}";`,
   "apps/web/src/lib/repository.ts": `const REPOSITORY_SLUG = "${repository}";`,
   "scripts/repository.ps1": `$WeirRepository = '${repository}'`,
-  "scripts/runner/Install-WeirRunner.ps1": `$RepositoryUrl = 'https://github.com/${repository}'`,
 });
 
 const files = (extra = {}, repository = REPO) =>
@@ -26,7 +25,7 @@ test("places that agree, and files that name no owner, are clean", () => {
 
 test("every place the repository is kept is found in the real repository's list, once each", () => {
   assert.equal(new Set(PLACES.map((place) => place.path)).size, PLACES.length);
-  assert.equal(PLACES.length, 5);
+  assert.equal(PLACES.length, 4);
 });
 
 test("the real Node place reads as owner/name, and no former owner is listed before the move", () => {

@@ -195,13 +195,16 @@ function renderPage(entry = "/activity") {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return render(
+  const page = () => (
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[entry]}>
         <ActivityPage />
       </MemoryRouter>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
+  const view = render(page());
+  /** Draws the page again, as it is when the list it reads has changed. */
+  return { ...view, refresh: () => view.rerender(page()) };
 }
 
 describe("ActivityPage", () => {
@@ -709,6 +712,26 @@ describe("ActivityPage", () => {
     fireEvent.click(retryAll);
 
     expect(requeueFiles).toHaveBeenCalledWith({ file_ids: [1, 2] });
+  });
+
+  it("keeps what the server answered after the last failed file is queued and has left the list", async () => {
+    files.files = [file({ id: 1, status: "processing_failed" })];
+    requeueFiles.mockResolvedValue({
+      requeued: 1,
+      skipped: 0,
+      detail: "Queued 1 file again.",
+    });
+    const view = renderPage("/activity?show=failed");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Try the 1 failed file again" }),
+    );
+    expect(await screen.findByText("Queued 1 file again.")).toBeInTheDocument();
+    files.files = [file({ id: 1, status: "unprocessed" })];
+    view.refresh();
+
+    expect(screen.getByText("Queued 1 file again.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Try the/ })).toBeNull();
   });
 
   it("offers Process all again under Failed when a rejected file is listed", () => {

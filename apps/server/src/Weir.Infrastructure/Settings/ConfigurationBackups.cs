@@ -11,7 +11,28 @@ using Weir.Infrastructure.Sqlite;
 namespace Weir.Infrastructure.Settings;
 
 /// <summary>A <c>suite_configuration_backup</c> row.</summary>
-public sealed record ConfigurationBackupRecord(long Id, Timestamp CreatedAt, string FileName, long SizeBytes);
+public sealed record ConfigurationBackupRecord(long Id, Timestamp CreatedAt, string FileName, long SizeBytes, BackupSource? MadeBy);
+
+/// <summary>Who made a backup: the schedule, or a person pressing "Back up now".</summary>
+public enum BackupSource
+{
+    Schedule,
+    Manual,
+}
+
+/// <summary>How a <see cref="BackupSource"/> is written in the database and on the wire.</summary>
+public static class BackupSourceText
+{
+    public static string ToText(this BackupSource source) => source == BackupSource.Manual ? "manual" : "schedule";
+
+    /// <summary>Null for text that names no source: a backup made before the source was kept.</summary>
+    public static BackupSource? FromText(string? text) => text switch
+    {
+        "schedule" => BackupSource.Schedule,
+        "manual" => BackupSource.Manual,
+        _ => null,
+    };
+}
 
 /// <summary>
 /// Automatic configuration snapshots on disk: writing, listing and pruning them, and the scheduled tick
@@ -47,7 +68,7 @@ public sealed class ConfigurationBackups
     {
         ArgumentNullException.ThrowIfNull(uow);
         return uow.QueryAsync(
-            "SELECT id, created_at, file_name, size_bytes FROM suite_configuration_backup " +
+            "SELECT id, created_at, file_name, size_bytes, made_by FROM suite_configuration_backup " +
             "ORDER BY suite_configuration_backup.created_at DESC, suite_configuration_backup.id DESC",
             Read);
     }
@@ -59,7 +80,8 @@ public sealed class ConfigurationBackups
             .Set("id", row.Id)
             .Set("created_at", row.CreatedAt.ToWireText())
             .Set("file_name", row.FileName)
-            .Set("size_bytes", row.SizeBytes);
+            .Set("size_bytes", row.SizeBytes)
+            .Set("made_by", row.MadeBy?.ToText());
     }
 
     /// <summary>
@@ -70,7 +92,7 @@ public sealed class ConfigurationBackups
     {
         ArgumentNullException.ThrowIfNull(uow);
         var row = await uow.QuerySingleAsync(
-            "SELECT id, created_at, file_name, size_bytes FROM suite_configuration_backup WHERE suite_configuration_backup.id = $id",
+            "SELECT id, created_at, file_name, size_bytes, made_by FROM suite_configuration_backup WHERE suite_configuration_backup.id = $id",
             Read,
             ("$id", backupId)).ConfigureAwait(false) ?? throw new WireValueException("Configuration snapshot not found.");
         if (PurePathName(row.FileName) != row.FileName || !row.FileName.StartsWith("suite-configuration-", StringComparison.Ordinal))
@@ -95,7 +117,7 @@ public sealed class ConfigurationBackups
     }
 
     /// <summary>Write a snapshot of the configuration bundle, record it, and prune past <see cref="MaxFiles"/>.</summary>
-    public async Task<ConfigurationBackupRecord> CreateAsync(UnitOfWork uow)
+    public async Task<ConfigurationBackupRecord> CreateAsync(UnitOfWork uow, BackupSource madeBy)
     {
         ArgumentNullException.ThrowIfNull(uow);
         var root = Directory;
@@ -114,13 +136,14 @@ public sealed class ConfigurationBackups
         var payload = Encoding.UTF8.GetBytes(WireJsonWriter.Dumps(bundle, WireJsonFormat.IndentedSorted));
         await File.WriteAllBytesAsync(path, payload).ConfigureAwait(false);
         var id = await uow.ExecuteScalarWriteAsync(
-            "INSERT INTO suite_configuration_backup (created_at, file_name, size_bytes) VALUES ($created, $name, $size) RETURNING id",
+            "INSERT INTO suite_configuration_backup (created_at, file_name, size_bytes, made_by) VALUES ($created, $name, $size, $madeBy) RETURNING id",
             ("$created", now.ToSqlite()),
             ("$name", fileName),
-            ("$size", payload.LongLength)).ConfigureAwait(false);
+            ("$size", payload.LongLength),
+            ("$madeBy", madeBy.ToText())).ConfigureAwait(false);
         await PruneAsync(uow).ConfigureAwait(false);
         _changes?.PublishOnCommit(uow, DataTopics.Backups);
-        return new ConfigurationBackupRecord(Convert.ToInt64(id, CultureInfo.InvariantCulture), now, fileName, payload.LongLength);
+        return new ConfigurationBackupRecord(Convert.ToInt64(id, CultureInfo.InvariantCulture), now, fileName, payload.LongLength, madeBy);
     }
 
     /// <summary>One scheduled check: 1 when a snapshot was due and written, else 0.</summary>
@@ -137,7 +160,7 @@ public sealed class ConfigurationBackups
                 return 0;
             }
 
-            await CreateAsync(uow).ConfigureAwait(false);
+            await CreateAsync(uow, BackupSource.Schedule).ConfigureAwait(false);
             await _suiteSettings.UpdateAsync(
                 uow, suite, suite with { ConfigurationBackupLastRunAt = Timestamp.FromUtc(Timestamp.TruncateToMicroseconds(when)) }).ConfigureAwait(false);
             await uow.CommitAsync().ConfigureAwait(false);
@@ -205,5 +228,6 @@ public sealed class ConfigurationBackups
         SqliteValues.GetInt64(reader, 0),
         SqliteValues.GetDateTime(reader, 1),
         SqliteValues.GetString(reader, 2),
-        SqliteValues.GetInt64(reader, 3));
+        SqliteValues.GetInt64(reader, 3),
+        BackupSourceText.FromText(SqliteValues.GetStringOrNull(reader, 4)));
 }
