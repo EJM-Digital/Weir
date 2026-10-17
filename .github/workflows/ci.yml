@@ -258,6 +258,11 @@ jobs:
           node scripts/check-recorded-replays.mjs
           node --test scripts/check-recorded-replays.test.mjs
 
+      - name: The release fixtures are whole, and no more than one release behind
+        run: |
+          node scripts/check-release-fixtures.mjs
+          node --test scripts/check-release-fixtures.test.mjs scripts/make-release-fixtures.test.mjs
+
       - name: Every server event type has a title
         run: |
           node scripts/check-event-titles.mjs
