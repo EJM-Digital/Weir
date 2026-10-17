@@ -1,6 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
 import {
-  act,
   fireEvent,
   render,
   screen,
