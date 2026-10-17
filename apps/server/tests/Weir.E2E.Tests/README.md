@@ -77,3 +77,9 @@ root-cause from the trace, never one to run twice.
   state read back through the API, so a request the page hid and a change the page never sent are both caught.
 - **`Support/Navigation`** is sign-in, the side menu, the tabs of an area, Logs and the Activity chips. **`Support/PageChecks`**
   holds the structural checks and screenshots of the visual smoke tests.
+- **`Support/WorkflowEditor`** opens the File paths tab, the Add workflow editor or a row's Edit, and the editor's folded groups, and reads a workflow back through the API.
+  **`Support/WorkflowBodies`** is the body the editor sends for a new workflow with nothing filled in, and **`Support/WeekGrids`** builds the weeks the Schedule tab draws.
+- **`Support/SonarrFedWorkflow`** is a TV workflow linked to a fake Sonarr whose qBittorrent download client Weir also knows, with the replies Sonarr's own API gives for its
+  download clients (the shape the contract suite uses; no recording of Sonarr exists).
+- **`Support/ViewerAccount`** adds a viewer next to the administrator and signs a page in as them, for a test of what a person who may only look can and cannot do.
+- **`Support/MediaManagersPage`** opens Connections › Media managers, finds a connection's card by its title and connects a fake manager through the API.
