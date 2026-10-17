@@ -1,5 +1,7 @@
+using Weir.Core.Media;
 using Weir.Core.MediaManagers;
 using Weir.Core.Processing;
+using Weir.Infrastructure.MediaManagers;
 using Weir.Infrastructure.Processing.RemuxPass;
 
 namespace Weir.Infrastructure.Tests.Processing.RemuxPass;
@@ -626,6 +628,74 @@ public sealed class FileLifecycleTests : IDisposable
         Assert.True(linked);
         Assert.EndsWith(".link", staged, StringComparison.Ordinal);
         Assert.Equal(100, new FileInfo(final).Length);
+    }
+
+    [Fact]
+    public async Task A_validated_copy_that_cannot_be_published_raises_a_lifecycle_failure_and_removes_the_partial()
+    {
+        var source = _root.Join("src.mkv");
+        File.WriteAllBytes(source, new byte[100]);
+        var final = BlockedFinal();
+
+        var failure = await Assert.ThrowsAsync<FileLifecycleException>(() => FileLifecycle.SafeCopyToFinalAsync(source, final, _ => Task.CompletedTask));
+
+        AssertNothingPublished(failure, final);
+        Assert.Equal(100, new FileInfo(source).Length);
+    }
+
+    [Fact]
+    public async Task A_hard_link_that_cannot_be_published_raises_a_lifecycle_failure_and_removes_the_link_but_not_the_source()
+    {
+        var source = _root.Join("src.mkv");
+        File.WriteAllBytes(source, new byte[100]);
+        var final = BlockedFinal();
+
+        var failure = await Assert.ThrowsAsync<FileLifecycleException>(() => FileLifecycle.TryHardlinkToFinalAsync(source, final, _ => Task.CompletedTask));
+
+        AssertNothingPublished(failure, final);
+        Assert.Equal(100, new FileInfo(source).Length);
+    }
+
+    [Fact]
+    public void A_finalised_file_that_cannot_be_published_raises_a_lifecycle_failure_and_removes_the_partial()
+    {
+        var staged = _root.Join("work", "t.mkv");
+        Directory.CreateDirectory(_root.Join("work"));
+        File.WriteAllText(staged, "new");
+        var final = BlockedFinal();
+
+        var failure = Assert.Throws<FileLifecycleException>(() => FileLifecycle.SafeFinalizeFile(staged, final));
+
+        AssertNothingPublished(failure, final);
+    }
+
+    [Fact]
+    public void A_lifecycle_failure_reads_in_plain_words_and_keeps_the_system_text_for_technical_detail()
+    {
+        var failure = new FileLifecycleException("Could not safely publish the validated copy at /out/final.mkv: Access to the path is denied.");
+
+        var plain = ToolFailureText.Plain(failure);
+
+        Assert.Equal(ToolFailureText.OutputNotPlaced, plain);
+        Assert.DoesNotContain("/out/final.mkv", plain, StringComparison.Ordinal);
+        Assert.Contains("/out/final.mkv", ToolFailureText.Technical(failure), StringComparison.Ordinal);
+    }
+
+    /// <summary>A folder with a file in it where the output file belongs, so the last step has nothing it may replace.</summary>
+    private string BlockedFinal()
+    {
+        var final = _root.Join("out", "final.mkv");
+        Directory.CreateDirectory(final);
+        File.WriteAllText(Path.Combine(final, "keep.txt"), "not Weir's to remove");
+        return final;
+    }
+
+    /// <summary>The blocking folder is as it was, and nothing else, hidden or not, is beside it.</summary>
+    private void AssertNothingPublished(FileLifecycleException failure, string final)
+    {
+        Assert.Contains(final, failure.Message, StringComparison.Ordinal);
+        Assert.Equal([final], Directory.EnumerateFileSystemEntries(_root.Join("out")));
+        Assert.Equal([Path.Combine(final, "keep.txt")], Directory.EnumerateFileSystemEntries(final));
     }
 
     [Fact]

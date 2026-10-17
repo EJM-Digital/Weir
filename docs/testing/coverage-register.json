@@ -50206,9 +50206,38 @@
           "type": "package-smoke",
           "file": "scripts/smoke-windows-package.ps1",
           "name": "*"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
+          "name": "A_validated_copy_that_cannot_be_published_raises_a_lifecycle_failure_and_removes_the_partial"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
+          "name": "A_hard_link_that_cannot_be_published_raises_a_lifecycle_failure_and_removes_the_link_but_not_the_source"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/RemuxPassFileTests.cs",
+          "name": "A_finalised_file_that_cannot_be_published_raises_a_lifecycle_failure_and_removes_the_partial"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/PublishFailureTests.cs",
+          "name": "A_cleaned_file_that_cannot_be_published_leaves_no_partial_and_Activity_says_so_in_plain_words"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/PublishFailureTests.cs",
+          "name": "An_original_that_cannot_be_handed_back_leaves_no_partial_and_Activity_says_so_in_plain_words"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/PublishFailureTests.cs",
+          "name": "An_unchanged_copy_that_cannot_be_published_leaves_no_partial_and_Activity_says_so_in_plain_words"
         }
       ],
-      "issue": 1065,
       "audit": {
         "id": "FL-09",
         "verdict": "Covered"
@@ -50237,9 +50266,43 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/SwapRecoverySweepTests.cs",
           "name": "A_backup_whose_original_is_missing_is_restored_with_a_warning"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "A_copy_left_by_an_earlier_swap_is_cleared_before_the_next_one_starts"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "A_backup_left_beside_an_original_in_place_is_removed_and_never_put_back_over_it"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "A_backup_left_without_its_original_is_put_back_before_the_next_swap_starts"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "Leftovers_another_program_holds_stop_the_swap_before_any_work"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "Leftovers_in_a_folder_Weir_cannot_change_stop_the_swap_before_any_work"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanLeftoversTests.cs",
+          "name": "A_copy_left_by_an_interrupted_swap_is_cleared_before_the_next_clean"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanLeftoversTests.cs",
+          "name": "A_backup_left_without_its_film_is_put_back_when_Weir_starts"
         }
       ],
-      "issue": 1066,
       "audit": {
         "id": "FL-10",
         "verdict": "Covered"
@@ -50468,9 +50531,33 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/SwapRecoverySweepTests.cs",
           "name": "A_backup_beside_its_original_is_deleted"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "A_real_file_is_replaced_in_place_with_a_new_mtime_and_the_job_row_records_it"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "A_backup_that_cannot_be_deleted_is_left_for_the_sweep_and_the_swap_still_commits"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanKeepsOriginalTests.cs",
+          "name": "With_keep_original_on_the_original_is_kept_whole_beside_the_cleaned_file"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanKeepsOriginalTests.cs",
+          "name": "With_keep_original_off_no_second_copy_is_left"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanLeftoversTests.cs",
+          "name": "A_backup_left_beside_a_film_that_is_in_place_is_removed_when_Weir_starts"
         }
       ],
-      "issue": 1066,
       "audit": {
         "id": "FL-15",
         "verdict": "Covered"

@@ -84,7 +84,7 @@ public static class RetryPolicy
             return new RetryDecision(
                 false,
                 null,
-                $"Weir tried this file {attemptsMade.ToString(CultureInfo.InvariantCulture)} times and stopped, because the {library.Name} " +
+                $"Weir tried this file {Plural.Of(attemptsMade, "time")} and stopped, because the {library.Name} " +
                 $"workflow allows {maxAttempts.ToString(CultureInfo.InvariantCulture)}. You can still start it again by hand.");
         }
 
