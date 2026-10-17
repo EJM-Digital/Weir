@@ -27,10 +27,10 @@ public sealed class GitHubReleaseCatalogClientTests : IDisposable
 
     private static string ReleaseList(string version, bool preRelease = false) =>
         $$"""
-        [{"tag_name":"v{{version}}","name":"Weir {{version}}","html_url":"https://github.com/jampat000/Weir/releases/tag/v{{version}}",
+        [{"tag_name":"v{{version}}","name":"Weir {{version}}","html_url":"{{ProjectLocation.RepositoryUrl}}/releases/tag/v{{version}}",
           "published_at":"2026-10-01T10:00:00Z","draft":false,"prerelease":{{(preRelease ? "true" : "false")}},
-          "assets":[{"name":"Weir-win-Setup.exe","url":"https://api.github.com/repos/jampat000/Weir/releases/assets/1",
-                     "browser_download_url":"https://github.com/jampat000/Weir/releases/download/v{{version}}/Weir-win-Setup.exe",
+          "assets":[{"name":"Weir-win-Setup.exe","url":"{{ProjectLocation.ApiRepositoryUrl}}/releases/assets/1",
+                     "browser_download_url":"{{ProjectLocation.RepositoryUrl}}/releases/download/v{{version}}/Weir-win-Setup.exe",
                      "size":1000,"content_type":"application/octet-stream"}]}]
         """;
 
@@ -38,7 +38,7 @@ public sealed class GitHubReleaseCatalogClientTests : IDisposable
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?><feed xmlns=\"http://www.w3.org/2005/Atom\">"
         + string.Concat(tags.Select(tag =>
             $"<entry><id>tag:github.com,2008:Repository/1/{tag}</id><updated>2026-10-05T08:30:00Z</updated>"
-            + $"<link rel=\"alternate\" type=\"text/html\" href=\"https://github.com/jampat000/Weir/releases/tag/{tag}\"/><title>Weir {tag}</title></entry>"))
+            + $"<link rel=\"alternate\" type=\"text/html\" href=\"{ProjectLocation.RepositoryUrl}/releases/tag/{tag}\"/><title>Weir {tag}</title></entry>"))
         + "</feed>";
 
     private static HttpResponseMessage Ok(string body, string mediaType) =>
@@ -69,8 +69,8 @@ public sealed class GitHubReleaseCatalogClientTests : IDisposable
         var latest = await _client.FetchLatestAsync(Running, CancellationToken.None);
 
         Assert.Equal("3.4.0", latest?.Version);
-        Assert.Equal("https://github.com/jampat000/Weir/releases/tag/v3.4.0", latest?.HtmlUrl);
-        Assert.Equal("https://github.com/jampat000/Weir/releases/download/v3.4.0/Weir-win-Setup.exe", latest?.WindowsInstallerAsset()?.BrowserDownloadUrl);
+        Assert.Equal($"{ProjectLocation.RepositoryUrl}/releases/tag/v3.4.0", latest?.HtmlUrl);
+        Assert.Equal($"{ProjectLocation.RepositoryUrl}/releases/download/v3.4.0/Weir-win-Setup.exe", latest?.WindowsInstallerAsset()?.BrowserDownloadUrl);
         Assert.Equal(0, _github.ApiCalls);
     }
 

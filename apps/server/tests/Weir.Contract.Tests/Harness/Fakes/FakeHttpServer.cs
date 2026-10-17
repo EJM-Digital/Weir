@@ -19,6 +19,7 @@ public abstract class FakeHttpServer : IDisposable
     private readonly List<RecordedRequest> _requests = [];
     private readonly HttpListener _listener;
     private TaskCompletionSource _arrived = NewSignal();
+    private volatile bool _unavailable;
 
     /// <param name="answersAnyHostName">
     /// Answers a request whatever host name it carries, not only the address it listens on. A listener on Linux holds a request to the host
@@ -103,6 +104,12 @@ public abstract class FakeHttpServer : IDisposable
         }
     }
 
+    /// <summary>
+    /// From now on answers every request 503, as a server that is down for its callers, and keeps its port: a stopped fake gives its port
+    /// back, and another fake in the same run can be given it and answer the requests meant for this one.
+    /// </summary>
+    public void GoUnavailable() => _unavailable = true;
+
     protected abstract HttpAnswer Answer(RecordedRequest request);
 
     public virtual void Dispose()
@@ -153,7 +160,7 @@ public abstract class FakeHttpServer : IDisposable
             HttpAnswer answer;
             try
             {
-                answer = Answer(request);
+                answer = _unavailable ? new HttpAnswer(503, []) : Answer(request);
             }
             catch (Exception problem)
             {

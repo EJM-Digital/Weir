@@ -59,6 +59,34 @@ internal static class GoneLooks
     public static bool StartIfWaiting(SqliteConnection connection, SqliteTransaction transaction, ProcessingJob pass) =>
         IsWaiting(pass) && ProcessingJobStore.Execute(connection, transaction, StartSql, ("@id", pass.Id)) > 0;
 
+    /// <summary>
+    /// Cancels every look still waiting at this file except <paramref name="kept"/>, the pass that has taken the file over, inside the
+    /// caller's write transaction. The send a look was booked for is closed by that takeover, so the look would only come round later to
+    /// a file already dealt with. Returns what it cancelled, so the caller can announce the change.
+    /// </summary>
+    public static IReadOnlyList<ProcessingJob> RetireOthers(
+        SqliteConnection connection, SqliteTransaction transaction, ProcessingJob kept, long libraryId, string relativePath)
+    {
+        ArgumentNullException.ThrowIfNull(kept);
+        var looks = ProcessingJobStore.Query(connection, transaction, ActiveRemuxPasses.ForPathSql, ("@path", relativePath))
+            .Concat(ProcessingJobStore.Query(connection, transaction, WaitingPassThroughSql + " AND json_extract(payload_json, '$.relative_media_path') = @path ORDER BY id", ("@path", relativePath)))
+            .Where(job => job.Id != kept.Id && IsWaiting(job) && Names(job, libraryId, relativePath))
+            .ToList();
+        foreach (var look in looks)
+        {
+            ProcessingJobStore.Execute(
+                connection,
+                transaction,
+                "UPDATE jobs SET dedupe_key = @dedupe, status = @status, last_error = @error, updated_at = CURRENT_TIMESTAMP WHERE id = @id",
+                ("@dedupe", JobQueueRules.TombstoneCancelledDedupeKey(look.DedupeKey, look.Id)),
+                ("@status", ProcessingJobStatus.Cancelled),
+                ("@error", JobQueueRules.ReplacedByResendError),
+                ("@id", look.Id));
+        }
+
+        return looks;
+    }
+
     /// <summary>The path of every file in the library with a pass-through pending or leased: waiting for its look, started or running.</summary>
     public static async Task<HashSet<string>> ActivePassThroughPathsAsync(UnitOfWork uow, long libraryId)
     {

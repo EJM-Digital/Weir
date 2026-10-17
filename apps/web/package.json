@@ -24,6 +24,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "web-bodies:write": "vitest run src/test/wire/destructive-requests.test.ts -u",
     "api:types:generate": "openapi-typescript ./openapi/weir-openapi.json -o ./src/lib/api/generated/openapi-types.ts && prettier --write ./src/lib/api/generated/openapi-types.ts",
     "api:types:sync": "npm run api:types:generate",
     "api:types:check": "npm run api:types:generate && git diff --exit-code -- openapi/weir-openapi.json src/lib/api/generated/openapi-types.ts",

@@ -189,6 +189,17 @@ public sealed class SetupDataChangeTests : IDisposable
     }
 
     [Fact]
+    public async Task Choosing_playback_devices_publishes_the_devices_and_not_the_settings()
+    {
+        var suite = await _store.WithUnitOfWork(uow => _suite.EnsureAsync(uow));
+
+        Assert.Equal([DataTopics.DirectPlayDevices], await HeardAsync(uow => _suite.UpdateAsync(uow, suite, suite with { DirectPlayDevices = "iphone" })));
+        Assert.Equal(
+            [DataTopics.DirectPlayDevices, DataTopics.Settings],
+            await HeardAsync(uow => _suite.UpdateAsync(uow, suite, suite with { DirectPlayDevices = "iphone", LogRetentionDays = suite.LogRetentionDays + 1 })));
+    }
+
+    [Fact]
     public async Task Pausing_changes_the_pause_and_not_the_settings()
     {
         var suite = await _store.WithUnitOfWork(uow => _suite.EnsureAsync(uow));

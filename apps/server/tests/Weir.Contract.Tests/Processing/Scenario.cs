@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
 using Weir.Contract.Tests.Harness.Fakes;
 
@@ -18,10 +19,15 @@ internal sealed partial class Scenario : IAsyncDisposable
     public const string DelunoOutputRoot = "/deluno/processed/movies";
     public const string EventsPath = "/api/integrations/processors/events";
 
+    /// <summary>The scan of one workflow's watched folder, which the periodic scan, the folder watcher and a person's "scan now" all queue.</summary>
+    public const string ScanKind = "processing.watched_folder.remux_scan_dispatch.v1";
+
     private const string Api = WeirClient.Api;
 
     private readonly TemporaryFolder _root = new();
     private readonly List<IDisposable> _owned = [];
+    private JsonObject? _sentinel;
+    private int _rounds;
 
     private Scenario(WeirServer server, WeirClient admin, FakeFfmpeg? tools)
     {

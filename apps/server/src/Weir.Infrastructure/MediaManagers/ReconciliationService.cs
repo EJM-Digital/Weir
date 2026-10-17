@@ -7,7 +7,7 @@ using Weir.Infrastructure.Sqlite;
 namespace Weir.Infrastructure.MediaManagers;
 
 /// <summary>A guarded filesystem mutation could not complete safely.</summary>
-public sealed class FileLifecycleException : Exception
+public sealed class FileLifecycleException : Exception, IPlainFailure
 {
     public FileLifecycleException()
     {
@@ -22,6 +22,9 @@ public sealed class FileLifecycleException : Exception
         : base(message, innerException)
     {
     }
+
+    /// <summary>The message names paths and the system's own words; a person reads this instead.</summary>
+    public string? PlainMessage => ToolFailureText.OutputNotPlaced;
 }
 
 /// <summary>Safe filesystem/database reconciliation checks and repairs.</summary>

@@ -150,3 +150,12 @@ says which test replays what.
 - `DelunoRecordingComparisonTests` proves a recording that stops matching fails naming its file and JSON path.
 - A recording Weir has no behaviour for is listed in `fixtures/recorded/deluno-side-no-weir-behaviour.json`; `scripts/check-recorded-replays.mjs` fails on
   one that is neither replayed nor listed, and one that waits on an open issue in `fixtures/recorded/deluno-side-awaiting-replay.json` is listed there until a test replays it.
+
+## The web app's destructive requests
+
+The requests the web app sends that can delete a file, remove tracks for good, ask a media manager to delete one or switch on a clean nobody
+watches are not written by hand here. `apps/web/src/test/wire/destructive-requests.ts` builds each one with the web app's own request code, and
+its test checks the result against `apps/server/tests/fixtures/web-bodies/destructive-requests.json`; run `npm run web-bodies:write` in
+`apps/web` to write the file again after the web app changes one, and the web tests fail until you do. `Harness/WebBodies.cs` reads the file,
+puts a real library, file, path, size and time in place of the stand-ins the web tests used, and `WebRequest.SendAsync` sends it with the
+session's token. A server test that changes what these requests must carry then fails with the web app's change, not months later.
