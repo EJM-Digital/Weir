@@ -68,6 +68,39 @@ public sealed partial class ProcessingRig
         Assert.True(queued.Status == HttpStatusCode.OK, queued.ToString());
     }
 
+    /// <summary>The Movies workflow skips files whose path matches one of these comma-separated patterns, such as <c>*sample*</c>; none when empty.</summary>
+    public async Task SetExcludePatternsAsync(string patterns)
+    {
+        var path = $"{Libraries}/{await MoviesWorkflowIdAsync()}";
+        var movies = await _admin.GetAsync(path);
+        Assert.True(movies.Status == HttpStatusCode.OK, movies.ToString());
+        var body = LibraryBodies.Unchanged(movies.Fields);
+        body["exclude_patterns_csv"] = patterns;
+        var saved = await _admin.PutWithCsrfAsync(path, body);
+        Assert.True(saved.Status == HttpStatusCode.OK, saved.ToString());
+    }
+
+    /// <summary>A film in a release folder of the watched folder that nothing has been asked to work on yet; <see cref="ScanAsync"/> is Weir's own look at the folder.</summary>
+    public async Task PlaceFileAsync(string releaseFolder, string fileName)
+    {
+        var probe = FakeMedia.Probe(audioLanguages: ["eng", "fre"]);
+        await WriteReleaseFileAsync(releaseFolder, fileName, probe);
+        _tools.SetFileRule(fileName, new FileRule { Probe = probe });
+    }
+
+    /// <summary>Asks for a look at the Movies workflow's watched folder that queues a pass for every file the rules let through, as the Check again button does.</summary>
+    public async Task ScanAsync()
+    {
+        var scan = await _admin.PostWithCsrfAsync(
+            $"{WeirClient.Api}/processing/jobs/watched-folder-remux-scan-dispatch/enqueue",
+            new JsonObject { ["media_scope"] = "movie", ["library_id"] = await MoviesWorkflowIdAsync(), ["enqueue_remux_jobs"] = true });
+        Assert.True(scan.Status == HttpStatusCode.OK, scan.ToString());
+    }
+
+    /// <summary>Waits until Activity lists the file with this status (a pass that is held open is "processing").</summary>
+    public async Task WaitForStatusAsync(string fileName, string status) =>
+        await Poll.UntilAsync(async () => (string?)(await ListedFileAsync(fileName))?["status"] == status, $"{fileName} to be {status}", PassCeiling);
+
     /// <summary>The metadata file <see cref="DropFileAsync"/> leaves beside the film.</summary>
     public const string MetadataFile = "film.nfo";
 
