@@ -573,7 +573,7 @@ public sealed class SuiteApiTests
                 Timestamp.FromUtc(new DateTime(2026, 4, 23, 0, 0, 0, DateTimeKind.Utc)),
                 false,
                 false,
-                [new GitHubReleaseAsset("Weir-win-Setup.exe", "https://api.github.com/repos/jampat000/Weir/releases/assets/123", "https://github.com/jampat000/Weir/releases/download/v1.2.3/Weir-win-Setup.exe", 123456789, "application/octet-stream")]));
+                [new GitHubReleaseAsset("Weir-win-Setup.exe", $"{ProjectLocation.ApiRepositoryUrl}/releases/assets/123", $"{ProjectLocation.RepositoryUrl}/releases/download/v1.2.3/Weir-win-Setup.exe", 123456789, "application/octet-stream")]));
         }
     }
 }

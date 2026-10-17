@@ -25,7 +25,7 @@ public sealed class ForgottenFileTests
         await File.WriteAllBytesAsync(source, FakeMedia.Bytes(FakeMedia.Probe(audioLanguages: ["eng", "fre"])));
         await scenario.PostHandoffAsync(handoffId, source);
         await scenario.WaitForHandoffStateAsync(handoffId, "completed");
-        await Poll.UntilAsync(() => Task.FromResult(Scenario.Callbacks(fake, handoffId).FirstOrDefault()), $"the report for {handoffId}");
+        await scenario.WaitForReportsAsync(fake, handoffId);
         return (fake, library, source);
     }
 
@@ -51,7 +51,7 @@ public sealed class ForgottenFileTests
         await scenario.PostHandoffAsync("again", source);
         await scenario.WaitForHandoffStateAsync("again", "completed");
 
-        var report = await Poll.UntilAsync(() => Task.FromResult(Scenario.Callbacks(fake, "again").FirstOrDefault()), "the report for the repeat");
+        var report = (await scenario.WaitForReportsAsync(fake, "again"))[0];
         Assert.Equal("completed", (string)report["status"]!);
         Assert.Equal((string)Scenario.Callbacks(fake, "first")[0]["outputPath"]!, (string)report["outputPath"]!);
         Assert.Null(report["disposition"]);

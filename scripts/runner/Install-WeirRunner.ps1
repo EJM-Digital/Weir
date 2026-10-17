@@ -5,7 +5,7 @@
 .DESCRIPTION
     Run once, in an elevated Windows PowerShell 5.1 or PowerShell 7 window, on the PC that will run the jobs.
     It installs Git and PowerShell 7 if they are missing, downloads the pinned Actions runner (checked against its
-    SHA-256), registers runners with jampat000/Weir under the labels self-hosted, Windows and weir-heavy, and installs
+    SHA-256), registers runners with the Weir repository under the labels self-hosted, Windows and weir-heavy, and installs
     each as a Windows service that runs as NETWORK SERVICE, so a job cannot read anyone's own files.
 
     Each runner takes one job at a time, so several runners let one PC run several jobs at once. Runner 1 lives in
@@ -39,6 +39,7 @@ Set-StrictMode -Version Latest
 
 $RunnerVersion = '2.338.0'
 $RunnerSha256 = 'f48e0750a21812bca5f82de5f7f5aeae71abee647fab5a582f1742d07eba455f'
+# Copied alone to the PC, so it cannot read scripts/repository.ps1; scripts/check-repository-owner.mjs keeps it equal.
 $RepositoryUrl = 'https://github.com/jampat000/Weir'
 $Labels = 'weir-heavy'
 $RunnerNamePrefix = 'weir-windows-'

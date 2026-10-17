@@ -88,14 +88,20 @@ public sealed class SuiteSettingsStore
         sets.Add("updated_at=CURRENT_TIMESTAMP");
         await uow.ExecuteAsync($"UPDATE suite_settings SET {string.Join(", ", sets)} WHERE suite_settings.id = 1", [.. parameters]).ConfigureAwait(false);
 
-        // The pause has a topic of its own (SuitePauseService), and no screen reads it with the settings.
-        var apartFromPause = before with
+        // The pause (SuitePauseService) and the chosen playback devices have topics of their own, and no screen reads them with the settings.
+        var apartFromOwnTopics = before with
         {
             ProcessingPaused = after.ProcessingPaused,
             ProcessingPausedUntil = after.ProcessingPausedUntil,
             ScanWhilePaused = after.ScanWhilePaused,
+            DirectPlayDevices = after.DirectPlayDevices,
         };
-        if (apartFromPause != after)
+        if (before.DirectPlayDevices != after.DirectPlayDevices)
+        {
+            _changes?.PublishOnCommit(uow, DataTopics.DirectPlayDevices);
+        }
+
+        if (apartFromOwnTopics != after)
         {
             _changes?.PublishOnCommit(uow, DataTopics.Settings);
         }

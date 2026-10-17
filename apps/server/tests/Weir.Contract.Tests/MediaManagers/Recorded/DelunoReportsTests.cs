@@ -230,10 +230,11 @@ public sealed partial class DelunoReportsTests
         // The rc.13 recordings have Weir also telling Deluno the replaced send was completed (answered 409, too late, events-too-late
         // exchange 1). Since #956 the replaced send is closed as cancelled and is never reported as finished.
         Assert.Equal("cancelled", (string)(await world.Scenario.HandoffStatusAsync(first.HandoffId()))["state"]!);
-        await Scenario.NeverWithinAsync(
-            () => Task.FromResult(world.Deluno.RequestsTo("POST", ReportsTo).Any(sent => ((JsonObject)sent.Json!)["handoffId"]!.ToString() == first.HandoffId() && ((JsonObject)sent.Json!)["status"]!.ToString() == "completed")),
-            TimeSpan.FromSeconds(3),
-            "Weir reporting the replaced send as completed");
+        // One worker takes the passes in the order they were queued, so the replaced send's pass ended before the report for the send that
+        // replaced it, which has arrived: a report for the first would have left before it.
+        Assert.DoesNotContain(
+            world.Deluno.RequestsTo("POST", ReportsTo),
+            sent => ((JsonObject)sent.Json!)["handoffId"]!.ToString() == first.HandoffId() && ((JsonObject)sent.Json!)["status"]!.ToString() == "completed");
     }
 
     [Fact]

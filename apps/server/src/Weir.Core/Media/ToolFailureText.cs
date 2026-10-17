@@ -44,6 +44,11 @@ public static class ToolFailureText
 
     public const string MissingOrEmpty = "Weir found no data in this file: it is missing or empty.";
 
+    /// <summary>What a person reads when a file could not be put in its final place in the output folder.</summary>
+    public const string OutputNotPlaced =
+        "Weir could not put the file in the output folder, so nothing was published and no half-written copy was left behind. " +
+        "Check that the output folder has room, that Weir can write to it, and that nothing else is using that name.";
+
     public const string OutputNotPublishable =
         "Weir wrote a cleaned copy, but its checks found a problem with it, so the copy was not published. The original is untouched.";
 
@@ -68,7 +73,7 @@ public static class ToolFailureText
         ArgumentNullException.ThrowIfNull(exception);
         return exception switch
         {
-            MediaToolException { PlainMessage: { Length: > 0 } plain } => plain,
+            IPlainFailure { PlainMessage: { Length: > 0 } plain } => plain,
             MediaUnreadableException => UnreadableFile,
             MediaToolTimeoutException => TookTooLong,
             _ => exception.Message,
