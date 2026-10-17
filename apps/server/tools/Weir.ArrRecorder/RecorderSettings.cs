@@ -77,7 +77,7 @@ internal sealed record ArrFlavour(
     IReadOnlyList<string> ImportNames,
     string DeleteEvent)
 {
-    /// <summary>Breaking Bad: TheTVDB 81189. The session grabs its third episode and imports its first two.</summary>
+    /// <summary>Breaking Bad: TheTVDB 81189. The session grabs its fourth episode and imports its first three.</summary>
     public static readonly ArrFlavour Sonarr = new(
         "sonarr",
         "tv",
@@ -85,8 +85,8 @@ internal sealed record ArrFlavour(
         "/tv",
         "/api/v3/series/lookup?term=tvdb:81189",
         "/api/v3/series",
-        "Breaking.Bad.S01E03.720p.WEB.h264-RECORDER",
-        ["Breaking.Bad.S01E01.720p.WEB.h264-RECORDER", "Breaking.Bad.S01E02.720p.WEB.h264-RECORDER"],
+        "Breaking.Bad.S01E04.720p.WEB.h264-RECORDER",
+        ["Breaking.Bad.S01E01.720p.WEB.h264-RECORDER", "Breaking.Bad.S01E02.720p.WEB.h264-RECORDER", "Breaking.Bad.S01E03.720p.WEB.h264-RECORDER"],
         "EpisodeFileDelete");
 
     /// <summary>Big Buck Bunny: TMDb 10378.</summary>

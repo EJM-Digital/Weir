@@ -68,4 +68,40 @@ public static class DownloadedScanRules
 
         return body;
     }
+
+    /// <summary>How many times Weir asks for one scan before it says the manager was too busy.</summary>
+    public const int MaxAttempts = 5;
+
+    /// <summary>How often Weir asks whether the scan that was in the way has finished.</summary>
+    public static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(3);
+
+    /// <summary>How long Weir waits for the scan that was in the way before it asks again.</summary>
+    public static readonly TimeSpan WaitLimit = TimeSpan.FromMinutes(2);
+
+    /// <summary>
+    /// Sonarr and Radarr keep one Downloaded Scan at a time: asked for a second while the first is queued or running, they answer
+    /// 201 with the command that is already there, not with a new one (seen in Sonarr 4.0.20: the reply carries the other scan's id
+    /// and path). That is not a scan of <paramref name="requestedPath"/>. Returns true, with the id of the scan in the way when the
+    /// manager said it, when the answer is another scan's; false when it is the scan that was asked for, or says nothing about a path.
+    /// </summary>
+    public static bool IsAnotherScan(WireValue? reply, string requestedPath, out long? otherCommandId)
+    {
+        otherCommandId = null;
+        if (reply is not WireObject command || command.Get("body") is not WireObject body || ManagerValues.Text(body.Get("path")) is not { } answeredPath)
+        {
+            return false;
+        }
+
+        if (LibraryFileChangeRules.PathsEqual(answeredPath, requestedPath))
+        {
+            return false;
+        }
+
+        otherCommandId = ManagerValues.WholeNumber(command.Get("id")) is { } id ? (long)id : null;
+        return true;
+    }
+
+    /// <summary>Whether a command's <c>GET /api/v3/command/{id}</c> answer says it is over, however it ended.</summary>
+    public static bool IsFinished(WireValue? command) =>
+        command is WireObject answer && ManagerValues.Text(answer.Get("status")) is "completed" or "failed" or "aborted" or "cancelled" or "orphaned";
 }

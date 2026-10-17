@@ -153,12 +153,12 @@ internal sealed partial class ArrScenario
         }
     }
 
-    private Task WaitForImportAsync() => TryAsync("wait for the import", async () =>
+    private Task WaitForImportAsync(int expected) => TryAsync("wait for the import", async () =>
     {
         try
         {
             await Wait.UntilAsync("the app to import the file", TimeSpan.FromMinutes(4), async () => _flavour.IsSonarr
-                ? (await _api.GetAsync($"/api/v3/episodefile?seriesId={_titleId}").ConfigureAwait(false))!.AsArray().Count >= _flavour.ImportNames.Count
+                ? (await _api.GetAsync($"/api/v3/episodefile?seriesId={_titleId}").ConfigureAwait(false))!.AsArray().Count >= expected
                 : (await _api.GetAsync($"/api/v3/movie/{_titleId}").ConfigureAwait(false))!["hasFile"]!.GetValue<bool>()).ConfigureAwait(false);
         }
         catch (RecorderException)
