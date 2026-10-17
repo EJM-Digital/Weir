@@ -1,0 +1,54 @@
+name: probe-tray-uia
+on:
+  push:
+    branches: [coverage/windows-tray-shard]
+    paths: ['.github/workflows/probe-tray-uia.yml', 'scripts/scenarios-ci/tray-ui.ps1']
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: apps/server/global.json
+      - name: Build the tray and its stand-in
+        shell: pwsh
+        run: |
+          dotnet publish apps/tray/Weir.Tray -c Release -r win-x64 --self-contained false -o $env:RUNNER_TEMP/probe/tray
+          dotnet publish apps/tray/Weir.Tray.StandInServer -c Release -r win-x64 --self-contained false -o $env:RUNNER_TEMP/probe/standin
+          New-Item -ItemType Directory -Force $env:RUNNER_TEMP/probe/tray/server/web-dist | Out-Null
+          Set-Content $env:RUNNER_TEMP/probe/tray/server/web-dist/index.html '<html></html>'
+          Copy-Item $env:RUNNER_TEMP/probe/standin/* $env:RUNNER_TEMP/probe/tray/server -Recurse -Force
+          Copy-Item $env:RUNNER_TEMP/probe/tray/server/Weir.Tray.StandInServer.exe $env:RUNNER_TEMP/probe/tray/server/WeirServer.exe
+      - name: Probe
+        shell: powershell
+        run: |
+          $ui = "$PWD\scripts\scenarios-ci\tray-ui.ps1"
+          function Show($title, $text) { Write-Host "::group::$title"; Write-Host $text; Write-Host '::endgroup::' }
+          function Ui { param([Parameter(ValueFromRemainingArguments)]$a) powershell -NoProfile -File $ui @a 2>&1 | Out-String }
+          Show 'session' (Ui session)
+          Show 'dump taskbar before' (Ui dump -Root taskbar -Depth 7)
+          $env:WEIR_HOME = "$env:RUNNER_TEMP\weir-home"
+          $tray = Start-Process "$env:RUNNER_TEMP\probe\tray\Weir.exe" -ArgumentList '--port','9361' -PassThru
+          Write-Host "tray pid $($tray.Id)"
+          for ($i = 0; $i -lt 12; $i++) {
+            Start-Sleep -Seconds 1
+            Show "balloons $i" (Ui balloons)
+          }
+          Show 'icons' (Ui icons)
+          Show 'dump taskbar after' (Ui dump -Root taskbar -Depth 7)
+          Show 'open-menu taskbar' (Ui open-menu -TrayProcessId $tray.Id -Via taskbar)
+          Start-Sleep -Seconds 2
+          Show 'menu after taskbar' (Ui menu -TrayProcessId $tray.Id)
+          Show 'desktop dump after taskbar attempt' (Ui dump -Depth 3)
+          Show 'close' (Ui close-menu)
+          Start-Sleep -Seconds 1
+          Show 'open-menu message' (Ui open-menu -TrayProcessId $tray.Id -Via message)
+          Start-Sleep -Seconds 2
+          Show 'menu after message' (Ui menu -TrayProcessId $tray.Id)
+          Show 'desktop dump after message' (Ui dump -Depth 3)
+          Get-Content "$env:WEIR_HOME\tray-host.log" | Out-String | ForEach-Object { Show 'tray log' $_ }
+          Stop-Process -Id $tray.Id -Force
