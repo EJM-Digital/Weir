@@ -4,7 +4,8 @@ import { LogWatch } from "./log-watch.mjs";
 /**
  * Runs the scenarios in order; one that fails does not stop the next, so one run reports every failure.
  * @param {string[]} ids
- * @param {Record<string, (world: object) => Promise<string>>} registry The scenarios that are ported, by id.
+ * @param {Record<string, ((world: object) => Promise<string>) | {run: (world: object) => Promise<string>, logs?: "since-start"}>} registry
+ *   The scenarios that are ported, by id. A scenario that is signed out when it begins has its logs judged from the start of the stack.
  * @param {{weir: object}} world
  */
 export async function runScenarios({ ids, registry, world }) {
@@ -16,8 +17,9 @@ export async function runScenarios({ ids, registry, world }) {
     const began = Date.now();
     let outcome;
     try {
-      const watch = await LogWatch.begin(world.weir);
-      const detail = await registry[id](world);
+      const { run, logs } = typeof registry[id] === "function" ? { run: registry[id] } : registry[id];
+      const watch = logs === "since-start" ? LogWatch.sinceStart(world.weir) : await LogWatch.begin(world.weir);
+      const detail = await run(world);
       await watch.finish();
       outcome = { status: "passed", detail: `${detail} The logs gained no warning or error.` };
     } catch (error) {
