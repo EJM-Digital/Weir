@@ -65,6 +65,7 @@ async function follow(world, film) {
     world,
     async () => {
       const found = await world.deluno.handoffOf(film.release);
+      if (found?.status === "failed") throw new Error(`Deluno shows the hand-off of ${film.release} failed: ${found.failureMessage}`);
       return found?.status === "completed" && found.importJobId ? found : undefined;
     },
     `the hand-off of ${film.release} to settle`,

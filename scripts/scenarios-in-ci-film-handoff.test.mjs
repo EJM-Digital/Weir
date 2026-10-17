@@ -69,9 +69,16 @@ test("a download qBittorrent never finishes fails the scenario, saying which rel
 });
 
 test("a hand-off that never settles fails the scenario", async () => {
-  const result = await run(world({ handoff: { status: "failed", importJobId: null } }));
+  const result = await run(world({ handoff: { status: "pending", importJobId: null } }));
   assert.equal(result.status, "failed");
   assert.match(result.detail, /the hand-off of .* to settle did not happen/);
+});
+
+test("a hand-off Deluno shows as failed stops the scenario at once, with the reason Deluno gives", async () => {
+  const result = await run(world({ handoff: { status: "failed", importJobId: null, failureMessage: "Skipped because this file is 49.9 MB, under the 50 MB minimum." } }));
+  assert.equal(result.status, "failed");
+  assert.match(result.detail, /Deluno shows the hand-off of .* failed: Skipped because this file is 49.9 MB/);
+  assert.ok(result.seconds < 5, "it did not wait out the ceiling");
 });
 
 test("a hand-off that is not a film fails the scenario", async () => {
@@ -80,7 +87,7 @@ test("a hand-off that is not a film fails the scenario", async () => {
 });
 
 test("a scenario that stops says where: what Weir, its Activity and Deluno show about the film", async () => {
-  const result = await run(world({ handoff: { status: "failed", importJobId: null } }));
+  const result = await run(world({ handoff: { status: "pending", importJobId: null } }));
   assert.ok(result.detail.includes(`Weir shows [{"path":"${RELEASE}/${RELEASE}.mkv","status":"processed"`), result.detail);
   assert.ok(result.detail.includes(`its recent Activity: ["failed: Cleaning failed"]; Deluno shows {"releaseName":"${RELEASE}"`), result.detail);
 });

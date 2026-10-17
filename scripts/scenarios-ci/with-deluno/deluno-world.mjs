@@ -25,6 +25,8 @@ export const MOVIES_CATEGORY = "deluno-movies";
 export const FILM_FOLDER = "/work/source";
 // Deluno treats a film shorter than two minutes as a likely sample.
 export const FILM_SECONDS = 130;
+// A workflow set up from Deluno keeps Weir's default minimum of 50 MB: at this rate the film is about 80 MB.
+export const FILM_BITRATE = "5M";
 const READY_CEILING_MS = 180_000;
 // qBittorrent keeps a password as PBKDF2-HMAC-SHA512 over 100,000 rounds, written as salt:hash in base64.
 const PBKDF2_ROUNDS = 100_000;
@@ -149,7 +151,7 @@ export class DelunoWorld {
    */
   async makeFilm({ box, title, year }) {
     const source = `${FILM_FOLDER}/${title}.mkv`;
-    await box.makeFilm({ path: source, seconds: FILM_SECONDS });
+    await box.makeFilm({ path: source, seconds: FILM_SECONDS, videoBitrate: FILM_BITRATE });
     const made = await send(FIXTURE_ORIGIN, { method: "POST", path: "/releases", body: { source, title, year }, what: "The release source" });
     assert.equal(made.status, 200, `The release source made the release (answered ${made.status}: ${made.text.slice(0, 300)})`);
     return made.json;
