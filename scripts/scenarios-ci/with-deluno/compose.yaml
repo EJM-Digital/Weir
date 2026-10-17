@@ -1,0 +1,105 @@
+# The services of the with-deluno shard, laid over the shipped compose.yaml (scripts/scenarios-in-ci.mjs lists both files): Weir as it ships,
+# Deluno and qBittorrent as published, and one container that makes the shared folders writable by the account every one of them runs as.
+# Every image besides Weir's own is named by a variable, and the variable takes its value from images.json, the one place a digest is written.
+# Deluno and Weir reach each other and qBittorrent by service name on the stack's own network. The folders are the same path in every
+# container that uses them, as a person who mounts one download folder into each application sets them up.
+name: weir
+
+services:
+  prepare:
+    image: ${WEIR_DOCKER_IMAGE:?}
+    pull_policy: never
+    user: root
+    entrypoint: ["sh", "-c"]
+    # qBittorrent's first settings file holds this run's login: the name and the PBKDF2 form of the password the runner made.
+    command:
+      - |
+        set -e
+        mkdir -p /downloads/completed/Movies /downloads/incomplete /media/Movies /weir/Ready/Movies /config/qBittorrent
+        cat > /config/qBittorrent/qBittorrent.conf <<CONF
+        [LegalNotice]
+        Accepted=true
+
+        [Preferences]
+        WebUI\Address=*
+        WebUI\CSRFProtection=false
+        WebUI\HostHeaderValidation=false
+        WebUI\Port=8080
+        WebUI\Username=$$QBITTORRENT_USERNAME
+        WebUI\Password_PBKDF2="@ByteArray($$QBITTORRENT_PBKDF2)"
+        CONF
+        chown -R 1654:1654 /downloads /media /weir /config
+    environment:
+      QBITTORRENT_USERNAME: ${SCENARIO_QBITTORRENT_USERNAME:?}
+      QBITTORRENT_PBKDF2: ${SCENARIO_QBITTORRENT_PBKDF2:?}
+    volumes:
+      - downloads:/downloads
+      - media:/media
+      - weir-output:/weir
+      - qbittorrent-config:/config
+
+  weir:
+    depends_on:
+      prepare:
+        condition: service_completed_successfully
+    environment:
+      WEIR_PUID: "1654"
+      WEIR_PGID: "1654"
+    volumes:
+      - downloads:/downloads
+      - weir-output:/weir
+
+  deluno:
+    image: ${SCENARIO_DELUNO_IMAGE:?}
+    pull_policy: never
+    depends_on:
+      prepare:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      Server__Port: "8080"
+      Server__AllowLan: "true"
+      Storage__DataRoot: /data
+    ports:
+      - "5099:8080"
+    volumes:
+      - deluno-data:/data
+      - downloads:/downloads
+      - media:/media
+      - weir-output:/weir
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 5s
+      start_period: 30s
+      retries: 20
+
+  qbittorrent:
+    image: ${SCENARIO_QBITTORRENT_IMAGE:?}
+    pull_policy: never
+    depends_on:
+      prepare:
+        condition: service_completed_successfully
+    environment:
+      PUID: "1654"
+      PGID: "1654"
+      TZ: Etc/UTC
+      WEBUI_PORT: "8080"
+    ports:
+      - "18081:8080"
+    volumes:
+      - qbittorrent-config:/config
+      - downloads:/downloads
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--output", "/dev/null", "http://localhost:8080/"]
+      interval: 5s
+      timeout: 5s
+      start_period: 20s
+      retries: 20
+
+volumes:
+  deluno-data:
+  downloads:
+  media:
+  qbittorrent-config:
+  weir-output:

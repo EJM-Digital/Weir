@@ -18,6 +18,9 @@ export class Stack {
   #logFolder;
   #scratch;
   #files = ["compose.yaml"];
+  #extraFiles = [];
+  #environment = {};
+  #alsoLogged = [];
   #overrides = 0;
   #stage = 0;
 
@@ -27,12 +30,12 @@ export class Stack {
     this.#scratch = scratch;
   }
 
-  #command(subcommand, files = this.#files) {
+  #command(subcommand, files = [...this.#files, ...this.#extraFiles]) {
     return `docker compose ${files.map((file) => `-f ${shellQuote(file)}`).join(" ")} ${subcommand}`;
   }
 
   #compose(subcommand) {
-    return run(this.#command(subcommand), { env: { WEIR_DOCKER_IMAGE: this.#image } });
+    return run(this.#command(subcommand), { env: { ...this.#environment, WEIR_DOCKER_IMAGE: this.#image } });
   }
 
   pull(image) {
@@ -41,10 +44,15 @@ export class Stack {
 
   /**
    * Creates the stack. `--pull never` for the image CI built (it is in no registry); `always` for a published one, as an operator's `up`
-   * would pull it. `layers` (see composeOverride) are laid over the shipped file for this and the stack's later commands.
+   * would pull it. `layers` (see composeOverride) are laid over the shipped file for this and the stack's later commands, and so are the
+   * `files` of services that run beside Weir; `environment` is what those files read their images and settings from.
+   * @param {{files?: string[], environment?: Record<string, string>, services?: string[]}} [beside] `services` are the ones whose logs are kept too.
    */
-  up(image, pull, layers = null) {
+  up(image, pull, layers = null, { files = [], environment = {}, services = [] } = {}) {
     this.#use(image, layers);
+    this.#extraFiles = files;
+    this.#environment = environment;
+    this.#alsoLogged = services;
     this.#compose(`up -d --pull ${pull}`);
   }
 
@@ -87,7 +95,8 @@ export class Stack {
 
   /** The stack and its volume, so the next scenario starts on a new one. */
   removeEverything() {
-    run(this.#command("down --volumes --remove-orphans", ["compose.yaml"]), { env: { WEIR_DOCKER_IMAGE: this.#image || "weir-ci-smoke" }, allowFailure: true });
+    const files = ["compose.yaml", ...this.#extraFiles];
+    run(this.#command("down --volumes --remove-orphans", files), { env: { ...this.#environment, WEIR_DOCKER_IMAGE: this.#image || "weir-ci-smoke" }, allowFailure: true });
   }
 
   /**
@@ -130,12 +139,12 @@ export class Stack {
   /** Like `exec`, with variables set for the command (`docker exec -e`), and its exit code, output and errors kept apart whatever the exit code. */
   execResult(command, variables = {}) {
     const flags = Object.entries(variables).map(([name, value]) => `-e ${shellQuote(`${name}=${value}`)}`).join(" ");
-    return runForStatus(this.#command(`exec -T -u weir ${flags} weir ${command}`), { env: { WEIR_DOCKER_IMAGE: this.#image } });
+    return runForStatus(this.#command(`exec -T -u weir ${flags} weir ${command}`), { env: { ...this.#environment, WEIR_DOCKER_IMAGE: this.#image } });
   }
 
-  /** What the server has logged since the stack was created; empty when there is no container to ask. */
-  logs() {
-    return run(this.#command("logs --no-color weir"), { env: { WEIR_DOCKER_IMAGE: this.#image || "weir-ci-smoke" }, allowFailure: true });
+  /** What a service (the server, unless named) has logged since the stack was created; empty when there is no container to ask. */
+  logs(service = "weir") {
+    return run(this.#command(`logs --no-color ${service}`), { env: { ...this.#environment, WEIR_DOCKER_IMAGE: this.#image || "weir-ci-smoke" }, allowFailure: true });
   }
 
   /** Copies a path out of the container (running or stopped) into a folder on this machine. */
@@ -144,13 +153,18 @@ export class Stack {
     run(`docker cp ${this.#compose("ps -a -q weir").trim()}:${containerPath} ${hostFolder}`);
   }
 
-  /** Saves the server's log for the artifact the workflow uploads, numbered in the order the stack ran, named for its image. */
+  /**
+   * Saves the server's log for the artifact the workflow uploads, numbered in the order the stack ran, named for its image, and the log of
+   * each service that runs beside it, named for the service.
+   */
   keepLogs() {
     const logs = this.logs();
     if (!logs) return;
     this.#stage += 1;
     mkdirSync(this.#logFolder, { recursive: true });
     const image = this.#image.replace(/[^A-Za-z0-9.-]+/g, "-");
-    writeFileSync(join(this.#logFolder, `${String(this.#stage).padStart(2, "0")}-${image}.log`), logs);
+    const stage = String(this.#stage).padStart(2, "0");
+    writeFileSync(join(this.#logFolder, `${stage}-${image}.log`), logs);
+    for (const service of this.#alsoLogged) writeFileSync(join(this.#logFolder, `${stage}-${service}.log`), this.logs(service));
   }
 }

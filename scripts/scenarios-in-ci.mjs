@@ -53,15 +53,18 @@ async function main() {
   const logFolder = join(values.logs, shard);
   const stack = new Stack(logFolder, scratch);
   const client = new WeirClient(ORIGIN);
-  const { account, browser: wantsBrowser, scenarios } = SHARDS[shard];
+  const { account, browser: wantsBrowser, beside, scenarios } = SHARDS[shard];
+  const started = beside?.start();
   let results = [];
   let browser;
   stack.removeEverything();
   try {
-    stack.up(values.candidate, "never");
+    for (const image of started?.pull ?? []) stack.pull(image);
+    stack.up(values.candidate, "never", null, beside ? { files: beside.files, environment: started.environment, services: beside.services } : undefined);
     stack.waitHealthy();
     const world = { weir: client, box: new ContainerBox(stack), runId: randomBytes(3).toString("hex"), createAccount: () => createFirstAccount({ client, stack }) };
     if (account) await world.createAccount();
+    if (beside) world.deluno = await beside.setUp(world, started);
     if (wantsBrowser) world.browser = browser = await Browser.launch(ORIGIN);
     results = await runScenarios({ ids, registry: scenarios, world });
   } catch (error) {

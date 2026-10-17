@@ -44,8 +44,9 @@
       "id": "workflows-from-deluno",
       "home": "linux",
       "shard": "with-deluno",
-      "state": "to-port",
-      "why": "Weir talks to Deluno over HTTP only, so Deluno's published image in Compose is the same Deluno."
+      "state": "ported",
+      "why": "Weir talks to Deluno over HTTP only, so Deluno's published image in Compose is the same Deluno.",
+      "passedInCi": []
     },
     {
       "id": "deluno-film-handoff",
