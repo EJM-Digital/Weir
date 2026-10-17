@@ -33,6 +33,9 @@ public sealed record FileRule
     /// <summary>The remux stays in progress until this path exists, so a test controls exactly how long (capped at two minutes).</summary>
     public string? RemuxReleaseFile { get; init; }
 
+    /// <summary>The remux reports having written this many seconds of the film (on the progress stream) as soon as it starts, before it waits to be released.</summary>
+    public double? RemuxProgressSeconds { get; init; }
+
     /// <summary>The probe of the remuxed output, instead of the source's streams restricted to the mapped ones.</summary>
     public JsonObject? OutputProbe { get; init; }
 
@@ -47,6 +50,7 @@ public sealed record FileRule
         Set(rule, FakeToolProtocol.RemuxFailTimesKey, RemuxFailTimes);
         Set(rule, FakeToolProtocol.RemuxDelaySecondsKey, RemuxDelaySeconds);
         Set(rule, FakeToolProtocol.RemuxReleaseFileKey, RemuxReleaseFile);
+        Set(rule, FakeToolProtocol.RemuxProgressSecondsKey, RemuxProgressSeconds);
         Set(rule, FakeToolProtocol.OutputProbeKey, OutputProbe?.DeepClone());
         return rule;
     }

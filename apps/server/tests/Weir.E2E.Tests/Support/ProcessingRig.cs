@@ -130,12 +130,12 @@ public sealed partial class ProcessingRig : IAsyncDisposable
     /// Deluno hands over a movie. Its pass stays under way, once a worker takes it, until <see cref="ReleasePass"/>. The hand-off
     /// is answered by the server before the file moves anywhere on screen.
     /// </summary>
-    public async Task HandOffAsync(string handoffId, string fileName)
+    public async Task HandOffAsync(string handoffId, string fileName, double? progressSeconds = null)
     {
         var source = Path.Combine(Watched, handoffId, fileName);
         Directory.CreateDirectory(Path.GetDirectoryName(source)!);
         await File.WriteAllBytesAsync(source, FakeMedia.Bytes(FakeMedia.Probe()));
-        _tools.SetFileRule(fileName, new FileRule { Probe = FakeMedia.Probe(), RemuxReleaseFile = ReleaseFileFor(fileName) });
+        _tools.SetFileRule(fileName, new FileRule { Probe = FakeMedia.Probe(), RemuxReleaseFile = ReleaseFileFor(fileName), RemuxProgressSeconds = progressSeconds });
         await PostHandOffAsync(handoffId, source);
     }
 

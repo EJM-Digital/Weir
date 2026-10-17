@@ -58,6 +58,12 @@ internal static class FakeFfmpegTool
         var output = argv[^1];
         var delay = FakeFfprobe.Number(rule, FakeToolProtocol.RemuxDelaySecondsKey);
         var releaseFile = FakeFfprobe.Text(rule, FakeToolProtocol.RemuxReleaseFileKey);
+        var progressSeconds = FakeFfprobe.Number(rule, FakeToolProtocol.RemuxProgressSecondsKey);
+        if (progressSeconds > 0 && argv.Contains("-progress"))
+        {
+            Output.Out(string.Create(CultureInfo.InvariantCulture, $"out_time_ms={(long)(progressSeconds * 1_000_000)}\nprogress=continue\n"));
+        }
+
         if (delay > 0 || releaseFile is not null)
         {
             File.WriteAllBytes(output, "partial fake output"u8.ToArray());
