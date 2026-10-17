@@ -2,9 +2,13 @@ using Xunit.Sdk;
 
 namespace Weir.Contract.Tests.Harness;
 
-/// <summary>Waiting for something the server does on its own schedule, with a deadline instead of a fixed pause.</summary>
+/// <summary>
+/// Waiting for something the server does on its own schedule. The wait ends the moment the condition holds; the timeout is a hang
+/// guard, which only a test whose server has stopped making progress reaches, and no result ever depends on how long it took.
+/// </summary>
 public static class Poll
 {
+    /// <summary>The hang guard: how long a wait for something the test has already arranged may go on before the test calls it hung.</summary>
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
     public static readonly TimeSpan Interval = TimeSpan.FromMilliseconds(200);
 

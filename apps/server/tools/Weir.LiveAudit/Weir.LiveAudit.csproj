@@ -5,6 +5,7 @@
     <RootNamespace>Weir.LiveAudit</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\..\src\Weir.Core\Updates\ProjectLocation.cs" Link="ProjectLocation.cs" />
     <PackageReference Include="Microsoft.Playwright" />
   </ItemGroup>
 </Project>

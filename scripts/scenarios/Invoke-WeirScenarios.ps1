@@ -64,7 +64,7 @@
 
 .PARAMETER InstallerPath
     The build under test: Weir-win-Setup.exe from the manual CI run given the release it will become
-    (`gh workflow run ci.yml --repo jampat000/Weir --ref main -f version=<version>`, artifact weir-windows-<short sha>).
+    (`gh workflow run ci.yml --repo <owner>/Weir --ref main -f version=<version>`, artifact weir-windows-<short sha>).
 
 .PARAMETER Version
     The version under test, for example 1.0.0-rc.18. The installed build must report it.
@@ -118,7 +118,7 @@ param(
     [Parameter(Mandatory)] [ValidatePattern('^[0-9a-f]{40}$')] [string] $CommitSha,
     [string[]] $Phases = @('Update', 'WithDeluno', 'Fresh'),
     [string[]] $Scenarios = @(),
-    [string] $Repository = 'jampat000/Weir',
+    [string] $Repository,
     [string] $VmName = 'Deluno-GoldenPath',
     [string] $Checkpoint = 'clean',
     [string] $RigCredentialFile = (Join-Path $env:LOCALAPPDATA 'Deluno-rig-admin.xml'),
@@ -140,6 +140,8 @@ $shortSha = $CommitSha.Substring(0, 7)
 if (-not $OutDirectory) { $OutDirectory = Join-Path $repoRoot 'artifacts' }
 $runFolder = Join-Path $OutDirectory "weir-scenarios-$Version-$shortSha"
 
+. (Join-Path $repoRoot 'scripts\repository.ps1')
+if (-not $Repository) { $Repository = $WeirRepository }
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Lib.ps1')
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Catalog.ps1')
 

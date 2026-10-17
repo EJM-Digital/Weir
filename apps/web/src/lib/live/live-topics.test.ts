@@ -18,6 +18,7 @@ describe("LIVE_TOPIC_QUERIES", () => {
     const topics: LiveTopic[] = [
       "backups",
       "connections",
+      "direct_play_devices",
       "files_at_once",
       "folder_checks",
       "jobs",
@@ -35,6 +36,13 @@ describe("LIVE_TOPIC_QUERIES", () => {
     ];
 
     expect(Object.keys(LIVE_TOPIC_QUERIES).sort()).toEqual(topics);
+  });
+
+  it("reads the playback devices, and the files that show a Direct Play badge for them, again when the chosen devices change", () => {
+    expect(LIVE_TOPIC_QUERIES.direct_play_devices).toEqual([
+      processingKeys.directPlayDevices,
+      processingKeys.files,
+    ]);
   });
 
   it("reads the list of signed-in browsers again when one signs in or out", () => {

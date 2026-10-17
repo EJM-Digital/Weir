@@ -1,8 +1,7 @@
 // Which published image a build is upgraded from.
 import { findPreviousVersion } from "../find-previous-release.mjs";
+import { IMAGE_REPOSITORY } from "../repository.mjs";
 import { compareSemver, parseSemver } from "../semver.mjs";
-
-export const IMAGE_REPOSITORY = "ghcr.io/jampat000/weir";
 
 function newestVersion(tags) {
   let newest = null;

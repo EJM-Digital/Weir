@@ -52,6 +52,7 @@ public sealed class WorkflowSyncTests
         var delunoId = (long)created.Fields["id"]!;
         var movies = Movies(await SyncedAsync(client));
         var moviesId = (long)movies["id"]!;
+        var tvId = (long)Assert.Single(await SyncedAsync(client), row => (string)row!["media_type"]! == "tv")!["id"]!;
 
         PublishDestinations(fake, rig, "Completed/Movies 4K");
         var moved = Path.Join(rig.Path, "Completed", "Movies 4K");
@@ -64,11 +65,15 @@ public sealed class WorkflowSyncTests
         var unlinked = await client.PostWithCsrfAsync($"{LibrariesRoute}/{moviesId}/unlink", new JsonObject());
         Assert.True(unlinked.Status == HttpStatusCode.OK, unlinked.ToString());
         Assert.Null(unlinked.Fields["folders_synced_from_connection_id"]);
-        PublishDestinations(fake, rig, "Completed/Movies 8K");
+        PublishDestinations(fake, rig, "Completed/Movies 8K", "Completed/TV 8K");
         var again = await client.PostWithCsrfAsync($"{ManagerConnections.Route}/{delunoId}/test", new JsonObject());
         Assert.True(again.Status == HttpStatusCode.OK, again.ToString());
-        await fake.WaitForRequestAsync("GET", DestinationsPath, 3);
-        await Task.Delay(500);
+
+        // The sync saves every workflow of the connection together, so once the linked TV workflow has followed Deluno, the pass is over.
+        var movedTv = Path.Join(rig.Path, "Completed", "TV 8K");
+        await Poll.UntilAsync(
+            async () => (string)(await client.GetAsync($"{LibrariesRoute}/{tvId}")).Fields["watched_folder"]! == movedTv ? "moved" : null,
+            "the linked TV workflow to follow Deluno's new folder");
 
         Assert.Equal(moved, (string)(await client.GetAsync($"{LibrariesRoute}/{moviesId}")).Fields["watched_folder"]!);
     }

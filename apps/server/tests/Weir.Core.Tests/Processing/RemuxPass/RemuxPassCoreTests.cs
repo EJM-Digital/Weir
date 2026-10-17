@@ -229,6 +229,16 @@ public sealed class FailureClassesTests
     }
 
     [Fact]
+    public void A_workflow_that_allows_one_attempt_says_so_in_the_singular()
+    {
+        var decision = RetryPolicy.DecideRetry(Library(maxAttempts: 1), "execution", 1, Now);
+
+        Assert.Equal(
+            "Weir tried this file 1 time and stopped, because the Movies workflow allows 1. You can still start it again by hand.",
+            decision.Reason);
+    }
+
+    [Fact]
     public void Repeated_failures_of_one_class_are_retried_up_to_the_workflows_limit_and_never_held_earlier()
     {
         var decision = RetryPolicy.DecideRetry(Library(maxAttempts: 10), "execution", 3, Now);
