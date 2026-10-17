@@ -385,6 +385,11 @@ public sealed partial class MediaManagerIntake
                     uow, connection, transaction, active, importEvent, dedupeKey, payload, target, ownerConnectionId, superseded).ConfigureAwait(false);
                 if (taken == Adoption.Adopted)
                 {
+                    foreach (var retired in GoneLooks.RetireOthers(connection, transaction, active, library.Id, target))
+                    {
+                        _jobs.AnnounceQueueChange(transaction, retired.JobKind);
+                    }
+
                     covered.Add(target);
                     continue;
                 }
