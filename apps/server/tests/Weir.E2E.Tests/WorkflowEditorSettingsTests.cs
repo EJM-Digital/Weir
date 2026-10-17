@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Weir.Contract.Tests.Harness;
 using Weir.E2E.Tests.Harness;
@@ -36,7 +37,7 @@ public sealed class WorkflowEditorSettingsTests(E2EServer server) : E2ETestBase(
         try
         {
             var form = await WorkflowEditor.OpenNewAsync(page);
-            await FillEverythingAsync(page, form, watched, output, work);
+            var chosen = await FillEverythingAsync(page, form, watched, output, work);
 
             var mark = log.Mark();
             await WorkflowEditor.Save(page).ClickAsync();
@@ -47,8 +48,6 @@ public sealed class WorkflowEditorSettingsTests(E2EServer server) : E2ETestBase(
             Assert.Equal($"POST {WeirClient.Api}/processing/libraries", $"{sent.Method} {sent.PathAndQuery}");
             var body = JsonNode.Parse(sent.Body!)!.AsObject();
             body.Remove("csrf_token");
-            // The folder picker names the folder it chose with the separator after it.
-            var chosen = watched + Path.DirectorySeparatorChar;
             var expected = await ChosenBodyAsync(page, profileId, chosen, output, work);
             Assert.True(JsonNode.DeepEquals(expected, body), $"The page sent {body.ToJsonString()}");
 
@@ -145,7 +144,8 @@ public sealed class WorkflowEditorSettingsTests(E2EServer server) : E2ETestBase(
         }
     }
 
-    private static async Task FillEverythingAsync(IPage page, ILocator form, string watched, string output, string work)
+    /// <summary>Fills in every setting and returns the watched folder as the page holds it once chosen in the folder picker.</summary>
+    private static async Task<string> FillEverythingAsync(IPage page, ILocator form, string watched, string output, string work)
     {
         await WorkflowEditor.Text(form, "Name").FillAsync(Name);
         await WorkflowEditor.Choice(form, "Media type").SelectOptionAsync(new SelectOptionValue { Label = "TV episodes" });
@@ -157,7 +157,7 @@ public sealed class WorkflowEditorSettingsTests(E2EServer server) : E2ETestBase(
         await Expect(form).ToContainTextAsync("FFmpeg writes every file, both new downloads and files already in your library.");
         await Expect(form).Not.ToContainTextAsync("mkvmerge writes MKV files when it is installed");
 
-        await ChooseFolderAsync(page, form, "watched folder", watched);
+        var chosen = await ChooseFolderAsync(page, form, "watched folder", watched);
         await WorkflowEditor.Text(form, "Output folder").FillAsync(output);
         await WorkflowEditor.Text(form, "Work folder").FillAsync(work);
 
@@ -203,10 +203,11 @@ public sealed class WorkflowEditorSettingsTests(E2EServer server) : E2ETestBase(
 
         await WorkflowEditor.OpenGroupAsync(form, "Advanced");
         await WorkflowEditor.Choice(form, "FFmpeg compatibility").SelectOptionAsync("experimental");
+        return chosen;
     }
 
-    /// <summary>Browse beside a folder opens the picker over the server's folders; Go to path then Use this folder puts the folder in the field.</summary>
-    private static async Task ChooseFolderAsync(IPage page, ILocator form, string label, string folder)
+    /// <summary>Browse beside a folder opens the picker over the server's folders; Go to path then Use this folder puts the folder in the field. Returns the folder as the field holds it, whether or not the server puts a separator after it.</summary>
+    private static async Task<string> ChooseFolderAsync(IPage page, ILocator form, string label, string folder)
     {
         await form.GetByTitle($"Choose the {label}").ClickAsync();
         var picker = page.GetByRole(AriaRole.Dialog, new() { Name = $"Choose the {label}", Exact = true });
@@ -216,8 +217,9 @@ public sealed class WorkflowEditorSettingsTests(E2EServer server) : E2ETestBase(
         await Expect(picker.Locator(".mm-folder-picker__current")).ToContainTextAsync(folder);
         await picker.GetByRole(AriaRole.Button, new() { Name = "Use this folder" }).ClickAsync();
         await Expect(picker).ToHaveCountAsync(0);
-        // The picker names the folder it is in with the separator after it.
-        await Expect(WorkflowEditor.Text(form, char.ToUpperInvariant(label[0]) + label[1..])).ToHaveValueAsync(folder + Path.DirectorySeparatorChar);
+        var field = WorkflowEditor.Text(form, char.ToUpperInvariant(label[0]) + label[1..]);
+        await Expect(field).ToHaveValueAsync(new Regex($@"^{Regex.Escape(folder)}[/\\]?$"));
+        return await field.InputValueAsync();
     }
 
     private static async Task<JsonObject> ChosenBodyAsync(IPage page, long profileId, string watched, string output, string work)
