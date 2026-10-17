@@ -17,11 +17,11 @@ import {
   type CleanupJob,
 } from "./cleanup-jobs";
 
-/** Saves one operator setting and says in words what changed. */
+/** Saves one operator setting and says in words what changed. Resolves to whether it was saved. */
 export type SaveSetting = (
   body: ProcessingOperatorSettingsPutBody,
   said: string,
-) => Promise<void>;
+) => Promise<boolean>;
 
 function nextRunWords(
   state: MaintenanceFamilyState,
@@ -259,9 +259,9 @@ export function DaysSettingRow({
             })}
             disabled={saving}
             onClick={() =>
-              void onSave(toBody(value), savedWords(value)).then(() =>
-                setDraft(null),
-              )
+              void onSave(toBody(value), savedWords(value)).then((saved) => {
+                if (saved) setDraft(null);
+              })
             }
           >
             {saving ? "Saving…" : "Save"}

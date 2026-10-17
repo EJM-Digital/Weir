@@ -2,6 +2,7 @@ import { Fragment, type ReactNode } from "react";
 
 import type { NotificationChannelOut } from "../../../../lib/settings/types";
 import { Chip } from "../../../../components/panels/chip";
+import { useIsAdmin } from "../../../../lib/auth/can-edit";
 import { mmActionButtonClass } from "../../../../lib/ui/mm-control-roles";
 import {
   ALERT_ACTIONS_COLUMN,
@@ -56,6 +57,7 @@ export function ChannelRow({
   testResult: TestResult | null;
   deleting: boolean;
 }) {
+  const admin = useIsAdmin();
   const cells: Record<string, ReactNode> = {
     [ALERT_NAME_COLUMN]: (
       <th
@@ -91,7 +93,7 @@ export function ChannelRow({
               variant: "secondary",
               size: "row",
             })}
-            disabled={deleting}
+            disabled={deleting || !admin}
             onClick={onEdit}
           >
             Edit
@@ -102,7 +104,7 @@ export function ChannelRow({
               variant: "danger-outline",
               size: "row",
             })}
-            disabled={deleting}
+            disabled={deleting || !admin}
             aria-haspopup="dialog"
             onClick={onDelete}
           >
@@ -125,7 +127,7 @@ export function ChannelRow({
           className={ALERT_CHECKBOX_CLASS}
           aria-label={`${channel.label}: ${eventLabel(event)}`}
           checked={channel.events.includes(event)}
-          disabled={toggling}
+          disabled={toggling || !admin}
           onChange={() => onToggleEvent(event)}
         />
       </td>

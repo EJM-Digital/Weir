@@ -13,6 +13,7 @@ import { mmActionButtonClass } from "../../../../lib/ui/mm-control-roles";
 import { ConnectionEditForm } from "./connection-edit-form";
 import { ConnectionFolderChain } from "./connection-folder-chain";
 import { ConnectionRow } from "./connection-row";
+import { useIsAdmin } from "../../../../lib/auth/can-edit";
 import { ConnectionSetup } from "./connection-setup";
 import { ConnectionStatus, FedWorkflows } from "./connection-status";
 import { RemoveConnectionDialog } from "./remove-connection-dialog";
@@ -35,6 +36,7 @@ export function ConnectionCard({
 }) {
   const update = useUpdateMediaManagerConnection();
   const remove = useDeleteMediaManagerConnection();
+  const admin = useIsAdmin();
   const test = useTestMediaManagerConnection();
   const secret = useGenerateMediaManagerWebhookSecret();
   // Remove asks first. Nothing is deleted until the dialog is confirmed.
@@ -64,7 +66,7 @@ export function ConnectionCard({
             type="button"
             data-testid="media-manager-edit"
             className={mmActionButtonClass({ variant: "secondary" })}
-            disabled={locked}
+            disabled={locked || !admin}
             onClick={() => setEditing(true)}
           >
             Edit
@@ -72,7 +74,7 @@ export function ConnectionCard({
           <button
             type="button"
             className={mmActionButtonClass({ variant: "secondary" })}
-            disabled={locked}
+            disabled={locked || !admin}
             onClick={() =>
               update.mutate({
                 id: connection.id,
@@ -86,7 +88,7 @@ export function ConnectionCard({
             type="button"
             data-testid="media-manager-remove"
             className={mmActionButtonClass({ variant: "danger-outline" })}
-            disabled={locked}
+            disabled={locked || !admin}
             aria-haspopup="dialog"
             onClick={() => {
               remove.reset();

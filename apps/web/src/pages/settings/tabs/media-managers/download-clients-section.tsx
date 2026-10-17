@@ -3,6 +3,8 @@ import { useRef, useState } from "react";
 import { EmptyState } from "../../../../components/shared/empty-state";
 import { PageLoading } from "../../../../components/shared/page-loading";
 import { SidePanel } from "../../../../components/shared/side-panel";
+import { AdminOnlyNote } from "../../../../components/shared/admin-only-note";
+import { useIsAdmin } from "../../../../lib/auth/can-edit";
 import { PageToolbarAddButton } from "../../../../components/shell/page-toolbar-actions";
 import type { DownloadClientConnection } from "../../../../lib/download-clients/download-clients-api";
 import { useDownloadClientConnectionsQuery } from "../../../../lib/download-clients/queries";
@@ -21,6 +23,7 @@ import { ConnectionList } from "./connection-row";
  */
 export function DownloadClientsSection() {
   const connections = useDownloadClientConnectionsQuery();
+  const admin = useIsAdmin();
   const fmt = useAppDateFormatter();
   const [adding, setAdding] = useState(false);
   const [justCreated, setJustCreated] =
@@ -41,6 +44,10 @@ export function DownloadClientsSection() {
       className="mm-quiet-stack"
       data-testid="suite-settings-download-clients"
     >
+      <AdminOnlyNote
+        what="a download client"
+        testId="download-client-needs-admin"
+      />
       {justCreated ? (
         <p className="mm-quiet-note" data-testid="download-client-created-note">
           {connectionTitle(justCreated)} is connected. Weir will offer its
@@ -57,6 +64,7 @@ export function DownloadClientsSection() {
             <button
               type="button"
               className={mmActionButtonClass({ variant: "secondary" })}
+              disabled={!admin}
               onClick={startAdding}
             >
               Add your first download client
@@ -86,6 +94,7 @@ export function DownloadClientsSection() {
       <PageToolbarAddButton
         label="Add download client"
         dataTestId="download-client-add"
+        disabled={!admin}
         onClick={startAdding}
       />
       <SidePanel

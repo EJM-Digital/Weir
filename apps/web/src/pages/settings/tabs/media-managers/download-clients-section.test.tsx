@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { signedInAs } from "../../../../test/signed-in-as";
 import * as api from "../../../../lib/download-clients/download-clients-api";
 import type { DownloadClientConnection } from "../../../../lib/download-clients/download-clients-api";
 import * as settingsQueries from "../../../../lib/settings/queries";
@@ -36,6 +37,7 @@ function wrapper({ children }: { children: ReactNode }) {
 
 // Each card formats its last test time in the app timezone, which is read from the settings.
 beforeEach(() => {
+  signedInAs("admin");
   vi.spyOn(settingsQueries, "useAppSettingsQuery").mockReturnValue({
     data: undefined,
   } as ReturnType<typeof settingsQueries.useAppSettingsQuery>);
@@ -154,6 +156,42 @@ describe("adding a download client", () => {
     expect(screen.getByTestId("download-client-save")).toBeDisabled();
   });
 
+  it("says what is missing beside the disabled Add button, and stops once the form is complete", async () => {
+    vi.spyOn(api, "fetchDownloadClientConnections").mockResolvedValue([]);
+    render(<DownloadClientsSection />, { wrapper });
+    fireEvent.click(await screen.findByTestId("download-client-add"));
+    const save = screen.getByTestId("download-client-save");
+
+    // SABnzbd is the default selection.
+    const reason = screen.getByTestId("download-client-save-reason");
+    expect(reason).toHaveTextContent(
+      "Enter the address and API key to add this client.",
+    );
+    expect(save).toHaveAttribute("aria-describedby", reason.id);
+
+    fireEvent.change(screen.getByTestId("download-client-base-url"), {
+      target: { value: "http://192.0.2.20:8080" },
+    });
+    expect(screen.getByTestId("download-client-save-reason")).toHaveTextContent(
+      "Enter the API key to add this client.",
+    );
+
+    fireEvent.change(screen.getByTestId("download-client-kind"), {
+      target: { value: "deluge" },
+    });
+    expect(screen.getByTestId("download-client-save-reason")).toHaveTextContent(
+      "Enter the password to add this client.",
+    );
+
+    fireEvent.change(screen.getByTestId("download-client-password"), {
+      target: { value: "deluge-secret" },
+    });
+    expect(
+      screen.queryByTestId("download-client-save-reason"),
+    ).not.toBeInTheDocument();
+    expect(save).not.toHaveAttribute("aria-describedby");
+  });
+
   it("asks for no name: the connection is named after its address", async () => {
     vi.spyOn(api, "fetchDownloadClientConnections").mockResolvedValue([]);
     render(<DownloadClientsSection />, { wrapper });
@@ -225,6 +263,44 @@ describe("adding a download client", () => {
     expect(
       await screen.findByTestId("download-client-created-note"),
     ).toHaveTextContent("nothing is applied on its own");
+  });
+
+  it("saves only what the chosen kind's login uses, not what was typed for a kind the person moved away from", async () => {
+    vi.spyOn(api, "fetchDownloadClientConnections").mockResolvedValue([]);
+    const create = vi
+      .spyOn(api, "createDownloadClientConnection")
+      .mockResolvedValue(connection({ name: "SABnzbd on 192.0.2.20" }));
+
+    render(<DownloadClientsSection />, { wrapper });
+    fireEvent.click(await screen.findByTestId("download-client-add"));
+    fireEvent.change(screen.getByTestId("download-client-kind"), {
+      target: { value: "qbittorrent" },
+    });
+    fireEvent.change(screen.getByTestId("download-client-username"), {
+      target: { value: "someone" },
+    });
+    fireEvent.change(screen.getByTestId("download-client-password"), {
+      target: { value: "typed-for-qbittorrent" },
+    });
+    fireEvent.change(screen.getByTestId("download-client-kind"), {
+      target: { value: "sabnzbd" },
+    });
+    fireEvent.change(screen.getByTestId("download-client-base-url"), {
+      target: { value: "http://192.0.2.20:8080" },
+    });
+    fireEvent.change(screen.getByTestId("download-client-api-key"), {
+      target: { value: "some-key" },
+    });
+    fireEvent.click(screen.getByTestId("download-client-save"));
+
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+    const sent = create.mock.calls[0]?.[0];
+    expect(sent).toMatchObject({
+      kind: "sabnzbd",
+      api_key: "some-key",
+      username: "",
+      password: "",
+    });
   });
 
   it("says why adding a connection failed", async () => {

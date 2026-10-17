@@ -23,6 +23,10 @@ export async function fetchLibraryRedownloads(
   return readJson<LibraryRedownloads>(r);
 }
 
+/** What a person is told when the media manager could not be asked and the server gave no reason of its own. */
+export const REDOWNLOAD_FAILED =
+  "Weir couldn't ask your media manager. Nothing was deleted; try again.";
+
 /** Only ever sent after the operator has confirmed: the media manager deletes the file before it searches. */
 export async function requestLibraryRedownload(
   libraryId: number,
@@ -32,7 +36,7 @@ export async function requestLibraryRedownload(
     redownloadsPath(libraryId),
     "POST",
     { path: filePath, confirm_destructive: true },
-    "Could not ask your media manager to download this again",
+    REDOWNLOAD_FAILED,
   );
   return readJson<LibraryRedownloadResult>(r);
 }

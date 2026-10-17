@@ -1,5 +1,8 @@
 import { errorMessage } from "../../lib/api/error-message";
-import type { LibraryFile } from "../../lib/processing/library-mode-api";
+import {
+  LEAVE_ALONE_FAILED,
+  type LibraryFile,
+} from "../../lib/processing/library-mode-api";
 import { useSetLibraryFileLeaveAlone } from "../../lib/processing/library-mode-queries";
 
 /**
@@ -61,10 +64,7 @@ export function LibraryLeaveAlone({
       </p>
       {mutation.isError ? (
         <p className="mm-drawer__failure" data-status="broken" role="alert">
-          {errorMessage(
-            mutation.error,
-            "Weir couldn't save that. The file is as it was; try again.",
-          )}
+          {errorMessage(mutation.error, LEAVE_ALONE_FAILED)}
         </p>
       ) : null}
     </div>

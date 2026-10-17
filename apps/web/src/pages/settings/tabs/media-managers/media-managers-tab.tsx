@@ -3,6 +3,8 @@ import { useRef, useState } from "react";
 import { EmptyState } from "../../../../components/shared/empty-state";
 import { PageLoading } from "../../../../components/shared/page-loading";
 import { SidePanel } from "../../../../components/shared/side-panel";
+import { AdminOnlyNote } from "../../../../components/shared/admin-only-note";
+import { useIsAdmin } from "../../../../lib/auth/can-edit";
 import { PageToolbarAddButton } from "../../../../components/shell/page-toolbar-actions";
 import type { MediaManagerConnection } from "../../../../lib/media-managers/media-managers-api";
 import { useMediaManagerConnectionsQuery } from "../../../../lib/media-managers/queries";
@@ -20,6 +22,7 @@ import { WeirOnlyWorkflows } from "./weir-only-workflows";
 /** Setup › Connections › Media managers: the media managers that send files to Weir. */
 export function MediaManagersTab() {
   const connections = useMediaManagerConnectionsQuery();
+  const admin = useIsAdmin();
   const fmt = useAppDateFormatter();
   const [adding, setAdding] = useState(false);
   const [justCreated, setJustCreated] = useState<MediaManagerConnection | null>(
@@ -38,6 +41,10 @@ export function MediaManagersTab() {
 
   return (
     <div className="mm-quiet-stack" data-testid="suite-settings-media-managers">
+      <AdminOnlyNote
+        what="a media manager"
+        testId="media-manager-needs-admin"
+      />
       {justCreated ? (
         <NewConnectionSecretPrompt
           connection={justCreated}
@@ -53,6 +60,7 @@ export function MediaManagersTab() {
             <button
               type="button"
               className={mmActionButtonClass({ variant: "secondary" })}
+              disabled={!admin}
               onClick={startAdding}
             >
               Add your first media manager
@@ -84,6 +92,7 @@ export function MediaManagersTab() {
       <PageToolbarAddButton
         label="Add media manager"
         dataTestId="media-manager-add"
+        disabled={!admin}
         onClick={startAdding}
       />
       <SidePanel
