@@ -5,13 +5,14 @@
       "id": 1,
       "label": "Recorded webhook",
       "provider": "webhook",
-      "url": "https://hooks.example.invalid/weir",
+      "url": "https://hooks.example.invalid/••••",
+      "has_token": true,
       "events": [
         "job_failed"
       ],
       "enabled": true,
-      "created_at": "2026-10-15T19:34:10",
-      "updated_at": "2026-10-15T19:34:10"
+      "created_at": "2026-10-17T06:15:28",
+      "updated_at": "2026-10-17T06:15:28"
     }
   },
   "PUT /api/v1/suite/notification-channels/1": {
@@ -20,14 +21,15 @@
       "id": 1,
       "label": "Recorded webhook",
       "provider": "webhook",
-      "url": "https://hooks.example.invalid/weir",
+      "url": "https://hooks.example.invalid/••••",
+      "has_token": true,
       "events": [
         "job_completed",
         "job_failed"
       ],
       "enabled": false,
-      "created_at": "2026-10-15T19:34:10",
-      "updated_at": "2026-10-15T19:34:10"
+      "created_at": "2026-10-17T06:15:28",
+      "updated_at": "2026-10-17T06:15:28"
     }
   },
   "POST /api/v1/suite/notification-channels/1/test": {
@@ -45,14 +47,15 @@
           "id": 1,
           "label": "Recorded webhook",
           "provider": "webhook",
-          "url": "https://hooks.example.invalid/weir",
+          "url": "https://hooks.example.invalid/••••",
+          "has_token": true,
           "events": [
             "job_completed",
             "job_failed"
           ],
           "enabled": false,
-          "created_at": "2026-10-15T19:34:10",
-          "updated_at": "2026-10-15T19:34:10"
+          "created_at": "2026-10-17T06:15:28",
+          "updated_at": "2026-10-17T06:15:28"
         }
       ],
       "supported_events": [
@@ -115,7 +118,7 @@
       "connection_id": 1,
       "ok": false,
       "detail": "Weir could not reach SABnzbd on localhost at http://localhost:8085. Check the address is right, and that the app is running and reachable from this machine.",
-      "checked_at": "2026-10-15T19:34:10.629609Z"
+      "checked_at": "2026-10-17T06:15:28.577770Z"
     }
   },
   "GET /api/v1/download-clients/connections": {
@@ -132,10 +135,10 @@
         "password_is_saved": false,
         "api_key_is_saved": true,
         "last_test_ok": false,
-        "last_test_at": "2026-10-15T19:34:10.629609",
+        "last_test_at": "2026-10-17T06:15:28.577770",
         "last_test_detail": "Weir could not reach SABnzbd on localhost at http://localhost:8085. Check the address is right, and that the app is running and reachable from this machine.",
-        "last_answer_ms": 4104,
-        "last_used_at": "2026-10-15T19:34:14.784427Z"
+        "last_answer_ms": 4060,
+        "last_used_at": "2026-10-17T06:15:32.677936Z"
       }
     ]
   },
@@ -195,14 +198,14 @@
       "connection_id": 1,
       "ok": false,
       "detail": "Weir could not reach Deluno on localhost · Recorded at http://localhost:5099. Check the address is right, and that the app is running and reachable from this machine.",
-      "checked_at": "2026-10-15T19:34:14.892099Z"
+      "checked_at": "2026-10-17T06:15:32.841904Z"
     }
   },
   "POST /api/v1/media-managers/connections/1/webhook-secret": {
     "status": 200,
     "body": {
       "connection_id": 1,
-      "webhook_secret": "orUrdUEgte96YkjLUbfWcqwPJ8HzwES7NkrcdeIVGE8",
+      "webhook_secret": "DsHmmRmQjHTF86Ktr5i3mQUi60UjTXUBgzfuaDTYiGc",
       "webhook_url_path": "/api/v1/intake/webhook/deluno",
       "header_name": "X-Webhook-Secret"
     }
@@ -222,10 +225,10 @@
         "webhook_url_path": "/api/v1/intake/webhook/deluno",
         "unsigned_webhook_warning": null,
         "last_test_ok": false,
-        "last_test_at": "2026-10-15T19:34:14.892099",
+        "last_test_at": "2026-10-17T06:15:32.841904",
         "last_test_detail": "Weir could not reach Deluno on localhost · Recorded at http://localhost:5099. Check the address is right, and that the app is running and reachable from this machine.",
-        "last_answer_ms": 4029,
-        "last_used_at": "2026-10-15T19:34:18.960908Z",
+        "last_answer_ms": 4051,
+        "last_used_at": "2026-10-17T06:15:36.927139Z",
         "downloaded_scan_enabled": false
       }
     ]
