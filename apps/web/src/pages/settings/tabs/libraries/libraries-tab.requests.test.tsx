@@ -131,24 +131,23 @@ describe("the On / Off switch of a workflow", () => {
     });
   });
 
-  it("sends nothing when the side already chosen is clicked", async () => {
+  it("sends nothing for a click on the side already chosen, only for the click after it on the other side", async () => {
     server = serveWorkflows({ workflows: [configured] });
     const row = await openTab();
     const group = within(row).getByRole("radiogroup", {
       name: "Movies enabled",
     });
 
+    // Everything the page sends goes through one queue, so the other side clicked after it is the control: when its save has arrived,
+    // anything the first click began would have arrived before it.
     fireEvent.click(within(group).getByRole("radio", { name: "On" }));
-    // The save asks for a token first and the stand-in server answers at once, so one turn of the event loop shows whether it began.
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    });
+    fireEvent.click(within(group).getByRole("radio", { name: "Off" }));
 
-    expect(
-      server.requests.filter((request) => request.method !== "GET"),
-    ).toEqual([]);
-    expect(server.to("GET /api/v1/auth/csrf")).toHaveLength(0);
-    expect(within(group).getByRole("radio", { name: "On" })).toBeChecked();
+    await waitFor(() => expect(server.to(updateRoute(1))).toHaveLength(1));
+    expect(server.to(updateRoute(1))[0]!.body).toMatchObject({
+      enabled: false,
+    });
+    expect(server.to("GET /api/v1/auth/csrf")).toHaveLength(1);
   });
 
   it("says why when the server refuses, and leaves the switch where the server has it", async () => {
