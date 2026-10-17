@@ -42,6 +42,20 @@ internal sealed partial class Scenario
         .Where(report => (string?)report["handoffId"] == handoffId)
         .ToList();
 
+    /// <summary>
+    /// The reports for one hand-off once there are <paramref name="count"/>. A pass reports before its job ends, and a hand-off settled
+    /// on arrival (a repeat of a cleaned file) is answered inside the request that brought it, so this waits for as long as a worker has
+    /// a job (see <see cref="WaitWhileWorkedOnAsync{T}"/>) and fails as soon as every job has ended without the report.
+    /// </summary>
+    public async Task<List<JsonObject>> WaitForReportsAsync(FakeManager fake, string handoffId, int count = 1) =>
+        await WaitWhileWorkedOnAsync(
+            () =>
+            {
+                var reports = Callbacks(fake, handoffId);
+                return Task.FromResult(reports.Count >= count ? reports : null);
+            },
+            $"{count} report(s) for {handoffId}");
+
     // --- jobs -----------------------------------------------------------------------------------
 
     /// <summary>

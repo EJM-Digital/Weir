@@ -16,25 +16,15 @@ public sealed class CleanedSourceRepeatTests
 {
     private const string SkippedRepeat = "processing.file_skipped_repeat";
 
-    private static async Task<List<JsonObject>> WaitForReportsAsync(FakeManager fake, string handoffId, int count) =>
-        await Poll.UntilAsync(
-            () =>
-            {
-                var reports = Scenario.Callbacks(fake, handoffId);
-                return Task.FromResult(reports.Count >= count ? reports : null);
-            },
-            $"{count} report(s) for {handoffId}",
-            TimeSpan.FromSeconds(60));
-
+    /// <summary>The skip lines, once there are <paramref name="count"/>. The request or the pass that settles a repeat writes its line, so this waits as long as a worker has a job (see <see cref="Scenario.WaitWhileWorkedOnAsync{T}"/>).</summary>
     private static async Task<JsonObject> WaitForSkipLineAsync(Scenario scenario, int count) =>
-        (await Poll.UntilAsync(
+        (await scenario.WaitWhileWorkedOnAsync(
             async () =>
             {
                 var lines = await scenario.ActivityAsync(SkippedRepeat);
                 return lines.Count >= count ? lines : null;
             },
-            "Activity to say the repeat was left alone",
-            TimeSpan.FromSeconds(60)))[0];
+            "Activity to say the repeat was left alone"))[0];
 
     private static void AssertCompletedWith(JsonObject status, string outputPath)
     {
@@ -53,13 +43,13 @@ public sealed class CleanedSourceRepeatTests
 
         await scenario.PostHandoffAsync("handoff-first", source);
         await scenario.WaitForHandoffStateAsync("handoff-first", "completed");
-        var first = (await WaitForReportsAsync(fake, "handoff-first", 1))[0];
+        var first = (await scenario.WaitForReportsAsync(fake, "handoff-first"))[0];
         var written = File.GetLastWriteTimeUtc(output);
         Assert.Single(scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux"));
 
         // The same hand-off sent again, as a resend or a replay would.
         await scenario.PostHandoffAsync("handoff-first", source);
-        var again = (await WaitForReportsAsync(fake, "handoff-first", 2))[1];
+        var again = (await scenario.WaitForReportsAsync(fake, "handoff-first", 2))[1];
 
         Assert.Equal("completed", (string)again["status"]!);
         Assert.Equal((string)first["outputPath"]!, (string)again["outputPath"]!);
@@ -70,7 +60,7 @@ public sealed class CleanedSourceRepeatTests
 
         // Another hand-off for the same download.
         await scenario.PostHandoffAsync("handoff-second", source);
-        var other = (await WaitForReportsAsync(fake, "handoff-second", 1))[0];
+        var other = (await scenario.WaitForReportsAsync(fake, "handoff-second"))[0];
 
         Assert.Equal("completed", (string)other["status"]!);
         Assert.Equal((string)first["outputPath"]!, (string)other["outputPath"]!);
