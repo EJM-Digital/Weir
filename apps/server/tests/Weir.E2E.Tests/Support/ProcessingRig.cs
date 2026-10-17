@@ -168,13 +168,13 @@ public sealed partial class ProcessingRig : IAsyncDisposable
 
     /// <summary>
     /// Deluno hands over a file ffprobe cannot read, as a download still arriving reads: Weir holds it and looks again later.
-    /// <see cref="FinishArrivingAsync"/> makes it readable.
+    /// <see cref="FinishArrivingAsync"/> makes it readable. <paramref name="sizeBytes"/> is how much of it has arrived; a workflow with a minimum size leaves a smaller one alone.
     /// </summary>
-    public async Task HandOffUnreadableAsync(string handoffId, string fileName)
+    public async Task HandOffUnreadableAsync(string handoffId, string fileName, int sizeBytes = 2048)
     {
         var source = Path.Combine(Watched, handoffId, fileName);
         Directory.CreateDirectory(Path.GetDirectoryName(source)!);
-        await File.WriteAllBytesAsync(source, new byte[2048]);
+        await File.WriteAllBytesAsync(source, new byte[sizeBytes]);
         _tools.SetFileRule(fileName, new FileRule { ProbeError = "Invalid data found when processing input" });
         await PostHandOffAsync(handoffId, source);
     }
