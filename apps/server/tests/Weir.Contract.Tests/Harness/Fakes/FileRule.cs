@@ -33,6 +33,9 @@ public sealed record FileRule
     /// <summary>The remux stays in progress until this path exists, so a test controls exactly how long (capped at two minutes).</summary>
     public string? RemuxReleaseFile { get; init; }
 
+    /// <summary>How far the write has come, reported as ffmpeg does while it works: one step after another, each once the file it names exists.</summary>
+    public IReadOnlyList<RemuxProgressStep>? RemuxProgress { get; init; }
+
     /// <summary>The probe of the remuxed output, instead of the source's streams restricted to the mapped ones.</summary>
     public JsonObject? OutputProbe { get; init; }
 
@@ -47,6 +50,7 @@ public sealed record FileRule
         Set(rule, FakeToolProtocol.RemuxFailTimesKey, RemuxFailTimes);
         Set(rule, FakeToolProtocol.RemuxDelaySecondsKey, RemuxDelaySeconds);
         Set(rule, FakeToolProtocol.RemuxReleaseFileKey, RemuxReleaseFile);
+        Set(rule, FakeToolProtocol.RemuxProgressKey, RemuxProgress is null ? null : new JsonArray([.. RemuxProgress.Select(step => (JsonNode)step.ToJson())]));
         Set(rule, FakeToolProtocol.OutputProbeKey, OutputProbe?.DeepClone());
         return rule;
     }
@@ -57,5 +61,20 @@ public sealed record FileRule
         {
             rule[key] = value;
         }
+    }
+}
+
+/// <summary>One report of how far a write has come: that many seconds of the film written, once <paramref name="AfterFile"/> exists (at once when it is null).</summary>
+public sealed record RemuxProgressStep(double OutTimeSeconds, string? AfterFile = null)
+{
+    internal JsonObject ToJson()
+    {
+        var step = new JsonObject { [FakeToolProtocol.ProgressOutTimeSecondsKey] = OutTimeSeconds };
+        if (AfterFile is not null)
+        {
+            step[FakeToolProtocol.ProgressAfterFileKey] = AfterFile;
+        }
+
+        return step;
     }
 }

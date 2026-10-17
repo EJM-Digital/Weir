@@ -51,6 +51,68 @@ public sealed class AudioAndSubtitleSelectionRulesTests
         Assert.Equal(plan.Audio.ToList().IndexOf(jpnTrack), plan.DefaultAudioOutputIndex);
     }
 
+    private static ProbeStreamInfo Audio(int index, string language) =>
+        Stream("{\"index\": " + index + ", \"codec_type\": \"audio\", \"codec_name\": \"aac\", \"channels\": 2, \"bit_rate\": \"128000\", \"tags\": {\"language\": \"" + language + "\"}}");
+
+    [Theory]
+    [InlineData("primary", 1)]
+    [InlineData("secondary", 2)]
+    [InlineData("tertiary", 3)]
+    public void Per_language_marks_the_track_of_the_slot_the_rule_set_names_as_the_default(string slot, int defaultInput)
+    {
+        var config = RemuxRules.DefaultConfig() with
+        {
+            AudioKeepMode = RemuxRuleValues.AudioKeepModePerLanguage,
+            PrimaryAudioLang = "eng",
+            SecondaryAudioLang = "ger",
+            TertiaryAudioLang = "fre",
+            DefaultAudioSlot = slot,
+        };
+
+        var plan = RemuxRules.PlanRemux([Video], [Audio(1, "eng"), Audio(2, "ger"), Audio(3, "fre")], [], config);
+
+        Assert.NotNull(plan);
+        Assert.Equal(3, plan!.Audio.Count);
+        Assert.Equal([defaultInput], plan.Audio.Where(track => track.Default).Select(track => track.InputIndex));
+        Assert.Equal(defaultInput, plan.Audio[plan.DefaultAudioOutputIndex].InputIndex);
+    }
+
+    [Fact]
+    public void Per_language_marks_the_slot_named_even_when_an_earlier_slot_is_left_empty()
+    {
+        var config = RemuxRules.DefaultConfig() with
+        {
+            AudioKeepMode = RemuxRuleValues.AudioKeepModePerLanguage,
+            PrimaryAudioLang = "eng",
+            SecondaryAudioLang = string.Empty,
+            TertiaryAudioLang = "fre",
+            DefaultAudioSlot = "tertiary",
+        };
+
+        var plan = RemuxRules.PlanRemux([Video], [Audio(1, "eng"), Audio(2, "fre")], [], config);
+
+        Assert.NotNull(plan);
+        Assert.Equal([2], plan!.Audio.Where(track => track.Default).Select(track => track.InputIndex));
+    }
+
+    [Fact]
+    public void Per_language_marks_the_first_track_when_the_slot_named_has_no_track()
+    {
+        var config = RemuxRules.DefaultConfig() with
+        {
+            AudioKeepMode = RemuxRuleValues.AudioKeepModePerLanguage,
+            PrimaryAudioLang = "eng",
+            SecondaryAudioLang = "ger",
+            TertiaryAudioLang = "fre",
+            DefaultAudioSlot = "tertiary",
+        };
+
+        var plan = RemuxRules.PlanRemux([Video], [Audio(1, "eng"), Audio(2, "ger")], [], config);
+
+        Assert.NotNull(plan);
+        Assert.Equal([1], plan!.Audio.Where(track => track.Default).Select(track => track.InputIndex));
+    }
+
     [Fact]
     public void Per_language_skips_a_configured_slot_with_no_matching_track()
     {

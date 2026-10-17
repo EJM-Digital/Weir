@@ -377,7 +377,7 @@ public sealed class SuiteApiTests
         long id;
         await using (uow)
         {
-            id = (await backups.CreateAsync(uow)).Id;
+            id = (await backups.CreateAsync(uow, BackupSource.Schedule)).Id;
             await uow.CommitAsync();
         }
 
