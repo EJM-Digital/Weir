@@ -138,9 +138,18 @@ internal sealed partial class ArrScenario : IDisposable
     {
         MakeDownloadedFiles();
         var scan = new ArrDownloadedScan(_transport);
+
+        // The app imports the file it is told about; the others are handed over without being recorded.
+        foreach (var index in Enumerable.Range(1, _flavour.ImportNames.Count - 1))
+        {
+            await TryAsync("hand over another file", () => _api.PostAsync(
+                DownloadedScanRules.CommandPath,
+                new System.Text.Json.Nodes.JsonObject { ["name"] = DownloadedScanRules.CommandName(_flavour.Scope), ["path"] = FileInDownloads(index), ["importMode"] = DownloadedScanRules.ImportMode })).ConfigureAwait(false);
+        }
+
         await StepAsync("downloaded-scan", "Weir asks the app to scan the folder a finished download is in; the app imports it.", async () =>
         {
-            var result = await scan.RequestAsync(_connection, _flavour.Scope, "/downloads", null).ConfigureAwait(false);
+            var result = await scan.RequestAsync(_connection, _flavour.Scope, FileInDownloads(0), null).ConfigureAwait(false);
             Expect(result.Accepted, $"the scan was refused: {result.FailureReason}");
         }).ConfigureAwait(false);
         await WaitForImportAsync().ConfigureAwait(false);
@@ -160,21 +169,21 @@ internal sealed partial class ArrScenario : IDisposable
 
         await StepAsync("downloaded-scan-with-mapping", "The same scan once the app has a remote path mapping that covers the folder: Weir sends the path the mapping gives.", async () =>
         {
-            var result = await scan.RequestAsync(_connection, _flavour.Scope, "/downloads", null).ConfigureAwait(false);
+            var result = await scan.RequestAsync(_connection, _flavour.Scope, FileInDownloads(0), null).ConfigureAwait(false);
             Expect(result.Accepted, $"the scan was refused: {result.FailureReason}");
         }).ConfigureAwait(false);
 
         await StepAsync("downloaded-scan-for-download", "The same scan for a download the download client named, which Weir sends as the client's own id for it, as text.", async () =>
         {
             Expect(_downloadId is not null, "the queue item carried no downloadId");
-            var result = await scan.RequestAsync(_connection, _flavour.Scope, "/downloads", _downloadId).ConfigureAwait(false);
+            var result = await scan.RequestAsync(_connection, _flavour.Scope, FileInDownloads(0), _downloadId).ConfigureAwait(false);
             Expect(result.Accepted, $"the scan was refused: {result.FailureReason}");
         }).ConfigureAwait(false);
 
         await StepAsync("downloaded-scan-refuses-a-number", "The scan command with the download client's id as a number, which the app answers 500 to; Weir sends text.", async () =>
         {
             var client = new MediaManagerHttpClient(_settings.Url, _apiKey, _transport, TimeSpan.FromSeconds(30));
-            var command = DownloadedScanRules.CommandBody(_flavour.Scope, "/downloads", null).Set("downloadClientId", 1L);
+            var command = DownloadedScanRules.CommandBody(_flavour.Scope, FileInDownloads(0), null).Set("downloadClientId", 1L);
             try
             {
                 await client.PostJsonAsync(DownloadedScanRules.CommandPath, command).ConfigureAwait(false);
@@ -255,6 +264,9 @@ internal sealed partial class ArrScenario : IDisposable
             Say($"  answered: {result.Outcome}");
         }).ConfigureAwait(false);
     }
+
+    /// <summary>A finished download, as the app sees it.</summary>
+    private string FileInDownloads(int index) => $"/downloads/{_flavour.ImportNames[index]}/{_flavour.ImportNames[index]}.mkv";
 
     private void WriteWebhooks(WebhookReceiver receiver)
     {

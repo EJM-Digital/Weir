@@ -66,10 +66,14 @@ internal sealed class ArrRecording
     public ArrExchange To(string method, string path) =>
         Exchanges.Single(exchange => exchange.Request.Method == method && exchange.Request.Path == path);
 
+    /// <summary>The recorded states of <paramref name="app"/> whose name starts with <paramref name="prefix"/>, in name order.</summary>
+    public static IReadOnlyList<string> States(string app, string prefix) =>
+        [.. Directory.GetFiles(VersionFolder(app), prefix + "*.json").Select(Path.GetFileNameWithoutExtension).OfType<string>().Order(StringComparer.Ordinal)];
+
     public static ArrRecording Load(string app, string state)
     {
+        var version = Path.GetFileName(VersionFolder(app));
         var appFolder = Path.Combine(RecordedFolder(), app);
-        var version = Directory.GetDirectories(appFolder).Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal).Last();
         var path = Path.Combine(appFolder, version, state + ".json");
         if (!System.IO.File.Exists(path))
         {
@@ -96,6 +100,12 @@ internal sealed class ArrRecording
 
     private static Dictionary<string, string> HeadersOf(JsonObject message) =>
         message["headers"] is JsonObject headers ? headers.ToDictionary(header => header.Key.ToLowerInvariant(), header => (string)header.Value!) : [];
+
+    private static string VersionFolder(string app)
+    {
+        var appFolder = Path.Combine(RecordedFolder(), app);
+        return Directory.GetDirectories(appFolder).Order(StringComparer.Ordinal).Last();
+    }
 
     private static string RecordedFolder()
     {
