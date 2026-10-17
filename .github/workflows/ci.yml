@@ -122,6 +122,8 @@ jobs:
               - 'scripts/wait-for-health.mjs'
               - 'scripts/docker-compose-smoke.mjs'
               - 'scripts/docker-smoke/**'
+              - 'scripts/scenarios-in-ci.mjs'
+              - 'scripts/scenarios-ci/**'
               - 'scripts/find-previous-release.mjs'
               - 'scripts/semver.mjs'
               - 'scripts/repository.mjs'
@@ -322,6 +324,9 @@ jobs:
       - name: Docker entrypoint refuses bad settings, keeps the secrets and the server's umask
         run: node --test scripts/docker-entrypoint.test.mjs
 
+      - name: Scenarios in CI - their homes, the film, the logs and the scenarios against a stand-in
+        run: node --test scripts/scenarios-in-ci.test.mjs scripts/docker-compose-smoke.test.mjs
+
       - name: Release and CI gate rules
         run: |
           node scripts/check-release-workflow-gates.mjs
@@ -410,37 +415,12 @@ jobs:
   server-windows:
     needs: changes
     if: needs.changes.outputs.run_server_windows == 'true'
-    # The spare Windows PC (docs/self-hosted-runner.md) when the repository variable WEIR_SELF_HOSTED_WINDOWS is 'true',
-    # never for a pull request from a fork; GitHub's own Windows runner otherwise.
-    runs-on: ${{ vars.WEIR_SELF_HOSTED_WINDOWS == 'true' && !github.event.pull_request.head.repo.fork && fromJSON('["self-hosted","Windows","weir-heavy"]') || 'windows-latest' }}
+    runs-on: windows-latest
     timeout-minutes: 30
-    env:
-      # A self-hosted Windows PC keeps Windows' default script policy; this lets the job's own PowerShell run
-      # its scripts without changing the machine's setting. GitHub's runners already allow it.
-      PSExecutionPolicyPreference: Bypass
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      # On a self-hosted PC: `bash` resolves to Windows' own bash.exe (WSL) unless Git's comes first on PATH, and
-      # the service account's temporary folder is under C:\Windows, where Weir rightly refuses to watch a folder.
-      # Several runners share that PC and its one account, so each keeps its NuGet packages in its own tool cache:
-      # one shared folder let a restore in one job rewrite a package another job's compiler had open (CS0009).
-      - name: Self-hosted PC set-up
-        if: runner.environment == 'self-hosted'
-        shell: powershell
-        run: |
-          Add-Content -Path $env:GITHUB_PATH -Value "$env:ProgramFiles\Git\bin"
-          $temp = Join-Path $env:RUNNER_TEMP 'tmp'
-          New-Item -ItemType Directory -Force -Path $temp | Out-Null
-          Add-Content -Path $env:GITHUB_ENV -Value "TEMP=$temp"
-          Add-Content -Path $env:GITHUB_ENV -Value "TMP=$temp"
-          Add-Content -Path $env:GITHUB_ENV -Value "NUGET_PACKAGES=$env:RUNNER_TOOL_CACHE\nuget\packages"
-          Add-Content -Path $env:GITHUB_ENV -Value "NUGET_HTTP_CACHE_PATH=$env:RUNNER_TOOL_CACHE\nuget\http-cache"
-
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
-        # A self-hosted runner's service account cannot write to Program Files; the tool cache is its own.
-        env:
-          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           global-json-file: apps/server/global.json
           cache: true
@@ -675,37 +655,12 @@ jobs:
   tray:
     needs: changes
     if: needs.changes.outputs.run_tray == 'true'
-    # The spare Windows PC (docs/self-hosted-runner.md) when the repository variable WEIR_SELF_HOSTED_WINDOWS is 'true',
-    # never for a pull request from a fork; GitHub's own Windows runner otherwise.
-    runs-on: ${{ vars.WEIR_SELF_HOSTED_WINDOWS == 'true' && !github.event.pull_request.head.repo.fork && fromJSON('["self-hosted","Windows","weir-heavy"]') || 'windows-latest' }}
+    runs-on: windows-latest
     timeout-minutes: 10
-    env:
-      # A self-hosted Windows PC keeps Windows' default script policy; this lets the job's own PowerShell run
-      # its scripts without changing the machine's setting. GitHub's runners already allow it.
-      PSExecutionPolicyPreference: Bypass
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      # On a self-hosted PC: `bash` resolves to Windows' own bash.exe (WSL) unless Git's comes first on PATH, and
-      # the service account's temporary folder is under C:\Windows, where Weir rightly refuses to watch a folder.
-      # Several runners share that PC and its one account, so each keeps its NuGet packages in its own tool cache:
-      # one shared folder let a restore in one job rewrite a package another job's compiler had open (CS0009).
-      - name: Self-hosted PC set-up
-        if: runner.environment == 'self-hosted'
-        shell: powershell
-        run: |
-          Add-Content -Path $env:GITHUB_PATH -Value "$env:ProgramFiles\Git\bin"
-          $temp = Join-Path $env:RUNNER_TEMP 'tmp'
-          New-Item -ItemType Directory -Force -Path $temp | Out-Null
-          Add-Content -Path $env:GITHUB_ENV -Value "TEMP=$temp"
-          Add-Content -Path $env:GITHUB_ENV -Value "TMP=$temp"
-          Add-Content -Path $env:GITHUB_ENV -Value "NUGET_PACKAGES=$env:RUNNER_TOOL_CACHE\nuget\packages"
-          Add-Content -Path $env:GITHUB_ENV -Value "NUGET_HTTP_CACHE_PATH=$env:RUNNER_TOOL_CACHE\nuget\http-cache"
-
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
-        # A self-hosted runner's service account cannot write to Program Files; the tool cache is its own.
-        env:
-          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           global-json-file: apps/server/global.json
           cache: true

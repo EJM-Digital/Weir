@@ -164,12 +164,5 @@ public sealed class ProcessPulseTests
         public override DateTimeOffset GetUtcNow() => Now;
     }
 
-    private static async Task WaitUntil(Func<bool> condition)
-    {
-        using var ceiling = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        while (!condition())
-        {
-            await Task.Delay(TimeSpan.FromMilliseconds(5), ceiling.Token);
-        }
-    }
+    private static Task WaitUntil(Func<bool> condition) => Eventually.ThatAsync(condition, TimeSpan.FromSeconds(30));
 }

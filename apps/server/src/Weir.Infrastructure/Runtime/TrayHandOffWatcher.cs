@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Threading.Channels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -35,16 +34,18 @@ public sealed class TrayHandOffWatcher : BackgroundService
 
     private readonly WeirOptions _options;
     private readonly DataChangePublisher _changes;
+    private readonly TimeProvider _time;
     private readonly ILogger<TrayHandOffWatcher> _logger;
     private readonly TimeSpan _settle;
     private readonly Channel<string> _written = Channel.CreateUnbounded<string>(new UnboundedChannelOptions { SingleReader = true });
     private FileSystemWatcher? _watcher;
 
-    public TrayHandOffWatcher(WeirOptions options, DataChangePublisher changes, ILogger<TrayHandOffWatcher> logger, TimeSpan? settle = null)
+    public TrayHandOffWatcher(WeirOptions options, DataChangePublisher changes, TimeProvider time, ILogger<TrayHandOffWatcher> logger, TimeSpan? settle = null)
     {
         _settle = settle ?? Settle;
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _changes = changes ?? throw new ArgumentNullException(nameof(changes));
+        _time = time ?? throw new ArgumentNullException(nameof(time));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -133,11 +134,11 @@ public sealed class TrayHandOffWatcher : BackgroundService
     /// <summary>Gathers what is written until the folder has been quiet for the settle time, or the most-waited time has passed.</summary>
     private async Task SettleAsync(HashSet<string> heard, CancellationToken stoppingToken)
     {
-        var started = Stopwatch.GetTimestamp();
+        var started = _time.GetTimestamp();
         bool written;
         do
         {
-            await Task.Delay(_settle, stoppingToken).ConfigureAwait(false);
+            await Task.Delay(_settle, _time, stoppingToken).ConfigureAwait(false);
             written = false;
             while (_written.Reader.TryRead(out var next))
             {
@@ -145,7 +146,7 @@ public sealed class TrayHandOffWatcher : BackgroundService
                 written = true;
             }
         }
-        while (written && Stopwatch.GetElapsedTime(started) < MostWaited);
+        while (written && _time.GetElapsedTime(started) < MostWaited);
     }
 
     private static IEnumerable<string> TopicsFor(HashSet<string> files) =>
