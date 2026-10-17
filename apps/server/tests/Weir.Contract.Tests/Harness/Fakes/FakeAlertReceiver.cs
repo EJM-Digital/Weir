@@ -19,6 +19,11 @@ public sealed class FakeAlertReceiver : FakeHttpServer
     private readonly object _gate = new();
     private readonly Dictionary<string, (int Status, string? Location)> _answers = [];
 
+    public FakeAlertReceiver()
+        : base(answersAnyHostName: true)
+    {
+    }
+
     /// <summary>What a server needs to send its alerts here: pass it to <see cref="WeirServer.StartNewAsync"/>.</summary>
     public IReadOnlyDictionary<string, string> Env => new Dictionary<string, string>
     {

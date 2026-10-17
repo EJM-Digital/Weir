@@ -51,6 +51,22 @@ public sealed class FakeAlertReceiverTests : IDisposable
     }
 
     [Fact]
+    public async Task A_post_for_the_public_name_a_channel_names_is_taken_as_well()
+    {
+        // The server connects to this port but sends the name in the address as the host, as it does for a real destination.
+        using var request = new HttpRequestMessage(HttpMethod.Post, _receiver.BaseUrl + "/alerts/named")
+        {
+            Content = new StringContent("{}", Encoding.UTF8, "application/json"),
+        };
+        request.Headers.Host = "hooks.example.com";
+
+        using var answer = await _http.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NoContent, answer.StatusCode);
+        Assert.Equal("hooks.example.com", Assert.Single(await _receiver.WaitForPostsAsync("/alerts/named", 1)).Header("Host"));
+    }
+
+    [Fact]
     public void The_environment_runs_a_development_server_that_sends_alerts_to_this_port()
     {
         var env = _receiver.Env;
