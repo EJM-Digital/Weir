@@ -26,6 +26,15 @@ export function jsonAnswer(body: unknown, status = 200): Response {
   });
 }
 
+/** The fields a request saves: its JSON body without the CSRF token every change carries. */
+export function savedFields(request: StubbedRequest): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(request.body as Record<string, unknown>).filter(
+      ([field]) => field !== "csrf_token",
+    ),
+  );
+}
+
 export type StubbedApi = {
   /** Every request made so far, in order. */
   requests: StubbedRequest[];
