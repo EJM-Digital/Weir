@@ -147,11 +147,13 @@ public sealed class LibraryCleanRefusalTests
 
         var jobId = await world.ConfirmedCleanAsync(path);
 
-        await LibrariesPartBWaits.NeverWithinAsync(
-            () => LibraryCleanWorld.Sha256(path) != hash || world.FilesOnDisk().Count != 1,
-            TimeSpan.FromSeconds(5),
-            "a library file changing while processing is paused");
-        Assert.Equal("pending", (string)(await world.JobAsync(jobId))["status"]!);
+        // What the server reports of the job is that no worker has had it. That a worker may not take it while paused is proved in
+        // PauseGatesTests and AdmissionClaimTests, against the queue itself.
+        var waiting = await world.JobAsync(jobId);
+        Assert.Equal("pending", (string)waiting["status"]!);
+        Assert.Null(waiting["lease_owner"]);
+        Assert.Equal(LibraryCleanWorld.Sha256(path), hash);
+        Assert.Single(world.FilesOnDisk());
         await world.PauseAsync(false);
         var clean = await world.WaitForCleanAsync(path);
         Assert.Equal("cleaned", (string)clean["outcome"]!);

@@ -220,6 +220,142 @@ public sealed class PhysicalSwapTests : IDisposable
     }
 
     [Fact]
+    public async Task A_copy_left_by_an_earlier_swap_is_cleared_before_the_next_one_starts()
+    {
+        File.WriteAllText(Temp, "half a copy");
+
+        var result = await RunAsync();
+
+        Assert.Equal(SwapOutcome.Committed, result.Outcome);
+        Assert.Equal([Path.Join("Movie (2020)", "Movie (2020).mkv")], FilesInLibrary());
+        Assert.Equal("cleaned content", await File.ReadAllTextAsync(_original));
+    }
+
+    [Fact]
+    public async Task A_backup_left_beside_an_original_in_place_is_removed_and_never_put_back_over_it()
+    {
+        File.WriteAllText(Backup, "the original an earlier swap replaced");
+
+        var result = await RunAsync();
+
+        Assert.Equal(SwapOutcome.Committed, result.Outcome);
+        Assert.Equal([Path.Join("Movie (2020)", "Movie (2020).mkv")], FilesInLibrary());
+        Assert.Equal("cleaned content", await File.ReadAllTextAsync(_original));
+    }
+
+    [Fact]
+    public async Task A_backup_left_without_its_original_is_put_back_before_the_next_swap_starts()
+    {
+        File.Move(_original, Backup);
+        File.WriteAllText(Temp, "half a copy");
+        string? seenByTheWriter = null;
+
+        var result = await RunAsync(_ => seenByTheWriter = File.ReadAllText(_original));
+
+        Assert.Equal(SwapOutcome.Committed, result.Outcome);
+        Assert.Equal("original content", seenByTheWriter);
+        Assert.Equal([Path.Join("Movie (2020)", "Movie (2020).mkv")], FilesInLibrary());
+        Assert.Equal("cleaned content", await File.ReadAllTextAsync(_original));
+    }
+
+    [WindowsFact("Share modes that block a delete are a Windows behaviour.")]
+    public async Task Leftovers_another_program_holds_stop_the_swap_before_any_work()
+    {
+        File.WriteAllText(Temp, "half a copy");
+        using (new FileStream(Temp, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            await AssertSwapStopsBeforeAnyWorkAsync();
+        }
+    }
+
+    [PosixFact("Folder permissions are a POSIX behaviour.")]
+    public async Task Leftovers_in_a_folder_Weir_cannot_change_stop_the_swap_before_any_work()
+    {
+        // [PosixFact] already skips this at runtime on Windows; this check is what lets the platform-compatibility analyzer
+        // (CA1416) see the Unix-only mode calls as guarded.
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        File.WriteAllText(Temp, "half a copy");
+        var folder = Path.GetDirectoryName(_original)!;
+        File.SetUnixFileMode(folder, UnixFileMode.UserRead | UnixFileMode.UserExecute);
+        try
+        {
+            if (CanStillWriteIn(folder))
+            {
+                return; // running as root: the folder's permissions do not hold it back
+            }
+
+            await AssertSwapStopsBeforeAnyWorkAsync();
+        }
+        finally
+        {
+            File.SetUnixFileMode(folder, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+    }
+
+    private async Task AssertSwapStopsBeforeAnyWorkAsync()
+    {
+        var wrote = false;
+
+        var result = await RunAsync(_ => wrote = true);
+
+        Assert.Equal(SwapOutcome.Failed, result.Outcome);
+        Assert.Equal(SafeSwapRules.FailedMessage("clearing up an earlier interrupted swap", "its leftover files could not be removed"), result.Message);
+        Assert.False(wrote, "the swap went on to write a copy with the earlier one still in the way");
+        Assert.Equal("original content", await File.ReadAllTextAsync(_original));
+        Assert.Equal("half a copy", await File.ReadAllTextAsync(Temp));
+        Assert.Empty(await _journal.ListUnfinishedAsync());
+    }
+
+    private static bool CanStillWriteIn(string folder)
+    {
+        var probe = Path.Join(folder, ".probe");
+        try
+        {
+            File.WriteAllText(probe, "x");
+            File.Delete(probe);
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    [WindowsFact("Deleting a read-only file is refused on Windows only.")]
+    public async Task A_backup_that_cannot_be_deleted_is_left_for_the_sweep_and_the_swap_still_commits()
+    {
+        // The original turns read-only after the checks, as the swap works: the backup is that file renamed, so it cannot be deleted.
+        var result = await RunAsync(_ => File.SetAttributes(_original, FileAttributes.ReadOnly));
+
+        try
+        {
+            Assert.Equal(SwapOutcome.Committed, result.Outcome);
+            Assert.False(result.BackupRemoved);
+            Assert.Contains("could not delete the backup copy", Assert.Single(result.Warnings), StringComparison.Ordinal);
+            Assert.Equal("cleaned content", await File.ReadAllTextAsync(_original));
+            Assert.Equal("original content", await File.ReadAllTextAsync(Backup));
+            Assert.Equal(2, FilesInLibrary().Length);
+            Assert.Single(await _journal.ListUnfinishedAsync());
+        }
+        finally
+        {
+            File.SetAttributes(Backup, FileAttributes.Normal);
+        }
+
+        var report = await new SwapRecoverySweep(PhysicalSwapFileSystem.Instance, _journal, new RecordingActivityWriter(), new ListLogger<SwapRecoverySweep>())
+            .RunAsync([], walkFolders: false);
+
+        Assert.Equal(new SwapRecoveryReport(0, 1, 0, 0), report);
+        Assert.Equal([Path.Join("Movie (2020)", "Movie (2020).mkv")], FilesInLibrary());
+        Assert.Equal("cleaned content", await File.ReadAllTextAsync(_original));
+        Assert.Equal("recovered", SwapRow().State);
+    }
+
+    [Fact]
     public void A_rename_never_replaces_an_existing_file()
     {
         var other = Path.Join(_library, "other.mkv");

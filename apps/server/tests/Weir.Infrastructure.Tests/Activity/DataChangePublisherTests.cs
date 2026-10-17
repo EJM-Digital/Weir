@@ -75,7 +75,7 @@ public sealed class DataChangePublisherTests
 
         Assert.Equal(
             [
-                "backups", "connections", "files_at_once", "folder_checks", "jobs", "kept_files", "libraries", "library_scan",
+                "backups", "connections", "direct_play_devices", "files_at_once", "folder_checks", "jobs", "kept_files", "libraries", "library_scan",
                 "maintenance", "metrics", "network_access", "pause", "readiness", "sessions", "settings", "update",
             ],
             [.. topics.Order(StringComparer.Ordinal)]);

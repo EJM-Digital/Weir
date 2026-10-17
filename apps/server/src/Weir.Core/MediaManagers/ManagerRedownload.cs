@@ -85,7 +85,7 @@ public static class ManagerRedownloadRules
     /// <summary>
     /// Sonarr/Radarr only (issue #509's verified behaviour). Deluno and a bare "native" connection are
     /// deliberately excluded: Deluno's external API has no "search again and replace this file" capability
-    /// as of the checkout read for this issue (jampat000/Deluno, commit confirmed in
+    /// as of the checkout read for this issue (Deluno's repository, commit confirmed in
     /// <c>ArrManagerRedownload</c>'s remarks) — a Deluno issue is needed before this can be verified and
     /// turned on, so it stays unsupported rather than guessed at.
     /// </summary>

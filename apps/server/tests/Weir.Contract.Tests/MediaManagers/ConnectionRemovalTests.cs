@@ -19,9 +19,6 @@ public sealed class ConnectionRemovalTests
     private const string Release = "Radarr.Film.2024";
     private const string Video = Release + "/film.mkv";
 
-    /// <summary>Long enough for a queued scan to be picked up if anything would pick it up.</summary>
-    private static readonly TimeSpan ScanWindow = TimeSpan.FromSeconds(8);
-
     private sealed record Download(string Video, string Nfo, string Folder)
     {
         public void AssertIntact()
@@ -116,11 +113,11 @@ public sealed class ConnectionRemovalTests
         Assert.Equal((string)library["watched_folder"]!, (string)kept["watched_folder"]!);
 
         // The workflow is Weir's own now, with the setting that removes what it cleaned still on, and it still does nothing to the download.
-        await scenario.EnqueueScanAsync(kept);
-        await Scenario.NeverWithinAsync(
-            async () => (await scenario.JobsAsync(Scenario.RemuxKind)).Count > 0 || !File.Exists(download.Video) || !File.Exists(download.Nfo),
-            ScanWindow,
-            "Weir cleaning or removing the download of a workflow that is switched off");
+        var scan = await scenario.EnqueueScanAsync(kept);
+        await scenario.WaitForARoundAsync();
+        Assert.Equal("pending", (string)Assert.Single(await scenario.JobsAsync(Scenario.ScanKind), job => (int)job["id"]! == scan)["status"]!);
+        Assert.Empty(await scenario.JobsAsync(Scenario.RemuxKind));
+        Assert.True(File.Exists(download.Video) && File.Exists(download.Nfo), "Weir removed the download of a workflow that is switched off");
         Assert.Empty(scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux"));
         download.AssertIntact();
 

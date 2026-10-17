@@ -95,7 +95,7 @@ public sealed class HandoffOutcomeTests
         const string handoffId = "outcome-1";
         await scenario.PostHandoffAsync(handoffId, source);
         await scenario.WaitForHandoffStateAsync(handoffId, "completed");
-        await fake.WaitForRequestAsync("POST", Scenario.EventsPath);
+        await scenario.WaitForReportsAsync(fake, handoffId);
         var copy = Path.Combine(scenario.Folders.Output, "Film.2020", "film.mkv");
         Assert.True(File.Exists(copy));
         return (copy, handoffId);

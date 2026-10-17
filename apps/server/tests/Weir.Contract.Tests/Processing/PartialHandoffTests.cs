@@ -34,8 +34,7 @@ public sealed class PartialHandoffTests
         var extra = await scenario.WaitForFileStatusAsync(library, $"{Release}/{Extra}", "skipped");
         Assert.Contains("under the 1 MB minimum", (string)extra["status_reason"]!, StringComparison.Ordinal);
 
-        await fake.WaitForRequestAsync("POST", Scenario.EventsPath);
-        var report = Assert.Single(Scenario.Callbacks(fake, "partial-1"));
+        var report = Assert.Single(await scenario.WaitForReportsAsync(fake, "partial-1"));
         Assert.Equal("completed", (string)report["status"]!);
         // The manager is told the copy under its own processor output folder, not Weir's local one.
         Assert.Equal(
@@ -69,8 +68,7 @@ public sealed class PartialHandoffTests
         await scenario.PostHandoffAsync("partial-2", release);
 
         await scenario.WaitForHandoffStateAsync("partial-2", "failed");
-        await fake.WaitForRequestAsync("POST", Scenario.EventsPath);
-        var report = Assert.Single(Scenario.Callbacks(fake, "partial-2"));
+        var report = Assert.Single(await scenario.WaitForReportsAsync(fake, "partial-2"));
         Assert.Equal("failed", (string)report["status"]!);
         Assert.Empty(report["outputFiles"]!.AsArray());
 
