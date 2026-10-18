@@ -148,6 +148,21 @@ export async function networkShare(world) {
 
 // --- network-share-hang -----------------------------------------------------------------------------------------------------------
 
+/**
+ * Windows allows one port per server name, and every use of a UNC path keeps a connection to localhost on the usual port for a while, so the
+ * connections are let go of, and the client is asked until it has none, before a mapping on another port is made.
+ */
+async function dropConnectionsToThisPc(world) {
+  await json(`net.exe use * /delete /y | Out-Null`).catch(() => undefined);
+  await wait(
+    world,
+    async () => ((await json(`ConvertTo-Json -Compress -InputObject @(Get-SmbConnection -ErrorAction SilentlyContinue | Where-Object { $_.ServerName -eq 'localhost' }).Count`)) === 0 ? true : undefined),
+    "the SMB client to have no connection to localhost",
+    60_000,
+    1000,
+  );
+}
+
 /** Maps a drive letter to the share through the relay's port (SMB over an alternative port, Windows Server 2025 and Windows 11 24H2 on). */
 async function mapThroughRelay(letter, unc, port) {
   await json(`New-SmbMapping -LocalPath ($env:SCENARIO_LETTER + ':') -RemotePath $env:SCENARIO_UNC -TcpPort ([int]$env:SCENARIO_PORT) | Out-Null`, { LETTER: letter, UNC: unc, PORT: port });
@@ -176,8 +191,8 @@ export async function networkShareHang(world) {
   await json(`Set-SmbClientConfiguration -DirectoryCacheLifetime 0 -FileInfoCacheLifetime 0 -FileNotFoundCacheLifetime 0 -Force`);
   const inUse = (await json(`ConvertTo-Json -Compress -InputObject @([IO.DriveInfo]::GetDrives() | ForEach-Object { $_.Name.Substring(0, 1) })`)) ?? [];
   const letter = freeLetter(inUse);
-  // Windows allows one port per server name, and the share scenario before this one has a connection to localhost on the usual port.
-  await mapThroughRelay(letter, uncOf(name, process.env.COMPUTERNAME), relay.port);
+  await dropConnectionsToThisPc(world);
+  await mapThroughRelay(letter, uncOf(name), relay.port);
   world.cleanups.push(() => unmap(letter));
   const mapped = `${letter}:\\`;
   assert.ok(await exists(join(mapped, "watched")), `the share mapped through the relay is not reachable at ${mapped}`);

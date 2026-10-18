@@ -17,7 +17,8 @@ export const isDone = (row) => Boolean(row) && DONE.includes(row.status);
 
 /** A movie workflow with no manager over the folders given, keeping its originals so a scenario can compare them. */
 export async function makeWorkflow(world, weir, { name, watched, work, output, minimumFreeMb = 0, skipAccessTests = true }) {
-  if (skipAccessTests) await world.machine.ensureFolders(watched, work, output);
+  // The folders exist before the workflow does, as a person makes them; a share's folders are made on the share.
+  await world.machine.ensureFolders(watched, work, output);
   const created = await weir.createLibrary({
     name: `${name} ${world.runId}`,
     media_type: "movie",
