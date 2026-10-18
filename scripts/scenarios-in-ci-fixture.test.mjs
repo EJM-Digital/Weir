@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, test } from "node:test";
 
-import { createFixture, parseRange, validExtra } from "./scenarios-ci/with-deluno/fixture/server.mjs";
+import { createFixture, mainFilesOf, parseRange, releaseNameOf, validExtra } from "./scenarios-ci/with-deluno/fixture/server.mjs";
 import { PIECE_BYTES, bencode, makeTorrent, releaseFiles } from "./scenarios-ci/with-deluno/fixture/torrent.mjs";
 
 /** Reads a bencoded value back, so the torrent is judged by something other than the code that wrote it. */
@@ -178,4 +178,28 @@ test("a release asked for with a bad extra is refused before anything is made", 
   const refused = await post("/releases", { source: join(work, "source", "x.mkv"), title: "ScnBadExtra", year: 2020, extras: [{ path: "../x.mkv", bytes: 10 }] });
   assert.equal(refused.status, 400);
   assert.equal((await post("/releases", { source: join(work, "source", "x.mkv"), title: "ScnBadExtra", year: 2020 })).status, 200, "the name was not used up by the refusal");
+});
+
+// --- a show's episodes ----------------------------------------------------------------------------------------------------
+
+test("an episode is named by its tag, a season pack by its season, a film by its year, and each episode has a file of its own", () => {
+  assert.equal(releaseNameOf({ title: "ScnShow", year: 2020, episodes: [] }), "ScnShow.2020.1080p.WEB-DL.x264-WEIR");
+  assert.equal(releaseNameOf({ title: "ScnShow", year: 2020, episodes: [3] }), "ScnShow.S01E03.1080p.WEB-DL.x264-WEIR");
+  assert.equal(releaseNameOf({ title: "ScnShow", year: 2020, episodes: [1, 2] }), "ScnShow.S01.1080p.WEB-DL.x264-WEIR");
+  const release = "ScnShow.S01.1080p.WEB-DL.x264-WEIR";
+  assert.deepEqual(mainFilesOf({ title: "ScnShow", release, episodes: [1, 2] }), ["ScnShow.S01E01.1080p.WEB-DL.x264-WEIR.mkv", "ScnShow.S01E02.1080p.WEB-DL.x264-WEIR.mkv"]);
+  assert.deepEqual(mainFilesOf({ title: "ScnShow", release: "x", episodes: [] }), ["x.mkv"]);
+});
+
+test("a season pack release holds a copy of the film for each episode and is a torrent of them", async () => {
+  const made = await post("/releases", { source: join(work, "source", "x.mkv"), title: "ScnPack", year: 2020, episodes: [1, 2] });
+  assert.equal(made.status, 200);
+  const body = await made.json();
+  assert.equal(body.release, "ScnPack.S01.1080p.WEB-DL.x264-WEIR");
+  const expected = ["ScnPack.S01E01.1080p.WEB-DL.x264-WEIR.mkv", "ScnPack.S01E02.1080p.WEB-DL.x264-WEIR.mkv", "ScnPack.S01.1080p.WEB-DL.x264-WEIR.nfo"];
+  assert.deepEqual(body.files.map((file) => file.path), expected.sort((a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b))));
+  const second = Buffer.from(await (await fetch(`${base}/webseed/${body.release}/ScnPack.S01E02.1080p.WEB-DL.x264-WEIR.mkv`)).arrayBuffer());
+  assert.deepEqual(second, film);
+  assert.equal((await post("/releases", { source: join(work, "source", "x.mkv"), title: "ScnBad", year: 2020, episodes: [0] })).status, 400);
+  assert.equal((await post("/releases", { source: join(work, "source", "x.mkv"), title: "ScnBad", year: 2020, episodes: "1" })).status, 400);
 });

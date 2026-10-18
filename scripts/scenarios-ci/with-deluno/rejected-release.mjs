@@ -15,7 +15,7 @@ const REMOVE_SENTENCE = /will remove the download; Weir left it in place./;
 
 export async function delunoRejectedRelease(world) {
   const { workflows } = await syncedWorkflows(world);
-  const workflow = workflows[0];
+  const workflow = workflows.find((candidate) => candidate.media_type === "movie");
   const film = failsOnPurpose(world, await world.deluno.makeFilm({ box: world.box, title: "ScnReject", year: 2020, content: "audio-only" }));
   const policy = workflow.failure_policy;
   await changeWorkflow(world, workflow, { failure_policy: "reject" });

@@ -6,6 +6,8 @@
 //                                                                                  its torrent, and answers {release, infohash, size, url, files}
 //        optional: "zeros": true      the release's film is as long as the source but all zero bytes: a file nothing can read
 //                  "extras": [{"path": "Extras/Featurette.mkv", "bytes": 2000000}]   more files in the folder, each all zero bytes
+//                  "episodes": [1, 2]   a season of a show, not a film: S01E01 is one episode's release, several are a season pack named S01, each
+//                                       episode a copy of the source film in a file named for it
 //   GET  /dl/<release>.torrent                                                      the torrent
 //   GET  /webseed/<release>/<file>                                                  the release's bytes, with ranges
 //   GET  /api?t=caps|search|movie|tvsearch                                          a Torznab feed that offers nothing: the scenario sends its release itself
@@ -66,6 +68,20 @@ function serveFile(request, response, file) {
   return fs.createReadStream(file).pipe(response);
 }
 
+const QUALITY = "1080p.WEB-DL.x264-WEIR";
+const episodeTag = (episode) => `S01E${String(episode).padStart(2, "0")}`;
+
+/** What a release is called: a film by its year, an episode by its tag, several episodes as the season they make. */
+export function releaseNameOf({ title, year, episodes }) {
+  if (episodes.length === 0) return `${title}.${year}.${QUALITY}`;
+  return episodes.length === 1 ? `${title}.${episodeTag(episodes[0])}.${QUALITY}` : `${title}.S01.${QUALITY}`;
+}
+
+/** The files of a release that hold the picture: the film, or a file for each episode. */
+export function mainFilesOf({ title, release, episodes }) {
+  return episodes.length === 0 ? [`${release}.mkv`] : episodes.map((episode) => `${title}.${episodeTag(episode)}.${QUALITY}.mkv`);
+}
+
 const MAX_EXTRA_BYTES = 50 * 1024 * 1024;
 /** An extra is a file below the release folder, named in plain words, of a size a scenario can afford. */
 export const validExtra = (extra) =>
@@ -83,17 +99,20 @@ export function createFixture({ work, publicBase }) {
   const torrents = new Map();
 
   function makeRelease(response, body) {
-    const { source, title, year, zeros = false, extras = [] } = JSON.parse(body);
+    const { source, title, year, zeros = false, extras = [], episodes = [] } = JSON.parse(body);
     if (!/^[A-Za-z0-9]+$/.test(title ?? "") || !Number.isInteger(year)) return reply(response, 400, "text/plain", "title must be letters and digits, and year a number");
+    if (!Array.isArray(episodes) || !episodes.every((episode) => Number.isInteger(episode) && episode >= 1 && episode <= 99)) return reply(response, 400, "each episode is a number from 1 to 99");
     if (!Array.isArray(extras) || !extras.every(validExtra)) return reply(response, 400, "text/plain", "each extra needs a plain relative path and a size between 1 byte and 50 MB");
     const film = path.resolve(source ?? "");
     if (!inside(work, film) || !fs.existsSync(film)) return reply(response, 400, "text/plain", `no film at ${source}`);
-    const release = `${title}.${year}.1080p.WEB-DL.x264-WEIR`;
+    const release = releaseNameOf({ title, year, episodes });
     const folder = path.join(releases, release);
     if (fs.existsSync(folder)) return reply(response, 409, "text/plain", "a release of that name already exists");
     fs.mkdirSync(folder, { recursive: true });
-    if (zeros) fs.writeFileSync(path.join(folder, `${release}.mkv`), Buffer.alloc(fs.statSync(film).size));
-    else fs.copyFileSync(film, path.join(folder, `${release}.mkv`));
+    for (const file of mainFilesOf({ title, release, episodes })) {
+      if (zeros) fs.writeFileSync(path.join(folder, file), Buffer.alloc(fs.statSync(film).size));
+      else fs.copyFileSync(film, path.join(folder, file));
+    }
     for (const extra of extras) {
       const file = path.join(folder, ...extra.path.split("/"));
       fs.mkdirSync(path.dirname(file), { recursive: true });

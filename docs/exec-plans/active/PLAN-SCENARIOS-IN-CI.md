@@ -27,6 +27,8 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`, then the ones written for CI t
 | `deluno-failed-release` | linux | with-deluno | ported | Written for CI (#1018): a release Weir cannot read; Deluno shows the hand-off failed in Weir's words. |
 | `deluno-rejected-release` | linux | with-deluno | ported | Written for CI (#1018): a release Weir rejects; Deluno refuses it and removes the download, Weir leaves it. |
 | `deluno-stop-waiting` | linux | with-deluno | ported | Written for CI (#1017): Stop waiting in Deluno drops a hand-off Weir holds while paused. |
+| `deluno-tv-episode` | linux | with-deluno | ported | Written for CI (#1017): an episode of a show handed over by a real Deluno as TV. |
+| `deluno-season-pack` | linux | with-deluno | ported | Written for CI (#1017): a season pack of two episodes handed over as one hand-off. |
 | `deluno-deleted-before-cleaning` | linux | with-deluno | ported | Written for CI (#1018): the download is deleted while Weir holds the hand-off; Weir reports it gone. |
 | `fresh-install` | windows | windows-install | to-port | Runs `Weir-win-Setup.exe` silently and starts the installed tray; a clean runner is the clean machine. |
 | `first-visit-account` | linux | weir-browser | ported | Nothing in it is Windows: a new browser context sees account creation, then sign-in. Chromium under Playwright takes the place of Edge. |

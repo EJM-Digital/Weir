@@ -16,6 +16,7 @@ function fakeClock() {
 
 const RELEASE = "Scna1b2c3Film.2020.1080p.WEB-DL.x264-WEIR";
 const OUTPUT = `/weir/Ready/Movies/${RELEASE}`;
+const TV_WORKFLOW = { id: 4, name: "TV Shows", media_type: "tv", folders_synced_from_connection_id: 7, manager_connection_ids: [7], watched_folder: "/downloads/completed/TV", output_folder: "/weir/Ready/TV", min_file_size_mb: 50 };
 const WORKFLOW = { id: 3, name: "Movies", folders_synced_from_connection_id: 7, manager_connection_ids: [7], watched_folder: "/downloads/completed/Movies", output_folder: "/weir/Ready/Movies", min_file_size_mb: 50, failure_policy: "pass_through", media_type: "movie" };
 
 /**
@@ -45,6 +46,7 @@ function stack(wrong = {}) {
   const reports = wrong.reports ?? [];
   const activity = wrong.activity ?? [];
   const workflow = { ...WORKFLOW };
+  const tvWorkflow = { ...TV_WORKFLOW };
   const weir = {
     write: async (method, path, fields) => {
       calls.push(`${method} ${path} ${JSON.stringify(fields ?? {})}`);
@@ -60,7 +62,7 @@ function stack(wrong = {}) {
     },
     get: async (path) => {
       if (path.startsWith("/system/log")) return { items: ++logReads > 1 ? (wrong.logRows ?? []) : [], next_cursor: null };
-      if (path === "/processing/libraries") return [workflow];
+      if (path === "/processing/libraries") return wrong.tv ? [workflow, tvWorkflow] : [workflow];
       if (path.startsWith("/activity/recent")) {
         const type = /event_type=([a-z._]+)/.exec(path)?.[1];
         return { items: type ? activity.filter((item) => item.event_type === type) : activity };
@@ -91,8 +93,10 @@ function stack(wrong = {}) {
   };
   const deluno = {
     connectWeir: async () => ({ id: 7, how: "connected Weir to Deluno" }),
-    makeFilm: async (options) => (calls.push(`makeFilm ${JSON.stringify({ ...options, box: undefined })}`), { title: "Scna1b2c3Film", year: options.year, release: RELEASE, infohash: "abc123", size: 56_000_000, url: "http://fixture:8765/x.torrent" }),
+    makeFilm: async (options) => (calls.push(`makeFilm ${JSON.stringify({ ...options, box: undefined })}`), { title: options.episodes?.length ? options.title : "Scna1b2c3Film", year: options.year, release: options.episodes?.length ? `${options.title}.S01.1080p.WEB-DL.x264-WEIR` : RELEASE, infohash: "abc123", size: 56_000_000, url: "http://fixture:8765/x.torrent" }),
     sendFilm: async () => {},
+    tvLibrary: async () => ({ id: "tv-library" }),
+    sendSeries: async (made) => void calls.push(`sendSeries ${made.release}`),
     handoffOf: async () => ({ ...handoff }),
     keepConversation: (made, recording) => void kept.push(`${recording.state} ${made.id}`),
     qbittorrent: { torrent: async () => (wrong.torrentGone && ++torrentAsks > 1 ? undefined : { progress: 1, amount_left: 0, size: 56_000_000 }) },
@@ -100,7 +104,7 @@ function stack(wrong = {}) {
     deluno: delunoApi,
   };
   const box = {
-    exists: async (path) => files.has(path) && !wrong.extraGone,
+    exists: async (path) => (files.has(path) || path.startsWith("/weir/Ready/TV/")) && !wrong.extraGone && !wrong.tvOutputMissing,
     sizeOf: async () => wrong.extraSize ?? 2_000_000,
     findNamed: async () => wrong.writtenExtras ?? [],
     removeTree: async (path) => {
@@ -303,6 +307,44 @@ test("Stop waiting fails when Deluno refuses, Weir will not drop the hand-off, A
   assert.match(silent.result.detail, /Activity to say Deluno cancelled its hand-off of .* did not happen/);
   const worked = await good("deluno-stop-waiting", stopStack({ writtenExtras: ["/weir/Ready/Movies/x.mkv"] }));
   assert.match(worked.result.detail, /Weir never worked the dropped hand-off/);
+});
+
+// --- a show's episode and a season pack ----------------------------------------------------------------------------------
+
+const PACK = "ScnPack.S01.1080p.WEB-DL.x264-WEIR";
+const tvHandoff = (release, extra = {}) => ({ id: "h1", releaseName: release, mediaType: "tv", status: "completed", outputPath: `/weir/Ready/TV/${release}`, outcome: null, ...extra });
+const tvRow = (id, release, name, extra = {}) => ({ id, library_id: 4, relative_path: `${release}/${name}.mkv`, status: "processed", handback: { output_path: `/weir/Ready/TV/${release}/${name}.mkv` }, ...extra });
+const packStack = (wrong = {}) => ({ tv: true, handoff: tvHandoff(PACK), noFile: true, extraRows: [tvRow(11, PACK, "ScnPack.S01E01"), tvRow(12, PACK, "ScnPack.S01E02")], ...wrong });
+
+test("a season pack: Deluno hands both episodes to Weir as TV, Weir cleans them in its TV workflow, and the hand-off is kept as a recording", async () => {
+  const { result, made } = await good("deluno-season-pack", packStack());
+  assert.equal(result.status, "passed", result.detail);
+  assert.deepEqual(made.kept, ["real-season-pack h1"]);
+  assert.ok(made.calls.some((call) => call.startsWith("makeFilm") && call.includes('"episodes":[1,2]')));
+  assert.ok(made.calls.includes(`sendSeries ${PACK}`));
+  assert.match(result.detail, /cleaned 2 episode\(s\) in its TV workflow/);
+});
+
+test("an episode: one cleaned episode in the TV workflow is the whole of it", async () => {
+  const release = "ScnShow.S01.1080p.WEB-DL.x264-WEIR";
+  const { result, made } = await good("deluno-tv-episode", { tv: true, handoff: tvHandoff(release), noFile: true, extraRows: [tvRow(11, release, "ScnShow.S01E01")] });
+  assert.equal(result.status, "passed", result.detail);
+  assert.deepEqual(made.kept, ["real-tv-episode h1"]);
+});
+
+test("a TV hand-off fails the scenario when Deluno calls it a film, an episode is missing or not cleaned, or it is cleaned in the wrong workflow or not where Weir says", async () => {
+  const film = await good("deluno-season-pack", packStack({ handoff: { mediaType: "movies" } }));
+  assert.match(film.result.detail, /Deluno handed over TV \(it reads movies\)/);
+  const one = await good("deluno-season-pack", packStack({ extraRows: [tvRow(11, PACK, "ScnPack.S01E01")] }));
+  assert.match(one.result.detail, /Weir to show 2 cleaned episode\(s\)/);
+  const failed = await good("deluno-season-pack", packStack({ extraRows: [tvRow(11, PACK, "ScnPack.S01E01"), tvRow(12, PACK, "ScnPack.S01E02", { status: "processing_failed" })] }));
+  assert.match(failed.result.detail, /Weir to show 2 cleaned episode\(s\)/);
+  const elsewhere = await good("deluno-season-pack", packStack({ extraRows: [tvRow(11, PACK, "ScnPack.S01E01", { library_id: 3 }), tvRow(12, PACK, "ScnPack.S01E02")] }));
+  assert.match(elsewhere.result.detail, /cleaned the episodes in the TV workflow/);
+  const missing = await good("deluno-season-pack", packStack({ tvOutputMissing: true }));
+  assert.match(missing.result.detail, /the cleaned episode is where Weir says/);
+  const noWorkflow = await good("deluno-season-pack", packStack({ tv: false }));
+  assert.match(noWorkflow.result.detail, /Weir to set up its TV workflow from Deluno's TV library did not happen/);
 });
 
 // --- saving a workflow --------------------------------------------------------------------------------------------------

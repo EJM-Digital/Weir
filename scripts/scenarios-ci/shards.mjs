@@ -15,6 +15,7 @@ import { delunoRejectedRelease } from "./with-deluno/rejected-release.mjs";
 import { delunoReleaseWithExtra } from "./with-deluno/release-with-extra.mjs";
 import { delunoResend } from "./with-deluno/resend.mjs";
 import { delunoStopWaiting } from "./with-deluno/stop-waiting.mjs";
+import { delunoSeasonPack, delunoTvEpisode } from "./with-deluno/tv-handoffs.mjs";
 import { workflowsFromDeluno } from "./with-deluno/workflows-from-deluno.mjs";
 
 // A scenario is its function, or { run, logs: "since-start" } when the logs are judged from the start of the stack, not from the scenario's
@@ -30,6 +31,8 @@ const WITH_DELUNO_SCENARIOS = {
   "deluno-failed-release": { run: delunoFailedRelease, expectedLogs: aboutItsFilm },
   "deluno-rejected-release": { run: delunoRejectedRelease, expectedLogs: aboutItsFilm },
   "deluno-stop-waiting": { run: delunoStopWaiting, expectedLogs: aboutItsFilm },
+  "deluno-tv-episode": delunoTvEpisode,
+  "deluno-season-pack": delunoSeasonPack,
   "deluno-deleted-before-cleaning": { run: delunoDeletedBeforeCleaning, expectedLogs: aboutItsFilm },
 };
 

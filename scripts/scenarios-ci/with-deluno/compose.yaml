@@ -15,7 +15,7 @@ services:
     command:
       - |
         set -e
-        mkdir -p /downloads/completed/Movies /downloads/incomplete /media/Movies /weir/Ready/Movies /config/qBittorrent /work/source
+        mkdir -p /downloads/completed/Movies /downloads/completed/TV /downloads/incomplete /media/Movies /media/TV /weir/Ready/Movies /weir/Ready/TV /config/qBittorrent /work/source
         cat > /config/qBittorrent/qBittorrent.conf <<CONF
         [LegalNotice]
         Accepted=true
