@@ -24,6 +24,11 @@ export class LogWatch {
     return new LogWatch(weir, (await weir.get(LOG_PAGE)).items);
   }
 
+  /** Counts every warning and error there is when it finishes as new: for a stack that was made for the scenario, and could not be read before. */
+  static sinceStart(weir) {
+    return new LogWatch(weir, []);
+  }
+
   /** Throws what the logs gained since `begin`. */
   async finish() {
     const page = await this.#weir.get(LOG_PAGE);

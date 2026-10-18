@@ -115,6 +115,24 @@ public sealed class ManagerHttpAndPortTests
     }
 
     [Fact]
+    public async Task Sonarrs_library_truth_walks_the_series_because_sonarr_refuses_an_episode_file_list_with_no_series()
+    {
+        var http = new FakeManagerHttp()
+            .Json(HttpMethod.Get, "/api/v3/series", """[{"id":1,"title":"One"},{"id":2,"title":"Two"}]""")
+            .Route(HttpMethod.Get, "/api/v3/episodefile", request => request.Uri.Query.Contains("seriesId=1", StringComparison.Ordinal)
+                ? FakeManagerHttp.Response(HttpStatusCode.OK, """[{"id":10,"path":"/tv/One/S01E01.mkv"}]""")
+                : request.Uri.Query.Contains("seriesId=2", StringComparison.Ordinal)
+                    ? FakeManagerHttp.Response(HttpStatusCode.OK, """[{"id":20,"path":"/tv/Two/S01E01.mkv"},{"id":21,"path":"/tv/Two/S01E02.mkv"}]""")
+                    : FakeManagerHttp.Response(HttpStatusCode.BadRequest, """{"message":"BadRequest: seriesId or episodeFileIds must be provided"}"""));
+        var sonarr = new HttpMediaManagerPorts(http).PortForKind("sonarr")!;
+
+        var truth = await sonarr.LibraryTruthAsync(Connection("sonarr"), "tv");
+
+        Assert.Equal(SignalStatus.Reported, truth.Status);
+        Assert.Equal(["/tv/One/S01E01.mkv", "/tv/Two/S01E01.mkv", "/tv/Two/S01E02.mkv"], truth.LibraryFilePaths);
+    }
+
+    [Fact]
     public async Task An_unreachable_or_refusing_manager_is_reported_with_the_connection_named()
     {
         var http = new FakeManagerHttp().Json(HttpMethod.Get, "/api/v3/rootfolder", "nope", HttpStatusCode.Unauthorized);

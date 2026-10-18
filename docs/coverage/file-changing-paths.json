@@ -54,6 +54,12 @@
       "gate": "claim"
     },
     {
+      "id": "downloaded-scan-retry",
+      "what": "Asks a Sonarr or Radarr again to scan a file Weir wrote, after the app said it was busy with another scan. Changes no file.",
+      "jobKind": "processing.downloaded_scan_retry.v1",
+      "gate": "claim"
+    },
+    {
       "id": "delete-download-by-hand",
       "what": "Activity's remove dialog, 'delete the download': Weir deletes the failed or rejected file, or asks the media manager that owns the download to remove it.",
       "routes": ["DELETE /api/v1/processing/files/{file_id}"],

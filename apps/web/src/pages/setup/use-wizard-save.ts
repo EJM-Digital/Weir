@@ -77,6 +77,11 @@ function libraryToFill(
   );
 }
 
+/** Where setup stands: "pending" until it is finished or skipped. */
+export function wizardStateOf(settings: AppSettings | undefined): string {
+  return (settings?.setup_wizard_state || "pending").trim().toLowerCase();
+}
+
 /** Saves the wizard: the libraries first, then the app settings. */
 export function useWizardSave({
   settings,
@@ -165,12 +170,18 @@ export function useWizardSave({
     });
   }
 
-  /** Skipping leaves what is already saved alone: only the wizard's own state moves on. */
+  /**
+   * Skipping leaves what is already saved alone: only the wizard's own state moves on, and only while it is pending.
+   * A setup that is already finished or skipped stays as it is when its reopened wizard is skipped.
+   */
   async function skip() {
     onMessage(null);
     try {
       await saveAppSettings.mutateAsync({
-        setup_wizard_state: "skipped",
+        setup_wizard_state:
+          wizardStateOf(settings) === "pending"
+            ? "skipped"
+            : settings.setup_wizard_state,
         app_timezone: settings.app_timezone,
         log_retention_days: settings.log_retention_days,
         configuration_backup_enabled: settings.configuration_backup_enabled,

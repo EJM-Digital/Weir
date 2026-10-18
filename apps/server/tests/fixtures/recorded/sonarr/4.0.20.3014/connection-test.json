@@ -1,0 +1,57 @@
+{
+  "app": "sonarr",
+  "version": "4.0.20.3014",
+  "state": "connection-test",
+  "recordedAt": "2026-10-17T05:25:46Z",
+  "note": "The connection test (and the heartbeat) with the right API key.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/system/status",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "appName": "Sonarr",
+          "instanceName": "Sonarr",
+          "version": "4.0.20.3014",
+          "buildTime": "2026-09-16T16:37:39Z",
+          "isDebug": false,
+          "isProduction": true,
+          "isAdmin": false,
+          "isUserInteractive": true,
+          "startupPath": "/app/sonarr/bin",
+          "appData": "/config",
+          "osName": "alpine",
+          "osVersion": "3.24.2",
+          "isNetCore": true,
+          "isLinux": true,
+          "isOsx": false,
+          "isWindows": false,
+          "isDocker": true,
+          "mode": "console",
+          "branch": "main",
+          "authentication": "none",
+          "migrationVersion": 217,
+          "urlBase": "",
+          "runtimeVersion": "6.0.13",
+          "runtimeName": ".NET",
+          "startTime": "2026-10-17T05:25:24Z",
+          "packageVersion": "4.0.20.3014-ls329",
+          "packageAuthor": "[linuxserver.io](https://linuxserver.io)",
+          "packageUpdateMechanism": "docker",
+          "databaseVersion": "3.53.4",
+          "databaseType": "sqLite"
+        }
+      }
+    }
+  ]
+}

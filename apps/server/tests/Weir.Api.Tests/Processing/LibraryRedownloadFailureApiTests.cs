@@ -86,7 +86,7 @@ public sealed class LibraryRedownloadFailureApiTests
         Assert.Equal(
             ("failed", $"{RedownloadRig.SonarrName} refused Weir's API key, so it could not say whether it can download this again. Check the key in Setup › Connections › Media managers and save it again."),
             (body["outcome"]!.GetValue<string>(), body["message"]!.GetValue<string>()));
-        Assert.Equal(["GET /api/v3/episodefile?seriesId=3"], rig.Manager.Asked());
+        Assert.Equal([$"GET /api/v3/episodefile?seriesId={ArrRedownloadReplies.SeriesId}"], rig.Manager.Asked());
     }
 
     [Theory]
@@ -164,7 +164,7 @@ public sealed class LibraryRedownloadFailureApiTests
 
         var body = await Json(response);
         Assert.Equal(("delete_not_confirmed", NotConfirmed(RedownloadRig.SonarrName)), (body["outcome"]!.GetValue<string>(), body["message"]!.GetValue<string>()));
-        Assert.Equal([$"GET /api/v3/episodefile?seriesId=3", $"DELETE {RedownloadScripts.EpisodeFilePath}"], rig.Manager.Asked());
+        Assert.Equal([$"GET /api/v3/episodefile?seriesId={ArrRedownloadReplies.SeriesId}", $"DELETE {RedownloadScripts.EpisodeFilePath}"], rig.Manager.Asked());
     }
 
     [Fact]
@@ -184,7 +184,7 @@ public sealed class LibraryRedownloadFailureApiTests
         Assert.Equal(
             ("file_not_matched", $"{RedownloadRig.SonarrName} does not list a file at that path, so Weir deleted nothing and asked for no search. Check that {RedownloadRig.SonarrName} sees this library at the same path Weir does (its path mappings), then try again."),
             (body["outcome"]!.GetValue<string>(), body["message"]!.GetValue<string>()));
-        Assert.Equal(["GET /api/v3/episodefile?seriesId=3"], rig.Manager.Asked());
+        Assert.Equal([$"GET /api/v3/episodefile?seriesId={ArrRedownloadReplies.SeriesId}"], rig.Manager.Asked());
     }
 
     private static string NotConfirmed(string manager) =>
