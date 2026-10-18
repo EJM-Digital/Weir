@@ -79,7 +79,7 @@ public sealed class HandoffOutcomeTests
         await using var scenario = await Scenario.StartAsync();
         await FinishedHandoffAsync(scenario);
 
-        await using var database = await scenario.Server.StopForDatabaseAsync();
+        await using var database = await scenario.StopForDatabaseAsync();
         var target = Assert.Single(SeedSql.Rows(
             database.Connection,
             "SELECT t.output_written_at AS named, h.written_at AS written FROM media_manager_handoff_targets t JOIN handbacks h ON h.relative_path = t.relative_path"));

@@ -169,7 +169,7 @@ internal sealed partial class Scenario
     /// <summary>The <c>files</c> row as stored, read from SQLite with the server stopped (and started again).</summary>
     public async Task<Dictionary<string, object?>> FileStateAfterStopAsync(JsonObject library, string relativePath)
     {
-        await using var database = await Server.StopForDatabaseAsync();
+        await using var database = await StopForDatabaseAsync();
         var found = SeedSql.Rows(
             database.Connection,
             "SELECT * FROM files WHERE library_id = $library AND relative_path = $path",
@@ -186,7 +186,7 @@ internal sealed partial class Scenario
     public async Task<List<Dictionary<string, object?>>> RowsAfterStopAsync(string sql, params (string Name, object? Value)[] parameters)
     {
         List<Dictionary<string, object?>> rows;
-        await using (var database = await Server.StopForDatabaseAsync())
+        await using (var database = await StopForDatabaseAsync())
         {
             rows = SeedSql.Rows(database.Connection, sql, parameters);
         }
