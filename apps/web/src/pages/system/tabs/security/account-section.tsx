@@ -7,7 +7,6 @@ export function AccountSection() {
     <Panel
       title="Account"
       headingId="suite-security-account-heading"
-      headingLevel={3}
       padded
       dataTestId="suite-security-account"
     >

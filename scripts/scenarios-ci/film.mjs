@@ -29,14 +29,14 @@ export function filmArguments({ path, seconds = 30, audio = AUDIO, subtitles = S
 }
 
 /** The shell command, run in the container, that writes the subtitle files, makes the film from them and takes them away again. */
-export function filmCommand({ path, seconds = 30, audio = AUDIO, subtitles = SUBTITLES, title = TITLE }) {
+export function filmCommand({ path, seconds = 30, audio = AUDIO, subtitles = SUBTITLES, title = TITLE, videoBitrate = "3M" }) {
   if (title.includes("'")) throw new Error("A film's title cannot hold a quote.");
   const files = subtitles.map((language) => subtitlePath(path, language));
   const writes = subtitles.map(
     (language, i) =>
       `printf '1\\n00:00:01,000 --> 00:00:04,000\\n${title} (${language})\\n\\n2\\n00:00:05,000 --> 00:00:08,000\\nSubtitle two\\n' > ${shellQuote(files[i])}`,
   );
-  const ffmpeg = ["ffmpeg", ...filmArguments({ path, seconds, audio, subtitles, title }).map(shellQuote)].join(" ");
+  const ffmpeg = ["ffmpeg", ...filmArguments({ path, seconds, audio, subtitles, title, videoBitrate }).map(shellQuote)].join(" ");
   return [`mkdir -p ${shellQuote(posix.dirname(path))}`, ...writes, ffmpeg, `rm -f ${files.map(shellQuote).join(" ")}`].join(" && ");
 }
 

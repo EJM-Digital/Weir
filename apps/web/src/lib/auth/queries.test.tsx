@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchMe } from "../api/auth-api";
 import { useLogoutMutation } from "./queries";
+import { useSignOutFailed } from "./sign-out-failed";
 import {
   clearSignedIn,
   markSignedIn,
@@ -106,5 +107,34 @@ describe("signing out on purpose", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(wasSignedIn()).toBe(true);
     expect(signedOutPath()).toBe("/login?session=expired");
+  });
+
+  it("records that signing out failed, and forgets it once the next sign-out goes through", async () => {
+    const answer = (status: number) =>
+      vi
+        .fn()
+        .mockImplementation((url: string) =>
+          Promise.resolve(
+            String(url).endsWith("/auth/csrf")
+              ? json({ csrf_token: "t" })
+              : json({ detail: "Could not sign out" }, status),
+          ),
+        );
+    vi.stubGlobal("fetch", answer(500));
+    const { result } = renderHook(
+      () => ({ logout: useLogoutMutation(), failed: useSignOutFailed() }),
+      { wrapper },
+    );
+
+    await act(async () => {
+      await result.current.logout.mutateAsync().catch(() => undefined);
+    });
+    await waitFor(() => expect(result.current.failed).toBe(true));
+
+    vi.stubGlobal("fetch", answer(200));
+    await act(async () => {
+      await result.current.logout.mutateAsync().catch(() => undefined);
+    });
+    await waitFor(() => expect(result.current.failed).toBe(false));
   });
 });

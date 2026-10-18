@@ -49,15 +49,29 @@
       "id": "workflows-from-deluno",
       "home": "linux",
       "shard": "with-deluno",
-      "state": "to-port",
-      "why": "Weir talks to Deluno over HTTP only, so Deluno's published image in Compose is the same Deluno."
+      "state": "ported",
+      "why": "Weir talks to Deluno over HTTP only, so Deluno's published image in Compose is the same Deluno.",
+      "passedInCi": [
+        {
+          "run": 39025422602,
+          "commit": "f2bc0132eb57a1020a2c02d8a1ce7bae20cdc4b5",
+          "ref": "coverage/scenarios-ci-with-deluno"
+        }
+      ]
     },
     {
       "id": "deluno-film-handoff",
       "home": "linux",
       "shard": "with-deluno",
-      "state": "to-port",
-      "why": "A film Deluno hands over is followed through Weir and back; Deluno's image and the real download clients run in Compose."
+      "state": "ported",
+      "why": "A film Deluno hands over is followed through Weir and back; Deluno's image and the real download clients run in Compose.",
+      "passedInCi": [
+        {
+          "run": 39025422602,
+          "commit": "f2bc0132eb57a1020a2c02d8a1ce7bae20cdc4b5",
+          "ref": "coverage/scenarios-ci-with-deluno"
+        }
+      ]
     },
     {
       "id": "deluno-release-with-extra",
@@ -100,7 +114,13 @@
       "shard": "weir-browser",
       "state": "ported",
       "why": "Nothing in it is Windows: a brand-new browser context sees account creation, then sign-in. Chromium under Playwright takes the place of Edge.",
-      "passedInCi": []
+      "passedInCi": [
+        {
+          "run": 39022938987,
+          "commit": "fd7eb18c62bcd6b807691d0743f184817003c5f5",
+          "ref": "coverage/scenarios-ci-weir-browser"
+        }
+      ]
     },
     {
       "id": "weir-only-film",
@@ -113,6 +133,11 @@
           "run": 39018476138,
           "commit": "2b25d02a9d3b009e639d9c4e102a11253ed161d7",
           "ref": "coverage/scenarios-in-ci"
+        },
+        {
+          "run": 39025422602,
+          "commit": "f2bc0132eb57a1020a2c02d8a1ce7bae20cdc4b5",
+          "ref": "coverage/scenarios-ci-with-deluno"
         }
       ]
     },
@@ -127,6 +152,11 @@
           "run": 39018476138,
           "commit": "2b25d02a9d3b009e639d9c4e102a11253ed161d7",
           "ref": "coverage/scenarios-in-ci"
+        },
+        {
+          "run": 39025422602,
+          "commit": "f2bc0132eb57a1020a2c02d8a1ce7bae20cdc4b5",
+          "ref": "coverage/scenarios-ci-with-deluno"
         }
       ]
     },
@@ -136,7 +166,13 @@
       "shard": "weir-only",
       "state": "ported",
       "why": "The server hears the tray through a file in its data folder, and that watcher is the same on Linux; the file is written in the container. The tray's side stays with windows-tray.",
-      "passedInCi": []
+      "passedInCi": [
+        {
+          "run": 39020973169,
+          "commit": "27a8310383cbb57169c5ab7a198eca2ea95f54b4",
+          "ref": "coverage/scenarios-ci-weir-only-2"
+        }
+      ]
     },
     {
       "id": "deleted-queued-file",
@@ -144,7 +180,13 @@
       "shard": "weir-only",
       "state": "ported",
       "why": "A file is put in a watched folder and deleted while Weir waits for it to settle; nothing in it is Windows.",
-      "passedInCi": []
+      "passedInCi": [
+        {
+          "run": 39020973169,
+          "commit": "27a8310383cbb57169c5ab7a198eca2ea95f54b4",
+          "ref": "coverage/scenarios-ci-weir-only-2"
+        }
+      ]
     },
     {
       "id": "update-requests",

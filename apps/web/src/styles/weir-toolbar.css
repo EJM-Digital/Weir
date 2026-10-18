@@ -26,6 +26,15 @@
   box-shadow: var(--mm-shadow-popover);
 }
 
+/* Where the header wraps, Pause starts the row it is on, so the menu opens from its left edge and stays on the screen. */
+@media (max-width: 920px) {
+  .mm-pause-menu {
+    right: auto;
+    left: 0;
+    max-width: calc(100cqw - 2 * var(--mm-header-pad-x));
+  }
+}
+
 .mm-pause-menu__heading {
   margin: 0;
   font-size: 0.8125rem;

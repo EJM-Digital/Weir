@@ -115,6 +115,7 @@ public sealed partial class LibraryControlsTests(E2EServer server) : E2ETestBase
         var leftAlone = drawer.GetByRole(AriaRole.Checkbox, new() { NameRegex = new("^Left alone") });
         var clean = drawer.GetByRole(AriaRole.Button, new() { Name = "Clean this file", Exact = true });
         await Expect(clean).ToBeEnabledAsync(new() { Timeout = ServerMs });
+        await Axe.AssertNoViolationsAsync(page, "The Library with a film's panel open");
         var arrival = Path.Combine(rig.LibraryFolder, Arrival);
         var mark = log.Mark();
 

@@ -179,7 +179,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [weir-only, weir-browser]
+        shard: [weir-only, weir-browser, with-deluno]
     env:
       SHARD: ${{ matrix.shard }}
     steps:
