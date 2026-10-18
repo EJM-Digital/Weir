@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What the out-of-process coverage figure counts (#1081): the shipped server assemblies, in the server process the
+  contract suite and the E2E smoke start, and nothing else. The same assemblies and exclusions as coverage.runsettings,
+  written in the form dotnet-coverage reads. The figure is its own: the two tools count lines and branches differently.
+  Used by CI and by docs/coverage/README.md, through dotnet-coverage collect.
+-->
+<Configuration>
+  <CodeCoverage>
+    <ModulePaths>
+      <Include>
+        <ModulePath>.*[\/]Weir\.dll$</ModulePath>
+        <ModulePath>.*[\/]Weir\.Core\.dll$</ModulePath>
+        <ModulePath>.*[\/]Weir\.Infrastructure\.dll$</ModulePath>
+        <ModulePath>.*[\/]Weir\.Api\.dll$</ModulePath>
+      </Include>
+    </ModulePaths>
+    <Attributes>
+      <Exclude>
+        <Attribute>^System\.CodeDom\.Compiler\.GeneratedCodeAttribute$</Attribute>
+        <Attribute>^System\.Runtime\.CompilerServices\.CompilerGeneratedAttribute$</Attribute>
+        <Attribute>^System\.Diagnostics\.CodeAnalysis\.ExcludeFromCodeCoverageAttribute$</Attribute>
+      </Exclude>
+    </Attributes>
+    <Sources>
+      <Exclude>
+        <Source>.*[\/]obj[\/].*</Source>
+      </Exclude>
+    </Sources>
+  </CodeCoverage>
+</Configuration>

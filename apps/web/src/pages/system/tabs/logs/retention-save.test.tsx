@@ -31,20 +31,11 @@ const MOST: RecordedReply = systemReplies.settingsPutRetention;
 
 function Retention({
   form,
-  settings,
 }: {
   form: ReturnType<typeof useSystemSettingsForm>;
-  settings: AppSettings;
 }) {
   const fileActivity = useFileActivityRetention();
-  return (
-    <RetentionSection
-      form={form}
-      fileActivity={fileActivity}
-      editable
-      savedLogDays={settings.log_retention_days}
-    />
-  );
+  return <RetentionSection form={form} fileActivity={fileActivity} editable />;
 }
 
 function renderRetention(routes: RecordedRoutes): RecordedWeir {
@@ -54,9 +45,7 @@ function renderRetention(routes: RecordedRoutes): RecordedWeir {
     "GET /api/v1/processing/operator-settings": systemReplies.operatorSettings,
     ...routes,
   });
-  renderWithSettingsForm((form, settings) => (
-    <Retention form={form} settings={settings} />
-  ));
+  renderWithSettingsForm((form) => <Retention form={form} />);
   return weir;
 }
 

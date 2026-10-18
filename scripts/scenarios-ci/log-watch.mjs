@@ -14,7 +14,7 @@ export class LogWatch {
   #weir;
   #before;
   #allowed = new Map();
-  #patterns = [];
+  #allowedPatterns = [];
 
   constructor(weir, before) {
     this.#weir = weir;
@@ -41,12 +41,12 @@ export class LogWatch {
   }
 
   /**
-   * Names rows whose title matches the pattern that the scenario causes on purpose, for titles that carry a number or a path: each `times` a
-   * row may match, and no more.
+   * Like `expect`, for rows whose title carries something that changes (a number of tries, a process id): each `times` a row whose title
+   * matches the pattern may appear, and no more.
    */
   expectMatching(pattern, { times = 1, why }) {
     if (!why) throw new Error(`A row the scenario expects (${pattern}) needs a reason.`);
-    this.#patterns.push({ pattern, left: times });
+    this.#allowedPatterns.push({ pattern, left: times });
   }
 
   /** Throws what the logs gained since `begin`, except the rows the scenario said it would cause. */
@@ -57,14 +57,15 @@ export class LogWatch {
       throw new Error("System > Logs gained more than one page of new warnings and errors, which is not a clean run.");
     }
     const left = new Map(this.#allowed);
+    const patterns = this.#allowedPatterns.map((allowed) => ({ ...allowed }));
     const unexpected = gained.filter((row) => {
       if (left.get(row.title) > 0) {
         left.set(row.title, left.get(row.title) - 1);
         return false;
       }
-      const allowed = this.#patterns.find((entry) => entry.left > 0 && entry.pattern.test(row.title));
+      const allowed = patterns.find((entry) => entry.left > 0 && entry.pattern.test(row.title));
       if (!allowed) return true;
-      allowed.left -= 1;
+      allowed.left--;
       return false;
     });
     if (unexpected.length > 0) {

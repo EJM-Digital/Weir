@@ -8,18 +8,11 @@ import { join } from "node:path";
 import { ORIGIN } from "../docker-smoke/stack.mjs";
 import { WeirClient } from "../docker-smoke/weir-client.mjs";
 import { runScenarios } from "./run.mjs";
-import * as install from "./windows-install.mjs";
-import * as files from "./windows-files.mjs";
+import { TrayDesktop } from "./tray-desktop.mjs";
 
 /** The longest each scenario of a shard may run, in milliseconds, by id or `default`; a hang costs that scenario and not the shard's other results. */
 const CLEANUP_CEILING_MS = 120_000;
 const SCENARIO_CEILINGS = { "windows-files": { default: 360_000, "library-swap-crash": 720_000 } };
-
-/** The scenarios of each Windows shard, and how each watches System > Logs. */
-const SHARDS = {
-  "windows-install": { scenarios: install.SCENARIOS, watchLogs: install.watchLogs },
-  "windows-files": { scenarios: files.SCENARIOS, watchLogs: files.watchLogs },
-};
 
 /** The server as an outsider asks it: is it ready, and which version does it report. */
 export function httpServer(origin) {
@@ -56,7 +49,10 @@ export function expectedVersion({ given, props }) {
 async function keepInstallLogs(machine, logFolder) {
   const kept = join(logFolder, "install-logs");
   await mkdir(kept, { recursive: true });
-  const files = [{ from: machine.paths.trayLog, name: "tray-host.log" }];
+  const files = [
+    { from: machine.paths.trayLog, name: "tray-host.log" },
+    { from: join(machine.paths.runtimeHome, "server-host.log"), name: "server-host.log" },
+  ];
   for (const file of await machine.files(machine.paths.logsFolder)) files.push({ from: join(machine.paths.logsFolder, file.path), name: `logs-${file.path.replaceAll(/[\/]/g, "-")}` });
   for (const file of files) await copyFile(file.from, join(kept, file.name)).catch((error) => console.error(`::warning::${file.from} could not be kept: ${error.message}`));
 }
@@ -81,16 +77,16 @@ async function keepServerConsoles(world, logFolder) {
 }
 
 /**
- * Runs the chosen scenarios on the machine against the Setup. One that fails does not stop the next. Weir is stopped at the end, whatever
+ * Runs the chosen scenarios of a shard (`registry` and `watchLogs` are its module's) on the machine against the Setup. One that fails does not stop the next. Weir is stopped at the end, whatever
  * happened, so the runner is left as it was.
  */
-export async function runWindowsShard({ shard = "windows-install", ids, machine, setupPath, version, logFolder }) {
-  const { scenarios, watchLogs } = SHARDS[shard];
+export async function runWindowsShard({ shard, ids, registry, watchLogs, machine, setupPath, version, logFolder }) {
   const recordings = join(logFolder, "recordings");
   await mkdir(recordings, { recursive: true });
   const scratch = await mkdtemp(join(tmpdir(), "weir-scenarios-ci-"));
   const world = {
     machine,
+    desktop: new TrayDesktop(),
     server: httpServer(ORIGIN),
     weir: new WeirClient(ORIGIN),
     browser: () => new WeirClient(ORIGIN),
@@ -104,7 +100,7 @@ export async function runWindowsShard({ shard = "windows-install", ids, machine,
     record: (name, text) => writeFile(join(recordings, name), text),
   };
   try {
-    return await runScenarios({ ids, registry: scenarios, world });
+    return await runScenarios({ ids, registry, world });
   } finally {
     // What a scenario made on the machine (servers, volumes, shares), taken down last made first, whatever happened.
     for (const cleanup of world.cleanups.splice(0).reverse()) {

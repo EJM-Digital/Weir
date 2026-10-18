@@ -30,7 +30,7 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`, and the ones written for CI al
 | `process-again` | linux | weir-only | ported | The first shard. Asked to process a cleaned film again, the server skips it. |
 | `pause-resume` | linux | weir-only | ported | The server hears the tray through a file in its data folder, and that watcher is the same on Linux. The tray's side stays with windows-tray. |
 | `deleted-queued-file` | linux | weir-only | ported | A file deleted while Weir waits for it to settle; nothing in it is Windows. |
-| `update-requests` | windows | windows-tray | to-port | Needs the real tray to take the update flag files. |
+| `update-requests` | windows | windows-tray | ported | Drives the real installed tray: the buttons are offered only while the tray is alive, and each press is taken by the tray. |
 | `recover-locked-out-account` | windows | windows-install | ported | Runs the installed `WeirServer.exe recover` with nothing set, so it must find Weir's data folder itself. The Docker form is already proved by the Docker smoke. |
 | `uninstall-keeps-the-data` | windows | windows-install | ported | Written for CI: the VM suite never ran the uninstaller. Uninstalls Weir stopped and running, and finds the data, the secrets and the account afterwards. |
 | `library-clean-in-place` | windows | windows-files | ported | Written for CI. The installed server cleans a real film in a library folder at its own path on NTFS, with and without the original kept; a film another program holds open is left as it was and its clean booked for later. |
@@ -41,6 +41,13 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`, and the ones written for CI al
 | `network-share` | windows | windows-files | ported | Written for CI. A real SMB share (New-SmbShare) used by its UNC path: found and used, removed (reported, nothing lost), restored. |
 | `network-share-hang` | windows | windows-files | ported | Written for CI. A share that stops answering without refusing, through a relay that can stop passing data: reported, other workflows and the System page unaffected. |
 | `network-access` | windows | windows-files | ported | Written for CI. Other devices switched on and off through the API on the installed Weir; the listener, the firewall rule for every profile and the machine's own address are read. |
+| `tray-menu` | windows | windows-tray | ported | Written for CI: every item of the tray menu pressed through UI Automation on the real installed tray, with its effect on the real server, the PC and tray-host.log. |
+| `tray-supervision` | windows | windows-tray | ported | Written for CI: the real server ended by its own process id, and its port taken; the tray brings it back after growing waits and logs why. |
+| `tray-give-up` | windows | windows-tray | ported | Written for CI: five failed starts end the trying once, with the red icon and a balloon; Restart Weir is the way back and Quit is never answered with a start. |
+| `tray-change-port` | windows | windows-tray | ported | Written for CI: Change port through the real window, succeeding, going back, and ending Stopped when both ports fail. |
+| `tray-lan-access` | windows | windows-tray | ported | Written for CI: Allow other devices runs the elevated firewall step for real, and Only allow this PC takes it back. |
+| `tray-second-launch` | windows | windows-tray | ported | Written for CI: a second Weir.exe leaves one tray and one server, and the running tray says so. |
+| `tray-start` | windows | windows-tray | ported | Written for CI: no start opens the browser, a start nobody can see that cannot start Weir exits 1, a taken saved port is asked about, and WEIR_PORT is honoured. |
 
 ### Windows-only behaviour with no scenario today
 
@@ -56,7 +63,7 @@ The VM suite does not cover these; the package smokes (`smoke-windows-package.ps
 | windows-install | windows-latest | 20 min | Install, the installed server and its secrets, the recovery command, uninstall and reinstall. **Built.** Start with Windows needs the tray's own menu, so it waits for windows-tray. |
 | windows-files | windows-latest | 25 min | What the installed server does to real files on real NTFS volumes and a real network share, and the setting that opens its port to other devices. **Built.** |
 | windows-update | windows-latest | 20 min | The update from the previous release over a running Weir. |
-| windows-tray | windows-latest | 20 min | The real tray through UI Automation, and NTFS behaviour. |
+| windows-tray | windows-latest | 20 min | The real tray through UI Automation. **Built.** NTFS behaviour is not in it yet. |
 
 ## The matrix
 
@@ -119,10 +126,20 @@ The tray is started without its user interface, so what the tray shows is left t
 - `network-share`, `network-share-hang`: the share is `New-SmbShare` on a folder of the runner, used by `\localhost<name>`. The hang goes through a relay (`files-proxy.mjs`) that the SMB client reaches by an alternative port and that can stop passing data without closing anything.
 - `network-access`: the installed Weir with its tray. Other devices is chosen through `PUT /suite/network-access`; the tray restarts the server and asks Windows for the rule. The listener, the rule (enabled, inbound, TCP, allow, every profile, the installed server) and the machine's own network address are read, then flipped back. **Not provable on one runner:** that Windows Firewall lets a packet from a second machine in, because traffic from a PC to its own address never meets the firewall; the rule stands in for it.
 
+### The windows-tray shard
+
+`scripts/scenarios-in-ci.mjs windows-tray --setup <Weir-win-Setup.exe>` runs on a GitHub-hosted `windows-latest` runner, which has an interactive desktop (session 2, Explorer running, a 1024 by 768 screen). It installs the Setup, starts the installed `Weir.exe` as the person who owns the desktop would, and drives it through Windows UI Automation (`scripts/scenarios-ci/tray-ui.ps1`): the icon in the notification area (which Windows 11 keeps in the hidden icons, opened first), its menu, and the window that asks for a port. The server is ended by its own process id and its port taken by another program (a listener in the scenario), never by name, and every wait is on the tray's own files and log lines or on the server answering `/ready`.
+
+- `update-requests`: ported from the VM.
+- `tray-menu`: each item pressed: Open Weir, Pause and Resume processing, Restart Weir, Copy address (the clipboard), Open data folder, Open logs folder, Report a problem (File Explorer), Start with Windows (a check item that keeps the menu open, and the Run entry), Check for updates, and Quit Weir, with the menu itself compared to the standard item for item.
+- `tray-supervision`, `tray-give-up`, `tray-change-port`, `tray-lan-access`, `tray-second-launch`, `tray-start`: see their rows above.
+
+**What UI Automation cannot reach on the hosted runner.** Windows shows a tray balloon as a notification, and the runner shows none (a watch of the desktop for the start balloon found no notification window). So the tray now writes every balloon it shows to `tray-host.log`, in the words the person would have read (`Balloon (info) Weir: ...`), which is also what an operator needs when focus assist hides a notification; the scenarios read the balloon from that line, and send the tray the click Windows sends for a balloon (`NIN_BALLOONUSERCLICK`, the message the notification area posts to the tray's hidden window) to prove what a click on it does. If the taskbar ever cannot be reached for the menu, the scenario opens it by the right-click message the notification area sends instead, says so in its record, and keeps the taskbar's tree (`taskbar-tree.json`).
+
 ### Next
 
 1. `with-deluno`: the other four scenarios and the other clients (Transmission, Deluge, SABnzbd, NZBGet). The release source is `with-deluno/fixture/`: Weir's own, small and Node-only. If Deluno publishes its fixture image, as the agreed shape has it, the shard moves to that and this folder goes.
-2. `windows-update`, then `windows-tray` (the shards after `windows-install`).
+2. `windows-update` (the shard after `windows-tray`).
 3. The drift workflow, and the per-shard paths filter.
 
 ## Runners

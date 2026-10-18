@@ -392,7 +392,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [windows-install, windows-files]
+        shard: [windows-install, windows-tray, windows-files]
     env:
       SHARD: ${{ matrix.shard }}
       BUILD_VERSION: ${{ needs.windows-package-smoke.outputs.version }}

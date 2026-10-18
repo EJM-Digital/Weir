@@ -95,7 +95,7 @@ export async function ensureSignedIn(world) {
   if ((await weir.signedInAs()) !== world.account.username) await weir.login(world.account.username, world.account.password);
 }
 
-async function ensureWeir(world) {
+export async function ensureWeir(world) {
   await ensureInstalledAndRunning(world);
   await ensureSignedIn(world);
 }
@@ -112,6 +112,7 @@ export async function watchLogs(world) {
   const watch = new LogWatch(world.weir, []);
   return {
     expect: (title, options) => watch.expect(title, options),
+    expectMatching: (pattern, options) => watch.expectMatching(pattern, options),
     finish: async () => {
       await ensureSignedIn(world);
       await watch.finish();
