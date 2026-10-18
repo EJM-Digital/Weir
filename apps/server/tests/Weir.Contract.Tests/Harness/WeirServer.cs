@@ -23,6 +23,7 @@ public sealed class WeirServer : IAsyncDisposable
 
     private const string ListenHost = "127.0.0.1";
 
+    private static readonly TimeSpan GracefulStopLimit = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan OutputGrace = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan ReadyPollInterval = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan ReadyProbeTimeout = TimeSpan.FromSeconds(2);
@@ -127,7 +128,9 @@ public sealed class WeirServer : IAsyncDisposable
     }
 
     /// <summary>Stops the server and what it started. The data folder stays.</summary>
-    public async Task StopAsync()
+    public Task StopAsync() => StopAsync(graceful: false);
+
+    private async Task StopAsync(bool graceful)
     {
         var process = _process;
         _process = null;
@@ -139,6 +142,11 @@ public sealed class WeirServer : IAsyncDisposable
         var processId = process.Id;
         try
         {
+            if (graceful && !process.HasExited && ServerShutdown.Request(process))
+            {
+                await WaitForExitAsync(process, GracefulStopLimit);
+            }
+
             if (!process.HasExited)
             {
                 process.Kill(entireProcessTree: true);
@@ -177,7 +185,9 @@ public sealed class WeirServer : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        await StopAsync();
+        // A run that measures coverage lets the server end by itself: what it ran is written as it exits, and a killed server writes nothing.
+        // A test that stops the server by hand to simulate a crash still kills it.
+        await StopAsync(graceful: ServerShutdown.CoverageIsMeasured);
         if (_evidenceName is not null)
         {
             // Kept for the test (or test class) that used this server; the framework deletes it again unless that test failed.
@@ -292,6 +302,20 @@ public sealed class WeirServer : IAsyncDisposable
             }
 
             await Task.Delay(ReadyPollInterval);
+        }
+    }
+
+    /// <summary>Waits for the process to end, for at most <paramref name="limit"/>; the caller kills it if it has not.</summary>
+    private static async Task WaitForExitAsync(Process process, TimeSpan limit)
+    {
+        using var ceiling = new CancellationTokenSource(limit);
+        try
+        {
+            await process.WaitForExitAsync(ceiling.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            // It did not stop when asked.
         }
     }
 

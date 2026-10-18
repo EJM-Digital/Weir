@@ -62,6 +62,7 @@ jobs:
       run_contract: ${{ steps.flags.outputs.run_contract }}
       run_tray: ${{ steps.flags.outputs.run_tray }}
       run_coverage: ${{ steps.flags.outputs.run_coverage }}
+      run_coverage_out_of_process: ${{ steps.flags.outputs.run_coverage_out_of_process }}
       run_packaging: ${{ steps.flags.outputs.run_packaging }}
       run_arm64: ${{ steps.flags.outputs.run_arm64 }}
       contract_areas: ${{ steps.areas.outputs.areas }}
@@ -192,8 +193,10 @@ jobs:
           on_pull_request() { if [ "$main_push" = true ]; then echo false; else echo "$1"; fi; }
 
           web=$(either "$all" "$SERVER" "$HARNESS" "$WEB")
-          # The unit tests of all three projects run to measure coverage when the floors change.
+          # The unit tests of all three projects, the contract suite and the E2E smoke run to measure coverage when the floors change.
           web_tests=$(either "$web" "$FLOORS")
+          contract_tests=$(either "$all" "$SERVER" "$FLOORS")
+          e2e_tests=$(on_pull_request "$web_tests")
           tray_tests=$(either "$all" "$TRAY" "$FLOORS")
           # packaging's own filter stays narrow on a pull request (see below); a server or web change
           # outside it still needs packaging tested once it lands on main, since nothing else will.
@@ -204,10 +207,12 @@ jobs:
             echo "run_server_audit=$(on_pull_request "$(either "$all" "$SERVER")")"
             echo "run_web=$web_tests"
             echo "run_web_audit=$(on_pull_request "$(either "$all" "$WEB")")"
-            echo "run_e2e=$(on_pull_request "$web")"
-            echo "run_contract=$(either "$all" "$SERVER")"
+            echo "run_e2e=$e2e_tests"
+            echo "run_contract=$contract_tests"
             echo "run_tray=$tray_tests"
             echo "run_coverage=$(either "$web_tests" "$tray_tests")"
+            # The out-of-process figure is the contract suite and the E2E smoke together: judged only when both ran.
+            echo "run_coverage_out_of_process=$(both "$contract_tests" "$e2e_tests")"
             echo "run_packaging=$(either "$all" "$PACKAGING" "$packaging_reached_by_main")"
             echo "run_arm64=$(either "$manual" "$DOCKER")"
           } | tee -a "$GITHUB_OUTPUT"
@@ -626,13 +631,34 @@ jobs:
         run: |
           pwsh apps/server/tests/Weir.E2E.Tests/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
 
+      # The pinned collector that follows the server these tests start as its own process (#1081, docs/coverage/README.md).
+      - name: Install dotnet-coverage
+        run: dotnet tool install --global dotnet-coverage --version 18.11.2
+
       # A failed browser test fails the job; nothing is retried (an intermittent test is a bug to root-cause).
+      # Each server is asked to stop instead of being killed (WEIR_CONTRACT_COVERAGE), so it writes what it ran.
       - name: Weir E2E smoke (Playwright + real .NET server), shard ${{ matrix.shard }}
+        id: e2e
         working-directory: apps/server
         env:
           WEIR_E2E: "1"
+          WEIR_CONTRACT_COVERAGE: "1"
           SHARD: ${{ matrix.shard }}
-        run: dotnet test tests/Weir.E2E.Tests --no-build --logger trx --filter "$(node ../../scripts/e2e-shards.mjs --shard "$SHARD")"
+        run: |
+          filter="$(node ../../scripts/e2e-shards.mjs --shard "$SHARD")"
+          dotnet-coverage collect --settings coverage.out-of-process.xml --output-format cobertura \
+            --output "$RUNNER_TEMP/out-of-process/coverage.cobertura.xml" --nologo -- \
+            dotnet test tests/Weir.E2E.Tests --no-build --logger trx --filter "$filter"
+
+      # A shard that passed and wrote no coverage fails here, so the coverage check never reads a gap as "nothing to measure".
+      - name: Upload the server coverage this shard measured
+        if: ${{ steps.e2e.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-out-of-process-e2e-${{ matrix.shard }}
+          if-no-files-found: error
+          retention-days: 1
+          path: ${{ runner.temp }}/out-of-process/coverage.cobertura.xml
 
       - name: Summarize E2E smoke results
         if: ${{ !cancelled() }}
@@ -716,10 +742,11 @@ jobs:
 
   # The coverage check (#976): the per-leg reports of the server (Linux and Windows), the tray and the web app,
   # merged into one report per project and held to the floors in docs/coverage/floors.json. The contract suite and
-  # the E2E smoke are not part of it: they run the server as a separate process, which the coverage collector
-  # cannot see (docs/coverage/README.md). A project whose tests did not run for this change is not judged.
+  # the E2E smoke run the server as a separate process, so they are measured by dotnet-coverage and make a figure of
+  # their own beside the unit figure (docs/coverage/README.md). A project whose tests did not run for this change is
+  # not judged.
   coverage:
-    needs: [changes, server-linux, server-windows, web, tray]
+    needs: [changes, server-linux, server-windows, web, tray, contract, e2e-smoke]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.run_coverage == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -757,6 +784,14 @@ jobs:
           name: coverage-web
           path: coverage-input/coverage-web
 
+      # Every contract area and E2E shard uploaded the server coverage it measured; merged, they are the out-of-process figure.
+      - name: Download the out-of-process server coverage
+        if: needs.changes.outputs.run_coverage_out_of_process == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: coverage-out-of-process-*
+          path: coverage-input/out-of-process
+
       - name: Install ReportGenerator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.11
 
@@ -780,6 +815,13 @@ jobs:
           "-targetdir:coverage/tray" "-reporttypes:Html;Cobertura;JsonSummary"
           "-filefilters:-*/obj/*;-*\obj\*" "-title:Weir tray"
 
+      - name: Merge the out-of-process server coverage
+        if: needs.changes.outputs.run_coverage_out_of_process == 'true'
+        run: >-
+          reportgenerator "-reports:coverage-input/out-of-process/**/coverage.cobertura.xml"
+          "-targetdir:coverage/out-of-process" "-reporttypes:Html;Cobertura;JsonSummary"
+          "-filefilters:-*/obj/*;-*\obj\*" "-title:Weir server, contract suite and E2E smoke"
+
       # On a pull request the base branch's floors, on a push to main the previous commit's: a floor lower than
       # that one needs its own explanation in the file (scripts/check-coverage-floors.mjs).
       - name: Floors before this change
@@ -799,11 +841,13 @@ jobs:
           SERVER: ${{ needs.changes.outputs.run_server_linux }}
           TRAY: ${{ needs.changes.outputs.run_tray }}
           WEB: ${{ needs.changes.outputs.run_web }}
+          OUT_OF_PROCESS: ${{ needs.changes.outputs.run_coverage_out_of_process }}
         run: |
           args=(--floors docs/coverage/floors.json)
           if [ -f base-floors.json ]; then args+=(--base-floors base-floors.json); fi
           if [ "$SERVER" = true ]; then args+=(--server coverage/server); fi
           if [ "$TRAY" = true ]; then args+=(--tray coverage/tray); fi
+          if [ "$OUT_OF_PROCESS" = true ]; then args+=(--out-of-process coverage/out-of-process); fi
           if [ "$WEB" = true ]; then
             mkdir -p coverage/web
             if [ -d coverage-input/coverage-web ]; then cp -r coverage-input/coverage-web/. coverage/web/; fi
