@@ -20,7 +20,8 @@ public sealed class FolderChecksTaskTests : IDisposable
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
     private sealed record Rig(
-        WeirTestServer Server, FolderChecksTask Task, DataChangePublisher Changes, ActivityStreamClients Clients, ServerLooks Looks, string WatchedFolder);
+        WeirTestServer Server, FolderChecksTask Task, DataChangePublisher Changes, ActivityStreamClients Clients, ServerLooks Looks, string WatchedFolder,
+        ApiTestClient Client, long LibraryId);
 
     private async Task<Rig> StartAsync()
     {
@@ -41,10 +42,11 @@ public sealed class FolderChecksTaskTests : IDisposable
                 output_folder = output,
             });
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var libraryId = (long)(await ApiTestClient.Json(created))["id"]!;
 
-        // The task is the server's own, built over its parts with a publisher and a count of watchers of its own, so
+        // The task is the server's own, built over its parts with a count of watchers of its own, so
         // the server's timer cannot add a look the test did not ask for.
-        var changes = new DataChangePublisher();
+        var changes = server.Services.GetRequiredService<DataChangePublisher>();
         var clients = new ActivityStreamClients();
         var looks = new ServerLooks(TimeProvider.System);
         var task = new FolderChecksTask(
@@ -52,9 +54,8 @@ public sealed class FolderChecksTaskTests : IDisposable
             server.Services.GetRequiredService<LibraryStore>(),
             server.Services.GetRequiredService<LibraryFolderChainCheck>(),
             clients,
-            changes,
             looks);
-        return new Rig(server, task, changes, clients, looks, watched);
+        return new Rig(server, task, changes, clients, looks, watched, client, libraryId);
     }
 
     private static async Task<string> NextAsync(BroadcastSubscription<string> subscription)
@@ -68,12 +69,18 @@ public sealed class FolderChecksTaskTests : IDisposable
         throw new InvalidOperationException("The subscription ended.");
     }
 
-    /// <summary>Whether the topic was published since the last call: a marker published after it tells where the topics end.</summary>
+    /// <summary>Whether the folder checks were published since the last call: the topics up to a marker are read, and the server may publish others between them.</summary>
     private static async Task<bool> PublishedAsync(Rig rig, BroadcastSubscription<string> subscription)
     {
         rig.Changes.Publish(Sentinel);
-        var first = await NextAsync(subscription);
-        return first != Sentinel;
+        var published = false;
+        string topic;
+        while ((topic = await NextAsync(subscription)) != Sentinel)
+        {
+            published |= topic == DataTopics.FolderChecks;
+        }
+
+        return published;
     }
 
     [Fact]
@@ -85,18 +92,41 @@ public sealed class FolderChecksTaskTests : IDisposable
         using var subscription = rig.Changes.Subscribe();
 
         await rig.Task.RunOnceAsync(CancellationToken.None);
-        Assert.Equal(DataTopics.FolderChecks, await NextAsync(subscription));
+        Assert.False(await PublishedAsync(rig, subscription), "The first answer is the one whoever asked was given, so there is nothing to tell.");
 
         await rig.Task.RunOnceAsync(CancellationToken.None);
         Assert.False(await PublishedAsync(rig, subscription), "An answer that has not changed is not published again.");
 
         Directory.Delete(rig.WatchedFolder);
         await rig.Task.RunOnceAsync(CancellationToken.None);
-        Assert.Equal(DataTopics.FolderChecks, await NextAsync(subscription));
+        Assert.True(await PublishedAsync(rig, subscription));
 
         Directory.CreateDirectory(rig.WatchedFolder);
         await rig.Task.RunOnceAsync(CancellationToken.None);
-        Assert.Equal(DataTopics.FolderChecks, await NextAsync(subscription));
+        Assert.True(await PublishedAsync(rig, subscription));
+    }
+
+    [Fact]
+    public async Task A_folder_a_screen_found_gone_is_published_so_its_coming_back_is_published_too()
+    {
+        var rig = await StartAsync();
+        await using var _server = rig.Server;
+        using var watcher = rig.Clients.Open();
+        using var subscription = rig.Changes.Subscribe();
+        await rig.Task.RunOnceAsync(CancellationToken.None);
+        Assert.False(await PublishedAsync(rig, subscription));
+
+        // A screen reads the workflow on its own (it was opened, it came back to the foreground, its live link was lost and found
+        // again) between two of the server's looks, and finds the folder gone.
+        Directory.Delete(rig.WatchedFolder);
+        using var read = await rig.Client.GetAsync($"/api/v1/processing/libraries/{rig.LibraryId}/folder-chain");
+        Assert.Equal(HttpStatusCode.OK, read.StatusCode);
+        Assert.True(await PublishedAsync(rig, subscription), "Every other screen must be told what the read found.");
+
+        // The folder is back before the server looks again, so the server never sees it gone. The screen that read it gone has to be told.
+        Directory.CreateDirectory(rig.WatchedFolder);
+        await rig.Task.RunOnceAsync(CancellationToken.None);
+        Assert.True(await PublishedAsync(rig, subscription), "The screen that read the folder gone must be told it is back.");
     }
 
     [Fact]
