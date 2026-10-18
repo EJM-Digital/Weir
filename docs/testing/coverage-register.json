@@ -5007,6 +5007,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/ReleaseBackupRestoreTests.cs",
+          "name": "ReleaseBackupRestoreTests"
         }
       ],
       "partial": [
@@ -5026,11 +5031,6 @@
           "name": "ConfigurationBundleIntakeUpgradeTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Restoring a backup taken by an earlier released version is tested with synthetic bundles only (PLAT-RESTORE). No test restores a bundle that differs from the current state and then compares every restored section (rule sets, operator settings, schedules, direct-play devices, alerts); the contract and API round trips restore the same state, and the only value they change is the product name, which restore drops"
-      },
-      "issue": 1004,
       "covers": [
         "route:PUT /api/v1/suite/configuration-bundle"
       ],
@@ -41133,6 +41133,11 @@
       "audit": {
         "id": "WEB-925",
         "verdict": "Gap"
+      },
+      "issue": 1057,
+      "needs": {
+        "kind": "e2e",
+        "test": "putNetworkAccess and fetchNetworkAccess need the Windows install (see the network access row); every other System request function is sent by a real page in the E2E tests listed."
       }
     },
     {
@@ -41496,13 +41501,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/AppNavigationTests.cs",
           "name": "AppNavigationTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemTabAddressTests.cs",
+          "name": "SystemTabAddressTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "`tab=backup`, `tab=security` by address, and an unknown value are not asserted; the alias table in `systemTabFrom` has no direct test."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-937",
         "verdict": "Partly"
@@ -41621,13 +41626,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/system-page.test.tsx",
           "name": "allows changing and saving backup schedule more than once"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemBackupScheduleTests.cs",
+          "name": "SystemBackupScheduleTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogRetentionTests.cs",
+          "name": "SystemLogRetentionTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Function-level spies only (`putAppSettings`). Never asserted: `configuration_backup_enabled`, `setup_wizard_state`, `app_timezone` passthrough, interval clamp 1..720. No fetch-level test of `putAppSettings` (SAPI checks paths only). Contract `Suite_settings_put_persists` is API side."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-943",
         "verdict": "Partly"
@@ -41907,13 +41917,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/about/update-section.test.tsx",
           "name": "still offers Check again, which the server answers without asking GitHub"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemUpdateStatusTests.cs",
+          "name": "SystemUpdateStatusTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "`fetchUpdateStatus` is mocked and never resolves: the result of the check (new status shown, or a failure message) is never asserted; GET `/api/v1/suite/update-status` not asserted at fetch level."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-956",
         "verdict": "Partly"
@@ -42016,13 +42026,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/system-page.test.tsx",
           "name": "shows Docker update instructions with a Copy button once an update exists"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemUpdateStatusTests.cs",
+          "name": "SystemUpdateStatusTests"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.test.tsx",
+          "name": "keeps saying Copy when the browser refuses the clipboard"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Click, `navigator.clipboard.writeText(command)`, the \"Copied\" label and its revert, and the clipboard-refused path are not tested (the network-access address copy button is tested separately through `CopyLink`, a different component)."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-960",
         "verdict": "Partly"
@@ -42281,13 +42296,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/system-page.test.tsx",
           "name": "saves an update choice as it is made, with no Save button"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemUpdatePreferencesTests.cs",
+          "name": "SystemUpdatePreferencesTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "`putUpdateSettings` mocked (URL/method unasserted); no E2E click; API tested outside the contract suite (`Weir.Api.Tests/Platform/SuiteApiTests.cs`); Download only and the other directions untested; the per-mode summary/hover text untested."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-970",
         "verdict": "Partly"
@@ -42406,8 +42421,8 @@
         }
       ],
       "needs": {
-        "kind": "vitest",
-        "test": "`mutate` is a bare `vi.fn`, so `onSuccess -> setConfirming(false)` and the mutation's `setQueryData` never run; no test drives the real mutation; no E2E (needs the tray). P1-weighted: this is the LAN-exposure change."
+        "kind": "e2e",
+        "test": "Windows only: the choice is carried out by the tray and Windows Firewall, which the Linux E2E run does not have; the dialog and the saved choice are proved in vitest and the contract suite."
       },
       "issue": 1057,
       "audit": {
@@ -42840,13 +42855,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/system-page.test.tsx",
           "name": "allows changing and saving backup schedule more than once"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemBackupScheduleTests.cs",
+          "name": "SystemBackupScheduleTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Function-level spy; option list (6..168 h, \"7 days\"), blank time -> 02:00, Save \"Saving…\" state not asserted; no fetch-level request."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-992",
         "verdict": "Partly"
@@ -42916,6 +42931,11 @@
           "name": "is overdue once the next backup is more than an hour late"
         },
         {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemBackupNowTests.cs",
+          "name": "SystemBackupNowTests"
+        },
+        {
           "type": "vitest",
           "file": "apps/web/src/pages/system/system-page.test.tsx",
           "name": "shows a backup made by hand as the last backup, and leaves the schedule where it was"
@@ -42951,11 +42971,6 @@
           "name": "A_backup_made_before_the_column_is_kept_and_does_not_say_who_made_it"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Pure model only; the glue rendering the date and chip (`BackupScheduleSection`) is untested."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-995",
         "verdict": "Partly"
@@ -42979,13 +42994,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/SetupLiveTests.cs",
           "name": "SetupLiveTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemBackupNowTests.cs",
+          "name": "SystemBackupNowTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "POST `/api/v1/suite/configuration-backups` not asserted at fetch level; the list refresh after creating (invalidate) is not asserted in vitest; buttons disabled while busy untested."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-996",
         "verdict": "Partly"
@@ -43063,13 +43078,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/system-page.test.tsx",
           "name": "offers restoring a saved backup and confirms in Weir's own dialog, not window.confirm"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemRestoreBackupTests.cs",
+          "name": "SystemRestoreBackupTests"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/ConfigurationBundleApiTests.cs",
+          "name": "A_restore_puts_back_the_backup_schedule_the_backup_held"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "DATA-LOSS action, P0-weighted. Asserted: dialog shown, `window.confirm` not used, `putConfigurationBundle` called once, dialog closes. NOT asserted: the bundle that was sent (a wrong or stale bundle would pass), the PUT method/URL/body shape, the \"Configuration restored.\" message, that all queries are refreshed so drafts and screens show the restored values. No E2E click."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1000",
         "verdict": "Partly"
@@ -44406,13 +44426,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/logs/log-row-detail.test.tsx",
           "name": "opens one row at a time"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogJobTests.cs",
+          "name": "SystemLogJobTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogsLiveTests.cs",
+          "name": "SystemLogsLiveTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Clicking an open row to close it is not asserted."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1053",
         "verdict": "Partly"
@@ -44485,13 +44510,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/logs/log-row-detail.test.tsx",
           "name": "says what a job was, how often it was tried, what it was given and why it stopped"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogJobTests.cs",
+          "name": "SystemLogJobTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Worker-lease fact and the paused wording (\"Waiting · Weir is paused.\" / \"Nothing to do. Resume at the top...\") are untested; `usePauseQuery` is mocked to not-paused everywhere."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1056",
         "verdict": "Partly"
@@ -44550,13 +44575,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/logs/log-row-detail.test.tsx",
           "name": "says why a cancel did not work"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogJobTests.cs",
+          "name": "SystemLogJobTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "`postProcessingJobCancelPending` mocked: the POST method/URL is unproven here; \"reads the log again\" asserted only as more than one `fetchSystemLog` call (the row actually showing as cancelled is not)."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1058",
         "verdict": "Partly"
@@ -44575,13 +44600,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/logs/log-row-detail.test.tsx",
           "name": "can save the result of a job that finished its work but could not record it"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogRecoverResultTests.cs",
+          "name": "SystemLogRecoverResultTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Failure message (\"Recovery failed.\") and the \"Recovering…\" state untested; POST path unproven here; list refresh as above."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1059",
         "verdict": "Partly"
@@ -44635,13 +44660,13 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/System/SystemLogExportTests.cs",
           "name": "SystemLogExportTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogDownloadTests.cs",
+          "name": "SystemLogDownloadTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Function-level mock: the export URL with all filter params, the `Accept` header and the `Content-Disposition` file-name parsing (`filenameFromDisposition`, untested anywhere) are unproven in the web layer; only `sort` is asserted in `system-log-api.test.ts`. CSV/JSON failure path untested (only the server-log failure is). \"Exporting…\" busy label untested. No E2E download."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1061",
         "verdict": "Partly"
@@ -44665,13 +44690,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/logs/log-card.test.tsx",
           "name": "says what went wrong when it cannot"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogDownloadTests.cs",
+          "name": "SystemLogDownloadTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "GET `/api/v1/suite/logs/download` not asserted at fetch level; the real download is never exercised (`saveBlobAs` mocked)."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1062",
         "verdict": "Partly"
@@ -44690,13 +44715,13 @@
           "type": "vitest",
           "file": "apps/web/src/lib/ui/use-close-on-outside.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogDownloadTests.cs",
+          "name": "SystemLogDownloadTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Wiring in `LogExportMenu` untested."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1063",
         "verdict": "Partly"
@@ -44720,13 +44745,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/logs/log-card.test.tsx",
           "name": "lists what it would remove and works only once RESET is typed"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogClearEventsTests.cs",
+          "name": "SystemLogClearEventsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Destructive. API functions mocked: the preview GET and the POST body `{confirm}` are not asserted at fetch level (contract `SuiteOperationalHistoryTests` + `ActivityHistoryTests` cover the API). Lowercase \"reset\" (accepted by the UI, sent as typed) untested in the UI. \"Reload\" proven only by a fetch count, not by the rows changing."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1064",
         "verdict": "Partly"
@@ -44750,13 +44775,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/logs/log-card.test.tsx",
           "name": "closes on Escape, removing nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogClearEventsTests.cs",
+          "name": "SystemLogClearEventsTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The \"Keep them\" button is not clicked."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1065",
         "verdict": "Partly"
@@ -44890,13 +44915,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/system-page.test.tsx",
           "name": "saves how long Activity history is kept, including 0 for until cleared"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogRetentionTests.cs",
+          "name": "SystemLogRetentionTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Function-level spy; clamp to 0..3650, blank-keeps-saved and the blur rewrite untested."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1070",
         "verdict": "Partly"
@@ -44925,13 +44950,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/logs/retention-section.test.tsx",
           "name": "refuses a file activity setting outside 0 to 3650 and a blank one"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogRetentionTests.cs",
+          "name": "SystemLogRetentionTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "`useProcessingOperatorSettingsSaveMutation` is mocked: the PUT `/processing/operator-settings` body is asserted only as a function argument; refresh of the files list after save (`processingKeys.files`) untested. Contract covers the API."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1071",
         "verdict": "Partly"
@@ -45171,15 +45196,20 @@
       "proofs": [
         {
           "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogStatesTests.cs",
+          "name": "SystemLogStatesTests"
+        },
+        {
+          "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/LiveConnectionTests.cs",
           "name": "LiveConnectionTests"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/log-summary.test.ts",
+          "name": "logSummaryWords"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The Log card header always reads \"... · live\" with a green dot (`StatusDot meaning=\"done\"`) whatever the connection; nothing asserts it stops claiming live (or that the banner appears) while on Logs or About. P1-weighted given the \"say when the live link drops\" rule."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1081",
         "verdict": "Partly"
@@ -45208,13 +45238,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/logs/unified-log.test.tsx",
           "name": "says when nothing has been logged, and when nothing matches the filters"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogStatesTests.cs",
+          "name": "SystemLogStatesTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "The loading text (\"Loading the log...\") and the wording of the unreadable error are not asserted."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1082",
         "verdict": "Partly"
@@ -45233,13 +45263,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/logs/unified-log.test.tsx",
           "name": "says how many entries there are and that it is live"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogSummaryTests.cs",
+          "name": "SystemLogSummaryTests"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/log-summary.test.ts",
+          "name": "logSummaryWords"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "`logSummaryWords` (`log-summary.ts`) has no unit test; the Showing/matching forms are not asserted."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1083",
         "verdict": "Partly"
@@ -45313,13 +45348,18 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/System/SystemLogExportTests.cs",
           "name": "SystemLogExportTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogRequestTests.cs",
+          "name": "SystemLogRequestTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogSummaryTests.cs",
+          "name": "SystemLogSummaryTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "P1-weighted: every filter reaches the server through this function and only 2 of about 15 parameters are asserted; `logQuery` (LFT, pure) is tested but its output is not pushed through the path builder in a test."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1086",
         "verdict": "Partly"
@@ -45436,13 +45476,53 @@
           "type": "vitest",
           "file": "apps/web/src/lib/settings/settings-api.test.ts",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemBackupScheduleTests.cs",
+          "name": "SystemBackupScheduleTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemBackupNowTests.cs",
+          "name": "SystemBackupNowTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemRestoreBackupTests.cs",
+          "name": "SystemRestoreBackupTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogClearEventsTests.cs",
+          "name": "SystemLogClearEventsTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogDownloadTests.cs",
+          "name": "SystemLogDownloadTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemLogRetentionTests.cs",
+          "name": "SystemLogRetentionTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemUpdatePreferencesTests.cs",
+          "name": "SystemUpdatePreferencesTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemUpdateStatusTests.cs",
+          "name": "SystemUpdateStatusTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemUpdateLiveTests.cs",
+          "name": "SystemUpdateLiveTests"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "P1-weighted: the other ~13 functions have no test of method, URL, CSRF placement or error text; component tests spy on them. A wrong verb or path (restore, clear events, update steps) would pass vitest and only the contract/E2E layers could notice, and E2E clicks none of the restore / clear / backup / password controls."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-1092",
         "verdict": "Partly"
@@ -49107,7 +49187,7 @@
         "kind": "xunit",
         "test": "Real Deluno's destinations answer is exercised only through \"chain ready\"; mismatch cases and older-Deluno fallbacks are fakes"
       },
-      "issue": 1057,
+      "issue": 1142,
       "audit": {
         "id": "INT-DEL-11",
         "verdict": "Partly"
@@ -51030,7 +51110,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/ReleaseBackupRestoreTests.cs",
+          "name": "ReleaseBackupRestoreTests"
+        }
+      ],
       "partial": [
         {
           "type": "contract",
@@ -51103,11 +51189,6 @@
           "name": "LiveAudit"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "A backup file written by an earlier released version is restored only from synthetic text in the tests, and no test restores onto a differently configured install and compares every section afterwards (the round-trip tests restore the same state); the UI restore step is manual (docs/smoke-checklists.md 16-17)"
-      },
-      "issue": 1004,
       "audit": {
         "id": "PLAT-21",
         "verdict": "Partly"
@@ -51176,7 +51257,18 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/ReleaseUpgradeTests.cs",
+          "name": "ReleaseUpgradeTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/ReleaseDatabaseUpgradeTests.cs",
+          "name": "ReleaseDatabaseUpgradeTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -51204,11 +51296,6 @@
           "name": "update-over-installed-weir"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "No test upgrades a database written by each earlier released version (rc.1 to rc.15) with real data; per-migration tests cover most data-moving steps (0002-0006, 0027, 0029, 0030, 0031...) but migration 0009 (a 35-statement rebuild of the rule-set and library tables) has no test of its own beyond the full-chain runs"
-      },
-      "issue": 1005,
       "audit": {
         "id": "PLAT-23",
         "verdict": "Partly"
@@ -59847,6 +59934,39 @@
         "setting:env:WEIR_PERIODIC_TASK_SPEEDUP",
         "task:SpedUpPeriodicTask"
       ]
+    },
+    {
+      "id": "settings.new.env-weir-releases-feed-url",
+      "area": "settings",
+      "behaviour": "WEIR_RELEASES_FEED_URL (tests only): the release feed Weir reads its news of a newer release from instead of GitHub's, so a browser test can play a recorded feed; refused at start when WEIR_ENV is production or when it is not an http or https address",
+      "kind": "setting",
+      "severity": "low",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Configuration/WeirOptionsParsingTests.cs",
+          "name": "A_release_feed_is_refused_at_start_in_production"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/GitHubReleaseCatalogClientTests.cs",
+          "name": "A_test_can_name_the_feed_to_read_and_nothing_else_is_asked"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemUpdateStatusTests.cs",
+          "name": "SystemUpdateStatusTests"
+        }
+      ],
+      "covers": [
+        "setting:env:WEIR_RELEASES_FEED_URL"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Partly"
+      }
     },
     {
       "id": "settings.env.notification-stand-in-port",

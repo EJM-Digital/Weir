@@ -134,11 +134,7 @@ export function SystemPage() {
           ) : tab === "security" ? (
             <SecurityTab />
           ) : (
-            <LogsTab
-              form={form}
-              editable={editable}
-              savedLogDays={settings.log_retention_days}
-            />
+            <LogsTab form={form} editable={editable} />
           )}
         </div>
       </WorkspacePanel>

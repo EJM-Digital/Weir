@@ -1,0 +1,78 @@
+# Makes the database fixtures and the configuration backups of published releases (scripts/make-release-fixtures.mjs): it pulls
+# each release's image from ghcr.io, runs the contract suite's short scripted session against the Weir program inside it, and
+# uploads what that program wrote. Run it by hand with the versions to add (Actions > Release fixtures > Run workflow), download the
+# "release-fixtures" artifact, and commit its two folders in place of the ones in apps/server/tests/fixtures.
+# scripts/check-release-fixtures.mjs fails CI while the newest fixture is more than one release behind.
+name: Release fixtures
+
+on:
+  workflow_dispatch:
+    inputs:
+      versions:
+        description: Release versions to make fixtures for, separated by spaces (for example 1.0.0-rc.18 1.0.0-rc.19).
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+jobs:
+  fixtures:
+    name: release fixtures
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      WEIR_SESSION_SECRET: ${{ github.run_id }}-release-fixtures-${{ github.run_attempt }}-session-secret-32chars-min
+      VERSIONS: ${{ inputs.versions || '1.0.0-rc.10 1.0.0-rc.11 1.0.0-rc.12 1.0.0-rc.13 1.0.0-rc.17 1.0.0-rc.18' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+
+      - uses: ./.github/actions/setup-ffmpeg-linux
+        timeout-minutes: 10
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: apps/server/global.json
+          cache: true
+          cache-dependency-path: apps/server/**/packages.lock.json
+
+      - name: Build the contract suite
+        working-directory: apps/server
+        run: |
+          dotnet restore tests/Weir.Contract.Tests --locked-mode
+          dotnet build tests/Weir.Contract.Tests --no-restore
+
+      # Every server the session starts keeps its data folder under TMPDIR, the folder the script scrubs out of what it writes.
+      - name: Make the fixtures
+        env:
+          TMPDIR: ${{ runner.temp }}/weir-fixture-session
+        run: |
+          mkdir -p "$TMPDIR"
+          node scripts/make-release-fixtures.mjs $VERSIONS
+
+      - name: Say what was made
+        run: |
+          {
+            echo '### Release fixtures'
+            echo
+            echo '```json'
+            cat apps/server/tests/fixtures/databases/manifest.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the fixtures
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-fixtures
+          retention-days: 14
+          path: |
+            apps/server/tests/fixtures/databases
+            apps/server/tests/fixtures/recorded/backups

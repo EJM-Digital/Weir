@@ -37,18 +37,6 @@ public readonly record struct Timestamp(DateTime Clock, TimeSpan? Offset)
     /// <summary>The instant, treating a naive value as UTC.</summary>
     public DateTime AsUtc => Offset is { } offset ? DateTime.SpecifyKind(Clock - offset, DateTimeKind.Utc) : DateTime.SpecifyKind(Clock, DateTimeKind.Utc);
 
-    /// <summary>Converts to UTC; unlike <see cref="AsUtc"/>, a naive value is taken as the machine's local time.</summary>
-    public Timestamp AstimezoneUtc()
-    {
-        if (Offset is { } offset)
-        {
-            return new Timestamp(DateTime.SpecifyKind(Clock - offset, DateTimeKind.Unspecified), TimeSpan.Zero);
-        }
-
-        var utc = TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(Clock, DateTimeKind.Unspecified), TimeZoneInfo.Local);
-        return new Timestamp(DateTime.SpecifyKind(utc, DateTimeKind.Unspecified), TimeSpan.Zero);
-    }
-
     /// <summary>The SQLite text form: the wall clock only, offset dropped.</summary>
     public string ToSqlite() => Clock.ToString(SqliteFormat, CultureInfo.InvariantCulture);
 

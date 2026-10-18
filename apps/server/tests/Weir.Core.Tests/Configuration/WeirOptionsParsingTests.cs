@@ -298,6 +298,43 @@ public sealed class WeirOptionsParsingTests
         Assert.Equal(WeirOptionsLoader.PeriodicTaskSpeedUpInProductionMessage, refused.Message);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void No_release_feed_is_played_unless_a_test_names_one(string? raw) =>
+        Assert.Null(TestRuntime.Load(("WEIR_ENV", "development"), ("WEIR_RELEASES_FEED_URL", raw ?? string.Empty)).ReleasesFeedUrl);
+
+    [Theory]
+    [InlineData("http://localhost:5050/releases.atom")]
+    [InlineData("  https://example.test/feed.atom  ", "https://example.test/feed.atom")]
+    public void A_release_feed_a_test_names_is_read_as_given(string raw, string? expected = null) =>
+        Assert.Equal(expected ?? raw, TestRuntime.Load(("WEIR_ENV", "development"), ("WEIR_RELEASES_FEED_URL", raw)).ReleasesFeedUrl);
+
+    [Theory]
+    [InlineData("releases.atom")]
+    [InlineData("ftp://example.test/releases.atom")]
+    [InlineData("http://")]
+    public void A_release_feed_that_is_not_an_http_address_refuses_to_start(string raw)
+    {
+        var refused = Assert.Throws<WeirConfigurationException>(() => TestRuntime.Load(("WEIR_ENV", "development"), ("WEIR_RELEASES_FEED_URL", raw)));
+
+        Assert.Equal(WeirOptionsLoader.ReleasesFeedNotAnAddressMessage, refused.Message);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("production")]
+    [InlineData(" Production ")]
+    public void A_release_feed_is_refused_at_start_in_production(string? env)
+    {
+        var refused = Assert.Throws<WeirConfigurationException>(() => env is null
+            ? TestRuntime.Load(("WEIR_RELEASES_FEED_URL", "http://localhost:5050/releases.atom"))
+            : TestRuntime.Load(("WEIR_ENV", env), ("WEIR_RELEASES_FEED_URL", "http://localhost:5050/releases.atom")));
+
+        Assert.Equal(WeirOptionsLoader.ReleasesFeedInProductionMessage, refused.Message);
+    }
+
     [Fact]
     public void A_periodic_task_speed_up_of_one_is_no_speed_up_and_starts_in_production() =>
         Assert.Equal(1, TestRuntime.Load(("WEIR_ENV", "production"), ("WEIR_PERIODIC_TASK_SPEEDUP", "1")).PeriodicTaskSpeedUp);

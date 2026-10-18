@@ -9,11 +9,9 @@ import { UnifiedLog } from "./unified-log";
 export function LogsTab({
   form,
   editable,
-  savedLogDays,
 }: {
   form: SystemSettingsForm;
   editable: boolean;
-  savedLogDays: number;
 }) {
   const settings = useLogSettingsPanel();
   return (
@@ -24,7 +22,6 @@ export function LogsTab({
         onClose={settings.close}
         form={form}
         editable={editable}
-        savedLogDays={savedLogDays}
       />
     </div>
   );
