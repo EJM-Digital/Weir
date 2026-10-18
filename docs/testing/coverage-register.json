@@ -17250,7 +17250,7 @@
           "name": "apiFetch timeouts"
         }
       ],
-      "issue": 1051,
+      "issue": 1142,
       "audit": {
         "id": "WEB-084",
         "verdict": "Partly"
@@ -17371,7 +17371,7 @@
           "name": "Logout_rejects_missing_csrf"
         }
       ],
-      "issue": 1051,
+      "issue": 1142,
       "audit": {
         "id": "WEB-088",
         "verdict": "Partly"
@@ -17395,9 +17395,18 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/Support/Navigation.cs",
           "name": "Navigation"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SignInTests.cs",
+          "name": "Signing_in_sends_the_trimmed_name_lands_on_the_Dashboard_signed_in_and_never_returns_to_the_form"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SignInTests.cs",
+          "name": "Trusting_the_device_is_reached_and_chosen_by_keyboard_alone_and_the_session_is_kept_as_trusted"
         }
       ],
-      "issue": 1051,
       "audit": {
         "id": "WEB-089",
         "verdict": "Partly"
@@ -17421,9 +17430,13 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthBootstrapTests.cs",
           "name": "Bootstrap_returns_a_working_session"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
+          "name": "Creating_the_account_sends_the_trimmed_name_signs_in_and_closes_account_creation"
         }
       ],
-      "issue": 1051,
       "audit": {
         "id": "WEB-090",
         "verdict": "Partly"
@@ -17522,9 +17535,23 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthApiTests.cs",
           "name": "Login_me_logout_flow"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SignInTests.cs",
+          "name": "Signing_in_sends_the_trimmed_name_lands_on_the_Dashboard_signed_in_and_never_returns_to_the_form"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SignInTests.cs",
+          "name": "A_name_Weir_does_not_know_is_refused_in_the_same_words_as_a_wrong_password_and_nothing_is_signed_in"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SignInTests.cs",
+          "name": "Trusting_the_device_is_reached_and_chosen_by_keyboard_alone_and_the_session_is_kept_as_trusted"
         }
       ],
-      "issue": 1051,
       "audit": {
         "id": "WEB-093",
         "verdict": "Partly"
@@ -17543,6 +17570,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
           "name": "explains that the password was right but the session did not stick, and what to set"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SignInTests.cs",
+          "name": "The_page_says_why_the_person_is_there_when_it_is_opened_with_a_reason"
         }
       ],
       "audit": {
@@ -17568,6 +17600,11 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/SignInRefusalTests.cs",
           "name": "SignInRefusalTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SignInTests.cs",
+          "name": "A_name_Weir_does_not_know_is_refused_in_the_same_words_as_a_wrong_password_and_nothing_is_signed_in"
         }
       ],
       "audit": {
@@ -17588,6 +17625,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
           "name": "tells a person who tried too often to wait and try again, whether the address or the account was limited"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SignInTests.cs",
+          "name": "Too_many_attempts_from_one_address_are_refused_in_plain_words_with_the_wait_and_the_form_stays_usable"
         }
       ],
       "audit": {
@@ -17628,6 +17670,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/auth/login-page.test.tsx",
           "name": "offers trust this device, off by default"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SignInTests.cs",
+          "name": "Trusting_the_device_is_reached_and_chosen_by_keyboard_alone_and_the_session_is_kept_as_trusted"
         }
       ],
       "audit": {
@@ -17648,6 +17695,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/auth/login-page-requests.test.tsx",
           "name": "sends trusted_device as true when Trust this device is ticked"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SignInTests.cs",
+          "name": "Trusting_the_device_is_reached_and_chosen_by_keyboard_alone_and_the_session_is_kept_as_trusted"
         }
       ],
       "audit": {
@@ -17688,6 +17740,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/auth/login-page.test.tsx",
           "name": "shows the bootstrap-created banner from the query string"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SignInTests.cs",
+          "name": "The_page_says_why_the_person_is_there_when_it_is_opened_with_a_reason"
         }
       ],
       "audit": {
@@ -17708,9 +17765,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/FirstVisitTests.cs",
           "name": "FirstVisitTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
+          "name": "On_a_fresh_install_sign_in_leads_to_account_creation_and_the_two_pages_link_to_each_other"
         }
       ],
-      "issue": 1051,
       "audit": {
         "id": "WEB-102",
         "verdict": "Partly"
@@ -17724,12 +17785,17 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SignInTests.cs",
+          "name": "Someone_already_signed_in_who_opens_the_sign_in_address_is_taken_to_the_Dashboard"
+        }
+      ],
       "needs": {
         "kind": "vitest",
         "test": "vitest: useMeQuery returns a user -> Navigate to \"/\""
       },
-      "issue": 1142,
       "audit": {
         "id": "WEB-103",
         "verdict": "Gap"
@@ -17750,7 +17816,7 @@
           "name": "*"
         }
       ],
-      "issue": 1051,
+      "issue": 1142,
       "audit": {
         "id": "WEB-104",
         "verdict": "Partly"
@@ -17764,12 +17830,17 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SignInTests.cs",
+          "name": "The_page_fits_a_phone_and_the_password_box_shows_and_hides_its_text"
+        }
+      ],
       "needs": {
         "kind": "vitest",
         "test": "vitest: click toggle, input type text/password, aria-label Show/Hide, cleared on empty"
       },
-      "issue": 1142,
       "audit": {
         "id": "WEB-105",
         "verdict": "Gap"
@@ -17862,6 +17933,16 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthBootstrapTests.cs",
           "name": "AuthBootstrapTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
+          "name": "Creating_the_account_sends_the_trimmed_name_signs_in_and_closes_account_creation"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupCodeTests.cs",
+          "name": "From_another_device_the_page_asks_for_the_code_refuses_a_wrong_one_and_accepts_the_one_Weir_wrote"
         }
       ],
       "audit": {
@@ -17887,6 +17968,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthBootstrapTests.cs",
           "name": "Bootstrap_rejects_short_password"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
+          "name": "A_password_shorter_than_eight_characters_is_stopped_by_the_browser_and_nothing_is_sent"
         }
       ],
       "audit": {
@@ -17907,6 +17993,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/setup/setup-page.test.tsx",
           "name": "blocks bootstrap submit when the confirmation does not match"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
+          "name": "A_blank_name_and_passwords_that_differ_are_refused_before_anything_is_sent_and_typing_clears_the_reason"
         }
       ],
       "audit": {
@@ -17922,12 +18013,17 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
+          "name": "A_blank_name_and_passwords_that_differ_are_refused_before_anything_is_sent_and_typing_clears_the_reason"
+        }
+      ],
       "needs": {
         "kind": "vitest",
         "test": "vitest: whitespace-only username submitted -> alert, mutation not called"
       },
-      "issue": 1142,
       "audit": {
         "id": "WEB-112",
         "verdict": "Gap"
@@ -17941,12 +18037,22 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
+          "name": "A_blank_name_and_passwords_that_differ_are_refused_before_anything_is_sent_and_typing_clears_the_reason"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
+          "name": "A_name_that_is_taken_is_refused_with_409_and_a_new_name_then_creates_the_account"
+        }
+      ],
       "needs": {
         "kind": "vitest",
         "test": "vitest: edit a field after an error, alert disappears"
       },
-      "issue": 1142,
       "audit": {
         "id": "WEB-113",
         "verdict": "Gap"
@@ -17970,6 +18076,16 @@
           "type": "vitest",
           "file": "apps/web/src/pages/setup/setup-page.test.tsx",
           "name": "requires and submits the setup code when the peer needs one"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupCodeTests.cs",
+          "name": "From_another_device_the_page_asks_for_the_code_refuses_a_wrong_one_and_accepts_the_one_Weir_wrote"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupCodeTests.cs",
+          "name": "From_the_device_Weir_runs_on_there_is_no_code_to_enter_even_while_Weir_holds_one"
         }
       ],
       "audit": {
@@ -18000,9 +18116,23 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthBootstrapTests.cs",
           "name": "Bootstrap_rejects_common_password"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
+          "name": "The_server_refuses_a_weak_password_in_its_own_words_and_the_form_keeps_what_was_typed"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
+          "name": "A_name_that_is_taken_is_refused_with_409_and_a_new_name_then_creates_the_account"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupCodeTests.cs",
+          "name": "From_another_device_the_page_asks_for_the_code_refuses_a_wrong_one_and_accepts_the_one_Weir_wrote"
         }
       ],
-      "issue": 1051,
       "audit": {
         "id": "WEB-115",
         "verdict": "Partly"
@@ -18061,7 +18191,7 @@
           "name": "*"
         }
       ],
-      "issue": 1051,
+      "issue": 1142,
       "audit": {
         "id": "WEB-118",
         "verdict": "Partly"
@@ -18075,12 +18205,17 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
+          "name": "On_a_fresh_install_sign_in_leads_to_account_creation_and_the_two_pages_link_to_each_other"
+        }
+      ],
       "needs": {
         "kind": "vitest",
         "test": "vitest: link goes to /login with state.manualSignIn so Login does not bounce back"
       },
-      "issue": 1142,
       "audit": {
         "id": "WEB-119",
         "verdict": "Gap"
@@ -18094,12 +18229,17 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
+          "name": "Each_password_box_shows_and_hides_its_text_and_hides_again_once_it_is_emptied"
+        }
+      ],
       "needs": {
         "kind": "vitest",
         "test": "same as 105"
       },
-      "issue": 1142,
       "audit": {
         "id": "WEB-120",
         "verdict": "Gap"
@@ -18128,6 +18268,11 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/AuthShellTests.cs",
           "name": "AuthShellTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "Finishing_with_typed_folders_fills_in_the_first_workflow_of_each_type_saves_the_settings_and_says_whats_next"
         }
       ],
       "audit": {
@@ -18153,6 +18298,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/setup/setup-wizard-page.test.tsx",
           "name": "asks how downloads reach Weir first, and will not finish without an answer"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "Finish_is_held_back_in_words_until_the_answer_and_the_output_folders_are_given_and_nothing_is_sent_meanwhile"
         }
       ],
       "audit": {
@@ -18183,6 +18333,11 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/AuthShellTests.cs",
           "name": "AuthShellTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "Finishing_with_typed_folders_fills_in_the_first_workflow_of_each_type_saves_the_settings_and_says_whats_next"
         }
       ],
       "audit": {
@@ -18218,6 +18373,11 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/SeededModuleSaveTests.cs",
           "name": "SeededModuleSaveTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "Skipping_marks_setup_skipped_changes_no_workflow_and_goes_to_the_Dashboard_for_good"
         }
       ],
       "audit": {
@@ -18307,9 +18467,23 @@
           "type": "vitest",
           "file": "apps/web/src/lib/settings/settings-api.test.ts",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "Finishing_with_typed_folders_fills_in_the_first_workflow_of_each_type_saves_the_settings_and_says_whats_next"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "A_folder_the_server_refuses_is_shown_in_its_words_keeps_setup_unfinished_and_can_then_be_corrected"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "Finish_is_held_back_in_words_until_the_answer_and_the_output_folders_are_given_and_nothing_is_sent_meanwhile"
         }
       ],
-      "issue": 1051,
       "audit": {
         "id": "WEB-127",
         "verdict": "Partly"
@@ -18348,6 +18522,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
           "name": "saves once the output folder is added, and clears the refusal"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "Finish_is_held_back_in_words_until_the_answer_and_the_output_folders_are_given_and_nothing_is_sent_meanwhile"
         }
       ],
       "audit": {
@@ -18373,6 +18552,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/setup/setup-wizard-page.test.tsx",
           "name": "does not mark the wizard complete when a workflow save fails first"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "A_folder_the_server_refuses_is_shown_in_its_words_keeps_setup_unfinished_and_can_then_be_corrected"
         }
       ],
       "audit": {
@@ -18478,6 +18662,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/setup/setup-wizard-finish.test.tsx",
           "name": "lets another zone be picked over one the list lacks"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "Finishing_with_typed_folders_fills_in_the_first_workflow_of_each_type_saves_the_settings_and_says_whats_next"
         }
       ],
       "audit": {
@@ -18503,9 +18692,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/setup/setup-wizard-page.test.tsx",
           "name": "completes and saves backup plus workflow starter settings"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "The_backup_boxes_are_off_until_backups_are_switched_on_keep_what_was_chosen_and_are_saved_as_chosen"
         }
       ],
-      "issue": 1051,
       "audit": {
         "id": "WEB-132",
         "verdict": "Partly"
@@ -18524,9 +18717,18 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/SeededModuleSaveTests.cs",
           "name": "SeededModuleSaveTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "The_button_says_Finish_setup_until_setup_is_done_and_the_reopened_wizard_says_Save_changes_and_saves_only_the_settings"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "Skipping_the_reopened_wizard_changes_nothing_and_does_not_turn_finished_setup_into_skipped"
         }
       ],
-      "issue": 1051,
       "audit": {
         "id": "WEB-133",
         "verdict": "Partly"
@@ -18540,12 +18742,17 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "Leaving_before_setup_is_finished_or_skipped_asks_the_browser_to_confirm_and_afterwards_does_not"
+        }
+      ],
       "needs": {
         "kind": "vitest",
         "test": "vitest: dispatch beforeunload while pending -> default prevented; not once completed/skipped"
       },
-      "issue": 1142,
       "audit": {
         "id": "WEB-134",
         "verdict": "Gap"
@@ -18593,6 +18800,11 @@
           "type": "vitest",
           "file": "apps/web/src/pages/setup/setup-wizard-connect.test.tsx",
           "name": "points at the remaining Sonarr and Radarr steps on What's next"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "Whats_next_offers_the_next_steps_and_each_one_goes_where_it_says"
         }
       ],
       "audit": {
@@ -18735,7 +18947,7 @@
           "name": "shows a line Weir could not verify as not verified, not as fine and not as a problem"
         }
       ],
-      "issue": 1051,
+      "issue": 1142,
       "audit": {
         "id": "WEB-141",
         "verdict": "Partly"
@@ -18781,7 +18993,7 @@
           "name": "says why a manager offered nothing, in the words the server used"
         }
       ],
-      "issue": 1051,
+      "issue": 1142,
       "audit": {
         "id": "WEB-143",
         "verdict": "Partly"
@@ -18802,7 +19014,7 @@
           "name": "*"
         }
       ],
-      "issue": 1051,
+      "issue": 1142,
       "audit": {
         "id": "WEB-144",
         "verdict": "Partly"

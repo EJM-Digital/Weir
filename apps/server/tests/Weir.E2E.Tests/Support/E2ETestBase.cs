@@ -47,19 +47,22 @@ public abstract class E2ETestBase(E2EServer server) : IAsyncLifetime
         }
     }
 
-    /// <summary>A page in a context of its own, at Playwright's 1280x720 unless a viewport is given.</summary>
-    protected async Task<IPage> NewPageAsync(ViewportSize? viewport = null)
+    /// <summary>A page in a context of its own, at Playwright's 1280x720 unless a viewport is given, sending <paramref name="headers"/> with every request.</summary>
+    protected async Task<IPage> NewPageAsync(ViewportSize? viewport = null, IReadOnlyDictionary<string, string>? headers = null)
     {
-        var context = await NewContextAsync(viewport);
+        var context = await NewContextAsync(viewport, headers);
         var page = await context.NewPageAsync();
         page.SetDefaultTimeout(DefaultTimeoutMs);
         return page;
     }
 
-    /// <summary>A browser context of its own, for a test that opens several pages in it. It is closed with the test.</summary>
-    protected async Task<IBrowserContext> NewContextAsync(ViewportSize? viewport)
+    /// <summary>
+    /// A browser context of its own, for a test that opens several pages in it. It is closed with the test. <paramref name="headers"/>
+    /// are sent with every request the browser makes, as a reverse proxy in front of Weir adds them.
+    /// </summary>
+    protected async Task<IBrowserContext> NewContextAsync(ViewportSize? viewport, IReadOnlyDictionary<string, string>? headers = null)
     {
-        var context = await _browser!.NewContextAsync(new BrowserNewContextOptions { ViewportSize = viewport });
+        var context = await _browser!.NewContextAsync(new BrowserNewContextOptions { ViewportSize = viewport, ExtraHTTPHeaders = headers });
         context.Page += (_, page) => Watch(page);
         await context.Tracing.StartAsync(new TracingStartOptions { Screenshots = true, Snapshots = true });
         _contexts.Add(context);

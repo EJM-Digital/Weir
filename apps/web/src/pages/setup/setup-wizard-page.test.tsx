@@ -98,13 +98,13 @@ function chooseNeither() {
   );
 }
 
-function renderWizard(role = "admin") {
+function renderWizard(wizardState = "pending", role = "admin") {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
   client.setQueryData(authKeys.me, { id: 1, username: "someone", role });
   client.setQueryData(settingsKeys.app, {
-    setup_wizard_state: "pending",
+    setup_wizard_state: wizardState,
     app_timezone: "UTC",
     log_retention_days: 30,
     configuration_backup_enabled: false,
@@ -129,7 +129,7 @@ describe("SetupWizardPage", () => {
   });
 
   it("shows a viewer who opens the wizard the notice, with no wizard and no Skip to be refused", () => {
-    renderWizard("viewer");
+    renderWizard("pending", "viewer");
 
     expect(
       screen.getByRole("heading", { name: "Weir isn't set up yet" }),
@@ -227,6 +227,21 @@ describe("SetupWizardPage", () => {
       );
     });
     expect(createLibraryMock).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith("/", { replace: true });
+    });
+  });
+
+  it("leaves a finished setup finished when the reopened wizard is skipped", async () => {
+    renderWizard("completed");
+
+    fireEvent.click(screen.getByTestId("setup-wizard-skip"));
+
+    await waitFor(() => {
+      expect(settingsMutateAsyncMock).toHaveBeenCalledWith(
+        expect.objectContaining({ setup_wizard_state: "completed" }),
+      );
+    });
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalledWith("/", { replace: true });
     });
