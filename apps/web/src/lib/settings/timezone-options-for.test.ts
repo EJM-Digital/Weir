@@ -2,8 +2,37 @@ import { describe, expect, it } from "vitest";
 
 import {
   CURATED_TIMEZONE_ID_SET,
+  CURATED_TIMEZONE_OPTIONS,
+  curatedTimezoneOptionsSorted,
   timezoneOptionsFor,
 } from "./timezone-options";
+
+describe("the curated time zone list", () => {
+  it("names only zones the browser can resolve", () => {
+    for (const { id } of CURATED_TIMEZONE_OPTIONS) {
+      expect(
+        () => new Intl.DateTimeFormat(undefined, { timeZone: id }),
+        id,
+      ).not.toThrow();
+    }
+  });
+
+  it("names each zone once", () => {
+    const ids = CURATED_TIMEZONE_OPTIONS.map((option) => option.id);
+
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("is sorted by label, each label ending in the zone's offset from UTC", () => {
+    const options = curatedTimezoneOptionsSorted();
+    const labels = options.map((option) => option.label);
+
+    expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b)));
+    for (const label of labels) {
+      expect(label, label).toMatch(/\(UTC([+-]\d{1,2}(:\d{2})?)?\)$/);
+    }
+  });
+});
 
 describe("timezoneOptionsFor", () => {
   it("offers UTC, so a server on UTC has a zone to show", () => {
