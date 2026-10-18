@@ -26325,12 +26325,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "isLoading branches are never rendered."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-page.states.test.tsx",
+          "name": "while Activity is reading"
+        }
+      ],
       "audit": {
         "id": "WEB-391",
         "verdict": "Gap"
@@ -26429,12 +26430,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The 1000-row limit note (and 'first N in this order' wording) is never rendered."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-page.states.test.tsx",
+          "name": "when the server sends as many downloads as Activity asks for"
+        }
+      ],
       "audit": {
         "id": "WEB-395",
         "verdict": "Gap"
@@ -26672,12 +26674,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "aria-current on the open row is never asserted."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-page.states.test.tsx",
+          "name": "after a file is removed from the list"
+        }
+      ],
       "audit": {
         "id": "WEB-403",
         "verdict": "Gap"
@@ -26691,12 +26694,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Rows are real buttons but no keyboard path is tested."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-page.states.test.tsx",
+          "name": "the list of files by keyboard"
+        }
+      ],
       "audit": {
         "id": "WEB-404",
         "verdict": "Gap"
@@ -27030,12 +27034,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "activity-direct-play is never rendered with data."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-detail.test.tsx",
+          "name": "names the Direct Play verdict of each of the person's devices"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-detail.test.tsx",
+          "name": "shows no Direct Play line for a file measured against no device"
+        }
+      ],
       "audit": {
         "id": "WEB-415",
         "verdict": "Gap"
@@ -27049,12 +27059,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "WorkingFigures (role=progressbar and the dl) is never rendered."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-detail.test.tsx",
+          "name": "a file Weir is working on"
+        }
+      ],
       "audit": {
         "id": "WEB-416",
         "verdict": "Gap"
@@ -27158,12 +27169,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The loading branch of RecordSection is never rendered."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-detail.test.tsx",
+          "name": "says it is reading the record while the server has not answered"
+        }
+      ],
       "audit": {
         "id": "WEB-420",
         "verdict": "Gap"
@@ -27202,12 +27214,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Both empty-record sentences (still working vs older than the File activity setting) are untested."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-detail.test.tsx",
+          "name": "says Weir has no record of a finished file whose record is gone, and names the setting that removes records"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-detail.test.tsx",
+          "name": "says a running file has no record yet because Weir has not finished with it"
+        }
+      ],
       "audit": {
         "id": "WEB-422",
         "verdict": "Gap"
@@ -27221,12 +27239,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The href (processingFileLogDownloadPath) is never asserted and the download is never followed."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-detail.test.tsx",
+          "name": "links to the download of the file's whole record"
+        }
+      ],
       "audit": {
         "id": "WEB-423",
         "verdict": "Gap"
@@ -27240,12 +27259,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Shown only for a running file; never rendered."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-detail.test.tsx",
+          "name": "offers the Dashboard, where the running file can be watched, and no size figures yet"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-detail.test.tsx",
+          "name": "offers no Dashboard link for a file that is not running, which shows its sizes instead"
+        }
+      ],
       "audit": {
         "id": "WEB-424",
         "verdict": "Gap"
@@ -27289,12 +27314,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "use-narrow-detail-focus has no test (matchMedia, scrollIntoView, focus, first-render skip)."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/use-narrow-detail-focus.test.tsx",
+          "name": "scrolls the detail into view and focuses its title when another file is picked on a narrow screen"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/use-narrow-detail-focus.test.tsx",
+          "name": "does nothing when the detail sits beside the list on a wide screen"
+        }
+      ],
       "audit": {
         "id": "WEB-426",
         "verdict": "Gap"
@@ -27308,12 +27339,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "No role=region/name assertion; the detail is inline, not a modal, so there is no Escape or focus trap to test."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-detail.test.tsx",
+          "name": "is a region labelled by the file's name, whose title takes focus by script but not by Tab"
+        }
+      ],
       "audit": {
         "id": "WEB-427",
         "verdict": "Gap"
@@ -27327,12 +27359,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "ActivityCleanDetail is never rendered."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-detail.test.tsx",
+          "name": "a library clean's detail"
+        }
+      ],
       "audit": {
         "id": "WEB-428",
         "verdict": "Gap"
@@ -27441,12 +27474,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Never rendered or clicked."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-file-buttons.requests.test.tsx",
+          "name": "Move to top"
+        }
+      ],
       "audit": {
         "id": "WEB-432",
         "verdict": "Gap"
@@ -27515,12 +27549,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Click, request (media_scope, library_id), 'Checking…' label, success and failure notices are untested."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-file-buttons.requests.test.tsx",
+          "name": "Check again"
+        }
+      ],
       "audit": {
         "id": "WEB-435",
         "verdict": "Gap"
@@ -27534,12 +27569,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Only presence is tested."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-file-buttons.requests.test.tsx",
+          "name": "Why is this held?"
+        }
+      ],
       "audit": {
         "id": "WEB-436",
         "verdict": "Gap"
@@ -27583,12 +27619,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "anyPending and every pendingLabel are never asserted."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-file-buttons.requests.test.tsx",
+          "name": "while one action runs"
+        }
+      ],
       "audit": {
         "id": "WEB-438",
         "verdict": "Gap"
@@ -27937,12 +27974,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "setRemovedNotice rendering and selectedEntry falling back to the first row are untested."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-page.states.test.tsx",
+          "name": "says so on the page and opens the next file in the list"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-page.states.test.tsx",
+          "name": "clears the notice when another file is picked"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-page.states.test.tsx",
+          "name": "clears the notice when a filter changes"
+        }
+      ],
       "audit": {
         "id": "WEB-451",
         "verdict": "Gap"
@@ -28151,12 +28199,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "KEPT_SORT_VALUES/sortRows never exercised on this table."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-page.states.test.tsx",
+          "name": "the kept files"
+        }
+      ],
       "audit": {
         "id": "WEB-458",
         "verdict": "Gap"
@@ -28245,12 +28294,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "libraries.isPending branch never rendered (the page tests mock the query as loaded)."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-page.states.test.tsx",
+          "name": "says it is loading your workflows while the list has not arrived"
+        }
+      ],
       "audit": {
         "id": "WEB-462",
         "verdict": "Gap"
@@ -28264,12 +28314,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The Library page's libraries.isError branch is never rendered; only the shared component is tested."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-page.states.test.tsx",
+          "name": "says Weir hit a problem, and offers a reload, when the workflows cannot be read"
+        }
+      ],
       "audit": {
         "id": "WEB-463",
         "verdict": "Gap"
@@ -28283,12 +28334,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "NoLibrary never rendered."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-page.states.test.tsx",
+          "name": "points to Setup > Workflows when no workflow is set up"
+        }
+      ],
       "audit": {
         "id": "WEB-464",
         "verdict": "Gap"
@@ -28467,12 +28519,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A reload or a shared link loses the search, the page, the reason filter and the open file; ?q= and ?path= on load are not tested either. (Sort is kept in this browser's storage, which is tested.)"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-page.states.test.tsx",
+          "name": "what the address holds"
+        }
+      ],
       "audit": {
         "id": "WEB-470",
         "verdict": "Gap"
@@ -29011,12 +29064,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "files.isPending and files.isError branches are never rendered."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-page.states.test.tsx",
+          "name": "while the files of the workflow are read"
+        }
+      ],
       "audit": {
         "id": "WEB-489",
         "verdict": "Gap"
@@ -29400,12 +29454,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "preview.isPending and isError never rendered."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-file-drawer.states.test.tsx",
+          "name": "the tracks in the file panel"
+        }
+      ],
       "audit": {
         "id": "WEB-505",
         "verdict": "Gap"
@@ -29469,12 +29524,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The toggle back from choosing is never clicked."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-file-drawer.states.test.tsx",
+          "name": "hands the choice back to the workflow's rules, which show again with their reasons"
+        }
+      ],
       "audit": {
         "id": "WEB-508",
         "verdict": "Gap"
@@ -29538,12 +29594,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "preview.refetch and its 'Checking…' label untested."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-file-drawer.states.test.tsx",
+          "name": "checking the file again"
+        }
+      ],
       "audit": {
         "id": "WEB-511",
         "verdict": "Gap"
@@ -29632,12 +29689,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "href never asserted."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-file-drawer.states.test.tsx",
+          "name": "the rules link"
+        }
+      ],
       "audit": {
         "id": "WEB-515",
         "verdict": "Gap"
@@ -29651,12 +29709,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "FileHistory never rendered with items."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-file-drawer.states.test.tsx",
+          "name": "what has happened to the file"
+        }
+      ],
       "audit": {
         "id": "WEB-516",
         "verdict": "Gap"
@@ -29670,12 +29729,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Reset on switching file untested."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-file-drawer.states.test.tsx",
+          "name": "starts the track choice again when another file is opened"
+        }
+      ],
       "audit": {
         "id": "WEB-517",
         "verdict": "Gap"
@@ -30034,12 +30094,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "iconOnly / data-icon-only never asserted; layout fit is jsdom-faked elsewhere."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-header-controls.test.tsx",
+          "name": "Library setup in a header short of room"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-header-controls.test.tsx",
+          "name": "Check again in a header short of room"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-header-controls.test.tsx",
+          "name": "the Library page's header"
+        }
+      ],
       "audit": {
         "id": "WEB-532",
         "verdict": "Gap"
@@ -30133,12 +30204,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The Enter key, ServerFolderPickerButton onSelect, blank and duplicate handling are untested here."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-setup-folders.test.tsx",
+          "name": "adding a folder to a workflow's library"
+        }
+      ],
       "audit": {
         "id": "WEB-536",
         "verdict": "Gap"
@@ -30262,12 +30334,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "disabled state when folders is empty untested."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-setup-folders.test.tsx",
+          "name": "the daily clean of a library with no folder"
+        }
+      ],
       "audit": {
         "id": "WEB-542",
         "verdict": "Gap"
@@ -30496,12 +30569,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Invalidation of settings, files and overview after save is untested."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-page.states.test.tsx",
+          "name": "shows the new folders when the setup is opened again, and reads the files and the counts again"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-page.states.test.tsx",
+          "name": "leaves the prompt to set up a workflow once it has gained a folder"
+        }
+      ],
       "audit": {
         "id": "WEB-553",
         "verdict": "Gap"
@@ -41150,12 +41229,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The page test seeds every query so pending never shows."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.states.test.tsx",
+          "name": "says it is loading settings until the settings arrive"
+        }
+      ],
       "audit": {
         "id": "WEB-940",
         "verdict": "Gap"
@@ -41169,12 +41249,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Needs three vitest cases rejecting the settings query with a network error, an HTTP error and a plain error."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.states.test.tsx",
+          "name": "while System reads its settings"
+        }
+      ],
       "audit": {
         "id": "WEB-941",
         "verdict": "Gap"
@@ -41188,12 +41269,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: make a draft dirty, navigate to another route, assert the dialog, Stay keeps the draft, Leave proceeds, a tab switch does not open it; plus a `beforeunload` assertion."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.states.test.tsx",
+          "name": "leaving System with changes that are not saved"
+        }
+      ],
       "audit": {
         "id": "WEB-942",
         "verdict": "Gap"
@@ -41242,12 +41324,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: type into a retention box, push changed settings through the query, assert the draft resets; push an identical copy, assert it is kept."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.states.test.tsx",
+          "name": "a fresh read of the settings"
+        }
+      ],
       "audit": {
         "id": "WEB-944",
         "verdict": "Gap"
@@ -41321,12 +41404,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest of `ThisWeirSection` with an update status: version text, chip label and `data-status` for up_to_date / update_available / unavailable."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/about-tab.states.test.tsx",
+          "name": "This Weir: the version and what the update check says of it"
+        }
+      ],
       "audit": {
         "id": "WEB-948",
         "verdict": "Gap"
@@ -41340,12 +41424,13 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest asserting the three rows for each `runs_as`, and `addressWords` with and without a port."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/about-tab.states.test.tsx",
+          "name": "This Weir: where it runs"
+        }
+      ],
       "audit": {
         "id": "WEB-949",
         "verdict": "Gap"
@@ -41449,12 +41534,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Same component test; also assert the link target `/setup/performance`."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/about-tab.states.test.tsx",
+          "name": "Media tools: what Weir writes with"
+        }
+      ],
       "audit": {
         "id": "WEB-954",
         "verdict": "Gap"
@@ -41528,12 +41614,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with the status query pending and rejected."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/about-tab.states.test.tsx",
+          "name": "Updates: while Weir asks and when it cannot"
+        }
+      ],
       "audit": {
         "id": "WEB-957",
         "verdict": "Gap"
@@ -41907,12 +41994,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: toggle, assert `putUpdateSettings({...,check_on_startup:false})` and the saved note."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/about-tab.states.test.tsx",
+          "name": "saves Check on startup being switched off with the other choices as they were, and says so"
+        }
+      ],
       "audit": {
         "id": "WEB-971",
         "verdict": "Gap"
@@ -41926,12 +42014,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: change the select, assert body `check_interval_minutes`."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/about-tab.states.test.tsx",
+          "name": "saves the interval chosen, in minutes"
+        }
+      ],
       "audit": {
         "id": "WEB-972",
         "verdict": "Gap"
@@ -41945,12 +42034,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with a rejected `putUpdateSettings`, a pending and a failed settings query."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/about-tab.states.test.tsx",
+          "name": "says the preferences could not be loaded when the server cannot give them"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/about-tab.states.test.tsx",
+          "name": "says it is loading the preferences until they arrive"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/about-tab.states.test.tsx",
+          "name": "says the settings could not be saved, and no saved note, when the server fails"
+        }
+      ],
       "audit": {
         "id": "WEB-973",
         "verdict": "Gap"
@@ -42295,12 +42395,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with `putAppSettings` rejecting."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.states.test.tsx",
+          "name": "says the time zone could not be saved when the server fails, and keeps Save for another try"
+        }
+      ],
       "audit": {
         "id": "WEB-985",
         "verdict": "Gap"
@@ -42314,12 +42415,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest as viewer: picker disabled, no Save."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.states.test.tsx",
+          "name": "is shown to a viewer with the picker off and no Save"
+        }
+      ],
       "audit": {
         "id": "WEB-986",
         "verdict": "Gap"
@@ -42333,12 +42435,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "See WEB-942."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.states.test.tsx",
+          "name": "asks first when a time zone has been picked and not saved"
+        }
+      ],
       "audit": {
         "id": "WEB-987",
         "verdict": "Gap"
@@ -42352,12 +42455,13 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest asserting the `LICENSE_URL` / `REPOSITORY_URL` hrefs and `rel`."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/about-footer.test.tsx",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-988",
         "verdict": "Gap"
@@ -42486,12 +42590,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Assert the status text appears after the save and clears on the next edit."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.states.test.tsx",
+          "name": "goes away when the schedule is changed again, and Save schedule is offered again"
+        }
+      ],
       "audit": {
         "id": "WEB-994",
         "verdict": "Gap"
@@ -42645,12 +42750,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: click, assert `fetchStoredConfigurationBackupBlob(id)` and the sanitised name (`[^\\w.-]` -> `_`, 120 chars); failure \"Could not download snapshot.\""
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.states.test.tsx",
+          "name": "Backups: downloading one stored backup"
+        }
+      ],
       "audit": {
         "id": "WEB-999",
         "verdict": "Gap"
@@ -42754,12 +42860,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: bad JSON text -> \"This file is not valid JSON.\"; same file twice."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.states.test.tsx",
+          "name": "says a file that is not JSON is not valid JSON, and opens no dialog"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.states.test.tsx",
+          "name": "says a JSON file that is not a Weir export is not one, and opens no dialog"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.states.test.tsx",
+          "name": "asks again when the same file is chosen a second time, after the first choice was set aside"
+        }
+      ],
       "audit": {
         "id": "WEB-1004",
         "verdict": "Gap"
@@ -42793,12 +42910,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with the blob fetch rejecting and with a non-bundle blob."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.states.test.tsx",
+          "name": "says a stored backup could not be read when the server cannot give it, and opens no dialog"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.states.test.tsx",
+          "name": "says a stored backup that is not a Weir export is not one, and opens no dialog"
+        }
+      ],
       "audit": {
         "id": "WEB-1006",
         "verdict": "Gap"
@@ -42832,12 +42955,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest for loading, LoadError and the empty note."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.states.test.tsx",
+          "name": "Backups: the list of stored backups"
+        }
+      ],
       "audit": {
         "id": "WEB-1008",
         "verdict": "Gap"
@@ -42871,12 +42995,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Assert `suite-configuration-backup-directory` shows the directory and the count line."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.states.test.tsx",
+          "name": "shows the folder the backups are kept in and how many are kept"
+        }
+      ],
       "audit": {
         "id": "WEB-1010",
         "verdict": "Gap"
@@ -42890,12 +43015,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The existing test is vacuous: it clicks the About tab and checks that the backups test id is absent. Needs a viewer opening `?tab=backups` and asserting none of Back up now / Download settings / Restore from file / Save schedule exist (server already refuses: contract `Configuration_backups_forbidden_for_viewer`)."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.states.test.tsx",
+          "name": "shows none of the controls that back up, download, restore or change the schedule"
+        }
+      ],
       "audit": {
         "id": "WEB-1011",
         "verdict": "Gap"
@@ -42909,12 +43035,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with a pending action."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backups-tab.states.test.tsx",
+          "name": "Backups: while one action runs"
+        }
+      ],
       "audit": {
         "id": "WEB-1012",
         "verdict": "Gap"
@@ -42928,12 +43055,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "See WEB-942."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.states.test.tsx",
+          "name": "never asks when moving between System's own tabs, and keeps the schedule that was changed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.states.test.tsx",
+          "name": "asks first when the backup schedule has been changed, and Stay here keeps the change"
+        }
+      ],
       "audit": {
         "id": "WEB-1013",
         "verdict": "Gap"
@@ -44631,12 +44764,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "`ServerDiagnostics` values and the pure formatters in `server-log-format.ts` (`formatRuntimeUptime`, `formatAverageMs`, `requestIssueSummary`) have no test; loading and error states untested."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/server-diagnostics.test.tsx",
+          "name": "Server diagnostics"
+        }
+      ],
       "audit": {
         "id": "WEB-1075",
         "verdict": "Gap"
@@ -44710,12 +44844,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "jsdom reports top 0 so `atTop` is always true; needs a test stubbing `getBoundingClientRect().top < 0` and one with older pages loaded."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/use-calm-feed.test.tsx",
+          "name": "the log's calm feed"
+        }
+      ],
       "audit": {
         "id": "WEB-1078",
         "verdict": "Gap"
@@ -44964,12 +45099,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Also `filenameFromDisposition` (`lib/api/activity-api.ts`, used by this export) has no test anywhere."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/system/system-log-export.test.tsx",
+          "name": "exporting the log"
+        }
+      ],
       "audit": {
         "id": "WEB-1087",
         "verdict": "Gap"
@@ -45003,12 +45139,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Only `toolVersion` parsing is tested (`media-tools.test.ts`). The endpoint has no contract test either (only Infrastructure unit tests)."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/system/system-log-export.test.tsx",
+          "name": "the media tools Weir found"
+        }
+      ],
       "audit": {
         "id": "WEB-1089",
         "verdict": "Gap"

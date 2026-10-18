@@ -1,7 +1,12 @@
 import { vi } from "vitest";
 
 /** What a running Weir server answered once: its status and the body text it sent, kept as recorded. */
-export type RecordedReply = { status: number; body: string };
+/** A reply the server recorded: its status and body, and the headers a page reads from it (a file name in Content-Disposition). */
+export type RecordedReply = {
+  status: number;
+  body: string;
+  headers?: Record<string, string>;
+};
 
 /** A request the page made, as the server would have seen it. */
 export type SentRequest = {
@@ -86,7 +91,7 @@ export function serveRecordedReplies(routes: RecordedRoutes): RecordedWeir {
       const answer = (reply: RecordedReply) =>
         new Response(reply.body, {
           status: reply.status,
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...reply.headers },
         });
       if (typeof route === "function") return route().then(answer);
       const replies = Array.isArray(route) ? route : [route];
