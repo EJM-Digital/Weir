@@ -55,11 +55,25 @@ public interface IExternalJsonPoster
 /// </summary>
 public sealed class ExternalJsonPoster : IExternalJsonPoster
 {
+    /// <summary>The address a name resolves to when a test has stood in for the network: public, and never connected to.</summary>
+    private static readonly IPAddress StandInResolvedAddress = IPAddress.Parse("93.184.216.34");
+
+    private readonly int? _standInPort;
+
+    /// <param name="standInPort">
+    /// For tests only (<see cref="Weir.Core.Configuration.WeirOptions.NotificationStandInPort"/>): when set, every name resolves to a public address and the
+    /// connection goes to this port on this machine, so the address checks run as they do for real and only the destination is the test's.
+    /// </param>
+    public ExternalJsonPoster(int? standInPort = null)
+    {
+        _standInPort = standInPort;
+    }
+
     public async Task<int> PostJsonAsync(string url, byte[] body, IReadOnlyDictionary<string, string> headers, TimeSpan timeout, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(body);
         ArgumentNullException.ThrowIfNull(headers);
-        var endpoint = await ResolveAsync(url, cancellationToken).ConfigureAwait(false);
+        var endpoint = await ResolveAsync(url, _standInPort is null ? null : StandInResolve, cancellationToken).ConfigureAwait(false);
         using var handler = new SocketsHttpHandler
         {
             AllowAutoRedirect = false,
@@ -70,7 +84,9 @@ public sealed class ExternalJsonPoster : IExternalJsonPoster
             {
                 try
                 {
-                    return await LoopbackFirstConnect.ConnectAsync([endpoint.Address], endpoint.Port, token).ConfigureAwait(false);
+                    return _standInPort is { } standIn
+                        ? await LoopbackFirstConnect.ConnectAsync(LoopbackFirstConnect.LoopbackAddresses(), standIn, token).ConfigureAwait(false)
+                        : await LoopbackFirstConnect.ConnectAsync([endpoint.Address], endpoint.Port, token).ConfigureAwait(false);
                 }
                 catch (Exception exception) when (exception is SocketException or OperationCanceledException)
                 {
@@ -121,8 +137,10 @@ public sealed class ExternalJsonPoster : IExternalJsonPoster
 
     private sealed record ResolvedEndpoint(Uri Uri, IPAddress Address, int Port);
 
+    private static Task<IPAddress[]> StandInResolve(string host, CancellationToken cancellationToken) => Task.FromResult(new[] { StandInResolvedAddress });
+
     /// <summary>Validates the URL and resolves it to a public address, throwing <see cref="ExternalEndpointException"/> otherwise.</summary>
-    private static async Task<ResolvedEndpoint> ResolveAsync(string raw, CancellationToken cancellationToken)
+    private static async Task<ResolvedEndpoint> ResolveAsync(string raw, OutboundAddressGuard.HostResolver? resolveHost, CancellationToken cancellationToken)
     {
         SplitUrl parsed;
         try
@@ -155,7 +173,7 @@ public sealed class ExternalJsonPoster : IExternalJsonPoster
             throw new ExternalEndpointException(ExternalUrlPolicy.InvalidPort, exception);
         }
 
-        var resolved = await OutboundAddressGuard.ResolveAllowedAsync(hostname, OutboundAddressGuard.IsPublic, resolveHost: null, cancellationToken).ConfigureAwait(false);
+        var resolved = await OutboundAddressGuard.ResolveAllowedAsync(hostname, OutboundAddressGuard.IsPublic, resolveHost, cancellationToken).ConfigureAwait(false);
         if (resolved.CouldNotResolve)
         {
             throw new ExternalEndpointException(ExternalUrlPolicy.CouldNotResolve);
@@ -214,10 +232,10 @@ public sealed class NotificationDispatcher
     {
         try
         {
-            await PostOneAsync(
+            var status = await PostOneAsync(
                 channel, $"{_machine.AppName} test notification", $"This is a test notification from {_machine.AppName}.", "job_completed", "processing", 0, "test", cancellationToken)
                 .ConfigureAwait(false);
-            return null;
+            return status >= 400 ? ExternalUrlPolicy.DestinationRefused(status) : null;
         }
         catch (ExternalEndpointException exception)
         {
@@ -246,12 +264,16 @@ public sealed class NotificationDispatcher
     /// Whether another attempt follows this failure, so the detail text says so instead of claiming
     /// retries are exhausted (#540). Ignored for <c>completed</c>.
     /// </param>
+    /// <param name="workFailed">
+    /// The job ended normally but the work it did failed for good (a file the tools could not finish), so its status is not
+    /// <c>failed</c> and the check that the job failed for good is skipped.
+    /// </param>
     public void DispatchJobNotification(
-        Sqlite.SqliteDatabase database, string module, string eventKind, long jobId, string jobKind, Action<string, Exception?> warn, bool willRetry = false)
+        Sqlite.SqliteDatabase database, string module, string eventKind, long jobId, string jobKind, Action<string, Exception?> warn, bool willRetry = false, bool workFailed = false)
     {
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(warn);
-        var (jobEvent, title, detail) = NotificationRules.JobNotification(module, eventKind, jobId, jobKind, _machine.AppName, willRetry);
+        var (jobEvent, title, detail) = NotificationRules.JobNotification(module, eventKind, jobId, jobKind, _machine.AppName, willRetry, workFailed);
         Track(Task.Run(async () =>
         {
             List<NotificationChannelRecord> channels;
@@ -261,7 +283,7 @@ public sealed class NotificationDispatcher
                 await using (uow.ConfigureAwait(false))
                 {
                     // Any failure, not only file processing: an alert says "failed" only once no retry follows.
-                    if (eventKind == "failed")
+                    if (eventKind == "failed" && !workFailed)
                     {
                         var status = await uow.ScalarAsync("SELECT status FROM jobs WHERE id = $id", ("$id", jobId)).ConfigureAwait(false);
                         if (status is not string text || text != "failed")
@@ -297,13 +319,13 @@ public sealed class NotificationDispatcher
                     var status = await PostOneAsync(channel, title, detail, jobEvent, module, jobId, jobKind, CancellationToken.None).ConfigureAwait(false);
                     if (status >= 400)
                     {
-                        warn($"Notification channel {channel.Id} ({channel.Label}) returned HTTP {status} for event={jobEvent}", null);
+                        warn($"The alert \"{channel.Label}\" was not delivered, and Weir will not send it again. {ExternalUrlPolicy.DestinationRefused(status)}", null);
                     }
                 }
                 catch (Exception exception) when (exception is ExternalEndpointException or HttpRequestException or IOException or OperationCanceledException)
                 {
                     var message = exception is ExternalEndpointException ? exception.Message : ExternalUrlPolicy.GenericDeliveryError;
-                    warn($"Notification dispatch failed for channel {channel.Id} ({channel.Label}) event={jobEvent}: {message}", null);
+                    warn($"The alert \"{channel.Label}\" was not delivered, and Weir will not send it again. {message}", null);
                 }
             }
         }));

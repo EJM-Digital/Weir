@@ -42,6 +42,40 @@ public static class E2EDatabase
         transaction.Commit();
     }
 
+    /// <summary>Adds an account with a role, as an operator's second process would; the server reads its users afresh on every sign-in.</summary>
+    public static void AddUser(string databasePath, string username, string passwordHash, string role)
+    {
+        using var connection = Open(databasePath);
+        using var transaction = connection.BeginTransaction();
+        SeedSql.InsertUser(connection, username, passwordHash, role);
+        transaction.Commit();
+    }
+
+    /// <summary>
+    /// Points a workflow at a watched folder without Weir's checks, as a media manager's own sync can leave one: the folders then overlap another
+    /// workflow's, which Weir refuses the next time that workflow is saved.
+    /// </summary>
+    public static void SetWatchedFolder(string databasePath, long libraryId, string watchedFolder)
+    {
+        using var connection = Open(databasePath);
+        using var transaction = connection.BeginTransaction();
+        SeedSql.Execute(connection, "UPDATE libraries SET watched_folder = $folder WHERE id = $id", ("$folder", watchedFolder), ("$id", libraryId));
+        transaction.Commit();
+    }
+
+    /// <summary>
+    /// The read-only viewer <see cref="SeededAccounts.ViewerUsername"/>, added while the server runs: no screen or request makes a
+    /// user without an administrator signing in first, so a test of someone who is not one seeds the row, as an operator's second
+    /// process would.
+    /// </summary>
+    public static void InsertViewer(string databasePath)
+    {
+        using var connection = Open(databasePath);
+        using var transaction = connection.BeginTransaction();
+        SeedSql.InsertUser(connection, SeededAccounts.ViewerUsername, SeededAccounts.ViewerPasswordHash, "viewer");
+        transaction.Commit();
+    }
+
     /// <summary>Ends every signed-in session while keeping the accounts, as an expiry does: the next request from a browser is unauthenticated.</summary>
     public static void EndAllSessions(string databasePath)
     {
