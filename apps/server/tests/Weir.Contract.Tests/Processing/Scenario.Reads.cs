@@ -107,6 +107,13 @@ internal sealed partial class Scenario
             async () => (await JobStatusesAsync()).Any(status => status is "pending" or "leased") ? null : "idle",
             "every job to end");
 
+    /// <summary>Returns once no worker holds a job, whatever else is waiting for its turn (see <see cref="WaitForNoJobInFlightAsync"/>).</summary>
+    public async Task WaitForNoJobHeldAsync() =>
+        await new JobWait().UntilAsync(
+            JobStatusesAsync,
+            async () => (await JobStatusesAsync()).Contains("leased") ? null : "idle",
+            "every job a worker holds to end");
+
     /// <summary>The job's inspection row once it has left <c>pending</c> and <c>leased</c>, for as long as a worker has it (see <see cref="JobWait"/>).</summary>
     public async Task<JsonObject> WaitForJobFinishedAsync(int jobId) =>
         await new JobWait().UntilAsync(
