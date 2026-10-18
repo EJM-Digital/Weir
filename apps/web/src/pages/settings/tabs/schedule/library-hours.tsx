@@ -13,6 +13,7 @@ import { ScheduleGridEditor } from "./schedule-grid-editor";
 import {
   DAY_NAMES,
   effectiveGrid,
+  sameWeek,
   weekHours,
   windowNow,
 } from "./schedule-model";
@@ -218,7 +219,7 @@ export function LibraryHoursEditor({
   onClose: () => void;
 }) {
   const update = useUpdateProcessingLibrary();
-  const dirty = grid !== effectiveGrid(library);
+  const dirty = !sameWeek(grid, effectiveGrid(library));
 
   const save = () =>
     update.mutate(

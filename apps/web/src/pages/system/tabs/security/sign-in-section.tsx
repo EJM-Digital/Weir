@@ -18,7 +18,6 @@ export function SignInSection() {
     <Panel
       title="Sign-in"
       headingId="suite-security-current-sign-in-heading"
-      headingLevel={3}
       padded
     >
       <dl

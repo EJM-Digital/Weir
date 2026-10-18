@@ -13,9 +13,12 @@ import { LOG_RETENTION_DAYS, expectKept, pick } from "../docker-smoke/smoke-data
 import { LogWatch } from "./log-watch.mjs";
 import { SabnzbdStandIn } from "./sabnzbd-stand-in.mjs";
 import { PORT, ensureSignedIn, waitReady } from "./windows-install.mjs";
+import { differencesInEntries, zipEntries } from "./zip-entries.mjs";
 
 const SECRET_FILES = ["session.secret", "credentials.secret"];
 const IDLE_MINUTES = 5;
+// How much of the tray's log a wait that ran out shows.
+const TRAY_LOG_LINES_SHOWN = 12;
 // Hang guards: each wait ends the moment what it waits for has happened.
 const STEP_CEILING_MS = 180_000;
 const APPLY_CEILING_MS = 300_000;
@@ -165,6 +168,7 @@ async function useThePreviousRelease(world, id) {
   const apiKey = randomBytes(12).toString("hex");
   const downloadClient = new SabnzbdStandIn(apiKey);
   const port = await downloadClient.listen();
+  world.cleanups.push(() => downloadClient.close());
   const connection = await weir.write("POST", "/download-clients/connections", { kind: "sabnzbd", base_url: `http://localhost:${port}`, api_key: apiKey });
   assert.equal(connection.status, 201, `saving the download client connection was answered ${connection.status}: ${connection.text.slice(0, 200)}`);
   const connectionId = connection.json.id;
@@ -216,7 +220,7 @@ async function expectPreviousReleaseStillRunning(world, before) {
  * secrets are the same bytes, the saved API key still works, Activity is as it was, and the copy of the data taken before the update is
  * named by System overview.
  */
-async function expectUpdatedWithDataKept(world, before, { oldProcesses }) {
+async function expectUpdatedWithDataKept(world, before, { oldProcesses, copyBy }) {
   const { machine, weir } = world;
   await waitForBuildUnderTest(world);
   const fileVersion = await machine.serverVersion();
@@ -244,11 +248,29 @@ async function expectUpdatedWithDataKept(world, before, { oldProcesses }) {
     "System overview to name the copy of the data saved for the update",
     STEP_CEILING_MS,
   );
-  assert.equal(backup.from_version, world.previousVersion, `the copy says it was taken at ${backup.from_version}`);
   assert.equal(backup.to_version, world.expectedVersion, `the copy says it was taken for ${backup.to_version}`);
   const copy = (await machine.files(dirname(backup.path))).find((file) => file.path === basename(backup.path));
   assert.ok(copy && copy.bytes > 0, `the copy ${backup.path} is missing or empty`);
+  await expectCopiesKnowTheirVersions(world, dirname(backup.path), copyBy);
   return { tray, backup };
+}
+
+/**
+ * The copies saved for this update say which version they were taken for. A running release that was asked to save one knows it was taken at
+ * its own version; when no release is running (the update was installed at the tray's start), the server that starts on the new version
+ * saves it as it migrates, and does not know which version it replaced.
+ * @param {"running release"|"new server"} copyBy
+ */
+async function expectCopiesKnowTheirVersions(world, folder, copyBy) {
+  const details = [];
+  for (const file of await world.machine.files(folder)) {
+    if (!file.path.endsWith(".backup.json")) continue;
+    const copy = JSON.parse(await world.machine.readText(join(folder, file.path)));
+    if (copy.ToVersion === world.expectedVersion) details.push(copy.FromVersion ?? null);
+  }
+  const wanted = copyBy === "running release" ? world.previousVersion : null;
+  assert.ok(details.includes(wanted), `the copies saved for ${world.expectedVersion} were taken at ${JSON.stringify(details)}; one should say ${JSON.stringify(wanted)}`);
+  if (copyBy === "new server") assert.deepEqual(details.filter((from) => from !== null), [], "a copy names the version it was taken at although no release was running");
 }
 
 const oldRelease = (world) => `Weir ${world.previousVersion}`;
@@ -297,9 +319,11 @@ async function updateOverInstalledWeir(world) {
   const downloaded = await waitForState(world, (state) => state.downloaded === true, "the update to be reported as downloaded");
   assert.equal(downloaded.pending_version, world.expectedVersion);
   assert.deepEqual(feed.packagesAskedFor(asked), [world.release.delta.FileName], "the tray did not take just the delta package");
-  const kept = (await machine.files(machine.paths.packagesFolder, { hash: true })).find((file) => file.path === world.release.full.FileName);
-  assert.ok(kept, `${world.release.full.FileName} is not in ${machine.paths.packagesFolder} after the download`);
-  assert.equal(kept.sha256.toLowerCase(), world.release.full.SHA256.toLowerCase(), "the full package rebuilt from the delta is not the one the feed names");
+  const fullPackage = world.release.full.FileName;
+  const kept = (await machine.files(machine.paths.packagesFolder)).find((file) => file.path === fullPackage);
+  assert.ok(kept, `${fullPackage} is not in ${machine.paths.packagesFolder} after the download`);
+  const rebuilt = differencesInEntries(await zipEntries(join(world.feedFolder, fullPackage)), await zipEntries(join(machine.paths.packagesFolder, fullPackage)));
+  assert.deepEqual(rebuilt.slice(0, 5), [], `the full package rebuilt from the delta does not hold the files of the one the feed names (${rebuilt.length} differ)`);
   await expectPreviousReleaseStillRunning(world, { trayPid });
 
   // The person restarts to apply it.
@@ -309,13 +333,13 @@ async function updateOverInstalledWeir(world) {
   await waitForTrayLine(world, `Asking the server to save a copy of Weir's data before updating to v${world.expectedVersion}`, mark);
   await waitForTrayLine(world, "The server saved a copy of Weir's data.", mark);
   await waitForTrayLine(world, `Applying update v${world.expectedVersion} and restarting...`, mark);
-  const { tray, backup } = await expectUpdatedWithDataKept(world, before, { oldProcesses });
+  const { tray, backup } = await expectUpdatedWithDataKept(world, before, { oldProcesses, copyBy: "running release" });
   await waitForTrayLine(world, `Velopack: after update to v${world.expectedVersion}`, mark);
 
   return (
     `${oldRelease(world)} was installed on a clean machine and used (an account, a workflow, a saved setting and a download client connection). With the tray told only to say that an update exists, ` +
     `a check with nothing newer published found nothing, a check with the build published found ${world.expectedVersion} and downloaded nothing; Download update took only ${world.release.delta.FileName} ` +
-    `and rebuilt ${world.release.full.FileName} with the hash the feed names; Restart and apply saved a copy of the data, applied it, and Weir came back by itself as ${world.expectedVersion} ` +
+    `and rebuilt ${world.release.full.FileName} with every file of the one the feed names; Restart and apply saved a copy of the data, applied it, and Weir came back by itself as ${world.expectedVersion} ` +
     `(new tray pid ${tray.pid}, no window, this PC only); the session still worked, the workflow, setting and ${before.activity.length} Activity entries were as they were, the two secrets were the same bytes, ` +
     `the saved API key still worked, and System overview names the copy ${basename(backup.path)}.`
   );
@@ -343,7 +367,7 @@ async function updateInstallsWhenIdle(world) {
 
   await waitForTrayLine(world, `Weir has been idle for ${IDLE_MINUTES} minutes; installing update v${world.expectedVersion} now.`, start, IDLE_CEILING_MS);
   await waitForTrayLine(world, `Applying update v${world.expectedVersion} and restarting...`, start);
-  const { tray, backup } = await expectUpdatedWithDataKept(world, before, { oldProcesses });
+  const { tray, backup } = await expectUpdatedWithDataKept(world, before, { oldProcesses, copyBy: "running release" });
 
   return (
     `In Automatic mode the tray checked when it started, took ${world.release.full.FileName} and said it installs once Weir has been idle for ${IDLE_MINUTES} minutes; ` +
@@ -374,7 +398,7 @@ async function updateLeftWaitingInstallsAtStart(world) {
   const mark = await logMark(world);
   machine.startTray(PORT);
   await waitForTrayLine(world, `Update v${world.expectedVersion} was left waiting to install. Installing it before the server starts.`, mark);
-  const { tray, backup } = await expectUpdatedWithDataKept(world, before, { oldProcesses });
+  const { tray, backup } = await expectUpdatedWithDataKept(world, before, { oldProcesses, copyBy: "new server" });
   await waitForTrayLine(world, `Velopack: after update to v${world.expectedVersion}`, mark);
   assert.ok(await machine.exists(join(machine.paths.runtimeHome, "update-start-attempt")), "the tray did not record that it tried the update at start");
 

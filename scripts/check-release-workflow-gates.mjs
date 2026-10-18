@@ -280,6 +280,7 @@ export function checkReleaseGates({ release, ci, ciContract, ciPackaging }) {
   const validate = requireJob(release, "validate", RELEASE);
   for (const marker of [
     "- name: Release notes file present",
+    'node scripts/check-recorded-freshness.mjs --version "$TAG"',
     "node scripts/check-dotnet-vulnerabilities.mjs",
     "name: weir-web-dist",
   ]) {

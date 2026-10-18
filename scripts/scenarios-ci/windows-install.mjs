@@ -24,7 +24,7 @@ const WARNINGS_OF_A_SERVER_WITHOUT_SECRETS = [
   "WEIR_CREDENTIALS_SECRET is set but shorter",
 ];
 // What a start of Weir takes at most; every wait ends the moment its condition holds, so these are hang guards.
-const START_CEILING_MS = 120_000;
+export const START_CEILING_MS = 120_000;
 const UNINSTALL_CEILING_MS = 120_000;
 const JOBS_CEILING_MS = 60_000;
 
@@ -33,7 +33,7 @@ function expectNone(found, what) {
   assert.equal(found.length, 0, `${what}: ${found.join("; ")}`);
 }
 
-const wait = (world, check, what, ceilingMs, intervalMs = 1000) => pollUntil(check, { what, ceilingMs, intervalMs, clock: world.clock });
+export const wait = (world, check, what, ceilingMs, intervalMs = 1000) => pollUntil(check, { what, ceilingMs, intervalMs, clock: world.clock });
 
 // --- Weir installed, running and signed in to ---------------------------------------------------------------------------------
 
@@ -41,14 +41,14 @@ export async function waitReady(world) {
   await wait(world, async () => ((await world.server.ready()) ? true : undefined), `Weir to answer /ready on port ${PORT}`, START_CEILING_MS);
 }
 
-async function expectBuildUnderTest(world) {
+export async function expectBuildUnderTest(world) {
   const reported = await world.server.version();
   assert.equal(reported, world.expectedVersion, `the running server reports ${reported}, not the build under test (${world.expectedVersion})`);
   return reported;
 }
 
 /** Starts the installed tray; every start of Weir in a scenario is a start of the build under test. */
-async function startInstalledWeir(world) {
+export async function startInstalledWeir(world) {
   const pid = world.machine.startTray(PORT);
   await waitReady(world);
   await expectBuildUnderTest(world);
@@ -60,7 +60,7 @@ async function startInstalledWeir(world) {
  * release feed the build under test (a placeholder version, older than every release) would download the newest release and replace itself
  * the next time it starts; what a scenario judges is the build, so it must stay.
  */
-async function installBuildUnderTest(world) {
+export async function installBuildUnderTest(world) {
   const setup = await world.machine.install(world.setupPath);
   assert.equal(setup.exitCode, 0, `Setup --silent exited ${setup.exitCode}, not 0`);
   await world.machine.keepUpdatesFromInstalling();
@@ -96,7 +96,7 @@ export async function ensureSignedIn(world) {
   if ((await weir.signedInAs()) !== world.account.username) await weir.login(world.account.username, world.account.password);
 }
 
-async function ensureWeir(world) {
+export async function ensureWeir(world) {
   await ensureInstalledAndRunning(world);
   await ensureSignedIn(world);
 }
@@ -113,6 +113,7 @@ export async function watchLogs(world) {
   const watch = new LogWatch(world.weir, []);
   return {
     expect: (title, options) => watch.expect(title, options),
+    expectMatching: (pattern, options) => watch.expectMatching(pattern, options),
     finish: async () => {
       await ensureSignedIn(world);
       await watch.finish();

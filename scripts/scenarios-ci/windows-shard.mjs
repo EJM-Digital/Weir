@@ -5,19 +5,13 @@ import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promi
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { REPOSITORY_URL } from "../repository.mjs";
 import { ORIGIN } from "../docker-smoke/stack.mjs";
 import { WeirClient } from "../docker-smoke/weir-client.mjs";
 import { GithubRedirect } from "./github-redirect.mjs";
 import { GithubStandIn } from "./github-stand-in.mjs";
 import { runScenarios } from "./run.mjs";
-import * as install from "./windows-install.mjs";
-import * as update from "./windows-update.mjs";
-
-/** The scenarios of each Windows shard, and how each watches System > Logs. */
-const SHARDS = {
-  "windows-install": { scenarios: install.SCENARIOS, watchLogs: install.watchLogs },
-  "windows-update": { scenarios: update.SCENARIOS, watchLogs: update.watchLogs },
-};
+import { TrayDesktop } from "./tray-desktop.mjs";
 
 /** The server as an outsider asks it: is it ready, and which version does it report. */
 export function httpServer(origin) {
@@ -54,7 +48,10 @@ export function expectedVersion({ given, props }) {
 async function keepInstallLogs(machine, logFolder, name = "install-logs") {
   const kept = join(logFolder, name);
   await mkdir(kept, { recursive: true });
-  const files = [{ from: machine.paths.trayLog, name: "tray-host.log" }];
+  const files = [
+    { from: machine.paths.trayLog, name: "tray-host.log" },
+    { from: join(machine.paths.runtimeHome, "server-host.log"), name: "server-host.log" },
+  ];
   for (const file of await machine.files(machine.paths.logsFolder)) files.push({ from: join(machine.paths.logsFolder, file.path), name: `logs-${file.path.replaceAll(/[\/]/g, "-")}` });
   for (const file of files) await copyFile(file.from, join(kept, file.name)).catch((error) => console.error(`::warning::${file.from} could not be kept: ${error.message}`));
 }
@@ -88,7 +85,7 @@ async function startGithub({ feedFolder, previousFeed, previousVersion, version,
     const certificate = await redirect.trustCertificate(scratch);
     await feed.listen({ tls: certificate, port: 443 });
     await redirect.redirect();
-    const answer = await redirect.fetchAsThePcDoes("https://github.com/jampat000/Weir/releases.atom");
+    const answer = await redirect.fetchAsThePcDoes(`${REPOSITORY_URL}/releases.atom`);
     if (answer.status !== 200 || !answer.text.includes(`/releases/tag/v${version}`)) {
       throw new Error(`The PC's request for github.com did not reach the stand-in (status ${answer.status}).`);
     }
@@ -101,18 +98,18 @@ async function startGithub({ feedFolder, previousFeed, previousVersion, version,
 }
 
 /**
- * Runs the chosen scenarios on the machine against the Setup. One that fails does not stop the next. Weir is stopped at the end, whatever
+ * Runs the chosen scenarios of a shard (`registry` and `watchLogs` are its module's) on the machine against the Setup. One that fails does not stop the next. Weir is stopped at the end, whatever
  * happened, so the runner is left as it was. The windows-update shard also gets `update`: the feed of the build under test, the release to
  * install first and its Setup.
- * @param {{shard?: string, update?: {feedFolder: string, previousSetup: string, previousFeed: string, previousVersion: string}}} options
+ * @param {{update?: {feedFolder: string, previousSetup: string, previousFeed: string, previousVersion: string}}} options
  */
-export async function runWindowsShard({ shard = "windows-install", ids, machine, setupPath, version, logFolder, update: updating }) {
-  const { scenarios, watchLogs } = SHARDS[shard];
+export async function runWindowsShard({ ids, registry: scenarios, watchLogs, machine, setupPath, version, logFolder, update: updating }) {
   const recordings = join(logFolder, "recordings");
   await mkdir(recordings, { recursive: true });
   const scratch = await mkdtemp(join(tmpdir(), "weir-scenarios-ci-"));
   const world = {
     machine,
+    desktop: new TrayDesktop(),
     server: httpServer(ORIGIN),
     weir: new WeirClient(ORIGIN),
     browser: () => new WeirClient(ORIGIN),
@@ -120,6 +117,7 @@ export async function runWindowsShard({ shard = "windows-install", ids, machine,
     expectedVersion: version,
     runId: randomBytes(3).toString("hex"),
     scratch,
+    cleanups: [],
     watchLogs,
     record: (name, text) => writeFile(join(recordings, name), text),
   };
@@ -129,7 +127,7 @@ export async function runWindowsShard({ shard = "windows-install", ids, machine,
     if (updating) {
       const releasesJson = await readFile(join(updating.feedFolder, "releases.win.json"), "utf8");
       github = await startGithub({ ...updating, version, scratch });
-      Object.assign(world, { feed: github.feed, previousSetup: updating.previousSetup, previousVersion: updating.previousVersion, release: packagesOf(releasesJson) });
+      Object.assign(world, { feed: github.feed, feedFolder: updating.feedFolder, previousSetup: updating.previousSetup, previousVersion: updating.previousVersion, release: packagesOf(releasesJson) });
       registry = Object.fromEntries(
         Object.entries(scenarios).map(([id, scenario]) => [
           id,

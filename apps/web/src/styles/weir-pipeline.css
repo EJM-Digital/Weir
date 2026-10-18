@@ -169,8 +169,18 @@
   }
 }
 
+/* An empty station is quieter: a fainter tint and mark. Its words keep their full strength so they stay readable. */
 .mm-pipe__station--empty {
+  background: color-mix(in srgb, var(--pipe-st) 6%, transparent);
+}
+
+.mm-pipe__station--empty .mm-pipe__dot {
   opacity: 0.55;
+}
+
+.mm-pipe__station--empty .mm-pipe__station-name,
+.mm-pipe__station--empty .mm-pipe__station-count {
+  color: var(--mm-text2);
 }
 
 .mm-pipe__station--active {

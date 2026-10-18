@@ -19,8 +19,8 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`, and the ones written for CI al
 | Scenario | Home | Shard | State | Why it lives there |
 | --- | --- | --- | --- | --- |
 | `update-over-installed-weir` | windows | windows-update | ported | The newest published release is installed, then updated to this commit's build through the tray's own update code, from a release feed made of the build's packages. Docker's upgrade smoke covers the volume half. |
-| `workflows-from-deluno` | linux | with-deluno | to-port | Weir and Deluno speak HTTP only; Deluno's published image is the same Deluno. |
-| `deluno-film-handoff` | linux | with-deluno | to-port | A hand-off followed through both apps, with the real clients in Compose. |
+| `workflows-from-deluno` | linux | with-deluno | ported | Weir and Deluno speak HTTP only; Deluno's published image is the same Deluno. |
+| `deluno-film-handoff` | linux | with-deluno | ported | A hand-off followed through both apps, with the real clients in Compose. |
 | `deluno-release-with-extra` | linux | with-deluno | to-port | The extra is read where it stays, through the download client's own API. |
 | `deluno-resend` | linux | with-deluno | to-port | Deluno's send-again is an API call; both sides are read over HTTP. |
 | `deluno-outcomes` | linux | with-deluno | to-port | The outcome each app recorded is compared; both are read over HTTP. |
@@ -30,9 +30,16 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`, and the ones written for CI al
 | `process-again` | linux | weir-only | ported | The first shard. Asked to process a cleaned film again, the server skips it. |
 | `pause-resume` | linux | weir-only | ported | The server hears the tray through a file in its data folder, and that watcher is the same on Linux. The tray's side stays with windows-tray. |
 | `deleted-queued-file` | linux | weir-only | ported | A file deleted while Weir waits for it to settle; nothing in it is Windows. |
-| `update-requests` | windows | windows-tray | to-port | Needs the real tray to take the update flag files. |
+| `update-requests` | windows | windows-tray | ported | Drives the real installed tray: the buttons are offered only while the tray is alive, and each press is taken by the tray. |
 | `recover-locked-out-account` | windows | windows-install | ported | Runs the installed `WeirServer.exe recover` with nothing set, so it must find Weir's data folder itself. The Docker form is already proved by the Docker smoke. |
 | `uninstall-keeps-the-data` | windows | windows-install | ported | Written for CI: the VM suite never ran the uninstaller. Uninstalls Weir stopped and running, and finds the data, the secrets and the account afterwards. |
+| `tray-menu` | windows | windows-tray | ported | Written for CI: every item of the tray menu pressed through UI Automation on the real installed tray, with its effect on the real server, the PC and tray-host.log. |
+| `tray-supervision` | windows | windows-tray | ported | Written for CI: the real server ended by its own process id, and its port taken; the tray brings it back after growing waits and logs why. |
+| `tray-give-up` | windows | windows-tray | ported | Written for CI: five failed starts end the trying once, with the red icon and a balloon; Restart Weir is the way back and Quit is never answered with a start. |
+| `tray-change-port` | windows | windows-tray | ported | Written for CI: Change port through the real window, succeeding, going back, and ending Stopped when both ports fail. |
+| `tray-lan-access` | windows | windows-tray | ported | Written for CI: Allow other devices runs the elevated firewall step for real, and Only allow this PC takes it back. |
+| `tray-second-launch` | windows | windows-tray | ported | Written for CI: a second Weir.exe leaves one tray and one server, and the running tray says so. |
+| `tray-start` | windows | windows-tray | ported | Written for CI: no start opens the browser, a start nobody can see that cannot start Weir exits 1, a taken saved port is asked about, and WEIR_PORT is honoured. |
 | `update-installs-when-idle` | windows | windows-update | ported | Written for CI: in Automatic mode the tray downloads the full package and installs it once Weir has been idle for 5 minutes, and not before. |
 | `update-left-waiting-installs-at-start` | windows | windows-update | ported | Written for CI: in Download only mode the update waits, and the next start of the tray installs it before the server starts. |
 | `update-failure-leaves-the-old-weir` | windows | windows-update | ported | Written for CI: a package changed after its hash was recorded is refused, and GitHub being down fails the check, each in plain words, with the old Weir still running. |
@@ -50,7 +57,7 @@ The VM suite does not cover these; the package smokes (`smoke-windows-package.ps
 | with-deluno | ubuntu-latest | 20 min | Weir, Deluno and the real clients; split by client when it outgrows the budget, as Deluno splits `resend`. |
 | windows-install | windows-latest | 20 min | Install, the installed server and its secrets, the recovery command, uninstall and reinstall. **Built.** Start with Windows needs the tray's own menu, so it waits for windows-tray. |
 | windows-update | windows-latest | 30 min | The newest published release updated to this commit's build through the tray's own update code. **Built.** |
-| windows-tray | windows-latest | 20 min | The real tray through UI Automation, and NTFS behaviour. |
+| windows-tray | windows-latest | 20 min | The real tray through UI Automation. **Built.** NTFS behaviour is not in it yet. |
 
 ## The matrix
 
@@ -73,7 +80,7 @@ Weir's Compose files for the with-Deluno shard therefore live in Weir (`scripts/
 
 ## Pinning by digest
 
-Every image a scenario starts other than Weir's own build is named `name@sha256:...` in `scripts/scenarios-ci/images.json` (Deluno, the five clients, Sonarr, Radarr, Deluno's fixture image, the Chromium image if one is used), and nowhere else. A test will fail on a reference without a digest, on a digest written anywhere but that file, and on an image the Compose files use that is not listed. A tag is kept beside each digest as a label so a person can read what was pinned. Digests are bumped in their own commit, after the drift job shows what changed. The first shard starts no other image, so the file arrives with the first shard that does.
+Every image a scenario starts other than Weir's own build is named `name@sha256:...` in `scripts/scenarios-ci/images.json` (Deluno, the five clients, Sonarr, Radarr, Deluno's fixture image, the Chromium image if one is used), and nowhere else. A test will fail on a reference without a digest, on a digest written anywhere but that file, and on an image the Compose files use that is not listed. A tag is kept beside each digest as a label so a person can read what was pinned. Digests are bumped in their own commit, after the drift job shows what changed. The `with-deluno` shard is the first to start other images, so the file arrived with it: Deluno and qBittorrent so far. Compose names each by a variable (`SCENARIO_<NAME>_IMAGE`) that `scenarios-in-ci.mjs` fills from the file.
 
 ## The drift job
 
@@ -115,11 +122,20 @@ An update only goes to a newer version, and the build under test carries a place
 
 Not in this shard: **Quit with a downloaded update** (the tray's menu, so `windows-tray`), and a disk too full for the download.
 
+### The windows-tray shard
+
+`scripts/scenarios-in-ci.mjs windows-tray --setup <Weir-win-Setup.exe>` runs on a GitHub-hosted `windows-latest` runner, which has an interactive desktop (session 2, Explorer running, a 1024 by 768 screen). It installs the Setup, starts the installed `Weir.exe` as the person who owns the desktop would, and drives it through Windows UI Automation (`scripts/scenarios-ci/tray-ui.ps1`): the icon in the notification area (which Windows 11 keeps in the hidden icons, opened first), its menu, and the window that asks for a port. The server is ended by its own process id and its port taken by another program (a listener in the scenario), never by name, and every wait is on the tray's own files and log lines or on the server answering `/ready`.
+
+- `update-requests`: ported from the VM.
+- `tray-menu`: each item pressed: Open Weir, Pause and Resume processing, Restart Weir, Copy address (the clipboard), Open data folder, Open logs folder, Report a problem (File Explorer), Start with Windows (a check item that keeps the menu open, and the Run entry), Check for updates, and Quit Weir, with the menu itself compared to the standard item for item.
+- `tray-supervision`, `tray-give-up`, `tray-change-port`, `tray-lan-access`, `tray-second-launch`, `tray-start`: see their rows above.
+
+**What UI Automation cannot reach on the hosted runner.** Windows shows a tray balloon as a notification, and the runner shows none (a watch of the desktop for the start balloon found no notification window). So the tray now writes every balloon it shows to `tray-host.log`, in the words the person would have read (`Balloon (info) Weir: ...`), which is also what an operator needs when focus assist hides a notification; the scenarios read the balloon from that line, and send the tray the click Windows sends for a balloon (`NIN_BALLOONUSERCLICK`, the message the notification area posts to the tray's hidden window) to prove what a click on it does. If the taskbar ever cannot be reached for the menu, the scenario opens it by the right-click message the notification area sends instead, says so in its record, and keeps the taskbar's tree (`taskbar-tree.json`).
+
 ### Next
 
-1. `with-deluno`: images pinned by digest, the Compose file, then `workflows-from-deluno` and `deluno-film-handoff` on qBittorrent, then the other four scenarios and the other clients.
-2. `windows-tray` (the shard after `windows-update`).
-3. The drift workflow, and the per-shard paths filter.
+1. `with-deluno`: the other four scenarios and the other clients (Transmission, Deluge, SABnzbd, NZBGet). The release source is `with-deluno/fixture/`: Weir's own, small and Node-only. If Deluno publishes its fixture image, as the agreed shape has it, the shard moves to that and this folder goes.
+2. The drift workflow, and the per-shard paths filter.
 
 ## Runners
 

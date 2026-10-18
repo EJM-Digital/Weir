@@ -168,9 +168,10 @@ public sealed class NonBlockingConsoleTests
             console.WriteLine($"line {line}");
         }
 
+        // The limit is a ceiling for a console that never answers: this one does, so the call returns as soon as the last line is written.
+        Assert.True(console.Drain(TimeSpan.FromSeconds(20)), "The console never took what was queued");
         console.Dispose();
 
-        // Nothing is waited for here: Dispose returned only after the writer had written them all.
         Assert.EndsWith($"line 499{Environment.NewLine}", stream.Text, StringComparison.Ordinal);
         await Task.CompletedTask;
     }

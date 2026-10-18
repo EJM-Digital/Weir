@@ -1,0 +1,36 @@
+{
+  "summary": {
+    "generatedon": "2026-10-18T11:23:38Z",
+    "parser": "Cobertura",
+    "assemblies": 4,
+    "classes": 7,
+    "files": 5,
+    "coveredlines": 116,
+    "uncoveredlines": 172,
+    "coverablelines": 288,
+    "totallines": 1109,
+    "linecoverage": 40.2,
+    "coveredbranches": 53,
+    "totalbranches": 210,
+    "branchcoverage": 25.2,
+    "coveredmethods": 17,
+    "fullcoveredmethods": 6,
+    "totalmethods": 33,
+    "methodcoverage": 51.5,
+    "fullmethodcoverage": 18.1
+ },
+  "coverage": {
+    "assemblies": [
+      { "name": "Weir", "classes": 1, "coverage": 80, "coveredlines": 16, "coverablelines": 20, "totallines": 81, "branchcoverage": 50, "coveredbranches": 2, "totalbranches": 4, "methodcoverage": 100, "fullmethodcoverage": 66.6, "coveredmethods": 3, "fullcoveredmethods": 2, "totalmethods": 3, "classesinassembly": [
+        { "name": "Weir.Host.StopRequestListener", "coverage": 80, "coveredlines": 16, "coverablelines": 20, "totallines": 81, "branchcoverage": 50, "coveredbranches": 2, "totalbranches": 4, "methodcoverage": 100, "fullmethodcoverage": 66.6, "coveredmethods": 3, "fullcoveredmethods": 2, "totalmethods": 3 } ] },
+      { "name": "Weir.Api", "classes": 3, "coverage": 50.3, "coveredlines": 73, "coverablelines": 145, "totallines": 1101, "branchcoverage": 41.6, "coveredbranches": 35, "totalbranches": 84, "methodcoverage": 84.6, "fullmethodcoverage": 23, "coveredmethods": 11, "fullcoveredmethods": 3, "totalmethods": 13, "classesinassembly": [
+        { "name": "Weir.Api.Http.ApiException", "coverage": 36.8, "coveredlines": 7, "coverablelines": 19, "totallines": 367, "branchcoverage": null, "coveredbranches": 0, "totalbranches": 0, "methodcoverage": 100, "fullmethodcoverage": 25, "coveredmethods": 4, "fullcoveredmethods": 1, "totalmethods": 4 },
+        { "name": "Weir.Api.Http.ApiResponses", "coverage": 48.1, "coveredlines": 13, "coverablelines": 27, "totallines": 367, "branchcoverage": 66.6, "coveredbranches": 8, "totalbranches": 12, "methodcoverage": 66.6, "fullmethodcoverage": 33.3, "coveredmethods": 2, "fullcoveredmethods": 1, "totalmethods": 3 },
+        { "name": "Weir.Api.Http.CookieHeaders", "coverage": 53.5, "coveredlines": 53, "coverablelines": 99, "totallines": 367, "branchcoverage": 37.5, "coveredbranches": 27, "totalbranches": 72, "methodcoverage": 83.3, "fullmethodcoverage": 16.6, "coveredmethods": 5, "fullcoveredmethods": 1, "totalmethods": 6 } ] },
+      { "name": "Weir.Core", "classes": 1, "coverage": 21.1, "coveredlines": 23, "coverablelines": 109, "totallines": 210, "branchcoverage": 13.7, "coveredbranches": 16, "totalbranches": 116, "methodcoverage": 22.2, "fullmethodcoverage": 0, "coveredmethods": 2, "fullcoveredmethods": 0, "totalmethods": 9, "classesinassembly": [
+        { "name": "Weir.Core.Json.WireConvert", "coverage": 21.1, "coveredlines": 23, "coverablelines": 109, "totallines": 210, "branchcoverage": 13.7, "coveredbranches": 16, "totalbranches": 116, "methodcoverage": 22.2, "fullmethodcoverage": 0, "coveredmethods": 2, "fullcoveredmethods": 0, "totalmethods": 9 } ] },
+      { "name": "Weir.Infrastructure", "classes": 2, "coverage": 28.5, "coveredlines": 4, "coverablelines": 14, "totallines": 451, "branchcoverage": 0, "coveredbranches": 0, "totalbranches": 6, "methodcoverage": 12.5, "fullmethodcoverage": 12.5, "coveredmethods": 1, "fullcoveredmethods": 1, "totalmethods": 8, "classesinassembly": [
+        { "name": "Weir.Infrastructure.Http.ExternalJsonPoster", "coverage": 57.1, "coveredlines": 4, "coverablelines": 7, "totallines": 346, "branchcoverage": null, "coveredbranches": 0, "totalbranches": 0, "methodcoverage": 25, "fullmethodcoverage": 25, "coveredmethods": 1, "fullcoveredmethods": 1, "totalmethods": 4 },
+        { "name": "Weir.Infrastructure.Http.OutboundAddressGuard", "coverage": 0, "coveredlines": 0, "coverablelines": 7, "totallines": 105, "branchcoverage": 0, "coveredbranches": 0, "totalbranches": 6, "methodcoverage": 0, "fullmethodcoverage": 0, "coveredmethods": 0, "fullcoveredmethods": 0, "totalmethods": 4 } ] } ]
+  }
+}

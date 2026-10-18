@@ -121,6 +121,13 @@ test("the film command makes the folder and the subtitle files, runs ffmpeg and 
 const probe = (streams, format) => ({ streams, format });
 const stream = (codec_type, language) => ({ codec_type, tags: language ? { language } : {} });
 
+test("the film's video bitrate is 3M unless asked for more, so a long film can be as large as a workflow's minimum needs", () => {
+  const rate = (options) => { const args = filmArguments({ path: "/tmp/a.mkv", ...options }); return args[args.indexOf("-b:v") + 1]; };
+  assert.equal(rate({}), "3M");
+  assert.equal(rate({ videoBitrate: "5M" }), "5M");
+  assert.match(filmCommand({ path: "/tmp/a.mkv", videoBitrate: "5M" }), /'-b:v' '5M'/);
+});
+
 test("a probe is summed up as video count, audio and subtitle languages, length and size", () => {
   const summary = summarizeProbe(
     probe([stream("video"), stream("audio", "eng"), stream("audio", "fre"), stream("subtitle", "spa"), stream("audio")], { duration: "30.04", size: "11000000" }),
@@ -321,4 +328,31 @@ test("a change to the scenarios in CI runs them", () => {
   const ci = read(".github/workflows/ci.yml");
   assert.match(ci, /- 'scripts\/scenarios-in-ci\.mjs'/);
   assert.match(ci, /- 'scripts\/scenarios-ci\/\*\*'/);
+});
+
+test("what a scenario leaves running is ended when it ends, whatever it found, and one that cannot be ended fails the scenario", async () => {
+  const ended = [];
+  const world = { ...new FakeWorld().asWorld(), cleanups: [] };
+  const registry = {
+    passes: async (given) => {
+      given.cleanups.push(async () => ended.push("passes"));
+      return "It was fine.";
+    },
+    fails: async (given) => {
+      given.cleanups.push(async () => ended.push("fails first"), async () => ended.push("fails second"));
+      throw new Error("It was not fine.");
+    },
+    "will-not-end": async (given) => {
+      given.cleanups.push(async () => {
+        throw new Error("the stand-in is still listening");
+      });
+      return "It was fine.";
+    },
+  };
+  const results = await runScenarios({ ids: ["passes", "fails", "will-not-end"], registry, world });
+  assert.deepEqual(ended, ["passes", "fails second", "fails first"]);
+  assert.deepEqual(results.map((result) => result.status), ["passed", "failed", "failed"]);
+  assert.equal(results[1].detail, "It was not fine.");
+  assert.match(results[2].detail, /Clean-up failed: the stand-in is still listening/);
+  assert.deepEqual(world.cleanups, []);
 });

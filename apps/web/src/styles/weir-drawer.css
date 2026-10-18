@@ -101,7 +101,7 @@ body.mm-drawer-open {
 
 .mm-drawer__note a {
   color: var(--mm-accent);
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 .mm-drawer__tracks {

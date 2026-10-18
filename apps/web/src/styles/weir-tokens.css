@@ -56,6 +56,8 @@
 
   --mm-primary: #52a5ff;
   --mm-primary-bright: #8cc3ff;
+  /* Text in the brand colour on a surface tinted with it: a selected chip, the current page in the side menu. */
+  --mm-primary-text: var(--mm-primary);
   --mm-primary-2: #4f92f8;
   --mm-accent: var(--mm-primary);
   --mm-accent-bright: var(--mm-primary-bright);
@@ -77,6 +79,8 @@
     var(--mm-text2)
   );
   --mm-status-attention: #fb8d2d;
+  /* How much of its colour a status pill is tinted with. */
+  --mm-status-tint: 14%;
   --mm-status-broken: #ff7b7b;
   --mm-status-idle: var(--mm-text3);
   /* Gold, for the figure of space saved: yellower and brighter than attention, and never a status. */
@@ -234,11 +238,12 @@ html[data-mm-theme="light"] {
 
   --mm-stone: #171c26;
   --mm-stone-muted: #525966;
-  --mm-stone-dim: #5d6572;
+  --mm-stone-dim: #555d6b;
   --mm-text-disabled: #8a919c;
 
   --mm-primary: #125eba;
   --mm-primary-bright: #0d4a96;
+  --mm-primary-text: var(--mm-primary-bright);
   --mm-primary-2: #2071e9;
   --mm-accent-soft: rgba(18, 94, 186, 0.12);
   --mm-accent-ring: rgba(18, 94, 186, 0.4);
@@ -251,8 +256,9 @@ html[data-mm-theme="light"] {
   --mm-info: #0872c9;
   --mm-status-done: #046c4a;
   --mm-status-doing: #1f5fb8;
-  --mm-status-attention: #964200;
-  --mm-status-broken: #b42318;
+  --mm-status-attention: #8c3d00;
+  --mm-status-broken: #a8200f;
+  --mm-status-tint: 8%;
   --mm-payoff: #6b5c00;
 
   --mm-lane-incoming: #9d65ec;

@@ -45,6 +45,12 @@ never changes. Cutting a release is:
    This PR touches nothing under `apps/`, `packaging/` or `Dockerfile`, so `CI / ci-passed` on it and
    on its merge to `main` both finish in well under a minute (path-aware CI skips everything but the
    repository checks).
+
+   Deluno's recordings of its talk with Weir must be of a Weir at most one release behind the one being released:
+   `node scripts/check-recorded-freshness.mjs` reads the newest line of `CHANGELOG.md` (the release's, once this PR has added it),
+   and the release's `validate` job runs it again with the tag. When it fails, ask Deluno to record against the current build on the
+   golden VM with its recording script, copy the new set in as `apps/server/tests/fixtures/recorded/deluno-side/README.md` describes, add
+   the build to `apps/server/tests/fixtures/recorded/weir-builds-recorded.json`, and replay it, before the tag.
 3. For every tag, release candidates included, make sure Weir's scenario suite has passed on that exact commit or on an
    earlier one whose shipped files are the same ([Proof before tagging](#proof-before-tagging)), and record the pass.
    The release refuses to publish without it. There is no pass-through for a release candidate and no waiver

@@ -12,6 +12,7 @@ import { useCanEdit } from "../../../../lib/auth/can-edit";
 import type { SystemLogQuery } from "../../../../lib/system/system-log-api";
 import { mmActionButtonClass } from "../../../../lib/ui/mm-control-roles";
 import { plural } from "../../../../lib/ui/mm-plural";
+import { useLiveUpdatesPaused } from "../../../../lib/live/use-live-updates-paused";
 import { useFitLevels } from "../../../../lib/ui/use-fit-levels";
 import type { TableColumns } from "../../../../lib/ui/use-table-columns";
 import { LogClearEvents } from "./log-clear-events";
@@ -19,8 +20,8 @@ import type { LogColumnId } from "./log-columns";
 import { LogExportMenu } from "./log-export-menu";
 import { anyLogFilterSet, refineCount, type LogFilters } from "./log-filters";
 import { LogList } from "./log-list";
-import type { LogRowActions } from "./log-row";
 import { LogRange } from "./log-range";
+import type { LogRowActions } from "./log-row";
 import { LogRefine } from "./log-refine";
 import { logSummaryWords } from "./log-summary";
 import type { LogEntries } from "./use-log-entries";
@@ -84,6 +85,7 @@ export function LogCard({
 }) {
   const canClear = useCanEdit();
   const [refineOpen, setRefineOpen] = useState(false);
+  const paused = useLiveUpdatesPaused();
   const [problem, setProblem] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const refining = refineCount(filters);
@@ -93,6 +95,7 @@ export function LogCard({
     loaded: entries.rows.length,
     total: entries.total,
     filtered,
+    paused,
   });
   const [summaryEl, setSummaryEl] = useState<HTMLElement | null>(null);
   const headerFit = useFitLevels(
@@ -138,7 +141,10 @@ export function LogCard({
             aria-busy={entries.loading}
             ref={setSummaryEl}
           >
-            <StatusDot meaning="done" className="mm-log-live" />
+            <StatusDot
+              meaning={paused ? "attention" : "done"}
+              className="mm-log-live"
+            />
             {summary}
           </span>
         }

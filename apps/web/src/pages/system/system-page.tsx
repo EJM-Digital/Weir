@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, type Location } from "react-router-dom";
 
 import { PageLoading } from "../../components/shared/page-loading";
 import {
@@ -50,6 +50,11 @@ function systemTabFrom(candidate: string | null | undefined): TabId {
   }
 }
 
+/** The tab an address shows. */
+function tabAt(location: Location): TabId {
+  return systemTabFrom(new URLSearchParams(location.search).get("tab"));
+}
+
 function SettingsLoadProblem({ error }: { error: Error }) {
   return (
     <div className="mm-page" data-testid="suite-settings-page">
@@ -75,7 +80,14 @@ export function SystemPage() {
   const form = useSystemSettingsForm(settingsQ.data);
   // The time zone is picked and saved on its own, so About tells the page when a pick is waiting for its Save.
   const [zoneUnsaved, setZoneUnsaved] = useState(false);
-  const blocker = useUnsavedChangesGuard(form.isDirty || zoneUnsaved);
+  // The settings drafts live in the page, so only another screen takes them away. A picked zone lives in About,
+  // so leaving About for another tab takes it away too.
+  const blocker = useUnsavedChangesGuard(
+    form.isDirty || zoneUnsaved,
+    (current, next) =>
+      current.pathname !== next.pathname ||
+      (zoneUnsaved && tabAt(current) !== tabAt(next)),
+  );
   // The address is the tab, so Back, Forward and the side menu move between tabs too.
   const tab = systemTabFrom(searchParams.get("tab"));
   const editable = canEdit(me.data?.role);
@@ -122,11 +134,7 @@ export function SystemPage() {
           ) : tab === "security" ? (
             <SecurityTab />
           ) : (
-            <LogsTab
-              form={form}
-              editable={editable}
-              savedLogDays={settings.log_retention_days}
-            />
+            <LogsTab form={form} editable={editable} />
           )}
         </div>
       </WorkspacePanel>
