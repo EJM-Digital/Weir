@@ -119,6 +119,8 @@ export async function networkShare(world) {
   facts.push(`a film dropped on the share by its UNC path was found, cleaned and written back to the share, and the original there was untouched`);
 
   // The share goes away. A film that arrives meanwhile (in the folder behind the share) is not touched, and the folders are reported.
+  world.logWatch.expectMatching(/^Weir can no longer see .*weir-ci-.*watched/, { times: 2, why: "the share is taken away, so Weir says in the logs that it can no longer see the watched folder" });
+  world.logWatch.expectMatching(/^The filesystem watcher for Scenario share .* reported an error/, { times: 2, why: "the share is taken away, so the watcher on its folder fails and is restarted" });
   await removeShare(name);
   assert.equal(await exists(join(unc, "watched")), false, "the share is still reachable after it was removed");
   const waiting = await placeRelease({ ...workflow, watched: join(backing, "watched"), output: join(backing, "output") }, "Share.Film.2019", master.path);
