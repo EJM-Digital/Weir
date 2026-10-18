@@ -1,0 +1,28 @@
+{
+  "app": "radarr",
+  "version": "6.4.4.10685",
+  "state": "queue-remove-unknown-item",
+  "recordedAt": "2026-10-17T05:26:18Z",
+  "note": "Asking the app to remove a queue item it does not have.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/v3/queue/987654?removeFromClient=true&blocklist=true",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "message": "NotFound"
+        }
+      }
+    }
+  ]
+}

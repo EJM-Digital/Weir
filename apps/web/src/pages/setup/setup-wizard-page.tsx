@@ -25,6 +25,7 @@ import { useWizardConnections } from "./use-wizard-connections";
 import {
   firstLibraryOfType,
   useWizardSave,
+  wizardStateOf,
   type LibraryChoice,
   type LibraryFolders,
   type WizardDraft,
@@ -34,10 +35,6 @@ import { isConnectedSource, type DownloadSource } from "./wizard-source";
 
 const FALLBACK_ZONE = "UTC";
 const DEFAULT_BACKUP_HOURS = 24;
-
-function wizardStateOf(settings: AppSettings | undefined): string {
-  return (settings?.setup_wizard_state || "pending").trim().toLowerCase();
-}
 
 /** The draft starts from what is saved: the zone, the backup schedule and the first library of each type. */
 function initialDraft(

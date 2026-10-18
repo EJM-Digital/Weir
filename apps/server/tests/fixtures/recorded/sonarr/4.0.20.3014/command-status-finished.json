@@ -1,0 +1,53 @@
+{
+  "app": "sonarr",
+  "version": "4.0.20.3014",
+  "state": "command-status-finished",
+  "recordedAt": "2026-10-17T05:26:07Z",
+  "note": "Asking the app about a scan it has finished: the status the app gives a command that is over.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/command/10",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "name": "DownloadedEpisodesScan",
+          "commandName": "Downloaded Episodes Scan",
+          "body": {
+            "path": "/downloads/Breaking.Bad.S01E02.720p.WEB.h264-RECORDER/Breaking.Bad.S01E02.720p.WEB.h264-RECORDER.mkv",
+            "importMode": "move",
+            "requiresDiskAccess": true,
+            "isLongRunning": true,
+            "sendUpdatesToClient": true,
+            "updateScheduledTask": true,
+            "isExclusive": false,
+            "name": "DownloadedEpisodesScan",
+            "trigger": "manual",
+            "suppressMessages": true
+          },
+          "priority": "normal",
+          "status": "completed",
+          "result": "successful",
+          "queued": "2026-10-17T05:26:04Z",
+          "started": "2026-10-17T05:26:04Z",
+          "ended": "2026-10-17T05:26:04Z",
+          "duration": "00:00:00.0214524",
+          "trigger": "manual",
+          "stateChangeTime": "2026-10-17T05:26:04Z",
+          "sendUpdatesToClient": true,
+          "updateScheduledTask": true,
+          "id": 10
+        }
+      }
+    }
+  ]
+}

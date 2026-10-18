@@ -1,0 +1,34 @@
+{
+  "app": "radarr",
+  "version": "6.4.4.10685",
+  "state": "describe",
+  "recordedAt": "2026-10-17T05:26:14Z",
+  "note": "Asking an app with one root folder which folders it manages.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/rootfolder",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": [
+          {
+            "path": "/movies",
+            "accessible": true,
+            "freeSpace": 90602815488,
+            "unmappedFolders": [],
+            "id": 1
+          }
+        ]
+      }
+    }
+  ]
+}

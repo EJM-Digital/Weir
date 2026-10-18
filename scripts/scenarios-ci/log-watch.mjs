@@ -25,6 +25,11 @@ export class LogWatch {
     return new LogWatch(weir, (await weir.get(LOG_PAGE)).items);
   }
 
+  /** Counts every warning and error there is when it finishes as new: for a stack that was made for the scenario, and could not be read before. */
+  static sinceStart(weir) {
+    return new LogWatch(weir, []);
+  }
+
   /**
    * Names rows the scenario causes on purpose, such as the warning Weir writes for a sign-in it refuses: each `times` a row with this title
    * may appear, and no more. `why` says what in the scenario causes it.

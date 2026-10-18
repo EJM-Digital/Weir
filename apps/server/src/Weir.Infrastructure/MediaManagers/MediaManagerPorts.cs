@@ -166,19 +166,26 @@ public sealed partial class HttpMediaManagerPort : IMediaManagerPort
             return new ManagerLibraryTruth(connection, SignalStatus.NoSignal, [], $"{connection.Label} does not look after this kind of library.");
         }
 
-        WireValue? payload;
+        var client = Client(connection, ManagerDialectRules.LibraryTimeout);
         try
         {
-            payload = await Client(connection, ManagerDialectRules.LibraryTimeout)
+            if (mediaScope == MediaManagerKinds.Tv)
+            {
+                var paths = (await SeriesEpisodeFilesAsync(client, cancellationToken).ConfigureAwait(false))
+                    .SelectMany(series => ManagerDialectRules.ArrLibraryFilePaths(series.Files, _profile.ArrFileKey))
+                    .ToList();
+                return new ManagerLibraryTruth(connection, SignalStatus.Reported, paths);
+            }
+
+            var payload = await client
                 .GetJsonAsync(_profile.ArrLibraryPath!, [new("pageSize", ManagerDialectRules.ArrLibraryPageSize)], cancellationToken)
                 .ConfigureAwait(false);
+            return new ManagerLibraryTruth(connection, SignalStatus.Reported, ManagerDialectRules.ArrLibraryFilePaths(payload, _profile.ArrFileKey));
         }
         catch (Exception exception) when (exception is MediaManagerHttpException or MediaManagerUnreachableException)
         {
             return new ManagerLibraryTruth(connection, SignalStatus.Unreachable, [], UnreachableText(connection, exception, "which files it still keeps"));
         }
-
-        return new ManagerLibraryTruth(connection, SignalStatus.Reported, ManagerDialectRules.ArrLibraryFilePaths(payload, _profile.ArrFileKey));
     }
 
     public async Task<ManagerLibraryFilesSignal> ListLibraryFilesAsync(ManagerConnection connection, string mediaScope, CancellationToken cancellationToken = default)
@@ -207,22 +214,10 @@ public sealed partial class HttpMediaManagerPort : IMediaManagerPort
                 return new ManagerLibraryFilesSignal(connection, SignalStatus.Reported, ManagerDialectRules.ArrMovieLibraryFiles(payload));
             }
 
-            // Sonarr has no "every episode file" endpoint: EpisodeFileController.GetEpisodeFiles requires
-            // seriesId or episodeFileIds, so every series is listed first and asked for its files in turn.
-            var seriesPayload = await client.GetJsonAsync("/api/v3/series", [new("pageSize", ManagerDialectRules.ArrLibraryPageSize)], cancellationToken).ConfigureAwait(false);
             var files = new List<ManagerLibraryFile>();
-            foreach (var series in ManagerValues.Dicts(seriesPayload))
+            foreach (var series in await SeriesEpisodeFilesAsync(client, cancellationToken).ConfigureAwait(false))
             {
-                if (ManagerValues.FirstNumber(series, "id") is not { } seriesId)
-                {
-                    continue;
-                }
-
-                var idText = seriesId.ToString(CultureInfo.InvariantCulture);
-                var title = ManagerValues.FirstText(series, "title") ?? idText;
-                var qualityProfileId = ManagerValues.FirstNumber(series, "qualityProfileId") is { } profileNumber ? (long)profileNumber : (long?)null;
-                var episodePayload = await client.GetJsonAsync("/api/v3/episodefile", [new("seriesId", seriesId)], cancellationToken).ConfigureAwait(false);
-                files.AddRange(ManagerDialectRules.ArrEpisodeLibraryFiles(episodePayload, idText, title, qualityProfileId));
+                files.AddRange(ManagerDialectRules.ArrEpisodeLibraryFiles(series.Files, series.Id, series.Title, series.QualityProfileId));
             }
 
             return new ManagerLibraryFilesSignal(connection, SignalStatus.Reported, files);
@@ -231,6 +226,34 @@ public sealed partial class HttpMediaManagerPort : IMediaManagerPort
         {
             return new ManagerLibraryFilesSignal(connection, SignalStatus.Unreachable, [], UnreachableText(connection, exception, "which files it keeps and their titles"));
         }
+    }
+
+    /// <summary>One Sonarr series with the answer to "which files does it have".</summary>
+    private sealed record SeriesFiles(string Id, string Title, long? QualityProfileId, WireValue? Files);
+
+    /// <summary>
+    /// Every series with its episode files. Sonarr has no "every episode file" endpoint: <c>GET /api/v3/episodefile</c> answers 400 unless it is
+    /// given a <c>seriesId</c> or <c>episodeFileIds</c> (recorded from Sonarr 4.0.20), so every series is listed first and asked for its files in turn.
+    /// </summary>
+    private static async Task<List<SeriesFiles>> SeriesEpisodeFilesAsync(MediaManagerHttpClient client, CancellationToken cancellationToken)
+    {
+        var seriesPayload = await client.GetJsonAsync("/api/v3/series", [new("pageSize", ManagerDialectRules.ArrLibraryPageSize)], cancellationToken).ConfigureAwait(false);
+        var all = new List<SeriesFiles>();
+        foreach (var series in ManagerValues.Dicts(seriesPayload))
+        {
+            if (ManagerValues.FirstNumber(series, "id") is not { } seriesId)
+            {
+                continue;
+            }
+
+            var idText = seriesId.ToString(CultureInfo.InvariantCulture);
+            var title = ManagerValues.FirstText(series, "title") ?? idText;
+            var qualityProfileId = ManagerValues.FirstNumber(series, "qualityProfileId") is { } profileNumber ? (long)profileNumber : (long?)null;
+            var episodePayload = await client.GetJsonAsync("/api/v3/episodefile", [new("seriesId", seriesId)], cancellationToken).ConfigureAwait(false);
+            all.Add(new SeriesFiles(idText, title, qualityProfileId, episodePayload));
+        }
+
+        return all;
     }
 
     public async Task<ManagerNotifyOutcome> FileChangedAsync(

@@ -1,0 +1,8 @@
+{
+  "name": "weir-scenarios-ci",
+  "private": true,
+  "description": "What the scenarios in CI need beyond Node itself: the browser driver for the weir-browser shard.",
+  "devDependencies": {
+    "playwright-core": "1.63.0"
+  }
+}

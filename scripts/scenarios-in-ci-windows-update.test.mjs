@@ -9,7 +9,8 @@ import { tmpdir } from "node:os";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { GithubStandIn, REPOSITORY, atomFeed, withOneByteChanged, withoutDeltas } from "./scenarios-ci/github-stand-in.mjs";
+import { REPOSITORY } from "./repository.mjs";
+import { GithubStandIn, atomFeed, withOneByteChanged, withoutDeltas } from "./scenarios-ci/github-stand-in.mjs";
 import { hostsRedirecting, hostsRestored } from "./scenarios-ci/github-redirect.mjs";
 import { loadHomes, scenariosOfShard } from "./scenarios-ci/homes.mjs";
 import { updateVersions } from "./scenarios-ci/update-versions.mjs";

@@ -1,0 +1,74 @@
+{
+  "app": "radarr",
+  "version": "6.4.4.10685",
+  "state": "downloaded-scan",
+  "recordedAt": "2026-10-17T05:26:21Z",
+  "note": "Weir asks the app to scan the folder a finished download is in; the app imports it.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/remotepathmapping",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": []
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v3/command",
+        "headers": {
+          "content-type": "application/json",
+          "x-api-key": "<scrubbed>"
+        },
+        "body": {
+          "name": "DownloadedMoviesScan",
+          "path": "/downloads/Big.Buck.Bunny.2008.720p.BluRay.x264-RECORDER/Big.Buck.Bunny.2008.720p.BluRay.x264-RECORDER.mkv",
+          "importMode": "Move"
+        }
+      },
+      "reply": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "http://localhost:7878/api/v3/command/7"
+        },
+        "body": {
+          "name": "DownloadedMoviesScan",
+          "commandName": "Downloaded Movies Scan",
+          "body": {
+            "sendUpdatesToClient": false,
+            "sendUpdates": false,
+            "path": "/downloads/Big.Buck.Bunny.2008.720p.BluRay.x264-RECORDER/Big.Buck.Bunny.2008.720p.BluRay.x264-RECORDER.mkv",
+            "importMode": "move",
+            "requiresDiskAccess": true,
+            "isLongRunning": true,
+            "updateScheduledTask": true,
+            "isExclusive": false,
+            "isTypeExclusive": false,
+            "name": "DownloadedMoviesScan",
+            "trigger": "manual",
+            "suppressMessages": true
+          },
+          "priority": "normal",
+          "status": "queued",
+          "result": "unknown",
+          "queued": "2026-10-17T05:26:21Z",
+          "trigger": "manual",
+          "sendUpdatesToClient": false,
+          "updateScheduledTask": true,
+          "id": 7
+        }
+      }
+    }
+  ]
+}
