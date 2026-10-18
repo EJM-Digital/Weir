@@ -52353,12 +52353,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "File locking, share modes, path rules (UNC, drive letters, case), process and handle behaviour of the real server, and real ffmpeg/mkvmerge are proven on Windows only by Windows-only unit facts (WindowsFact) and by 15 VM scenarios. Needs a contract leg on windows-latest (the harness already starts the server as a process) and the pinned Windows ffmpeg/mkvmerge installed for it"
-      },
-      "issue": 995,
+      "proofs": [
+        {
+          "type": "node",
+          "file": "scripts/check-contract-areas.test.mjs",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "PLAT-28",
         "verdict": "Gap"

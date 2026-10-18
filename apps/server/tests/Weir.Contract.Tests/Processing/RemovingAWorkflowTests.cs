@@ -84,7 +84,7 @@ public sealed class RemovingAWorkflowTests
     /// <summary>With the server stopped: no table that keeps a workflow's rows still holds one, and no job waits to run for it.</summary>
     private static async Task AssertNothingLeftForAsync(Scenario scenario, int libraryId)
     {
-        await using var database = await scenario.Server.StopForDatabaseAsync();
+        await using var database = await scenario.StopForDatabaseAsync();
         var tables = SeedSql.Rows(
             database.Connection,
             "SELECT DISTINCT m.name AS name FROM sqlite_master m, pragma_table_info(m.name) p WHERE m.type = 'table' AND p.name = 'library_id'");
