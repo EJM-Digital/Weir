@@ -1,6 +1,20 @@
 // Running the chosen scenarios of a shard one after the other, each judged on its own and on what the logs gained, and the verdict.
 import { LogWatch } from "./log-watch.mjs";
 
+/** The scenario's result, or a failure once it has run for `ceilingMs` (a hang guard; no ceiling when none is given). The scenario is not stopped, the shard moves on. */
+async function withinCeiling(running, ceilingMs, id) {
+  if (!ceilingMs) return running;
+  let timer;
+  const expired = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${id} was still running after ${Math.round(ceilingMs / 60_000)} minutes.`)), ceilingMs);
+  });
+  try {
+    return await Promise.race([running, expired]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Runs the scenarios in order; one that fails does not stop the next, so one run reports every failure.
  * @param {string[]} ids
@@ -20,13 +34,14 @@ export async function runScenarios({ ids, registry, world }) {
       const { run, logs } = typeof registry[id] === "function" ? { run: registry[id] } : registry[id];
       const watch = await (world.watchLogs ? world.watchLogs(world) : logs === "since-start" ? LogWatch.sinceStart(world.weir) : LogWatch.begin(world.weir));
       world.logWatch = watch;
-      const detail = await run(world);
+      const detail = await withinCeiling(run(world), world.scenarioCeilingMs?.[id] ?? world.scenarioCeilingMs?.default, id);
       await watch.finish();
       outcome = { status: "passed", detail: `${detail} The logs gained no unexpected warning or error.` };
     } catch (error) {
       outcome = { status: "failed", detail: error.message };
     }
     results.push({ id, ...outcome, seconds: Math.round((Date.now() - began) / 1000) });
+    console.log(`${id}: ${outcome.status} in ${results.at(-1).seconds} s${outcome.status === "passed" ? "" : `: ${outcome.detail}`}`);
   }
   return results;
 }
