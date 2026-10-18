@@ -7,7 +7,7 @@ import { LogWatch } from "./log-watch.mjs";
  * @param {Record<string, ((world: object) => Promise<string>) | {run: (world: object) => Promise<string>, logs?: "since-start", expectedLogs?: (world: object) => (row: object) => boolean}>} registry
  *   The scenarios that are ported, by id. A scenario that is signed out when it begins has its logs judged from the start of the stack. One that makes
  *   Weir fail on purpose says which warnings that is expected to log (`expectedLogs`); any other warning or error still fails it.
- * @param {{weir: object}} world
+ * @param {{weir: object, watchLogs?: (world: object) => Promise<{finish(expected?: (row: object) => boolean): Promise<object[]>}>}} world `watchLogs` replaces the default watch of System > Logs, for a shard whose first scenario begins before Weir is there.
  */
 export async function runScenarios({ ids, registry, world }) {
   for (const id of ids) {
@@ -19,10 +19,11 @@ export async function runScenarios({ ids, registry, world }) {
     let outcome;
     try {
       const { run, logs, expectedLogs } = typeof registry[id] === "function" ? { run: registry[id] } : registry[id];
-      const watch = logs === "since-start" ? LogWatch.sinceStart(world.weir) : await LogWatch.begin(world.weir);
+      const watch = await (world.watchLogs ? world.watchLogs(world) : logs === "since-start" ? LogWatch.sinceStart(world.weir) : LogWatch.begin(world.weir));
+      world.logWatch = watch;
       const detail = await run(world);
       const accepted = await watch.finish(expectedLogs?.(world));
-      const logged = accepted.length === 0 ? "The logs gained no warning or error." : `The logs gained only what the scenario expected: ${accepted.map((row) => row.title).join(" | ")}.`;
+      const logged = accepted.length === 0 ? "The logs gained no unexpected warning or error." : `The logs gained only what the scenario expected: ${accepted.map((row) => row.title).join(" | ")}.`;
       outcome = { status: "passed", detail: `${detail} ${logged}` };
     } catch (error) {
       outcome = { status: "failed", detail: error.message };
@@ -38,8 +39,8 @@ export function exitCode(results) {
 }
 
 /** The table the workflow shows on its summary page. */
-export function summaryMarkdown(results, { shard, candidate }) {
+export function summaryMarkdown(results, { shard, value, label = "Image under test" }) {
   const cell = (text) => text.replaceAll("|", "\\|").replaceAll(/\r?\n/g, " ");
   const rows = results.map((result) => `| \`${result.id}\` | ${result.status === "passed" ? "passed" : "FAILED"} | ${result.seconds} s | ${cell(result.detail)} |`);
-  return [`### Scenarios: ${shard}`, "", `Image under test: \`${candidate}\``, "", "| Scenario | Verdict | Time | What it showed |", "| --- | --- | --- | --- |", ...rows, ""].join("\n");
+  return [`### Scenarios: ${shard}`, "", `${label}: \`${value}\``, "", "| Scenario | Verdict | Time | What it showed |", "| --- | --- | --- | --- |", ...rows, ""].join("\n");
 }

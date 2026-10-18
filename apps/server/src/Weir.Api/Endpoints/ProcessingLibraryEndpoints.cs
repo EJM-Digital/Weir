@@ -201,7 +201,7 @@ internal sealed class ProcessingLibraryEndpointHandlers
         var uow = await request.DbAsync().ConfigureAwait(false);
         var library = await RequireLibraryAsync(uow, _libraries, id).ConfigureAwait(false);
         var chain = await _folderChainCheck
-            .CheckForLibraryAsync(uow, library, request.Context.RequestAborted)
+            .ReadSavedAsync(uow, library, request.Context.RequestAborted)
             .ConfigureAwait(false);
         return ApiRoutes.Ok(chain);
     }

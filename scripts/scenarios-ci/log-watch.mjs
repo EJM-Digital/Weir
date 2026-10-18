@@ -13,6 +13,7 @@ export function newProblemRows(before, after) {
 export class LogWatch {
   #weir;
   #before;
+  #allowed = new Map();
 
   constructor(weir, before) {
     this.#weir = weir;
@@ -30,8 +31,17 @@ export class LogWatch {
   }
 
   /**
-   * Throws what the logs gained since `begin`, except the rows `expected` accepts: a scenario that makes Weir fail on purpose expects the
-   * warnings that say so. Returns the rows it accepted, so the scenario's verdict can say what it expected.
+   * Names rows the scenario causes on purpose, such as the warning Weir writes for a sign-in it refuses: each `times` a row with this title
+   * may appear, and no more. `why` says what in the scenario causes it.
+   */
+  expect(title, { times = 1, why }) {
+    if (!why) throw new Error(`A row the scenario expects ("${title}") needs a reason.`);
+    this.#allowed.set(title, (this.#allowed.get(title) ?? 0) + times);
+  }
+
+  /**
+   * Throws what the logs gained since `begin`, except the rows `expected` accepts and the rows the scenario said it would cause. A scenario that
+   * makes Weir fail on purpose expects the warnings that say so. Returns the rows `expected` accepted, so the scenario's verdict can say what it expected.
    */
   async finish(expected = () => false) {
     const page = await this.#weir.get(LOG_PAGE);
@@ -41,8 +51,14 @@ export class LogWatch {
     if (page.next_cursor && gained.length >= page.items.length) {
       throw new Error("System > Logs gained more than one page of new warnings and errors, which is not a clean run.");
     }
-    if (gained.length > 0) {
-      throw new Error(`System > Logs gained ${gained.length} unexpected warning or error (${gained.map((row) => row.title).join(" | ")}).`);
+    const left = new Map(this.#allowed);
+    const unexpected = gained.filter((row) => {
+      if (!(left.get(row.title) > 0)) return true;
+      left.set(row.title, left.get(row.title) - 1);
+      return false;
+    });
+    if (unexpected.length > 0) {
+      throw new Error(`System > Logs gained ${unexpected.length} unexpected warning or error (${unexpected.map((row) => row.title).join(" | ")}).`);
     }
     return accepted;
   }

@@ -1,0 +1,37 @@
+{
+  "app": "deluge",
+  "version": "2.2.0",
+  "state": "test",
+  "recordedAt": "2026-10-17T11:11:15Z",
+  "note": "The connection test with the right password.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/json",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "method": "auth.login",
+          "params": [
+            "<scrubbed>"
+          ],
+          "id": 1
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "set-cookie": "_session_id=<scrubbed>; Expires=Sat, 17 Oct 2026 12:11:15 GMT; Path=/"
+        },
+        "body": {
+          "result": true,
+          "error": null,
+          "id": 1
+        }
+      }
+    }
+  ]
+}

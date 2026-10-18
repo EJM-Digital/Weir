@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Weir.ClientRecorder</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Weir.Infrastructure\Weir.Infrastructure.csproj" />
+  </ItemGroup>
+  <!-- The recorder's own pieces are shared with the Sonarr and Radarr recorder, not copied. -->
+  <ItemGroup>
+    <Compile Include="..\Weir.ArrRecorder\RecordingTransport.cs" Link="Shared\RecordingTransport.cs" />
+    <Compile Include="..\Weir.ArrRecorder\RecordingWriter.cs" Link="Shared\RecordingWriter.cs" />
+    <Compile Include="..\Weir.ArrRecorder\ArrApi.cs" Link="Shared\ArrApi.cs" />
+  </ItemGroup>
+</Project>

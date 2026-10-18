@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { currentManifest, defaultRoot, hashOf, problems } from "./check-recorded-manifest.mjs";
+import { appRoots, currentManifest, defaultRoot, hashOf, problems } from "./check-recorded-manifest.mjs";
 
 const script = fileURLToPath(new URL("./check-recorded-manifest.mjs", import.meta.url));
 
@@ -106,4 +106,9 @@ test("--write makes the manifest of a folder, and the check then passes", () => 
     assert.match(written, /Wrote .*MANIFEST.sha256/);
     assert.deepEqual(problems(root, manifest), []);
   });
+});
+
+test("the recordings of every recorded app match the manifest checked in beside them", () => {
+  assert.equal(appRoots.length, 7);
+  for (const root of appRoots) assert.deepEqual(problems(root, join(root, "MANIFEST.sha256")), [], root);
 });
