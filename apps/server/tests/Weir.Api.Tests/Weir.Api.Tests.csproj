@@ -28,6 +28,8 @@
     <Compile Include="..\Shared\FileChangingPathsTable.cs" Link="TestSupport\FileChangingPathsTable.cs" />
     <!-- Recordings of a real Sonarr and Radarr (fixtures/recorded) and the handler that replays them. -->
     <Compile Include="..\Shared\ArrRecordings.cs" Link="TestSupport\ArrRecordings.cs" />
+    <!-- GitHub, as it answered when recorded (fixtures/recorded/github-releases). -->
+    <Compile Include="..\Shared\RecordedGitHub.cs" Link="TestSupport\RecordedGitHub.cs" />
   </ItemGroup>
   <ItemGroup>
     <!-- A frozen fixture from an older release, shared with the infrastructure tests. -->

@@ -60,7 +60,8 @@ public sealed class ProcessingRejectHandlerTests : IDisposable
         _fixture.Store.Execute(
             $"INSERT INTO files (library_id, relative_path, status, status_reason) VALUES ({libraryId}, '{relativePath}', '{status}', 'ffmpeg could not read the audio track.')");
 
-    private static JobWorkContext Context(long id, string payload) => new(id, IntakeRules.RejectJobKind, payload, "test");
+    private static JobWorkContext Context(long id, string payload, int attempt = 1, int maxAttempts = 1) =>
+        new(id, IntakeRules.RejectJobKind, payload, "test", attempt, maxAttempts);
 
     private async Task<string> ScalarText(string sql)
     {
@@ -164,6 +165,40 @@ public sealed class ProcessingRejectHandlerTests : IDisposable
         await Handler().HandleAsync(Context(43, payload), CancellationToken.None);
 
         Assert.Equal(bytesBefore, File.ReadAllBytes(source));
+        Assert.Equal(1, await _fixture.Store.Scalar($"SELECT count(*) FROM jobs WHERE job_kind = '{IntakeRules.PassThroughJobKind}'"));
+    }
+
+    [Fact]
+    public async Task A_manager_that_does_not_answer_is_asked_again_before_the_original_is_handed_back()
+    {
+        var library = await LibraryAsync();
+        var source = _folders.Source("Film/film.mkv");
+        var bytesBefore = File.ReadAllBytes(source);
+        await FileRowAsync(library, "Film/film.mkv");
+        var connection = await _fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
+        await LinkAsync(library, connection);
+        _fixture.Http.Throw(HttpMethod.Get, ManifestPath, new HttpRequestException("no route to host"));
+        var payload = $$$"""{"relative_media_path":"Film/film.mkv","library_id":{{{library}}},"origin":{"source_key":"deluno","handoff_id":"h1","callback_path":"{{{EventsPath}}}"}}""";
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Handler().HandleAsync(Context(44, payload, attempt: 1, maxAttempts: 3), CancellationToken.None));
+
+        Assert.Equal(bytesBefore, File.ReadAllBytes(source));
+        Assert.Equal(0, await _fixture.Store.Scalar($"SELECT count(*) FROM jobs WHERE job_kind = '{IntakeRules.PassThroughJobKind}'"));
+        Assert.Equal(0, await _fixture.Store.Scalar("SELECT count(*) FROM activity_events WHERE event_type = 'processing.file_reject_fell_back'"));
+    }
+
+    [Fact]
+    public async Task A_manager_that_still_does_not_answer_on_the_last_attempt_has_the_original_handed_back()
+    {
+        var library = await LibraryAsync();
+        await FileRowAsync(library, "Film/film.mkv");
+        var connection = await _fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
+        await LinkAsync(library, connection);
+        _fixture.Http.Throw(HttpMethod.Get, ManifestPath, new HttpRequestException("no route to host"));
+        var payload = $$$"""{"relative_media_path":"Film/film.mkv","library_id":{{{library}}},"origin":{"source_key":"deluno","handoff_id":"h1","callback_path":"{{{EventsPath}}}"}}""";
+
+        await Handler().HandleAsync(Context(45, payload, attempt: 3, maxAttempts: 3), CancellationToken.None);
+
         Assert.Equal(1, await _fixture.Store.Scalar($"SELECT count(*) FROM jobs WHERE job_kind = '{IntakeRules.PassThroughJobKind}'"));
     }
 

@@ -16,6 +16,9 @@ import { finishedLine } from "./processing-words";
 const RECENT_PASSES = 24;
 const RECENT_CLEANS = 12;
 
+/** The newest finished files, and why they could not be read when a read failed, so an empty list is not taken for a quiet day. */
+type FinishedReading = { files: FinishedFile[]; error: unknown };
+
 /**
  * The newest finished files, from the Activity entry each one wrote: both kinds, or the one kind and the one
  * workflow the page is narrowed to, which the server picks out so the shelf has that many of its own to show.
@@ -23,7 +26,7 @@ const RECENT_CLEANS = 12;
 export function useFinishedFiles(
   filter: Filter = "all",
   workflowId: number | null = null,
-): FinishedFile[] {
+): FinishedReading {
   const workflow = workflowId === null ? {} : { library_id: workflowId };
   const withPasses = shownBy(filter, { source: "download" });
   const withCleans = shownBy(filter, { source: "library" });
@@ -49,12 +52,13 @@ export function useFinishedFiles(
     },
     { enabled: withCleans },
   );
-  return useMemo(() => {
+  const files = useMemo(() => {
     const all = [...(passes.data?.items ?? []), ...(cleans.data?.items ?? [])]
       .map(finishedFileFromEvent)
       .filter((item): item is FinishedFile => item !== null);
     return all.sort((a, b) => b.finishedAt.localeCompare(a.finishedAt));
   }, [passes.data, cleans.data]);
+  return { files, error: passes.error ?? cleans.error ?? null };
 }
 
 /**

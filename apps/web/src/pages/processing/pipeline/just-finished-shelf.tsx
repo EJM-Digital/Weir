@@ -16,6 +16,7 @@ import {
 } from "react";
 
 import { Panel } from "../../../components/panels/panel";
+import { loadErrorMessage } from "../../../lib/api/error-message";
 import type { FinishedFile } from "../../../lib/activity/processing-outcome";
 import { useElementSize } from "../../../lib/ui/use-element-size";
 import type { Filter } from "../processing-filter";
@@ -47,6 +48,8 @@ type Fit = ShelfFit & { across: number };
 export type JustFinishedShelfProps = {
   /** The newest finished files, before any filter. */
   items: readonly FinishedFile[];
+  /** Why they could not be read, when the read failed: an empty shelf then says so instead of claiming a quiet day. */
+  readError?: unknown;
   filter: Filter;
   /** Narrows the shelf to this workflow and leaves its chip the only one; the owner's own choice of chip otherwise. */
   workflowId?: number | null;
@@ -70,6 +73,7 @@ export type JustFinishedShelfProps = {
 
 export function JustFinishedShelf({
   items,
+  readError = null,
   filter,
   workflowId = null,
   now,
@@ -168,7 +172,19 @@ export function JustFinishedShelf({
       <div className="mm-shelf" data-testid="just-finished-shelf">
         <div ref={shelfRef} className="mm-shelf__rows">
           {shelf.tiles.length === 0 ? (
-            <p className="mm-shelf__empty">{NOTHING_FINISHED_WORDS[filter]}</p>
+            readError ? (
+              <p
+                className="mm-shelf__empty mm-status-text"
+                data-status="broken"
+                role="alert"
+              >
+                {loadErrorMessage(readError, "what has finished")}
+              </p>
+            ) : (
+              <p className="mm-shelf__empty">
+                {NOTHING_FINISHED_WORDS[filter]}
+              </p>
+            )
           ) : null}
           <ShelfTiles
             tiles={shelf.tiles}

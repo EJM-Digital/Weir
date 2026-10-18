@@ -38,9 +38,13 @@ function Trace({
 }
 
 const line = () =>
-  screen.getByRole("img").querySelector<SVGPathElement>(".mm-trace__line")!;
+  screen
+    .getByRole("slider", { name: "CPU, last 10 minutes" })
+    .querySelector<SVGPathElement>(".mm-trace__line")!;
 const dot = () =>
-  screen.getByRole("img").querySelector<HTMLElement>(".mm-trace__dot")!;
+  screen
+    .getByRole("slider", { name: "CPU, last 10 minutes" })
+    .querySelector<HTMLElement>(".mm-trace__dot")!;
 const lastPoint = () => {
   const points = (line().getAttribute("d") ?? "").split(" ");
   return {
@@ -69,7 +73,7 @@ describe("LiveTrace", () => {
     render(<Trace lines={series(10, 20, 30)} />);
 
     expect(
-      screen.getByRole("img", { name: "CPU, last 10 minutes" }),
+      screen.getByRole("slider", { name: "CPU, last 10 minutes" }),
     ).toBeInTheDocument();
     expect(line().getAttribute("d")).toMatch(/^M/);
   });
@@ -176,7 +180,10 @@ describe("LiveTrace's readout", () => {
   it("says the time and the value under the pointer, in Weir's time zone", () => {
     render(<Trace lines={series(10, 20, 30, 40, 50)} />);
 
-    fireEvent.pointerMove(screen.getByRole("img"), { clientX: 100 });
+    fireEvent.pointerMove(
+      screen.getByRole("slider", { name: "CPU, last 10 minutes" }),
+      { clientX: 100 },
+    );
 
     expect(screen.getByText("t24 · 50%")).toBeInTheDocument();
   });
@@ -184,8 +191,14 @@ describe("LiveTrace's readout", () => {
   it("follows the pointer along the line", () => {
     render(<Trace lines={series(10, 20, 30, 40, 50)} />);
 
-    fireEvent.pointerMove(screen.getByRole("img"), { clientX: 100 });
-    fireEvent.pointerMove(screen.getByRole("img"), { clientX: 80 });
+    fireEvent.pointerMove(
+      screen.getByRole("slider", { name: "CPU, last 10 minutes" }),
+      { clientX: 100 },
+    );
+    fireEvent.pointerMove(
+      screen.getByRole("slider", { name: "CPU, last 10 minutes" }),
+      { clientX: 80 },
+    );
 
     expect(screen.getByText("t22 · 30%")).toBeInTheDocument();
   });
@@ -193,8 +206,13 @@ describe("LiveTrace's readout", () => {
   it("goes when the pointer leaves", () => {
     render(<Trace lines={series(10, 20, 30)} />);
 
-    fireEvent.pointerMove(screen.getByRole("img"), { clientX: 100 });
-    fireEvent.pointerLeave(screen.getByRole("img"));
+    fireEvent.pointerMove(
+      screen.getByRole("slider", { name: "CPU, last 10 minutes" }),
+      { clientX: 100 },
+    );
+    fireEvent.pointerLeave(
+      screen.getByRole("slider", { name: "CPU, last 10 minutes" }),
+    );
 
     expect(screen.queryByText(/^t\d+ · /)).toBeNull();
   });
@@ -202,12 +220,126 @@ describe("LiveTrace's readout", () => {
   it("sits on the side of the line the pointer is not on", () => {
     render(<Trace lines={series(10, 20, 30, 40, 50)} windowMs={4000} />);
 
-    fireEvent.pointerMove(screen.getByRole("img"), { clientX: 100 });
+    fireEvent.pointerMove(
+      screen.getByRole("slider", { name: "CPU, last 10 minutes" }),
+      { clientX: 100 },
+    );
     expect(screen.getByText("t24 · 50%")).toHaveClass("mm-trace__read--left");
 
-    fireEvent.pointerMove(screen.getByRole("img"), { clientX: 0 });
+    fireEvent.pointerMove(
+      screen.getByRole("slider", { name: "CPU, last 10 minutes" }),
+      { clientX: 0 },
+    );
     expect(screen.getByText("t20 · 10%")).not.toHaveClass(
       "mm-trace__read--left",
+    );
+  });
+});
+
+describe("LiveTrace's readout from the keyboard", () => {
+  const trace = () =>
+    screen.getByRole("slider", { name: "CPU, last 10 minutes" });
+  const press = (key: string) => fireEvent.keyDown(trace(), { key });
+
+  it("can be reached with Tab, and says how to read it", () => {
+    render(<Trace lines={series(10, 20, 30)} />);
+
+    expect(trace()).toHaveAttribute("tabindex", "0");
+    expect(trace()).toHaveAccessibleDescription(
+      "Left and right arrow keys read earlier and later values.",
+    );
+  });
+
+  it("starts at the newest value on the first arrow, and goes earlier and later from there", () => {
+    render(<Trace lines={series(10, 20, 30, 40, 50)} />);
+
+    press("ArrowLeft");
+    expect(trace()).toHaveAttribute("aria-valuetext", "t24 · 50%");
+    press("ArrowLeft");
+    expect(trace()).toHaveAttribute("aria-valuetext", "t23 · 40%");
+    press("ArrowLeft");
+    expect(trace()).toHaveAttribute("aria-valuetext", "t22 · 30%");
+    press("ArrowRight");
+    expect(trace()).toHaveAttribute("aria-valuetext", "t23 · 40%");
+  });
+
+  it("stops at the oldest and newest values, and Home and End go straight to them", () => {
+    render(<Trace lines={series(10, 20, 30)} />);
+
+    press("Home");
+    expect(trace()).toHaveAttribute("aria-valuetext", "t20 · 10%");
+    press("ArrowLeft");
+    expect(trace()).toHaveAttribute("aria-valuetext", "t20 · 10%");
+    press("End");
+    expect(trace()).toHaveAttribute("aria-valuetext", "t22 · 30%");
+    press("ArrowRight");
+    expect(trace()).toHaveAttribute("aria-valuetext", "t22 · 30%");
+  });
+
+  it("shows the same card the pointer does, beside the value it says", () => {
+    render(<Trace lines={series(10, 20, 30)} />);
+
+    press("Home");
+
+    expect(trace().querySelector(".mm-trace__read")?.textContent).toBe(
+      "t20 · 10%",
+    );
+    expect(trace().querySelector(".mm-trace__cursor")).not.toBeNull();
+  });
+
+  it("goes on Escape and when the focus leaves, saying nothing more", () => {
+    render(<Trace lines={series(10, 20, 30)} />);
+    press("End");
+
+    press("Escape");
+    expect(trace()).not.toHaveAttribute("aria-valuetext");
+    expect(trace().querySelector(".mm-trace__read")).toBeNull();
+
+    press("End");
+    fireEvent.blur(trace());
+    expect(trace()).not.toHaveAttribute("aria-valuetext");
+    expect(trace().querySelector(".mm-trace__read")).toBeNull();
+  });
+
+  it("leaves other keys alone", () => {
+    render(<Trace lines={series(10, 20, 30)} />);
+
+    const handled = fireEvent.keyDown(trace(), { key: "a" });
+
+    expect(handled).toBe(true);
+    expect(trace().querySelector(".mm-trace__read")).toBeNull();
+  });
+
+  it("says nothing for a trace with no samples", () => {
+    render(<Trace lines={series()} />);
+
+    press("ArrowLeft");
+
+    expect(trace()).not.toHaveAttribute("aria-valuetext");
+  });
+
+  it("reads each line when there are two, as the pointer does", () => {
+    const lines: TraceSeries[] = [
+      {
+        key: "read",
+        label: "read",
+        colour: "var(--mm-success)",
+        samples: samples(1, 2, 3),
+      },
+      {
+        key: "write",
+        label: "write",
+        colour: "var(--mm-primary)",
+        samples: samples(4, 5, 6),
+      },
+    ];
+    render(<Trace lines={lines} />);
+
+    press("End");
+
+    expect(trace()).toHaveAttribute(
+      "aria-valuetext",
+      "t22 · read 3% · write 6%",
     );
   });
 });

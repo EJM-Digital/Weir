@@ -5607,7 +5607,28 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_status_says_an_update_is_available_to_a_copy_behind_the_recorded_release_feed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_status_says_up_to_date_to_a_copy_that_is_the_newest_the_recorded_feed_names"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_status_reads_the_recorded_releases_API_when_the_feed_cannot_be_read"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/GitHubReleaseRecordingTests.cs",
+          "name": "GitHubReleaseRecordingTests"
+        }
+      ],
       "partial": [
         {
           "type": "contract",
@@ -5655,11 +5676,6 @@
           "name": "ReleaseSelectionTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The release feed JSON is a hand-written fake; no test runs against the real GitHub releases API"
-      },
-      "issue": 1142,
       "covers": [
         "route:GET /api/v1/suite/update-status"
       ],
@@ -5676,7 +5692,28 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_settings_are_read_only_by_someone_signed_in"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_settings_start_as_Auto_and_a_saved_choice_is_what_the_next_read_returns"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_settings_refuse_a_mode_that_is_not_one_of_the_three_and_an_interval_outside_a_minute_to_a_week"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_settings_refuse_a_field_they_do_not_have"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -5689,11 +5726,6 @@
           "name": "Update_settings_files_round_trip_and_fall_back_to_notify_only"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No test shows a PUT then a GET returning the saved mode, no invalid-mode refusal, no contract test; the GET's own auth is not asserted"
-      },
-      "issue": 1142,
       "covers": [
         "route:GET /api/v1/suite/update-settings"
       ],
@@ -6198,7 +6230,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/SystemReadings/WindowsHostReadingSourceTests.cs",
+          "name": "WindowsHostReadingSourceTests"
+        }
+      ],
       "partial": [
         {
           "type": "contract",
@@ -6231,11 +6269,6 @@
           "name": "LinuxParsersTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "WindowsHostReadingSource and WindowsNative (the readings on the platform people install on) have no test; every reading is asserted on fakes or Linux sources"
-      },
-      "issue": 1142,
       "covers": [
         "route:GET /api/v1/system/stats"
       ],
@@ -6343,12 +6376,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Nothing validates a real response against the schema, so a field the server stops sending (or sends with another type) while the web client types still say otherwise is caught only where a person wrote a key list."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/OpenApiResponseSchemaTests.cs",
+          "name": "Every_body_a_route_answers_on_a_fresh_server_matches_the_schema_the_document_gives_it"
+        }
+      ],
       "audit": {
         "id": "X-02",
         "verdict": "Gap"
@@ -6570,7 +6604,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.Loops.cs",
+          "name": "A_files_at_once_value_saved_while_weir_runs_takes_effect_once_the_slots_read_it_again"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.Loops.cs",
+          "name": "A_files_at_once_value_that_cannot_be_read_is_warned_about_once_a_minute_not_on_every_pass"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -6608,11 +6653,6 @@
           "name": "SystemEndpointsTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Not proven: a Files-at-once value changed while the server runs takes effect after the 30 s cache expiry (all tests set the value before start; the \"needs no restart\" claim in docs/settings-truthfulness-audit.md has no test); the SettingsReadFailureLogInterval throttle (one warning a minute) is untested."
-      },
-      "issue": 1142,
       "covers": [
         "service:ProcessingWorkerService"
       ],
@@ -6629,7 +6669,33 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.Loops.cs",
+          "name": "The_upkeep_lane_takes_a_scan_and_leaves_file_work_for_the_files_lane"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.Loops.cs",
+          "name": "The_upkeep_slots_report_under_their_own_name_while_they_run_and_stopped_once_the_lane_stops"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.Loops.cs",
+          "name": "The_upkeep_lane_survives_a_crashed_tick_says_so_and_carries_on_when_the_database_is_back"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/PeriodicTaskRunsApiTests.cs",
+          "name": "Every_job_kind_the_server_runs_belongs_to_the_lane_that_is_meant_to_take_it"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/JobsStartupRecoveryServiceTests.cs",
+          "name": "The_upkeep_lane_claims_nothing_until_the_sweep_has_finished_and_then_takes_the_scan"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -6652,11 +6718,6 @@
           "name": "WorkerLaneWakeTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] The loop itself has no test: crashed-tick backoff, recovery gate, heartbeat stop on shutdown, and that the lane claims ONLY WorkLanes.UpkeepKinds. WorkLanes.UpkeepKinds (which kinds are upkeep) has no direct test, so a new job kind added to the wrong list would not be caught."
-      },
-      "issue": 1142,
       "covers": [
         "service:UpkeepWorkerService"
       ],
@@ -7720,7 +7781,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/PeriodicTaskRunsApiTests.cs",
+          "name": "The_sign_in_clean_up_removes_signed_out_and_expired_sign_ins_and_keeps_the_live_one"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -7738,11 +7805,6 @@
           "name": "PeriodicTasksStartupTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] SessionCleanupTask.RunOnceAsync itself (unit-of-work open, commit, the log lines) is never run by any test."
-      },
-      "issue": 1142,
       "covers": [
         "task:auth-session-cleanup"
       ],
@@ -7759,7 +7821,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/PeriodicTaskRunsApiTests.cs",
+          "name": "The_log_trim_prunes_to_the_days_saved_and_does_it_at_most_once_a_day"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -7782,11 +7850,6 @@
           "name": "SystemOverviewApiTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] LogRetentionTask.TickAsync is never called by a test: the once-a-day gate (MinRunInterval) and \"Prune receives the saved days\" are unproven; the host test only shows the task finished without error."
-      },
-      "issue": 1142,
       "covers": [
         "task:suite-log-retention"
       ],
@@ -8059,7 +8122,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/PeriodicTaskRunsApiTests.cs",
+          "name": "The_System_overview_timer_reads_nothing_while_no_browser_is_watching_and_reads_once_one_is"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/PeriodicTaskRunsApiTests.cs",
+          "name": "The_System_overview_timer_sends_a_change_to_an_open_stream_when_a_browser_is_watching"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -8077,11 +8151,6 @@
           "name": "SystemOverviewApiTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] SystemOverviewChangeTask (the 5 s task that calls RefreshAsync, and its no-client short-circuit) has no test; only the frame class it drives is tested. The first test depends on a 250 ms real sleep heuristic."
-      },
-      "issue": 1142,
       "covers": [
         "task:system-overview"
       ],
@@ -8179,7 +8248,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "Finished_jobs_older_than_the_saved_retention_days_are_pruned_and_younger_ones_kept"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "The_default_retention_keeps_a_job_the_one_day_setting_would_prune"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "The_timer_takes_its_interval_from_the_environment_and_prunes_when_it_starts"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "A_run_that_pruned_something_says_how_many_and_a_quiet_run_says_nothing"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -8202,11 +8292,6 @@
           "name": "JobWritesAnnounceTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] JobRowsRetentionTask (reads WEIR_JOB_ROWS_RETENTION_DAYS and the interval from WeirOptions, runs the tick off the pool, logs the counts) is untested; the two environment variables are parse-tested only (SET-E15)."
-      },
-      "issue": 1142,
       "covers": [
         "task:platform-job-rows-retention"
       ],
@@ -8491,7 +8576,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "A_gone_files_history_goes_after_the_saved_number_of_days_and_not_before"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "A_changed_setting_is_the_one_the_next_run_uses"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "Zero_days_keeps_a_gone_files_history_for_ever"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -8499,11 +8600,6 @@
           "name": "FileHistoryRetentionTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] FileLogRetentionTask (reads file_log_retention_days from the operator settings and passes it to PruneAsync) has no test, so the saved setting reaching the prune is unproven (SET-O09)."
-      },
-      "issue": 1142,
       "covers": [
         "task:processing-file-log-retention"
       ],
@@ -8737,7 +8833,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/ThreadPoolWatchTests.cs",
+          "name": "The_loop_looks_from_a_thread_of_its_own_not_one_from_the_pool_it_is_watching"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/ThreadPoolWatchTests.cs",
+          "name": "The_loop_says_so_when_the_pool_does_not_start_its_probe_and_stops_when_the_host_does"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -8750,11 +8857,6 @@
           "name": "BlockingWaitGuardTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] The hosted loop against the real ThreadPool is not tested: The_service_starts_and_stops_on_a_thread_of_its_own only asserts no warning was logged (it does not prove a thread of its own or that a real starved pool is noticed). New in the working tree (uncommitted)."
-      },
-      "issue": 1142,
       "covers": [
         "service:ThreadPoolWatch"
       ],
@@ -9290,7 +9392,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/PeriodicTaskRunsApiTests.cs",
+          "name": "The_log_trim_prunes_to_the_days_saved_and_does_it_at_most_once_a_day"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -9313,11 +9421,6 @@
           "name": "RuntimeAndLoggingTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] The step that joins them is untested: LogRetentionTask.TickAsync reading the saved days and pruning once a day (JOB-031)."
-      },
-      "issue": 1142,
       "covers": [
         "setting:SuiteSettingsRecord.LogRetentionDays"
       ],
@@ -9788,7 +9891,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.Loops.cs",
+          "name": "A_files_at_once_value_saved_while_weir_runs_takes_effect_once_the_slots_read_it_again"
+        }
+      ],
       "partial": [
         {
           "type": "contract",
@@ -9826,11 +9935,6 @@
           "name": "AdmissionClaimTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] No test changes the value while the worker runs (30 s cache) - JOB-002."
-      },
-      "issue": 1142,
       "covers": [
         "setting:ProcessingOperatorSettingsRecord.MaxConcurrentFiles"
       ],
@@ -10182,7 +10286,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "A_changed_setting_is_the_one_the_next_run_uses"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "A_gone_files_history_goes_after_the_saved_number_of_days_and_not_before"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "Zero_days_keeps_a_gone_files_history_for_ever"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -10200,11 +10320,6 @@
           "name": "Operator_settings_put_updates"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] FileLogRetentionTask (setting -> PruneAsync) untested (JOB-049); no test that a changed value is the one the hourly job uses."
-      },
-      "issue": 1142,
       "covers": [
         "setting:ProcessingOperatorSettingsRecord.FileLogRetentionDays"
       ],
@@ -13596,7 +13711,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "WEIR_ENV_chooses_the_mode_Weir_runs_in_and_an_unset_one_is_production"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "A_failure_inside_Weir_answers_the_same_plain_500_in_either_mode_with_nothing_of_the_failure_in_it"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -13614,11 +13740,6 @@
           "name": "CsrfTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Needed: Api test that an exception returns the sanitized body under production and the developer page under development."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_ENV"
       ],
@@ -13635,7 +13756,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "WEIR_LOG_LEVEL_WARNING_keeps_warnings_in_the_log_and_leaves_information_out"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "Without_WEIR_LOG_LEVEL_information_is_in_the_log_too"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -13648,11 +13780,6 @@
           "name": "RuntimeAndLoggingTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Needed: Api test with WEIR_LOG_LEVEL=WARNING asserting an Information line is absent from the log file and a warning is present."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_LOG_LEVEL"
       ],
@@ -13801,12 +13928,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "A custom name must be both set and read; a mismatch locks every user out. Needed: Api test with WEIR_SESSION_COOKIE_NAME=x: Set-Cookie uses x and the session works."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "A_custom_session_cookie_name_is_set_on_sign_in_and_read_back_to_keep_the_person_signed_in"
+        }
+      ],
       "covers": [
         "setting:env:WEIR_SESSION_COOKIE_NAME"
       ],
@@ -13823,12 +13951,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Needed: strict and none values asserted on Set-Cookie (none without Secure is dropped by browsers - lock-out risk worth a documented test). Layer: integration."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "The_session_cookie_carries_the_SameSite_value_the_environment_names"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "SameSite_none_on_a_plain_http_install_is_not_marked_Secure_which_a_browser_will_not_keep_unless_Secure_is_switched_on"
+        }
+      ],
       "covers": [
         "setting:env:WEIR_SESSION_COOKIE_SAMESITE"
       ],
@@ -13873,7 +14007,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "A_sign_in_lasts_as_long_as_the_absolute_days_for_its_kind_say"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "A_sign_in_that_has_been_idle_too_long_ends_by_the_idle_setting_for_its_kind"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -13901,11 +14046,6 @@
           "name": "Trusted_device_login_uses_extended_session_policy"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Non-default trusted values never reach a session in any test."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_SESSION_IDLE_MINUTES",
         "setting:env:WEIR_SESSION_ABSOLUTE_DAYS",
@@ -14070,7 +14210,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "The_timer_takes_its_interval_from_the_environment_and_prunes_when_it_starts"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "Finished_jobs_older_than_the_saved_retention_days_are_pruned_and_younger_ones_kept"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -14088,11 +14239,6 @@
           "name": "JobServicesTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] See JOB-042. Needed: JobRowsRetentionTask test with options of 1 day / 60 s on a fake clock."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_JOB_ROWS_RETENTION_DAYS",
         "setting:env:WEIR_JOB_ROWS_RETENTION_SCHEDULE_INTERVAL_SECONDS"
@@ -14209,7 +14355,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "Each_work_file_sweep_takes_its_own_interval_from_the_environment"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "A_sweep_left_to_its_default_runs_hourly_whatever_the_other_one_is_set_to"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -14222,11 +14379,6 @@
           "name": "A_saved_interval_replaces_the_environments"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Needed: AT test starting a server with each variable and reading the enqueuer's Interval (like ProcessingEnvironmentSwitchTests does for the switches)."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_WORK_TEMP_STALE_SWEEP_MOVIE_SCHEDULE_INTERVAL_SECONDS",
         "setting:env:WEIR_PROCESSING_WORK_TEMP_STALE_SWEEP_TV_SCHEDULE_INTERVAL_SECONDS"
@@ -14244,7 +14396,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkTempStaleSweepAgeTests.cs",
+          "name": "A_work_file_goes_when_it_is_older_than_the_age_the_environment_names"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -14262,11 +14420,6 @@
           "name": "WorkTempStaleSweepHandlerTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] The handler tests prove \"older than the stale age is removed\", not that the environment value is the age used."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_WORK_TEMP_STALE_SWEEP_MIN_STALE_AGE_SECONDS"
       ],
@@ -14312,7 +14465,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "The_log_the_backups_the_temp_folder_and_the_database_are_where_the_environment_puts_them"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "A_backup_taken_now_goes_in_the_folder_WEIR_BACKUP_DIR_names"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -14325,11 +14489,6 @@
           "name": "RuntimeAndLoggingTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] WEIR_BACKUP_DIR, WEIR_LOG_DIR and WEIR_TEMP_DIR are parse-tested only: no test starts a server with each and finds backups / the log / temp files there (ConfigurationBackups.Directory and WeirLogFile read the option, untested with a non-default)."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_DB_PATH",
         "setting:env:WEIR_BACKUP_DIR",
@@ -14521,7 +14680,18 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanDispatchScheduleTaskTests.cs",
+          "name": "A_scheduled_scan_asks_for_passes_as_the_environment_says"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/ProcessingWatchedFolderWatcherServiceTests.cs",
+          "name": "A_scan_a_folder_change_queues_asks_for_passes_as_the_environment_says"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -14544,11 +14714,6 @@
           "name": "PauseTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] The environment value reaching ScheduleTask:158 and Watcher:394 is untested."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_WATCHED_FOLDER_REMUX_SCAN_DISPATCH_PERIODIC_ENQUEUE_REMUX_JOBS"
       ],
@@ -14565,12 +14730,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Needed: unit test of the ffprobe command line for non-default values (IT/Media/MediaToolsTests.cs style). Wrong values can make probing miss late-starting streams."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "The_probe_and_clean_up_numbers_in_the_environment_are_the_ones_a_pass_is_given"
+        }
+      ],
       "covers": [
         "setting:env:WEIR_PROCESSING_PROBE_SIZE_MB",
         "setting:env:WEIR_PROCESSING_ANALYZE_DURATION_SECONDS"
@@ -14588,7 +14754,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/OutputFolderCleanupTests.cs",
+          "name": "A_movie_age_that_is_not_met_holds_back_the_movie_folder_and_not_the_TV_season"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/OutputFolderCleanupTests.cs",
+          "name": "A_TV_age_that_is_not_met_holds_back_the_TV_season_and_not_the_movie_folder"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "The_probe_and_clean_up_numbers_in_the_environment_are_the_ones_a_pass_is_given"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -14606,11 +14788,6 @@
           "name": "OutputFolderCleanupTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Needed: TV variant and a test that the configured age (not a constant) decides."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_MOVIE_OUTPUT_CLEANUP_MIN_AGE_SECONDS",
         "setting:env:WEIR_PROCESSING_TV_OUTPUT_CLEANUP_MIN_AGE_SECONDS"
@@ -14628,7 +14805,18 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/MediaManagerServiceTests.cs",
+          "name": "The_environments_Sonarr_serves_TV_only_and_the_environments_Radarr_serves_movies_only"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/MediaManagerServiceTests.cs",
+          "name": "An_environment_address_without_its_key_is_no_connection"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -14636,11 +14824,6 @@
           "name": "MediaManagerServiceTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Sonarr pair is parse-tested only; undocumented outside ADR-0008."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_ARR_RADARR_BASE_URL",
         "setting:env:WEIR_ARR_SONARR_BASE_URL",
@@ -15223,12 +15406,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: pending useMeQuery renders PageLoading and no redirect"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/app/router.test.tsx",
+          "name": "shows Loading while /auth/me has not answered, and does not move off the address"
+        }
+      ],
       "audit": {
         "id": "WEB-009",
         "verdict": "Gap"
@@ -15404,14 +15588,12 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "E2E or vitest memory router: signed-out GET /whatever lands on /login. NOTE the top-level `path: \"*\"` -> /login route in router.tsx looks unreachable because `/` with a `*` child matches every address first; if so it is dead code"
-      },
-      "issue": 1142,
-      "covers": [
-        "web:*"
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/app/router.test.tsx",
+          "name": "sends a signed-out visitor to any address that is not a page to the sign-in page"
+        }
       ],
       "audit": {
         "id": "WEB-015",
@@ -15665,12 +15847,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: renders \"Loading Weir\" status inside the fallback frame"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/app/hydrate-fallback.test.tsx",
+          "name": "says Weir is loading, politely, inside a frame shaped like the app so nothing jumps when the page arrives"
+        }
+      ],
       "audit": {
         "id": "WEB-024",
         "verdict": "Gap"
@@ -15694,9 +15877,13 @@
           "type": "vitest",
           "file": "apps/web/src/components/error-boundary.test.tsx",
           "name": "ErrorBoundary"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/main.test.tsx",
+          "name": "puts the saved theme on the page before the first draw, and shows the error screen when the app itself fails"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-025",
         "verdict": "Partly"
@@ -15840,9 +16027,13 @@
           "type": "vitest",
           "file": "apps/web/src/layouts/app-shell.test.tsx",
           "name": "shows Weir and the computer it runs on at the top of the menu, as Deluno does"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/layouts/app-shell.menu.test.tsx",
+          "name": "closes when the brand is chosen, and the page goes to the Dashboard"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-030",
         "verdict": "Partly"
@@ -15856,12 +16047,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: open drawer, click a link, assert sidebar loses mm-sidebar--open and aria-expanded false"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/layouts/app-shell.menu.test.tsx",
+          "name": "closes when a place in the menu is chosen, and the page moves there"
+        }
+      ],
       "audit": {
         "id": "WEB-031",
         "verdict": "Gap"
@@ -15900,9 +16092,13 @@
           "type": "vitest",
           "file": "apps/web/src/components/shell/sidebar-collapse-choice.test.ts",
           "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/layouts/app-shell.menu.test.tsx",
+          "name": "is remembered in this browser and restored on the next visit"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-033",
         "verdict": "Partly"
@@ -15916,12 +16112,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with matchMedia stub: laptop width collapses, a stored false choice wins"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/layouts/app-shell.menu.test.tsx",
+          "name": "folds by itself at laptop width and stays open at any other"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/layouts/app-shell.menu.test.tsx",
+          "name": "keeps the person's own choice over the window's width"
+        }
+      ],
       "audit": {
         "id": "WEB-034",
         "verdict": "Gap"
@@ -15960,12 +16162,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: open drawer, click the backdrop button, then reopen and click Menu again"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/layouts/app-shell.menu.test.tsx",
+          "name": "closes from the backdrop, and from the Menu button a second time"
+        }
+      ],
       "audit": {
         "id": "WEB-036",
         "verdict": "Gap"
@@ -16099,12 +16302,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: SidebarUser with signingOut true shows \"Signing out…\" and disabled"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shell/sidebar-user.test.tsx",
+          "name": "says Signing out… and cannot be pressed again while the sign-out is under way"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/layouts/app-shell.menu.test.tsx",
+          "name": "shows the sign-in page at once, while the server is still ending the session"
+        }
+      ],
       "audit": {
         "id": "WEB-040",
         "verdict": "Gap"
@@ -16118,12 +16327,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: click the link, assert location and menu closed"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/layouts/app-shell.menu.test.tsx",
+          "name": "closes, with the user menu, when Change password is chosen, and opens the Security tab"
+        }
+      ],
       "audit": {
         "id": "WEB-041",
         "verdict": "Gap"
@@ -16237,9 +16447,18 @@
           "type": "vitest",
           "file": "apps/web/src/layouts/app-shell.test.tsx",
           "name": "says Weir cannot be reached when it does not answer"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/layouts/app-shell.menu.test.tsx",
+          "name": "shows Can't reach Weir when the readiness check fails"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/layouts/app-shell.menu.test.tsx",
+          "name": "shows nothing when the server answers 503 with its readiness, as it does while starting"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-045",
         "verdict": "Partly"
@@ -16870,9 +17089,18 @@
           "type": "vitest",
           "file": "apps/web/src/components/shell/theme-toggle.test.tsx",
           "name": "says a failed save never touched the theme on other browsers, but keeps it here"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shell/theme-toggle.test.tsx",
+          "name": "keeps the theme here and says the account was not updated when the server refuses the save"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ThemeToggleTests.cs",
+          "name": "A_save_the_server_refuses_says_other_browsers_were_not_told_and_keeps_the_choice_here"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-064",
         "verdict": "Partly"
@@ -16941,9 +17169,13 @@
           "type": "vitest",
           "file": "apps/web/src/components/shell/header-search.test.tsx",
           "name": "is the same input whether or not it is collapsed to a mark, so what is typed stays"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityNarrowLayoutTests.cs",
+          "name": "A_search_that_is_only_a_mark_opens_when_pressed_stays_open_while_it_holds_a_search_and_shuts_when_it_loses_focus_empty"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-067",
         "verdict": "Partly"
@@ -17052,9 +17284,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/library/library-page.test.tsx",
           "name": "LibraryPage"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shell/page-toolbar.test.tsx",
+          "name": "a page's own buttons when it has no tabs"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-071",
         "verdict": "Partly"
@@ -17243,9 +17479,18 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/SystemHealthLiveTests.cs",
           "name": "SystemHealthLiveTests"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/activity/recorded-stream.test.tsx",
+          "name": "are understood by the page: the run's id, each topic, and each system reading"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemHealthLiveTests.cs",
+          "name": "A_workflows_checked_time_is_the_servers_last_look_not_the_pages_last_read_and_a_drive_says_live"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-077",
         "verdict": "Partly"
@@ -17329,9 +17574,13 @@
           "type": "vitest",
           "file": "apps/web/src/lib/live/use-live-sync.test.tsx",
           "name": "does not ask about the session when the browser merely loses the connection"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SessionEndsInShellTests.cs",
+          "name": "A_session_the_server_ended_sends_the_open_app_to_sign_in_saying_it_expired_without_reloading_the_page"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-079",
         "verdict": "Partly"
@@ -17450,9 +17699,13 @@
           "type": "vitest",
           "file": "apps/web/src/lib/api/client.test.ts",
           "name": "apiFetch timeouts"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/client.test.ts",
+          "name": "apiFetch requests"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-084",
         "verdict": "Partly"
@@ -17571,9 +17824,13 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthApiTests.cs",
           "name": "Logout_rejects_missing_csrf"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/api/auth-api.requests.test.ts",
+          "name": "a change of state asks for a token first and sends it back"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-088",
         "verdict": "Partly"
@@ -18016,9 +18273,13 @@
           "type": "vitest",
           "file": "apps/web/src/components/shared/api-entry-error.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-entry.test.tsx",
+          "name": "the sign-in page when it cannot ask"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-104",
         "verdict": "Partly"
@@ -18056,12 +18317,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest/E2E: submit empty form does not call the mutation"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page-entry.test.tsx",
+          "name": "will not send an empty name and password"
+        }
+      ],
       "audit": {
         "id": "WEB-106",
         "verdict": "Gap"
@@ -18348,12 +18610,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with pending mutation"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-page-requests.test.tsx",
+          "name": "says Creating... and cannot be pressed again while the server is working"
+        }
+      ],
       "audit": {
         "id": "WEB-116",
         "verdict": "Gap"
@@ -18367,12 +18630,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest memory router, bootstrap_allowed false and a signed-in me. (E2E FirstVisitTests covers the opposite direction only)"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-page-entry.test.tsx",
+          "name": "to sign in when an account already exists"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-page-entry.test.tsx",
+          "name": "to the app when they are already signed in, even though no account could be made"
+        }
+      ],
       "audit": {
         "id": "WEB-117",
         "verdict": "Gap"
@@ -18391,9 +18660,13 @@
           "type": "vitest",
           "file": "apps/web/src/components/shared/api-entry-error.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-page-entry.test.tsx",
+          "name": "the first-run page when it cannot ask whether an account can be made"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-118",
         "verdict": "Partly"
@@ -18620,12 +18893,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with pending mutations: both buttons disabled, label \"Saving…\""
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-connections.test.tsx",
+          "name": "saving the wizard"
+        }
+      ],
       "audit": {
         "id": "WEB-126",
         "verdict": "Gap"
@@ -18968,12 +19242,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: three cases"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-connections.test.tsx",
+          "name": "the wizard before it shows a form"
+        }
+      ],
       "audit": {
         "id": "WEB-135",
         "verdict": "Gap"
@@ -19149,7 +19424,6 @@
           "name": "shows a line Weir could not verify as not verified, not as fine and not as a problem"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-141",
         "verdict": "Partly"
@@ -19195,7 +19469,6 @@
           "name": "says why a manager offered nothing, in the words the server used"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-143",
         "verdict": "Partly"
@@ -19214,9 +19487,18 @@
           "type": "vitest",
           "file": "apps/web/src/pages/setup/setup-wizard-connect.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-connections.test.tsx",
+          "name": "shows why its last test failed, and tests it again on Test, showing Testing… meanwhile"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-connections.test.tsx",
+          "name": "says the test could not be made when the request itself fails"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-144",
         "verdict": "Partly"
@@ -19230,12 +19512,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: Remove opens the shared dialog, confirm deletes and the row disappears"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-connections.test.tsx",
+          "name": "asks before removing: Cancel keeps it, and Remove takes it out of the list"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-connections.test.tsx",
+          "name": "keeps the connection and says so when the removal fails"
+        }
+      ],
       "audit": {
         "id": "WEB-145",
         "verdict": "Gap"
@@ -19249,12 +19537,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest for both buttons (onBack resets the answer to null)"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-connections.test.tsx",
+          "name": "opens a second form on Connect another, and Cancel closes it again while the connection stays"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-connections.test.tsx",
+          "name": "shows the form at once, and Cancel goes back to the question with nothing chosen"
+        }
+      ],
       "audit": {
         "id": "WEB-146",
         "verdict": "Gap"
@@ -19268,12 +19562,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Wizard glue (justCreated + answering) untested: vitest asserting the prompt appears after a successful create and test in the wizard"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-connections.test.tsx",
+          "name": "offers to create a secret once the new manager has been added and answers its test"
+        }
+      ],
       "audit": {
         "id": "WEB-147",
         "verdict": "Gap"
@@ -19287,12 +19582,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest for each; the Try again button must call refetch"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-connections.test.tsx",
+          "name": "while the wizard asks what is connected"
+        }
+      ],
       "audit": {
         "id": "WEB-148",
         "verdict": "Gap"
@@ -19306,12 +19602,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: Deluno chosen, connection failing, press Finish -> \"Connect and test it first…\", no save"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-connections.test.tsx",
+          "name": "Finish with a source chosen"
+        }
+      ],
       "audit": {
         "id": "WEB-149",
         "verdict": "Gap"
@@ -19325,12 +19622,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Proves nothing about responsiveness: jsdom does no layout and only UnifiedLog (a System tab) is rendered five times with a changed window.innerWidth. Real checks are the two phone-width E2E assertions (WEB-047). Needed: Playwright overflow/visibility checks of the shell and each screen at 375 and 768"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AccessibilitySweepTests.cs",
+          "name": "Every_screen_fits_its_width_from_a_small_phone_to_a_wide_desktop"
+        }
+      ],
       "audit": {
         "id": "WEB-150",
         "verdict": "Gap"
@@ -19394,9 +19692,13 @@
           "type": "vitest",
           "file": "apps/web/src/components/shared/api-entry-error.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shared/api-entry-error.test.tsx",
+          "name": "loads the page again when Reload is pressed"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-153",
         "verdict": "Partly"
@@ -19430,8 +19732,43 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shared/quiet-parts.test.tsx",
+          "name": "EmptyState"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shared/quiet-parts.test.tsx",
+          "name": "SettingsGroup and its rows"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shared/quiet-parts.test.tsx",
+          "name": "the quiet page parts"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shared/quiet-parts.test.tsx",
+          "name": "FactTable"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shared/quiet-parts.test.tsx",
+          "name": "the workflow kind"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shared/quiet-parts.test.tsx",
+          "name": "SetupCheckLines"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shared/quiet-parts.test.tsx",
+          "name": "FolderChainSections"
+        }
+      ],
       "audit": {
         "id": "WEB-155",
         "verdict": "Partly"
@@ -19615,9 +19952,13 @@
           "type": "vitest",
           "file": "apps/web/src/components/ui/use-listbox-keyboard-nav.test.ts",
           "name": "useListboxKeyboardNav"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/ui/use-listbox-keyboard-nav.test.ts",
+          "name": "useListboxKeyboardNav keys"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-162",
         "verdict": "Partly"
@@ -19646,9 +19987,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/library/library-setup-panel.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/ui/mm-on-off-switch.test.tsx",
+          "name": "choosing On or Off"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-163",
         "verdict": "Partly"
@@ -19877,12 +20222,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with fake timers: settles only after the delay, restarts on each change, clears on unmount"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/ui/use-debounced-value.test.ts",
+          "name": "holds the first value, and takes a new one only once it has stopped changing for the delay"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/ui/use-debounced-value.test.ts",
+          "name": "starts the wait again on each change, so only the last of a run of changes is taken"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/ui/use-debounced-value.test.ts",
+          "name": "takes nothing once it is gone"
+        }
+      ],
       "audit": {
         "id": "WEB-172",
         "verdict": "Gap"
@@ -19896,12 +20252,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: visibilityState hidden, prefers-reduced-motion reduce, and resizing class"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/ui/motion-allowed.test.ts",
+          "name": "motionAllowed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/ui/motion-allowed.test.ts",
+          "name": "windowIsResizing"
+        }
+      ],
       "audit": {
         "id": "WEB-173",
         "verdict": "Gap"
@@ -19920,9 +20282,43 @@
           "type": "vitest",
           "file": "apps/web/src/lib/ui/use-fit-levels.test.tsx",
           "name": "useFitLevels"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/ui/measuring-hooks.test.tsx",
+          "name": "useElementSize"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/ui/measuring-hooks.test.tsx",
+          "name": "useAnimationFrame"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/ui/measuring-hooks.test.tsx",
+          "name": "useRemPx"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/ui/save-file.test.ts",
+          "name": "hands the file to the browser's own download under the name given, then lets go of it"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/ui/fit-hold.test.tsx",
+          "name": "holds the fit while a popover is open and lets go when it closes or goes away"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/ui/fit-hold.test.tsx",
+          "name": "keeps holding until the last popover has closed, and then says so once"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/ui/fit-hold.test.tsx",
+          "name": "tells a reader of the hold when it changes"
         }
       ],
-      "issue": 1142,
       "audit": {
         "id": "WEB-174",
         "verdict": "Partly"
@@ -20269,12 +20665,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Needs a vitest that opens the picker, picks \"Library cleaning\" and asserts ?work=library; also that it shows the current value."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/work-picker.test.tsx",
+          "name": "the compact picker for the kind of work"
+        }
+      ],
       "audit": {
         "id": "WEB-185",
         "verdict": "Gap"
@@ -20458,12 +20855,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Needs an E2E at about 375 px asserting no horizontal overflow on / and /?view=system, the pipeline stations stack, and the compact work picker shows."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/DashboardLayoutTests.cs",
+          "name": "A_phone_stacks_every_card_in_one_column_the_width_of_the_window"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/pipeline/pipeline-board.test.tsx",
+          "name": "the board at the width of a phone"
+        }
+      ],
       "audit": {
         "id": "WEB-190",
         "verdict": "Gap"
@@ -20477,12 +20880,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A vitest with the files query pending."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/live-view.reads.test.tsx",
+          "name": "the Live view while it waits for the files"
+        }
+      ],
       "audit": {
         "id": "WEB-191",
         "verdict": "Gap"
@@ -20496,12 +20900,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A vitest with the files query in error asserting the entry error and its wording."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/live-view.reads.test.tsx",
+          "name": "the Live view when the files cannot be read"
+        }
+      ],
       "audit": {
         "id": "WEB-192",
         "verdict": "Gap"
@@ -21385,12 +21790,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The figure shows \"…\" for ever if the stats/activity read fails (no error state in code or test)."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/live-view.reads.test.tsx",
+          "name": "the Today tile when its figures cannot be read"
+        }
+      ],
       "audit": {
         "id": "WEB-220",
         "verdict": "Gap"
@@ -21904,12 +22310,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Needs a vitest forcing a narrow measured width (or an E2E at phone width) asserting cards appear under their station headings."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/pipeline/pipeline-board.test.tsx",
+          "name": "the board at the width of a phone"
+        }
+      ],
       "audit": {
         "id": "WEB-237",
         "verdict": "Gap"
@@ -22243,12 +22650,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Needs a vitest rendering the hook with a new first item and asserting the polite status text, and none on first load."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/pipeline/just-finished-shelf.test.tsx",
+          "name": "what a screen reader is told when a file finishes"
+        }
+      ],
       "audit": {
         "id": "WEB-248",
         "verdict": "Gap"
@@ -22292,12 +22700,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Shows \"Nothing has finished yet.\" for a failed read (no error state in code or test)."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/live-view.reads.test.tsx",
+          "name": "Just finished when the Activity read fails"
+        }
+      ],
       "audit": {
         "id": "WEB-250",
         "verdict": "Gap"
@@ -22501,12 +22910,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Says \"Nothing yet. What Weir does appears here.\" (a wrong statement) when the read failed."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/live-view.reads.test.tsx",
+          "name": "the Activity panel when the read fails"
+        }
+      ],
       "audit": {
         "id": "WEB-258",
         "verdict": "Gap"
@@ -23110,12 +23520,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Buttons and links are native, but no test drives the panel from the keyboard or checks where focus lands after Remove or Try again removes the row."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/needs-panel.keyboard.test.tsx",
+          "name": "a Needs you row from the keyboard"
+        }
+      ],
       "audit": {
         "id": "WEB-278",
         "verdict": "Gap"
@@ -23479,12 +23890,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Needs a vitest with `loading` true."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/processing/file-story-panel.test.tsx",
+          "name": "says it is loading while the record is read, and claims nothing about the file yet"
+        }
+      ],
       "audit": {
         "id": "WEB-290",
         "verdict": "Gap"
@@ -23638,12 +24050,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Either wire it from the file and test it, or drop the dead prop; the component is also used by Activity's detail and untested there."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/processing/direct-play-line.test.tsx",
+          "name": "shows nothing for a file when no device was chosen"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/processing/direct-play-line.test.tsx",
+          "name": "names each chosen device with its verdict in words as well as marks, and the first reason shortened"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/processing/direct-play-line.test.tsx",
+          "name": "marks each device by what its verdict means"
+        }
+      ],
       "audit": {
         "id": "WEB-296",
         "verdict": "Gap"
@@ -23847,12 +24270,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Needs a vitest clicking Cancel and asserting `onClose`."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/processing/choose-tracks-panel.test.tsx",
+          "name": "closes from Cancel, and says nothing about queueing"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/processing/choose-tracks-panel.test.tsx",
+          "name": "says Queueing… and holds both buttons while the choice is being queued"
+        }
+      ],
       "audit": {
         "id": "WEB-305",
         "verdict": "Gap"
@@ -23866,12 +24295,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Needs a vitest with `submitting` true."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/processing/choose-tracks-panel.test.tsx",
+          "name": "says Queueing… and holds both buttons while the choice is being queued"
+        }
+      ],
       "audit": {
         "id": "WEB-306",
         "verdict": "Gap"
@@ -23885,12 +24315,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Needs a vitest with `submitError`."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/processing/choose-tracks-panel.test.tsx",
+          "name": "shows why the choice could not be queued, and leaves the buttons ready to try again"
+        }
+      ],
       "audit": {
         "id": "WEB-307",
         "verdict": "Gap"
@@ -23929,12 +24360,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Needs a vitest with an image stream."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/processing/choose-tracks-panel.test.tsx",
+          "name": "lists an embedded image or attachment apart from the table, with what the saved rules do with it, and does not offer it"
+        }
+      ],
       "audit": {
         "id": "WEB-309",
         "verdict": "Gap"
@@ -24028,12 +24460,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Needs a vitest asserting the entry error."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/system-view.test.tsx",
+          "name": "says Weir hit a problem, with Reload, and shows no card when the workflows cannot be read"
+        }
+      ],
       "audit": {
         "id": "WEB-313",
         "verdict": "Gap"
@@ -24352,12 +24785,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The `stats.isError` branch is untested (the other band cards test theirs)."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/system/processing-card.test.tsx",
+          "name": "says Weir couldn't load its work, not that it is still reading, when the reading failed"
+        }
+      ],
       "audit": {
         "id": "WEB-325",
         "verdict": "Gap"
@@ -25571,12 +26005,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A keyboard user cannot read a trace's values; needs behaviour plus a test."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/charts/live-trace.test.tsx",
+          "name": "LiveTrace's readout from the keyboard"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/charts/live-trace-readout.test.ts",
+          "name": "the sample a key moves to"
+        }
+      ],
       "audit": {
         "id": "WEB-369",
         "verdict": "Gap"
@@ -52414,12 +52854,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "File locking, share modes, path rules (UNC, drive letters, case), process and handle behaviour of the real server, and real ffmpeg/mkvmerge are proven on Windows only by Windows-only unit facts (WindowsFact) and by 15 VM scenarios. Needs a contract leg on windows-latest (the harness already starts the server as a process) and the pinned Windows ffmpeg/mkvmerge installed for it"
-      },
-      "issue": 995,
+      "proofs": [
+        {
+          "type": "node",
+          "file": "scripts/check-contract-areas.test.mjs",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "PLAT-28",
         "verdict": "Gap"
@@ -58677,8 +59118,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/ProcessingPassThroughHandlerTests.cs",
+          "name": "The_original_is_delivered_byte_for_byte_and_the_source_survives"
+        }
+      ],
       "covers": [
         "event:processing.file_passed_through"
       ],

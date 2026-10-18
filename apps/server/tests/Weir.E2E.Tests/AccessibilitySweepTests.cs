@@ -72,6 +72,30 @@ public sealed class AccessibilitySweepTests(E2EServer server) : E2ETestBase(serv
         Assert.True(problems.Count == 0, ReportOf(problems));
     }
 
+    [E2EFact]
+    public async Task Every_screen_fits_its_width_from_a_small_phone_to_a_wide_desktop()
+    {
+        var problems = new List<string>();
+        foreach (var width in new[] { 320, 375, 768, 1024, 1440 })
+        {
+            var page = await NewPageAsync(new ViewportSize { Width = width, Height = 800 });
+            await Navigation.EnsureSignedInAsync(page, BaseUrl);
+            foreach (var place in Places)
+            {
+                await page.GotoAsync($"{BaseUrl}{place.Address}", new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+                await Expect(page.GetByTestId(place.Ready)).ToBeVisibleAsync(new() { Timeout = Navigation.UrlAssertMs });
+                if (await page.EvaluateAsync<bool>("document.documentElement.scrollWidth > document.documentElement.clientWidth"))
+                {
+                    problems.Add($"{width}px wide, {place.Name}: the page is wider than the screen, so it scrolls sideways");
+                }
+            }
+
+            await page.CloseAsync();
+        }
+
+        Assert.True(problems.Count == 0, ReportOf(problems));
+    }
+
     private static string ReportOf(IEnumerable<string> problems) =>
         $"These places break accessibility rules or their width:{Environment.NewLine}{string.Join(Environment.NewLine, problems)}";
 

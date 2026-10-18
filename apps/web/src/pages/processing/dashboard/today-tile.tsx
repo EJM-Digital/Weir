@@ -3,6 +3,7 @@ import {
   StatSide,
   StatTile,
 } from "../../../components/panels/stat-tile";
+import { loadErrorMessage } from "../../../lib/api/error-message";
 import { formatBytes } from "../../../lib/format/bytes";
 import type { Filter } from "../processing-filter";
 import { useHandedBack } from "../use-handed-back";
@@ -13,6 +14,8 @@ import { useNeedsYou } from "./use-needs-you";
 import { useTodayFigures } from "./use-today-figures";
 
 const PENDING = "…";
+const FAILED = "–";
+const FAILED_SIDE = "couldn't load";
 
 type TodayTileProps = {
   filter: Filter;
@@ -26,7 +29,7 @@ type TodayTileProps = {
  * hours drawn under it. The aside takes the person to the Needs you panel, when anything is in it.
  */
 export function TodayTile({ filter, now, workflowId = null }: TodayTileProps) {
-  const figures = useTodayFigures(workflowId, filter, now);
+  const { figures, error } = useTodayFigures(workflowId, filter, now);
   const needsALook = useNeedsYou(workflowId, filter).files.length;
   const { handed, total, partial } = useHandedBack(filter, now, workflowId);
   return (
@@ -42,9 +45,23 @@ export function TodayTile({ filter, now, workflowId = null }: TodayTileProps) {
       figure={
         <>
           <span data-testid="live-done-today">
-            {figures ? figures.cleaned.toLocaleString() : PENDING}
+            {figures
+              ? figures.cleaned.toLocaleString()
+              : error
+                ? FAILED
+                : PENDING}
           </span>
           <StatFitUnit>cleaned</StatFitUnit>
+          {!figures && error ? (
+            <>
+              <StatSide>
+                <span aria-hidden="true">{FAILED_SIDE}</span>
+              </StatSide>
+              <span className="sr-only" role="alert">
+                {loadErrorMessage(error, "today's figures")}
+              </span>
+            </>
+          ) : null}
           {figures?.savedBytes != null ? (
             <StatSide>
               {formatBytes(figures.savedBytes) || "0 B"} saved

@@ -299,6 +299,27 @@ public sealed partial class HandbackOutcomeApiTests : IDisposable
     }
 
     [Fact]
+    public async Task An_answer_to_a_report_Weir_has_sent_is_taken_while_the_pass_is_still_releasing_its_job()
+    {
+        await using var server = await StartAsync();
+        var copy = await FinishedHandoffAsync(server);
+        await TestDatabase.ExecuteAsync(server, "UPDATE jobs SET status = 'leased' WHERE job_kind = 'processing.file.remux_pass.v1'");
+        await TestDatabase.ExecuteAsync(
+            server,
+            "UPDATE media_manager_handoffs SET output_path = $copy, output_files_json = $files WHERE source_key = 'deluno' AND handoff_id = 'h1'",
+            ("$copy", copy),
+            ("$files", System.Text.Json.JsonSerializer.Serialize(new[] { copy })));
+
+        using var status = await new ApiTestClient(server).GetAsync("/api/v1/intake/handoffs/deluno/h1", SecretHeader);
+        Assert.Equal("working", (await Json(status))["state"]!.GetValue<string>());
+
+        using var response = await PostOutcomeAsync(server, "h1", DelunoOutcome("imported", "/media/movies/Film (2020)/Film (2020).mkv", null));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.False(File.Exists(copy));
+    }
+
+    [Fact]
     public async Task A_409_says_in_its_code_whether_the_answer_is_final_or_worth_sending_again()
     {
         await using var server = await StartAsync();
