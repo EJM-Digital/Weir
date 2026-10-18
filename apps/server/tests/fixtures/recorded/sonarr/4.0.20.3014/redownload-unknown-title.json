@@ -1,0 +1,29 @@
+{
+  "app": "sonarr",
+  "version": "4.0.20.3014",
+  "state": "redownload-unknown-title",
+  "recordedAt": "2026-10-17T05:26:10Z",
+  "note": "Download again for a title the app does not have.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/episodefile?seriesId=987654",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "message": "Series with ID 987654 does not exist",
+          "description": "NzbDrone.Core.Datastore.ModelNotFoundException: Series with ID 987654 does not exist\n   at NzbDrone.Core.Datastore.BasicRepository`1.Get(Int32 id) in ./Sonarr.Core/Datastore/BasicRepository.cs:line 104\n   at NzbDrone.Core.Tv.SeriesService.GetSeries(Int32 seriesId) in ./Sonarr.Core/Tv/SeriesService.cs:line 64\n   at Sonarr.Api.V3.EpisodeFiles.EpisodeFileController.GetEpisodeFiles(Nullable`1 seriesId, List`1 episodeFileIds) in ./Sonarr.Api.V3/EpisodeFiles/EpisodeFileController.cs:line 69\n   at lambda_method293(Closure , Object , Object[] )\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.SyncObjectResultExecutor.Execute(IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeActionMethodAsync()\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeNextActionFilterAsync()\n--- End of stack trace from previous location ---\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync()\n--- End of stack trace from previous location ---\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)\n   at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|6_0(Endpoint endpoint, Task requestTask, ILogger logger)\n   at Sonarr.Http.Middleware.BufferingMiddleware.InvokeAsync(HttpContext context) in ./Sonarr.Http/Middleware/BufferingMiddleware.cs:line 28\n   at Sonarr.Http.Middleware.IfModifiedMiddleware.InvokeAsync(HttpContext context) in ./Sonarr.Http/Middleware/IfModifiedMiddleware.cs:line 41\n   at Sonarr.Http.Middleware.CacheHeaderMiddleware.InvokeAsync(HttpContext context) in ./Sonarr.Http/Middleware/CacheHeaderMiddleware.cs:line 33\n   at Sonarr.Http.Middleware.StartingUpMiddleware.InvokeAsync(HttpContext context) in ./Sonarr.Http/Middleware/StartingUpMiddleware.cs:line 38\n   at Sonarr.Http.Middleware.UrlBaseMiddleware.InvokeAsync(HttpContext context) in ./Sonarr.Http/Middleware/UrlBaseMiddleware.cs:line 29\n   at Sonarr.Http.Middleware.VersionMiddleware.InvokeAsync(HttpContext context) in ./Sonarr.Http/Middleware/VersionMiddleware.cs:line 29\n   at Microsoft.AspNetCore.Authorization.Policy.AuthorizationMiddlewareResultHandler.HandleAsync(RequestDelegate next, HttpContext context, AuthorizationPolicy policy, PolicyAuthorizationResult authorizeResult)\n   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)\n   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)\n   at Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware.<Invoke>g__Awaited|6_0(ExceptionHandlerMiddleware middleware, HttpContext context, Task task)"
+        }
+      }
+    }
+  ]
+}

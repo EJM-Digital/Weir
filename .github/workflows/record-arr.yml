@@ -1,0 +1,116 @@
+# Records a real Sonarr and a real Radarr (#1013, #1014). The replay tests read what this records, once it is checked in.
+#
+# The apps are the published Docker images, pinned by digest in apps/server/tools/Weir.ArrRecorder/compose.yaml. The recorder
+# (apps/server/tools/Weir.ArrRecorder) sets each app up through its own API and drives Weir's own manager client code against it, so a
+# recording holds exactly what Weir sent and what the app answered. The recordings are uploaded as an artifact; to refresh the checked-in
+# ones, run this by hand and copy the artifact's sonarr/ and radarr/ folders to apps/server/tests/fixtures/recorded/ unchanged, then
+# regenerate each MANIFEST.sha256 with `node scripts/check-recorded-manifest.mjs --write`.
+#
+# Weekly it is also the drift check: it records against the pinned images and against the newest releases, and fails when either set of
+# replies differs from the checked-in ones once times, ids and sizes are set aside (scripts/compare-arr-recordings.mjs). A failure on the
+# pinned images means the recording is not repeatable; a failure on the newest releases means Sonarr or Radarr has changed what it says.
+name: Record Sonarr and Radarr
+
+on:
+  workflow_dispatch:
+    inputs:
+      images:
+        description: "Which images to record against: pinned (the digests in compose.yaml) or latest (the newest release of each app)."
+        type: choice
+        options: [pinned, latest]
+        default: pinned
+      compare:
+        description: "Also fail when the replies differ from the checked-in ones."
+        type: boolean
+        default: false
+  schedule:
+    # Mondays, 05:41 UTC.
+    - cron: "41 5 * * 1"
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+jobs:
+  record:
+    name: Record against ${{ matrix.images }} images
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        images: ${{ fromJSON(github.event_name == 'schedule' && '["pinned","latest"]' || format('["{0}"]', inputs.images || 'pinned')) }}
+    env:
+      RECORDER_WORK: ${{ github.workspace }}/arr-work
+      RECORDER_OUT_DIR: ${{ github.workspace }}/arr-recorded
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: apps/server/global.json
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+
+      # The pinned FFmpeg the server tests use makes the finished download the apps import.
+      - name: Install the pinned FFmpeg
+        run: |
+          node scripts/install-ffmpeg-linux.mjs "$RUNNER_TEMP/ffmpeg"
+          echo "$RUNNER_TEMP/ffmpeg" >> "$GITHUB_PATH"
+
+      - name: Use the newest release of each app
+        if: matrix.images == 'latest'
+        run: |
+          echo "WEIR_RECORD_SONARR_IMAGE=lscr.io/linuxserver/sonarr:latest" >> "$GITHUB_ENV"
+          echo "WEIR_RECORD_RADARR_IMAGE=lscr.io/linuxserver/radarr:latest" >> "$GITHUB_ENV"
+
+      - name: Start Sonarr, Radarr and the download client
+        run: |
+          mkdir -p "$RECORDER_WORK"/{sonarr,radarr}/{config,library,downloads} "$RECORDER_WORK"/transmission/{config,downloads} "$RECORDER_OUT_DIR"
+          export PUID="$(id -u)" PGID="$(id -g)"
+          docker compose -f apps/server/tools/Weir.ArrRecorder/compose.yaml up -d
+          docker compose -f apps/server/tools/Weir.ArrRecorder/compose.yaml ps
+
+      - name: Build the recorder
+        run: dotnet build apps/server/tools/Weir.ArrRecorder -c Release -warnaserror
+
+      - name: Record Sonarr
+        env:
+          RECORDER_APP: sonarr
+          RECORDER_CONFIG_DIR: ${{ github.workspace }}/arr-work/sonarr/config
+          RECORDER_WORK_DIR: ${{ github.workspace }}/arr-work/sonarr/downloads
+        shell: bash
+        run: dotnet run --no-build --project apps/server/tools/Weir.ArrRecorder -c Release 2>&1 | tee "$RECORDER_OUT_DIR/sonarr-recorder.log"
+
+      - name: Record Radarr
+        if: success() || failure()
+        env:
+          RECORDER_APP: radarr
+          RECORDER_CONFIG_DIR: ${{ github.workspace }}/arr-work/radarr/config
+          RECORDER_WORK_DIR: ${{ github.workspace }}/arr-work/radarr/downloads
+        shell: bash
+        run: dotnet run --no-build --project apps/server/tools/Weir.ArrRecorder -c Release 2>&1 | tee "$RECORDER_OUT_DIR/radarr-recorder.log"
+
+      - name: Keep what the apps logged
+        if: always()
+        run: |
+          docker compose -f apps/server/tools/Weir.ArrRecorder/compose.yaml logs --no-color > "$RECORDER_OUT_DIR/containers.log" || true
+          cp -r "$RECORDER_WORK"/sonarr/config/logs "$RECORDER_OUT_DIR/sonarr-app-logs" 2>/dev/null || true
+          cp -r "$RECORDER_WORK"/radarr/config/logs "$RECORDER_OUT_DIR/radarr-app-logs" 2>/dev/null || true
+
+      - name: The recordings
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: arr-recordings-${{ matrix.images }}
+          path: ${{ env.RECORDER_OUT_DIR }}
+          if-no-files-found: error
+
+      - name: Compare with the checked-in replies
+        if: (github.event_name == 'schedule' || inputs.compare) && (success() || failure())
+        run: node scripts/compare-arr-recordings.mjs "$RECORDER_OUT_DIR"

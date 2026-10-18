@@ -5,6 +5,9 @@ public static class RepoPaths
 {
     private static readonly Lazy<string> Root = new(FindRoot);
 
+    /// <summary>The accessibility checker the web app's own tests use, installed with its dependencies.</summary>
+    public static string AxeCore => Path.Combine(Root.Value, "apps", "web", "node_modules", "axe-core", "axe.min.js");
+
     public static string WebDist => Path.Combine(Root.Value, "apps", "web", "dist");
 
     /// <summary>The replies other services recorded for the tests to replay, and the requests the web app sends (`apps/server/tests/fixtures`).</summary>

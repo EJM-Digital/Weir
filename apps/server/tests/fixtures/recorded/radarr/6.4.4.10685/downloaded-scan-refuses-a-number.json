@@ -1,0 +1,35 @@
+{
+  "app": "radarr",
+  "version": "6.4.4.10685",
+  "state": "downloaded-scan-refuses-a-number",
+  "recordedAt": "2026-10-17T05:26:24Z",
+  "note": "The scan command with the download client's id as a number, which the app answers 500 to; Weir sends text.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v3/command",
+        "headers": {
+          "content-type": "application/json",
+          "x-api-key": "<scrubbed>"
+        },
+        "body": {
+          "name": "DownloadedMoviesScan",
+          "path": "/downloads/Big.Buck.Bunny.2008.720p.BluRay.x264-RECORDER/Big.Buck.Bunny.2008.720p.BluRay.x264-RECORDER.mkv",
+          "importMode": "Move",
+          "downloadClientId": 1
+        }
+      },
+      "reply": {
+        "status": 500,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "message": "The JSON value could not be converted to System.String. Path: $.downloadClientId | LineNumber: 0 | BytePositionInLine: 194.",
+          "description": "System.Text.Json.JsonException: The JSON value could not be converted to System.String. Path: $.downloadClientId | LineNumber: 0 | BytePositionInLine: 194.\n ---> System.InvalidOperationException: Cannot get the value of a token type 'Number' as a string.\n   at System.Text.Json.ThrowHelper.ThrowInvalidOperationException_ExpectedString(JsonTokenType tokenType)\n   at System.Text.Json.Utf8JsonReader.GetString()\n   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.ReadJsonAndSetMember(Object obj, ReadStack& state, Utf8JsonReader& reader)\n   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryRead(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options, ReadStack& state, T& value)\n   at System.Text.Json.Serialization.JsonConverter`1.TryRead(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options, ReadStack& state, T& value, Boolean& isPopulatedValue)\n   at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader& reader, JsonSerializerOptions options, ReadStack& state)\n   --- End of inner exception stack trace ---\n   at System.Text.Json.ThrowHelper.ReThrowWithPath(ReadStack& state, Utf8JsonReader& reader, Exception ex)\n   at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader& reader, JsonSerializerOptions options, ReadStack& state)\n   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsObject(Utf8JsonReader& reader, ReadStack& state)\n   at System.Text.Json.JsonSerializer.ReadFromSpanAsObject(ReadOnlySpan`1 utf8Json, JsonTypeInfo jsonTypeInfo, Nullable`1 actualByteCount)\n   at System.Text.Json.JsonSerializer.ReadFromSpanAsObject(ReadOnlySpan`1 json, JsonTypeInfo jsonTypeInfo)\n   at System.Text.Json.JsonSerializer.Deserialize(String json, Type returnType, JsonSerializerOptions options)\n   at NzbDrone.Common.Serializer.STJson.Deserialize(String json, Type type) in ./NzbDrone.Common/Serializer/System.Text.Json/STJson.cs:line 48\n   at Radarr.Api.V3.Commands.CommandController.StartCommand(CommandResource commandResource) in ./Radarr.Api.V3/Commands/CommandController.cs:line 69\n   at lambda_method125(Closure, Object, Object[])\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.SyncObjectResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeActionMethodAsync()\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeNextActionFilterAsync()\n--- End of stack trace from previous location ---\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync()\n--- End of stack trace from previous location ---\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextResourceFilter>g__Awaited|25_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResourceExecutedContextSealed context)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.InvokeFilterPipelineAsync()\n--- End of stack trace from previous location ---\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)\n   at Radarr.Http.Middleware.BufferingMiddleware.InvokeAsync(HttpContext context) in ./Radarr.Http/Middleware/BufferingMiddleware.cs:line 27\n   at Radarr.Http.Middleware.IfModifiedMiddleware.InvokeAsync(HttpContext context) in ./Radarr.Http/Middleware/IfModifiedMiddleware.cs:line 40\n   at Radarr.Http.Middleware.CacheHeaderMiddleware.InvokeAsync(HttpContext context) in ./Radarr.Http/Middleware/CacheHeaderMiddleware.cs:line 32\n   at Radarr.Http.Middleware.StartingUpMiddleware.InvokeAsync(HttpContext context) in ./Radarr.Http/Middleware/StartingUpMiddleware.cs:line 37\n   at Radarr.Http.Middleware.UrlBaseMiddleware.InvokeAsync(HttpContext context) in ./Radarr.Http/Middleware/UrlBaseMiddleware.cs:line 28\n   at Radarr.Http.Middleware.VersionMiddleware.InvokeAsync(HttpContext context) in ./Radarr.Http/Middleware/VersionMiddleware.cs:line 28\n   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)\n   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)\n   at Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddlewareImpl.<Invoke>g__Awaited|10_0(ExceptionHandlerMiddlewareImpl middleware, HttpContext context, Task task)"
+        }
+      }
+    }
+  ]
+}

@@ -98,3 +98,12 @@ test("the command fails with a named file and exit code 1 when a recording chang
 test("the recordings checked in beside the contract tests match the manifest copied with them", () => {
   assert.deepEqual(problems(defaultRoot, join(defaultRoot, "MANIFEST.sha256")), []);
 });
+
+test("--write makes the manifest of a folder, and the check then passes", () => {
+  withRecordings((root, manifest) => {
+    rmSync(manifest);
+    const written = execFileSync(process.execPath, [script, "--write", "--root", root], { encoding: "utf8" });
+    assert.match(written, /Wrote .*MANIFEST.sha256/);
+    assert.deepEqual(problems(root, manifest), []);
+  });
+});

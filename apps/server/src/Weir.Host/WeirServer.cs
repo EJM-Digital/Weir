@@ -81,6 +81,8 @@ public static class WeirServer
             options.WeirHome);
         StartAttemptNote.WarnIfRetry(runtime, earlyLog);
 
+        ClearAddressesFromTheEnvironment();
+
         var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions
         {
             // Configuration comes from WEIR_* only; appsettings files and ASPNETCORE_* URLs do not apply.
@@ -189,6 +191,21 @@ public static class WeirServer
             logger.LogWarning(
                 "WEIR_CREDENTIALS_SECRET is not set — stored provider credentials will fall back to " +
                 "session-secret encryption. Set a dedicated credentials secret for stronger isolation.");
+        }
+    }
+
+    /// <summary>
+    /// Weir listens where <c>--host</c> and <c>--port</c> say (<see cref="ServerListenOptions"/>). The .NET container images name a port of their own
+    /// (<c>ASPNETCORE_HTTP_PORTS=8080</c>), which Kestrel would take as one more address and then log a warning about, at every start of the Docker image.
+    /// </summary>
+    private static void ClearAddressesFromTheEnvironment()
+    {
+        foreach (var prefix in new[] { "ASPNETCORE_", "DOTNET_" })
+        {
+            foreach (var name in new[] { "URLS", "HTTP_PORTS", "HTTPS_PORTS" })
+            {
+                Environment.SetEnvironmentVariable(prefix + name, null);
+            }
         }
     }
 

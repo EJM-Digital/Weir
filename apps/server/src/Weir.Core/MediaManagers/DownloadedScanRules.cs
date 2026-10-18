@@ -51,20 +51,48 @@ public static class DownloadedScanRules
     }
 
     /// <summary>
-    /// The <c>POST /api/v3/command</c> body. <c>downloadClientId</c> is present only when Weir knows it; Sonarr and
-    /// Radarr treat a missing field as "unknown", not as zero.
+    /// The <c>POST /api/v3/command</c> body. <c>downloadClientId</c> is the download client's own id for the download (the
+    /// <c>downloadId</c> its queue shows, such as a torrent's hash), as text: Sonarr and Radarr answer 500 to a number. It is present only
+    /// when Weir knows it; a missing field means "not from a download client".
     /// </summary>
-    public static WireObject CommandBody(string arrScope, string managerPath, int? downloadClientId)
+    public static WireObject CommandBody(string arrScope, string managerPath, string? downloadId)
     {
         var body = new WireObject()
             .Set("name", CommandName(arrScope))
             .Set("path", managerPath)
             .Set("importMode", ImportMode);
-        if (downloadClientId is { } id)
+        if (!string.IsNullOrEmpty(downloadId))
         {
-            body.Set("downloadClientId", id);
+            body.Set("downloadClientId", downloadId);
         }
 
         return body;
     }
+
+    /// <summary>
+    /// Sonarr and Radarr keep one Downloaded Scan at a time: asked for a second while the first is queued or running, they answer
+    /// 201 with the command that is already there, not with a new one (seen in Sonarr 4.0.20: the reply carries the other scan's id
+    /// and path). That is not a scan of <paramref name="requestedPath"/>. Returns true, with the id of the scan in the way when the
+    /// manager said it, when the answer is another scan's; false when it is the scan that was asked for, or says nothing about a path.
+    /// </summary>
+    public static bool IsAnotherScan(WireValue? reply, string requestedPath, out long? otherCommandId)
+    {
+        otherCommandId = null;
+        if (reply is not WireObject command || command.Get("body") is not WireObject body || ManagerValues.Text(body.Get("path")) is not { } answeredPath)
+        {
+            return false;
+        }
+
+        if (LibraryFileChangeRules.PathsEqual(answeredPath, requestedPath))
+        {
+            return false;
+        }
+
+        otherCommandId = ManagerValues.WholeNumber(command.Get("id")) is { } id ? (long)id : null;
+        return true;
+    }
+
+    /// <summary>Whether a command's <c>GET /api/v3/command/{id}</c> answer says it is over, however it ended.</summary>
+    public static bool IsFinished(WireValue? command) =>
+        command is WireObject answer && ManagerValues.Text(answer.Get("status")) is "completed" or "failed" or "aborted" or "cancelled" or "orphaned";
 }
