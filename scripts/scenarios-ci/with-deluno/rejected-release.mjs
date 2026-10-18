@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 
 import { activity, wait } from "../workflow-support.mjs";
-import { changeWorkflow, waitForReport } from "./failure-support.mjs";
+import { changeWorkflow, failsOnPurpose, waitForReport } from "./failure-support.mjs";
 import { ANSWER_CEILING_MS, reportingWhereItStopped, waitForDownload, waitForHandoff, waitForWeirRows } from "./handoffs.mjs";
 import { syncedWorkflows } from "./synced-workflows.mjs";
 
@@ -16,7 +16,7 @@ const REMOVE_SENTENCE = /will remove the download; Weir left it in place./;
 export async function delunoRejectedRelease(world) {
   const { workflows } = await syncedWorkflows(world);
   const workflow = workflows[0];
-  const film = (world.failingFilm = await world.deluno.makeFilm({ box: world.box, title: "ScnReject", year: 2020, content: "audio-only" }));
+  const film = failsOnPurpose(world, await world.deluno.makeFilm({ box: world.box, title: "ScnReject", year: 2020, content: "audio-only" }));
   const policy = workflow.failure_policy;
   await changeWorkflow(world, workflow, { failure_policy: "reject" });
   try {

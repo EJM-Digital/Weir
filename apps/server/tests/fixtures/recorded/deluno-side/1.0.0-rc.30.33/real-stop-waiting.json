@@ -1,0 +1,61 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.33",
+  "state": "real-stop-waiting",
+  "recordedAt": "2026-10-18T06:41:08.273Z",
+  "note": "A release handed to Weir by a real Deluno while Weir was paused, and then dropped by a person pressing Stop waiting in Deluno: Deluno's questions while it waited, its request that Weir drop the hand-off and Weir's answer, as the proxy between them saw it.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a14db2f54078688dd42818e9557af8:1792304936256",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a14db2f54078688dd42818e9557af8",
+          "libraryId": "01a14dad7e3a723c8aae8cdb68d70f18",
+          "mediaType": "movies",
+          "sourcePath": "/downloads/completed/Movies/ScnStop.2020.1080p.WEB-DL.x264-WEIR",
+          "releaseName": "ScnStop.2020.1080p.WEB-DL.x264-WEIR",
+          "queueItemId": "8b3ca5bd905ca3fecc5cfc7adac0877e40232285",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "ScnStop",
+          "year": 2020,
+          "sourceFiles": [
+            "/downloads/completed/Movies/ScnStop.2020.1080p.WEB-DL.x264-WEIR/ScnStop.2020.1080p.WEB-DL.x264-WEIR.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/v1/intake/handoffs/deluno/01a14db2f54078688dd42818e9557af8",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 204,
+        "headers": {}
+      }
+    }
+  ]
+}

@@ -6,12 +6,12 @@ import assert from "node:assert/strict";
 
 import { FOLDERS } from "./deluno-world.mjs";
 import { reportingWhereItStopped, waitForDownload, waitForHandoff, weirRowsAbout } from "./handoffs.mjs";
-import { reportsAbout, waitForReport } from "./failure-support.mjs";
+import { failsOnPurpose, reportsAbout, waitForReport } from "./failure-support.mjs";
 import { syncedWorkflows } from "./synced-workflows.mjs";
 
 export async function delunoFailedRelease(world) {
   await syncedWorkflows(world);
-  const film = (world.failingFilm = await world.deluno.makeFilm({ box: world.box, title: "ScnFail", year: 2020, zeros: true }));
+  const film = failsOnPurpose(world, await world.deluno.makeFilm({ box: world.box, title: "ScnFail", year: 2020, zeros: true }));
   return reportingWhereItStopped(world, film, async () => {
     await world.deluno.sendFilm(film);
     await waitForDownload(world, film);

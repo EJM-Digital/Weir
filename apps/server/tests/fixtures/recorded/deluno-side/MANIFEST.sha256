@@ -49,3 +49,10 @@ c5850fc966af6d4d02fe96d2ca938843e8815c62af87c4237d3055aa247f3633  1.0.0-rc.30.32
 5e3a0c62d506d5d0bad0cbba871ba98303dd7dbd6c5f17ab87333143bfd90ae7  1.0.0-rc.30.32/reply-send-again-weir-not-finished.json
 d5e278252599284743b14cca21c17cfd5544dc330b8c989754410a15d3a37b46  1.0.0-rc.30.32/reply-send-again-weir-refuses-secret.json
 af090d25e7e08bb31b3b68611be79595cf910eb65a23ce383ca44b6767256ec7  1.0.0-rc.30.32/reply-send-again-weir-unreachable.json
+3f377a9a442c5d5e0874fbb986bc253ac00ce7f27303d840eaeb65d75239805c  1.0.0-rc.30.33/real-connection.json
+f1bba80e4a72d16f3e41f215cb51a813d9fb8bc9c3b2c189a51ec54bc33c17aa  1.0.0-rc.30.33/real-deleted-before-cleaning.json
+ab509c25db8713fa1c4082e494677d0ef42e430cab0606ef9d987b511b234291  1.0.0-rc.30.33/real-failed-unreadable.json
+d458addc9faccf4208de507eb53c68eb0efb8946200d272a3b7c4f23281d75a2  1.0.0-rc.30.33/real-rejected-audio-only.json
+3fbfcbd2552766788782b82354642bafeb524b9350c8ef7e6dfd9be23589429f  1.0.0-rc.30.33/real-release-folder.json
+4e5240ae4cfe2e77673a158275671d7377776b114ec2c0d690e8c54fbd72264f  1.0.0-rc.30.33/real-release-with-extra.json
+1a860127b11ed3a11a6d7426b52338d8f3db51ea35685db891089101fbf931ec  1.0.0-rc.30.33/real-stop-waiting.json

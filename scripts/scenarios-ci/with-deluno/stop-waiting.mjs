@@ -5,6 +5,7 @@
 import assert from "node:assert/strict";
 
 import { wait } from "../workflow-support.mjs";
+import { failsOnPurpose } from "./failure-support.mjs";
 import { ANSWER_CEILING_MS, reportingWhereItStopped, waitForDownload, waitForHandoff } from "./handoffs.mjs";
 import { syncedWorkflows } from "./synced-workflows.mjs";
 
@@ -13,7 +14,7 @@ const DROPPED = 204;
 
 export async function delunoStopWaiting(world) {
   await syncedWorkflows(world);
-  const film = (world.failingFilm = await world.deluno.makeFilm({ box: world.box, title: "ScnStop", year: 2020 }));
+  const film = failsOnPurpose(world, await world.deluno.makeFilm({ box: world.box, title: "ScnStop", year: 2020 }));
   const paused = await pause(world, true);
   assert.equal(paused.status, 200, `Weir paused (answered ${paused.status}: ${paused.text})`);
   try {

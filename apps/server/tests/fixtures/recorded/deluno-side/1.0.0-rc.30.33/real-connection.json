@@ -1,0 +1,209 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.33",
+  "state": "real-connection",
+  "recordedAt": "2026-10-18T06:41:08.273Z",
+  "note": "Weir connected to a real Deluno, and Deluno to Weir: what Weir read of Deluno's manifest and folders, and what Deluno asked of Weir, the first time each was said.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/capabilities",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "capabilities": [
+            "handoff-status",
+            "handoff-cancel",
+            "handoff-outcome",
+            "handoff-outcome-codes",
+            "library-folders"
+          ],
+          "machine_name": "<scrubbed>",
+          "product": "Weir",
+          "version": "0.0.1-dev"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/integrations/external/manifest",
+        "headers": {
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "product": "Deluno",
+          "version": "v1",
+          "instanceName": "<scrubbed>",
+          "capabilities": [
+            "movies",
+            "tv",
+            "indexers",
+            "download-clients",
+            "library-routing",
+            "destination-rules",
+            "metadata",
+            "media-probing",
+            "external-file-changed",
+            "external-redownload",
+            "pre-import-processing",
+            "processor-reject-regrab",
+            "activity-feed",
+            "signalr"
+          ],
+          "recommendedCategories": {
+            "movies": "deluno-movies",
+            "tv": "deluno-tv",
+            "anime": "deluno-anime",
+            "movies4k": "deluno-movies-4k",
+            "tv4k": "deluno-tv-4k"
+          },
+          "libraries": [
+            {
+              "id": "01a14dad7e3a723c8aae8cdb68d70f18",
+              "name": "Movies",
+              "mediaType": "movies",
+              "rootPath": "/media/Movies",
+              "downloadsPath": "/downloads/completed/Movies",
+              "qualityProfileName": "Balanced 1080p",
+              "importWorkflow": "standard",
+              "processorName": null,
+              "processorOutputPath": null,
+              "processorTimeoutMinutes": 2880,
+              "processorFailureMode": "block",
+              "missingSearchEnabled": false,
+              "upgradeSearchEnabled": false,
+              "maxItemsPerRun": 10,
+              "automationStatus": "idle",
+              "cleanupMode": "keep-source",
+              "removeEmptySourceFolders": false
+            }
+          ],
+          "indexers": [
+            {
+              "id": "01a14dad7e567d4f84157301638cefb5",
+              "name": "Scenario feed",
+              "protocol": "torznab",
+              "mediaScope": "both",
+              "priority": 25,
+              "isEnabled": true,
+              "healthStatus": "healthy"
+            }
+          ],
+          "downloadClients": [
+            {
+              "id": "01a14dad7d0179669c6d0cc9d45a0d38",
+              "name": "qBittorrent on qbittorrent",
+              "protocol": "qbittorrent",
+              "moviesCategory": "deluno-movies",
+              "tvCategory": "deluno-tv",
+              "categoryTemplate": null,
+              "priority": 1,
+              "isEnabled": true,
+              "healthStatus": "healthy"
+            }
+          ],
+          "connections": []
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/integrations/processors/download-destinations",
+        "headers": {
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "libraries": [
+            {
+              "libraryId": "01a14dad7e3a723c8aae8cdb68d70f18",
+              "libraryName": "Movies",
+              "mediaType": "movies",
+              "downloadsPath": "/downloads/completed/Movies",
+              "processorOutputPath": null,
+              "importWorkflow": "standard",
+              "destinations": [
+                {
+                  "downloadClientId": "01a14dad7d0179669c6d0cc9d45a0d38",
+                  "downloadClientName": "qBittorrent on qbittorrent",
+                  "protocol": "qbittorrent",
+                  "category": "deluno-movies",
+                  "categoryKind": "category",
+                  "saveFolder": "/downloads/completed/Movies",
+                  "clientSaveFolder": "/downloads/completed/Movies",
+                  "savedBy": "client-category",
+                  "matchesDownloadsPath": true,
+                  "status": "ok",
+                  "message": "qBittorrent on qbittorrent saves movies to /downloads/completed/Movies, the folder the Movies library expects."
+                }
+              ],
+              "processorConnection": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/library-folders",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "libraries": [
+            {
+              "id": 1,
+              "name": "Movies",
+              "media_type": "movie",
+              "watched_folder": "",
+              "work_folder": "/data/weir/processing/processing-movie-work",
+              "output_folder": "",
+              "manager_library_key": null,
+              "folders_from_manager": false,
+              "minimum_file_size_bytes": 52428800
+            },
+            {
+              "id": 2,
+              "name": "TV",
+              "media_type": "tv",
+              "watched_folder": "",
+              "work_folder": "/data/weir/processing/processing-tv-work",
+              "output_folder": "",
+              "manager_library_key": null,
+              "folders_from_manager": false,
+              "minimum_file_size_bytes": 52428800
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -10923,9 +10923,9 @@
           "name": "WatchedFolderScanDispatchTests"
         },
         {
-          "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffSourceFilesTests.cs",
-          "name": "HandoffSourceFilesTests"
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_small_extra_the_real_Deluno_left_out_of_its_hand_off_stays_in_the_download_untouched"
         },
         {
           "type": "xunit",
@@ -47978,11 +47978,6 @@
           "name": "HandoffFolderTests"
         },
         {
-          "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffSourceFilesTests.cs",
-          "name": "HandoffSourceFilesTests"
-        },
-        {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/HandoffSourceFilesTests.cs",
           "name": "HandoffSourceFilesTests"
@@ -48006,6 +48001,11 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "deluno-release-with-extra"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_small_extra_the_real_Deluno_left_out_of_its_hand_off_stays_in_the_download_untouched"
         }
       ],
       "needs": {

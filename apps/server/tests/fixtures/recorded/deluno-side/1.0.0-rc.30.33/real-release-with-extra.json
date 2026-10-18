@@ -1,0 +1,110 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.33",
+  "state": "real-release-with-extra",
+  "recordedAt": "2026-10-18T06:41:08.273Z",
+  "note": "A qBittorrent release folder holding a film and an extra under Weir's minimum size, handed to Weir by a real Deluno: sourceFiles names only the film, and the extra stays in the download. The hand-off, Deluno's questions about it, Weir's report and the outcome, as the proxy between them saw it.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a14daf48687fc7aa5d7c967d9b310c:1792304695400",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a14daf48687fc7aa5d7c967d9b310c",
+          "libraryId": "01a14dad7e3a723c8aae8cdb68d70f18",
+          "mediaType": "movies",
+          "sourcePath": "/downloads/completed/Movies/ScnExtra.2020.1080p.WEB-DL.x264-WEIR",
+          "releaseName": "ScnExtra.2020.1080p.WEB-DL.x264-WEIR",
+          "queueItemId": "5afcdaf25a4fb7dbe891a010656fa4287e25f679",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "ScnExtra",
+          "year": 2020,
+          "sourceFiles": [
+            "/downloads/completed/Movies/ScnExtra.2020.1080p.WEB-DL.x264-WEIR/ScnExtra.2020.1080p.WEB-DL.x264-WEIR.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "x-api-key": "<scrubbed>",
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a14daf48687fc7aa5d7c967d9b310c",
+          "status": "completed",
+          "processorName": "Weir",
+          "libraryId": "01a14dad7e3a723c8aae8cdb68d70f18",
+          "releaseName": "ScnExtra.2020.1080p.WEB-DL.x264-WEIR",
+          "outputPath": "/weir/Ready/Movies/ScnExtra.2020.1080p.WEB-DL.x264-WEIR/ScnExtra.2020.1080p.WEB-DL.x264-WEIR.mkv",
+          "message": "Removed 2 audio tracks and 2 subtitle tracks.",
+          "outputFiles": [
+            "/weir/Ready/Movies/ScnExtra.2020.1080p.WEB-DL.x264-WEIR/ScnExtra.2020.1080p.WEB-DL.x264-WEIR.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "completed",
+          "handoffId": "01a14daf48687fc7aa5d7c967d9b310c",
+          "activityId": "01a14dafd660755ba0fb24aead5e1e78",
+          "importJobId": "01a14dafd66174e6a446380e9cf8c269"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/01a14daf48687fc7aa5d7c967d9b310c/outcome",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "outcome": "imported",
+          "occurredUtc": "2026-10-18T06:25:33.984954+00:00",
+          "importedPath": "/media/Movies/ScnExtra (2020)/ScnExtra.2020.1080p.WEB-DL.x264-WEIR.mkv",
+          "reason": null
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a14daf48687fc7aa5d7c967d9b310c",
+          "outcome": "imported",
+          "released": false,
+          "message": "Weir recorded that Deluno imported the file. Deluno moved Weir's copy into its library, so there was nothing for Weir to remove."
+        }
+      }
+    }
+  ]
+}

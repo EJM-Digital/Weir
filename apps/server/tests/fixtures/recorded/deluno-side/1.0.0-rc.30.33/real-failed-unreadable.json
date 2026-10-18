@@ -1,0 +1,81 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.33",
+  "state": "real-failed-unreadable",
+  "recordedAt": "2026-10-18T06:41:08.273Z",
+  "note": "A release whose film is a file of zero bytes, handed to Weir by a real Deluno: Weir cannot read it and reports it failed. The hand-off, Deluno's questions about it, Weir's report and Deluno's reply, as the proxy between them saw it.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a14db034007eb3b95fe9e25eaf105c:1792304755712",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a14db034007eb3b95fe9e25eaf105c",
+          "libraryId": "01a14dad7e3a723c8aae8cdb68d70f18",
+          "mediaType": "movies",
+          "sourcePath": "/downloads/completed/Movies/ScnFail.2020.1080p.WEB-DL.x264-WEIR",
+          "releaseName": "ScnFail.2020.1080p.WEB-DL.x264-WEIR",
+          "queueItemId": "acd8bec194804fc64e19fb1e0aed6d2dcba524ae",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "ScnFail",
+          "year": 2020,
+          "sourceFiles": [
+            "/downloads/completed/Movies/ScnFail.2020.1080p.WEB-DL.x264-WEIR/ScnFail.2020.1080p.WEB-DL.x264-WEIR.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "x-api-key": "<scrubbed>",
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a14db034007eb3b95fe9e25eaf105c",
+          "status": "failed",
+          "processorName": "Weir",
+          "libraryId": "01a14dad7e3a723c8aae8cdb68d70f18",
+          "releaseName": "ScnFail.2020.1080p.WEB-DL.x264-WEIR",
+          "message": "Weir can't read this file yet. It may still be arriving, so Weir will look again later.",
+          "disposition": "held",
+          "sourceRemoved": false,
+          "outputFiles": []
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "failed",
+          "handoffId": "01a14db034007eb3b95fe9e25eaf105c",
+          "activityId": "01a14db10d347c358867e1dcd1ebf294",
+          "importJobId": null
+        }
+      }
+    }
+  ]
+}

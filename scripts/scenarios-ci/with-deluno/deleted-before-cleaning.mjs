@@ -14,14 +14,14 @@ import { ANSWER_CEILING_MS, reportingWhereItStopped, waitForDownload, waitForHan
 const GONE_CEILING_MS = 16 * 60_000;
 // Deluno keeps a hand-off whose download Weir found gone as its own state, in its own words, not as a failure.
 const SOURCE_GONE = "source-gone";
-import { waitForReport } from "./failure-support.mjs";
+import { failsOnPurpose, waitForReport } from "./failure-support.mjs";
 import { syncedWorkflows } from "./synced-workflows.mjs";
 
 const pause = (world, paused) => world.weir.write("PUT", "/pause", { paused, scan_while_paused: true });
 
 export async function delunoDeletedBeforeCleaning(world) {
   await syncedWorkflows(world);
-  const film = (world.failingFilm = await world.deluno.makeFilm({ box: world.box, title: "ScnGone", year: 2020 }));
+  const film = failsOnPurpose(world, await world.deluno.makeFilm({ box: world.box, title: "ScnGone", year: 2020 }));
   const paused = await pause(world, true);
   assert.equal(paused.status, 200, `Weir paused (answered ${paused.status}: ${paused.text})`);
   try {

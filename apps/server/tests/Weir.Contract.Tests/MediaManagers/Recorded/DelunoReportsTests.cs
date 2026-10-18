@@ -99,20 +99,7 @@ public sealed partial class DelunoReportsTests
         await Poll.UntilAsync(
             async () => (bool?)(await world.Scenario.FileRowAsync(world.Movies, Path.GetFileName(path)))?["source_gone"] is true ? "held as gone" : null,
             "Weir to hold the file as gone after its first look");
-        // The first look is not final: Weir looks again after the vanished-file grace and a minute, and only then tells Deluno. The
-        // second look is made due now, as it would be once that time has passed; the file shows as gone a moment before the look is
-        // booked, so the server is stopped and asked again until it is there.
-        await Poll.UntilAsync(
-            async () =>
-            {
-                await using var database = await world.Scenario.Server.StopForDatabaseAsync();
-                var due = SeedSql.Execute(
-                    database.Connection,
-                    "UPDATE jobs SET not_before = $past WHERE status = 'pending' AND dedupe_key LIKE '%:gone-wait:%'",
-                    ("$past", Handoffs.StoredTime(DateTime.UtcNow.AddMinutes(-1))));
-                return due > 0 ? "due" : null;
-            },
-            "Weir to book a second look at the gone file");
+        await MakeSecondLookDueAsync(world);
 
         var report = await ReportAsync(world, hand.HandoffId());
         EmittedReport.AssertMatches(recorded, 0, report.Body);

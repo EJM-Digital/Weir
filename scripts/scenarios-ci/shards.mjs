@@ -19,8 +19,8 @@ import { workflowsFromDeluno } from "./with-deluno/workflows-from-deluno.mjs";
 
 // A scenario is its function, or { run, logs: "since-start" } when the logs are judged from the start of the stack, not from the scenario's
 // own start: the scenario is what signs in, so there is nothing to read before it. One that makes Weir fail on purpose adds { expectedLogs }: the
-// rows it expects the logs to gain (those about the film it failed), and any other warning or error still fails it.
-const aboutItsFilm = (world) => rowAbout(world.failingFilm);
+// rows it expects the logs to gain (those about the films made to fail), and any other warning or error still fails it.
+const aboutItsFilm = (world) => rowAbout(world.failingFilms ?? []);
 const WITH_DELUNO_SCENARIOS = {
   "workflows-from-deluno": workflowsFromDeluno,
   "deluno-film-handoff": delunoFilmHandoff,

@@ -45,5 +45,14 @@ export function waitForReport(world, handoff, accepted, what) {
   );
 }
 
-/** Whether a log row is about this film: a scenario that makes Weir fail on purpose expects the warnings that say so, and no others. */
-export const rowAbout = (film) => (row) => JSON.stringify(row).includes(film.title);
+/**
+ * Notes that a film was made to fail. A scenario that makes Weir fail on purpose expects the warnings that say so, and Weir looks again at a file
+ * it could not read for as long as the stack runs, so a later scenario sees them too.
+ */
+export function failsOnPurpose(world, film) {
+  (world.failingFilms ??= []).push(film);
+  return film;
+}
+
+/** Whether a log row is about one of these films. Any other warning or error is not expected. */
+export const rowAbout = (films) => (row) => films.some((film) => JSON.stringify(row).includes(film.title));
