@@ -213,6 +213,6 @@ public sealed partial class ConfigurationBundleStore
     private static WireValue SerializeStored(Column column, object value)
     {
         var loaded = LoadStored(column, value);
-        return loaded is WireTimestampValue dt ? WireValue.Of(dt.Value.AstimezoneUtc().IsoFormat()) : loaded;
+        return loaded is WireTimestampValue dt ? WireValue.Of(Timestamp.FromUtc(dt.Value.AsUtc).IsoFormat()) : loaded;
     }
 }

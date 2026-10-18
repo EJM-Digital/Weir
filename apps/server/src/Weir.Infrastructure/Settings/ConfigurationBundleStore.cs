@@ -128,7 +128,8 @@ public sealed partial class ConfigurationBundleStore
 
     private async Task ApplySuiteSettingsAsync(UnitOfWork uow, WireValue section, ITimeZoneResolver zones)
     {
-        // A backup's product_display_name (Weir is named after its machine, #826) and signed_in_home_notice (no page shows one) are not read.
+        // A backup's product_display_name (Weir is named after its machine, #826) and signed_in_home_notice (no page shows one) are not read, and
+        // neither are the pause and the setup wizard, which describe this install as it is now rather than how it is set up.
         var ss = section as WireObject ?? throw new WireTypeException($"The backup's {SuiteTable} section must be an object.");
         var timezone = WireConvert.Str(Required(ss, "app_timezone"));
         var logRetention = WireConvert.ToInt(Required(ss, "log_retention_days"));
@@ -160,9 +161,16 @@ public sealed partial class ConfigurationBundleStore
             }
         }
 
-        normalized = normalized with { ConfigurationBackupEnabled = backupEnabled, ConfigurationBackupIntervalHours = backupHours };
+        var backupTime = ss.Get("configuration_backup_preferred_time") is WireString timeValue ? SuiteSettingsRules.NormalizeBackupPreferredTime(timeValue.Value) : null;
+        normalized = normalized with { ConfigurationBackupEnabled = backupEnabled, ConfigurationBackupIntervalHours = backupHours, ConfigurationBackupPreferredTime = backupTime };
         var before = await _suiteSettings.EnsureAsync(uow).ConfigureAwait(false);
-        await _suiteSettings.UpdateAsync(uow, before, SuiteSettingsRules.Apply(before, normalized)).ConfigureAwait(false);
+        var restored = SuiteSettingsRules.Apply(before, normalized);
+        if (ss.Get("direct_play_devices") is WireString devices)
+        {
+            restored = restored with { DirectPlayDevices = devices.Value };
+        }
+
+        await _suiteSettings.UpdateAsync(uow, before, restored).ConfigureAwait(false);
     }
 
     private static async Task ApplySingletonAsync(UnitOfWork uow, string table, WireValue section)
