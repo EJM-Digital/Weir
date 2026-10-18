@@ -25,7 +25,7 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`. `scripts/scenarios-ci/homes.js
 | `deluno-resend` | linux | with-deluno | to-port | Deluno's send-again is an API call; both sides are read over HTTP. |
 | `deluno-outcomes` | linux | with-deluno | to-port | The outcome each app recorded is compared; both are read over HTTP. |
 | `fresh-install` | windows | windows-install | to-port | Runs `Weir-win-Setup.exe` silently and starts the installed tray; a clean runner is the clean machine. |
-| `first-visit-account` | linux | weir-browser | to-port | Nothing in it is Windows: a new browser context sees account creation, then sign-in. Chromium under Playwright takes the place of Edge. |
+| `first-visit-account` | linux | weir-browser | ported | Nothing in it is Windows: a new browser context sees account creation, then sign-in. Chromium under Playwright takes the place of Edge. |
 | `weir-only-film` | linux | weir-only | ported | The first shard. The server cleans a film with the image's own ffmpeg. |
 | `process-again` | linux | weir-only | ported | The first shard. Asked to process a cleaned film again, the server skips it. |
 | `pause-resume` | linux | weir-only | ported | The server hears the tray through a file in its data folder, and that watcher is the same on Linux. The tray's side stays with windows-tray. |
@@ -42,7 +42,7 @@ The VM suite does not cover these; the package smokes (`smoke-windows-package.ps
 | Shard | Runner | Budget | What it holds |
 | --- | --- | --- | --- |
 | weir-only | ubuntu-latest | 15 min | Weir alone in the Docker image: films, Process again, Pause and resume, a deleted file. **Built.** |
-| weir-browser | ubuntu-latest | 10 min | Weir alone, driven through a real browser. |
+| weir-browser | ubuntu-latest | 10 min | Weir alone, driven through a real browser (Chromium under Playwright, from `scripts/scenarios-ci/package.json`). **Built.** |
 | with-deluno | ubuntu-latest | 20 min | Weir, Deluno and the real clients; split by client when it outgrows the budget, as Deluno splits `resend`. |
 | windows-install | windows-latest | 20 min | Install, the installed server, the recovery command, the service and start with Windows. |
 | windows-update | windows-latest | 20 min | The update from the previous release over a running Weir. |
@@ -91,10 +91,9 @@ A scenario is **green twice** when it passed in two CI runs on `main`, on differ
 
 ### Next
 
-1. `weir-browser`: `first-visit-account`, with Chromium under Playwright.
-2. `with-deluno`: images pinned by digest, the Compose file, then `workflows-from-deluno` and `deluno-film-handoff` on qBittorrent, then the other four scenarios and the other clients.
-3. The Windows shards, starting with `windows-install`.
-4. The drift workflow, and the per-shard paths filter.
+1. `with-deluno`: images pinned by digest, the Compose file, then `workflows-from-deluno` and `deluno-film-handoff` on qBittorrent, then the other four scenarios and the other clients.
+2. The Windows shards, starting with `windows-install`.
+3. The drift workflow, and the per-shard paths filter.
 
 ## Runners
 

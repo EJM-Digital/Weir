@@ -45,6 +45,13 @@ updates:
         versions:
           - ">=6.0.0"
 
+  # The browser driver of the weir-browser scenario shard; test tooling, kept in step by hand.
+  - package-ecosystem: npm
+    directory: /scripts/scenarios-ci
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+
   - package-ecosystem: npm
     directory: /docs-site
     schedule:
