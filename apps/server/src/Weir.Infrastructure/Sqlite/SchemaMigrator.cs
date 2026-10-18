@@ -134,6 +134,7 @@ public sealed class SchemaMigrator
         new(45, "0080_handback_speaker", "Weir.Infrastructure.Migrations.0045_handback_speaker.sql"),
         new(46, "0081_retire_unused_settings", "Weir.Infrastructure.Migrations.0046_retire_unused_settings.sql"),
         new(47, "0082_connection_links_are_kept", "Weir.Infrastructure.Migrations.0047_connection_links_are_kept.sql"),
+        new(48, "0083_backup_made_by", "Weir.Infrastructure.Migrations.0048_backup_made_by.sql"),
     ];
 
     /// <summary>The first migration's revision: the oldest schema this build can start from.</summary>

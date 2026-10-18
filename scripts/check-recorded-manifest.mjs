@@ -10,15 +10,22 @@
 // This is Deluno's scripts/check-recorded-manifest.mjs, ported to the paths Weir needs. A file's hash is taken over its text with line
 // endings read as LF, so a Windows checkout (CRLF) and a Linux one agree. The lines are sorted by name and the file ends with a newline.
 //
-// Usage: node scripts/check-recorded-manifest.mjs [--root <folder>] [--manifest <file>]
+// The recordings of a real Sonarr and Radarr (apps/server/tests/fixtures/recorded/sonarr and radarr) have the same manifest, made by
+// `--write` when a recording run is copied in; they are checked in unchanged too.
+//
+// Usage: node scripts/check-recorded-manifest.mjs [--root <folder>] [--manifest <file>]   (with no --root: all three folders)
+//        node scripts/check-recorded-manifest.mjs --write [--root <folder>]              (writes the manifest of the Sonarr and Radarr folders, or of --root)
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
 export const defaultRoot = join(repositoryRoot, "apps", "server", "tests", "fixtures", "recorded", "deluno-side");
 export const manifestName = "MANIFEST.sha256";
+
+/** The recordings of a real Sonarr and a real Radarr (#1013, #1014), made by apps/server/tools/Weir.ArrRecorder and checked in unchanged. */
+export const arrRoots = ["sonarr", "radarr"].map((app) => join(repositoryRoot, "apps", "server", "tests", "fixtures", "recorded", app));
 
 export function hashOf(file) {
   const text = readFileSync(file, "utf8").replace(/^﻿/, "").replace(/\r\n/g, "\n");
@@ -42,7 +49,7 @@ export function currentManifest(root) {
 
 /** What differs between the folder and the manifest, one sentence each; empty when they agree. */
 export function problems(root, manifestPath) {
-  if (!existsSync(manifestPath)) return [`${manifestPath} is missing. Copy it from Deluno with the recordings.`];
+  if (!existsSync(manifestPath)) return [`${manifestPath} is missing. Copy it from Deluno with the recordings (Sonarr and Radarr: node scripts/check-recorded-manifest.mjs --write).`];
   const read = (text) =>
     new Map(
       text
@@ -70,14 +77,28 @@ export function problems(root, manifestPath) {
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   const args = process.argv.slice(2);
   const option = (name, fallback) => (args.includes(name) ? resolve(args[args.indexOf(name) + 1]) : fallback);
-  const root = option("--root", defaultRoot);
-  const manifest = option("--manifest", join(root, manifestName));
-  const found = problems(root, manifest);
-  if (found.length > 0) {
-    console.error("Deluno's recordings and their manifest disagree (#971):");
-    for (const problem of found) console.error("  " + problem);
-    console.error("A recording here is a byte-for-byte copy of Deluno's and is never edited. Copy the folder and its manifest again from Deluno (see the README beside them).");
+  if (args.includes("--write")) {
+    for (const root of args.includes("--root") ? [option("--root")] : arrRoots) {
+      writeFileSync(join(root, manifestName), currentManifest(root));
+      console.log(`Wrote ${relative(process.cwd(), join(root, manifestName))}.`);
+    }
+    process.exit(0);
+  }
+
+  const roots = args.includes("--root") ? [option("--root")] : [defaultRoot, ...arrRoots];
+  let failed = false;
+  for (const root of roots) {
+    const found = problems(root, args.includes("--manifest") ? option("--manifest") : join(root, manifestName));
+    if (found.length > 0) {
+      failed = true;
+      console.error(`The recordings under ${relative(process.cwd(), root) || "."} and their manifest disagree (#971, #1013):`);
+      for (const problem of found) console.error("  " + problem);
+    } else {
+      console.log(`Every recording under ${relative(process.cwd(), root) || "."} matches its manifest.`);
+    }
+  }
+  if (failed) {
+    console.error("A recording is a byte-for-byte copy and is never edited. Deluno's: copy the folder and its manifest again from Deluno (see the README beside them). Sonarr's and Radarr's: run the recorder again and copy its output in, then `node scripts/check-recorded-manifest.mjs --write`.");
     process.exit(1);
   }
-  console.log(`Every recording under ${relative(process.cwd(), root) || "."} matches its manifest.`);
 }

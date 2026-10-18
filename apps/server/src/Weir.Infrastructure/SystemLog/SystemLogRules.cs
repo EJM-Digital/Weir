@@ -4,6 +4,7 @@ using Weir.Core.Logs;
 using Weir.Core.MediaManagers;
 using Weir.Core.Processing;
 using Weir.Infrastructure.Jobs;
+using Weir.Infrastructure.MediaManagers;
 
 namespace Weir.Infrastructure.SystemLog;
 
@@ -60,6 +61,7 @@ public static class SystemLogRules
         new(IntakeRules.RejectJobKind, "Reject a file", SystemLogCategories.Processing),
         new(PeriodicJobKinds.WorkTempStaleSweep, "Clean temporary work files", SystemLogCategories.Cleanup),
         new(PeriodicJobKinds.UnclaimedHandbackCleanup, "Remove copies nobody picked up", SystemLogCategories.Cleanup),
+        new(DownloadedScanRetryHandler.Kind, "Ask a media manager to scan again", SystemLogCategories.Connections),
     ];
 
     /// <summary>

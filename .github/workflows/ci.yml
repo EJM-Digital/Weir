@@ -274,15 +274,15 @@ jobs:
           node scripts/check-contract-areas.mjs
           node --test scripts/check-contract-areas.test.mjs
 
-      - name: Deluno's recordings match the manifest they were copied with
+      - name: The recordings of Deluno, Sonarr and Radarr match the manifests they were checked in with
         run: |
           node scripts/check-recorded-manifest.mjs
           node --test scripts/check-recorded-manifest.test.mjs
 
-      - name: Every recording of Deluno's side is replayed or explained
+      - name: Every recording is replayed or explained, and the drift check compares what it should
         run: |
           node scripts/check-recorded-replays.mjs
-          node --test scripts/check-recorded-replays.test.mjs
+          node --test scripts/check-recorded-replays.test.mjs scripts/compare-arr-recordings.test.mjs
 
       - name: Every server event type has a title
         run: |
@@ -592,6 +592,17 @@ jobs:
         with:
           name: weir-web-dist
           path: apps/web/dist
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      # The accessibility check in the browser tests runs axe-core, which the web app's own tests install.
+      - name: Install the web app's packages (axe-core for the accessibility check)
+        working-directory: apps/web
+        run: npm ci --ignore-scripts
 
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6

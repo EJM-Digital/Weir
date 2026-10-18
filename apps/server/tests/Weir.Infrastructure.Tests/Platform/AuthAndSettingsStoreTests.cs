@@ -201,7 +201,7 @@ public sealed class AuthAndSettingsStoreTests
         for (var i = 0; i < 7; i++)
         {
             fixture.Clock.Set(fixture.Clock.GetUtcNow().AddMinutes(1));
-            await fixture.WithUnitOfWork(backups.CreateAsync);
+            await fixture.WithUnitOfWork(uow => backups.CreateAsync(uow, BackupSource.Manual));
         }
 
         Assert.Equal(5, await fixture.Scalar("SELECT count(*) FROM suite_configuration_backup"));

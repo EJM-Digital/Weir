@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Weir.Core.Configuration;
+using Weir.Core.Jobs;
 using Weir.Core.MediaManagers;
 using Weir.Core.Security;
 using Weir.Infrastructure.Artwork;
@@ -50,6 +51,9 @@ public static class MediaManagerServices
         services.TryAddSingleton<HandbackOutcomes>();
         // The optional downloaded-scan hand-back for a Sonarr/Radarr connection outside Weir's own hand-off flow.
         services.TryAddSingleton<DownloadedScanNotifier>();
+        // A manager that was busy with another scan is asked again later, as a queued job rather than a worker that waits.
+        services.TryAddSingleton<DownloadedScanRetryHandler>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IJobHandler, DownloadedScanRetryHandler>(sp => sp.GetRequiredService<DownloadedScanRetryHandler>()));
         services.TryAddSingleton<ILibraryFileChangeNotifier, LibraryFileChangeNotifier>();
 
         // #509: asking a manager to redownload a title. What a clean removed, and which titles wait for a

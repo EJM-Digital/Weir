@@ -26,7 +26,7 @@ public sealed partial class RemuxPassHandler
             await using (uow.ConfigureAwait(false))
             {
                 await _downloadedScan.NotifyLibraryAsync(
-                    uow, (long)libraryValue.Value, mediaScope, outputPath, relativePath, DownloadClientId(origin)).ConfigureAwait(false);
+                    uow, (long)libraryValue.Value, mediaScope, outputPath, relativePath, DownloadId(origin)).ConfigureAwait(false);
             }
         }
 #pragma warning disable CA1031 // Best effort: a manager that cannot be reached must never fail a pass that already succeeded.
@@ -61,10 +61,10 @@ public sealed partial class RemuxPassHandler
     }
 
     /// <summary>
-    /// Sonarr's/Radarr's own id for the download client that owns this download, when the job's origin happens to
-    /// carry one. Today that is never the case for these connections (they run the remote-path-mapping flow, not a
+    /// The download client's own id for this download (a torrent's hash, a usenet client's job id), when the job's origin
+    /// carries one. Today that is never the case for these connections (they run the remote-path-mapping flow, not a
     /// hand-off), so this is usually null; the command is sent without <c>downloadClientId</c> either way.
     /// </summary>
-    private static int? DownloadClientId(WireObject? origin) =>
-        origin?.Get("download_id") is { IsTruthy: true } value && int.TryParse(WireConvert.Str(value), out var id) ? id : null;
+    private static string? DownloadId(WireObject? origin) =>
+        origin?.Get("download_id") is { IsTruthy: true } value ? WireConvert.Str(value) : null;
 }

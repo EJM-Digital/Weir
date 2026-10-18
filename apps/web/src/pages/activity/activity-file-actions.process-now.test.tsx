@@ -165,4 +165,21 @@ describe("Process now on a file that has not been processed", () => {
     );
     expect(screen.queryByText(QUEUED)).toBeNull();
   });
+
+  it("says in plain words that the file could not be queued when Weir has a fault of its own", async () => {
+    stubServer({
+      [ENQUEUE]: jsonAnswer(
+        { detail: "Weir is busy with other changes." },
+        503,
+      ),
+    });
+    renderActions();
+
+    fireEvent.click(processNow());
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Could not queue that file.",
+    );
+    expect(processNow()).toBeEnabled();
+  });
 });
