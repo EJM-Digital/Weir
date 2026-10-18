@@ -47699,12 +47699,13 @@
       "severity": "high",
       "touches": "install",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "A regression in the before-uninstall hook (or Velopack config) that removed the data folder would be silent total data loss. Needs a CI-smoke/VM step that writes a sentinel and the database into the runtime home, uninstalls, and asserts they are all still there (and still readable by a reinstall)."
-      },
-      "issue": 988,
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-install.mjs",
+          "name": "uninstall-keeps-the-data"
+        }
+      ],
       "audit": {
         "id": "TRAY-083",
         "verdict": "Gap"
@@ -47766,9 +47767,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/ServerEnvironmentTests.cs",
           "name": "ServerEnvironmentTests"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-install.mjs",
+          "name": "fresh-install"
         }
       ],
-      "issue": 1072,
       "audit": {
         "id": "TRAY-085",
         "verdict": "Covered"
@@ -49753,13 +49758,18 @@
           "type": "package-smoke",
           "file": "scripts/smoke-windows-package.ps1",
           "name": "*"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-install.mjs",
+          "name": "uninstall-keeps-the-data"
         }
       ],
       "needs": {
         "kind": "scenario",
-        "test": "Not asserted: Start Menu and desktop shortcuts removed, the Run entry removed, and the registry mark HKCU\\SOFTWARE\\WeirTrayRunning cleared"
+        "test": "Not asserted on a real install: the Run entry removed once Start with Windows has been turned on, which needs the tray's own menu (the windows-tray shard)"
       },
-      "issue": 988,
+      "issue": 1142,
       "audit": {
         "id": "PLAT-06",
         "verdict": "Partly"
@@ -49774,12 +49784,13 @@
       "severity": "high",
       "touches": "install",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "A regression that makes the uninstaller remove C:\\ProgramData\\Weir would be total data loss and no test would fail. Needs the smoke (or a VM scenario) to create an account and a workflow, uninstall, check the folder, reinstall, sign in"
-      },
-      "issue": 988,
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-install.mjs",
+          "name": "uninstall-keeps-the-data"
+        }
+      ],
       "audit": {
         "id": "PLAT-06b",
         "verdict": "Gap"
@@ -50414,6 +50425,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/BootstrapInactiveAdminTests.cs",
           "name": "Recovering_from_an_inactive_admin_leaves_exactly_one"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-install.mjs",
+          "name": "recover-locked-out-account"
         }
       ],
       "covers": [
