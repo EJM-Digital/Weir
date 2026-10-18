@@ -23,7 +23,7 @@ public sealed class ServerRunTests
         var failure = await Assert.ThrowsAsync<IOException>(() => ServerRun.RunAsync(host, exception => told = exception));
 
         Assert.Same(failure, told);
-        Assert.Equal("the loop ended before the service was disposed", shared.Outcome);
+        Assert.Equal(Ordered, shared.Outcome);
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public sealed class ServerRunTests
         host.Services.GetRequiredService<IHostApplicationLifetime>().StopApplication();
         await run.WaitAsync(TimeSpan.FromSeconds(30));
 
-        Assert.Equal("the loop ended before the service was disposed", shared.Outcome);
+        Assert.Equal(Ordered, shared.Outcome);
     }
 
     private static IHost Build(Shared shared, bool failToStart)
@@ -47,6 +47,7 @@ public sealed class ServerRunTests
         builder.Services.AddSingleton(shared);
         builder.Services.AddSingleton<Service>();
         builder.Services.AddHostedService<Loop>();
+        builder.Services.AddHostedService<ReleasesLoopWhenStopped>();
         if (failToStart)
         {
             builder.Services.AddHostedService<FailsToStart>();
@@ -55,39 +56,53 @@ public sealed class ServerRunTests
         return builder.Build();
     }
 
+    private const string Ordered = "the loop ended before the service was disposed";
+
+    private const string Unordered = "the service was disposed while the loop was still running";
+
     private sealed class Shared
     {
         public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        /// <summary>What a loop that is in the middle of a run waits for before it finishes.</summary>
+        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public bool LoopFinished { get; set; }
+
         public string? Outcome { get; set; }
     }
 
+    /// <summary>A service the loop uses, which records whether the loop had finished when it was disposed.</summary>
     private sealed class Service(Shared shared) : IDisposable
     {
-        public bool Disposed { get; private set; }
-
         public void Dispose()
         {
-            Disposed = true;
-            shared.Outcome ??= "the service was disposed while the loop was still running";
+            shared.Outcome ??= shared.LoopFinished ? Ordered : Unordered;
+            shared.Release.TrySetResult();
         }
     }
 
+    /// <summary>A loop in the middle of a run, which only a stop of the host lets finish.</summary>
     private sealed class Loop(Service service, Shared shared) : BackgroundService
     {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            _ = service;
             shared.Started.TrySetResult();
-            try
-            {
-                await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                // A run that stops mid-way gives the services a moment to be disposed, as the real loops' own work does.
-                await Task.Delay(TimeSpan.FromMilliseconds(200), CancellationToken.None).ConfigureAwait(false);
-                shared.Outcome ??= service.Disposed ? "the service was disposed while the loop was still running" : "the loop ended before the service was disposed";
-            }
+            await shared.Release.Task.ConfigureAwait(false);
+            shared.LoopFinished = true;
+        }
+    }
+
+    /// <summary>Stopped before the loop (hosts stop services in reverse order), it lets the loop finish: only a host that is stopped does.</summary>
+    private sealed class ReleasesLoopWhenStopped(Shared shared) : IHostedService
+    {
+        public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            shared.Release.TrySetResult();
+            return Task.CompletedTask;
         }
     }
 
