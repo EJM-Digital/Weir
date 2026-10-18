@@ -234,6 +234,37 @@ public sealed class JobsStartupRecoveryServiceTests : IDisposable
         Assert.NotNull(service.LastSwapSweepReport);
     }
 
+    [Fact]
+    public async Task The_upkeep_lane_claims_nothing_until_the_sweep_has_finished_and_then_takes_the_scan()
+    {
+        await AddLibraryFoldersAsync("/lib");
+        await _db.Store.EnqueueOrGetAsync("queued", Weir.Core.LibraryMode.LibraryModeJobKinds.ScanKind);
+        using var held = HoldTheSweep();
+        var scanned = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var service = Service(_swap.Sweep);
+        var registry = new JobHandlerRegistry([new DelegateHandler(Weir.Core.LibraryMode.LibraryModeJobKinds.ScanKind, _ => scanned.TrySetResult())]);
+        var lane = new UpkeepWorkerService(
+            new ProcessingJobProcessor(_db.Store, registry, new SqliteActivityWriter(_db.Database), new NoUnhandledJobFailureRecorder(), new NoJobNotifications(), TimeProvider.System, NullLogger<ProcessingJobProcessor>.Instance),
+            new WorkerHeartbeats(TimeProvider.System),
+            new WorkerLoopTimings { IdleSleep = TimeSpan.FromMilliseconds(50), TickErrorBackoff = TimeSpan.FromMilliseconds(50), LeaseSeconds = 3600 },
+            TimeProvider.System,
+            NullLogger<UpkeepWorkerService>.Instance,
+            registry,
+            service);
+        _db.Clock.SetUtcNow(DateTimeOffset.UtcNow);
+
+        await Task.Run(() => service.StartAsync(CancellationToken.None)).WaitAsync(TimeSpan.FromSeconds(15));
+        await lane.StartAsync(CancellationToken.None);
+        await held.RunningAsync();
+
+        Assert.False(scanned.Task.IsCompleted);
+        Assert.Equal("pending", (string?)_db.Scalar("SELECT status FROM jobs WHERE dedupe_key = 'queued'"));
+
+        held.Release();
+        await scanned.Task.WaitAsync(TimeSpan.FromSeconds(15));
+        await lane.StopAsync(CancellationToken.None);
+    }
+
     private HeldSweep HoldTheSweep() => new(_swap.Files);
 
     private JobsStartupRecoveryService Service(SwapRecoverySweep? sweep) =>

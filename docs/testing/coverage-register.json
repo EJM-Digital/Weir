@@ -5607,7 +5607,28 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_status_says_an_update_is_available_to_a_copy_behind_the_recorded_release_feed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_status_says_up_to_date_to_a_copy_that_is_the_newest_the_recorded_feed_names"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_status_reads_the_recorded_releases_API_when_the_feed_cannot_be_read"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/GitHubReleaseRecordingTests.cs",
+          "name": "GitHubReleaseRecordingTests"
+        }
+      ],
       "partial": [
         {
           "type": "contract",
@@ -5655,11 +5676,6 @@
           "name": "ReleaseSelectionTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The release feed JSON is a hand-written fake; no test runs against the real GitHub releases API"
-      },
-      "issue": 1142,
       "covers": [
         "route:GET /api/v1/suite/update-status"
       ],
@@ -5676,7 +5692,28 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_settings_are_read_only_by_someone_signed_in"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_settings_start_as_Auto_and_a_saved_choice_is_what_the_next_read_returns"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_settings_refuse_a_mode_that_is_not_one_of_the_three_and_an_interval_outside_a_minute_to_a_week"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_settings_refuse_a_field_they_do_not_have"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -5689,11 +5726,6 @@
           "name": "Update_settings_files_round_trip_and_fall_back_to_notify_only"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No test shows a PUT then a GET returning the saved mode, no invalid-mode refusal, no contract test; the GET's own auth is not asserted"
-      },
-      "issue": 1142,
       "covers": [
         "route:GET /api/v1/suite/update-settings"
       ],
@@ -6198,7 +6230,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/SystemReadings/WindowsHostReadingSourceTests.cs",
+          "name": "WindowsHostReadingSourceTests"
+        }
+      ],
       "partial": [
         {
           "type": "contract",
@@ -6231,11 +6269,6 @@
           "name": "LinuxParsersTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "WindowsHostReadingSource and WindowsNative (the readings on the platform people install on) have no test; every reading is asserted on fakes or Linux sources"
-      },
-      "issue": 1142,
       "covers": [
         "route:GET /api/v1/system/stats"
       ],
@@ -6343,12 +6376,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Nothing validates a real response against the schema, so a field the server stops sending (or sends with another type) while the web client types still say otherwise is caught only where a person wrote a key list."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/OpenApiResponseSchemaTests.cs",
+          "name": "Every_body_a_route_answers_on_a_fresh_server_matches_the_schema_the_document_gives_it"
+        }
+      ],
       "audit": {
         "id": "X-02",
         "verdict": "Gap"
@@ -6570,7 +6604,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.Loops.cs",
+          "name": "A_files_at_once_value_saved_while_weir_runs_takes_effect_once_the_slots_read_it_again"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.Loops.cs",
+          "name": "A_files_at_once_value_that_cannot_be_read_is_warned_about_once_a_minute_not_on_every_pass"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -6608,11 +6653,6 @@
           "name": "SystemEndpointsTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Not proven: a Files-at-once value changed while the server runs takes effect after the 30 s cache expiry (all tests set the value before start; the \"needs no restart\" claim in docs/settings-truthfulness-audit.md has no test); the SettingsReadFailureLogInterval throttle (one warning a minute) is untested."
-      },
-      "issue": 1142,
       "covers": [
         "service:ProcessingWorkerService"
       ],
@@ -6629,7 +6669,33 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.Loops.cs",
+          "name": "The_upkeep_lane_takes_a_scan_and_leaves_file_work_for_the_files_lane"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.Loops.cs",
+          "name": "The_upkeep_slots_report_under_their_own_name_while_they_run_and_stopped_once_the_lane_stops"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.Loops.cs",
+          "name": "The_upkeep_lane_survives_a_crashed_tick_says_so_and_carries_on_when_the_database_is_back"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/PeriodicTaskRunsApiTests.cs",
+          "name": "Every_job_kind_the_server_runs_belongs_to_the_lane_that_is_meant_to_take_it"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/JobsStartupRecoveryServiceTests.cs",
+          "name": "The_upkeep_lane_claims_nothing_until_the_sweep_has_finished_and_then_takes_the_scan"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -6652,11 +6718,6 @@
           "name": "WorkerLaneWakeTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] The loop itself has no test: crashed-tick backoff, recovery gate, heartbeat stop on shutdown, and that the lane claims ONLY WorkLanes.UpkeepKinds. WorkLanes.UpkeepKinds (which kinds are upkeep) has no direct test, so a new job kind added to the wrong list would not be caught."
-      },
-      "issue": 1142,
       "covers": [
         "service:UpkeepWorkerService"
       ],
@@ -7720,7 +7781,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/PeriodicTaskRunsApiTests.cs",
+          "name": "The_sign_in_clean_up_removes_signed_out_and_expired_sign_ins_and_keeps_the_live_one"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -7738,11 +7805,6 @@
           "name": "PeriodicTasksStartupTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] SessionCleanupTask.RunOnceAsync itself (unit-of-work open, commit, the log lines) is never run by any test."
-      },
-      "issue": 1142,
       "covers": [
         "task:auth-session-cleanup"
       ],
@@ -7759,7 +7821,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/PeriodicTaskRunsApiTests.cs",
+          "name": "The_log_trim_prunes_to_the_days_saved_and_does_it_at_most_once_a_day"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -7782,11 +7850,6 @@
           "name": "SystemOverviewApiTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] LogRetentionTask.TickAsync is never called by a test: the once-a-day gate (MinRunInterval) and \"Prune receives the saved days\" are unproven; the host test only shows the task finished without error."
-      },
-      "issue": 1142,
       "covers": [
         "task:suite-log-retention"
       ],
@@ -8059,7 +8122,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/PeriodicTaskRunsApiTests.cs",
+          "name": "The_System_overview_timer_reads_nothing_while_no_browser_is_watching_and_reads_once_one_is"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/PeriodicTaskRunsApiTests.cs",
+          "name": "The_System_overview_timer_sends_a_change_to_an_open_stream_when_a_browser_is_watching"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -8077,11 +8151,6 @@
           "name": "SystemOverviewApiTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] SystemOverviewChangeTask (the 5 s task that calls RefreshAsync, and its no-client short-circuit) has no test; only the frame class it drives is tested. The first test depends on a 250 ms real sleep heuristic."
-      },
-      "issue": 1142,
       "covers": [
         "task:system-overview"
       ],
@@ -8179,7 +8248,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "Finished_jobs_older_than_the_saved_retention_days_are_pruned_and_younger_ones_kept"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "The_default_retention_keeps_a_job_the_one_day_setting_would_prune"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "The_timer_takes_its_interval_from_the_environment_and_prunes_when_it_starts"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "A_run_that_pruned_something_says_how_many_and_a_quiet_run_says_nothing"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -8202,11 +8292,6 @@
           "name": "JobWritesAnnounceTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] JobRowsRetentionTask (reads WEIR_JOB_ROWS_RETENTION_DAYS and the interval from WeirOptions, runs the tick off the pool, logs the counts) is untested; the two environment variables are parse-tested only (SET-E15)."
-      },
-      "issue": 1142,
       "covers": [
         "task:platform-job-rows-retention"
       ],
@@ -8491,7 +8576,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "A_gone_files_history_goes_after_the_saved_number_of_days_and_not_before"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "A_changed_setting_is_the_one_the_next_run_uses"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "Zero_days_keeps_a_gone_files_history_for_ever"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -8499,11 +8600,6 @@
           "name": "FileHistoryRetentionTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] FileLogRetentionTask (reads file_log_retention_days from the operator settings and passes it to PruneAsync) has no test, so the saved setting reaching the prune is unproven (SET-O09)."
-      },
-      "issue": 1142,
       "covers": [
         "task:processing-file-log-retention"
       ],
@@ -8737,7 +8833,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/ThreadPoolWatchTests.cs",
+          "name": "The_loop_looks_from_a_thread_of_its_own_not_one_from_the_pool_it_is_watching"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/ThreadPoolWatchTests.cs",
+          "name": "The_loop_says_so_when_the_pool_does_not_start_its_probe_and_stops_when_the_host_does"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -8750,11 +8857,6 @@
           "name": "BlockingWaitGuardTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] The hosted loop against the real ThreadPool is not tested: The_service_starts_and_stops_on_a_thread_of_its_own only asserts no warning was logged (it does not prove a thread of its own or that a real starved pool is noticed). New in the working tree (uncommitted)."
-      },
-      "issue": 1142,
       "covers": [
         "service:ThreadPoolWatch"
       ],
@@ -9290,7 +9392,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/PeriodicTaskRunsApiTests.cs",
+          "name": "The_log_trim_prunes_to_the_days_saved_and_does_it_at_most_once_a_day"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -9313,11 +9421,6 @@
           "name": "RuntimeAndLoggingTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] The step that joins them is untested: LogRetentionTask.TickAsync reading the saved days and pruning once a day (JOB-031)."
-      },
-      "issue": 1142,
       "covers": [
         "setting:SuiteSettingsRecord.LogRetentionDays"
       ],
@@ -9788,7 +9891,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkerLaneWakeTests.Loops.cs",
+          "name": "A_files_at_once_value_saved_while_weir_runs_takes_effect_once_the_slots_read_it_again"
+        }
+      ],
       "partial": [
         {
           "type": "contract",
@@ -9826,11 +9935,6 @@
           "name": "AdmissionClaimTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] No test changes the value while the worker runs (30 s cache) - JOB-002."
-      },
-      "issue": 1142,
       "covers": [
         "setting:ProcessingOperatorSettingsRecord.MaxConcurrentFiles"
       ],
@@ -10182,7 +10286,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "A_changed_setting_is_the_one_the_next_run_uses"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "A_gone_files_history_goes_after_the_saved_number_of_days_and_not_before"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "Zero_days_keeps_a_gone_files_history_for_ever"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -10200,11 +10320,6 @@
           "name": "Operator_settings_put_updates"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] FileLogRetentionTask (setting -> PruneAsync) untested (JOB-049); no test that a changed value is the one the hourly job uses."
-      },
-      "issue": 1142,
       "covers": [
         "setting:ProcessingOperatorSettingsRecord.FileLogRetentionDays"
       ],
@@ -13596,7 +13711,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "WEIR_ENV_chooses_the_mode_Weir_runs_in_and_an_unset_one_is_production"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "A_failure_inside_Weir_answers_the_same_plain_500_in_either_mode_with_nothing_of_the_failure_in_it"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -13614,11 +13740,6 @@
           "name": "CsrfTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Needed: Api test that an exception returns the sanitized body under production and the developer page under development."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_ENV"
       ],
@@ -13635,7 +13756,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "WEIR_LOG_LEVEL_WARNING_keeps_warnings_in_the_log_and_leaves_information_out"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "Without_WEIR_LOG_LEVEL_information_is_in_the_log_too"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -13648,11 +13780,6 @@
           "name": "RuntimeAndLoggingTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Needed: Api test with WEIR_LOG_LEVEL=WARNING asserting an Information line is absent from the log file and a warning is present."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_LOG_LEVEL"
       ],
@@ -13801,12 +13928,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "A custom name must be both set and read; a mismatch locks every user out. Needed: Api test with WEIR_SESSION_COOKIE_NAME=x: Set-Cookie uses x and the session works."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "A_custom_session_cookie_name_is_set_on_sign_in_and_read_back_to_keep_the_person_signed_in"
+        }
+      ],
       "covers": [
         "setting:env:WEIR_SESSION_COOKIE_NAME"
       ],
@@ -13823,12 +13951,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Needed: strict and none values asserted on Set-Cookie (none without Secure is dropped by browsers - lock-out risk worth a documented test). Layer: integration."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "The_session_cookie_carries_the_SameSite_value_the_environment_names"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "SameSite_none_on_a_plain_http_install_is_not_marked_Secure_which_a_browser_will_not_keep_unless_Secure_is_switched_on"
+        }
+      ],
       "covers": [
         "setting:env:WEIR_SESSION_COOKIE_SAMESITE"
       ],
@@ -13873,7 +14007,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "A_sign_in_lasts_as_long_as_the_absolute_days_for_its_kind_say"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "A_sign_in_that_has_been_idle_too_long_ends_by_the_idle_setting_for_its_kind"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -13901,11 +14046,6 @@
           "name": "Trusted_device_login_uses_extended_session_policy"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Non-default trusted values never reach a session in any test."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_SESSION_IDLE_MINUTES",
         "setting:env:WEIR_SESSION_ABSOLUTE_DAYS",
@@ -14070,7 +14210,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "The_timer_takes_its_interval_from_the_environment_and_prunes_when_it_starts"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/RetentionTasksTests.cs",
+          "name": "Finished_jobs_older_than_the_saved_retention_days_are_pruned_and_younger_ones_kept"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -14088,11 +14239,6 @@
           "name": "JobServicesTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] See JOB-042. Needed: JobRowsRetentionTask test with options of 1 day / 60 s on a fake clock."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_JOB_ROWS_RETENTION_DAYS",
         "setting:env:WEIR_JOB_ROWS_RETENTION_SCHEDULE_INTERVAL_SECONDS"
@@ -14209,7 +14355,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "Each_work_file_sweep_takes_its_own_interval_from_the_environment"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "A_sweep_left_to_its_default_runs_hourly_whatever_the_other_one_is_set_to"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -14222,11 +14379,6 @@
           "name": "A_saved_interval_replaces_the_environments"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Needed: AT test starting a server with each variable and reading the enqueuer's Interval (like ProcessingEnvironmentSwitchTests does for the switches)."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_WORK_TEMP_STALE_SWEEP_MOVIE_SCHEDULE_INTERVAL_SECONDS",
         "setting:env:WEIR_PROCESSING_WORK_TEMP_STALE_SWEEP_TV_SCHEDULE_INTERVAL_SECONDS"
@@ -14244,7 +14396,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/WorkTempStaleSweepAgeTests.cs",
+          "name": "A_work_file_goes_when_it_is_older_than_the_age_the_environment_names"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -14262,11 +14420,6 @@
           "name": "WorkTempStaleSweepHandlerTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] The handler tests prove \"older than the stale age is removed\", not that the environment value is the age used."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_WORK_TEMP_STALE_SWEEP_MIN_STALE_AGE_SECONDS"
       ],
@@ -14312,7 +14465,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "The_log_the_backups_the_temp_folder_and_the_database_are_where_the_environment_puts_them"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "A_backup_taken_now_goes_in_the_folder_WEIR_BACKUP_DIR_names"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -14325,11 +14489,6 @@
           "name": "RuntimeAndLoggingTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] WEIR_BACKUP_DIR, WEIR_LOG_DIR and WEIR_TEMP_DIR are parse-tested only: no test starts a server with each and finds backups / the log / temp files there (ConfigurationBackups.Directory and WeirLogFile read the option, untested with a non-default)."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_DB_PATH",
         "setting:env:WEIR_BACKUP_DIR",
@@ -14521,7 +14680,18 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanDispatchScheduleTaskTests.cs",
+          "name": "A_scheduled_scan_asks_for_passes_as_the_environment_says"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/ProcessingWatchedFolderWatcherServiceTests.cs",
+          "name": "A_scan_a_folder_change_queues_asks_for_passes_as_the_environment_says"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -14544,11 +14714,6 @@
           "name": "PauseTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] The environment value reaching ScheduleTask:158 and Watcher:394 is untested."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_WATCHED_FOLDER_REMUX_SCAN_DISPATCH_PERIODIC_ENQUEUE_REMUX_JOBS"
       ],
@@ -14565,12 +14730,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Needed: unit test of the ffprobe command line for non-default values (IT/Media/MediaToolsTests.cs style). Wrong values can make probing miss late-starting streams."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "The_probe_and_clean_up_numbers_in_the_environment_are_the_ones_a_pass_is_given"
+        }
+      ],
       "covers": [
         "setting:env:WEIR_PROCESSING_PROBE_SIZE_MB",
         "setting:env:WEIR_PROCESSING_ANALYZE_DURATION_SECONDS"
@@ -14588,7 +14754,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/OutputFolderCleanupTests.cs",
+          "name": "A_movie_age_that_is_not_met_holds_back_the_movie_folder_and_not_the_TV_season"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/OutputFolderCleanupTests.cs",
+          "name": "A_TV_age_that_is_not_met_holds_back_the_TV_season_and_not_the_movie_folder"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/EnvironmentSettingsApiTests.cs",
+          "name": "The_probe_and_clean_up_numbers_in_the_environment_are_the_ones_a_pass_is_given"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -14606,11 +14788,6 @@
           "name": "OutputFolderCleanupTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Needed: TV variant and a test that the configured age (not a constant) decides."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_PROCESSING_MOVIE_OUTPUT_CLEANUP_MIN_AGE_SECONDS",
         "setting:env:WEIR_PROCESSING_TV_OUTPUT_CLEANUP_MIN_AGE_SECONDS"
@@ -14628,7 +14805,18 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/MediaManagerServiceTests.cs",
+          "name": "The_environments_Sonarr_serves_TV_only_and_the_environments_Radarr_serves_movies_only"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/MediaManagerServiceTests.cs",
+          "name": "An_environment_address_without_its_key_is_no_connection"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -14636,11 +14824,6 @@
           "name": "MediaManagerServiceTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Sonarr pair is parse-tested only; undocumented outside ADR-0008."
-      },
-      "issue": 1142,
       "covers": [
         "setting:env:WEIR_ARR_RADARR_BASE_URL",
         "setting:env:WEIR_ARR_SONARR_BASE_URL",
@@ -58875,8 +59058,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/ProcessingPassThroughHandlerTests.cs",
+          "name": "The_original_is_delivered_byte_for_byte_and_the_source_survives"
+        }
+      ],
       "covers": [
         "event:processing.file_passed_through"
       ],
