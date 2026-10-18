@@ -42,6 +42,9 @@ internal static class FakeToolProtocol
     public const string RemuxDelaySecondsKey = "remux_delay_seconds";
     public const string HwaccelsFirstCallDelaySecondsKey = "hwaccels_first_call_delay_seconds";
     public const string RemuxReleaseFileKey = "remux_release_file";
+    public const string RemuxProgressKey = "remux_progress";
+    public const string ProgressOutTimeSecondsKey = "out_time_seconds";
+    public const string ProgressAfterFileKey = "after_file";
     public const string OutputProbeKey = "output_probe";
 
     public const string ToolKey = "tool";

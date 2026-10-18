@@ -9,6 +9,7 @@ import type {
   ProcessingMediaType,
   RemuxWriter,
 } from "../../../../lib/processing/libraries-api";
+import { parseAppDate } from "../../../../lib/ui/mm-format-date";
 
 export type LibraryForm = {
   name: string;
@@ -124,10 +125,10 @@ const MS_PER_MINUTE = 60_000;
 /** "YYYY-MM-DDTHH:MM", the length a datetime-local value takes. */
 const DATETIME_LOCAL_LENGTH = 16;
 
-/** A stored UTC time as the local value a datetime-local input shows. */
+/** A stored UTC time as the local value a datetime-local input shows. The server writes it without a zone, which is UTC. */
 function localDateTimeValue(value: string | null): string {
   if (!value) return "";
-  const parsed = new Date(value);
+  const parsed = parseAppDate(value);
   if (Number.isNaN(parsed.getTime())) return "";
   const local = new Date(
     parsed.getTime() - parsed.getTimezoneOffset() * MS_PER_MINUTE,

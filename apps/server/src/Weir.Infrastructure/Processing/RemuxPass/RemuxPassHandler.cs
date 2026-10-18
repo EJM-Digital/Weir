@@ -103,6 +103,7 @@ public sealed partial class RemuxPassHandler : IJobHandler
         var raw = WireStrings.Strip(context.PayloadJson ?? string.Empty);
         if (raw.Length == 0)
         {
+            context.Alert = JobAlert.FailedForGood;
             await RecordAsync(FailedPayload(context.Id, "missing payload_json")).ConfigureAwait(false);
             return;
         }
@@ -114,12 +115,14 @@ public sealed partial class RemuxPassHandler : IJobHandler
         }
         catch (WireJsonDecodeException exception)
         {
+            context.Alert = JobAlert.FailedForGood;
             await RecordAsync(FailedPayload(context.Id, $"invalid json: {exception.Message}")).ConfigureAwait(false);
             return;
         }
 
         if (parsed is not WireObject data)
         {
+            context.Alert = JobAlert.FailedForGood;
             await RecordAsync(FailedPayload(context.Id, "payload must be a JSON object")).ConfigureAwait(false);
             return;
         }
@@ -127,6 +130,7 @@ public sealed partial class RemuxPassHandler : IJobHandler
         var provenance = ActivityProvenance.JobProvenance(data);
         if (data.Get("relative_media_path") is not WireString relValue || WireStrings.Strip(relValue.Value).Length == 0)
         {
+            context.Alert = JobAlert.FailedForGood;
             await RecordAsync(Merge(FailedPayload(context.Id, "relative_media_path is required"), provenance)).ConfigureAwait(false);
             return;
         }
@@ -138,6 +142,7 @@ public sealed partial class RemuxPassHandler : IJobHandler
                     context.Id,
                     "This job payload uses legacy Weir dry_run, which is no longer supported. Re-enqueue without dry_run.")
                 .Set("relative_media_path", rel);
+            context.Alert = JobAlert.FailedForGood;
             await RecordFailedResultAsync(Merge(legacy, provenance), null, "movie", null).ConfigureAwait(false);
             return;
         }
@@ -162,6 +167,7 @@ public sealed partial class RemuxPassHandler : IJobHandler
 
         if (await SettleRepeatAsync(data, provenance, rel, mediaScope, libraryId, payloadJson, cancellationToken).ConfigureAwait(false))
         {
+            context.Alert = JobAlert.Nothing;
             return;
         }
 
@@ -169,6 +175,7 @@ public sealed partial class RemuxPassHandler : IJobHandler
         if (claim.Superseded)
         {
             _logger.LogInformation("Dropped the queued retry of {Path}: the file was given up on, finished or started again after it was queued.", rel);
+            context.Alert = JobAlert.Nothing;
             return;
         }
 
@@ -176,6 +183,7 @@ public sealed partial class RemuxPassHandler : IJobHandler
         {
             Merge(failure, provenance);
             await RecordFailedResultAsync(failure, libraryId, mediaScope, origin).ConfigureAwait(false);
+            context.Alert = AlertFor(failure);
             await ReportBackAsync(payloadJson, failure).ConfigureAwait(false);
             return;
         }
@@ -244,6 +252,7 @@ public sealed partial class RemuxPassHandler : IJobHandler
         await DeferUntilOldEnoughAsync(context.Id, data, origin, result, cancellationToken).ConfigureAwait(false);
         await LookAgainForGoneFileAsync(context.Id, data, origin, result, (claim.Runtime!.WatchedFolder, rel, mediaScope, claim.Library?.Id ?? libraryId), cancellationToken).ConfigureAwait(false);
         await RecordAsync(result, progress.ActivityId, newEntry: AddsGoneEntry(result, claim.GoneListed)).ConfigureAwait(false);
+        context.Alert = AlertFor(result);
 
         await FinishRejectedInputCleanupAsync(result, claim.Library, libraryId, mediaScope, origin).ConfigureAwait(false);
         if (BeforeReport is { } beforeReport)

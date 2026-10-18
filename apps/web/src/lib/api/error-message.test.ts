@@ -65,6 +65,26 @@ describe("loadErrorMessage", () => {
     ).toBe("Weir couldn't load these settings. Reload the page to try again.");
   });
 
+  it("says the server's own sentence when a load found the database busy", () => {
+    const sentence =
+      "Weir is busy with other changes and could not finish this request. Try again in 30 seconds.";
+
+    expect(
+      loadErrorMessage(
+        new ApiHttpError(
+          PATH,
+          503,
+          sentence,
+          sentence,
+          false,
+          false,
+          "database_busy",
+        ),
+        "these settings",
+      ),
+    ).toBe(sentence);
+  });
+
   it("asks for a new sign-in when the session has ended", () => {
     expect(
       loadErrorMessage(

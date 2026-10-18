@@ -224,7 +224,7 @@ public sealed class SetupDataChangeTests : IDisposable
     [Fact]
     public async Task A_configuration_backup_publishes_the_backups()
     {
-        Assert.Equal([DataTopics.Backups], await HeardAsync(uow => _backups.CreateAsync(uow)));
+        Assert.Equal([DataTopics.Backups], await HeardAsync(uow => _backups.CreateAsync(uow, BackupSource.Manual)));
     }
 
     [Fact]

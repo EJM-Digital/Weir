@@ -6,6 +6,7 @@
 import {
   NETWORK_UNREACHABLE_MESSAGE,
   TIMED_OUT_MESSAGE,
+  codeOf,
   responseErrorText,
 } from "./api-error-text";
 
@@ -30,6 +31,8 @@ export class ApiHttpError extends Error {
    * error, or the request timing out. See {@link NETWORK_UNREACHABLE_MESSAGE}.
    */
   readonly networkUnreachable: boolean;
+  /** The `code` the server put on its answer, when it gave one (for example `database_busy`). */
+  readonly code: string | undefined;
 
   constructor(
     path: string,
@@ -38,6 +41,7 @@ export class ApiHttpError extends Error {
     detail?: unknown,
     timedOut = false,
     networkUnreachable = false,
+    code?: string,
   ) {
     super(message);
     this.name = "ApiHttpError";
@@ -46,6 +50,7 @@ export class ApiHttpError extends Error {
     this.detail = detail;
     this.timedOut = timedOut;
     this.networkUnreachable = networkUnreachable;
+    this.code = code;
   }
 }
 
@@ -219,7 +224,7 @@ export async function apiResponseErrorMessage(
   path: string,
   r: Response,
   fallback: string,
-): Promise<{ message: string; detail?: unknown }> {
+): Promise<{ message: string; detail?: unknown; code?: string }> {
   const body = await readJsonBody(r);
   const message = responseErrorText({
     path,
@@ -231,7 +236,7 @@ export async function apiResponseErrorMessage(
     typeof body === "object" && body !== null && "detail" in body
       ? (body as { detail: unknown }).detail
       : undefined;
-  return { message, detail };
+  return { message, detail, code: codeOf(body) };
 }
 
 export async function throwApiResponseError(
@@ -240,7 +245,15 @@ export async function throwApiResponseError(
   fallback: string,
 ): Promise<never> {
   const normalized = await apiResponseErrorMessage(path, r, fallback);
-  throw new ApiHttpError(path, r.status, normalized.message, normalized.detail);
+  throw new ApiHttpError(
+    path,
+    r.status,
+    normalized.message,
+    normalized.detail,
+    false,
+    false,
+    normalized.code,
+  );
 }
 
 export async function requireOk(
