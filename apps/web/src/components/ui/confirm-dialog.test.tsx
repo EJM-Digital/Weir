@@ -43,3 +43,19 @@ it("leaves the cancel button neutral and focused when the action is destructive"
   );
   expect(cancel).toHaveFocus();
 });
+
+it("offers to keep the thing by default and says it is removing while a removal runs", () => {
+  render(
+    <ConfirmDialog
+      title="Remove Movies?"
+      confirmLabel="Remove workflow"
+      busy
+      testId="remove-dialog"
+      onCancel={() => undefined}
+      onConfirm={() => undefined}
+    />,
+  );
+
+  expect(screen.getByRole("button", { name: "Keep it" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Removing…" })).toBeDisabled();
+});

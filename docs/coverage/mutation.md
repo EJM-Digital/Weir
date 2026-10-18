@@ -54,16 +54,27 @@ Stryker.NET's `Standard` mutation level is used, and the tests that need ffmpeg 
 in any run without the real tools. The contract suite and the E2E smoke are not run: they start the server as a
 separate process, which a mutation run cannot swap code into.
 
+Three kinds of call are not mutated in the Stryker.NET targets (`ignore-methods` in each config), because changing them
+changes nothing a test could see or is a programmer error, not data: `ConfigureAwait(false)` (the server has no
+synchronisation context to return to) and the argument guards `ArgumentNullException.ThrowIfNull` and
+`ArgumentException.ThrowIfNullOrEmpty`. Everything else is mutated, including every log line and message.
+
+The targets and the way each one is run are listed in [`.github/mutation-targets.json`](../../.github/mutation-targets.json);
+a new target is added there, to `mutation-floors.json` and as a config in the `mutation` folder.
+
 ## When it runs
 
-Weekly (Sunday, 02:41 UTC) and on demand (Actions, Mutation, Run workflow). Never on a pull request: a target takes
+Weekly (Sunday, 02:41 UTC), on demand (Actions, Mutation, Run workflow) and on a pull request that changes a file a target
+mutates. The weekly and manual runs mutate every target. A pull request mutates only the targets whose files it changes
+(`scripts/select-mutation-targets.mjs` picks them from the pull request's changed paths, or the target's own config), so
+one that touches none starts no Stryker job, and its check holds only those targets to their floors. A target takes
 tens of minutes, because Stryker first runs the whole test project once to learn which tests cover which line. To try
 one target by hand, run it from its test project:
 
 ```
 cd apps/server/tests/Weir.Infrastructure.Tests
 dotnet tool restore
-dotnet stryker -f ../../mutation/file-lifecycle/stryker-config.json -O ../../../../artifacts/mutation/file-lifecycle --concurrency 4
+dotnet stryker -f ../../mutation/file-lifecycle-moves/stryker-config.json -O ../../../../artifacts/mutation/file-lifecycle-moves --concurrency 4
 ```
 
 and for the web app, from `apps/web`: `npx stryker run mutation/web-api-client/stryker.config.json` (the report is
