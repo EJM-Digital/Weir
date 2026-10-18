@@ -30,6 +30,11 @@
       "home": "windows",
       "budgetMinutes": 20,
       "what": "The real tray, driven through UI Automation."
+    },
+    "windows-files": {
+      "home": "windows",
+      "budgetMinutes": 25,
+      "what": "What the installed server does to real files on real NTFS volumes and a real network share, and the setting that opens its port to other devices."
     }
   },
   "scenarios": [
@@ -176,6 +181,70 @@
           "ref": "coverage/windows-install-shard"
         }
       ]
+    },
+    {
+      "id": "library-clean-in-place",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-files",
+      "state": "ported",
+      "why": "The VM suite never cleaned a library file in place. The installed server cleans a real film at its own path on NTFS, with and without the original kept, and leaves a film another program holds open exactly as it was."
+    },
+    {
+      "id": "library-swap-crash",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-files",
+      "state": "ported",
+      "why": "The VM suite never ended the server mid-swap. The installed server is ended by its process id at each point of the swap and started again; one intact film is left under its name and the interrupted clean finishes."
+    },
+    {
+      "id": "publish-across-volumes",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-files",
+      "state": "ported",
+      "why": "A second real NTFS volume (a virtual disk) is the output drive: a cleaned film appears at its final name only when whole, and an unchanged film is copied where a hard link is refused."
+    },
+    {
+      "id": "keep-original-across-volumes",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-files",
+      "state": "ported",
+      "why": "The original is kept on another real volume: copied, checked and deleted, and a crash between the steps loses neither file."
+    },
+    {
+      "id": "full-disk",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-files",
+      "state": "ported",
+      "why": "A small real volume fills during a pass: the pass waits, writes nothing, records nothing as done and completes when room returns; the unchanged-publish check does the same."
+    },
+    {
+      "id": "network-share",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-files",
+      "state": "ported",
+      "why": "A real SMB share on the runner, used by its UNC path: folders found and used, a removed share reported and nothing lost, a restored share used again."
+    },
+    {
+      "id": "network-share-hang",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-files",
+      "state": "ported",
+      "why": "A share that stops answering without refusing (the SMB client talks through a relay that can stop passing data): reported unreachable, other workflows and the System page unaffected."
+    },
+    {
+      "id": "network-access",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-files",
+      "state": "ported",
+      "why": "Other devices switched on and off through the API on the installed Weir: the listener, the firewall rule for every profile and the machine's own network address are read; a second machine is not available on one runner."
     }
   ]
 }

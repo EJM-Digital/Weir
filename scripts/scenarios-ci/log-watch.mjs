@@ -14,6 +14,7 @@ export class LogWatch {
   #weir;
   #before;
   #allowed = new Map();
+  #patterns = [];
 
   constructor(weir, before) {
     this.#weir = weir;
@@ -39,6 +40,15 @@ export class LogWatch {
     this.#allowed.set(title, (this.#allowed.get(title) ?? 0) + times);
   }
 
+  /**
+   * Names rows whose title matches the pattern that the scenario causes on purpose, for titles that carry a number or a path: each `times` a
+   * row may match, and no more.
+   */
+  expectMatching(pattern, { times = 1, why }) {
+    if (!why) throw new Error(`A row the scenario expects (${pattern}) needs a reason.`);
+    this.#patterns.push({ pattern, left: times });
+  }
+
   /** Throws what the logs gained since `begin`, except the rows the scenario said it would cause. */
   async finish() {
     const page = await this.#weir.get(LOG_PAGE);
@@ -48,8 +58,13 @@ export class LogWatch {
     }
     const left = new Map(this.#allowed);
     const unexpected = gained.filter((row) => {
-      if (!(left.get(row.title) > 0)) return true;
-      left.set(row.title, left.get(row.title) - 1);
+      if (left.get(row.title) > 0) {
+        left.set(row.title, left.get(row.title) - 1);
+        return false;
+      }
+      const allowed = this.#patterns.find((entry) => entry.left > 0 && entry.pattern.test(row.title));
+      if (!allowed) return true;
+      allowed.left -= 1;
       return false;
     });
     if (unexpected.length > 0) {

@@ -33,6 +33,14 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`, and the ones written for CI al
 | `update-requests` | windows | windows-tray | to-port | Needs the real tray to take the update flag files. |
 | `recover-locked-out-account` | windows | windows-install | ported | Runs the installed `WeirServer.exe recover` with nothing set, so it must find Weir's data folder itself. The Docker form is already proved by the Docker smoke. |
 | `uninstall-keeps-the-data` | windows | windows-install | ported | Written for CI: the VM suite never ran the uninstaller. Uninstalls Weir stopped and running, and finds the data, the secrets and the account afterwards. |
+| `library-clean-in-place` | windows | windows-files | ported | Written for CI. The installed server cleans a real film in a library folder at its own path on NTFS, with and without the original kept; a film another program holds open is left as it was and its clean booked for later. |
+| `library-swap-crash` | windows | windows-files | ported | Written for CI. The installed server is ended by its process id at each of the swap's eight points and started again: one intact film under its name, nothing left over, and the interrupted clean finishes. |
+| `publish-across-volumes` | windows | windows-files | ported | Written for CI. The output is on a second real NTFS volume (a virtual disk): a cleaned film appears at its final name only whole, and an unchanged film is copied where a hard link is refused. |
+| `keep-original-across-volumes` | windows | windows-files | ported | Written for CI. The original is kept on another real volume (copy, check, delete), also with the server ended between the steps. |
+| `full-disk` | windows | windows-files | ported | Written for CI. A small real volume fills during a pass: the pass waits for room, writes and records nothing, and completes when room returns; so does an unchanged film. |
+| `network-share` | windows | windows-files | ported | Written for CI. A real SMB share (New-SmbShare) used by its UNC path: found and used, removed (reported, nothing lost), restored. |
+| `network-share-hang` | windows | windows-files | ported | Written for CI. A share that stops answering without refusing, through a relay that can stop passing data: reported, other workflows and the System page unaffected. |
+| `network-access` | windows | windows-files | ported | Written for CI. Other devices switched on and off through the API on the installed Weir; the listener, the firewall rule for every profile and the machine's own address are read. |
 
 ### Windows-only behaviour with no scenario today
 
@@ -46,6 +54,7 @@ The VM suite does not cover these; the package smokes (`smoke-windows-package.ps
 | weir-browser | ubuntu-latest | 10 min | Weir alone, driven through a real browser (Chromium under Playwright, from `scripts/scenarios-ci/package.json`). **Built.** |
 | with-deluno | ubuntu-latest | 20 min | Weir, Deluno and the real clients; split by client when it outgrows the budget, as Deluno splits `resend`. |
 | windows-install | windows-latest | 20 min | Install, the installed server and its secrets, the recovery command, uninstall and reinstall. **Built.** Start with Windows needs the tray's own menu, so it waits for windows-tray. |
+| windows-files | windows-latest | 25 min | What the installed server does to real files on real NTFS volumes and a real network share, and the setting that opens its port to other devices. **Built.** |
 | windows-update | windows-latest | 20 min | The update from the previous release over a running Weir. |
 | windows-tray | windows-latest | 20 min | The real tray through UI Automation, and NTFS behaviour. |
 
@@ -99,6 +108,16 @@ A scenario is **green twice** when it passed in two CI runs on `main`, on differ
 - `uninstall-keeps-the-data` (added for CI): uninstalls with Weir stopped, then with Weir running; the data folder, the secrets and the account are as they were, the shortcuts, the Run entry and the running mark are gone, and each reinstall signs in and finds the workflow.
 
 The tray is started without its user interface, so what the tray shows is left to `windows-tray`. Right after each Setup the shard writes `update-settings.json` with `NotifyOnly`, the file the tray reads: a runner can reach the release feed, and a placeholder build (`0.0.1-dev`) is older than every published release, so otherwise the tray downloads the newest one and replaces the build under test the next time it starts. Every start of Weir in a scenario also checks it is still the build under test.
+
+### The windows-files shard
+
+`scripts/scenarios-in-ci.mjs windows-files --setup <Weir-win-Setup.exe>` runs on a GitHub-hosted `windows-latest` runner. Setup installs the build under test, and all but one of the scenarios start the installed `WeirServer.exe` themselves, each with a data folder and a port of its own, so a scenario can end it by its process id and start it again, or point it at another drive. The media is made and cleaned by the ffmpeg the package carries (`binfmpeg`).
+
+- `library-clean-in-place`: Scan and Clean through the API on a real film; the file at the same path has only the English audio, nothing is left beside it, and with "keep the original" the original is under `.weir-originals` byte for byte. A film that another program holds open is left as it was; its clean is booked for a later look (5 minutes, the real backoff, which the scenario does not wait for).
+- `library-swap-crash`: `WEIR_LIBRARY_SWAP_HOLD_AT` stops the swap at each of its eight points; the server is ended there, the files are compared with the plan of the contract suite (`SwapCrashPlan`), the server is started with no workers so only start-up recovery has touched anything, and then as on a real install so the interrupted clean finishes. Three points also run with the original kept.
+- `publish-across-volumes`, `keep-original-across-volumes`, `full-disk`: a second NTFS volume is a virtual disk made with `diskpart` (the runner has no Hyper-V cmdlets); `full-disk` uses a small fixed one and fills it with the pass's own staged copy.
+- `network-share`, `network-share-hang`: the share is `New-SmbShare` on a folder of the runner, used by `\localhost<name>`. The hang goes through a relay (`files-proxy.mjs`) that the SMB client reaches by an alternative port and that can stop passing data without closing anything.
+- `network-access`: the installed Weir with its tray. Other devices is chosen through `PUT /suite/network-access`; the tray restarts the server and asks Windows for the rule. The listener, the rule (enabled, inbound, TCP, allow, every profile, the installed server) and the machine's own network address are read, then flipped back. **Not provable on one runner:** that Windows Firewall lets a packet from a second machine in, because traffic from a PC to its own address never meets the firewall; the rule stands in for it.
 
 ### Next
 

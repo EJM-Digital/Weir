@@ -8,7 +8,14 @@ import { join } from "node:path";
 import { ORIGIN } from "../docker-smoke/stack.mjs";
 import { WeirClient } from "../docker-smoke/weir-client.mjs";
 import { runScenarios } from "./run.mjs";
-import { SCENARIOS, watchLogs } from "./windows-install.mjs";
+import * as install from "./windows-install.mjs";
+import * as files from "./windows-files.mjs";
+
+/** The scenarios of each Windows shard, and how each watches System > Logs. */
+const SHARDS = {
+  "windows-install": { scenarios: install.SCENARIOS, watchLogs: install.watchLogs },
+  "windows-files": { scenarios: files.SCENARIOS, watchLogs: files.watchLogs },
+};
 
 /** The server as an outsider asks it: is it ready, and which version does it report. */
 export function httpServer(origin) {
@@ -54,7 +61,8 @@ async function keepInstallLogs(machine, logFolder) {
  * Runs the chosen scenarios on the machine against the Setup. One that fails does not stop the next. Weir is stopped at the end, whatever
  * happened, so the runner is left as it was.
  */
-export async function runWindowsShard({ ids, machine, setupPath, version, logFolder }) {
+export async function runWindowsShard({ shard = "windows-install", ids, machine, setupPath, version, logFolder }) {
+  const { scenarios, watchLogs } = SHARDS[shard];
   const recordings = join(logFolder, "recordings");
   await mkdir(recordings, { recursive: true });
   const scratch = await mkdtemp(join(tmpdir(), "weir-scenarios-ci-"));
@@ -67,12 +75,15 @@ export async function runWindowsShard({ ids, machine, setupPath, version, logFol
     expectedVersion: version,
     runId: randomBytes(3).toString("hex"),
     scratch,
+    cleanups: [],
     watchLogs,
     record: (name, text) => writeFile(join(recordings, name), text),
   };
   try {
-    return await runScenarios({ ids, registry: SCENARIOS, world });
+    return await runScenarios({ ids, registry: scenarios, world });
   } finally {
+    // What a scenario made on the machine (servers, volumes, shares), taken down last made first, whatever happened.
+    for (const cleanup of world.cleanups.splice(0).reverse()) await cleanup().catch((error) => console.error(`::warning::A clean-up failed: ${error.message}`));
     await keepInstallLogs(machine, logFolder).catch((error) => console.error(`::warning::The install's logs could not be kept: ${error.message}`));
     await machine.stopWeir().catch((error) => console.error(`::warning::Weir could not be stopped: ${error.message}`));
     await rm(scratch, { recursive: true, force: true });

@@ -198,6 +198,7 @@ public sealed partial class LibraryCleanHandler : IJobHandler
         if (plan.Classification == LibraryFileClassification.Matches)
         {
             await RecordAsync(libraryId, path, trigger, LibraryActivityEventTypes.FileSkipped, "This file already matches the workflow's rules; nothing to clean.").ConfigureAwait(false);
+            await LookAtLibraryAgainAsync(libraryId, cancellationToken).ConfigureAwait(false);
             return;
         }
 

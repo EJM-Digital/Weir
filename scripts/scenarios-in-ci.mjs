@@ -81,6 +81,7 @@ async function runWindowsShardHere({ shard, ids, setup, version, logFolder }) {
   const props = readFileSync("apps/server/Directory.Build.props", "utf8");
   try {
     return await runWindowsShard({
+      shard,
       ids,
       machine: new WindowsMachine(),
       setupPath: resolve(setup),

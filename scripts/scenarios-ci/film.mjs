@@ -13,16 +13,17 @@ const LENGTH_TOLERANCE_SECONDS = 1.5;
 const subtitlePath = (path, language) => `${path.slice(0, -posix.extname(path).length)}.${language}.srt`;
 
 /** The arguments of the ffmpeg that makes the film: one video, an audio track for each language and a subtitle track for each. */
-export function filmArguments({ path, seconds = 30, audio = AUDIO, subtitles = SUBTITLES, title = TITLE }) {
+export function filmArguments({ path, seconds = 30, audio = AUDIO, subtitles = SUBTITLES, title = TITLE, videoBitrate = "3M", defaultAudio = false }) {
   const args = ["-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i", `testsrc2=duration=${seconds}:size=640x360:rate=24`];
   audio.forEach((_, i) => args.push("-f", "lavfi", "-i", `sine=frequency=${220 * (i + 1)}:duration=${seconds}`));
   for (const language of subtitles) args.push("-i", subtitlePath(path, language));
   args.push("-map", "0:v");
   audio.forEach((_, i) => args.push("-map", `${i + 1}:a`));
   subtitles.forEach((_, i) => args.push("-map", `${audio.length + 1 + i}:s`));
-  args.push("-c:v", "mpeg4", "-b:v", "3M", "-c:a", "aac", "-c:s", "srt", "-metadata", `title=${title}`);
+  args.push("-c:v", "mpeg4", "-b:v", videoBitrate, "-c:a", "aac", "-c:s", "srt", "-metadata", `title=${title}`);
   audio.forEach((language, i) => args.push(`-metadata:s:a:${i}`, `language=${language}`));
   subtitles.forEach((language, i) => args.push(`-metadata:s:s:${i}`, `language=${language}`));
+  if (defaultAudio) args.push("-disposition:a:0", "default");
   args.push(path);
   return args;
 }

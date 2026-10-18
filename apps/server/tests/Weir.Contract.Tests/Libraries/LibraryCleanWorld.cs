@@ -2,6 +2,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
+using Weir.Contract.Tests.Jobs;
 using Weir.Contract.Tests.Harness.Fakes;
 using static Weir.Contract.Tests.Libraries.LibrariesPartAHelpers;
 
@@ -173,6 +174,20 @@ internal sealed class LibraryCleanWorld : IAsyncDisposable
                     .FirstOrDefault(clean => SamePath((string)clean["relative_path"]!, path));
             },
             $"the clean of {Path.GetFileName(path)}");
+
+    /// <summary>
+    /// Waits until the Files table lists the file at <paramref name="path"/> with this status, for as long as a worker has any job
+    /// (see <see cref="JobWait"/>), and returns its row.
+    /// </summary>
+    public async Task<JsonObject> WaitForFileStatusAsync(string path, string status) =>
+        await new JobWait().UntilAsync(
+            async () => [.. (await JobsApi.AllJobsAsync(Admin)).Select(job => (string)job["status"]!)],
+            async () =>
+            {
+                var file = await FileAsync(path);
+                return (string)file["status"]! == status ? file : null;
+            },
+            $"{Path.GetFileName(path)} to be listed as {status}");
 
     /// <summary>The job as the inspection list shows it, whatever its status.</summary>
     public async Task<JsonObject> JobAsync(long jobId)

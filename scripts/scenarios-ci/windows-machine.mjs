@@ -29,7 +29,7 @@ export function consoleEnvironment(env) {
   return Object.fromEntries(Object.entries(env).filter(([name]) => !name.toUpperCase().startsWith("WEIR_")));
 }
 
-function run(program, args, { env = process.env, ceilingMs = 120_000 } = {}) {
+export function run(program, args, { env = process.env, ceilingMs = 120_000 } = {}) {
   return new Promise((resolve, reject) => {
     execFile(program, args, { env, windowsHide: true, timeout: ceilingMs, maxBuffer: 32 * 1024 * 1024 }, (error, stdout, stderr) => {
       if (error) reject(new Error(`${program} ${args.join(" ")} failed: ${error.message}\n${stderr}`.trim(), { cause: error }));
@@ -43,7 +43,7 @@ function run(program, args, { env = process.env, ceilingMs = 120_000 } = {}) {
  * finds nothing and says nothing succeeds (a failed lookup under -ErrorAction SilentlyContinue would otherwise set the exit code); an error that
  * stops the script still fails it.
  */
-async function json(script, values = {}) {
+export async function json(script, values = {}) {
   const env = { ...process.env, ...Object.fromEntries(Object.entries(values).map(([name, value]) => [`SCENARIO_${name}`, String(value)])) };
   const text = await run(POWERSHELL, ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", `$ErrorActionPreference = 'Stop'; ${script}
 exit 0`], { env });

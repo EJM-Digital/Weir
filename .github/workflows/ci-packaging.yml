@@ -388,11 +388,11 @@ jobs:
   scenarios-windows:
     needs: windows-package-smoke
     runs-on: windows-latest
-    timeout-minutes: 40
+    timeout-minutes: 50
     strategy:
       fail-fast: false
       matrix:
-        shard: [windows-install]
+        shard: [windows-install, windows-files]
     env:
       SHARD: ${{ matrix.shard }}
       BUILD_VERSION: ${{ needs.windows-package-smoke.outputs.version }}
