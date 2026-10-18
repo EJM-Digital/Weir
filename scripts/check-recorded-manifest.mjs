@@ -10,11 +10,11 @@
 // This is Deluno's scripts/check-recorded-manifest.mjs, ported to the paths Weir needs. A file's hash is taken over its text with line
 // endings read as LF, so a Windows checkout (CRLF) and a Linux one agree. The lines are sorted by name and the file ends with a newline.
 //
-// The recordings of a real Sonarr and Radarr (apps/server/tests/fixtures/recorded/sonarr and radarr) have the same manifest, made by
+// The recordings of a real Sonarr, Radarr and the five download clients (apps/server/tests/fixtures/recorded/<app>) have the same manifest, made by
 // `--write` when a recording run is copied in; they are checked in unchanged too.
 //
-// Usage: node scripts/check-recorded-manifest.mjs [--root <folder>] [--manifest <file>]   (with no --root: all three folders)
-//        node scripts/check-recorded-manifest.mjs --write [--root <folder>]              (writes the manifest of the Sonarr and Radarr folders, or of --root)
+// Usage: node scripts/check-recorded-manifest.mjs [--root <folder>] [--manifest <file>]   (with no --root: Deluno's folder and every app's)
+//        node scripts/check-recorded-manifest.mjs --write [--root <folder>]              (writes the manifest of the folders of the apps, or of --root)
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
@@ -24,8 +24,8 @@ const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
 export const defaultRoot = join(repositoryRoot, "apps", "server", "tests", "fixtures", "recorded", "deluno-side");
 export const manifestName = "MANIFEST.sha256";
 
-/** The recordings of a real Sonarr and a real Radarr (#1013, #1014), made by apps/server/tools/Weir.ArrRecorder and checked in unchanged. */
-export const arrRoots = ["sonarr", "radarr"].map((app) => join(repositoryRoot, "apps", "server", "tests", "fixtures", "recorded", app));
+/** The recordings of a real Sonarr, Radarr and download clients (#1013, #1014, #1015), made by apps/server/tools/Weir.ArrRecorder and Weir.ClientRecorder and checked in unchanged. */
+export const appRoots = ["sonarr", "radarr", "qbittorrent", "transmission", "deluge", "sabnzbd", "nzbget"].map((app) => join(repositoryRoot, "apps", "server", "tests", "fixtures", "recorded", app));
 
 export function hashOf(file) {
   const text = readFileSync(file, "utf8").replace(/^﻿/, "").replace(/\r\n/g, "\n");
@@ -49,7 +49,7 @@ export function currentManifest(root) {
 
 /** What differs between the folder and the manifest, one sentence each; empty when they agree. */
 export function problems(root, manifestPath) {
-  if (!existsSync(manifestPath)) return [`${manifestPath} is missing. Copy it from Deluno with the recordings (Sonarr and Radarr: node scripts/check-recorded-manifest.mjs --write).`];
+  if (!existsSync(manifestPath)) return [`${manifestPath} is missing. Copy it from Deluno with the recordings (the other apps: node scripts/check-recorded-manifest.mjs --write).`];
   const read = (text) =>
     new Map(
       text
@@ -78,27 +78,27 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
   const args = process.argv.slice(2);
   const option = (name, fallback) => (args.includes(name) ? resolve(args[args.indexOf(name) + 1]) : fallback);
   if (args.includes("--write")) {
-    for (const root of args.includes("--root") ? [option("--root")] : arrRoots) {
+    for (const root of args.includes("--root") ? [option("--root")] : appRoots) {
       writeFileSync(join(root, manifestName), currentManifest(root));
       console.log(`Wrote ${relative(process.cwd(), join(root, manifestName))}.`);
     }
     process.exit(0);
   }
 
-  const roots = args.includes("--root") ? [option("--root")] : [defaultRoot, ...arrRoots];
+  const roots = args.includes("--root") ? [option("--root")] : [defaultRoot, ...appRoots];
   let failed = false;
   for (const root of roots) {
     const found = problems(root, args.includes("--manifest") ? option("--manifest") : join(root, manifestName));
     if (found.length > 0) {
       failed = true;
-      console.error(`The recordings under ${relative(process.cwd(), root) || "."} and their manifest disagree (#971, #1013):`);
+      console.error(`The recordings under ${relative(process.cwd(), root) || "."} and their manifest disagree (#971, #1013, #1015):`);
       for (const problem of found) console.error("  " + problem);
     } else {
       console.log(`Every recording under ${relative(process.cwd(), root) || "."} matches its manifest.`);
     }
   }
   if (failed) {
-    console.error("A recording is a byte-for-byte copy and is never edited. Deluno's: copy the folder and its manifest again from Deluno (see the README beside them). Sonarr's and Radarr's: run the recorder again and copy its output in, then `node scripts/check-recorded-manifest.mjs --write`.");
+    console.error("A recording is a byte-for-byte copy and is never edited. Deluno's: copy the folder and its manifest again from Deluno (see the README beside them). The other apps': run the recorder again (apps/server/tools/Weir.ArrRecorder or Weir.ClientRecorder) and copy its output in, then `node scripts/check-recorded-manifest.mjs --write`.");
     process.exit(1);
   }
 }

@@ -27,24 +27,11 @@ public static class QBittorrentLoginRules
             return QBittorrentLogin.Refused;
         }
 
-        var cookie = SessionCookie(setCookie);
+        var cookie = SessionCookie.Leading(setCookie);
         var text = body.Trim();
         var accepted = text.Length == 0
             ? status == NoContentStatus || cookie is not null
             : string.Equals(text, AcceptedBody, StringComparison.Ordinal);
         return accepted ? new QBittorrentLogin(true, cookie) : QBittorrentLogin.Refused;
-    }
-
-    /// <summary>The leading <c>name=value</c> of the first <c>Set-Cookie</c>, without its attributes, or null when there is none.</summary>
-    private static string? SessionCookie(string? setCookie)
-    {
-        var pair = setCookie?.Split(';', 2)[0].Trim();
-        if (pair is null)
-        {
-            return null;
-        }
-
-        var separator = pair.IndexOf('=', StringComparison.Ordinal);
-        return separator > 0 && separator < pair.Length - 1 ? pair : null;
     }
 }
