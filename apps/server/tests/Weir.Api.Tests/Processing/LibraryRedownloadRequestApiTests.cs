@@ -52,7 +52,7 @@ public sealed class LibraryRedownloadRequestApiTests
         using var response = await rig.RedownloadAsync(rig.Admin, libraryId, RedownloadRig.FilmPath);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("""{"name":"MoviesSearch","movieIds":[7]}""", Compact(rig.Manager.SearchBody()));
+        Assert.Equal($$"""{"name":"MoviesSearch","movieIds":[{{ArrRedownloadReplies.MovieId}}]}""", Compact(rig.Manager.SearchBody()));
         Assert.All(rig.Manager.Requested(), call => Assert.Equal("the-managers-api-key", call.ApiKey));
         Assert.Empty(rig.Manager.Requested().Single(call => call.Method == "DELETE").Body);
     }
@@ -72,7 +72,7 @@ public sealed class LibraryRedownloadRequestApiTests
             ("requested", $"{RedownloadRig.SonarrName} deleted the existing file and is searching for a replacement."),
             (body["outcome"]!.GetValue<string>(), body["message"]!.GetValue<string>()));
         Assert.Equal(RedownloadScripts.SonarrDeleteThenSearch, rig.Manager.Asked());
-        Assert.Equal("""{"name":"SeriesSearch","seriesId":3}""", Compact(rig.Manager.SearchBody()));
+        Assert.Equal($$"""{"name":"SeriesSearch","seriesId":{{ArrRedownloadReplies.SeriesId}}}""", Compact(rig.Manager.SearchBody()));
     }
 
     [Fact]

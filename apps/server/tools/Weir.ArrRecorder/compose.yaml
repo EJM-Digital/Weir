@@ -1,0 +1,55 @@
+# The real Sonarr, Radarr and download client the recorder talks to (README.md). The images are pinned by digest, so a recording is
+# of a known release; the weekly drift check overrides them with the newest release to see whether the replies have moved.
+#
+#   RECORDER_WORK=/tmp/arr PUID=$(id -u) PGID=$(id -g) docker compose -f compose.yaml up -d
+#
+# RECORDER_WORK holds one folder per app for its config, library and downloads, and the download client's. The apps run as PUID:PGID,
+# so the recorder, which runs on the host as that user, can read the API key each app generates and write the files it hands them.
+
+name: weir-arr-recorder
+
+services:
+  sonarr:
+    image: ${WEIR_RECORD_SONARR_IMAGE:-lscr.io/linuxserver/sonarr:4.0.20.3014-ls329@sha256:44b06045a98bc1f237b9ffefc4b28dab64cb29305e4a2a94875ae93b5224e4cc}
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: Etc/UTC
+    volumes:
+      - ${RECORDER_WORK:?set RECORDER_WORK}/sonarr/config:/config
+      - ${RECORDER_WORK}/sonarr/library:/tv
+      - ${RECORDER_WORK}/sonarr/downloads:/downloads
+    ports:
+      - "127.0.0.1:8989:8989"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  radarr:
+    image: ${WEIR_RECORD_RADARR_IMAGE:-lscr.io/linuxserver/radarr:6.4.4.10685-ls321@sha256:ea6822c956d26db648b237919f41340318f32e5b7dcc4ba702cf256a0f5f3c12}
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: Etc/UTC
+    volumes:
+      - ${RECORDER_WORK:?set RECORDER_WORK}/radarr/config:/config
+      - ${RECORDER_WORK}/radarr/library:/movies
+      - ${RECORDER_WORK}/radarr/downloads:/downloads
+    ports:
+      - "127.0.0.1:7878:7878"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # No sign-in, and any host name may ask: it only has to list the torrents the apps hand it.
+  transmission:
+    image: ${WEIR_RECORD_TRANSMISSION_IMAGE:-lscr.io/linuxserver/transmission:4.0.6-r4-ls311@sha256:991b4aed6213fa04e93701523d6303deba8c13dc3d351b2f8cc7178e823fdd20}
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: Etc/UTC
+      WHITELIST: "*.*.*.*"
+      HOST_WHITELIST: "transmission,localhost"
+    volumes:
+      - ${RECORDER_WORK}/transmission/config:/config
+      - ${RECORDER_WORK}/transmission/downloads:/downloads
+    ports:
+      - "127.0.0.1:9091:9091"

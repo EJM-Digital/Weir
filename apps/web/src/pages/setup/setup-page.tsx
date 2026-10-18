@@ -50,6 +50,14 @@ export function SetupPage() {
     return <Navigate to="/login" replace />;
   }
 
+  // A reason given for what was typed no longer applies once it is changed.
+  const forgetRefusal = () => {
+    setValidationError(null);
+    if (bootstrap.isError) {
+      bootstrap.reset();
+    }
+  };
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const trimmedUsername = username.trim();
@@ -109,9 +117,7 @@ export function SetupPage() {
               value={username}
               onChange={(e) => {
                 setUsername(e.target.value);
-                if (validationError) {
-                  setValidationError(null);
-                }
+                forgetRefusal();
               }}
               required
               maxLength={64}
@@ -126,9 +132,7 @@ export function SetupPage() {
               value={password}
               onChange={(value) => {
                 setPassword(value);
-                if (validationError) {
-                  setValidationError(null);
-                }
+                forgetRefusal();
               }}
               required
               minLength={8}
@@ -144,9 +148,7 @@ export function SetupPage() {
               value={confirmPassword}
               onChange={(value) => {
                 setConfirmPassword(value);
-                if (validationError) {
-                  setValidationError(null);
-                }
+                forgetRefusal();
               }}
               required
               minLength={8}
@@ -166,9 +168,7 @@ export function SetupPage() {
                   value={setupCode}
                   onChange={(e) => {
                     setSetupCode(e.target.value);
-                    if (validationError) {
-                      setValidationError(null);
-                    }
+                    forgetRefusal();
                   }}
                   required
                   maxLength={32}

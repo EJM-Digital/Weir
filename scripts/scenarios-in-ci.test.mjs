@@ -14,6 +14,7 @@ import { filmArguments, filmCommand, cleanedFilmProblems, summarizeProbe } from 
 import { catalogIds, linuxShards, loadHomes, problemsWithHomes, scenariosOfShard } from "./scenarios-ci/homes.mjs";
 import { LogWatch, newProblemRows } from "./scenarios-ci/log-watch.mjs";
 import { exitCode, runScenarios, summaryMarkdown } from "./scenarios-ci/run.mjs";
+import { SHARDS, allScenarios } from "./scenarios-ci/shards.mjs";
 import { SCENARIOS } from "./scenarios-ci/weir-only.mjs";
 import { FakeWorld } from "./scenarios-ci/fake-world.mjs";
 
@@ -78,7 +79,14 @@ test("the plan's table says what the manifest says, row for row", () => {
 
 test("every ported Linux scenario has code, and every scenario with code is ported", () => {
   const ported = homes.scenarios.filter((scenario) => scenario.home === "linux" && scenario.state !== "to-port").map((scenario) => scenario.id);
-  assert.deepEqual(Object.keys(SCENARIOS).sort(), ported.sort());
+  assert.deepEqual(Object.keys(allScenarios()).sort(), ported.sort());
+});
+
+test("every Linux shard with a ported scenario runs exactly its own scenarios", () => {
+  for (const shard of linuxShards(homes)) {
+    const ported = scenariosOfShard(homes, shard).filter((scenario) => scenario.state !== "to-port").map((scenario) => scenario.id);
+    assert.deepEqual(Object.keys(SHARDS[shard]?.scenarios ?? {}).sort(), ported.sort(), shard);
+  }
 });
 
 test("a shard is its scenarios in catalogue order, and only shards with a ported scenario are in the workflow's matrix", () => {

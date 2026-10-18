@@ -17,7 +17,7 @@ Solution: `apps/server/Weir.slnx`.
 | `tests/Weir.Api.Tests` | Endpoint tests over HTTP, including `OpenApiDocumentParityTests`. |
 | `tests/Weir.TestChild` | A slow-program stand-in that the process runner tests start instead of a system tool. |
 
-The contract suite (`tests/Weir.Contract.Tests`) and the E2E smoke (`tests/Weir.E2E.Tests`) judge a running server from outside, as a process over HTTP. See [`tests/Weir.Contract.Tests/README.md`](tests/Weir.Contract.Tests/README.md) and [`tests/Weir.E2E.Tests/README.md`](tests/Weir.E2E.Tests/README.md); the packaged live audit is [`tools/Weir.LiveAudit`](tools/Weir.LiveAudit/README.md).
+The contract suite (`tests/Weir.Contract.Tests`) and the E2E smoke (`tests/Weir.E2E.Tests`) judge a running server from outside, as a process over HTTP. See [`tests/Weir.Contract.Tests/README.md`](tests/Weir.Contract.Tests/README.md) and [`tests/Weir.E2E.Tests/README.md`](tests/Weir.E2E.Tests/README.md); the packaged live audit is [`tools/Weir.LiveAudit`](tools/Weir.LiveAudit/README.md). The recordings of a real Sonarr and Radarr that tests replay are made by [`tools/Weir.ArrRecorder`](tools/Weir.ArrRecorder/README.md).
 
 ## Build and test
 

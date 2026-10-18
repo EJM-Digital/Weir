@@ -1,0 +1,22 @@
+{
+  "app": "sonarr",
+  "version": "4.0.20.3014",
+  "state": "queue-remove-and-blocklist",
+  "recordedAt": "2026-10-17T05:25:51Z",
+  "note": "Removing the queue item from the download client and blocklisting the release.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/v3/queue/270375924?removeFromClient=true&blocklist=true",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200
+      }
+    }
+  ]
+}

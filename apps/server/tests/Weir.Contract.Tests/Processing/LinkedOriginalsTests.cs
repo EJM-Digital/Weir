@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
 using Weir.Contract.Tests.Harness.Fakes;
+using Weir.Tests.Shared;
 
 namespace Weir.Contract.Tests.Processing;
 
@@ -84,7 +85,7 @@ public sealed class LinkedOriginalsTests
     public async Task A_radarr_workflow_is_still_scanned_and_its_originals_are_kept()
     {
         await using var scenario = await Scenario.StartAsync();
-        var (_, library) = await scenario.RadarrSetupAsync(("remove_original_after_success", true));
+        var (radarr, library) = await scenario.RadarrSetupAsync(("remove_original_after_success", true));
         var download = WriteDownload(scenario, "Radarr.Film.2024");
 
         await scenario.EnqueueScanAsync(library);
@@ -96,6 +97,37 @@ public sealed class LinkedOriginalsTests
         AssertDownloadIntact(download);
         var completed = Assert.Single(await scenario.ActivityAsync("processing.file_remux_pass_completed"));
         Assert.Contains("This workflow is linked to Radarr", completed.ToJsonString(), StringComparison.Ordinal);
+        AssertAskedAsRecorded(radarr, ArrRecording.Load("radarr", "queue-empty"));
+    }
+
+    [Fact]
+    public async Task A_sonarr_workflow_is_still_scanned_and_its_originals_are_kept()
+    {
+        await using var scenario = await Scenario.StartAsync();
+        var (sonarr, library) = await scenario.SonarrSetupAsync(("remove_original_after_success", true));
+        var download = WriteDownload(scenario, "Sonarr.Show.S01E01");
+
+        await scenario.EnqueueScanAsync(library);
+
+        await scenario.WaitWhileWorkedOnAsync(
+            () => Task.FromResult(File.Exists(Path.Combine(scenario.Folders.Output, "Sonarr.Show.S01E01", "film.mkv"))),
+            "the scan to process the episode");
+        await scenario.WaitForFileStatusAsync(library, "Sonarr.Show.S01E01/film.mkv", "processed");
+        AssertDownloadIntact(download);
+        var completed = Assert.Single(await scenario.ActivityAsync("processing.file_remux_pass_completed"));
+        Assert.Contains("This workflow is linked to Sonarr", completed.ToJsonString(), StringComparison.Ordinal);
+        AssertAskedAsRecorded(sonarr, ArrRecording.Load("sonarr", "queue-empty"));
+    }
+
+    /// <summary>The fake answers in the shape of the recorded app, and Weir asked it for its queue the way the recording shows.</summary>
+    private static void AssertAskedAsRecorded(FakeManager fake, ArrRecording queue)
+    {
+        var recorded = queue.Only.Request;
+        var asked = fake.RequestsTo(recorded.Method, recorded.Path);
+        Assert.NotEmpty(asked);
+        Assert.All(asked, request => Assert.Equal(fake.ApiKey, request.Header("X-Api-Key")));
+        Assert.All(asked, request => Assert.Equal(["1000"], request.Query["pageSize"]));
+        Assert.Equal("pageSize=1000", recorded.Query);
     }
 
     [Fact]
