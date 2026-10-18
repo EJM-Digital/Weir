@@ -253,9 +253,9 @@ test("a release Weir rejects fails the scenario when the report is not a rejecti
 // --- a download deleted before Weir cleans it ---------------------------------------------------------------------------
 
 const goneReport = (body = {}) => failedReport({ failureClass: "source_gone", message: "The download is no longer there, so Weir had nothing to do.", disposition: undefined, sourceRemoved: false, ...body });
-const goneStack = (wrong = {}) => ({ handoff: { ...failedHandoff, failureMessage: "Weir reports failed for it: The download is no longer there, so Weir had nothing to do." }, row: failedRow, reports: [goneReport()], ...wrong });
+const goneStack = (wrong = {}) => ({ handoff: { ...failedHandoff, status: "source-gone", failureMessage: "The download was gone before Weir on 1b365a42fb85 could clean it." }, row: failedRow, reports: [goneReport()], ...wrong });
 
-test("a download deleted while Weir holds the hand-off: after Weir resumes it reports the download gone and Deluno shows it failed in those words", async () => {
+test("a download deleted while Weir holds the hand-off: after Weir resumes it reports the download gone and Deluno shows it as source-gone", async () => {
   const { result, made } = await good("deluno-deleted-before-cleaning", goneStack());
   assert.equal(result.status, "passed", result.detail);
   assert.deepEqual(made.kept, ["real-deleted-before-cleaning h1"]);
@@ -269,8 +269,8 @@ test("a deleted download fails the scenario when Weir called it something else o
   const other = await good("deluno-deleted-before-cleaning", goneStack({ reports: [goneReport({ failureClass: "preflight" })] }));
   assert.match(other.result.detail, /Weir reported the download gone \(failure class preflight/);
   assert.equal(other.made.isPaused(), false, "a failed scenario does not leave Weir paused");
-  const words = await good("deluno-deleted-before-cleaning", goneStack({ handoff: { ...failedHandoff, failureMessage: "else" } }));
-  assert.match(words.result.detail, /failed in Weir's words/);
+  const words = await good("deluno-deleted-before-cleaning", goneStack({ handoff: { ...failedHandoff, status: "source-gone", failureMessage: "else" } }));
+  assert.match(words.result.detail, /Deluno says the download was gone/);
   const never = await good("deluno-deleted-before-cleaning", goneStack({ toWeir: [] }));
   assert.match(never.result.detail, /Weir to take in Deluno's hand-off of .* did not happen/);
 });
@@ -281,7 +281,7 @@ const cancelExchange = (status = 204) => ({ request: { method: "DELETE", path: "
 const stopStack = (wrong = {}) => ({
   handoff: { status: "submitted", importJobId: null, outputPath: null, outcome: null },
   toWeir: [{ request: { method: "POST", path: "/api/v1/intake/webhook/deluno", body: { handoffId: "h1", releaseName: RELEASE } }, reply: { status: 200 } }, cancelExchange()],
-  activity: [{ event_type: "processing.cancelled", title: `Weir stopped work on ${RELEASE}.mkv` }],
+  activity: [{ title: `Deluno cancelled its hand-off of ${RELEASE}` }],
   ...wrong,
 });
 
@@ -300,7 +300,7 @@ test("Stop waiting fails when Deluno refuses, Weir will not drop the hand-off, A
   const wouldNot = await good("deluno-stop-waiting", stopStack({ toWeir: stopStack().toWeir.slice(0, 1).concat(cancelExchange(409)) }));
   assert.match(wouldNot.result.detail, /Weir dropped the hand-off \(it answered 409/);
   const silent = await good("deluno-stop-waiting", stopStack({ activity: [] }));
-  assert.match(silent.result.detail, /Activity to say it stopped work on .* did not happen/);
+  assert.match(silent.result.detail, /Activity to say Deluno cancelled its hand-off of .* did not happen/);
   const worked = await good("deluno-stop-waiting", stopStack({ writtenExtras: ["/weir/Ready/Movies/x.mkv"] }));
   assert.match(worked.result.detail, /Weir never worked the dropped hand-off/);
 });

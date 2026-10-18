@@ -12,6 +12,8 @@ import { ANSWER_CEILING_MS, reportingWhereItStopped, waitForDownload, waitForHan
 // A download that is gone is looked for again before Weir tells Deluno: a share that dropped for a moment is not a deleted download. The file stays
 // listed for ten minutes after a scan last saw it and is looked at again a minute after that, so the report comes about eleven minutes in.
 const GONE_CEILING_MS = 16 * 60_000;
+// Deluno keeps a hand-off whose download Weir found gone as its own state, in its own words, not as a failure.
+const SOURCE_GONE = "source-gone";
 import { waitForReport } from "./failure-support.mjs";
 import { syncedWorkflows } from "./synced-workflows.mjs";
 
@@ -42,19 +44,19 @@ export async function delunoDeletedBeforeCleaning(world) {
       const resumed = await pause(world, false);
       assert.equal(resumed.status, 200, `Weir resumed (answered ${resumed.status}: ${resumed.text})`);
 
-      const handoff = await waitForHandoff(world, film, (found) => found?.status === "failed", `Deluno to show the hand-off of ${film.release} as failed`, { failureExpected: true, ceilingMs: GONE_CEILING_MS });
+      const handoff = await waitForHandoff(world, film, (found) => found?.status === SOURCE_GONE, `Deluno to show the hand-off of ${film.release} as source-gone`, { failureExpected: true, ceilingMs: GONE_CEILING_MS });
       const report = await waitForReport(world, handoff, (body) => body.status === "failed", `Weir's report of ${film.release} to reach Deluno`);
       const sent = report.request.body;
       assert.equal(sent.failureClass, "source_gone", `Weir reported the download gone (failure class ${sent.failureClass}: ${sent.message})`);
       assert.ok(report.reply.status >= 200 && report.reply.status < 300, `Deluno accepted the report (it answered ${report.reply.status})`);
-      assert.ok(String(handoff.failureMessage).includes(sent.message), `Deluno shows the hand-off failed in Weir's words (Weir said "${sent.message}"; Deluno shows "${handoff.failureMessage}")`);
+      assert.match(String(handoff.failureMessage), /The download was gone before .* could clean it./, `Deluno says the download was gone (it shows "${handoff.failureMessage}")`);
       assert.equal(await world.box.exists(`${folder}/${film.release}.mkv`), false, "Weir did not bring the deleted download back");
 
       world.deluno.keepConversation(handoff, {
         state: "real-deleted-before-cleaning",
         note: "A release handed to Weir by a real Deluno while Weir was paused, and deleted from its folder before Weir started on it: Deluno's questions while it waited, then Weir's failed report (source_gone) and Deluno's reply, as the proxy between them saw it.",
       });
-      return `Weir held Deluno's hand-off of ${film.release} while paused; once the download was deleted and Weir resumed it reported "${sent.message}" (failure class source_gone) and Deluno shows the hand-off failed in those words.`;
+      return `Weir held Deluno's hand-off of ${film.release} while paused; once the download was deleted and Weir resumed it reported "${sent.message}" (failure class source_gone) and Deluno shows the hand-off as ${handoff.status} ("${handoff.failureMessage}").`;
     });
   } finally {
     await pause(world, false);

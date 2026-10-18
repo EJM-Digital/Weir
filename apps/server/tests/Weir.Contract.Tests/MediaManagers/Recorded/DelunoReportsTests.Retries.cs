@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
+using static Weir.Contract.Tests.MediaManagers.Recorded.DelunoReportSteps;
 
 namespace Weir.Contract.Tests.MediaManagers.Recorded;
 

@@ -4,7 +4,7 @@
 // The conversation is kept as a recording (real-stop-waiting): the hand-off, Deluno's questions while it waited, its cancel and Weir's answer.
 import assert from "node:assert/strict";
 
-import { activity, wait } from "../workflow-support.mjs";
+import { wait } from "../workflow-support.mjs";
 import { ANSWER_CEILING_MS, reportingWhereItStopped, waitForDownload, waitForHandoff } from "./handoffs.mjs";
 import { syncedWorkflows } from "./synced-workflows.mjs";
 
@@ -45,8 +45,8 @@ export async function delunoStopWaiting(world) {
       assert.equal(resumed.status, 200, `Weir resumed (answered ${resumed.status}: ${resumed.text})`);
       const said = await wait(
         world,
-        async () => (await activity(world, "processing.cancelled")).find((item) => JSON.stringify(item).includes(film.title)),
-        `Weir's Activity to say it stopped work on ${film.release}`,
+        async () => (await world.weir.get("/activity/recent?limit=100")).items.find((item) => String(item.title).includes(`cancelled its hand-off of ${film.release}`)),
+        `Weir's Activity to say Deluno cancelled its hand-off of ${film.release}`,
         ANSWER_CEILING_MS,
         2000,
       );

@@ -28,6 +28,12 @@ internal sealed class Recording
     /// <summary>The Deluno version whose own replies to Weir were recorded, in the server code.</summary>
     public const string DelunoSideRepliesVersion = "1.0.0-rc.30.32";
 
+    /// <summary>
+    /// The Deluno version whose talk with Weir was recorded in Compose by the scenario shard (<c>scripts/scenarios-ci/with-deluno</c>), with a
+    /// recording proxy between the real Deluno and the real Weir: every state in it is named <c>real-*</c>.
+    /// </summary>
+    public const string DelunoSideRealStackVersion = "v1";
+
     private const string WeirRecordedByDeluno = "fixtures/recorded/deluno/" + Version;
 
     private Recording(string folder, string state, string note, IReadOnlyList<RecordedExchange> exchanges)

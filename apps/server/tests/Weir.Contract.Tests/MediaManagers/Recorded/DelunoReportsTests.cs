@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
 using Weir.Contract.Tests.Harness.Fakes;
 using Weir.Contract.Tests.Processing;
+using static Weir.Contract.Tests.MediaManagers.Recorded.DelunoReportSteps;
 
 namespace Weir.Contract.Tests.MediaManagers.Recorded;
 
@@ -290,12 +291,6 @@ public sealed partial class DelunoReportsTests
     private static RecordedCall HandoffFor(Recording report, int exchange) =>
         DelunoSide.HandoffLike((string)report.Exchanges[exchange].Request.Body!["handoffId"]!, DelunoSide.ReleaseNameOf(report.Exchanges[exchange]));
 
-    private static async Task HandOffAsync(RecordedWorld world, RecordedCall hand)
-    {
-        var accepted = await world.Replay.SendCallAsync(hand);
-        Assert.True(accepted.Status == System.Net.HttpStatusCode.OK, accepted.ToString());
-    }
-
     /// <summary>Hands the release off while the file is there, takes the file away, and waits until Weir holds it as gone with a look booked for later.</summary>
     private static async Task HoldAsGoneAsync(RecordedWorld world, RecordedCall hand)
     {
@@ -334,18 +329,6 @@ public sealed partial class DelunoReportsTests
         }
 
         world.PutFilm(hand.SourcePath(), needsWork: true);
-    }
-
-    private sealed record Sent(RecordedRequest Request, JsonObject Body);
-
-    /// <summary>The report Weir sent for the hand-off, once it has, for as long as a worker has the job that makes it (see <see cref="JobWait"/>).</summary>
-    private static async Task<Sent> ReportAsync(RecordedWorld world, string handoffId)
-    {
-        var request = await new JobWait().UntilAsync(
-            world.Scenario.JobStatusesAsync,
-            () => Task.FromResult(world.Deluno.RequestsTo("POST", ReportsTo).FirstOrDefault(sent => ((JsonObject)sent.Json!)["handoffId"]!.ToString() == handoffId)),
-            $"Weir's report of {handoffId}");
-        return new Sent(request, (JsonObject)request.Json!);
     }
 
     /// <summary>
