@@ -15,7 +15,7 @@ public static partial class Navigation
     // machine that other work shares), and skipping the setup wizard saves several settings. Each submit waits for
     // its own form to go away, so a pending request is never clicked again and a failed one fails here instead of in
     // the next step. This is a ceiling, not a delay: a submit that settles sooner returns sooner.
-    private const float SubmitSettleMs = 60_000;
+    public const float SubmitSettleMs = 60_000;
 
     // First-run setup, sign-in, the setup wizard, then the shell: each screen at most once, plus spare turns
     // for a screen that was replaced between being seen and being checked.

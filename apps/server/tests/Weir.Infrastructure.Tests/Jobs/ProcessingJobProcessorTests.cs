@@ -43,6 +43,34 @@ public sealed class ProcessingJobProcessorTests : IDisposable
         Assert.Equal(["completed 1 processing.test.ok.v1 willRetry=False"], notifications.Sent);
     }
 
+    [Theory]
+    [InlineData(JobAlert.Finished, "completed 1 processing.test.ok.v1 willRetry=False")]
+    [InlineData(JobAlert.FailedForGood, "failed-for-good 1 processing.test.ok.v1")]
+    public async Task A_handler_says_what_the_alert_for_its_finished_job_is(JobAlert alert, string sent)
+    {
+        await _db.Store.EnqueueOrGetAsync("d1", "processing.test.ok.v1", maxAttempts: 3);
+        var notifications = new RecordingNotifications();
+        var processor = _db.Processor([new DelegateHandler("processing.test.ok.v1", context => context.Alert = alert)], notifications: notifications);
+
+        await processor.ProcessOneAsync("w", 3600, T0);
+
+        Assert.Equal(ProcessingJobStatus.Completed, (await _db.Store.GetAsync(1))!.Status);
+        Assert.Equal([sent], notifications.Sent);
+    }
+
+    [Fact]
+    public async Task A_handler_that_says_nothing_happened_sends_no_alert_at_all()
+    {
+        await _db.Store.EnqueueOrGetAsync("d1", "processing.test.ok.v1", maxAttempts: 3);
+        var notifications = new RecordingNotifications();
+        var processor = _db.Processor([new DelegateHandler("processing.test.ok.v1", context => context.Alert = JobAlert.Nothing)], notifications: notifications);
+
+        await processor.ProcessOneAsync("w", 3600, T0);
+
+        Assert.Equal(ProcessingJobStatus.Completed, (await _db.Store.GetAsync(1))!.Status);
+        Assert.Empty(notifications.Sent);
+    }
+
     [Fact]
     public async Task Process_one_fail_path_on_handler_error()
     {
@@ -443,6 +471,9 @@ public sealed class ProcessingJobProcessorTests : IDisposable
 
         public void Dispatch(string moduleName, string eventKind, long jobId, string jobKind, bool willRetry = false) =>
             Sent.Add($"{eventKind} {jobId} {jobKind} willRetry={willRetry}");
+
+        public void DispatchFailedForGood(string moduleName, long jobId, string jobKind) =>
+            Sent.Add($"failed-for-good {jobId} {jobKind}");
     }
 
     private sealed class RecordingFailureRecorder(bool? willRetry) : IUnhandledJobFailureRecorder

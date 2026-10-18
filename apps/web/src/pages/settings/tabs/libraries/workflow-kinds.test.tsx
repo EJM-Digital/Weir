@@ -476,3 +476,61 @@ it("opens the add choice already on the media manager it was linked from", async
     choice.getByRole("combobox", { name: "Which media manager?" }),
   ).toHaveValue("6");
 });
+
+it("forgets the workflows a media manager offered when another one is chosen, and asks the new one on Continue", async () => {
+  withConnections(
+    connection({}),
+    connection({ id: 6, kind: "sonarr", name: "Sonarr" }),
+  );
+  vi.spyOn(api, "fetchProcessingLibraries").mockResolvedValue([library()]);
+  vi.spyOn(setupApi, "fetchLibrarySuggestions").mockResolvedValue({
+    libraries: [
+      {
+        library_id: null,
+        name: "Films",
+        media_type: "movie",
+        watched_folder: "/downloads/films",
+        output_folder: "/downloads/Weir Ready/Films",
+        source_label: "Deluno",
+        manager_connection_ids: [5],
+      },
+      {
+        library_id: null,
+        name: "Shows",
+        media_type: "tv",
+        watched_folder: "/downloads/shows",
+        output_folder: "/downloads/Weir Ready/Shows",
+        source_label: "Deluno",
+        manager_connection_ids: [5],
+      },
+    ],
+    notes: [],
+  });
+
+  render(<LibrariesTab />, { wrapper });
+  fireEvent.click(await screen.findByTestId("processing-library-add"));
+  fireEvent.click(
+    await screen.findByRole("radio", { name: /From a media manager/ }),
+  );
+  const choice = within(await screen.findByTestId("add-workflow-choice"));
+  fireEvent.click(screen.getByTestId("add-workflow-continue"));
+
+  const which = await choice.findByRole("combobox", { name: "Which one?" });
+  expect(
+    within(which)
+      .getAllByRole("option")
+      .map((option) => option.textContent),
+  ).toEqual(["Movies", "TV episodes"]);
+
+  fireEvent.change(
+    choice.getByRole("combobox", { name: "Which media manager?" }),
+    { target: { value: "6" } },
+  );
+  expect(
+    choice.queryByRole("combobox", { name: "Which one?" }),
+  ).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByTestId("add-workflow-continue"));
+  const form = await screen.findByTestId("processing-library-form");
+  expect(within(form).getByLabelText("Name")).toHaveValue("");
+});

@@ -9822,6 +9822,22 @@
             "title": "Id",
             "type": "integer"
           },
+          "made_by": {
+            "anyOf": [
+              {
+                "enum": [
+                  "schedule",
+                  "manual"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Who made the backup: the schedule, or a person pressing Back up now. Null for a backup made before this was kept.",
+            "title": "Made By"
+          },
           "size_bytes": {
             "title": "Size Bytes",
             "type": "integer"
@@ -9831,7 +9847,8 @@
           "id",
           "created_at",
           "file_name",
-          "size_bytes"
+          "size_bytes",
+          "made_by"
         ],
         "title": "SuiteConfigurationBackupItemOut",
         "type": "object"
