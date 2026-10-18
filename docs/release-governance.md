@@ -11,7 +11,7 @@ This is the canonical governance checklist for keeping Weir releases controlled 
 - The one required status check for `main` is `ci-passed`, CI's verdict (`.github/workflows/ci.yml`,
   `scripts/ci-passed.mjs`): every job the change made due passed, and every other job was skipped by path
   filtering. The individual jobs (`server-linux`, `server-windows`, `web`, `web-dist`, `e2e-smoke`, the
-  `contract (<area>)` legs, `tray`, `docker-smoke`, `windows-package-smoke`, `repo-checks`) are judged by
+  `contract (<area>, <platform>)` legs (every area on Linux and on Windows), `tray`, `docker-smoke`, `windows-package-smoke`, `repo-checks`) are judged by
   it, so none of them is a required check of its own.
 - The repo Wiki is disabled. Public docs live in the repository.
 - Issues are enabled and use structured templates.
