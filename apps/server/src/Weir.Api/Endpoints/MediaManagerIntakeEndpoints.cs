@@ -335,7 +335,9 @@ internal sealed class MediaManagerIntakeEndpointHandlers
 
         var status = await _intake.Ledger.CurrentStatusAsync(uow, row).ConfigureAwait(false);
         var ended = HandoffLedgerRules.TerminalStates.Contains(status.State);
-        if (status.State is not (HandoffLedgerRules.Completed or HandoffLedgerRules.PassedThrough) && !(ended && HandoffLedgerStore.HandedBackFile(row)))
+        // A pass tells the manager how the hand-off ended before it releases its job, so for a moment the hand-off still reads as working
+        // although the report has gone: the copy it names is there to import, and the manager's answer is taken.
+        if (status.State is not (HandoffLedgerRules.Completed or HandoffLedgerRules.PassedThrough) && !HandoffLedgerStore.HandedBackFile(row))
         {
             await request.CommitAsync().ConfigureAwait(false);
             throw new ApiException(
