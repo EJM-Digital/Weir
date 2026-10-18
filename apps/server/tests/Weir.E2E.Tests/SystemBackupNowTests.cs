@@ -34,7 +34,7 @@ public sealed class SystemBackupNowTests(E2EServer server) : E2ETestBase(server)
         await using var system = await SystemSession.OpenAsync(await NewPageAsync(), "Backups");
         var (page, requests) = (system.Page, system.Requests);
         await Expect(page.GetByText("No automatic snapshots yet.", new() { Exact = true })).ToBeVisibleAsync();
-        await Expect(Schedule(page)).ToContainTextAsync(new Regex(@"Last backup\s*—"));
+        await Expect(Schedule(page)).ToContainTextAsync(new Regex(@"Last backup\s*None yet"));
         Assert.Empty((await system.ReadAsync(Backups))["items"]!.AsArray());
         var buttons = new[] { "Back up now", "Download settings", "Restore from file…" };
         await PageTrail.WatchAsync(
@@ -71,7 +71,7 @@ public sealed class SystemBackupNowTests(E2EServer server) : E2ETestBase(server)
         await opened.Clock.InstallAsync();
         await using var system = await SystemSession.OpenAsync(opened, "Backups", ("WEIR_ENV", "development"), ("WEIR_PERIODIC_TASK_SPEEDUP", "60"));
         var page = system.Page;
-        await Expect(Schedule(page)).ToContainTextAsync(new Regex(@"Last backups*—"));
+        await Expect(Schedule(page)).ToContainTextAsync(new Regex(@"Last backup\s*None yet"));
         await Expect(page.GetByText("No automatic snapshots yet.", new() { Exact = true })).ToBeVisibleAsync();
 
         // Midnight has always passed, so the first backup is due as soon as the schedule is on.
@@ -79,7 +79,7 @@ public sealed class SystemBackupNowTests(E2EServer server) : E2ETestBase(server)
         await TurnOnAutomaticBackupsAsync(page);
 
         await Expect(Schedule(page).GetByText("Up to date", new() { Exact = true })).ToBeVisibleAsync(new() { Timeout = ScheduledBackupMs });
-        await Expect(Schedule(page)).Not.ToContainTextAsync(new Regex(@"Last backups*—"));
+        await Expect(Schedule(page)).Not.ToContainTextAsync(new Regex(@"Last backup\s*None yet"));
         await Expect(Schedule(page).GetByText("Overdue")).ToHaveCountAsync(0);
         await Expect(RestoreButtons(page)).ToHaveCountAsync(1);
         Assert.False(string.IsNullOrEmpty((string?)(await system.ReadAsync("/api/v1/suite/settings"))["configuration_backup_last_run_at"]));
