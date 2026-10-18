@@ -19,7 +19,8 @@ async function within(running, id) {
 /**
  * Runs the scenarios in order; one that fails does not stop the next, so one run reports every failure.
  * @param {string[]} ids
- * @param {Record<string, (world: object) => Promise<string>>} registry The scenarios that are ported, by id.
+ * @param {Record<string, ((world: object) => Promise<string>) | {run: (world: object) => Promise<string>, logs?: "since-start"}>} registry
+ *   The scenarios that are ported, by id. A scenario that is signed out when it begins has its logs judged from the start of the stack.
  * @param {{weir: object, watchLogs?: (world: object) => Promise<{finish(): Promise<void>}>}} world `watchLogs` replaces the default watch of System > Logs, for a shard whose first scenario begins before Weir is there.
  */
 export async function runScenarios({ ids, registry, world }) {
@@ -31,9 +32,10 @@ export async function runScenarios({ ids, registry, world }) {
     const began = Date.now();
     let outcome;
     try {
-      const watch = await (world.watchLogs ? world.watchLogs(world) : LogWatch.begin(world.weir));
+      const { run, logs } = typeof registry[id] === "function" ? { run: registry[id] } : registry[id];
+      const watch = await (world.watchLogs ? world.watchLogs(world) : logs === "since-start" ? LogWatch.sinceStart(world.weir) : LogWatch.begin(world.weir));
       world.logWatch = watch;
-      const detail = await within(registry[id](world), id);
+      const detail = await within(run(world), id);
       await watch.finish();
       outcome = { status: "passed", detail: `${detail} The logs gained no unexpected warning or error.` };
     } catch (error) {

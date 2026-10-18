@@ -4,6 +4,7 @@ using Weir.Core.Jobs;
 using Weir.Core.LibraryMode;
 using Weir.Core.Logs;
 using Weir.Infrastructure.Jobs;
+using Weir.Infrastructure.MediaManagers;
 using Weir.Infrastructure.SystemLog;
 
 namespace Weir.Infrastructure.Tests.SystemLog;
@@ -125,6 +126,7 @@ public sealed class SystemLogRulesTests
         var kinds = new[]
         {
             LibraryModeJobKinds.ScanKind, LibraryModeJobKinds.CleanKind, PeriodicJobKinds.WorkTempStaleSweep, PeriodicJobKinds.UnclaimedHandbackCleanup,
+            DownloadedScanRetryHandler.Kind,
         };
 
         Assert.All(kinds, kind => Assert.NotEqual(SystemLogCategories.Weir, SystemLogRules.JobCategory(kind)));

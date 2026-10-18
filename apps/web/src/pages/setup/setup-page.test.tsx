@@ -12,6 +12,7 @@ import { SetupPage } from "./setup-page";
 
 const navigateMock = vi.fn();
 const mutateAsyncMock = vi.fn();
+const resetMock = vi.fn();
 let bootstrapMutationError: unknown = null;
 let requiresSetupCode = false;
 
@@ -39,6 +40,7 @@ vi.mock("../../lib/auth/queries", () => ({
     isError: bootstrapMutationError !== null,
     error: bootstrapMutationError,
     mutateAsync: mutateAsyncMock,
+    reset: resetMock,
   }),
 }));
 
@@ -57,6 +59,7 @@ describe("SetupPage", () => {
   beforeEach(() => {
     navigateMock.mockReset();
     mutateAsyncMock.mockReset();
+    resetMock.mockReset();
     bootstrapMutationError = null;
     requiresSetupCode = false;
   });
@@ -185,5 +188,24 @@ describe("SetupPage", () => {
     const banner = screen.getByRole("alert");
     expect(banner).toHaveTextContent(NETWORK_UNREACHABLE_MESSAGE);
     expect(banner).not.toHaveTextContent("Failed to fetch");
+  });
+
+  it("forgets the server's reason once a field is edited, and only then", () => {
+    bootstrapMutationError = new ApiHttpError(
+      "/api/v1/auth/bootstrap",
+      409,
+      "Username already exists.",
+      undefined,
+      false,
+      false,
+    );
+
+    render(wrap(<SetupPage />));
+    expect(resetMock).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByTestId("setup-username"), {
+      target: { value: "someone-else" },
+    });
+
+    expect(resetMock).toHaveBeenCalledTimes(1);
   });
 });

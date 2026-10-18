@@ -93,8 +93,9 @@
       "id": "first-visit-account",
       "home": "linux",
       "shard": "weir-browser",
-      "state": "to-port",
-      "why": "Nothing in it is Windows: a brand-new browser context sees account creation, then sign-in. Chromium under Playwright takes the place of Edge."
+      "state": "ported",
+      "why": "Nothing in it is Windows: a brand-new browser context sees account creation, then sign-in. Chromium under Playwright takes the place of Edge.",
+      "passedInCi": []
     },
     {
       "id": "weir-only-film",

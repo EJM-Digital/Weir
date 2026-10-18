@@ -1,0 +1,54 @@
+{
+  "app": "radarr",
+  "version": "6.4.4.10685",
+  "state": "webhook-test",
+  "recordedAt": "2026-10-17T05:26:24Z",
+  "note": "The app's own Test webhook, as it posted it. The 200 is the recorder's, not Weir's.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/radarr",
+        "headers": {
+          "content-type": "application/json",
+          "user-agent": "Radarr/6.4.4.10685 (alpine 3.24.2)",
+          "x-webhook-secret": "<scrubbed>"
+        },
+        "body": {
+          "movie": {
+            "id": 1,
+            "title": "Test Title",
+            "year": 1970,
+            "releaseDate": "1970-01-01",
+            "folderPath": "C:\\testpath",
+            "tmdbId": 0,
+            "tags": [
+              "test-tag"
+            ]
+          },
+          "remoteMovie": {
+            "tmdbId": 1234,
+            "imdbId": "5678",
+            "title": "Test title",
+            "year": 1970
+          },
+          "release": {
+            "quality": "Test Quality",
+            "qualityVersion": 1,
+            "releaseGroup": "Test Group",
+            "releaseTitle": "Test Title",
+            "indexer": "Test Indexer",
+            "size": 9999999,
+            "customFormatScore": 0
+          },
+          "eventType": "Test",
+          "instanceName": "Radarr",
+          "applicationUrl": ""
+        }
+      },
+      "reply": {
+        "status": 200
+      }
+    }
+  ]
+}

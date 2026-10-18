@@ -84,12 +84,12 @@ public sealed class DownloadedScanRulesTests
     }
 
     [Fact]
-    public void A_known_download_client_id_is_included_and_an_unknown_one_is_omitted_entirely()
+    public void A_known_download_id_is_sent_as_text_and_an_unknown_one_is_omitted_entirely()
     {
-        var known = DownloadedScanRules.CommandBody(MediaManagerKinds.Movie, "/complete/movie.mkv", 7);
+        var known = DownloadedScanRules.CommandBody(MediaManagerKinds.Movie, "/complete/movie.mkv", "3F2A9C41D0B7");
         var unknown = DownloadedScanRules.CommandBody(MediaManagerKinds.Movie, "/complete/movie.mkv", null);
 
-        Assert.Equal(7L, (long)((WireInteger)known["downloadClientId"]).Value);
+        Assert.Equal("3F2A9C41D0B7", Assert.IsType<WireString>(known["downloadClientId"]).Value);
         Assert.False(unknown.ContainsKey("downloadClientId"));
     }
 }

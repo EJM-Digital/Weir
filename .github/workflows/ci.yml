@@ -274,15 +274,15 @@ jobs:
           node scripts/check-contract-areas.mjs
           node --test scripts/check-contract-areas.test.mjs
 
-      - name: Deluno's recordings match the manifest they were copied with
+      - name: The recordings of Deluno, Sonarr and Radarr match the manifests they were checked in with
         run: |
           node scripts/check-recorded-manifest.mjs
           node --test scripts/check-recorded-manifest.test.mjs
 
-      - name: Every recording of Deluno's side is replayed or explained
+      - name: Every recording is replayed or explained, and the drift check compares what it should
         run: |
           node scripts/check-recorded-replays.mjs
-          node --test scripts/check-recorded-replays.test.mjs
+          node --test scripts/check-recorded-replays.test.mjs scripts/compare-arr-recordings.test.mjs
 
       - name: Every server event type has a title
         run: |
