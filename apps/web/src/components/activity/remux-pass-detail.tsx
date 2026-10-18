@@ -28,7 +28,7 @@ function trackSection(
 ) {
   return (
     <div key={label} className="mm-activity-remux-detail__tracks-section">
-      <h5 className="mm-activity-remux-detail__tracks-title">{label}</h5>
+      <h4 className="mm-activity-remux-detail__tracks-title">{label}</h4>
       {values.length === 0 ? (
         <p className="mm-activity-remux-detail__tracks-empty">{emptyLabel}</p>
       ) : (
@@ -137,7 +137,7 @@ export function RemuxPassDetail({ detail }: { detail: string }) {
         <div className="mm-activity-remux-detail__expand-body">
           <div className="mm-activity-remux-detail__compare">
             <section className="mm-activity-remux-detail__column">
-              <h4 className="mm-activity-remux-detail__column-title">Before</h4>
+              <h3 className="mm-activity-remux-detail__column-title">Before</h3>
               <dl className="mm-activity-remux-detail__dl">{beforeRows}</dl>
               <div className="mm-activity-remux-detail__tracks">
                 {trackSection(
@@ -153,7 +153,7 @@ export function RemuxPassDetail({ detail }: { detail: string }) {
               </div>
             </section>
             <section className="mm-activity-remux-detail__column">
-              <h4 className="mm-activity-remux-detail__column-title">After</h4>
+              <h3 className="mm-activity-remux-detail__column-title">After</h3>
               <dl className="mm-activity-remux-detail__dl">{afterRows}</dl>
               <div className="mm-activity-remux-detail__tracks">
                 {trackSection(
@@ -183,9 +183,9 @@ export function RemuxPassDetail({ detail }: { detail: string }) {
           </div>
 
           <div className="mm-activity-remux-detail__supplemental">
-            <h4 className="mm-activity-remux-detail__section-title">
+            <h3 className="mm-activity-remux-detail__section-title">
               Processing notes
-            </h4>
+            </h3>
             <dl className="mm-activity-remux-detail__dl">
               {notes
                 .filter((r) => r.v !== undefined && r.v !== null && r.v !== "")

@@ -53,7 +53,6 @@ export function ActiveSessionsSection({ enabled }: { enabled: boolean }) {
     <Panel
       title="Active sessions"
       headingId="suite-security-sessions-heading"
-      headingLevel={3}
       padded
       note={<span title={SESSIONS_DETAIL}>{SESSIONS_NOTE}</span>}
       aside={

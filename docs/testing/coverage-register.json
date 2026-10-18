@@ -15035,9 +15035,23 @@
           "type": "vitest",
           "file": "apps/web/src/app/startup-gate.test.tsx",
           "name": "asks /ready again each second until it answers ready, then mounts the app and stops asking"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/StartupGateTests.cs",
+          "name": "While_Weir_is_starting_the_page_says_so_keeps_asking_and_opens_the_app_the_moment_it_is_ready"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/StartupGateTests.cs",
+          "name": "While_Weir_does_not_answer_the_page_says_it_is_waiting_for_the_server_and_opens_the_app_when_it_does"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/StartupGateTests.cs",
+          "name": "A_Weir_that_never_becomes_ready_ends_the_wait_after_a_minute_and_Try_again_asks_afresh"
         }
       ],
-      "issue": 1058,
       "audit": {
         "id": "WEB-002",
         "verdict": "Partly"
@@ -15551,9 +15565,23 @@
           "type": "vitest",
           "file": "apps/web/src/components/error-boundary.test.tsx",
           "name": "renders the recovery screen when a child throws"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RouteFailureTests.cs",
+          "name": "A_screen_that_cannot_be_loaded_says_so_with_its_error_and_Reload_Weir_brings_it_back"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RouteFailureTests.cs",
+          "name": "Go_to_the_Dashboard_leaves_a_screen_that_cannot_be_loaded_for_the_Dashboard"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/app/lazy-route-boundaries.test.tsx",
+          "name": "a lazy route's boundary"
         }
       ],
-      "issue": 1058,
       "audit": {
         "id": "WEB-020",
         "verdict": "Partly"
@@ -15577,9 +15605,13 @@
           "type": "vitest",
           "file": "apps/web/src/lib/api/client.test.ts",
           "name": "apiFetch unauthorized handling"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SessionEndsInShellTests.cs",
+          "name": "A_session_the_server_ended_sends_the_open_app_to_sign_in_saying_it_expired_without_reloading_the_page"
         }
       ],
-      "issue": 1058,
       "audit": {
         "id": "WEB-021",
         "verdict": "Partly"
@@ -15664,7 +15696,7 @@
           "name": "ErrorBoundary"
         }
       ],
-      "issue": 1058,
+      "issue": 1142,
       "audit": {
         "id": "WEB-025",
         "verdict": "Partly"
@@ -15810,7 +15842,7 @@
           "name": "shows Weir and the computer it runs on at the top of the menu, as Deluno does"
         }
       ],
-      "issue": 1058,
+      "issue": 1142,
       "audit": {
         "id": "WEB-030",
         "verdict": "Partly"
@@ -15870,7 +15902,7 @@
           "name": "*"
         }
       ],
-      "issue": 1058,
+      "issue": 1142,
       "audit": {
         "id": "WEB-033",
         "verdict": "Partly"
@@ -16032,7 +16064,7 @@
     {
       "id": "web-shell.application-shell-side-menu.sign-out-fails-on-the-server-what-the-person",
       "area": "web-shell",
-      "behaviour": "Sign out fails on the server: what the person sees",
+      "behaviour": "Sign out fails on the server: the app says the person is still signed in, and Dismiss hides it",
       "kind": "screen action",
       "severity": "medium",
       "touches": "none",
@@ -16042,9 +16074,18 @@
           "type": "vitest",
           "file": "apps/web/src/lib/auth/queries.test.tsx",
           "name": "keeps the session on record when signing out fails, and says expired again if it later ends"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SessionEndsInShellTests.cs",
+          "name": "Sign_out_that_the_server_refuses_says_the_person_is_still_signed_in_and_a_second_try_signs_out"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shell/sign-out-failed-banner.test.tsx",
+          "name": "SignOutFailedBanner"
         }
       ],
-      "issue": 1058,
       "audit": {
         "id": "WEB-039",
         "verdict": "Partly"
@@ -16198,7 +16239,7 @@
           "name": "says Weir cannot be reached when it does not answer"
         }
       ],
-      "issue": 1058,
+      "issue": 1142,
       "audit": {
         "id": "WEB-045",
         "verdict": "Partly"
@@ -16237,13 +16278,54 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/VisualSmokeTests.cs",
           "name": "VisualSmokeTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AccessibilitySweepTests.cs",
+          "name": "Every_screen_and_shell_menu_passes_the_accessibility_check_on_a_phone_and_fits_its_width"
         }
       ],
-      "issue": 1058,
       "audit": {
         "id": "WEB-047",
         "verdict": "Partly"
       }
+    },
+    {
+      "id": "web-shell.responsive-smoke-error-and.every-screen-and-shell-menu-pass-the-accessibility-check-in-both-themes-at-desktop-and-phone-width",
+      "area": "web-shell",
+      "behaviour": "Every screen, the pause and user menus, the side menu drawer and the Log settings panel pass the axe accessibility check at desktop and phone width in the light and the dark theme",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AccessibilitySweepTests.cs",
+          "name": "Every_screen_and_shell_menu_passes_the_accessibility_check_on_a_desktop"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/AccessibilitySweepTests.cs",
+          "name": "Every_screen_and_shell_menu_passes_the_accessibility_check_on_a_phone_and_fits_its_width"
+        }
+      ]
+    },
+    {
+      "id": "web-shell.responsive-smoke-error-and.keyboard-only-use-of-the-shell-and-the-browser-s-back-and-forward",
+      "area": "web-shell",
+      "behaviour": "The shell by keyboard alone (skip link, side menu, user menu) and by the browser's Back and Forward, deep links, and the not-found page inside the shell",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ShellKeyboardAndHistoryTests.cs",
+          "name": "*"
+        }
+      ]
     },
     {
       "id": "web-shell.header-controls-pause-status.pause-menu-opens-heading-four-durations-30-min-2",
@@ -16263,9 +16345,23 @@
           "type": "vitest",
           "file": "apps/web/src/components/shell/pause-control.test.tsx",
           "name": "says what happens to work already running rather than leaving it to be assumed"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PauseMenuTests.cs",
+          "name": "The_menu_opens_with_what_it_offers_and_closes_on_Escape_a_click_outside_or_the_button_again_sending_nothing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PauseMenuTests.cs",
+          "name": "The_menu_works_from_the_keyboard_alone"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PauseMenuTests.cs",
+          "name": "The_control_is_in_the_header_of_every_screen_and_its_menu_stays_on_the_screen_from_a_phone_to_a_laptop"
         }
       ],
-      "issue": 1058,
       "audit": {
         "id": "WEB-048",
         "verdict": "Partly"
@@ -16299,9 +16395,23 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/LiveConnectionTests.cs",
           "name": "LiveConnectionTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PauseMenuTests.cs",
+          "name": "Until_I_resume_pauses_with_no_end_menu_closes_and_it_is_announced"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PauseMenuTests.cs",
+          "name": "A_pause_the_server_refuses_says_so_leaves_the_menu_open_and_nothing_paused"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PauseMenuTests.cs",
+          "name": "Keep_looking_for_new_files_is_saved_as_chosen_and_carried_into_the_pause_and_the_resume"
         }
       ],
-      "issue": 1058,
       "audit": {
         "id": "WEB-049",
         "verdict": "Partly"
@@ -16335,9 +16445,13 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/System/PauseApiTests.cs",
           "name": "An_out_of_range_duration_is_refused"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PauseMenuTests.cs",
+          "name": "Each_timed_pause_sends_its_minutes_and_the_server_ends_it_that_long_from_now"
         }
       ],
-      "issue": 1058,
       "audit": {
         "id": "WEB-050",
         "verdict": "Partly"
@@ -16421,9 +16535,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/LiveDashboardTests.cs",
           "name": "LiveDashboardTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/PauseMenuTests.cs",
+          "name": "Resume_says_it_is_resuming_while_it_saves_then_sends_paused_false_and_puts_the_menu_back"
         }
       ],
-      "issue": 1058,
       "audit": {
         "id": "WEB-053",
         "verdict": "Partly"
@@ -16722,9 +16840,18 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthApiTests.cs",
           "name": "AuthApiTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ThemeToggleTests.cs",
+          "name": "Pressing_it_changes_the_page_at_once_remembers_it_here_and_saves_it_to_the_account"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ThemeToggleTests.cs",
+          "name": "It_works_from_the_keyboard_and_a_phone"
         }
       ],
-      "issue": 1058,
       "audit": {
         "id": "WEB-063",
         "verdict": "Partly"
@@ -16745,7 +16872,7 @@
           "name": "says a failed save never touched the theme on other browsers, but keeps it here"
         }
       ],
-      "issue": 1058,
+      "issue": 1142,
       "audit": {
         "id": "WEB-064",
         "verdict": "Partly"
@@ -16816,7 +16943,7 @@
           "name": "is the same input whether or not it is collapsed to a mark, so what is typed stays"
         }
       ],
-      "issue": 1058,
+      "issue": 1142,
       "audit": {
         "id": "WEB-067",
         "verdict": "Partly"
@@ -16927,7 +17054,7 @@
           "name": "LibraryPage"
         }
       ],
-      "issue": 1058,
+      "issue": 1142,
       "audit": {
         "id": "WEB-071",
         "verdict": "Partly"
@@ -17118,7 +17245,7 @@
           "name": "SystemHealthLiveTests"
         }
       ],
-      "issue": 1058,
+      "issue": 1142,
       "audit": {
         "id": "WEB-077",
         "verdict": "Partly"
@@ -17204,7 +17331,7 @@
           "name": "does not ask about the session when the browser merely loses the connection"
         }
       ],
-      "issue": 1058,
+      "issue": 1142,
       "audit": {
         "id": "WEB-079",
         "verdict": "Partly"
@@ -19269,7 +19396,7 @@
           "name": "*"
         }
       ],
-      "issue": 1058,
+      "issue": 1142,
       "audit": {
         "id": "WEB-153",
         "verdict": "Partly"
@@ -19348,9 +19475,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/alerts/alerts-tab.test.tsx",
           "name": "*"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ConfirmDialogStatesTests.cs",
+          "name": "*"
         }
       ],
-      "issue": 1058,
       "audit": {
         "id": "WEB-157",
         "verdict": "Partly"
@@ -19419,9 +19550,13 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/AppNavigationTests.cs",
           "name": "AppNavigationTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SidePanelTests.cs",
+          "name": "*"
         }
       ],
-      "issue": 1058,
       "audit": {
         "id": "WEB-159",
         "verdict": "Partly"
@@ -19482,7 +19617,7 @@
           "name": "useListboxKeyboardNav"
         }
       ],
-      "issue": 1058,
+      "issue": 1142,
       "audit": {
         "id": "WEB-162",
         "verdict": "Partly"
@@ -19513,7 +19648,7 @@
           "name": "*"
         }
       ],
-      "issue": 1058,
+      "issue": 1142,
       "audit": {
         "id": "WEB-163",
         "verdict": "Partly"
@@ -19557,9 +19692,13 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/System/LocalBrowseApiTests.cs",
           "name": "LocalBrowseApiTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/FolderPickerTests.cs",
+          "name": "*"
         }
       ],
-      "issue": 1058,
       "audit": {
         "id": "WEB-165",
         "verdict": "Partly"
@@ -19783,7 +19922,7 @@
           "name": "useFitLevels"
         }
       ],
-      "issue": 1058,
+      "issue": 1142,
       "audit": {
         "id": "WEB-174",
         "verdict": "Partly"

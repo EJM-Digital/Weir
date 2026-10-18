@@ -106,7 +106,7 @@ async function rendered() {
 
 /** Opens the row for the thing with this title. */
 function open(title: string) {
-  const row = screen.getByText(title).closest("li") as HTMLElement;
+  const row = screen.getByText(title).closest("[role=row]") as HTMLElement;
   fireEvent.click(within(row).getByRole("button", { expanded: false }));
   return row;
 }
@@ -191,7 +191,7 @@ describe("an open row", () => {
     );
     await rendered();
 
-    const row = screen.getByText(sentence).closest("li") as HTMLElement;
+    const row = screen.getByText(sentence).closest("[role=row]") as HTMLElement;
 
     expect(within(row).queryByText(/matroska/)).not.toBeInTheDocument();
     fireEvent.click(within(row).getByRole("button", { expanded: false }));

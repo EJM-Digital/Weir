@@ -24,13 +24,7 @@ export function SettingsGroup({
   testId?: string;
 }) {
   return (
-    <Panel
-      title={title}
-      headingLevel={3}
-      padded
-      aside={aside}
-      dataTestId={testId}
-    >
+    <Panel title={title} padded aside={aside} dataTestId={testId}>
       {detail ? <p className="mm-setgroup__detail">{detail}</p> : null}
       <div className="mm-setgroup__rows">{children}</div>
       {footer ? <div className={quietActionRowClass}>{footer}</div> : null}

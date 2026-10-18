@@ -115,7 +115,7 @@
 }
 
 .mm-sidebar-link[aria-current="page"] {
-  color: var(--mm-primary);
+  color: var(--mm-primary-text);
 }
 
 .mm-sidebar-link[aria-current="page"] .mm-sidebar-link-icon {
