@@ -200,7 +200,8 @@ export class DelunoWorld {
 
   /** Writes what the run asked to keep, as `<folder>/<Deluno's version>/<state>.json`. Returns the files written. */
   async writeRecordings(folder, now = new Date()) {
-    const { recordings } = this.recordings.build(await this.exchanges.all(), now.toISOString());
+    const { version } = await this.deluno.must("GET", "/api/system/status");
+    const { recordings } = this.recordings.build(await this.exchanges.all(), now.toISOString(), version);
     return writeRecordings(folder, recordings);
   }
 

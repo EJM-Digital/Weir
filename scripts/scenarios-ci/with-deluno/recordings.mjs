@@ -5,7 +5,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-const MANIFEST_PATH = "/api/integrations/external/manifest";
 /** Routes that are only a heartbeat or a readiness probe: they say the same thing every time and belong to no conversation. */
 const NOISE = [/^\/ready(\?|$)/, /^\/health(\?|$)/, /^\/api\/integrations\/external\/health(\?|$)/];
 
@@ -14,12 +13,6 @@ const HANDOFF_ROUTES = [/^\/api\/v1\/intake\/(webhook|handoffs)\//, /^\/api\/int
 
 const pathOf = (exchange) => exchange.request.path.split("?")[0];
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-
-/** The version Deluno called itself in its manifest, or undefined when Weir never read the manifest. */
-export function delunoVersionOf(exchanges) {
-  const manifest = exchanges.find((exchange) => exchange.route === "to-deluno" && pathOf(exchange) === MANIFEST_PATH && exchange.reply.status === 200);
-  return typeof manifest?.reply.body?.version === "string" ? manifest.reply.body.version : undefined;
-}
 
 /** Whether the exchange is about this hand-off: its id is in the path, the request's body or headers, or the reply's body. */
 export function mentions(exchange, handoffId) {
@@ -89,12 +82,12 @@ export class RecordingSet {
   /**
    * @param {object[]} exchanges Everything the proxy saw, in order.
    * @param {string} recordedAt When this is being written (ISO).
+   * @param {string} version The version Deluno reports of itself (its system status), which names the folder the recordings go in.
    * @returns {{version: string, recordings: object[]}} A conversation the proxy saw nothing of throws: the scenario did not see the traffic it said it would.
    */
-  build(exchanges, recordedAt) {
-    if (this.#wanted.length === 0) return { version: undefined, recordings: [] };
-    const version = delunoVersionOf(exchanges);
-    if (!version) throw new Error("Weir never read Deluno's manifest through the recording proxy, so the version Deluno reported is not known.");
+  build(exchanges, recordedAt, version) {
+    if (this.#wanted.length === 0) return { version, recordings: [] };
+    if (!/^[0-9A-Za-z][0-9A-Za-z.+-]*$/.test(version ?? "")) throw new Error(`Deluno's version is not one a folder can be named for: ${JSON.stringify(version)}.`);
     const handoffIds = this.#wanted.filter((entry) => entry.handoffId).map((entry) => entry.handoffId);
     const recordings = this.#wanted.map((entry) => {
       const chosen = entry.connection ? connectionExchanges(exchanges, handoffIds) : conversationOf(exchanges, entry.handoffId);

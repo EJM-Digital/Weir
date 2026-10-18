@@ -16,12 +16,15 @@ const EXTRA_NAME = "Featurette.mkv";
 
 export async function delunoReleaseWithExtra(world) {
   const { workflows } = await syncedWorkflows(world);
-  const film = await world.deluno.makeFilm({ box: world.box, title: `Scn${world.runId}Extra`, year: 2020, extras: [EXTRA] });
+  const film = await world.deluno.makeFilm({ box: world.box, title: "ScnExtra", year: 2020, extras: [EXTRA] });
   return reportingWhereItStopped(world, film, async () => {
     await world.deluno.sendFilm(film);
     const { handoff, copies } = await followToImport(world, film);
 
-    const listed = handoff.sourceFiles;
+    // What Deluno sent Weir, as the proxy saw it: its own list of hand-offs does not show the files it named.
+    const [sent] = await world.deluno.exchanges.where("to-weir", (exchange) => exchange.request.method === "POST" && exchange.request.body?.handoffId === handoff.id);
+    assert.ok(sent, "the proxy saw Deluno hand the release to Weir");
+    const listed = sent.request.body.sourceFiles;
     assert.ok(Array.isArray(listed) && listed.length === 1, `Deluno's hand-off names the one file at or above the minimum (it lists ${JSON.stringify(listed)})`);
     assert.ok(!listed.some((file) => String(file).includes(EXTRA_NAME)), `Deluno's hand-off does not name the extra (it lists ${JSON.stringify(listed)})`);
 

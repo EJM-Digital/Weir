@@ -19,13 +19,22 @@ export function keptHeaders(headers, allowed) {
   return kept;
 }
 
+/** Members of a body that name the machine an application runs on, which a recording does not keep. */
+const MACHINE_MEMBERS = new Set(["machine_name", "machineName", "instanceName", "hostName"]);
+
+function scrubbedMachine(value) {
+  if (Array.isArray(value)) return value.map(scrubbedMachine);
+  if (value !== null && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, MACHINE_MEMBERS.has(key) ? SCRUBBED : scrubbedMachine(inner)]));
+  return value;
+}
+
 /** `{body}` for JSON, `{bodyText}` for any other text, nothing for no body. */
 export function bodyOf(buffer, contentType) {
   if (!buffer || buffer.length === 0) return {};
   const text = buffer.toString("utf8");
   if (/json/i.test(contentType ?? "")) {
     try {
-      return { body: JSON.parse(text) };
+      return { body: scrubbedMachine(JSON.parse(text)) };
     } catch {
       return { bodyText: text };
     }

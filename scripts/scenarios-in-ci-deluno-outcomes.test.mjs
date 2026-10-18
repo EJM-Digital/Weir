@@ -37,7 +37,6 @@ function stack(wrong = {}) {
     importJobId: "job-1",
     outputPath: OUTPUT,
     createdUtc: "2026-10-18T10:00:00Z",
-    sourceFiles: [`/downloads/completed/Movies/${RELEASE}/${RELEASE}.mkv`],
     outcome: { outcome: "imported", delivery: "delivered", attempts: 1, lastAttemptUtc: new Date().toISOString(), processorSaid: "Weir recorded it." },
     ...wrong.handoff,
   };
@@ -62,17 +61,27 @@ function stack(wrong = {}) {
     get: async (path) => {
       if (path.startsWith("/system/log")) return { items: ++logReads > 1 ? (wrong.logRows ?? []) : [], next_cursor: null };
       if (path === "/processing/libraries") return [workflow];
-      if (path.startsWith("/activity/recent")) return { items: path.includes("event_type=processing.file_rejected") ? activity.filter((item) => item.event_type === "processing.file_rejected") : activity };
+      if (path.startsWith("/activity/recent")) {
+        const type = /event_type=([a-z._]+)/.exec(path)?.[1];
+        return { items: type ? activity.filter((item) => item.event_type === type) : activity };
+      }
       if (path.startsWith("/processing/files?limit=1&")) return { status_counts: { processing_failed: 0, rejected: 0, ...wrong.counts }, files: [] };
       if (path.startsWith("/processing/files")) return { files: wrong.noFile ? extraRows : [row, ...extraRows] };
       throw new Error(`The stand-in has no route ${path}`);
     },
   };
   const exchanges = {
-    where: async (route, test) => (route === "to-deluno" ? reports.filter(test) : (wrong.toWeir ?? [{ request: { method: "POST", body: { releaseName: RELEASE } }, reply: { status: 200 } }]).filter(test)),
+    where: async (route, test) => (route === "to-deluno" ? reports.filter(test) : (wrong.toWeir ?? [{ request: { method: "POST", body: { handoffId: "h1", releaseName: RELEASE, sourceFiles: [`/downloads/completed/Movies/${RELEASE}/${RELEASE}.mkv`] } }, reply: { status: 200 } }]).filter(test)),
   };
   const delunoApi = {
-    call: async (method, path) => (calls.push(`deluno ${method} ${path}`), wrong.sendAgain ?? { status: 200, json: { message: "sent", outcome: { ...handoff.outcome, attempts: 2, lastAttemptUtc: new Date().toISOString() } }, text: "" }),
+    call: async (method, path) => {
+      calls.push(`deluno ${method} ${path}`);
+      if (path.endsWith("/stop-waiting")) {
+        handoff.status = wrong.stillWaiting ? handoff.status : "cancelled";
+        return wrong.stopRefused ?? { status: 200, json: { message: "You stopped waiting", handoff: { status: "cancelled" } }, text: "" };
+      }
+      return wrong.sendAgain ?? { status: 200, json: { message: "sent", outcome: { ...handoff.outcome, attempts: 2, lastAttemptUtc: new Date().toISOString() } }, text: "" };
+    },
     must: async (method, path) => {
       calls.push(`deluno ${method} ${path}`);
       if (path.startsWith("/api/integrations/processors/handoffs")) return wrong.handoffs ?? [handoff];
@@ -84,7 +93,7 @@ function stack(wrong = {}) {
     connectWeir: async () => ({ id: 7, how: "connected Weir to Deluno" }),
     makeFilm: async (options) => (calls.push(`makeFilm ${JSON.stringify({ ...options, box: undefined })}`), { title: "Scna1b2c3Film", year: options.year, release: RELEASE, infohash: "abc123", size: 56_000_000, url: "http://fixture:8765/x.torrent" }),
     sendFilm: async () => {},
-    handoffOf: async () => handoff,
+    handoffOf: async () => ({ ...handoff }),
     keepConversation: (made, recording) => void kept.push(`${recording.state} ${made.id}`),
     qbittorrent: { torrent: async () => (wrong.torrentGone && ++torrentAsks > 1 ? undefined : { progress: 1, amount_left: 0, size: 56_000_000 }) },
     exchanges,
@@ -118,7 +127,7 @@ test("a release with an extra: Deluno names only the film, the extra stays in th
 });
 
 test("a release with an extra fails when Deluno names the extra, when it is gone, changed, written to the output or not left alone", async () => {
-  const named = await good("deluno-release-with-extra", { handoff: { sourceFiles: [`/d/${RELEASE}.mkv`, "/d/Extras/Featurette.mkv"] } });
+  const named = await good("deluno-release-with-extra", { toWeir: [{ request: { method: "POST", body: { handoffId: "h1", sourceFiles: [`/d/${RELEASE}.mkv`, "/d/Extras/Featurette.mkv"] } }, reply: { status: 200 } }] });
   assert.match(named.result.detail, /names the one file at or above the minimum/);
   const gone = await good("deluno-release-with-extra", { extraGone: true });
   assert.match(gone.result.detail, /is still in the release folder where qBittorrent left it/);
@@ -264,6 +273,36 @@ test("a deleted download fails the scenario when Weir called it something else o
   assert.match(words.result.detail, /failed in Weir's words/);
   const never = await good("deluno-deleted-before-cleaning", goneStack({ toWeir: [] }));
   assert.match(never.result.detail, /Weir to take in Deluno's hand-off of .* did not happen/);
+});
+
+// --- Stop waiting -------------------------------------------------------------------------------------------------------
+
+const cancelExchange = (status = 204) => ({ request: { method: "DELETE", path: "/api/v1/intake/handoffs/deluno/h1" }, reply: { status } });
+const stopStack = (wrong = {}) => ({
+  handoff: { status: "submitted", importJobId: null, outputPath: null, outcome: null },
+  toWeir: [{ request: { method: "POST", path: "/api/v1/intake/webhook/deluno", body: { handoffId: "h1", releaseName: RELEASE } }, reply: { status: 200 } }, cancelExchange()],
+  activity: [{ event_type: "processing.cancelled", title: `Weir stopped work on ${RELEASE}.mkv` }],
+  ...wrong,
+});
+
+test("Stop waiting in Deluno while Weir holds the hand-off: Deluno asks Weir to drop it, Weir does and says so, and Weir is resumed", async () => {
+  const { result, made } = await good("deluno-stop-waiting", stopStack());
+  assert.equal(result.status, "passed", result.detail);
+  assert.deepEqual(made.kept, ["real-stop-waiting h1"]);
+  assert.ok(made.calls.includes("deluno POST /api/integrations/processors/handoffs/h1/stop-waiting"));
+  assert.equal(made.isPaused(), false);
+});
+
+test("Stop waiting fails when Deluno refuses, Weir will not drop the hand-off, Activity is silent or Weir worked it anyway; Weir is resumed all the same", async () => {
+  const refused = await good("deluno-stop-waiting", stopStack({ stopRefused: { status: 409, json: { message: "already ended" }, text: "" } }));
+  assert.match(refused.result.detail, /Deluno stopped waiting \(answered 409: already ended\)/);
+  assert.equal(refused.made.isPaused(), false);
+  const wouldNot = await good("deluno-stop-waiting", stopStack({ toWeir: stopStack().toWeir.slice(0, 1).concat(cancelExchange(409)) }));
+  assert.match(wouldNot.result.detail, /Weir dropped the hand-off \(it answered 409/);
+  const silent = await good("deluno-stop-waiting", stopStack({ activity: [] }));
+  assert.match(silent.result.detail, /Activity to say it stopped work on .* did not happen/);
+  const worked = await good("deluno-stop-waiting", stopStack({ writtenExtras: ["/weir/Ready/Movies/x.mkv"] }));
+  assert.match(worked.result.detail, /Weir never worked the dropped hand-off/);
 });
 
 // --- saving a workflow --------------------------------------------------------------------------------------------------

@@ -26,6 +26,7 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`, then the ones written for CI t
 | `deluno-outcomes` | linux | with-deluno | ported | The outcome each app recorded is compared; both are read over HTTP. |
 | `deluno-failed-release` | linux | with-deluno | ported | Written for CI (#1018): a release Weir cannot read; Deluno shows the hand-off failed in Weir's words. |
 | `deluno-rejected-release` | linux | with-deluno | ported | Written for CI (#1018): a release Weir rejects; Deluno refuses it and removes the download, Weir leaves it. |
+| `deluno-stop-waiting` | linux | with-deluno | ported | Written for CI (#1017): Stop waiting in Deluno drops a hand-off Weir holds while paused. |
 | `deluno-deleted-before-cleaning` | linux | with-deluno | ported | Written for CI (#1018): the download is deleted while Weir holds the hand-off; Weir reports it gone. |
 | `fresh-install` | windows | windows-install | to-port | Runs `Weir-win-Setup.exe` silently and starts the installed tray; a clean runner is the clean machine. |
 | `first-visit-account` | linux | weir-browser | ported | Nothing in it is Windows: a new browser context sees account creation, then sign-in. Chromium under Playwright takes the place of Edge. |
@@ -46,7 +47,7 @@ The VM suite does not cover these; the package smokes (`smoke-windows-package.ps
 | --- | --- | --- | --- |
 | weir-only | ubuntu-latest | 15 min | Weir alone in the Docker image: films, Process again, Pause and resume, a deleted file. **Built.** |
 | weir-browser | ubuntu-latest | 10 min | Weir alone, driven through a real browser (Chromium under Playwright, from `scripts/scenarios-ci/package.json`). **Built.** |
-| with-deluno | ubuntu-latest | 20 min | Weir, Deluno and the real clients; split by client when it outgrows the budget, as Deluno splits `resend`. |
+| with-deluno | ubuntu-latest | 25 min | Weir, Deluno and the real clients; split by client when it outgrows the budget, as Deluno splits `resend`. |
 | windows-install | windows-latest | 20 min | Install, the installed server, the recovery command, the service and start with Windows. |
 | windows-update | windows-latest | 20 min | The update from the previous release over a running Weir. |
 | windows-tray | windows-latest | 20 min | The real tray through UI Automation, and NTFS behaviour. |

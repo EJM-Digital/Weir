@@ -8,6 +8,10 @@ import assert from "node:assert/strict";
 import { wait } from "../workflow-support.mjs";
 import { FOLDERS } from "./deluno-world.mjs";
 import { ANSWER_CEILING_MS, reportingWhereItStopped, waitForDownload, waitForHandoff } from "./handoffs.mjs";
+
+// A download that is gone is looked for again before Weir tells Deluno: a share that dropped for a moment is not a deleted download. The file stays
+// listed for ten minutes after a scan last saw it and is looked at again a minute after that, so the report comes about eleven minutes in.
+const GONE_CEILING_MS = 16 * 60_000;
 import { waitForReport } from "./failure-support.mjs";
 import { syncedWorkflows } from "./synced-workflows.mjs";
 
@@ -15,7 +19,7 @@ const pause = (world, paused) => world.weir.write("PUT", "/pause", { paused, sca
 
 export async function delunoDeletedBeforeCleaning(world) {
   await syncedWorkflows(world);
-  const film = (world.failingFilm = await world.deluno.makeFilm({ box: world.box, title: `Scn${world.runId}Gone`, year: 2020 }));
+  const film = (world.failingFilm = await world.deluno.makeFilm({ box: world.box, title: "ScnGone", year: 2020 }));
   const paused = await pause(world, true);
   assert.equal(paused.status, 200, `Weir paused (answered ${paused.status}: ${paused.text})`);
   try {
@@ -38,7 +42,7 @@ export async function delunoDeletedBeforeCleaning(world) {
       const resumed = await pause(world, false);
       assert.equal(resumed.status, 200, `Weir resumed (answered ${resumed.status}: ${resumed.text})`);
 
-      const handoff = await waitForHandoff(world, film, (found) => found?.status === "failed", `Deluno to show the hand-off of ${film.release} as failed`, { failureExpected: true });
+      const handoff = await waitForHandoff(world, film, (found) => found?.status === "failed", `Deluno to show the hand-off of ${film.release} as failed`, { failureExpected: true, ceilingMs: GONE_CEILING_MS });
       const report = await waitForReport(world, handoff, (body) => body.status === "failed", `Weir's report of ${film.release} to reach Deluno`);
       const sent = report.request.body;
       assert.equal(sent.failureClass, "source_gone", `Weir reported the download gone (failure class ${sent.failureClass}: ${sent.message})`);

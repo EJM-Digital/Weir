@@ -10,7 +10,7 @@ import { after, before, test } from "node:test";
 
 import { SCRUBBED, bodyOf, keptHeaders } from "./scenarios-ci/with-deluno/recorder/exchange.mjs";
 import { startRecorder } from "./scenarios-ci/with-deluno/recorder/proxy.mjs";
-import { RecordingSet, conversationOf, connectionExchanges, delunoVersionOf, mentions, withoutRepeats, writeRecordings } from "./scenarios-ci/with-deluno/recordings.mjs";
+import { RecordingSet, conversationOf, connectionExchanges, mentions, withoutRepeats, writeRecordings } from "./scenarios-ci/with-deluno/recordings.mjs";
 
 // --- what a recording keeps ---------------------------------------------------------------------------------------------
 
@@ -28,6 +28,11 @@ test("a body is JSON when it says so and parses, text when it is anything else, 
   assert.deepEqual(bodyOf(Buffer.from("not json"), "application/json"), { bodyText: "not json" });
   assert.deepEqual(bodyOf(Buffer.from("plain"), "text/plain"), { bodyText: "plain" });
   assert.deepEqual(bodyOf(Buffer.alloc(0), "application/json"), {});
+});
+
+test("the name of the machine an application runs on is not kept, wherever the body names it", () => {
+  const body = bodyOf(Buffer.from(JSON.stringify({ product: "Weir", machine_name: "3f2a9c1d7b44", nested: [{ instanceName: "a-host" }] })), "application/json").body;
+  assert.deepEqual(body, { product: "Weir", machine_name: SCRUBBED, nested: [{ instanceName: SCRUBBED }] });
 });
 
 // --- the proxy, between two servers ---------------------------------------------------------------------------------------
@@ -173,16 +178,11 @@ test("the connection is the first time each call was made that belongs to no han
   assert.deepEqual(connectionExchanges(LOG, ["aaa", "bbb"]).map((entry) => entry.seq), [1, 2]);
 });
 
-test("the version is the one Deluno gave in its manifest", () => {
-  assert.equal(delunoVersionOf(LOG), "1.0.0-rc.30.33");
-  assert.equal(delunoVersionOf([CAPABILITIES]), undefined);
-});
-
 test("what a run keeps becomes recordings in the checked-in format, one per state, under the version Deluno reported", () => {
   const set = new RecordingSet();
   set.keepConnection({ state: "real-connection", note: "connecting" });
   set.keepConversation({ state: "real-failed", note: "a failure", handoffId: "aaa" });
-  const { version, recordings } = set.build(LOG, "2026-10-18T11:00:00.000Z");
+  const { version, recordings } = set.build(LOG, "2026-10-18T11:00:00.000Z", "1.0.0-rc.30.33");
   assert.equal(version, "1.0.0-rc.30.33");
   assert.deepEqual(recordings.map((recording) => recording.state), ["real-connection", "real-failed"]);
   const failed = recordings[1];
@@ -193,16 +193,16 @@ test("what a run keeps becomes recordings in the checked-in format, one per stat
 });
 
 test("a run that kept nothing builds nothing, even if Weir never read the manifest", () => {
-  assert.deepEqual(new RecordingSet().build([], "now"), { version: undefined, recordings: [] });
+  assert.deepEqual(new RecordingSet().build([], "now", "1.0.0"), { version: "1.0.0", recordings: [] });
 });
 
-test("a conversation the proxy saw nothing of, a manifest never read and a bad or repeated state are each refused, saying what", () => {
+test("a conversation the proxy saw nothing of, a version no folder can be named for and a bad or repeated state are each refused, saying what", () => {
   const empty = new RecordingSet();
   empty.keepConversation({ state: "real-none", note: "x", handoffId: "zzz" });
-  assert.throws(() => empty.build(LOG, "now"), /saw nothing for real-none \(hand-off zzz\)/);
+  assert.throws(() => empty.build(LOG, "now", "1.0.0"), /saw nothing for real-none \(hand-off zzz\)/);
   const blind = new RecordingSet();
   blind.keepConnection({ state: "real-connection", note: "x" });
-  assert.throws(() => blind.build([CAPABILITIES], "now"), /never read Deluno's manifest/);
+  assert.throws(() => blind.build(LOG, "now", "../etc"), /not one a folder can be named for/);
   const set = new RecordingSet();
   assert.throws(() => set.keepConnection({ state: "Real Connection", note: "x" }), /lower-case words/);
   set.keepConnection({ state: "real-connection", note: "x" });
@@ -214,7 +214,7 @@ test("recordings are written as <version>/<state>.json in two-space JSON with a 
   try {
     const set = new RecordingSet();
     set.keepConversation({ state: "real-failed", note: "a failure", handoffId: "aaa" });
-    const { recordings } = set.build(LOG, "2026-10-18T11:00:00.000Z");
+    const { recordings } = set.build(LOG, "2026-10-18T11:00:00.000Z", "1.0.0-rc.30.33");
     const [file] = writeRecordings(folder, recordings);
     assert.equal(file, join(folder, "1.0.0-rc.30.33", "real-failed.json"));
     const text = readFileSync(file, "utf8");

@@ -13,7 +13,7 @@
     },
     "with-deluno": {
       "home": "linux",
-      "budgetMinutes": 20,
+      "budgetMinutes": 25,
       "what": "Weir, Deluno and the real download clients, each hand-off followed through both apps."
     },
     "windows-install": {
@@ -104,6 +104,14 @@
       "shard": "with-deluno",
       "state": "ported",
       "why": "Deluno hands over a release Weir rejects by its rules; Deluno refuses it and removes the download, Weir leaves it."
+    },
+    {
+      "id": "deluno-stop-waiting",
+      "origin": "ci",
+      "home": "linux",
+      "shard": "with-deluno",
+      "state": "ported",
+      "why": "A hand-off Weir holds while paused is dropped by Stop waiting in Deluno; Deluno asks Weir to drop it and both are read over HTTP."
     },
     {
       "id": "deluno-deleted-before-cleaning",

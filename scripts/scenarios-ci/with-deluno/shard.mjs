@@ -1,7 +1,7 @@
 // What the with-deluno shard starts beside Weir, and how it is set up before the scenarios begin.
 import { join } from "node:path";
 
-import { imageEnvironment, loadImages } from "../images.mjs";
+import { imageEnvironment, withOverrides } from "../images.mjs";
 import { DelunoWorld, newLogins } from "./deluno-world.mjs";
 
 const SERVICES = ["deluno", "qbittorrent", "recorder"];
@@ -12,7 +12,7 @@ export const WITH_DELUNO = {
 
   /** The images to pull (the stack starts with --pull never, for the Weir image CI built), the variables Compose reads, and this run's logins. */
   start() {
-    const images = loadImages();
+    const images = withOverrides();
     const logins = newLogins();
     return {
       pull: Object.values(images).map((image) => image.reference),

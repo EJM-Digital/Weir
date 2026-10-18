@@ -282,7 +282,7 @@ jobs:
       - name: Every recording is replayed or explained, and the drift check compares what it should
         run: |
           node scripts/check-recorded-replays.mjs
-          node --test scripts/check-recorded-replays.test.mjs scripts/compare-arr-recordings.test.mjs
+          node --test scripts/check-recorded-replays.test.mjs scripts/compare-arr-recordings.test.mjs scripts/compare-deluno-recordings.test.mjs
 
       - name: Every server event type has a title
         run: |

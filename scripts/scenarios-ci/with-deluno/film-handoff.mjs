@@ -24,7 +24,7 @@ const POLL_MS = 2000;
 export function followedFilm(world) {
   world.followedFilm ??= (async () => {
     await syncedWorkflows(world);
-    const film = await world.deluno.makeFilm({ box: world.box, title: `Scn${world.runId}Film`, year: 2020 });
+    const film = await world.deluno.makeFilm({ box: world.box, title: "ScnFilm", year: 2020 });
     return reportingWhereItStopped(world, film, () => follow(world, film));
   })().catch((error) => {
     world.followedFilm = undefined;

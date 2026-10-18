@@ -175,7 +175,7 @@ jobs:
   # are those with a scenario ported (scripts/scenarios-ci/homes.json); the VM stays the release gate until each scenario has passed twice here.
   scenarios-linux:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:

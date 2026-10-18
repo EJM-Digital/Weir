@@ -10,12 +10,13 @@ import { changeWorkflow, waitForReport } from "./failure-support.mjs";
 import { ANSWER_CEILING_MS, reportingWhereItStopped, waitForDownload, waitForHandoff, waitForWeirRows } from "./handoffs.mjs";
 import { syncedWorkflows } from "./synced-workflows.mjs";
 
-const REMOVE_SENTENCE = "Deluno will remove the download; Weir left it in place.";
+// The connection is named for the machine it is on, so the manager is "Deluno on <machine>" in Weir's words.
+const REMOVE_SENTENCE = /will remove the download; Weir left it in place./;
 
 export async function delunoRejectedRelease(world) {
   const { workflows } = await syncedWorkflows(world);
   const workflow = workflows[0];
-  const film = (world.failingFilm = await world.deluno.makeFilm({ box: world.box, title: `Scn${world.runId}Reject`, year: 2020, content: "audio-only" }));
+  const film = (world.failingFilm = await world.deluno.makeFilm({ box: world.box, title: "ScnReject", year: 2020, content: "audio-only" }));
   const policy = workflow.failure_policy;
   await changeWorkflow(world, workflow, { failure_policy: "reject" });
   try {
@@ -38,7 +39,7 @@ export async function delunoRejectedRelease(world) {
         ANSWER_CEILING_MS,
         2000,
       );
-      assert.ok(JSON.stringify(rejected).includes(REMOVE_SENTENCE), `Weir's Activity says Deluno will remove the download and Weir left it in place (it says ${JSON.stringify(rejected)})`);
+      assert.match(JSON.stringify(rejected), REMOVE_SENTENCE, `Weir's Activity says Deluno will remove the download and Weir left it in place (it says ${JSON.stringify(rejected)})`);
 
       const blocked = await wait(
         world,

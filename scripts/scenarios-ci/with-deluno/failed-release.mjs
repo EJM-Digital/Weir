@@ -11,7 +11,7 @@ import { syncedWorkflows } from "./synced-workflows.mjs";
 
 export async function delunoFailedRelease(world) {
   await syncedWorkflows(world);
-  const film = (world.failingFilm = await world.deluno.makeFilm({ box: world.box, title: `Scn${world.runId}Fail`, year: 2020, zeros: true }));
+  const film = (world.failingFilm = await world.deluno.makeFilm({ box: world.box, title: "ScnFail", year: 2020, zeros: true }));
   return reportingWhereItStopped(world, film, async () => {
     await world.deluno.sendFilm(film);
     await waitForDownload(world, film);

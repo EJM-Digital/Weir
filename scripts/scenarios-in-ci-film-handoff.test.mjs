@@ -12,7 +12,7 @@ function fakeClock() {
   return { now: () => now, sleep: async (ms) => void (now += ms) };
 }
 
-const RELEASE = "Scna1b2c3Film.2020.1080p.WEB-DL.x264-WEIR";
+const RELEASE = "ScnFilm.2020.1080p.WEB-DL.x264-WEIR";
 const OUTPUT = `/weir/Ready/Movies/${RELEASE}`;
 
 /**

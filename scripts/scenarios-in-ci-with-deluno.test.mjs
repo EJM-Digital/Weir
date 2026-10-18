@@ -6,7 +6,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { afterEach, test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { imageEnvironment, imageVariable, loadImages, problemsWithImages } from "./scenarios-ci/images.mjs";
+import { imageEnvironment, imageVariable, loadImages, overrideVariable, problemsWithImages, withOverrides } from "./scenarios-ci/images.mjs";
 import { runScenarios } from "./scenarios-ci/run.mjs";
 import { SHARDS } from "./scenarios-ci/shards.mjs";
 import { QbittorrentApi } from "./scenarios-ci/with-deluno/qbittorrent-api.mjs";
@@ -53,6 +53,17 @@ function filesBelow(folder) {
     return statSync(join(repository, path)).isDirectory() ? filesBelow(path) : [path];
   });
 }
+
+test("an image can be replaced for one run, by a reference with a digest, and by nothing else", () => {
+  const newest = `registry.example/deluno@sha256:${"a".repeat(64)}`;
+  const replaced = withOverrides(images, { [overrideVariable("DELUNO")]: newest });
+  assert.equal(replaced.DELUNO.reference, newest);
+  assert.match(replaced.DELUNO.label, /replaced for this run/);
+  assert.deepEqual(replaced.QBITTORRENT, images.QBITTORRENT, "the others are as pinned");
+  assert.deepEqual(withOverrides(images, {}), images);
+  assert.throws(() => withOverrides(images, { [overrideVariable("DELUNO")]: "registry.example/deluno:latest" }), /must be a reference with a sha256 digest/);
+  assert.equal(imageEnvironment(replaced)[imageVariable("DELUNO")], newest);
+});
 
 test("no digest is written anywhere in the scenarios but images.json", () => {
   const shipped = filesBelow("scripts/scenarios-ci").filter((path) => !path.endsWith("images.json") && !path.endsWith("package-lock.json"));

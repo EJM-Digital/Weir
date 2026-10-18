@@ -5,7 +5,7 @@ namespace Weir.Contract.Tests.MediaManagers.Recorded;
 
 /// <summary>
 /// What differs between the machine that made a recording and this test, and nothing else: the hand-off ids a test makes its own,
-/// and the folders the recorded Windows paths stand for. It is applied to the request before it is sent and to the reply before
+/// and the folders the recorded paths (a Windows machine's, or a container's) stand for. It is applied to the request before it is sent and to the reply before
 /// it is compared, so the recorded text is never edited and a reply that differs in any other way still fails.
 /// </summary>
 internal sealed partial class Translation
@@ -62,10 +62,12 @@ internal sealed partial class Translation
 
         foreach (var (recorded, live) in _roots)
         {
-            if (text.StartsWith(recorded + "\\", StringComparison.Ordinal))
+            // The recorded machine's separator is the one its folders are written with: a backslash for C:\Downloads, a slash for /downloads.
+            var separator = recorded.Contains('/', StringComparison.Ordinal) ? '/' : '\\';
+            if (text.StartsWith(recorded + separator, StringComparison.Ordinal))
             {
                 // A path: what follows the folder is written with this machine's separators.
-                return live + Path.DirectorySeparatorChar + text[(recorded.Length + 1)..].Replace('\\', Path.DirectorySeparatorChar);
+                return live + Path.DirectorySeparatorChar + text[(recorded.Length + 1)..].Replace(separator, Path.DirectorySeparatorChar);
             }
 
             // A sentence that names the folder: the folder changes, the words around it do not.
