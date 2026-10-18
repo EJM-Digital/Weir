@@ -148,9 +148,10 @@ public sealed partial class ProcessingRejectHandler : IJobHandler
             attempt = new RejectRouteOutcome(false, "No linked media manager can take a rejection for this file, so Weir handed the original back instead.");
         }
 
-        // A manager that did not answer may answer the next time. Until the attempts run out the job is retried like any other
-        // transient failure; the file is left where it is only when no manager can take the rejection, or the last attempt failed too.
-        if (unreadable && !attempt.Done && attempt.Transient && context.AttemptCount < context.MaxAttempts)
+        // A manager that did not answer may answer the next time, and a release known to be bad is not handed back as good because a
+        // manager was busy for a moment. Until the attempts run out the job is retried like any other transient failure; the file is
+        // handed back, or left where it is when it could not be read, only when no manager can take the rejection or the last attempt failed too.
+        if (!attempt.Done && attempt.Transient && context.AttemptCount < context.MaxAttempts)
         {
             throw new InvalidOperationException(attempt.Reason);
         }
