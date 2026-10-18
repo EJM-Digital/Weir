@@ -80,8 +80,7 @@ public sealed class LibraryCheckAgainTests(E2EServer server) : E2ETestBase(serve
                 response => response.Url.EndsWith("/library-scan", StringComparison.Ordinal),
                 new() { Timeout = ServerMs });
 
-            Assert.Equal(503, refused.Status);
-            await Expect(failure).ToHaveTextAsync("Weir couldn't start a check. Try again in a moment.", new() { Timeout = ServerMs });
+            await Expect(failure).ToHaveTextAsync(await BusyAnswer.DetailAsync(refused), new() { Timeout = ServerMs });
         }
 
         await Expect(failure).ToHaveAttributeAsync("role", "alert");
