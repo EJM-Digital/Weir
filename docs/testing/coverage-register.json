@@ -1107,9 +1107,47 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
-        }
-      ],
-      "partial": [
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DownloadClientRecordedRepliesTests.cs",
+          "name": "The_test_button_says_connected_when_the_client_lets_the_saved_credentials_in"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DownloadClientRecordedRepliesTests.cs",
+          "name": "The_test_button_says_in_plain_words_that_the_client_refused_the_saved_credentials"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "A_viewer_is_refused_what_needs_an_operator"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/QBittorrentRepliesTests.cs",
+          "name": "QBittorrentRepliesTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/TransmissionRepliesTests.cs",
+          "name": "TransmissionRepliesTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/DelugeRepliesTests.cs",
+          "name": "DelugeRepliesTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/SabnzbdRepliesTests.cs",
+          "name": "SabnzbdRepliesTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/NzbgetRepliesTests.cs",
+          "name": "NzbgetRepliesTests"
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/DownloadClientConnectionsApiTests.cs",
@@ -1117,20 +1155,10 @@
         },
         {
           "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/DownloadClientPortsTests.cs",
-          "name": "DownloadClientPortsTests"
-        },
-        {
-          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/QBittorrentSessionTests.cs",
           "name": "QBittorrentSessionTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Client replies are hand-written fakes, not recorded from the real products; no auth/CSRF refusal test"
-      },
-      "issue": 1015,
       "covers": [
         "route:POST /api/v1/download-clients/connections/{connection_id}/test"
       ],
@@ -47699,12 +47727,13 @@
       "severity": "high",
       "touches": "install",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "A regression in the before-uninstall hook (or Velopack config) that removed the data folder would be silent total data loss. Needs a CI-smoke/VM step that writes a sentinel and the database into the runtime home, uninstalls, and asserts they are all still there (and still readable by a reinstall)."
-      },
-      "issue": 988,
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-install.mjs",
+          "name": "uninstall-keeps-the-data"
+        }
+      ],
       "audit": {
         "id": "TRAY-083",
         "verdict": "Gap"
@@ -47766,9 +47795,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/ServerEnvironmentTests.cs",
           "name": "ServerEnvironmentTests"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-install.mjs",
+          "name": "fresh-install"
         }
       ],
-      "issue": 1072,
       "audit": {
         "id": "TRAY-085",
         "verdict": "Covered"
@@ -48931,8 +48964,22 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/QBittorrentRepliesTests.cs",
+          "name": "QBittorrentRepliesTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/QBittorrentRulesTests.cs",
+          "name": "QBittorrentRulesTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DownloadClientRecordedRepliesTests.cs",
+          "name": "The_suggestions_are_the_folders_the_client_reports"
+        },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/DownloadClientPortsTests.cs",
@@ -48950,20 +48997,10 @@
         },
         {
           "type": "xunit",
-          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/QBittorrentRulesTests.cs",
-          "name": "QBittorrentRulesTests"
-        },
-        {
-          "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/DownloadClientConnectionsApiTests.cs",
           "name": "DownloadClientConnectionsApiTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Fake HTTP servers written to the documented behaviour; never run against a real qBittorrent (there is no qBittorrent in the VM or CI). The sessions test names real bugs found in the field, which suggests the shapes do drift"
-      },
-      "issue": 1015,
       "audit": {
         "id": "INT-DC-QBIT",
         "verdict": "Partly"
@@ -48977,24 +49014,23 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/DownloadClientPortsTests.cs",
-          "name": "DownloadClientPortsTests"
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/TransmissionRepliesTests.cs",
+          "name": "TransmissionRepliesTests"
         },
         {
-          "type": "xunit",
+          "type": "recording-replay",
           "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/TransmissionRulesTests.cs",
           "name": "TransmissionRulesTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DownloadClientRecordedRepliesTests.cs",
+          "name": "The_suggestions_are_the_folders_the_client_reports"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Fake server only"
-      },
-      "issue": 1015,
       "audit": {
         "id": "INT-DC-TRANS",
         "verdict": "Partly"
@@ -49008,24 +49044,28 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/DownloadClientPortsTests.cs",
-          "name": "DownloadClientPortsTests"
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/DelugeRepliesTests.cs",
+          "name": "DelugeRepliesTests"
         },
         {
-          "type": "xunit",
+          "type": "recording-replay",
           "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/DelugeRulesTests.cs",
           "name": "DelugeRulesTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/SessionCookieTests.cs",
+          "name": "SessionCookieTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DownloadClientRecordedRepliesTests.cs",
+          "name": "The_suggestions_are_the_folders_the_client_reports"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Fake server only"
-      },
-      "issue": 1015,
       "audit": {
         "id": "INT-DC-DELUGE",
         "verdict": "Partly"
@@ -49039,24 +49079,23 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/DownloadClientPortsTests.cs",
-          "name": "DownloadClientPortsTests"
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/SabnzbdRepliesTests.cs",
+          "name": "SabnzbdRepliesTests"
         },
         {
-          "type": "xunit",
+          "type": "recording-replay",
           "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/SabnzbdRulesTests.cs",
           "name": "SabnzbdRulesTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DownloadClientRecordedRepliesTests.cs",
+          "name": "The_suggestions_are_the_folders_the_client_reports"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Fake server only"
-      },
-      "issue": 1015,
       "audit": {
         "id": "INT-DC-SAB",
         "verdict": "Partly"
@@ -49070,24 +49109,23 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/DownloadClientPortsTests.cs",
-          "name": "DownloadClientPortsTests"
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/Recorded/NzbgetRepliesTests.cs",
+          "name": "NzbgetRepliesTests"
         },
         {
-          "type": "xunit",
+          "type": "recording-replay",
           "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/NzbgetRulesTests.cs",
           "name": "NzbgetRulesTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DownloadClientRecordedRepliesTests.cs",
+          "name": "The_suggestions_are_the_folders_the_client_reports"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Fake server only"
-      },
-      "issue": 1015,
       "audit": {
         "id": "INT-DC-NZBGET",
         "verdict": "Partly"
@@ -49754,13 +49792,18 @@
           "type": "package-smoke",
           "file": "scripts/smoke-windows-package.ps1",
           "name": "*"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-install.mjs",
+          "name": "uninstall-keeps-the-data"
         }
       ],
       "needs": {
         "kind": "scenario",
-        "test": "Not asserted: Start Menu and desktop shortcuts removed, the Run entry removed, and the registry mark HKCU\\SOFTWARE\\WeirTrayRunning cleared"
+        "test": "Not asserted on a real install: the Run entry removed once Start with Windows has been turned on, which needs the tray's own menu (the windows-tray shard)"
       },
-      "issue": 988,
+      "issue": 1142,
       "audit": {
         "id": "PLAT-06",
         "verdict": "Partly"
@@ -49775,12 +49818,13 @@
       "severity": "high",
       "touches": "install",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "A regression that makes the uninstaller remove C:\\ProgramData\\Weir would be total data loss and no test would fail. Needs the smoke (or a VM scenario) to create an account and a workflow, uninstall, check the folder, reinstall, sign in"
-      },
-      "issue": 988,
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-install.mjs",
+          "name": "uninstall-keeps-the-data"
+        }
+      ],
       "audit": {
         "id": "PLAT-06b",
         "verdict": "Gap"
@@ -50415,6 +50459,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/BootstrapInactiveAdminTests.cs",
           "name": "Recovering_from_an_inactive_admin_leaves_exactly_one"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-install.mjs",
+          "name": "recover-locked-out-account"
         }
       ],
       "covers": [

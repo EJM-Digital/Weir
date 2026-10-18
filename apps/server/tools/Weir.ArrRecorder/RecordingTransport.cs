@@ -13,7 +13,8 @@ internal sealed record Exchange(
     int Status,
     SortedDictionary<string, string> ReplyHeaders,
     JsonNode? ReplyBody,
-    string? ReplyText);
+    string? ReplyText,
+    string? RequestText = null);
 
 /// <summary>The exchanges made since the last <see cref="Clear"/>.</summary>
 internal sealed class ExchangeLog
@@ -52,22 +53,31 @@ internal sealed class ExchangeLog
 /// </summary>
 internal sealed class RecordingTransport : IManagerHttpHandlerFactory
 {
-    /// <summary>The request headers Weir sets that mean something to the manager; the rest are the HTTP stack's.</summary>
-    private static readonly string[] RequestHeadersKept = ["accept", "content-type", "x-api-key"];
+    /// <summary>The request headers Weir sets that mean something to a manager; the rest are the HTTP stack's.</summary>
+    public static readonly IReadOnlyList<string> ManagerRequestHeaders = ["accept", "content-type", "x-api-key"];
 
-    private static readonly string[] ReplyHeadersKept = ["content-type", "retry-after", "location", "www-authenticate"];
+    public static readonly IReadOnlyList<string> ManagerReplyHeaders = ["content-type", "retry-after", "location", "www-authenticate"];
 
     private readonly IManagerHttpHandlerFactory _inner;
     private readonly ExchangeLog _log;
+    private readonly IReadOnlyList<string> _requestHeaders;
+    private readonly IReadOnlyList<string> _replyHeaders;
 
-    public RecordingTransport(IManagerHttpHandlerFactory inner, ExchangeLog log)
+    /// <summary>
+    /// A transport that records the request and reply headers named (lower case). A download client's sign-in lives in headers a manager's
+    /// does not (<c>authorization</c>, <c>cookie</c>, <c>set-cookie</c>), so its recorder names its own.
+    /// </summary>
+    public RecordingTransport(
+        IManagerHttpHandlerFactory inner, ExchangeLog log, IReadOnlyList<string>? requestHeaders = null, IReadOnlyList<string>? replyHeaders = null)
     {
         _inner = inner;
         _log = log;
+        _requestHeaders = requestHeaders ?? ManagerRequestHeaders;
+        _replyHeaders = replyHeaders ?? ManagerReplyHeaders;
     }
 
     public HttpMessageHandler Handler(bool followRedirects, ManagerAddressPolicy policy = ManagerAddressPolicy.Local) =>
-        new Recording(_inner.Handler(followRedirects, policy), _log);
+        new Recording(_inner.Handler(followRedirects, policy), _log, _requestHeaders, _replyHeaders);
 
     /// <summary>The JSON in <paramref name="bytes"/>, or null when it is empty or not JSON.</summary>
     internal static JsonNode? ParseJson(byte[] bytes)
@@ -87,7 +97,7 @@ internal sealed class RecordingTransport : IManagerHttpHandlerFactory
         }
     }
 
-    internal static SortedDictionary<string, string> Kept(IEnumerable<KeyValuePair<string, IEnumerable<string>>> headers, string[] names)
+    internal static SortedDictionary<string, string> Kept(IEnumerable<KeyValuePair<string, IEnumerable<string>>> headers, IReadOnlyList<string> names)
     {
         var kept = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (var (name, values) in headers)
@@ -102,25 +112,28 @@ internal sealed class RecordingTransport : IManagerHttpHandlerFactory
         return kept;
     }
 
-    private sealed class Recording(HttpMessageHandler next, ExchangeLog log) : DelegatingHandler(next)
+    private sealed class Recording(HttpMessageHandler next, ExchangeLog log, IReadOnlyList<string> requestHeaderNames, IReadOnlyList<string> replyHeaderNames)
+        : DelegatingHandler(next)
     {
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var requestBytes = request.Content is null ? [] : await request.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
-            var requestHeaders = Kept(request.Headers.Concat(request.Content?.Headers ?? Enumerable.Empty<KeyValuePair<string, IEnumerable<string>>>()), RequestHeadersKept);
+            var requestHeaders = Kept(request.Headers.Concat(request.Content?.Headers ?? Enumerable.Empty<KeyValuePair<string, IEnumerable<string>>>()), requestHeaderNames);
             var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
             var replyBytes = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
-            var replyHeaders = Kept(response.Headers.Concat(response.Content.Headers), ReplyHeadersKept);
+            var replyHeaders = Kept(response.Headers.Concat(response.Content.Headers), replyHeaderNames);
             var replyJson = ParseJson(replyBytes);
+            var requestJson = ParseJson(requestBytes);
             log.Add(new Exchange(
                 request.Method.Method,
                 request.RequestUri!.PathAndQuery,
                 requestHeaders,
-                ParseJson(requestBytes),
+                requestJson,
                 (int)response.StatusCode,
                 replyHeaders,
                 replyJson,
-                replyJson is null && replyBytes.Length > 0 ? Encoding.UTF8.GetString(replyBytes) : null));
+                replyJson is null && replyBytes.Length > 0 ? Encoding.UTF8.GetString(replyBytes) : null,
+                requestJson is null && requestBytes.Length > 0 ? Encoding.UTF8.GetString(requestBytes) : null));
 
             // The caller reads the body again from a fresh buffer.
             var content = new ByteArrayContent(replyBytes);
