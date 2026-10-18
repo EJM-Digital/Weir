@@ -86,7 +86,7 @@ export async function runWindowsShard({ shard = "windows-install", ids, machine,
     for (const cleanup of world.cleanups.splice(0).reverse()) await cleanup().catch((error) => console.error(`::warning::A clean-up failed: ${error.message}`));
     await keepInstallLogs(machine, logFolder).catch((error) => console.error(`::warning::The install's logs could not be kept: ${error.message}`));
     await machine.stopWeir().catch((error) => console.error(`::warning::Weir could not be stopped: ${error.message}`));
-    await rm(scratch, { recursive: true, force: true });
+    await rm(scratch, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 }).catch((error) => console.error(`::warning::The scratch folder could not be removed: ${error.message}`));
   }
 }
 

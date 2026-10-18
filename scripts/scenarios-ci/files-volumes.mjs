@@ -11,6 +11,7 @@ import { json } from "./windows-machine.mjs";
 
 const DISKPART_CEILING_MS = 180_000;
 const MOUNT_CEILING_MS = 60_000;
+const RELEASE_CEILING_MS = 30_000;
 const MEGABYTE = 1024 * 1024;
 const CHUNK = 4 * MEGABYTE;
 // Drive letters are taken from the end of the alphabet, away from the ones a runner uses.
@@ -56,11 +57,12 @@ function diskpart(scriptFile) {
 
 /** One virtual disk made for a scenario; `root` is its drive, such as `Z:\`. */
 export class Volume {
-  constructor({ file, letter, sizeMb, scratch }) {
+  constructor({ file, letter, sizeMb, scratch, clock }) {
     this.file = file;
     this.letter = letter;
     this.sizeMb = sizeMb;
     this.scratch = scratch;
+    this.clock = clock;
     this.root = `${letter}:\\`;
   }
 
@@ -96,8 +98,18 @@ export class Volume {
   async remove() {
     const script = join(this.scratch, `detach-${this.letter}.txt`);
     await writeFile(script, detachScript({ file: this.file }));
-    await diskpart(script).catch((error) => console.error(`::warning::${error.message}`));
-    await rm(this.file, { force: true });
+    await diskpart(script).catch((error) => {
+      if (!error.message.includes("already detached")) console.error(`::warning::${error.message}`);
+    });
+    // Windows lets go of the disk's file a moment after it is detached.
+    await pollUntil(
+      async () =>
+        rm(this.file, { force: true }).then(
+          () => true,
+          () => undefined,
+        ),
+      { what: `the virtual disk ${this.file} to be released`, ceilingMs: RELEASE_CEILING_MS, intervalMs: 500, clock: this.clock },
+    ).catch((error) => console.error(`::warning::${error.message}`));
   }
 }
 
@@ -117,7 +129,7 @@ export class Volumes {
     const file = join(this.scratch, `volume-${letter}.vhdx`);
     const script = join(this.scratch, `create-${letter}.txt`);
     await writeFile(script, createScript({ file, sizeMb, letter, label }));
-    const volume = new Volume({ file, letter, sizeMb, scratch: this.scratch });
+    const volume = new Volume({ file, letter, sizeMb, scratch: this.scratch, clock: this.clock });
     this.#made.push(volume);
     await diskpart(script);
     await pollUntil(async () => ((await exists(volume.root)) ? true : undefined), {
