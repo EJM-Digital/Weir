@@ -85,9 +85,12 @@ describe("exporting the log", () => {
 
 describe("the media tools Weir found", () => {
   function wrapper(client: QueryClient) {
-    return ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
-    );
+    function Provider({ children }: { children: ReactNode }) {
+      return (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      );
+    }
+    return Provider;
   }
 
   it("reads their version lines from the media-tools route", async () => {

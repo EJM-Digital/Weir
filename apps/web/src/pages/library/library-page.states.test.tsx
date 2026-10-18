@@ -1,7 +1,6 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { workflowRow } from "../../test/dashboard-fixtures";
 import { elapse, useFakeClock, useRealClock } from "../../test/fake-clock";
 import {
   libraryFile,
