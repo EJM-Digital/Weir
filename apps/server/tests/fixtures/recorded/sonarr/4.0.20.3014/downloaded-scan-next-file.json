@@ -1,0 +1,72 @@
+{
+  "app": "sonarr",
+  "version": "4.0.20.3014",
+  "state": "downloaded-scan-next-file",
+  "recordedAt": "2026-10-17T05:26:07Z",
+  "note": "Weir asks the app to scan the next file once the earlier scan is over; the app takes it.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/remotepathmapping",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": []
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v3/command",
+        "headers": {
+          "content-type": "application/json",
+          "x-api-key": "<scrubbed>"
+        },
+        "body": {
+          "name": "DownloadedEpisodesScan",
+          "path": "/downloads/Breaking.Bad.S01E03.720p.WEB.h264-RECORDER/Breaking.Bad.S01E03.720p.WEB.h264-RECORDER.mkv",
+          "importMode": "Move"
+        }
+      },
+      "reply": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "http://localhost:8989/api/v3/command/13"
+        },
+        "body": {
+          "name": "DownloadedEpisodesScan",
+          "commandName": "Downloaded Episodes Scan",
+          "body": {
+            "path": "/downloads/Breaking.Bad.S01E03.720p.WEB.h264-RECORDER/Breaking.Bad.S01E03.720p.WEB.h264-RECORDER.mkv",
+            "importMode": "move",
+            "requiresDiskAccess": true,
+            "isLongRunning": true,
+            "sendUpdatesToClient": true,
+            "updateScheduledTask": true,
+            "isExclusive": false,
+            "name": "DownloadedEpisodesScan",
+            "trigger": "manual",
+            "suppressMessages": true
+          },
+          "priority": "normal",
+          "status": "queued",
+          "result": "unknown",
+          "queued": "2026-10-17T05:26:07Z",
+          "trigger": "manual",
+          "sendUpdatesToClient": true,
+          "updateScheduledTask": true,
+          "id": 13
+        }
+      }
+    }
+  ]
+}

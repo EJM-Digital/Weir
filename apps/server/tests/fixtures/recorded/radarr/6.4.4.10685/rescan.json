@@ -1,0 +1,56 @@
+{
+  "app": "radarr",
+  "version": "6.4.4.10685",
+  "state": "rescan",
+  "recordedAt": "2026-10-17T05:26:24Z",
+  "note": "Weir tells the app a file in its library changed, so it reads the title's folder again.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v3/command",
+        "headers": {
+          "content-type": "application/json",
+          "x-api-key": "<scrubbed>"
+        },
+        "body": {
+          "name": "RescanMovie",
+          "movieId": 1
+        }
+      },
+      "reply": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "http://localhost:7878/api/v3/command/12"
+        },
+        "body": {
+          "name": "RescanMovie",
+          "commandName": "Rescan Movie",
+          "body": {
+            "movieId": 1,
+            "sendUpdatesToClient": true,
+            "updateScheduledTask": true,
+            "requiresDiskAccess": false,
+            "isExclusive": false,
+            "isTypeExclusive": false,
+            "isLongRunning": false,
+            "name": "RescanMovie",
+            "trigger": "manual",
+            "suppressMessages": false
+          },
+          "priority": "normal",
+          "status": "started",
+          "result": "unknown",
+          "queued": "2026-10-17T05:26:24Z",
+          "started": "2026-10-17T05:26:24Z",
+          "trigger": "manual",
+          "stateChangeTime": "2026-10-17T05:26:24Z",
+          "sendUpdatesToClient": true,
+          "updateScheduledTask": true,
+          "id": 12
+        }
+      }
+    }
+  ]
+}

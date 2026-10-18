@@ -1,0 +1,240 @@
+{
+  "app": "sonarr",
+  "version": "4.0.20.3014",
+  "state": "redownload",
+  "recordedAt": "2026-10-17T05:26:10Z",
+  "note": "Download again: the app deletes the file, then is asked to search for the title.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/episodefile?seriesId=1",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": [
+          {
+            "seriesId": 1,
+            "seasonNumber": 1,
+            "relativePath": "Season 1/Breaking.Bad.S01E01.720p.WEB.h264-RECORDER.mkv",
+            "path": "/tv/Breaking Bad/Season 1/Breaking.Bad.S01E01.720p.WEB.h264-RECORDER.mkv",
+            "size": 6761472,
+            "dateAdded": "2026-10-17T05:26:01Z",
+            "sceneName": "Breaking.Bad.S01E01.720p.WEB.h264-RECORDER",
+            "releaseGroup": "RECORDER",
+            "languages": [
+              {
+                "id": 1,
+                "name": "English"
+              }
+            ],
+            "quality": {
+              "quality": {
+                "id": 8,
+                "name": "WEBDL-480p",
+                "source": "web",
+                "resolution": 480
+              },
+              "revision": {
+                "version": 1,
+                "real": 0,
+                "isRepack": false
+              }
+            },
+            "customFormats": [],
+            "customFormatScore": 0,
+            "indexerFlags": 0,
+            "releaseType": "singleEpisode",
+            "mediaInfo": {
+              "audioBitrate": 0,
+              "audioChannels": 1,
+              "audioCodec": "AAC",
+              "audioLanguages": "",
+              "audioStreamCount": 1,
+              "videoBitDepth": 8,
+              "videoBitrate": 0,
+              "videoCodec": "",
+              "videoFps": 1,
+              "videoDynamicRange": "",
+              "videoDynamicRangeType": "",
+              "resolution": "160x120",
+              "runTime": "11:00",
+              "scanType": "Progressive",
+              "subtitles": ""
+            },
+            "qualityCutoffNotMet": false,
+            "id": 1
+          },
+          {
+            "seriesId": 1,
+            "seasonNumber": 1,
+            "relativePath": "Season 1/Breaking.Bad.S01E02.720p.WEB.h264-RECORDER.mkv",
+            "path": "/tv/Breaking Bad/Season 1/Breaking.Bad.S01E02.720p.WEB.h264-RECORDER.mkv",
+            "size": 6761472,
+            "dateAdded": "2026-10-17T05:26:04Z",
+            "sceneName": "Breaking.Bad.S01E02.720p.WEB.h264-RECORDER",
+            "releaseGroup": "RECORDER",
+            "languages": [
+              {
+                "id": 1,
+                "name": "English"
+              }
+            ],
+            "quality": {
+              "quality": {
+                "id": 8,
+                "name": "WEBDL-480p",
+                "source": "web",
+                "resolution": 480
+              },
+              "revision": {
+                "version": 1,
+                "real": 0,
+                "isRepack": false
+              }
+            },
+            "customFormats": [],
+            "customFormatScore": 0,
+            "indexerFlags": 0,
+            "releaseType": "singleEpisode",
+            "mediaInfo": {
+              "audioBitrate": 0,
+              "audioChannels": 1,
+              "audioCodec": "AAC",
+              "audioLanguages": "",
+              "audioStreamCount": 1,
+              "videoBitDepth": 8,
+              "videoBitrate": 0,
+              "videoCodec": "",
+              "videoFps": 1,
+              "videoDynamicRange": "",
+              "videoDynamicRangeType": "",
+              "resolution": "160x120",
+              "runTime": "11:00",
+              "scanType": "Progressive",
+              "subtitles": ""
+            },
+            "qualityCutoffNotMet": false,
+            "id": 2
+          },
+          {
+            "seriesId": 1,
+            "seasonNumber": 1,
+            "relativePath": "Season 1/Breaking.Bad.S01E03.720p.WEB.h264-RECORDER.mkv",
+            "path": "/tv/Breaking Bad/Season 1/Breaking.Bad.S01E03.720p.WEB.h264-RECORDER.mkv",
+            "size": 6761472,
+            "dateAdded": "2026-10-17T05:26:07Z",
+            "sceneName": "Breaking.Bad.S01E03.720p.WEB.h264-RECORDER",
+            "releaseGroup": "RECORDER",
+            "languages": [
+              {
+                "id": 1,
+                "name": "English"
+              }
+            ],
+            "quality": {
+              "quality": {
+                "id": 8,
+                "name": "WEBDL-480p",
+                "source": "web",
+                "resolution": 480
+              },
+              "revision": {
+                "version": 1,
+                "real": 0,
+                "isRepack": false
+              }
+            },
+            "customFormats": [],
+            "customFormatScore": 0,
+            "indexerFlags": 0,
+            "releaseType": "singleEpisode",
+            "mediaInfo": {
+              "audioBitrate": 0,
+              "audioChannels": 1,
+              "audioCodec": "AAC",
+              "audioLanguages": "",
+              "audioStreamCount": 1,
+              "videoBitDepth": 8,
+              "videoBitrate": 0,
+              "videoCodec": "",
+              "videoFps": 1,
+              "videoDynamicRange": "",
+              "videoDynamicRangeType": "",
+              "resolution": "160x120",
+              "runTime": "11:00",
+              "scanType": "Progressive",
+              "subtitles": ""
+            },
+            "qualityCutoffNotMet": false,
+            "id": 3
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/v3/episodefile/1",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v3/command",
+        "headers": {
+          "content-type": "application/json",
+          "x-api-key": "<scrubbed>"
+        },
+        "body": {
+          "name": "SeriesSearch",
+          "seriesId": 1
+        }
+      },
+      "reply": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "http://localhost:8989/api/v3/command/17"
+        },
+        "body": {
+          "name": "SeriesSearch",
+          "commandName": "Series Search",
+          "body": {
+            "seriesId": 1,
+            "sendUpdatesToClient": true,
+            "updateScheduledTask": true,
+            "isLongRunning": false,
+            "requiresDiskAccess": false,
+            "isExclusive": false,
+            "name": "SeriesSearch",
+            "trigger": "manual",
+            "suppressMessages": false
+          },
+          "priority": "normal",
+          "status": "queued",
+          "result": "unknown",
+          "queued": "2026-10-17T05:26:10Z",
+          "trigger": "manual",
+          "sendUpdatesToClient": true,
+          "updateScheduledTask": true,
+          "id": 17
+        }
+      }
+    }
+  ]
+}

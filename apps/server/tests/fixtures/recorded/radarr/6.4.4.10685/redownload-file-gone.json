@@ -1,0 +1,211 @@
+{
+  "app": "radarr",
+  "version": "6.4.4.10685",
+  "state": "redownload-file-gone",
+  "recordedAt": "2026-10-17T05:26:24Z",
+  "note": "Download again once the file has already been deleted.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/movie/1",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "title": "Big Buck Bunny",
+          "originalTitle": "Big Buck Bunny",
+          "originalLanguage": {
+            "id": 1,
+            "name": "English"
+          },
+          "alternateTitles": [
+            {
+              "sourceType": "tmdb",
+              "movieMetadataId": 1,
+              "title": "El gran conejo",
+              "id": 1
+            },
+            {
+              "sourceType": "tmdb",
+              "movieMetadataId": 1,
+              "title": "Peach Open Movie Project",
+              "id": 2
+            },
+            {
+              "sourceType": "tmdb",
+              "movieMetadataId": 1,
+              "title": "Big Buck Bunny (Short 2008)",
+              "id": 3
+            },
+            {
+              "sourceType": "tmdb",
+              "movieMetadataId": 1,
+              "title": "Большой кролик",
+              "id": 4
+            },
+            {
+              "sourceType": "tmdb",
+              "movieMetadataId": 1,
+              "title": "Большой кролик Бак",
+              "id": 5
+            },
+            {
+              "sourceType": "tmdb",
+              "movieMetadataId": 1,
+              "title": "Великий Бак",
+              "id": 6
+            },
+            {
+              "sourceType": "tmdb",
+              "movieMetadataId": 1,
+              "title": "Zeka veliki bak",
+              "id": 7
+            }
+          ],
+          "secondaryYearSourceId": 0,
+          "sortTitle": "big buck bunny",
+          "sizeOnDisk": 0,
+          "status": "released",
+          "overview": "<scrubbed>",
+          "inCinemas": "2008-04-10T00:00:00Z",
+          "digitalRelease": "2008-04-10T00:00:00Z",
+          "releaseDate": "2008-04-10T00:00:00Z",
+          "images": [
+            {
+              "coverType": "poster",
+              "url": "/MediaCover/1/poster.jpg?h=575804ada86e356966a7",
+              "remoteUrl": "https://image.tmdb.org/t/p/original/i9jJzvoXET4D9pOkoEwncSdNNER.jpg"
+            },
+            {
+              "coverType": "fanart",
+              "url": "/MediaCover/1/fanart.jpg?h=a54364feca427354955c",
+              "remoteUrl": "https://image.tmdb.org/t/p/original/xtdybjRRZ15mCrPOvEld305myys.jpg"
+            }
+          ],
+          "website": "https://peach.blender.org/",
+          "year": 2008,
+          "youTubeTrailerId": "yUQM7H4Swgw",
+          "studio": "Blender Foundation",
+          "path": "/movies/Big Buck Bunny (2008)",
+          "qualityProfileId": 1,
+          "hasFile": false,
+          "movieFileId": 0,
+          "monitored": true,
+          "minimumAvailability": "announced",
+          "isAvailable": true,
+          "folderName": "/movies/Big Buck Bunny (2008)",
+          "runtime": 8,
+          "cleanTitle": "bigbuckbunny",
+          "imdbId": "tt1254207",
+          "tmdbId": 10378,
+          "titleSlug": "10378",
+          "rootFolderPath": "/movies",
+          "certification": "G",
+          "genres": [
+            "Animation",
+            "Comedy",
+            "Family"
+          ],
+          "keywords": [
+            "blender",
+            "bunny",
+            "conejo",
+            "hilarious",
+            "mobbing",
+            "open source",
+            "repayment",
+            "revenge",
+            "short film",
+            "squirrel"
+          ],
+          "tags": [],
+          "added": "2026-10-17T05:26:11Z",
+          "ratings": {
+            "imdb": {
+              "votes": 2267,
+              "value": 6.4,
+              "type": "user"
+            },
+            "tmdb": {
+              "votes": 200,
+              "value": 6.5,
+              "type": "user"
+            },
+            "trakt": {
+              "votes": 329,
+              "value": 7.04863,
+              "type": "user"
+            }
+          },
+          "popularity": 2.4014,
+          "statistics": {
+            "movieFileCount": 0,
+            "sizeOnDisk": 0,
+            "releaseGroups": [],
+            "movieFileQualities": []
+          },
+          "id": 1
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v3/command",
+        "headers": {
+          "content-type": "application/json",
+          "x-api-key": "<scrubbed>"
+        },
+        "body": {
+          "name": "MoviesSearch",
+          "movieIds": [
+            1
+          ]
+        }
+      },
+      "reply": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "http://localhost:7878/api/v3/command/14"
+        },
+        "body": {
+          "name": "MoviesSearch",
+          "commandName": "Movies Search",
+          "body": {
+            "movieIds": [
+              1
+            ],
+            "sendUpdatesToClient": true,
+            "updateScheduledTask": true,
+            "requiresDiskAccess": false,
+            "isExclusive": false,
+            "isTypeExclusive": false,
+            "isLongRunning": false,
+            "name": "MoviesSearch",
+            "trigger": "manual",
+            "suppressMessages": false
+          },
+          "priority": "normal",
+          "status": "queued",
+          "result": "unknown",
+          "queued": "2026-10-17T05:26:24Z",
+          "started": "2026-10-17T05:26:24Z",
+          "trigger": "manual",
+          "stateChangeTime": "2026-10-17T05:26:24Z",
+          "sendUpdatesToClient": true,
+          "updateScheduledTask": true,
+          "id": 14
+        }
+      }
+    }
+  ]
+}

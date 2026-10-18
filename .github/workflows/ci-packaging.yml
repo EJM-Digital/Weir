@@ -179,7 +179,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [weir-only]
+        shard: [weir-only, weir-browser]
     env:
       SHARD: ${{ matrix.shard }}
     steps:
@@ -203,6 +203,14 @@ jobs:
           tags: weir-ci-smoke
           cache-from: type=gha,scope=weir-ci-amd64
           cache-to: type=gha,mode=max,scope=weir-ci-amd64,ignore-error=true
+
+      # Only the shard that drives a browser needs one: the driver is pinned and locked in scripts/scenarios-ci, and Chromium is the one it was built for.
+      - name: Install the browser
+        if: ${{ matrix.shard == 'weir-browser' }}
+        working-directory: scripts/scenarios-ci
+        run: |
+          npm ci
+          npx playwright-core install --with-deps chromium
 
       - name: Run the shard's scenarios against the image
         run: node scripts/scenarios-in-ci.mjs "$SHARD" --candidate weir-ci-smoke

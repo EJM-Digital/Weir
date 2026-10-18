@@ -1,0 +1,55 @@
+{
+  "app": "sonarr",
+  "version": "4.0.20.3014",
+  "state": "rescan",
+  "recordedAt": "2026-10-17T05:26:10Z",
+  "note": "Weir tells the app a file in its library changed, so it reads the title's folder again.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v3/command",
+        "headers": {
+          "content-type": "application/json",
+          "x-api-key": "<scrubbed>"
+        },
+        "body": {
+          "name": "RescanSeries",
+          "seriesId": 1
+        }
+      },
+      "reply": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "http://localhost:8989/api/v3/command/16"
+        },
+        "body": {
+          "name": "RescanSeries",
+          "commandName": "Rescan Series",
+          "body": {
+            "seriesId": 1,
+            "sendUpdatesToClient": true,
+            "updateScheduledTask": true,
+            "isLongRunning": false,
+            "requiresDiskAccess": false,
+            "isExclusive": false,
+            "name": "RescanSeries",
+            "trigger": "manual",
+            "suppressMessages": false
+          },
+          "priority": "normal",
+          "status": "started",
+          "result": "unknown",
+          "queued": "2026-10-17T05:26:10Z",
+          "started": "2026-10-17T05:26:10Z",
+          "trigger": "manual",
+          "stateChangeTime": "2026-10-17T05:26:10Z",
+          "sendUpdatesToClient": true,
+          "updateScheduledTask": true,
+          "id": 16
+        }
+      }
+    }
+  ]
+}

@@ -79,9 +79,16 @@ internal sealed partial class Scenario
     }
 
     /// <summary>A fake Radarr whose root folder is <c>library</c> under the scenario's folder, and a workflow it manages.</summary>
-    public async Task<(FakeManager Fake, JsonObject Library)> RadarrSetupAsync(params (string Name, JsonNode? Value)[] library)
+    public Task<(FakeManager Fake, JsonObject Library)> RadarrSetupAsync(params (string Name, JsonNode? Value)[] library) =>
+        ArrSetupAsync("radarr", library);
+
+    /// <summary>A fake Sonarr whose root folder is <c>library</c> under the scenario's folder, and a TV workflow it manages.</summary>
+    public Task<(FakeManager Fake, JsonObject Library)> SonarrSetupAsync(params (string Name, JsonNode? Value)[] library) =>
+        ArrSetupAsync("sonarr", [("media_type", "tv"), .. library]);
+
+    private async Task<(FakeManager Fake, JsonObject Library)> ArrSetupAsync(string kind, (string Name, JsonNode? Value)[] library)
     {
-        var fake = Own(FakeManager.StartArr("radarr", rootFolders: [Path.Combine(Root, "library")]));
+        var fake = Own(FakeManager.StartArr(kind, rootFolders: [Path.Combine(Root, "library")]));
         var connection = await CreateConnectionAsync(fake);
         var created = await CreateLibraryAsync([("manager_connection_ids", new JsonArray(connection["id"]!.DeepClone())), .. library]);
         return (fake, created);
