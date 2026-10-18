@@ -7,6 +7,7 @@ import { classNames } from "../../../../lib/ui/class-names";
 import { mmActionButtonClass } from "../../../../lib/ui/mm-control-roles";
 import { useAppDateFormatter } from "../../../../lib/ui/mm-format-date";
 import type { CleanupConfirmAction } from "./cleanup-confirm-dialog";
+import { useUnsavedChanges } from "../../unsaved-changes";
 import type { CleanupColumnId } from "./cleanup-columns";
 import {
   choiceLabel,
@@ -198,6 +199,7 @@ export function DaysSettingRow({
   columnCount,
   inputId,
   inputLabel,
+  unsavedThing,
   saved,
   min,
   max,
@@ -214,6 +216,8 @@ export function DaysSettingRow({
   columnCount: number;
   inputId: string;
   inputLabel: string;
+  /** What the unsaved warning calls this setting, as in "the days …". */
+  unsavedThing: string;
   saved: number | undefined;
   min: number;
   max: number;
@@ -228,6 +232,7 @@ export function DaysSettingRow({
   const value = Number.parseInt(shown, 10);
   const dirty = saved !== undefined && draft !== null && value !== saved;
   const inRange = value >= min && value <= max;
+  useUnsavedChanges(dirty ? unsavedThing : null);
   return (
     <SettingRow
       testId={testId}
