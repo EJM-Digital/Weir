@@ -1,42 +1,57 @@
 using Weir.Core.Json;
 using Weir.Core.MediaManagers;
+using Weir.Tests.Shared;
 
 namespace Weir.Core.Tests.MediaManagers;
 
-/// <summary><see cref="QBittorrentRules"/>: <c>GET /api/v2/torrents/categories</c> and <c>GET /api/v2/app/preferences</c> (#768).</summary>
+/// <summary>
+/// <see cref="QBittorrentRules"/>: <c>GET /api/v2/torrents/categories</c> and <c>GET /api/v2/app/preferences</c> (#768), read from what a
+/// real qBittorrent answered, in every version recorded (<c>fixtures/recorded/qbittorrent</c>).
+/// </summary>
 public sealed class QBittorrentRulesTests
 {
-    private const string Categories = """
-        {"tv-sonarr":{"name":"tv-sonarr","savePath":"/downloads/complete/tv"},"movies":{"name":"movies","savePath":""}}
-        """;
+    public static TheoryData<string> Versions => [.. ArrRecording.Versions("qbittorrent")];
 
-    private const string Preferences = """{"save_path":"/downloads/complete","other_setting":true}""";
+    private static WireValue Categories(string version) => WireJsonParser.Parse(ArrRecording.Load("qbittorrent", version, "folders").To("GET", "/api/v2/torrents/categories").Reply.Text);
 
-    [Fact]
-    public void The_default_folder_is_the_preferences_save_path()
+    private static WireValue Preferences(string version) => WireJsonParser.Parse(ArrRecording.Load("qbittorrent", version, "folders").To("GET", "/api/v2/app/preferences").Reply.Text);
+
+    [Theory]
+    [MemberData(nameof(Versions))]
+    public void The_default_folder_is_the_preferences_save_path(string version)
     {
-        var folders = QBittorrentRules.Parse(WireJsonParser.Parse(Categories), WireJsonParser.Parse(Preferences));
+        var folders = QBittorrentRules.Parse(Categories(version), Preferences(version));
+
         Assert.Equal("/downloads/complete", folders.CompletedFolder);
     }
 
-    [Fact]
-    public void A_category_with_its_own_save_path_is_reported()
+    [Theory]
+    [MemberData(nameof(Versions))]
+    public void A_category_with_its_own_save_path_is_reported(string version)
     {
-        var folders = QBittorrentRules.Parse(WireJsonParser.Parse(Categories), WireJsonParser.Parse(Preferences));
-        Assert.Contains(new DownloadClientCategoryFolder("tv-sonarr", "/downloads/complete/tv"), folders.CategoryFolders);
+        var folders = QBittorrentRules.Parse(Categories(version), Preferences(version));
+
+        Assert.Contains(new DownloadClientCategoryFolder("tv-recorder", "/downloads/complete/tv"), folders.CategoryFolders);
     }
 
-    [Fact]
-    public void A_category_with_an_empty_save_path_is_not_reported_as_a_folder_of_its_own()
+    [Theory]
+    [MemberData(nameof(Versions))]
+    public void A_category_with_an_empty_save_path_is_not_reported_as_a_folder_of_its_own(string version)
     {
-        var folders = QBittorrentRules.Parse(WireJsonParser.Parse(Categories), WireJsonParser.Parse(Preferences));
-        Assert.DoesNotContain(folders.CategoryFolders, category => category.Category == "movies");
+        var recorded = ArrRecording.Load("qbittorrent", version, "folders").To("GET", "/api/v2/torrents/categories").Reply.Body!;
+
+        var folders = QBittorrentRules.Parse(Categories(version), Preferences(version));
+
+        Assert.Equal("", (string)recorded["default-recorder"]!["savePath"]!);
+        Assert.DoesNotContain(folders.CategoryFolders, category => category.Category == "default-recorder");
     }
 
-    [Fact]
-    public void No_categories_object_yields_an_empty_category_list()
+    [Theory]
+    [MemberData(nameof(Versions))]
+    public void No_categories_object_yields_an_empty_category_list(string version)
     {
-        var folders = QBittorrentRules.Parse(null, WireJsonParser.Parse(Preferences));
+        var folders = QBittorrentRules.Parse(null, Preferences(version));
+
         Assert.Empty(folders.CategoryFolders);
         Assert.Equal("/downloads/complete", folders.CompletedFolder);
     }

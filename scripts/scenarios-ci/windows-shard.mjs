@@ -7,7 +7,6 @@ import { join } from "node:path";
 
 import { ORIGIN } from "../docker-smoke/stack.mjs";
 import { WeirClient } from "../docker-smoke/weir-client.mjs";
-import { REPOSITORY_URL } from "../repository.mjs";
 import { GithubRedirect } from "./github-redirect.mjs";
 import { GithubStandIn } from "./github-stand-in.mjs";
 import { runScenarios } from "./run.mjs";
@@ -89,7 +88,7 @@ async function startGithub({ feedFolder, previousFeed, previousVersion, version,
     const certificate = await redirect.trustCertificate(scratch);
     await feed.listen({ tls: certificate, port: 443 });
     await redirect.redirect();
-    const answer = await redirect.fetchAsThePcDoes(`${REPOSITORY_URL}/releases.atom`);
+    const answer = await redirect.fetchAsThePcDoes("https://github.com/jampat000/Weir/releases.atom");
     if (answer.status !== 200 || !answer.text.includes(`/releases/tag/v${version}`)) {
       throw new Error(`The PC's request for github.com did not reach the stand-in (status ${answer.status}).`);
     }

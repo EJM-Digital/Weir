@@ -1,0 +1,35 @@
+{
+  "app": "sabnzbd",
+  "version": "5.1.3",
+  "state": "folders-wrong-key",
+  "recordedAt": "2026-10-17T11:11:17Z",
+  "note": "Reading the folders with an API key SABnzbd does not know.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api?mode=get_config&section=misc&output=json&apikey=0123456789abcdef0123456789abcdef"
+      },
+      "reply": {
+        "status": 403,
+        "headers": {
+          "content-type": "text/html; charset=utf-8"
+        },
+        "bodyText": "API Key Incorrect"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api?mode=get_config&section=categories&output=json&apikey=0123456789abcdef0123456789abcdef"
+      },
+      "reply": {
+        "status": 403,
+        "headers": {
+          "content-type": "text/html; charset=utf-8"
+        },
+        "bodyText": "API Key Incorrect"
+      }
+    }
+  ]
+}

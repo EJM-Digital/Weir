@@ -7,8 +7,7 @@ import { createServer as createHttpServer } from "node:http";
 import { createServer as createHttpsServer } from "node:https";
 import { join } from "node:path";
 
-import { REPOSITORY } from "../repository.mjs";
-
+export const REPOSITORY = "jampat000/Weir";
 const DOWNLOADS = new RegExp(`^/${REPOSITORY}/releases/download/([^/]+)/([^/]+)$`, "i");
 
 /**

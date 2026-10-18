@@ -69,3 +69,33 @@ test("how far along a command is, and the free space on a disk, do not make two 
   const changed = folder("sonarr", "1.0.0.1", { rescan: recording("sonarr", "1.0.0.1", "rescan", command("queued", { body: { seriesId: 1, extra: true } })) });
   assert.match(problems("sonarr", changed, before)[0], /body/);
 });
+
+test("a download client checked in at two versions is compared with the version of the same major release", () => {
+  const states = (version) => ({ test: recording("qbittorrent", version, "test", { save_path: "/downloads" }) });
+  const root = mkdtempSync(path.join(tmpdir(), "client-compare-"));
+  for (const version of ["4.6.7", "5.1.4"]) {
+    mkdirSync(path.join(root, "qbittorrent", version), { recursive: true });
+    writeFileSync(path.join(root, "qbittorrent", version, "test.json"), JSON.stringify(states(version).test));
+  }
+  const newer = folder("qbittorrent", "5.2.0", { test: recording("qbittorrent", "5.2.0", "test", { save_path: "/downloads" }) });
+  assert.deepEqual(problems("qbittorrent", newer, root), []);
+  const changed = folder("qbittorrent", "5.2.0", { test: recording("qbittorrent", "5.2.0", "test", { save_path: "/downloads", added_setting: true }) });
+  assert.match(problems("qbittorrent", changed, root)[0], /added_setting/);
+  const other = folder("qbittorrent", "6.0.0", { test: recording("qbittorrent", "6.0.0", "test", { save_path: "/downloads" }) });
+  assert.match(problems("qbittorrent", other, root)[0], /same release line/);
+});
+
+test("the date a client sets a cookie to expire and the id of its container do not make two runs differ", () => {
+  const reply = (expires, container) => ({
+    status: 200,
+    headers: { "set-cookie": `_session_id=<scrubbed>; Expires=${expires}; Path=/` },
+    body: { host_whitelist: [container], listen_random_port: 51765, ssl_listen_port: 63165 },
+  });
+  const make = (expires, container, port) => {
+    const document = recording("deluge", "2.2.0", "test", {});
+    document.exchanges[0].reply = reply(expires, container);
+    document.exchanges[0].reply.body.ssl_listen_port = port;
+    return folder("deluge", "2.2.0", { test: document });
+  };
+  assert.deepEqual(problems("deluge", make("Sat, 17 Oct 2026 12:04:48 GMT", "25665a35c441", 22069), make("Sun, 18 Oct 2026 01:00:00 GMT", "6bd60e1a28a9", 63165)), []);
+});
