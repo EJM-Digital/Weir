@@ -1,4 +1,4 @@
-// Where each scenario of the VM catalogue runs once the VM is gone (docs/exec-plans/active/PLAN-SCENARIOS-IN-CI.md), read from homes.json.
+// Where each scenario of the VM catalogue runs once the VM is gone, and the scenarios written for CI that the VM never had (origin "ci") (docs/exec-plans/active/PLAN-SCENARIOS-IN-CI.md), read from homes.json.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,10 +20,11 @@ export function problemsWithHomes(homes, catalog) {
   const problems = [];
   const seen = new Set();
   for (const scenario of homes.scenarios) {
-    const { id, home, shard, state, why } = scenario;
+    const { id, home, shard, state, why, origin } = scenario;
     if (seen.has(id)) problems.push(`${id}: listed more than once.`);
     seen.add(id);
-    if (!catalog.includes(id)) problems.push(`${id}: not in the catalogue of scenarios/Weir.Scenarios.Catalog.ps1.`);
+    if (origin !== undefined && origin !== "ci") problems.push(`${id}: origin "${origin}" is not "ci", the only scenarios that are not in the VM catalogue.`);
+    if (!catalog.includes(id) && origin !== "ci") problems.push(`${id}: not in the catalogue of scenarios/Weir.Scenarios.Catalog.ps1.`);
     if (!HOMES.includes(home)) problems.push(`${id}: home "${home}" is none of ${HOMES.join(", ")}.`);
     if (!STATES.includes(state)) problems.push(`${id}: state "${state}" is none of ${STATES.join(", ")}.`);
     problems.push(...problemsWithPasses(scenario));

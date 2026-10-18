@@ -29,15 +29,21 @@ export class LogWatch {
     return new LogWatch(weir, []);
   }
 
-  /** Throws what the logs gained since `begin`. */
-  async finish() {
+  /**
+   * Throws what the logs gained since `begin`, except the rows `expected` accepts: a scenario that makes Weir fail on purpose expects the
+   * warnings that say so. Returns the rows it accepted, so the scenario's verdict can say what it expected.
+   */
+  async finish(expected = () => false) {
     const page = await this.#weir.get(LOG_PAGE);
-    const gained = newProblemRows(this.#before, page.items);
+    const all = newProblemRows(this.#before, page.items);
+    const accepted = all.filter(expected);
+    const gained = all.filter((row) => !accepted.includes(row));
     if (page.next_cursor && gained.length >= page.items.length) {
       throw new Error("System > Logs gained more than one page of new warnings and errors, which is not a clean run.");
     }
     if (gained.length > 0) {
       throw new Error(`System > Logs gained ${gained.length} unexpected warning or error (${gained.map((row) => row.title).join(" | ")}).`);
     }
+    return accepted;
   }
 }

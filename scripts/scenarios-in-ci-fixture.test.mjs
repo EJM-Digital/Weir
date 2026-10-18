@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, test } from "node:test";
 
-import { createFixture, parseRange } from "./scenarios-ci/with-deluno/fixture/server.mjs";
+import { createFixture, parseRange, validExtra } from "./scenarios-ci/with-deluno/fixture/server.mjs";
 import { PIECE_BYTES, bencode, makeTorrent, releaseFiles } from "./scenarios-ci/with-deluno/fixture/torrent.mjs";
 
 /** Reads a bencoded value back, so the torrent is judged by something other than the code that wrote it. */
@@ -146,4 +146,36 @@ test("the feed answers as a Torznab indexer: its capabilities, and no results fo
   assert.match(search, /<rss version="2.0"/);
   assert.doesNotMatch(search, /<item>/);
   assert.equal((await fetch(`${base}/health`)).status, 200);
+});
+
+// --- releases that go wrong -----------------------------------------------------------------------------------------------
+
+test("a release can hold a film nothing can read: as long as the source film and all zero bytes", async () => {
+  const made = await post("/releases", { source: join(work, "source", "x.mkv"), title: "ScnZeros", year: 2020, zeros: true });
+  assert.equal(made.status, 200);
+  const { release } = await made.json();
+  const bytes = Buffer.from(await (await fetch(`${base}/webseed/${release}/${release}.mkv`)).arrayBuffer());
+  assert.equal(bytes.length, film.length);
+  assert.ok(bytes.every((byte) => byte === 0));
+});
+
+test("a release can hold extras below its folder, each all zero bytes of the size asked for, listed in its torrent", async () => {
+  const made = await post("/releases", { source: join(work, "source", "x.mkv"), title: "ScnExtras", year: 2020, extras: [{ path: "Extras/Featurette.mkv", bytes: 4000 }] });
+  assert.equal(made.status, 200);
+  const body = await made.json();
+  assert.deepEqual(body.files.map((file) => [file.path, file.size]), [[`${body.release}.mkv`, film.length], [`${body.release}.nfo`, 22], ["Extras/Featurette.mkv", 4000]].sort((a, b) => Buffer.compare(Buffer.from(a[0]), Buffer.from(b[0]))));
+  const extra = Buffer.from(await (await fetch(`${base}/webseed/${body.release}/Extras/Featurette.mkv`)).arrayBuffer());
+  assert.deepEqual(extra, Buffer.alloc(4000));
+});
+
+test("an extra must be a plain path below the release folder and a size a scenario can afford", () => {
+  assert.equal(validExtra({ path: "Extras/Featurette.mkv", bytes: 1 }), true);
+  for (const path of ["../x.mkv", "/etc/passwd", "a/../b.mkv", "./a.mkv", "a b.mkv", "", "a//b.mkv"]) assert.equal(validExtra({ path, bytes: 10 }), false, path);
+  for (const bytes of [0, -1, 1.5, 51 * 1024 * 1024, "10"]) assert.equal(validExtra({ path: "a.mkv", bytes }), false, String(bytes));
+});
+
+test("a release asked for with a bad extra is refused before anything is made", async () => {
+  const refused = await post("/releases", { source: join(work, "source", "x.mkv"), title: "ScnBadExtra", year: 2020, extras: [{ path: "../x.mkv", bytes: 10 }] });
+  assert.equal(refused.status, 400);
+  assert.equal((await post("/releases", { source: join(work, "source", "x.mkv"), title: "ScnBadExtra", year: 2020 })).status, 200, "the name was not used up by the refusal");
 });

@@ -220,11 +220,11 @@ test("Weir and Deluno are connected once: a key made in Deluno, Weir's secret gi
   assert.equal(first, second, "a second call is the same connection, not a second one");
   assert.equal(first.id, 7);
   assert.deepEqual(weirCalls, [
-    ["POST", "/media-managers/connections", { kind: "deluno", base_url: "http://deluno:8080", api_key: "deluno_key", enabled: true }],
+    ["POST", "/media-managers/connections", { kind: "deluno", base_url: "http://recorder:8081", api_key: "deluno_key", enabled: true }],
     ["POST", "/media-managers/connections/7/webhook-secret", undefined],
   ]);
   const processor = requests.find((request) => request.path === "/api/integrations/processors/connections").body;
-  assert.deepEqual([processor.submissionUrl, processor.authHeaderName, processor.secret], ["http://weir:9347/api/v1/hooks/abc", "X-Webhook-Secret", "shh"]);
+  assert.deepEqual([processor.submissionUrl, processor.authHeaderName, processor.secret], ["http://recorder:8082/api/v1/hooks/abc", "X-Webhook-Secret", "shh"]);
   const workflow = requests.find((request) => request.method === "PUT" && request.path === "/api/libraries/library-1/workflow").body;
   assert.deepEqual([workflow.importWorkflow, workflow.processorConnectionId, workflow.processorOutputPath], ["refine-before-import", "processor-1", FOLDERS.weirOutput]);
 });
@@ -278,10 +278,10 @@ test("a workflow not linked to Deluno, or whose folder chain is not ready, fails
   assert.match(notReady[0].detail, /the folder chain for 'Movies' is ready/);
 });
 
-test("the shard starts Deluno and qBittorrent beside Weir, with an account, and keeps their logs", () => {
+test("the shard starts Deluno, qBittorrent and the recording proxy beside Weir, with an account, and keeps their logs", () => {
   const shard = SHARDS["with-deluno"];
   assert.deepEqual([shard.account, shard.browser], [true, false]);
-  assert.deepEqual(shard.beside.services, ["deluno", "qbittorrent"]);
+  assert.deepEqual(shard.beside.services, ["deluno", "qbittorrent", "recorder"]);
   assert.deepEqual(shard.beside.files, ["scripts/scenarios-ci/with-deluno/compose.yaml"]);
   const started = shard.beside.start();
   assert.deepEqual(started.pull.sort(), Object.values(images).map((image) => image.reference).sort());

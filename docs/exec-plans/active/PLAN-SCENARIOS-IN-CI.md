@@ -14,16 +14,19 @@
 
 ## Every scenario and its home
 
-The 14 scenarios of `Weir.Scenarios.Catalog.ps1`. `scripts/scenarios-ci/homes.json` is the record the code reads; `scripts/scenarios-in-ci.test.mjs` fails when this table and that file disagree, or when a scenario of the catalogue has no row. **No scenario is wholly unportable.** Two have a part that stays on Windows (the tray's side of Pause and resume, and the installed copy of the recovery command); those parts have their own Windows rows below.
+The 14 scenarios of `Weir.Scenarios.Catalog.ps1`, then the ones written for CI that the VM never had (`origin: "ci"` in `homes.json`). `scripts/scenarios-ci/homes.json` is the record the code reads; `scripts/scenarios-in-ci.test.mjs` fails when this table and that file disagree, or when a scenario of the catalogue has no row. **No scenario is wholly unportable.** Two have a part that stays on Windows (the tray's side of Pause and resume, and the installed copy of the recovery command); those parts have their own Windows rows below.
 
 | Scenario | Home | Shard | State | Why it lives there |
 | --- | --- | --- | --- | --- |
 | `update-over-installed-weir` | windows | windows-update | to-port | `Setup --silent` over the previous release's running install, with the tray's pre-update copy. Docker's upgrade smoke covers the volume half. |
 | `workflows-from-deluno` | linux | with-deluno | ported | Weir and Deluno speak HTTP only; Deluno's published image is the same Deluno. |
 | `deluno-film-handoff` | linux | with-deluno | ported | A hand-off followed through both apps, with the real clients in Compose. |
-| `deluno-release-with-extra` | linux | with-deluno | to-port | The extra is read where it stays, through the download client's own API. |
-| `deluno-resend` | linux | with-deluno | to-port | Deluno's send-again is an API call; both sides are read over HTTP. |
-| `deluno-outcomes` | linux | with-deluno | to-port | The outcome each app recorded is compared; both are read over HTTP. |
+| `deluno-release-with-extra` | linux | with-deluno | ported | The extra is read where qBittorrent left it, in the folder both containers share. |
+| `deluno-resend` | linux | with-deluno | ported | Deluno's send-again is an API call; both sides are read over HTTP. |
+| `deluno-outcomes` | linux | with-deluno | ported | The outcome each app recorded is compared; both are read over HTTP. |
+| `deluno-failed-release` | linux | with-deluno | ported | Written for CI (#1018): a release Weir cannot read; Deluno shows the hand-off failed in Weir's words. |
+| `deluno-rejected-release` | linux | with-deluno | ported | Written for CI (#1018): a release Weir rejects; Deluno refuses it and removes the download, Weir leaves it. |
+| `deluno-deleted-before-cleaning` | linux | with-deluno | ported | Written for CI (#1018): the download is deleted while Weir holds the hand-off; Weir reports it gone. |
 | `fresh-install` | windows | windows-install | to-port | Runs `Weir-win-Setup.exe` silently and starts the installed tray; a clean runner is the clean machine. |
 | `first-visit-account` | linux | weir-browser | ported | Nothing in it is Windows: a new browser context sees account creation, then sign-in. Chromium under Playwright takes the place of Edge. |
 | `weir-only-film` | linux | weir-only | ported | The first shard. The server cleans a film with the image's own ffmpeg. |

@@ -4,6 +4,8 @@
 //
 //   POST /releases {"source": "/work/source/x.mkv", "title": "Name", "year": 2020}   makes the release folder (the film and an .nfo),
 //                                                                                  its torrent, and answers {release, infohash, size, url, files}
+//        optional: "zeros": true      the release's film is as long as the source but all zero bytes: a file nothing can read
+//                  "extras": [{"path": "Extras/Featurette.mkv", "bytes": 2000000}]   more files in the folder, each all zero bytes
 //   GET  /dl/<release>.torrent                                                      the torrent
 //   GET  /webseed/<release>/<file>                                                  the release's bytes, with ranges
 //   GET  /api?t=caps|search|movie|tvsearch                                          a Torznab feed that offers nothing: the scenario sends its release itself
@@ -64,6 +66,16 @@ function serveFile(request, response, file) {
   return fs.createReadStream(file).pipe(response);
 }
 
+const MAX_EXTRA_BYTES = 50 * 1024 * 1024;
+/** An extra is a file below the release folder, named in plain words, of a size a scenario can afford. */
+export const validExtra = (extra) =>
+  typeof extra?.path === "string" &&
+  /^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/.test(extra.path) &&
+  !extra.path.split("/").some((part) => part === "." || part === "..") &&
+  Number.isInteger(extra.bytes) &&
+  extra.bytes >= 1 &&
+  extra.bytes <= MAX_EXTRA_BYTES;
+
 /** @param {{work: string, publicBase: string}} options `work` holds the films the scenario made and the releases made from them. */
 export function createFixture({ work, publicBase }) {
   const releases = path.join(work, "releases");
@@ -71,15 +83,22 @@ export function createFixture({ work, publicBase }) {
   const torrents = new Map();
 
   function makeRelease(response, body) {
-    const { source, title, year } = JSON.parse(body);
+    const { source, title, year, zeros = false, extras = [] } = JSON.parse(body);
     if (!/^[A-Za-z0-9]+$/.test(title ?? "") || !Number.isInteger(year)) return reply(response, 400, "text/plain", "title must be letters and digits, and year a number");
+    if (!Array.isArray(extras) || !extras.every(validExtra)) return reply(response, 400, "text/plain", "each extra needs a plain relative path and a size between 1 byte and 50 MB");
     const film = path.resolve(source ?? "");
     if (!inside(work, film) || !fs.existsSync(film)) return reply(response, 400, "text/plain", `no film at ${source}`);
     const release = `${title}.${year}.1080p.WEB-DL.x264-WEIR`;
     const folder = path.join(releases, release);
     if (fs.existsSync(folder)) return reply(response, 409, "text/plain", "a release of that name already exists");
     fs.mkdirSync(folder, { recursive: true });
-    fs.copyFileSync(film, path.join(folder, `${release}.mkv`));
+    if (zeros) fs.writeFileSync(path.join(folder, `${release}.mkv`), Buffer.alloc(fs.statSync(film).size));
+    else fs.copyFileSync(film, path.join(folder, `${release}.mkv`));
+    for (const extra of extras) {
+      const file = path.join(folder, ...extra.path.split("/"));
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, Buffer.alloc(extra.bytes));
+    }
     fs.writeFileSync(path.join(folder, `${release}.nfo`), "Weir scenario release\n");
     const made = makeTorrent({ folder, name: release, webSeedBase: `${publicBase}/webseed/` });
     torrents.set(release, made.torrent);

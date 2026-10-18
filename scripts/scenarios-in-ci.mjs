@@ -56,6 +56,7 @@ async function main() {
   const { account, browser: wantsBrowser, beside, scenarios } = SHARDS[shard];
   const started = beside?.start();
   let results = [];
+  let collectFailed = false;
   let browser;
   stack.removeEverything();
   try {
@@ -67,7 +68,12 @@ async function main() {
     if (beside) world.deluno = await beside.setUp(world, started);
     if (wantsBrowser) world.browser = browser = await Browser.launch(ORIGIN);
     results = await runScenarios({ ids, registry: scenarios, world });
+    if (beside?.collect) {
+      const files = await beside.collect(world, logFolder);
+      console.log(`Kept ${files.length} recording(s) of what passed between the applications:\n${files.join("\n")}`);
+    }
   } catch (error) {
+    collectFailed = results.length > 0;
     console.error(`::error::${shard}: ${error.message}`);
     console.error(`::group::Container log\n${stack.logs()}\n::endgroup::`);
   } finally {
@@ -83,7 +89,7 @@ async function main() {
   writeFileSync(join(logFolder, "results.json"), JSON.stringify({ shard, candidate: values.candidate, results }, null, 2));
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   for (const result of results.filter((entry) => entry.status !== "passed")) console.error(`::error::${result.id}: ${result.detail}`);
-  process.exitCode = exitCode(results);
+  process.exitCode = collectFailed ? 1 : exitCode(results);
 }
 
 await main();
