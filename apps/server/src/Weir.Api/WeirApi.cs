@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Weir.Api.Endpoints;
 using Weir.Api.Http;
 using Weir.Api.Web;
@@ -66,7 +67,11 @@ public static class WeirApi
         services.AddSingleton<MediaManagerConnectionsEndpointHandlers>();
         services.AddSingleton<MediaManagerIntakeEndpointHandlers>();
         services.AddSingleton<UpdateFiles>();
-        services.AddSingleton<IReleaseCatalogClient, GitHubReleaseCatalogClient>();
+        services.AddSingleton<IReleaseCatalogClient>(provider => new GitHubReleaseCatalogClient(
+            provider.GetRequiredService<TimeProvider>(),
+            provider.GetRequiredService<ILogger<GitHubReleaseCatalogClient>>(),
+            handler: null,
+            feedUrl: provider.GetRequiredService<WeirOptions>().ReleasesFeedUrl));
         services.AddSingleton<IExternalJsonPoster>(new ExternalJsonPoster(options.NotificationStandInPort));
         services.AddSingleton<NotificationDispatcher>();
         // Registered before AddWeirJobs, whose TryAdd would otherwise install the version that sends nothing.

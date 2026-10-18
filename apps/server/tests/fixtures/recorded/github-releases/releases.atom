@@ -1,0 +1,545 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xml:lang="en-US">
+  <id>tag:github.com,2008:https://github.com/jampat000/Weir/releases</id>
+  <link type="text/html" rel="alternate" href="https://github.com/jampat000/Weir/releases"/>
+  <link type="application/atom+xml" rel="self" href="https://github.com/jampat000/Weir/releases.atom"/>
+  <title>Release notes from Weir</title>
+  <updated>2026-10-14T07:33:05Z</updated>
+  <entry>
+    <id>tag:github.com,2008:Repository/1205514420/v1.0.0-rc.18</id>
+    <updated>2026-10-14T07:44:56Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/jampat000/Weir/releases/tag/v1.0.0-rc.18"/>
+    <title>v1.0.0-rc.18</title>
+    <content type="html">&lt;h1&gt;Weir v1.0.0-rc.18&lt;/h1&gt;
+&lt;p&gt;Date: 2026-10-14&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Early days.&lt;/strong&gt; Weir is early, and it is in active, hard testing. Expect rough edges. If something is wrong or confusing, please report it on &lt;a href=&quot;https://github.com/jampat000/Weir/issues&quot;&gt;GitHub issues&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Release candidate 17 passed its full run on a clean machine and was published for Docker, but its Windows release page went up with no files. Releases on this repository are immutable once published, and the old publish step made the release first and attached the files afterwards, so every file was refused. A published release cannot be repaired, so Windows users get the changes of release candidate 17 here. This is the first Windows release since release candidate 13, so it carries everything user-facing from release candidate 17 and from the three release candidates before it: a Windows update that could leave Weir not running, a start-up that watches itself and tries again, a tray that counts its server ready only when that same server says so, how Weir answers a download your media manager sends twice, picking a file back up when it comes back, keeping an imported film from slipping back to &quot;Waiting&quot;, a new border on Weir&#39;s icon, and no stall on requests on a busy or small machine. Release candidates 14, 15 and 16 were never published. Release candidate 14 was held back because the scenario run on a clean machine found problems in the run itself. Release candidate 15 was held back because that run then found that updating from release candidate 13 could leave Weir not running. Release candidate 16 was held back because that run then found that on a busy machine Weir could freeze for up to 84 seconds on list requests, so a waiting file was judged too early. Everything in all three is here, with the changes for issues &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5795443531&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/954&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/954/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/954&quot;&gt;#954&lt;/a&gt;, &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5796276779&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/955&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/955/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/955&quot;&gt;#955&lt;/a&gt;, &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5796277056&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/956&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/956/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/956&quot;&gt;#956&lt;/a&gt; and &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5804646697&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/958&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/958/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/958&quot;&gt;#958&lt;/a&gt;, each confirmed on evidence from the clean-machine run.&lt;/p&gt;
+&lt;p&gt;New since release candidate 17: the release is now published only after every file is attached, a busy database and an unforeseen failure each get a clear answer a media manager can act on, and the tests and shared documents behind them are tightened.&lt;/p&gt;
+&lt;h2&gt;New Since Release Candidate 17&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;A release can no longer go up without its files.&lt;/strong&gt; The release is now made as a draft. Every file is attached to the draft, the draft is checked to hold each one at its size, and only then is it published, in one last step, so the repository&#39;s rule against changing a published release can no longer refuse a file. A run that fails part-way leaves a draft, which running it again finishes. A release that is already published is never touched; the run stops and says why, because only a new tag can replace it. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5839729528&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/969&quot; data-hovercard-type=&quot;pull_request&quot; data-hovercard-url=&quot;/jampat000/Weir/pull/969/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/pull/969&quot;&gt;#969&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A busy database gets an answer a media manager can act on.&lt;/strong&gt; When a write waits for the database for the whole time Weir allows, for example while a backup tool holds it, Weir now answers 503 with a &lt;code&gt;Retry-After&lt;/code&gt; header and the code &lt;code&gt;database_busy&lt;/code&gt;, and writes one warning to &lt;strong&gt;System › Logs&lt;/strong&gt; with the route and how long it waited. Before, the same moment surfaced as a plain-text 500 that a media manager could not tell from &quot;Weir is broken&quot;. &lt;code&gt;Retry-After&lt;/code&gt; is how long the write really waited, from 1 to 60 seconds. The write was not made, so the same request can be sent again after that time. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5837789546&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/964&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/964/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/964&quot;&gt;#964&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;An unforeseen failure answers JSON with a code.&lt;/strong&gt; A failure Weir did not foresee now answers 500 with a JSON body, a plain &lt;code&gt;detail&lt;/code&gt; sentence and the code &lt;code&gt;internal_error&lt;/code&gt;, with nothing of the failure in the body. The details and the stack trace are in Weir&#39;s log, as before.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;New setting &lt;code&gt;WEIR_SQLITE_BUSY_TIMEOUT_SECONDS&lt;/code&gt;.&lt;/strong&gt; How long a write waits for the database before it answers 503, from 1 to 120 seconds, 30 unless set. It covers Weir&#39;s own writers queueing for the database and then any program outside Weir that holds it. Raising it only makes a media manager wait longer for the same answer. It is listed in &lt;code&gt;.env.example&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The API reference lists both answers.&lt;/strong&gt; &lt;code&gt;docs-site/docs/api/index.md&lt;/code&gt; has a new Errors table, the OpenAPI description and generated types carry the 503, and the operator messaging standard says an error&#39;s wording is never what a client reads: it reads the status and &lt;code&gt;code&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Tests that judge the thread pool no longer share it with every other test.&lt;/strong&gt; A test of the database write gate asked whether the process&#39;s thread pool ran a small job within a second, but every test in the same run uses that one pool, so the probe measured the other tests and failed on a busy runner, as it did on release candidate 17&#39;s push. The gate test now runs its writers on a thread of its own, with no pool and no clock. A run on four processors showed one other test starving the pool for 10 seconds by waiting on 24 pool threads at once; the tests that hold many threads at once now run on threads of their own, and five full runs after the change had no stall of 2 seconds or more. A switch for the test run, &lt;code&gt;WEIR_POOL_SAMPLE&lt;/code&gt;, records every wait of half a second or more for the pool, and &lt;code&gt;scripts/attribute-pool-stalls.mjs&lt;/code&gt; lays those waits beside the tests. This changes nothing in Weir itself.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Shared documents from Deluno.&lt;/strong&gt; &lt;code&gt;docs/deluno-weir-contract.md&lt;/code&gt; is new: it lists every reply Weir gives Deluno, with its recording and the test that proves it. &lt;code&gt;docs/golden-path.md&lt;/code&gt; is updated with the update phase, the keep-seeding group, running a single scenario, the ready checkpoint and the real run times. Both are copies of Deluno&#39;s, identical byte for byte.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;The request stall&lt;/h2&gt;
+&lt;p&gt;On the clean-machine run of release candidate 16, Weir froze for up to 84 seconds on list requests, and a file that was waiting for its media manager was judged too early. Release candidate 17 fixed the cause that was found, and added a warning that will record the stall if it ever comes back.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;The cause.&lt;/strong&gt; Release candidate 16 made Weir and its tray look again, up to five times 20 milliseconds apart, at a file that seemed to be damaged or missing. Most of those small files are missing most of the time, for example the update state before the first update step, the update settings and network choice on a fresh install, and a pause request after it is answered. So every read of the update state or settings slept four times on a thread that was also serving requests. Weir&#39;s pool of threads starts with one thread per processor and adds another only every half second or so, so on a machine with few processors those sleeping reads used up the threads and unrelated requests had to wait behind them.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Missing means missing.&lt;/strong&gt; A name that is not there is now the answer at the first look. Weir and its tray replace these files by renaming a new file over the old one, which leaves the name in place: 43,000 renames against three readers at once never showed a missing name. Only a file that is refused (a virus scanner holding it, or a rename in progress) is looked at again.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Requests look once.&lt;/strong&gt; Everything Weir reads while answering a request or running a timer now looks once and keeps the last good reading: the tray&#39;s heartbeat, the update state, the reason an update was held back, the update settings and the network choice. A refused file is answered with that last reading, and the next read looks again. Before any reading exists, the safe side is used as before: update settings notify only, and the network choice is this PC only. Only start-up and the tray&#39;s watchers, which have nothing else to do, still wait between looks.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A warning when work waits for a thread.&lt;/strong&gt; When work waits two seconds or more for a thread, Weir writes a warning to &lt;strong&gt;System › Logs&lt;/strong&gt; with the pool&#39;s counts (threads, how many it starts at once, work waiting, processors). It repeats every 30 seconds while the wait lasts and writes a line when it ends. It runs on a thread of its own, so a starved pool cannot silence it. A test also keeps the list of places in Weir that sleep short, so a new one cannot slip in unnoticed.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Measured before and after.&lt;/strong&gt; On a 2-processor server with 24 clients asking at once, release candidate 16 answered the update state with a median of 255 ms, the files list took up to 1,012 ms, and the server handled 923 requests in a minute. With this change the update state&#39;s median is 5 ms, the files list takes at most 38 ms and the server handles 2,184 requests in a minute, the same as before release candidate 16 made it look again.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;What was not shown.&lt;/strong&gt; The full 84-second stall seen on the clean machine was not reproduced here. The slowdown above was, and removing its cause brings the measurements back to where they were, but the 84 seconds itself is not proven to have the same cause. If it comes back, the new warning will record it in &lt;strong&gt;System › Logs&lt;/strong&gt; with the pool&#39;s counts, and the clean-machine run will show it.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;What Changed&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;An update can no longer leave Weir not running.&lt;/strong&gt; On the clean-machine run, updating from release candidate 13 once left Weir started but never answering: it wrote nothing to its log, did not listen on its port and did not exit. The cause was found by measurement. If the server&#39;s printed output went into a pipe that was full and that nobody was reading, the server waited on that pipe before it wrote its first log line. Weir&#39;s console output no longer waits: it goes through a small queue handled on its own thread, and if nothing reads it, lines are dropped and counted instead of stopping the server. &lt;code&gt;weir.log&lt;/code&gt; always keeps every line. A test starts the real server with a full pipe that nobody reads; it failed before this change and passes now. How that server came to have an unread pipe was not found, which is why the start-up watch below is there as well.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Weir&#39;s start-up now watches itself and tries again.&lt;/strong&gt; The tray starts the server, whether it is the first start, a start after a crash or &lt;strong&gt;Restart Weir&lt;/strong&gt;, and watches how far it gets. The server reports each step: starting, opening the database, saving a copy of your data, updating the database, getting ready, starting to listen, ready. A start counts as stuck only when the reports stop for longer than that step allows, so a large database that is still working is left alone and a stuck one is not waited on for long. A stuck server is asked to stop and then ended, and only a server the tray itself started is ever touched. The next try does not begin until the old server is confirmed gone; if one cannot be ended, the tray stops there rather than start a second server beside it, and its log names the process to end. Otherwise the start is tried again after a short, growing wait. The details, and the measurements behind the numbers, are in &lt;code&gt;docs/start-supervision.md&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The tray counts its server ready only when that same server says so.&lt;/strong&gt; The tray asks Weir&#39;s &lt;code&gt;/ready&lt;/code&gt; address whether Weir is up, but that address cannot say which Weir answers. If another Weir already held the port, it answered &quot;ready&quot; while the server the tray had just started was about to fail to take the port and exit, and the tray took that answer for its own server&#39;s. The tray now accepts a ready answer only after the server it started has reported that it is ready, either on its standard output or in &lt;code&gt;startup-progress.json&lt;/code&gt;, in a report that carries that server&#39;s own process number. A server that exits instead ends the start as any exit does, and one that never reports is treated like any other silent start.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A download sent twice gets the right answer.&lt;/strong&gt; When your media manager sends the same download again, the new send takes over Weir&#39;s work and is told the result with the cleaned file; the earlier send is told it was replaced. Notes no longer mix, so a film never reads &quot;imported&quot; and &quot;will not import&quot; at once. Answers go only to the connection that sent the download. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5796276779&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/955&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/955/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/955&quot;&gt;#955&lt;/a&gt;, &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5796277056&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/956&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/956/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/956&quot;&gt;#956&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A file that comes back is picked up again.&lt;/strong&gt; A file Weir saw as gone is looked at again as soon as it is back, instead of waiting ten minutes, and its hand-off is answered. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5796277056&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/956&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/956/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/956&quot;&gt;#956&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;An imported film stays imported.&lt;/strong&gt; A film your media manager imported no longer slips back to &quot;Waiting for your media manager&quot; after its download is cleaned up or handed over again.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Two connections sharing a download folder.&lt;/strong&gt; A file Weir is already working on for one connection is not taken for another; that connection is told Weir is busy and sends it again later.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A new logo border.&lt;/strong&gt; The Weir app icon, tray icon, browser icon and docs icon now carry a thin teal border set in from the rounded edge, like Deluno&#39;s, and the mark is a little smaller so it clears the border. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5804646697&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/958&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/958/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/958&quot;&gt;#958&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;What You See When A Start Goes Wrong&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;While Weir is retrying, the tray icon shows Starting.&lt;/li&gt;
+&lt;li&gt;If Weir has not started after 5 tries within 15 minutes, the tray stops trying. The icon turns red and a notice says &quot;Weir didn&#39;t start after 5 tries, so it has stopped trying. The details are in the tray log. Click to try again.&quot; Clicking the notice, or choosing &lt;strong&gt;Restart Weir&lt;/strong&gt;, starts over with a fresh set of tries.&lt;/li&gt;
+&lt;li&gt;If Weir was running, stopped and could not be brought back, the notice says it stopped and did not start again after that many tries, with the same way back.&lt;/li&gt;
+&lt;li&gt;If the port Weir saved last time cannot be read when it starts (another program has the file for a moment), the tray treats that as a failed try like any other: it waits and tries again with the same growing wait, shows Starting, and never asks for a port or saves one meanwhile. After 5 tries it gives up with the same notice, red icon and Restart Weir.&lt;/li&gt;
+&lt;li&gt;If Weir was started by something with nobody at the desktop, such as an installer, the tray exits with code 1 and the reason is in the tray log.&lt;/li&gt;
+&lt;li&gt;A server that stopped for a reason that trying again cannot change is not tried again: its settings are not valid, it cannot use its database, or it could not save a copy of your data before updating. Its own words are shown, as before.&lt;/li&gt;
+&lt;li&gt;If Weir only started on a retry, it works, and &lt;strong&gt;System › Logs&lt;/strong&gt; shows a warning that it needed one.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Where The Logs Are&lt;/h2&gt;
+&lt;p&gt;On Windows, in &lt;code&gt;C:\ProgramData\Weir&lt;/code&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;tray-host.log&lt;/code&gt; says what the tray did: every start attempt with its number, why it failed and how long it waits before the next, and, when a server never answered, a description of the stuck process (how long it ran, its processor time, threads and memory, and the files it had loaded).&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;server-host.log&lt;/code&gt;, next to it, is new. It keeps everything the server printed while it started and anything it wrote to its error output, each line marked with the server&#39;s process number. It keeps one earlier file, up to 1 MB each.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;logs\weir.log&lt;/code&gt; now says Weir is starting before anything that could block, then that it is opening the database, so a start that stops leaves how far it got.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;startup-progress.json&lt;/code&gt; holds the latest step the server reported.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Fixes And Stability&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;A file that is being replaced is no longer taken for a damaged or missing one.&lt;/strong&gt; Weir and its tray pass small files to each other, and each is replaced by renaming a new file over the old. A reader that looked at that instant could be refused, and a virus scanner holding a freshly written file does the same. The tray could then read the saved network choice as &quot;this PC only&quot; and restart the server, act on update settings that were not there, start the wait for Weir to be idle over, ask the first-run port question again and save another port over yours (it now waits and tries again, as for any other start), or send an update on as if Weir could not save a copy of its data. The server could briefly report that the tray had quit, that a downloaded update was gone, or drop a pause or backup request. A reader that is refused now looks again before it says anything, and a file that stays refused is treated as &quot;not yet&quot;: it keeps the last thing known, or waits, and changes nothing. A name that is not there is simply not there; see the request stall above.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A failed browser test now keeps its evidence.&lt;/strong&gt; One end-to-end browser test, &lt;code&gt;SeededModuleSaveTests.Saved_state_persists_across_settings_and_processing&lt;/code&gt;, failed once in a full run on the way to release candidate 15, and its error was not kept. It did not come back in many later runs, with the order of steps, folder deletes and a fully loaded processor forced, and no fault in Weir was found, so its cause is not proven and it is not set aside. Every browser test now records a trace and its browser and server logs, and a test that fails keeps its full error, the trace, the logs and a screenshot of each page under &lt;code&gt;artifacts/e2e-failures&lt;/code&gt;. A passing test deletes its own, and the build uploads the folder as &lt;code&gt;e2e-failure-evidence&lt;/code&gt;, including for a test that passed only on its retry.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Every release is proven before it is tagged.&lt;/strong&gt; A scenario run on a clean machine — install, update, first visit, real hand-offs from Deluno, pause, Process again, a deleted file and Logs — must pass on the exact commit before any release, release candidates included, can be published. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5795443531&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/954&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/954/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/954&quot;&gt;#954&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The scenario run is now done in three steps around Deluno&#39;s suite.&lt;/strong&gt; First the build is installed over the Weir that Deluno&#39;s own installer put there, before Deluno sends any film; then, once Deluno&#39;s suite has made its hand-offs, the Deluno scenarios run; then the clean-machine scenarios run on a restored clean checkpoint. Each Deluno hand-off is judged by the Weir that handled it, so a hand-off the previous release answered is counted but never held against the new build. The checks for the update, resent hand-offs, small extras and Deluno&#39;s outcome records were corrected against what the first run showed, and a step that goes wrong no longer stops the next one. The run&#39;s Logs check also fails when a start needed a retry, unless the run names it.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The Docker start-up check no longer ends without a result.&lt;/strong&gt; When the container&#39;s health address hung, the check could end with no retry and no container log. A hung attempt now counts as a failed attempt, the check tries again, and the container&#39;s log is printed if every attempt fails.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The contract suite no longer mistakes one server for another.&lt;/strong&gt; The suite picks a free port, releases it and starts a server on it. Two starts that picked the same port could both launch; one won and the other exited with &quot;address already in use&quot;, but its start-up had already read the winner&#39;s &quot;ready&quot; and taken it for its own, so a test ran against another test&#39;s server. A server now counts as ready only when its address answers and the process the suite started has logged that it listens on its port. The loser is seen to exit and is started again on a new port. Tests cover a port held by another Weir server and four servers picking one port at once; both failed before the change.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A failed contract test keeps the logs of its own servers.&lt;/strong&gt; Each server copies its &lt;code&gt;weir.log&lt;/code&gt;, its standard output and error and its progress file when it stops, into a folder named for the test that used it (&lt;code&gt;artifacts/contract-failures&lt;/code&gt;). A server shared by the tests of one class is kept under the class name. A passing test deletes its folder, and CI uploads the rest as &lt;code&gt;contract-failure-evidence-&amp;lt;area&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;One more test no longer assumes a fast machine.&lt;/strong&gt; A test of the start-up refusal message read the console before its last line had reached it; on a busy runner it read nothing. It now waits for the line, with a ceiling.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The contract suite&#39;s record of started servers no longer trips over itself.&lt;/strong&gt; The suite keeps one small file per server it starts, in a folder shared by every test class and every run on the machine. Test classes that started or stopped a server at the same moment could collide on those files, and a class that lost a delete left a stale file that made the next run&#39;s classes collide again, so some tests failed before they began. Every read and delete now accepts that someone else got there first, and a leftover server is stopped by the one caller that claims it, never twice and never unless the process is the recorded one. New tests plant stale entries and run the callers at once; they failed before the change and pass after it.&lt;/li&gt;
+&lt;li&gt;Two tests that measured time against the real clock now use their own clock, so a busy machine no longer fails them; Weir&#39;s real time limits were confirmed safe.&lt;/li&gt;
+&lt;li&gt;The copyright line now reads &quot;Copyright (C) 2026 jampat000 and the Weir contributors&quot;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Upgrade Notes&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Windows: &lt;strong&gt;Check now&lt;/strong&gt; then &lt;strong&gt;Download update&lt;/strong&gt; then &lt;strong&gt;Restart and apply&lt;/strong&gt; in System › About, or install &lt;code&gt;Weir-win-Setup.exe&lt;/code&gt; over the top. Before installing, Weir saves a copy of its data. Two database updates run on first start.&lt;/li&gt;
+&lt;li&gt;Anything that starts Weir and then waits for it to answer should allow about three minutes for a Weir that has to retry, and longer for a very large database. A start that goes well still takes a few seconds.&lt;/li&gt;
+&lt;li&gt;Docker: change the image to &lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.18&lt;/code&gt;, then &lt;code&gt;docker compose pull &amp;amp;&amp;amp; docker compose up -d&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;</content>
+    <author>
+      <name>github-actions[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/in/15368?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1205514420/v1.0.0-rc.17</id>
+    <updated>2026-10-14T00:13:06Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/jampat000/Weir/releases/tag/v1.0.0-rc.17"/>
+    <title>v1.0.0-rc.17</title>
+    <content type="html">&lt;h1&gt;Weir v1.0.0-rc.17&lt;/h1&gt;
+&lt;p&gt;Date: 2026-10-14&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Early days.&lt;/strong&gt; Weir is early, and it is in active, hard testing. Expect rough edges. If something is wrong or confusing, please report it on &lt;a href=&quot;https://github.com/jampat000/Weir/issues&quot;&gt;GitHub issues&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;This release candidate fixes a Windows update that could leave Weir not running, makes Weir&#39;s start-up watch itself and try again when a start goes wrong, and makes the tray count its server ready only when that same server says it is. It also carries everything from the release candidates before it: how Weir answers a download your media manager sends twice, picking a file back up when it comes back, keeping an imported film from slipping back to &quot;Waiting&quot;, and a new border on Weir&#39;s icon. Release candidates 14, 15 and 16 were never published. Release candidate 14 was held back because the scenario run on a clean machine found problems in the run itself. Release candidate 15 was held back because that run then found that updating from release candidate 13 could leave Weir not running. Release candidate 16 was held back because that run then found that on a busy machine Weir could freeze for up to 84 seconds on list requests, so a waiting file was judged too early. Everything in all three is here, and release candidate 17 is the first published tag to carry the changes for issues &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5795443531&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/954&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/954/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/954&quot;&gt;#954&lt;/a&gt;, &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5796276779&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/955&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/955/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/955&quot;&gt;#955&lt;/a&gt;, &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5796277056&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/956&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/956/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/956&quot;&gt;#956&lt;/a&gt; and &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5804646697&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/958&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/958/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/958&quot;&gt;#958&lt;/a&gt;, each confirmed on evidence from the clean-machine run.&lt;/p&gt;
+&lt;h2&gt;The request stall&lt;/h2&gt;
+&lt;p&gt;On the clean-machine run of release candidate 16, Weir froze for up to 84 seconds on list requests, and a file that was waiting for its media manager was judged too early. Release candidate 17 fixes the cause that was found, and adds a warning that will record the stall if it ever comes back.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;The cause.&lt;/strong&gt; Release candidate 16 made Weir and its tray look again, up to five times 20 milliseconds apart, at a file that seemed to be damaged or missing. Most of those small files are missing most of the time, for example the update state before the first update step, the update settings and network choice on a fresh install, and a pause request after it is answered. So every read of the update state or settings slept four times on a thread that was also serving requests. Weir&#39;s pool of threads starts with one thread per processor and adds another only every half second or so, so on a machine with few processors those sleeping reads used up the threads and unrelated requests had to wait behind them.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Missing means missing.&lt;/strong&gt; A name that is not there is now the answer at the first look. Weir and its tray replace these files by renaming a new file over the old one, which leaves the name in place: 43,000 renames against three readers at once never showed a missing name. Only a file that is refused (a virus scanner holding it, or a rename in progress) is looked at again.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Requests look once.&lt;/strong&gt; Everything Weir reads while answering a request or running a timer now looks once and keeps the last good reading: the tray&#39;s heartbeat, the update state, the reason an update was held back, the update settings and the network choice. A refused file is answered with that last reading, and the next read looks again. Before any reading exists, the safe side is used as before: update settings notify only, and the network choice is this PC only. Only start-up and the tray&#39;s watchers, which have nothing else to do, still wait between looks.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A warning when work waits for a thread.&lt;/strong&gt; When work waits two seconds or more for a thread, Weir writes a warning to &lt;strong&gt;System › Logs&lt;/strong&gt; with the pool&#39;s counts (threads, how many it starts at once, work waiting, processors). It repeats every 30 seconds while the wait lasts and writes a line when it ends. It runs on a thread of its own, so a starved pool cannot silence it. A test also keeps the list of places in Weir that sleep short, so a new one cannot slip in unnoticed.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Measured before and after.&lt;/strong&gt; On a 2-processor server with 24 clients asking at once, release candidate 16 answered the update state with a median of 255 ms, the files list took up to 1,012 ms, and the server handled 923 requests in a minute. With this change the update state&#39;s median is 5 ms, the files list takes at most 38 ms and the server handles 2,184 requests in a minute, the same as before release candidate 16 made it look again.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;What was not shown.&lt;/strong&gt; The full 84-second stall seen on the clean machine was not reproduced here. The slowdown above was, and removing its cause brings the measurements back to where they were, but the 84 seconds itself is not proven to have the same cause. If it comes back, the new warning will record it in &lt;strong&gt;System › Logs&lt;/strong&gt; with the pool&#39;s counts, and the clean-machine run will show it.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;What Changed&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;An update can no longer leave Weir not running.&lt;/strong&gt; On the clean-machine run, updating from release candidate 13 once left Weir started but never answering: it wrote nothing to its log, did not listen on its port and did not exit. The cause was found by measurement. If the server&#39;s printed output went into a pipe that was full and that nobody was reading, the server waited on that pipe before it wrote its first log line. Weir&#39;s console output no longer waits: it goes through a small queue handled on its own thread, and if nothing reads it, lines are dropped and counted instead of stopping the server. &lt;code&gt;weir.log&lt;/code&gt; always keeps every line. A test starts the real server with a full pipe that nobody reads; it failed before this change and passes now. How that server came to have an unread pipe was not found, which is why the start-up watch below is there as well.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Weir&#39;s start-up now watches itself and tries again.&lt;/strong&gt; The tray starts the server, whether it is the first start, a start after a crash or &lt;strong&gt;Restart Weir&lt;/strong&gt;, and watches how far it gets. The server reports each step: starting, opening the database, saving a copy of your data, updating the database, getting ready, starting to listen, ready. A start counts as stuck only when the reports stop for longer than that step allows, so a large database that is still working is left alone and a stuck one is not waited on for long. A stuck server is asked to stop and then ended, and only a server the tray itself started is ever touched. The next try does not begin until the old server is confirmed gone; if one cannot be ended, the tray stops there rather than start a second server beside it, and its log names the process to end. Otherwise the start is tried again after a short, growing wait. The details, and the measurements behind the numbers, are in &lt;code&gt;docs/start-supervision.md&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The tray counts its server ready only when that same server says so.&lt;/strong&gt; The tray asks Weir&#39;s &lt;code&gt;/ready&lt;/code&gt; address whether Weir is up, but that address cannot say which Weir answers. If another Weir already held the port, it answered &quot;ready&quot; while the server the tray had just started was about to fail to take the port and exit, and the tray took that answer for its own server&#39;s. The tray now accepts a ready answer only after the server it started has reported that it is ready, either on its standard output or in &lt;code&gt;startup-progress.json&lt;/code&gt;, in a report that carries that server&#39;s own process number. A server that exits instead ends the start as any exit does, and one that never reports is treated like any other silent start.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A download sent twice gets the right answer.&lt;/strong&gt; When your media manager sends the same download again, the new send takes over Weir&#39;s work and is told the result with the cleaned file; the earlier send is told it was replaced. Notes no longer mix, so a film never reads &quot;imported&quot; and &quot;will not import&quot; at once. Answers go only to the connection that sent the download. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5796276779&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/955&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/955/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/955&quot;&gt;#955&lt;/a&gt;, &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5796277056&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/956&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/956/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/956&quot;&gt;#956&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A file that comes back is picked up again.&lt;/strong&gt; A file Weir saw as gone is looked at again as soon as it is back, instead of waiting ten minutes, and its hand-off is answered. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5796277056&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/956&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/956/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/956&quot;&gt;#956&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;An imported film stays imported.&lt;/strong&gt; A film your media manager imported no longer slips back to &quot;Waiting for your media manager&quot; after its download is cleaned up or handed over again.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Two connections sharing a download folder.&lt;/strong&gt; A file Weir is already working on for one connection is not taken for another; that connection is told Weir is busy and sends it again later.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A new logo border.&lt;/strong&gt; The Weir app icon, tray icon, browser icon and docs icon now carry a thin teal border set in from the rounded edge, like Deluno&#39;s, and the mark is a little smaller so it clears the border. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5804646697&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/958&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/958/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/958&quot;&gt;#958&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;What You See When A Start Goes Wrong&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;While Weir is retrying, the tray icon shows Starting.&lt;/li&gt;
+&lt;li&gt;If Weir has not started after 5 tries within 15 minutes, the tray stops trying. The icon turns red and a notice says &quot;Weir didn&#39;t start after 5 tries, so it has stopped trying. The details are in the tray log. Click to try again.&quot; Clicking the notice, or choosing &lt;strong&gt;Restart Weir&lt;/strong&gt;, starts over with a fresh set of tries.&lt;/li&gt;
+&lt;li&gt;If Weir was running, stopped and could not be brought back, the notice says it stopped and did not start again after that many tries, with the same way back.&lt;/li&gt;
+&lt;li&gt;If the port Weir saved last time cannot be read when it starts (another program has the file for a moment), the tray treats that as a failed try like any other: it waits and tries again with the same growing wait, shows Starting, and never asks for a port or saves one meanwhile. After 5 tries it gives up with the same notice, red icon and Restart Weir.&lt;/li&gt;
+&lt;li&gt;If Weir was started by something with nobody at the desktop, such as an installer, the tray exits with code 1 and the reason is in the tray log.&lt;/li&gt;
+&lt;li&gt;A server that stopped for a reason that trying again cannot change is not tried again: its settings are not valid, it cannot use its database, or it could not save a copy of your data before updating. Its own words are shown, as before.&lt;/li&gt;
+&lt;li&gt;If Weir only started on a retry, it works, and &lt;strong&gt;System › Logs&lt;/strong&gt; shows a warning that it needed one.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Where The Logs Are&lt;/h2&gt;
+&lt;p&gt;On Windows, in &lt;code&gt;C:\ProgramData\Weir&lt;/code&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;tray-host.log&lt;/code&gt; says what the tray did: every start attempt with its number, why it failed and how long it waits before the next, and, when a server never answered, a description of the stuck process (how long it ran, its processor time, threads and memory, and the files it had loaded).&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;server-host.log&lt;/code&gt;, next to it, is new. It keeps everything the server printed while it started and anything it wrote to its error output, each line marked with the server&#39;s process number. It keeps one earlier file, up to 1 MB each.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;logs\weir.log&lt;/code&gt; now says Weir is starting before anything that could block, then that it is opening the database, so a start that stops leaves how far it got.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;startup-progress.json&lt;/code&gt; holds the latest step the server reported.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Fixes And Stability&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;A file that is being replaced is no longer taken for a damaged or missing one.&lt;/strong&gt; Weir and its tray pass small files to each other, and each is replaced by renaming a new file over the old. A reader that looked at that instant could be refused, and a virus scanner holding a freshly written file does the same. The tray could then read the saved network choice as &quot;this PC only&quot; and restart the server, act on update settings that were not there, start the wait for Weir to be idle over, ask the first-run port question again and save another port over yours (it now waits and tries again, as for any other start), or send an update on as if Weir could not save a copy of its data. The server could briefly report that the tray had quit, that a downloaded update was gone, or drop a pause or backup request. A reader that is refused now looks again before it says anything, and a file that stays refused is treated as &quot;not yet&quot;: it keeps the last thing known, or waits, and changes nothing. A name that is not there is simply not there; see the request stall above.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A failed browser test now keeps its evidence.&lt;/strong&gt; One end-to-end browser test, &lt;code&gt;SeededModuleSaveTests.Saved_state_persists_across_settings_and_processing&lt;/code&gt;, failed once in a full run on the way to release candidate 15, and its error was not kept. It did not come back in many later runs, with the order of steps, folder deletes and a fully loaded processor forced, and no fault in Weir was found, so its cause is not proven and it is not set aside. Every browser test now records a trace and its browser and server logs, and a test that fails keeps its full error, the trace, the logs and a screenshot of each page under &lt;code&gt;artifacts/e2e-failures&lt;/code&gt;. A passing test deletes its own, and the build uploads the folder as &lt;code&gt;e2e-failure-evidence&lt;/code&gt;, including for a test that passed only on its retry.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Every release is proven before it is tagged.&lt;/strong&gt; A scenario run on a clean machine — install, update, first visit, real hand-offs from Deluno, pause, Process again, a deleted file and Logs — must pass on the exact commit before any release, release candidates included, can be published. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5795443531&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/954&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/954/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/954&quot;&gt;#954&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The scenario run is now done in three steps around Deluno&#39;s suite.&lt;/strong&gt; First the build is installed over the Weir that Deluno&#39;s own installer put there, before Deluno sends any film; then, once Deluno&#39;s suite has made its hand-offs, the Deluno scenarios run; then the clean-machine scenarios run on a restored clean checkpoint. Each Deluno hand-off is judged by the Weir that handled it, so a hand-off the previous release answered is counted but never held against the new build. The checks for the update, resent hand-offs, small extras and Deluno&#39;s outcome records were corrected against what the first run showed, and a step that goes wrong no longer stops the next one. The run&#39;s Logs check also fails when a start needed a retry, unless the run names it.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The Docker start-up check no longer ends without a result.&lt;/strong&gt; When the container&#39;s health address hung, the check could end with no retry and no container log. A hung attempt now counts as a failed attempt, the check tries again, and the container&#39;s log is printed if every attempt fails.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The contract suite no longer mistakes one server for another.&lt;/strong&gt; The suite picks a free port, releases it and starts a server on it. Two starts that picked the same port could both launch; one won and the other exited with &quot;address already in use&quot;, but its start-up had already read the winner&#39;s &quot;ready&quot; and taken it for its own, so a test ran against another test&#39;s server. A server now counts as ready only when its address answers and the process the suite started has logged that it listens on its port. The loser is seen to exit and is started again on a new port. Tests cover a port held by another Weir server and four servers picking one port at once; both failed before the change.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A failed contract test keeps the logs of its own servers.&lt;/strong&gt; Each server copies its &lt;code&gt;weir.log&lt;/code&gt;, its standard output and error and its progress file when it stops, into a folder named for the test that used it (&lt;code&gt;artifacts/contract-failures&lt;/code&gt;). A server shared by the tests of one class is kept under the class name. A passing test deletes its folder, and CI uploads the rest as &lt;code&gt;contract-failure-evidence-&amp;lt;area&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;One more test no longer assumes a fast machine.&lt;/strong&gt; A test of the start-up refusal message read the console before its last line had reached it; on a busy runner it read nothing. It now waits for the line, with a ceiling.&lt;/li&gt;
+&lt;li&gt;Two tests that measured time against the real clock now use their own clock, so a busy machine no longer fails them; Weir&#39;s real time limits were confirmed safe.&lt;/li&gt;
+&lt;li&gt;The copyright line now reads &quot;Copyright (C) 2026 jampat000 and the Weir contributors&quot;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Upgrade Notes&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Windows: &lt;strong&gt;Check now&lt;/strong&gt; then &lt;strong&gt;Download update&lt;/strong&gt; then &lt;strong&gt;Restart and apply&lt;/strong&gt; in System › About, or install &lt;code&gt;Weir-win-Setup.exe&lt;/code&gt; over the top. Before installing, Weir saves a copy of its data. Two database updates run on first start.&lt;/li&gt;
+&lt;li&gt;Anything that starts Weir and then waits for it to answer should allow about three minutes for a Weir that has to retry, and longer for a very large database. A start that goes well still takes a few seconds.&lt;/li&gt;
+&lt;li&gt;Docker: change the image to &lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.17&lt;/code&gt;, then &lt;code&gt;docker compose pull &amp;amp;&amp;amp; docker compose up -d&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;</content>
+    <author>
+      <name>github-actions[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/in/15368?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1205514420/v1.0.0-rc.13</id>
+    <updated>2026-10-10T01:56:23Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/jampat000/Weir/releases/tag/v1.0.0-rc.13"/>
+    <title>v1.0.0-rc.13</title>
+    <content type="html">&lt;h1&gt;Weir v1.0.0-rc.13&lt;/h1&gt;
+&lt;p&gt;Date: 2026-10-10&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Early days.&lt;/strong&gt; Weir is early, and it is in active, hard testing. Expect rough edges. If something is wrong or confusing, please report it on &lt;a href=&quot;https://github.com/jampat000/Weir/issues&quot;&gt;GitHub issues&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;This release candidate lets you check for, download and apply an update from System › About without waiting for the tray, saves a checked copy of Weir&#39;s data before every update, and stops a frozen ffmpeg after 10 minutes without progress instead of a flat hour. It also lets a media manager leave files under a workflow&#39;s minimum size out of a hand-off.&lt;/p&gt;
+&lt;h2&gt;What Changed&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Update from System › About without waiting for the tray.&lt;/strong&gt; Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5785135341&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/950&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/950/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/950&quot;&gt;#950&lt;/a&gt;.
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;System › About › Updates&lt;/strong&gt; now has &lt;strong&gt;Check now&lt;/strong&gt;, &lt;strong&gt;Download update&lt;/strong&gt; and &lt;strong&gt;Restart and apply&lt;/strong&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Check now&lt;/strong&gt; makes the tray look for an update at once, and the page shows the result as it happens.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Download update&lt;/strong&gt; works in every update mode, Notify only included, because clicking it is your choice. The page shows &quot;Downloading update...&quot; and then the ready state.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Restart and apply&lt;/strong&gt; restarts Weir, installs the downloaded update, and the page reloads by itself.&lt;/li&gt;
+&lt;li&gt;The next step is the blue button. Each button is only available when it applies.&lt;/li&gt;
+&lt;li&gt;When the tray isn&#39;t running (Docker, or the tray was quit), the buttons are greyed out with a plain reason beside them.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Download installer&lt;/strong&gt; and &lt;strong&gt;Release notes&lt;/strong&gt; stay as small links.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A checked copy of your data before every update.&lt;/strong&gt; Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5785161106&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/951&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/951/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/951&quot;&gt;#951&lt;/a&gt;.
+&lt;ul&gt;
+&lt;li&gt;Before installing an update, the tray asks Weir to save a checked copy of its database, settings and keys in the backups folder. The last 5 copies are kept.&lt;/li&gt;
+&lt;li&gt;If the copy can&#39;t be made, for example because there isn&#39;t enough free space, the update isn&#39;t installed. Weir keeps running the old version and says why on About and in the tray.&lt;/li&gt;
+&lt;li&gt;Weir also takes a copy at start-up when it finds its version has changed. That covers installing Setup over the top and Docker image changes.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;System › About&lt;/strong&gt; shows where the copy was saved.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Minimum file size shared with Deluno.&lt;/strong&gt;
+&lt;ul&gt;
+&lt;li&gt;Weir tells Deluno each workflow&#39;s minimum file size, so Deluno knows which files Weir will leave alone.&lt;/li&gt;
+&lt;li&gt;When Deluno sends the list of source files to hand off, Weir leaves out files under the minimum. They are never touched and stay where they are for seeding.&lt;/li&gt;
+&lt;li&gt;This needs a Deluno build with Deluno #1199.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Fixes And Stability&lt;/h2&gt;
+&lt;p&gt;Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5774966480&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/948&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/948/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/948&quot;&gt;#948&lt;/a&gt;.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;A frozen ffmpeg is stopped after 10 minutes with no real progress.&lt;/strong&gt; It used to run until a flat 1-hour or size-based limit. A big remux on a slow NAS is no longer killed by a flat hour, as long as it keeps moving.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;An ffmpeg that finishes but won&#39;t exit is given a minute.&lt;/strong&gt; If its output checks out after that, the clean counts.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The same file is no longer processed twice.&lt;/strong&gt; A database hiccup could make a job lose its claim and be picked up again. That can&#39;t happen now.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The tray waits sensibly.&lt;/strong&gt;
+&lt;ul&gt;
+&lt;li&gt;On Quit and on update, the tray gives Weir 45 seconds to stop and shows &quot;Weir - Stopping...&quot;, but stays within the installer&#39;s time limit.&lt;/li&gt;
+&lt;li&gt;A server that never answers goes red after about a minute. A slow one may take up to 5 minutes.&lt;/li&gt;
+&lt;li&gt;A slow Setup no longer stops Weir coming back.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;A tray test that failed now and then is fixed at the root, so a failed check means something.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Upgrade Notes&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Windows: &lt;strong&gt;Check for updates&lt;/strong&gt; in the tray or &lt;strong&gt;System › About&lt;/strong&gt;, or install &lt;code&gt;Weir-win-Setup.exe&lt;/code&gt; over the top. Existing data is kept, and so is your choice about starting Weir when you sign in to Windows.&lt;/li&gt;
+&lt;li&gt;Docker: change the image to &lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.13&lt;/code&gt;, then &lt;code&gt;docker compose pull &amp;amp;&amp;amp; docker compose up -d&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;The first update to rc.13 is protected by the copy Weir takes at start-up when the version changes. Later updates are protected by the copy taken before installing.&lt;/li&gt;
+&lt;li&gt;Docker&#39;s healthcheck start period is now 5 minutes, to leave room for the copy Weir takes at start-up.&lt;/li&gt;
+&lt;li&gt;Handing off only the files above a workflow&#39;s minimum size needs a Deluno build with Deluno #1199.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Docker&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.13&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Images are published for &lt;code&gt;linux/amd64&lt;/code&gt; and &lt;code&gt;linux/arm64&lt;/code&gt;, and run the .NET build of the Weir server.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Full Changelog&lt;/h2&gt;
+&lt;p&gt;&lt;a class=&quot;commit-link&quot; href=&quot;https://github.com/jampat000/Weir/compare/v1.0.0-rc.12...v1.0.0-rc.13&quot;&gt;&lt;tt&gt;v1.0.0-rc.12...v1.0.0-rc.13&lt;/tt&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>github-actions[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/in/15368?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1205514420/v1.0.0-rc.12</id>
+    <updated>2026-10-09T08:45:05Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/jampat000/Weir/releases/tag/v1.0.0-rc.12"/>
+    <title>v1.0.0-rc.12</title>
+    <content type="html">&lt;h1&gt;Weir v1.0.0-rc.12&lt;/h1&gt;
+&lt;p&gt;Date: 2026-10-09&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Early days.&lt;/strong&gt; Weir is early, and it is in active, hard testing. Expect rough edges. If something is wrong or confusing, please report it on &lt;a href=&quot;https://github.com/jampat000/Weir/issues&quot;&gt;GitHub issues&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;This release candidate makes the tray&#39;s dot show only whether Weir itself is healthy, stops an extra that was left out for being too small from counting as needing you, settles a file that leaves before Weir starts on it, and makes the first-run port window impossible to miss.&lt;/p&gt;
+&lt;h2&gt;What Changed&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;The tray&#39;s dot shows Weir&#39;s health, nothing else.&lt;/strong&gt; Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5772710010&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/944&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/944/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/944&quot;&gt;#944&lt;/a&gt;.
+&lt;ul&gt;
+&lt;li&gt;Green: Weir is running and everything it relies on answers.&lt;/li&gt;
+&lt;li&gt;Amber: Deluno, or a watched, work or output folder, isn&#39;t answering. A network drive that hangs counts after about 10 seconds, and only after two misses in a row, so a single slow answer doesn&#39;t turn the dot amber.&lt;/li&gt;
+&lt;li&gt;Red: Weir has stopped.&lt;/li&gt;
+&lt;li&gt;The dot blinks while Weir is starting.&lt;/li&gt;
+&lt;li&gt;Pause bars and the update arrow now sit in the opposite corner. If both apply, the pause bars show.&lt;/li&gt;
+&lt;li&gt;The hover text and the menu&#39;s status line read &quot;Weir - ...&quot; and say what is wrong, for example &quot;Weir - Deluno isn&#39;t answering&quot;.&lt;/li&gt;
+&lt;li&gt;Files waiting no longer change the tray at all. They stay on Weir&#39;s own screens.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Start with Windows&lt;/strong&gt; is asked once if an older version switched it on without asking. The tick beside it in the menu is now announced by screen readers.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;An extra left out for being under the workflow&#39;s minimum size is no longer something you need to act on.&lt;/strong&gt; Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5773118052&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/945&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/945/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/945&quot;&gt;#945&lt;/a&gt;.
+&lt;ul&gt;
+&lt;li&gt;It reads &quot;Skipped&quot; and no longer counts under &lt;strong&gt;Needs you&lt;/strong&gt; or in the Dashboard headline.&lt;/li&gt;
+&lt;li&gt;If the workflow deletes such files, it reads &quot;Removed: under the workflow&#39;s minimum size.&quot;&lt;/li&gt;
+&lt;li&gt;Other rule skips (maximum size, patterns, date windows) still ask you.&lt;/li&gt;
+&lt;li&gt;No skip is ever shown or counted as cleaned.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Just finished shows each file&#39;s current result.&lt;/strong&gt; A film that was imported after an earlier failure no longer shows &quot;Couldn&#39;t finish&quot;. The Dashboard headline and chart agree with it. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5773118052&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/945&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/945/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/945&quot;&gt;#945&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A file that leaves before Weir starts on it says so at once.&lt;/strong&gt; Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5773261718&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/946&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/946/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/946&quot;&gt;#946&lt;/a&gt;.
+&lt;ul&gt;
+&lt;li&gt;While waiting to settle, while paused or outside workflow hours, the file now reads &quot;... is no longer there&quot; instead of &quot;Waiting...&quot;. It is recorded once, not twice.&lt;/li&gt;
+&lt;li&gt;The panel of a file that is gone offers only &lt;strong&gt;Remove from list&lt;/strong&gt;.&lt;/li&gt;
+&lt;li&gt;A file placed directly in the watched folder no longer logs a cleanup warning.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The first-run port window opens in front.&lt;/strong&gt; Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5773908814&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/947&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/947/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/947&quot;&gt;#947&lt;/a&gt;.
+&lt;ul&gt;
+&lt;li&gt;It stays on top until you answer, and the tray icon shows while it waits, so Weir never sits silently waiting on a question hidden behind other windows.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Fixes And Stability&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;A busy PC no longer fails a good clean.&lt;/strong&gt; Weir now gives ffmpeg up to 60 seconds to close after it has written a file, instead of 5.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;No log lines are lost while old logs are trimmed.&lt;/strong&gt; A gap introduced in rc.11 is closed.&lt;/li&gt;
+&lt;li&gt;Several tests that failed now and then for no real reason are fixed at the root, so a failed check means something.&lt;/li&gt;
+&lt;li&gt;Weir&#39;s tray standard is a word-for-word copy of Deluno&#39;s, so the two apps follow the same rules.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Upgrade Notes&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Windows: &lt;strong&gt;Check for updates&lt;/strong&gt; in the tray or &lt;strong&gt;System › About&lt;/strong&gt;, or install &lt;code&gt;Weir-win-Setup.exe&lt;/code&gt; over the top. Existing data is kept, and so is your choice about starting Weir when you sign in to Windows. A fresh install asks once.&lt;/li&gt;
+&lt;li&gt;Docker: change the image to &lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.12&lt;/code&gt;, then &lt;code&gt;docker compose pull &amp;amp;&amp;amp; docker compose up -d&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Two small database changes run on the first start: one adds the kind of file skip, and one adds an index that keeps Activity quick. Neither needs anything from you.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Docker&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.12&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Images are published for &lt;code&gt;linux/amd64&lt;/code&gt; and &lt;code&gt;linux/arm64&lt;/code&gt;, and run the .NET build of the Weir server.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Full Changelog&lt;/h2&gt;
+&lt;p&gt;&lt;a class=&quot;commit-link&quot; href=&quot;https://github.com/jampat000/Weir/compare/v1.0.0-rc.11...v1.0.0-rc.12&quot;&gt;&lt;tt&gt;v1.0.0-rc.11...v1.0.0-rc.12&lt;/tt&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>github-actions[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/in/15368?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1205514420/v1.0.0-rc.11</id>
+    <updated>2026-10-09T04:02:31Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/jampat000/Weir/releases/tag/v1.0.0-rc.11"/>
+    <title>v1.0.0-rc.11</title>
+    <content type="html">&lt;h1&gt;Weir v1.0.0-rc.11&lt;/h1&gt;
+&lt;p&gt;Date: 2026-10-09&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Early days.&lt;/strong&gt; Weir is early, and it is in active, hard testing. Expect rough edges. If something is wrong or confusing, please report it on &lt;a href=&quot;https://github.com/jampat000/Weir/issues&quot;&gt;GitHub issues&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;This release candidate makes the update check dependable on busy networks, gives the Windows tray the same look and menu as Deluno&#39;s, stops Weir slowing down while it processes, and settles three cases that used to leave a file waiting or showing an error.&lt;/p&gt;
+&lt;h2&gt;What Changed&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;The update check keeps working when GitHub limits your network.&lt;/strong&gt; Weir used to say only &quot;Could not check for updates&quot;. It now reads GitHub&#39;s public release feed, keeps showing the update it already knew about, and says when it will try again. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5770133284&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/935&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/935/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/935&quot;&gt;#935&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The tray&#39;s own updater uses the same feed.&lt;/strong&gt; Update checks from the tray work again on networks that hit GitHub&#39;s limit. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5770133284&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/935&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/935/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/935&quot;&gt;#935&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The Windows tray matches Deluno&#39;s.&lt;/strong&gt; Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5770451469&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/939&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/939/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/939&quot;&gt;#939&lt;/a&gt;.
+&lt;ul&gt;
+&lt;li&gt;The icon shows the state: a corner mark appears only when something differs (starting, paused, needs you, or an update is ready), and no mark means all is well.&lt;/li&gt;
+&lt;li&gt;The hover text gives the status, for example &quot;Weir - Paused&quot;.&lt;/li&gt;
+&lt;li&gt;The menu is the one Deluno&#39;s tray uses.&lt;/li&gt;
+&lt;li&gt;You can pause and resume processing from the tray.&lt;/li&gt;
+&lt;li&gt;Windows asks once whether Weir should start when you sign in. Nothing is switched on without your answer.&lt;/li&gt;
+&lt;li&gt;Weir no longer opens your browser by itself when it starts. A notice offers to open Weir, and clicking it does.&lt;/li&gt;
+&lt;li&gt;If Weir is already running, starting it again shows a notice, and clicking the notice opens Weir.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A first visit no longer says &quot;Your session expired&quot;.&lt;/strong&gt; On a fresh install, the first page goes straight to creating your account. The line with your setup code is now logged as ordinary information, not a warning. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5770188789&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/937&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/937/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/937&quot;&gt;#937&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&quot;Process again&quot; on a file Weir already cleaned now answers.&lt;/strong&gt; It shows &quot;Skipped: already done&quot; in Activity, instead of doing nothing visible. A file that has changed is still processed. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5770188200&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/936&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/936/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/936&quot;&gt;#936&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A file deleted while it waits settles quietly.&lt;/strong&gt; After a short second look and the usual 10-minute wait, Weir records &quot;no longer there&quot; and moves on, with no errors and no failed job. A file Weir can&#39;t read is never handed back as unchanged. Deluno is told the file is gone. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5770726177&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/940&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/940/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/940&quot;&gt;#940&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A finished hand-off no longer waits for ever.&lt;/strong&gt; When the main film was delivered and only an extra was skipped for being under the size minimum, the hand-off now ends completed. Weir also accepts the media manager&#39;s &quot;imported&quot; for it, so the entry settles instead of staying on &quot;Waiting for your media manager&quot;. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5771106981&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/941&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/941/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/941&quot;&gt;#941&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Fixes And Stability&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Weir no longer slows to a crawl while it processes files.&lt;/strong&gt; Logs could show a warning about &quot;thread pool starvation&quot; and pages and live updates went slow. Database writes now queue without holding up other work, and long file copies run on their own threads. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5770189303&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/938&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/938/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/938&quot;&gt;#938&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Installing Weir quietly over a running Weir starts it again.&lt;/strong&gt; A silent Setup, which is how Deluno updates Weir, used to leave Weir stopped until someone started it by hand. Weir now starts again by itself, without opening a browser. A Weir that was stopped before stays stopped. Addresses &lt;a class=&quot;issue-link js-issue-link&quot; data-error-text=&quot;Failed to load title&quot; data-id=&quot;5771298680&quot; data-permission-text=&quot;Title is private&quot; data-url=&quot;https://github.com/jampat000/Weir/issues/942&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/jampat000/Weir/issues/942/hovercard&quot; href=&quot;https://github.com/jampat000/Weir/issues/942&quot;&gt;#942&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;Several tests that failed now and then for no real reason are fixed at the root, so a failed check means something.&lt;/li&gt;
+&lt;li&gt;Weir&#39;s golden-path and tray-standard documents are now word-for-word copies of Deluno&#39;s, so the two apps follow the same rules.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Upgrade Notes&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Windows: &lt;strong&gt;Check for updates&lt;/strong&gt; in the tray or &lt;strong&gt;System › About&lt;/strong&gt;, or install &lt;code&gt;Weir-win-Setup.exe&lt;/code&gt; over the top. Existing data is kept, and so is your choice about starting Weir when you sign in to Windows. A fresh install asks once.&lt;/li&gt;
+&lt;li&gt;Docker: change the image to &lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.11&lt;/code&gt;, then &lt;code&gt;docker compose pull &amp;amp;&amp;amp; docker compose up -d&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Docker&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.11&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Images are published for &lt;code&gt;linux/amd64&lt;/code&gt; and &lt;code&gt;linux/arm64&lt;/code&gt;, and run the .NET build of the Weir server.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Full Changelog&lt;/h2&gt;
+&lt;p&gt;&lt;a class=&quot;commit-link&quot; href=&quot;https://github.com/jampat000/Weir/compare/v1.0.0-rc.10...v1.0.0-rc.11&quot;&gt;&lt;tt&gt;v1.0.0-rc.10...v1.0.0-rc.11&lt;/tt&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>github-actions[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/in/15368?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1205514420/v1.0.0-rc.10</id>
+    <updated>2026-10-08T22:55:33Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/jampat000/Weir/releases/tag/v1.0.0-rc.10"/>
+    <title>v1.0.0-rc.10</title>
+    <content type="html">&lt;h1&gt;Weir v1.0.0-rc.10&lt;/h1&gt;
+&lt;p&gt;Date: 2026-10-09&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Early days.&lt;/strong&gt; Weir is early, and it is in active, hard testing. Expect rough edges. If something is wrong or confusing, please report it on &lt;a href=&quot;https://github.com/jampat000/Weir/issues&quot;&gt;GitHub issues&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;This release candidate makes Weir&#39;s Logs say what happened in plain words, stops a warning nobody could act on, and makes Weir&#39;s folders readable by your other apps again on Docker. It replaces 1.0.0-rc.9, which was tagged but never published: the download of the video tools it was built with had been removed by their publisher.&lt;/p&gt;
+&lt;h2&gt;What Changed&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Logs speak plainly.&lt;/strong&gt; When Weir can&#39;t read a file, Logs now says so in a sentence instead of showing the media tool&#39;s own output. The technical detail is still there when you open the entry.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A failed job says why.&lt;/strong&gt; A job that fails because a file can&#39;t be read now says that, instead of &quot;The job hit an unexpected error&quot;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;No warning at every start.&lt;/strong&gt; Weir no longer warns about &lt;code&gt;WEIR_CORS_ORIGINS&lt;/code&gt; each time it starts. Setting it is optional extra hardening for sign-in; Weir already protects sign-in and saves without it.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Docker keeps saved keys under their own secret.&lt;/strong&gt; A Docker install now makes a separate secret for the keys you save for your media managers and download clients, the first time it starts. Keys you saved before still open.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Fixes And Stability&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Docker: Weir&#39;s folders are readable by your other apps again.&lt;/strong&gt; When Weir wrote its own secret files on start, it also left a setting behind that made every folder it created private to Weir&#39;s own user. So Plex, Jellyfin or another container couldn&#39;t read the cleaned files. This happened on any Docker install that doesn&#39;t set &lt;code&gt;WEIR_SESSION_SECRET&lt;/code&gt;. Folders Weir creates now get the usual permissions. If a folder Weir made earlier is still private, you can open it up with &lt;code&gt;chmod -R a+rX &amp;lt;folder&amp;gt;&lt;/code&gt; on the host.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Weir now includes a newer build of FFmpeg, the video tool it uses (9.0.2, the same version line as before). Each Weir release also carries copies of the exact tool files it was built with, so a future release can&#39;t be held up when the tool&#39;s publisher removes an old download.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Upgrade Notes&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Windows: &lt;strong&gt;Check for updates&lt;/strong&gt; in the tray or &lt;strong&gt;System › About&lt;/strong&gt;, or install &lt;code&gt;Weir-win-Setup.exe&lt;/code&gt; over the top. Existing data is kept.&lt;/li&gt;
+&lt;li&gt;Docker: change the image to &lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.10&lt;/code&gt;, then &lt;code&gt;docker compose pull &amp;amp;&amp;amp; docker compose up -d&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Docker&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.10&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Images are published for &lt;code&gt;linux/amd64&lt;/code&gt; and &lt;code&gt;linux/arm64&lt;/code&gt;, and run the .NET build of the Weir server.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Full Changelog&lt;/h2&gt;
+&lt;p&gt;&lt;a class=&quot;commit-link&quot; href=&quot;https://github.com/jampat000/Weir/compare/v1.0.0-rc.8...v1.0.0-rc.10&quot;&gt;&lt;tt&gt;v1.0.0-rc.8...v1.0.0-rc.10&lt;/tt&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>github-actions[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/in/15368?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1205514420/v1.0.0-rc.9</id>
+    <updated>2026-10-08T22:01:16Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/jampat000/Weir/releases/tag/v1.0.0-rc.9"/>
+    <title>v1.0.0-rc.9</title>
+    <content type="html">&lt;p&gt;Weir v1.0.0-rc.9&lt;/p&gt;</content>
+    <author>
+      <name>jampat000</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/139826092?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1205514420/v1.0.0-rc.8</id>
+    <updated>2026-10-08T10:58:09Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/jampat000/Weir/releases/tag/v1.0.0-rc.8"/>
+    <title>v1.0.0-rc.8</title>
+    <content type="html">&lt;h1&gt;Weir v1.0.0-rc.8&lt;/h1&gt;
+&lt;p&gt;Date: 2026-10-08&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Early days.&lt;/strong&gt; Weir is early, and it is in active, hard testing. Expect rough edges. If something is wrong or confusing, please report it on &lt;a href=&quot;https://github.com/jampat000/Weir/issues&quot;&gt;GitHub issues&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;This release candidate fixes what a clean install alongside Deluno turned up: folders Weir guessed, files it could not read, and messages people could not make sense of.&lt;/p&gt;
+&lt;h2&gt;What Changed&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Weir never guesses a folder.&lt;/strong&gt; When Deluno doesn&#39;t say where a library&#39;s downloads arrive, Weir leaves that workflow&#39;s watched folder empty and says plainly what to set in Deluno. It no longer points a workflow at a folder every library shares, which stopped Weir&#39;s setup from finishing. A workflow that already holds such a folder is put right.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Setup explains itself.&lt;/strong&gt; If a download client saves everything to one folder, Weir says to give Movies and TV their own category folders, instead of offering nothing.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A file Weir can&#39;t read is never deleted, and never passed on.&lt;/strong&gt; Weir looks at it again over about an hour, as it does for a download that is still arriving. If it is still unreadable and hasn&#39;t changed, Weir refuses it before writing anything and leaves the original where it is.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Plain words instead of tool output.&lt;/strong&gt; Activity, Logs and what Weir tells Deluno now say what went wrong in a sentence, not raw ffmpeg text.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A later &quot;imported&quot; counts.&lt;/strong&gt; If Deluno first says it won&#39;t import a file and later imports it after all, Weir&#39;s record and Activity now say it was imported.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Linked workflows show only what can happen.&lt;/strong&gt; On a workflow linked to a media manager, &quot;Delete only the rejected file&quot; is shown as unavailable, because your media manager removes rejected downloads itself.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Fixes And Stability&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Leaving a page while it is loading no longer puts an error in Logs.&lt;/li&gt;
+&lt;li&gt;Weir only ever releases its own cleaned copy that a hand-off actually named, even when two answers from a media manager arrive at once.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Upgrade Notes&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Windows: &lt;strong&gt;Check for updates&lt;/strong&gt; in the tray or &lt;strong&gt;System › About&lt;/strong&gt;, or install &lt;code&gt;Weir-win-Setup.exe&lt;/code&gt; over the top. Existing data is kept.&lt;/li&gt;
+&lt;li&gt;Docker: change the image to &lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.8&lt;/code&gt;, then &lt;code&gt;docker compose pull &amp;amp;&amp;amp; docker compose up -d&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Docker&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.8&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Images are published for &lt;code&gt;linux/amd64&lt;/code&gt; and &lt;code&gt;linux/arm64&lt;/code&gt;, and run the .NET build of the Weir server.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Full Changelog&lt;/h2&gt;
+&lt;p&gt;&lt;a class=&quot;commit-link&quot; href=&quot;https://github.com/jampat000/Weir/compare/v1.0.0-rc.7...v1.0.0-rc.8&quot;&gt;&lt;tt&gt;v1.0.0-rc.7...v1.0.0-rc.8&lt;/tt&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>github-actions[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/in/15368?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1205514420/v1.0.0-rc.7</id>
+    <updated>2026-10-08T06:08:21Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/jampat000/Weir/releases/tag/v1.0.0-rc.7"/>
+    <title>v1.0.0-rc.7</title>
+    <content type="html">&lt;h1&gt;Weir v1.0.0-rc.7&lt;/h1&gt;
+&lt;p&gt;Date: 2026-10-08&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Early days.&lt;/strong&gt; Weir is early, and it is in active, hard testing. Expect rough edges. If something is wrong or confusing, please report it on &lt;a href=&quot;https://github.com/jampat000/Weir/issues&quot;&gt;GitHub issues&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;This release candidate makes Weir live: every screen shows what is happening as it happens, with nothing to refresh.&lt;/p&gt;
+&lt;h2&gt;What Changed&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Everything is live.&lt;/strong&gt; The Dashboard lanes, Activity, Library, System, Health, Logs, update status and the Setup, Connections and Settings lists all change the moment Weir&#39;s data changes. Nothing waits on a timer, and there is no need to reload or press Refresh to see new information.
+&lt;ul&gt;
+&lt;li&gt;A pause or resume shows straight away, and so does a timed pause running out.&lt;/li&gt;
+&lt;li&gt;A library check counts up the files it has looked at while it runs.&lt;/li&gt;
+&lt;li&gt;Health re-checks your workflows&#39; folders by itself and turns red or green as soon as the answer changes. Each row says when Weir last looked.&lt;/li&gt;
+&lt;li&gt;Changes Deluno makes, such as a workflow it keeps in step, appear without a reload.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Weir says when it can&#39;t keep a screen live.&lt;/strong&gt; If the connection to Weir drops, a notice reads &quot;Live updates paused: can&#39;t reach Weir. Reconnecting…&quot;, and the screen catches up by itself when it is back. After &lt;strong&gt;Restart to apply&lt;/strong&gt;, the page recovers on its own.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;If your session has ended&lt;/strong&gt;, Weir takes you to sign in instead of quietly showing old information.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Fixes And Stability&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Connecting to a media manager or download client saved as &lt;code&gt;localhost&lt;/code&gt; no longer waits about two seconds on Windows.&lt;/li&gt;
+&lt;li&gt;When an address has more than one IP, Weir tries each in turn instead of giving up after the first.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Upgrade Notes&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Windows: &lt;strong&gt;Check for updates&lt;/strong&gt; in the tray or &lt;strong&gt;System › About&lt;/strong&gt;, or install &lt;code&gt;Weir-win-Setup.exe&lt;/code&gt; over the top. Existing data is kept.&lt;/li&gt;
+&lt;li&gt;Docker: change the image to &lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.7&lt;/code&gt;, then &lt;code&gt;docker compose pull &amp;amp;&amp;amp; docker compose up -d&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Docker&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.7&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Images are published for &lt;code&gt;linux/amd64&lt;/code&gt; and &lt;code&gt;linux/arm64&lt;/code&gt;, and run the .NET build of the Weir server.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Full Changelog&lt;/h2&gt;
+&lt;p&gt;&lt;a class=&quot;commit-link&quot; href=&quot;https://github.com/jampat000/Weir/compare/v1.0.0-rc.6...v1.0.0-rc.7&quot;&gt;&lt;tt&gt;v1.0.0-rc.6...v1.0.0-rc.7&lt;/tt&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>github-actions[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/in/15368?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1205514420/v1.0.0-rc.6</id>
+    <updated>2026-10-07T22:24:36Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/jampat000/Weir/releases/tag/v1.0.0-rc.6"/>
+    <title>v1.0.0-rc.6</title>
+    <content type="html">&lt;h1&gt;Weir v1.0.0-rc.6&lt;/h1&gt;
+&lt;p&gt;Date: 2026-10-08&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Early days.&lt;/strong&gt; Weir is early, and it is in active, hard testing. Expect rough edges. If something is wrong or confusing, please report it on &lt;a href=&quot;https://github.com/jampat000/Weir/issues&quot;&gt;GitHub issues&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;This release candidate lets a media manager name its connection to Weir on its own.&lt;/p&gt;
+&lt;h2&gt;What Changed&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Weir says what it is when a media manager asks.&lt;/strong&gt; Weir&#39;s answer to a media manager&#39;s first question now names the product as well as the machine, so Deluno shows the connection as &quot;Weir on your-pc&quot; without being told.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Upgrade Notes&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Windows: &lt;strong&gt;Check for updates&lt;/strong&gt; in the tray or &lt;strong&gt;System › About&lt;/strong&gt;, or install &lt;code&gt;Weir-win-Setup.exe&lt;/code&gt; over the top. Existing data is kept.&lt;/li&gt;
+&lt;li&gt;Docker: change the image to &lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.6&lt;/code&gt;, then &lt;code&gt;docker compose pull &amp;amp;&amp;amp; docker compose up -d&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Docker&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;ghcr.io/jampat000/weir:1.0.0-rc.6&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Images are published for &lt;code&gt;linux/amd64&lt;/code&gt; and &lt;code&gt;linux/arm64&lt;/code&gt;, and run the .NET build of the Weir server.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Full Changelog&lt;/h2&gt;
+&lt;p&gt;&lt;a class=&quot;commit-link&quot; href=&quot;https://github.com/jampat000/Weir/compare/v1.0.0-rc.5...v1.0.0-rc.6&quot;&gt;&lt;tt&gt;v1.0.0-rc.5...v1.0.0-rc.6&lt;/tt&gt;&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>github-actions[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/in/15368?s=60&amp;v=4"/>
+  </entry>
+</feed>
