@@ -184,17 +184,7 @@ public sealed partial class HandoffLedgerStore
             foreach (var job in jobs)
             {
                 stamps.Add(job.UpdatedAt);
-                var jobPath = PayloadRelativePath(job.PayloadJson);
-                // The pass tells the manager how the hand-off ended before it releases its job (it still scans the downloaded files), so
-                // once the ledger holds that ending a leased job whose file has its result is only finishing up, and the files say what
-                // became of it. Before the ending is recorded the job still holds the hand-off working.
-                if (job.Status == ProcessingJobStatus.Leased && HandoffLedgerRules.TerminalStates.Contains(row.State) &&
-                    jobPath is { Length: > 0 } && HasRecordedResult(targets, jobPath))
-                {
-                    continue;
-                }
-
-                if (jobPath is { } busyPath)
+                if (PayloadRelativePath(job.PayloadJson) is { } busyPath)
                 {
                     busyPaths.Add(busyPath);
                 }
@@ -361,13 +351,6 @@ public sealed partial class HandoffLedgerStore
             delivered ? row.OutputPath : null,
             message ?? storedMessage,
             delivered ? ReportedOutputFiles(row) : null);
-    }
-
-    /// <summary>Whether the pass over this file has already told the hand-off how it ended.</summary>
-    private static bool HasRecordedResult(IReadOnlyList<HandoffTarget> targets, string relativePath)
-    {
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        return targets.Any(target => target.Result is not null && string.Equals(target.RelativePath, relativePath, comparison));
     }
 
     /// <summary>
