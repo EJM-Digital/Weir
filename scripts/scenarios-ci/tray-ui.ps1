@@ -5,6 +5,7 @@
         tray-ui.ps1 session
         tray-ui.ps1 icons
         tray-ui.ps1 show-hidden
+        tray-ui.ps1 hover-icons
         tray-ui.ps1 open-menu -TrayProcessId <pid> [-Via taskbar|message]
         tray-ui.ps1 menu -TrayProcessId <pid>
         tray-ui.ps1 invoke -TrayProcessId <pid> -Item <text>
@@ -23,7 +24,7 @@
 #>
 param(
     [Parameter(Mandatory, Position = 0)]
-    [ValidateSet('session', 'icons', 'show-hidden', 'open-menu', 'menu', 'invoke', 'close-menu', 'click-icon', 'click-balloon', 'window', 'window-set', 'window-press', 'balloons', 'find-text', 'dump')]
+    [ValidateSet('session', 'icons', 'show-hidden', 'hover-icons', 'open-menu', 'menu', 'invoke', 'close-menu', 'click-icon', 'click-balloon', 'window', 'window-set', 'window-press', 'balloons', 'find-text', 'dump')]
     [string] $Command,
     [int] $TrayProcessId = 0,
     [string] $Item = '',
@@ -149,6 +150,21 @@ function Click-At($x, $y, [switch] $Right) {
 }
 
 function Get-Centre($bounds) { @(($bounds.x + [int]($bounds.width / 2)), ($bounds.y + [int]($bounds.height / 2))) }
+
+# A tray that was ended by force leaves its icon where it was until the pointer passes over it. Passing over every Weir icon makes Windows drop
+# the ones whose program is gone; the one that is alive stays.
+function Move-OverIcons {
+    Assert-ThrowawayDesktop
+    $moved = 0
+    foreach ($icon in @(Find-TrayIcon)) {
+        if (-not $icon.bounds) { continue }
+        $x, $y = Get-Centre $icon.bounds
+        [void][TrayUiNative]::SetCursorPos($x, $y)
+        [void][TrayUiNative]::SetCursorPos($x + 3, $y + 3)
+        $moved++
+    }
+    $moved
+}
 
 # Opens the hidden icons when Weir's icon is not among the visible ones, unless they are open already.
 function Show-Overflow {
@@ -278,6 +294,7 @@ switch ($Command) {
     'session' { Write-Json (Get-SessionFacts) }
     'icons' { Write-Json @(Find-TrayIcon) }
     'show-hidden' { Write-Json ([pscustomobject]@{ opened = Show-Overflow }) }
+    'hover-icons' { Write-Json ([pscustomobject]@{ moved = Move-OverIcons }) }
     'open-menu' {
         if ($TrayProcessId -le 0) { throw '-TrayProcessId is needed.' }
         if ($Via -eq 'message') {
@@ -285,9 +302,11 @@ switch ($Command) {
             Write-Json ([pscustomobject]@{ via = 'message'; sent = $sent })
             break
         }
-        $icon = Find-TrayIcon | Select-Object -First 1
         $opened = $false
-        if (-not $icon) { $opened = Show-Overflow; $icon = Find-TrayIcon | Select-Object -First 1 }
+        if (-not (Find-TrayIcon)) { $opened = Show-Overflow }
+        $icons = @(Find-TrayIcon)
+        if ($icons.Count -gt 1) { [void](Move-OverIcons); Write-Json ([pscustomobject]@{ via = 'taskbar'; found = $false; ghosts = $icons.Count }); break }
+        $icon = $icons | Select-Object -First 1
         if (-not $icon -or -not $icon.bounds) { Write-Json ([pscustomobject]@{ via = 'taskbar'; found = $false; overflowOpened = $opened }); break }
         $x, $y = Get-Centre $icon.bounds
         Click-At $x $y -Right
@@ -316,8 +335,10 @@ switch ($Command) {
         Write-Json ([pscustomobject]@{ closed = $true })
     }
     'click-icon' {
-        $icon = Find-TrayIcon | Select-Object -First 1
-        if (-not $icon) { Show-Overflow | Out-Null; $icon = Find-TrayIcon | Select-Object -First 1 }
+        if (-not (Find-TrayIcon)) { Show-Overflow | Out-Null }
+        $icons = @(Find-TrayIcon)
+        if ($icons.Count -gt 1) { [void](Move-OverIcons); Write-Json ([pscustomobject]@{ found = $false; ghosts = $icons.Count }); break }
+        $icon = $icons | Select-Object -First 1
         if (-not $icon -or -not $icon.bounds) { Write-Json ([pscustomobject]@{ found = $false }); break }
         $x, $y = Get-Centre $icon.bounds
         Click-At $x $y

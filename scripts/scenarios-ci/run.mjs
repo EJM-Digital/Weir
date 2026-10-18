@@ -1,6 +1,21 @@
 // Running the chosen scenarios of a shard one after the other, each judged on its own and on what the logs gained, and the verdict.
 import { LogWatch } from "./log-watch.mjs";
 
+// A hang guard: a scenario that has not ended by then is failed, saying which, instead of leaving the run to wait for ever.
+const SCENARIO_CEILING_MS = 10 * 60_000;
+
+async function within(running, id) {
+  let timer;
+  const hung = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${id} was still running after ${SCENARIO_CEILING_MS / 60_000} minutes.`)), SCENARIO_CEILING_MS);
+  });
+  try {
+    return await Promise.race([running, hung]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Runs the scenarios in order; one that fails does not stop the next, so one run reports every failure.
  * @param {string[]} ids
@@ -18,7 +33,7 @@ export async function runScenarios({ ids, registry, world }) {
     try {
       const watch = await (world.watchLogs ? world.watchLogs(world) : LogWatch.begin(world.weir));
       world.logWatch = watch;
-      const detail = await registry[id](world);
+      const detail = await within(registry[id](world), id);
       await watch.finish();
       outcome = { status: "passed", detail: `${detail} The logs gained no unexpected warning or error.` };
     } catch (error) {

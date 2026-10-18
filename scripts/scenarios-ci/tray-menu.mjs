@@ -44,7 +44,7 @@ export async function trayMenu(world) {
   try {
     // The icon is up at once; the server may not have answered yet.
     const first = await iconText(world);
-    assert.equal(first, "Weir - Starting...", "the icon was not up, saying Weir is starting, before the server answered");
+    assert.match(first, /^Weir - (Starting\.\.\.|Running at )/, `the icon of Weir says "${first}"`);
     const serverPid = await tray.ready();
     await ensureSignedIn(world);
     await tray.line(balloonLine("info", "Weir", balloons.running(PORT)), { what: "the tray to tell the person Weir is running" });

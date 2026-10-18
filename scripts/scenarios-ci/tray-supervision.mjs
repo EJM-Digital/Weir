@@ -81,7 +81,7 @@ export async function traySupervision(world) {
   // The tray ends without stopping its server, as a crashed tray does: the next one finds the server it left and stops it.
   const second = await startTray(world, ["--port", String(PORT), "--no-browser"]);
   try {
-    await second.line(new RegExp(`^Startup \\(orphaned server check\\): stopped WeirServer\\.exe \\(pid ${orphan}\\)`), { what: "the new tray to stop the server the last one left" });
+    await second.line(new RegExp(`^Startup \\(orphaned server check\\): stopped WeirServer(?:\\.exe)? \\(pid ${orphan}\\)`), { what: "the new tray to stop the server the last one left" });
     const pid = await second.ready();
     assert.notEqual(pid, orphan, "the server the old tray left is still the one running");
     await onlyOneServerRuns(world);

@@ -48,6 +48,11 @@ export class TrayDesktop {
     return ui("show-hidden");
   }
 
+  /** Passes the pointer over every Weir icon, so Windows drops the icons of trays that were ended by force. */
+  hoverIcons() {
+    return ui("hover-icons");
+  }
+
   /** Right-clicks the icon (opening the hidden icons first when it is in them), or sends the click's message. Returns what was done. */
   openMenu(trayProcessId) {
     return ui("open-menu", { TrayProcessId: trayProcessId, Via: this.route });

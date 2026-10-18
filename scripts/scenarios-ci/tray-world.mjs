@@ -142,6 +142,10 @@ export async function iconText(world, { startingOnly = false } = {}) {
         await world.desktop.showHidden();
         return undefined;
       }
+      if (found.length > 1) {
+        await world.desktop.hoverIcons();
+        return undefined;
+      }
       const text = found[0].name;
       return startingOnly && !text.includes("Starting") ? undefined : text;
     },
