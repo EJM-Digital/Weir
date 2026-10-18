@@ -27,8 +27,7 @@ public sealed class ConnectionActivityTests(NoWebhookSecretFixture fixture) : IC
 
     /// <summary>
     /// The next <paramref name="count"/> <c>connection.activity</c> frames about one media manager connection that go
-    /// the way <paramref name="direction"/> says. Weir's own heartbeat calls every enabled manager once a minute, so a
-    /// frame for a connection is not always the one a test provoked; the direction tells the two apart.
+    /// the way <paramref name="direction"/> says.
     /// </summary>
     private static async Task<List<JsonObject>> ConnectionFramesAsync(SseReader stream, int connectionId, string direction, int count)
     {
@@ -43,6 +42,27 @@ public sealed class ConnectionActivityTests(NoWebhookSecretFixture fixture) : IC
         }
 
         return frames;
+    }
+
+    /// <summary>
+    /// What Weir says of a call to a media manager: the frames that say it was asked, then the one that says how it ended. Weir's
+    /// own heartbeat calls every enabled manager once a minute, at any moment, so a call a test provokes can overlap one of its
+    /// calls, and the overlap puts a second asked frame before the end. Every call is asked before it ends, so the first frame
+    /// that is not asked is the end of one of them, and the frames before it are asked.
+    /// </summary>
+    private static async Task<(List<JsonObject> Asked, JsonObject Ended)> OutboundCallAsync(SseReader stream, int connectionId)
+    {
+        var asked = new List<JsonObject>();
+        while (true)
+        {
+            var frame = (await ConnectionFramesAsync(stream, connectionId, "outbound", 1))[0];
+            if ((string)frame["phase"]! != "asked")
+            {
+                return (asked, frame);
+            }
+
+            asked.Add(frame);
+        }
     }
 
     /// <summary>Reads the frames every stream opens with, so it is certainly listening when the test acts.</summary>
@@ -111,15 +131,17 @@ public sealed class ConnectionActivityTests(NoWebhookSecretFixture fixture) : IC
         using var fake = FakeManager.StartDeluno();
         var connectionId = await AddManagerAsync(admin, fake);
 
-        JsonObject asked, answered;
+        List<JsonObject> askedFrames;
+        JsonObject answered;
         using (var stream = await admin.OpenStreamAsync(ActivityStream))
         {
             await OpenedAsync(stream);
             Assert.Equal(HttpStatusCode.OK, (await admin.PostWithCsrfAsync($"{ManagerConnections.Route}/{connectionId}/test")).Status);
-            var frames = await ConnectionFramesAsync(stream, connectionId, "outbound", 2);
-            (asked, answered) = (frames[0], frames[1]);
+            (askedFrames, answered) = await OutboundCallAsync(stream, connectionId);
         }
 
+        Assert.NotEmpty(askedFrames);
+        var asked = askedFrames[0];
         Assert.Equal(FrameFields, JsonFields.Names(asked));
         Assert.Equal("asked", (string)asked["phase"]!);
         Assert.Equal("outbound", (string)asked["direction"]!);
@@ -143,7 +165,7 @@ public sealed class ConnectionActivityTests(NoWebhookSecretFixture fixture) : IC
         {
             await OpenedAsync(stream);
             Assert.Equal(HttpStatusCode.OK, (await admin.PostWithCsrfAsync($"{ManagerConnections.Route}/{connectionId}/test")).Status);
-            ended = (await ConnectionFramesAsync(stream, connectionId, "outbound", 2))[1];
+            ended = (await OutboundCallAsync(stream, connectionId)).Ended;
         }
 
         Assert.Equal("failed", (string)ended["phase"]!);

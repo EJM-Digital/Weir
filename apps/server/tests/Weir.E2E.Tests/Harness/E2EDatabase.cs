@@ -69,10 +69,7 @@ public static class E2EDatabase
     /// </summary>
     public static void InsertViewerNamed(string databasePath, string username)
     {
-        using var connection = Open(databasePath);
-        using var transaction = connection.BeginTransaction();
-        SeedSql.InsertUser(connection, username, SeededAccounts.ViewerPasswordHash, "viewer");
-        transaction.Commit();
+        AddUser(databasePath, username, SeededAccounts.ViewerPasswordHash, "viewer");
     }
 
     /// <summary>The read-only viewer <see cref="SeededAccounts.ViewerUsername"/>, added while the server runs and no administrator exists yet.</summary>

@@ -31,9 +31,8 @@ public sealed class OutputFolderCleanupTests
         // The fake Radarr answers (it is reachable and reporting) but its own library listing stays empty: exactly what a
         // manager that has not scanned or finished importing this release yet looks like. radarr.Library is never populated here.
         await scenario.EnqueueFilePassAsync("Contract.Movie.2024/Contract.Movie.2024.mkv", library, passThroughUnchanged: true);
-        await WaitForThePassToFinishAsync(scenario);
+        await WaitForTheCleanupDecisionAsync(scenario, radarr);
 
-        Assert.NotEmpty(radarr.RequestsTo("GET", "/api/v3/movie"));
         var outputFolder = Path.Combine(scenario.Folders.Output, "Contract.Movie.2024");
         Assert.True(
             Directory.Exists(outputFolder),
@@ -56,7 +55,7 @@ public sealed class OutputFolderCleanupTests
         radarr.Library.Add(ArrShapes.LibraryRow("radarr", Path.Combine(scenario.Root, "library", "Confirmed.Movie.2024.mkv")));
 
         await scenario.EnqueueFilePassAsync("Confirmed.Movie.2024/Confirmed.Movie.2024.mkv", library, passThroughUnchanged: true);
-        await WaitForThePassToFinishAsync(scenario);
+        await WaitForTheCleanupDecisionAsync(scenario, radarr);
 
         var outputFolder = Path.Combine(scenario.Folders.Output, "Confirmed.Movie.2024");
         Assert.False(Directory.Exists(outputFolder), "a manager that confirmed the import should let the folder be removed");
@@ -71,10 +70,22 @@ public sealed class OutputFolderCleanupTests
         return source;
     }
 
-    // A manual enqueue with no prior scan may leave no Files row for GET /processing/files to report on, so this watches the
-    // job itself, as the Radarr-queue scenario in FailurePoliciesTests does.
-    private static async Task WaitForThePassToFinishAsync(Scenario scenario) =>
+    // A job that ends is one attempt that ended, and a pass can end without reaching the cleanup (it is tried again later), so the
+    // wait is for what the cleanup's decision rests on: the manager being asked what it has imported. The pass is then waited
+    // for, because the folder is removed or kept before it ends. A manual enqueue with no prior scan may leave no Files row for
+    // GET /processing/files to report on, so the job itself is what is watched, as the Radarr-queue scenario in
+    // FailurePoliciesTests does.
+    private static async Task WaitForTheCleanupDecisionAsync(Scenario scenario, FakeManager manager)
+    {
         await scenario.WaitWhileWorkedOnAsync(
-            async () => (await scenario.JobsAsync(Scenario.RemuxKind)).Any(job => (string)job["status"]! == "completed"),
+            () => Task.FromResult(manager.RequestsTo("GET", "/api/v3/movie").Count > 0),
+            "the manager to be asked which films it has imported");
+        await scenario.WaitWhileWorkedOnAsync(
+            async () =>
+            {
+                var statuses = (await scenario.JobsAsync(Scenario.RemuxKind)).Select(job => (string)job["status"]!).ToList();
+                return statuses.Contains("completed") && !statuses.Contains("pending") && !statuses.Contains("leased");
+            },
             "the manual pass to finish");
+    }
 }

@@ -1,20 +1,21 @@
 #!/usr/bin/env node
-// Fails when a fresh recording of a real Sonarr or Radarr differs from the one checked in (#1013, #1014).
+// Fails when a fresh recording of a real Sonarr, Radarr or download client differs from the one checked in (#1013, #1014, #1015).
 //
-// The recorder (apps/server/tools/Weir.ArrRecorder) writes <folder>/<app>/<version>/<state>.json. The checked-in recordings are
+// The recorders (apps/server/tools/Weir.ArrRecorder and Weir.ClientRecorder) write <folder>/<app>/<version>/<state>.json. The checked-in recordings are
 // apps/server/tests/fixtures/recorded/<app>/<version>/<state>.json. Two runs never agree byte for byte: every recording carries the
 // time it was made, and the apps number their rows, size their files and stamp their records afresh. So this compares what a
 // replay depends on: the same states, the same requests, the same statuses and the same members with the same values, once these are
 // set aside:
 //
-//   * timestamps, and any text that is a GUID, a long hex string or a four-part version number;
+//   * timestamps (ISO or HTTP dates), and any text that is a GUID, a long hex string, a container id or a four-part version number;
 //   * the value of a member that is an id, a size, a count or a duration (the member must still be there, with the same type);
 //   * the members that describe a title on a metadata site and change without the app changing (ratings, images, popularity...);
 //   * the numbers in a path (`/queue/12`) and in a query (`seriesId=3`).
 //
-// The version folder may differ: that is how a newer release shows up, and then the replies are compared across the two versions.
+// The version folder may differ: that is how a newer release shows up, and then the replies are compared across the two versions. When
+// several versions of an app are checked in (qBittorrent 4.x and 5.x), a fresh recording is compared with the one of the same major version.
 //
-// Usage: node scripts/compare-arr-recordings.mjs <fresh folder> [<checked-in folder>]
+// Usage: node scripts/compare-arr-recordings.mjs <fresh folder> [<checked-in folder>] [--apps sonarr,radarr]   (the apps default to Sonarr and Radarr)
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,8 +24,11 @@ const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
 export const checkedIn = path.join(repositoryRoot, "apps", "server", "tests", "fixtures", "recorded");
 export const apps = ["sonarr", "radarr"];
 
+/** Every app with a recording: the Arr apps and the five download clients. */
+export const allApps = [...apps, "qbittorrent", "transmission", "deluge", "sabnzbd", "nzbget"];
+
 /** Members whose value is the app's own bookkeeping: still required, never compared. */
-const VOLATILE_MEMBER = /^(id|.*Id|.*Ids|size|sizeleft|timeleft|sizeOnDisk|.*Count|.*Bytes|runtime|.*Size|.*Seconds|.*Minutes|.*Date|.*Time|added|.*At|age|ageHours|ageMinutes|duration|freeSpace|totalSpace)$/;
+const VOLATILE_MEMBER = /^(id|.*Id|.*Ids|size|sizeleft|timeleft|sizeOnDisk|.*Count|.*Bytes|runtime|.*Size|.*Seconds|.*Minutes|.*Date|.*Time|added|.*At|age|ageHours|ageMinutes|duration|freeSpace|totalSpace|.*listen_port)$/;
 
 /** Members that describe a title on a metadata site, and move without the app moving. */
 const METADATA_MEMBER = new Set([
@@ -35,13 +39,14 @@ const METADATA_MEMBER = new Set([
   "description", "traceId",
 ]);
 
-const TIMESTAMP = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?/g;
+const TIMESTAMP = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?|[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT/g;
 const GUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
 const LONG_HEX = /\b[0-9a-f]{32,}\b/gi;
 const VERSION = /\b\d+\.\d+\.\d+\.\d+\b/g;
+const CONTAINER_ID = /\b[0-9a-f]{12}\b/g;
 
 export function maskText(text) {
-  return text.replace(TIMESTAMP, "<time>").replace(GUID, "<guid>").replace(LONG_HEX, "<hex>").replace(VERSION, "<version>");
+  return text.replace(TIMESTAMP, "<time>").replace(GUID, "<guid>").replace(LONG_HEX, "<hex>").replace(VERSION, "<version>").replace(CONTAINER_ID, "<hex>");
 }
 
 export function maskPath(target) {
@@ -102,9 +107,22 @@ function firstDifference(a, b, where) {
   return `${where}: ${JSON.stringify(a)?.slice(0, 120)} became ${JSON.stringify(b)?.slice(0, 120)}`;
 }
 
+function versionFolders(appFolder) {
+  return readdirSync(appFolder).filter((name) => statSync(path.join(appFolder, name)).isDirectory());
+}
+
+/** The version folder of a fresh recording: a run records one version of an app. */
 function onlyVersionFolder(appFolder) {
-  const folders = readdirSync(appFolder).filter((name) => statSync(path.join(appFolder, name)).isDirectory());
+  const folders = versionFolders(appFolder);
   return folders.length === 1 ? path.join(appFolder, folders[0]) : null;
+}
+
+/** The checked-in version folder to compare a fresh one with: the same version, the only one, or the one of the same major version. */
+function matchingVersionFolder(appFolder, version) {
+  const folders = versionFolders(appFolder);
+  const major = (name) => name.split(".")[0];
+  const found = folders.includes(version) ? [version] : folders.length === 1 ? folders : folders.filter((name) => major(name) === major(version));
+  return found.length === 1 ? path.join(appFolder, found[0]) : null;
 }
 
 /** What differs between the recordings of one app in two folders, one sentence each; empty when they agree. */
@@ -115,8 +133,8 @@ export function problems(app, freshRoot, recordedRoot) {
   if (!existsSync(freshApp)) return [`${app}: the recorder wrote nothing.`];
   if (!existsSync(recordedApp)) return [`${app}: nothing is checked in under ${recordedApp}.`];
   const fresh = onlyVersionFolder(freshApp);
-  const recorded = onlyVersionFolder(recordedApp);
-  if (!fresh || !recorded) return [`${app}: expected exactly one version folder on each side.`];
+  const recorded = fresh && matchingVersionFolder(recordedApp, path.basename(fresh));
+  if (!fresh || !recorded) return [`${app}: expected one fresh version folder and one checked-in version of the same release line.`];
   const states = (folder) => readdirSync(folder).filter((name) => name.endsWith(".json")).map((name) => name.slice(0, -5)).sort();
   const freshStates = states(fresh);
   const recordedStates = states(recorded);
@@ -137,14 +155,16 @@ export function problems(app, freshRoot, recordedRoot) {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
-  const [fresh, recorded = checkedIn] = process.argv.slice(2);
-  if (!fresh) {
-    console.error("Usage: node scripts/compare-arr-recordings.mjs <fresh folder> [<checked-in folder>]");
+  const args = process.argv.slice(2);
+  const named = args.includes("--apps") ? args.splice(args.indexOf("--apps"), 2)[1]?.split(",") : null;
+  const [fresh, recorded = checkedIn] = args;
+  if (!fresh || (named && !named.every((app) => allApps.includes(app)))) {
+    console.error("Usage: node scripts/compare-arr-recordings.mjs <fresh folder> [<checked-in folder>] [--apps " + allApps.join(",") + "]");
     process.exit(2);
   }
-  const found = apps.flatMap((app) => problems(app, path.resolve(fresh), path.resolve(recorded)));
+  const found = (named ?? apps).flatMap((app) => problems(app, path.resolve(fresh), path.resolve(recorded)));
   if (found.length > 0) {
-    console.error("The replies recorded now differ from the ones checked in (#1013, #1014):");
+    console.error("The replies recorded now differ from the ones checked in (#1013, #1014, #1015):");
     for (const problem of found) console.error("  " + problem);
     process.exit(1);
   }
