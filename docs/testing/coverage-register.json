@@ -46185,9 +46185,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayMenuViewTests.cs",
           "name": "Only_the_toggle_is_a_check_item"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-004",
         "verdict": "Partly"
@@ -46413,9 +46417,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/StartupIconTests.cs",
           "name": "StartupIconTests"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-010",
         "verdict": "Partly"
@@ -46610,9 +46618,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayBehaviourTests.cs",
           "name": "A_later_click_opens_Weir_again"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-015",
         "verdict": "Partly"
@@ -46698,9 +46710,18 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/WeirOpenerTests.cs",
           "name": "A_page_of_Weir_opens_at_its_path"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-change-port"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-018",
         "verdict": "Partly"
@@ -46715,12 +46736,32 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-start"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-change-port"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-lan-access"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-second-launch"
+        }
+      ],
       "needs": {
         "kind": "xunit",
         "test": "The rule (decision #638, regressed before) is proven only as flag predicates. Nothing launches the real tray through each start path and asserts no browser/shell-open happened. Needs a VM scenario (or CI-smoke step) that starts the installed tray with/without `--no-browser`, after Setup, after an update, after Change port, and second launch, and fails if a browser process or shell-open of `127.0.0.1:<port>` appears; plus a tray-unit test on `TrayApp.StartAsync` with a recording opener."
       },
-      "issue": 1021,
       "audit": {
         "id": "TRAY-019",
         "verdict": "Gap"
@@ -46775,9 +46816,18 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/StartWithWindowsTests.cs",
           "name": "Only_a_start_the_person_makes_themselves_may_ask"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-start"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-021",
         "verdict": "Partly"
@@ -46817,6 +46867,11 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/ServerHostPortTests.cs",
           "name": "A_person_who_closes_the_first_run_dialog_is_not_asked_again_by_the_back_off"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-give-up"
         }
       ],
       "issue": 1059,
@@ -46834,12 +46889,17 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-start"
+        }
+      ],
       "needs": {
         "kind": "xunit",
         "test": "The branch in `TrayApp.StartAsync` (`!_start.Interactive` -> `_exitCode = 1; Application.ExitThread()`) and `Program.RunTray` returning 1 when the port cannot be decided are never run. The calling program (Deluno, Setup scripts) relies on a non-zero exit. Needs a tray-unit test on the start outcome (seam) and a CI-smoke/VM scenario that starts `Weir.exe --silent --port <busy port>` and a tray whose server cannot start, asserting exit code 1 and the log line."
       },
-      "issue": 1020,
       "audit": {
         "id": "TRAY-023",
         "verdict": "Gap"
@@ -46863,9 +46923,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/StartupErrorTests.cs",
           "name": "The_balloons_carry_the_reason_and_the_way_back"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-give-up"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-024",
         "verdict": "Partly"
@@ -46993,6 +47057,11 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/LanAccess/LanAccessNoticeTests.cs",
           "name": "LanAccessNoticeTests"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-lan-access"
         }
       ],
       "issue": 1059,
@@ -47020,9 +47089,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/SecondLaunchTests.cs",
           "name": "SecondLaunchTests"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-second-launch"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-029",
         "verdict": "Partly"
@@ -47092,9 +47165,13 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "first-visit-account"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-031",
         "verdict": "Partly"
@@ -47331,9 +47408,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/ServerHostTests.cs",
           "name": "A_server_that_ran_and_then_exits_is_started_again_through_the_same_supervision"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-supervision"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-035",
         "verdict": "Partly"
@@ -47347,12 +47428,27 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-give-up"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-change-port"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/ServerHostWatchdogTests.cs",
+          "name": "ServerHostWatchdogTests"
+        }
+      ],
       "needs": {
         "kind": "xunit",
         "test": "The crash-loop-after-running path (the red icon, the \"Stopped ... choose Restart Weir\" state the standard promises) and the \"Quit must not respawn the server\" guard (`ProcessState.Stopped` on a cleared process) have no test. A regression leaves Weir down with a green-looking tray, or a Quit that restarts the server. Needs tray-unit tests on `ServerHost.Watch`: 5 crashes in a row -> callback once + `Phase == Stopped`; `StopAsync` while watching -> no new start; `MoveToPortAsync` after a give-up -> watchdog running again."
       },
-      "issue": 1020,
       "audit": {
         "id": "TRAY-036",
         "verdict": "Gap"
@@ -47381,9 +47477,18 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/ServerHostPortTests.cs",
           "name": "Restart_Weir_after_the_port_window_was_closed_asks_again_and_forgets_that_it_was_closed"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-change-port"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-037",
         "verdict": "Partly"
@@ -47503,9 +47608,18 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/InstallProcessesTests.cs",
           "name": "Kills_a_server_that_ignores_the_request_and_then_stops_the_tray"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-lan-access"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-040",
         "verdict": "Partly"
@@ -47545,9 +47659,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/UpdateBackupTests.cs",
           "name": "A_new_attempt_may_begin_once_the_one_before_it_has_ended_without_applying"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-041",
         "verdict": "Partly"
@@ -47642,12 +47760,17 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-second-launch"
+        }
+      ],
       "needs": {
         "kind": "xunit",
         "test": "The mutex and the `Main` branch (`createdNew == false` -> `HandOverToRunningTray` -> `return 0`) are never run with two real processes. If the guard failed, two trays would supervise two servers on one port/database. Needs a CI-smoke/VM step: start the installed `Weir.exe` twice, assert the second exits 0 within seconds, only one `WeirServer.exe` runs, and the first logs \"Weir was started again\"."
       },
-      "issue": 1021,
       "audit": {
         "id": "TRAY-045",
         "verdict": "Gap"
@@ -47768,12 +47891,22 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-change-port"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/ServerHostWatchdogTests.cs",
+          "name": "ServerHostWatchdogTests"
+        }
+      ],
       "needs": {
         "kind": "xunit",
         "test": "Nothing asserts that a successful move saves `port.txt`, rewrites `current-port.txt` and changes `Host.Port`, nor that a failed move (port taken, server hung/crashing) returns to the old port, leaves `port.txt` alone and ends Running (or Stopped if the old port fails too). A wrong revert leaves Weir down or on a port nobody bookmarked. Needs tray-unit tests with the stand-in (move ok / move fails -> old port back / old port also fails) and a VM or CI-smoke scenario that moves the installed Weir's port (the tray offers no non-UI trigger, so this needs the UIA seam from TRAY-003 or a testable `P"
       },
-      "issue": 1020,
       "audit": {
         "id": "TRAY-049",
         "verdict": "Gap"
@@ -47798,9 +47931,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/PortChoiceTests.cs",
           "name": "Headless_start_with_the_saved_port_busy_does_not_move"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-start"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-050",
         "verdict": "Partly"
@@ -47819,9 +47956,18 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayStateTests.cs",
           "name": "Copy_address_gives_this_pcs_address_until_other_devices_are_let_in"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-lan-access"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-051",
         "verdict": "Partly"
@@ -47851,9 +47997,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/LanAccess/LanAccessSettingTests.cs",
           "name": "LanAccessSettingTests"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-lan-access"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-052",
         "verdict": "Partly"
@@ -47909,12 +48059,22 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-lan-access"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/Firewall/FirewallElevationTests.cs",
+          "name": "FirewallElevationTests"
+        }
+      ],
       "needs": {
         "kind": "xunit",
         "test": "This is the code behind \"Allow other devices on your network...\", the first-run prompt, the saved-choice prompt and the widening prompt. Nothing runs it, not even with a fake process starter, so a mis-mapped decline would report \"Could not allow\" (or success) wrongly and LAN access would not match what the person sees. CI-smoke runs the elevated commands directly, never through `runas`. Needs a seam for `Process.Start` (tray-unit: success, 1223, other exit code, null process, Win32 error) and a CI-smoke step that runs the helper on the elevated runner."
       },
-      "issue": 1021,
       "audit": {
         "id": "TRAY-055",
         "verdict": "Gap"
@@ -48361,9 +48521,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/UpdateChannelTests.cs",
           "name": "UpdateChannelTests"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-069",
         "verdict": "Partly"
@@ -48407,9 +48571,18 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "update-requests"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "update-requests"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-070",
         "verdict": "Partly"
@@ -48686,9 +48859,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/StartWithWindowsTests.cs",
           "name": "StartWithWindowsTests"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-079",
         "verdict": "Partly"
@@ -48713,6 +48890,16 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "update-over-installed-weir"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-start"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-lan-access"
         }
       ],
       "issue": 1059,
@@ -48791,9 +48978,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/StartWithWindowsTests.cs",
           "name": "Uninstalling_removes_the_entry_and_the_answer_so_a_later_install_asks_again"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-lan-access"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-082",
         "verdict": "Partly"
@@ -48849,9 +49040,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/SecretFileTests.cs",
           "name": "Restricting_leaves_exactly_system_administrators_and_this_account"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-start"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-084",
         "verdict": "Partly"
@@ -48975,9 +49170,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayBehaviourTests.cs",
           "name": "A_file_that_is_not_there_opens_its_folder_instead_of_selecting_it"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-089",
         "verdict": "Partly"
@@ -48997,9 +49196,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayBehaviourTests.cs",
           "name": "The_version_has_no_build_metadata"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-090",
         "verdict": "Partly"
@@ -49028,9 +49231,18 @@
           "type": "real-fs",
           "file": "apps/server/tests/Weir.Api.Tests/ServerOutputPipeTests.cs",
           "name": "ServerOutputPipeTests"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-supervision"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-091",
         "verdict": "Partly"
@@ -50827,7 +51039,7 @@
         "kind": "scenario",
         "test": "Needs an interactive session; a VM scenario in the signed-in desktop session could run it"
       },
-      "issue": 1019,
+      "issue": 1142,
       "audit": {
         "id": "PLAT-04",
         "verdict": "Gap"
@@ -50967,7 +51179,18 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-start"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-change-port"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -51014,7 +51237,6 @@
         "kind": "scenario",
         "test": "The port-in-use path against a real second listener on the installed server is not run; see TRAY- items"
       },
-      "issue": 1019,
       "audit": {
         "id": "PLAT-08",
         "verdict": "Partly"
@@ -51107,7 +51329,18 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-supervision"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-give-up"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -51144,7 +51377,6 @@
         "kind": "scenario",
         "test": "Supervision is proven with stand-in servers (StandInServers); no VM scenario kills the real server or fills its pipe on the installed copy (TRAY- items)"
       },
-      "issue": 1019,
       "audit": {
         "id": "PLAT-11",
         "verdict": "Partly"
@@ -51914,7 +52146,7 @@
         "kind": "scenario",
         "test": "The checklist's \"stopped cleanly within a few seconds, not killing it\" after Quit and after LAN toggles is manual; the VM never quits the tray"
       },
-      "issue": 1019,
+      "issue": 1142,
       "audit": {
         "id": "PLAT-26",
         "verdict": "Partly"

@@ -498,6 +498,7 @@ sealed class TrayApp : IDisposable
             return;
         }
         _balloonClick = onClick;
+        TrayLog.Write(TrayBalloons.LogLine(title, text, icon));
         _notifyIcon.ShowBalloonTip(TrayBalloons.TimeoutMs(icon), title, text, icon);
     }
 
