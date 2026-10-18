@@ -5,9 +5,32 @@ using System.Web;
 
 namespace Weir.Tests.Shared;
 
-/// <summary>What Weir sent a Sonarr or Radarr, or what the app sent Weir: the method, the path with its query, the body and the headers (lower-case names).</summary>
-internal sealed record ArrRequest(string Method, string Target, JsonNode? Body, IReadOnlyDictionary<string, string> Headers)
+/// <summary>
+/// What Weir sent an app, or what the app sent Weir: the method, the path with its query, the body and the headers (lower-case names). A
+/// body that is not JSON (a form, for the download clients that take one) is in <see cref="BodyText"/>.
+/// </summary>
+internal sealed record ArrRequest(string Method, string Target, JsonNode? Body, IReadOnlyDictionary<string, string> Headers, string? BodyText = null)
 {
+    /// <summary>The body as a person compares two of them: JSON as JSON, a form as its decoded fields, anything else as text.</summary>
+    public string BodyKey
+    {
+        get
+        {
+            if (Body is not null)
+            {
+                return Body.ToJsonString();
+            }
+
+            if (BodyText is null || !Headers.GetValueOrDefault("content-type", string.Empty).StartsWith("application/x-www-form-urlencoded", StringComparison.Ordinal))
+            {
+                return BodyText ?? string.Empty;
+            }
+
+            var form = HttpUtility.ParseQueryString(BodyText);
+            return string.Join('&', form.AllKeys.OfType<string>().Order(StringComparer.Ordinal).Select(key => $"{key}={form[key]}"));
+        }
+    }
+
     public string Path => Target.Split('?')[0];
 
     /// <summary>The query pairs, sorted, so two spellings of one query compare equal.</summary>
@@ -29,7 +52,7 @@ internal sealed record ArrReply(int Status, JsonNode? Body, string? BodyText, IR
 internal sealed record ArrExchange(ArrRequest Request, ArrReply Reply);
 
 /// <summary>
-/// One recording of a real Sonarr or Radarr (<c>fixtures/recorded/&lt;app&gt;/&lt;version&gt;/&lt;state&gt;.json</c>), loaded as it is. A test
+/// One recording of a real app (Sonarr, Radarr or a download client; <c>fixtures/recorded/&lt;app&gt;/&lt;version&gt;/&lt;state&gt;.json</c>), loaded as it is. A test
 /// never writes a request or a reply by hand: a state nobody recorded fails and says where it would have been.
 /// </summary>
 internal sealed class ArrRecording
@@ -72,13 +95,23 @@ internal sealed class ArrRecording
     public ArrExchange To(string method, string path) =>
         Exchanges.First(exchange => exchange.Request.Method == method && exchange.Request.Path == path);
 
+    /// <summary>The first exchange of a JSON-RPC client whose request calls <paramref name="method"/> (Deluge's calls all go to one path).</summary>
+    public ArrExchange Call(string method) =>
+        Exchanges.First(exchange => (string?)exchange.Request.Body?["method"] == method);
+
     /// <summary>The recorded states of <paramref name="app"/> whose name starts with <paramref name="prefix"/>, in name order.</summary>
     public static IReadOnlyList<string> States(string app, string prefix) =>
         [.. Directory.GetFiles(VersionFolder(app), prefix + "*.json").Select(Path.GetFileNameWithoutExtension).OfType<string>().Order(StringComparer.Ordinal)];
 
-    public static ArrRecording Load(string app, string state)
+    /// <summary>The newest version recorded of <paramref name="app"/>.</summary>
+    public static ArrRecording Load(string app, string state) => Load(app, Path.GetFileName(VersionFolder(app)), state);
+
+    /// <summary>The versions recorded of <paramref name="app"/>, oldest first.</summary>
+    public static IReadOnlyList<string> Versions(string app) =>
+        [.. Directory.GetDirectories(Path.Combine(RecordedFolder(), app)).Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal)];
+
+    public static ArrRecording Load(string app, string version, string state)
     {
-        var version = Path.GetFileName(VersionFolder(app));
         var appFolder = Path.Combine(RecordedFolder(), app);
         var path = Path.Combine(appFolder, version, state + ".json");
         if (!System.IO.File.Exists(path))
@@ -100,7 +133,7 @@ internal sealed class ArrRecording
         var request = exchange["request"]!.AsObject();
         var reply = exchange["reply"]!.AsObject();
         return new ArrExchange(
-            new ArrRequest((string)request["method"]!, (string)request["path"]!, request["body"]?.DeepClone(), HeadersOf(request)),
+            new ArrRequest((string)request["method"]!, (string)request["path"]!, request["body"]?.DeepClone(), HeadersOf(request), (string?)request["bodyText"]),
             new ArrReply((int)reply["status"]!, reply["body"]?.DeepClone(), (string?)reply["bodyText"], HeadersOf(reply)));
     }
 
@@ -136,6 +169,9 @@ internal sealed class ArrRecording
 /// </summary>
 internal sealed class ArrReplayHandler : HttpMessageHandler
 {
+    /// <summary>The headers that carry a sign-in; their values are scrubbed in a recording, so a test holds that they were sent, not what they held.</summary>
+    private static readonly string[] SignInHeaders = ["x-api-key", "authorization", "cookie", "x-transmission-session-id"];
+
     private readonly List<(ArrRequest Request, ArrReply Reply, string Origin)> _recorded = [];
     private readonly Dictionary<(string Method, string Path, string Query), int> _answered = [];
     private readonly List<ArrRequest> _sent = [];
@@ -177,24 +213,39 @@ internal sealed class ArrReplayHandler : HttpMessageHandler
     /// </summary>
     public void AssertSentAsRecorded(ArrRecording recording)
     {
+        var seen = new Dictionary<(string Method, string Path, string Query), int>();
         foreach (var exchange in recording.Exchanges)
         {
             var recorded = exchange.Request;
-            var match = Sent.FirstOrDefault(sent => sent.Method == recorded.Method && sent.Path == recorded.Path && sent.Query == recorded.Query)
+            var route = (recorded.Method, recorded.Path, recorded.Query);
+            var nth = seen.GetValueOrDefault(route);
+            seen[route] = nth + 1;
+            var onRoute = Sent.Where(sent => sent.Method == recorded.Method && sent.Path == recorded.Path && sent.Query == recorded.Query).ToList();
+
+            // A route recorded more than once (a handshake, a JSON-RPC path) is matched call by call, in the order Weir made them.
+            var match = onRoute.ElementAtOrDefault(nth) ?? onRoute.FirstOrDefault()
                 ?? throw new Xunit.Sdk.XunitException($"Weir never sent {recorded.Method} {recorded.Target}, which {recording.File} records.");
             Assert.True(
-                (recorded.Body is null && match.Body is null) || (recorded.Body is not null && JsonNode.DeepEquals(recorded.Body, match.Body)),
-                $"Weir's body for {recorded.Method} {recorded.Target} was {match.Body?.ToJsonString() ?? "empty"}; {recording.File} records {recorded.Body?.ToJsonString() ?? "empty"}.");
-            Assert.Equal(recorded.Headers.ContainsKey("x-api-key"), match.Headers.ContainsKey("x-api-key"));
+                recorded.Body is not null && match.Body is not null ? JsonNode.DeepEquals(recorded.Body, match.Body) : recorded.BodyKey == match.BodyKey,
+                $"Weir's body for {recorded.Method} {recorded.Target} was {Show(match.BodyKey)}; {recording.File} records {Show(recorded.BodyKey)}.");
+            foreach (var header in SignInHeaders)
+            {
+                Assert.True(
+                    recorded.Headers.ContainsKey(header) == match.Headers.ContainsKey(header),
+                    $"{recording.File} records {recorded.Method} {recorded.Target} {(recorded.Headers.ContainsKey(header) ? "with" : "without")} {header}; Weir sent it {(match.Headers.ContainsKey(header) ? "with" : "without")}.");
+            }
         }
     }
+
+    private static string Show(string body) => body.Length == 0 ? "empty" : body;
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var body = request.Content is { } content ? await content.ReadAsStringAsync(cancellationToken) : string.Empty;
         var headers = request.Headers.Concat(request.Content?.Headers ?? Enumerable.Empty<KeyValuePair<string, IEnumerable<string>>>())
             .ToDictionary(pair => pair.Key.ToLowerInvariant(), pair => string.Join(", ", pair.Value));
-        var sent = new ArrRequest(request.Method.Method, request.RequestUri!.PathAndQuery, body.Length == 0 ? null : JsonNode.Parse(body), headers);
+        var isJson = headers.GetValueOrDefault("content-type", string.Empty).StartsWith("application/json", StringComparison.Ordinal);
+        var sent = new ArrRequest(request.Method.Method, request.RequestUri!.PathAndQuery, body.Length > 0 && isJson ? JsonNode.Parse(body) : null, headers, body.Length > 0 && !isJson ? body : null);
         ArrReply reply;
         lock (_lock)
         {
@@ -206,7 +257,14 @@ internal sealed class ArrReplayHandler : HttpMessageHandler
                     $"Nothing was recorded for {sent.Method} {sent.Target}. Recordings in play: {string.Join(", ", _recorded.Select(entry => entry.Origin).Distinct())}.");
             }
 
-            var key = (sent.Method, sent.Path, sent.Query);
+            // Calls that share a route and differ in their body (a JSON-RPC client's calls all go to one path) are told apart by it.
+            var sameBody = candidates.Where(entry => entry.Request.BodyKey == sent.BodyKey).ToList();
+            var key = (sent.Method, sent.Path, sent.Query + (sameBody.Count > 0 && sameBody.Count < candidates.Count ? "#" + sent.BodyKey : string.Empty));
+            if (sameBody.Count > 0)
+            {
+                candidates = sameBody;
+            }
+
             var index = _answered.GetValueOrDefault(key);
             reply = candidates[Math.Min(index, candidates.Count - 1)].Reply;
             _answered[key] = index + 1;
