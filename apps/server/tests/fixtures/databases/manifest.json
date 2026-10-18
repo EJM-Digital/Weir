@@ -2,7 +2,6 @@
   "databases": [
     {
       "version": "1.0.0-rc.10",
-      "image": "ghcr.io/jampat000/weir:1.0.0-rc.10",
       "image_digest": "sha256:296086fa99a8047efb2ae24adf815eb6940bb16dcf54221fd45d5768bd56688b",
       "schema_revision": "0075_handoff_target_copy",
       "sha256": "3cc295e60e3463b7a9200c2f9a063d8edcf7d90b0ac7df0d4b723f05051b2328",
@@ -36,7 +35,6 @@
     },
     {
       "version": "1.0.0-rc.11",
-      "image": "ghcr.io/jampat000/weir:1.0.0-rc.11",
       "image_digest": "sha256:298fd18e95d845b4d1ab9c02a0e366f41e648630bd7c2eb4010f63170b9cc0f9",
       "schema_revision": "0076_handoff_skipped_extras",
       "sha256": "b0e6916f18b254e5af3f6c93aef7e042752fb78024afdc4ccea1af601d53cfd2",
@@ -70,7 +68,6 @@
     },
     {
       "version": "1.0.0-rc.12",
-      "image": "ghcr.io/jampat000/weir:1.0.0-rc.12",
       "image_digest": "sha256:907cbc2a6c45ec254151b3c4a9cda442a7d682b54462dc425b2c5c7c3ece5484",
       "schema_revision": "0078_activity_current_index",
       "sha256": "25c8edcbda465f398ebef13f49c6fd6310091218dc113527cab3457c18ec733c",
@@ -104,7 +101,6 @@
     },
     {
       "version": "1.0.0-rc.13",
-      "image": "ghcr.io/jampat000/weir:1.0.0-rc.13",
       "image_digest": "sha256:72307d7b814034a65dfd5fdd117c97432c2a9abbd39f5e4bb65e45bb4e934497",
       "schema_revision": "0078_activity_current_index",
       "sha256": "b6e33643e48c543238a95b7bf36d766684002b181fb864d63c32066f2b8d69bf",
@@ -138,7 +134,6 @@
     },
     {
       "version": "1.0.0-rc.17",
-      "image": "ghcr.io/jampat000/weir:1.0.0-rc.17",
       "image_digest": "sha256:e046550fd51d0d6654e03c693ed4490c8b143b5ccca7ca3b16b065ce6032302f",
       "schema_revision": "0080_handback_speaker",
       "sha256": "aad4119b227c939fdbfb9a4259a3119266f806da3c8a45af6dac801d25ab629a",
@@ -172,7 +167,6 @@
     },
     {
       "version": "1.0.0-rc.18",
-      "image": "ghcr.io/jampat000/weir:1.0.0-rc.18",
       "image_digest": "sha256:77a2de6920d6ef7fc3fa3bc4a55dc13ae8318ee46a08d01527eb248362e9f674",
       "schema_revision": "0080_handback_speaker",
       "sha256": "d45f64c6a82ab97ee3252c97deaa1cd64fa86c78892baa27678e013c475a5d82",

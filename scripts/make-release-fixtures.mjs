@@ -4,7 +4,7 @@
 //   node scripts/make-release-fixtures.mjs 1.0.0-rc.18 [1.0.0-rc.17 ...]
 //
 // For each release version it
-//   1. pulls the image that release published (ghcr.io/jampat000/weir:<version>), records its digest, and copies the Weir program out of
+//   1. pulls the image that release published (this repository's image, tagged with the version), records its digest, and copies the Weir program out of
 //      it: the very bytes people run, not a build of the source;
 //   2. runs the contract suite's `ReleaseFixtureSession` against that program (WEIR_CONTRACT_SERVER names it), which drives it
 //      through its API with the real ffmpeg: an alert, a rule set, direct play devices, a workflow a fake media manager feeds (one file
@@ -25,6 +25,8 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { gzipSync } from "node:zlib";
+
+import { IMAGE_REPOSITORY } from "./repository.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const databasesFolder = path.join(repositoryRoot, "apps", "server", "tests", "fixtures", "databases");
@@ -173,7 +175,7 @@ export function describeDatabase(file) {
 const run = (program, args, options = {}) => execFileSync(program, args, { stdio: "inherit", ...options });
 
 /** The image a release published. */
-export const imageOf = (version) => `ghcr.io/jampat000/weir:${version}`;
+export const imageOf = (version) => `${IMAGE_REPOSITORY}:${version}`;
 
 /** Pulls the release's image and copies its program out: the program's path, and the image's digest. */
 function fetchRelease(version, scratch) {
@@ -237,7 +239,6 @@ export function makeFixtures(version) {
     const manifest = existsSync(manifestFile) ? JSON.parse(readFileSync(manifestFile, "utf8")) : { databases: [] };
     const entry = {
       version,
-      image: imageOf(version),
       image_digest: digest,
       schema_revision: description.revision,
       sha256: createHash("sha256").update(compressed).digest("hex"),

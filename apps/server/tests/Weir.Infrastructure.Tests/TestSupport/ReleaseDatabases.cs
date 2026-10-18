@@ -11,7 +11,7 @@ namespace Weir.Infrastructure.Tests;
 internal static class ReleaseDatabases
 {
     /// <summary>One fixture's line in <c>manifest.json</c>.</summary>
-    internal sealed record Release(string Version, string Image, string ImageDigest, string SchemaRevision, string Sha256, IReadOnlyDictionary<string, long> Rows);
+    internal sealed record Release(string Version, string ImageDigest, string SchemaRevision, string Sha256, IReadOnlyDictionary<string, long> Rows);
 
     public static string Folder => Path.Join(RepositoryPaths.RepositoryRoot!, "apps", "server", "tests", "fixtures", "databases");
 
@@ -51,7 +51,6 @@ internal static class ReleaseDatabases
         using var document = JsonDocument.Parse(File.ReadAllText(Path.Join(Folder, "manifest.json")));
         return [.. document.RootElement.GetProperty("databases").EnumerateArray().Select(entry => new Release(
             entry.GetProperty("version").GetString()!,
-            entry.GetProperty("image").GetString()!,
             entry.GetProperty("image_digest").GetString()!,
             entry.GetProperty("schema_revision").GetString()!,
             entry.GetProperty("sha256").GetString()!,
