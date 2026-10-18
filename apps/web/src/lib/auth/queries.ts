@@ -23,6 +23,7 @@ import {
   startChangingPassword,
   startSigningOut,
 } from "./signed-in-before";
+import { clearSignOutFailed, markSignOutFailed } from "./sign-out-failed";
 import { activityKeys } from "../activity/query-keys";
 import { authKeys } from "./query-keys";
 
@@ -119,6 +120,7 @@ export function useLogoutMutation() {
   return useMutation({
     mutationFn: postLogout,
     onMutate: async () => {
+      clearSignOutFailed();
       startSigningOut();
       await qc.cancelQueries({ queryKey: authKeys.me });
       await qc.cancelQueries({ queryKey: authKeys.session });
@@ -126,6 +128,7 @@ export function useLogoutMutation() {
       qc.setQueryData(authKeys.session, null);
     },
     onSuccess: clearSignedIn,
+    onError: markSignOutFailed,
     onSettled: () => {
       finishSigningOut();
       void qc.invalidateQueries({ queryKey: authKeys.me });

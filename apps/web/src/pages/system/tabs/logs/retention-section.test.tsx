@@ -82,7 +82,6 @@ function Retention({
       form={formWith(logDirty)}
       fileActivity={useFileActivityRetention()}
       editable={editable}
-      savedLogDays={30}
     />
   );
 }

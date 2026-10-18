@@ -4,10 +4,10 @@
 //
 //   node scripts/check-coverage-floors.mjs --floors docs/coverage/floors.json \
 //     [--base-floors <floors.json as it is on the base branch>] \
-//     [--server <folder>] [--tray <folder>] [--web <folder>]
+//     [--server <folder>] [--out-of-process <folder>] [--tray <folder>] [--web <folder>]
 //
-// <folder> for the server and the tray is a ReportGenerator output folder (Summary.json and Cobertura.xml: the
-// per-leg Cobertura files merged into one report); for the web app it is vitest's coverage folder
+// <folder> for the server, the out-of-process server figure (#1081) and the tray is a ReportGenerator output folder
+// (Summary.json and Cobertura.xml: the per-leg Cobertura files merged into one report); for the web app it is vitest's coverage folder
 // (coverage-summary.json). A project whose folder is not passed was not due for this change and is shown as not
 // run; a project whose folder is passed but holds no report fails, so a test run that wrote nothing is never read
 // as "nothing to check".
@@ -29,6 +29,12 @@ export const PROJECTS = [
   { id: "server-infrastructure", label: "Server: Weir.Infrastructure", report: "server", assembly: "Weir.Infrastructure", folder: "Weir.Infrastructure" },
   { id: "server-api", label: "Server: Weir.Api", report: "server", assembly: "Weir.Api", folder: "Weir.Api" },
   { id: "server-host", label: "Server: Weir.Host", report: "server", assembly: "Weir", folder: "Weir.Host" },
+  // The server as the contract suite and the E2E smoke run it, measured by dotnet-coverage: a figure of its own, because
+  // that tool counts lines and branches differently from coverlet.
+  { id: "out-of-process-core", label: "Out of process: Weir.Core", report: "out-of-process", assembly: "Weir.Core", folder: "Weir.Core" },
+  { id: "out-of-process-infrastructure", label: "Out of process: Weir.Infrastructure", report: "out-of-process", assembly: "Weir.Infrastructure", folder: "Weir.Infrastructure" },
+  { id: "out-of-process-api", label: "Out of process: Weir.Api", report: "out-of-process", assembly: "Weir.Api", folder: "Weir.Api" },
+  { id: "out-of-process-host", label: "Out of process: Weir.Host", report: "out-of-process", assembly: "Weir", folder: "Weir.Host" },
   { id: "tray", label: "Tray", report: "tray", assembly: "Weir", folder: "Weir.Tray" },
   { id: "web", label: "Web app", report: "web" },
 ];
@@ -225,14 +231,8 @@ function cell(measure) {
   return `${measure.actual}% (${measure.figure.covered}/${measure.figure.total})`;
 }
 
-export function renderSummary({ rows, notes, problems, targets, floors }) {
-  const lines = ["### Test coverage", ""];
-  lines.push(
-    `Floors are in docs/coverage/floors.json, measured from CI run ${floors.measuredFrom.run}. A figure below its floor fails this check; a figure above it can be raised in the pull request that earned it.`,
-    "",
-    "| Project | Lines | Floor | Branches | Floor | |",
-    "|---|---:|---:|---:|---:|---|",
-  );
+function tableOf(rows) {
+  const lines = ["| Project | Lines | Floor | Branches | Floor | |", "|---|---:|---:|---:|---:|---|"];
   for (const row of rows) {
     if (!row.measures) {
       lines.push(`| ${row.project.label} | - | - | - | - | ${row.status === "not run" ? "not run for this change" : "NO REPORT"} |`);
@@ -242,6 +242,23 @@ export function renderSummary({ rows, notes, problems, targets, floors }) {
     const verdict = row.status === "ok" ? (line.headroom >= 0.1 || branch.headroom >= 0.1 ? "ok, floor can rise" : "ok") : "BELOW FLOOR";
     lines.push(`| ${row.project.label} | ${cell(line)} | ${line.floor}% | ${cell(branch)} | ${branch.floor}% | ${verdict} |`);
   }
+  return lines;
+}
+
+export function renderSummary({ rows, notes, problems, targets, floors }) {
+  const outOfProcess = (row) => row.project.report === "out-of-process";
+  const lines = ["### Test coverage", ""];
+  lines.push(
+    `Floors are in docs/coverage/floors.json, measured from CI run ${floors.measuredFrom.run}. A figure below its floor fails this check; a figure above it can be raised in the pull request that earned it.`,
+    "",
+    ...tableOf(rows.filter((row) => !outOfProcess(row))),
+    "",
+    "#### Out of process: the contract suite and the E2E smoke",
+    "",
+    "The server as those suites run it, as its own process, measured by dotnet-coverage. The two tools count lines and branches differently, so this figure is held to its own floors and is not added to the one above.",
+    "",
+    ...tableOf(rows.filter(outOfProcess)),
+  );
   for (const note of notes) lines.push("", `- ${note}`);
   for (const problem of problems) lines.push("", `**${problem}**`);
   for (const target of targets) {
@@ -316,7 +333,7 @@ export function parseArguments(argv) {
     if (value === undefined) throw new Error(`${name} needs a value.`);
     if (name === "--floors") options.floorsFile = value;
     else if (name === "--base-floors") options.baseFloorsFile = value;
-    else if (["--server", "--tray", "--web"].includes(name)) options.folders[name.slice(2)] = value;
+    else if (["--server", "--out-of-process", "--tray", "--web"].includes(name)) options.folders[name.slice(2)] = value;
     else throw new Error(`Unknown option ${name}.`);
   }
   if (!options.floorsFile) throw new Error("--floors <file> is required.");

@@ -61,7 +61,7 @@ public sealed class PauseAndPortTests : IDisposable
         Assert.Equal(["log shown"], _events);
     }
 
-    private PortChange Change(int? chosen, Func<int, Task<bool>>? move = null) => new(
+    private PortChange Change(int? chosen, Func<int, Task<PortMove>>? move = null) => new(
         () => 9347,
         prompt =>
         {
@@ -71,7 +71,7 @@ public sealed class PauseAndPortTests : IDisposable
         async (port, _) =>
         {
             _events.Add($"moving to {port}, menu says {_currentMoving}");
-            return await (move?.Invoke(port) ?? Task.FromResult(true));
+            return await (move?.Invoke(port) ?? Task.FromResult(PortMove.Moved));
         },
         (_, text, icon, click) => _balloons.Add((text, icon, click)),
         () => _events.Add("opened Weir"),
@@ -82,7 +82,7 @@ public sealed class PauseAndPortTests : IDisposable
     private PortChange? _portChange;
     private int? _currentMoving;
 
-    private async Task RunAsync(int? chosen, Func<int, Task<bool>>? move = null)
+    private async Task RunAsync(int? chosen, Func<int, Task<PortMove>>? move = null)
     {
         _portChange = Change(chosen, move);
         await _portChange.RunAsync();
@@ -113,7 +113,7 @@ public sealed class PauseAndPortTests : IDisposable
     [Fact]
     public async Task A_move_that_fails_says_which_port_it_is_still_on_and_a_click_shows_the_log()
     {
-        await RunAsync(9400, _ => Task.FromResult(false));
+        await RunAsync(9400, _ => Task.FromResult(PortMove.KeptOldPort));
 
         var balloon = Assert.Single(_balloons);
         Assert.Equal("Weir could not start on port 9400, so it is still at port 9347. See tray-host.log in the data folder.", balloon.Text);
@@ -121,6 +121,19 @@ public sealed class PauseAndPortTests : IDisposable
         balloon.Click!();
         Assert.Contains("log shown", _events);
         Assert.DoesNotContain("opened Weir", _events);
+    }
+
+    [Fact]
+    public async Task A_move_that_fails_with_the_old_port_lost_as_well_says_Weir_has_stopped_and_a_click_shows_the_log()
+    {
+        await RunAsync(9400, _ => Task.FromResult(PortMove.Stopped));
+
+        var balloon = Assert.Single(_balloons);
+        Assert.Equal("Weir could not start on port 9400 or go back to port 9347, so it has stopped. Choose Restart Weir once the port is free. See tray-host.log in the data folder.", balloon.Text);
+        Assert.Equal(ToolTipIcon.Warning, balloon.Icon);
+        Assert.DoesNotContain("still at port", balloon.Text, StringComparison.Ordinal);
+        balloon.Click!();
+        Assert.Contains("log shown", _events);
     }
 
     [Theory]

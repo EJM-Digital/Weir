@@ -22,9 +22,9 @@ function AccountForm({
 }) {
   return (
     <section className="mm-account-form" aria-labelledby={headingId}>
-      <h4 id={headingId} className="mm-account-form__title">
+      <h3 id={headingId} className="mm-account-form__title">
         {title}
-      </h4>
+      </h3>
       <p className="mm-account-form__help">{help}</p>
       {children}
     </section>

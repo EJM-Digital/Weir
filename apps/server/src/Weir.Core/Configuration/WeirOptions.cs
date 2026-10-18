@@ -108,6 +108,12 @@ public sealed record WeirOptions
     public int PeriodicTaskSpeedUp { get; init; } = 1;
 
     /// <summary>
+    /// For tests only (<c>WEIR_RELEASES_FEED_URL</c>): the release feed Weir reads its news of a newer release from, instead of GitHub's own, so a browser
+    /// test can play a recorded feed. Null on a real install: the loader refuses a value when <c>WEIR_ENV</c> is production.
+    /// </summary>
+    public string? ReleasesFeedUrl { get; init; }
+
+    /// <summary>
     /// For tests only (<c>WEIR_NOTIFICATION_STAND_IN_PORT</c>): the port on this machine that every alert is delivered to, so a test can listen
     /// there and read what an alert looks like on the wire. The address an alert names is still held to the public-address rule (a name must
     /// resolve to a public address, a number is checked as written); only the connection goes to the stand-in. Null on a real install: the

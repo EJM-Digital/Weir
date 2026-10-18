@@ -211,6 +211,11 @@
   margin: 0;
 }
 
+/* A link inside a sentence is underlined, so it is told from the words around it by more than its colour. */
+.mm-about-credits p .mm-sys-link {
+  text-decoration: underline;
+}
+
 /* This PC: the network and the time zone as two halves that share a height, with a hairline between them. */
 .mm-this-pc {
   display: grid;

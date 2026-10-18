@@ -23,7 +23,15 @@ import { catalogIds, linuxShards, loadHomes, problemsWithHomes, scenariosOfShard
 import { exitCode, runScenarios, summaryMarkdown } from "./scenarios-ci/run.mjs";
 import { SHARDS } from "./scenarios-ci/shards.mjs";
 import { WindowsMachine, whyNotAThrowawayMachine } from "./scenarios-ci/windows-machine.mjs";
+import * as windowsInstall from "./scenarios-ci/windows-install.mjs";
+import * as windowsTray from "./scenarios-ci/windows-tray.mjs";
 import { expectedVersion, runWindowsShard } from "./scenarios-ci/windows-shard.mjs";
+
+/** The scenarios of each Windows shard, and the watch on the logs they are judged by. */
+const WINDOWS_SHARDS = {
+  "windows-install": windowsInstall,
+  "windows-tray": windowsTray,
+};
 
 const CATALOG = "scripts/scenarios/Weir.Scenarios.Catalog.ps1";
 
@@ -51,15 +59,18 @@ async function runLinuxShard({ shard, ids, candidate, logFolder }) {
   const scratch = mkdtempSync(join(tmpdir(), "weir-scenarios-ci-"));
   const stack = new Stack(logFolder, scratch);
   const client = new WeirClient(ORIGIN);
-  const { account, browser: wantsBrowser, scenarios } = SHARDS[shard];
+  const { account, browser: wantsBrowser, beside, scenarios } = SHARDS[shard];
+  const started = beside?.start();
   let results = [];
   let browser;
   stack.removeEverything();
   try {
-    stack.up(candidate, "never");
+    for (const image of started?.pull ?? []) stack.pull(image);
+    stack.up(candidate, "never", null, beside ? { files: beside.files, environment: started.environment, services: beside.services } : undefined);
     stack.waitHealthy();
     const world = { weir: client, box: new ContainerBox(stack), runId: randomBytes(3).toString("hex"), createAccount: () => createFirstAccount({ client, stack }) };
     if (account) await world.createAccount();
+    if (beside) world.deluno = await beside.setUp(world, started);
     if (wantsBrowser) world.browser = browser = await Browser.launch(ORIGIN);
     results = await runScenarios({ ids, registry: scenarios, world });
   } catch (error) {
@@ -82,6 +93,8 @@ async function runWindowsShardHere({ shard, ids, setup, version, logFolder }) {
   try {
     return await runWindowsShard({
       ids,
+      registry: WINDOWS_SHARDS[shard].SCENARIOS,
+      watchLogs: WINDOWS_SHARDS[shard].watchLogs,
       machine: new WindowsMachine(),
       setupPath: resolve(setup),
       version: expectedVersion({ given: version ?? process.env.WEIR_BUILD_VERSION, props }),

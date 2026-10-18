@@ -60,6 +60,10 @@ jobs:
           dotnet restore tests/Weir.Contract.Tests --locked-mode
           dotnet build tests/Weir.Contract.Tests --no-restore
 
+      # The pinned collector that follows the server this suite starts as its own process (#1081, docs/coverage/README.md).
+      - name: Install dotnet-coverage
+        run: dotnet tool install --global dotnet-coverage --version 18.11.2
+
       # `dotnet test` passes when a filter matches nothing, so scripts/check-contract-areas.mjs (repo-checks)
       # guarantees every area in areas.json has test classes.
       - name: Contract suite, area (${{ matrix.area }}, ${{ matrix.platform }})
@@ -72,6 +76,8 @@ jobs:
           WEIR_CONTRACT_REAL_MKVTOOLNIX_DIR: ${{ steps.media-tools.outputs.mkvtoolnix-dir }}
           # Keep each server's data folder and log (<folder>/contract-logs) until the leg is known to have passed.
           WEIR_CONTRACT_KEEP_DATA: "1"
+          # Each server is asked to stop instead of being killed, so it writes what it ran.
+          WEIR_CONTRACT_COVERAGE: "1"
           # Every server the suite starts gets its data folder under here, so a failed leg can upload them.
           # TMPDIR is the Linux name; TEMP and TMP are Windows'.
           TMPDIR: ${{ runner.temp }}/weir-contract-data
@@ -79,7 +85,9 @@ jobs:
           TMP: ${{ runner.temp }}/weir-contract-data
         run: |
           mkdir -p "$TMPDIR"
-          dotnet test tests/Weir.Contract.Tests --no-build --filter "Area=$CONTRACT_AREA" --logger trx
+          dotnet-coverage collect --settings coverage.out-of-process.xml --output-format cobertura \
+            --output "$RUNNER_TEMP/out-of-process/coverage.cobertura.xml" --nologo -- \
+            dotnet test tests/Weir.Contract.Tests --no-build --filter "Area=$CONTRACT_AREA" --logger trx
 
       - name: Summarize contract results
         if: ${{ !cancelled() }}
@@ -94,6 +102,16 @@ jobs:
           CONTRACT_AREA: ${{ matrix.area }}
           PLATFORM: ${{ matrix.platform }}
         run: node scripts/check-contract-real-tool-tests.mjs "$CONTRACT_AREA" apps/server/tests/Weir.Contract.Tests "$PLATFORM" "Real-tool scenarios ($CONTRACT_AREA, $PLATFORM)"
+
+      # A leg that passed and wrote no coverage fails here, so the coverage check never reads a gap as "nothing to measure".
+      - name: Upload the server coverage this area measured
+        if: ${{ steps.contract.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-out-of-process-contract-${{ matrix.area }}
+          if-no-files-found: error
+          retention-days: 1
+          path: ${{ runner.temp }}/out-of-process/coverage.cobertura.xml
 
       - name: Upload contract results
         if: ${{ !cancelled() }}

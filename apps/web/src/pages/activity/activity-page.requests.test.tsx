@@ -1,27 +1,17 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ProcessingFile } from "../../lib/processing/files-api";
 import type { LibraryClean } from "../../lib/processing/library-cleans-api";
+import { filesPage, processingFile } from "../../test/dashboard-fixtures";
+import { jsonAnswer, type StubbedApi } from "../../test/stub-weir-api";
 import {
-  filesPage,
-  processingFile,
-  readyServer,
-  workflowRow,
-} from "../../test/dashboard-fixtures";
-import {
-  jsonAnswer,
-  stubWeirApi,
-  type StubbedApi,
-  type StubbedRequest,
-} from "../../test/stub-weir-api";
-import { ActivityPage } from "./activity-page";
-
-const FILES = "GET /api/v1/processing/files";
-const CLEANS = "GET /api/v1/processing/library-cleans";
-const WORKFLOWS = "GET /api/v1/processing/libraries";
+  CLEANS,
+  FILES,
+  WORKFLOWS,
+  renderActivityPage,
+  stubActivityServer,
+} from "./activity-test-server";
 
 const ALPHA = processingFile({
   id: 1,
@@ -56,54 +46,10 @@ function stubServer({
   attention = [] as ProcessingFile[],
   overrides = {} as Record<string, unknown>,
 } = {}) {
-  api = stubWeirApi({
-    [FILES]: (request: StubbedRequest) =>
-      filesPage(request.query.has("file_status") ? attention : files),
-    [CLEANS]: { cleans, returned: cleans.length, limit: 200 },
-    [WORKFLOWS]: [
-      workflowRow({ id: 1, name: "Movies" }),
-      workflowRow({ id: 2, name: "TV", media_type: "tv" }),
-    ],
-    "GET /api/v1/processing/kept-files": { files: [] },
-    "GET /api/v1/auth/me": {
-      user: { id: 1, username: "admin", role: "admin" },
-    },
-    "GET /api/v1/media-managers/connections": [],
-    "GET /api/v1/system/readiness": readyServer(),
-    "GET /api/v1/processing/jobs/inspection": { jobs: [] },
-    "GET /api/v1/pause": { paused: false },
-    "GET /api/v1/suite/settings": { app_timezone: "UTC" },
-    "GET /api/v1/processing/operator-settings": {
-      file_log_retention_days: 90,
-    },
-    ...Object.fromEntries(
-      files.map((file) => [
-        `GET /api/v1/processing/files/${file.id}/log`,
-        {
-          file_id: file.id,
-          relative_path: file.relative_path,
-          retention_days: 90,
-          entries: [],
-        },
-      ]),
-    ),
-    ...overrides,
-  });
+  api = stubActivityServer({ files, cleans, attention, overrides });
 }
 
-function renderPage(address = "/activity") {
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[address]}>
-        <ActivityPage />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
-}
+const renderPage = renderActivityPage;
 
 /** The request the page made for its list of downloads (the Needs you read has its own, narrowed by status). */
 const listRequests = () =>

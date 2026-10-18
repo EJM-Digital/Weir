@@ -198,6 +198,7 @@ export function CleanupTab() {
                 columnCount={columnCount}
                 inputId={`${ids}-window`}
                 inputLabel="Cleaned copies nobody picked up wait for"
+                unsavedThing="the days cleaned copies nobody picked up wait"
                 saved={
                   settings.data.unclaimed_handback_window_days ??
                   WINDOW_DEFAULT_DAYS

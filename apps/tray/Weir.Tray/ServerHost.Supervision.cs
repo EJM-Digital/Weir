@@ -98,6 +98,9 @@ sealed partial class ServerHost
         LaunchWatchdog();
     }
 
+    /// <summary>Whether the watchdog is running: it ends when the server is stopped on purpose and when it gives up, and a restart or a move starts it again.</summary>
+    internal bool IsWatching => _watchdog is { IsCompleted: false };
+
     private void LaunchWatchdog()
     {
         var onGaveUp = _onGaveUp!;

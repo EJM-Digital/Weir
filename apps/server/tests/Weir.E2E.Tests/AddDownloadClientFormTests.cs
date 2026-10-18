@@ -52,6 +52,7 @@ public sealed class AddDownloadClientFormTests(E2EServer server) : E2ETestBase(s
             await Expect(Fields.Password(panel)).ToHaveCountAsync(kind.Login == Login.ApiKey ? 0 : 1);
             await Expect(Fields.Address(panel)).ToBeVisibleAsync();
             await Expect(Fields.Nickname(panel)).ToBeVisibleAsync();
+            await Axe.AssertNoViolationsAsync(page, $"The add download client panel for {kind.Value}");
         }
     }
 
