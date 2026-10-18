@@ -1,0 +1,85 @@
+{
+  "app": "radarr",
+  "version": "6.4.4.10685",
+  "state": "downloaded-scan-for-download",
+  "recordedAt": "2026-10-17T05:26:24Z",
+  "note": "The same scan for a download the download client named, which Weir sends as the client's own id for it, as text.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/remotepathmapping",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": [
+          {
+            "host": "transmission",
+            "remotePath": "/remote-downloads/",
+            "localPath": "/downloads/",
+            "id": 1
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v3/command",
+        "headers": {
+          "content-type": "application/json",
+          "x-api-key": "<scrubbed>"
+        },
+        "body": {
+          "name": "DownloadedMoviesScan",
+          "path": "/remote-downloads/Big.Buck.Bunny.2008.720p.BluRay.x264-RECORDER/Big.Buck.Bunny.2008.720p.BluRay.x264-RECORDER.mkv",
+          "importMode": "Move",
+          "downloadClientId": "C5F32B7898081D15371612C2096A6A1ABF155B8F"
+        }
+      },
+      "reply": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "http://localhost:7878/api/v3/command/11"
+        },
+        "body": {
+          "name": "DownloadedMoviesScan",
+          "commandName": "Downloaded Movies Scan",
+          "body": {
+            "sendUpdatesToClient": false,
+            "sendUpdates": false,
+            "path": "/remote-downloads/Big.Buck.Bunny.2008.720p.BluRay.x264-RECORDER/Big.Buck.Bunny.2008.720p.BluRay.x264-RECORDER.mkv",
+            "downloadClientId": "C5F32B7898081D15371612C2096A6A1ABF155B8F",
+            "importMode": "move",
+            "requiresDiskAccess": true,
+            "isLongRunning": true,
+            "updateScheduledTask": true,
+            "isExclusive": false,
+            "isTypeExclusive": false,
+            "name": "DownloadedMoviesScan",
+            "trigger": "manual",
+            "suppressMessages": true
+          },
+          "priority": "normal",
+          "status": "started",
+          "result": "unknown",
+          "queued": "2026-10-17T05:26:24Z",
+          "started": "2026-10-17T05:26:24Z",
+          "trigger": "manual",
+          "stateChangeTime": "2026-10-17T05:26:24Z",
+          "sendUpdatesToClient": false,
+          "updateScheduledTask": true,
+          "id": 11
+        }
+      }
+    }
+  ]
+}

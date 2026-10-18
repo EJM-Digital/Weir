@@ -1,0 +1,73 @@
+{
+  "app": "radarr",
+  "version": "6.4.4.10685",
+  "state": "queue-with-download",
+  "recordedAt": "2026-10-17T05:26:18Z",
+  "note": "The queue while the app has one release handed to its download client.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/queue?pageSize=1000",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "page": 1,
+          "pageSize": 1000,
+          "sortKey": "timeleft",
+          "sortDirection": "descending",
+          "totalRecords": 1,
+          "records": [
+            {
+              "movieId": 1,
+              "languages": [
+                {
+                  "id": 1,
+                  "name": "English"
+                }
+              ],
+              "quality": {
+                "quality": {
+                  "id": 7,
+                  "name": "Bluray-1080p",
+                  "source": "bluray",
+                  "resolution": 1080,
+                  "modifier": "none"
+                },
+                "revision": {
+                  "version": 1,
+                  "real": 0,
+                  "isRepack": false
+                }
+              },
+              "customFormats": [],
+              "customFormatScore": 0,
+              "size": 524288,
+              "title": "Big.Buck.Bunny.2008.1080p.BluRay.x264-RECORDER",
+              "added": "2026-10-17T05:26:15Z",
+              "status": "downloading",
+              "trackedDownloadStatus": "ok",
+              "trackedDownloadState": "downloading",
+              "statusMessages": [],
+              "downloadId": "C5F32B7898081D15371612C2096A6A1ABF155B8F",
+              "protocol": "torrent",
+              "downloadClient": "Transmission",
+              "downloadClientHasPostImportCategory": false,
+              "outputPath": "/downloads/complete/radarr/Big.Buck.Bunny.2008.1080p.BluRay.x264-RECORDER",
+              "sizeleft": 524288,
+              "id": 210751219
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

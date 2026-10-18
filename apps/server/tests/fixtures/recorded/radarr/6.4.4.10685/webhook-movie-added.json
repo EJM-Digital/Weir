@@ -1,0 +1,61 @@
+{
+  "app": "radarr",
+  "version": "6.4.4.10685",
+  "state": "webhook-movie-added",
+  "recordedAt": "2026-10-17T05:26:24Z",
+  "note": "The app's own MovieAdded webhook, as it posted it. The 200 is the recorder's, not Weir's.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/radarr",
+        "headers": {
+          "content-type": "application/json",
+          "user-agent": "Radarr/6.4.4.10685 (alpine 3.24.2)",
+          "x-webhook-secret": "<scrubbed>"
+        },
+        "body": {
+          "movie": {
+            "id": 1,
+            "title": "Big Buck Bunny",
+            "year": 2008,
+            "releaseDate": "2008-07-09",
+            "folderPath": "/movies/Big Buck Bunny (2008)",
+            "tmdbId": 10378,
+            "imdbId": "tt1254207",
+            "overview": "<scrubbed>",
+            "genres": [
+              "Animation",
+              "Comedy",
+              "Family"
+            ],
+            "images": [
+              {
+                "coverType": "poster",
+                "url": "/MediaCover/1/poster.jpg?h=575804ada86e356966a7",
+                "remoteUrl": "https://image.tmdb.org/t/p/original/i9jJzvoXET4D9pOkoEwncSdNNER.jpg"
+              },
+              {
+                "coverType": "fanart",
+                "url": "/MediaCover/1/fanart.jpg?h=a54364feca427354955c",
+                "remoteUrl": "https://image.tmdb.org/t/p/original/xtdybjRRZ15mCrPOvEld305myys.jpg"
+              }
+            ],
+            "tags": [],
+            "originalLanguage": {
+              "id": 1,
+              "name": "English"
+            }
+          },
+          "addMethod": "manual",
+          "eventType": "MovieAdded",
+          "instanceName": "Radarr",
+          "applicationUrl": ""
+        }
+      },
+      "reply": {
+        "status": 200
+      }
+    }
+  ]
+}
