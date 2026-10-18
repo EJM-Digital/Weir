@@ -29,6 +29,13 @@ public sealed class RuleSetRealPassTests(RuleSetRealPassTests.World world) : ICl
     private static string Langs(PassResult pass, string kind) =>
         string.Join(",", pass.Tracks.Where(track => track.Kind == kind).Select(track => track.Language.Length == 0 ? "-" : track.Language));
 
+    /// <summary>The audio languages of the copy, and when they are not the ones expected, what the metadata service was asked and what Weir logged about it.</summary>
+    private async Task AssertAudioAsync(string expected, PassResult pass)
+    {
+        var actual = Langs(pass, "audio");
+        Assert.True(expected == actual, $"Expected the audio {expected}, but the copy has {actual}. {await world.WhatTheMetadataServiceSawAsync()}");
+    }
+
     private static IEnumerable<RealMedia.Described> Of(PassResult pass, string kind) => pass.Tracks.Where(track => track.Kind == kind);
 
     /// <summary>The copy Weir wrote: its tracks, and what else the film itself carries.</summary>
@@ -109,8 +116,8 @@ public sealed class RuleSetRealPassTests(RuleSetRealPassTests.World world) : ICl
         var plain = await world.RunNamedAsync("Nosferatu.1922.1080p", "Preferred only", film, ("primary_audio_lang", "eng"));
         var original = await world.RunNamedAsync("Nosferatu.1923.1080p", "Original language", film, ("primary_audio_lang", "eng"), ("keep_original_language", true));
 
-        Assert.Equal("eng", Langs(plain, "audio"));
-        Assert.Equal("ger", Langs(original, "audio"));
+        await AssertAudioAsync("eng", plain);
+        await AssertAudioAsync("ger", original);
     }
 
     [RealFfmpegFact]
@@ -126,8 +133,8 @@ public sealed class RuleSetRealPassTests(RuleSetRealPassTests.World world) : ICl
             ("keep_original_language", true),
             ("original_language_additional_csv", "fre"));
 
-        Assert.Equal("eng", Langs(without, "audio"));
-        Assert.Equal("fre", Langs(with, "audio"));
+        await AssertAudioAsync("eng", without);
+        await AssertAudioAsync("fre", with);
     }
 
     [RealFfmpegFact]
@@ -143,8 +150,8 @@ public sealed class RuleSetRealPassTests(RuleSetRealPassTests.World world) : ICl
             ("keep_original_language", true),
             ("original_language_treat_empty_as_original", true));
 
-        Assert.Equal("eng", Langs(tagged, "audio"));
-        Assert.Equal("-", Langs(untagged, "audio"));
+        await AssertAudioAsync("eng", tagged);
+        await AssertAudioAsync("-", untagged);
     }
 
     [RealFfmpegFact]
@@ -276,6 +283,14 @@ public sealed class RuleSetRealPassTests(RuleSetRealPassTests.World world) : ICl
         }
 
         public void Dispose() => _gateway.Dispose();
+
+        /// <summary>What a pass that kept the wrong language needs to be explained: the searches the service answered and the warnings Weir logged.</summary>
+        internal async Task<string> WhatTheMetadataServiceSawAsync()
+        {
+            var log = await _scenario.Admin.GetAsync($"{WeirClient.Api}/system/log", ("level", "warning,error"), ("limit", 20));
+            var logged = log.Fields["items"]!.AsArray().Select(row => (string)row!["title"]!);
+            return $"The service answered {_gateway.Searches().Count} searches ({string.Join(", ", _gateway.Searches().Select(search => search.Query.GetValueOrDefault("query")?[0]))}). Weir logged: {string.Join(" | ", logged)}.";
+        }
 
         /// <summary>Saves a rule set with these settings, points the workflow at it, passes a film through it and returns the tracks of the copy written.</summary>
         internal async Task<PassResult> RunAsync(string name, RealMedia.Film film, params (string Setting, JsonNode Value)[] settings) =>
