@@ -10,6 +10,9 @@ public static class RepoPaths
 
     public static string WebDist => Path.Combine(Root.Value, "apps", "web", "dist");
 
+    /// <summary>The replies other services recorded for the tests to replay, and the requests the web app sends (`apps/server/tests/fixtures`).</summary>
+    public static string Fixtures => Path.Combine(Root.Value, "apps", "server", "tests", "fixtures");
+
     /// <summary>Informational screenshots, ignored by git: no pixel-exact baselines are committed.</summary>
     public static string Screenshots => Path.Combine(Root.Value, "artifacts", "screenshots");
 

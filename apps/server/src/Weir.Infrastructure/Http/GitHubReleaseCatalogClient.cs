@@ -26,13 +26,18 @@ public sealed class GitHubReleaseCatalogClient : IReleaseCatalogClient
     private readonly TimeProvider _time;
     private readonly ILogger<GitHubReleaseCatalogClient> _logger;
     private readonly HttpMessageHandler _handler;
+    private readonly string _feedUrl;
     private readonly Lock _gate = new();
     private IReadOnlyList<GitHubReleaseRecord>? _lastKnown;
     private (int Status, DateTimeOffset ResetsAt)? _limit;
 
-    /// <summary>The <paramref name="handler"/> carries the requests; the default connects to loopback first and follows redirects.</summary>
-    public GitHubReleaseCatalogClient(TimeProvider time, ILogger<GitHubReleaseCatalogClient> logger, HttpMessageHandler? handler = null)
+    /// <summary>
+    /// The <paramref name="handler"/> carries the requests; the default connects to loopback first and follows redirects. A test names the
+    /// <paramref name="feedUrl"/> of a feed to play instead of GitHub's public one.
+    /// </summary>
+    public GitHubReleaseCatalogClient(TimeProvider time, ILogger<GitHubReleaseCatalogClient> logger, HttpMessageHandler? handler = null, string? feedUrl = null)
     {
+        _feedUrl = feedUrl ?? ReleaseCatalog.ReleasesFeedUrl;
         _time = time ?? throw new ArgumentNullException(nameof(time));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _handler = handler ?? new SocketsHttpHandler
@@ -69,7 +74,7 @@ public sealed class GitHubReleaseCatalogClient : IReleaseCatalogClient
     private async Task<IReadOnlyList<GitHubReleaseRecord>> ReadFeedAsync(string currentVersion, CancellationToken cancellationToken)
     {
         using var client = new HttpClient(_handler, disposeHandler: false) { Timeout = RequestTimeout, MaxResponseContentBufferSize = MostFeedBytes };
-        using var request = Request(ReleaseCatalog.ReleasesFeedUrl, currentVersion);
+        using var request = Request(_feedUrl, currentVersion);
         using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         return ReleaseFeed.Parse(await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));

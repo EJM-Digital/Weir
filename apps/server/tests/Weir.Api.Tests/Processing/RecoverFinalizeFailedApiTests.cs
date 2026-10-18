@@ -80,7 +80,7 @@ public sealed class RecoverFinalizeFailedApiTests
         using var response = await RecoverAsync(client, jobId);
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        Assert.Equal("Only a job whose media work completed but finalization failed can be recovered.", await Detail(response));
+        Assert.Equal("This job is not waiting for its result to be saved, so there is nothing to recover; the log shows where it is now.", await Detail(response));
         Assert.Equal(status, await StatusAsync(server, jobId));
         Assert.Equal(FinalizeError, await TestDatabase.ScalarStringAsync(server, "SELECT last_error FROM jobs WHERE id = $id", ("$id", jobId)));
     }

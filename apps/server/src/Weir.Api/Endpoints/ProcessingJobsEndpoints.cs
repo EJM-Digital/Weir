@@ -112,7 +112,7 @@ internal sealed class ProcessingJobsEndpointHandlers
 
         if (result.Outcome == JobActionOutcome.WrongStatus)
         {
-            throw new ApiException(StatusCodes.Status409Conflict, "Only pending jobs can be cancelled (not leased, completed, failed, or already cancelled).");
+            throw new ApiException(StatusCodes.Status409Conflict, "This job is no longer waiting, so it can't be cancelled; the log shows where it is now.");
         }
 
         if (result.EndedHandoff is { } handoff)
@@ -152,7 +152,7 @@ internal sealed class ProcessingJobsEndpointHandlers
 
         if (outcome == JobActionOutcome.WrongStatus)
         {
-            throw new ApiException(StatusCodes.Status409Conflict, "Only a job whose media work completed but finalization failed can be recovered.");
+            throw new ApiException(StatusCodes.Status409Conflict, "This job is not waiting for its result to be saved, so there is nothing to recover; the log shows where it is now.");
         }
 
         return ApiRoutes.Ok(new WireObject().Set("ok", true).Set("job_id", id).Set("status", ProcessingJobStatus.Completed));
