@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Weir.Core.Activity;
 using Weir.Core.LibraryMode;
 using Weir.Infrastructure.LibraryMode;
+using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Processing.RemuxPass;
 using Weir.Infrastructure.Tests.Jobs;
 using Weir.Infrastructure.Tests.Media;
@@ -18,11 +19,11 @@ internal sealed class SwapScenario
     public static readonly string Temp = SafeSwapRules.TempPath(Original);
     public static readonly string Backup = SafeSwapRules.BackupPath(Original);
 
-    public SwapScenario()
+    public SwapScenario(IOutputOwnership? ownership = null)
     {
         Files.Put(Original, "OLD");
         Journal = new FakeSwapJournal(Files);
-        Swap = new SafeSwap(Files, Journal, Validator, SwapLogger);
+        Swap = new SafeSwap(Files, Journal, Validator, SwapLogger, ownership);
         Sweep = new SwapRecoverySweep(Files, Journal, ActivityWriter, SweepLogger);
     }
 

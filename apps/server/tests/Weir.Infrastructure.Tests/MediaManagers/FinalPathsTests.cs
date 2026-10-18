@@ -73,6 +73,8 @@ public sealed class FinalPathsTests
     [Theory]
     [InlineData("")]
     [InlineData("relative/folder")]
+    [InlineData("   ")]
+    [InlineData(".")]
     public void A_path_that_is_not_fully_qualified_does_not_resolve(string path)
     {
         Assert.Null(FinalPaths.Resolve(path));
@@ -87,5 +89,40 @@ public sealed class FinalPathsTests
         FolderLinks.Create(mount, real);
 
         Assert.Equal(real, new FilesystemFolderProbe().ResolveFinalPath(mount), ignoreCase: true);
+    }
+
+    [Fact]
+    public void A_file_resolves_to_itself()
+    {
+        using var temp = new TempDirectory();
+        var file = temp.Join("Film.mkv");
+        File.WriteAllBytes(file, new byte[4]);
+
+        Assert.Equal(file, FinalPaths.Resolve(file), ignoreCase: true);
+    }
+
+    [Fact]
+    public void A_path_the_system_cannot_read_does_not_resolve()
+    {
+        Assert.Null(FinalPaths.Resolve(Path.Join(Path.GetTempPath(), "a\u0000b")));
+    }
+
+    [Fact]
+    public void A_chain_of_forty_links_resolves_and_one_more_gives_up()
+    {
+        using var temp = new TempDirectory();
+        var real = Directory.CreateDirectory(temp.Join("Real")).FullName;
+        var previous = real;
+        var links = new List<string>();
+        for (var number = 1; number <= 41; number++)
+        {
+            var link = temp.Join($"Link{number}");
+            FolderLinks.Create(link, previous);
+            links.Add(link);
+            previous = link;
+        }
+
+        Assert.Equal(real, FinalPaths.Resolve(links[39]), ignoreCase: true);
+        Assert.Null(FinalPaths.Resolve(links[40]));
     }
 }
