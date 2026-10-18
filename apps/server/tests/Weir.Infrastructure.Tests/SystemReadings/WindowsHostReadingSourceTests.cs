@@ -60,7 +60,8 @@ public sealed class WindowsHostReadingSourceTests
         if (Environment.OSVersion.Version.Build >= 22000)
         {
             Assert.DoesNotContain("Windows 10", name, StringComparison.Ordinal);
-            Assert.Contains("Windows 11", name, StringComparison.Ordinal);
+            // Windows Server shares the build numbers of Windows 11 and is named for what it is.
+            Assert.Contains(name.Contains("Server", StringComparison.Ordinal) ? "Windows Server" : "Windows 11", name, StringComparison.Ordinal);
         }
     }
 
