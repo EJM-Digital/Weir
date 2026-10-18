@@ -1,0 +1,74 @@
+{
+  "app": "sonarr",
+  "version": "4.0.20.3014",
+  "state": "downloaded-scan",
+  "recordedAt": "2026-10-17T05:26:01Z",
+  "note": "Weir asks the app to scan the folder a finished download is in; the app imports it.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/remotepathmapping",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": []
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v3/command",
+        "headers": {
+          "content-type": "application/json",
+          "x-api-key": "<scrubbed>"
+        },
+        "body": {
+          "name": "DownloadedEpisodesScan",
+          "path": "/downloads/Breaking.Bad.S01E01.720p.WEB.h264-RECORDER/Breaking.Bad.S01E01.720p.WEB.h264-RECORDER.mkv",
+          "importMode": "Move"
+        }
+      },
+      "reply": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "http://localhost:8989/api/v3/command/9"
+        },
+        "body": {
+          "name": "DownloadedEpisodesScan",
+          "commandName": "Downloaded Episodes Scan",
+          "body": {
+            "path": "/downloads/Breaking.Bad.S01E01.720p.WEB.h264-RECORDER/Breaking.Bad.S01E01.720p.WEB.h264-RECORDER.mkv",
+            "importMode": "move",
+            "requiresDiskAccess": true,
+            "isLongRunning": true,
+            "sendUpdatesToClient": true,
+            "updateScheduledTask": true,
+            "isExclusive": false,
+            "name": "DownloadedEpisodesScan",
+            "trigger": "manual",
+            "suppressMessages": true
+          },
+          "priority": "normal",
+          "status": "started",
+          "result": "unknown",
+          "queued": "2026-10-17T05:26:01Z",
+          "started": "2026-10-17T05:26:01Z",
+          "trigger": "manual",
+          "stateChangeTime": "2026-10-17T05:26:01Z",
+          "sendUpdatesToClient": true,
+          "updateScheduledTask": true,
+          "id": 9
+        }
+      }
+    }
+  ]
+}

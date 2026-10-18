@@ -1,0 +1,719 @@
+{
+  "app": "sonarr",
+  "version": "4.0.20.3014",
+  "state": "library-listing",
+  "recordedAt": "2026-10-17T05:26:10Z",
+  "note": "Weir lists the files the app keeps, matched to titles, and asks which files it still keeps.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/series?pageSize=200000",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": [
+          {
+            "title": "Breaking Bad",
+            "alternateTitles": [],
+            "sortTitle": "breaking bad",
+            "status": "ended",
+            "ended": true,
+            "overview": "<scrubbed>",
+            "previousAiring": "2013-09-30T01:00:00Z",
+            "network": "AMC",
+            "airTime": "21:00",
+            "images": [
+              {
+                "coverType": "banner",
+                "url": "/MediaCover/1/banner.jpg?lastWrite=639278115472079600",
+                "remoteUrl": "https://artworks.thetvdb.com/banners/graphical/81189-g21.jpg"
+              },
+              {
+                "coverType": "poster",
+                "url": "/MediaCover/1/poster.jpg?lastWrite=639278115472719609",
+                "remoteUrl": "https://artworks.thetvdb.com/banners/posters/81189-10.jpg"
+              },
+              {
+                "coverType": "fanart",
+                "url": "/MediaCover/1/fanart.jpg?lastWrite=639278115473329617",
+                "remoteUrl": "https://artworks.thetvdb.com/banners/fanart/original/81189-21.jpg"
+              },
+              {
+                "coverType": "clearlogo",
+                "url": "/MediaCover/1/clearlogo.png?lastWrite=639278115473599621",
+                "remoteUrl": "https://artworks.thetvdb.com/banners/v4/series/81189/clearlogo/611b4df33bac5.png"
+              }
+            ],
+            "originalLanguage": {
+              "id": 1,
+              "name": "English"
+            },
+            "seasons": [
+              {
+                "seasonNumber": 0,
+                "monitored": false,
+                "statistics": {
+                  "episodeFileCount": 0,
+                  "episodeCount": 0,
+                  "totalEpisodeCount": 18,
+                  "sizeOnDisk": 0,
+                  "releaseGroups": [],
+                  "percentOfEpisodes": 0
+                }
+              },
+              {
+                "seasonNumber": 1,
+                "monitored": true,
+                "statistics": {
+                  "previousAiring": "2008-03-10T01:00:00Z",
+                  "episodeFileCount": 3,
+                  "episodeCount": 7,
+                  "totalEpisodeCount": 7,
+                  "sizeOnDisk": 20284416,
+                  "releaseGroups": [
+                    "RECORDER"
+                  ],
+                  "percentOfEpisodes": 42.857142857142857142857142860
+                }
+              },
+              {
+                "seasonNumber": 2,
+                "monitored": true,
+                "statistics": {
+                  "previousAiring": "2009-06-01T01:00:00Z",
+                  "episodeFileCount": 0,
+                  "episodeCount": 13,
+                  "totalEpisodeCount": 13,
+                  "sizeOnDisk": 0,
+                  "releaseGroups": [],
+                  "percentOfEpisodes": 0
+                }
+              },
+              {
+                "seasonNumber": 3,
+                "monitored": true,
+                "statistics": {
+                  "previousAiring": "2010-06-14T01:00:00Z",
+                  "episodeFileCount": 0,
+                  "episodeCount": 13,
+                  "totalEpisodeCount": 13,
+                  "sizeOnDisk": 0,
+                  "releaseGroups": [],
+                  "percentOfEpisodes": 0
+                }
+              },
+              {
+                "seasonNumber": 4,
+                "monitored": true,
+                "statistics": {
+                  "previousAiring": "2011-10-10T01:00:00Z",
+                  "episodeFileCount": 0,
+                  "episodeCount": 13,
+                  "totalEpisodeCount": 13,
+                  "sizeOnDisk": 0,
+                  "releaseGroups": [],
+                  "percentOfEpisodes": 0
+                }
+              },
+              {
+                "seasonNumber": 5,
+                "monitored": true,
+                "statistics": {
+                  "previousAiring": "2013-09-30T01:00:00Z",
+                  "episodeFileCount": 0,
+                  "episodeCount": 16,
+                  "totalEpisodeCount": 16,
+                  "sizeOnDisk": 0,
+                  "releaseGroups": [],
+                  "percentOfEpisodes": 0
+                }
+              }
+            ],
+            "year": 2008,
+            "path": "/tv/Breaking Bad",
+            "qualityProfileId": 1,
+            "seasonFolder": true,
+            "monitored": true,
+            "monitorNewItems": "all",
+            "useSceneNumbering": false,
+            "runtime": 48,
+            "tvdbId": 81189,
+            "tvRageId": 18164,
+            "tvMazeId": 169,
+            "tmdbId": 1396,
+            "firstAired": "2008-01-20T00:00:00Z",
+            "lastAired": "2013-09-29T00:00:00Z",
+            "seriesType": "standard",
+            "cleanTitle": "breakingbad",
+            "imdbId": "tt0903747",
+            "titleSlug": "breaking-bad",
+            "rootFolderPath": "/tv",
+            "certification": "TV-MA",
+            "genres": [
+              "Crime",
+              "Drama",
+              "Thriller",
+              "Western"
+            ],
+            "tags": [],
+            "added": "2026-10-17T05:25:46Z",
+            "ratings": {
+              "votes": 2691904,
+              "value": 9.5
+            },
+            "statistics": {
+              "seasonCount": 5,
+              "episodeFileCount": 3,
+              "episodeCount": 62,
+              "totalEpisodeCount": 80,
+              "sizeOnDisk": 20284416,
+              "releaseGroups": [
+                "RECORDER"
+              ],
+              "percentOfEpisodes": 4.8387096774193548387096774200
+            },
+            "languageProfileId": 1,
+            "id": 1
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/episodefile?seriesId=1",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": [
+          {
+            "seriesId": 1,
+            "seasonNumber": 1,
+            "relativePath": "Season 1/Breaking.Bad.S01E01.720p.WEB.h264-RECORDER.mkv",
+            "path": "/tv/Breaking Bad/Season 1/Breaking.Bad.S01E01.720p.WEB.h264-RECORDER.mkv",
+            "size": 6761472,
+            "dateAdded": "2026-10-17T05:26:01Z",
+            "sceneName": "Breaking.Bad.S01E01.720p.WEB.h264-RECORDER",
+            "releaseGroup": "RECORDER",
+            "languages": [
+              {
+                "id": 1,
+                "name": "English"
+              }
+            ],
+            "quality": {
+              "quality": {
+                "id": 8,
+                "name": "WEBDL-480p",
+                "source": "web",
+                "resolution": 480
+              },
+              "revision": {
+                "version": 1,
+                "real": 0,
+                "isRepack": false
+              }
+            },
+            "customFormats": [],
+            "customFormatScore": 0,
+            "indexerFlags": 0,
+            "releaseType": "singleEpisode",
+            "mediaInfo": {
+              "audioBitrate": 0,
+              "audioChannels": 1,
+              "audioCodec": "AAC",
+              "audioLanguages": "",
+              "audioStreamCount": 1,
+              "videoBitDepth": 8,
+              "videoBitrate": 0,
+              "videoCodec": "",
+              "videoFps": 1,
+              "videoDynamicRange": "",
+              "videoDynamicRangeType": "",
+              "resolution": "160x120",
+              "runTime": "11:00",
+              "scanType": "Progressive",
+              "subtitles": ""
+            },
+            "qualityCutoffNotMet": false,
+            "id": 1
+          },
+          {
+            "seriesId": 1,
+            "seasonNumber": 1,
+            "relativePath": "Season 1/Breaking.Bad.S01E02.720p.WEB.h264-RECORDER.mkv",
+            "path": "/tv/Breaking Bad/Season 1/Breaking.Bad.S01E02.720p.WEB.h264-RECORDER.mkv",
+            "size": 6761472,
+            "dateAdded": "2026-10-17T05:26:04Z",
+            "sceneName": "Breaking.Bad.S01E02.720p.WEB.h264-RECORDER",
+            "releaseGroup": "RECORDER",
+            "languages": [
+              {
+                "id": 1,
+                "name": "English"
+              }
+            ],
+            "quality": {
+              "quality": {
+                "id": 8,
+                "name": "WEBDL-480p",
+                "source": "web",
+                "resolution": 480
+              },
+              "revision": {
+                "version": 1,
+                "real": 0,
+                "isRepack": false
+              }
+            },
+            "customFormats": [],
+            "customFormatScore": 0,
+            "indexerFlags": 0,
+            "releaseType": "singleEpisode",
+            "mediaInfo": {
+              "audioBitrate": 0,
+              "audioChannels": 1,
+              "audioCodec": "AAC",
+              "audioLanguages": "",
+              "audioStreamCount": 1,
+              "videoBitDepth": 8,
+              "videoBitrate": 0,
+              "videoCodec": "",
+              "videoFps": 1,
+              "videoDynamicRange": "",
+              "videoDynamicRangeType": "",
+              "resolution": "160x120",
+              "runTime": "11:00",
+              "scanType": "Progressive",
+              "subtitles": ""
+            },
+            "qualityCutoffNotMet": false,
+            "id": 2
+          },
+          {
+            "seriesId": 1,
+            "seasonNumber": 1,
+            "relativePath": "Season 1/Breaking.Bad.S01E03.720p.WEB.h264-RECORDER.mkv",
+            "path": "/tv/Breaking Bad/Season 1/Breaking.Bad.S01E03.720p.WEB.h264-RECORDER.mkv",
+            "size": 6761472,
+            "dateAdded": "2026-10-17T05:26:07Z",
+            "sceneName": "Breaking.Bad.S01E03.720p.WEB.h264-RECORDER",
+            "releaseGroup": "RECORDER",
+            "languages": [
+              {
+                "id": 1,
+                "name": "English"
+              }
+            ],
+            "quality": {
+              "quality": {
+                "id": 8,
+                "name": "WEBDL-480p",
+                "source": "web",
+                "resolution": 480
+              },
+              "revision": {
+                "version": 1,
+                "real": 0,
+                "isRepack": false
+              }
+            },
+            "customFormats": [],
+            "customFormatScore": 0,
+            "indexerFlags": 0,
+            "releaseType": "singleEpisode",
+            "mediaInfo": {
+              "audioBitrate": 0,
+              "audioChannels": 1,
+              "audioCodec": "AAC",
+              "audioLanguages": "",
+              "audioStreamCount": 1,
+              "videoBitDepth": 8,
+              "videoBitrate": 0,
+              "videoCodec": "",
+              "videoFps": 1,
+              "videoDynamicRange": "",
+              "videoDynamicRangeType": "",
+              "resolution": "160x120",
+              "runTime": "11:00",
+              "scanType": "Progressive",
+              "subtitles": ""
+            },
+            "qualityCutoffNotMet": false,
+            "id": 3
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/series?pageSize=200000",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": [
+          {
+            "title": "Breaking Bad",
+            "alternateTitles": [],
+            "sortTitle": "breaking bad",
+            "status": "ended",
+            "ended": true,
+            "overview": "<scrubbed>",
+            "previousAiring": "2013-09-30T01:00:00Z",
+            "network": "AMC",
+            "airTime": "21:00",
+            "images": [
+              {
+                "coverType": "banner",
+                "url": "/MediaCover/1/banner.jpg?lastWrite=639278115472079600",
+                "remoteUrl": "https://artworks.thetvdb.com/banners/graphical/81189-g21.jpg"
+              },
+              {
+                "coverType": "poster",
+                "url": "/MediaCover/1/poster.jpg?lastWrite=639278115472719609",
+                "remoteUrl": "https://artworks.thetvdb.com/banners/posters/81189-10.jpg"
+              },
+              {
+                "coverType": "fanart",
+                "url": "/MediaCover/1/fanart.jpg?lastWrite=639278115473329617",
+                "remoteUrl": "https://artworks.thetvdb.com/banners/fanart/original/81189-21.jpg"
+              },
+              {
+                "coverType": "clearlogo",
+                "url": "/MediaCover/1/clearlogo.png?lastWrite=639278115473599621",
+                "remoteUrl": "https://artworks.thetvdb.com/banners/v4/series/81189/clearlogo/611b4df33bac5.png"
+              }
+            ],
+            "originalLanguage": {
+              "id": 1,
+              "name": "English"
+            },
+            "seasons": [
+              {
+                "seasonNumber": 0,
+                "monitored": false,
+                "statistics": {
+                  "episodeFileCount": 0,
+                  "episodeCount": 0,
+                  "totalEpisodeCount": 18,
+                  "sizeOnDisk": 0,
+                  "releaseGroups": [],
+                  "percentOfEpisodes": 0
+                }
+              },
+              {
+                "seasonNumber": 1,
+                "monitored": true,
+                "statistics": {
+                  "previousAiring": "2008-03-10T01:00:00Z",
+                  "episodeFileCount": 3,
+                  "episodeCount": 7,
+                  "totalEpisodeCount": 7,
+                  "sizeOnDisk": 20284416,
+                  "releaseGroups": [
+                    "RECORDER"
+                  ],
+                  "percentOfEpisodes": 42.857142857142857142857142860
+                }
+              },
+              {
+                "seasonNumber": 2,
+                "monitored": true,
+                "statistics": {
+                  "previousAiring": "2009-06-01T01:00:00Z",
+                  "episodeFileCount": 0,
+                  "episodeCount": 13,
+                  "totalEpisodeCount": 13,
+                  "sizeOnDisk": 0,
+                  "releaseGroups": [],
+                  "percentOfEpisodes": 0
+                }
+              },
+              {
+                "seasonNumber": 3,
+                "monitored": true,
+                "statistics": {
+                  "previousAiring": "2010-06-14T01:00:00Z",
+                  "episodeFileCount": 0,
+                  "episodeCount": 13,
+                  "totalEpisodeCount": 13,
+                  "sizeOnDisk": 0,
+                  "releaseGroups": [],
+                  "percentOfEpisodes": 0
+                }
+              },
+              {
+                "seasonNumber": 4,
+                "monitored": true,
+                "statistics": {
+                  "previousAiring": "2011-10-10T01:00:00Z",
+                  "episodeFileCount": 0,
+                  "episodeCount": 13,
+                  "totalEpisodeCount": 13,
+                  "sizeOnDisk": 0,
+                  "releaseGroups": [],
+                  "percentOfEpisodes": 0
+                }
+              },
+              {
+                "seasonNumber": 5,
+                "monitored": true,
+                "statistics": {
+                  "previousAiring": "2013-09-30T01:00:00Z",
+                  "episodeFileCount": 0,
+                  "episodeCount": 16,
+                  "totalEpisodeCount": 16,
+                  "sizeOnDisk": 0,
+                  "releaseGroups": [],
+                  "percentOfEpisodes": 0
+                }
+              }
+            ],
+            "year": 2008,
+            "path": "/tv/Breaking Bad",
+            "qualityProfileId": 1,
+            "seasonFolder": true,
+            "monitored": true,
+            "monitorNewItems": "all",
+            "useSceneNumbering": false,
+            "runtime": 48,
+            "tvdbId": 81189,
+            "tvRageId": 18164,
+            "tvMazeId": 169,
+            "tmdbId": 1396,
+            "firstAired": "2008-01-20T00:00:00Z",
+            "lastAired": "2013-09-29T00:00:00Z",
+            "seriesType": "standard",
+            "cleanTitle": "breakingbad",
+            "imdbId": "tt0903747",
+            "titleSlug": "breaking-bad",
+            "rootFolderPath": "/tv",
+            "certification": "TV-MA",
+            "genres": [
+              "Crime",
+              "Drama",
+              "Thriller",
+              "Western"
+            ],
+            "tags": [],
+            "added": "2026-10-17T05:25:46Z",
+            "ratings": {
+              "votes": 2691904,
+              "value": 9.5
+            },
+            "statistics": {
+              "seasonCount": 5,
+              "episodeFileCount": 3,
+              "episodeCount": 62,
+              "totalEpisodeCount": 80,
+              "sizeOnDisk": 20284416,
+              "releaseGroups": [
+                "RECORDER"
+              ],
+              "percentOfEpisodes": 4.8387096774193548387096774200
+            },
+            "languageProfileId": 1,
+            "id": 1
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/episodefile?seriesId=1",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": [
+          {
+            "seriesId": 1,
+            "seasonNumber": 1,
+            "relativePath": "Season 1/Breaking.Bad.S01E01.720p.WEB.h264-RECORDER.mkv",
+            "path": "/tv/Breaking Bad/Season 1/Breaking.Bad.S01E01.720p.WEB.h264-RECORDER.mkv",
+            "size": 6761472,
+            "dateAdded": "2026-10-17T05:26:01Z",
+            "sceneName": "Breaking.Bad.S01E01.720p.WEB.h264-RECORDER",
+            "releaseGroup": "RECORDER",
+            "languages": [
+              {
+                "id": 1,
+                "name": "English"
+              }
+            ],
+            "quality": {
+              "quality": {
+                "id": 8,
+                "name": "WEBDL-480p",
+                "source": "web",
+                "resolution": 480
+              },
+              "revision": {
+                "version": 1,
+                "real": 0,
+                "isRepack": false
+              }
+            },
+            "customFormats": [],
+            "customFormatScore": 0,
+            "indexerFlags": 0,
+            "releaseType": "singleEpisode",
+            "mediaInfo": {
+              "audioBitrate": 0,
+              "audioChannels": 1,
+              "audioCodec": "AAC",
+              "audioLanguages": "",
+              "audioStreamCount": 1,
+              "videoBitDepth": 8,
+              "videoBitrate": 0,
+              "videoCodec": "",
+              "videoFps": 1,
+              "videoDynamicRange": "",
+              "videoDynamicRangeType": "",
+              "resolution": "160x120",
+              "runTime": "11:00",
+              "scanType": "Progressive",
+              "subtitles": ""
+            },
+            "qualityCutoffNotMet": false,
+            "id": 1
+          },
+          {
+            "seriesId": 1,
+            "seasonNumber": 1,
+            "relativePath": "Season 1/Breaking.Bad.S01E02.720p.WEB.h264-RECORDER.mkv",
+            "path": "/tv/Breaking Bad/Season 1/Breaking.Bad.S01E02.720p.WEB.h264-RECORDER.mkv",
+            "size": 6761472,
+            "dateAdded": "2026-10-17T05:26:04Z",
+            "sceneName": "Breaking.Bad.S01E02.720p.WEB.h264-RECORDER",
+            "releaseGroup": "RECORDER",
+            "languages": [
+              {
+                "id": 1,
+                "name": "English"
+              }
+            ],
+            "quality": {
+              "quality": {
+                "id": 8,
+                "name": "WEBDL-480p",
+                "source": "web",
+                "resolution": 480
+              },
+              "revision": {
+                "version": 1,
+                "real": 0,
+                "isRepack": false
+              }
+            },
+            "customFormats": [],
+            "customFormatScore": 0,
+            "indexerFlags": 0,
+            "releaseType": "singleEpisode",
+            "mediaInfo": {
+              "audioBitrate": 0,
+              "audioChannels": 1,
+              "audioCodec": "AAC",
+              "audioLanguages": "",
+              "audioStreamCount": 1,
+              "videoBitDepth": 8,
+              "videoBitrate": 0,
+              "videoCodec": "",
+              "videoFps": 1,
+              "videoDynamicRange": "",
+              "videoDynamicRangeType": "",
+              "resolution": "160x120",
+              "runTime": "11:00",
+              "scanType": "Progressive",
+              "subtitles": ""
+            },
+            "qualityCutoffNotMet": false,
+            "id": 2
+          },
+          {
+            "seriesId": 1,
+            "seasonNumber": 1,
+            "relativePath": "Season 1/Breaking.Bad.S01E03.720p.WEB.h264-RECORDER.mkv",
+            "path": "/tv/Breaking Bad/Season 1/Breaking.Bad.S01E03.720p.WEB.h264-RECORDER.mkv",
+            "size": 6761472,
+            "dateAdded": "2026-10-17T05:26:07Z",
+            "sceneName": "Breaking.Bad.S01E03.720p.WEB.h264-RECORDER",
+            "releaseGroup": "RECORDER",
+            "languages": [
+              {
+                "id": 1,
+                "name": "English"
+              }
+            ],
+            "quality": {
+              "quality": {
+                "id": 8,
+                "name": "WEBDL-480p",
+                "source": "web",
+                "resolution": 480
+              },
+              "revision": {
+                "version": 1,
+                "real": 0,
+                "isRepack": false
+              }
+            },
+            "customFormats": [],
+            "customFormatScore": 0,
+            "indexerFlags": 0,
+            "releaseType": "singleEpisode",
+            "mediaInfo": {
+              "audioBitrate": 0,
+              "audioChannels": 1,
+              "audioCodec": "AAC",
+              "audioLanguages": "",
+              "audioStreamCount": 1,
+              "videoBitDepth": 8,
+              "videoBitrate": 0,
+              "videoCodec": "",
+              "videoFps": 1,
+              "videoDynamicRange": "",
+              "videoDynamicRangeType": "",
+              "resolution": "160x120",
+              "runTime": "11:00",
+              "scanType": "Progressive",
+              "subtitles": ""
+            },
+            "qualityCutoffNotMet": false,
+            "id": 3
+          }
+        ]
+      }
+    }
+  ]
+}

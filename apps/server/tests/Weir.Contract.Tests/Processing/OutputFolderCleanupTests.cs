@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
 using Weir.Contract.Tests.Harness.Fakes;
 
@@ -54,10 +53,7 @@ public sealed class OutputFolderCleanupTests
         await using var scenario = await Scenario.StartAsync(("WEIR_PROCESSING_MOVIE_OUTPUT_CLEANUP_MIN_AGE_SECONDS", "3600"));
         var (radarr, library) = await scenario.RadarrSetupAsync();
         WriteOldRelease(scenario, "Confirmed.Movie.2024", "Confirmed.Movie.2024.mkv");
-        radarr.Library.Add(new JsonObject
-        {
-            ["movieFile"] = new JsonObject { ["path"] = Path.Combine(scenario.Root, "library", "Confirmed.Movie.2024.mkv") },
-        });
+        radarr.Library.Add(ArrShapes.LibraryRow("radarr", Path.Combine(scenario.Root, "library", "Confirmed.Movie.2024.mkv")));
 
         await scenario.EnqueueFilePassAsync("Confirmed.Movie.2024/Confirmed.Movie.2024.mkv", library, passThroughUnchanged: true);
         await WaitForThePassToFinishAsync(scenario);

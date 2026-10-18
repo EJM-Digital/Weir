@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 
-import { problems, sourceText, statesIn } from "./check-recorded-replays.mjs";
+import { arrProblems, problems, sourceText, statesIn } from "./check-recorded-replays.mjs";
 
 const excuse = { reason: "Weir never calls it.", route: "/processors/handoffs" };
 
@@ -72,4 +72,13 @@ test("states are the file names of every version folder, and source text skips b
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("a Sonarr or Radarr state a test names, or a prefix a test lists, is replayed; one nothing names is not", () => {
+  const source = 'ArrRecording.Load(app, "queue-empty"); foreach (var state in ArrRecording.States(app, "webhook-")) {}';
+  assert.deepEqual(arrProblems({ sonarr: ["queue-empty", "webhook-grab"], radarr: ["queue-empty", "webhook-test"] }, source), []);
+  assert.deepEqual(arrProblems({ sonarr: ["queue-empty", "rescan"], radarr: [] }, source), [
+    "sonarr/rescan is recorded but no test replays it. Replay it in a test, or take the step out of the recorder.",
+    "radarr: no recordings.",
+  ]);
 });

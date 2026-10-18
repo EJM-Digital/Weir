@@ -1,0 +1,33 @@
+{
+  "app": "radarr",
+  "version": "6.4.4.10685",
+  "state": "queue-after-remove",
+  "recordedAt": "2026-10-17T05:26:18Z",
+  "note": "The queue once the item has been removed.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/queue?pageSize=1000",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "page": 1,
+          "pageSize": 1000,
+          "sortKey": "timeleft",
+          "sortDirection": "descending",
+          "totalRecords": 0,
+          "records": []
+        }
+      }
+    }
+  ]
+}

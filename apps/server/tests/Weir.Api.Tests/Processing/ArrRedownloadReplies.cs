@@ -1,36 +1,60 @@
+using System.Globalization;
+using System.Text.Json.Nodes;
+using Weir.Tests.Shared;
+
 namespace Weir.Api.Tests.Processing;
 
 /// <summary>
-/// What the fake Sonarr and Radarr answer in the "Download again" tests, named in this one file.
-/// <para>Every reply here is an ASSUMED SHAPE, not a recording: no real Sonarr or Radarr has been recorded yet. Each one
-/// carries only the members Weir reads (<c>ArrManagerRedownload</c> reads the movie's <c>movieFile.id</c> and <c>size</c>, and
-/// the episode files' <c>id</c>, <c>size</c> and <c>path</c>) and is to be replaced by a recorded reply when the Sonarr
-/// recording (#1013) and the Radarr recording (#1014) land. Until then the tests prove what Weir sends and what it tells the
-/// person, not what the real products answer.</para>
+/// What the scripted Sonarr and Radarr answer in the "Download again" tests, named in this one file. Every reply is one a real Sonarr
+/// or Radarr gave (<c>fixtures/recorded/sonarr</c> and <c>radarr</c>, recorded by <c>apps/server/tools/Weir.ArrRecorder</c>): the
+/// movie with its file, the movie after its file was deleted, the series' episode files, the answer to a search command and a
+/// manager that fails on its own. Only the paths of the episode files change (<see cref="EpisodeFiles"/>), because a test chooses
+/// which files the library holds; the ids, sizes and every other member are the manager's.
 /// </summary>
 internal static class ArrRedownloadReplies
 {
-    public const long MovieId = 7;
-    public const long MovieFileId = 42;
-    public const long MovieFileBytes = 1_500_000_000;
-    public const long SeriesId = 3;
-    public const long EpisodeFileId = 55;
-    public const long OtherEpisodeFileId = 56;
+    private static readonly ArrRecording MovieRedownload = ArrRecording.Load("radarr", "redownload");
+    private static readonly ArrRecording MovieAfterDelete = ArrRecording.Load("radarr", "redownload-file-gone");
+    private static readonly ArrRecording SeriesRedownload = ArrRecording.Load("sonarr", "redownload");
+    private static readonly ArrRecording ManagerFailure = ArrRecording.Load("sonarr", "downloaded-scan-refuses-a-number");
 
-    /// <summary>Assumed shape (replaced by the Radarr recording, #1014): a movie that has a file.</summary>
-    public static readonly string MovieWithFile =
-        $$$"""{"id":{{{MovieId}}},"title":"Arrival","hasFile":true,"movieFile":{"id":{{{MovieFileId}}},"size":{{{MovieFileBytes}}},"path":"/movies/Arrival (2016)/Arrival.mkv"}}""";
+    private static readonly ArrExchange MovieRead = MovieRedownload.Exchanges.Single(exchange => exchange.Request.Method == "GET");
+    private static readonly ArrExchange MovieFileDelete = MovieRedownload.Exchanges.Single(exchange => exchange.Request.Method == "DELETE");
+    private static readonly ArrExchange EpisodeFileList = SeriesRedownload.Exchanges.Single(exchange => exchange.Request.Method == "GET");
+    private static readonly ArrExchange EpisodeFileDelete = SeriesRedownload.Exchanges.Single(exchange => exchange.Request.Method == "DELETE");
 
-    /// <summary>Assumed shape (replaced by the Radarr recording, #1014): a movie whose file is already gone.</summary>
-    public static readonly string MovieWithoutFile = $$$"""{"id":{{{MovieId}}},"title":"Arrival","hasFile":false}""";
+    public static readonly long MovieId = LastSegment(MovieRead.Request.Path);
+    public static readonly long MovieFileId = LastSegment(MovieFileDelete.Request.Path);
+    public static readonly long MovieFileBytes = (long)MovieRead.Reply.Body!["movieFile"]!["size"]!;
+    public static readonly long SeriesId = long.Parse(EpisodeFileList.Request.Query["seriesId=".Length..], CultureInfo.InvariantCulture);
+    public static readonly long EpisodeFileId = LastSegment(EpisodeFileDelete.Request.Path);
+    public static readonly long OtherEpisodeFileId = EpisodeFileList.Reply.Body!.AsArray().Select(file => (long)file!["id"]!).First(id => id != EpisodeFileId);
 
-    /// <summary>Assumed shape (replaced by the Sonarr recording, #1013): a series' episode files, two of them.</summary>
-    public static string EpisodeFiles(string firstPath, string secondPath) =>
-        $$$"""[{"id":{{{EpisodeFileId}}},"seriesId":{{{SeriesId}}},"size":900000000,"path":"{{{firstPath}}}"},{"id":{{{OtherEpisodeFileId}}},"seriesId":{{{SeriesId}}},"size":123,"path":"{{{secondPath}}}"}]""";
+    /// <summary>Radarr's answer for a movie that has a file.</summary>
+    public static readonly string MovieWithFile = MovieRead.Reply.Text;
 
-    /// <summary>Assumed shape (replaced by the Sonarr and Radarr recordings, #1013 and #1014): the answer to a command.</summary>
-    public const string CommandAccepted = """{"id":1,"name":"Search","status":"queued"}""";
+    /// <summary>Radarr's answer for the same movie once its file is gone.</summary>
+    public static readonly string MovieWithoutFile = MovieAfterDelete.Exchanges[0].Reply.Text;
 
-    /// <summary>Assumed shape (replaced by the Sonarr and Radarr recordings, #1013 and #1014): a manager that fails on its own.</summary>
-    public const string ManagerError = """{"message":"Internal Server Error"}""";
+    /// <summary>Radarr's answer to the search it was asked for.</summary>
+    public static readonly string CommandAccepted = MovieRedownload.Exchanges.Single(exchange => exchange.Request.Method == "POST").Reply.Text;
+
+    /// <summary>What a Sonarr that fails on its own answers: a 500 with its own message.</summary>
+    public static readonly string ManagerError = ManagerFailure.Only.Reply.Text;
+
+    /// <summary>
+    /// Sonarr's episode files for the series, two of them: the one that "Download again" deletes and another. Each keeps the manager's
+    /// own id, size and members; only the path is the one the test's library holds.
+    /// </summary>
+    public static string EpisodeFiles(string firstPath, string secondPath)
+    {
+        var files = EpisodeFileList.Reply.Body!.AsArray().Select(file => file!.DeepClone().AsObject()).ToList();
+        var first = files.Single(file => (long)file["id"]! == EpisodeFileId);
+        var second = files.First(file => (long)file["id"]! == OtherEpisodeFileId);
+        first["path"] = firstPath;
+        second["path"] = secondPath;
+        return new JsonArray(first, second).ToJsonString();
+    }
+
+    private static long LastSegment(string path) => long.Parse(path[(path.LastIndexOf('/') + 1)..], CultureInfo.InvariantCulture);
 }
