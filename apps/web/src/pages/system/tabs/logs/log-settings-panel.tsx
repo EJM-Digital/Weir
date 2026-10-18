@@ -42,13 +42,11 @@ export function LogSettingsPanel({
   onClose,
   form,
   editable,
-  savedLogDays,
 }: {
   open: boolean;
   onClose: () => void;
   form: SystemSettingsForm;
   editable: boolean;
-  savedLogDays: number;
 }) {
   const fileActivity = useFileActivityRetention();
   return (
@@ -63,7 +61,6 @@ export function LogSettingsPanel({
         form={form}
         fileActivity={fileActivity}
         editable={editable}
-        savedLogDays={savedLogDays}
       />
       <ServerDiagnostics />
     </SidePanel>

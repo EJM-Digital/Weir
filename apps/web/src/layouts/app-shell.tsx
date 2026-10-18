@@ -2,6 +2,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import { MainLandmark } from "../components/shared/page-loading";
 import { AppSidebar } from "../components/shell/app-sidebar";
+import { SignOutFailedBanner } from "../components/shell/sign-out-failed-banner";
 import { LiveConnectionBanner } from "../components/shell/live-connection-banner";
 import { ShellHeader } from "../components/shell/shell-header";
 import { ShellHeaderProvider } from "../components/shell/shell-header-context";
@@ -53,6 +54,7 @@ export function AppShell() {
             onToggleMenu={() => setMenuOpen((open) => !open)}
           />
           <LiveConnectionBanner />
+          <SignOutFailedBanner />
           <main className="mm-main" id="mm-main-content" tabIndex={-1}>
             <div className="mm-main-inner">
               <MainLandmark>

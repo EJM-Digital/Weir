@@ -357,7 +357,6 @@ a.mm-stat__label:hover {
 
 .mm-segmented__option[aria-pressed="true"] .mm-segmented__count {
   color: inherit;
-  opacity: 0.8;
 }
 
 @media (prefers-reduced-motion: reduce) {

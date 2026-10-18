@@ -1,5 +1,5 @@
 using System.Text;
-using System.Threading.Channels;
+using System.Collections.Concurrent;
 
 namespace Weir.Infrastructure.Logging;
 
@@ -21,12 +21,7 @@ public sealed class NonBlockingConsole : IDisposable
 
     private readonly Func<Stream> _open;
     private readonly Func<Encoding> _encoding;
-    private readonly Channel<string> _lines = Channel.CreateBounded<string>(new BoundedChannelOptions(Capacity)
-    {
-        FullMode = BoundedChannelFullMode.Wait,
-        SingleReader = true,
-        AllowSynchronousContinuations = false,
-    });
+    private readonly BlockingCollection<string> _lines = new(new ConcurrentQueue<string>(), Capacity);
 
     private readonly Thread _writer;
     private Stream? _output;
@@ -70,7 +65,7 @@ public sealed class NonBlockingConsole : IDisposable
     public void WriteLine(string line)
     {
         ArgumentNullException.ThrowIfNull(line);
-        if (_lines.Writer.TryWrite(line))
+        if (TryQueue(line))
         {
             Interlocked.Increment(ref _queued);
         }
@@ -105,24 +100,35 @@ public sealed class NonBlockingConsole : IDisposable
     public void Dispose()
     {
         Drain(ShutdownDrain);
-        _lines.Writer.TryComplete();
+        _lines.CompleteAdding();
+    }
+
+    // A full queue, or one that has stopped taking lines, drops the line.
+    private bool TryQueue(string line)
+    {
+        try
+        {
+            return _lines.TryAdd(line);
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
     }
 
     private void WriteLines()
     {
-        var reader = _lines.Reader;
         var open = TryOpen();
-        while (reader.WaitToReadAsync().AsTask().GetAwaiter().GetResult())
+        // Blocks on the queue itself rather than on a task: waking this thread needs nothing from the thread pool, so a server whose
+        // pool is busy still gets its last lines out when it stops.
+        foreach (var line in _lines.GetConsumingEnumerable())
         {
-            while (reader.TryRead(out var line))
+            if (open)
             {
-                if (open)
-                {
-                    open = TryWrite(line);
-                }
-
-                Interlocked.Increment(ref _written);
+                open = TryWrite(line);
             }
+
+            Interlocked.Increment(ref _written);
         }
     }
 

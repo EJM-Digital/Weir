@@ -1,7 +1,12 @@
 import { vi } from "vitest";
 
 /** What a running Weir server answered once: its status and the body text it sent, kept as recorded. */
-export type RecordedReply = { status: number; body: string };
+/** A reply the server recorded: its status and body, and the headers a page reads from it (a file name in Content-Disposition). */
+export type RecordedReply = {
+  status: number;
+  body: string;
+  headers?: Record<string, string>;
+};
 
 /** A request the page made, as the server would have seen it. */
 export type SentRequest = {
@@ -30,6 +35,9 @@ export type RecordedWeir = {
 };
 
 const SERVER_ORIGIN = "http://weir.test";
+
+/** Statuses a server answers with no body, which a `Response` refuses to be given one for. */
+const NO_BODY_STATUSES: ReadonlySet<number> = new Set([204, 205, 304]);
 
 function routeOf(input: RequestInfo | URL, init?: RequestInit) {
   const url = new URL(
@@ -84,9 +92,9 @@ export function serveRecordedReplies(routes: RecordedRoutes): RecordedWeir {
         return Promise.reject(new Error(`No recording answers ${key}.`));
       }
       const answer = (reply: RecordedReply) =>
-        new Response(reply.body, {
+        new Response(NO_BODY_STATUSES.has(reply.status) ? null : reply.body, {
           status: reply.status,
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...reply.headers },
         });
       if (typeof route === "function") return route().then(answer);
       const replies = Array.isArray(route) ? route : [route];

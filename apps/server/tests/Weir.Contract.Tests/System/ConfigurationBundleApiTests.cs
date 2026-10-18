@@ -68,6 +68,33 @@ public sealed class ConfigurationBundleApiTests(UsersFixture fixture) : IClassFi
         Assert.True(restore.Status == HttpStatusCode.OK, restore.ToString());
     }
 
+    /// <summary>A restore replaces the backup schedule with the one the backup held: how often and at what time of day, not only whether it is on.</summary>
+    [Fact]
+    public async Task A_restore_puts_back_the_backup_schedule_the_backup_held()
+    {
+        await using var server = await WeirServer.StartNewAsync();
+        using var admin = await server.CreateAdminClientAsync();
+        const string Settings = $"{WeirClient.Api}/suite/settings";
+        static JsonObject Schedule(int hours, string time) => new()
+        {
+            ["app_timezone"] = "UTC",
+            ["log_retention_days"] = 30,
+            ["configuration_backup_interval_hours"] = hours,
+            ["configuration_backup_preferred_time"] = time,
+        };
+
+        Assert.Equal(HttpStatusCode.OK, (await admin.PutWithCsrfAsync(Settings, Schedule(48, "03:30"))).Status);
+        var held = (await admin.GetAsync(Bundle)).Fields;
+        Assert.Equal(HttpStatusCode.OK, (await admin.PutWithCsrfAsync(Settings, Schedule(6, "04:45"))).Status);
+
+        var restore = await admin.PutWithCsrfAsync(Bundle, new JsonObject { ["bundle"] = held.DeepClone() });
+
+        Assert.True(restore.Status == HttpStatusCode.OK, restore.ToString());
+        var after = (await admin.GetAsync(Settings)).Fields;
+        Assert.Equal(48, (int)after["configuration_backup_interval_hours"]!);
+        Assert.Equal("03:30", (string?)after["configuration_backup_preferred_time"]);
+    }
+
     /// <summary>Pruner moved to Deluno (#473): exports drop its sections, older backups still restore.</summary>
     [Fact]
     public async Task Configuration_bundle_no_longer_carries_pruner_and_ignores_it_on_restore()

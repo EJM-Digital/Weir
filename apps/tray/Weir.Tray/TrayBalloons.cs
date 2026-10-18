@@ -10,6 +10,12 @@ static class TrayBalloons
 
     internal static int TimeoutMs(ToolTipIcon icon) => icon is ToolTipIcon.Warning or ToolTipIcon.Error ? ProblemMs : InformationMs;
 
+    /// <summary>
+    /// What tray-host.log says of a balloon: the words the person was shown. Windows shows a balloon as a notification the person may
+    /// never see (focus assist, a full-screen app, a desktop with notifications off), so the log keeps what Weir told them.
+    /// </summary>
+    internal static string LogLine(string title, string text, ToolTipIcon icon) => $"Balloon ({icon.ToString().ToLowerInvariant()}) {title}: {text}";
+
     /// <summary>The server exited and the watchdog gave up bringing it back. A click restarts it.</summary>
     internal const string StoppedText = "Weir stopped and couldn't start again by itself. Click to restart it.";
 

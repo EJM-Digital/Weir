@@ -144,9 +144,9 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
     /// <summary>
     /// Restarts the server on <paramref name="to"/> and saves it as the chosen port. If it does not come up there,
     /// goes back to the port it had, which was working a moment ago and is still the saved one. Returns whether
-    /// the move succeeded.
+    /// how it ended: moved, kept where it was, or stopped because the old port could not be taken again either.
     /// </summary>
-    internal async Task<bool> MoveToPortAsync(int to, CancellationToken cancellationToken)
+    internal async Task<PortMove> MoveToPortAsync(int to, CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         var from = _port;
@@ -156,7 +156,7 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
             {
                 // Saving a port now could overwrite the one that cannot be read yet.
                 TrayLog.Write("Change port: not done, because the saved port is not known yet. Restart Weir first.");
-                return false;
+                return PortMove.KeptOldPort;
             }
 
             TrayLog.Write($"Change port: restarting the server on port {to} (was {from}).");
@@ -165,18 +165,16 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
                 PortChoice.Save(_runtimeHome, to);
                 WritePortFile();
                 TrayLog.Write($"Change port: Weir is healthy on http://127.0.0.1:{to}/ and port {to} is saved.");
-                return true;
+                return PortMove.Moved;
             }
             TrayLog.Write($"Change port: going back to port {from}.");
             if (await TryStartOnAsync(from, _scope, cancellationToken).ConfigureAwait(false))
             {
                 WritePortFile();
+                return PortMove.KeptOldPort;
             }
-            else
-            {
-                SetPhase(ServerPhase.Stopped);
-            }
-            return false;
+            SetPhase(ServerPhase.Stopped);
+            return PortMove.Stopped;
         }
         finally
         {

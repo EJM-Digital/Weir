@@ -56,7 +56,6 @@ export function BackupScheduleSection({
     <Panel
       title="Schedule"
       headingId="suite-settings-backup-heading"
-      headingLevel={3}
       padded
       note={
         <span title={WHAT_A_BACKUP_HOLDS}>

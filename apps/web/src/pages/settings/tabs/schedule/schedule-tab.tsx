@@ -13,7 +13,7 @@ import { SaveModelNote } from "../../save-model-note";
 import { SettingsLoadError } from "../../settings-load-error";
 import { useLeaveConfirmation, useUnsavedChanges } from "../../unsaved-changes";
 import { LibraryHoursEditor, LibraryHoursRow } from "./library-hours";
-import { effectiveGrid } from "./schedule-model";
+import { effectiveGrid, sameWeek } from "./schedule-model";
 
 /** Often enough that "open until" and "it is 14:32 there" stay true while the page is open. */
 const CLOCK_TICK_MS = 30_000;
@@ -40,7 +40,7 @@ function LibrariesSection({
   );
   const editingLibrary = ordered.find((l) => l.id === editing) ?? null;
   const dirty =
-    editingLibrary !== null && grid !== effectiveGrid(editingLibrary);
+    editingLibrary !== null && !sameWeek(grid, effectiveGrid(editingLibrary));
   const thing = editingLibrary ? `${editingLibrary.name}'s hours` : null;
   useUnsavedChanges(dirty ? thing : null);
   const { confirmLeave, dialog } = useLeaveConfirmation();

@@ -80,6 +80,13 @@ test("each publish job needs every shared check and its own build's checks", () 
   }
 });
 
+test("a tag cannot be cut on stale recordings of Weir", () => {
+  rejects(
+    editJob(real.release, "validate", (body) => body.replace('node scripts/check-recorded-freshness.mjs --version "$TAG"', "echo skipped")),
+    /check-recorded-freshness/,
+  );
+});
+
 test("a release cannot publish without every browser-test shard", () => {
   // The shards are the matrix legs of the one `e2e` job, so needing it is needing every shard.
   for (const job of ["publish-windows", "publish-docker"]) {

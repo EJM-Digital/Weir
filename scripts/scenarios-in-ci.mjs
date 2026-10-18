@@ -23,7 +23,15 @@ import { catalogIds, linuxShards, loadHomes, problemsWithHomes, scenariosOfShard
 import { exitCode, runScenarios, summaryMarkdown } from "./scenarios-ci/run.mjs";
 import { SHARDS } from "./scenarios-ci/shards.mjs";
 import { WindowsMachine, whyNotAThrowawayMachine } from "./scenarios-ci/windows-machine.mjs";
+import * as windowsInstall from "./scenarios-ci/windows-install.mjs";
+import * as windowsTray from "./scenarios-ci/windows-tray.mjs";
 import { expectedVersion, runWindowsShard } from "./scenarios-ci/windows-shard.mjs";
+
+/** The scenarios of each Windows shard, and the watch on the logs they are judged by. */
+const WINDOWS_SHARDS = {
+  "windows-install": windowsInstall,
+  "windows-tray": windowsTray,
+};
 
 const CATALOG = "scripts/scenarios/Weir.Scenarios.Catalog.ps1";
 
@@ -46,7 +54,7 @@ function chooseScenarios(homes, shard, only) {
   return chosen;
 }
 
-/** The ported scenarios of a Linux shard, run against the image in Compose. */
+/** The ported scenarios of a Linux shard, run against the image in Compose; `collectFailed` says the recordings of what they showed could not be kept although they ran. */
 async function runLinuxShard({ shard, ids, candidate, logFolder }) {
   const scratch = mkdtempSync(join(tmpdir(), "weir-scenarios-ci-"));
   const stack = new Stack(logFolder, scratch);
@@ -80,7 +88,7 @@ async function runLinuxShard({ shard, ids, candidate, logFolder }) {
     stack.removeEverything();
     rmSync(scratch, { recursive: true, force: true });
   }
-  return results;
+  return { results, collectFailed };
 }
 
 /** The ported scenarios of a Windows shard, run on this machine, which must be a clean GitHub-hosted runner. */
@@ -91,6 +99,8 @@ async function runWindowsShardHere({ shard, ids, setup, version, logFolder }) {
   try {
     return await runWindowsShard({
       ids,
+      registry: WINDOWS_SHARDS[shard].SCENARIOS,
+      watchLogs: WINDOWS_SHARDS[shard].watchLogs,
       machine: new WindowsMachine(),
       setupPath: resolve(setup),
       version: expectedVersion({ given: version ?? process.env.WEIR_BUILD_VERSION, props }),
@@ -126,9 +136,9 @@ async function main() {
   const logFolder = join(values.logs, shard);
 
   const subject = linux ? { label: "Image under test", value: values.candidate } : { label: "Setup under test", value: values.setup };
-  const results = linux
+  const { results, collectFailed } = linux
     ? await runLinuxShard({ shard, ids, candidate: values.candidate, logFolder })
-    : await runWindowsShardHere({ shard, ids, setup: values.setup, version: values.version, logFolder });
+    : { results: await runWindowsShardHere({ shard, ids, setup: values.setup, version: values.version, logFolder }), collectFailed: false };
 
   const summary = summaryMarkdown(results, { shard, ...subject });
   console.log(summary);

@@ -12,6 +12,7 @@ recordings of Weir's replies, made by Deluno the other way round, are in `../del
 | Source commit | `73905126bbf27db1be75b7bdefcb983805fe01bb` (Deluno `main`). It carries Deluno #1267, which re-made five recordings so that a body-less 404 means only that the route is missing, and the reports Weir 1.0.0-rc.18 sent Deluno on the golden VM; every file here is byte-identical to that commit (git blob ids match) |
 | Copied | byte for byte, with Deluno's `MANIFEST.sha256`; 51 recordings |
 | Never edited here | `node scripts/check-recorded-manifest.mjs` fails (CI, `repo-checks`) when a file differs from its line in the manifest, and names the file |
+| Weir build | `../weir-builds-recorded.json` names the Weir build each folder below was recorded against (rc.30.30: 1.0.0-rc.13, rc.30.32: 1.0.0-rc.18). `node scripts/check-recorded-freshness.mjs` (CI, `repo-checks`, and the release's `validate` job) fails when the newest is more than one release behind the repository (Weir #979) |
 | Copy again | `git -C <Deluno> archive <commit> tests/fixtures/recorded/deluno` and put the `1.0.0-rc.*` folders and `MANIFEST.sha256` here, then change the commit above |
 
 | Version folder | What it holds | How it was recorded |

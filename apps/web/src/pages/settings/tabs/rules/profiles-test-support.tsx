@@ -41,6 +41,8 @@ export function serveProfiles(
   options: { holdListAfterCreate?: boolean } = {},
 ) {
   let listed = profiles;
+  // A server with no profiles still answers a save of the profile the tab would have opened first.
+  const first = profiles[0] ?? STORED;
   let held: Promise<void> | null = null;
   let letListThrough = () => {};
   const saved = recordedBody<ProcessingRuleSet>(`PUT ${RULE_SETS}/3`);
@@ -53,12 +55,12 @@ export function serveProfiles(
       await held;
       return listed;
     },
-    [`PUT ${RULE_SETS}/${profiles[0]!.id}`]: (request: StubbedRequest) => {
+    [`PUT ${RULE_SETS}/${first.id}`]: (request: StubbedRequest) => {
       const profile = {
         ...saved,
         ...sentRule(request),
-        id: profiles[0]!.id,
-        used_by_library_count: profiles[0]!.used_by_library_count,
+        id: first.id,
+        used_by_library_count: first.used_by_library_count,
       };
       listed = listed.map((row) => (row.id === profile.id ? profile : row));
       return profile;
@@ -89,9 +91,14 @@ function wrapper({ children }: { children: ReactNode }) {
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
+/** Draws the tab, without waiting for anything to be on screen. */
+export function renderProfiles() {
+  render(<ProfilesTab />, { wrapper });
+}
+
 /** Opens the tab and waits for the first profile to be on screen. */
 export async function openProfiles() {
-  render(<ProfilesTab />, { wrapper });
+  renderProfiles();
   await screen.findByRole("heading", { name: "Audio" });
 }
 

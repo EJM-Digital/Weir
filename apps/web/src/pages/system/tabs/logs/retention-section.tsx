@@ -88,13 +88,11 @@ export function RetentionSection({
   form,
   fileActivity,
   editable,
-  savedLogDays,
 }: {
   form: SystemSettingsForm;
   /** The file activity number, held by whoever shows this, so a draft outlives the panel closing. */
   fileActivity: FileActivityRetention;
   editable: boolean;
-  savedLogDays: number;
 }) {
   const { retention, save } = form;
   const [saved, setSaved] = useState(false);
@@ -136,7 +134,6 @@ export function RetentionSection({
             className="mm-input mm-retention__number"
             value={retention.logValue}
             disabled={disabled}
-            onFocus={() => retention.setLogDraft(String(savedLogDays))}
             onChange={(e) => retention.setLogDraft(e.target.value)}
             onBlur={() =>
               retention.setLogDraft(String(retention.finalizeLogDays()))

@@ -25,12 +25,48 @@ const OPTION_CLASS =
   "flex cursor-pointer items-center gap-2 text-sm text-mm-text2";
 export const ALERT_CHECKBOX_CLASS = "h-4 w-4 shrink-0 accent-mm-accent";
 
+type ChannelValues = ChannelFormData & { url: string };
+
+/** What is typed in the form, and whether it differs from what the form started with. */
+export type ChannelDraft = {
+  values: ChannelValues;
+  change: <K extends keyof ChannelValues>(
+    key: K,
+    value: ChannelValues[K],
+  ) => void;
+  dirty: boolean;
+};
+
+function sameEvents(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((event) => b.includes(event));
+}
+
+/** The form's fields, starting from `initial` (a new alert when there is none). */
+export function useChannelDraft(
+  initial: ChannelFormData = NEW_CHANNEL,
+): ChannelDraft {
+  const [start] = useState<ChannelValues>(() => ({
+    ...initial,
+    url: initial.url ?? "",
+  }));
+  const [values, setValues] = useState(start);
+  const change: ChannelDraft["change"] = (key, value) =>
+    setValues((current) => ({ ...current, [key]: value }));
+  const dirty =
+    values.label !== start.label ||
+    values.provider !== start.provider ||
+    values.url !== start.url ||
+    values.enabled !== start.enabled ||
+    !sameEvents(values.events, start.events);
+  return { values, change, dirty };
+}
+
 /**
  * Adds or edits one channel: where it posts, and which events it hears about. An alert that is being edited is given its
  * `savedAddress` as the server shows it, with the secret part hidden: the address itself is typed again only to replace it.
  */
 export function ChannelForm({
-  initial = NEW_CHANNEL,
+  draft,
   savedAddress,
   supportedEvents,
   onSave,
@@ -39,7 +75,7 @@ export function ChannelForm({
   saveError,
   labelRef,
 }: {
-  initial?: ChannelFormData;
+  draft: ChannelDraft;
   savedAddress?: string;
   supportedEvents: string[];
   onSave: (data: ChannelFormData) => void;
@@ -49,24 +85,20 @@ export function ChannelForm({
   /** Reaches the label field, for a drawer that focuses it as it opens. */
   labelRef?: RefObject<HTMLInputElement | null>;
 }) {
-  const [draft, setDraft] = useState({ ...initial, url: initial.url ?? "" });
+  const { values, change } = draft;
   const [replacingAddress, setReplacingAddress] = useState(false);
   const addressShown = savedAddress === undefined || replacingAddress;
-  const change = <K extends keyof ChannelFormData>(
-    key: K,
-    value: ChannelFormData[K],
-  ) => setDraft((current) => ({ ...current, [key]: value }));
   const toggleEvent = (event: string) =>
     change(
       "events",
-      draft.events.includes(event)
-        ? draft.events.filter((e) => e !== event)
-        : [...draft.events, event],
+      values.events.includes(event)
+        ? values.events.filter((e) => e !== event)
+        : [...values.events, event],
     );
   const incomplete =
-    !draft.label.trim() ||
-    (addressShown && !draft.url.trim()) ||
-    draft.events.length === 0;
+    !values.label.trim() ||
+    (addressShown && !values.url.trim()) ||
+    values.events.length === 0;
   const keepSavedAddress = () => {
     change("url", "");
     setReplacingAddress(false);
@@ -76,7 +108,7 @@ export function ChannelForm({
     <form
       onSubmit={(event) => {
         event.preventDefault();
-        const { url, ...rest } = draft;
+        const { url, ...rest } = values;
         onSave(addressShown ? { ...rest, url } : rest);
       }}
       className="space-y-4"
@@ -87,7 +119,7 @@ export function ChannelForm({
             ref={labelRef}
             type="text"
             className="mm-input"
-            value={draft.label}
+            value={values.label}
             onChange={(e) => change("label", e.target.value)}
             placeholder="e.g. Discord alerts"
             required
@@ -98,7 +130,7 @@ export function ChannelForm({
         <Field label="Provider" width="medium">
           <select
             className="mm-input"
-            value={draft.provider}
+            value={values.provider}
             onChange={(e) => change("provider", e.target.value)}
             disabled={saving}
           >
@@ -115,7 +147,7 @@ export function ChannelForm({
               type="url"
               autoComplete="off"
               className="mm-input"
-              value={draft.url}
+              value={values.url}
               onChange={(e) => change("url", e.target.value)}
               placeholder="https://..."
               required
@@ -162,7 +194,7 @@ export function ChannelForm({
               <input
                 type="checkbox"
                 className={ALERT_CHECKBOX_CLASS}
-                checked={draft.events.includes(event)}
+                checked={values.events.includes(event)}
                 onChange={() => toggleEvent(event)}
                 disabled={saving}
               />
@@ -176,7 +208,7 @@ export function ChannelForm({
         <input
           type="checkbox"
           className={ALERT_CHECKBOX_CLASS}
-          checked={draft.enabled}
+          checked={values.enabled}
           onChange={(e) => change("enabled", e.target.checked)}
           disabled={saving}
         />

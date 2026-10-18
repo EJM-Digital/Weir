@@ -73,13 +73,13 @@ export function LogList({
       {...columns.tableProps}
     >
       <LogHeadings columns={columns} />
-      <ol role="rowgroup" data-testid="log-feed">
+      <div role="rowgroup" data-testid="log-feed">
         {days.map((day) => (
           <Fragment key={day.key}>
             {byTime ? (
-              <li className="mm-log-day" aria-hidden="true">
+              <div className="mm-log-day" aria-hidden="true">
                 {dayHeading(day.key, now, timeZone)}
-              </li>
+              </div>
             ) : null}
             {day.rows.map((row) => (
               <LogRow
@@ -95,7 +95,7 @@ export function LogList({
             ))}
           </Fragment>
         ))}
-      </ol>
+      </div>
     </div>
   );
 }

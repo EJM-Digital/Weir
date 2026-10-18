@@ -1,4 +1,5 @@
 using Microsoft.Playwright;
+using Weir.Contract.Tests.Harness;
 
 namespace Weir.E2E.Tests.Support;
 
@@ -72,6 +73,16 @@ public sealed class RequestLog
         {
             return [.. _logged.Skip(mark).Where(request => request.PathAndQuery != TokenPath)];
         }
+    }
+
+    /// <summary>
+    /// The one change the page sends after <paramref name="mark"/>, waited for: a control that answers at once (a switch that shows its new state) sends its change a round
+    /// trip later, after a token. Fails when it has not come, or when it came more than once.
+    /// </summary>
+    public async Task<SentRequest> OnlyChangeSinceAsync(int mark, string what)
+    {
+        await Poll.UntilAsync(() => Task.FromResult(Since(mark).Count > 0), $"the page to send {what}");
+        return Assert.Single(Since(mark));
     }
 
     /// <summary>

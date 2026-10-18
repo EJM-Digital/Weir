@@ -165,7 +165,19 @@ kbd {
   margin: 0;
   padding: 8px var(--mm-header-pad-x);
   border-bottom: 1px solid color-mix(in srgb, var(--mm-st) 40%, transparent);
-  background: color-mix(in srgb, var(--mm-st) 14%, var(--mm-bg-main));
+  background: color-mix(in srgb, var(--mm-st) 6%, var(--mm-bg-main));
   font-size: var(--mm-type-body);
   line-height: 1.5;
+}
+
+/* A banner's one way out, as plain as the words beside it. */
+.mm-live-banner__dismiss {
+  margin-left: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }

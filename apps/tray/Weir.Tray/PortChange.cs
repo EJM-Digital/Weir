@@ -1,5 +1,18 @@
 namespace Weir.Tray;
 
+/// <summary>How a move to another port ended.</summary>
+enum PortMove
+{
+    /// <summary>The server is on the new port and the port is saved.</summary>
+    Moved,
+
+    /// <summary>The server could not take the new port, and is where it was (or nothing could be done), with nothing saved.</summary>
+    KeptOldPort,
+
+    /// <summary>The server could not take the new port and could not go back either, so it is stopped.</summary>
+    Stopped,
+}
+
 /// <summary>
 /// "Change port (...)...": asks which port, moves the server there, and tells the person how it went. Moving the port is not
 /// asking to open Weir, so no browser opens; the balloon offers the new address and a click on it opens it. Everything here
@@ -7,7 +20,7 @@ namespace Weir.Tray;
 /// </summary>
 /// <param name="currentPort">The port the server is on now.</param>
 /// <param name="ask">Asks the person which port; null when they close the question without choosing.</param>
-/// <param name="moveTo">Restarts the server on a port, going back if it does not come up; whether the move worked.</param>
+/// <param name="moveTo">Restarts the server on a port, going back if it does not come up; how the move ended.</param>
 /// <param name="balloon">Shows a balloon: title, text, icon and what a click on it does.</param>
 /// <param name="openWeir">What a click on the balloon about the new address does.</param>
 /// <param name="showLog">What a click on the balloon about a failed move does: shows tray-host.log.</param>
@@ -16,7 +29,7 @@ namespace Weir.Tray;
 sealed class PortChange(
     Func<int> currentPort,
     Func<PortPrompt, int?> ask,
-    Func<int, CancellationToken, Task<bool>> moveTo,
+    Func<int, CancellationToken, Task<PortMove>> moveTo,
     Action<string, string, ToolTipIcon, Action?> balloon,
     Action openWeir,
     Action showLog,
@@ -41,17 +54,25 @@ sealed class PortChange(
         try
         {
             // Restarting waits up to a minute for the new server; this method carries on here when it is done.
-            if (await moveTo(port, cancellationToken))
+            switch (await moveTo(port, cancellationToken))
             {
-                balloon("Weir", TrayBalloons.PortMovedText(port), ToolTipIcon.Info, openWeir);
-            }
-            else
-            {
-                balloon(
-                    "Weir",
-                    $"Weir could not start on port {port}, so it is still at port {current}. See tray-host.log in the data folder.",
-                    ToolTipIcon.Warning,
-                    showLog);
+                case PortMove.Moved:
+                    balloon("Weir", TrayBalloons.PortMovedText(port), ToolTipIcon.Info, openWeir);
+                    break;
+                case PortMove.KeptOldPort:
+                    balloon(
+                        "Weir",
+                        $"Weir could not start on port {port}, so it is still at port {current}. See tray-host.log in the data folder.",
+                        ToolTipIcon.Warning,
+                        showLog);
+                    break;
+                default:
+                    balloon(
+                        "Weir",
+                        $"Weir could not start on port {port} or go back to port {current}, so it has stopped. Choose Restart Weir once the port is free. See tray-host.log in the data folder.",
+                        ToolTipIcon.Warning,
+                        showLog);
+                    break;
             }
         }
         catch (OperationCanceledException)

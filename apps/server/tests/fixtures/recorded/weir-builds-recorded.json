@@ -1,0 +1,8 @@
+{
+  "note": "The Weir build each set of recordings was made against. scripts/check-recorded-freshness.mjs reads it and fails when the newest build listed is more than one release behind the repository. Every folder under deluno/ and deluno-side/ is listed. A recording made from Deluno's code alone (reply-*) does not depend on Weir; the set's build is the one its Weir recordings (replies, reports) were made against.",
+  "sets": {
+    "deluno/1.0.0-rc.13": { "weirVersion": "1.0.0-rc.13", "recordedOn": "2026-10-11" },
+    "deluno-side/1.0.0-rc.30.30": { "weirVersion": "1.0.0-rc.13", "recordedOn": "2026-10-13" },
+    "deluno-side/1.0.0-rc.30.32": { "weirVersion": "1.0.0-rc.18", "recordedOn": "2026-10-15" }
+  }
+}
