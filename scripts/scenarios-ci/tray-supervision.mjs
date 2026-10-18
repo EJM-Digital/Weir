@@ -52,8 +52,7 @@ export async function traySupervision(world) {
     }
     const log = await tray.log();
     assert.equal(linesWith(log, /Giving up/).length, 0, "the tray gave up although the server came back each time");
-    const started = lineWith(log, /^Weir started on attempt \d+, after 3 failed attempts: /);
-    assert.ok(started, "the tray does not say that Weir started only on a retry, after three failures");
+    await tray.line(/^Weir started on attempt \d+, after 3 failed attempts: /, { what: "the tray to say that Weir started only on a retry, after three failures" });
     assert.equal(await machine.dataFile("current-port.txt"), String(PORT), "current-port.txt names the port the server is on");
     await statusIs(world, tray, status.running(PORT), "the menu to say Weir is running again");
     // The tray goes, and its server is left running.
@@ -91,11 +90,10 @@ export async function traySupervision(world) {
     } finally {
       if (held) await holder.release();
     }
-    await second.line(/^Weir started on attempt d+, after d+ failed attempts: /, { what: "the tray to say that Weir started only on a retry" });
+    await second.line(/^Weir started on attempt \d+, after \d+ failed attempts: /, { what: "the tray to say that Weir started only on a retry" });
     const log = await second.log();
     expectGrowingWaits(failedStarts(log), "with the port held");
     assert.equal(linesWith(log, /Giving up/).length, 0, "the tray gave up before the port was free again");
-    assert.ok(lineWith(log, /^Weir started on attempt \d+, after \d+ failed attempts: /), "the tray does not say that Weir started only on a retry");
     facts.push("with another program holding the port the restarts failed with the server's own exit code (75) and kept trying, with growing waits, and Weir came up as soon as the port was free");
   } finally {
     await second.end();

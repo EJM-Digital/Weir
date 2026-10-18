@@ -91,12 +91,13 @@ export async function trayMenu(world) {
     facts.push("Open data folder, Open logs folder and Report a problem... each opened File Explorer on the right folder");
 
     // Start with Windows: a real check item, the menu stays open, and the Run entry follows it.
-    await choose(world, tray, menu.startWithWindows);
+    // A real click: UI Automation's Toggle changes the tick without running the item's handler.
+    await choose(world, tray, menu.startWithWindows, { click: true });
     const entry = await wait(world, async () => (await machine.runEntry()) ?? undefined, "the Run entry to be made", 30_000, 500);
     assert.ok(entry.toLowerCase().includes(machine.paths.trayExe.toLowerCase()) && entry.includes("--no-browser"), `the Run entry does not start the installed Weir.exe with --no-browser: ${entry}`);
     const turnedOn = (await desktop.menu(tray.pid))?.items.find((item) => item.name === menu.startWithWindows);
     assert.equal(turnedOn?.toggle, "On", "the menu stayed open and shows Start with Windows on");
-    await desktop.invoke(tray.pid, menu.startWithWindows);
+    await desktop.clickItem(tray.pid, menu.startWithWindows);
     await wait(world, async () => ((await machine.runEntry()) ? undefined : true), "the Run entry to be taken away", 30_000, 500);
     assert.equal((await desktop.menu(tray.pid))?.items.find((item) => item.name === menu.startWithWindows)?.toggle, "Off", "the menu shows Start with Windows off again");
     await closeMenu(world, tray);

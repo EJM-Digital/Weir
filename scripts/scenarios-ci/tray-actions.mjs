@@ -88,7 +88,7 @@ export async function closeMenu(world, tray) {
 }
 
 /** Chooses an item of the menu by the words on it: opens the menu, waits for the item to be enabled, and clicks it. */
-export async function choose(world, tray, name) {
+export async function choose(world, tray, name, { click = false } = {}) {
   await openMenu(world, tray);
   await wait(
     world,
@@ -101,7 +101,7 @@ export async function choose(world, tray, name) {
     ITEM_CEILING_MS,
     POLL_MS,
   );
-  await world.desktop.invoke(tray.pid, name);
+  await (click ? world.desktop.clickItem(tray.pid, name) : world.desktop.invoke(tray.pid, name));
 }
 
 /** The status line of the menu, the words the icon shows when the pointer rests on it. */
