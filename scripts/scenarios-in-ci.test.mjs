@@ -165,6 +165,20 @@ test("a log watch fails with what the logs gained, and when there are more than 
   await assert.rejects(() => crowded.finish(), /more than one page/);
 });
 
+test("a row the scenario said it would cause is let through as many times as it said, and nothing else is", async () => {
+  const world = new FakeWorld();
+  const watch = await LogWatch.begin(world.weir);
+  watch.expect("Sign-in failed", { times: 2, why: "the wrong password is tried twice" });
+  world.logRows.push(row(1, "Sign-in failed"), row(2, "Sign-in failed"));
+  await watch.finish();
+  world.logRows.push(row(3, "Sign-in failed"));
+  await assert.rejects(() => watch.finish(), /1 unexpected warning or error \(Sign-in failed\)/);
+  world.logRows.length = 0;
+  world.logRows.push(row(4, "Sign-in failed"), row(5, "Something else"));
+  await assert.rejects(() => watch.finish(), /1 unexpected warning or error \(Something else\)/);
+  assert.throws(() => watch.expect("Sign-in failed", {}), /needs a reason/);
+});
+
 // --- the scenarios, against a stand-in for Weir and the container ---------------------------------------------------------
 
 async function run(id, world = new FakeWorld()) {
@@ -243,7 +257,7 @@ test("the summary is a table of each scenario's verdict and time, with what fail
   const text = summaryMarkdown([
     { id: "weir-only-film", status: "passed", seconds: 12, detail: "A film was cleaned." },
     { id: "process-again", status: "failed", seconds: 3, detail: "it was answered 500" },
-  ], { shard: "weir-only", candidate: "weir-ci-smoke" });
+  ], { shard: "weir-only", value: "weir-ci-smoke" });
   assert.match(text, /^### Scenarios: weir-only/);
   assert.match(text, /\| `weir-only-film` \| passed \| 12 s \| A film was cleaned\. \|/);
   assert.match(text, /\| `process-again` \| FAILED \| 3 s \| it was answered 500 \|/);

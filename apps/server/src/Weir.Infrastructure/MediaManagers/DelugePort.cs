@@ -6,8 +6,8 @@ namespace Weir.Infrastructure.MediaManagers;
 /// <summary>
 /// Deluge, read only: its Web UI JSON-RPC at <c>{base_url}/json</c>. <c>auth.login</c> with the saved
 /// password (Deluge's Web UI has no username) establishes a session cookie, then <c>core.get_config</c> for the
-/// base completed folder and <c>label.get_config</c> for each label's own — the label plugin not being enabled
-/// answers a JSON-RPC error, read as "no per-label folders" rather than a failed connection.
+/// base completed folder, <c>label.get_labels</c> for the labels and <c>label.get_options</c> for each one's own folder — the
+/// label plugin not being enabled answers a JSON-RPC error, read as "no per-label folders" rather than a failed connection.
 /// </summary>
 public sealed class DelugePort : IDownloadClientPort
 {
@@ -51,8 +51,15 @@ public sealed class DelugePort : IDownloadClientPort
 
             var headers = CookieHeader(cookie);
             var core = await CallAsync(client, "core.get_config", headers, 2, cancellationToken).ConfigureAwait(false);
-            var labels = await CallAsync(client, "label.get_config", headers, 3, cancellationToken).ConfigureAwait(false);
-            return DelugeRules.Parse(core.Json(), labels.Json());
+            var names = DelugeRules.LabelNames((await CallAsync(client, "label.get_labels", headers, 3, cancellationToken).ConfigureAwait(false)).Json());
+            var labels = new List<(string Label, WireValue? Options)>();
+            foreach (var name in names)
+            {
+                var options = await CallAsync(client, "label.get_options", headers, 4 + labels.Count, cancellationToken, new WireArray([WireValue.Of(name)])).ConfigureAwait(false);
+                labels.Add((name, options.Json()));
+            }
+
+            return DelugeRules.Parse(core.Json(), labels);
         }
         catch (DownloadClientUnreachableException)
         {
@@ -64,7 +71,7 @@ public sealed class DelugePort : IDownloadClientPort
     {
         var response = await CallAsync(client, "auth.login", null, 1, cancellationToken, new WireArray([WireValue.Of(connection.Password ?? string.Empty)])).ConfigureAwait(false);
         var ok = response.Status is >= 200 and < 300 && response.Json() is WireObject dict && dict.Get("result") is WireBool { Value: true };
-        return (ok, ok ? response.Headers.GetValueOrDefault("Set-Cookie") : null);
+        return (ok, ok ? SessionCookie.Leading(response.Headers.GetValueOrDefault("Set-Cookie")) : null);
     }
 
     private static Task<DownloadClientHttpResponse> CallAsync(

@@ -152,6 +152,7 @@ public sealed class RemovingAFileFromActivityTests
     private static async Task<(JsonObject Library, JsonObject Row, string Source)> RejectedFileWithoutFingerprintAsync(Scenario scenario)
     {
         var (library, row, source) = await RejectedFileAsync(scenario);
+        await scenario.WaitForNoJobInFlightAsync();
         await scenario.ExecuteAfterStopAsync("UPDATE files SET fingerprint_size_bytes = NULL, fingerprint_mtime_ns = NULL");
         return (library, row, source);
     }

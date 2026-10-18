@@ -7,6 +7,7 @@
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Weir.ArrRecorder/Weir.ArrRecorder.csproj" />
+    <Project Path="tools/Weir.ClientRecorder/Weir.ClientRecorder.csproj" />
     <Project Path="tools/Weir.LiveAudit/Weir.LiveAudit.csproj" />
   </Folder>
   <Folder Name="/tests/">
