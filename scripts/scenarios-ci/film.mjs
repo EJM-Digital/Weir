@@ -13,14 +13,14 @@ const LENGTH_TOLERANCE_SECONDS = 1.5;
 const subtitlePath = (path, language) => `${path.slice(0, -posix.extname(path).length)}.${language}.srt`;
 
 /** The arguments of the ffmpeg that makes the film: one video, an audio track for each language and a subtitle track for each. */
-export function filmArguments({ path, seconds = 30, audio = AUDIO, subtitles = SUBTITLES, title = TITLE }) {
+export function filmArguments({ path, seconds = 30, audio = AUDIO, subtitles = SUBTITLES, title = TITLE, videoBitrate = "3M" }) {
   const args = ["-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i", `testsrc2=duration=${seconds}:size=640x360:rate=24`];
   audio.forEach((_, i) => args.push("-f", "lavfi", "-i", `sine=frequency=${220 * (i + 1)}:duration=${seconds}`));
   for (const language of subtitles) args.push("-i", subtitlePath(path, language));
   args.push("-map", "0:v");
   audio.forEach((_, i) => args.push("-map", `${i + 1}:a`));
   subtitles.forEach((_, i) => args.push("-map", `${audio.length + 1 + i}:s`));
-  args.push("-c:v", "mpeg4", "-b:v", "3M", "-c:a", "aac", "-c:s", "srt", "-metadata", `title=${title}`);
+  args.push("-c:v", "mpeg4", "-b:v", videoBitrate, "-c:a", "aac", "-c:s", "srt", "-metadata", `title=${title}`);
   audio.forEach((language, i) => args.push(`-metadata:s:a:${i}`, `language=${language}`));
   subtitles.forEach((language, i) => args.push(`-metadata:s:s:${i}`, `language=${language}`));
   args.push(path);
@@ -28,14 +28,14 @@ export function filmArguments({ path, seconds = 30, audio = AUDIO, subtitles = S
 }
 
 /** The shell command, run in the container, that writes the subtitle files, makes the film from them and takes them away again. */
-export function filmCommand({ path, seconds = 30, audio = AUDIO, subtitles = SUBTITLES, title = TITLE }) {
+export function filmCommand({ path, seconds = 30, audio = AUDIO, subtitles = SUBTITLES, title = TITLE, videoBitrate = "3M" }) {
   if (title.includes("'")) throw new Error("A film's title cannot hold a quote.");
   const files = subtitles.map((language) => subtitlePath(path, language));
   const writes = subtitles.map(
     (language, i) =>
       `printf '1\\n00:00:01,000 --> 00:00:04,000\\n${title} (${language})\\n\\n2\\n00:00:05,000 --> 00:00:08,000\\nSubtitle two\\n' > ${shellQuote(files[i])}`,
   );
-  const ffmpeg = ["ffmpeg", ...filmArguments({ path, seconds, audio, subtitles, title }).map(shellQuote)].join(" ");
+  const ffmpeg = ["ffmpeg", ...filmArguments({ path, seconds, audio, subtitles, title, videoBitrate }).map(shellQuote)].join(" ");
   return [`mkdir -p ${shellQuote(posix.dirname(path))}`, ...writes, ffmpeg, `rm -f ${files.map(shellQuote).join(" ")}`].join(" && ");
 }
 

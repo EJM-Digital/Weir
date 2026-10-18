@@ -54,6 +54,7 @@ export const EXCUSED = [
   { path: "docs/exec-plans/active/PLAN-ORG-MOVE.md", why: "the plan names the old and the new owner" },
   { path: ".github/CODEOWNERS", why: "names the person who reviews, not the repository" },
   { path: ".github/FUNDING.yml", why: "names the person's sponsorship page" },
+  { path: "scripts/scenarios-ci/images.json", why: "names Deluno's image by its registry path, which is Deluno's to move, not Weir's" },
 ];
 
 /** Lines that name the person rather than where Weir lives: a move leaves them as they are. */

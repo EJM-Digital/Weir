@@ -19,8 +19,8 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`, and the ones written for CI al
 | Scenario | Home | Shard | State | Why it lives there |
 | --- | --- | --- | --- | --- |
 | `update-over-installed-weir` | windows | windows-update | to-port | `Setup --silent` over the previous release's running install, with the tray's pre-update copy. Docker's upgrade smoke covers the volume half. |
-| `workflows-from-deluno` | linux | with-deluno | to-port | Weir and Deluno speak HTTP only; Deluno's published image is the same Deluno. |
-| `deluno-film-handoff` | linux | with-deluno | to-port | A hand-off followed through both apps, with the real clients in Compose. |
+| `workflows-from-deluno` | linux | with-deluno | ported | Weir and Deluno speak HTTP only; Deluno's published image is the same Deluno. |
+| `deluno-film-handoff` | linux | with-deluno | ported | A hand-off followed through both apps, with the real clients in Compose. |
 | `deluno-release-with-extra` | linux | with-deluno | to-port | The extra is read where it stays, through the download client's own API. |
 | `deluno-resend` | linux | with-deluno | to-port | Deluno's send-again is an API call; both sides are read over HTTP. |
 | `deluno-outcomes` | linux | with-deluno | to-port | The outcome each app recorded is compared; both are read over HTTP. |
@@ -70,7 +70,7 @@ Weir's Compose files for the with-Deluno shard therefore live in Weir (`scripts/
 
 ## Pinning by digest
 
-Every image a scenario starts other than Weir's own build is named `name@sha256:...` in `scripts/scenarios-ci/images.json` (Deluno, the five clients, Sonarr, Radarr, Deluno's fixture image, the Chromium image if one is used), and nowhere else. A test will fail on a reference without a digest, on a digest written anywhere but that file, and on an image the Compose files use that is not listed. A tag is kept beside each digest as a label so a person can read what was pinned. Digests are bumped in their own commit, after the drift job shows what changed. The first shard starts no other image, so the file arrives with the first shard that does.
+Every image a scenario starts other than Weir's own build is named `name@sha256:...` in `scripts/scenarios-ci/images.json` (Deluno, the five clients, Sonarr, Radarr, Deluno's fixture image, the Chromium image if one is used), and nowhere else. A test will fail on a reference without a digest, on a digest written anywhere but that file, and on an image the Compose files use that is not listed. A tag is kept beside each digest as a label so a person can read what was pinned. Digests are bumped in their own commit, after the drift job shows what changed. The `with-deluno` shard is the first to start other images, so the file arrived with it: Deluno and qBittorrent so far. Compose names each by a variable (`SCENARIO_<NAME>_IMAGE`) that `scenarios-in-ci.mjs` fills from the file.
 
 ## The drift job
 
@@ -102,7 +102,7 @@ The tray is started without its user interface, so what the tray shows is left t
 
 ### Next
 
-1. `with-deluno`: images pinned by digest, the Compose file, then `workflows-from-deluno` and `deluno-film-handoff` on qBittorrent, then the other four scenarios and the other clients.
+1. `with-deluno`: the other four scenarios and the other clients (Transmission, Deluge, SABnzbd, NZBGet). The release source is `with-deluno/fixture/`: Weir's own, small and Node-only. If Deluno publishes its fixture image, as the agreed shape has it, the shard moves to that and this folder goes.
 2. `windows-update`, then `windows-tray` (the shards after `windows-install`).
 3. The drift workflow, and the per-shard paths filter.
 
