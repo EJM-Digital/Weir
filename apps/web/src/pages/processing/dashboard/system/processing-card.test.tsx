@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { NETWORK_UNREACHABLE_MESSAGE } from "../../../../lib/api/api-error-text";
+import { ApiHttpError } from "../../../../lib/api/client";
 import { ProcessingCard } from "./processing-card";
 import { testStats } from "./test-stats";
 
@@ -70,5 +72,42 @@ describe("the Processing card", () => {
     render(<ProcessingCard />);
 
     expect(screen.getByText("Reading Weir's work…")).toBeInTheDocument();
+  });
+
+  it("says Weir couldn't load its work, not that it is still reading, when the reading failed", () => {
+    query = { isError: true, error: new Error("down") };
+    render(<ProcessingCard />);
+
+    expect(
+      screen.getByText(
+        "Weir couldn't load Weir's work. Reload the page to try again.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Reading Weir's work…")).toBeNull();
+  });
+
+  it("says Weir cannot be reached when the failure was the server not answering", () => {
+    query = {
+      isError: true,
+      error: new ApiHttpError(
+        "/api/v1/system/stats",
+        0,
+        "x",
+        undefined,
+        false,
+        true,
+      ),
+    };
+    render(<ProcessingCard />);
+
+    expect(screen.getByText(NETWORK_UNREACHABLE_MESSAGE)).toBeInTheDocument();
+  });
+
+  it("keeps showing the last reading when a later one fails", () => {
+    query = { data: testStats, isError: true, error: new Error("down") };
+    render(<ProcessingCard />);
+
+    expect(screen.getByText("Disk work")).toBeInTheDocument();
+    expect(screen.queryByText(/couldn't load/)).toBeNull();
   });
 });

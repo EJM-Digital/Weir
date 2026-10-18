@@ -10,7 +10,12 @@ type HealthState = {
   overviewChecks: null;
 };
 
-let libraries: { isPending: boolean; isError: boolean; data: unknown[] };
+let libraries: {
+  isPending: boolean;
+  isError: boolean;
+  error?: unknown;
+  data: unknown[];
+};
 let health: HealthState;
 let overviewChecks: { passing: number; total: number } | undefined;
 const hearFrames = vi.fn();
@@ -100,6 +105,24 @@ describe("the System view's cards", () => {
     render(<SystemView layout={beside} />);
 
     expect(hearFrames).toHaveBeenCalled();
+  });
+
+  it("says Weir hit a problem, with Reload, and shows no card when the workflows cannot be read", () => {
+    vi.stubEnv("DEV", false);
+    libraries = {
+      isPending: false,
+      isError: true,
+      error: new Error("down"),
+      data: [],
+    };
+    render(<SystemView layout={beside} />);
+
+    expect(
+      screen.getByRole("heading", { name: "Weir hit a problem" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reload" })).toBeInTheDocument();
+    expect(screen.queryByText("computer")).toBeNull();
+    vi.unstubAllEnvs();
   });
 
   it("waits for the workflows before it shows anything", () => {

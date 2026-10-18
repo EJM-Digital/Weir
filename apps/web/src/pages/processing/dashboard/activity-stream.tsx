@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { Panel } from "../../../components/panels/panel";
+import { loadErrorMessage } from "../../../lib/api/error-message";
 import { useActivityRecentQuery } from "../../../lib/activity/queries";
 import { classNames } from "../../../lib/ui/class-names";
 import { FitText } from "../../../lib/ui/fit-text";
@@ -121,7 +122,17 @@ export function ActivityStream({
       {/* The host is always there, so its height is watched from the first paint, before there is anything to list. */}
       <div ref={listRef} className="mm-stream__fit">
         {stream.rows.length === 0 ? (
-          <p className="mm-stream__empty">{NOTHING_YET_WORDS[filter]}</p>
+          recent.isError ? (
+            <p
+              className="mm-stream__empty mm-status-text"
+              data-status="broken"
+              role="alert"
+            >
+              {loadErrorMessage(recent.error, "what Weir has done")}
+            </p>
+          ) : (
+            <p className="mm-stream__empty">{NOTHING_YET_WORDS[filter]}</p>
+          )
         ) : (
           <ul className="mm-stream__list" data-testid="live-stream">
             {shown.map((row) => (

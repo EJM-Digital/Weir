@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 
 import { ApiHttpError } from "../../lib/api/client";
@@ -9,6 +9,7 @@ const PATH = "/api/v1/processing/files";
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 
 it("shows a person a plain problem and a Reload button, never the server's text", () => {
@@ -28,6 +29,17 @@ it("shows a person a plain problem and a Reload button, never the server's text"
   ).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Reload" })).toBeInTheDocument();
   expect(document.body).not.toHaveTextContent(/database is locked|500|npm/);
+});
+
+it("loads the page again when Reload is pressed", () => {
+  vi.stubEnv("DEV", false);
+  const reload = vi.fn();
+  vi.stubGlobal("location", { ...window.location, reload });
+  render(<ApiEntryError error={new ApiHttpError(PATH, 500, "x")} />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Reload" }));
+
+  expect(reload).toHaveBeenCalledTimes(1);
 });
 
 it("says where to look when Weir can't be reached", () => {

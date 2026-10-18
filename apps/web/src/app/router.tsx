@@ -1,8 +1,4 @@
-import {
-  Navigate,
-  RouterProvider,
-  createBrowserRouter,
-} from "react-router-dom";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { RouteErrorScreen } from "../components/error-boundary";
 import { AppShell } from "../layouts/app-shell";
 import { RequireAuth } from "./require-auth";
@@ -132,11 +128,6 @@ const router = createBrowserRouter(
           ],
         },
       ],
-    },
-    {
-      path: "*",
-      element: <Navigate to="/login" replace />,
-      errorElement: routeErrorElement,
     },
   ]),
 );

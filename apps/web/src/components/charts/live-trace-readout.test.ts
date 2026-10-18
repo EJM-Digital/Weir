@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { readoutFor } from "./live-trace-readout";
+import { readoutFor, sampleAfterKey } from "./live-trace-readout";
 
 const clock = (time: number) => `t${time / 1000}`;
 const percent = (value: number) => `${Math.round(value)}%`;
@@ -63,6 +63,49 @@ describe("the pointer's readout", () => {
   it("is nothing when there are no samples", () => {
     expect(
       readoutFor([{ samples: [] }], window, 0.5, percent, clock),
+    ).toBeNull();
+  });
+});
+
+describe("the sample a key moves to", () => {
+  const samples = line(10, 20, 30, 40, 50);
+
+  it("takes the newest with the first arrow, whichever way", () => {
+    expect(sampleAfterKey(samples, window, null, "ArrowLeft")).toBe(4000);
+    expect(sampleAfterKey(samples, window, null, "ArrowRight")).toBe(4000);
+  });
+
+  it("moves one sample earlier or later from the one chosen", () => {
+    expect(sampleAfterKey(samples, window, 2000, "ArrowLeft")).toBe(1000);
+    expect(sampleAfterKey(samples, window, 2000, "ArrowRight")).toBe(3000);
+  });
+
+  it("stays on the oldest and the newest at the ends", () => {
+    expect(sampleAfterKey(samples, window, 0, "ArrowLeft")).toBe(0);
+    expect(sampleAfterKey(samples, window, 4000, "ArrowRight")).toBe(4000);
+  });
+
+  it("goes to the oldest with Home and the newest with End", () => {
+    expect(sampleAfterKey(samples, window, 2000, "Home")).toBe(0);
+    expect(sampleAfterKey(samples, window, 2000, "End")).toBe(4000);
+  });
+
+  it("counts only the samples inside the window", () => {
+    const inside = { from: 1000, to: 3000 };
+
+    expect(sampleAfterKey(samples, inside, null, "End")).toBe(3000);
+    expect(sampleAfterKey(samples, inside, 1000, "ArrowLeft")).toBe(1000);
+    expect(sampleAfterKey(samples, inside, 3000, "Home")).toBe(1000);
+  });
+
+  it("starts from the sample nearest the one it was on once the line has slid on", () => {
+    expect(sampleAfterKey(samples, window, 2400, "ArrowRight")).toBe(3000);
+  });
+
+  it("is nothing with no sample in the window", () => {
+    expect(sampleAfterKey([], window, null, "End")).toBeNull();
+    expect(
+      sampleAfterKey(samples, { from: 9000, to: 10000 }, null, "End"),
     ).toBeNull();
   });
 });
