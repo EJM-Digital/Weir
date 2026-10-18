@@ -24,6 +24,8 @@ internal sealed class RecordedWorld : IAsyncDisposable
     /// <summary>The folders of the recordings made in Compose (the real Deluno and Weir in their containers), written as a container writes them.</summary>
     public const string ContainerMoviesWatched = "/downloads/completed/Movies";
     public const string ContainerMoviesOutput = "/weir/Ready/Movies";
+    public const string ContainerTvWatched = "/downloads/completed/TV";
+    public const string ContainerTvOutput = "/weir/Ready/TV";
 
     private RecordedWorld(Scenario scenario, FakeManager deluno, JsonObject movies, JsonObject tv, Replay replay)
     {
@@ -132,7 +134,7 @@ internal sealed class RecordedWorld : IAsyncDisposable
                     ["mediaType"] = "tv",
                     ["rootPath"] = "/deluno/library/tv",
                     ["importWorkflow"] = "refine-before-import",
-                    ["processorOutputPath"] = delunoOutputRoot is null ? tv.Output : RecordedTvOutput,
+                    ["processorOutputPath"] = delunoOutputRoot is null ? tv.Output : delunoOutputRoot == ContainerMoviesOutput ? ContainerTvOutput : RecordedTvOutput,
                 });
             }
 
@@ -144,6 +146,8 @@ internal sealed class RecordedWorld : IAsyncDisposable
                 .Folder(RecordedMoviesOutput, scenario.Folders.Output)
                 .Folder(ContainerMoviesWatched, scenario.Folders.Watched)
                 .Folder(ContainerMoviesOutput, scenario.Folders.Output)
+                .Folder(ContainerTvWatched, tv.Watched)
+                .Folder(ContainerTvOutput, tv.Output)
                 .Folder(RecordedTvWatched, tv.Watched)
                 .Folder(RecordedTvOutput, tv.Output)
                 .Folder(RecordedElsewhere, Directory.CreateDirectory(Path.Combine(scenario.Root, "elsewhere")).FullName);

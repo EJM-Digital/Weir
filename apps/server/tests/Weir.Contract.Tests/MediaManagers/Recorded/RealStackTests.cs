@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
 using Weir.Contract.Tests.Harness.Fakes;
 using static Weir.Contract.Tests.MediaManagers.Recorded.DelunoReportSteps;
@@ -113,5 +114,34 @@ public sealed partial class RealStackTests
         var rejected = await world.Scenario.ActivityAsync("processing.file_rejected");
         Assert.Equal($"{Path.GetFileName(film)} was rejected so a different release can be found", (string)Assert.Single(rejected)["title"]!);
         Assert.Contains("will remove the download; Weir left it in place.", (string)Assert.Single(rejected)["detail"]!, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("real-tv-episode")]
+    [InlineData("real-season-pack")]
+    public async Task A_show_the_real_Deluno_handed_over_is_cleaned_in_the_TV_workflow_reported_and_its_unmatched_import_recorded_as_they_said(string state)
+    {
+        var recording = RealStackSide.Load(state);
+        await using var world = await RealStackSide.StartTvWorldAsync(recording);
+        var hand = RealStackSide.HandoffOf(recording);
+        var report = RealStackSide.ReportIndex(recording, "completed");
+        world.Deluno.AnswerReportAs(recording.Exchanges[report]);
+        var listed = RealStackSide.SourceFilesOf(hand);
+        var sources = listed.Select(file => Untouched.Of(world.PutFilm(file, needsWork: true))).ToList();
+
+        await world.Replay.SendAsync(recording, recording.Exchanges.ToList().IndexOf(hand));
+
+        var id = hand.Request.HandoffId();
+        EmittedReport.AssertMatches(recording, report, (await ReportAsync(world, id)).Body);
+        var done = await world.Scenario.WaitForHandoffStateAsync(id, "completed");
+        Assert.Equal((string)recording.Exchanges[report].Request.Body!["outputPath"]!, (string)done["outputPath"]!);
+        foreach (var file in (JsonArray)recording.Exchanges[report].Request.Body!["outputFiles"]!)
+        {
+            Assert.True(File.Exists(world.Translation.Apply((string)file!)), $"{file} was not written");
+        }
+
+        // Deluno could not match the file to an episode (it knows none here), so it will not import; Weir keeps its copy and says so.
+        await world.Replay.SendAsync(recording, RealStackSide.OutcomeIndex(recording));
+        sources.ForEach(source => source.AssertStill());
     }
 }

@@ -19,6 +19,10 @@ internal static class RealStackSide
     public static Task<RecordedWorld> StartWorldAsync(Recording recording, params (string Name, string Value)[] settings) =>
         RecordedWorld.StartAsync(LibraryIdOf(recording), RecordedWorld.ContainerMoviesOutput, settings: settings);
 
+    /// <summary>The world the TV recordings were made in: Deluno's TV library by the id the hand-off names, handing back to Deluno's folder.</summary>
+    public static Task<RecordedWorld> StartTvWorldAsync(Recording recording, params (string Name, string Value)[] settings) =>
+        RecordedWorld.StartAsync(tvKey: LibraryIdOf(recording), delunoOutputRoot: RecordedWorld.ContainerMoviesOutput, settings: settings);
+
     public static string LibraryIdOf(Recording recording) => (string)HandoffOf(recording).Request.Body!["libraryId"]!;
 
     /// <summary>The exchange in which Deluno handed the release to Weir.</summary>
