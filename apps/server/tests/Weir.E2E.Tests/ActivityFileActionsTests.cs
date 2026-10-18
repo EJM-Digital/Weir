@@ -72,13 +72,14 @@ public sealed partial class ActivityFileActionsTests(E2EServer server) : E2ETest
             var (page, _) = await OpenAsync(rig);
             var actions = await SelectAsync(page, MixedActivity.Failed);
             var tryAgain = actions.GetByRole(AriaRole.Button, new() { Name = "Try again", Exact = true });
+            string busy;
 
             using (rig.HoldWrites())
             {
                 var refused = await page.RunAndWaitForResponseAsync(() => tryAgain.ClickAsync(), response => response.Url.EndsWith("/requeue", StringComparison.Ordinal), new() { Timeout = PushMs });
 
-                Assert.Equal(503, refused.Status);
-                await Expect(actions.GetByRole(AriaRole.Status)).ToHaveTextAsync("Could not queue that file again.", new() { Timeout = PushMs });
+                busy = await BusyAnswer.DetailAsync(refused);
+                await Expect(actions.GetByRole(AriaRole.Status)).ToHaveTextAsync(busy, new() { Timeout = PushMs });
             }
 
             await Expect(tryAgain).ToBeEnabledAsync();
@@ -87,7 +88,7 @@ public sealed partial class ActivityFileActionsTests(E2EServer server) : E2ETest
 
             await tryAgain.ClickAsync();
 
-            await Expect(actions.GetByRole(AriaRole.Status)).Not.ToHaveTextAsync("Could not queue that file again.", new() { Timeout = PushMs });
+            await Expect(actions.GetByRole(AriaRole.Status)).Not.ToHaveTextAsync(busy, new() { Timeout = PushMs });
             await Expect(tryAgain).ToHaveCountAsync(0, new() { Timeout = PushMs });
         });
     }
@@ -107,8 +108,7 @@ public sealed partial class ActivityFileActionsTests(E2EServer server) : E2ETest
             {
                 var refused = await page.RunAndWaitForResponseAsync(() => processAgain.ClickAsync(), response => response.Url.EndsWith("/requeue", StringComparison.Ordinal), new() { Timeout = PushMs });
 
-                Assert.Equal(503, refused.Status);
-                await Expect(actions.GetByRole(AriaRole.Status)).ToHaveTextAsync("Could not queue that file again.", new() { Timeout = PushMs });
+                await Expect(actions.GetByRole(AriaRole.Status)).ToHaveTextAsync(await BusyAnswer.DetailAsync(refused), new() { Timeout = PushMs });
             }
 
             await Expect(processAgain).ToBeEnabledAsync();
@@ -150,10 +150,7 @@ public sealed partial class ActivityFileActionsTests(E2EServer server) : E2ETest
                     response => response.Url.EndsWith("/enqueue", StringComparison.Ordinal),
                     new() { Timeout = PushMs });
 
-                Assert.Equal(503, refused.Status);
-                await Expect(actions.GetByRole(AriaRole.Status)).ToHaveTextAsync(
-                    "Could not queue that file.",
-                    new() { Timeout = PushMs });
+                await Expect(actions.GetByRole(AriaRole.Status)).ToHaveTextAsync(await BusyAnswer.DetailAsync(refused), new() { Timeout = PushMs });
             }
 
             await open.ClickAsync();
@@ -188,8 +185,7 @@ public sealed partial class ActivityFileActionsTests(E2EServer server) : E2ETest
             {
                 var refused = await page.RunAndWaitForResponseAsync(() => remove.ClickAsync(), response => response.Request.Method == "DELETE", new() { Timeout = PushMs });
 
-                Assert.Equal(503, refused.Status);
-                await Expect(actions.GetByRole(AriaRole.Status)).ToHaveTextAsync("Could not remove that file from the list.", new() { Timeout = PushMs });
+                await Expect(actions.GetByRole(AriaRole.Status)).ToHaveTextAsync(await BusyAnswer.DetailAsync(refused), new() { Timeout = PushMs });
             }
 
             Assert.NotNull(await rig.ListedFileAsync(MixedActivity.ExtraOfFinished));
