@@ -22,16 +22,19 @@ public sealed class LibraryFolderChainCheck
     private readonly LibraryStore _libraries;
     private readonly WeirOptions _options;
     private readonly IFolderProbe _probe;
+    private readonly FolderChainAnswers _answers;
 
-    public LibraryFolderChainCheck(ManagerSetupCheck managerSetupCheck, DownloadClientSuggestions downloadClientSuggestions, LibraryStore libraries, WeirOptions options)
-        : this(managerSetupCheck, downloadClientSuggestions, libraries, options, new FilesystemFolderProbe())
+    public LibraryFolderChainCheck(
+        ManagerSetupCheck managerSetupCheck, DownloadClientSuggestions downloadClientSuggestions, LibraryStore libraries, WeirOptions options, FolderChainAnswers answers)
+        : this(managerSetupCheck, downloadClientSuggestions, libraries, options, answers, new FilesystemFolderProbe())
     {
     }
 
     /// <summary>For tests: the filesystem comes from <paramref name="probe"/> instead of the real disk.</summary>
     internal LibraryFolderChainCheck(
-        ManagerSetupCheck managerSetupCheck, DownloadClientSuggestions downloadClientSuggestions, LibraryStore libraries, WeirOptions options, IFolderProbe probe)
+        ManagerSetupCheck managerSetupCheck, DownloadClientSuggestions downloadClientSuggestions, LibraryStore libraries, WeirOptions options, FolderChainAnswers answers, IFolderProbe probe)
     {
+        _answers = answers ?? throw new ArgumentNullException(nameof(answers));
         _managerSetupCheck = managerSetupCheck ?? throw new ArgumentNullException(nameof(managerSetupCheck));
         _downloadClientSuggestions = downloadClientSuggestions ?? throw new ArgumentNullException(nameof(downloadClientSuggestions));
         _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
@@ -81,6 +84,20 @@ public sealed class LibraryFolderChainCheck
             .Set("download_clients", new WireArray(downloadClients.Select(entry => (WireValue)entry)))
             .Set("ready", localReady && managersReady && downloadClientsReady);
     }
+
+    /// <summary>
+    /// A saved workflow's chain, read by a screen or by the server's own look. The answer is remembered, and told to the open
+    /// streams when it is not the one last given (<see cref="FolderChainAnswers"/>).
+    /// </summary>
+    public async Task<WireObject> ReadSavedAsync(UnitOfWork uow, ProcessingLibraryRecord library, CancellationToken cancellationToken)
+    {
+        var chain = await CheckForLibraryAsync(uow, library, cancellationToken).ConfigureAwait(false);
+        _answers.Given(library.Id, chain);
+        return chain;
+    }
+
+    /// <summary>Forgets the answers of the workflows not in <paramref name="kept"/>, so one that comes back is told as new.</summary>
+    public void ForgetAnswersExcept(IReadOnlySet<long> kept) => _answers.KeepOnly(kept);
 
     /// <summary>
     /// The library's own folders whose reach can be asked about, each on its own (<see cref="LibraryFolderChainRules.IsUnreachable"/>),
@@ -146,7 +163,7 @@ public sealed class LibraryFolderChainCheck
         var results = new List<WireObject>();
         foreach (var library in libraries)
         {
-            results.Add(await CheckForLibraryAsync(uow, library, cancellationToken).ConfigureAwait(false));
+            results.Add(await ReadSavedAsync(uow, library, cancellationToken).ConfigureAwait(false));
         }
 
         return results;
