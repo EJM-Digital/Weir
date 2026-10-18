@@ -12,6 +12,7 @@ import * as install from "./windows-install.mjs";
 import * as files from "./windows-files.mjs";
 
 /** The longest each scenario of a shard may run, in milliseconds, by id or `default`; a hang costs that scenario and not the shard's other results. */
+const CLEANUP_CEILING_MS = 120_000;
 const SCENARIO_CEILINGS = { "windows-files": { default: 360_000, "library-swap-crash": 720_000 } };
 
 /** The scenarios of each Windows shard, and how each watches System > Logs. */
@@ -60,6 +61,18 @@ async function keepInstallLogs(machine, logFolder) {
   for (const file of files) await copyFile(file.from, join(kept, file.name)).catch((error) => console.error(`::warning::${file.from} could not be kept: ${error.message}`));
 }
 
+/** The work, or a warning and a move on once `ms` have passed: a clean-up that hangs must not lose the shard's results. */
+function bounded(work, ms, what) {
+  let timer;
+  const late = new Promise((resolve) => {
+    timer = setTimeout(() => {
+      console.error(`::warning::${what} did not finish within ${ms / 1000} s.`);
+      resolve();
+    }, ms);
+  });
+  return Promise.race([work, late]).finally(() => clearTimeout(timer));
+}
+
 /** The console and logs of each server a scenario started itself. */
 async function keepServerConsoles(world, logFolder) {
   const kept = join(logFolder, "server-consoles");
@@ -94,11 +107,13 @@ export async function runWindowsShard({ shard = "windows-install", ids, machine,
     return await runScenarios({ ids, registry: scenarios, world });
   } finally {
     // What a scenario made on the machine (servers, volumes, shares), taken down last made first, whatever happened.
-    for (const cleanup of world.cleanups.splice(0).reverse()) await cleanup().catch((error) => console.error(`::warning::A clean-up failed: ${error.message}`));
-    await keepServerConsoles(world, logFolder).catch((error) => console.error(`::warning::The servers' consoles could not be kept: ${error.message}`));
-    await keepInstallLogs(machine, logFolder).catch((error) => console.error(`::warning::The install's logs could not be kept: ${error.message}`));
-    await machine.stopWeir().catch((error) => console.error(`::warning::Weir could not be stopped: ${error.message}`));
-    await rm(scratch, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 }).catch((error) => console.error(`::warning::The scratch folder could not be removed: ${error.message}`));
+    for (const cleanup of world.cleanups.splice(0).reverse()) {
+      await bounded(cleanup().catch((error) => console.error(`::warning::A clean-up failed: ${error.message}`)), CLEANUP_CEILING_MS, "A clean-up");
+    }
+    await bounded(keepServerConsoles(world, logFolder), CLEANUP_CEILING_MS, "Keeping the servers' consoles").catch((error) => console.error(`::warning::The servers' consoles could not be kept: ${error.message}`));
+    await bounded(keepInstallLogs(machine, logFolder), CLEANUP_CEILING_MS, "Keeping the install's logs").catch((error) => console.error(`::warning::The install's logs could not be kept: ${error.message}`));
+    await bounded(machine.stopWeir(), CLEANUP_CEILING_MS, "Stopping Weir").catch((error) => console.error(`::warning::Weir could not be stopped: ${error.message}`));
+    await bounded(rm(scratch, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 }), CLEANUP_CEILING_MS, "Removing the scratch folder").catch((error) => console.error(`::warning::The scratch folder could not be removed: ${error.message}`));
   }
 }
 

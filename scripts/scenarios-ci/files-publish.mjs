@@ -149,6 +149,7 @@ export async function fullDisk(world) {
   const big = join(base, "source", "Full.Disk.Film.2020.mkv");
   await makeFilm(tools, { path: big, seconds: 24, videoBitrate: "6M" });
   const bigBytes = await sizeOf(big);
+  const bigFilm = { summary: await probe(tools, big) };
   const MEGABYTE = 1024 * 1024;
   assert.ok(bigBytes > 8 * MEGABYTE && bigBytes < 40 * MEGABYTE, `the film for the full disk is ${bigBytes} bytes, not between 8 and 40 MB`);
   const plain = join(base, "source", "Plain.Film.2021.mkv");
@@ -173,7 +174,7 @@ export async function fullDisk(world) {
   const again = await weir.write("POST", `/processing/files/${row.id}/requeue`, {});
   assert.equal(again.status, 200, `Process again was answered ${again.status}: ${again.text}`);
   await waitDone(world, weir, workflow, held);
-  await expectCleanedFilm(world, held.output);
+  await expectCleanedFilm(world, held.output, bigFilm);
   assert.deepEqual(await treeOf(volume.root), ["output/Full.Disk.Film.2020/Full.Disk.Film.2020.mkv"], "the small volume holds more than the published film once the pass is done");
   facts.push("with room back, Process again cleaned and published it");
 

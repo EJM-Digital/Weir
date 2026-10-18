@@ -35,10 +35,10 @@ export async function placeFilm(world, path) {
   return master;
 }
 
-/** The film at the path is what a cleaned film must be: the English audio only, as long, and smaller. Returns its summary. */
-export async function expectCleanedFilm(world, path) {
+/** The film at the path is what a cleaned film must be: the English audio only, as long, and smaller. Returns its summary. `original` is the film it was cleaned from, the master film unless given. */
+export async function expectCleanedFilm(world, path, original) {
   const { tools } = await filesWorld(world);
-  const master = await masterFilm(world);
+  const master = original ?? (await masterFilm(world));
   assert.ok(await exists(path), `the cleaned film is not at ${path}`);
   const cleaned = await probe(tools, path);
   const problems = cleanedFilmProblems(master.summary, cleaned);

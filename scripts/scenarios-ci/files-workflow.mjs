@@ -56,11 +56,19 @@ export async function dropRelease(world, weir, workflow, name, source) {
   return release;
 }
 
-export const waitDone = (world, weir, workflow, release) =>
-  wait(world, async () => {
-    const row = await rowFor(weir, workflow, release.relative);
-    return isDone(row) ? row : undefined;
-  }, `Weir to finish ${release.relative}`, 240_000);
+export async function waitDone(world, weir, workflow, release) {
+  try {
+    return await wait(world, async () => {
+      const row = await rowFor(weir, workflow, release.relative);
+      return isDone(row) ? row : undefined;
+    }, `Weir to finish ${release.relative}`, 240_000);
+  } catch (error) {
+    // What Weir says about the file is the first thing a person would look at.
+    const row = await rowFor(weir, workflow, release.relative).catch(() => undefined);
+    const activity = await weir.get("/activity/recent?limit=5").then((found) => found.items.map((item) => item.title), () => []);
+    throw new Error(`${error.message} The file reads: ${JSON.stringify(row ? { status: row.status, reason: row.status_reason } : null)}. Activity: ${JSON.stringify(activity)}`, { cause: error });
+  }
+}
 
 /** Waits until the file is on hold for want of room, and returns its row. */
 export const waitWaitingForRoom = (world, weir, workflow, release) =>

@@ -37,7 +37,7 @@ async function removeShare(name) {
 const hasShare = async (name) => (await json(`ConvertTo-Json -Compress -InputObject ([bool](Get-SmbShare -Name $env:SCENARIO_NAME -ErrorAction SilentlyContinue))`, { NAME: name })) === true;
 
 /** The share's UNC path, by this PC's own name for itself. */
-const uncOf = (name) => `\\\\localhost\\${name}`;
+const uncOf = (name, server = "localhost") => `\\\\${server}\\${name}`;
 
 async function makeShare(world, name, backing) {
   await world.machine.ensureFolders(backing, join(backing, "watched"), join(backing, "output"));
@@ -176,7 +176,8 @@ export async function networkShareHang(world) {
   await json(`Set-SmbClientConfiguration -DirectoryCacheLifetime 0 -FileInfoCacheLifetime 0 -FileNotFoundCacheLifetime 0 -Force`);
   const inUse = (await json(`ConvertTo-Json -Compress -InputObject @([IO.DriveInfo]::GetDrives() | ForEach-Object { $_.Name.Substring(0, 1) })`)) ?? [];
   const letter = freeLetter(inUse);
-  await mapThroughRelay(letter, uncOf(name), relay.port);
+  // Windows allows one port per server name, and the share scenario before this one has a connection to localhost on the usual port.
+  await mapThroughRelay(letter, uncOf(name, process.env.COMPUTERNAME), relay.port);
   world.cleanups.push(() => unmap(letter));
   const mapped = `${letter}:\\`;
   assert.ok(await exists(join(mapped, "watched")), `the share mapped through the relay is not reachable at ${mapped}`);

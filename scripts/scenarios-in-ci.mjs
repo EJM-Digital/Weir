@@ -129,6 +129,8 @@ async function main() {
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   for (const result of results.filter((entry) => entry.status !== "passed")) console.error(`::error::${result.id}: ${result.detail}`);
   process.exitCode = exitCode(results);
+  // Anything a scenario left running (a server, a relay, a call to a share that hangs) must not hold the job after its results are written.
+  process.exit(process.exitCode);
 }
 
 await main();
