@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -15,7 +15,11 @@ import {
   serveProfiles,
 } from "./profiles-test-support";
 
-afterEach(() => vi.unstubAllGlobals());
+// The page is taken down before `fetch` is given back, so nothing it still has on its way reaches the network the setup refuses.
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 function save() {
   fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
