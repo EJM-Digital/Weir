@@ -48803,12 +48803,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Weir is at 1.0.0-rc.16; no recording of rc.14, rc.15 or rc.16 exists, so a change to the wire since rc.13 is held against the rc.13 replies only through `ExpectedDifference` pins. Needs Deluno's recording of the current build, and Weir's recordings of Deluno's replies (the other direction, INT-DEL-09/10) which nobody has recorded"
-      },
-      "issue": 979,
+      "proofs": [
+        {
+          "type": "node",
+          "file": "scripts/check-recorded-freshness.test.mjs",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "INT-DEL-14",
         "verdict": "Gap"
