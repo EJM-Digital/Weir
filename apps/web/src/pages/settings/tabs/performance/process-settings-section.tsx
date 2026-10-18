@@ -18,6 +18,7 @@ import { mmActionButtonClass } from "../../../../lib/ui/mm-control-roles";
 import { errorMessage } from "../../../../lib/api/error-message";
 import { SaveModelNote } from "../../save-model-note";
 import { SettingsLoadError } from "../../settings-load-error";
+import { useUnsavedChanges } from "../../unsaved-changes";
 
 /** Files at once goes from one to ten (#633). */
 const FILES_AT_ONCE = Array.from({ length: 10 }, (_, i) => i + 1);
@@ -112,6 +113,7 @@ function ProcessSettingsForm({
     runnerCost1080p !== String(saved.runner_cost_1080p) ||
     runnerCost4k !== String(saved.runner_cost_4k) ||
     runnerBudgetEnabled !== saved.runner_budget_enabled;
+  useUnsavedChanges(dirty ? "your speed settings" : null);
   const locked = !editable || save.isPending;
 
   const cost = (label: string, value: string, set: (v: string) => void) => (

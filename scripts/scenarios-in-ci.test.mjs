@@ -121,6 +121,13 @@ test("the film command makes the folder and the subtitle files, runs ffmpeg and 
 const probe = (streams, format) => ({ streams, format });
 const stream = (codec_type, language) => ({ codec_type, tags: language ? { language } : {} });
 
+test("the film's video bitrate is 3M unless asked for more, so a long film can be as large as a workflow's minimum needs", () => {
+  const rate = (options) => { const args = filmArguments({ path: "/tmp/a.mkv", ...options }); return args[args.indexOf("-b:v") + 1]; };
+  assert.equal(rate({}), "3M");
+  assert.equal(rate({ videoBitrate: "5M" }), "5M");
+  assert.match(filmCommand({ path: "/tmp/a.mkv", videoBitrate: "5M" }), /'-b:v' '5M'/);
+});
+
 test("a probe is summed up as video count, audio and subtitle languages, length and size", () => {
   const summary = summarizeProbe(
     probe([stream("video"), stream("audio", "eng"), stream("audio", "fre"), stream("subtitle", "spa"), stream("audio")], { duration: "30.04", size: "11000000" }),

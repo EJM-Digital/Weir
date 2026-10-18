@@ -80,7 +80,6 @@ export function SignInProtectionSection({
     <Panel
       title="How sign-in is protected"
       headingId="suite-security-protection-heading"
-      headingLevel={3}
       padded
       count={overview ? protectionSummary(protections) : undefined}
       dataTestId="suite-security-posture"

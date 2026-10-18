@@ -301,3 +301,50 @@ test("command line options are read, and anything else is refused", () => {
   assert.throws(() => parseArguments(["--floors", "f.json", "--nope", "x"]), /Unknown option/);
   assert.throws(() => parseArguments(["--floors"]), /needs a value/);
 });
+
+test("the out-of-process figure is read from its own report and listed apart from the unit figures", () => {
+  withFolders(({ root, put }) => {
+    for (const file of ["Summary.json", "Cobertura.xml"]) put("out-of-process", "out-of-process")(file);
+    const summary = JSON.parse(readFixture("out-of-process", "Summary.json"));
+    const floorsOf = (name) => ({ line: floorTenth(figuresFromSummary(summary, name).line), branch: floorTenth(figuresFromSummary(summary, name).branch) });
+    const floors = floorsFile({
+      base: 0,
+      floors: {
+        "out-of-process-core": floorsOf("Weir.Core"),
+        "out-of-process-infrastructure": floorsOf("Weir.Infrastructure"),
+        "out-of-process-api": floorsOf("Weir.Api"),
+        "out-of-process-host": floorsOf("Weir"),
+      },
+    });
+    const result = run({ floorsFile: floorsAt(root, floors), folders: { "out-of-process": path.join(root, "out-of-process") } });
+    assert.deepEqual(result.problems, []);
+    assert.match(result.text, /#### Out of process: the contract suite and the E2E smoke/);
+    assert.match(result.text, /\| Out of process: Weir\.Api \| 50\.3% \(73\/145\) \|/);
+    assert.match(result.text, /Least covered in Out of process: Weir\.Core/);
+    assert.match(result.text, /\| Server: Weir\.Core \| - \| - \| - \| - \| not run for this change \|/);
+  });
+});
+
+test("the out-of-process figure is held to its own floor and the failure names it", () => {
+  withFolders(({ root, put }) => {
+    for (const file of ["Summary.json", "Cobertura.xml"]) put("out-of-process", "out-of-process")(file);
+    const floors = floorsFile({ base: 0, floors: { "out-of-process-api": { line: 50.4, branch: 0 } } });
+    const result = run({ floorsFile: floorsAt(root, floors), folders: { "out-of-process": path.join(root, "out-of-process") } });
+    assert.equal(result.problems.length, 1);
+    assert.match(result.problems[0], /Out of process: Weir\.Api line coverage is 50\.3% \(73 of 145\), below its floor of 50\.4%/);
+  });
+});
+
+test("an out-of-process folder that was asked for and holds no report fails", () => {
+  withFolders(({ root }) => {
+    const folder = path.join(root, "out-of-process");
+    mkdirSync(folder);
+    const result = run({ floorsFile: floorsAt(root, floorsFile()), folders: { "out-of-process": folder } });
+    assert.equal(result.problems.length, 4);
+    assert.match(result.problems[0], /^Out of process: Weir\.Core: .*Summary\.json was not written/);
+  });
+});
+
+test("the out-of-process folder is a command line option", () => {
+  assert.deepEqual(parseArguments(["--floors", "f.json", "--out-of-process", "o"]), { floorsFile: "f.json", folders: { "out-of-process": "o" } });
+});

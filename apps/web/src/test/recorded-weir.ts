@@ -31,6 +31,9 @@ export type RecordedWeir = {
 
 const SERVER_ORIGIN = "http://weir.test";
 
+/** Statuses a server answers with no body, which a `Response` refuses to be given one for. */
+const NO_BODY_STATUSES: ReadonlySet<number> = new Set([204, 205, 304]);
+
 function routeOf(input: RequestInfo | URL, init?: RequestInit) {
   const url = new URL(
     input instanceof Request ? input.url : String(input),
@@ -84,7 +87,7 @@ export function serveRecordedReplies(routes: RecordedRoutes): RecordedWeir {
         return Promise.reject(new Error(`No recording answers ${key}.`));
       }
       const answer = (reply: RecordedReply) =>
-        new Response(reply.body, {
+        new Response(NO_BODY_STATUSES.has(reply.status) ? null : reply.body, {
           status: reply.status,
           headers: { "Content-Type": "application/json" },
         });

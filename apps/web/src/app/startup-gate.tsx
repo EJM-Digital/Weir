@@ -112,7 +112,7 @@ export function StartupGate({ children }: { children: ReactNode }) {
   }
 
   return (
-    <main className="mm-startup">
+    <main className="mm-startup" id="mm-main-content" tabIndex={-1}>
       <div className="mm-startup__inner">
         <p className="mm-startup__eyebrow">Weir</p>
         <h1 className="mm-startup__title">{state.message}</h1>

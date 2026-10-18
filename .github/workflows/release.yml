@@ -240,6 +240,11 @@ jobs:
             exit 1
           fi
 
+      # Deluno's recordings of its talk with Weir must be of a build at most one release behind this tag (#979), so a
+      # tag is never cut on recordings of a much older Weir. Record again on the golden VM first (docs/release.md).
+      - name: Recordings of Weir are recent enough for this tag
+        run: node scripts/check-recorded-freshness.mjs --version "$TAG"
+
       - name: Release publication gate ordering
         run: node scripts/check-release-workflow-gates.mjs
 

@@ -51,7 +51,11 @@
 
 /* A pill's size, shape and edge (currentColor) come from the component that wears it (.mm-chip). */
 .mm-status-pill {
-  background: color-mix(in srgb, var(--mm-st) 14%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--mm-st) var(--mm-status-tint),
+    transparent
+  );
 }
 
 /* Space saved: a figure, never a status. */

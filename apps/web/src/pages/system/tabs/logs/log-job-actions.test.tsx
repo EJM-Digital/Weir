@@ -22,7 +22,7 @@ function renderJobs(routes: RecordedRoutes): RecordedWeir {
 /** Opens the row at `position` in the list (newest first) and returns it. */
 async function openRow(position: number): Promise<HTMLElement> {
   const rows = await screen.findAllByTestId("log-row");
-  const row = rows[position].closest("li") as HTMLElement;
+  const row = rows[position].closest("[role=row]") as HTMLElement;
   fireEvent.click(within(row).getByRole("button", { expanded: false }));
   return row;
 }

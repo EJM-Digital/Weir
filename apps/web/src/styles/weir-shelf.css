@@ -137,7 +137,7 @@
 .lsh-chip[aria-pressed="true"] {
   border-color: color-mix(in srgb, var(--mm-primary) 45%, transparent);
   background: color-mix(in srgb, var(--mm-primary) 16%, transparent);
-  color: var(--mm-primary);
+  color: var(--mm-primary-text);
   font-weight: 600;
 }
 

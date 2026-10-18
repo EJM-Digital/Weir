@@ -274,3 +274,41 @@ describe("a profile edited in the real Profiles tab", () => {
     expect(server.to("PUT /api/v1/processing/rule-sets/4")).toHaveLength(0);
   });
 });
+
+describe("a new profile opened in the real Profiles tab", () => {
+  async function startNewProfile() {
+    const router = await renderAt("/setup/rules");
+    await screen.findByRole("heading", { name: "Audio" });
+    await signedIn(client);
+    fireEvent.click(screen.getByRole("button", { name: "New profile" }));
+    await screen.findByRole("button", { name: "Create profile" });
+    return router;
+  }
+
+  it("is unsaved from the moment it opens, so another tab asks, naming the new profile", async () => {
+    const router = await startNewProfile();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Playback devices" }));
+
+    expect(warning()).toHaveTextContent(
+      "You have unsaved changes to the new profile. Leave without saving?",
+    );
+    keepEditing();
+    expect(router.state.location.pathname).toBe("/setup/rules");
+    expect(
+      screen.getByRole("button", { name: "Create profile" }),
+    ).toBeInTheDocument();
+  });
+
+  it("asks before the side menu leaves setup, and Leave drops it", async () => {
+    const router = await startNewProfile();
+
+    fireEvent.click(screen.getByRole("link", { name: "Activity" }));
+    expect(warning()).toHaveTextContent("the new profile");
+    leave();
+
+    expect(await screen.findByText("Activity page")).toBeVisible();
+    expect(router.state.location.pathname).toBe("/activity");
+    expect(server.to("POST /api/v1/processing/rule-sets")).toHaveLength(0);
+  });
+});
