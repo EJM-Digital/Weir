@@ -15,10 +15,11 @@ import { randomBytes } from "node:crypto";
 import { createFirstAccount } from "./docker-smoke/smoke-data.mjs";
 import { ORIGIN, Stack } from "./docker-smoke/stack.mjs";
 import { WeirClient } from "./docker-smoke/weir-client.mjs";
+import { Browser } from "./scenarios-ci/browser.mjs";
 import { ContainerBox } from "./scenarios-ci/container-box.mjs";
 import { catalogIds, linuxShards, loadHomes, problemsWithHomes, scenariosOfShard } from "./scenarios-ci/homes.mjs";
 import { exitCode, runScenarios, summaryMarkdown } from "./scenarios-ci/run.mjs";
-import { SCENARIOS } from "./scenarios-ci/weir-only.mjs";
+import { SHARDS } from "./scenarios-ci/shards.mjs";
 
 const CATALOG = "scripts/scenarios/Weir.Scenarios.Catalog.ps1";
 
@@ -52,18 +53,22 @@ async function main() {
   const logFolder = join(values.logs, shard);
   const stack = new Stack(logFolder, scratch);
   const client = new WeirClient(ORIGIN);
+  const { account, browser: wantsBrowser, scenarios } = SHARDS[shard];
   let results = [];
+  let browser;
   stack.removeEverything();
   try {
     stack.up(values.candidate, "never");
     stack.waitHealthy();
-    await createFirstAccount({ client, stack });
-    const world = { weir: client, box: new ContainerBox(stack), runId: randomBytes(3).toString("hex") };
-    results = await runScenarios({ ids, registry: SCENARIOS, world });
+    const world = { weir: client, box: new ContainerBox(stack), runId: randomBytes(3).toString("hex"), createAccount: () => createFirstAccount({ client, stack }) };
+    if (account) await world.createAccount();
+    if (wantsBrowser) world.browser = browser = await Browser.launch(ORIGIN);
+    results = await runScenarios({ ids, registry: scenarios, world });
   } catch (error) {
     console.error(`::error::${shard}: ${error.message}`);
     console.error(`::group::Container log\n${stack.logs()}\n::endgroup::`);
   } finally {
+    await browser?.close();
     stack.keepLogs();
     stack.removeEverything();
     rmSync(scratch, { recursive: true, force: true });

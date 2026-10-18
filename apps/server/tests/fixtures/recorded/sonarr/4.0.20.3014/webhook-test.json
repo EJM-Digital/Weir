@@ -1,0 +1,51 @@
+{
+  "app": "sonarr",
+  "version": "4.0.20.3014",
+  "state": "webhook-test",
+  "recordedAt": "2026-10-17T05:26:10Z",
+  "note": "The app's own Test webhook, as it posted it. The 200 is the recorder's, not Weir's.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/sonarr",
+        "headers": {
+          "content-type": "application/json",
+          "user-agent": "Sonarr/4.0.20.3014 (alpine 3.24.2)",
+          "x-webhook-secret": "<scrubbed>"
+        },
+        "body": {
+          "series": {
+            "id": 1,
+            "title": "Test Title",
+            "path": "C:\\testpath",
+            "tvdbId": 1234,
+            "tvMazeId": 0,
+            "tmdbId": 0,
+            "type": "standard",
+            "year": 0,
+            "tags": [
+              "test-tag"
+            ]
+          },
+          "episodes": [
+            {
+              "id": 123,
+              "episodeNumber": 1,
+              "seasonNumber": 1,
+              "title": "Test title",
+              "seriesId": 0,
+              "tvdbId": 0
+            }
+          ],
+          "eventType": "Test",
+          "instanceName": "Sonarr",
+          "applicationUrl": ""
+        }
+      },
+      "reply": {
+        "status": 200
+      }
+    }
+  ]
+}

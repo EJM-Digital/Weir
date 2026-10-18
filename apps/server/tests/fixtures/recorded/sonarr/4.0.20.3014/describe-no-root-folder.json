@@ -1,0 +1,26 @@
+{
+  "app": "sonarr",
+  "version": "4.0.20.3014",
+  "state": "describe-no-root-folder",
+  "recordedAt": "2026-10-17T05:25:46Z",
+  "note": "Asking a fresh app which folders it manages, before it has a root folder.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v3/rootfolder",
+        "headers": {
+          "accept": "application/json",
+          "x-api-key": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": []
+      }
+    }
+  ]
+}

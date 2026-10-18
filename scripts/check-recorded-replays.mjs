@@ -9,6 +9,11 @@
 // apps/server/tests/fixtures/recorded/deluno-side-awaiting-replay.json with the open issue that will replay it. Such an entry comes out of
 // the list when a test replays the recording, so the list only shrinks.
 //
+// The recordings of a real Sonarr and Radarr (apps/server/tests/fixtures/recorded/sonarr and radarr, #1013 and #1014) are held to the same
+// rule: every state is named as a quoted string by a test under apps/server/tests (Infrastructure, Api or Contract), or covered by a test
+// that lists a whole family of states with ArrRecording.States(app, "<prefix>") (the webhook-* events). Nothing excuses a state there: a
+// recording of the real app that no test replays is a recording that proves nothing, so it is either replayed or not made.
+//
 // Usage: node scripts/check-recorded-replays.mjs
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
@@ -20,6 +25,27 @@ const allowList = path.join(repositoryRoot, "apps", "server", "tests", "fixtures
 const awaitingList = path.join(repositoryRoot, "apps", "server", "tests", "fixtures", "recorded", "deluno-side-awaiting-replay.json");
 const tests = path.join(repositoryRoot, "apps", "server", "tests", "Weir.Contract.Tests");
 const serverCode = path.join(repositoryRoot, "apps", "server", "src");
+
+const arrRecordings = path.join(repositoryRoot, "apps", "server", "tests", "fixtures", "recorded");
+const allTests = path.join(repositoryRoot, "apps", "server", "tests");
+
+/**
+ * What is wrong with the replay of the Sonarr and Radarr recordings, one sentence each.
+ * @param statesByApp app -> every recorded state
+ * @param testSource the text of the server tests
+ */
+export function arrProblems(statesByApp, testSource) {
+  const prefixes = [...testSource.matchAll(/\.States\(\s*\w+\s*,\s*"([^"]+)"\s*\)/g)].map((match) => match[1]);
+  const out = [];
+  for (const [app, states] of Object.entries(statesByApp)) {
+    if (states.length === 0) out.push(`${app}: no recordings.`);
+    for (const state of states) {
+      const named = testSource.includes(`"${state}"`) || prefixes.some((prefix) => state.startsWith(prefix));
+      if (!named) out.push(`${app}/${state} is recorded but no test replays it. Replay it in a test, or take the step out of the recorder.`);
+    }
+  }
+  return out;
+}
 
 /** The states in the folder: file name without .json, by version folder. */
 export function statesIn(root) {
@@ -86,10 +112,16 @@ export function problems(states, testSource, serverSource, excused, awaiting = {
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const found = problems(statesIn(recordings), sourceText(tests), sourceText(serverCode), JSON.parse(readFileSync(allowList, "utf8")), JSON.parse(readFileSync(awaitingList, "utf8")));
-  if (found.length > 0) {
-    console.error("Deluno's recordings and the tests that replay them disagree (#971):");
+  const arrFound = arrProblems(
+    Object.fromEntries(["sonarr", "radarr"].map((app) => [app, statesIn(path.join(arrRecordings, app))])),
+    sourceText(allTests),
+  );
+  if (found.length > 0 || arrFound.length > 0) {
+    if (found.length > 0) console.error("Deluno's recordings and the tests that replay them disagree (#971):");
     for (const problem of found) console.error("  " + problem);
+    if (arrFound.length > 0) console.error("The Sonarr and Radarr recordings and the tests that replay them disagree (#1013, #1014):");
+    for (const problem of arrFound) console.error("  " + problem);
     process.exit(1);
   }
-  console.log("Every recording of Deluno's own side is replayed by a contract test, explained, or waiting on an open issue.");
+  console.log("Every recording of Deluno's own side is replayed by a contract test, explained, or waiting on an open issue, and every Sonarr and Radarr recording is replayed.");
 }

@@ -20,8 +20,8 @@ public sealed partial class FakeManager
     public SharedList<JsonObject> Jobs { get; } = new();
 
     /// <summary>
-    /// A Sonarr or Radarr v3 fake: status, root folders, a queue a test fills in (<see cref="Queue"/>), command and manual import.
-    /// It is already running.
+    /// A Sonarr or Radarr v3 fake: status, root folders, a queue a test fills in (<see cref="Queue"/>), command and manual import,
+    /// each answered in the shape a real Sonarr or Radarr gave (<see cref="ArrShapes"/>). It is already running.
     /// </summary>
     public static FakeManager StartArr(string kind, IEnumerable<string>? rootFolders = null)
     {
@@ -32,13 +32,11 @@ public sealed partial class FakeManager
 
         var fake = new FakeManager(kind, DefaultApiKey);
         var folders = rootFolders?.ToList() ?? [];
-        fake.Route("GET", "/api/v3/system/status", new JsonObject { ["appName"] = char.ToUpperInvariant(kind[0]) + kind[1..], ["version"] = "4.0.0.0" });
-        fake.Route("GET", "/api/v3/rootfolder", _ => Reply.Ok(new JsonArray(folders
-            .Select((path, index) => (JsonNode)new JsonObject { ["id"] = index + 1, ["path"] = path })
-            .ToArray())));
-        fake.Route("GET", "/api/v3/queue", _ => QueuePage(fake.Queue.Snapshot()));
+        fake.Route("GET", "/api/v3/system/status", _ => Reply.Ok(ArrShapes.Status(kind)));
+        fake.Route("GET", "/api/v3/rootfolder", _ => Reply.Ok(ArrShapes.RootFolders(kind, folders)));
+        fake.Route("GET", "/api/v3/queue", _ => Reply.Ok(ArrShapes.QueuePage(kind, fake.Queue.Snapshot())));
         fake.Route("DELETE", "/api/v3/queue/{id}", request => fake.RemoveFromQueue(request.Path[(request.Path.LastIndexOf('/') + 1)..]));
-        fake.Route("POST", "/api/v3/command", request => new Reply(201, new JsonObject { ["id"] = 1, ["name"] = (request.Json as JsonObject)?["name"]?.DeepClone() }));
+        fake.Route("POST", "/api/v3/command", request => new Reply(201, ArrShapes.CommandAccepted(kind, (string?)(request.Json as JsonObject)?["name"] ?? "unknown")));
         fake.Route("GET", "/api/v3/manualimport", new JsonArray());
         fake.Route("GET", kind == "radarr" ? "/api/v3/movie" : "/api/v3/episodefile", _ => Reply.Ok(Copy(fake.Library.Snapshot())));
         return fake;
@@ -61,14 +59,6 @@ public sealed partial class FakeManager
         fake.Route("POST", "/api/integrations/processors/events", new JsonObject { ["accepted"] = true }, status: 202);
         return fake;
     }
-
-    private static Reply QueuePage(IReadOnlyList<JsonObject> records) => Reply.Ok(new JsonObject
-    {
-        ["page"] = 1,
-        ["pageSize"] = 1000,
-        ["totalRecords"] = records.Count,
-        ["records"] = Copy(records),
-    });
 
     private Reply RemoveFromQueue(string id) =>
         new(Queue.RemoveAll(row => row["id"]?.ToString() == id) > 0 ? 200 : 404);
