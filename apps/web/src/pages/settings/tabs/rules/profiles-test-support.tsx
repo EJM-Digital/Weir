@@ -114,11 +114,16 @@ export function expectedSave(
   return { ...Object.fromEntries(rules), ...changes };
 }
 
-/** The one request that saved the profile: its body without the token, once the save has been sent. */
+/**
+ * The one request that saved the profile: its body without the token, once the save has been sent and the page has shown how it ended.
+ * The page goes on to select the profile it saved and to read again what it lists, so a test that ended with the request would end
+ * while those reads are on their way.
+ */
 export async function savedBody(
   api: ReturnType<typeof serveProfiles>,
   route = `PUT ${RULE_SETS}/${STORED.id}`,
 ) {
   await waitFor(() => expect(api.to(route)).toHaveLength(1));
+  await screen.findByRole("status");
   return sentRule(api.to(route)[0]!);
 }

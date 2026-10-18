@@ -96,7 +96,7 @@ public sealed class LibraryFolderChainCheck
         return chain;
     }
 
-    /// <summary>Forgets the answers of the workflows not in <paramref name="kept"/>, so one that comes back is told as new.</summary>
+    /// <summary>Forgets the answers of the workflows not in <paramref name="kept"/>, so one that comes back starts afresh.</summary>
     public void ForgetAnswersExcept(IReadOnlySet<long> kept) => _answers.KeepOnly(kept);
 
     /// <summary>

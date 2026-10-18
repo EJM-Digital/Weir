@@ -92,7 +92,7 @@ public sealed class FolderChecksTaskTests : IDisposable
         using var subscription = rig.Changes.Subscribe();
 
         await rig.Task.RunOnceAsync(CancellationToken.None);
-        Assert.True(await PublishedAsync(rig, subscription));
+        Assert.False(await PublishedAsync(rig, subscription), "The first answer is the one whoever asked was given, so there is nothing to tell.");
 
         await rig.Task.RunOnceAsync(CancellationToken.None);
         Assert.False(await PublishedAsync(rig, subscription), "An answer that has not changed is not published again.");
@@ -114,7 +114,7 @@ public sealed class FolderChecksTaskTests : IDisposable
         using var watcher = rig.Clients.Open();
         using var subscription = rig.Changes.Subscribe();
         await rig.Task.RunOnceAsync(CancellationToken.None);
-        Assert.True(await PublishedAsync(rig, subscription));
+        Assert.False(await PublishedAsync(rig, subscription));
 
         // A screen reads the workflow on its own (it was opened, it came back to the foreground, its live link was lost and found
         // again) between two of the server's looks, and finds the folder gone.

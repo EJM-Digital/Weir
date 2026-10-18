@@ -18,14 +18,16 @@ public sealed class FolderChainAnswers
 
     public FolderChainAnswers(DataChangePublisher changes) => _changes = changes ?? throw new ArgumentNullException(nameof(changes));
 
-    /// <summary>Remembers <paramref name="chain"/> as the answer for the workflow, and tells the open streams when it is new.</summary>
+    /// <summary>Remembers <paramref name="chain"/> as the answer for the workflow, and tells the open streams when it is not the one given before.</summary>
     public void Given(long libraryId, WireObject chain)
     {
         ArgumentNullException.ThrowIfNull(chain);
         var answer = WireJsonWriter.Dumps(chain, WireJsonFormat.Compact);
+        bool given;
         lock (_gate)
         {
-            if (_last.TryGetValue(libraryId, out var before) && before == answer)
+            given = _last.TryGetValue(libraryId, out var before);
+            if (given && before == answer)
             {
                 return;
             }
@@ -33,10 +35,13 @@ public sealed class FolderChainAnswers
             _last[libraryId] = answer;
         }
 
-        _changes.Publish(DataTopics.FolderChecks);
+        if (given)
+        {
+            _changes.Publish(DataTopics.FolderChecks);
+        }
     }
 
-    /// <summary>Forgets the workflows that are not in <paramref name="kept"/>, so one that comes back is told as new.</summary>
+    /// <summary>Forgets the workflows that are not in <paramref name="kept"/>, so one that comes back starts afresh.</summary>
     public void KeepOnly(IReadOnlySet<long> kept)
     {
         ArgumentNullException.ThrowIfNull(kept);
