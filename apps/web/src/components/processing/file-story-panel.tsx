@@ -10,11 +10,9 @@ import { Poster } from "../shared/poster";
 import { STORY_STEP_MEANING } from "../../lib/processing/story-step-meaning";
 import { fileActivityRetentionNote } from "../../lib/processing/file-activity-retention";
 import { useAppDateFormatter } from "../../lib/ui/mm-format-date";
-import { DirectPlayLine } from "./direct-play-line";
 import { FileNowSection, type FileNow } from "./file-now-section";
 import { StoryPanelShell } from "./story-panel-shell";
 import type {
-  ProcessingDirectPlay,
   ProcessingFileLog,
   ProcessingFileStoryStep,
 } from "../../lib/processing/files-api";
@@ -36,8 +34,6 @@ export interface FileStoryPanelProps {
   fileName: string;
   /** What the header shows beside the name: the title's poster, tinted for its workflow when there is none. */
   poster?: { url: string | null | undefined; workflow: string };
-  /** Which of the operator's devices will play the file directly. Information only. */
-  directPlay?: ProcessingDirectPlay[];
   /** Where the file is on the Pipeline right now, when it is on it: shown above what has already happened to it. */
   now?: FileNow;
   log: ProcessingFileLog | undefined;
@@ -50,7 +46,6 @@ export function FileStoryPanel({
   open,
   fileName,
   poster,
-  directPlay = [],
   now,
   log,
   loading,
@@ -79,11 +74,6 @@ export function FileStoryPanel({
       backdropLabel="Close file activity"
       onClose={onClose}
     >
-      <DirectPlayLine
-        directPlay={directPlay}
-        full
-        testId="file-story-direct-play"
-      />
       {now ? <FileNowSection now={now} /> : null}
       {loading ? (
         <p className="mm-story-panel__note">Loading…</p>

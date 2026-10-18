@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
@@ -34,5 +34,27 @@ describe("SidebarUser", () => {
     );
 
     expect(screen.getByTestId("user-menu")).toHaveTextContent(/^Aadmin$/);
+  });
+
+  it("says Signing out… and cannot be pressed again while the sign-out is under way", () => {
+    const onSignOut = vi.fn();
+    render(
+      <MemoryRouter>
+        <SidebarUser
+          username="admin"
+          version="3.2.16"
+          signingOut
+          onSignOut={onSignOut}
+          onNavigate={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByTestId("user-menu"));
+
+    const button = screen.getByTestId("sign-out");
+    expect(button).toHaveTextContent("Signing out…");
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(onSignOut).not.toHaveBeenCalled();
   });
 });

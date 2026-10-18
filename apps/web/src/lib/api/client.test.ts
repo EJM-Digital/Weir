@@ -314,3 +314,89 @@ describe("apiFetch unauthorized handling", () => {
     expect(handler).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("apiFetch requests", () => {
+  const answered = () => {
+    const fetchStub = vi.fn().mockResolvedValue(new Response("{}"));
+    vi.stubGlobal("fetch", fetchStub);
+    return fetchStub;
+  };
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("goes to the same origin under /api/v1, with the session cookie and the headers the server looks for", async () => {
+    const fetchStub = answered();
+
+    await apiFetch(SETTINGS);
+
+    const [url, init] = fetchStub.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(SETTINGS);
+    expect(init.credentials).toBe("include");
+    expect(init.headers).toMatchObject({
+      Accept: "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    });
+  });
+
+  it("adds the caller's own headers to those, and keeps its method and body", async () => {
+    const fetchStub = answered();
+
+    await apiFetch(SETTINGS, {
+      method: "PUT",
+      body: "{}",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const [, init] = fetchStub.mock.calls[0] as [string, RequestInit];
+    expect(init.method).toBe("PUT");
+    expect(init.body).toBe("{}");
+    expect(init.headers).toEqual({
+      Accept: "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+      "Content-Type": "application/json",
+    });
+  });
+
+  it("refuses an address outside /api/v1 without sending anything", async () => {
+    const fetchStub = answered();
+
+    await expect(apiFetch("/somewhere/else")).rejects.toThrow(
+      "API paths must be under /api/v1",
+    );
+
+    expect(fetchStub).not.toHaveBeenCalled();
+  });
+
+  it("gives a request 30 seconds, or the time its caller asks for", async () => {
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    answered();
+
+    await apiFetch(SETTINGS);
+    await apiFetch(SETTINGS, { timeoutMs: 5_000 });
+
+    expect(timeout.mock.calls).toEqual([[30_000], [5_000]]);
+  });
+
+  it("stops when its caller stops it, and says so as the caller's abort rather than as a timeout", async () => {
+    const caller = new AbortController();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_url: string, init: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () =>
+              reject(new DOMException("Aborted", "AbortError")),
+            );
+          }),
+      ),
+    );
+
+    const request = apiFetch(SETTINGS, { signal: caller.signal });
+    caller.abort();
+
+    await expect(request).rejects.toMatchObject({
+      name: "AbortError",
+    });
+    await expect(request).rejects.not.toBeInstanceOf(ApiHttpError);
+  });
+});

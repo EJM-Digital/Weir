@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Weir.E2E.Tests.Harness;
@@ -65,6 +66,31 @@ public sealed class ActivityNarrowLayoutTests(E2EServer server) : E2ETestBase(se
     }
 
     [E2EFact]
+    public async Task A_search_that_is_only_a_mark_opens_when_pressed_stays_open_while_it_holds_a_search_and_shuts_when_it_loses_focus_empty()
+    {
+        await using var rig = await ProcessingRig.StartAsync();
+        var page = await OpenActivityAsync(rig, Short);
+        var group = page.GetByRole(AriaRole.Group, new() { Name = "Show" });
+        await NarrowUntilChipsFoldAsync(page, group.GetByRole(AriaRole.Button, new() { NameRegex = new("^More") }));
+        var search = Search(page);
+        await Expect(search.Locator("xpath=ancestor::label")).ToHaveAttributeAsync("data-collapsed", "true");
+        var mark = await SearchWidthAsync(page);
+
+        await search.ClickAsync();
+        await WaitForSearchWidthAsync(page, $"> {(mark * 2).ToString(CultureInfo.InvariantCulture)}");
+
+        await search.FillAsync("harbour");
+        await search.BlurAsync();
+        await SettleAsync(page);
+        Assert.True(await SearchWidthAsync(page) > mark * 2, "A search that holds words shut when it lost the focus.");
+
+        await search.FocusAsync();
+        await search.FillAsync("");
+        await search.BlurAsync();
+        await WaitForSearchWidthAsync(page, $"<= {(mark + 2).ToString(CultureInfo.InvariantCulture)}");
+    }
+
+    [E2EFact]
     public async Task On_a_phone_the_last_chips_fold_into_More_and_the_search_and_pickers_are_still_there_to_use()
     {
         await using var rig = await ProcessingRig.StartAsync();
@@ -106,6 +132,17 @@ public sealed class ActivityNarrowLayoutTests(E2EServer server) : E2ETestBase(se
 
         Assert.Fail($"No chip had folded into More by {TitleLineShared}px wide, the narrowest window that still shares the title line.");
     }
+
+    private const string SearchBox = "document.querySelector('input[aria-label=\"Find a file\"]').closest('label')";
+
+    private static async Task<double> SearchWidthAsync(IPage page) =>
+        await page.EvaluateAsync<double>($"() => {SearchBox}.getBoundingClientRect().width");
+
+    private static async Task WaitForSearchWidthAsync(IPage page, string comparison) =>
+        await page.WaitForFunctionAsync($"() => {SearchBox}.getBoundingClientRect().width {comparison}");
+
+    private static async Task SettleAsync(IPage page) =>
+        await page.EvaluateAsync("() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))");
 
     private static ILocator Search(IPage page) => page.GetByRole(AriaRole.Searchbox, new() { Name = "Find a file" });
 

@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { PageToolbar } from "./page-toolbar";
+import { PageToolbar, PageToolbarButtons } from "./page-toolbar";
 import {
   ShellHeaderProvider,
   useHeaderButtonsSlotRef,
@@ -114,5 +114,41 @@ describe("where the header is too narrow", () => {
     expect(
       screen.getByRole("navigation", { name: "Page tabs" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("a page's own buttons when it has no tabs", () => {
+  function renderButtons() {
+    return render(
+      <ShellHeaderProvider>
+        <TitleLine />
+        <PageToolbarButtons>
+          <button type="button">Check again</button>
+          <button type="button">Set up</button>
+        </PageToolbarButtons>
+      </ShellHeaderProvider>,
+    );
+  }
+
+  it("sit at the right of the title line where the header has room, with no row of their own", () => {
+    stubWindowWidth(true);
+    const { container } = renderButtons();
+
+    const line = within(screen.getByTestId("title-line-buttons"));
+    expect(line.getByRole("button", { name: "Check again" })).toBeVisible();
+    expect(line.getByRole("button", { name: "Set up" })).toBeVisible();
+    expect(container.querySelector(".mm-page-toolbar")).toBeNull();
+  });
+
+  it("sit in a row of the page's own, at its right, where the header is too narrow", () => {
+    stubWindowWidth(false);
+    const { container } = renderButtons();
+
+    const row = container.querySelector(".mm-page-toolbar__actions");
+    expect(row).not.toBeNull();
+    expect(within(row as HTMLElement).getAllByRole("button")).toHaveLength(2);
+    expect(
+      within(screen.getByTestId("title-line-buttons")).queryByRole("button"),
+    ).toBeNull();
   });
 });

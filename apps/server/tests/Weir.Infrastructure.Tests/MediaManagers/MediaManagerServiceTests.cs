@@ -48,6 +48,28 @@ public sealed class MediaManagerServiceTests
     }
 
     [Fact]
+    public async Task The_environments_Sonarr_serves_TV_only_and_the_environments_Radarr_serves_movies_only()
+    {
+        using var environment = new MediaManagerFixture(
+            ("WEIR_ARR_SONARR_BASE_URL", "http://sonarr.local:8989"), ("WEIR_ARR_SONARR_API_KEY", "tv-key"),
+            ("WEIR_ARR_RADARR_BASE_URL", "http://radarr.local:7878"), ("WEIR_ARR_RADARR_API_KEY", "film-key"));
+
+        var tv = Assert.Single(await environment.Db(uow => environment.Connections.ConnectionsForScopeAsync(uow, "tv")));
+        var movies = Assert.Single(await environment.Db(uow => environment.Connections.ConnectionsForScopeAsync(uow, "movie")));
+
+        Assert.Equal(("sonarr", "http://sonarr.local:8989", "tv-key"), (tv.Kind, tv.BaseUrl, tv.ApiKey));
+        Assert.Equal(("radarr", "http://radarr.local:7878", "film-key"), (movies.Kind, movies.BaseUrl, movies.ApiKey));
+    }
+
+    [Fact]
+    public async Task An_environment_address_without_its_key_is_no_connection()
+    {
+        using var environment = new MediaManagerFixture(("WEIR_ARR_SONARR_BASE_URL", "http://sonarr.local:8989"));
+
+        Assert.Empty(await environment.Db(uow => environment.Connections.ConnectionsForScopeAsync(uow, "tv")));
+    }
+
+    [Fact]
     public async Task Fan_out_asks_every_covering_connection_and_narrows_rows_to_the_scope()
     {
         using var fixture = new MediaManagerFixture();

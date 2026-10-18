@@ -253,4 +253,57 @@ public sealed class OutputFolderCleanupTests : IDisposable
         Assert.Contains("Another TV video pass", Str(blocked, "tv_output_season_folder_skip_reason"), StringComparison.Ordinal);
         Assert.True(File.Exists(episode));
     }
+
+    private string FreshTvEpisode()
+    {
+        var episode = _folders.Out(Path.Join("Show", "S01", "ep.mkv"));
+        Directory.CreateDirectory(Path.GetDirectoryName(episode)!);
+        File.WriteAllText(episode, "x");
+        return episode;
+    }
+
+    /// <summary>One manager that already has both the episode and the film in its own library.</summary>
+    private void ManagerHasBoth() =>
+        _data.Truth.Add(Reported(_folders.Out(Path.Join("ManagerLibrary", "ep.mkv")), _folders.Out(Path.Join("ManagerLibrary", "m.mkv"))));
+
+    private Task<WireObject> RunTv(OutputFolderCleanup cleanup, string episode)
+    {
+        var output = new WireObject();
+        return cleanup.RunTvAsync(output, _folders.Runtime(), _folders.Watched, _folders.Source(Path.Join("Show", "S01", "ep.mkv")), episode, 1, "tv", null, CancellationToken.None)
+            .ContinueWith(_ => output, TaskScheduler.Default);
+    }
+
+    [Fact]
+    public async Task A_movie_age_that_is_not_met_holds_back_the_movie_folder_and_not_the_TV_season()
+    {
+        var cleanup = new OutputFolderCleanup(_data, TimeProvider.System, NullLogger.Instance, movieMinAgeSeconds: 3600, tvMinAgeSeconds: 0);
+        var episode = FreshTvEpisode();
+        var movieFile = MovieOutput(old: false);
+        ManagerHasBoth();
+
+        var tv = await RunTv(cleanup, episode);
+        var movie = new WireObject();
+        await cleanup.RunMovieAsync(movie, _folders.Runtime(), _folders.Watched, _folders.Source("Title/m.mkv"), movieFile, "Title/m.mkv", 1, "movie", null, CancellationToken.None);
+
+        Assert.True(((WireBool)tv["tv_output_season_folder_deleted"]).Value);
+        Assert.Contains("changed too recently", Str(movie, "movie_output_folder_skip_reason"), StringComparison.Ordinal);
+        Assert.True(File.Exists(movieFile));
+    }
+
+    [Fact]
+    public async Task A_TV_age_that_is_not_met_holds_back_the_TV_season_and_not_the_movie_folder()
+    {
+        var cleanup = new OutputFolderCleanup(_data, TimeProvider.System, NullLogger.Instance, movieMinAgeSeconds: 0, tvMinAgeSeconds: 3600);
+        var episode = FreshTvEpisode();
+        var movieFile = MovieOutput(old: false);
+        ManagerHasBoth();
+
+        var tv = await RunTv(cleanup, episode);
+        var movie = new WireObject();
+        await cleanup.RunMovieAsync(movie, _folders.Runtime(), _folders.Watched, _folders.Source("Title/m.mkv"), movieFile, "Title/m.mkv", 1, "movie", null, CancellationToken.None);
+
+        Assert.Contains("at least 3600s old", Str(tv, "tv_output_season_folder_skip_reason"), StringComparison.Ordinal);
+        Assert.True(File.Exists(episode));
+        Assert.True(((WireBool)movie["movie_output_folder_deleted"]).Value);
+    }
 }
