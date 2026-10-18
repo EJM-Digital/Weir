@@ -13,13 +13,16 @@ const DOWNLOAD_CEILING_MS = 600_000;
 const RESTING = ["idle", "failed", "downloaded"];
 
 export async function updateRequests(world) {
-  await ensureWeir(world);
   const { weir, machine } = world;
+  const startOfThisRun = (await machine.readText(machine.paths.trayLog).catch(() => "")).length;
+  await ensureWeir(world);
   const trayLog = async (from) => linesAfter(await machine.readText(machine.paths.trayLog), from);
   const logLength = async () => (await machine.readText(machine.paths.trayLog)).length;
   const state = () => weir.get("/suite/update-state");
   const atRest = (what, ceilingMs) => wait(world, async () => ((await state()).state && RESTING.includes((await state()).state) ? state() : undefined), what, ceilingMs, 1000);
 
+  // The tray checks once as it starts; the request is pressed after that check has an answer, so it is the request that is answered.
+  await wait(world, async () => lineWith(await trayLog(startOfThisRun), /^(Update available|No update available)/), "the check the tray makes as it starts to have an answer", 120_000, 500);
   const alive = await wait(world, async () => ((await state()).tray_running === true ? state() : undefined), "the tray to say it is alive", TRAY_ALIVE_CEILING_MS, 1000);
   assert.equal(alive.tray_running, true, "Weir counts the tray alive, so the buttons are offered");
 

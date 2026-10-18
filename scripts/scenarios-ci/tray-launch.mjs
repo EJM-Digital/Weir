@@ -10,6 +10,7 @@ import {
   browserOn,
   closeBrowsers,
   expectNoBrowser,
+  expectRowsOfAServerEndedOnPurpose,
   holdPort,
   installedAndStopped,
   PORT,
@@ -196,6 +197,7 @@ async function noStartOpensTheBrowser(world) {
 
 /** tray-start: the starts nobody sees, and the starts a person answers. */
 export async function trayStart(world) {
+  expectRowsOfAServerEndedOnPurpose(world, "a start whose server cannot take its port is tried again, and Setup ends the running server");
   await installedAndStopped(world);
   const facts = [];
   try {

@@ -163,7 +163,7 @@ export async function iconSays(world, wanted = () => true, what = "the icon of W
 
 /** The hover text of the icon, once it is there. */
 export const iconText = (world, { startingOnly = false } = {}) =>
-  iconSays(world, (text) => !startingOnly || text.includes("Starting"), startingOnly ? "the icon to say Weir is starting" : "the icon of Weir in the notification area");
+  iconSays(world, (text) => !startingOnly || text.endsWith("Starting..."), startingOnly ? "the icon to say Weir is starting" : "the icon of Weir in the notification area");
 
 /** Waits for a browser to be started on this address, and returns it: { pid, name, commandLine }. */
 export async function browserOn(world, port, path = "/") {
@@ -274,4 +274,20 @@ export function atLogLine(world, tray, wanted, action, skip = 0, ceilingMs = STA
       watcher.close();
     },
   };
+}
+
+/** The rows the server writes to System > Logs when it is ended on purpose, or finds its port taken, and the tray starts it again. */
+const ROWS_OF_A_SERVER_ENDED_ON_PURPOSE = [
+  /^Weir is starting again: this is start attempt \d+/,
+  /^Weir startup recovered interrupted work/,
+  /^Weir cannot listen: port \d+ is already in use by another program/,
+  /^Hosting failed to start/,
+  /^BackgroundService failed/,
+  /^The HostOptions\.BackgroundServiceExceptionBehavior is configured to StopHost/,
+];
+const ROWS_CEILING = 40;
+
+/** Names the warnings and errors a scenario causes by ending the server and taking its port; any other row still fails it. */
+export function expectRowsOfAServerEndedOnPurpose(world, why) {
+  for (const pattern of ROWS_OF_A_SERVER_ENDED_ON_PURPOSE) world.logWatch.expectMatching(pattern, { times: ROWS_CEILING, why });
 }

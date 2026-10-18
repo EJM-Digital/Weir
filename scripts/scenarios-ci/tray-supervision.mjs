@@ -3,19 +3,12 @@
 // cannot, it gives up once, tells the person, and Restart Weir is the way back. All written for CI: the VM suite never ended a server.
 import assert from "node:assert/strict";
 
-import { choose, statusLine } from "./tray-actions.mjs";
+import { choose, statusIs } from "./tray-actions.mjs";
 import { backoffProblem, failedStarts, lineWith, linesWith } from "./tray-log.mjs";
-import { GIVE_UP_CEILING_MS, holdPort, installedAndStopped, PORT, restoreWeir, startTray } from "./tray-world.mjs";
+import { expectRowsOfAServerEndedOnPurpose, GIVE_UP_CEILING_MS, holdPort, installedAndStopped, PORT, restoreWeir, startTray } from "./tray-world.mjs";
 import { balloonLine, balloons, menu, status } from "./tray-words.mjs";
 import { ensureSignedIn, wait } from "./windows-install.mjs";
 
-/** The server warns in its log, for every start that follows a failed one, that it is starting again. */
-const STARTING_AGAIN = /^Weir is starting again: this is start attempt \d+/;
-const WARNING_ROWS_CEILING = 30;
-
-function expectStartingAgainWarnings(world, why) {
-  world.logWatch.expectMatching(STARTING_AGAIN, { times: WARNING_ROWS_CEILING, why });
-}
 
 /** The failed starts logged after the mark, with the waits between them judged: each lies where the policy puts it, and they grow. */
 function expectGrowingWaits(failures, what) {
@@ -37,7 +30,7 @@ async function onlyOneServerRuns(world) {
 /** tray-supervision: a server that is killed three times comes back each time, a different process, after longer waits, with the reason logged. */
 export async function traySupervision(world) {
   const { machine } = world;
-  expectStartingAgainWarnings(world, "the server is ended on purpose and the tray starts it again");
+  expectRowsOfAServerEndedOnPurpose(world, "the server is ended on purpose, its port is taken, and the tray starts it again");
   await installedAndStopped(world);
   const tray = await startTray(world, ["--port", String(PORT), "--no-browser"]);
   const facts = [];
@@ -62,7 +55,7 @@ export async function traySupervision(world) {
     const started = lineWith(log, /^Weir started on attempt \d+, after 3 failed attempts: /);
     assert.ok(started, "the tray does not say that Weir started only on a retry, after three failures");
     assert.equal(await machine.dataFile("current-port.txt"), String(PORT), "current-port.txt names the port the server is on");
-    assert.equal(await statusLine(world, tray), status.running(PORT), "the icon says Weir is running again");
+    await statusIs(world, tray, status.running(PORT), "the menu to say Weir is running again");
     // The tray goes, and its server is left running.
     orphan = pid;
     await machine.killProcess(tray.pid);
@@ -98,6 +91,7 @@ export async function traySupervision(world) {
     } finally {
       if (held) await holder.release();
     }
+    await second.line(/^Weir started on attempt d+, after d+ failed attempts: /, { what: "the tray to say that Weir started only on a retry" });
     const log = await second.log();
     expectGrowingWaits(failedStarts(log), "with the port held");
     assert.equal(linesWith(log, /Giving up/).length, 0, "the tray gave up before the port was free again");
@@ -113,7 +107,7 @@ export async function traySupervision(world) {
 /** tray-give-up: five failures in a row end the trying once, with the red icon and a balloon; Restart Weir brings Weir back with a fresh budget. */
 export async function trayGiveUp(world) {
   const { machine } = world;
-  expectStartingAgainWarnings(world, "the server is ended on purpose and the tray starts it again");
+  expectRowsOfAServerEndedOnPurpose(world, "the server is ended on purpose, its port is taken, and the tray starts it again");
   await installedAndStopped(world);
   const tray = await startTray(world, ["--port", String(PORT), "--no-browser"]);
   try {
@@ -133,7 +127,7 @@ export async function trayGiveUp(world) {
       const balloon = balloonLine("error", "Weir", balloons.stoppedPortInUse(PORT, 5));
       await tray.line(balloon, { what: "the balloon that tells the person Weir stopped" });
       assert.equal(linesWith(await tray.log(), "Weir stopped and didn't start again").length, 1, "the person was told more than once");
-      assert.equal(await statusLine(world, tray), status.stoppedPortInUse(PORT), "the menu does not say why Weir is stopped");
+      await statusIs(world, tray, status.stoppedPortInUse(PORT), "the menu to say why Weir is stopped");
       assert.equal(await world.server.ready(), false, "Weir answers although the tray says it stopped");
 
       // Restart Weir is the way back, once the port is free.
@@ -143,7 +137,7 @@ export async function trayGiveUp(world) {
       await world.desktop.clickBalloon(tray.pid);
       await tray.line("Restart: restarting the server on port 9347 (only this PC can connect).", { what: "the click on the balloon to restart the server", after: mark });
       const back = await tray.readyAfter(pid);
-      assert.equal(await statusLine(world, tray), status.running(PORT), "the icon does not say Weir is running after Restart Weir");
+      await statusIs(world, tray, status.running(PORT), "the menu to say Weir is running after Restart Weir");
 
       // The watchdog is watching again: another crash is met with another start, counted from one.
       const afterRestart = await tray.lineCount();

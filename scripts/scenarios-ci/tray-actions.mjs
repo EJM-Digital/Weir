@@ -111,3 +111,20 @@ export async function statusLine(world, tray) {
   await closeMenu(world, tray);
   return line;
 }
+
+/** Waits until the status line of the menu says this, and returns it; on failure it says what the menu said last. */
+export async function statusIs(world, tray, expected, what, ceilingMs = 120_000) {
+  let last = "nothing";
+  return wait(
+    world,
+    async () => {
+      last = await statusLine(world, tray);
+      return last === expected ? last : undefined;
+    },
+    what,
+    ceilingMs,
+    1000,
+  ).catch((error) => {
+    throw new Error(`${error.message} The menu said: ${last}.`, { cause: error });
+  });
+}

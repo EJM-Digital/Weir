@@ -6,15 +6,15 @@ import assert from "node:assert/strict";
 
 import { choose, openMenu, statusLine } from "./tray-actions.mjs";
 import { failedStarts, lineWith } from "./tray-log.mjs";
-import { atLogLine, browserOn, closeBrowsers, expectNoBrowser, holdPort, installedAndStopped, PORT, restoreWeir, serverOn, startTray } from "./tray-world.mjs";
+import { atLogLine, browserOn, expectRowsOfAServerEndedOnPurpose, closeBrowsers, expectNoBrowser, holdPort, installedAndStopped, PORT, restoreWeir, serverOn, startTray } from "./tray-world.mjs";
 import { balloonLine, balloons, menu, status } from "./tray-words.mjs";
 import { ensureSignedIn, installBuildUnderTest, wait } from "./windows-install.mjs";
 
+const DEFAULT_PORT = 9347;
 const MOVED_PORT = 9352;
 const REFUSED_PORT = 9353;
 const BOTH_PORT = 9354;
 const BUSY_PORT = 9360;
-const STARTING_AGAIN = /^Weir is starting again: this is start attempt \d+/;
 
 const savedPort = (world) => world.machine.dataFile("port.txt");
 const currentPort = (world) => world.machine.dataFile("current-port.txt");
@@ -26,7 +26,9 @@ async function askToMove(world, tray, from, to) {
   await wait(world, async () => ((await desktop.menu(tray.pid))?.items.find((item) => item.name === menu.changePort(from))?.enabled ? true : undefined), "Change port to be enabled", 30_000, 500);
   await desktop.clickItem(tray.pid, menu.changePort(from));
   const dialog = await wait(world, async () => (await desktop.window(tray.pid)) ?? undefined, "the window that asks for a port", 60_000, 500);
-  assert.equal(dialog.edits[0], String(from), `the window offers the port Weir is on (${dialog.edits[0]})`);
+  // The default port is offered as an option; any other port is typed in.
+  if (from === DEFAULT_PORT) assert.ok(dialog.options.some((option) => option.selected && option.name.includes(String(from))), `the window does not offer the default port, ${from}`);
+  else assert.equal(dialog.edits[0], String(from), `the window offers the port Weir is on (${dialog.edits[0]})`);
   await desktop.setWindowText(tray.pid, String(to));
   return { dialog, accept: () => desktop.pressInWindow(tray.pid, "Restart on this port"), cancel: () => desktop.pressInWindow(tray.pid, "Cancel") };
 }
@@ -40,7 +42,7 @@ async function expectStoppedCleanly(tray, pid, mark) {
 /** tray-change-port: a move to a free port is saved and answers; one that cannot be made goes back and saves nothing; both failing ends Stopped. */
 export async function trayChangePort(world) {
   const { machine, desktop } = world;
-  world.logWatch.expectMatching(STARTING_AGAIN, { times: 10, why: "the server cannot take the port it was moved to, and the tray starts it again where it was; it is ended once on purpose" });
+  expectRowsOfAServerEndedOnPurpose(world, "the server cannot take the port it was moved to, and the tray starts it again where it was; it is ended once on purpose");
   await installedAndStopped(world);
   const tray = await startTray(world, ["--port", String(PORT), "--no-browser"]);
   const facts = [];
