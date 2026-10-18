@@ -277,6 +277,30 @@ public sealed class GitHubReleaseCatalogClientTests : IDisposable
     }
 
     /// <summary>GitHub's API and public release feed, answering as the test says and counting what was asked.</summary>
+    [Fact]
+    public async Task A_test_can_name_the_feed_to_read_and_nothing_else_is_asked()
+    {
+        const string Played = "http://localhost:5050/feed/releases.atom";
+        using var handler = new FeedAt(Feed("v3.5.0"));
+        var client = new GitHubReleaseCatalogClient(_clock, NullLogger<GitHubReleaseCatalogClient>.Instance, handler, Played);
+
+        var latest = await client.FetchLatestAsync(Running, CancellationToken.None);
+
+        Assert.Equal("3.5.0", latest?.Version);
+        Assert.Equal([Played], handler.Asked);
+    }
+
+    private sealed class FeedAt(string feed) : HttpMessageHandler
+    {
+        public List<string> Asked { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Asked.Add(request.RequestUri!.ToString());
+            return Task.FromResult(Ok(feed, "application/atom+xml"));
+        }
+    }
+
     private sealed class FakeGitHub : HttpMessageHandler
     {
         private int _apiCalls;
