@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weir.Core.Configuration;
 using Weir.Core.Jobs;
@@ -18,9 +19,10 @@ namespace Weir.Infrastructure.Tests.Jobs;
 
 /// <summary>
 /// A job queued on an idle Weir is claimed by its lane's worker at once, without the poll interval passing (#1098). The clock
-/// never moves in these tests, so a claim can only have come from the wake.
+/// never moves in these tests, so a claim can only have come from the wake. The loops themselves are in
+/// <c>WorkerLaneWakeTests.Loops.cs</c>: which jobs a lane takes, what it reports, and how it carries on after a failure.
 /// </summary>
-public sealed class WorkerLaneWakeTests : IDisposable
+public sealed partial class WorkerLaneWakeTests : IDisposable
 {
     private const string FilesKind = "processing.test.files_lane.v1";
     private static readonly TimeSpan Ceiling = TimeSpan.FromSeconds(30);
@@ -175,9 +177,9 @@ public sealed class WorkerLaneWakeTests : IDisposable
         return lane == WorkLane.Files ? FilesLane(handlers, idleWaiting) : UpkeepLane(handlers, idleWaiting);
     }
 
-    private ProcessingWorkerService FilesLane(IJobHandler[] handlers, Action idleWaiting)
+    private ProcessingWorkerService FilesLane(IJobHandler[] handlers, Action idleWaiting, int workerCount = 1, ILogger<ProcessingWorkerService>? logger = null)
     {
-        var options = Options(workerCount: 1);
+        var options = Options(workerCount);
         var registry = new JobHandlerRegistry(handlers);
         return new ProcessingWorkerService(
             Processor(registry),
@@ -186,7 +188,7 @@ public sealed class WorkerLaneWakeTests : IDisposable
             options,
             Timings(),
             _db.Clock,
-            NullLogger<ProcessingWorkerService>.Instance,
+            logger ?? NullLogger<ProcessingWorkerService>.Instance,
             registry,
             Recovery(options),
             _signals)
@@ -195,15 +197,15 @@ public sealed class WorkerLaneWakeTests : IDisposable
         };
     }
 
-    private UpkeepWorkerService UpkeepLane(IJobHandler[] handlers, Action idleWaiting)
+    private UpkeepWorkerService UpkeepLane(IJobHandler[] handlers, Action idleWaiting, WorkerHeartbeats? heartbeats = null, ILogger<UpkeepWorkerService>? logger = null)
     {
         var registry = new JobHandlerRegistry(handlers);
         return new UpkeepWorkerService(
             Processor(registry),
-            new WorkerHeartbeats(_db.Clock),
+            heartbeats ?? new WorkerHeartbeats(_db.Clock),
             Timings(),
             _db.Clock,
-            NullLogger<UpkeepWorkerService>.Instance,
+            logger ?? NullLogger<UpkeepWorkerService>.Instance,
             registry,
             Recovery(Options(workerCount: 1)),
             _signals)
