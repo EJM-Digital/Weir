@@ -279,6 +279,11 @@ jobs:
           node scripts/check-recorded-manifest.mjs
           node --test scripts/check-recorded-manifest.test.mjs
 
+      - name: The recordings of Weir are of a recent build
+        run: |
+          node scripts/check-recorded-freshness.mjs
+          node --test scripts/check-recorded-freshness.test.mjs
+
       - name: Every recording is replayed or explained, and the drift check compares what it should
         run: |
           node scripts/check-recorded-replays.mjs
