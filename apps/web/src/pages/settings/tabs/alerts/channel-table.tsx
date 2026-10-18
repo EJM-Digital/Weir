@@ -15,7 +15,12 @@ import {
   ALERT_NAME_COLUMN,
   alertSortValues,
 } from "./alert-columns";
-import { ChannelForm, type ChannelFormData } from "./channel-form";
+import { useLeaveConfirmation, useUnsavedChanges } from "../../unsaved-changes";
+import {
+  ChannelForm,
+  useChannelDraft,
+  type ChannelFormData,
+} from "./channel-form";
 import { ChannelRow, type TestResult } from "./channel-row";
 
 /** The channel as the form edits it. The address is left out: the server shows it hidden, and keeps the saved one. */
@@ -26,6 +31,42 @@ function formDataOf(channel: NotificationChannelOut): ChannelFormData {
     events: channel.events,
     enabled: channel.enabled,
   };
+}
+
+/** The form an alert is edited in, which asks before an edit not yet saved is dropped. */
+function EditChannel({
+  channel,
+  supportedEvents,
+  saving,
+  saveError,
+  onSave,
+  onClose,
+}: {
+  channel: NotificationChannelOut;
+  supportedEvents: string[];
+  saving: boolean;
+  saveError: string | null;
+  onSave: (data: ChannelFormData) => void;
+  onClose: () => void;
+}) {
+  const draft = useChannelDraft(formDataOf(channel));
+  const thing = `the alert ${channel.label}`;
+  useUnsavedChanges(draft.dirty ? thing : null);
+  const { confirmLeave, dialog } = useLeaveConfirmation();
+  return (
+    <>
+      <ChannelForm
+        draft={draft}
+        savedAddress={channel.url}
+        supportedEvents={supportedEvents}
+        onSave={onSave}
+        onCancel={() => confirmLeave(draft.dirty ? thing : null, onClose)}
+        saving={saving}
+        saveError={saveError}
+      />
+      {dialog}
+    </>
+  );
 }
 
 /** Sends a test to one channel at a time and keeps each channel's last answer beside it. */
@@ -141,12 +182,11 @@ export function ChannelTable({
                 <tr key={channel.id}>
                   <td colSpan={columns.order.length} data-label="">
                     <QuietFieldGroup title="Edit alert">
-                      <ChannelForm
-                        initial={formDataOf(channel)}
-                        savedAddress={channel.url}
+                      <EditChannel
+                        channel={channel}
                         supportedEvents={supportedEvents}
                         onSave={(data) => save(channel.id, data)}
-                        onCancel={() => onEdit(null)}
+                        onClose={() => onEdit(null)}
                         saving={updateMutation.isPending}
                         saveError={
                           updateMutation.isError
@@ -168,6 +208,7 @@ export function ChannelTable({
                   order={columns.order}
                   onToggleEvent={(event) => toggle(channel, event)}
                   toggling={updateMutation.isPending}
+                  editLocked={editingId !== null}
                   onEdit={() => onEdit(channel.id)}
                   onDelete={() => onRemove(channel)}
                   onTest={() => tests.test(channel.id)}

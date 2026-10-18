@@ -36,6 +36,7 @@ export function ChannelRow({
   order,
   onToggleEvent,
   toggling,
+  editLocked,
   onEdit,
   onDelete,
   onTest,
@@ -49,6 +50,8 @@ export function ChannelRow({
   order: readonly string[];
   onToggleEvent: (event: string) => void;
   toggling: boolean;
+  /** Another alert is being edited, and a second form would drop what is typed in the first. */
+  editLocked: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onTest: () => void;
@@ -90,7 +93,7 @@ export function ChannelRow({
               variant: "secondary",
               size: "row",
             })}
-            disabled={deleting || !admin}
+            disabled={deleting || editLocked || !admin}
             onClick={onEdit}
           >
             Edit

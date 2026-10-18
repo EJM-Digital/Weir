@@ -17,6 +17,9 @@ import { connectionTitle } from "../../../../lib/ui/connection-title";
 import { mmActionButtonClass } from "../../../../lib/ui/mm-control-roles";
 import { plural } from "../../../../lib/ui/mm-plural";
 
+const NO_MEDIA_TYPE_PROBLEM =
+  "The media manager did not say whether this is Movies or TV episodes, so Weir cannot import it.";
+
 function DiscoveredLibrary({
   item,
   selected,
@@ -30,7 +33,10 @@ function DiscoveredLibrary({
     item.already_imported ||
     Boolean(item.local_path_problem) ||
     !item.media_type;
-  const problem = item.local_path_problem || item.output_path_problem;
+  const problem =
+    item.local_path_problem ||
+    item.output_path_problem ||
+    (item.media_type ? null : NO_MEDIA_TYPE_PROBLEM);
   return (
     <label className="mm-discovered-library">
       <input
