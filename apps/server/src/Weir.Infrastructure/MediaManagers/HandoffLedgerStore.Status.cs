@@ -185,9 +185,11 @@ public sealed partial class HandoffLedgerStore
             {
                 stamps.Add(job.UpdatedAt);
                 var jobPath = PayloadRelativePath(job.PayloadJson);
-                // The pass tells the manager how the file ended before it releases its job (it still scans the downloaded files), so a
-                // leased job whose file already has its result is only finishing up: the file's own row says what became of it.
-                if (job.Status == ProcessingJobStatus.Leased && jobPath is { Length: > 0 } && HasRecordedResult(targets, jobPath))
+                // The pass tells the manager how the hand-off ended before it releases its job (it still scans the downloaded files), so
+                // once the ledger holds that ending a leased job whose file has its result is only finishing up, and the files say what
+                // became of it. Before the ending is recorded the job still holds the hand-off working.
+                if (job.Status == ProcessingJobStatus.Leased && HandoffLedgerRules.TerminalStates.Contains(row.State) &&
+                    jobPath is { Length: > 0 } && HasRecordedResult(targets, jobPath))
                 {
                     continue;
                 }
