@@ -11,7 +11,7 @@ import { FreezableRelay } from "./files-proxy.mjs";
 import { exists, probe, sha256, treeOf } from "./files-media.mjs";
 import { masterFilm } from "./files-swap.mjs";
 import { freeLetter } from "./files-volumes.mjs";
-import { dropRelease, lookAndWait, makeWorkflow, placeRelease, rowFor, waitDone } from "./files-workflow.mjs";
+import { dropRelease, lookAndWait, makeWorkflow, placeRelease, rowFor, tryToLook, waitDone } from "./files-workflow.mjs";
 import { expectCleanLogs, filesWorld, newServer, wait } from "./files-world.mjs";
 import { json } from "./windows-machine.mjs";
 
@@ -126,12 +126,14 @@ export async function networkShare(world) {
   assert.ok(afterDrop < RESPONSIVE_MS, `the System page's data took ${afterDrop} ms while the share was gone`);
   await waitReported(world, server, workflow, true);
   const outputBefore = await treeOf(join(backing, "output"));
-  await lookAndWait(world, weir, workflow);
+  const refused = await tryToLook(weir, workflow);
+  assert.equal(refused.status, 400, `asking Weir to look at a folder on a share that is gone was answered ${refused.status}, not refused`);
+  assert.match(refused.json?.detail ?? "", /can't see the watched folder/, "the refusal does not say in words that Weir cannot see the watched folder");
   assert.deepEqual(await treeOf(join(backing, "output")), outputBefore, "something was written to the folder behind the removed share");
   assert.equal(await sha256(waiting.film), master.sha256, "the film behind the removed share changed");
   const stillWaiting = await rowFor(weir, workflow, waiting.relative);
   assert.ok(!stillWaiting || !["processed", "passed_through"].includes(stillWaiting.status), "a film on a share that was gone is recorded as done");
-  facts.push(`with the share removed Weir reported the folders unreachable, answered the System page in ${await responseTime(weir)} ms, wrote nothing and left the film alone`);
+  facts.push(`with the share removed Weir reported the folders unreachable, refused to look at the watched folder saying it cannot see it, answered the System page in ${await responseTime(weir)} ms, wrote nothing and left the film alone`);
 
   // The share comes back and Weir carries on.
   await createShare(name, backing);

@@ -35,9 +35,12 @@ export async function makeWorkflow(world, weir, { name, watched, work, output, m
   return { id: created.id, name: created.name, watched, work, output, minimumFreeMb };
 }
 
+/** Asks Weir to look at a workflow's watched folder and queue what it finds; the answer, whatever it is. */
+export const tryToLook = (weir, workflow) => weir.write("POST", LOOK, { media_scope: "movie", library_id: workflow.id, enqueue_remux_jobs: true });
+
 /** Asks Weir to look at a workflow's watched folder and queue what it finds. */
 export async function askToLook(weir, workflow) {
-  const look = await weir.write("POST", LOOK, { media_scope: "movie", library_id: workflow.id, enqueue_remux_jobs: true });
+  const look = await tryToLook(weir, workflow);
   assert.equal(look.status, 200, `asking Weir to look at the watched folder was answered ${look.status}: ${look.text}`);
 }
 
