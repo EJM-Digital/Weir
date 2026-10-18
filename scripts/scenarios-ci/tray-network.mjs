@@ -16,19 +16,19 @@ const BOTH_PORT = 9354;
 const BUSY_PORT = 9360;
 const STARTING_AGAIN = /^Weir is starting again: this is start attempt \d+/;
 
-const savedPort = async (world) => (await world.machine.readText(`${world.machine.paths.runtimeHome}\\port.txt`)).trim();
-const currentPort = async (world) => (await world.machine.readText(`${world.machine.paths.runtimeHome}\\current-port.txt`)).trim();
+const savedPort = (world) => world.machine.dataFile("port.txt");
+const currentPort = (world) => world.machine.dataFile("current-port.txt");
 
 /** Chooses Change port and types the port into the window it opens; the answer is left to the caller. */
 async function askToMove(world, tray, from, to) {
   const { desktop } = world;
   await openMenu(world, tray);
   await wait(world, async () => ((await desktop.menu(tray.pid))?.items.find((item) => item.name === menu.changePort(from))?.enabled ? true : undefined), "Change port to be enabled", 30_000, 500);
-  const click = desktop.invokeAndLeave(tray.pid, menu.changePort(from));
+  await desktop.clickItem(tray.pid, menu.changePort(from));
   const dialog = await wait(world, async () => (await desktop.window(tray.pid)) ?? undefined, "the window that asks for a port", 60_000, 500);
   assert.equal(dialog.edits[0], String(from), `the window offers the port Weir is on (${dialog.edits[0]})`);
   await desktop.setWindowText(tray.pid, String(to));
-  return { click, dialog, accept: () => desktop.pressInWindow(tray.pid, "Restart on this port"), cancel: () => desktop.pressInWindow(tray.pid, "Cancel") };
+  return { dialog, accept: () => desktop.pressInWindow(tray.pid, "Restart on this port"), cancel: () => desktop.pressInWindow(tray.pid, "Cancel") };
 }
 
 async function expectStoppedCleanly(tray, pid, mark) {
@@ -57,7 +57,6 @@ export async function trayChangePort(world) {
       assert.equal(refusal, `Another program on this computer is already using port ${BUSY_PORT}. Choose a different number.`);
       await busy.cancel();
       await tray.line("Change port: closed without a new port.", { what: "the tray to log that the window was closed" });
-      await busy.click.ended;
     } finally {
       await holdingBusy.release();
     }
@@ -69,8 +68,7 @@ export async function trayChangePort(world) {
     const move = await askToMove(world, tray, PORT, MOVED_PORT);
     await move.accept();
     await tray.line(`Change port: Weir is healthy on http://127.0.0.1:${MOVED_PORT}/ and port ${MOVED_PORT} is saved.`, { what: "the move to succeed", after: mark });
-    await move.click.ended;
-    await expectStoppedCleanly(tray, pid, mark);
+        await expectStoppedCleanly(tray, pid, mark);
     assert.equal(await savedPort(world), String(MOVED_PORT), "port.txt does not name the new port");
     assert.equal(await currentPort(world), String(MOVED_PORT), "current-port.txt does not name the new port");
     await wait(world, async () => ((await serverOn(MOVED_PORT).ready()) ? true : undefined), `Weir to answer on port ${MOVED_PORT}`, 60_000, 500);
@@ -96,7 +94,6 @@ export async function trayChangePort(world) {
     const holder = await taking.done;
     try {
       await tray.line(`Change port: going back to port ${MOVED_PORT}.`, { what: "the tray to go back", after: mark });
-      await refused.click.ended;
       await wait(world, async () => ((await serverOn(MOVED_PORT).ready()) ? true : undefined), `Weir to answer on port ${MOVED_PORT} again`, 120_000, 500);
       await tray.line(balloonLine("warning", "Weir", balloons.portMoveFailed(REFUSED_PORT, MOVED_PORT)), { what: "the balloon that tells the person Weir stayed where it was", after: mark });
     } finally {
@@ -117,7 +114,6 @@ export async function trayChangePort(world) {
     const holders = [await takingNew.done, await takingOld.done];
     try {
       await tray.line(`Change port: going back to port ${MOVED_PORT}.`, { what: "the tray to try the old port", after: mark });
-      await both.click.ended;
       await wait(world, async () => ((await statusLine(world, tray)) === "Weir - Stopped - choose Restart Weir" ? true : undefined), "the menu to say Weir is stopped", 120_000, 1000);
       const said = (await tray.log()).slice(mark).filter((line) => line.startsWith("Balloon "));
       assert.equal(said.length, 1, `the person was told ${said.length} things: ${said.join(" | ")}`);
@@ -155,6 +151,8 @@ export async function trayLanAccess(world) {
     let pid = await tray.ready();
     await ensureSignedIn(world);
     const loopback = (addresses) => addresses.every((address) => ["127.0.0.1", "::1"].includes(address));
+    // Every interface is "0.0.0.0", or "::" when it listens on both families.
+    const beyondThisPc = (addresses) => addresses.some((address) => ["0.0.0.0", "::"].includes(address));
     assert.ok(loopback(await machine.listeningAddresses(PORT)), "Weir listens beyond this PC before anything was allowed");
 
     let mark = await tray.lineCount();
@@ -165,7 +163,7 @@ export async function trayLanAccess(world) {
     assert.ok(lineWith(log, "LAN access: restarting the server so that other devices on the network can connect (it was: only this PC can connect)."), "the tray does not say why it restarted the server");
     await expectStoppedCleanly(tray, pid, mark);
     const open = await machine.listeningAddresses(PORT);
-    assert.ok(open.includes("0.0.0.0"), `Weir listens on ${open.join(", ")}, not on every interface`);
+    assert.ok(beyondThisPc(open), `Weir listens on ${open.join(", ")}, not on every interface`);
     assert.equal(await machine.firewallRuleExists(), true, "Windows Firewall has no rule for Weir after the elevated step");
     await choose(world, tray, menu.copyAddress);
     const machineName = process.env.COMPUTERNAME;
@@ -178,7 +176,7 @@ export async function trayLanAccess(world) {
     const again = await startTray(world, ["--port", String(PORT), "--no-browser"]);
     try {
       pid = await again.ready();
-      assert.ok((await machine.listeningAddresses(PORT)).includes("0.0.0.0"), "the saved choice for other devices was not kept across a start");
+      assert.ok(beyondThisPc(await machine.listeningAddresses(PORT)), "the saved choice for other devices was not kept across a start");
       mark = await again.lineCount();
       await choose(world, again, menu.onlyThisPc);
       await again.line(balloonLine("info", "Weir", balloons.lanClosed), { what: "the tray to tell the person only this PC can reach Weir", after: mark });

@@ -123,7 +123,7 @@ async function takenPortAndTheDesktop(world) {
     await desktop.pressInWindow(tray.pid, "Start Weir");
     await tray.line(`Saved port ${TAKEN_PORT} was in use; the user chose ${NEXT_PORT}.`, { what: "the tray to take the chosen port" });
     await wait(world, async () => ((await serverOn(NEXT_PORT).ready()) ? true : undefined), `Weir to answer on port ${NEXT_PORT}`, 120_000, 500);
-    assert.equal((await machine.readText(`${machine.paths.runtimeHome}\\port.txt`)).trim(), String(NEXT_PORT), "the chosen port was not saved");
+    assert.equal(await machine.dataFile("port.txt"), String(NEXT_PORT), "the chosen port was not saved");
     facts.push(`with the saved port ${TAKEN_PORT} taken and a person at the desktop, the tray asked, offered ${NEXT_PORT}, and Weir came up there and saved it`);
     await tray.end();
 
@@ -170,7 +170,7 @@ async function noStartOpensTheBrowser(world) {
   const quiet = await startTray(world, ["--silent"]);
   await checked(quiet, "a silent start");
   assert.ok(lineWith(await quiet.log(), `First run with no interactive desktop to ask: using the default port ${PORT}. Saved; Weir will use port ${PORT} from now on.`), "the tray did not use and save the default port");
-  assert.equal((await machine.readText(`${machine.paths.runtimeHome}\port.txt`)).trim(), String(PORT), "the default port was not saved");
+  assert.equal(await machine.dataFile("port.txt"), String(PORT), "the default port was not saved");
   await expectHomeOwnerOnly(world);
   await machine.stopWeir();
 

@@ -209,6 +209,25 @@ test("another program's port is held until it is let go", async () => {
   }
 });
 
+test("another program's port is let go although a client is still connected to it", async () => {
+  const { world, cleanup } = await logWorld();
+  try {
+    const probe = net.createServer();
+    await new Promise((done) => probe.listen(0, "127.0.0.1", done));
+    const { port } = probe.address();
+    await new Promise((done) => probe.close(done));
+    const holder = await holdPort(world, port);
+    const client = net.connect(port, "127.0.0.1");
+    client.on("error", () => {});
+    await new Promise((done) => client.once("connect", done));
+    await holder.release();
+    assert.equal(await tryListening(port), "listened");
+    client.destroy();
+  } finally {
+    await cleanup();
+  }
+});
+
 test("an action waits for the tray to log a line and runs once, on the line and not before", async () => {
   const { world, trayLog, cleanup } = await logWorld();
   try {

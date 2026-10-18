@@ -61,7 +61,7 @@ export async function traySupervision(world) {
     assert.equal(linesWith(log, /Giving up/).length, 0, "the tray gave up although the server came back each time");
     const started = lineWith(log, /^Weir started on attempt \d+, after 3 failed attempts: /);
     assert.ok(started, "the tray does not say that Weir started only on a retry, after three failures");
-    assert.equal(await machine.readText(`${machine.paths.runtimeHome}\\current-port.txt`), String(PORT), "current-port.txt names the port the server is on");
+    assert.equal(await machine.dataFile("current-port.txt"), String(PORT), "current-port.txt names the port the server is on");
     assert.equal(await statusLine(world, tray), status.running(PORT), "the icon says Weir is running again");
     // The tray goes, and its server is left running.
     orphan = pid;

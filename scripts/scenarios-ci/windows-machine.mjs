@@ -264,6 +264,11 @@ public static class ProcessEnvironment {
     }
   }
 
+  /** What a file of the data folder holds, without the line end. */
+  async dataFile(name) {
+    return (await readFile(join(this.paths.runtimeHome, name), "utf8")).trim();
+  }
+
   /** The files of the data folder named, deleted if they are there. */
   async removeFromDataFolder(...names) {
     for (const name of names) await rm(join(this.paths.runtimeHome, name), { force: true });

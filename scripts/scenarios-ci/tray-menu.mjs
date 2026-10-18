@@ -2,9 +2,10 @@
 // on the files the tray and the server share, on the PC (the clipboard, File Explorer, the registry, the browser) and in tray-host.log, which
 // keeps every balloon the tray showed. Written for CI: the VM suite never pressed a menu item.
 import assert from "node:assert/strict";
+import { join } from "node:path";
 
 import { choose, closeMenu, menuProblems, openMenu, runningMenu, statusLine } from "./tray-actions.mjs";
-import { closeBrowsers, browserOn, expectNoBrowser, iconText, installedAndStopped, PORT, restoreWeir, serverOn, startTray } from "./tray-world.mjs";
+import { closeBrowsers, browserOn, expectNoBrowser, iconSays, iconText, installedAndStopped, PORT, restoreWeir, serverOn, startTray } from "./tray-world.mjs";
 import { balloonLine, balloons, menu, status } from "./tray-words.mjs";
 import { ensureSignedIn, wait } from "./windows-install.mjs";
 import { linesWith } from "./tray-log.mjs";
@@ -28,7 +29,7 @@ async function expectServerEnvironment(world, serverPid) {
   assert.equal(env.WEIR_ENV, "production");
   assert.equal(env.WEIR_HOME?.toLowerCase(), machine.paths.runtimeHome.toLowerCase());
   assert.ok(env.WEIR_WEB_DIST?.toLowerCase().startsWith(machine.paths.installRoot.toLowerCase()), `WEIR_WEB_DIST is ${env.WEIR_WEB_DIST}, not the bundle in the install`);
-  assert.ok(await machine.exists(`${env.WEIR_WEB_DIST}\index.html`), "the web app bundle the server was given is not there");
+  assert.ok(await machine.exists(join(env.WEIR_WEB_DIST, "index.html")), "the web app bundle the server was given is not there");
   assert.equal(env.WEIR_SESSION_COOKIE_SECURE, "false");
   assert.equal(env.WEIR_SESSION_SECRET, (await machine.readText(machine.secretPath("session.secret"))).trim(), "the server was not given the session secret on disk");
   assert.equal(env.WEIR_CREDENTIALS_SECRET, (await machine.readText(machine.secretPath("credentials.secret"))).trim(), "the server was not given the credentials secret on disk");
@@ -48,7 +49,7 @@ export async function trayMenu(world) {
     const serverPid = await tray.ready();
     await ensureSignedIn(world);
     await tray.line(balloonLine("info", "Weir", balloons.running(PORT)), { what: "the tray to tell the person Weir is running" });
-    await wait(world, async () => ((await iconText(world)) === status.running(PORT) ? true : undefined), "the icon to say Weir is running", 120_000, 1000);
+    await iconSays(world, (text) => text === status.running(PORT), "the icon to say Weir is running", 120_000);
     facts.push(`the server was started with WEIR_ENV=production, WEIR_HOME, the bundled web app, plain-http cookies and both secrets from disk; the icon was in the notification area ("${first}") and then said "${status.running(PORT)}", and the tray told the person Weir was running`);
     await expectNoBrowser(world, "although the start was only announced", PORT);
     await expectServerEnvironment(world, serverPid);
@@ -71,7 +72,7 @@ export async function trayMenu(world) {
     await choose(world, tray, menu.pause);
     await tray.line("Pause processing asked for from the tray menu.", { what: "the tray to log the pause request" });
     await wait(world, async () => ((await weir.get("/pause")).paused ? true : undefined), "Weir to pause on the tray's request", 60_000, 500);
-    await wait(world, async () => ((await iconText(world)) === status.paused ? true : undefined), `the icon to say "${status.paused}"`, 60_000, 500);
+    await iconSays(world, (text) => text === status.paused, `the icon to say "${status.paused}"`, 60_000);
     assert.equal(await statusLine(world, tray), status.paused, "the menu does not say what the icon says");
     await openMenu(world, tray);
     assert.ok((await desktop.menu(tray.pid)).items.some((item) => item.name === menu.resume && item.enabled), "the menu offers Resume processing while paused");
@@ -149,7 +150,7 @@ export async function trayMenu(world) {
     const stopping = (await tray.log()).slice(mark);
     assert.ok(stopping.some((line) => line.startsWith(`Bundled server host pid=${oldPid} stopped cleanly in`)), "the old server was asked to stop and stopped by itself");
     assert.ok(!stopping.some((line) => line.includes("killing it")), "no server was killed");
-    await wait(world, async () => ((await iconText(world)) === status.running(PORT) ? true : undefined), "the icon to say Weir is running again", 120_000, 1000);
+    await iconSays(world, (text) => text === status.running(PORT), "the icon to say Weir is running again", 120_000);
     facts.push(`Restart Weir stopped server ${oldPid} cleanly, started ${newPid} on the same port, and the icon said Starting meanwhile`);
 
     // Quit: the server is stopped by its own stop request, the tray ends, and the icon goes.

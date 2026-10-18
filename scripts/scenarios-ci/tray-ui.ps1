@@ -9,6 +9,7 @@
         tray-ui.ps1 open-menu -TrayProcessId <pid> [-Via taskbar|message]
         tray-ui.ps1 menu -TrayProcessId <pid>
         tray-ui.ps1 invoke -TrayProcessId <pid> -Item <text>
+        tray-ui.ps1 click-item -TrayProcessId <pid> -Item <text>
         tray-ui.ps1 close-menu -TrayProcessId <pid>
         tray-ui.ps1 click-icon -Clicks single|double
         tray-ui.ps1 click-balloon -TrayProcessId <pid>
@@ -24,7 +25,7 @@
 #>
 param(
     [Parameter(Mandatory, Position = 0)]
-    [ValidateSet('session', 'icons', 'show-hidden', 'hover-icons', 'open-menu', 'menu', 'invoke', 'close-menu', 'click-icon', 'click-balloon', 'window', 'window-set', 'window-press', 'balloons', 'find-text', 'dump')]
+    [ValidateSet('session', 'icons', 'show-hidden', 'hover-icons', 'open-menu', 'menu', 'invoke', 'click-item', 'close-menu', 'click-icon', 'click-balloon', 'window', 'window-set', 'window-press', 'balloons', 'find-text', 'dump')]
     [string] $Command,
     [int] $TrayProcessId = 0,
     [string] $Item = '',
@@ -328,6 +329,16 @@ switch ($Command) {
         elseif ($found.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) { $pattern.Invoke() }
         else { throw "'$Item' cannot be invoked." }
         Write-Json ([pscustomobject]@{ invoked = $Item })
+    }
+    'click-item' {
+        # A real click, for an item whose handler asks a question and does not return until it is answered: UI Automation's Invoke would wait for it.
+        $menu = Find-Menu $TrayProcessId
+        if (-not $menu) { throw 'No menu is open.' }
+        $match = @(Get-MenuItems $menu) | Where-Object { $_.name -eq $Item -and $_.bounds } | Select-Object -First 1
+        if (-not $match) { throw "The menu has no item '$Item' to click." }
+        $x, $y = Get-Centre $match.bounds
+        Click-At $x $y
+        Write-Json ([pscustomobject]@{ clicked = $Item })
     }
     'close-menu' {
         Assert-ThrowawayDesktop

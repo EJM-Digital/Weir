@@ -132,12 +132,17 @@ export async function clientOn(world, port) {
 
 export { ORIGIN, PORT };
 
-/** The hover text of the icon in the notification area (the hidden icons are opened when it is in them), once the icon is there. */
-export async function iconText(world, { startingOnly = false } = {}) {
+/**
+ * Waits for the icon of Weir in the notification area (the hidden icons are opened when it is in them; the icons of trays ended by force are
+ * cleared first) and for it to say what `wanted` accepts. Returns the hover text. On failure it says what the icons said meanwhile.
+ */
+export async function iconSays(world, wanted = () => true, what = "the icon of Weir in the notification area", ceilingMs = START_CEILING_MS) {
+  const seen = new Set();
   return wait(
     world,
     async () => {
       const found = await world.desktop.icons();
+      for (const icon of found) seen.add(icon.name);
       if (found.length === 0) {
         await world.desktop.showHidden();
         return undefined;
@@ -146,14 +151,19 @@ export async function iconText(world, { startingOnly = false } = {}) {
         await world.desktop.hoverIcons();
         return undefined;
       }
-      const text = found[0].name;
-      return startingOnly && !text.includes("Starting") ? undefined : text;
+      return wanted(found[0].name) ? found[0].name : undefined;
     },
-    startingOnly ? "the icon to say Weir is starting" : "the icon of Weir in the notification area",
-    START_CEILING_MS,
+    what,
+    ceilingMs,
     500,
-  );
+  ).catch((error) => {
+    throw new Error(`${error.message} The icons said: ${[...seen].join(" | ") || "nothing"}.`, { cause: error });
+  });
 }
+
+/** The hover text of the icon, once it is there. */
+export const iconText = (world, { startingOnly = false } = {}) =>
+  iconSays(world, (text) => !startingOnly || text.includes("Starting"), startingOnly ? "the icon to say Weir is starting" : "the icon of Weir in the notification area");
 
 /** Waits for a browser to be started on this address, and returns it: { pid, name, commandLine }. */
 export async function browserOn(world, port, path = "/") {
@@ -188,6 +198,11 @@ export async function expectNoBrowser(world, why, ...ports) {
  */
 export async function holdPort(world, port) {
   const listener = net.createServer();
+  const connections = new Set();
+  listener.on("connection", (socket) => {
+    connections.add(socket);
+    socket.on("close", () => connections.delete(socket));
+  });
   await wait(
     world,
     () =>
@@ -201,7 +216,12 @@ export async function holdPort(world, port) {
   );
   return {
     port,
-    release: () => new Promise((resolve) => listener.close(() => resolve())),
+    // Whatever connected to it (the tray looking for its server) is let go too, or the port is not free until that is closed.
+    release: () =>
+      new Promise((resolve) => {
+        listener.close(() => resolve());
+        for (const socket of connections) socket.destroy();
+      }),
   };
 }
 

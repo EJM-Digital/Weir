@@ -1,7 +1,7 @@
 // The person at the desktop: the tray's icon, its menu and its windows, reached through Windows UI Automation (tray-ui.ps1), and the click on
 // a balloon, which the notification area sends as a message. Nothing here waits; the scenarios own every wait, so each ends the moment what it
 // waits for has happened.
-import { execFile, spawn } from "node:child_process";
+import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const SCRIPT = fileURLToPath(new URL("./tray-ui.ps1", import.meta.url));
@@ -73,14 +73,9 @@ export class TrayDesktop {
     return ui("invoke", { TrayProcessId: trayProcessId, Item: item });
   }
 
-  /**
-   * Clicks an item whose handler does not return until the person has answered a window (Change port), so the click is left running; the
-   * returned object ends it. The click is over once the window is closed.
-   */
-  invokeAndLeave(trayProcessId, item) {
-    const child = spawn("powershell.exe", shellArguments(scriptArguments("invoke", { TrayProcessId: trayProcessId, Item: item }), false), { stdio: "ignore", windowsHide: true });
-    const ended = new Promise((resolve) => child.on("exit", resolve));
-    return { ended, stop: () => child.kill() };
+  /** Clicks the item with the mouse, for an item whose handler asks a question and does not return until it is answered (Change port). */
+  clickItem(trayProcessId, item) {
+    return ui("click-item", { TrayProcessId: trayProcessId, Item: item });
   }
 
   closeMenu() {
