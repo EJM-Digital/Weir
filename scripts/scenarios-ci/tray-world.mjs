@@ -87,6 +87,8 @@ export class RunningTray {
   /** Waits until the server answers /ready on the port, and returns the process id of the server the tray started last. */
   async ready(port = PORT) {
     await wait(this.#world, async () => ((await serverOn(port).ready()) ? true : undefined), `Weir to answer /ready on port ${port}`, START_CEILING_MS, 500);
+    // The tray has seen it too, which is when it begins to watch the server: ending the server before then is a failed start, not a crash.
+    await this.line(`Weir is healthy on http://127.0.0.1:${port}/`, { what: "the tray to see that its server is ready" });
     return this.serverPid();
   }
 
@@ -280,6 +282,7 @@ export function atLogLine(world, tray, wanted, action, skip = 0, ceilingMs = STA
 const ROWS_OF_A_SERVER_ENDED_ON_PURPOSE = [
   /^Weir is starting again: this is start attempt \d+/,
   /^Weir startup recovered interrupted work/,
+  /^Couldn't finish this job/,
   /^Weir cannot listen: port \d+ is already in use by another program/,
   /^Hosting failed to start/,
   /^BackgroundService failed/,
