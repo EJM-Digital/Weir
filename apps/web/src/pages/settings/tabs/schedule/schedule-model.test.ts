@@ -5,6 +5,7 @@ import {
   backupWords,
   effectiveGrid,
   gridFromDaysAndTimes,
+  sameWeek,
   weekHours,
   windowNow,
 } from "./schedule-model";
@@ -58,6 +59,18 @@ describe("the week a library runs to", () => {
     expect(hours[4]![23]).toBe(true); // Friday night
     expect(hours[5]![3]).toBe(true); // into Saturday morning
     expect(hours[5]![22]).toBe(false); // Saturday night is not chosen
+  });
+});
+
+describe("whether two weeks are the same", () => {
+  it("counts a week with every hour on as no restriction at all", () => {
+    expect(sameWeek("", "1".repeat(SLOTS_PER_WEEK))).toBe(true);
+    expect(sameWeek("not a grid", "1".repeat(SLOTS_PER_WEEK))).toBe(true);
+  });
+
+  it("tells a week with an hour off from one without", () => {
+    expect(sameWeek("", nights)).toBe(false);
+    expect(sameWeek(nights, nights)).toBe(true);
   });
 });
 

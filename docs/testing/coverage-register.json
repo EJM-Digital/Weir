@@ -31363,12 +31363,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Unit test of useUnsavedChangesRegistry: beforeunload default prevented while a panel reports unsaved edits, listener removed once cleared. Layer: vitest."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/unsaved-changes.test.tsx",
+          "name": "closing or reloading the browser tab"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/unsaved-changes.test.tsx",
+          "name": "is held for the person to confirm while a panel has edits not yet saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/unsaved-changes.test.tsx",
+          "name": "stops being held once the edits are saved, so the listener is removed"
+        }
+      ],
       "audit": {
         "id": "WEB-579",
         "verdict": "Gap"
@@ -31417,12 +31428,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Route test with a rejecting lazy loader for one tab: error element shown, sibling tab still opens. Layer: vitest."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-lazy-failure.test.tsx",
+          "name": "a setup tab whose code cannot be fetched"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-lazy-failure.test.tsx",
+          "name": "shows the error screen instead of a blank page"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-area-lazy-failure.test.tsx",
+          "name": "leaves the other tabs working, so going to one opens it"
+        }
+      ],
       "audit": {
         "id": "WEB-581",
         "verdict": "Gap"
@@ -31531,12 +31553,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "One test per panel with a never-resolving fetch asserting the loading label and that no empty-state text shows. Layer: vitest."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-panels-load.test.tsx",
+          "name": "the $name panel"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-panels-load.test.tsx",
+          "name": "says it is loading while its data is on its way, and shows no empty state in its place"
+        }
+      ],
       "audit": {
         "id": "WEB-585",
         "verdict": "Gap"
@@ -31550,12 +31578,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Note plus test: no test shows a panel leaving the error state when a live push or a refocus refetch succeeds, or what the person can do other than reload. Layer: vitest."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-panels-load.test.tsx",
+          "name": "says Weir could not load it, with no Retry control, when its data did not arrive"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-panels-load.test.tsx",
+          "name": "leaves the failure by itself when the live link says the data changed and it now arrives"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-panels-load.test.tsx",
+          "name": "leaves the failure by itself when the person returns to the tab and the data now arrives"
+        }
+      ],
       "audit": {
         "id": "WEB-586",
         "verdict": "Gap"
@@ -31756,13 +31795,28 @@
           "type": "vitest",
           "file": "apps/web/src/lib/settings/timezone-options-for.test.ts",
           "name": "adds a saved zone the list lacks, first, named with its offset"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/timezone-options-for.test.ts",
+          "name": "the curated time zone list"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/timezone-options-for.test.ts",
+          "name": "names only zones the browser can resolve"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/timezone-options-for.test.ts",
+          "name": "names each zone once"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/settings/timezone-options-for.test.ts",
+          "name": "is sorted by label, each label ending in the zone's offset from UTC"
         }
       ],
-      "needs": {
-        "kind": "vitest",
-        "test": "Unit test: every curated id is accepted by Intl.DateTimeFormat, labels sort, no duplicate ids, savedZone returns the saved zone, including one outside the list, and UTC when none is saved. Layer: vitest."
-      },
-      "issue": 1142,
       "audit": {
         "id": "WEB-591",
         "verdict": "Gap"
@@ -32391,12 +32445,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest with a MemoryRouter: after the editor opens, edit/addFrom are gone from the address (replace, no history entry); an unknown or non-positive id opens nothing."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/use-workflow-deep-links.test.tsx",
+          "name": "a link into Workflows"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/use-workflow-deep-links.test.tsx",
+          "name": "opens the workflow's editor once and leaves the address, so a reload does not reopen it"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/use-workflow-deep-links.test.tsx",
+          "name": "opens the add choice once and leaves the address"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/use-workflow-deep-links.test.tsx",
+          "name": "opens nothing for ?%s"
+        }
+      ],
       "audit": {
         "id": "WEB-615",
         "verdict": "Gap"
@@ -32580,12 +32650,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: two suggestions for one manager show the Which one? select; picking TV then Continue opens the TV preset."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/add-workflow-choice.test.tsx",
+          "name": "a media manager that reports several workflows"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/add-workflow-choice.test.tsx",
+          "name": "asks Which one? with Movies and TV episodes, and Continue starts the one picked"
+        }
+      ],
       "audit": {
         "id": "WEB-623",
         "verdict": "Gap"
@@ -32624,12 +32700,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: fetchLibrarySuggestions rejected shows the role=alert text and re-enables Continue; pending shows Asking... and disables Continue."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/add-workflow-choice.test.tsx",
+          "name": "asking the media manager for its folders"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/add-workflow-choice.test.tsx",
+          "name": "says Asking… and holds Continue while the answer is on its way"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/add-workflow-choice.test.tsx",
+          "name": "says why when it fails, and Continue works again"
+        }
+      ],
       "audit": {
         "id": "WEB-625",
         "verdict": "Gap"
@@ -32643,12 +32730,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: click Cancel, the choice is gone, no editor, no create."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/add-workflow-choice.test.tsx",
+          "name": "Cancel on the choice"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/add-workflow-choice.test.tsx",
+          "name": "closes it without opening an editor or saving anything"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/WorkflowCreateTests.cs",
+          "name": "The_choice_offers_Local_folders_and_says_a_media_manager_is_not_connected_yet_and_Cancel_adds_nothing"
+        }
+      ],
       "audit": {
         "id": "WEB-626",
         "verdict": "Gap"
@@ -32687,12 +32785,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: clear Name, Save disabled; type a name, Save enabled; whitespace-only name still disabled."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.leaving.test.tsx",
+          "name": "the Name field"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.leaving.test.tsx",
+          "name": "keeps Save off while the name is blank or only spaces, and on once there is a name"
+        }
+      ],
       "audit": {
         "id": "WEB-628",
         "verdict": "Gap"
@@ -33156,12 +33260,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: edit, Cancel, confirm Leave, editor closes and the list still shows the saved name; reopening shows the saved values."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.leaving.test.tsx",
+          "name": "Cancel on an edited form"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.leaving.test.tsx",
+          "name": "asks first, and Leave without saving closes the editor and drops the edit"
+        }
+      ],
       "audit": {
         "id": "WEB-646",
         "verdict": "Gap"
@@ -33195,12 +33305,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "SidePanel has no test file. vitest: with an edited editor, Escape / backdrop / X open the unsaved prompt instead of discarding; focus returns to the Edit button."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.leaving.test.tsx",
+          "name": "closing an edited editor any other way"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.leaving.test.tsx",
+          "name": "asks first for %s, and keeps the edit when told to stay"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.leaving.test.tsx",
+          "name": "closes after %s once the person leaves, and focus goes back to the Edit button"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.leaving.test.tsx",
+          "name": "does not ask for %s when nothing was edited"
+        }
+      ],
       "audit": {
         "id": "WEB-648",
         "verdict": "Gap"
@@ -33214,12 +33340,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: asViewer, open Edit (if reachable) or render LibraryEditor with editable=false; all inputs, selects and Save disabled."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.leaving.test.tsx",
+          "name": "the editor opened by a viewer"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.leaving.test.tsx",
+          "name": "has every field and Save switched off"
+        }
+      ],
       "audit": {
         "id": "WEB-649",
         "verdict": "Gap"
@@ -33433,12 +33565,18 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: pending fetch shows the loading line; rejected fetch shows the alert text; neither hides the folder fields."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.checks.test.tsx",
+          "name": "says it is reading the media managers while their setup is on its way, with the folder fields still there"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.checks.test.tsx",
+          "name": "says Weir could not read the media managers when their setup fails, with the folder fields still there"
+        }
+      ],
       "audit": {
         "id": "WEB-658",
         "verdict": "Gap"
@@ -33587,12 +33725,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: pending fetch shows the loading line; click Check again calls fetchLibraryFolderChain a second time and shows Checking… until it settles."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.checks.test.tsx",
+          "name": "says it is checking the folders while the chain is on its way"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.checks.test.tsx",
+          "name": "checks the folders again on Check again, reading Checking… until the answer arrives"
+        }
+      ],
       "audit": {
         "id": "WEB-664",
         "verdict": "Gap"
@@ -34286,12 +34430,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: a workflow with no grid says Any time and a workflow with a drawn grid says On the hours chosen for it; the link goes to /setup/workflows/schedule."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.checks.test.tsx",
+          "name": "says When this workflow may run is any time for a workflow with no hours drawn, with a link to Schedule"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.checks.test.tsx",
+          "name": "says When this workflow may run is on the hours chosen for a workflow with a week drawn"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-editor.checks.test.tsx",
+          "name": "says a new workflow may run any time until hours are chosen"
+        }
+      ],
       "audit": {
         "id": "WEB-686",
         "verdict": "Gap"
@@ -34335,12 +34490,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: drift result with one moved root renders the name, detail and Manager/Weir values; empty result shows the no-differences line."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-import-section.test.tsx",
+          "name": "Check for changes"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-import-section.test.tsx",
+          "name": "lists what differs, with the workflow, the detail, and what the manager and Weir each hold"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-import-section.test.tsx",
+          "name": "says no differences were found when there are none"
+        }
+      ],
       "audit": {
         "id": "WEB-688",
         "verdict": "Gap"
@@ -34354,12 +34520,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: discoverProcessingLibraries rejected and importDiscoveredProcessingLibraries rejected each show their notice in the page notice area."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-import-section.test.tsx",
+          "name": "Discover workflows"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-import-section.test.tsx",
+          "name": "says why when the manager cannot be reached"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-import-section.test.tsx",
+          "name": "Import selected"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-import-section.test.tsx",
+          "name": "says why when the import fails, and leaves the choice as it was"
+        }
+      ],
       "audit": {
         "id": "WEB-689",
         "verdict": "Gap"
@@ -34373,12 +34555,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: discover returns one already imported and one with local_path_problem; both checkboxes disabled with their messages; empty list shows the empty line."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-import-section.test.tsx",
+          "name": "switches off, and says why, the workflows that cannot be imported"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-import-section.test.tsx",
+          "name": "says so when the manager reports no workflows"
+        }
+      ],
       "audit": {
         "id": "WEB-690",
         "verdict": "Gap"
@@ -34392,12 +34580,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: asViewer and no connections each render no Import section."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-import-section.test.tsx",
+          "name": "the Import section"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-import-section.test.tsx",
+          "name": "is not there for a viewer"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/libraries/library-import-section.test.tsx",
+          "name": "is not there when no media manager is connected"
+        }
+      ],
       "audit": {
         "id": "WEB-691",
         "verdict": "Gap"
@@ -34476,12 +34675,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: a disabled workflow shows the label; no workflows shows the empty text."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/schedule-tab.hours.test.tsx",
+          "name": "the rows"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/schedule-tab.hours.test.tsx",
+          "name": "say a workflow is switched off in Workflows, and only that one"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/schedule-tab.hours.test.tsx",
+          "name": "say there is nothing to schedule when there are no workflows"
+        }
+      ],
       "audit": {
         "id": "WEB-695",
         "verdict": "Gap"
@@ -34595,12 +34805,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: Save disabled on open, enabled after one cell, Saving… with a pending update."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/schedule-tab.hours.test.tsx",
+          "name": "Save on the hours"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/schedule-tab.hours.test.tsx",
+          "name": "is off until the week changes, on once it has, and off again when the change is undone"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/schedule-tab.hours.test.tsx",
+          "name": "reads Saving… and holds the hours while the server works"
+        }
+      ],
       "audit": {
         "id": "WEB-700",
         "verdict": "Gap"
@@ -34614,12 +34835,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: updateProcessingLibrary rejected shows the alert, editor stays open with the drawn week."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/schedule-tab.hours.test.tsx",
+          "name": "says why when the server refuses the hours, and keeps the editor open with the week drawn"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/schedule-tab.hours.test.tsx",
+          "name": "says Weir cannot be reached when the server does not answer"
+        }
+      ],
       "audit": {
         "id": "WEB-701",
         "verdict": "Gap"
@@ -34653,12 +34880,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: confirm Leave replaces the editor with the other workflow's week; Close on a dirty week asks and Leave discards."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/schedule-tab.hours.test.tsx",
+          "name": "hours drawn and not saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/schedule-tab.hours.test.tsx",
+          "name": "are asked about before another workflow's hours replace them, and Leave without saving switches to the other week"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/schedule/schedule-tab.hours.test.tsx",
+          "name": "are asked about on Close, Keep editing leaves them drawn, and Leave without saving drops them"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ScheduleEditorTests.cs",
+          "name": "Closing_or_switching_with_hours_drawn_and_not_saved_asks_first_and_Escape_keeps_editing"
+        }
+      ],
       "audit": {
         "id": "WEB-703",
         "verdict": "Gap"
@@ -34792,12 +35035,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: putAppSettings rejected shows the alert and keeps the chosen zone and the Save button."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.time-zone.test.tsx",
+          "name": "saving the time zone"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.time-zone.test.tsx",
+          "name": "says why when the server refuses it, and keeps the zone picked with its Save button"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.time-zone.test.tsx",
+          "name": "says Weir cannot be reached when the server does not answer"
+        }
+      ],
       "audit": {
         "id": "WEB-708",
         "verdict": "Gap"
@@ -34811,12 +35065,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: choose a zone without saving, navigate to another System tab or area, expect the leave prompt."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.time-zone.test.tsx",
+          "name": "a time zone picked and not yet saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.time-zone.test.tsx",
+          "name": "is asked about before the person leaves System for another page"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.time-zone.test.tsx",
+          "name": "is asked about before another System tab replaces About, and stays when told to"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.time-zone.test.tsx",
+          "name": "asks nothing once it is saved"
+        }
+      ],
       "audit": {
         "id": "WEB-709",
         "verdict": "Gap"
@@ -34830,12 +35100,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "E2E at phone viewport: open Change hours on Schedule, assert no horizontal overflow of the document."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupPhoneWidthTests.cs",
+          "name": "The_workflow_list_the_editor_the_hours_editor_and_the_profiles_fit_a_phone_without_sideways_scrolling"
+        }
+      ],
       "audit": {
         "id": "WEB-710",
         "verdict": "Gap"
@@ -34899,12 +35170,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: rule sets [] shows the empty text and the New profile button; no editor."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "with no profiles"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "says so, and offers New profile but no rules to edit"
+        }
+      ],
       "audit": {
         "id": "WEB-713",
         "verdict": "Gap"
@@ -34918,12 +35195,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: libraries with rule_set_id set list their names in rule-set-used-by; none shows the hint."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "the line under the profile's name"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "names the workflows that use it"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "says no workflow uses a profile that none has chosen"
+        }
+      ],
       "audit": {
         "id": "WEB-714",
         "verdict": "Gap"
@@ -34987,12 +35275,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: clear the name, Save profile, notice shown, create/update not called."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "Save profile"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "asks for a name and sends nothing when the name is cleared"
+        }
+      ],
       "audit": {
         "id": "WEB-717",
         "verdict": "Gap"
@@ -35061,12 +35355,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: updateProcessingRuleSet rejected shows the notice, draft intact, Save usable again."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "says why when the server refuses the rules, keeps the edits, and can be pressed again"
+        }
+      ],
       "audit": {
         "id": "WEB-720",
         "verdict": "Gap"
@@ -35285,12 +35580,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: a profile with two removals on shows '2 of 5 on' and the fold open."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "the Also remove fold"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "says Off and stays closed when nothing inside is on"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "says how many are on, and opens by itself, when something inside is"
+        }
+      ],
       "audit": {
         "id": "WEB-731",
         "verdict": "Gap"
@@ -35324,12 +35630,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: toggle each and assert remove_attachments, remove_title, remove_language_tags, remove_other_metadata."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "saves %s as %s when it is switched on"
+        }
+      ],
       "audit": {
         "id": "WEB-733",
         "verdict": "Gap"
@@ -35423,12 +35730,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: edit the name, press New profile, expect the unsaved prompt; Keep editing leaves the profile open."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "New profile"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "asks first when the open profile has edits not saved, and Keep editing leaves it open"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "opens a blank profile once the person chooses to leave without saving"
+        }
+      ],
       "audit": {
         "id": "WEB-737",
         "verdict": "Gap"
@@ -35442,12 +35760,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Covered by the integration test named in the scaffolding section; add a case for a new profile, which is dirty from the moment it opens."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-unsaved-guard.test.tsx",
+          "name": "a new profile opened in the real Profiles tab"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-unsaved-guard.test.tsx",
+          "name": "is unsaved from the moment it opens, so another tab asks, naming the new profile"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-unsaved-guard.test.tsx",
+          "name": "asks before the side menu leaves setup, and Leave drops it"
+        }
+      ],
       "audit": {
         "id": "WEB-738",
         "verdict": "Gap"
@@ -35461,12 +35790,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Behaviour question and test: after New profile there is no Cancel; either add one or pin that leaving is the only way, with the guard prompt."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "leaves no way back to the saved profiles but leaving the tab: the profile list and New profile are gone, and there is no Cancel"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/setup-unsaved-guard.test.tsx",
+          "name": "a new profile opened in the real Profiles tab"
+        }
+      ],
       "audit": {
         "id": "WEB-739",
         "verdict": "Gap"
@@ -35550,12 +35885,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: role viewer, all inputs and buttons disabled, no request on click."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "a viewer"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.states.test.tsx",
+          "name": "can read every rule but change none: each field, New profile, Save profile and Remove are off, and a press sends nothing"
+        }
+      ],
       "audit": {
         "id": "WEB-743",
         "verdict": "Gap"
@@ -35709,12 +36050,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: two workflows, pick the second, Preview, assert libraryId 2."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/rules-preview-panel.target.test.tsx",
+          "name": "the workflow the file is tried against"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/rules-preview-panel.target.test.tsx",
+          "name": "starts on the first workflow, and the preview is sent for the one chosen instead"
+        }
+      ],
       "audit": {
         "id": "WEB-750",
         "verdict": "Gap"
@@ -35728,12 +36075,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: anywhere mode with 'C:\\\\Media\\\\Movies' and 'Movie.mkv' sends C:\\\\Media\\\\Movies\\\\Movie.mkv; with '/media/movies/' and '/Movie.mkv' sends one separator; trailing and leading separators trimmed."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/rules-preview-panel.target.test.tsx",
+          "name": "a file anywhere on this machine"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/rules-preview-panel.target.test.tsx",
+          "name": "joins the folder %j and the file name %j as %j with one separator"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/rules-preview-panel.target.test.tsx",
+          "name": "fills the Folder from the folder browser"
+        }
+      ],
       "audit": {
         "id": "WEB-751",
         "verdict": "Gap"
@@ -35747,12 +36105,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: no path means Preview disabled; a pending preview shows Checking… and the role=status text."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/rules-preview-panel.target.test.tsx",
+          "name": "the Preview button"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/rules-preview-panel.target.test.tsx",
+          "name": "is off until a path is given"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/rules-preview-panel.target.test.tsx",
+          "name": "reads Checking… with a line saying what is happening while the answer is on its way"
+        }
+      ],
       "audit": {
         "id": "WEB-752",
         "verdict": "Gap"
@@ -35851,12 +36220,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: render RulesPreviewPanel with disabled; Try on a file disabled."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/rules-preview-panel.target.test.tsx",
+          "name": "the panel for a viewer"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/rules-preview-panel.target.test.tsx",
+          "name": "cannot be opened"
+        }
+      ],
       "audit": {
         "id": "WEB-757",
         "verdict": "Gap"
@@ -35870,12 +36245,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "contract or E2E: after a preview, the job queue and the file list are unchanged."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingRulesPreviewApiTests.cs",
+          "name": "A_preview_creates_no_job_rows_and_writes_nothing"
+        }
+      ],
       "audit": {
         "id": "WEB-758",
         "verdict": "Gap"
@@ -35939,12 +36315,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: tick then untick, Save disappears; untick the only selected device, Save sends [] and the checklist stays empty."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/playback-devices-section.save.test.tsx",
+          "name": "the device checklist"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/playback-devices-section.save.test.tsx",
+          "name": "offers Save only while the ticks differ from the saved choice, and takes it away when they are put back"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/playback-devices-section.save.test.tsx",
+          "name": "saves an empty list when every device is unticked, and leaves the checklist empty"
+        }
+      ],
       "audit": {
         "id": "WEB-761",
         "verdict": "Gap"
@@ -35958,12 +36345,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "vitest: pending putDirectPlayDevices disables the boxes and shows Saving…; a rejection shows the alert with the reason and keeps the ticks."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/playback-devices-section.save.test.tsx",
+          "name": "saving the choice"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/playback-devices-section.save.test.tsx",
+          "name": "reads Saving… and holds every tick while the server works"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/rules/playback-devices-section.save.test.tsx",
+          "name": "says why when the server refuses it, and keeps the ticks"
+        }
+      ],
       "audit": {
         "id": "WEB-762",
         "verdict": "Gap"
@@ -36557,12 +36955,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "useUnsavedChangesRegistry adds and removes a beforeunload listener when anything is unsaved."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/unsaved-changes.test.tsx",
+          "name": "closing or reloading the browser tab"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/unsaved-changes.test.tsx",
+          "name": "is held for the person to confirm while a panel has edits not yet saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/unsaved-changes.test.tsx",
+          "name": "stops being held once the edits are saved, so the listener is removed"
+        }
+      ],
       "audit": {
         "id": "WEB-781",
         "verdict": "Gap"
@@ -36576,12 +36985,48 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Only the Media manager edit form registers a dirty state. A typed Speed value, alert form or download-client edit is dropped silently by a tab click, Escape or backdrop click. Decide the rule, implement it for these panels, then test it."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "a Speed setting that was changed and not saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "the days cleaned copies wait, typed and not saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "asks, naming the setting, before another tab opens, and keeps what was typed when told to stay"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "asks nothing when the number is back to the saved one"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "an alert edited or added and not saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "a download client edited and not saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "asks, naming the download client, before another tab opens, and keeps the edit when told to stay"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "asks before the side menu leaves setup, and Leave drops the edit"
+        }
+      ],
       "audit": {
         "id": "WEB-782",
         "verdict": "Gap"
@@ -36680,12 +37125,18 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The empty-state action is a separate button wired to startAdding."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "the first media manager"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "is added from the button in the empty state, which opens the add drawer"
+        }
+      ],
       "audit": {
         "id": "WEB-786",
         "verdict": "Gap"
@@ -36939,8 +37390,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "adding a media manager"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "says Adding… and cannot be submitted again while the server answers"
+        }
+      ],
       "audit": {
         "id": "WEB-794",
         "verdict": "Gap"
@@ -37084,8 +37545,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "the secret offered for a new media manager"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "says Creating… and holds both buttons still while the secret is made"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "goes away when Done is pressed after the secret is shown"
+        }
+      ],
       "audit": {
         "id": "WEB-800",
         "verdict": "Gap"
@@ -37184,8 +37660,18 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "the list of media managers"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "counts them, says how often Weir checks, and says changes save as they are made"
+        }
+      ],
       "audit": {
         "id": "WEB-803",
         "verdict": "Gap"
@@ -37244,12 +37730,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The Settings time-zone formatter is stubbed to undefined in every test here."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "the list of media managers"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "shows when a media manager was last checked in the time zone chosen for Weir"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "tells a media manager that has not been checked yet that Weir will check it within a minute"
+        }
+      ],
       "audit": {
         "id": "WEB-805",
         "verdict": "Gap"
@@ -37643,8 +38140,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "saving an edit to a media manager"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "says Saving… and holds Save and Cancel still while the server answers"
+        }
+      ],
       "audit": {
         "id": "WEB-817",
         "verdict": "Gap"
@@ -38148,8 +38655,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "the check of a media manager's workflow folders"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "says it is checking while the answer is on its way"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/connection-states.test.tsx",
+          "name": "says quietly that it could not check, without an alert of its own"
+        }
+      ],
       "audit": {
         "id": "WEB-832",
         "verdict": "Gap"
@@ -38203,12 +38725,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The Connections components never read the role; contract Routes_require_an_operator_session shows the API refuses. A viewer would see working-looking buttons that fail."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/admin-only-controls.test.tsx",
+          "name": "signed in as a %s"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/admin-only-controls.test.tsx",
+          "name": "cannot add, change or remove a media manager, and is told why"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/admin-only-controls.test.tsx",
+          "name": "cannot create or replace a media manager's secret, and is told why"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/admin-only-controls.test.tsx",
+          "name": "cannot add a first media manager"
+        }
+      ],
       "audit": {
         "id": "WEB-834",
         "verdict": "Gap"
@@ -38282,8 +38820,18 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "the first download client"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "is added from the button in the empty state, which opens the add drawer"
+        }
+      ],
       "audit": {
         "id": "WEB-837",
         "verdict": "Gap"
@@ -38507,8 +39055,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "the add drawer"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "masks what a %s login keeps secret"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "says Adding… and cannot be submitted again while the server answers"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "is closed by %s without adding anything"
+        }
+      ],
       "audit": {
         "id": "WEB-844",
         "verdict": "Gap"
@@ -38682,8 +39250,18 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "turning a download client on or off"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "says why the change failed and leaves the button as it was"
+        }
+      ],
       "audit": {
         "id": "WEB-850",
         "verdict": "Gap"
@@ -38772,8 +39350,28 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "editing a download client"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "asks SABnzbd for its API key and nothing else"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "asks Deluge for its password only"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "asks %s for a username and a password"
+        }
+      ],
       "audit": {
         "id": "WEB-853",
         "verdict": "Gap"
@@ -38787,8 +39385,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "editing a download client"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "cannot be saved with the address blank, and says nothing is sent"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "says Saving… and holds Save still while the server answers"
+        }
+      ],
       "audit": {
         "id": "WEB-854",
         "verdict": "Gap"
@@ -38827,8 +39440,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-edit-form.test.tsx",
+          "name": "Cancel on a download client's edit form"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-edit-form.test.tsx",
+          "name": "closes at once, sending nothing, when nothing was changed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-edit-form.test.tsx",
+          "name": "asks before dropping a changed field, and Keep editing leaves the form as it was"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-edit-form.test.tsx",
+          "name": "closes without sending anything once the person chooses to leave"
+        }
+      ],
       "audit": {
         "id": "WEB-856",
         "verdict": "Gap"
@@ -38892,12 +39525,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "RemoveDownloadClientDialog is its own component with its own error wiring."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "removing a download client"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "opens with the focus on the safe choice, and Escape keeps the download client"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "stays open and says why when the removal fails"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/download-client-states.test.tsx",
+          "name": "closes once the download client is removed, and its card goes"
+        }
+      ],
       "audit": {
         "id": "WEB-858",
         "verdict": "Gap"
@@ -38946,12 +39595,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Same as media managers; no role check in the source."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/admin-only-controls.test.tsx",
+          "name": "signed in as a %s"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/admin-only-controls.test.tsx",
+          "name": "cannot add, change or remove a download client, and is told why"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/media-managers/admin-only-controls.test.tsx",
+          "name": "cannot add a first download client"
+        }
+      ],
       "audit": {
         "id": "WEB-860",
         "verdict": "Gap"
@@ -39255,8 +39915,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-states.test.tsx",
+          "name": "the last event of an alert"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-states.test.tsx",
+          "name": "cannot be unticked, and the alert says it needs one"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-states.test.tsx",
+          "name": "says why a tick could not be saved, and leaves the box as it was saved"
+        }
+      ],
       "audit": {
         "id": "WEB-870",
         "verdict": "Gap"
@@ -39270,12 +39945,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Another row's Edit stays enabled and silently discards the first edit."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-states.test.tsx",
+          "name": "editing an alert"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-states.test.tsx",
+          "name": "opens the alert in a form filled in with what it has, and holds Add alert and the other Edit buttons while it is open"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-states.test.tsx",
+          "name": "lets the other alert be edited once the first form is closed"
+        }
+      ],
       "audit": {
         "id": "WEB-871",
         "verdict": "Gap"
@@ -39303,7 +39989,7 @@
         {
           "type": "vitest",
           "file": "apps/web/src/pages/settings/tabs/alerts/alerts-requests.test.tsx",
-          "name": "throws away what was typed when it is cancelled, and sends nothing"
+          "name": "throws away what was typed when it is cancelled and left, and sends nothing"
         }
       ],
       "audit": {
@@ -39554,12 +40240,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "The notificationChannels key sits under the 'settings' topic, whose mapping has no unit test."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-states.test.tsx",
+          "name": "an alert changed from somewhere else"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-states.test.tsx",
+          "name": "shows on the open tab when it is added, changed or removed, with no reload"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/live/live-topics.test.ts",
+          "name": "LIVE_TOPIC_QUERIES"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/lib/live/live-topics.test.ts",
+          "name": "refreshes the app, alert, operator and runtime settings, and what they decide, when a setting changes"
+        }
+      ],
       "audit": {
         "id": "WEB-878",
         "verdict": "Gap"
@@ -39573,12 +40275,48 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "See section 1."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "an alert edited or added and not saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "asks, naming the alert, before another tab opens, and keeps the edit when told to stay"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "asks before Cancel drops an edit, and Cancel closes at once when nothing was changed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "asks nothing once the edit is saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "a new alert in the drawer"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "asks before another tab opens"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "asks before %s drops it, and Keep editing leaves the drawer as it was"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "closes at once when nothing was typed"
+        }
+      ],
       "audit": {
         "id": "WEB-879",
         "verdict": "Gap"
@@ -39592,12 +40330,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "A viewer is likely to see 'Weir couldn't load your alerts' instead of a read-only explanation."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-states.test.tsx",
+          "name": "a viewer opening Alerts"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/alerts/alerts-states.test.tsx",
+          "name": "is told alerts are for operators and admins, not that Weir failed to load them"
+        }
+      ],
       "audit": {
         "id": "WEB-880",
         "verdict": "Gap"
@@ -39611,8 +40355,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/speed-states.test.tsx",
+          "name": "opening Speed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/speed-states.test.tsx",
+          "name": "says the performance settings are loading until they arrive"
+        }
+      ],
       "audit": {
         "id": "WEB-881",
         "verdict": "Gap"
@@ -39766,8 +40520,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/speed-states.test.tsx",
+          "name": "saving Speed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/speed-states.test.tsx",
+          "name": "says Saving… and holds every control still while the server answers"
+        }
+      ],
       "audit": {
         "id": "WEB-887",
         "verdict": "Gap"
@@ -39891,12 +40655,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Source comment says this is intended."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/speed-states.test.tsx",
+          "name": "Speed changed from somewhere else while a number is half chosen"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/speed-states.test.tsx",
+          "name": "shows the saved settings and drops the choice that was not saved"
+        }
+      ],
       "audit": {
         "id": "WEB-892",
         "verdict": "Gap"
@@ -39910,8 +40680,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/speed-states.test.tsx",
+          "name": "a viewer on Speed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/speed-states.test.tsx",
+          "name": "sees the settings with every control and Save held still"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/speed-states.test.tsx",
+          "name": "can change them as an operator"
+        }
+      ],
       "audit": {
         "id": "WEB-893",
         "verdict": "Gap"
@@ -39925,12 +40710,33 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "See section 1: the panel never registers an unsaved change."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "a Speed setting that was changed and not saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "asks, naming the settings, before another tab opens, and keeps the change when told to stay"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "asks before the side menu leaves setup, and Leave drops the change without saving it"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "asks nothing once it is saved"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/connections-performance-unsaved-guard.test.tsx",
+          "name": "asks nothing when nothing was changed"
+        }
+      ],
       "audit": {
         "id": "WEB-894",
         "verdict": "Gap"
@@ -39974,8 +40780,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/cleanup/cleanup-empty.test.tsx",
+          "name": "says no cleanup jobs are available when the server lists none, and shows no table"
+        }
+      ],
       "audit": {
         "id": "WEB-896",
         "verdict": "Gap"
@@ -40669,13 +41480,48 @@
     {
       "id": "web-setup-connections-performance.weir-s-timers.sort-by-when-last-run-next-run-columns-menu",
       "area": "web-setup-connections-performance",
-      "behaviour": "Sort by When, Last run, Next run; Columns menu hide / show / move",
+      "behaviour": "Sort by When, Last run, Next run; move a column with Alt and an arrow; the Columns menu puts the columns back",
       "kind": "screen action",
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/timers-table.test.tsx",
+          "name": "sorting the timers"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/timers-table.test.tsx",
+          "name": "lists them as they come until a heading is pressed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/timers-table.test.tsx",
+          "name": "sorts by how often a job runs, shortest first, and reverses on the next press"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/timers-table.test.tsx",
+          "name": "sorts by the last run, the latest first"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/timers-table.test.tsx",
+          "name": "sorts by the next run, the soonest first, and keeps a job with none last"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/timers-table.test.tsx",
+          "name": "moving the timers' columns"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/timers-table.test.tsx",
+          "name": "moves a column with Alt and an arrow, and Reset columns puts the table back"
+        }
+      ],
       "audit": {
         "id": "WEB-920",
         "verdict": "Gap"
@@ -40689,12 +41535,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "TimersSection ignores maintenance.isError / isPending."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/timers-table.test.tsx",
+          "name": "the cleanup jobs' own times"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/timers-table.test.tsx",
+          "name": "say the jobs are loading, not that they have no times, while Weir is still asked"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/timers-table.test.tsx",
+          "name": "say Weir could not load them, not that they have none, when the request fails"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/settings/tabs/performance/timers-table.test.tsx",
+          "name": "show no note once they have loaded"
+        }
+      ],
       "audit": {
         "id": "WEB-921",
         "verdict": "Gap"
