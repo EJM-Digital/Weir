@@ -184,7 +184,15 @@ public sealed partial class HandoffLedgerStore
             foreach (var job in jobs)
             {
                 stamps.Add(job.UpdatedAt);
-                if (PayloadRelativePath(job.PayloadJson) is { } busyPath)
+                var jobPath = PayloadRelativePath(job.PayloadJson);
+                // The pass tells the manager how the file ended before it releases its job (it still scans the downloaded files), so a
+                // leased job whose file already has its result is only finishing up: the file's own row says what became of it.
+                if (job.Status == ProcessingJobStatus.Leased && jobPath is { Length: > 0 } && HasRecordedResult(targets, jobPath))
+                {
+                    continue;
+                }
+
+                if (jobPath is { } busyPath)
                 {
                     busyPaths.Add(busyPath);
                 }
@@ -351,6 +359,13 @@ public sealed partial class HandoffLedgerStore
             delivered ? row.OutputPath : null,
             message ?? storedMessage,
             delivered ? ReportedOutputFiles(row) : null);
+    }
+
+    /// <summary>Whether the pass over this file has already told the hand-off how it ended.</summary>
+    private static bool HasRecordedResult(IReadOnlyList<HandoffTarget> targets, string relativePath)
+    {
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        return targets.Any(target => target.Result is not null && string.Equals(target.RelativePath, relativePath, comparison));
     }
 
     /// <summary>
