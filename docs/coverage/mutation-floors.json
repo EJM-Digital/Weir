@@ -1,0 +1,78 @@
+{
+  "measuredFrom": {
+    "commit": "pending the first measuring runs",
+    "note": "Placeholders until the Mutation workflow has run on this branch: every floor is 0 and every run id is 1.",
+    "runs": {
+      "file-lifecycle-recovery": 1,
+      "file-lifecycle-moves": 1,
+      "handoff-intake": 1,
+      "outcome-handling": 1,
+      "write-gate-database": 1,
+      "write-gate-unit-of-work": 1,
+      "core-rules": 1,
+      "start-supervision": 1,
+      "web-api-client": 1,
+      "web-processing-files": 1,
+      "web-processing-libraries": 1,
+      "web-settings-requests": 1,
+      "web-dialogs-library": 1,
+      "web-dialogs-activity-profile": 1,
+      "file-lifecycle-swap-preflight": 1,
+      "file-lifecycle-swap-prepare": 1,
+      "file-lifecycle-swap-commit": 1
+    }
+  },
+  "floors": {
+    "file-lifecycle-recovery": {
+      "score": 0
+    },
+    "file-lifecycle-moves": {
+      "score": 0
+    },
+    "handoff-intake": {
+      "score": 0
+    },
+    "outcome-handling": {
+      "score": 0
+    },
+    "write-gate-database": {
+      "score": 0
+    },
+    "write-gate-unit-of-work": {
+      "score": 0
+    },
+    "core-rules": {
+      "score": 0
+    },
+    "start-supervision": {
+      "score": 0
+    },
+    "web-api-client": {
+      "score": 0
+    },
+    "web-processing-files": {
+      "score": 0
+    },
+    "web-processing-libraries": {
+      "score": 0
+    },
+    "web-settings-requests": {
+      "score": 0
+    },
+    "web-dialogs-library": {
+      "score": 0
+    },
+    "web-dialogs-activity-profile": {
+      "score": 0
+    },
+    "file-lifecycle-swap-preflight": {
+      "score": 0
+    },
+    "file-lifecycle-swap-prepare": {
+      "score": 0
+    },
+    "file-lifecycle-swap-commit": {
+      "score": 0
+    }
+  }
+}

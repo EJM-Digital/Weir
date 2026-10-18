@@ -1,0 +1,663 @@
+{
+  "schemaVersion": "2",
+  "thresholds": {
+    "high": 80,
+    "low": 60
+  },
+  "projectRoot": "D:\\a\\Weir\\Weir\\apps\\server\\src\\Weir.Core",
+  "files": {
+    "D:\\a\\Weir\\Weir\\apps\\server\\src\\Weir.Core\\MediaManagers\\LibraryFolderPublishing.cs": {
+      "language": "cs",
+      "source": "using Weir.Core.Json;\n\nnamespace Weir.Core.MediaManagers;\n\n/// <summary>\n/// One library's published folders: the stable, read-only shape a media manager reads instead of asking a\n/// person to retype the same paths. Weir owns the watched, work and output folders; the manager owns its own\n/// library roots and categories. <see cref=\"ManagerLibraryKey\"/> is the manager's own id for the library the workflow was set\n/// up from, and <see cref=\"FoldersFromManager\"/> says whether that manager still owns the watched and output folders.\n/// <see cref=\"MinimumFileSizeBytes\"/> is the workflow's minimum file size, null when it has none, so a manager can leave smaller files\n/// out of a hand-off instead of sending them for Weir to refuse.\n/// </summary>\npublic sealed record PublishedLibraryFolders(\n    long Id,\n    string Name,\n    string MediaType,\n    string WatchedFolder,\n    string WorkFolder,\n    string OutputFolder,\n    string? ManagerLibraryKey,\n    bool FoldersFromManager,\n    long? MinimumFileSizeBytes)\n{\n    public WireObject ToOut() => new WireObject()\n        .Set(\"id\", Id)\n        .Set(\"name\", Name)\n        .Set(\"media_type\", MediaType)\n        .Set(\"watched_folder\", WatchedFolder)\n        .Set(\"work_folder\", WorkFolder)\n        .Set(\"output_folder\", OutputFolder)\n        .Set(\"manager_library_key\", ManagerLibraryKey)\n        .Set(\"folders_from_manager\", FoldersFromManager)\n        .Set(\"minimum_file_size_bytes\", MinimumFileSizeBytes);\n\n    /// <summary>A workflow's minimum in bytes, from its setting in MB: null for no minimum.</summary>\n    public static long? MinimumBytesOf(long minFileSizeMb) => minFileSizeMb > 0 ? minFileSizeMb * 1024 * 1024 : null;\n\n    /// <summary>\n    /// The manager library a workflow was set up from, while it is still set up from that manager: null once it is unlinked\n    /// or if it never came from one.\n    /// </summary>\n    public static string? ManagerLibraryKeyOf(long? discoveredFromConnectionId, string? discoveredLibraryKey) =>\n        discoveredFromConnectionId is not null && !string.IsNullOrEmpty(discoveredLibraryKey) ? discoveredLibraryKey : null;\n}\n\n/// <summary>The intake capability and shape for reading every enabled library's folders in one call.</summary>\npublic static class LibraryFolderPublishing\n{\n    /// <summary>The intake capability that says Weir takes <c>GET /intake/library-folders</c>.</summary>\n    public const string Capability = \"library-folders\";\n\n    public static WireObject ToOut(IReadOnlyList<PublishedLibraryFolders> libraries)\n    {\n        ArgumentNullException.ThrowIfNull(libraries);\n        return new WireObject().Set(\"libraries\", new WireArray(libraries.Select(library => (WireValue)library.ToOut())));\n    }\n}\n",
+      "mutants": [
+        {
+          "id": "6188",
+          "mutatorName": "String mutation",
+          "replacement": "\"\"",
+          "location": {
+            "start": {
+              "line": 25,
+              "column": 14
+            },
+            "end": {
+              "line": 25,
+              "column": 18
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ],
+          "killedBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ]
+        },
+        {
+          "id": "6189",
+          "mutatorName": "String mutation",
+          "replacement": "\"\"",
+          "location": {
+            "start": {
+              "line": 26,
+              "column": 14
+            },
+            "end": {
+              "line": 26,
+              "column": 20
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ],
+          "killedBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ]
+        },
+        {
+          "id": "6190",
+          "mutatorName": "String mutation",
+          "replacement": "\"\"",
+          "location": {
+            "start": {
+              "line": 27,
+              "column": 14
+            },
+            "end": {
+              "line": 27,
+              "column": 26
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ],
+          "killedBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ]
+        },
+        {
+          "id": "6191",
+          "mutatorName": "String mutation",
+          "replacement": "\"\"",
+          "location": {
+            "start": {
+              "line": 28,
+              "column": 14
+            },
+            "end": {
+              "line": 28,
+              "column": 30
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ],
+          "killedBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ]
+        },
+        {
+          "id": "6192",
+          "mutatorName": "String mutation",
+          "replacement": "\"\"",
+          "location": {
+            "start": {
+              "line": 29,
+              "column": 14
+            },
+            "end": {
+              "line": 29,
+              "column": 27
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ],
+          "killedBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ]
+        },
+        {
+          "id": "6193",
+          "mutatorName": "String mutation",
+          "replacement": "\"\"",
+          "location": {
+            "start": {
+              "line": 30,
+              "column": 14
+            },
+            "end": {
+              "line": 30,
+              "column": 29
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ],
+          "killedBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ]
+        },
+        {
+          "id": "6194",
+          "mutatorName": "String mutation",
+          "replacement": "\"\"",
+          "location": {
+            "start": {
+              "line": 31,
+              "column": 14
+            },
+            "end": {
+              "line": 31,
+              "column": 35
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ],
+          "killedBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ]
+        },
+        {
+          "id": "6195",
+          "mutatorName": "String mutation",
+          "replacement": "\"\"",
+          "location": {
+            "start": {
+              "line": 32,
+              "column": 14
+            },
+            "end": {
+              "line": 32,
+              "column": 36
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ],
+          "killedBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ]
+        },
+        {
+          "id": "6196",
+          "mutatorName": "String mutation",
+          "replacement": "\"\"",
+          "location": {
+            "start": {
+              "line": 33,
+              "column": 14
+            },
+            "end": {
+              "line": 33,
+              "column": 39
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ],
+          "killedBy": [
+            "0e258768-1e20-b03a-d2a9-1b21436e5583",
+            "09eefdd9-e201-90d5-6a5a-aa621a9d92cc"
+          ]
+        },
+        {
+          "id": "6197",
+          "mutatorName": "Conditional (true) mutation",
+          "replacement": "(true?minFileSizeMb * 1024 * 1024 :null)",
+          "location": {
+            "start": {
+              "line": 36,
+              "column": 63
+            },
+            "end": {
+              "line": 36,
+              "column": 117
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "90615f7d-ce4b-51db-87c2-b6769c36122d"
+          ],
+          "killedBy": [
+            "90615f7d-ce4b-51db-87c2-b6769c36122d"
+          ]
+        },
+        {
+          "id": "6198",
+          "mutatorName": "Conditional (false) mutation",
+          "replacement": "(false?minFileSizeMb * 1024 * 1024 :null)",
+          "location": {
+            "start": {
+              "line": 36,
+              "column": 63
+            },
+            "end": {
+              "line": 36,
+              "column": 117
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "90615f7d-ce4b-51db-87c2-b6769c36122d"
+          ],
+          "killedBy": [
+            "90615f7d-ce4b-51db-87c2-b6769c36122d"
+          ]
+        },
+        {
+          "id": "6199",
+          "mutatorName": "Equality mutation",
+          "replacement": "minFileSizeMb < 0",
+          "location": {
+            "start": {
+              "line": 36,
+              "column": 63
+            },
+            "end": {
+              "line": 36,
+              "column": 80
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "90615f7d-ce4b-51db-87c2-b6769c36122d"
+          ],
+          "killedBy": [
+            "90615f7d-ce4b-51db-87c2-b6769c36122d"
+          ]
+        },
+        {
+          "id": "6200",
+          "mutatorName": "Equality mutation",
+          "replacement": "minFileSizeMb >= 0",
+          "location": {
+            "start": {
+              "line": 36,
+              "column": 63
+            },
+            "end": {
+              "line": 36,
+              "column": 80
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "90615f7d-ce4b-51db-87c2-b6769c36122d"
+          ],
+          "killedBy": [
+            "90615f7d-ce4b-51db-87c2-b6769c36122d"
+          ]
+        },
+        {
+          "id": "6201",
+          "mutatorName": "Arithmetic mutation",
+          "replacement": "minFileSizeMb * 1024 / 1024",
+          "location": {
+            "start": {
+              "line": 36,
+              "column": 83
+            },
+            "end": {
+              "line": 36,
+              "column": 110
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "90615f7d-ce4b-51db-87c2-b6769c36122d"
+          ],
+          "killedBy": [
+            "90615f7d-ce4b-51db-87c2-b6769c36122d"
+          ]
+        },
+        {
+          "id": "6202",
+          "mutatorName": "Arithmetic mutation",
+          "replacement": "minFileSizeMb / 1024",
+          "location": {
+            "start": {
+              "line": 36,
+              "column": 83
+            },
+            "end": {
+              "line": 36,
+              "column": 103
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "90615f7d-ce4b-51db-87c2-b6769c36122d"
+          ],
+          "killedBy": [
+            "90615f7d-ce4b-51db-87c2-b6769c36122d"
+          ]
+        },
+        {
+          "id": "6203",
+          "mutatorName": "Conditional (true) mutation",
+          "replacement": "(true?discoveredLibraryKey :null)",
+          "location": {
+            "start": {
+              "line": 43,
+              "column": 9
+            },
+            "end": {
+              "line": 43,
+              "column": 124
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "5fbeefa3-8ebd-2254-7892-5dd5cd176789"
+          ],
+          "killedBy": [
+            "5fbeefa3-8ebd-2254-7892-5dd5cd176789"
+          ]
+        },
+        {
+          "id": "6204",
+          "mutatorName": "Conditional (false) mutation",
+          "replacement": "(false?discoveredLibraryKey :null)",
+          "location": {
+            "start": {
+              "line": 43,
+              "column": 9
+            },
+            "end": {
+              "line": 43,
+              "column": 124
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "5fbeefa3-8ebd-2254-7892-5dd5cd176789"
+          ],
+          "killedBy": [
+            "5fbeefa3-8ebd-2254-7892-5dd5cd176789"
+          ]
+        },
+        {
+          "id": "6205",
+          "mutatorName": "Logical mutation",
+          "replacement": "discoveredFromConnectionId is not null || !string.IsNullOrEmpty(discoveredLibraryKey)",
+          "location": {
+            "start": {
+              "line": 43,
+              "column": 9
+            },
+            "end": {
+              "line": 43,
+              "column": 94
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "5fbeefa3-8ebd-2254-7892-5dd5cd176789"
+          ],
+          "killedBy": [
+            "5fbeefa3-8ebd-2254-7892-5dd5cd176789"
+          ]
+        },
+        {
+          "id": "6206",
+          "mutatorName": "Equality mutation",
+          "replacement": "discoveredFromConnectionId is null",
+          "location": {
+            "start": {
+              "line": 43,
+              "column": 9
+            },
+            "end": {
+              "line": 43,
+              "column": 47
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "5fbeefa3-8ebd-2254-7892-5dd5cd176789"
+          ],
+          "killedBy": [
+            "5fbeefa3-8ebd-2254-7892-5dd5cd176789"
+          ]
+        },
+        {
+          "id": "6207",
+          "mutatorName": "LogicalNotExpression to un-LogicalNotExpression mutation",
+          "replacement": "string.IsNullOrEmpty(discoveredLibraryKey)",
+          "location": {
+            "start": {
+              "line": 43,
+              "column": 51
+            },
+            "end": {
+              "line": 43,
+              "column": 94
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "5fbeefa3-8ebd-2254-7892-5dd5cd176789"
+          ],
+          "killedBy": [
+            "5fbeefa3-8ebd-2254-7892-5dd5cd176789"
+          ]
+        },
+        {
+          "id": "6208",
+          "mutatorName": "String mutation",
+          "replacement": "(discoveredLibraryKey!=null)",
+          "location": {
+            "start": {
+              "line": 43,
+              "column": 52
+            },
+            "end": {
+              "line": 43,
+              "column": 94
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "5fbeefa3-8ebd-2254-7892-5dd5cd176789"
+          ],
+          "killedBy": [
+            "5fbeefa3-8ebd-2254-7892-5dd5cd176789"
+          ]
+        },
+        {
+          "id": "6209",
+          "mutatorName": "String mutation",
+          "replacement": "(discoveredLibraryKey!=\"\")",
+          "location": {
+            "start": {
+              "line": 43,
+              "column": 52
+            },
+            "end": {
+              "line": 43,
+              "column": 94
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "5fbeefa3-8ebd-2254-7892-5dd5cd176789"
+          ],
+          "killedBy": [
+            "5fbeefa3-8ebd-2254-7892-5dd5cd176789"
+          ]
+        },
+        {
+          "id": "6210",
+          "mutatorName": "Block removal mutation",
+          "replacement": "{}",
+          "location": {
+            "start": {
+              "line": 53,
+              "column": 5
+            },
+            "end": {
+              "line": 56,
+              "column": 6
+            }
+          },
+          "status": "Ignored",
+          "statusReason": "Removed by block already covered filter",
+          "static": false,
+          "coveredBy": [],
+          "killedBy": []
+        },
+        {
+          "id": "6211",
+          "mutatorName": "Statement mutation",
+          "replacement": ";",
+          "location": {
+            "start": {
+              "line": 54,
+              "column": 9
+            },
+            "end": {
+              "line": 54,
+              "column": 54
+            }
+          },
+          "status": "NoCoverage",
+          "statusReason": "Not covered by any test.",
+          "static": false,
+          "coveredBy": [],
+          "killedBy": []
+        },
+        {
+          "id": "6212",
+          "mutatorName": "String mutation",
+          "replacement": "\"\"",
+          "location": {
+            "start": {
+              "line": 55,
+              "column": 37
+            },
+            "end": {
+              "line": 55,
+              "column": 48
+            }
+          },
+          "status": "NoCoverage",
+          "statusReason": "Not covered by any test.",
+          "static": false,
+          "coveredBy": [],
+          "killedBy": []
+        }
+      ]
+    }
+  },
+  "testFiles": {
+    "D:\\a\\Weir\\Weir\\apps\\server\\tests\\Weir.Core.Tests\\MediaManagers\\PublishedLibraryFoldersTests.cs": {
+      "language": "cs",
+      "tests": [
+        {
+          "id": "0e258768-1e20-b03a-d2a9-1b21436e5583",
+          "name": "Weir.Core.Tests.MediaManagers.PublishedLibraryFoldersTests.A_workflow_set_up_from_a_manager_publishes_the_managers_library_id_and_that_it_owns_the_folders",
+          "location": {
+            "start": {
+              "line": 11,
+              "column": 5
+            },
+            "end": {
+              "line": 19,
+              "column": 6
+            }
+          }
+        },
+        {
+          "id": "09eefdd9-e201-90d5-6a5a-aa621a9d92cc",
+          "name": "Weir.Core.Tests.MediaManagers.PublishedLibraryFoldersTests.A_workflow_that_is_only_Weirs_publishes_no_key_and_no_manager_ownership",
+          "location": {
+            "start": {
+              "line": 21,
+              "column": 5
+            },
+            "end": {
+              "line": 29,
+              "column": 6
+            }
+          }
+        },
+        {
+          "id": "90615f7d-ce4b-51db-87c2-b6769c36122d",
+          "name": "Weir.Core.Tests.MediaManagers.PublishedLibraryFoldersTests.The_minimum_is_published_in_bytes_and_none_when_the_workflow_has_no_minimum",
+          "location": {
+            "start": {
+              "line": 31,
+              "column": 5
+            },
+            "end": {
+              "line": 36,
+              "column": 6
+            }
+          }
+        },
+        {
+          "id": "5fbeefa3-8ebd-2254-7892-5dd5cd176789",
+          "name": "Weir.Core.Tests.MediaManagers.PublishedLibraryFoldersTests.The_key_is_published_only_while_the_workflow_is_set_up_from_a_manager",
+          "location": {
+            "start": {
+              "line": 38,
+              "column": 5
+            },
+            "end": {
+              "line": 45,
+              "column": 6
+            }
+          }
+        }
+      ]
+    }
+  }
+}

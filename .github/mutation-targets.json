@@ -1,0 +1,126 @@
+[
+  {
+    "target": "file-lifecycle-swap-preflight",
+    "kind": "dotnet",
+    "directory": "apps/server/tests/Weir.Infrastructure.Tests",
+    "config": "../../mutation/file-lifecycle-swap-preflight/stryker-config.json",
+    "restore": "apps/server",
+    "solution": "Weir.slnx"
+  },
+  {
+    "target": "file-lifecycle-swap-prepare",
+    "kind": "dotnet",
+    "directory": "apps/server/tests/Weir.Infrastructure.Tests",
+    "config": "../../mutation/file-lifecycle-swap-prepare/stryker-config.json",
+    "restore": "apps/server",
+    "solution": "Weir.slnx"
+  },
+  {
+    "target": "file-lifecycle-swap-commit",
+    "kind": "dotnet",
+    "directory": "apps/server/tests/Weir.Infrastructure.Tests",
+    "config": "../../mutation/file-lifecycle-swap-commit/stryker-config.json",
+    "restore": "apps/server",
+    "solution": "Weir.slnx"
+  },
+  {
+    "target": "file-lifecycle-recovery",
+    "kind": "dotnet",
+    "directory": "apps/server/tests/Weir.Infrastructure.Tests",
+    "config": "../../mutation/file-lifecycle-recovery/stryker-config.json",
+    "restore": "apps/server",
+    "solution": "Weir.slnx"
+  },
+  {
+    "target": "file-lifecycle-moves",
+    "kind": "dotnet",
+    "directory": "apps/server/tests/Weir.Infrastructure.Tests",
+    "config": "../../mutation/file-lifecycle-moves/stryker-config.json",
+    "restore": "apps/server",
+    "solution": "Weir.slnx"
+  },
+  {
+    "target": "handoff-intake",
+    "kind": "dotnet",
+    "directory": "apps/server/tests/Weir.Infrastructure.Tests",
+    "config": "../../mutation/handoff-intake/stryker-config.json",
+    "restore": "apps/server",
+    "solution": "Weir.slnx"
+  },
+  {
+    "target": "outcome-handling",
+    "kind": "dotnet",
+    "directory": "apps/server/tests/Weir.Infrastructure.Tests",
+    "config": "../../mutation/outcome-handling/stryker-config.json",
+    "restore": "apps/server",
+    "solution": "Weir.slnx"
+  },
+  {
+    "target": "write-gate-database",
+    "kind": "dotnet",
+    "directory": "apps/server/tests/Weir.Infrastructure.Tests",
+    "config": "../../mutation/write-gate-database/stryker-config.json",
+    "restore": "apps/server",
+    "solution": "Weir.slnx"
+  },
+  {
+    "target": "write-gate-unit-of-work",
+    "kind": "dotnet",
+    "directory": "apps/server/tests/Weir.Infrastructure.Tests",
+    "config": "../../mutation/write-gate-unit-of-work/stryker-config.json",
+    "restore": "apps/server",
+    "solution": "Weir.slnx"
+  },
+  {
+    "target": "core-rules",
+    "kind": "dotnet",
+    "directory": "apps/server/tests/Weir.Core.Tests",
+    "config": "../../mutation/core-rules/stryker-config.json",
+    "restore": "apps/server",
+    "solution": "Weir.slnx"
+  },
+  {
+    "target": "start-supervision",
+    "kind": "dotnet",
+    "directory": "apps/tray/Weir.Tray.Tests",
+    "config": "../mutation/start-supervision/stryker-config.json",
+    "restore": "apps/tray",
+    "solution": "Weir.Tray.slnx"
+  },
+  {
+    "target": "web-api-client",
+    "kind": "web",
+    "directory": "apps/web",
+    "config": "mutation/web-api-client/stryker.config.json"
+  },
+  {
+    "target": "web-processing-files",
+    "kind": "web",
+    "directory": "apps/web",
+    "config": "mutation/web-processing-files/stryker.config.json"
+  },
+  {
+    "target": "web-processing-libraries",
+    "kind": "web",
+    "directory": "apps/web",
+    "config": "mutation/web-processing-libraries/stryker.config.json"
+  },
+  {
+    "target": "web-settings-requests",
+    "kind": "web",
+    "directory": "apps/web",
+    "config": "mutation/web-settings-requests/stryker.config.json"
+  },
+  {
+    "target": "web-dialogs-library",
+    "kind": "web",
+    "directory": "apps/web",
+    "config": "mutation/web-dialogs-library/stryker.config.json"
+  },
+  {
+    "target": "web-dialogs-activity-profile",
+    "kind": "web",
+    "directory": "apps/web",
+    "config": "mutation/web-dialogs-activity-profile/stryker.config.json"
+  }
+]

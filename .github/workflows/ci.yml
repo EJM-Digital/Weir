@@ -297,6 +297,22 @@ jobs:
       - name: Coverage floors and report alignment
         run: node --test scripts/check-coverage-floors.test.mjs scripts/align-coverage-reports.test.mjs
 
+      # The mutation workflow (mutation.yml) runs weekly and judges the scores; here a pull request is held to the other
+      # half of the ratchet, that a floor in docs/coverage/mutation-floors.json only goes up without its own entry.
+      - name: Mutation floors - the file, the matrix and the ratchet
+        env:
+          BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          node --test scripts/check-mutation-floors.test.mjs
+          args=(--floors docs/coverage/mutation-floors.json --floors-only)
+          if [ -n "$BEFORE" ] && git fetch --no-tags --depth=1 origin "$BEFORE" && git show FETCH_HEAD:docs/coverage/mutation-floors.json > base-mutation-floors.json; then
+            args+=(--base-floors base-mutation-floors.json)
+          else
+            rm -f base-mutation-floors.json
+            echo "No earlier floors file to compare with."
+          fi
+          node scripts/check-mutation-floors.mjs "${args[@]}"
+
       - name: The real media tools - pins, installers and the check that every real-tool test ran
         run: node --test scripts/ffmpeg-pin.test.mjs scripts/pinned-download.test.mjs scripts/mkvtoolnix-pin.test.mjs scripts/install-mkvtoolnix-linux.test.mjs scripts/summarize-test-results.test.mjs scripts/check-real-tool-tests.test.mjs scripts/check-contract-real-tool-tests.test.mjs
 

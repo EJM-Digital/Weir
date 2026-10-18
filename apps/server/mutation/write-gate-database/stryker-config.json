@@ -1,0 +1,22 @@
+{
+  "stryker-config": {
+    "project": "Weir.Infrastructure.csproj",
+    "mutate": [
+      "**/Sqlite/SqliteDatabase.cs",
+      "**/Sqlite/WriteLockTurns.cs"
+    ],
+    "ignore-methods": [
+      "*ConfigureAwait",
+      "*ThrowIfNull",
+      "*ThrowIfNullOrEmpty"
+    ],
+    "test-case-filter": "Category!=Stress&Category!=Contract&Category!=E2E",
+    "coverage-analysis": "perTest",
+    "reporters": [
+      "json",
+      "html",
+      "dots"
+    ],
+    "concurrency": 4
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-js/master/packages/core/schema/stryker-core.json",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "npx vitest run src/lib/processing"
+  },
+  "mutate": [
+    "src/lib/processing/libraries-api.ts",
+    "src/lib/processing/library-cleans-api.ts",
+    "src/lib/processing/library-folder-chain-api.ts",
+    "src/lib/processing/library-managers-api.ts",
+    "src/lib/processing/library-mode-api.ts",
+    "src/lib/processing/library-redownload-api.ts",
+    "src/lib/processing/library-setup-api.ts",
+    "src/lib/processing/rule-sets-api.ts",
+    "src/lib/processing/jobs-inspection/api.ts"
+  ],
+  "coverageAnalysis": "off",
+  "tempDirName": "../../.stryker-tmp",
+  "concurrency": 2,
+  "timeoutFactor": 3,
+  "timeoutMS": 60000,
+  "dryRunTimeoutMinutes": 30,
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json",
+    "html"
+  ],
+  "jsonReporter": {
+    "fileName": "reports/mutation/web-processing-libraries/mutation-report.json"
+  },
+  "htmlReporter": {
+    "fileName": "reports/mutation/web-processing-libraries/mutation-report.html"
+  },
+  "thresholds": {
+    "high": 90,
+    "low": 70,
+    "break": null
+  }
+}

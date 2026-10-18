@@ -1,7 +1,8 @@
 # Test coverage
 
 Every CI run measures what fraction of Weir's code its tests run, per project, and holds each figure to a floor
-that only goes up. This page says what is measured, how to read it and how to change a floor.
+that only goes up. This page says what is measured, how to read it and how to change a floor. Whether the tests would notice
+if the riskiest code were wrong is a separate weekly measurement, in [`mutation.md`](mutation.md).
 
 ## What is measured
 

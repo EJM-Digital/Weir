@@ -1,0 +1,44 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-js/master/packages/core/schema/stryker-core.json",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "npx vitest run src/lib/processing"
+  },
+  "mutate": [
+    "src/lib/processing/files-api.ts",
+    "src/lib/processing/files-at-once-api.ts",
+    "src/lib/processing/kept-files-api.ts",
+    "src/lib/processing/rejected-files-api.ts",
+    "src/lib/processing/file-remux-pass-api.ts",
+    "src/lib/processing/direct-play-api.ts",
+    "src/lib/processing/maintenance-api.ts",
+    "src/lib/processing/operator-settings-api.ts",
+    "src/lib/processing/overview-stats-api.ts",
+    "src/lib/processing/runtime-settings-api.ts",
+    "src/lib/processing/rules-preview-api.ts",
+    "src/lib/processing/watched-folder-scan-api.ts"
+  ],
+  "coverageAnalysis": "off",
+  "tempDirName": "../../.stryker-tmp",
+  "concurrency": 2,
+  "timeoutFactor": 3,
+  "timeoutMS": 60000,
+  "dryRunTimeoutMinutes": 30,
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json",
+    "html"
+  ],
+  "jsonReporter": {
+    "fileName": "reports/mutation/web-processing-files/mutation-report.json"
+  },
+  "htmlReporter": {
+    "fileName": "reports/mutation/web-processing-files/mutation-report.html"
+  },
+  "thresholds": {
+    "high": 90,
+    "low": 70,
+    "break": null
+  }
+}
