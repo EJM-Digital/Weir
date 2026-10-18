@@ -1,0 +1,66 @@
+{
+  "app": "transmission",
+  "version": "4.0.6",
+  "state": "folders",
+  "recordedAt": "2026-10-17T11:11:30Z",
+  "note": "Reading the folder Transmission saves downloads in.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/transmission/rpc",
+        "headers": {
+          "authorization": "Basic <scrubbed>",
+          "content-type": "application/json"
+        },
+        "body": {
+          "method": "session-get",
+          "arguments": {
+            "fields": [
+              "download-dir"
+            ]
+          }
+        }
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "text/html; charset=ISO-8859-1",
+          "x-transmission-session-id": "<scrubbed>"
+        },
+        "bodyText": "<h1>409: Conflict</h1><p>Your request had an invalid session-id header.</p><p>To fix this, follow these steps:<ol><li> When reading a response, get its X-Transmission-Session-Id header and remember it<li> Add the updated header to your outgoing requests<li> When you get this 409 error message, resend your request with the updated header</ol></p><p>This requirement has been added to help prevent <a href=\"https://en.wikipedia.org/wiki/Cross-site_request_forgery\">CSRF</a> attacks.</p><p><code>X-Transmission-Session-Id: <scrubbed></code></p>"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/transmission/rpc",
+        "headers": {
+          "authorization": "Basic <scrubbed>",
+          "content-type": "application/json",
+          "x-transmission-session-id": "<scrubbed>"
+        },
+        "body": {
+          "method": "session-get",
+          "arguments": {
+            "fields": [
+              "download-dir"
+            ]
+          }
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "body": {
+          "arguments": {
+            "download-dir": "/downloads/complete"
+          },
+          "result": "success"
+        }
+      }
+    }
+  ]
+}

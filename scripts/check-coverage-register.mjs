@@ -37,7 +37,7 @@ import { spawnSync } from "node:child_process";
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CONTAINER_SMOKE_FILE, PACKAGE_SMOKE_FILE, REAL_FS_FILE, TestIndex, read } from "./coverage/testindex.mjs";
+import { CONTAINER_SMOKE_FILE, PACKAGE_SMOKE_FILE, REAL_FS_FILE, SCENARIO_FILE, TestIndex, read } from "./coverage/testindex.mjs";
 import { buildInventory, countsOf } from "./coverage/inventory.mjs";
 
 export const REGISTER = "docs/testing/coverage-register.json";
@@ -139,7 +139,7 @@ export function mapInventory(register, inventory) {
 function typeMismatch(p, index) {
   switch (p.type) {
     case "scenario":
-      return /^scripts\/scenarios\/.+\.ps1$/.test(p.file) ? null : `a scenario proof must be a script in scripts/scenarios, not ${p.file}`;
+      return SCENARIO_FILE.test(p.file) ? null : `a scenario proof must be a script in scripts/scenarios or a module in scripts/scenarios-ci, not ${p.file}`;
     case "e2e":
       return /^apps\/server\/tests\/Weir\.E2E\.Tests\/.+\.cs$/.test(p.file) ? null : `an e2e proof must be a test in Weir.E2E.Tests, not ${p.file}`;
     case "vitest":

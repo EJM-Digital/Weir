@@ -81,14 +81,6 @@ public sealed partial class DashboardHealthPanelTests(E2EServer server) : E2ETes
             var page = await NewPageAsync(Roomy);
             await page.AddInitScriptAsync(RecordCheckButton);
             await Navigation.EnsureSignedInAsync(page, rig.BaseUrl);
-            var sent = new List<string>();
-            page.Request += (_, request) =>
-            {
-                lock (sent)
-                {
-                    sent.Add($"{request.Method} {new Uri(request.Url).AbsolutePath}");
-                }
-            };
             var connections = Panel(page).GetByRole(AriaRole.Region, new() { Name = "Connections", Exact = true }).GetByRole(AriaRole.Listitem);
             await Expect(connections).ToHaveCountAsync(2, new() { Timeout = PushMs });
 
@@ -97,6 +89,16 @@ public sealed partial class DashboardHealthPanelTests(E2EServer server) : E2ETes
             await Expect(workflows).ToHaveCountAsync(2, new() { Timeout = PushMs });
             await Expect(workflows.Filter(new() { HasText = "Movies" })).ToContainTextAsync("In sync", new() { Timeout = PushMs });
             await Expect(workflows.Filter(new() { HasText = "TV" })).ToContainTextAsync("Needs a fix", new() { Timeout = PushMs });
+
+            // Only what the click asks for is counted: the panel has read everything it lists, and what it was told about that is settled.
+            var sent = new List<string>();
+            page.Request += (_, request) =>
+            {
+                lock (sent)
+                {
+                    sent.Add($"{request.Method} {new Uri(request.Url).AbsolutePath}");
+                }
+            };
             var button = Panel(page).GetByRole(AriaRole.Button, new() { Name = "Check now", Exact = true });
 
             await button.ClickAsync();

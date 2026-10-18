@@ -29,7 +29,8 @@ export const read = (file) => readFileSync(file, "utf8").replace(/^\uFEFF/, "");
 
 const E2E_TESTS = "apps/server/tests/Weir.E2E.Tests/";
 const CONTRACT_TESTS = "apps/server/tests/Weir.Contract.Tests/";
-const SCENARIOS = "scripts/scenarios/";
+/** A scenario proof: a golden-VM script, or a module of the scenarios that run in CI (scripts/scenarios-ci/), where each scenario is a quoted key of the module's registry. */
+export const SCENARIO_FILE = /^scripts\/scenarios\/.+\.ps1$|^scripts\/scenarios-ci\/[a-z]+(?:-[a-z]+)*\.mjs$/;
 /** The Windows package smokes: the package itself and the recovery command. */
 export const PACKAGE_SMOKE_FILE = /^scripts\/smoke-windows-[a-z]+\.ps1$/;
 const LIVE_AUDIT = "apps/server/tools/Weir.LiveAudit/";
@@ -45,7 +46,7 @@ export function testFiles(root) {
   add("apps/tray/Weir.Tray.Tests", (f) => f.endsWith(".cs"));
   add("apps/server/tools/Weir.LiveAudit", (f) => f.endsWith(".cs"));
   add("apps/web/src", (f) => /\.test\.tsx?$/.test(f));
-  add("scripts", (f) => /\.test\.mjs$/.test(f) || /[\\/]scenarios[\\/].*\.ps1$/.test(f) || /scripts[\\/]smoke-windows-[a-z]+\.ps1$/.test(f) || CONTAINER_SCRIPT.test(slash(f)));
+  add("scripts", (f) => /\.test\.mjs$/.test(f) || /[\\/]scenarios[\\/].*\.ps1$/.test(f) || SCENARIO_FILE.test(slash(relative(root, f))) ||/scripts[\\/]smoke-windows-[a-z]+\.ps1$/.test(f) || CONTAINER_SCRIPT.test(slash(f)));
   add(".github/workflows", (f) => /\.ya?ml$/.test(f));
   return files.map((f) => slash(relative(root, f)));
 }
@@ -78,6 +79,8 @@ export function namesOf(file, text) {
   } else if (file.endsWith(".ps1")) {
     for (const m of text.matchAll(/^\s*function\s+([\w-]+)/gim)) names.add(m[1]);
     for (const m of text.matchAll(/\bId\s*=\s*'([a-z][a-z0-9-]*)'/g)) names.add(m[1]);
+  } else if (SCENARIO_FILE.test(file) && file.endsWith(".mjs")) {
+    for (const m of text.matchAll(/^\s+"([a-z][a-z0-9]*(?:-[a-z0-9]+)+)":\s/gm)) names.add(m[1]);
   } else if (/\.ya?ml$/.test(file)) {
     for (const m of text.matchAll(/^\s*-\s+name:\s*(.+?)\s*$/gm)) names.add(m[1].replace(/^["']|["']$/g, ""));
   } else {
@@ -238,7 +241,7 @@ function csBodies(file, text) {
  */
 export function proofTypeOf(file, index, name) {
   if (PACKAGE_SMOKE_FILE.test(file) || file.startsWith(LIVE_AUDIT)) return "package-smoke";
-  if (file.startsWith(SCENARIOS) && file.endsWith(".ps1")) return "scenario";
+  if (SCENARIO_FILE.test(file)) return "scenario";
   if (file.startsWith(E2E_TESTS)) return "e2e";
   if (/\.test\.tsx?$/.test(file)) return "vitest";
   if (/\.test\.mjs$/.test(file)) return "node";

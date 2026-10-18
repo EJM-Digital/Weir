@@ -5,16 +5,13 @@ namespace Weir.Contract.Tests.Processing;
 internal sealed partial class Scenario
 {
     /// <summary>
-    /// Stops the server to read or change SQLite, once no worker holds a job. A file's row reaches its final status before the job that
-    /// wrote it is released, and a server stopped in between requeues that job when it starts again, so the pass runs a second time and
-    /// writes over what the test went to the database for.
+    /// Stops the server to read or change SQLite, once no job is pending or held by a worker. A file's row reaches its final status before the
+    /// job that wrote it is released, and a server stopped in between requeues that job when it starts again, so the pass runs a second time
+    /// and writes over what the test went to the database for.
     /// </summary>
     public async Task<StoppedDatabase> StopForDatabaseAsync()
     {
-        await new JobWait().UntilAsync(
-            async () => [.. (await JobsAsync()).Select(row => (string)row["status"]!)],
-            async () => (await JobsAsync()).Any(row => (string)row["status"]! == "leased") ? null : string.Empty,
-            "the workers to put down their jobs");
+        await WaitForNoJobInFlightAsync();
         return await Server.StopForDatabaseAsync();
     }
 
