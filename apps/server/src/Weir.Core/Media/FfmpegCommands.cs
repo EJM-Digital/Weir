@@ -280,6 +280,14 @@ public static class FfmpegCommands
             args.AddRange(["-map_metadata:s:t", "0:s:t"]);
         }
 
+        if (plan.Metadata.RemoveOtherMetadata && !plan.Metadata.RemoveLanguageTags)
+        {
+            // "-map_metadata -1" erases a track's language tag along with the rest, but "Language tags" is a rule of its own: unless it
+            // is on, the tracks keep the language the plan gives them.
+            AddLanguageTags(args, 'a', plan.Audio);
+            AddLanguageTags(args, 's', plan.Subtitles);
+        }
+
         // #547 item 2: additive syntax ("+flag"/"-flag") only ever touches default/forced, whatever else ffmpeg
         // already copied through from the source stream's own disposition (comment, descriptions,
         // hearing_impaired, dub, original, ...); a flat "default"/"0" would discard them. Verified against the
@@ -362,6 +370,18 @@ public static class FfmpegCommands
         }
 
         return !AttachmentIncapableExtensions.Contains(dst[lastDot..]);
+    }
+
+    /// <summary>Tags each kept output stream of <paramref name="streamType"/> ('a' or 's') with the language the plan gives it; a track with none is left untagged.</summary>
+    private static void AddLanguageTags(List<string> args, char streamType, IReadOnlyList<PlannedTrack> tracks)
+    {
+        for (var i = 0; i < tracks.Count; i++)
+        {
+            if (tracks[i].LangLabel.Length > 0)
+            {
+                args.AddRange([$"-metadata:s:{streamType}:{i.ToString(CultureInfo.InvariantCulture)}", $"language={tracks[i].LangLabel}"]);
+            }
+        }
     }
 
     /// <summary>See <see cref="StaleStatisticsTagKeys"/>: clear each of them on every one of <paramref name="count"/>

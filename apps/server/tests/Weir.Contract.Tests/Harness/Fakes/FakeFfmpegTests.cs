@@ -181,6 +181,28 @@ public sealed class FakeFfmpegTests : IDisposable
     }
 
     [Fact]
+    public async Task A_remux_reports_how_far_it_has_come_step_by_step_each_once_the_file_it_waits_for_exists()
+    {
+        var source = Write("film.mkv", FakeMedia.Bytes(FakeMedia.Probe()));
+        var next = Path.Combine(_files.Path, "next");
+        var release = Path.Combine(_files.Path, "release");
+        var output = Path.Combine(_files.Path, "out.mkv");
+        _tools.SetFileRule("film.mkv", new FileRule { RemuxReleaseFile = release, RemuxProgress = [new RemuxProgressStep(15), new RemuxProgressStep(36, next)] });
+        using var process = Start("ffmpeg", "-i", source, "-map", "0:0", "-progress", "pipe:1", output);
+
+        Assert.Equal("out_time_ms=15000000", await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30)));
+        Assert.Equal("progress=continue", await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30)));
+        Assert.False(process.HasExited);
+
+        await File.WriteAllTextAsync(next, "go");
+
+        Assert.Equal("out_time_ms=36000000", await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30)));
+        await File.WriteAllTextAsync(release, "go");
+        await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        Assert.Equal(0, process.ExitCode);
+    }
+
+    [Fact]
     public async Task Concurrent_tools_log_every_call_without_losing_any()
     {
         var source = Write("film.mkv", FakeMedia.Bytes(FakeMedia.Probe()));

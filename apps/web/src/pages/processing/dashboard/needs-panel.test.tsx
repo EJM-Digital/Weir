@@ -78,9 +78,20 @@ vi.mock("./needs-files", () => ({
   }),
 }));
 vi.mock("../../activity/activity-rejected-again", () => ({
-  ProcessRejectedAgain: (props: { libraryId?: number }) => {
+  ProcessRejectedAgain: (props: {
+    libraryId?: number;
+    libraryName?: string;
+    onNotice?: (text: string, failed: boolean) => void;
+  }) => {
     rejectedAgain(props);
-    return <button type="button">Process all again</button>;
+    return (
+      <button
+        type="button"
+        onClick={() => props.onNotice?.("Queued 1 file.", false)}
+      >
+        Process all again
+      </button>
+    );
   },
 }));
 
@@ -308,10 +319,18 @@ describe("the Needs you panel when something does", () => {
     expect(
       within(rejectedGroup).getByRole("button", { name: "Process all again" }),
     ).toBeInTheDocument();
-    expect(rejectedAgain).toHaveBeenCalledWith({
-      libraryId: 1,
-      libraryName: "TV",
-    });
+    expect(rejectedAgain).toHaveBeenCalledWith(
+      expect.objectContaining({ libraryId: 1, libraryName: "TV" }),
+    );
+  });
+
+  it("says what Process all again did in the panel, which outlasts the button", () => {
+    needFiles.files = [rejected];
+    renderPanel({ workflowId: 1 });
+
+    fireEvent.click(screen.getByRole("button", { name: "Process all again" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("Queued 1 file.");
   });
 
   it("narrows to one workflow's files, but still says what is wrong with Weir itself", () => {

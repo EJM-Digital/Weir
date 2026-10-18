@@ -103,6 +103,16 @@ describe("the shelf's tiles", () => {
     ]);
   });
 
+  it("say a saving under a megabyte in whole KB, never rounded up to a megabyte it did not save", () => {
+    const saved = (bytes: number) =>
+      shelf([finished(1, { savedBytes: bytes })]).tiles[0].status.words;
+
+    expect(saved(1.1 * 1024)).toEqual(["1 KB saved", "1 KB"]);
+    expect(saved(318.4 * 1024)).toEqual(["318 KB saved", "318 KB"]);
+    expect(saved(700)).toEqual(["1 KB saved", "1 KB"]);
+    expect(saved(1023.6 * 1024)).toEqual(["1 MB saved", "1 MB"]);
+  });
+
   it("say a saving with one decimal for GB and whole MB, and no sign", () => {
     const saved = (bytes: number) =>
       shelf([finished(1, { savedBytes: bytes })]).tiles[0].status.words;

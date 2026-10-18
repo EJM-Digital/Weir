@@ -37,6 +37,8 @@ class FakeEventSource {
 export type ActivityStreamHandle = {
   /** The server says an Activity entry was written: `activity.latest`, with the newest entry's id. */
   entryWritten(latestEventId: number): void;
+  /** The server wrote a line to its log: a `system.log` frame, whose data is the text the server sent. */
+  logLineWritten(frameData: string): void;
   /** Any frame the stream can send, by its name, with the JSON it carries. */
   frame(type: string, data: unknown): void;
 };
@@ -56,6 +58,9 @@ export function stubActivityStream(): ActivityStreamHandle {
         "activity.latest",
         JSON.stringify({ latest_event_id: latestEventId }),
       );
+    },
+    logLineWritten(frameData) {
+      opened().emit("system.log", frameData);
     },
     frame(type, data) {
       opened().emit(type, JSON.stringify(data));

@@ -36,9 +36,12 @@ public sealed class SuiteFileApiTests
         using var created = await admin.PostAsync("/api/v1/suite/configuration-backups", new { csrf_token = await admin.CsrfAsync() });
 
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
-        var id = (await Json(created))["id"]!.GetValue<long>();
+        var body = await Json(created);
+        var id = body["id"]!.GetValue<long>();
+        Assert.Equal("manual", body["made_by"]!.GetValue<string>());
         var listed = (await Json(await admin.GetAsync("/api/v1/suite/configuration-backups")))["items"]!.AsArray();
         Assert.Equal(id, listed.Single()!["id"]!.GetValue<long>());
+        Assert.Equal("manual", listed.Single()!["made_by"]!.GetValue<string>());
     }
 
     [Fact]

@@ -97,7 +97,41 @@ describe("validationText", () => {
   });
 });
 
+const BUSY_BODY = {
+  detail:
+    "Weir is busy with other changes and could not finish this request. Try again in 30 seconds.",
+  code: "database_busy",
+};
+
 describe("responseErrorText", () => {
+  it("shows the server's own sentence when the database is busy, whatever was being done", () => {
+    for (const path of [
+      "/api/v1/suite/settings",
+      "/api/v1/processing/files",
+      "/api/v1/auth/login",
+    ]) {
+      expect(
+        responseErrorText({
+          path,
+          status: 503,
+          body: BUSY_BODY,
+          fallback: "Could not save",
+        }),
+      ).toBe(BUSY_BODY.detail);
+    }
+  });
+
+  it("keeps the fallback for a 503 that is not a busy database, whose text is for the log", () => {
+    expect(
+      responseErrorText({
+        path: "/api/v1/suite/settings",
+        status: 503,
+        body: { detail: "SQLITE_ERROR near line 3", code: "internal_error" },
+        fallback: "Could not save",
+      }),
+    ).toBe("Could not save.");
+  });
+
   it("keeps the sign-in form's own reason for a 401", () => {
     expect(
       responseErrorText({

@@ -46,8 +46,9 @@ export function useUpdateDownloadClientConnection() {
   return useMutation({
     mutationFn: (vars: { id: number; data: DownloadClientConnectionUpdate }) =>
       updateDownloadClientConnection(vars.id, vars.data),
+    // Settles once the list is read again, so the card never goes back to its old word while the new one is on its way.
     onSuccess: () =>
-      void qc.invalidateQueries({ queryKey: downloadClientKeys.connections }),
+      qc.invalidateQueries({ queryKey: downloadClientKeys.connections }),
   });
 }
 
@@ -64,8 +65,8 @@ export function useTestDownloadClientConnection() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => testDownloadClientConnection(id),
-    // The test result is stored on the row, so the list is now stale.
+    // The result is stored on the row, so the list is stale until it is read again; this settles once it has been.
     onSuccess: () =>
-      void qc.invalidateQueries({ queryKey: downloadClientKeys.connections }),
+      qc.invalidateQueries({ queryKey: downloadClientKeys.connections }),
   });
 }

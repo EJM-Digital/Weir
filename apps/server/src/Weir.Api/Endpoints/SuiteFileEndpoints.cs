@@ -55,7 +55,7 @@ internal sealed class SuiteFileEndpointHandlers
         ConfigurationBackupRecord row;
         try
         {
-            row = await _backups.CreateAsync(uow).ConfigureAwait(false);
+            row = await _backups.CreateAsync(uow, BackupSource.Manual).ConfigureAwait(false);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
