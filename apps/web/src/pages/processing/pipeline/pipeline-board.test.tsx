@@ -438,3 +438,73 @@ describe("a card that changes station", () => {
     expect(cardNamed(/S01E01/)).not.toHaveClass("mm-pipe__card--arrived");
   });
 });
+
+describe("the board at the width of a phone", () => {
+  class Observer {
+    observe() {}
+    disconnect() {}
+  }
+
+  function boardIsWide(width: number) {
+    vi.stubGlobal("ResizeObserver", Observer);
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      width,
+      height: 400,
+      top: 0,
+    } as DOMRect);
+  }
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("stacks the stations one under another with their cards flowing under each, leaving out the ones with no file", () => {
+    boardIsWide(320);
+    const files = [aFile(1, "unprocessed"), aWriting(2), aWriting(3)];
+    const { container } = render(board(lanesOf(files)));
+
+    expect(container.querySelector(".mm-pipe__body--stacked")).not.toBeNull();
+    expect(container.querySelector(".mm-pipe__stations")).toBeNull();
+    const stages = [...container.querySelectorAll("[data-station]")].map(
+      (group) => group.getAttribute("data-station"),
+    );
+    expect(stages).toEqual(["queued", "processing"]);
+    const processing = container.querySelector('[data-station="processing"]')!;
+    expect(
+      within(processing as HTMLElement).getByRole("group", {
+        name: "Processing: 2",
+      }),
+    ).toBeVisible();
+    expect(processing.querySelectorAll(".mm-pipe__card")).toHaveLength(2);
+    expect(container.querySelector(".mm-pipe__lanes")).toBeNull();
+  });
+
+  it("shows every file in a station however many there are, with no 'and more' line", () => {
+    boardIsWide(320);
+    const files = [1, 2, 3, 4, 5].map((id) => aFile(id, "unprocessed"));
+    const { container } = render(board(lanesOf(files)));
+
+    expect(container.querySelectorAll(".mm-pipe__card")).toHaveLength(5);
+    expect(container.querySelectorAll(".mm-pipe__card--hidden")).toHaveLength(
+      0,
+    );
+    expect(screen.queryByText(/more →/)).toBeNull();
+  });
+
+  it("says nothing is in progress when it is empty", () => {
+    boardIsWide(320);
+
+    render(board(lanesOf([])));
+
+    expect(
+      screen.getByText("Nothing in progress. New downloads appear here."),
+    ).toBeVisible();
+  });
+
+  it("keeps the stations side by side in a window with room for them", () => {
+    boardIsWide(1000);
+
+    const { container } = render(board(lanesOf([aFile(1, "unprocessed")])));
+
+    expect(container.querySelector(".mm-pipe__body--stacked")).toBeNull();
+    expect(container.querySelectorAll(".mm-pipe__station")).toHaveLength(5);
+  });
+});

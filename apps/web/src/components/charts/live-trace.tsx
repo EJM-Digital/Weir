@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type KeyboardEvent,
   type PointerEvent,
 } from "react";
 
@@ -15,6 +16,7 @@ import { useAnimationFrame } from "../../lib/ui/use-animation-frame";
 import {
   TRACE_HEIGHT,
   TRACE_WIDTH,
+  fractionOfTime,
   headTime,
   highestIn,
   rateScaleTop,
@@ -23,7 +25,12 @@ import {
   type TraceSample,
   type TraceWindow,
 } from "./live-trace-math";
-import { readoutFor, type Readout } from "./live-trace-readout";
+import {
+  READOUT_KEYS,
+  readoutFor,
+  sampleAfterKey,
+  type Readout,
+} from "./live-trace-readout";
 
 /** One line of a trace: what it is called in the readout, its colour (a CSS colour or variable) and its samples. */
 export type TraceSeries = {
@@ -84,7 +91,10 @@ export function LiveTrace({
   });
   const frameWindow = useRef<TraceWindow | null>(null);
   const pointer = useRef<number | null>(null);
+  // The sample a keyboard has chosen, by its time: it stays on that sample as the line slides on.
+  const keyed = useRef<number | null>(null);
   const [readout, setReadout] = useState<Readout | null>(null);
+  const hintId = useId();
 
   const draw = useCallback(
     (time: number) => {
@@ -128,8 +138,11 @@ export function LiveTrace({
           dot.style.top = `${(last.y / TRACE_HEIGHT) * 100}%`;
         }
       }
-      if (pointer.current !== null) {
-        const next = readoutFor(series, window, pointer.current, format, clock);
+      const following =
+        pointer.current ??
+        (keyed.current === null ? null : fractionOfTime(window, keyed.current));
+      if (following !== null) {
+        const next = readoutFor(series, window, following, format, clock);
         setReadout((current) =>
           current?.text === next?.text && current?.fraction === next?.fraction
             ? current
@@ -149,6 +162,7 @@ export function LiveTrace({
   });
 
   const point = (event: PointerEvent<HTMLElement>) => {
+    keyed.current = null;
     const box = event.currentTarget.getBoundingClientRect();
     if (box.width <= 0) return;
     pointer.current = (event.clientX - box.left) / box.width;
@@ -160,19 +174,56 @@ export function LiveTrace({
   };
   const leave = () => {
     pointer.current = null;
-    setReadout(null);
+    if (keyed.current === null) setReadout(null);
+  };
+  const choose = (at: number | null) => {
+    keyed.current = at;
+    pointer.current = null;
+    const window = frameWindow.current;
+    const next =
+      at === null || !window
+        ? null
+        : readoutFor(series, window, fractionOfTime(window, at), format, clock);
+    setReadout(next);
+  };
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === "Escape") {
+      choose(null);
+      return;
+    }
+    const key = READOUT_KEYS.find((candidate) => candidate === event.key);
+    if (!key) return;
+    event.preventDefault();
+    const lead = series.find((line) => line.samples.length > 0);
+    const window = frameWindow.current;
+    choose(
+      lead && window
+        ? sampleAfterKey(lead.samples, window, keyed.current, key)
+        : null,
+    );
   };
 
   const flip = readout !== null && readout.fraction > 0.5;
   return (
     <div
       className="mm-trace"
-      role="img"
+      role="slider"
+      tabIndex={0}
       aria-label={label}
+      aria-describedby={hintId}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={readout ? Math.round(readout.fraction * 100) : 100}
+      aria-valuetext={readout?.text}
       onPointerMove={point}
       onPointerDown={point}
       onPointerLeave={leave}
+      onKeyDown={onKeyDown}
+      onBlur={() => choose(null)}
     >
+      <span id={hintId} className="sr-only">
+        Left and right arrow keys read earlier and later values.
+      </span>
       <svg
         className="mm-trace__svg"
         viewBox={`0 0 ${TRACE_WIDTH} ${TRACE_HEIGHT}`}
