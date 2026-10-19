@@ -1,78 +1,78 @@
 {
   "measuredFrom": {
-    "commit": "pending the first measuring runs",
-    "note": "Placeholders until the Mutation workflow has run on this branch: every floor is 0 and every run id is 1.",
+    "commit": "65268611",
+    "note": "Each floor is the score the Mutation workflow measured on run 39124477233, rounded down to one decimal. core-rules is held at 0 until its measuring run, which lost its report to a full disk on the runner, is read.",
     "runs": {
-      "file-lifecycle-recovery": 1,
-      "file-lifecycle-moves": 1,
-      "handoff-intake": 1,
-      "outcome-handling": 1,
-      "write-gate-database": 1,
-      "write-gate-unit-of-work": 1,
+      "file-lifecycle-recovery": 39124477233,
+      "file-lifecycle-moves": 39124477233,
+      "handoff-intake": 39124477233,
+      "outcome-handling": 39124477233,
+      "write-gate-database": 39124477233,
+      "write-gate-unit-of-work": 39124477233,
       "core-rules": 1,
-      "start-supervision": 1,
-      "web-api-client": 1,
-      "web-processing-files": 1,
-      "web-processing-libraries": 1,
-      "web-settings-requests": 1,
-      "web-dialogs-library": 1,
-      "web-dialogs-activity-profile": 1,
-      "file-lifecycle-swap-preflight": 1,
-      "file-lifecycle-swap-prepare": 1,
-      "file-lifecycle-swap-commit": 1
+      "start-supervision": 39124477233,
+      "web-api-client": 39124477233,
+      "web-processing-files": 39124477233,
+      "web-processing-libraries": 39124477233,
+      "web-settings-requests": 39124477233,
+      "web-dialogs-library": 39124477233,
+      "web-dialogs-activity-profile": 39124477233,
+      "file-lifecycle-swap-preflight": 39124477233,
+      "file-lifecycle-swap-prepare": 39124477233,
+      "file-lifecycle-swap-commit": 39124477233
     }
   },
   "floors": {
     "file-lifecycle-recovery": {
-      "score": 0
+      "score": 98
     },
     "file-lifecycle-moves": {
-      "score": 0
+      "score": 93.1
     },
     "handoff-intake": {
-      "score": 0
+      "score": 61.3
     },
     "outcome-handling": {
-      "score": 0
+      "score": 64.8
     },
     "write-gate-database": {
-      "score": 0
+      "score": 72.6
     },
     "write-gate-unit-of-work": {
-      "score": 0
+      "score": 92.8
     },
     "core-rules": {
       "score": 0
     },
     "start-supervision": {
-      "score": 0
+      "score": 65.3
     },
     "web-api-client": {
-      "score": 0
+      "score": 60.4
     },
     "web-processing-files": {
-      "score": 0
+      "score": 30.3
     },
     "web-processing-libraries": {
-      "score": 0
+      "score": 8.8
     },
     "web-settings-requests": {
-      "score": 0
+      "score": 62.1
     },
     "web-dialogs-library": {
-      "score": 0
+      "score": 98.3
     },
     "web-dialogs-activity-profile": {
-      "score": 0
+      "score": 66.9
     },
     "file-lifecycle-swap-preflight": {
-      "score": 0
+      "score": 92.1
     },
     "file-lifecycle-swap-prepare": {
-      "score": 0
+      "score": 86.9
     },
     "file-lifecycle-swap-commit": {
-      "score": 0
+      "score": 100
     }
   }
 }
