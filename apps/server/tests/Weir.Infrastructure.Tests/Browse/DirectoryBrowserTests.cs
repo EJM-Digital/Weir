@@ -5,7 +5,7 @@ namespace Weir.Infrastructure.Tests.Browse;
 /// <summary>
 /// #723: <see cref="DirectoryBrowser"/> rejects UNC paths, device paths and alternate data streams before any
 /// filesystem call, so a path like <c>\\host\share</c> can never reach <c>CreateFileW</c> and make the server
-/// connect to a remote host. <see cref="DirectoryBrowser.Browse"/> and <see cref="DirectoryBrowser.ValidateFilePath"/>
+/// connect to a remote host. <see cref="DirectoryBrowser.Browse(string?)"/> and <see cref="DirectoryBrowser.ValidateFilePath"/>
 /// share one validator (<see cref="DirectoryBrowser.RejectUnsafePathForm"/>), proved directly here and through
 /// both public entry points.
 /// </summary>

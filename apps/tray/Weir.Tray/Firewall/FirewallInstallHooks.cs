@@ -15,15 +15,26 @@ static class FirewallInstallHooks
     /// devices on your network..." in the tray menu is how they revisit it later. A yes that ends with the rule in
     /// place also turns LAN access on; anything else leaves Weir listening for this PC only.
     /// </summary>
-    internal static void AskOnFirstRun(string[] args)
+    internal static void AskOnFirstRun(string[] args) =>
+        AskOnFirstRun(args, PortChoice.HasInteractiveDesktop, PersonAllows, new WindowsFirewallAccess(), Program.RuntimeHome());
+
+    /// <summary>The question as the person sees it; true when they answer Yes.</summary>
+    private static bool PersonAllows() =>
+        MessageBox.Show(
+            "Other devices on your network, such as Deluno, need Weir allowed through Windows Firewall to reach it. Allow Weir on your network?",
+            "Weir",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question) == DialogResult.Yes;
+
+    /// <summary>The first-run question with the desktop check, the question, Windows Firewall and the data folder given.</summary>
+    internal static void AskOnFirstRun(string[] args, Func<bool> hasInteractiveDesktop, Func<bool> personAllows, IFirewallAccess firewall, string runtimeHome)
     {
-        if (!Program.ShouldPromptForFirewallAccess(args, PortChoice.HasInteractiveDesktop))
+        if (!Program.ShouldPromptForFirewallAccess(args, hasInteractiveDesktop))
         {
             TrayLog.Write("First-run firewall prompt skipped: silent start or no interactive desktop.");
             return;
         }
 
-        var runtimeHome = Program.RuntimeHome();
         try
         {
             if (FirewallPromptFile.AlreadyAsked(runtimeHome))
@@ -31,13 +42,7 @@ static class FirewallInstallHooks
                 return;
             }
 
-            var allow = MessageBox.Show(
-                "Other devices on your network, such as Deluno, need Weir allowed through Windows Firewall to reach it. Allow Weir on your network?",
-                "Weir",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question) == DialogResult.Yes;
-
-            var outcome = allow ? FirewallElevation.ConfigureElevated(TrayLog.Write) : FirewallElevation.Outcome.Declined;
+            var outcome = personAllows() ? firewall.AskToAllow() : FirewallElevation.Outcome.Declined;
             FirewallPromptFile.MarkAsked(runtimeHome, outcome);
             if (outcome == FirewallElevation.Outcome.Configured)
             {

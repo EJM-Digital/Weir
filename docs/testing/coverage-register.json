@@ -5747,6 +5747,16 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "UpdateApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/UpdateSettingsTests.cs",
+          "name": "A_file_the_settings_page_wrote_is_followed_as_saved"
         }
       ],
       "partial": [
@@ -5771,11 +5781,6 @@
           "name": "update-requests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No test that the saved mode reaches the tray and changes whether it installs by itself (each side of the file is tested separately)"
-      },
-      "issue": 989,
       "covers": [
         "route:PUT /api/v1/suite/update-settings"
       ],
@@ -7509,7 +7514,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryScanRealFilesTests.cs",
+          "name": "LibraryScanRealFilesTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -7582,11 +7593,6 @@
           "name": "LibraryScanLiveTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Probing is only ever done by a fake media runner or seeded index rows in the scan tests; no test scans a real library with real ffprobe through the job queue. No VM scenario."
-      },
-      "issue": 1142,
       "covers": [
         "job:processing.library.scan.v1"
       ],
@@ -8999,7 +9005,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Jobs/DaylightSavingScheduleTests.cs",
+          "name": "DaylightSavingScheduleTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -9037,11 +9049,6 @@
           "name": "Schedule_window_blocks_work_outside_its_hours"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] No test crosses a daylight-saving change (ScheduleGridTests use America/New_York only on a fixed August date): a window or the library-mode daily run could be an hour out twice a year. The contract test depends on the machine's wall clock."
-      },
-      "issue": 1142,
       "audit": {
         "id": "JOB-060",
         "verdict": "Partly"
@@ -9832,7 +9839,7 @@
         "kind": "xunit",
         "test": "Needed: a tray test on the fake clock with a non-zero interval that advances time and asserts a second check (and none while the mode forbids it). Layer: unit/integration (tray)."
       },
-      "issue": 989,
+      "issue": 1142,
       "covers": [
         "setting:UpdateSettings.CheckIntervalMinutes"
       ],
@@ -10113,7 +10120,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/KeepFailedWorkFilesTests.cs",
+          "name": "KeepFailedWorkFilesTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -10131,11 +10144,6 @@
           "name": "A_failed_copy_kept_on_request_survives_a_restart_until_it_is_a_day_old"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Not proven: RemuxPassHandler copying performance.KeepFailedWorkFiles into the pass request, so a real failed pass with the switch on keeps the copy and with it off removes it (no handler/contract test names the setting); no API test saves it (not in ProcessingOperatorSettingsApiTests)."
-      },
-      "issue": 1142,
       "covers": [
         "setting:ProcessingOperatorSettingsRecord.KeepFailedWorkFiles"
       ],
@@ -11423,7 +11431,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/PreserveOriginalTimestampsTests.cs",
+          "name": "PreserveOriginalTimestampsTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -11436,11 +11450,6 @@
           "name": "Original_timestamps_are_applied_and_a_problem_is_reported_not_raised"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] No runner/handler test that the saved flag reaches the helper for a real pass (RemuxPassPaths.cs:240 -> RemuxPassRunner.PostSuccessCleanup.cs:31): output media mtime equals the source's when on, differs when off."
-      },
-      "issue": 1142,
       "covers": [
         "setting:ProcessingLibraryRecord.PreserveOriginalTimestamps"
       ],
@@ -11978,7 +11987,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/RetryExecutionFailuresTests.cs",
+          "name": "RetryExecutionFailuresTests"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -11986,11 +12001,6 @@
           "name": "LibraryStoreTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] No handler or contract test turns it off and shows a tool failure is not retried."
-      },
-      "issue": 1142,
       "covers": [
         "setting:ProcessingLibraryRecord.RetryExecutionFailures"
       ],
@@ -12141,12 +12151,18 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Needed: scan two workflows (priorities 0 and 10), assert the queued jobs carry the priority and the higher workflow's file is claimed first. Layer: integration."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingWatchedFolderScanPriorityTests.cs",
+          "name": "ProcessingWatchedFolderScanPriorityTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Jobs/ProcessingJobStoreTests.cs",
+          "name": "Claim_order_is_priority_then_id"
+        }
+      ],
       "covers": [
         "setting:ProcessingLibraryRecord.Priority"
       ],
@@ -12406,7 +12422,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Libraries/LibraryCleanReplacesFileTests.cs",
+          "name": "A_file_shared_with_a_download_is_cleaned_when_the_workflow_allows_it_and_the_download_keeps_its_own_copy"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -12454,11 +12476,6 @@
           "name": "A_hardlinked_real_file_is_skipped"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] The \"on\" path (a hardlinked file IS cleaned and the seeding copy stays intact) has no handler/real-FS test."
-      },
-      "issue": 1142,
       "covers": [
         "setting:LibrarySettings.CleanHardlinkedFiles"
       ],
@@ -26890,12 +26907,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "removedNotice is set by callbacks in tests but its clearing in setParam/pickEntry is never asserted."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-page.states.test.tsx",
+          "name": "clears the notice when another file is picked"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-page.states.test.tsx",
+          "name": "clears the notice when a filter changes"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/activity-page.states.test.tsx",
+          "name": "says what the server answered to Process again, until another kind of file is shown"
+        }
+      ],
       "audit": {
         "id": "WEB-396",
         "verdict": "Gap"
@@ -32123,14 +32151,18 @@
           "type": "vitest",
           "file": "apps/web/src/lib/settings/settings-api.test.ts",
           "name": "saves who can reach Weir with a CSRF token in the body"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "network-access-from-weir"
         }
       ],
       "audit": {
         "id": "WEB-589",
         "verdict": "Covered"
       },
-      "vm": true,
-      "issue": 1142
+      "vm": true
     },
     {
       "id": "web-setup-workflows-rules.lib-settings.network-access-put-carries-csrf-and-scope-notification-channel",
@@ -42100,16 +42132,16 @@
           "type": "vitest",
           "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
           "name": "*"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "network-access-from-weir"
         }
       ],
       "audit": {
         "id": "WEB-925",
         "verdict": "Gap"
-      },
-      "issue": 1057,
-      "needs": {
-        "kind": "e2e",
-        "test": "putNetworkAccess and fetchNetworkAccess need the Windows install (see the network access row); every other System request function is sent by a real page in the E2E tests listed."
       }
     },
     {
@@ -42493,12 +42525,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Needs a vitest: set filters on Logs, click About, assert the address holds no `source/level/q/...`; and that About has no `tab`."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.tabs.test.tsx",
+          "name": "names the tab picked, and names none for About, where System opens"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.tabs.test.tsx",
+          "name": "takes the filters of the log away when another tab is picked, and keeps what is not the log's"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.tabs.test.tsx",
+          "name": "leaves no tab and no filter in the address of About"
+        }
+      ],
       "audit": {
         "id": "WEB-938",
         "verdict": "Gap"
@@ -42512,12 +42555,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Memory-router vitest with `router.navigate(-1)`, or an E2E Back after tab clicks."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/system-page.tabs.test.tsx",
+          "name": "moves between the tabs with the browser's Back and Forward"
+        }
+      ],
       "audit": {
         "id": "WEB-939",
         "verdict": "Gap"
@@ -43411,13 +43455,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/about/network-access-setting.test.tsx",
           "name": "says Weir is only restarting when Windows already allows it"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "network-access-from-weir"
         }
       ],
-      "needs": {
-        "kind": "e2e",
-        "test": "Windows only: the choice is carried out by the tray and Windows Firewall, which the Linux E2E run does not have; the dialog and the saved choice are proved in vitest and the contract suite."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-975",
         "verdict": "Partly"
@@ -45512,12 +45556,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "`jobOfEvent` / the button have no test (the fixture event's detail is plain text)."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/logs/log-row-detail.test.tsx",
+          "name": "offers the job an event names, and no job for one that names none"
+        }
+      ],
       "audit": {
         "id": "WEB-1055",
         "verdict": "Gap"
@@ -46705,12 +46750,23 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "The dictionary in `TrayApp` is private and untested: swapped handlers (data vs logs folder, Allow vs Only-this-PC) or a missing entry pass every test. Needs a tray-unit test through a seam that builds the real click map, or a VM UI-Automation scenario that invokes each real menu item and checks its effect."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-lan-access"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-change-port"
+        }
+      ],
       "covers": [
         "tray:Open",
         "tray:Status",
@@ -47145,12 +47201,23 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "The \"one place draws everything so they cannot disagree\" design is the point of the standard and is itself untested; a missed `Render()` call leaves a stale dot or hover. Needs tray-unit tests with `TrayApp` seams (fake `NotifyIcon` host) or a VM UI-Automation scenario that reads the real tooltip/menu after a pause, a stop and an update."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-give-up"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-change-port"
+        }
+      ],
       "audit": {
         "id": "TRAY-014",
         "verdict": "Gap"
@@ -48663,12 +48730,13 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "`FirewallInstallHooks.AskOnFirstRun` (MessageBox, outcome -> marker, Configured -> `LanAccessSetting.Write`) is untested apart from its guard predicate and the marker file. The Velopack `OnFirstRun` wiring is untested (TRAY-080)."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/Firewall/FirstRunFirewallQuestionTests.cs",
+          "name": "FirstRunFirewallQuestionTests"
+        }
+      ],
       "audit": {
         "id": "TRAY-056",
         "verdict": "Gap"
@@ -48704,12 +48772,18 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "`LanAccessMenu` (AllowAsync/LimitToThisPcAsync: ordering, activity states, which notice follows which outcome, exception paths) has no test at all."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/LanAccess/LanAccessMenuTests.cs",
+          "name": "LanAccessMenuTests"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-lan-access"
+        }
+      ],
       "audit": {
         "id": "TRAY-058",
         "verdict": "Gap"
@@ -49429,6 +49503,11 @@
           "name": "A_development_build_opens_the_web_update_check_instead"
         },
         {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-portable"
+        },
+        {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayUpdateRequestsTests.cs",
           "name": "A_tray_that_was_not_installed_says_it_is_alive_and_cannot_update"
@@ -49498,6 +49577,11 @@
           "type": "scenario",
           "file": "scripts/scenarios-ci/windows-tray.mjs",
           "name": "tray-lan-access"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "install-hooks"
         }
       ],
       "audit": {
@@ -49709,12 +49793,13 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "`TrayLog` has no test of its own. The VM's log check (the end of every scenario) tells the tray's trouble lines apart by their text, and reads the time with a regex that a different line format would not match. The log is append-only with no size cap (the server-host log has one). Needs tray-unit tests pinning the format against the scenario regex, the unwritable-log fallback, and a size/rotation decision."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayLogTests.cs",
+          "name": "TrayLogTests"
+        }
+      ],
       "audit": {
         "id": "TRAY-087",
         "verdict": "Gap"
@@ -49731,13 +49816,20 @@
       "proofs": [],
       "needs": {
         "kind": "xunit",
-        "test": "Every background task in the tray (watchers, update loops, watchdog) relies on `BackgroundWork` to make a failure visible; nothing tests that it does or that the handlers keep the tray alive."
+        "test": "BackgroundWork is proved. Still untested: LogUnhandledErrors (the UI-thread, domain and task handlers keep the tray running) and the fatal start-up error that is logged with exit code 1, both private to Program."
       },
       "issue": 1142,
       "audit": {
         "id": "TRAY-088",
         "verdict": "Gap"
-      }
+      },
+      "partial": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/BackgroundWorkTests.cs",
+          "name": "BackgroundWorkTests"
+        }
+      ]
     },
     {
       "id": "tray.tray.open-data-folder-open-logs-folder-honours-weir-log",
@@ -49978,19 +50070,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffStatusTests.cs",
           "name": "HandoffStatusTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedStatusAndCancelTests.cs",
+          "name": "A_hand_off_Weir_failed_reads_failed_in_Weirs_words_with_the_members_Deluno_recorded"
         }
-      ],
-      "needs": {
-        "kind": "recording-replay",
-        "test": "A real Deluno asks about a hand-off only while it waits for Weir, and Weir tells it of a failure, a cancel or a retry in its report, so the stack never sees these replies. Producing them needs the report to be held back in the recording proxy until Deluno asks"
-      },
-      "issue": 1017
+      ]
     },
     {
       "id": "integrations.del-04.deluno-x-outcome-post-intake-handoffs-deluno-id-outcome",
@@ -50381,19 +50472,33 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ReplacedHandoffReportTests.cs",
+          "name": "A_refusal_to_start_a_single_file_send_is_exactly_failed_not_taken_with_no_disposition"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ReplacedHandoffReportTests.cs",
+          "name": "A_folder_send_Weir_would_not_start_is_refused_with_the_reason_and_nothing_held"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/HeldFileReturnTests.Resend.cs",
+          "name": "A_release_sent_by_another_connection_of_the_same_manager_is_refused_and_told_to_that_connection"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
+          "name": "Cancelling_a_hand_offs_job_on_the_jobs_screen_tells_the_manager_it_is_cancelled"
+        },
         {
           "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Processing/FailurePoliciesTests.cs",
-          "name": "FailurePoliciesTests"
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffLifecycleTests.cs",
+          "name": "A_queued_hand_off_can_be_cancelled"
         }
-      ],
-      "needs": {
-        "kind": "recording-replay",
-        "test": "Weir sends a not_taken report when a release it was handed is not one it takes, and a cancelled one when a person cancels in Weir; neither happens in the stack's scenarios, and Deluno has not recorded either"
-      },
-      "issue": 1018
+      ]
     },
     {
       "id": "integrations.del-10a.weir-s-reports-to-deluno-refused-for-now-or-for-good",
@@ -51748,7 +51853,18 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-lan-access"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-install.mjs",
+          "name": "uninstall-keeps-the-data"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -51759,18 +51875,8 @@
           "type": "package-smoke",
           "file": "scripts/smoke-windows-package.ps1",
           "name": "*"
-        },
-        {
-          "type": "scenario",
-          "file": "scripts/scenarios-ci/windows-install.mjs",
-          "name": "uninstall-keeps-the-data"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Not asserted on a real install: the Run entry removed once Start with Windows has been turned on, which needs the tray's own menu (the windows-tray shard)"
-      },
-      "issue": 1142,
       "audit": {
         "id": "PLAT-06",
         "verdict": "Partly"
@@ -51976,7 +52082,13 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -51984,11 +52096,6 @@
           "name": "StartWithWindowsTests"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Registry write/delete against the real HKCU is not exercised by a VM scenario or CI smoke"
-      },
-      "issue": 1142,
       "audit": {
         "id": "PLAT-10",
         "verdict": "Partly"
@@ -52783,7 +52890,23 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-menu"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-lan-access"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-change-port"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -52816,11 +52939,6 @@
           "name": "LifespanResilienceTests"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "The checklist's \"stopped cleanly within a few seconds, not killing it\" after Quit and after LAN toggles is manual; the VM never quits the tray"
-      },
-      "issue": 1142,
       "audit": {
         "id": "PLAT-26",
         "verdict": "Partly"
@@ -54980,7 +55098,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-over-installed-weir"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -54988,11 +55112,6 @@
           "name": "update-over-installed-weir"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
-      },
-      "issue": 982,
       "covers": [
         "scenario:update-over-installed-weir"
       ],
@@ -55010,19 +55129,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/shards.mjs",
+          "name": "workflows-from-deluno"
+        },
         {
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "workflows-from-deluno"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
-      },
-      "issue": 982,
       "covers": [
         "scenario:workflows-from-deluno"
       ],
@@ -55039,19 +55157,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/shards.mjs",
+          "name": "deluno-film-handoff"
+        },
         {
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "deluno-film-handoff"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
-      },
-      "issue": 982,
       "covers": [
         "scenario:deluno-film-handoff"
       ],
@@ -55068,7 +55185,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/shards.mjs",
+          "name": "deluno-release-with-extra"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -55076,11 +55199,6 @@
           "name": "deluno-release-with-extra"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
-      },
-      "issue": 982,
       "covers": [
         "scenario:deluno-release-with-extra"
       ],
@@ -55097,7 +55215,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/shards.mjs",
+          "name": "deluno-resend"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -55105,11 +55229,6 @@
           "name": "deluno-resend"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
-      },
-      "issue": 982,
       "covers": [
         "scenario:deluno-resend"
       ],
@@ -55126,7 +55245,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/shards.mjs",
+          "name": "deluno-outcomes"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -55134,11 +55259,6 @@
           "name": "deluno-outcomes"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
-      },
-      "issue": 982,
       "covers": [
         "scenario:deluno-outcomes"
       ],
@@ -55358,19 +55478,18 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "update-requests"
+        },
         {
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "update-requests"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
-      },
-      "issue": 982,
       "covers": [
         "scenario:update-requests"
       ],
@@ -59136,8 +59255,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/PublishFailureTests.cs",
+          "name": "An_original_that_cannot_be_handed_back_leaves_no_partial_and_Activity_says_so_in_plain_words"
+        }
+      ],
       "covers": [
         "event:processing.file_pass_through_failed"
       ],
@@ -59775,8 +59899,13 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/LibraryFileChangeNotifierTests.cs",
+          "name": "Deluno_without_the_capability_is_skipped_with_a_note_and_makes_no_call"
+        }
+      ],
       "covers": [
         "event:library.file_change_notify_skipped"
       ],
@@ -60304,8 +60433,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedStatusAndCancelTests.cs",
+          "name": "A_hand_off_Weir_failed_reads_failed_in_Weirs_words_with_the_members_Deluno_recorded"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60322,8 +60456,18 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.Waiting.cs",
+          "name": "A_hand_off_the_person_stopped_waiting_for_is_dropped_with_a_204_and_is_never_worked"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "Stop_waiting_cancels_a_queued_hand_off_with_a_204_and_the_work_is_never_done"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60396,8 +60540,18 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "A_single_file_in_the_watched_folder_is_accepted_and_cleaned_into_the_output_folder_without_a_folder_of_its_own"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "A_single_file_in_the_watched_folder_is_accepted_finished_and_reported_imported_as_recorded"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60414,8 +60568,23 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "A_release_folder_is_accepted_and_only_the_files_it_lists_are_cleaned_into_a_folder_named_for_the_release"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "A_Usenet_job_folder_is_accepted_and_cleaned_into_a_folder_named_for_the_release"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_release_folder_the_real_Deluno_handed_over_is_cleaned_reported_and_its_import_recorded_as_they_said"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60456,8 +60625,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffStatusTests.cs",
+          "name": "A_wrong_or_missing_secret_is_refused"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedWebhookSecretTests.cs",
+          "name": "One_connections_secret_does_not_open_the_hand_offs_of_another"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60475,8 +60654,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedReadTests.cs",
+          "name": "A_status_poll_and_an_outcome_for_a_hand_off_Weir_never_had_are_both_404_as_recorded"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffStatusTests.cs",
+          "name": "An_unknown_hand_off_is_404"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60494,8 +60683,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedStatusAndCancelTests.cs",
+          "name": "A_source_Weir_does_not_know_is_a_404_for_the_poll_and_the_cancel_whatever_secret_is_sent"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60512,8 +60706,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedWebhookSecretTests.cs",
+          "name": "With_no_instance_secret_and_none_on_the_connection_Deluno_is_taken_unsigned_and_the_routes_that_show_paths_stay_shut"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffStatusTests.cs",
+          "name": "No_configured_secret_is_a_403_that_says_what_to_set"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60559,8 +60763,18 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffCancelTests.cs",
+          "name": "A_hand_off_Weir_is_working_on_is_refused_as_recorded_for_a_finished_one_and_the_pass_carries_on"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffLifecycleTests.cs",
+          "name": "Work_that_has_started_is_never_cancelled"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60629,8 +60843,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedWebhookSecretTests.cs",
+          "name": "One_connections_secret_does_not_open_the_hand_offs_of_another"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60647,8 +60866,18 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedStatusAndCancelTests.cs",
+          "name": "A_cancel_for_a_hand_off_Weir_never_received_is_a_404_in_the_words_Deluno_recorded_for_the_poll"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffLifecycleTests.cs",
+          "name": "Cancelling_an_unknown_hand_off_is_404"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60665,8 +60894,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "An_import_from_the_watched_folder_releases_Weirs_copy_and_leaves_the_watched_folder_alone"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60683,8 +60917,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedStatusAndCancelTests.cs",
+          "name": "A_cancel_that_carries_an_Origin_and_no_X_Requested_With_is_refused_403_and_the_hand_off_stays_queued"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60751,8 +60990,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedOutcomeTests.cs",
+          "name": "An_import_that_carries_a_note_is_a_200_with_the_members_Deluno_recorded_and_Weir_keeps_the_note"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60769,8 +61013,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedOutcomeTests.cs",
+          "name": "A_refusal_to_import_with_no_reason_is_a_200_in_the_words_Deluno_recorded_and_Weir_keeps_its_copy"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60789,8 +61038,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedOutcomeTests.cs",
+          "name": "An_outcome_sent_before_Weir_has_finished_is_a_409_to_send_again_whether_the_hand_off_is_queued_or_working"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60808,8 +61062,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedOutcomeTests.cs",
+          "name": "An_outcome_for_a_hand_off_that_was_cancelled_or_failed_is_a_409_that_says_it_ended_and_changes_nothing"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60873,8 +61132,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedOutcomeTests.cs",
+          "name": "An_outcome_with_a_wrong_secret_or_none_is_a_401_in_the_words_Deluno_recorded_for_a_hand_off_and_records_nothing"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60891,8 +61155,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedReadTests.cs",
+          "name": "A_status_poll_and_an_outcome_for_a_hand_off_Weir_never_had_are_both_404_as_recorded"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60909,8 +61178,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedOutcomeTests.cs",
+          "name": "An_outcome_body_Deluno_never_sends_is_refused_422_with_a_list_of_what_is_wrong_or_415_with_a_sentence_before_the_secret_is_looked_at"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
