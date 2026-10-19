@@ -47457,7 +47457,6 @@
           "name": "tray-give-up"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-022",
         "verdict": "Partly"
@@ -47574,7 +47573,6 @@
           "name": "The_message_goes_when_the_update_it_is_about_has_been_installed_some_other_way"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-026",
         "verdict": "Partly"
@@ -47647,7 +47645,6 @@
           "name": "tray-lan-access"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-028",
         "verdict": "Partly"
@@ -48699,7 +48696,6 @@
           "name": "FirewallRuleWideningTests"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-057",
         "verdict": "Partly"
@@ -49179,12 +49175,18 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "`UpdateService` (the only code that touches Velopack's `UpdateManager`) has no test. A feed/channel/asset-name mismatch makes every Weir silently stop updating, and a download that is not verified could install a bad package. Needs a VM (or CI-smoke) scenario that serves a local Velopack feed (a newer build, a corrupted package, an older build) to the installed tray and asserts: found, downloaded, corrupted rejected with a plain message, old version untouched."
-      },
-      "issue": 989,
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-over-installed-weir"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-failure-leaves-the-old-weir"
+        }
+      ],
       "audit": {
         "id": "TRAY-071",
         "verdict": "Gap"
@@ -49249,12 +49251,23 @@
       "severity": "high",
       "touches": "install",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "`UpdateService.ApplyAndRestart/ApplyAndExit/ApplyLeftWaitingUpdateAndRestart` -> `UpdateManager.WaitExitThenApplyUpdates(silent, restart, args)` has never been run by any automated test; `UpdateHandOver` is only checked as data. The default install path (Auto mode) therefore has no proof it ends with Weir running the new version; a wrong flag leaves Weir stopped (Weir down) or pops Velopack's window or a browser. Only the manual smoke item 25 covers it. Needs a VM scenario (with the local feed from TRAY-071): for each of Restart-to-update (apply-now flag), Auto idle install, Quit-with-update a"
-      },
-      "issue": 989,
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-over-installed-weir"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-installs-when-idle"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-left-waiting-installs-at-start"
+        }
+      ],
       "audit": {
         "id": "TRAY-073",
         "verdict": "Gap"
@@ -49331,7 +49344,6 @@
           "name": "A_server_left_running_that_cannot_save_the_copy_keeps_the_update_waiting_and_is_not_stopped"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-075",
         "verdict": "Partly"
@@ -49411,7 +49423,7 @@
     {
       "id": "tray.tray.a-tray-that-is-not-a-velopack-install-portable",
       "area": "tray",
-      "behaviour": "A tray that is not a Velopack install (portable/dev): skips update checks and heartbeat, menu opens System > About",
+      "behaviour": "A tray that is not a Velopack install (portable/dev): skips update checks, says in its heartbeat that it was not installed (System > About then says this copy cannot update itself and how to get a newer one), menu opens System > About",
       "kind": "tray",
       "severity": "medium",
       "touches": "install",
@@ -49421,9 +49433,18 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/UpdateMenuStateTests.cs",
           "name": "A_development_build_opens_the_web_update_check_instead"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayUpdateRequestsTests.cs",
+          "name": "A_tray_that_was_not_installed_says_it_is_alive_and_cannot_update"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteUpdateRequestsApiTests.cs",
+          "name": "A_tray_run_from_a_copy_that_was_not_installed_says_so_and_is_not_asked"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-078",
         "verdict": "Partly"
@@ -49485,7 +49506,6 @@
           "name": "tray-lan-access"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-080",
         "verdict": "Partly"
@@ -51709,12 +51729,28 @@
       "severity": "high",
       "touches": "install",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "No test ever downloads and applies a real newer package through the tray. A broken update path strands every installed copy on the old version or leaves Weir stopped. Needs a VM scenario with a local release feed holding a newer build (check, download, apply, back on the new version, data intact) and its failure variant"
-      },
-      "issue": 989,
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-over-installed-weir"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-installs-when-idle"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-left-waiting-installs-at-start"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-failure-leaves-the-old-weir"
+        }
+      ],
       "audit": {
         "id": "PLAT-05",
         "verdict": "Gap"
@@ -58940,47 +58976,6 @@
       ],
       "covers": [
         "event:system.processing_resumed"
-      ],
-      "audit": {
-        "id": "inventory",
-        "verdict": "Covered"
-      }
-    },
-    {
-      "id": "events.arr.arr-library-connection-test-succeeded",
-      "area": "events",
-      "behaviour": "Weir records \"Connection check finished\" in Activity (arr_library.connection_test_succeeded)",
-      "kind": "event",
-      "severity": "low",
-      "touches": "none",
-      "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
-      "covers": [
-        "event:arr_library.connection_test_succeeded"
-      ],
-      "audit": {
-        "id": "inventory",
-        "verdict": "Gap"
-      }
-    },
-    {
-      "id": "events.arr.arr-library-connection-test-failed",
-      "area": "events",
-      "behaviour": "Weir records \"Connection check failed\" in Activity (arr_library.connection_test_failed)",
-      "kind": "event",
-      "severity": "low",
-      "touches": "none",
-      "required": "inproc",
-      "proofs": [
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/SystemLog/SystemLogRulesTests.cs",
-          "name": "An_event_type_belongs_to_the_category_its_family_is_about"
-        }
-      ],
-      "covers": [
-        "event:arr_library.connection_test_failed"
       ],
       "audit": {
         "id": "inventory",

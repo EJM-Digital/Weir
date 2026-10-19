@@ -44,7 +44,13 @@
       "shard": "windows-update",
       "state": "ported",
       "why": "The tray updates a running install through its own code: the newest published release is installed, and a release feed made of this commit's package (the PC's hosts file points github.com at a stand-in) is checked, downloaded, verified and applied; the data, the account and the secrets survive.",
-      "passedInCi": []
+      "passedInCi": [
+        {
+          "run": 39209114964,
+          "commit": "f4c3df6a9e0e90993582560ec27ba0e0e0739885",
+          "ref": "main"
+        }
+      ]
     },
     {
       "id": "workflows-from-deluno",
@@ -456,7 +462,13 @@
       "shard": "windows-update",
       "state": "ported",
       "why": "The VM suite never waited for it: in Automatic mode the tray downloads the full package and installs it by itself once Weir has been idle for 5 minutes, and not before.",
-      "passedInCi": []
+      "passedInCi": [
+        {
+          "run": 39209114964,
+          "commit": "f4c3df6a9e0e90993582560ec27ba0e0e0739885",
+          "ref": "main"
+        }
+      ]
     },
     {
       "id": "update-left-waiting-installs-at-start",
@@ -465,7 +477,13 @@
       "shard": "windows-update",
       "state": "ported",
       "why": "The VM suite never ended a tray with an update downloaded: in Download only mode the update waits, and the next start of the tray installs it before the server starts.",
-      "passedInCi": []
+      "passedInCi": [
+        {
+          "run": 39209114964,
+          "commit": "f4c3df6a9e0e90993582560ec27ba0e0e0739885",
+          "ref": "main"
+        }
+      ]
     },
     {
       "id": "update-failure-leaves-the-old-weir",
@@ -474,7 +492,13 @@
       "shard": "windows-update",
       "state": "ported",
       "why": "The VM suite could only show 'nothing newer': a package changed after its hash was recorded is refused, and GitHub being down fails the check, each in plain words, with the old Weir still running.",
-      "passedInCi": []
+      "passedInCi": [
+        {
+          "run": 39209114964,
+          "commit": "f4c3df6a9e0e90993582560ec27ba0e0e0739885",
+          "ref": "main"
+        }
+      ]
     }
   ]
 }

@@ -25,6 +25,10 @@ public sealed class UpdateFiles
     /// <summary>How old the tray's heartbeat may be and still count: three beats.</summary>
     public static readonly TimeSpan TrayHeartbeatMaxAge = TimeSpan.FromSeconds(90);
 
+    /// <summary>What a person is told when the tray they are using is a copy that was not installed with the installer.</summary>
+    public const string CopyCannotUpdateText =
+        "This copy of Weir wasn't installed with the installer, so it can't update itself. To get a newer version, download the newest Weir-win-Setup.exe from the Weir releases page on GitHub and run it.";
+
     /// <summary>How old a check or download flag may be and still read as under way: the tray takes one up within a second.</summary>
     public static readonly TimeSpan RequestMaxAge = TimeSpan.FromMinutes(2);
 
@@ -42,7 +46,7 @@ public sealed class UpdateFiles
     // one over it) says nothing, so the last good reading stands in until the next look; only a file that is not there, or that is
     // damaged, changes it. See ReplacedFile.
     private readonly Lock _lastGood = new();
-    private DateTimeOffset? _lastBeat;
+    private TrayBeat? _lastBeat;
     private string? _lastStateText;
     private string? _lastNotAppliedReason;
     private WireObject? _lastSettings;
@@ -61,20 +65,29 @@ public sealed class UpdateFiles
     }
 
     /// <summary>
-    /// Whether there is a tray to answer a request: this is the Windows install, and the tray has said it is alive lately. A
-    /// Docker or source install has no tray, and a flag left for one that has quit or died is never taken up.
+    /// Whether there is a tray to answer a request: this is the Windows install, and a tray that can update itself has said it is
+    /// alive lately. A Docker or source install has no tray, a flag left for one that has quit or died is never taken up, and a tray
+    /// run from a copy that was not installed with the installer (<see cref="TrayIsFromACopyThatCannotUpdate"/>) answers nothing.
     /// </summary>
-    public bool TrayIsRunning()
+    public bool TrayIsRunning() => LatestBeat() is { Installed: true };
+
+    /// <summary>
+    /// Whether a tray is alive but was not installed with the installer (a portable copy), so it never takes up a request and
+    /// the person needs telling why, which is not the same as telling them there is no tray.
+    /// </summary>
+    public bool TrayIsFromACopyThatCannotUpdate() => LatestBeat() is { Installed: false };
+
+    private TrayBeat? LatestBeat()
     {
         if (DetectInstallType(_options.RuntimeKind) != "windows")
         {
-            return false;
+            return null;
         }
 
         // A heartbeat that cannot be read just now is the last one seen, ageing as time passes: a tray that is being refused for a
         // moment is not a tray that has quit.
         var (state, text) = Look(TrayHeartbeatFileName);
-        DateTimeOffset? beat;
+        TrayBeat? beat;
         if (state == ReplacedFileState.Busy)
         {
             lock (_lastGood)
@@ -91,17 +104,23 @@ public sealed class UpdateFiles
             }
         }
 
-        return beat is { } when && _time.GetUtcNow() - when <= TrayHeartbeatMaxAge;
+        return beat is { } latest && _time.GetUtcNow() - latest.At <= TrayHeartbeatMaxAge ? latest : null;
     }
 
-    private static DateTimeOffset? ParseHeartbeat(string text)
+    /// <summary>
+    /// What a heartbeat says: when, and whether the tray was installed with the installer. A tray that does not say is taken to be
+    /// installed, as every tray was before the field existed.
+    /// </summary>
+    private readonly record struct TrayBeat(DateTimeOffset At, bool Installed);
+
+    private static TrayBeat? ParseHeartbeat(string text)
     {
         try
         {
             return WireJsonParser.Parse(text) is WireObject beat
                 && beat.Get("at") is WireString at
                 && DateTimeOffset.TryParse(at.Value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var when)
-                    ? when
+                    ? new TrayBeat(when, beat.Get("installed") is not WireBool { Value: false })
                     : null;
         }
         catch (WireJsonDecodeException)
@@ -217,6 +236,11 @@ public sealed class UpdateFiles
     {
         var alive = TrayIsRunning();
         var state = StateAsShown(ReadStateFile(), alive).Set("tray_running", alive);
+        if (TrayIsFromACopyThatCannotUpdate())
+        {
+            state.Set("cannot_update_reason", CopyCannotUpdateText);
+        }
+
         return ReadNotAppliedReason() is { } reason ? state.Set("not_updated_reason", reason) : state;
     }
 
