@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { appendFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { readFileSync } from "node:fs";
+import { readFileSync, watch } from "node:fs";
 import net from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -257,6 +257,47 @@ test("an action skips the lines the tray logged before the scenario began to wai
     const watch = atLogLine(world, tray, "Go back to port 9352.", async () => "ran", skipped);
     await appendFile(trayLog, stamp("Go back to port 9352."));
     assert.equal(await watch.done, "ran");
+  } finally {
+    await cleanup();
+  }
+});
+
+test("an action sees a line logged while the watch is still reading the log", async () => {
+  const { world, trayLog, cleanup } = await logWorld();
+  try {
+    let seen = [];
+    let reads = 0;
+    let firstRead;
+    const reading = new Promise((done) => (firstRead = done));
+    let letGo;
+    const gate = new Promise((done) => (letGo = done));
+    // The first look reads the log, then waits; whatever is logged after that read is not in what it saw.
+    const tray = {
+      log: async () => {
+        const read = [...seen];
+        if (++reads === 1) {
+          firstRead();
+          await gate;
+        }
+        return read;
+      },
+    };
+    const watcher = atLogLine(world, tray, "Go back to port 9352.", async () => "ran", 0, 5000);
+    await reading;
+    const changed = new Promise((done) => {
+      const own = watch(world.machine.paths.runtimeHome, (_, name) => {
+        if (name === "tray-host.log") {
+          own.close();
+          done();
+        }
+      });
+    });
+    seen = [stamp("Go back to port 9352.").trim()];
+    await appendFile(trayLog, stamp("Go back to port 9352."));
+    await changed;
+    await nextTick();
+    letGo();
+    assert.equal(await watcher.done, "ran");
   } finally {
     await cleanup();
   }
