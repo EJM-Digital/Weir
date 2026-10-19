@@ -60,6 +60,14 @@ internal sealed class StoreFixture : IDisposable
         }
     }
 
+    public async Task<string?> ScalarText(string sql)
+    {
+        using var connection = Database.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        return Convert.ToString(await command.ExecuteScalarAsync(), System.Globalization.CultureInfo.InvariantCulture);
+    }
+
     public async Task<long> Scalar(string sql)
     {
         using var connection = Database.Open();

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Weir.Contract.Tests.Harness;
@@ -357,9 +358,7 @@ public sealed class WeirServer : IAsyncDisposable
         try
         {
             using var response = await ReadyProbe.GetAsync(new Uri(BaseUrl, "ready"));
-            var body = await response.Content.ReadAsStringAsync();
-            var ready = response.StatusCode == HttpStatusCode.OK && (bool?)JsonNode.Parse(body)?["ready"] == true;
-            return ready ? null : $"HTTP {(int)response.StatusCode} {body}";
+            return ReadyProblem(response.StatusCode, await response.Content.ReadAsStringAsync());
         }
         catch (HttpRequestException problem)
         {
@@ -369,6 +368,23 @@ public sealed class WeirServer : IAsyncDisposable
         {
             return "no answer within the probe timeout";
         }
+    }
+
+    /// <summary>Null when this is the answer of a ready server; otherwise what it answered. A server that is starting can answer with no body or with something that is not JSON, and that is not ready yet.</summary>
+    internal static string? ReadyProblem(HttpStatusCode status, string body)
+    {
+        try
+        {
+            if (status == HttpStatusCode.OK && (bool?)JsonNode.Parse(body)?["ready"] == true)
+            {
+                return null;
+            }
+        }
+        catch (JsonException)
+        {
+        }
+
+        return $"HTTP {(int)status} {body}";
     }
 
     internal static int FreePort()

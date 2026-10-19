@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import * as authQueries from "../../lib/auth/queries";
 import { APP_THEME_STORAGE_KEY, persistAppTheme } from "../../lib/ui/app-theme";
+import { jsonAnswer, stubWeirApi } from "../../test/stub-weir-api";
 import { ThemeToggle } from "./theme-toggle";
 
 const mutate = vi.fn<(theme: "light" | "dark") => void>();
@@ -64,4 +65,46 @@ it("shows no alert once a save has not failed", () => {
   render(<ThemeToggle />, { wrapper });
 
   expect(screen.queryByTestId("theme-toggle-alert")).not.toBeInTheDocument();
+});
+
+describe("saving the choice to the account", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("keeps the theme here and says the account was not updated when the server refuses the save", async () => {
+    const api = stubWeirApi({
+      "GET /api/v1/auth/csrf": { csrf_token: "token-1" },
+      "POST /api/v1/auth/theme": () => jsonAnswer({ detail: "No." }, 500),
+    });
+    persistAppTheme("dark");
+
+    render(<ThemeToggle />, { wrapper });
+    fireEvent.click(screen.getByTestId("theme-toggle"));
+
+    expect(await screen.findByTestId("theme-toggle-alert")).toHaveTextContent(
+      "couldn't save your theme for other browsers",
+    );
+    expect(api.to("POST /api/v1/auth/theme")[0]?.body).toEqual({
+      csrf_token: "token-1",
+      theme: "light",
+    });
+    expect(document.documentElement.getAttribute("data-mm-theme")).toBe(
+      "light",
+    );
+  });
+
+  it("shows no alert when the save goes through", async () => {
+    const api = stubWeirApi({
+      "GET /api/v1/auth/csrf": { csrf_token: "token-1" },
+      "POST /api/v1/auth/theme": { message: "Saved.", app_theme: "light" },
+    });
+    persistAppTheme("dark");
+
+    render(<ThemeToggle />, { wrapper });
+    fireEvent.click(screen.getByTestId("theme-toggle"));
+
+    await waitFor(() =>
+      expect(api.to("POST /api/v1/auth/theme")).toHaveLength(1),
+    );
+    expect(screen.queryByTestId("theme-toggle-alert")).not.toBeInTheDocument();
+  });
 });

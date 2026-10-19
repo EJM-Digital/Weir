@@ -8,7 +8,7 @@ namespace Weir.E2E.Tests;
 /// <summary>
 /// The Dashboard sizes itself to the room its main area has: wide, Live and System are exactly as tall as the window, the right column
 /// sits beside the page and the page never scrolls; narrower the page flows and scrolls like any other, and on a phone the cards stack
-/// in one column. The Pipeline is full, the busiest Live there is.
+/// in one column, the Pipeline's stations stack and the kind of work stays a three-button switch. The Pipeline is full, the busiest Live there is.
 /// </summary>
 public sealed class DashboardLayoutTests(E2EServer server) : E2ETestBase(server)
 {
@@ -135,6 +135,12 @@ public sealed class DashboardLayoutTests(E2EServer server) : E2ETestBase(server)
         foreach (var (view, cards) in new[] { ("live", LiveCards), ("system", SystemCards) })
         {
             await OpenAsync(page, rig, view);
+            if (view == "live")
+            {
+                await Expect(page.GetByTestId("live-filter")).ToBeVisibleAsync();
+                await Expect(page.GetByTestId("live-filter-compact")).ToBeHiddenAsync();
+                await Expect(page.GetByTestId("pipeline-board").Locator(".mm-pipe__body--stacked")).ToHaveCountAsync(1);
+            }
 
             var (inner, height, width, client) = await ScrollSizesAsync(page);
             var boxes = await BoxesAsync(page, cards);

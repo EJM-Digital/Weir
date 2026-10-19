@@ -156,13 +156,30 @@ public sealed class ThreadPoolWatchTests
     }
 
     [Fact]
-    public async Task The_service_starts_and_stops_on_a_thread_of_its_own()
+    public async Task The_loop_looks_from_a_thread_of_its_own_not_one_from_the_pool_it_is_watching()
     {
-        using var watch = new ThreadPoolWatch(TimeProvider.System, _log);
+        var queuedFrom = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var watch = new ThreadPoolWatch(_time, _log, _ => queuedFrom.TrySetResult(Thread.CurrentThread.IsThreadPoolThread), () => _counts);
 
         await watch.StartAsync(CancellationToken.None);
+        var fromPool = await queuedFrom.Task.WaitAsync(TimeSpan.FromSeconds(15));
         await watch.StopAsync(CancellationToken.None);
 
+        Assert.False(fromPool);
         Assert.DoesNotContain(_log.Messages, message => message.Level >= LogLevel.Warning);
+    }
+
+    [Fact]
+    public async Task The_loop_says_so_when_the_pool_does_not_start_its_probe_and_stops_when_the_host_does()
+    {
+        using var watch = new ThreadPoolWatch(_time, _log, _waiting.Add, () => _counts);
+
+        await watch.StartAsync(CancellationToken.None);
+        await Eventually.ThatAsync(() => _waiting.Count == 1);
+        Pass(ThreadPoolStallTracker.LateAfter + TimeSpan.FromSeconds(1));
+        await Eventually.ThatAsync(() => _log.Logged(LogLevel.Warning, "slow to get to work"));
+        await watch.StopAsync(CancellationToken.None);
+
+        Assert.Contains("Processors available: 2", Assert.Single(_log.Messages, message => message.Level == LogLevel.Warning).Message, StringComparison.Ordinal);
     }
 }
