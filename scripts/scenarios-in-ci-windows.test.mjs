@@ -232,8 +232,16 @@ test("the uninstalls wait for the job Weir starts with, so the next start has no
   assert.equal(result.status, "passed", result.detail);
 });
 
+test("a job a worker takes after the job list was read empty does not outlast the pause the uninstalls start with", async () => {
+  const stand = new FakeWindows({ jobStartsLate: true });
+  const [result] = await runScenarios({ ids: ["uninstall-keeps-the-data"], registry: SCENARIOS, world: { ...stand.world(), watchLogs } });
+  assert.equal(result.status, "passed", result.detail);
+  assert.ok(stand.calls.indexOf("pause") < stand.calls.lastIndexOf("stopWeir", stand.calls.indexOf("uninstall")), "Weir was stopped before it was paused");
+  assert.ok(stand.calls.lastIndexOf("resume") > stand.calls.lastIndexOf("uninstall"), "Weir was left paused");
+});
+
 test("a job that never ends fails the scenario by name instead of being stopped under", async () => {
-  assert.match(await failureOf("uninstall-keeps-the-data", { jobNeverEnds: true }), /every job to end/);
+  assert.match(await failureOf("uninstall-keeps-the-data", { jobNeverEnds: true }), /every job a worker holds to end/);
 });
 
 test("an uninstaller that deletes the data folder does not pass, and says what it deleted", async () => {

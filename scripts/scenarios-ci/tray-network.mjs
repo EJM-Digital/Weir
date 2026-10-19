@@ -197,14 +197,23 @@ export async function trayLanAccess(world) {
     const configured = await machine.runTray(["--configure-firewall"]);
     assert.equal(configured.exitCode, 0, `Weir.exe --configure-firewall exited ${configured.exitCode}: ${configured.stderr}`);
     assert.equal(await machine.firewallRuleExists(), true, "there is no Weir firewall rule after --configure-firewall");
-    await machine.stopWeir();
+    // Start with Windows is on, so the uninstall has its Run entry to take away.
+    const startsWithWindows = await startTray(world, ["--port", String(PORT), "--no-browser"]);
+    try {
+      await startsWithWindows.ready();
+      await choose(world, startsWithWindows, menu.startWithWindows, { click: true });
+      await wait(world, async () => ((await machine.runEntry()) ? true : undefined), "the Run entry to be made", 30_000, 500);
+    } finally {
+      await startsWithWindows.end();
+    }
     const logBefore = (await machine.readText(machine.paths.trayLog)).length;
     const uninstall = await machine.uninstall();
     assert.equal(uninstall.exitCode, 0, `the uninstaller exited ${uninstall.exitCode}`);
     await wait(world, async () => ((await machine.exists(machine.paths.trayExe)) ? undefined : true), "the uninstaller to remove Weir.exe", 120_000, 1000);
     assert.equal(await machine.firewallRuleExists(), false, "the uninstall left the Weir firewall rule");
+    assert.ok(!(await machine.runEntry()), "the uninstall left the Start with Windows entry");
     assert.ok((await machine.readText(machine.paths.trayLog)).slice(logBefore).includes("Uninstall: removed the Weir firewall rule."), "the uninstall did not log that it removed the rule");
-    facts.push("--remove-firewall and --configure-firewall took the rule away and made it, and the uninstall removed it itself because it ran as an administrator");
+    facts.push("--remove-firewall and --configure-firewall took the rule away and made it, and the uninstall removed it itself because it ran as an administrator, with the Start with Windows entry the menu had made");
     await installBuildUnderTest(world);
   } finally {
     await tray.end();

@@ -11,17 +11,19 @@ namespace Weir.Tray.LanAccess;
 sealed class LanAccessMenu
 {
     private readonly LanAccessSync _sync;
-    private readonly ServerHost _server;
+    private readonly IServerListenScope _server;
+    private readonly IFirewallAccess _firewall;
     private readonly Action<LanAccessNotice> _notify;
     private readonly Action _changed;
     private readonly CancellationToken _cancellationToken;
     private LanAccessActivity _activity = LanAccessActivity.Idle;
 
     // notify tells the person how a change went; changed is called when State changes, so the tray draws it again.
-    internal LanAccessMenu(LanAccessSync sync, ServerHost server, Action<LanAccessNotice> notify, Action changed, CancellationToken cancellationToken)
+    internal LanAccessMenu(LanAccessSync sync, IServerListenScope server, IFirewallAccess firewall, Action<LanAccessNotice> notify, Action changed, CancellationToken cancellationToken)
     {
         _sync = sync;
         _server = server;
+        _firewall = firewall;
         _notify = notify;
         _changed = changed;
         _cancellationToken = cancellationToken;
@@ -46,13 +48,13 @@ sealed class LanAccessMenu
 
     // Blocks on the elevated child process (and the UAC prompt the person answers) off the UI thread, so the tray's
     // message loop never freezes on it.
-    private async Task AllowAsync()
+    internal async Task AllowAsync()
     {
         TrayLog.Write("Allow other devices on your network: requested from the tray menu.");
         Show(LanAccessActivity.WaitingForWindows);
         try
         {
-            var outcome = await Task.Run(() => FirewallElevation.ConfigureElevated(TrayLog.Write), _cancellationToken);
+            var outcome = await Task.Run(_firewall.AskToAllow, _cancellationToken);
             if (outcome != FirewallElevation.Outcome.Configured)
             {
                 _notify(LanAccessNotice.FirewallStepFailed(outcome, _server.Scope));
@@ -79,7 +81,7 @@ sealed class LanAccessMenu
         }
     }
 
-    private async Task LimitToThisPcAsync()
+    internal async Task LimitToThisPcAsync()
     {
         TrayLog.Write("Only allow this PC: requested from the tray menu.");
         Show(LanAccessActivity.RestartingForThisPcOnly);

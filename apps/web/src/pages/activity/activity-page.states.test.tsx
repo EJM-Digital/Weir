@@ -269,6 +269,28 @@ describe("the kept files", () => {
     ]);
   });
 
+  it("says what the server answered to Process again, until another kind of file is shown", async () => {
+    const answer =
+      "Weir is checking this file's workflow now and will queue it once it is ready.";
+    api = stubActivityServer({
+      files: [ALPHA],
+      overrides: {
+        [KEPT]: { files: KEPT_FILES },
+        "POST /api/v1/processing/kept-files/10/process-again": {
+          detail: answer,
+        },
+      },
+    });
+    renderActivityPage("/activity?show=kept");
+    const row = await screen.findByTestId("kept-file-row-10");
+
+    fireEvent.click(within(row).getByRole("button", { name: "Process again" }));
+
+    expect(await screen.findByText(answer)).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /^Failed/ }));
+    await waitFor(() => expect(screen.queryByText(answer)).toBeNull());
+  });
+
   it("sorts by File, and reverses on the second click", async () => {
     renderActivityPage("/activity?show=kept");
     await screen.findByTestId("kept-files-table");

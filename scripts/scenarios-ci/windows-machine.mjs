@@ -184,10 +184,10 @@ export class WindowsMachine {
 
   /**
    * Starts the installed tray with these arguments, as the person who owns the desktop would (its windows are shown). `exit` settles with the
-   * tray's exit code when it ends. The variables of Weir's are not passed on unless given.
+   * tray's exit code when it ends. The variables of Weir's are not passed on unless given. `executable` runs a Weir.exe other than the installed one.
    */
-  startTrayWith({ args, env = {} }) {
-    const child = spawn(this.paths.trayExe, args, { detached: true, stdio: "ignore", windowsHide: false, env: { ...consoleEnvironment(this.#env), ...env } });
+  startTrayWith({ args, env = {}, executable = this.paths.trayExe }) {
+    const child = spawn(executable, args, { detached: true, stdio: "ignore", windowsHide: false, env: { ...consoleEnvironment(this.#env), ...env } });
     const exit = new Promise((resolve) => child.on("exit", (code) => resolve(code)));
     child.unref();
     return { pid: child.pid, exit };
