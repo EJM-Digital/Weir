@@ -9,7 +9,7 @@
       "outcome-handling": 39124477233,
       "write-gate-database": 39232657649,
       "write-gate-unit-of-work": 39124477233,
-      "core-rules": 1,
+      "core-rules": 39232657649,
       "start-supervision": 39124477233,
       "web-api-client": 39124477233,
       "web-processing-files": 39124477233,
@@ -42,7 +42,7 @@
       "score": 92.8
     },
     "core-rules": {
-      "score": 0
+      "score": 92.2
     },
     "start-supervision": {
       "score": 65.3
