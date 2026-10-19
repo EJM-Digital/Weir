@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { jsonAnswer, stubWeirApi } from "../test/stub-weir-api";
@@ -29,7 +29,10 @@ function openApp() {
   );
 }
 
+// The page comes down first: clearing the shared query client or unstubbing fetch under a mounted page makes it ask for
+// /auth/me again, and that request reaches the network guard in test/setup.ts.
 afterEach(() => {
+  cleanup();
   queryClient.clear();
   vi.unstubAllGlobals();
   window.history.pushState(null, "", "/");
