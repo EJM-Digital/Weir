@@ -1,0 +1,45 @@
+﻿<!doctype html>
+<html><head><meta charset="utf-8"><title>Weir social preview</title>
+<style>
+@font-face{font-family:Inter;src:url("../../apps/web/node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2");font-weight:100 900}
+html,body{margin:0;padding:0}
+body{width:1280px;height:640px;background:#0b1418;font-family:Inter,sans-serif;color:#e8f1f2;position:relative;overflow:hidden}
+.glow{position:absolute;right:-180px;top:-220px;width:720px;height:720px;border-radius:50%;background:#3ed7c8;opacity:.045}
+.main{position:absolute;left:96px;top:0;bottom:0;right:96px;display:flex;align-items:center;gap:64px}
+.icon{width:248px;height:248px;flex:none}
+h1{margin:0 0 14px;font-size:120px;font-weight:700;letter-spacing:-3px;line-height:1}
+.tag{margin:0 0 26px;font-size:36px;font-weight:500;line-height:1.25;color:#e8f1f2;max-width:760px}
+.tag span{color:#3ed7c8}
+.meta{margin:0;font-size:24px;color:#8fa6ab;font-weight:450}
+.ejm{position:absolute;right:56px;bottom:48px;display:flex;align-items:center;gap:14px;font-size:22px;font-weight:600;color:#c9d6d8}
+.ejm svg{width:44px;height:44px;border-radius:9px}
+</style></head>
+<body>
+<div class="glow"></div>
+<div class="main">
+  <svg class="icon" viewBox="0 0 24 24" aria-label="Weir">
+    <rect width="24" height="24" rx="5.25" fill="#0f1e23"/>
+    <rect x="1.78" y="1.78" width="20.44" height="20.44" rx="4.5" fill="none" stroke="#3ed7c8" stroke-opacity="0.38" stroke-width="0.47"/>
+    <g transform="translate(12 12) scale(0.8) translate(-12 -12)">
+      <path d="M3.65 16.55L3.65 13.7A9.65 9.65 0 0 1 21.889 9.3L19.74 9.3A7.8 7.8 0 0 0 5.5 13.7L5.5 16.55Z" fill="#3ed7c8"/>
+      <path d="M7.05 16.55L7.05 13.7A6.25 6.25 0 0 1 17.739 9.3L13.3 9.3A4.4 4.4 0 0 0 8.9 13.7L8.9 16.55Z" fill="#3ed7c8"/>
+      <path d="M10.45 13.7L10.45 18.1L2.1 18.1L2.1 19.95L12.3 19.95L12.3 13.7A1 1 0 0 1 13.3 12.7L21.889 12.7L21.889 10.85L13.3 10.85A2.85 2.85 0 0 0 10.45 13.7Z" fill="#3ed7c8"/>
+    </g>
+  </svg>
+  <div>
+    <h1>Weir</h1>
+    <p class="tag">Keep the audio and subtitle tracks you want. <span>Drop the rest.</span></p>
+    <p class="meta">Windows and Docker · Works with Deluno, Radarr and Sonarr</p>
+  </div>
+</div>
+<div class="ejm">
+  <svg viewBox="0 0 100 100" aria-label="EJM Digital">
+    <rect width="100" height="100" fill="#14282C"/>
+    <circle cx="36.56" cy="36.56" r="29.12" fill="#4C8C93" stroke="#14282C" stroke-width="2.2"/>
+    <circle cx="63.44" cy="36.56" r="29.12" fill="#E6957F" stroke="#14282C" stroke-width="2.2"/>
+    <circle cx="50" cy="63.44" r="29.12" fill="#EDD088" stroke="#14282C" stroke-width="2.2"/>
+  </svg>
+  EJM Digital
+</div>
+</body></html>
+
