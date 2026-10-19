@@ -26,9 +26,10 @@ internal static class ReleaseFixtures
         return versions;
     }
 
-    /// <summary>Puts the release's database where a server of <paramref name="server"/> keeps its own, in place of what is there. The server must be stopped.</summary>
-    public static void PlaceDatabase(string version, WeirServer server)
+    /// <summary>Puts the release's database where a server of <paramref name="server"/> keeps its own, in place of what is there. The server must be stopped; this waits until the operating system has let go of the files it held.</summary>
+    public static async Task PlaceDatabaseAsync(string version, WeirServer server)
     {
+        await StoppedDatabase.WaitForReleaseAsync(server.DatabasePath);
         foreach (var suffix in new[] { string.Empty, "-wal", "-shm" })
         {
             File.Delete(server.DatabasePath + suffix);
