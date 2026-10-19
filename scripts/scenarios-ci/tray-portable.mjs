@@ -13,14 +13,15 @@ import { browserOn, closeBrowsers, expectNoBrowser, installedAndStopped, PORT, r
 import { ensureSignedIn } from "./windows-install.mjs";
 
 /** What the tray of a copy that is not an install logs in place of starting its update checks (apps/tray/Weir.Tray/TrayUpdates.cs). */
-export const NOT_INSTALLED_LINE = "Velopack: not installed (dev mode), skipping update checks.";
+export const NOT_INSTALLED_LINE = "Velopack: not installed (portable or development copy), skipping update checks.";
 
-/** What Weir answers a request to update, from a copy that has no tray able to take it (apps/web/src/pages/system/tabs/about/update-actions.tsx says the same). */
-export const CANNOT_UPDATE_DETAIL = "The Weir tray isn't running, so Weir can't update itself from here.";
+/** What Weir tells a person who asks a copy that was not installed to update (apps/server/src/Weir.Infrastructure/Runtime/SystemServices.cs), on the refusal and in the update state the page shows. */
+export const CANNOT_UPDATE_DETAIL =
+  "This copy of Weir wasn't installed with the installer, so it can't update itself. To get a newer version, download the newest Weir-win-Setup.exe from the Weir releases page on GitHub and run it.";
 
 const UPDATE_STARTS = [/^Checking for updates/, /^Update available/, /^No update available/, /^Downloading update/, /^Update downloaded/];
 
-/** tray-portable: a copy of the install's files, run from a folder with no Update.exe beside it, checks for no update and says it cannot update. */
+/** tray-portable: a copy of the install's files, run from a folder with no Update.exe beside it, checks for no update and says it cannot update. Its heartbeat says it is alive and not installed. */
 export async function trayPortable(world) {
   const { machine, weir } = world;
   await installedAndStopped(world);
@@ -39,11 +40,13 @@ export async function trayPortable(world) {
     await tray.line(NOT_INSTALLED_LINE, { what: "the tray to say it is not an install and skips its update checks" });
     const log = await tray.log();
     for (const started of UPDATE_STARTS) assert.equal(linesWith(log, started).length, 0, `the copy started an update check although it is not an install: ${lineWith(log, started)}`);
-    assert.equal(await machine.exists(join(machine.paths.runtimeHome, "tray-heartbeat.json")), false, "the copy wrote a heartbeat, which tells Weir a tray is there to update it");
+    const heartbeat = JSON.parse(await machine.readText(join(machine.paths.runtimeHome, "tray-heartbeat.json")));
+    assert.equal(heartbeat.installed, false, "the copy's heartbeat says it was installed, which tells Weir a tray is there to update it");
     assert.deepEqual(await machine.processes(), [], "the install's own tray or server runs although only the copy was started");
     const state = await weir.get("/suite/update-state");
     assert.equal(state.tray_running, false, "Weir counts the copy as a tray that can take an update request");
-    facts.push(`the copy (Weir.exe in ${folder}) ran Weir on port ${PORT}, logged "${NOT_INSTALLED_LINE}", started no update check and wrote no heartbeat, so Weir counts no tray able to update it`);
+    assert.equal(state.cannot_update_reason, CANNOT_UPDATE_DETAIL, `System > About is told "${state.cannot_update_reason}"`);
+    facts.push(`the copy (Weir.exe in ${folder}) ran Weir on port ${PORT}, logged "${NOT_INSTALLED_LINE}", started no update check and wrote a heartbeat that says it is not installed, so Weir counts no tray able to update it and tells a person why`);
 
     for (const [route, step] of [["/suite/check-update", "Check for updates"], ["/suite/download-update", "Download update"], ["/suite/apply-update", "Restart and apply"]]) {
       const refused = await weir.write("POST", route);

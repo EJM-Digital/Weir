@@ -52,6 +52,6 @@ test("the hook's lines are read as the tray writes them", () => {
 
 test("the portable scenario expects the words the tray and the page use", () => {
   assert.ok(read("apps/tray/Weir.Tray/TrayUpdates.cs").includes(`"${NOT_INSTALLED_LINE}"`));
-  assert.ok(read("apps/web/src/pages/system/tabs/about/update-actions.tsx").includes(CANNOT_UPDATE_DETAIL));
-  assert.ok(read("apps/server/src/Weir.Api/Endpoints/SuiteUpdateEndpoints.cs").includes(`"${CANNOT_UPDATE_DETAIL}"`));
+  assert.ok(read("apps/web/src/pages/system/tabs/about/update-actions.tsx").includes("cannot_update_reason"));
+  assert.ok(read("apps/server/src/Weir.Infrastructure/Runtime/SystemServices.cs").includes(`"${CANNOT_UPDATE_DETAIL}"`));
 });
