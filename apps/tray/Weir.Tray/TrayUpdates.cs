@@ -26,6 +26,7 @@ sealed class TrayUpdates
 
     private readonly string _runtimeHome;
     private readonly UpdateSettings _settings;
+    private readonly Func<UpdateSettings>? _readSettings;
     private readonly IUpdateService _service;
     private readonly UpdateCallbacks _callbacks;
     private readonly TimeProvider _clock;
@@ -34,6 +35,7 @@ sealed class TrayUpdates
     private readonly Lock _requestsLock = new();
     private readonly Lock _stateLock = new();
     private int _activity;
+    private int _checkingOn;
     private Task? _idleWatch;
     private Task? _requestedWork;
     private (UpdatePhase Phase, string? Version, string? Failure) _lastState = (UpdatePhase.Idle, null, null);
@@ -44,17 +46,24 @@ sealed class TrayUpdates
     /// <param name="callbacks">How the rest of the tray hears about updates and applies them.</param>
     /// <param name="clock">Times the wait for Weir to be idle and the log of a failing watcher.</param>
     /// <param name="shutdown">Cancelled when the tray is ending, which ends every loop here.</param>
+    /// <param name="readSettings">
+    /// Reads the settings file again. Whether to look for updates at all is asked of it before every check and download, so
+    /// switching checking off in System › About stops the next one. Without it the settings given stand for good.
+    /// </param>
     internal TrayUpdates(
         IUpdateService service,
         string runtimeHome,
         UpdateSettings settings,
         UpdateCallbacks callbacks,
         TimeProvider clock,
-        CancellationToken shutdown)
+        CancellationToken shutdown,
+        Func<UpdateSettings>? readSettings = null)
     {
         _service = service;
         _runtimeHome = runtimeHome;
         _settings = settings;
+        _readSettings = readSettings;
+        _checkingOn = settings.CheckForUpdates ? 1 : 0;
         _callbacks = callbacks;
         _clock = clock;
         _shutdown = shutdown;
@@ -88,7 +97,8 @@ sealed class TrayUpdates
             (UpdateActivity)Volatile.Read(ref _activity),
             _service.HasPendingUpdate,
             _service.IsDownloaded,
-            _service.PendingVersion);
+            _service.PendingVersion,
+            Volatile.Read(ref _checkingOn) == 1);
 
     /// <summary>Starts the start-up check, the periodic check and the watch for requests, as the settings say.</summary>
     internal void Start()
@@ -305,6 +315,11 @@ sealed class TrayUpdates
     // asked: a person pressed the button, so a step that cannot be taken is answered by writing the state as it is.
     internal async Task CheckAsync(bool asked = false)
     {
+        if (!CheckingIsOn(asked))
+        {
+            return;
+        }
+
         // A downloaded update waits to be installed; looking again would make the tray forget it.
         if (_service.IsDownloaded || !TryBegin(UpdateActivity.Checking))
         {
@@ -344,6 +359,11 @@ sealed class TrayUpdates
     // has not looked yet.
     internal async Task DownloadAsync(bool asked = false)
     {
+        if (!CheckingIsOn(asked))
+        {
+            return;
+        }
+
         if (_service.IsDownloaded || !TryBegin(UpdateActivity.Downloading))
         {
             if (asked)
@@ -370,6 +390,24 @@ sealed class TrayUpdates
         {
             SetActivity(UpdateActivity.Idle);
         }
+    }
+
+    // While checking is off nothing reaches the release feed, whoever asks: the periodic check, a click or a button in System. The
+    // choice is read from the file each time, so a change made in System takes effect at once, and the menu is drawn again when it
+    // changed. A request is answered by writing the state as it is, so the page is not left waiting.
+    private bool CheckingIsOn(bool asked)
+    {
+        var on = (_readSettings?.Invoke() ?? _settings).CheckForUpdates;
+        if (Interlocked.Exchange(ref _checkingOn, on ? 1 : 0) != (on ? 1 : 0))
+        {
+            _callbacks.OnUi(_callbacks.Changed);
+        }
+        if (!on && asked)
+        {
+            TrayLog.Write("Update checking is off, so nothing was looked for.");
+            RepublishState();
+        }
+        return on;
     }
 
     private async Task DownloadFoundAsync(UpdateMode announce)

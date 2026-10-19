@@ -66,12 +66,27 @@ internal sealed class SuiteUpdateEndpointHandlers
         var mode = model.Literal("mode", UpdateStatus.Modes);
         var checkOnStartup = model.Bool("check_on_startup", defaultValue: true);
         var interval = model.Number("check_interval_minutes", 60, required: false, ge: 1, le: 10080);
+
+        // A save that does not mention the choice leaves it as it was.
+        var asked = model.OptionalBool("check_for_updates");
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
         request.RequireConfirmationToken(csrfToken);
-        return ApiRoutes.Ok(_files.WriteSettings(mode, checkOnStartup, interval));
+        var before = CheckingIsOn(_files.ReadSettings());
+        var checkForUpdates = asked ?? before;
+        var saved = _files.WriteSettings(mode, checkOnStartup, interval, checkForUpdates);
+
+        // The tray reads the choice when it is asked to look, so a change is told to it the way a press of Check now is.
+        if (checkForUpdates != before && _files.TrayIsRunning())
+        {
+            _files.WriteCheckFlag();
+        }
+
+        return ApiRoutes.Ok(saved);
     }
+
+    private static bool CheckingIsOn(WireObject settings) => settings.Get("check_for_updates")?.IsTruthy ?? false;
 
     public async Task<ApiResult> GetUpdateStateAsync(ApiRequest request)
     {
@@ -97,6 +112,11 @@ internal sealed class SuiteUpdateEndpointHandlers
         if (state.Get("downloaded")?.IsTruthy ?? false)
         {
             throw new ApiException(StatusCodes.Status409Conflict, "An update is already downloaded. Restart Weir to apply it.");
+        }
+
+        if (!CheckingIsOn(_files.ReadSettings()))
+        {
+            throw new ApiException(StatusCodes.Status409Conflict, UpdateFiles.CheckingIsOffText);
         }
 
         var current = (state.Get("state") as WireString)?.Value;

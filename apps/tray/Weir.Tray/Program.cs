@@ -184,6 +184,7 @@ static class Program
             // Before the port is asked for and before any server runs: an update left waiting is installed while
             // nothing is running that the install could interrupt (#857).
             var updateService = new UpdateService(TrayLog.Write);
+            UpdateSettings.SettleFirstRun(runtimeHome);
             var updateSettings = UpdateSettings.Load(runtimeHome);
             Func<RunningServer?> orphan = () => UpdateBackupReady.FindLiveServer(runtimeHome);
             var backup = new UpdateBackupHook(

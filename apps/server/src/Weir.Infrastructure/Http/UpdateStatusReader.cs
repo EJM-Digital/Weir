@@ -24,16 +24,23 @@ public sealed class UpdateStatusReader
     private readonly WeirOptions _options;
     private readonly SqliteDatabase _database;
     private readonly SuiteSettingsStore _suiteSettings;
+    private readonly UpdateFiles _files;
     private readonly ILogger<UpdateStatusReader> _logger;
     private string? _lastIssue;
 
     public UpdateStatusReader(
-        IReleaseCatalogClient releases, WeirOptions options, SqliteDatabase database, SuiteSettingsStore suiteSettings, ILogger<UpdateStatusReader> logger)
+        IReleaseCatalogClient releases,
+        WeirOptions options,
+        SqliteDatabase database,
+        SuiteSettingsStore suiteSettings,
+        UpdateFiles files,
+        ILogger<UpdateStatusReader> logger)
     {
         _releases = releases ?? throw new ArgumentNullException(nameof(releases));
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _database = database ?? throw new ArgumentNullException(nameof(database));
         _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
+        _files = files ?? throw new ArgumentNullException(nameof(files));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -45,6 +52,13 @@ public sealed class UpdateStatusReader
         if (currentVersion.Length == 0)
         {
             currentVersion = UnknownVersion;
+        }
+
+        // The Windows app lets its owner switch checking off, and then nothing is asked of GitHub. A Docker or source install has no
+        // tray to hold that choice and keeps looking, since this page is how it learns of a release.
+        if (installType == "windows" && _files.ReadSettings().Get("check_for_updates")?.IsTruthy != true)
+        {
+            return UpdateStatus.Off(currentVersion, installType);
         }
 
         try

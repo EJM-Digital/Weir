@@ -45,7 +45,8 @@ function signCsrf(secret) {
  * @param {number} [behaviour.jobsInFlight] How many times the job list is read, after each start, before the job Weir starts with ends.
  * @param {boolean} [behaviour.jobNeverEnds] The job Weir starts with does not end.
  * @param {boolean} [behaviour.jobStartsLate] After each start, a worker takes a job just after the job list is first read empty, unless Weir is paused.
- * @param {boolean} [behaviour.feedHasNewerRelease] A release newer than the build is published, and the tray installs it at its next start unless told only to announce updates.
+ * @param {boolean} [behaviour.feedHasNewerRelease] A release newer than the build is published, and the tray installs it at its next start unless told only to announce updates or to check for nothing.
+ * @param {boolean} [behaviour.newInstallChecksForUpdates] The tray does not start a new install with update checking off.
  */
 export class FakeWindows {
   logRows = [];
@@ -160,7 +161,8 @@ export class FakeWindows {
     },
     startTray: (port) => {
       this.calls.push(`startTray ${port}`);
-      if (this.#behaviour.feedHasNewerRelease && !this.#files.has("update-settings.json") && this.#updateWaiting) this.#version = "1.0.0-rc.18";
+      if (!this.#files.has("update-settings.json")) this.#settleFirstRun();
+      if (this.#behaviour.feedHasNewerRelease && this.#updateWaiting) this.#version = "1.0.0-rc.18";
       const trayPid = ++this.#pids;
       this.#tray = { trayPid, serverPid: ++this.#pids };
       this.#mark = { processId: trayPid, executable: this.paths.trayExe };
@@ -200,6 +202,21 @@ export class FakeWindows {
     serverLogs: async () => this.#files.get(join("logs", "weir.log")) ?? "",
   };
 
+  /** The tray's first start writes the update choices: a Weir that has run here before keeps checking, a new install starts with checking off. */
+  #settleFirstRun() {
+    const checking = this.#behaviour.newInstallChecksForUpdates === true || this.#files.has(join("data", "weir.sqlite3"));
+    this.#put("update-settings.json", JSON.stringify({ mode: "Auto", checkOnStartup: true, checkIntervalMinutes: 60, checkForUpdates: checking }));
+    const line = checking ? "Weir has run here before, so update checking stays on." : "This is a new install, so update checking starts off. Setup asks whether to turn it on.";
+    this.#put("tray-host.log", `${this.#files.get("tray-host.log") ?? ""}${line}
+`);
+  }
+
+  /** Whether the tray, as its update choices stand, installs a newer release by itself: it checks, and its mode is Auto. */
+  #installsItsOwnUpdates() {
+    const settings = JSON.parse(this.#files.get("update-settings.json") ?? "{}");
+    return (settings.mode ?? "Auto") === "Auto" && settings.checkForUpdates !== false;
+  }
+
   /** A server stopped while a job is held by a worker owes that job a second run, and says so when it starts again. */
   #stop() {
     if (this.#jobInFlight()) this.#interrupted = true;
@@ -217,7 +234,7 @@ export class FakeWindows {
     this.#put(join("data", "weir.sqlite3"), this.#files.get(join("data", "weir.sqlite3")) ?? "database");
     this.#put("tray-host.log", `${this.#files.get("tray-host.log") ?? ""}Using port 9347 from --port\nWeir is healthy on http://127.0.0.1:9347/\n`);
     this.#put(join("logs", "weir.log"), `${this.#files.get(join("logs", "weir.log")) ?? ""}${this.#behaviour.serverLogLine ?? "Weir started"}\n`);
-    this.#updateWaiting = !this.#files.has("update-settings.json");
+    this.#updateWaiting = this.#installsItsOwnUpdates();
     this.#db ??= { account: null, settings: { app_timezone: "UTC", log_retention_days: 30 }, libraries: [], activity: [], logs: [], paused: false };
     if (this.#behaviour.warnsWhenStarted) this.#db.logs.push({ source: "server", id: this.#db.logs.length + 1, at: this.#now, title: this.#behaviour.warnsWhenStarted });
     if (this.#interrupted) this.#db.logs.push({ source: "server", id: this.#db.logs.length + 1, at: this.#now, title: "Weir startup recovered interrupted work recovered_jobs={'processing_requeued': 1}" });

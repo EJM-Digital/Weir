@@ -23,6 +23,10 @@ public static class TrayFiles
     public static void WriteHeartbeat(string home, TimeSpan? ago = null) =>
         File.WriteAllText(Path.Join(home, Heartbeat), JsonSerializer.Serialize(new { at = DateTimeOffset.UtcNow - (ago ?? TimeSpan.Zero) }));
 
+    /// <summary>The update choices the tray follows: whether Weir looks for updates at all. A new install has no such file and checks for nothing.</summary>
+    public static void WriteUpdateSettings(string home, bool checkForUpdates) =>
+        File.WriteAllText(Path.Join(home, "update-settings.json"), JsonSerializer.Serialize(new { mode = "Auto", checkForUpdates }));
+
     public static void WriteUpdateState(string home, bool downloaded, string version) =>
         Replace(home, string.Create(CultureInfo.InvariantCulture, $"{{\"downloaded\": {(downloaded ? "true" : "false")}, \"version\": \"{version}\"}}"));
 

@@ -22,11 +22,19 @@ public sealed class SuiteUpdateRequestsApiTests
 
     private static readonly string[] Steps = ["/api/v1/suite/check-update", "/api/v1/suite/download-update", "/api/v1/suite/apply-update"];
 
-    /// <summary>A Windows install whose tray has just said it is alive, unless <paramref name="trayBeatAgo"/> says it did so longer ago.</summary>
-    private static async Task<(WeirTestServer Server, ApiTestClient Client)> SignedInAdminAsync(TimeSpan? trayBeatAgo = null, bool windows = true)
+    /// <summary>
+    /// A Windows install whose tray has just said it is alive, unless <paramref name="trayBeatAgo"/> says it did so longer ago. It has
+    /// update checking switched on unless <paramref name="checking"/> says it has not, as a new install does not.
+    /// </summary>
+    private static async Task<(WeirTestServer Server, ApiTestClient Client)> SignedInAdminAsync(TimeSpan? trayBeatAgo = null, bool windows = true, bool checking = true)
     {
         var server = windows ? await StartServerAsync(("WEIR_RUNTIME", "windows")) : await StartServerAsync();
         await TestDatabase.SeedAdminAsync(server);
+        if (checking)
+        {
+            File.WriteAllText(Path.Join(server.Home, "update-settings.json"), "{\"mode\": \"Auto\", \"checkForUpdates\": true}");
+        }
+
         if (trayBeatAgo is { } ago)
         {
             File.WriteAllText(Path.Join(server.Home, "tray-heartbeat.json"), $"{{\"at\": \"{DateTimeOffset.UtcNow - ago:O}\"}}");
@@ -55,6 +63,87 @@ public sealed class SuiteUpdateRequestsApiTests
     {
         using var response = await client.GetAsync(UpdateState);
         return (await Json(response))["tray_running"]!.GetValue<bool>();
+    }
+
+    [Theory]
+    [InlineData(CheckUpdate)]
+    [InlineData(DownloadUpdate)]
+    public async Task While_update_checking_is_off_a_check_or_a_download_is_refused_and_leaves_no_flag(string path)
+    {
+        var (server, client) = await SignedInAdminAsync(TimeSpan.Zero, checking: false);
+        await using var _ = server;
+
+        using var refused = await AskAsync(client, path);
+
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        Assert.Equal("Update checking is off. Turn it on in System, About, then try again.", (await Json(refused))["detail"]!.GetValue<string>());
+        Assert.Empty(Directory.GetFiles(server.Home, "update-*-now"));
+        Assert.Equal(("idle", false, null, null), await StateAsync(client));
+    }
+
+    private const string Settings = "/api/v1/suite/update-settings";
+
+    private static async Task<HttpResponseMessage> SaveAsync(ApiTestClient client, object choices) =>
+        await client.PutAsync(Settings, choices);
+
+    [Fact]
+    public async Task Turning_update_checking_on_or_off_tells_the_tray_so_it_looks_at_once()
+    {
+        var (server, client) = await SignedInAdminAsync(TimeSpan.Zero, checking: false);
+        await using var _ = server;
+
+        using var on = await SaveAsync(client, new { csrf_token = await client.CsrfAsync(), mode = "Auto", check_for_updates = true });
+        Assert.True((await Json(on))["check_for_updates"]!.GetValue<bool>());
+        Assert.True(File.Exists(Path.Join(server.Home, "update-check-now")));
+        File.Delete(Path.Join(server.Home, "update-check-now"));
+
+        using var sameAgain = await SaveAsync(client, new { csrf_token = await client.CsrfAsync(), mode = "NotifyOnly", check_for_updates = true });
+        Assert.Equal(HttpStatusCode.OK, sameAgain.StatusCode);
+        Assert.Empty(Directory.GetFiles(server.Home, "update-*-now"));
+
+        using var off = await SaveAsync(client, new { csrf_token = await client.CsrfAsync(), mode = "NotifyOnly", check_for_updates = false });
+        Assert.False((await Json(off))["check_for_updates"]!.GetValue<bool>());
+        Assert.True(File.Exists(Path.Join(server.Home, "update-check-now")));
+    }
+
+    [Fact]
+    public async Task Saving_the_update_settings_without_the_choice_leaves_it_as_it_was()
+    {
+        var (server, client) = await SignedInAdminAsync(TimeSpan.Zero, checking: false);
+        await using var _ = server;
+        using var changed = await SaveAsync(client, new { csrf_token = await client.CsrfAsync(), mode = "DownloadOnly", check_on_startup = false, check_interval_minutes = 240 });
+
+        var settings = await Json(changed);
+
+        Assert.False(settings["check_for_updates"]!.GetValue<bool>());
+        Assert.Empty(Directory.GetFiles(server.Home, "update-*-now"));
+        Assert.Contains("\"checkForUpdates\": false", File.ReadAllText(Path.Join(server.Home, "update-settings.json")), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task With_no_tray_to_tell_the_choice_is_saved_and_no_flag_is_left()
+    {
+        var (server, client) = await SignedInAdminAsync(checking: false);
+        await using var _ = server;
+
+        using var on = await SaveAsync(client, new { csrf_token = await client.CsrfAsync(), mode = "Auto", check_for_updates = true });
+
+        Assert.Equal(HttpStatusCode.OK, on.StatusCode);
+        Assert.Empty(Directory.GetFiles(server.Home, "update-*-now"));
+        Assert.True((await Json(await client.GetAsync(Settings)))["check_for_updates"]!.GetValue<bool>());
+    }
+
+    [Fact]
+    public async Task An_update_already_downloaded_can_still_be_applied_while_update_checking_is_off()
+    {
+        var (server, client) = await SignedInAdminAsync(TimeSpan.Zero, checking: false);
+        await using var _ = server;
+        TrayWrites(server, """{"state": "downloaded", "downloaded": true, "version": "9.9.9"}""");
+
+        using var applied = await AskAsync(client, "/api/v1/suite/apply-update");
+
+        Assert.Equal(HttpStatusCode.OK, applied.StatusCode);
+        Assert.True(File.Exists(Path.Join(server.Home, "update-apply-now")));
     }
 
     [Fact]

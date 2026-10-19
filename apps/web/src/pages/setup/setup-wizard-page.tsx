@@ -22,6 +22,7 @@ import {
 import { SetupNeedsAdmin } from "./setup-needs-admin";
 import { useSuggestedLibraries } from "./use-suggested-libraries";
 import { useWizardConnections } from "./use-wizard-connections";
+import { useWizardUpdates } from "./use-wizard-updates";
 import {
   firstLibraryOfType,
   useWizardSave,
@@ -31,6 +32,7 @@ import {
   type WizardDraft,
 } from "./use-wizard-save";
 import { WizardDownloadsSection } from "./wizard-downloads-section";
+import { WizardUpdatesSection } from "./wizard-updates-section";
 import { isConnectedSource, type DownloadSource } from "./wizard-source";
 
 const FALLBACK_ZONE = "UTC";
@@ -123,9 +125,11 @@ function WizardForm({
     isConnectedSource(source) ? source : null,
   );
   const found = useSuggestedLibraries(connections.answering);
+  const updates = useWizardUpdates();
   const { finish, skip, pending } = useWizardSave({
     settings,
     libraries,
+    saveUpdates: updates.saveAnswer,
     onMessage: setStatusMessage,
     onFinished: () => setFinished(true),
   });
@@ -217,6 +221,14 @@ function WizardForm({
                 }
               />
             </WizardSection>
+
+            {updates.asked ? (
+              <WizardUpdatesSection
+                checking={updates.checking}
+                onChange={updates.choose}
+                disabled={pending}
+              />
+            ) : null}
           </div>
 
           {statusMessage ? (

@@ -7784,7 +7784,7 @@ export interface components {
       retry_at?: string | null;
       /**
        * Status
-       * @description up_to_date, update_available, rate_limited (GitHub is limiting update checks; the latest_ fields are the last release Weir knew), or unavailable
+       * @description up_to_date, update_available, rate_limited (GitHub is limiting update checks; the latest_ fields are the last release Weir knew), off (the Windows app's owner switched update checking off), or unavailable
        */
       status: string;
       /** Summary */
@@ -8132,7 +8132,7 @@ export interface components {
       latest_version: string | null;
       /**
        * Status
-       * @description checking: nothing learned yet. up_to_date. update_available. downloaded: the tray holds an update waiting to install. not_published: no release exists yet. rate_limited: GitHub is limiting update checks from this network, so the newest version is the last one known. unavailable: the release list could not be reached.
+       * @description checking: nothing learned yet. up_to_date. update_available. downloaded: the tray holds an update waiting to install. not_published: no release exists yet. rate_limited: GitHub is limiting update checks from this network, so the newest version is the last one known. off: the Windows app's owner switched update checking off, so nothing was asked of GitHub. unavailable: the release list could not be reached.
        * @enum {string}
        */
       status:
@@ -8142,6 +8142,7 @@ export interface components {
         | "downloaded"
         | "not_published"
         | "rate_limited"
+        | "off"
         | "unavailable";
     };
     /**
@@ -8540,6 +8541,12 @@ export interface components {
      * @description Tray update behaviour persisted in update-settings.json.
      */
     UpdateSettingsOut: {
+      /**
+       * Check For Updates
+       * @description Whether the Windows app looks for updates at all. Off on a new install; a file saved before this choice existed reads as on.
+       * @default false
+       */
+      check_for_updates: boolean;
       /** Check Interval Minutes */
       check_interval_minutes: number;
       /**
@@ -8558,6 +8565,11 @@ export interface components {
      * @description Body for PUT /suite/update-settings.
      */
     UpdateSettingsPutIn: {
+      /**
+       * Check For Updates
+       * @description Whether the Windows app looks for updates at all. Left out, it stays as it was.
+       */
+      check_for_updates?: boolean;
       /**
        * Check Interval Minutes
        * @default 60

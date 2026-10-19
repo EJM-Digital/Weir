@@ -181,6 +181,9 @@ public static class ReleaseCatalog
 public static class UpdateStatus
 {
     public const string RateLimitedStatus = "rate_limited";
+
+    /// <summary>The status of a Windows install whose owner has update checking switched off: Weir asks GitHub nothing.</summary>
+    public const string OffStatus = "off";
     public static readonly IReadOnlyList<string> Modes = ["Auto", "DownloadOnly", "NotifyOnly"];
 
     public static WireObject Unavailable(string currentVersion, string installType, string status, string summary) =>
@@ -260,14 +263,21 @@ public static class UpdateStatus
     public static string ClockText(DateTimeOffset at, string? timezoneName) =>
         TimeZones.ToLocal(at, timezoneName).ToString("h:mm tt", CultureInfo.InvariantCulture).ToLowerInvariant();
 
-    public static WireObject UpdateSettingsOut(string mode, bool checkOnStartup, long checkIntervalMinutes) => new WireObject()
+    /// <summary>The status when update checking is off: nothing was asked of GitHub, and the summary says how to turn it on.</summary>
+    public static WireObject Off(string currentVersion, string installType) =>
+        Unavailable(currentVersion, installType, OffStatus, "Update checking is off. Turn it on below to look for new versions of Weir.");
+
+    public static WireObject UpdateSettingsOut(string mode, bool checkOnStartup, long checkIntervalMinutes, bool checkForUpdates) => new WireObject()
         .Set("mode", mode)
         .Set("check_on_startup", checkOnStartup)
-        .Set("check_interval_minutes", checkIntervalMinutes);
+        .Set("check_interval_minutes", checkIntervalMinutes)
+        .Set("check_for_updates", checkForUpdates);
 
-    public static readonly WireObject DefaultUpdateSettings = UpdateSettingsOut("Auto", true, 60);
+    /// <summary>A new install: nobody has chosen yet, and checking is off until they do.</summary>
+    public static readonly WireObject DefaultUpdateSettings = UpdateSettingsOut("Auto", true, 60, checkForUpdates: false);
 
-    public static readonly WireObject UnreadableUpdateSettings = UpdateSettingsOut("NotifyOnly", true, 60);
+    /// <summary>A file that cannot be read: what was chosen is not known, so nothing installs and nothing is asked of GitHub.</summary>
+    public static readonly WireObject UnreadableUpdateSettings = UpdateSettingsOut("NotifyOnly", true, 60, checkForUpdates: false);
 
     /// <summary>
     /// Reads <c>update-settings.json</c>'s text; <see langword="null"/> when it cannot be read and the
@@ -298,6 +308,9 @@ public static class UpdateStatus
         }
 
         var checkOnStartup = (dict.Get("checkOnStartup") ?? WireBool.True).IsTruthy;
+
+        // A file saved before this choice existed was saved by an install that was checking, so it keeps checking.
+        var checkForUpdates = (dict.Get("checkForUpdates") ?? WireBool.True).IsTruthy;
         BigInteger interval;
         try
         {
@@ -308,13 +321,17 @@ public static class UpdateStatus
             return null;
         }
 
-        return interval < 1 || interval > 10080 ? null : UpdateSettingsOut(mode, checkOnStartup, (long)interval);
+        return interval < 1 || interval > 10080 ? null : UpdateSettingsOut(mode, checkOnStartup, (long)interval, checkForUpdates);
     }
 
     /// <summary>The <c>update-settings.json</c> the tray reads, as JSON indented by two spaces.</summary>
-    public static string SerializeUpdateSettings(string mode, bool checkOnStartup, long checkIntervalMinutes) =>
+    public static string SerializeUpdateSettings(string mode, bool checkOnStartup, long checkIntervalMinutes, bool checkForUpdates) =>
         WireJsonWriter.Dumps(
-            new WireObject().Set("mode", mode).Set("checkOnStartup", checkOnStartup).Set("checkIntervalMinutes", checkIntervalMinutes),
+            new WireObject()
+                .Set("mode", mode)
+                .Set("checkOnStartup", checkOnStartup)
+                .Set("checkIntervalMinutes", checkIntervalMinutes)
+                .Set("checkForUpdates", checkForUpdates),
             WireJsonFormat.Indented);
 
     /// <summary>

@@ -426,7 +426,8 @@ sealed class TrayApp : IDisposable
                 ShowUpdateNotice,
                 () => BackgroundWork.Observe("Apply update", ApplyUpdateAndRestartAsync())),
             TimeProvider.System,
-            _cts.Token);
+            _cts.Token,
+            () => UpdateSettings.Load(_runtimeHome));
         _icons = new TrayIcons(size => Program.LoadAppIcon(size), SystemInformation.SmallIconSize);
         _blinkTimer = new System.Windows.Forms.Timer { Interval = (int)TrayBlink.Interval.TotalMilliseconds };
         _blinkTimer.Tick += (_, _) =>

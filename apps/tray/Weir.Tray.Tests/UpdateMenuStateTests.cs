@@ -62,4 +62,22 @@ public sealed class UpdateMenuStateTests
         Assert.Equal(UpdateMenuAction.Download, after.Action);
         Assert.True(after.Enabled);
     }
+
+    [Theory]
+    [InlineData(false, null)]
+    [InlineData(true, "3.3.0")]
+    public void While_checking_is_off_the_item_says_so_and_opens_the_page_where_it_is_switched_on(bool hasPendingUpdate, string? version)
+    {
+        var state = UpdateMenuState.Describe(isInstalled: true, UpdateActivity.Idle, hasPendingUpdate, isDownloaded: false, version, checkingIsOn: false);
+
+        Assert.Equal(new UpdateMenuState("Update checking is off", true, UpdateMenuAction.OpenUpdatePage), state);
+    }
+
+    [Fact]
+    public void An_update_downloaded_before_checking_was_switched_off_can_still_be_restarted_into()
+    {
+        var state = UpdateMenuState.Describe(isInstalled: true, UpdateActivity.Idle, hasPendingUpdate: true, isDownloaded: true, "3.3.0", checkingIsOn: false);
+
+        Assert.Equal(new UpdateMenuState("Restart to update (v3.3.0)", true, UpdateMenuAction.Restart), state);
+    }
 }

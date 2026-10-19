@@ -10,7 +10,7 @@ namespace Weir.Infrastructure.Http;
 /// <param name="Status">
 /// <c>checking</c> (nothing learned yet), <c>up_to_date</c>, <c>update_available</c>, <c>downloaded</c> (waiting for the tray to
 /// install it), <c>not_published</c>, <c>rate_limited</c> (GitHub is limiting update checks; the latest version is the last one
-/// known) or <c>unavailable</c>.
+/// known), <c>off</c> (the Windows app's owner switched checking off) or <c>unavailable</c>.
 /// </param>
 /// <param name="LatestVersion">The newest version known, or the one waiting to install; null when none is known.</param>
 public sealed record UpdateOutlookSnapshot(string Status, string? LatestVersion);
@@ -99,6 +99,13 @@ public sealed class UpdateOutlook
     private DateTimeOffset NextCheckAt(string status, string? retryAt)
     {
         var now = _time.GetUtcNow();
+
+        // An off answer cost nothing to learn, and switching checking on must show at once, so it is never kept.
+        if (status == UpdateStatus.OffStatus)
+        {
+            return now;
+        }
+
         if (status == UpdateStatus.RateLimitedStatus && retryAt is not null && DateTimeOffset.TryParse(retryAt, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var lifts))
         {
             return lifts;

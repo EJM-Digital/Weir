@@ -770,6 +770,7 @@ describe("SystemPage", () => {
       mode: "Auto" | "DownloadOnly" | "NotifyOnly";
       check_on_startup: boolean;
       check_interval_minutes: number;
+      check_for_updates: boolean;
     };
   }) {
     const qc = new QueryClient({
@@ -804,6 +805,7 @@ describe("SystemPage", () => {
         mode: "NotifyOnly",
         check_on_startup: true,
         check_interval_minutes: 60,
+        check_for_updates: true,
       },
     });
 
@@ -970,6 +972,7 @@ describe("SystemPage", () => {
         mode: body.mode,
         check_on_startup: body.check_on_startup ?? true,
         check_interval_minutes: body.check_interval_minutes ?? 60,
+        check_for_updates: body.check_for_updates ?? true,
       }));
     const qc = seededUpdateClient({
       updateStatus: windowsUpdateAvailableStatus,
@@ -977,6 +980,7 @@ describe("SystemPage", () => {
         mode: "NotifyOnly",
         check_on_startup: true,
         check_interval_minutes: 60,
+        check_for_updates: true,
       },
     });
     render(wrap(<SystemPage />, qc));
@@ -988,6 +992,7 @@ describe("SystemPage", () => {
         mode: "Auto",
         check_on_startup: true,
         check_interval_minutes: 60,
+        check_for_updates: true,
       });
     });
     expect(

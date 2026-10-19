@@ -109,8 +109,12 @@ your home, put it behind a reverse proxy with HTTPS. See the [reverse proxy guid
 
 ## Update Weir
 
-Weir checks GitHub for new versions and tells you through the tray icon. Under **System › About**, **Update
-mode** decides what happens:
+A new install does not check for updates. Setup asks whether to, and the answer can be changed at any time under
+**System › About**, **Check for updates**. While it is off, Weir asks GitHub nothing and the tray menu says so. An install
+that was already checking before this choice existed keeps checking.
+
+When it is on, Weir checks GitHub for new versions and tells you through the tray icon. Under **System › About**,
+**Update mode** decides what happens:
 
 - **Auto**: downloads and installs by itself (the default).
 - **Download only**: downloads, then waits for you to choose **Restart to update**.

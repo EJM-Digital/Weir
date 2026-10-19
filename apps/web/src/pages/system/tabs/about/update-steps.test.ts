@@ -39,6 +39,31 @@ function enabled(buttons: ReturnType<typeof updateButtons>) {
 }
 
 describe("updateButtons", () => {
+  it("offers neither a check nor a download while update checking is off, even when the tray knows of an update", () => {
+    const buttons = updateButtons(
+      state({ pending_version: "1.1.0" }),
+      status({ status: "off" }),
+      idle,
+    );
+
+    expect(enabled(buttons)).toEqual([false, false, false]);
+    expect(buttons.download.primary).toBe(false);
+  });
+
+  it("still offers the restart into an update downloaded before checking was switched off", () => {
+    const buttons = updateButtons(
+      state({
+        downloaded: true,
+        pending_version: "1.1.0",
+        state: "downloaded",
+      }),
+      status({ status: "off" }),
+      idle,
+    );
+
+    expect(enabled(buttons)).toEqual([false, false, true]);
+  });
+
   it("offers only Check now when Weir is up to date", () => {
     const buttons = updateButtons(state(), status(), idle);
 

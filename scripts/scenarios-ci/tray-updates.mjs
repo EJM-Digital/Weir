@@ -16,6 +16,11 @@ export async function updateRequests(world) {
   const { weir, machine } = world;
   const startOfThisRun = (await machine.readText(machine.paths.trayLog).catch(() => "")).length;
   await ensureWeir(world);
+
+  // A new install does not check for updates, and these buttons are for an install that does: it is switched on for this run and put back at the end.
+  const original = await weir.get("/suite/update-settings");
+  const settings = (mode, checking) => ({ mode, check_on_startup: Boolean(original.check_on_startup), check_interval_minutes: Number(original.check_interval_minutes), check_for_updates: checking });
+  await weir.write("PUT", "/suite/update-settings", settings(original.mode, true));
   const trayLog = async (from) => linesAfter(await machine.readText(machine.paths.trayLog), from);
   const logLength = async () => (await machine.readText(machine.paths.trayLog)).length;
   const state = () => weir.get("/suite/update-state");
@@ -27,9 +32,7 @@ export async function updateRequests(world) {
   assert.equal(alive.tray_running, true, "Weir counts the tray alive, so the buttons are offered");
 
   // A tray set to install by itself must not restart Weir under the run: only the person's own buttons are pressed.
-  const original = await weir.get("/suite/update-settings");
-  const settings = (mode) => ({ mode, check_on_startup: Boolean(original.check_on_startup), check_interval_minutes: Number(original.check_interval_minutes) });
-  await weir.write("PUT", "/suite/update-settings", settings("NotifyOnly"));
+  await weir.write("PUT", "/suite/update-settings", settings("NotifyOnly", true));
   let checkedText;
   let downloadText;
   try {
@@ -58,7 +61,7 @@ export async function updateRequests(world) {
       }
     }
   } finally {
-    await weir.write("PUT", "/suite/update-settings", settings(original.mode));
+    await weir.write("PUT", "/suite/update-settings", settings(original.mode, Boolean(original.check_for_updates)));
     // A downloaded update would be installed by the next Quit: the build under test stays.
     await machine.stopWeir();
     await machine.discardDownloadedUpdate();

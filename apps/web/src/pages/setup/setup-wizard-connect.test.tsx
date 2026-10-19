@@ -173,6 +173,8 @@ function renderWizard() {
     },
   });
   client.setQueryData(authKeys.me, { id: 1, username: "admin", role: "admin" });
+  // A Docker install is not asked whether to check for updates, so these tests are about the rest of setup.
+  client.setQueryData(settingsKeys.updateStatus, { install_type: "docker" });
   client.setQueryData(settingsKeys.app, {
     setup_wizard_state: "pending",
     app_timezone: "UTC",

@@ -82,15 +82,18 @@ export function wizardStateOf(settings: AppSettings | undefined): string {
   return (settings?.setup_wizard_state || "pending").trim().toLowerCase();
 }
 
-/** Saves the wizard: the libraries first, then the app settings. */
+/** Saves the wizard: the libraries and the update answer first, then the app settings. */
 export function useWizardSave({
   settings,
   libraries,
   onMessage,
   onFinished,
+  saveUpdates,
 }: {
   settings: AppSettings;
   libraries: ProcessingLibrary[] | undefined;
+  /** Saves the answer to whether Weir checks for updates; nothing when the install has no such choice. */
+  saveUpdates: () => Promise<void>;
   onMessage: (message: string | null) => void;
   /** Called once the wizard's own data has saved and `setup_wizard_state` is "completed". */
   onFinished: () => void;
@@ -209,8 +212,8 @@ export function useWizardSave({
   }
 
   /**
-   * Libraries save before settings, so a library failure never leaves `setup_wizard_state` marked
-   * "completed" over work that did not actually finish.
+   * Libraries and the update answer save before settings, so a failure of either never leaves `setup_wizard_state`
+   * marked "completed" over work that did not actually finish.
    */
   async function finish(draft: WizardDraft, choice: LibraryChoice) {
     onMessage(null);
@@ -221,6 +224,7 @@ export function useWizardSave({
     }
     try {
       await saveLibraries(draft, choice);
+      await saveUpdates();
       await saveAppSettings.mutateAsync({
         setup_wizard_state: "completed",
         app_timezone: draft.timezone,
