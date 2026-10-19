@@ -1,7 +1,7 @@
 // The files in the container under test, as the scenarios ask about them: made, dropped into a watched folder, probed, hashed and dated by
 // the container's own tools, as the account the server runs as.
 import { shellQuote } from "../docker-smoke/shell.mjs";
-import { filmCommand, summarizeProbe } from "./film.mjs";
+import { audioOnlyCommand, filmCommand, summarizeProbe } from "./film.mjs";
 
 const PLAIN_PATH = /^[A-Za-z0-9_./-]+$/;
 
@@ -27,6 +27,12 @@ export class ContainerBox {
     this.#stack.exec(filmCommand(options));
   }
 
+  /** A file with sound and no picture, large enough to pass a size minimum. */
+  async makeAudioOnly(options) {
+    plain(options.path);
+    this.#stack.exec(audioOnlyCommand(options));
+  }
+
   /** A release folder in a watched folder: a copy of the film named for the release, and an .nfo beside it. */
   async dropRelease({ film, folder, name }) {
     const [source, target, nfo] = [film, `${folder}/${name}.mkv`, `${folder}/${name}.nfo`].map((path) => shellQuote(plain(path)));
@@ -47,6 +53,24 @@ export class ContainerBox {
 
   async remove(path) {
     this.#stack.exec(`rm -f ${shellQuote(plain(path))}`);
+  }
+
+  /** A folder and everything in it, as a person deletes a download from its folder. */
+  async removeTree(path) {
+    this.#stack.exec(`rm -rf ${shellQuote(plain(path))}`);
+  }
+
+  /** How many bytes the file holds. */
+  async sizeOf(path) {
+    const result = this.#stack.execResult(`stat -c %s ${plain(path)}`);
+    if (result.status !== 0) throw new Error(`stat could not read ${path}: ${result.output.trim()}`);
+    return Number(result.stdout.trim());
+  }
+
+  /** The paths below a folder that have this file name, or none when the folder is not there. */
+  async findNamed(folder, name) {
+    const result = this.#stack.execResult(`find ${plain(folder)} -type f -name ${shellQuote(name)}`);
+    return result.stdout.split("\n").filter(Boolean);
   }
 
   async probe(path) {

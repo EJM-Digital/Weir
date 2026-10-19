@@ -359,6 +359,8 @@ async function updateOverInstalledWeir(world) {
  */
 async function updateInstallsWhenIdle(world) {
   const { machine, feed } = world;
+  // The stand-in keeps every request of the shard, so what this scenario asked for is what came after this.
+  const asked = feed.requests.length;
   const { trayPid } = await startPreviousRelease(world, { feed: "newer-full", mode: "Auto", checkOnStartup: true });
   const before = await useThePreviousRelease(world, "update-installs-when-idle");
   const oldProcesses = await machine.processes();
@@ -367,7 +369,7 @@ async function updateInstallsWhenIdle(world) {
   const start = 0;
   await waitForTrayLine(world, "Update downloaded successfully.", start);
   await waitForTrayLine(world, `installing once Weir has been idle for ${IDLE_MINUTES} minutes`, start);
-  assert.deepEqual(feed.packagesAskedFor(), [world.release.full.FileName], "the tray did not take just the full package");
+  assert.deepEqual(feed.packagesAskedFor(asked), [world.release.full.FileName], "the tray did not take just the full package");
   await expectPreviousReleaseStillRunning(world, { trayPid });
 
   await waitForTrayLine(world, `Weir has been idle for ${IDLE_MINUTES} minutes; installing update v${world.expectedVersion} now.`, start, IDLE_CEILING_MS);

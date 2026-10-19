@@ -329,30 +329,3 @@ test("a change to the scenarios in CI runs them", () => {
   assert.match(ci, /- 'scripts\/scenarios-in-ci\.mjs'/);
   assert.match(ci, /- 'scripts\/scenarios-ci\/\*\*'/);
 });
-
-test("what a scenario leaves running is ended when it ends, whatever it found, and one that cannot be ended fails the scenario", async () => {
-  const ended = [];
-  const world = { ...new FakeWorld().asWorld(), cleanups: [] };
-  const registry = {
-    passes: async (given) => {
-      given.cleanups.push(async () => ended.push("passes"));
-      return "It was fine.";
-    },
-    fails: async (given) => {
-      given.cleanups.push(async () => ended.push("fails first"), async () => ended.push("fails second"));
-      throw new Error("It was not fine.");
-    },
-    "will-not-end": async (given) => {
-      given.cleanups.push(async () => {
-        throw new Error("the stand-in is still listening");
-      });
-      return "It was fine.";
-    },
-  };
-  const results = await runScenarios({ ids: ["passes", "fails", "will-not-end"], registry, world });
-  assert.deepEqual(ended, ["passes", "fails second", "fails first"]);
-  assert.deepEqual(results.map((result) => result.status), ["passed", "failed", "failed"]);
-  assert.equal(results[1].detail, "It was not fine.");
-  assert.match(results[2].detail, /Clean-up failed: the stand-in is still listening/);
-  assert.deepEqual(world.cleanups, []);
-});

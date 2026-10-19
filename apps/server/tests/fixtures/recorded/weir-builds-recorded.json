@@ -3,6 +3,7 @@
   "sets": {
     "deluno/1.0.0-rc.13": { "weirVersion": "1.0.0-rc.13", "recordedOn": "2026-10-11" },
     "deluno-side/1.0.0-rc.30.30": { "weirVersion": "1.0.0-rc.13", "recordedOn": "2026-10-13" },
-    "deluno-side/1.0.0-rc.30.32": { "weirVersion": "1.0.0-rc.18", "recordedOn": "2026-10-15" }
+    "deluno-side/1.0.0-rc.30.32": { "weirVersion": "1.0.0-rc.18", "recordedOn": "2026-10-15" },
+    "deluno-side/1.0.0-rc.30.33": { "weirVersion": "1.0.0-rc.18", "recordedOn": "2026-10-18" }
   }
 }

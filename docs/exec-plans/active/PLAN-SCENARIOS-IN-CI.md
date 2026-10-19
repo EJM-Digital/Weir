@@ -21,9 +21,15 @@ The 14 scenarios of `Weir.Scenarios.Catalog.ps1`, and the ones written for CI al
 | `update-over-installed-weir` | windows | windows-update | ported | The newest published release is installed, then updated to this commit's build through the tray's own update code, from a release feed made of the build's packages. Docker's upgrade smoke covers the volume half. |
 | `workflows-from-deluno` | linux | with-deluno | ported | Weir and Deluno speak HTTP only; Deluno's published image is the same Deluno. |
 | `deluno-film-handoff` | linux | with-deluno | ported | A hand-off followed through both apps, with the real clients in Compose. |
-| `deluno-release-with-extra` | linux | with-deluno | to-port | The extra is read where it stays, through the download client's own API. |
-| `deluno-resend` | linux | with-deluno | to-port | Deluno's send-again is an API call; both sides are read over HTTP. |
-| `deluno-outcomes` | linux | with-deluno | to-port | The outcome each app recorded is compared; both are read over HTTP. |
+| `deluno-release-with-extra` | linux | with-deluno | ported | The extra is read where qBittorrent left it, in the folder both containers share. |
+| `deluno-resend` | linux | with-deluno | ported | Deluno's send-again is an API call; both sides are read over HTTP. |
+| `deluno-outcomes` | linux | with-deluno | ported | The outcome each app recorded is compared; both are read over HTTP. |
+| `deluno-failed-release` | linux | with-deluno | ported | Written for CI (#1018): a release Weir cannot read; Deluno shows the hand-off failed in Weir's words. |
+| `deluno-rejected-release` | linux | with-deluno | ported | Written for CI (#1018): a release Weir rejects; Deluno refuses it and removes the download, Weir leaves it. |
+| `deluno-stop-waiting` | linux | with-deluno | ported | Written for CI (#1017): Stop waiting in Deluno drops a hand-off Weir holds while paused. |
+| `deluno-tv-episode` | linux | with-deluno | ported | Written for CI (#1017): an episode of a show handed over by a real Deluno as TV. |
+| `deluno-season-pack` | linux | with-deluno | ported | Written for CI (#1017): a season pack of two episodes handed over as one hand-off. |
+| `deluno-deleted-before-cleaning` | linux | with-deluno | ported | Written for CI (#1018): the download is deleted while Weir holds the hand-off; Weir reports it gone. |
 | `fresh-install` | windows | windows-install | ported | Runs `Weir-win-Setup.exe` silently and starts the installed tray; a clean runner is the clean machine. It also reads the tray's two secrets on the real install. |
 | `first-visit-account` | linux | weir-browser | ported | Nothing in it is Windows: a new browser context sees account creation, then sign-in. Chromium under Playwright takes the place of Edge. |
 | `weir-only-film` | linux | weir-only | ported | The first shard. The server cleans a film with the image's own ffmpeg. |
@@ -54,7 +60,7 @@ The VM suite does not cover these; the package smokes (`smoke-windows-package.ps
 | --- | --- | --- | --- |
 | weir-only | ubuntu-latest | 15 min | Weir alone in the Docker image: films, Process again, Pause and resume, a deleted file. **Built.** |
 | weir-browser | ubuntu-latest | 10 min | Weir alone, driven through a real browser (Chromium under Playwright, from `scripts/scenarios-ci/package.json`). **Built.** |
-| with-deluno | ubuntu-latest | 20 min | Weir, Deluno and the real clients; split by client when it outgrows the budget, as Deluno splits `resend`. |
+| with-deluno | ubuntu-latest | 25 min | Weir, Deluno and the real clients; split by client when it outgrows the budget, as Deluno splits `resend`. |
 | windows-install | windows-latest | 20 min | Install, the installed server and its secrets, the recovery command, uninstall and reinstall. **Built.** Start with Windows needs the tray's own menu, so it waits for windows-tray. |
 | windows-update | windows-latest | 30 min | The newest published release updated to this commit's build through the tray's own update code. **Built.** |
 | windows-tray | windows-latest | 20 min | The real tray through UI Automation. **Built.** NTFS behaviour is not in it yet. |

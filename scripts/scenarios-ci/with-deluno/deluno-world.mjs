@@ -6,21 +6,35 @@ import { pbkdf2Sync, randomBytes } from "node:crypto";
 
 import { pollUntil } from "../../docker-smoke/poll.mjs";
 import { DelunoApi } from "./deluno-api.mjs";
+import { ExchangeLog } from "./exchange-log.mjs";
 import { send } from "./http.mjs";
 import { QbittorrentApi } from "./qbittorrent-api.mjs";
+import { RecordingSet, writeRecordings } from "./recordings.mjs";
 
 /** Where the stack's applications answer on this machine (with-deluno/compose.yaml publishes these ports). */
 export const DELUNO_ORIGIN = "http://localhost:5099";
 export const QBITTORRENT_ORIGIN = "http://localhost:18081";
 const FIXTURE_ORIGIN = "http://localhost:18765";
+const RECORDER_ORIGIN = "http://localhost:18083";
 
-/** Where the applications reach one another, on the stack's own network. */
-const DELUNO_INSIDE = "http://deluno:8080";
-const WEIR_INSIDE = "http://weir:9347";
+/**
+ * Where the applications reach one another, on the stack's own network. Neither is given the other's address: both go through the recording
+ * proxy, which forwards every call unchanged and writes it down.
+ */
+const DELUNO_INSIDE = "http://recorder:8081";
+const WEIR_INSIDE = "http://recorder:8082";
 const FIXTURE_INSIDE = "http://fixture:8765";
 
-export const FOLDERS = { downloads: "/downloads/completed/Movies", library: "/media/Movies", weirOutput: "/weir/Ready/Movies" };
+export const FOLDERS = {
+  downloads: "/downloads/completed/Movies",
+  library: "/media/Movies",
+  weirOutput: "/weir/Ready/Movies",
+  tvDownloads: "/downloads/completed/TV",
+  tvLibrary: "/media/TV",
+  tvWeirOutput: "/weir/Ready/TV",
+};
 export const MOVIES_CATEGORY = "deluno-movies";
+export const TV_CATEGORY = "deluno-tv";
 /** The folder every container sees the release source's films in: the scenario makes a film here, in Weir's container, and the source offers it. */
 export const FILM_FOLDER = "/work/source";
 // Deluno treats a film shorter than two minutes as a likely sample.
@@ -53,9 +67,16 @@ export class DelunoWorld {
   #library;
   #indexer;
   #connection = null;
+  #processor = null;
+  #tvLibrary = null;
+  #client;
+  /** What passed between Weir and Deluno, and what the run asks to keep of it. */
+  exchanges = new ExchangeLog(RECORDER_ORIGIN);
+  recordings = new RecordingSet();
 
-  constructor({ deluno, qbittorrent, weir, library, indexer }) {
+  constructor({ deluno, qbittorrent, weir, library, indexer, client }) {
     this.deluno = deluno;
+    this.#client = client;
     this.#indexer = indexer;
     this.qbittorrent = qbittorrent;
     this.#weir = weir;
@@ -68,6 +89,7 @@ export class DelunoWorld {
     await ready(DELUNO_ORIGIN, "/health", "Deluno to answer");
     await ready(QBITTORRENT_ORIGIN, "/", "qBittorrent to answer");
     await ready(FIXTURE_ORIGIN, "/health", "the release source to answer");
+    await ready(RECORDER_ORIGIN, "/health", "the recording proxy to answer");
 
     const deluno = new DelunoApi(DELUNO_ORIGIN);
     await deluno.createFirstAccount(logins.deluno);
@@ -84,7 +106,7 @@ export class DelunoWorld {
       host: "qbittorrent",
       port: 8080,
       moviesCategory: MOVIES_CATEGORY,
-      tvCategory: "deluno-tv",
+      tvCategory: TV_CATEGORY,
       priority: 1,
       isEnabled: true,
     });
@@ -141,18 +163,24 @@ export class DelunoWorld {
     });
     // The planner that hands a finished download to Weir is one of the automatic jobs.
     await deluno.must("PUT", "/api/settings/automation", { isEnabled: true });
-    return new DelunoWorld({ deluno, qbittorrent, weir, library, indexer });
+    return new DelunoWorld({ deluno, qbittorrent, weir, library, indexer, client });
   }
 
   /**
    * Makes a film in Weir's container, as the scenario's film, and has the release source make a release of it that qBittorrent can download:
    * the film and an .nfo in a folder named like a release, and a torrent that names the source as its web seed.
+   * @param {object} options
+   * @param {"film" | "audio-only"} [options.content] The picture and sound of a film, or only sound (a file with no video in it, large enough to pass a size minimum).
+   * @param {boolean} [options.zeros] The release's file is as long as the film and all zero bytes: nothing can read it.
+   * @param {{path: string, bytes: number}[]} [options.extras] More files in the release folder, all zero bytes.
+   * @param {number[]} [options.episodes] Not a film but these episodes of season 1 of a show: one is an episode's release, several a season pack.
    * @returns {Promise<{title: string, year: number, release: string, infohash: string, size: number, url: string}>}
    */
-  async makeFilm({ box, title, year }) {
+  async makeFilm({ box, title, year, content = "film", zeros = false, extras = [], episodes = [] }) {
     const source = `${FILM_FOLDER}/${title}.mkv`;
-    await box.makeFilm({ path: source, seconds: FILM_SECONDS, videoBitrate: FILM_BITRATE });
-    const made = await send(FIXTURE_ORIGIN, { method: "POST", path: "/releases", body: { source, title, year }, what: "The release source" });
+    if (content === "audio-only") await box.makeAudioOnly({ path: source, seconds: FILM_SECONDS });
+    else await box.makeFilm({ path: source, seconds: FILM_SECONDS, videoBitrate: FILM_BITRATE });
+    const made = await send(FIXTURE_ORIGIN, { method: "POST", path: "/releases", body: { source, title, year, zeros, extras, episodes }, what: "The release source" });
     assert.equal(made.status, 200, `The release source made the release (answered ${made.status}: ${made.text.slice(0, 300)})`);
     return made.json;
   }
@@ -173,6 +201,93 @@ export class DelunoWorld {
       duplicateAction: null,
     });
     return movie;
+  }
+
+  /**
+   * Has the conversation about a hand-off kept as a recording. It is read from the proxy when the run ends, so it holds everything said about
+   * the hand-off until then: the hand-off, Deluno's questions about it, Weir's reports and Deluno's answers, the outcome.
+   */
+  keepConversation(handoff, { state, note }) {
+    this.recordings.keepConversation({ state, note, handoffId: handoff.id });
+  }
+
+  /** Writes what the run asked to keep, as `<folder>/<Deluno's version>/<state>.json`. Returns the files written. */
+  async writeRecordings(folder, now = new Date()) {
+    const { version } = await this.deluno.must("GET", "/api/system/status");
+    const { recordings } = this.recordings.build(await this.exchanges.all(), now.toISOString(), version);
+    return writeRecordings(folder, recordings);
+  }
+
+  /**
+   * Deluno's TV library, made the first time a scenario asks: its own quality profile, folders and qBittorrent category, routed to the release
+   * source and qBittorrent, and handed to Weir for refining as the movies library is. Weir then sets up a TV workflow from it.
+   */
+  async tvLibrary() {
+    this.#tvLibrary ??= this.#makeTvLibrary();
+    return this.#tvLibrary;
+  }
+
+  async #makeTvLibrary() {
+    await this.connectWeir();
+    await this.qbittorrent.createCategory(TV_CATEGORY, FOLDERS.tvDownloads);
+    const profile = await this.deluno.must("POST", "/api/quality-profiles", {
+      name: "TV 1080p",
+      mediaType: "tv",
+      cutoffQuality: "WEB 1080p",
+      allowedQualities: "WEB 720p,Bluray 720p,WEB 1080p,Bluray 1080p",
+      customFormatIds: "",
+      upgradeUntilCutoff: true,
+      upgradeUnknownItems: false,
+    });
+    const library = await this.deluno.must("POST", "/api/libraries", {
+      name: "TV Shows",
+      mediaType: "tv",
+      purpose: "Main library",
+      rootPath: FOLDERS.tvLibrary,
+      downloadsPath: FOLDERS.tvDownloads,
+      qualityProfileId: profile.id,
+      autoSearchEnabled: false,
+      missingSearchEnabled: false,
+      upgradeSearchEnabled: false,
+      removeEmptySourceFolders: false,
+      searchIntervalMinutes: 720,
+      retryDelayHours: 6,
+      maxItemsPerRun: 10,
+    });
+    await this.deluno.must("PUT", `/api/libraries/${library.id}/routing`, {
+      sources: [{ indexerId: this.#indexer.id, priority: 1, requiredTags: "", excludedTags: "" }],
+      downloadClients: [{ downloadClientId: this.#client.id, priority: 1 }],
+    });
+    await this.deluno.must("PUT", `/api/libraries/${library.id}/workflow`, {
+      importWorkflow: "refine-before-import",
+      processorConnectionId: this.#processor.id,
+      processorName: this.#processor.name,
+      processorOutputPath: FOLDERS.tvWeirOutput,
+      processorTimeoutMinutes: 2880,
+      processorFailureMode: "block",
+      cleanupMode: "keep-source",
+      removeEmptySourceFolders: false,
+    });
+    return library;
+  }
+
+  /** Adds the show to Deluno and sends the release of its episode (or season) to qBittorrent, as "Send anyway" on the show's page does. */
+  async sendSeries(release) {
+    const library = await this.tvLibrary();
+    const series = await this.deluno.must("POST", "/api/series", { title: release.title, startYear: release.year, monitored: true, libraryId: library.id });
+    await this.deluno.must("POST", `/api/series/${series.id}/grab?libraryId=${library.id}`, {
+      releaseName: release.release,
+      indexerId: this.#indexer.id,
+      indexerName: this.#indexer.name,
+      candidateQuality: "WEB 1080p",
+      downloadUrl: release.url,
+      sizeBytes: release.size,
+      seeders: 50,
+      force: true,
+      overrideReason: "Weir scenarios",
+      duplicateAction: null,
+    });
+    return series;
   }
 
   /** The newest hand-off Deluno has for a release, or undefined. */
@@ -208,6 +323,7 @@ export class DelunoWorld {
       isEnabled: true,
       healthCheckUrl: `${WEIR_INSIDE}/ready`,
     });
+    this.#processor = processor;
     await this.deluno.must("PUT", `/api/libraries/${this.#library.id}/workflow`, {
       importWorkflow: "refine-before-import",
       processorConnectionId: processor.id,
@@ -217,6 +333,10 @@ export class DelunoWorld {
       processorFailureMode: "block",
       cleanupMode: "keep-source",
       removeEmptySourceFolders: false,
+    });
+    this.recordings.keepConnection({
+      state: "real-connection",
+      note: "Weir connected to a real Deluno, and Deluno to Weir: what Weir read of Deluno's manifest and folders, and what Deluno asked of Weir, the first time each was said.",
     });
     return { id: connectionId, how: "connected Weir to Deluno with an API key made in Deluno, and Deluno to Weir with Weir's webhook secret" };
   }

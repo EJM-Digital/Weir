@@ -1,5 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import {
+  cleanup,
   fireEvent,
   render,
   screen,
@@ -57,6 +58,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cleanup();
   expect(server.unmatched).toEqual([]);
   vi.unstubAllGlobals();
 });

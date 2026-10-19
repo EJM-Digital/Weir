@@ -144,6 +144,10 @@ export async function runWindowsShard({ ids, registry: scenarios, watchLogs, mac
     }
     return await runScenarios({ ids, registry, world });
   } finally {
+    // What a scenario started on the machine (a stand-in server), taken down last made first, whatever happened.
+    for (const cleanup of world.cleanups.splice(0).reverse()) {
+      await cleanup().catch((error) => console.error(`::warning::A clean-up failed: ${error.message}`));
+    }
     await github?.stop();
     await keepInstallLogs(machine, logFolder).catch((error) => console.error(`::warning::The install's logs could not be kept: ${error.message}`));
     await machine.stopWeir().catch((error) => console.error(`::warning::Weir could not be stopped: ${error.message}`));

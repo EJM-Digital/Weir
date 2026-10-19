@@ -62,7 +62,7 @@ function chooseScenarios(homes, shard, only) {
   return chosen;
 }
 
-/** The ported scenarios of a Linux shard, run against the image in Compose. */
+/** The ported scenarios of a Linux shard, run against the image in Compose; `collectFailed` says the recordings of what they showed could not be kept although they ran. */
 async function runLinuxShard({ shard, ids, candidate, logFolder }) {
   const scratch = mkdtempSync(join(tmpdir(), "weir-scenarios-ci-"));
   const stack = new Stack(logFolder, scratch);
@@ -70,6 +70,7 @@ async function runLinuxShard({ shard, ids, candidate, logFolder }) {
   const { account, browser: wantsBrowser, beside, scenarios } = SHARDS[shard];
   const started = beside?.start();
   let results = [];
+  let collectFailed = false;
   let browser;
   stack.removeEverything();
   try {
@@ -81,7 +82,12 @@ async function runLinuxShard({ shard, ids, candidate, logFolder }) {
     if (beside) world.deluno = await beside.setUp(world, started);
     if (wantsBrowser) world.browser = browser = await Browser.launch(ORIGIN);
     results = await runScenarios({ ids, registry: scenarios, world });
+    if (beside?.collect) {
+      const files = await beside.collect(world, logFolder);
+      console.log(`Kept ${files.length} recording(s) of what passed between the applications:\n${files.join("\n")}`);
+    }
   } catch (error) {
+    collectFailed = results.length > 0;
     console.error(`::error::${shard}: ${error.message}`);
     console.error(`::group::Container log\n${stack.logs()}\n::endgroup::`);
   } finally {
@@ -90,7 +96,7 @@ async function runLinuxShard({ shard, ids, candidate, logFolder }) {
     stack.removeEverything();
     rmSync(scratch, { recursive: true, force: true });
   }
-  return results;
+  return { results, collectFailed };
 }
 
 /** The ported scenarios of a Windows shard, run on this machine, which must be a clean GitHub-hosted runner. */
@@ -155,9 +161,9 @@ async function main() {
   const update = updating
     ? { feedFolder: resolve(values.feed), previousSetup: resolve(values["previous-setup"]), previousFeed: resolve(values["previous-feed"]), previousVersion: values["previous-version"].replace(/^v/, "") }
     : undefined;
-  const results = linux
+  const { results, collectFailed } = linux
     ? await runLinuxShard({ shard, ids, candidate: values.candidate, logFolder })
-    : await runWindowsShardHere({ shard, ids, setup: values.setup, version: values.version, logFolder, update });
+    : { results: await runWindowsShardHere({ shard, ids, setup: values.setup, version: values.version, logFolder, update }), collectFailed: false };
 
   const summary = summaryMarkdown(results, { shard, ...subject });
   console.log(summary);
@@ -165,7 +171,7 @@ async function main() {
   writeFileSync(join(logFolder, "results.json"), JSON.stringify({ shard, [linux ? "candidate" : "setup"]: subject.value, results }, null, 2));
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   for (const result of results.filter((entry) => entry.status !== "passed")) console.error(`::error::${result.id}: ${result.detail}`);
-  process.exitCode = exitCode(results);
+  process.exitCode = collectFailed ? 1 : exitCode(results);
 }
 
 await main();
