@@ -8578,9 +8578,14 @@ export interface components {
     };
     /**
      * UpdateStateOut
-     * @description Where the tray is with an update: idle (an update it found and did not download is named in pending_version), checking, downloading, downloaded (waiting to be applied) or failed (failure says why). Read from update-state.json. tray_running says whether a tray is there to take a request: false on a Docker or source install and when the tray has not said it is alive lately.
+     * @description Where the tray is with an update: idle (an update it found and did not download is named in pending_version), checking, downloading, downloaded (waiting to be applied) or failed (failure says why). Read from update-state.json. tray_running says whether a tray is there to take a request: false on a Docker or source install, when the tray has not said it is alive lately, and when the tray was not installed with the installer (cannot_update_reason says so).
      */
     UpdateStateOut: {
+      /**
+       * Cannot Update Reason
+       * @description Present only while a tray is running that was not installed with the installer (a portable copy), so it cannot update itself: why, in plain words, and how to get a newer version.
+       */
+      cannot_update_reason?: string;
       /**
        * Downloaded
        * @default false

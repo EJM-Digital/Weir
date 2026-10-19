@@ -95,7 +95,10 @@ sealed class TrayUpdates
     {
         if (!_service.IsInstalled)
         {
-            TrayLog.Write("Velopack: not installed (dev mode), skipping update checks.");
+            // It still says it is alive, so System › About can tell a person this copy cannot update itself rather than that no tray is running.
+            TrayLog.Write("Velopack: not installed (portable or development copy), skipping update checks.");
+            WriteHeartbeat();
+            BackgroundWork.RunLoop("Update heartbeat", BeatAsync, _shutdown);
             return;
         }
 
@@ -160,7 +163,7 @@ sealed class TrayUpdates
     {
         try
         {
-            TrayHeartbeatFile.Write(_runtimeHome, _clock.GetUtcNow());
+            TrayHeartbeatFile.Write(_runtimeHome, _clock.GetUtcNow(), _service.IsInstalled);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

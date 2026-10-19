@@ -387,6 +387,33 @@ public sealed class TrayUpdateRequestsTests : IDisposable
     }
 
     [Fact(Timeout = 30_000)]
+    public async Task A_tray_that_was_not_installed_says_it_is_alive_and_cannot_update()
+    {
+        var service = new FakeUpdateService { IsInstalled = false };
+        var updates = Build(service, UpdateMode.Auto, checkOnStartup: true);
+        var started = _clock.GetUtcNow();
+
+        updates.Start();
+        await _clock.NextDelay();
+
+        Assert.Equal(started, HeartbeatAt());
+        Assert.False(HeartbeatSaysInstalled());
+        Assert.Equal(0, service.Checks);
+        Assert.False(File.Exists(FlagPath("update-state.json")));
+    }
+
+    [Fact(Timeout = 30_000)]
+    public async Task An_installed_tray_says_it_was_installed()
+    {
+        var updates = Build(new FakeUpdateService(), UpdateMode.NotifyOnly);
+
+        updates.Start();
+        await _clock.NextDelay();
+
+        Assert.True(HeartbeatSaysInstalled());
+    }
+
+    [Fact(Timeout = 30_000)]
     public async Task A_check_asked_for_before_the_tray_started_is_acted_on_at_start()
     {
         var service = new FakeUpdateService();
@@ -471,6 +498,9 @@ public sealed class TrayUpdateRequestsTests : IDisposable
 
     private DateTimeOffset HeartbeatAt() =>
         DateTimeOffset.Parse(JsonNode.Parse(File.ReadAllText(FlagPath("tray-heartbeat.json")))!["at"]!.GetValue<string>(), System.Globalization.CultureInfo.InvariantCulture);
+
+    private bool HeartbeatSaysInstalled() =>
+        JsonNode.Parse(File.ReadAllText(FlagPath("tray-heartbeat.json")))!["installed"]!.GetValue<bool>();
 
     private string FlagPath(string name) => Path.Combine(_home.Path, name);
 
