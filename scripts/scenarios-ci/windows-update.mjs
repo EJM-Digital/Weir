@@ -65,13 +65,16 @@ async function trayLogSince(world, mark) {
   return (await trayLog(world)).slice(mark);
 }
 
+const TAIL_LINES = 20;
+
+/** Waits for the tray to log a line; when it does not, the error carries the end of the tray's log, which says what it did instead. */
 async function waitForTrayLine(world, text, mark, ceilingMs = STEP_CEILING_MS) {
-  return wait(
-    world,
-    async () => (await trayLogSince(world, mark)).split(/\r?\n/).find((line) => line.includes(text)),
-    `the tray to log "${text}"`,
-    ceilingMs,
-  );
+  try {
+    return await wait(world, async () => (await trayLogSince(world, mark)).split(/\r?\n/).find((line) => line.includes(text)), `the tray to log "${text}"`, ceilingMs);
+  } catch (error) {
+    const tail = (await trayLogSince(world, mark)).split(/\r?\n/).filter(Boolean).slice(-TAIL_LINES).join("\n");
+    throw new Error(`${error.message} The end of its log:\n${tail || "(empty)"}`, { cause: error });
+  }
 }
 
 const updateState = (world) => world.weir.get("/suite/update-state");
@@ -110,6 +113,8 @@ async function startPreviousRelease(world, { feed, mode, checkOnStartup }) {
 
   const setup = await machine.install(world.previousSetup);
   assert.equal(setup.exitCode, 0, `Setup --silent of the release ${world.previousVersion} exited ${setup.exitCode}, not 0`);
+  const missing = await machine.missingFromInstall();
+  assert.equal(missing, undefined, `Setup of the release ${world.previousVersion} left an install that is not whole: ${missing}`);
   await machine.writeUpdateSettings({ mode, checkOnStartup, checkIntervalMinutes: NEVER_CHECK_MINUTES });
   const trayPid = machine.startTray(PORT);
   await waitReady(world);

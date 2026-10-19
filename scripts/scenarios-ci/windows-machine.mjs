@@ -118,8 +118,31 @@ export class WindowsMachine {
         ceilingMs: STOP_CEILING_MS * 2,
         intervalMs: 1000,
       });
+      await this.#waitForUninstallHelpers();
     }
     for (const folder of [this.paths.runtimeHome, this.paths.installRoot]) await rm(folder, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 });
+  }
+
+  /** The uninstaller hands the last of its clean-up to processes that outlive it; an install made while they run would be cleaned away with the old one. */
+  async #waitForUninstallHelpers() {
+    const running = () =>
+      json(
+        `ConvertTo-Json -Compress -InputObject @(Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -and $_.CommandLine.IndexOf($env:SCENARIO_ROOT, [StringComparison]::OrdinalIgnoreCase) -ge 0 } | ForEach-Object { $_.Name })`,
+        { ROOT: this.paths.installRoot },
+      );
+    await pollUntil(async () => ((await running()).length === 0 ? true : undefined), {
+      what: "the uninstaller's helper processes to end",
+      ceilingMs: STOP_CEILING_MS,
+      intervalMs: 500,
+    });
+  }
+
+  /** What is missing from an install that has just been made, in words, or undefined when it is whole. */
+  async missingFromInstall() {
+    for (const [what, path] of [["Update.exe", this.paths.updater], ["Weir.exe", this.paths.trayExe], ["WeirServer.exe", this.paths.serverExe]]) {
+      if (!(await this.exists(path))) return `${what} (${path}) is not there`;
+    }
+    return undefined;
   }
 
   /** Runs Velopack's own uninstaller, silently. */
