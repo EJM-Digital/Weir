@@ -67,7 +67,9 @@ function UpdateNotice({
   if (state.tray_running === false) {
     return (
       <div className="mm-update-ready" data-status="attention" role="alert">
-        <p className="mm-status-text text-sm font-semibold">{NO_TRAY}</p>
+        <p className="mm-status-text text-sm font-semibold">
+          {state.cannot_update_reason ?? NO_TRAY}
+        </p>
       </div>
     );
   }

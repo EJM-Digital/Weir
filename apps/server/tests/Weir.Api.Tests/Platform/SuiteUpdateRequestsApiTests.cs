@@ -17,6 +17,9 @@ public sealed class SuiteUpdateRequestsApiTests
 
     private const string NoTray = "The Weir tray isn't running, so Weir can't update itself from here.";
 
+    private const string NotInstalled =
+        "This copy of Weir wasn't installed with the installer, so it can't update itself. To get a newer version, download the newest Weir-win-Setup.exe from the Weir releases page on GitHub and run it.";
+
     private static readonly string[] Steps = ["/api/v1/suite/check-update", "/api/v1/suite/download-update", "/api/v1/suite/apply-update"];
 
     /// <summary>A Windows install whose tray has just said it is alive, unless <paramref name="trayBeatAgo"/> says it did so longer ago.</summary>
@@ -227,6 +230,39 @@ public sealed class SuiteUpdateRequestsApiTests
         Assert.Equal(NoTray, (await Json(asked))["detail"]!.GetValue<string>());
         Assert.Empty(Directory.GetFiles(server.Home, "update-*-now"));
         Assert.False(await TrayRunningAsync(client));
+    }
+
+    [Theory]
+    [InlineData(CheckUpdate)]
+    [InlineData(DownloadUpdate)]
+    [InlineData("/api/v1/suite/apply-update")]
+    public async Task A_tray_run_from_a_copy_that_was_not_installed_says_so_and_is_not_asked(string path)
+    {
+        var (server, client) = await SignedInAdminAsync();
+        await using var _ = server;
+        File.WriteAllText(Path.Join(server.Home, "tray-heartbeat.json"), $"{{\"at\": \"{DateTimeOffset.UtcNow:O}\", \"installed\": false}}");
+        TrayWrites(server, """{"state": "downloaded", "downloaded": true, "version": "9.9.9"}""");
+
+        using var asked = await AskAsync(client, path);
+        using var stateResponse = await client.GetAsync(UpdateState);
+        var state = await Json(stateResponse);
+
+        Assert.Equal(HttpStatusCode.Conflict, asked.StatusCode);
+        Assert.Equal(NotInstalled, (await Json(asked))["detail"]!.GetValue<string>());
+        Assert.Empty(Directory.GetFiles(server.Home, "update-*-now"));
+        Assert.False(state["tray_running"]!.GetValue<bool>());
+        Assert.Equal(NotInstalled, state["cannot_update_reason"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task A_missing_tray_gives_no_reason_beyond_not_running()
+    {
+        var (server, client) = await SignedInAdminAsync();
+        await using var _ = server;
+
+        using var stateResponse = await client.GetAsync(UpdateState);
+
+        Assert.Null((await Json(stateResponse))["cannot_update_reason"]);
     }
 
     [Fact]

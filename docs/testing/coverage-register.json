@@ -47455,7 +47455,6 @@
           "name": "tray-give-up"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-022",
         "verdict": "Partly"
@@ -47572,7 +47571,6 @@
           "name": "The_message_goes_when_the_update_it_is_about_has_been_installed_some_other_way"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-026",
         "verdict": "Partly"
@@ -47645,7 +47643,6 @@
           "name": "tray-lan-access"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-028",
         "verdict": "Partly"
@@ -48697,7 +48694,6 @@
           "name": "FirewallRuleWideningTests"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-057",
         "verdict": "Partly"
@@ -49346,7 +49342,6 @@
           "name": "A_server_left_running_that_cannot_save_the_copy_keeps_the_update_waiting_and_is_not_stopped"
         }
       ],
-      "issue": 1059,
       "audit": {
         "id": "TRAY-075",
         "verdict": "Partly"
@@ -49426,7 +49421,7 @@
     {
       "id": "tray.tray.a-tray-that-is-not-a-velopack-install-portable",
       "area": "tray",
-      "behaviour": "A tray that is not a Velopack install (portable/dev): skips update checks and heartbeat, menu opens System > About",
+      "behaviour": "A tray that is not a Velopack install (portable/dev): skips update checks, says in its heartbeat that it was not installed (System > About then says this copy cannot update itself and how to get a newer one), menu opens System > About",
       "kind": "tray",
       "severity": "medium",
       "touches": "install",
@@ -49441,6 +49436,16 @@
           "type": "scenario",
           "file": "scripts/scenarios-ci/windows-tray.mjs",
           "name": "tray-portable"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayUpdateRequestsTests.cs",
+          "name": "A_tray_that_was_not_installed_says_it_is_alive_and_cannot_update"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteUpdateRequestsApiTests.cs",
+          "name": "A_tray_run_from_a_copy_that_was_not_installed_says_so_and_is_not_asked"
         }
       ],
       "audit": {
@@ -58959,47 +58964,6 @@
       ],
       "covers": [
         "event:system.processing_resumed"
-      ],
-      "audit": {
-        "id": "inventory",
-        "verdict": "Covered"
-      }
-    },
-    {
-      "id": "events.arr.arr-library-connection-test-succeeded",
-      "area": "events",
-      "behaviour": "Weir records \"Connection check finished\" in Activity (arr_library.connection_test_succeeded)",
-      "kind": "event",
-      "severity": "low",
-      "touches": "none",
-      "required": "inproc",
-      "proofs": [],
-      "issue": 1142,
-      "covers": [
-        "event:arr_library.connection_test_succeeded"
-      ],
-      "audit": {
-        "id": "inventory",
-        "verdict": "Gap"
-      }
-    },
-    {
-      "id": "events.arr.arr-library-connection-test-failed",
-      "area": "events",
-      "behaviour": "Weir records \"Connection check failed\" in Activity (arr_library.connection_test_failed)",
-      "kind": "event",
-      "severity": "low",
-      "touches": "none",
-      "required": "inproc",
-      "proofs": [
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/SystemLog/SystemLogRulesTests.cs",
-          "name": "An_event_type_belongs_to_the_category_its_family_is_about"
-        }
-      ],
-      "covers": [
-        "event:arr_library.connection_test_failed"
       ],
       "audit": {
         "id": "inventory",

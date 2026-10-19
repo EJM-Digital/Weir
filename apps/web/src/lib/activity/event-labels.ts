@@ -16,8 +16,6 @@ export const EVENT_LABELS: Record<string, string> = {
   "system.network_access.changed": "Network access changed",
   "system.processing_paused": "Processing paused",
   "system.processing_resumed": "Processing resumed",
-  "arr_library.connection_test_succeeded": "Connection check finished",
-  "arr_library.connection_test_failed": "Connection check failed",
   "processing.supplied_payload_evaluation_completed":
     "Manual queue check finished",
   "processing.candidate_gate_completed": "Queue check finished",

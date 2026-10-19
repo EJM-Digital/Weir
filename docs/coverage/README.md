@@ -65,6 +65,17 @@ is not judged, and a project whose tests ran but wrote no report fails.
   file watchers) are run by tests that race them, so the lines they cover vary a little from run to run; the floors
   of the two projects they are in leave room for that.
 
+## Exclusions
+
+The goal is 100% of the code that ships ([`PLAN-100.md`](PLAN-100.md) says how it is reached), so nothing is left out of the figures by
+accident. Every way the figures leave code out is listed in `exclusions.json` with a kind and a reason: the names in
+`coverage.runsettings` (server and tray), in `coverage.out-of-process.xml` and in the web app's `coverage.exclude`, and each
+`[ExcludeFromCodeCoverage]` or `v8 ignore` marker in the code. `node scripts/check-coverage-exclusions.mjs` runs in CI on every
+change and fails when something is left out and not listed, when a listed exclusion no longer exists, and when an entry has no reason
+or one that says nothing. The kinds, and what a reason has to say for each, are in the plan.
+
+To exclude a line or a file, add the marker in the code and its entry in the same pull request; to stop excluding, remove both.
+
 ## Running it locally
 
 ```powershell

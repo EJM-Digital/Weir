@@ -218,6 +218,12 @@ public static class MediaToolLocations
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var directory in directories)
         {
+            // An empty entry means the current directory to a POSIX shell; Weir never looks there.
+            if (directory.Length == 0)
+            {
+                continue;
+            }
+
             var normalized = windows ? directory.Replace('/', '\\').ToLowerInvariant() : directory;
             if (!seen.Add(normalized))
             {
@@ -237,11 +243,6 @@ public static class MediaToolLocations
     /// <summary>Joins a directory and a relative file name, adding a separator only when one is missing.</summary>
     private static string OsPathJoin(string directory, string file, bool windows)
     {
-        if (directory.Length == 0)
-        {
-            return file;
-        }
-
         if (windows)
         {
             var last = directory[^1];
