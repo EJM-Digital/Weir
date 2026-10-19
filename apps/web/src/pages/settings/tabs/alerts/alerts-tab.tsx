@@ -6,6 +6,7 @@ import { SidePanel } from "../../../../components/shared/side-panel";
 import { PageToolbarAddButton } from "../../../../components/shell/page-toolbar-actions";
 import { AdminOnlyNote } from "../../../../components/shared/admin-only-note";
 import { useIsAdmin } from "../../../../lib/auth/can-edit";
+import { ApiHttpError } from "../../../../lib/api/client";
 import { errorMessage } from "../../../../lib/api/error-message";
 import {
   useCreateNotificationChannelMutation,
@@ -14,12 +15,18 @@ import {
 import { mmActionButtonClass } from "../../../../lib/ui/mm-control-roles";
 import { SettingsLoadError } from "../../settings-load-error";
 import { orderedEvents } from "./alert-events";
-import { ChannelForm } from "./channel-form";
+import { useLeaveConfirmation, useUnsavedChanges } from "../../unsaved-changes";
+import { ChannelForm, useChannelDraft } from "./channel-form";
 import { ChannelsPanel } from "./channels-panel";
 import {
   RemoveChannelDialog,
   useChannelRemoval,
 } from "./remove-channel-dialog";
+
+/** What the unsaved warning calls an alert that has not been added yet. */
+const NEW_ALERT = "your new alert";
+
+const FORBIDDEN = 403;
 
 function NewChannelPanel({
   supportedEvents,
@@ -30,29 +37,42 @@ function NewChannelPanel({
 }) {
   const createMutation = useCreateNotificationChannelMutation();
   const labelRef = useRef<HTMLInputElement>(null);
+  const draft = useChannelDraft();
+  useUnsavedChanges(draft.dirty ? NEW_ALERT : null);
+  const { confirmLeave, dialog } = useLeaveConfirmation();
+  const close = () => confirmLeave(draft.dirty ? NEW_ALERT : null, onClose);
   return (
-    <SidePanel
-      open
-      title="New alert"
-      eyebrow="Setup · Connections"
-      initialFocus={labelRef}
-      onClose={onClose}
-      dataTestId="alert-add-panel"
-    >
-      <ChannelForm
-        supportedEvents={supportedEvents}
-        labelRef={labelRef}
-        onSave={(data) => createMutation.mutate(data, { onSuccess: onClose })}
-        onCancel={onClose}
-        saving={createMutation.isPending}
-        saveError={
-          createMutation.isError
-            ? errorMessage(createMutation.error, "Could not create alert.")
-            : null
-        }
-      />
-    </SidePanel>
+    <>
+      <SidePanel
+        open
+        title="New alert"
+        eyebrow="Setup · Connections"
+        initialFocus={labelRef}
+        onClose={close}
+        dataTestId="alert-add-panel"
+      >
+        <ChannelForm
+          draft={draft}
+          supportedEvents={supportedEvents}
+          labelRef={labelRef}
+          onSave={(data) => createMutation.mutate(data, { onSuccess: onClose })}
+          onCancel={close}
+          saving={createMutation.isPending}
+          saveError={
+            createMutation.isError
+              ? errorMessage(createMutation.error, "Could not create alert.")
+              : null
+          }
+        />
+      </SidePanel>
+      {dialog}
+    </>
   );
+}
+
+/** The server refused the account, as it does a viewer asking for the alerts. */
+function isRefusal(error: unknown): boolean {
+  return error instanceof ApiHttpError && error.status === FORBIDDEN;
 }
 
 export function AlertsTab() {
@@ -63,7 +83,15 @@ export function AlertsTab() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   if (channelsQ.isPending) return <PageLoading label="Loading alerts" />;
-  if (channelsQ.isError) return <SettingsLoadError what="alerts" />;
+  if (channelsQ.isError) {
+    return isRefusal(channelsQ.error) ? (
+      <p className="mm-quiet-note" data-testid="alerts-need-operator">
+        Only an operator or an admin can see alerts.
+      </p>
+    ) : (
+      <SettingsLoadError what="alerts" />
+    );
+  }
 
   const supportedEvents = orderedEvents(channelsQ.data.supported_events);
   const channels = channelsQ.data.items;

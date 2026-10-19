@@ -27,6 +27,12 @@ export type TodayFigures = {
   savedBytes: number | null;
 };
 
+/** Today's figures once read, and why they could not be when a read they depend on failed. */
+type TodayReading = {
+  figures: TodayFigures | undefined;
+  error: unknown;
+};
+
 /** What a day's finished downloads come to for one workflow: the ones Weir cleaned, and the space that saved. */
 export function figuresOf(finished: readonly FinishedFile[]): {
   cleaned: number;
@@ -65,8 +71,9 @@ export function useTodayFigures(
   workflowId: number | null,
   filter: Filter,
   now: number,
-): TodayFigures | undefined {
-  const totals = useProcessingOverviewStatsQuery(TODAY_DAYS).data;
+): TodayReading {
+  const totalsQuery = useProcessingOverviewStatsQuery(TODAY_DAYS);
+  const totals = totalsQuery.data;
   const oneWorkflow = workflowId !== null;
   const withDownloads = shownBy(filter, { source: "download" });
   const withLibrary = shownBy(filter, { source: "library" });
@@ -79,18 +86,26 @@ export function useTodayFigures(
     date_from: since,
     library_id: workflowId ?? undefined,
   };
-  const passes = useActivityWindowQuery(
+  const passesQuery = useActivityWindowQuery(
     { event_type: REMUX_PASS_COMPLETED_EVENT, ...dayWindow },
     TODAY_PAGES,
     { enabled: oneWorkflow && withDownloads },
-  ).data;
-  const cleans = useActivityWindowQuery(
+  );
+  const cleansQuery = useActivityWindowQuery(
     { event_type: LIBRARY_FILE_CLEANED_EVENT, ...dayWindow },
     COUNT_ONLY_PAGES,
     { enabled: withLibrary },
-  ).data;
+  );
+  const passes = passesQuery.data;
+  const cleans = cleansQuery.data;
+  // Only a read the figures are built from can fail them: the totals when every workflow is shown, a workflow's passes when
+  // one is, and the library's cleans when library cleaning is shown.
+  const error =
+    (withDownloads && !oneWorkflow ? totalsQuery.error : null) ??
+    (withDownloads && oneWorkflow ? passesQuery.error : null) ??
+    (withLibrary ? cleansQuery.error : null);
 
-  return useMemo(() => {
+  const figures = useMemo(() => {
     const downloadFigures = oneWorkflow
       ? passes &&
         figuresOf(
@@ -111,4 +126,5 @@ export function useTodayFigures(
       cleans?.total ?? 0,
     );
   }, [oneWorkflow, withDownloads, withLibrary, filter, totals, passes, cleans]);
+  return { figures, error };
 }

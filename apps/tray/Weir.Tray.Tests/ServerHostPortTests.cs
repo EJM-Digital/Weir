@@ -167,7 +167,7 @@ public sealed class ServerHostPortTests
     {
         using var rig = new StartRig(portUnknown: true);
 
-        Assert.False(await rig.Host.MoveToPortAsync(StartRig.AnotherPort(), CancellationToken.None));
+        Assert.Equal(PortMove.KeptOldPort, await rig.Host.MoveToPortAsync(StartRig.AnotherPort(), CancellationToken.None));
         Assert.Equal(ScopeChange.Failed, await rig.Host.MoveToScopeAsync(ListenScope.OtherDevices, CancellationToken.None));
 
         Assert.False(File.Exists(PortFile(rig)));

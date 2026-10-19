@@ -344,13 +344,16 @@ describe("the Edit alert form", () => {
     );
   });
 
-  it("throws away what was typed when it is cancelled, and sends nothing", async () => {
+  it("throws away what was typed when it is cancelled and left, and sends nothing", async () => {
     const server = serve({ [`GET ${CHANNELS}`]: oneChannel });
     render(<AlertsTab />, { wrapper });
     const form = await openEditForm(discord.label);
 
     fill(form, "Label", "Something else");
     fireEvent.click(within(form).getByRole("button", { name: "Cancel" }));
+    fireEvent.click(
+      await screen.findByTestId("settings-unsaved-changes-confirm"),
+    );
 
     const row = await rowOf(discord.label);
     expect(within(row).getByText(discord.provider)).toBeInTheDocument();

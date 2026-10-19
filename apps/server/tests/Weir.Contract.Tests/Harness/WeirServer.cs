@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Weir.Contract.Tests.Harness;
@@ -23,6 +24,7 @@ public sealed class WeirServer : IAsyncDisposable
 
     private const string ListenHost = "127.0.0.1";
 
+    private static readonly TimeSpan GracefulStopLimit = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan OutputGrace = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan ReadyPollInterval = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan ReadyProbeTimeout = TimeSpan.FromSeconds(2);
@@ -127,7 +129,9 @@ public sealed class WeirServer : IAsyncDisposable
     }
 
     /// <summary>Stops the server and what it started. The data folder stays.</summary>
-    public async Task StopAsync()
+    public Task StopAsync() => StopAsync(graceful: false);
+
+    private async Task StopAsync(bool graceful)
     {
         var process = _process;
         _process = null;
@@ -139,6 +143,11 @@ public sealed class WeirServer : IAsyncDisposable
         var processId = process.Id;
         try
         {
+            if (graceful && !process.HasExited && ServerShutdown.Request(process))
+            {
+                await WaitForExitAsync(process, GracefulStopLimit);
+            }
+
             if (!process.HasExited)
             {
                 process.Kill(entireProcessTree: true);
@@ -177,7 +186,9 @@ public sealed class WeirServer : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        await StopAsync();
+        // A run that measures coverage lets the server end by itself: what it ran is written as it exits, and a killed server writes nothing.
+        // A test that stops the server by hand to simulate a crash still kills it.
+        await StopAsync(graceful: ServerShutdown.CoverageIsMeasured);
         if (_evidenceName is not null)
         {
             // Kept for the test (or test class) that used this server; the framework deletes it again unless that test failed.
@@ -295,6 +306,20 @@ public sealed class WeirServer : IAsyncDisposable
         }
     }
 
+    /// <summary>Waits for the process to end, for at most <paramref name="limit"/>; the caller kills it if it has not.</summary>
+    private static async Task WaitForExitAsync(Process process, TimeSpan limit)
+    {
+        using var ceiling = new CancellationTokenSource(limit);
+        try
+        {
+            await process.WaitForExitAsync(ceiling.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            // It did not stop when asked.
+        }
+    }
+
     /// <summary>
     /// Waits for what the server printed before it ended to reach its log. A child of the server that outlives it can hold the
     /// streams open, so the wait has an end; what has arrived by then is what there is.
@@ -333,9 +358,7 @@ public sealed class WeirServer : IAsyncDisposable
         try
         {
             using var response = await ReadyProbe.GetAsync(new Uri(BaseUrl, "ready"));
-            var body = await response.Content.ReadAsStringAsync();
-            var ready = response.StatusCode == HttpStatusCode.OK && (bool?)JsonNode.Parse(body)?["ready"] == true;
-            return ready ? null : $"HTTP {(int)response.StatusCode} {body}";
+            return ReadyProblem(response.StatusCode, await response.Content.ReadAsStringAsync());
         }
         catch (HttpRequestException problem)
         {
@@ -345,6 +368,23 @@ public sealed class WeirServer : IAsyncDisposable
         {
             return "no answer within the probe timeout";
         }
+    }
+
+    /// <summary>Null when this is the answer of a ready server; otherwise what it answered. A server that is starting can answer with no body or with something that is not JSON, and that is not ready yet.</summary>
+    internal static string? ReadyProblem(HttpStatusCode status, string body)
+    {
+        try
+        {
+            if (status == HttpStatusCode.OK && (bool?)JsonNode.Parse(body)?["ready"] == true)
+            {
+                return null;
+            }
+        }
+        catch (JsonException)
+        {
+        }
+
+        return $"HTTP {(int)status} {body}";
     }
 
     internal static int FreePort()

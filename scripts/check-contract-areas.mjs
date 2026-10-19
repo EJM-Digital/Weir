@@ -4,7 +4,9 @@
 // CI runs one leg per name in apps/server/tests/Weir.Contract.Tests/areas.json with `--filter "Area=<name>"`.
 // `dotnet test` passes when a filter matches nothing, so a misspelt or empty area would be a leg that always
 // goes green. This check makes that impossible: every listed area has at least one [ContractArea("<name>")]
-// class, and every area a class names is listed.
+// class, and every area a class names is listed. Each area runs on Linux and on Windows, the platform people install on (#995):
+// the workflow must keep both platforms in its matrix, run the Windows one on a Windows runner, and tell the real-tool check which
+// platform a leg is on.
 //
 // Usage: node scripts/check-contract-areas.mjs
 import { readdirSync, readFileSync } from "node:fs";
@@ -31,6 +33,21 @@ export function compareAreas(listed, used) {
   return problems;
 }
 
+/** What is wrong with .github/workflows/ci-contract.yml's platforms, one sentence each; empty when every area runs on both. */
+export function platformProblems(workflow) {
+  const problems = [];
+  if (!/^\s+platform:\s*\[linux, windows\]\s*$/m.test(workflow)) {
+    problems.push("ci-contract.yml must list `platform: [linux, windows]` in its matrix, so every contract area runs on Windows as well as Linux.");
+  }
+  if (!/runs-on:.*windows-latest/.test(workflow)) {
+    problems.push("ci-contract.yml must run the windows platform on windows-latest.");
+  }
+  if (!/check-contract-real-tool-tests\.mjs[^\n]*"\$PLATFORM"/.test(workflow)) {
+    problems.push(`ci-contract.yml must pass the leg's platform ("$PLATFORM") to check-contract-real-tool-tests.mjs, not a fixed one.`);
+  }
+  return problems;
+}
+
 function sourceFiles(folder) {
   const files = [];
   for (const entry of readdirSync(folder, { withFileTypes: true })) {
@@ -53,12 +70,12 @@ function main() {
       if (!used.has(name)) used.set(name, relative);
     }
   }
-  const problems = compareAreas(listed, used);
+  const problems = [...compareAreas(listed, used), ...platformProblems(readFileSync(path.join(root, ".github", "workflows", "ci-contract.yml"), "utf8"))];
   if (problems.length > 0) {
     console.error(problems.join("\n"));
     process.exit(1);
   }
-  console.log(`Contract areas match their test classes: ${listed.join(", ")}.`);
+  console.log(`Contract areas match their test classes, and each runs on Linux and Windows: ${listed.join(", ")}.`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();

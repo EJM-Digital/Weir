@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { Panel } from "../../../../components/panels/panel";
 import { ColumnsMenu } from "../../../../components/shared/columns-menu";
+import { LoadError } from "../../../../components/shared/load-error";
 import { SortableColumnHeader } from "../../../../components/shared/sortable-column-header";
 import { useProcessingMaintenanceQuery } from "../../../../lib/processing/maintenance-queries";
 import type { AppSettings } from "../../../../lib/settings/types";
@@ -132,6 +133,17 @@ export function TimersSection({
       aside={<ColumnsMenu table={columns} />}
       padded
     >
+      {maintenance.isError ? (
+        <LoadError
+          thing="when the cleanup jobs run"
+          error={maintenance.error}
+        />
+      ) : null}
+      {maintenance.isPending ? (
+        <p className="mm-quiet-note" role="status">
+          Loading when the cleanup jobs run…
+        </p>
+      ) : null}
       <TimersTable rows={rows} columns={columns} />
     </Panel>
   );

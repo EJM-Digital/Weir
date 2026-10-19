@@ -9,6 +9,7 @@ if the riskiest code were wrong is a separate weekly measurement, in [`mutation.
 | Project | Measured by | Which tests |
 | --- | --- | --- |
 | Weir.Core, Weir.Infrastructure, Weir.Api, Weir.Host | coverlet.collector, merged by ReportGenerator | `Weir.Core.Tests`, `Weir.Infrastructure.Tests` and `Weir.Api.Tests` on Linux and on Windows, merged into one report |
+| Weir.Core, Weir.Infrastructure, Weir.Api, Weir.Host, **out of process** | dotnet-coverage, merged by ReportGenerator | every contract area and every E2E smoke shard, measured in the server process they start |
 | Tray | coverlet.collector, merged by ReportGenerator | `Weir.Tray.Tests` on Windows |
 | Web app | vitest with the v8 provider | the whole vitest suite |
 
@@ -20,12 +21,24 @@ generated API types).
 
 The numbers are exact counts, not a sample: a line either ran in some test or it did not.
 
-### What is not measured
+### The out-of-process figure
 
-The contract suite and the E2E smoke start the server as a separate process and talk to it over HTTP, so a
-collector attached to the test run sees only the test code, never the server. They run as before and are not part
-of these figures; the figures are what the in-process tests alone run. Measuring the server from outside is a
-separate piece of work (#976 records what was tried).
+The contract suite and the E2E smoke start the server as a separate process and talk to it over HTTP, so a collector
+attached to the test run sees only the test code, never the server. They are measured by `dotnet-coverage collect`
+(pinned in `ci.yml` and `ci-contract.yml`), which instruments the server process they start. The settings in
+`apps/server/coverage.out-of-process.xml` count the same four shipped assemblies as `coverage.runsettings`.
+
+- **A separate figure.** The two tools count lines and branches differently, so the out-of-process figure is
+  never added to the unit figure and has floors of its own (`out-of-process-*` in `floors.json`). It is the server
+  code that the contract suite and the E2E smoke run *together*: each contract area and each E2E shard uploads its own
+  report, and the `coverage` job merges them. It is judged only when both suites ran for the change; on a push to main,
+  where the E2E smoke does not run, it is shown as not run.
+- **The server must end to be measured.** A process writes what it ran as it exits, and a killed server writes nothing.
+  With `WEIR_CONTRACT_COVERAGE=1` the harness asks each server to stop when its test ends (the stop event on Windows,
+  the termination signal elsewhere) and kills it only if it has not stopped within a minute. A test that stops a
+  server by hand to simulate a crash still kills it, so the part of the server that ran before the crash is not in the figure.
+- **A leg that wrote nothing fails.** A contract area or E2E shard whose tests passed but which wrote no report fails its
+  upload step.
 
 ## Reading a run
 
@@ -43,7 +56,7 @@ is not judged, and a project whose tests ran but wrote no report fails.
 
 - **Raising a floor.** A pull request that adds tests raises the floors it earned, to the figure the run printed
   (the table marks "floor can rise"). Nothing raises them for you. A change to `floors.json` alone runs the server,
-  tray and web tests too, so a raised floor is checked against a fresh measurement.
+  tray, web, contract and E2E tests too, so a raised floor is checked against a fresh measurement.
 - **Lowering a floor.** A floor only goes down in a pull request of its own, with the reason in plain words written
   under `lowered` in `floors.json`, naming the old and the new figure:
   `"web.branch": { "from": 82.7, "to": 80, "reason": "..." }`. Without that entry the check fails and says so;
@@ -63,13 +76,20 @@ reportgenerator "-reports:tests/*/TestResults/*/coverage.cobertura.xml" "-target
 
 # Tray: the same from apps/tray with Weir.Tray.slnx, and "-reports:*/TestResults/*/coverage.cobertura.xml"
 
+# Out of process: one contract area (Linux or Windows), measured in the server it starts
+# (needs: dotnet tool install --global dotnet-coverage --version 18.11.2)
+cd apps/server
+$env:WEIR_CONTRACT_COVERAGE = "1"
+dotnet-coverage collect --settings coverage.out-of-process.xml --output-format cobertura --output ../../artifacts/coverage/out-of-process/coverage.cobertura.xml --nologo -- dotnet test tests/Weir.Contract.Tests --filter "Area=auth"
+reportgenerator "-reports:../../artifacts/coverage/out-of-process/coverage.cobertura.xml" "-targetdir:../../artifacts/coverage/out-of-process-report" "-reporttypes:Html;Cobertura;JsonSummary"
+
 # Web app
 cd apps/web
 npm run test:coverage
 
 # The check, against what you just measured
 cd ../..
-node scripts/check-coverage-floors.mjs --floors docs/coverage/floors.json --server artifacts/coverage/server --web apps/web/coverage
+node scripts/check-coverage-floors.mjs --floors docs/coverage/floors.json --server artifacts/coverage/server --out-of-process artifacts/coverage/out-of-process-report --web apps/web/coverage
 ```
 
 A local figure can differ from CI's: CI's server figure merges Linux and Windows, and tests that need FFmpeg or

@@ -93,6 +93,8 @@ A download in the watched folder is not Weir's. A download client may still be s
 - the scan's retry of an interrupted movie removal, `WatchedFolderScanOps.RetryCompletedMovieSourceCleanup`, and the scan's decision to attempt it;
 - deleting a rejected file: the workflow's "delete rejected files" choice (in the pass and in the scan), Activity's "delete the file" choice (which tells the person to remove the download from their download client instead), and the reject route (`RejectRoutes.ThroughHandoffAsync`);
 
+A manager that does not answer the rejection is asked again (the job is retried like any other transient failure) before the original is handed back, so a release known to be bad is not passed on because the manager was busy for a moment; once the attempts run out, the original is handed back unchanged (`ProcessingRejectHandler`).
+
 The reject route has no exception. When Weir tells the manager a release is bad and the manager accepts, a linked workflow's download is left in place: the report says `sourceRemoved: false`, the manager and its download client remove the download, and Activity says "Deluno will remove the download; Weir left it in place."
 
 The sentence a person reads names the manager: "This workflow is linked to Deluno, so the original stays with your download client, which may still be seeding." It is the pass's `source_folder_skip_reason` (Movies) or `tv_season_folder_skip_reason` (TV), and the file's Processed reason says the original was kept for the download client. A workflow that is Weir only, and has the setting off, keeps its own sentence (`RemuxPassRunner.KeptOriginalReason`).

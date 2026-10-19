@@ -64,6 +64,15 @@ import { LibraryTable } from "./library-table";
 import { useLibraryClean, type CleanRequest } from "./use-library-clean";
 
 const PAGE_SIZE = 200;
+/** What a link can open the page onto, read once: the address then holds only the workflow and the status chosen. */
+const OPENED_ONCE = ["q", "path"] as const;
+
+/** The address as it goes on, without what a link opened the page onto and the page no longer shows. */
+function addressAfterOpening(params: URLSearchParams): URLSearchParams {
+  const next = new URLSearchParams(params);
+  for (const name of OPENED_ONCE) next.delete(name);
+  return next;
+}
 /** Typing narrows the table, but not on every keystroke: the server reads the whole index for each search. */
 const SEARCH_DEBOUNCE_MS = 300;
 /** A clean finishes on the server minutes after the button, and a library is a long list to re-read. */
@@ -198,7 +207,7 @@ export function LibraryPage(): React.ReactElement {
         setSetupOpen(false);
       });
       saveLastLibrary(id);
-      const next = new URLSearchParams(params);
+      const next = addressAfterOpening(params);
       next.set("library", String(id));
       setParams(next, { replace: true });
     },
@@ -253,7 +262,7 @@ export function LibraryPage(): React.ReactElement {
     showRows(() => {
       setFilter(next);
       setPage(1);
-      const address = new URLSearchParams(params);
+      const address = addressAfterOpening(params);
       if (next.status) address.set("show", next.status);
       else address.delete("show");
       setParams(address, { replace: true });

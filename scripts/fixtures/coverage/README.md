@@ -14,3 +14,6 @@ write and not shapes assumed from their documentation.
 
 In `server/`, `tray/` and `web/` the checkout folder in every file name is rewritten to the one GitHub's runners use, so
 no fixture names a workstation folder. Nothing else is changed.
+- `out-of-process/`: the `Cobertura.xml` and `Summary.json` that ReportGenerator 5.5.11 wrote for the Cobertura file
+  dotnet-coverage 18.11.2 wrote while three contract tests ran (`apps/server/coverage.out-of-process.xml`,
+  `WEIR_CONTRACT_COVERAGE=1`), cut down to a few classes with `-classfilters`. The checkout folder is rewritten as above.

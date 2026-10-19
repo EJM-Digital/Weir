@@ -573,6 +573,42 @@ public sealed class ProcessingWatchedFolderWatcherServiceTests
         }
     }
 
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("0", false)]
+    public async Task A_scan_a_folder_change_queues_asks_for_passes_as_the_environment_says(string? environmentValue, bool queuesPasses)
+    {
+        (string, string)[] variables =
+        [
+            ("WEIR_CREDENTIALS_SECRET", "watcher-tests-secret-enqueue"),
+            ("WEIR_PROCESSING_WATCHER_DEBOUNCE_SECONDS", "60"),
+            .. environmentValue is null ? [] : new[] { ("WEIR_PROCESSING_WATCHED_FOLDER_REMUX_SCAN_DISPATCH_PERIODIC_ENQUEUE_REMUX_JOBS", environmentValue) },
+        ];
+        using var store = new StoreFixture(variables);
+        var watched = store.Home.Join("watch");
+        var output = store.Home.Join("out");
+        Directory.CreateDirectory(watched);
+        Directory.CreateDirectory(output);
+        await CreateLibraryAsync(store, watched, output);
+        var service = new FakeWatcherService(store.Database, store.Options, new ProcessingJobStore(store.Database, TimeProvider.System),
+            new WatcherStateStore(), Libraries, TimeProvider.System, NullLogger<ProcessingWatchedFolderWatcherService>.Instance);
+        await service.StartAsync(CancellationToken.None);
+        try
+        {
+            await Eventually.ThatAsync(() => service.CreatedFor(watched).Count == 1);
+
+            service.CreatedFor(watched)[0].RaiseError(new IOException("simulated overflow"));
+
+            await Eventually.ThatAsync(() => ScanJobPayloads(store).Count > 0);
+            var body = (WireObject)WireJsonParser.Parse(ScanJobPayloads(store)[0]);
+            Assert.Equal(queuesPasses, ((WireBool)body.Get("enqueue_remux_jobs")!).Value);
+        }
+        finally
+        {
+            await service.StopAsync(CancellationToken.None);
+        }
+    }
+
     /// <summary>Raises a synthetic <c>Error</c> event — a real buffer-overflow exception cannot be
     /// triggered deterministically from a test.</summary>
     private sealed class FakeFileSystemWatcher(string path) : FileSystemWatcher(path)

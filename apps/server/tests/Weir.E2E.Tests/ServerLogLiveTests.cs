@@ -15,19 +15,29 @@ public sealed class ServerLogLiveTests(E2EServer server) : E2ETestBase(server)
     [E2EFact]
     public async Task A_warning_the_server_writes_appears_in_the_open_Server_log_without_a_reload()
     {
+        using var stranger = new WeirClient(new Uri(BaseUrl));
+
         var page = await NewPageAsync();
         await Navigation.EnsureSignedInAsync(page, BaseUrl);
+
+        // A wrong password is one thing the server writes a warning for. One is refused before the log is opened, so the log
+        // has a line of this kind to show: once it does, the count is of what the log held, not of what had loaded so far.
+        await RefuseWrongPasswordAsync(stranger);
         await Navigation.OpenLogsAsync(page, "Server");
         var refusals = page.GetByTestId("log-row").Filter(new() { HasText = "auth event: login failed" });
+        await Expect(refusals.First).ToBeVisibleAsync(new() { Timeout = LineArrivesMs });
         var before = await refusals.CountAsync();
         await page.EvaluateAsync("() => { window.__weirNotReloaded = true; }");
 
-        // A wrong password is one thing the server writes a warning for.
-        using var stranger = new WeirClient(new Uri(BaseUrl));
-        var refused = await stranger.AttemptLoginAsync(Navigation.BootstrapUser, "not-the-password");
-        Assert.Equal(HttpStatusCode.Unauthorized, refused.Status);
+        await RefuseWrongPasswordAsync(stranger);
 
         await Expect(refusals).ToHaveCountAsync(before + 1, new() { Timeout = LineArrivesMs });
         Assert.True(await page.EvaluateAsync<bool>("() => window.__weirNotReloaded === true"), "The page was reloaded.");
+    }
+
+    private static async Task RefuseWrongPasswordAsync(WeirClient stranger)
+    {
+        var refused = await stranger.AttemptLoginAsync(Navigation.BootstrapUser, "not-the-password");
+        Assert.Equal(HttpStatusCode.Unauthorized, refused.Status);
     }
 }

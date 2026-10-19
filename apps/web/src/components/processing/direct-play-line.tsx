@@ -95,34 +95,12 @@ function DeviceVerdict({
 
 export function DirectPlayLine({
   directPlay,
-  full = false,
   testId,
 }: {
   directPlay: ProcessingDirectPlay[];
-  /** Lists every device with its full reasons, for a detail view rather than a list row. */
-  full?: boolean;
   testId?: string;
 }): React.ReactElement | null {
   if (directPlay.length === 0) return null;
-
-  if (full) {
-    return (
-      <section
-        className="mm-direct-play mm-direct-play--full"
-        data-testid={testId}
-      >
-        <h3 className="mm-direct-play__heading">Direct Play on your devices</h3>
-        <ul className="mm-direct-play__reasons">
-          {directPlay.map((entry) => (
-            <li key={entry.device_id}>{fullSentence(entry)}</li>
-          ))}
-        </ul>
-        <p className="mm-direct-play__note">
-          Information only. Weir never changes a file because of this.
-        </p>
-      </section>
-    );
-  }
 
   const explained = directPlay.filter((entry) => entry.reasons.length > 0);
   return (

@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { ORIGIN } from "../docker-smoke/stack.mjs";
 import { WeirClient } from "../docker-smoke/weir-client.mjs";
 import { runScenarios } from "./run.mjs";
-import { SCENARIOS, watchLogs } from "./windows-install.mjs";
+import { TrayDesktop } from "./tray-desktop.mjs";
 
 /** The server as an outsider asks it: is it ready, and which version does it report. */
 export function httpServer(origin) {
@@ -45,21 +45,25 @@ export function expectedVersion({ given, props }) {
 async function keepInstallLogs(machine, logFolder) {
   const kept = join(logFolder, "install-logs");
   await mkdir(kept, { recursive: true });
-  const files = [{ from: machine.paths.trayLog, name: "tray-host.log" }];
+  const files = [
+    { from: machine.paths.trayLog, name: "tray-host.log" },
+    { from: join(machine.paths.runtimeHome, "server-host.log"), name: "server-host.log" },
+  ];
   for (const file of await machine.files(machine.paths.logsFolder)) files.push({ from: join(machine.paths.logsFolder, file.path), name: `logs-${file.path.replaceAll(/[\/]/g, "-")}` });
   for (const file of files) await copyFile(file.from, join(kept, file.name)).catch((error) => console.error(`::warning::${file.from} could not be kept: ${error.message}`));
 }
 
 /**
- * Runs the chosen scenarios on the machine against the Setup. One that fails does not stop the next. Weir is stopped at the end, whatever
+ * Runs the chosen scenarios of a shard (`registry` and `watchLogs` are its module's) on the machine against the Setup. One that fails does not stop the next. Weir is stopped at the end, whatever
  * happened, so the runner is left as it was.
  */
-export async function runWindowsShard({ ids, machine, setupPath, version, logFolder }) {
+export async function runWindowsShard({ ids, registry, watchLogs, machine, setupPath, version, logFolder }) {
   const recordings = join(logFolder, "recordings");
   await mkdir(recordings, { recursive: true });
   const scratch = await mkdtemp(join(tmpdir(), "weir-scenarios-ci-"));
   const world = {
     machine,
+    desktop: new TrayDesktop(),
     server: httpServer(ORIGIN),
     weir: new WeirClient(ORIGIN),
     browser: () => new WeirClient(ORIGIN),
@@ -71,7 +75,7 @@ export async function runWindowsShard({ ids, machine, setupPath, version, logFol
     record: (name, text) => writeFile(join(recordings, name), text),
   };
   try {
-    return await runScenarios({ ids, registry: SCENARIOS, world });
+    return await runScenarios({ ids, registry, world });
   } finally {
     await keepInstallLogs(machine, logFolder).catch((error) => console.error(`::warning::The install's logs could not be kept: ${error.message}`));
     await machine.stopWeir().catch((error) => console.error(`::warning::Weir could not be stopped: ${error.message}`));

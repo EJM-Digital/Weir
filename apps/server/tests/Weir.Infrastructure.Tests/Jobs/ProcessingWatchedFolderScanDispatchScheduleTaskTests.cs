@@ -117,6 +117,30 @@ public sealed class ProcessingWatchedFolderScanDispatchScheduleTaskTests
         Assert.Equal(1, count);
     }
 
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("0", false)]
+    public async Task A_scheduled_scan_asks_for_passes_as_the_environment_says(string? environmentValue, bool queuesPasses)
+    {
+        (string, string)[] variables =
+        [
+            ("WEIR_CREDENTIALS_SECRET", "schedule-task-tests-secret-enqueue"),
+            .. environmentValue is null ? [] : new[] { ("WEIR_PROCESSING_WATCHED_FOLDER_REMUX_SCAN_DISPATCH_PERIODIC_ENQUEUE_REMUX_JOBS", environmentValue) },
+        ];
+        using var store = new StoreFixture(variables);
+        var watched = store.Home.Join("watch");
+        var output = store.Home.Join("out");
+        Directory.CreateDirectory(watched);
+        Directory.CreateDirectory(output);
+        await CreateLibraryAsync(store, watched, output, scanIntervalSeconds: 10);
+        var task = new ProcessingWatchedFolderScanDispatchScheduleTask(store.Database, store.Options, new ProcessingJobStore(store.Database, store.Clock), OperatorSettings, Libraries, store.Clock, NullLogger<ProcessingWatchedFolderScanDispatchScheduleTask>.Instance);
+
+        await task.RunOnceAsync(CancellationToken.None);
+
+        var body = (Weir.Core.Json.WireObject)Weir.Core.Json.WireJsonParser.Parse((await store.ScalarText("SELECT payload_json FROM jobs WHERE job_kind = 'processing.watched_folder.remux_scan_dispatch.v1'"))!);
+        Assert.Equal(queuesPasses, ((Weir.Core.Json.WireBool)body.Get("enqueue_remux_jobs")!).Value);
+    }
+
     [Fact]
     public async Task A_disabled_library_is_never_scheduled_regardless_of_the_scope_switch()
     {

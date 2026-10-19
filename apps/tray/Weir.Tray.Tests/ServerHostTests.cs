@@ -450,7 +450,7 @@ public sealed class ServerHostTests
         var move = rig.Host.MoveToPortAsync(StartRig.AnotherPort(), CancellationToken.None);
         await rig.DriveAsync(move, After(rig.LatestListeningAsync));
 
-        Assert.True(await move);
+        Assert.Equal(PortMove.Moved, await move);
         var moved = rig.Starts[startsBefore];
         Assert.Equal(string.Empty, moved.Attempt);
         Assert.Equal(string.Empty, moved.Failures);
@@ -478,7 +478,7 @@ public sealed class ServerHostTests
         StartRig.Steer("WEIR_STANDIN_EXIT_CODE", null);
         var move = rig.Host.MoveToPortAsync(StartRig.AnotherPort(), CancellationToken.None);
         await rig.DriveAsync(move, After(rig.LatestListeningAsync));
-        Assert.True(await move);
+        Assert.Equal(PortMove.Moved, await move);
         var gaveUp = false;
         rig.Host.Watch(() => gaveUp = true, CancellationToken.None);
         var startsBefore = rig.Starts.Count;

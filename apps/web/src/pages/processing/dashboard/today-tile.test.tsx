@@ -35,8 +35,11 @@ vi.mock("./use-today-figures", () => ({
     figuresAsked.push(workflowId);
     filtersAsked.push(filter);
     return {
-      cleaned: stats.files_processed,
-      savedBytes: stats.net_space_saved_bytes,
+      figures: {
+        cleaned: stats.files_processed,
+        savedBytes: stats.net_space_saved_bytes,
+      },
+      error: null,
     };
   },
 }));

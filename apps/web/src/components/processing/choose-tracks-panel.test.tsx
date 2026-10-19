@@ -232,3 +232,102 @@ it("moves a column from the keyboard and puts the columns back with Reset column
   fireEvent.click(screen.getByRole("menuitem", { name: "Reset columns" }));
   expect(columnNames().slice(0, 2)).toEqual(["Keep", "Track"]);
 });
+
+it("closes from Cancel, and says nothing about queueing", () => {
+  const props = baseProps();
+  render(<ChooseTracksPanel {...props} />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+  expect(props.onClose).toHaveBeenCalledTimes(1);
+  expect(props.onSubmit).not.toHaveBeenCalled();
+});
+
+it("says Queueing… and holds both buttons while the choice is being queued", () => {
+  const props = baseProps();
+  render(<ChooseTracksPanel {...props} submitting />);
+
+  const queueing = screen.getByTestId("choose-tracks-submit");
+  expect(queueing).toHaveTextContent("Queueing…");
+  expect(queueing).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+  fireEvent.click(queueing);
+  expect(props.onSubmit).not.toHaveBeenCalled();
+});
+
+it("shows why the choice could not be queued, and leaves the buttons ready to try again", () => {
+  const props = baseProps();
+  render(
+    <ChooseTracksPanel
+      {...props}
+      submitError="Weir could not queue that choice. The file changed."
+    />,
+  );
+
+  expect(screen.getByTestId("choose-tracks-submit-error")).toHaveTextContent(
+    "Weir could not queue that choice. The file changed.",
+  );
+  expect(screen.getByTestId("choose-tracks-submit-error")).toHaveAttribute(
+    "role",
+    "alert",
+  );
+  expect(screen.getByTestId("choose-tracks-submit")).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Cancel" })).toBeEnabled();
+});
+
+it("shows no queueing error when there is none", () => {
+  render(<ChooseTracksPanel {...baseProps()} />);
+
+  expect(
+    screen.queryByTestId("choose-tracks-submit-error"),
+  ).not.toBeInTheDocument();
+});
+
+it("lists an embedded image or attachment apart from the table, with what the saved rules do with it, and does not offer it", () => {
+  const withImages = tracks();
+  withImages.streams.push(
+    {
+      index: 4,
+      type: "image",
+      codec: "mjpeg",
+      language: null,
+      title: "Poster",
+      channels: null,
+      default: false,
+      forced: false,
+      rule_would_keep: false,
+      rule_reason: "This pass does not act on this stream type.",
+    },
+    {
+      index: 5,
+      type: "attachment",
+      codec: "ttf",
+      language: null,
+      title: null,
+      channels: null,
+      default: false,
+      forced: false,
+      rule_would_keep: true,
+      rule_reason: "Fonts stay so styled subtitles still display.",
+    },
+  );
+  render(<ChooseTracksPanel {...baseProps()} tracks={withImages} />);
+
+  const disclosure = screen.getByText(
+    /2 embedded images or attachments not shown above/,
+  );
+  const items = [...disclosure.closest("details")!.querySelectorAll("li")].map(
+    (item) => item.textContent,
+  );
+  expect(items).toEqual([
+    "Cover image “Poster” — removed: This pass does not act on this stream type.",
+    "Attachment — kept: Fonts stay so styled subtitles still display.",
+  ]);
+  expect(screen.getAllByRole("row")).toHaveLength(1 + 4);
+});
+
+it("has no list of images or attachments when the file has none", () => {
+  render(<ChooseTracksPanel {...baseProps()} />);
+
+  expect(screen.queryByText(/embedded image/)).not.toBeInTheDocument();
+});

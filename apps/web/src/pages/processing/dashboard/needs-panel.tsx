@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { Link } from "react-router-dom";
 
 import { Panel } from "../../../components/panels/panel";
@@ -28,14 +28,32 @@ type RowHandlers = {
   onOpen: ((file: ProcessingFile) => void) | undefined;
 };
 
+/**
+ * A row leaves when what it asked of the person is done. If their focus was in it, it would fall to the top of the page
+ * and a keyboard user would start again from there, so it goes to the panel, where the rows that remain are next.
+ */
+function useHandFocusToPanelWhenGone(row: RefObject<HTMLElement | null>) {
+  useLayoutEffect(() => {
+    const element = row.current;
+    return () => {
+      if (element?.contains(document.activeElement)) {
+        document.getElementById(NEEDS_PANEL_ID)?.focus();
+      }
+    };
+  }, [row]);
+}
+
 function NeedItem({
   row,
   mediaScopes,
   onNotice,
   onOpen,
 }: { row: NeedRow } & RowHandlers) {
+  const item = useRef<HTMLLIElement>(null);
+  useHandFocusToPanelWhenGone(item);
   return (
     <li
+      ref={item}
       className="mm-need"
       title={row.detail}
       data-status={row.meaning}

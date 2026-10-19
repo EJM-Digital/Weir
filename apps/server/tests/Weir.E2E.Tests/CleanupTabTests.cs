@@ -289,16 +289,28 @@ public sealed class CleanupTabTests(E2EServer server) : E2ETestBase(server)
         await admin.EnsureAdminAsync(Navigation.BootstrapUser, Navigation.BootstrapPassword);
         var page = await NewPageAsync();
         await Navigation.EnsureSignedInAsync(page, baseUrl);
-        var ran = await admin.PostWithCsrfAsync(Run, new JsonObject { ["family"] = CleanupTab.Unclaimed, ["media_scope"] = "movie" });
-        Assert.True(ran.Status == System.Net.HttpStatusCode.OK, ran.ToString());
+        // The leftover files run as the server starts, a movie sweep and a TV one, so the order the headings sort by is only settled once both
+        // have ended; the unclaimed copies are then run, and run again while they are not the latest.
         await Poll.UntilAsync(
             async () =>
             {
-                var (unclaimed, idle) = await RunStateAsync(page.Context, baseUrl, CleanupTab.Unclaimed);
-                var leftover = (await RunStateAsync(page.Context, baseUrl, CleanupTab.Leftover)).Completed;
-                return idle && unclaimed is not null && leftover is not null && string.CompareOrdinal(unclaimed, leftover) > 0;
+                var (unclaimed, unclaimedIdle) = await RunStateAsync(page.Context, baseUrl, CleanupTab.Unclaimed);
+                var (leftover, leftoverIdle) = await RunStateAsync(page.Context, baseUrl, CleanupTab.Leftover);
+                if (!unclaimedIdle || !leftoverIdle || leftover is null)
+                {
+                    return false;
+                }
+
+                if (unclaimed is not null && string.CompareOrdinal(unclaimed, leftover) > 0)
+                {
+                    return true;
+                }
+
+                var ran = await admin.PostWithCsrfAsync(Run, new JsonObject { ["family"] = CleanupTab.Unclaimed, ["media_scope"] = "movie" });
+                Assert.True(ran.Status == System.Net.HttpStatusCode.OK, ran.ToString());
+                return false;
             },
-            "the unclaimed copies run to finish after the leftover files run");
+            "the unclaimed copies to have run after the leftover files");
         await CleanupTab.OpenTabAsync(page);
 
         var jobs = page.GetByTestId("processing-maintenance-section").Locator("tbody tr");

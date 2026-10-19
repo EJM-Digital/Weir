@@ -28,6 +28,14 @@ function editable(grid: string): string {
   return usable(grid) ? grid : "1".repeat(SLOTS_PER_WEEK);
 }
 
+/**
+ * Whether two grids draw the same week in the editor. A week with every hour on looks the same as no restriction, so a
+ * person who draws a change and then undoes it has nothing to save.
+ */
+export function sameWeek(a: string, b: string): boolean {
+  return editable(a) === editable(b);
+}
+
 /** Whether an hour is on in the editor: it is when any of its quarters is. */
 export function hourIsOn(grid: string, day: number, hour: number): boolean {
   const start = day * SLOTS_PER_DAY + hour * SLOTS_PER_HOUR;

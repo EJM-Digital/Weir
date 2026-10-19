@@ -1,6 +1,7 @@
 # The contract suite (#516), called by ci.yml: apps/server/tests/Weir.Contract.Tests starts the built .NET server as
-# a separate process and talks to it only over HTTP (its README.md). One leg per area in that project's areas.json,
-# all at once, rather than one long runner.
+# a separate process and talks to it only over HTTP (its README.md). One leg per area in that project's areas.json and
+# per platform, all at once, rather than one long runner. Windows is the platform people install on, so every area runs
+# there too, against the Windows builds of ffmpeg and mkvmerge the package ships (#995).
 name: Contract suite
 
 on:
@@ -20,13 +21,17 @@ env:
 
 jobs:
   area:
-    name: contract (${{ matrix.area }})
-    runs-on: ubuntu-latest
+    name: contract (${{ matrix.area }}, ${{ matrix.platform }})
+    runs-on: ${{ matrix.platform == 'windows' && 'windows-latest' || 'ubuntu-latest' }}
     timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
         area: ${{ fromJSON(inputs.areas) }}
+        platform: [linux, windows]
+    defaults:
+      run:
+        shell: bash
     env:
       WEIR_SESSION_SECRET: ${{ github.run_id }}-${{ github.job }}-${{ github.run_attempt }}-ci-session-secret-32chars-min
     steps:
@@ -55,9 +60,13 @@ jobs:
           dotnet restore tests/Weir.Contract.Tests --locked-mode
           dotnet build tests/Weir.Contract.Tests --no-restore
 
+      # The pinned collector that follows the server this suite starts as its own process (#1081, docs/coverage/README.md).
+      - name: Install dotnet-coverage
+        run: dotnet tool install --global dotnet-coverage --version 18.11.2
+
       # `dotnet test` passes when a filter matches nothing, so scripts/check-contract-areas.mjs (repo-checks)
       # guarantees every area in areas.json has test classes.
-      - name: Contract suite, area (${{ matrix.area }})
+      - name: Contract suite, area (${{ matrix.area }}, ${{ matrix.platform }})
         id: contract
         working-directory: apps/server
         env:
@@ -67,29 +76,48 @@ jobs:
           WEIR_CONTRACT_REAL_MKVTOOLNIX_DIR: ${{ steps.media-tools.outputs.mkvtoolnix-dir }}
           # Keep each server's data folder and log (<folder>/contract-logs) until the leg is known to have passed.
           WEIR_CONTRACT_KEEP_DATA: "1"
+          # Each server is asked to stop instead of being killed, so it writes what it ran.
+          WEIR_CONTRACT_COVERAGE: "1"
           # Every server the suite starts gets its data folder under here, so a failed leg can upload them.
+          # TMPDIR is the Linux name; TEMP and TMP are Windows'.
           TMPDIR: ${{ runner.temp }}/weir-contract-data
+          TEMP: ${{ runner.temp }}/weir-contract-data
+          TMP: ${{ runner.temp }}/weir-contract-data
         run: |
           mkdir -p "$TMPDIR"
-          dotnet test tests/Weir.Contract.Tests --no-build --filter "Area=$CONTRACT_AREA" --logger trx
+          dotnet-coverage collect --settings coverage.out-of-process.xml --output-format cobertura \
+            --output "$RUNNER_TEMP/out-of-process/coverage.cobertura.xml" --nologo -- \
+            dotnet test tests/Weir.Contract.Tests --no-build --filter "Area=$CONTRACT_AREA" --logger trx
 
       - name: Summarize contract results
         if: ${{ !cancelled() }}
         env:
           CONTRACT_AREA: ${{ matrix.area }}
-        run: node scripts/summarize-test-results.mjs trx apps/server/tests/Weir.Contract.Tests "Contract suite ($CONTRACT_AREA)"
+          PLATFORM: ${{ matrix.platform }}
+        run: node scripts/summarize-test-results.mjs trx apps/server/tests/Weir.Contract.Tests "Contract suite ($CONTRACT_AREA, $PLATFORM)"
 
       - name: Every real-tool scenario ran
         if: ${{ !cancelled() }}
         env:
           CONTRACT_AREA: ${{ matrix.area }}
-        run: node scripts/check-contract-real-tool-tests.mjs "$CONTRACT_AREA" apps/server/tests/Weir.Contract.Tests linux "Real-tool scenarios ($CONTRACT_AREA)"
+          PLATFORM: ${{ matrix.platform }}
+        run: node scripts/check-contract-real-tool-tests.mjs "$CONTRACT_AREA" apps/server/tests/Weir.Contract.Tests "$PLATFORM" "Real-tool scenarios ($CONTRACT_AREA, $PLATFORM)"
+
+      # A leg that passed and wrote no coverage fails here, so the coverage check never reads a gap as "nothing to measure".
+      - name: Upload the server coverage this area measured
+        if: ${{ steps.contract.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-out-of-process-contract-${{ matrix.area }}
+          if-no-files-found: error
+          retention-days: 1
+          path: ${{ runner.temp }}/out-of-process/coverage.cobertura.xml
 
       - name: Upload contract results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: contract-test-results-${{ matrix.area }}
+          name: contract-test-results-${{ matrix.area }}-${{ matrix.platform }}
           if-no-files-found: ignore
           retention-days: 1
           path: apps/server/tests/Weir.Contract.Tests/TestResults/*.trx
@@ -100,7 +128,7 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: contract-failure-evidence-${{ matrix.area }}
+          name: contract-failure-evidence-${{ matrix.area }}-${{ matrix.platform }}
           if-no-files-found: ignore
           retention-days: 7
           path: artifacts/contract-failures
@@ -109,7 +137,7 @@ jobs:
         if: ${{ !cancelled() && steps.contract.outcome == 'failure' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: weir-contract-data-${{ matrix.area }}
+          name: weir-contract-data-${{ matrix.area }}-${{ matrix.platform }}
           if-no-files-found: warn
           retention-days: 7
           path: ${{ runner.temp }}/weir-contract-data

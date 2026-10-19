@@ -50,11 +50,13 @@ public sealed partial class DashboardClockTests(E2EServer server) : E2ETestBase(
             var first = int.Parse(Seconds().Match(await figure.InnerTextAsync()).Groups[1].Value, CultureInfo.InvariantCulture);
             Assert.InRange(first, 1, LeadSeconds);
 
-            // It shows a smaller number a moment later with nobody asking the server: the page's own once-a-second tick moved it.
+            // It shows a smaller number a moment later with nobody asking the server for what it counts down: the page's own
+            // once-a-second tick moved it. The countdown is worked out from the workflow list; the page may still be reading other
+            // things, for instance after a live update, and those are not what moves the figure.
             var asked = 0;
             page.Request += (_, request) =>
             {
-                if (request.Method == "GET" && request.Url.Contains("/api/v1/processing", StringComparison.Ordinal))
+                if (request.Method == "GET" && new Uri(request.Url).AbsolutePath.TrimEnd('/') == $"{WeirClient.Api}/processing/libraries")
                 {
                     Interlocked.Increment(ref asked);
                 }
