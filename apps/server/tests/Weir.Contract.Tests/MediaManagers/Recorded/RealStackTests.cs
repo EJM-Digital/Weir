@@ -111,7 +111,10 @@ public sealed partial class RealStackTests
 
         EmittedReport.AssertMatches(recording, report, (await ReportAsync(world, hand.Request.HandoffId())).Body);
         Assert.True(File.Exists(path), "Deluno removes the download, Weir leaves it");
-        var rejected = await world.Scenario.ActivityAsync("processing.file_rejected");
+        // Weir writes Activity after the manager has the report, so the line is awaited rather than read the moment the report is seen.
+        var rejected = await world.Scenario.WaitWhileWorkedOnAsync(
+            async () => await world.Scenario.ActivityAsync("processing.file_rejected") is { Count: > 0 } lines ? lines : null,
+            "Activity to say the release was rejected");
         Assert.Equal($"{Path.GetFileName(film)} was rejected so a different release can be found", (string)Assert.Single(rejected)["title"]!);
         Assert.Contains("will remove the download; Weir left it in place.", (string)Assert.Single(rejected)["detail"]!, StringComparison.Ordinal);
     }

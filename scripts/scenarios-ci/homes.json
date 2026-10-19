@@ -23,8 +23,8 @@
     },
     "windows-update": {
       "home": "windows",
-      "budgetMinutes": 20,
-      "what": "The update from the previous release, over a Weir that is running."
+      "budgetMinutes": 30,
+      "what": "The tray updates the newest published release to this commit's build through its own update code, from a release feed made of the build's packages."
     },
     "windows-tray": {
       "home": "windows",
@@ -37,8 +37,15 @@
       "id": "update-over-installed-weir",
       "home": "windows",
       "shard": "windows-update",
-      "state": "to-port",
-      "why": "Setup --silent over the previous release's running install, with the tray and its pre-update copy; none of it exists on Linux. Docker's own upgrade smoke already covers the volume half."
+      "state": "ported",
+      "why": "The tray updates a running install through its own code: the newest published release is installed, and a release feed made of this commit's package (the PC's hosts file points github.com at a stand-in) is checked, downloaded, verified and applied; the data, the account and the secrets survive.",
+      "passedInCi": [
+        {
+          "run": 39209114964,
+          "commit": "f4c3df6a9e0e90993582560ec27ba0e0e0739885",
+          "ref": "main"
+        }
+      ]
     },
     {
       "id": "workflows-from-deluno",
@@ -376,6 +383,51 @@
           "run": 39089494243,
           "commit": "a9a0a3cea94273cb25ebcffd8deafeaeb2b4ea3f",
           "ref": "coverage/windows-tray-shard"
+        }
+      ]
+    },
+    {
+      "id": "update-installs-when-idle",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-update",
+      "state": "ported",
+      "why": "The VM suite never waited for it: in Automatic mode the tray downloads the full package and installs it by itself once Weir has been idle for 5 minutes, and not before.",
+      "passedInCi": [
+        {
+          "run": 39209114964,
+          "commit": "f4c3df6a9e0e90993582560ec27ba0e0e0739885",
+          "ref": "main"
+        }
+      ]
+    },
+    {
+      "id": "update-left-waiting-installs-at-start",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-update",
+      "state": "ported",
+      "why": "The VM suite never ended a tray with an update downloaded: in Download only mode the update waits, and the next start of the tray installs it before the server starts.",
+      "passedInCi": [
+        {
+          "run": 39209114964,
+          "commit": "f4c3df6a9e0e90993582560ec27ba0e0e0739885",
+          "ref": "main"
+        }
+      ]
+    },
+    {
+      "id": "update-failure-leaves-the-old-weir",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-update",
+      "state": "ported",
+      "why": "The VM suite could only show 'nothing newer': a package changed after its hash was recorded is refused, and GitHub being down fails the check, each in plain words, with the old Weir still running.",
+      "passedInCi": [
+        {
+          "run": 39209114964,
+          "commit": "f4c3df6a9e0e90993582560ec27ba0e0e0739885",
+          "ref": "main"
         }
       ]
     }

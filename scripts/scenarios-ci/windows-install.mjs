@@ -26,6 +26,7 @@ const WARNINGS_OF_A_SERVER_WITHOUT_SECRETS = [
 // What a start of Weir takes at most; every wait ends the moment its condition holds, so these are hang guards.
 export const START_CEILING_MS = 120_000;
 const UNINSTALL_CEILING_MS = 120_000;
+const JOBS_CEILING_MS = 60_000;
 
 /** Fails with each thing found when there is any. */
 function expectNone(found, what) {
@@ -302,6 +303,16 @@ export function dataFolderProblems(before, after, { mayGrow = [] } = {}) {
   return problems;
 }
 
+/** Returns once no job waits for a worker or is held by one: a Weir stopped while a worker holds a job warns, when it next starts, that it ran the job again. */
+async function waitForNoJobInFlight(world) {
+  await wait(
+    world,
+    async () => ((await world.weir.get("/processing/jobs/inspection?limit=100&status=pending&status=leased")).jobs.length === 0 ? true : undefined),
+    "every job to end",
+    JOBS_CEILING_MS,
+  );
+}
+
 async function makeWorkflow(world) {
   const base = join(world.scratch, "workflow");
   const folders = { watched_folder: join(base, "watched"), work_folder: join(base, "work"), output_folder: join(base, "output") };
@@ -361,6 +372,7 @@ async function uninstallKeepsTheData(world) {
 
   // Weir stopped: nothing in the data folder may differ, but the line the tray logs that it was uninstalled.
   assert.ok((await machine.trayMark()) !== null, "a running tray leaves no mark in the registry, so there is nothing for the uninstall to remove");
+  await waitForNoJobInFlight(world);
   await machine.stopWeir();
   const stopped = await machine.files(home, { hash: true });
   assert.ok(stopped.some((file) => file.path === join("data", "weir.sqlite3")), "the data folder holds no database");
@@ -371,6 +383,7 @@ async function uninstallKeepsTheData(world) {
   assert.deepEqual(await secretsOf(world), secrets, "the reinstall replaced a secret");
 
   // Weir running: the uninstaller stops it first, and nothing in the data folder is deleted.
+  await waitForNoJobInFlight(world);
   const shortcuts = await machine.shortcuts();
   const running = await machine.files(home);
   await expectUninstalled(world);

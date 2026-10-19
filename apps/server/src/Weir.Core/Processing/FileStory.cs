@@ -133,7 +133,7 @@ public static class FileStory
         var minutes = (long)Math.Round(seconds / 60, MidpointRounding.AwayFromZero);
         if (minutes < 90)
         {
-            return $"{minutes} minute{(minutes != 1 ? "s" : string.Empty)}";
+            return $"{minutes} minutes";
         }
 
         var hours = seconds / 3600;
@@ -150,7 +150,7 @@ public static class FileStory
     {
         var where = libraryName.Trim();
         var scope = Text(detail.TryGetValue("media_scope", out var s) ? s : null);
-        var kind = scope switch { "tv" => "TV", "movie" => "film", _ => string.Empty };
+        var kind = scope switch { "tv" => "TV show", "movie" => "film", _ => string.Empty };
         if (where.Length == 0 && kind.Length == 0)
         {
             return null;
@@ -414,9 +414,8 @@ public static class FileStory
     /// <summary>A rejection by the rules is a decision, not a failure: it says why, then what became of the file.</summary>
     private static StoryStep Rejected(WireObject detail, string reason)
     {
-        var why = reason.StartsWith(AudioRejectionExplanation.Lead, StringComparison.Ordinal)
-            ? reason[AudioRejectionExplanation.Lead.Length..]
-            : reason;
+        var lead = AudioRejectionExplanation.Lead.TrimEnd();
+        var why = reason.StartsWith(lead, StringComparison.Ordinal) ? reason[lead.Length..].TrimStart() : reason;
         why = why.Length > 0 ? char.ToUpperInvariant(why[0]) + why[1..] : "Weir rejected this file.";
         why = why.EndsWith('.') ? why : $"{why}.";
         var next = Text(detail.Get("rejected_cleanup_detail"));
