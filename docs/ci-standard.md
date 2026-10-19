@@ -17,6 +17,10 @@ Deluno and Weir each keep their own identical copy of this standard and of the s
 
 Any other workflow follows the same rules below.
 
+## The local gate matches CI
+
+The local pre-push gate (`npm run gate`, `scripts/gate.ps1`) runs the browser smoke in CI's three shards (`--shard=1/3`, `2/3` and `3/3`, same Playwright config), each against its own fresh smoke host and database on its own ports, so state left by earlier specs is the same here as in a CI shard.
+
 ## The required check
 
 **`ci-passed` is the one check branch protection requires.** Nothing else is listed as required, so a job can be added, renamed or skipped by a path filter without touching the repository settings.
@@ -63,12 +67,13 @@ The job ids and display names below are the same in both repositories.
 9. **Containers are scanned.** Every image built in CI and in the release is scanned with Trivy (`aquasecurity/trivy-action`, pinned). The scan fails on a `HIGH` or `CRITICAL` vulnerability that has a fix available (`severity: HIGH,CRITICAL`, `ignore-unfixed: true`, `exit-code: "1"`).
 10. **Dependabot watches the actions.** The `github-actions` ecosystem in `dependabot.yml` covers `.github/workflows`, so a security advisory on a pinned action opens a pull request.
 11. **Browser tests retry once on CI; backend tests never retry.** Playwright runs with `retries: process.env.CI ? 1 : 0`, so one failed attempt is run again, and the job summary lists every test that passed only on the retry under "Flaky (passed on retry)". Nothing is hidden, and a test on that list is fixed. The backend xUnit tests are not retried at all: a failure is a failure.
+12. **A skip is never a pass.** A test that needs a real external tool skips itself where the tool is missing. CI installs the pinned tool, sets a require variable that turns the skip into a failure, and fails the leg unless the expected number of those tests ran; a skip is never a pass.
 
 ## The release
 
-1. **A tag is made only after CI is green on that exact commit.** The first job in `release.yml`, `ci-passed`, runs `scripts/verify-ci-for-release.mjs`: it asks GitHub (`gh run list --commit`) whether `ci.yml` has a completed `push` or manual run for the tagged commit whose `ci-passed` job passed. It does not wait. A tag made while CI is still running fails at once, and the fix is to wait for CI and re-run the release.
+1. **A tag is made only after CI is green on that exact commit.** The first job in `release.yml`, `ci-passed`, runs `scripts/verify-ci-for-release.mjs`: it asks GitHub (`gh run list --commit`) whether `ci.yml` has a completed `push` or manual run for the tagged commit whose `ci-passed` job passed. Deluno adds one condition: the Windows installer and both end-to-end job sets run only on a manual run (an ordinary push never builds them), so the run must have passed those jobs, which means a tag needs a green manual run (`gh workflow run ci.yml`) on the commit. It does not wait. A tag made while CI is still running fails at once, and the fix is to wait for CI and re-run the release.
 
-   **A tag the golden path gates is made only after it has passed on that exact commit** (`docs/golden-path.md` says which: every Deluno release, and Weir's stable releases). The release's `golden-path` job runs `scripts/verify-golden-path-for-release.mjs`: it asks GitHub for the commit's statuses and passes only when the newest status with the context `golden-path` is `success`. It does not wait. The status is set by whoever drove the golden-path run: `gh api repos/<owner>/<repo>/statuses/<sha> -f state=success -f context=golden-path -f description=… -f target_url=…`.
+   **A tag the golden path gates is made only after it has passed on that exact commit** (`docs/golden-path.md` says which: every `v*` tag of both apps, Deluno and Weir, release candidates included, each waiting for its own app's scenario suite on that exact commit). The release's `golden-path` job runs `scripts/verify-golden-path-for-release.mjs`: it asks GitHub for the commit's statuses and passes only when the newest status with the context `golden-path` is `success`, on the tagged commit or, when no file that ships changed since, on the nearest earlier commit that has one (and was run for the version being tagged); it says which commit's pass it used and why. It does not wait. The status is set by the scenario suite itself (`scripts/golden-path/Invoke-ScenarioSuite.ps1`, `docs/golden-path.md`); by hand only for a run that was not the suite's: `gh api repos/<owner>/<repo>/statuses/<sha> -f state=success -f context=golden-path -f description=… -f target_url=…`.
 2. **Each thing is built and checked before it is published.** The Windows build, the container build and the vulnerability scan run side by side, without credentials, and publish nothing. A publish job starts only when the build it publishes has passed.
 3. **Two jobs publish, one per thing published, and neither waits for the other.** `publish-windows` creates the GitHub Release with the Windows installer and its update files; `publish-docker` pushes the container image. Each `needs` the shared checks (`ci-passed`, `golden-path`, `validate`) and the checks of the build it publishes, and nothing else, so a slow or failed build of one never holds back the other, and either can be re-run alone (`gh run rerun --job`). Only `publish-windows` has `contents: write`. Only `publish-docker` has `packages: write` and logs in to the registry. `publish-docker` pushes the image (with provenance and an SBOM), checks the pushed manifest and starts the pushed image, and **only then moves the moving tags** (`major.minor` and `latest`), as the last step of the job, so a moving tag never names an image that failed its check. A release candidate has no moving tags.
 4. **`scripts/check-release-workflow-gates.mjs` checks this shape in `repo-checks`:** only `publish-windows` and `publish-docker` can publish, each needs the shared checks and its own build's checks and neither needs the other, the steps of `publish-docker` are in that order with the moving tags last and never moved for a release candidate, `ci-passed` still judges every CI job, and `golden-path` is a job both publish jobs need.
@@ -95,7 +100,7 @@ Security updates only. Every ecosystem in `dependabot.yml` has `open-pull-reques
 | `scripts/check-github-action-pins.mjs` | Fails on an action that is not pinned to a full SHA with a release comment. |
 | `scripts/check-workflow-hygiene.mjs` | Fails on a missing top-level `permissions` or a job with no `timeout-minutes`. |
 | `scripts/verify-ci-for-release.mjs` | The release's check that CI passed on the tagged commit. |
-| `scripts/verify-golden-path-for-release.mjs` | The release's check that the golden path passed on the tagged commit (`golden-path` commit status). |
+| `scripts/verify-golden-path-for-release.mjs` | The release's check that the golden path passed on the tagged commit, or on an earlier one with the same shipped files (`golden-path` commit status). |
 | `scripts/check-release-workflow-gates.mjs` | Fails when the release workflow's publish shape is broken. |
 | `scripts/summarize-test-results.mjs` | Writes TRX and Playwright results to the job summary. |
 
@@ -107,3 +112,5 @@ These are settings, not files, and are made by the repository owner:
 - Dependabot security updates on.
 - Secret scanning and push protection on.
 - A tag ruleset so that only the owner can create a `v*` tag.
+
+The backend tests run in seven parallel jobs (issue 1346): the six smaller test projects together, and `Deluno.Persistence.Tests` in six parts split by namespace, the large `Api` namespace by the first letter of the test class's name into four of them (`scripts/persistence-parts.mjs`; one job for all of Api ran past its 40 minute limit on 18 Oct). `scripts/check-persistence-parts.mjs` proves, from `dotnet test --list-tests`, that every Persistence test runs in exactly one part; CI runs it on the first leg and the gate runs it before the tests. Coverage from every leg is merged before the ratchet, and a failed leg fails the `backend` job that `ci-passed` judges.
