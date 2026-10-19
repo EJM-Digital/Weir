@@ -21,8 +21,8 @@ installed version, the latest release and a **Release notes** link.
 
 Every release has notes describing what changed for users:
 
-- on the [GitHub Releases page](https://github.com/jampat000/Weir/releases)
-- in the repository, under [`docs/release-notes`](https://github.com/jampat000/Weir/tree/main/docs/release-notes)
+- on the [GitHub Releases page](https://github.com/EJM-Digital/Weir/releases)
+- in the repository, under [`docs/release-notes`](https://github.com/EJM-Digital/Weir/tree/main/docs/release-notes)
 
 ## Updating on Windows
 
@@ -41,7 +41,7 @@ See [Windows installer](../deployment/windows#updates) for more.
 
 ## Updating on Docker
 
-With `image: ghcr.io/jampat000/weir:latest` (stable releases only: release candidates are published under their version tag, so until 1.0.0 you pin one, as below), pull the new image and recreate the container:
+With `image: ghcr.io/ejm-digital/weir:latest` (stable releases only: release candidates are published under their version tag, so until 1.0.0 you pin one, as below), pull the new image and recreate the container:
 
 ```bash
 docker compose pull
@@ -57,10 +57,10 @@ Each release is also published under its version number. To stay on one release 
 to move, pin it:
 
 ```yaml
-image: ghcr.io/jampat000/weir:X.Y.Z
+image: ghcr.io/ejm-digital/weir:X.Y.Z
 ```
 
-Replace `X.Y.Z` with a version from [the releases page](https://github.com/jampat000/Weir/releases).
+Replace `X.Y.Z` with a version from [the releases page](https://github.com/EJM-Digital/Weir/releases).
 
 To update, change the number to the new version and run the two commands above. Images are
 published for linux/amd64 and linux/arm64.
@@ -71,4 +71,4 @@ A release doesn't re-run the test suite. Its `ci-passed` job checks that CI alre
 exact commit being tagged, and a second job checks that the golden path (a run of the real product on a
 clean machine) was recorded as passed on it. Nothing is published until those jobs, the Windows package smoke test
 and the Docker image checks have all passed. The full process is in
-[`docs/release.md`](https://github.com/jampat000/Weir/blob/main/docs/release.md).
+[`docs/release.md`](https://github.com/EJM-Digital/Weir/blob/main/docs/release.md).

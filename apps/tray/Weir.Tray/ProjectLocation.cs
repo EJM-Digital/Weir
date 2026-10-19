@@ -7,7 +7,7 @@ namespace Weir.Tray;
 /// </summary>
 static class ProjectLocation
 {
-    internal const string Owner = "jampat000";
+    internal const string Owner = "EJM-Digital";
     internal const string Repo = "Weir";
     internal const string Slug = Owner + "/" + Repo;
     internal const string RepositoryUrl = "https://github.com/" + Slug;
