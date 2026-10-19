@@ -130,9 +130,17 @@ internal sealed class SuiteUpdateEndpointHandlers
         return ApiRoutes.Ok(state);
     }
 
-    /// <summary>A flag is answered only by a tray: a Docker or source install has none, and one that quit or died answers nothing.</summary>
+    /// <summary>
+    /// A flag is answered only by a tray that can update: a Docker or source install has none, one that quit or died answers nothing,
+    /// and a copy that was not installed with the installer has a tray that cannot, which the person is told plainly.
+    /// </summary>
     private void RequireTray()
     {
+        if (_files.TrayIsFromACopyThatCannotUpdate())
+        {
+            throw new ApiException(StatusCodes.Status409Conflict, UpdateFiles.CopyCannotUpdateText);
+        }
+
         if (!_files.TrayIsRunning())
         {
             throw new ApiException(StatusCodes.Status409Conflict, "The Weir tray isn't running, so Weir can't update itself from here.");

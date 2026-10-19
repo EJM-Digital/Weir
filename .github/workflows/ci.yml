@@ -307,6 +307,12 @@ jobs:
       - name: Coverage floors and report alignment
         run: node --test scripts/check-coverage-floors.test.mjs scripts/align-coverage-reports.test.mjs
 
+      # Everything the coverage figures leave out is listed in docs/coverage/exclusions.json with a kind and a reason (#1060).
+      - name: Coverage exclusions each have a reason
+        run: |
+          node --test scripts/check-coverage-exclusions.test.mjs
+          node scripts/check-coverage-exclusions.mjs
+
       - name: The real media tools - pins, installers and the check that every real-tool test ran
         run: node --test scripts/ffmpeg-pin.test.mjs scripts/pinned-download.test.mjs scripts/mkvtoolnix-pin.test.mjs scripts/install-mkvtoolnix-linux.test.mjs scripts/summarize-test-results.test.mjs scripts/check-real-tool-tests.test.mjs scripts/check-contract-real-tool-tests.test.mjs
 

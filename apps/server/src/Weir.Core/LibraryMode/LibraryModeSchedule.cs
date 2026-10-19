@@ -17,13 +17,22 @@ public static class LibraryModeSchedule
     /// <summary>How long after one scheduled scan the next is due.</summary>
     public static readonly TimeSpan Interval = TimeSpan.FromDays(1);
 
+    /// <summary>
+    /// How far a change of clocks can move the window against the day. It shifts the window by an hour, and a run that had to
+    /// wait for the hour after a skip then finds the next day's window an hour early, so the next run is looked for from this
+    /// much before a day has passed.
+    /// </summary>
+    private static readonly TimeSpan ClockChangeAllowance = TimeSpan.FromHours(2);
+
     /// <summary>The <c>trigger</c> a scheduled scan (and every clean it queues) carries in its job payload and Activity.</summary>
     public const string Trigger = "schedule";
 
     /// <summary>
     /// When the next scheduled run is due: a day after <paramref name="lastRunAt"/> (or straight away when there has
     /// never been one), moved to when <paramref name="window"/> next opens if it is shut then. The answer can be in the
-    /// past, which means "due now"; keeping it rather than rounding it up to <paramref name="now"/> is what stops the
+    /// past, which means "due now"; a window the clocks moved or skipped over is found from a little before that (see
+    /// <see cref="ClockChangeAllowance"/>), so it still runs the same day, at the first moment the window can be in, and a
+    /// window under an hour long is never lost to a day each spring. Keeping it rather than rounding it up to <paramref name="now"/> is what stops the
     /// daily run creeping later by one timer tick a day. Null when it will never run: the library is switched off, or
     /// its window has no open hour at all.
     /// </summary>
@@ -41,13 +50,24 @@ public static class LibraryModeSchedule
             return due;
         }
 
-        if (ScheduleGrid.NextOpenSlot(EffectiveGrid(window), timezoneName, due) is not { } opens)
+        return FirstOpenAtOrAfter(window, timezoneName, lastRunAt is null ? due : due - ClockChangeAllowance);
+    }
+
+    private static DateTimeOffset? FirstOpenAtOrAfter(LibraryAdmissionSnapshot window, string? timezoneName, DateTimeOffset from)
+    {
+        if (WorkAdmissionRules.LibraryWindowOpen(window, timezoneName, from))
+        {
+            return from;
+        }
+
+        if (ScheduleGrid.NextOpenSlot(EffectiveGrid(window), timezoneName, from) is not { } opens)
         {
             return null;
         }
 
         // A day/start/end window opens on the minute it names, which a quarter-hour grid slot can precede by up to
-        // fourteen minutes; step to the first minute the window really is open.
+        // fourteen minutes; step to the first minute the window really is open. A slot the clocks skipped over is
+        // answered as the moment after the skip, which is where no minute is open, so that moment stands.
         for (var minute = 0; minute < ScheduleGrid.SlotMinutes; minute++)
         {
             var candidate = opens.AddMinutes(minute);

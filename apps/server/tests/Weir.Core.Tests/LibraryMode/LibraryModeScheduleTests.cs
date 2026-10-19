@@ -1,5 +1,6 @@
 using Weir.Core.Jobs;
 using Weir.Core.LibraryMode;
+using Weir.Core.Time;
 
 namespace Weir.Core.Tests.LibraryMode;
 
@@ -77,5 +78,73 @@ public sealed class LibraryModeScheduleTests
     {
         Assert.Null(LibraryModeSchedule.NextRunAt(null, Grid(new string('0', ScheduleGrid.SlotsPerWeek)), "UTC", Now));
         Assert.Null(LibraryModeSchedule.NextRunAt(null, NoWindow(enabled: false), "UTC", Now));
+    }
+
+    /// <summary>
+    /// Runs the schedule for six days from the day before a clock change: each run is asked for when the one before it finished,
+    /// as the timer does, so the answer after a clock change is what the following days are worked out from.
+    /// </summary>
+    private static List<DateTimeOffset> RunsAround(string zoneName, DateOnly dayBefore, string start, string end)
+    {
+        var zone = TimeZones.Find(zoneName);
+        var window = Grid(ScheduleGrid.FromDaysAndTimes(EveryDay, start, end));
+        var startWall = dayBefore.ToDateTime(TimeOnly.Parse(start, System.Globalization.CultureInfo.InvariantCulture));
+        var last = TimeZones.FromWallClock(startWall, zone).AddSeconds(20);
+        var runs = new List<DateTimeOffset> { last };
+        for (var day = 0; day < 6; day++)
+        {
+            var next = LibraryModeSchedule.NextRunAt(last, window, zoneName, last);
+            Assert.NotNull(next);
+            last = next.Value.AddSeconds(20);
+            runs.Add(next.Value);
+        }
+
+        return runs;
+    }
+
+    [Theory]
+    [InlineData("Australia/Sydney", "2026-10-03", "02:15", "02:45")]
+    [InlineData("Australia/Sydney", "2026-04-04", "02:15", "02:45")]
+    [InlineData("Europe/London", "2026-03-28", "01:15", "01:45")]
+    [InlineData("Europe/London", "2026-10-24", "01:15", "01:45")]
+    public void A_window_under_an_hour_is_run_once_every_day_across_a_clock_change(string zoneName, string dayBefore, string start, string end)
+    {
+        var runs = RunsAround(zoneName, DateOnly.Parse(dayBefore, System.Globalization.CultureInfo.InvariantCulture), start, end);
+
+        var localDays = runs.Select(run => DateOnly.FromDateTime(TimeZones.ToLocal(run, zoneName).DateTime)).ToList();
+        Assert.Equal(runs.Count, localDays.Distinct().Count());
+        Assert.Equal(Enumerable.Range(0, runs.Count).Select(offset => localDays[0].AddDays(offset)), localDays);
+    }
+
+    [Fact]
+    public void A_window_the_clocks_skip_over_runs_at_the_first_moment_after_the_skipped_hour()
+    {
+        // Sydney's clocks go from 02:00 to 03:00 on Sunday 4 October 2026, so 02:15 to 02:45 never happens that day.
+        var runs = RunsAround("Australia/Sydney", new DateOnly(2026, 10, 3), "02:15", "02:45");
+
+        var sunday = TimeZones.ToLocal(runs[1], "Australia/Sydney");
+        Assert.Equal(new DateOnly(2026, 10, 4), DateOnly.FromDateTime(sunday.DateTime));
+        Assert.True(sunday.TimeOfDay >= TimeSpan.FromHours(3));
+        Assert.True(sunday.TimeOfDay < TimeSpan.FromHours(4));
+    }
+
+    [Fact]
+    public void The_run_after_a_skipped_window_is_back_in_the_window_the_next_day()
+    {
+        var runs = RunsAround("Australia/Sydney", new DateOnly(2026, 10, 3), "02:15", "02:45");
+
+        var monday = TimeZones.ToLocal(runs[2], "Australia/Sydney");
+        Assert.Equal(new DateOnly(2026, 10, 5), DateOnly.FromDateTime(monday.DateTime));
+        Assert.Equal(new TimeSpan(2, 15, 0), monday.TimeOfDay);
+    }
+
+    [Fact]
+    public void A_window_in_an_hour_the_clocks_repeat_runs_once_that_day()
+    {
+        // London's clocks go from 02:00 back to 01:00 on Sunday 25 October 2026, so 01:15 to 01:45 happens twice.
+        var runs = RunsAround("Europe/London", new DateOnly(2026, 10, 24), "01:15", "01:45");
+
+        var sunday = runs.Where(run => DateOnly.FromDateTime(TimeZones.ToLocal(run, "Europe/London").DateTime) == new DateOnly(2026, 10, 25));
+        Assert.Single(sunday);
     }
 }

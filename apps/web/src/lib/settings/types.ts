@@ -43,6 +43,8 @@ export type UpdateStateOut = {
   tray_running: boolean;
   /** Why the tray held the update back: it could not save a copy of Weir's data first. Absent otherwise. */
   not_updated_reason?: string;
+  /** Why this copy cannot update itself: it was not installed with the installer. Absent otherwise. */
+  cannot_update_reason?: string;
 };
 
 export type HistoryResetResult = Schema<"SuiteOperationalHistoryResetOut">;

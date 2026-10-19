@@ -70,17 +70,9 @@ public static class PasswordHasher
             return PasswordVerification.InvalidHash;
         }
 
-        byte[] computed;
-        try
-        {
-            computed = Argon2.Hash(
-                decoded.Type, decoded.Version, Encoding.UTF8.GetBytes(plain), decoded.Salt, [], [],
-                decoded.TimeCost, decoded.MemoryKib, decoded.Parallelism, decoded.Tag.Length);
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            return PasswordVerification.InvalidHash;
-        }
+        var computed = Argon2.Hash(
+            decoded.Type, decoded.Version, Encoding.UTF8.GetBytes(plain), decoded.Salt, [], [],
+            decoded.TimeCost, decoded.MemoryKib, decoded.Parallelism, decoded.Tag.Length);
 
         return CryptographicOperations.FixedTimeEquals(computed, decoded.Tag) ? PasswordVerification.Match : PasswordVerification.Mismatch;
     }
