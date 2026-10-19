@@ -163,6 +163,23 @@ public sealed partial class HandoffLedgerStore
             ("$id", handoffId));
     }
 
+    /// <summary>
+    /// Notes that the manager accepted Weir's rejection of this hand-off, so a job that runs again (after a crash, or a save that
+    /// failed once the manager had answered) finishes the rejection without reporting it a second time. A hand-off already
+    /// reported as anything but failed is left as it was.
+    /// </summary>
+    public static Task<int> RecordRejectionReportedAsync(UnitOfWork uow, string sourceKey, string handoffId)
+    {
+        ArgumentNullException.ThrowIfNull(uow);
+        return uow.ExecuteAsync(
+            "UPDATE media_manager_handoffs SET reported_status = $rejected WHERE source_key = $source AND handoff_id = $id " +
+            "AND (reported_status IS NULL OR reported_status = $failed)",
+            ("$rejected", HandoffLedgerRules.Rejected),
+            ("$failed", HandoffLedgerRules.Failed),
+            ("$source", sourceKey),
+            ("$id", handoffId));
+    }
+
     /// <summary>Every report Weir still owes a manager of this kind: the hand-off id and the saved report.</summary>
     public static Task<List<(string HandoffId, string ReportJson)>> PendingReportsAsync(UnitOfWork uow, string sourceKey)
     {

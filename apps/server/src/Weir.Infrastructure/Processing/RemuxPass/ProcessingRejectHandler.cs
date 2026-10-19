@@ -99,6 +99,7 @@ public sealed partial class ProcessingRejectHandler : IJobHandler
         string? targetRefusalReason = null;
         var queueConnections = new List<ManagerConnection>();
         var links = WorkflowManagerLinks.None;
+        var alreadyAccepted = false;
         await LockedWrites.RunAsync(
             _database,
             async uow =>
@@ -111,6 +112,8 @@ public sealed partial class ProcessingRejectHandler : IJobHandler
 
                 watchedRoot = RemuxPassPaths.Resolve(library.WatchedFolder);
                 links = await _libraries.ManagerLinksAsync(uow, library.Id).ConfigureAwait(false);
+                alreadyAccepted = origin is { HandoffId.Length: > 0 } &&
+                    await HandoffLedgerStore.FindAsync(uow, origin.SourceKey, origin.HandoffId).ConfigureAwait(false) is { ReportedStatus: HandoffLedgerRules.Rejected };
                 if (origin is not null && _ports.PortForKind(origin.SourceKey) is { } originPort && !originPort.Capabilities().RemovesQueueItems)
                 {
                     (target, targetRefusalReason) = await _reporter.ResolveHandoffTargetAsync(uow, origin).ConfigureAwait(false);
@@ -129,10 +132,17 @@ public sealed partial class ProcessingRejectHandler : IJobHandler
         // 2. The attempt, paced, with no unit of work open.
         await _pacing.WaitAsync(cancellationToken).ConfigureAwait(false);
         RejectRouteOutcome attempt;
-        if (origin is not null)
+        if (alreadyAccepted)
+        {
+            // The manager has this rejection already: a job that runs again finishes it and never reports it a second time.
+            attempt = RejectRoutes.AfterAcceptedRejection(target?.Connection.Label ?? "The media manager", source, watchedRoot, links);
+        }
+        else if (origin is not null)
         {
             attempt = target is not null
-                ? await _routes.ThroughHandoffAsync(target, origin, source, watchedRoot, reason, failureClass, links, cancellationToken).ConfigureAwait(false)
+                ? await _routes.ThroughHandoffAsync(
+                    target, origin, source, watchedRoot, reason, failureClass, links, cancellationToken,
+                    (report, token) => RecordRejectionAcceptedAsync(origin, report, relativePath, token)).ConfigureAwait(false)
                 : targetRefusalReason is not null
                     ? new RejectRouteOutcome(false, $"Weir could not report to the manager: {targetRefusalReason}.")
                     : queueConnections.Count > 0
@@ -237,6 +247,26 @@ public sealed partial class ProcessingRejectHandler : IJobHandler
             cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Reject for {Path}: {Reason}", relativePath, attempt.Reason);
     }
+
+    /// <summary>
+    /// Saves that the manager accepted the rejection, in its own short transaction as soon as it has: the hand-off notes it, so a run of this job
+    /// after any later failure does not report it again, and Activity says the manager was told.
+    /// </summary>
+    private Task RecordRejectionAcceptedAsync(HandoffOrigin origin, RejectDeliveryReport report, string relativePath, CancellationToken cancellationToken) =>
+        LockedWrites.RunAsync(
+            _database,
+            async uow =>
+            {
+                if (!string.IsNullOrEmpty(origin.HandoffId))
+                {
+                    await HandoffLedgerStore.RecordRejectionReportedAsync(uow, origin.SourceKey, origin.HandoffId).ConfigureAwait(false);
+                }
+
+                await HandoffCompletionReporter.RecordHandoffReportAsync(uow, report.Target, report.Body, report.Delivery, relativePath).ConfigureAwait(false);
+            },
+            _logger,
+            "reject accepted",
+            cancellationToken);
 
     /// <summary>Queues a pass-through, called unconditionally on any reject failure — the reject route never
     /// re-checks the library's failure policy: anything short of certainty always falls back to pass-through.</summary>
