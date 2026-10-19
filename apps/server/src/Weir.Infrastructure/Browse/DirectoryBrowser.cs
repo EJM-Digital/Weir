@@ -39,50 +39,28 @@ public sealed class DirectoryBrowseException : Exception
 /// <summary>Server-side folder browsing for path settings.</summary>
 public static partial class DirectoryBrowser
 {
-    public static WireObject Browse(string? path)
+    public static WireObject Browse(string? path) => Browse(path, Directory.EnumerateFileSystemEntries);
+
+    /// <summary>Browses with the given way of listing a folder's entries, so a failure while listing can be shown without a damaged disk.</summary>
+    internal static WireObject Browse(string? path, Func<string, IEnumerable<string>> listEntries)
     {
         if (path is null || path.Trim().Length == 0)
         {
             return Out(null, null, RootEntries());
         }
 
-        var sanitized = path.Replace("\0", string.Empty, StringComparison.Ordinal);
-        RejectUnsafePathForm(sanitized);
-        if (!IsAbsolute(sanitized))
-        {
-            throw new DirectoryBrowseException(400, "Path must be absolute.");
-        }
-
-        var normalized = RealPath(sanitized);
-        if (OperatingSystem.IsWindows())
-        {
-            normalized = normalized.TrimEnd('\\', '/') + "\\";
-            if (!ValidWindowsRoots().Any(root => normalized == root || normalized.StartsWith(root, StringComparison.Ordinal)))
-            {
-                throw new DirectoryBrowseException(400, "Path is not within a valid drive root.");
-            }
-        }
-        else if (!normalized.StartsWith('/'))
-        {
-            throw new DirectoryBrowseException(400, "Path must begin at the filesystem root.");
-        }
-
+        var resolved = ResolveOnAllowedRoot(path);
+        var normalized = OperatingSystem.IsWindows() ? WithTrailingSeparator(resolved) : resolved;
         if (!Directory.Exists(normalized))
         {
             throw new DirectoryBrowseException(404, "The requested directory does not exist.");
         }
 
-        var parent = ParentOf(normalized);
-        string? parentPath = parent != normalized ? parent : null;
-        if (OperatingSystem.IsWindows() && !string.IsNullOrEmpty(parentPath))
-        {
-            parentPath = parentPath.TrimEnd('\\', '/') + "\\";
-        }
-
+        var parentPath = ParentOf(normalized);
         var entries = new List<(string Name, WireObject Entry)>();
         try
         {
-            foreach (var child in Directory.EnumerateFileSystemEntries(normalized))
+            foreach (var child in listEntries(normalized))
             {
                 if (!Directory.Exists(child))
                 {
@@ -90,10 +68,10 @@ public static partial class DirectoryBrowser
                 }
 
                 var name = Path.GetFileName(child.TrimEnd(Path.DirectorySeparatorChar));
-                var childPath = RealPath(NormalizeDirectoryPath(child));
+                var childPath = RealPath(child);
                 entries.Add((name, new WireObject()
-                    .Set("name", name.Length == 0 ? child : name)
-                    .Set("path", childPath)
+                    .Set("name", name)
+                    .Set("path", OperatingSystem.IsWindows() ? WithTrailingSeparator(childPath) : childPath)
                     .Set("kind", "directory")
                     .Set("description", (string?)null)));
             }
@@ -112,7 +90,7 @@ public static partial class DirectoryBrowser
     }
 
     /// <summary>
-    /// Validates an absolute file path against the same allow-list <see cref="Browse"/> applies to
+    /// Validates an absolute file path against the same allow-list <see cref="Browse(string?)"/> applies to
     /// directories (an existing drive root on Windows, the filesystem root elsewhere). Used where a
     /// caller lets the operator pick any file the local file picker could reach, rather than one
     /// scoped to a single saved folder (issue #502's "Try on a file" preview). Returns the resolved
@@ -125,27 +103,7 @@ public static partial class DirectoryBrowser
             throw new DirectoryBrowseException(400, "A file path is required.");
         }
 
-        var sanitized = path.Replace("\0", string.Empty, StringComparison.Ordinal);
-        RejectUnsafePathForm(sanitized);
-        if (!IsAbsolute(sanitized))
-        {
-            throw new DirectoryBrowseException(400, "Path must be absolute.");
-        }
-
-        var normalized = RealPath(sanitized);
-        if (OperatingSystem.IsWindows())
-        {
-            var withSlash = normalized.TrimEnd('\\', '/') + "\\";
-            if (!ValidWindowsRoots().Any(root => withSlash == root || withSlash.StartsWith(root, StringComparison.Ordinal)))
-            {
-                throw new DirectoryBrowseException(400, "Path is not within a valid drive root.");
-            }
-        }
-        else if (!normalized.StartsWith('/'))
-        {
-            throw new DirectoryBrowseException(400, "Path must begin at the filesystem root.");
-        }
-
+        var normalized = ResolveOnAllowedRoot(path);
         if (!File.Exists(normalized))
         {
             throw new DirectoryBrowseException(404, "The requested file does not exist.");
@@ -183,6 +141,30 @@ public static partial class DirectoryBrowser
         }
     }
 
+    /// <summary>The link-resolved absolute path for operator-supplied text, or a 400 <see cref="DirectoryBrowseException"/> when it is unsafe, relative or off every allowed root.</summary>
+    private static string ResolveOnAllowedRoot(string path)
+    {
+        var sanitized = path.Replace("\0", string.Empty, StringComparison.Ordinal);
+        RejectUnsafePathForm(sanitized);
+        if (!IsAbsolute(sanitized))
+        {
+            throw new DirectoryBrowseException(400, "Path must be absolute.");
+        }
+
+        var resolved = RealPath(sanitized);
+        if (OperatingSystem.IsWindows() && !IsOnDriveRoot(WithTrailingSeparator(resolved), ValidWindowsRoots()))
+        {
+            throw new DirectoryBrowseException(400, "Path is not within a valid drive root.");
+        }
+
+        return resolved;
+    }
+
+    private static bool IsOnDriveRoot(string pathWithSeparator, IEnumerable<string> roots) =>
+        roots.Any(root => pathWithSeparator.StartsWith(root, StringComparison.OrdinalIgnoreCase));
+
+    private static string WithTrailingSeparator(string path) => path.TrimEnd('\\', '/') + "\\";
+
     private static WireObject Out(string? current, string? parent, IEnumerable<WireObject> entries) => new WireObject()
         .Set("current_path", current)
         .Set("parent_path", parent)
@@ -195,38 +177,18 @@ public static partial class DirectoryBrowser
             return [Entry("/", "/", "root", "Filesystem root")];
         }
 
-        var entries = new List<WireObject>();
-        foreach (var letter in Enumerable.Range('A', 26).Select(c => (char)c))
-        {
-            var root = $"{letter}:\\";
-            if (!Directory.Exists(root))
-            {
-                continue;
-            }
-
-            string description;
-            try
-            {
-                description = (int)new DriveInfo(root).DriveType switch
-                {
-                    2 => "External drive",
-                    3 => "Local drive",
-                    4 => "Network drive",
-                    5 => "Optical drive",
-                    6 => "RAM disk",
-                    _ => "Drive",
-                };
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
-            {
-                description = "Drive";
-            }
-
-            entries.Add(Entry(root.TrimEnd('\\'), root, "root", description));
-        }
-
-        return entries;
+        return [.. ValidWindowsRoots().Select(root => Entry(root.TrimEnd('\\'), root, "root", DescribeDrive(new DriveInfo(root).DriveType)))];
     }
+
+    internal static string DescribeDrive(DriveType type) => type switch
+    {
+        DriveType.Removable => "External drive",
+        DriveType.Fixed => "Local drive",
+        DriveType.Network => "Network drive",
+        DriveType.CDRom => "Optical drive",
+        DriveType.Ram => "RAM disk",
+        _ => "Drive",
+    };
 
     private static WireObject Entry(string name, string path, string kind, string? description) => new WireObject()
         .Set("name", name)
@@ -236,30 +198,6 @@ public static partial class DirectoryBrowser
 
     private static List<string> ValidWindowsRoots() =>
         [.. Enumerable.Range('A', 26).Select(c => $"{(char)c}:\\").Where(Directory.Exists)];
-
-    /// <summary>An absolute, link-resolved directory path inside an allowed root, or a 400 <see cref="DirectoryBrowseException"/>.</summary>
-    private static string NormalizeDirectoryPath(string path)
-    {
-        var sanitized = path.Replace("\0", string.Empty, StringComparison.Ordinal);
-        if (!IsAbsolute(sanitized))
-        {
-            throw new DirectoryBrowseException(400, "Path must be absolute.");
-        }
-
-        var value = RealPath(sanitized);
-        if (OperatingSystem.IsWindows())
-        {
-            value = value.TrimEnd('\\', '/') + "\\";
-            if (!ValidWindowsRoots().Any(root => value == root || value.StartsWith(root, StringComparison.Ordinal)))
-            {
-                throw new DirectoryBrowseException(400, "Path is not within a valid drive root.");
-            }
-
-            return value;
-        }
-
-        return value.StartsWith('/') ? value : throw new DirectoryBrowseException(400, "Path must begin at the filesystem root.");
-    }
 
     /// <summary>Whether the path is absolute; on Windows a leading separator counts as absolute too.</summary>
     private static bool IsAbsolute(string path)
@@ -274,28 +212,16 @@ public static partial class DirectoryBrowser
         return head.StartsWith('\\') || (head.Length >= 3 && head[1..3] == ":\\");
     }
 
-    /// <summary>The parent directory; a root is its own parent.</summary>
-    private static string ParentOf(string path)
+    /// <summary>The parent directory, or null for a root.</summary>
+    private static string? ParentOf(string path)
     {
         if (OperatingSystem.IsWindows())
         {
             var trimmed = path.TrimEnd('\\');
-            if (trimmed.Length <= 2 && trimmed.EndsWith(':'))
-            {
-                return trimmed + "\\";
-            }
-
-            var parent = Path.GetDirectoryName(trimmed + (trimmed.EndsWith(':') ? "\\" : string.Empty));
-            return parent ?? path;
+            return trimmed.EndsWith(':') ? null : WithTrailingSeparator(Path.GetDirectoryName(trimmed)!);
         }
 
-        if (path == "/")
-        {
-            return "/";
-        }
-
-        var unixParent = Path.GetDirectoryName(path.TrimEnd('/'));
-        return string.IsNullOrEmpty(unixParent) ? "/" : unixParent;
+        return path == "/" ? null : Path.GetDirectoryName(path);
     }
 
     /// <summary>The real path: absolute, normalised, links resolved where the path exists.</summary>
@@ -312,7 +238,7 @@ public static partial class DirectoryBrowser
 
     private static string TrimTrailing(string full)
     {
-        var root = Path.GetPathRoot(full) ?? string.Empty;
+        var root = Path.GetPathRoot(full)!;
         return full.Length > root.Length ? full.TrimEnd(Path.DirectorySeparatorChar) : full;
     }
 
@@ -328,8 +254,7 @@ public static partial class DirectoryBrowser
                 var info = new FileInfo(next);
                 if (info.LinkTarget is not null)
                 {
-                    var target = info.ResolveLinkTarget(returnFinalTarget: true);
-                    next = target is null ? next : Path.GetFullPath(target.FullName);
+                    next = Path.GetFullPath(info.ResolveLinkTarget(returnFinalTarget: true)!.FullName);
                 }
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
@@ -355,32 +280,24 @@ public static partial class DirectoryBrowser
             return null;
         }
 
-        var buffer = new char[32768];
-        uint length;
+        // 32,768 characters is the longest path Windows allows, so one call always fits.
         unsafe
         {
-            fixed (char* pointer = buffer)
-            {
-                length = GetFinalPathNameByHandleW(handle, pointer, (uint)buffer.Length, 0);
-            }
+            var buffer = stackalloc char[32768];
+            var length = GetFinalPathNameByHandleW(handle, buffer, 32768, 0);
+            return length == 0 ? null : TrimTrailing(WithoutDevicePrefix(new string(buffer, 0, (int)length)));
+        }
+    }
+
+    /// <summary>A final path without the <c>\\?\</c> device prefix, a network share written as an ordinary <c>\\server\share</c> path.</summary>
+    internal static string WithoutDevicePrefix(string finalPath)
+    {
+        if (finalPath.StartsWith(@"\\?\UNC\", StringComparison.Ordinal))
+        {
+            return @"\\" + finalPath[8..];
         }
 
-        if (length == 0 || length >= buffer.Length)
-        {
-            return null;
-        }
-
-        var result = new string(buffer, 0, (int)length);
-        if (result.StartsWith(@"\\?\UNC\", StringComparison.Ordinal))
-        {
-            result = @"\\" + result[8..];
-        }
-        else if (result.StartsWith(@"\\?\", StringComparison.Ordinal))
-        {
-            result = result[4..];
-        }
-
-        return TrimTrailing(result);
+        return finalPath.StartsWith(@"\\?\", StringComparison.Ordinal) ? finalPath[4..] : finalPath;
     }
 
     [LibraryImport("kernel32.dll", EntryPoint = "CreateFileW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
