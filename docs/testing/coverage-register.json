@@ -32123,14 +32123,18 @@
           "type": "vitest",
           "file": "apps/web/src/lib/settings/settings-api.test.ts",
           "name": "saves who can reach Weir with a CSRF token in the body"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "network-access-from-weir"
         }
       ],
       "audit": {
         "id": "WEB-589",
         "verdict": "Covered"
       },
-      "vm": true,
-      "issue": 1142
+      "vm": true
     },
     {
       "id": "web-setup-workflows-rules.lib-settings.network-access-put-carries-csrf-and-scope-notification-channel",
@@ -42100,16 +42104,16 @@
           "type": "vitest",
           "file": "apps/web/src/lib/api/request-builders-guard.test.ts",
           "name": "*"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "network-access-from-weir"
         }
       ],
       "audit": {
         "id": "WEB-925",
         "verdict": "Gap"
-      },
-      "issue": 1057,
-      "needs": {
-        "kind": "e2e",
-        "test": "putNetworkAccess and fetchNetworkAccess need the Windows install (see the network access row); every other System request function is sent by a real page in the E2E tests listed."
       }
     },
     {
@@ -43411,13 +43415,13 @@
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/about/network-access-setting.test.tsx",
           "name": "says Weir is only restarting when Windows already allows it"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "network-access-from-weir"
         }
       ],
-      "needs": {
-        "kind": "e2e",
-        "test": "Windows only: the choice is carried out by the tray and Windows Firewall, which the Linux E2E run does not have; the dialog and the saved choice are proved in vitest and the contract suite."
-      },
-      "issue": 1057,
       "audit": {
         "id": "WEB-975",
         "verdict": "Partly"
@@ -49429,6 +49433,11 @@
           "name": "A_development_build_opens_the_web_update_check_instead"
         },
         {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-portable"
+        },
+        {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayUpdateRequestsTests.cs",
           "name": "A_tray_that_was_not_installed_says_it_is_alive_and_cannot_update"
@@ -49498,6 +49507,11 @@
           "type": "scenario",
           "file": "scripts/scenarios-ci/windows-tray.mjs",
           "name": "tray-lan-access"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "install-hooks"
         }
       ],
       "audit": {
@@ -51761,7 +51775,18 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-lan-access"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-install.mjs",
+          "name": "uninstall-keeps-the-data"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -51772,18 +51797,8 @@
           "type": "package-smoke",
           "file": "scripts/smoke-windows-package.ps1",
           "name": "*"
-        },
-        {
-          "type": "scenario",
-          "file": "scripts/scenarios-ci/windows-install.mjs",
-          "name": "uninstall-keeps-the-data"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Not asserted on a real install: the Run entry removed once Start with Windows has been turned on, which needs the tray's own menu (the windows-tray shard)"
-      },
-      "issue": 1142,
       "audit": {
         "id": "PLAT-06",
         "verdict": "Partly"

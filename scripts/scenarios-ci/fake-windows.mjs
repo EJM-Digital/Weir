@@ -44,6 +44,7 @@ function signCsrf(secret) {
  * @param {string} [behaviour.warnsWhenStarted] A warning the server logs when it starts.
  * @param {number} [behaviour.jobsInFlight] How many times the job list is read, after each start, before the job Weir starts with ends.
  * @param {boolean} [behaviour.jobNeverEnds] The job Weir starts with does not end.
+ * @param {boolean} [behaviour.jobStartsLate] After each start, a worker takes a job just after the job list is first read empty, unless Weir is paused.
  * @param {boolean} [behaviour.feedHasNewerRelease] A release newer than the build is published, and the tray installs it at its next start unless told only to announce updates.
  */
 export class FakeWindows {
@@ -64,6 +65,8 @@ export class FakeWindows {
   #shortcuts = [];
   #mark = null;
   #jobReadsLeft = 0;
+  #lateJobArmed = false;
+  #lateJobHeld = false;
   #interrupted = false;
 
   constructor(behaviour = {}) {
@@ -203,7 +206,7 @@ export class FakeWindows {
     this.#tray = null;
   }
 
-  #jobInFlight = () => this.#behaviour.jobNeverEnds === true || this.#jobReadsLeft > 0;
+  #jobInFlight = () => this.#behaviour.jobNeverEnds === true || this.#jobReadsLeft > 0 || this.#lateJobHeld;
 
   /** The tray's first start makes the secrets; the server then starts with them and opens its database. */
   #start() {
@@ -215,11 +218,13 @@ export class FakeWindows {
     this.#put("tray-host.log", `${this.#files.get("tray-host.log") ?? ""}Using port 9347 from --port\nWeir is healthy on http://127.0.0.1:9347/\n`);
     this.#put(join("logs", "weir.log"), `${this.#files.get(join("logs", "weir.log")) ?? ""}${this.#behaviour.serverLogLine ?? "Weir started"}\n`);
     this.#updateWaiting = !this.#files.has("update-settings.json");
-    this.#db ??= { account: null, settings: { app_timezone: "UTC", log_retention_days: 30 }, libraries: [], activity: [], logs: [] };
+    this.#db ??= { account: null, settings: { app_timezone: "UTC", log_retention_days: 30 }, libraries: [], activity: [], logs: [], paused: false };
     if (this.#behaviour.warnsWhenStarted) this.#db.logs.push({ source: "server", id: this.#db.logs.length + 1, at: this.#now, title: this.#behaviour.warnsWhenStarted });
     if (this.#interrupted) this.#db.logs.push({ source: "server", id: this.#db.logs.length + 1, at: this.#now, title: "Weir startup recovered interrupted work recovered_jobs={'processing_requeued': 1}" });
     this.#interrupted = false;
     this.#jobReadsLeft = this.#behaviour.jobsInFlight ?? 0;
+    this.#lateJobArmed = this.#behaviour.jobStartsLate === true;
+    this.#lateJobHeld = false;
     this.logRows = this.#db.logs;
   }
 
@@ -227,7 +232,17 @@ export class FakeWindows {
   jobsInFlight() {
     const held = this.#jobInFlight();
     if (this.#jobReadsLeft > 0) this.#jobReadsLeft -= 1;
+    if (this.#lateJobArmed && !this.#db.paused) {
+      this.#lateJobArmed = false;
+      this.#lateJobHeld = true;
+    }
     return held ? [{ job_kind: "processing.watched_folder.remux_scan_dispatch", status: "leased" }] : [];
+  }
+
+  /** Weir paused, or resumed, as the pause screen does: a paused Weir takes no job from the queue. */
+  setPaused(paused) {
+    this.#db.paused = paused;
+    this.calls.push(paused ? "pause" : "resume");
   }
 
   #recover(args) {
@@ -332,6 +347,14 @@ class FakeBrowser {
 
   async libraries() {
     return [...this.#world.db.libraries];
+  }
+
+  async write(method, path, fields) {
+    if (method === "PUT" && path === "/pause") {
+      this.#world.setPaused(fields.paused === true);
+      return { status: 200, json: { paused: fields.paused === true }, text: "" };
+    }
+    throw new Error(`the stand-in does not take ${method} ${path}`);
   }
 
   async get(path) {
