@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Fails when Weir's repository owner or name is written anywhere but the one place its language keeps it, so moving the
-// repository to another owner is one small commit (docs/exec-plans/active/PLAN-ORG-MOVE.md).
+// repository to another owner is one small commit (docs/archive/PLAN-ORG-MOVE.md).
 //
 // The places: scripts/repository.mjs (Node, and the truth the others are compared with), the server's and the tray's
 // ProjectLocation.cs, the web app's lib/repository.ts and scripts/repository.ps1 (PowerShell).
@@ -26,7 +26,7 @@ import { fileURLToPath } from "node:url";
 import { REPOSITORY } from "./repository.mjs";
 
 /** Owners the repository used to have: text that cannot read a constant must not name them any more. The move adds the old owner here. */
-export const FORMER_OWNERS = [];
+export const FORMER_OWNERS = ["jampat000"];
 
 const csharp = (text) => {
   const owner = /\bOwner\s*=\s*"([^"]+)"/.exec(text)?.[1];
@@ -52,7 +52,6 @@ export const EXCUSED = [
   { prefix: "docs/adr/", why: "history" },
   { prefix: "apps/server/tests/fixtures/recorded/", why: "real replies kept exactly as they came, so a replay is the real thing" },
   { prefix: "docs-site/docs/architecture/adr/", why: "history" },
-  { path: "docs/exec-plans/active/PLAN-ORG-MOVE.md", why: "the plan names the old and the new owner" },
   { path: ".github/CODEOWNERS", why: "names the person who reviews, not the repository" },
   { path: ".github/FUNDING.yml", why: "names the person's sponsorship page" },
   { path: "scripts/scenarios-ci/images.json", why: "names Deluno's image by its registry path, which is Deluno's to move, not Weir's" },
@@ -63,7 +62,9 @@ export const PERSON_LINES = [/Copyright \(C\) \d{4}/, /github\.com\/sponsors\//]
 
 /** Lines that link to one of Weir's issues or pull requests, which a move leaves working. */
 const CITATION_LINES = [/github\.com\/[^/\s"]+\/Weir\/(issues|pull)\/\d+/];
-export const EXCUSED_LINES = [...PERSON_LINES, ...CITATION_LINES];
+/** This check's own list of former owners, which has to name them. */
+const FORMER_OWNERS_LINE = [/^export const FORMER_OWNERS = /];
+export const EXCUSED_LINES = [...PERSON_LINES, ...CITATION_LINES, ...FORMER_OWNERS_LINE];
 
 /** Text that cannot read a constant. */
 export const TEXT = [/\.mdx?$/i, /^docs-site\//, /^compose\.yaml$/, /^docker\/\.env\.example$/, /^apps\/web\/\.env\.example$/, /^\.github\/ISSUE_TEMPLATE\//];
@@ -89,7 +90,7 @@ export function findProblems({ files, repository, formerOwners = FORMER_OWNERS, 
   }
 
   if (running && running.toLowerCase() !== repository.toLowerCase()) {
-    problems.push(`${NODE_PLACE}:1: the code holds ${repository}, but this build runs in ${running}. Sweep the move (docs/exec-plans/active/PLAN-ORG-MOVE.md).`);
+    problems.push(`${NODE_PLACE}:1: the code holds ${repository}, but this build runs in ${running}. Sweep the move (docs/archive/PLAN-ORG-MOVE.md).`);
   }
 
   const names = [...new Set([owner, ...formerOwners])].map((name) => name.toLowerCase());
@@ -145,7 +146,7 @@ function main(argv) {
   const problems = findProblems({ files, repository: REPOSITORY, running });
   if (problems.length > 0) {
     console.error(problems.join("\n"));
-    console.error(`\n${problems.length} problem(s). The owner and name are written once per language; see docs/exec-plans/active/PLAN-ORG-MOVE.md.`);
+    console.error(`\n${problems.length} problem(s). The owner and name are written once per language; see docs/archive/PLAN-ORG-MOVE.md.`);
     process.exit(1);
   }
 
