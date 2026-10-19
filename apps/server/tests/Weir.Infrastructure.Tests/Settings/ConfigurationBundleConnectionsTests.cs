@@ -2,7 +2,6 @@ using Weir.Core.Json;
 using Weir.Core.Time;
 using Weir.Infrastructure.Auth;
 using Weir.Infrastructure.MediaManagers;
-using Weir.Infrastructure.Notifications;
 using Weir.Infrastructure.Settings;
 using Weir.Infrastructure.Tests.Platform;
 
@@ -19,7 +18,7 @@ public sealed class ConfigurationBundleConnectionsTests : IDisposable
 
     public ConfigurationBundleConnectionsTests()
     {
-        _bundle = new(new SuiteSettingsStore(new AuthStore()), new ConfigurationBundleConnections(new NotificationChannelStore(), _managers));
+        _bundle = new(new SuiteSettingsStore(new AuthStore()), BackupParts.Connections(managers: _managers));
     }
 
     public void Dispose()

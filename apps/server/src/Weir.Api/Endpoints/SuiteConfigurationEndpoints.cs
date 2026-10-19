@@ -32,6 +32,7 @@ public static class SuiteConfigurationEndpoints
         endpoints.MapV1("PUT", "/suite/configuration-bundle", handlers.PutBundleAsync);
         endpoints.MapV1("GET", "/suite/configuration-backups", handlers.GetBackupsAsync);
         endpoints.MapV1("GET", "/suite/configuration-backups/{backup_id}/download", handlers.DownloadBackupAsync);
+        endpoints.MapV1("PUT", "/suite/backup-password", handlers.PutBackupPasswordAsync);
         endpoints.MapV1("GET", "/suite/security-overview", handlers.GetSecurityOverviewAsync);
         return endpoints;
     }
@@ -64,9 +65,12 @@ public static class SuiteConfigurationEndpoints
 /// <summary>Handlers for <see cref="SuiteConfigurationEndpoints"/>, constructor-injected with the stores they need.</summary>
 internal sealed class SuiteConfigurationEndpointHandlers
 {
+    private const int MaxBackupPasswordLength = 256;
+
     private readonly SuiteSettingsStore _suiteSettings;
     private readonly ConfigurationBundleStore _bundle;
     private readonly ConfigurationBackups _backups;
+    private readonly BackupPasswordStore _backupPassword;
     private readonly ITimeZoneResolver _zones;
     private readonly ScanSettingsChanges _scanSettingsChanges;
     private readonly WeirLogFile _logFile;
@@ -75,6 +79,7 @@ internal sealed class SuiteConfigurationEndpointHandlers
         SuiteSettingsStore suiteSettings,
         ConfigurationBundleStore bundle,
         ConfigurationBackups backups,
+        BackupPasswordStore backupPassword,
         ITimeZoneResolver zones,
         ScanSettingsChanges scanSettingsChanges,
         WeirLogFile logFile)
@@ -82,6 +87,7 @@ internal sealed class SuiteConfigurationEndpointHandlers
         _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
         _bundle = bundle ?? throw new ArgumentNullException(nameof(bundle));
         _backups = backups ?? throw new ArgumentNullException(nameof(backups));
+        _backupPassword = backupPassword ?? throw new ArgumentNullException(nameof(backupPassword));
         _zones = zones ?? throw new ArgumentNullException(nameof(zones));
         _scanSettingsChanges = scanSettingsChanges ?? throw new ArgumentNullException(nameof(scanSettingsChanges));
         _logFile = logFile ?? throw new ArgumentNullException(nameof(logFile));
@@ -179,6 +185,7 @@ internal sealed class SuiteConfigurationEndpointHandlers
         var model = new BodyModel(body, issues);
         var csrfToken = model.Str("csrf_token", minLength: 1);
         var bundle = model.Dict("bundle");
+        var backupPassword = model.OptionalStr("password", minLength: 1, maxLength: MaxBackupPasswordLength);
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
@@ -186,7 +193,7 @@ internal sealed class SuiteConfigurationEndpointHandlers
         var uow = await request.DbAsync().ConfigureAwait(false);
         try
         {
-            await _bundle.ApplyAsync(uow, bundle, _zones, request.Options.WeirHome).ConfigureAwait(false);
+            await _bundle.ApplyAsync(uow, bundle, _zones, request.Options.WeirHome, backupPassword).ConfigureAwait(false);
         }
         catch (WireValueException exception)
         {
@@ -205,7 +212,44 @@ internal sealed class SuiteConfigurationEndpointHandlers
         var rows = await ConfigurationBackups.ListAsync(uow).ConfigureAwait(false);
         return ApiRoutes.Ok(new WireObject()
             .Set("directory", _backups.Directory)
+            .Set("password_set", await _backupPassword.IsSetAsync(uow).ConfigureAwait(false))
             .Set("items", new WireArray(rows.Select(row => (WireValue)ConfigurationBackups.ItemOut(row)))));
+    }
+
+    /// <summary>
+    /// Sets or changes the password the secrets in future backups are locked with. Backups already made keep the password they were
+    /// made with. The password is checked, used to make a key and dropped: it is never stored, echoed or logged.
+    /// </summary>
+    public async Task<ApiResult> PutBackupPasswordAsync(ApiRequest request)
+    {
+        await request.RequireUserAsync(UserRoles.AdminOnly).ConfigureAwait(false);
+        var body = await request.ReadBodyAsync().ConfigureAwait(false);
+        var issues = new ValidationIssues();
+        var model = new BodyModel(body, issues);
+        var csrfToken = model.Str("csrf_token", minLength: 1);
+        var password = model.Str("password", minLength: 1, maxLength: MaxBackupPasswordLength);
+        var confirmation = model.Str("confirm_password", minLength: 1, maxLength: MaxBackupPasswordLength);
+        model.Finish(ExtraFields.Forbid);
+        issues.ThrowIfAny();
+
+        request.RequireConfirmationToken(csrfToken);
+        if (!string.Equals(password, confirmation, StringComparison.Ordinal))
+        {
+            throw new ApiException(StatusCodes.Status400BadRequest, "The two backup passwords do not match. Type the same password in both boxes.");
+        }
+
+        var uow = await request.DbAsync().ConfigureAwait(false);
+        try
+        {
+            await _backupPassword.SetAsync(uow, password).ConfigureAwait(false);
+        }
+        catch (WireValueException exception)
+        {
+            throw new ApiException(StatusCodes.Status400BadRequest, exception.Message);
+        }
+
+        await request.CommitAsync().ConfigureAwait(false);
+        return ApiRoutes.Ok(new WireObject().Set("password_set", true));
     }
 
     public async Task<ApiResult> DownloadBackupAsync(ApiRequest request)

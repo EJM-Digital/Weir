@@ -231,7 +231,7 @@ Deluno and Weir are independent. Each works without the other, and neither conta
 
 **Windows.** Weir checks GitHub for new versions and tells you through the tray icon. **System › About** has the **Update mode**: **Auto**, **Download only** or **Notify only**. Updates need no administrator rights and keep your data. A release candidate is offered the next release candidate as well as stable releases, while a stable install is only ever offered stable ones. You can also download the new `Weir-win-Setup.exe` and run it: it installs over the old one.
 
-Before a big update, take a backup under **System › Backups**. It keeps a rolling copy of your configuration, and you can copy it somewhere else. To back up everything, quit Weir from the tray icon and copy `C:\ProgramData\Weir`.
+Before a big update, take a backup under **System › Backups**. It keeps a rolling copy of your configuration, and you can copy it somewhere else. Set a backup password there to include your connections' keys and passwords, locked so only the password opens them; without one they are left out. To back up everything, quit Weir from the tray icon and copy `C:\ProgramData\Weir`.
 
 To uninstall, use **Settings › Apps › Installed apps** in Windows. That removes the program and its shortcuts, and the **Weir** firewall rule if you run the uninstaller as administrator. Your data in `C:\ProgramData\Weir` stays, and so do the files in your media folders: Weir never deletes those by uninstalling. Delete `C:\ProgramData\Weir` yourself if you want it gone.
 

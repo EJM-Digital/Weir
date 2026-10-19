@@ -25,6 +25,7 @@ import {
   postConfigurationBackupNow,
   postDownloadUpdate,
   putAppSettings,
+  putBackupPassword,
   putConfigurationBundle,
   putUpdateSettings,
   resetOperationalHistory,
@@ -187,6 +188,40 @@ describe("the requests the settings screens send", () => {
         url: "/api/v1/suite/configuration-backups",
         method: "POST",
         body: { csrf_token: CSRF },
+      },
+    ]);
+  });
+
+  it("sets the backup password typed twice, and sends the password only with a restore that has one", async () => {
+    const sent = recordRequests();
+
+    await putBackupPassword("a backup password", "a backup password");
+    await putConfigurationBundle({ format_version: 4 }, "a backup password");
+    await putConfigurationBundle({ format_version: 4 }, "");
+
+    expect(sent).toEqual([
+      {
+        url: "/api/v1/suite/backup-password",
+        method: "PUT",
+        body: {
+          password: "a backup password",
+          confirm_password: "a backup password",
+          csrf_token: CSRF,
+        },
+      },
+      {
+        url: "/api/v1/suite/configuration-bundle",
+        method: "PUT",
+        body: {
+          bundle: { format_version: 4 },
+          password: "a backup password",
+          csrf_token: CSRF,
+        },
+      },
+      {
+        url: "/api/v1/suite/configuration-bundle",
+        method: "PUT",
+        body: { bundle: { format_version: 4 }, csrf_token: CSRF },
       },
     ]);
   });

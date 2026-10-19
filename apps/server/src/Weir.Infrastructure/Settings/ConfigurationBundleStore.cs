@@ -1,4 +1,5 @@
 using Weir.Core.Json;
+using Weir.Core.Security;
 using Weir.Core.Settings;
 using Weir.Core.Time;
 using Weir.Infrastructure.Activity;
@@ -8,7 +9,7 @@ namespace Weir.Infrastructure.Settings;
 
 /// <summary>
 /// Export and restore of the settings rows, format version 4 only. Media managers and alerts travel without their
-/// secrets; see <see cref="ConfigurationBundleConnections"/>. Restoring <c>libraries</c> and <c>rule_sets</c> lives
+/// secrets, which a backup carries only sealed with the backup password; see <see cref="ConfigurationBundleConnections"/>. Restoring <c>libraries</c> and <c>rule_sets</c> lives
 /// in the <c>.Libraries</c> partial, and the generic column/row IO both halves share lives in the <c>.RowIO</c>
 /// partial.
 /// </summary>
@@ -92,7 +93,7 @@ public sealed partial class ConfigurationBundleStore
     /// Restore a bundle into the settings rows. <see cref="WireValueException"/> becomes a 400; anything else
     /// (<see cref="WireTypeException"/>, <see cref="Microsoft.Data.Sqlite.SqliteException"/>) is a server error.
     /// </summary>
-    public async Task ApplyAsync(UnitOfWork uow, WireObject bundle, ITimeZoneResolver zones, string weirHome)
+    public async Task ApplyAsync(UnitOfWork uow, WireObject bundle, ITimeZoneResolver zones, string weirHome, string? backupPassword = null)
     {
         ArgumentNullException.ThrowIfNull(uow);
         ArgumentNullException.ThrowIfNull(bundle);
@@ -116,14 +117,52 @@ public sealed partial class ConfigurationBundleStore
             }
         }
 
+        var secrets = OpenSecrets(bundle, backupPassword);
         await ApplySuiteSettingsAsync(uow, bundle[SuiteTable], zones).ConfigureAwait(false);
         await ApplySingletonAsync(uow, ArrTable, bundle[ArrTable]).ConfigureAwait(false);
         await ApplySingletonAsync(uow, ProcessingOperatorTable, bundle[ProcessingOperatorTable]).ConfigureAwait(false);
-        var restoredConnectionIds = await _connections.RestoreMediaManagersAsync(uow, bundle).ConfigureAwait(false);
+        var restoredConnectionIds = await _connections.RestoreMediaManagersAsync(uow, bundle, secrets).ConfigureAwait(false);
         await RestoreProcessingLibrariesAsync(uow, bundle, weirHome, restoredConnectionIds).ConfigureAwait(false);
-        await _connections.RestoreAlertsAsync(uow, bundle).ConfigureAwait(false);
+        await _connections.RestoreAlertsAsync(uow, bundle, secrets).ConfigureAwait(false);
+        await _connections.RestoreDownloadClientsAsync(uow, secrets).ConfigureAwait(false);
         _changes?.PublishOnCommit(uow, DataTopics.Libraries);
         _changes?.PublishOnCommit(uow, DataTopics.Settings);
+    }
+
+    /// <summary>The connections' secrets in the clear, for the sealed section of a backup. Never part of <see cref="BuildAsync"/>.</summary>
+    public Task<WireObject> ExportSecretsAsync(UnitOfWork uow)
+    {
+        ArgumentNullException.ThrowIfNull(uow);
+        return _connections.ExportSecretsAsync(uow);
+    }
+
+    /// <summary>Whether a backup holds secrets locked with a backup password.</summary>
+    public static bool HasSealedSecrets(WireObject bundle)
+    {
+        ArgumentNullException.ThrowIfNull(bundle);
+        return bundle.ContainsKey(BackupSecretsSeal.SectionName);
+    }
+
+    /// <summary>
+    /// The secrets a backup holds, opened with the backup password, or null when it holds none. Refuses plainly, before anything is
+    /// changed, when the password is missing or is not the one the backup was made with.
+    /// </summary>
+    private static WireObject? OpenSecrets(WireObject bundle, string? backupPassword)
+    {
+        if (!HasSealedSecrets(bundle))
+        {
+            return null;
+        }
+
+        if (string.IsNullOrEmpty(backupPassword))
+        {
+            throw new WireValueException("This backup holds secrets locked with a backup password. Enter the backup password to restore it.");
+        }
+
+        var opened = BackupSecretsSeal.TryOpen(bundle[BackupSecretsSeal.SectionName], backupPassword)
+            ?? throw new WireValueException("That is not the backup password this backup was made with. Nothing was changed.");
+        return WireJsonParser.Parse(opened) as WireObject
+            ?? throw new WireValueException("This backup's locked secrets are not in a form this version of Weir can read.");
     }
 
     private async Task ApplySuiteSettingsAsync(UnitOfWork uow, WireValue section, ITimeZoneResolver zones)

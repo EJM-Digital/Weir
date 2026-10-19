@@ -192,6 +192,7 @@ function renderSettings(
   qc.setQueryData(authKeys.session, minimalCurrentSession);
   qc.setQueryData(settingsKeys.configurationBackups, {
     directory: "C:/Weir/backups/suite-configuration",
+    password_set: false,
     items: overrides?.backupItems ?? [],
   });
   qc.setQueryData(
@@ -233,6 +234,7 @@ async function renderSettingsWithSupportConfig(
   qc.setQueryData(authKeys.session, minimalCurrentSession);
   qc.setQueryData(settingsKeys.configurationBackups, {
     directory: "C:/Weir/backups/suite-configuration",
+    password_set: false,
     items: [],
   });
   qc.setQueryData(
@@ -329,6 +331,7 @@ describe("SystemPage", () => {
         size_bytes: 512,
         file_name: "weir-configuration-2026-04-12.json",
         made_by: "manual",
+        secrets_sealed: false,
       });
     renderSettings(operatorMe, { initialEntries: ["/system?tab=backups"] });
 
@@ -347,6 +350,7 @@ describe("SystemPage", () => {
       size_bytes: 512,
       file_name: "suite-configuration-20260410-020000.json",
       made_by: "schedule" as const,
+      secrets_sealed: false,
     };
     const byHand = {
       id: 9,
@@ -354,12 +358,14 @@ describe("SystemPage", () => {
       size_bytes: 512,
       file_name: "suite-configuration-20260412-120000.json",
       made_by: "manual" as const,
+      secrets_sealed: false,
     };
     vi.spyOn(settingsApi, "postConfigurationBackupNow").mockResolvedValue(
       byHand,
     );
     vi.spyOn(settingsApi, "fetchConfigurationBackupList").mockResolvedValue({
       directory: "C:/Weir/backups/suite-configuration",
+      password_set: false,
       items: [byHand, scheduled],
     });
     renderSettings(operatorMe, {
@@ -715,6 +721,7 @@ describe("SystemPage", () => {
     qc.setQueryData(authKeys.session, minimalCurrentSession);
     qc.setQueryData(settingsKeys.configurationBackups, {
       directory: "C:/Weir/backups/suite-configuration",
+      password_set: false,
       items: [],
     });
     qc.setQueryData(settingsKeys.updateStatus, minimalUpdateStatus);
@@ -781,6 +788,7 @@ describe("SystemPage", () => {
     qc.setQueryData(authKeys.session, minimalCurrentSession);
     qc.setQueryData(settingsKeys.configurationBackups, {
       directory: "C:/Weir/backups/suite-configuration",
+      password_set: false,
       items: [],
     });
     qc.setQueryData(settingsKeys.updateStatus, overrides.updateStatus);

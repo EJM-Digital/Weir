@@ -48,6 +48,27 @@ This checklist defines the current practical hardening baseline for Weir.
   `WEIR_PREVIOUS_CREDENTIALS_SECRETS` and restart again. Copies already in `backups/pre-update` keep the credentials secret
   they were made with (their `.credentials.secret` file) and the keys encrypted with it; they do not follow the rotation, so
   delete them once you no longer need them, or keep them as a pair.
+- **The backup password.** A configuration backup (System › Backups) holds the connections' secrets only when a backup password
+  is set: the media managers' API keys and webhook secrets, the download clients' passwords and API keys, and the alerts'
+  addresses. They are in the backup file only as one locked section (`sealed_secrets`), sealed with AES-256-GCM under a key
+  that Argon2id makes from the password (the same memory-hard function that protects sign-in passwords); the rest of the file
+  stays readable, so a restore can show what is inside. Without a password a backup holds none of them, which is how every
+  backup behaved before the password existed, so an install that already backs up keeps working: its next backup is taken
+  without the secrets and System › Backups says so until a password is set. Weir never writes a secret into a backup in the
+  clear.
+  - Setting the password asks for it twice and applies the same strength rule as a sign-in password. Weir keeps the key the
+    password makes, locked with `WEIR_CREDENTIALS_SECRET` like every other saved secret, so the schedule can seal a backup
+    while nobody is signed in; the password itself is never stored, returned or logged.
+  - Restoring a backup with locked secrets asks for the password it was made with. A wrong or missing password is refused
+    before anything changes. A restore adds the connections and alerts the install does not have, switched off, and leaves
+    the ones it has exactly as they are.
+  - Changing the password locks later backups with the new one. Backups already made keep the password they were made with,
+    so keep the old one for as long as you keep those backups. Weir cannot recover a lost password.
+  - After rotating `WEIR_CREDENTIALS_SECRET`, set the backup password again, together with re-saving the connections. If Weir
+    can no longer read the key it saved, it stops taking backups and says so, instead of quietly leaving the secrets out.
+  - The server's own session and credentials secrets are not part of a configuration backup. They belong to the install
+    (`session.secret` and `credentials.secret`, or the environment variables), and a restore on another install brings the
+    connections' secrets across by re-locking them with that install's own credentials secret.
 
 ## Repository and dependency controls
 
