@@ -42,6 +42,16 @@ public sealed class CleanupTabTests(E2EServer server) : E2ETestBase(server)
         return (completed, state.GetProperty("pending").GetInt32() == 0 && state.GetProperty("running").GetInt32() == 0);
     }
 
+    private static async Task<bool> StartupSweepsDoneAsync(IBrowserContext context, string baseUrl)
+    {
+        var jobs = await PageApi.GetAsync(context, baseUrl, "/api/v1/processing/jobs/inspection");
+        var scopes = jobs.GetProperty("jobs").EnumerateArray()
+            .Where(job => job.GetProperty("job_kind").GetString() == "processing.work_temp_stale_sweep.v1" && job.GetProperty("status").GetString() == "completed")
+            .Select(job => System.Text.Json.JsonDocument.Parse(job.GetProperty("payload_json").GetString()!).RootElement.GetProperty("media_scope").GetString())
+            .ToHashSet(StringComparer.Ordinal);
+        return scopes.Contains("movie") && scopes.Contains("tv");
+    }
+
     [E2EFact]
     public async Task A_job_that_deletes_nothing_is_switched_off_and_on_at_once_with_no_question()
     {
@@ -289,14 +299,15 @@ public sealed class CleanupTabTests(E2EServer server) : E2ETestBase(server)
         await admin.EnsureAdminAsync(Navigation.BootstrapUser, Navigation.BootstrapPassword);
         var page = await NewPageAsync();
         await Navigation.EnsureSignedInAsync(page, baseUrl);
-        // The leftover files run as the server starts, a movie sweep and a TV one, so the order the headings sort by is only settled once both
-        // have ended; the unclaimed copies are then run, and run again while they are not the latest.
+        // The leftover files run as the server starts, a movie sweep and a TV one, each queued by a timer of its own, so one can be queued after
+        // the other has ended. The order the headings sort by is only settled once both have ended; the unclaimed copies are then run, and run
+        // again while they are not the latest.
         await Poll.UntilAsync(
             async () =>
             {
                 var (unclaimed, unclaimedIdle) = await RunStateAsync(page.Context, baseUrl, CleanupTab.Unclaimed);
                 var (leftover, leftoverIdle) = await RunStateAsync(page.Context, baseUrl, CleanupTab.Leftover);
-                if (!unclaimedIdle || !leftoverIdle || leftover is null)
+                if (!unclaimedIdle || !leftoverIdle || leftover is null || !await StartupSweepsDoneAsync(page.Context, baseUrl))
                 {
                     return false;
                 }

@@ -42,7 +42,7 @@ internal sealed class FakeUpdateService : IUpdateService
     /// <summary>The apply calls made so far, by the constants above.</summary>
     public IReadOnlyList<string> Applied => _applied;
 
-    public bool IsInstalled => true;
+    public bool IsInstalled { get; init; } = true;
 
     public bool HasPendingUpdate { get; private set; }
 

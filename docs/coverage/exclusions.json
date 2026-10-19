@@ -1,0 +1,137 @@
+{
+  "exclusions": [
+    {
+      "id": "server-test-projects",
+      "file": "apps/server/coverage.runsettings",
+      "marker": "[Weir.*Tests]*",
+      "kind": "not-production",
+      "reason": "The server test projects (Weir.Core.Tests, Weir.Infrastructure.Tests, Weir.Api.Tests, Weir.E2E.Tests) hold tests, which do not ship; counting them would make the figure move with the tests instead of the product."
+    },
+    {
+      "id": "server-test-child",
+      "file": "apps/server/coverage.runsettings",
+      "marker": "[Weir.TestChild]*",
+      "kind": "not-production",
+      "reason": "The child process some tests start as a stand-in for a long-running program; it is test support and does not ship."
+    },
+    {
+      "id": "server-contract-suite",
+      "file": "apps/server/coverage.runsettings",
+      "marker": "[Weir.Contract.*]*",
+      "kind": "not-production",
+      "reason": "The contract suite and its fake tools judge a running server from outside; they are test code and do not ship. The server code they run is counted in the out-of-process figure."
+    },
+    {
+      "id": "server-generated-code-attribute",
+      "file": "apps/server/coverage.runsettings",
+      "marker": "GeneratedCodeAttribute",
+      "kind": "generated",
+      "reason": "Code marked as generated (source generators such as the one behind GeneratedRegex) is written by a tool; the hand-written code that calls it is what the tests cover."
+    },
+    {
+      "id": "server-compiler-generated-attribute",
+      "file": "apps/server/coverage.runsettings",
+      "marker": "CompilerGeneratedAttribute",
+      "kind": "generated",
+      "reason": "The compiler writes closures, state machines and record members; their branches belong to the hand-written code they were made from, which is counted."
+    },
+    {
+      "id": "server-exclude-attribute",
+      "file": "apps/server/coverage.runsettings",
+      "marker": "ExcludeFromCodeCoverageAttribute",
+      "kind": "policy",
+      "reason": "Honours [ExcludeFromCodeCoverage] in the code. There are none today, and a new one fails the exclusions check until it is listed here with its own kind and reason."
+    },
+    {
+      "id": "server-obj-folder",
+      "file": "apps/server/coverage.runsettings",
+      "marker": "**/obj/**",
+      "kind": "generated",
+      "reason": "Files the build writes into obj (assembly attributes, generated sources) are not source anyone edits."
+    },
+    {
+      "id": "tray-generated-code-attribute",
+      "file": "apps/tray/coverage.runsettings",
+      "marker": "GeneratedCodeAttribute",
+      "kind": "generated",
+      "reason": "Code marked as generated is written by a tool; the hand-written code that calls it is what the tray tests cover."
+    },
+    {
+      "id": "tray-compiler-generated-attribute",
+      "file": "apps/tray/coverage.runsettings",
+      "marker": "CompilerGeneratedAttribute",
+      "kind": "generated",
+      "reason": "The compiler writes closures, state machines and record members; their branches belong to the hand-written code they were made from, which is counted."
+    },
+    {
+      "id": "tray-exclude-attribute",
+      "file": "apps/tray/coverage.runsettings",
+      "marker": "ExcludeFromCodeCoverageAttribute",
+      "kind": "policy",
+      "reason": "Honours [ExcludeFromCodeCoverage] in the code. There are none today, and a new one fails the exclusions check until it is listed here with its own kind and reason."
+    },
+    {
+      "id": "tray-obj-folder",
+      "file": "apps/tray/coverage.runsettings",
+      "marker": "**/obj/**",
+      "kind": "generated",
+      "reason": "Files the build writes into obj (assembly attributes, generated sources) are not source anyone edits."
+    },
+    {
+      "id": "out-of-process-generated-code-attribute",
+      "file": "apps/server/coverage.out-of-process.xml",
+      "marker": "^System\\.CodeDom\\.Compiler\\.GeneratedCodeAttribute$",
+      "kind": "generated",
+      "reason": "The same exclusion as the server run settings, in the form dotnet-coverage reads: code marked as generated is written by a tool."
+    },
+    {
+      "id": "out-of-process-compiler-generated-attribute",
+      "file": "apps/server/coverage.out-of-process.xml",
+      "marker": "^System\\.Runtime\\.CompilerServices\\.CompilerGeneratedAttribute$",
+      "kind": "generated",
+      "reason": "The same exclusion as the server run settings, in the form dotnet-coverage reads: the compiler writes closures and state machines from hand-written code, which is counted."
+    },
+    {
+      "id": "out-of-process-exclude-attribute",
+      "file": "apps/server/coverage.out-of-process.xml",
+      "marker": "^System\\.Diagnostics\\.CodeAnalysis\\.ExcludeFromCodeCoverageAttribute$",
+      "kind": "policy",
+      "reason": "The same switch as the server run settings: [ExcludeFromCodeCoverage] is honoured, and each use is listed here on its own."
+    },
+    {
+      "id": "out-of-process-obj-folder",
+      "file": "apps/server/coverage.out-of-process.xml",
+      "marker": ".*[\\/]obj[\\/].*",
+      "kind": "generated",
+      "reason": "The same exclusion as the server run settings: files the build writes into obj are not source anyone edits."
+    },
+    {
+      "id": "web-test-files",
+      "file": "apps/web/vite.config.ts",
+      "marker": "src/**/*.test.{ts,tsx}",
+      "kind": "not-production",
+      "reason": "Test files do not ship in the web app."
+    },
+    {
+      "id": "web-test-support",
+      "file": "apps/web/vite.config.ts",
+      "marker": "src/test/**",
+      "kind": "not-production",
+      "reason": "Test setup and helpers do not ship in the web app."
+    },
+    {
+      "id": "web-type-declarations",
+      "file": "apps/web/vite.config.ts",
+      "marker": "src/**/*.d.ts",
+      "kind": "no-code",
+      "reason": "Declaration files hold only types, so there is no statement in them to run."
+    },
+    {
+      "id": "web-generated-api-types",
+      "file": "apps/web/vite.config.ts",
+      "marker": "src/lib/api/generated/**",
+      "kind": "generated",
+      "reason": "The API types are generated from the server's OpenAPI description (npm run api:types:generate, checked in CI by api:types:check); they hold types, not behaviour."
+    }
+  ]
+}

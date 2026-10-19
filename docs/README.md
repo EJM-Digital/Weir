@@ -28,7 +28,7 @@ whose source is in [`../docs-site/docs`](../docs-site/docs).
 - [`exec-plans/active/PLAN-SCENARIOS-IN-CI.md`](exec-plans/active/PLAN-SCENARIOS-IN-CI.md) - how Weir's scenario suite moves from the VM into CI: where each of the 14 scenarios runs, the shards, the images pinned by digest, the drift job, when a scenario counts as proved, and the clean-up once the VM is gone.
 - [`exec-plans/active/PLAN-ORG-MOVE.md`](exec-plans/active/PLAN-ORG-MOVE.md) - moving Weir to the EJM-Digital organisation: where the owner is written, what GitHub redirects, the sweep, the two image names, the organisation settings and the proof after the move.
 - [`release.md`](release.md) - the release procedure and what each release produces.
-- [`coverage/README.md`](coverage/README.md) - how test coverage is measured on every CI run, the floors that only go up, and how to raise or lower one.
+- [`coverage/README.md`](coverage/README.md) - how test coverage is measured on every CI run, the floors that only go up, and how to raise or lower one. [`coverage/PLAN-100.md`](coverage/PLAN-100.md) is the plan to 100% and the rules for leaving code out.
 - [`coverage/mutation.md`](coverage/mutation.md) - mutation testing of the risky core: what is mutated, how to read the survivors, and the score floors that only go up.
 - [`start-supervision.md`](start-supervision.md) - how the tray supervises every start of the server: progress, hung starts, retries, the start limit, what it logs and shows, and the measurements behind the numbers.
 - [`release-governance.md`](release-governance.md) - repository controls and the checks before and after a release.

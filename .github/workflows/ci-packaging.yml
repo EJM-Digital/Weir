@@ -381,21 +381,96 @@ jobs:
             dist/windows/releases/Weir-win-Setup.exe
             dist/windows/releases/Weir-win-Portable.zip
 
+  # The build the windows-update shard updates to. An update only goes to a newer version, and windows-package-smoke's build carries a
+  # placeholder older than every release, so this commit is built again under the newest published release's version with its patch number
+  # plus one (scripts/scenarios-ci/update-versions.mjs), packed with a delta against that release exactly as release.yml packs a release.
+  # Nothing here is published; the packages are kept for a day for the next job.
+  windows-update-package:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.versions.outputs.version }}
+      previous: ${{ steps.versions.outputs.previous }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: apps/server/global.json
+          cache: true
+          cache-dependency-path: |
+            apps/server/**/packages.lock.json
+            apps/tray/**/packages.lock.json
+
+      - name: FFmpeg build checksum
+        id: ffmpeg
+        shell: bash
+        run: node scripts/ffmpeg-cache-key.mjs >> "$GITHUB_OUTPUT"
+
+      - name: Cache vendored FFmpeg
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: packaging/windows/vendor/ffmpeg
+          key: ${{ runner.os }}-${{ steps.ffmpeg.outputs.key }}
+
+      - name: Cache vendored MKVToolNix
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: packaging/windows/vendor/mkvtoolnix
+          key: mkvtoolnix-vendor-${{ runner.os }}-${{ hashFiles('packaging/windows/build-velopack-vendored-media-tools.ps1') }}
+          restore-keys: |
+            mkvtoolnix-vendor-${{ runner.os }}-
+
+      - name: Choose the version to build and the release to update from
+        id: versions
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          gh api --paginate "repos/${{ github.repository }}/releases?per_page=100" --jq '.[] | select(.draft | not) | .tag_name'             | node scripts/scenarios-ci/update-versions.mjs >> "$GITHUB_OUTPUT"
+
+      - name: Build the package with a delta against that release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WEIR_BUILD_VERSION: ${{ steps.versions.outputs.version }}
+        run: >-
+          powershell -ExecutionPolicy Bypass -File packaging/windows/build-velopack.ps1 -SkipSmoke
+          -PreviousReleaseRepoUrl "${{ github.server_url }}/${{ github.repository }}"
+          -PreviousReleaseVersion "${{ steps.versions.outputs.previous }}"
+
+      - name: Keep the packages and their feed
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: weir-windows-update-feed
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            dist/windows/releases/*.nupkg
+            dist/windows/releases/releases.win.json
+
   # Weir's Windows scenarios on a clean GitHub-hosted runner, replacing the Hyper-V VM (docs/exec-plans/active/PLAN-SCENARIOS-IN-CI.md): the
   # Setup the job above built is installed for real, used, and uninstalled. The shards listed here are those with a scenario ported
   # (scripts/scenarios-ci/homes.json). Always GitHub's own runner: the shard refuses to run on a machine that is not one, because it installs
   # and uninstalls Weir.
   scenarios-windows:
-    needs: windows-package-smoke
+    needs: [windows-package-smoke, windows-update-package]
     runs-on: windows-latest
     timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
-        shard: [windows-install, windows-tray]
+        shard: [windows-install, windows-update, windows-tray]
     env:
       SHARD: ${{ matrix.shard }}
       BUILD_VERSION: ${{ needs.windows-package-smoke.outputs.version }}
+      UPDATE_VERSION: ${{ needs.windows-update-package.outputs.version }}
+      PREVIOUS_VERSION: ${{ needs.windows-update-package.outputs.previous }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -404,14 +479,41 @@ jobs:
           node-version-file: .node-version
 
       - name: Fetch the Setup under test
+        if: ${{ matrix.shard != 'windows-update' }}
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: weir-windows-setup-under-test
           path: setup
 
       - name: Run the shard's scenarios against the Setup
+        if: ${{ matrix.shard != 'windows-update' }}
         shell: bash
         run: node scripts/scenarios-in-ci.mjs "$SHARD" --setup setup/Weir-win-Setup.exe --version "$BUILD_VERSION"
+
+      # The update shard installs the newest published release (the Setup and Velopack feed file it published) and updates it to the build
+      # windows-update-package made.
+      - name: Fetch the feed of the build under test
+        if: ${{ matrix.shard == 'windows-update' }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: weir-windows-update-feed
+          path: feed
+
+      - name: Fetch the release to update from
+        if: ${{ matrix.shard == 'windows-update' }}
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: gh release download "v$PREVIOUS_VERSION" --repo "$GITHUB_REPOSITORY" --pattern Weir-win-Setup.exe --pattern releases.win.json --dir previous
+
+      - name: Run the update scenarios
+        if: ${{ matrix.shard == 'windows-update' }}
+        # Its own ceiling, so a run that does not end still uploads its logs below instead of ending with the job.
+        timeout-minutes: 30
+        shell: bash
+        run: >-
+          node scripts/scenarios-in-ci.mjs windows-update --feed feed --previous-setup previous/Weir-win-Setup.exe
+          --previous-feed previous/releases.win.json --previous-version "$PREVIOUS_VERSION" --version "$UPDATE_VERSION"
 
       - name: Upload scenario logs and results
         if: ${{ !cancelled() }}

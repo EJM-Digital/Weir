@@ -6,8 +6,13 @@
 //
 // Where every scenario of the VM catalogue runs, and what is left to port: docs/exec-plans/active/PLAN-SCENARIOS-IN-CI.md.
 //
+// The windows-update shard installs the newest published release instead and updates it to the build under test through the tray's own update
+// code, from a release feed made of that build's packages (--feed), so it is also given the release and its Setup.
+//
 // Usage: node scripts/scenarios-in-ci.mjs <linux shard> --candidate <local image> [--only <id,id>] [--logs <folder>]
 //        node scripts/scenarios-in-ci.mjs <windows shard> --setup <Weir-win-Setup.exe> [--version <version>] [--only <id,id>] [--logs <folder>]
+//        node scripts/scenarios-in-ci.mjs windows-update --feed <folder> --previous-setup <Weir-win-Setup.exe> --previous-feed <releases.win.json>
+//          --previous-version <version> --version <version> [--only <id,id>] [--logs <folder>]
 import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -25,12 +30,14 @@ import { SHARDS } from "./scenarios-ci/shards.mjs";
 import { WindowsMachine, whyNotAThrowawayMachine } from "./scenarios-ci/windows-machine.mjs";
 import * as windowsInstall from "./scenarios-ci/windows-install.mjs";
 import * as windowsTray from "./scenarios-ci/windows-tray.mjs";
+import * as windowsUpdate from "./scenarios-ci/windows-update.mjs";
 import { expectedVersion, runWindowsShard } from "./scenarios-ci/windows-shard.mjs";
 
 /** The scenarios of each Windows shard, and the watch on the logs they are judged by. */
 const WINDOWS_SHARDS = {
   "windows-install": windowsInstall,
   "windows-tray": windowsTray,
+  "windows-update": windowsUpdate,
 };
 
 const CATALOG = "scripts/scenarios/Weir.Scenarios.Catalog.ps1";
@@ -38,6 +45,7 @@ const CATALOG = "scripts/scenarios/Weir.Scenarios.Catalog.ps1";
 const USAGE = [
   "node scripts/scenarios-in-ci.mjs <linux shard> --candidate <image> [--only <id,id>] [--logs <folder>]",
   "node scripts/scenarios-in-ci.mjs <windows shard> --setup <Weir-win-Setup.exe> [--version <version>] [--only <id,id>] [--logs <folder>]",
+  "node scripts/scenarios-in-ci.mjs windows-update --feed <folder> --previous-setup <Weir-win-Setup.exe> --previous-feed <releases.win.json> --previous-version <version> --version <version> [--only <id,id>] [--logs <folder>]",
 ].join("\n       ");
 
 function usage(message) {
@@ -92,7 +100,7 @@ async function runLinuxShard({ shard, ids, candidate, logFolder }) {
 }
 
 /** The ported scenarios of a Windows shard, run on this machine, which must be a clean GitHub-hosted runner. */
-async function runWindowsShardHere({ shard, ids, setup, version, logFolder }) {
+async function runWindowsShardHere({ shard, ids, setup, version, logFolder, update }) {
   const refusal = whyNotAThrowawayMachine(process.env, process.platform);
   if (refusal) usage(`${shard} installs and uninstalls Weir for real, and ${refusal}.`);
   const props = readFileSync("apps/server/Directory.Build.props", "utf8");
@@ -102,7 +110,8 @@ async function runWindowsShardHere({ shard, ids, setup, version, logFolder }) {
       registry: WINDOWS_SHARDS[shard].SCENARIOS,
       watchLogs: WINDOWS_SHARDS[shard].watchLogs,
       machine: new WindowsMachine(),
-      setupPath: resolve(setup),
+      setupPath: setup ? resolve(setup) : null,
+      update,
       version: expectedVersion({ given: version ?? process.env.WEIR_BUILD_VERSION, props }),
       logFolder,
     });
@@ -118,6 +127,10 @@ async function main() {
     options: {
       candidate: { type: "string" },
       setup: { type: "string" },
+      feed: { type: "string" },
+      "previous-setup": { type: "string" },
+      "previous-feed": { type: "string" },
+      "previous-version": { type: "string" },
       version: { type: "string" },
       only: { type: "string" },
       logs: { type: "string", default: "artifacts/scenarios-in-ci" },
@@ -130,15 +143,27 @@ async function main() {
   const linux = linuxShards(homes).includes(shard);
   const windows = windowsShards(homes).includes(shard);
   if (linux && !values.candidate) usage(`${shard} runs against an image, so --candidate is needed.`);
-  if (windows && !values.setup) usage(`${shard} runs against a Setup, so --setup is needed.`);
+  const updating = shard === "windows-update";
+  if (windows && !updating && !values.setup) usage(`${shard} runs against a Setup, so --setup is needed.`);
+  if (updating) {
+    const missing = ["feed", "previous-setup", "previous-feed", "previous-version", "version"].filter((name) => !values[name]);
+    if (missing.length > 0) usage(`${shard} updates a release to the build under test, so it needs ${missing.map((name) => `--${name}`).join(", ")}.`);
+  }
   if (!linux && !windows) usage(`The shard must be one of ${[...linuxShards(homes), ...windowsShards(homes)].join(", ")}.`);
   const ids = chooseScenarios(homes, shard, values.only);
   const logFolder = join(values.logs, shard);
 
-  const subject = linux ? { label: "Image under test", value: values.candidate } : { label: "Setup under test", value: values.setup };
+  const subject = linux
+    ? { label: "Image under test", value: values.candidate }
+    : updating
+      ? { label: "Feed of the build under test", value: values.feed }
+      : { label: "Setup under test", value: values.setup };
+  const update = updating
+    ? { feedFolder: resolve(values.feed), previousSetup: resolve(values["previous-setup"]), previousFeed: resolve(values["previous-feed"]), previousVersion: values["previous-version"].replace(/^v/, "") }
+    : undefined;
   const { results, collectFailed } = linux
     ? await runLinuxShard({ shard, ids, candidate: values.candidate, logFolder })
-    : { results: await runWindowsShardHere({ shard, ids, setup: values.setup, version: values.version, logFolder }), collectFailed: false };
+    : { results: await runWindowsShardHere({ shard, ids, setup: values.setup, version: values.version, logFolder, update }), collectFailed: false };
 
   const summary = summaryMarkdown(results, { shard, ...subject });
   console.log(summary);

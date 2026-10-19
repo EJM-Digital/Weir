@@ -26,10 +26,6 @@ public static class ActivityEventTypes
     /// <summary>Processing was resumed, by someone or because a timed pause ran out.</summary>
     public const string SystemProcessingResumed = "system.processing_resumed";
 
-    // Shared *arr library (Sonarr/Radarr): operator-triggered connection checks
-    public const string ArrLibraryConnectionTestSucceeded = "arr_library.connection_test_succeeded";
-    public const string ArrLibraryConnectionTestFailed = "arr_library.connection_test_failed";
-
     // Processing durable families (jobs)
     public const string ProcessingFileProcessingProgress = "processing.file_processing_progress";
     public const string ProcessingFileRemuxPassCompleted = "processing.file_remux_pass_completed";

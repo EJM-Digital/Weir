@@ -30,7 +30,7 @@ export function consoleEnvironment(env) {
   return Object.fromEntries(Object.entries(env).filter(([name]) => !name.toUpperCase().startsWith("WEIR_")));
 }
 
-function run(program, args, { env = process.env, ceilingMs = 120_000 } = {}) {
+export function run(program, args, { env = process.env, ceilingMs = 120_000 } = {}) {
   return new Promise((resolve, reject) => {
     execFile(program, args, { env, windowsHide: true, timeout: ceilingMs, maxBuffer: 32 * 1024 * 1024 }, (error, stdout, stderr) => {
       if (error) reject(new Error(`${program} ${args.join(" ")} failed: ${error.message}\n${stderr}`.trim(), { cause: error }));
@@ -44,7 +44,7 @@ function run(program, args, { env = process.env, ceilingMs = 120_000 } = {}) {
  * finds nothing and says nothing succeeds (a failed lookup under -ErrorAction SilentlyContinue would otherwise set the exit code); an error that
  * stops the script still fails it.
  */
-async function json(script, values = {}) {
+export async function json(script, values = {}) {
   const env = { ...process.env, ...Object.fromEntries(Object.entries(values).map(([name, value]) => [`SCENARIO_${name}`, String(value)])) };
   const text = await run(POWERSHELL, ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", `$ErrorActionPreference = 'Stop'; ${script}
 exit 0`], { env });
@@ -79,6 +79,7 @@ export class WindowsMachine {
     this.paths = {
       installRoot,
       updater: join(installRoot, "Update.exe"),
+      packagesFolder: join(installRoot, "packages"),
       trayExe: join(installRoot, "current", "Weir.exe"),
       serverExe: join(installRoot, "current", "server", "WeirServer.exe"),
       runtimeHome,
@@ -95,11 +96,53 @@ export class WindowsMachine {
     return { exitCode, seconds: Math.round((Date.now() - began) / 1000) };
   }
 
-  /** Chooses "only say that an update exists" in update-settings.json, the file the tray reads, so no start of Weir installs a release over the build under test. With `onlyWhenAsked` it also checks for updates only when asked, so the menu's update item and the balloons are those of the scenario alone. */
-  async keepUpdatesFromInstalling({ onlyWhenAsked = false } = {}) {
+  /** Writes update-settings.json, the file the tray reads its update choices from, as the tray or the Settings page would. */
+  async writeUpdateSettings(settings) {
     await mkdir(this.paths.runtimeHome, { recursive: true });
-    const choice = onlyWhenAsked ? { mode: "NotifyOnly", checkOnStartup: false, checkIntervalMinutes: 0 } : { mode: "NotifyOnly" };
-    await writeFile(join(this.paths.runtimeHome, "update-settings.json"), JSON.stringify(choice));
+    await writeFile(join(this.paths.runtimeHome, "update-settings.json"), JSON.stringify(settings));
+  }
+
+  /** Chooses "only say that an update exists" in update-settings.json, so no start of Weir installs a release over the build under test. With `onlyWhenAsked` it also checks for updates only when asked, so the menu's update item and the balloons are those of the scenario alone. */
+  keepUpdatesFromInstalling({ onlyWhenAsked = false } = {}) {
+    return this.writeUpdateSettings(onlyWhenAsked ? { mode: "NotifyOnly", checkOnStartup: false, checkIntervalMinutes: 0 } : { mode: "NotifyOnly" });
+  }
+
+  /** Leaves the machine as a clean runner is: Weir stopped and uninstalled, and its install and data folders gone. */
+  async removeEverything() {
+    await this.stopWeir();
+    if (await this.exists(this.paths.updater)) {
+      const { exitCode } = await this.uninstall();
+      if (exitCode !== 0) throw new Error(`The uninstaller exited ${exitCode}, not 0.`);
+      await pollUntil(async () => ((await this.exists(this.paths.trayExe)) ? undefined : true), {
+        what: "the uninstaller to remove Weir.exe",
+        ceilingMs: STOP_CEILING_MS * 2,
+        intervalMs: 1000,
+      });
+      await this.#waitForUninstallHelpers();
+    }
+    for (const folder of [this.paths.runtimeHome, this.paths.installRoot]) await rm(folder, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 });
+  }
+
+  /** The uninstaller hands the last of its clean-up to processes that outlive it; an install made while they run would be cleaned away with the old one. */
+  async #waitForUninstallHelpers() {
+    const running = () =>
+      json(
+        `ConvertTo-Json -Compress -InputObject @(Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -and $_.CommandLine.IndexOf($env:SCENARIO_ROOT, [StringComparison]::OrdinalIgnoreCase) -ge 0 } | ForEach-Object { $_.Name })`,
+        { ROOT: this.paths.installRoot },
+      );
+    await pollUntil(async () => ((await running()).length === 0 ? true : undefined), {
+      what: "the uninstaller's helper processes to end",
+      ceilingMs: STOP_CEILING_MS,
+      intervalMs: 500,
+    });
+  }
+
+  /** What is missing from an install that has just been made, in words, or undefined when it is whole. */
+  async missingFromInstall() {
+    for (const [what, path] of [["Update.exe", this.paths.updater], ["Weir.exe", this.paths.trayExe], ["WeirServer.exe", this.paths.serverExe]]) {
+      if (!(await this.exists(path))) return `${what} (${path}) is not there`;
+    }
+    return undefined;
   }
 
   /** Runs Velopack's own uninstaller, silently. */

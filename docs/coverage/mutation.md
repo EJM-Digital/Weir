@@ -50,6 +50,8 @@ names, and a time limit generous enough that a slow run is not counted as a catc
 changes ended by timing out). For that reason the web survivors list "the related tests ran" in place of the tests that ran the line, and a line
 no test runs shows as a survivor, not as "none run this line".
 
+The Activity and profile dialogs target stops each run at its first failing test (`--bail 1`): a change is caught by one failing test, so the score is the same, and only the changes no test catches run all of the related tests. Without it the target ran past the three hours a step may run, with 209 of its 248 changes tested.
+
 Stryker.NET's `Standard` mutation level is used, and the tests that need ffmpeg or mkvmerge skip themselves, as they do
 in any run without the real tools. The contract suite and the E2E smoke are not run: they start the server as a
 separate process, which a mutation run cannot swap code into.

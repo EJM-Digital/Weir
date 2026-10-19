@@ -23,7 +23,9 @@ public sealed partial class RealStackTests
         await Poll.UntilAsync(
             async () => (bool?)(await world.Scenario.FileRowAsync(world.Movies, $"{Path.GetFileName(hand.Request.SourcePath())}/{Path.GetFileName(paths[0])}"))?["source_gone"] is true ? "held as gone" : null,
             "Weir to hold the file as gone after its first look");
-        // Deluno asked while the file was gone and the look was not yet final: the hand-off is still queued, and Weir says why.
+        // The file shows as gone while the look that found it is still ending, and the hand-off reads as working until it has. Deluno asks
+        // once the look is over, while the file is gone and the look is not yet final: the hand-off is still queued, and Weir says why.
+        await world.Scenario.WaitForHandoffStateAsync(hand.Request.HandoffId(), "queued");
         await world.Replay.SendAsync(recording, ask);
 
         // The look a vanished file waits for is minutes away; it is made due now, as it would be once that time has passed.

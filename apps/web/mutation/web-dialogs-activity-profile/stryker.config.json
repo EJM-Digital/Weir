@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-js/master/packages/core/schema/stryker-core.json",
   "testRunner": "command",
   "commandRunner": {
-    "command": "npx vitest related src/pages/activity/activity-remove-dialog.tsx src/pages/settings/tabs/rules/profiles-tab.tsx --run"
+    "command": "npx vitest related src/pages/activity/activity-remove-dialog.tsx src/pages/settings/tabs/rules/profiles-tab.tsx --run --bail 1"
   },
   "mutate": [
     "src/pages/activity/activity-remove-dialog.tsx",

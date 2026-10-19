@@ -206,6 +206,21 @@ describe("UpdateActions", () => {
     }
   });
 
+  it("says a copy that was not installed with the installer cannot update itself", () => {
+    const reason =
+      "This copy of Weir wasn't installed with the installer, so it can't update itself. To get a newer version, download the newest Weir-win-Setup.exe from the Weir releases page on GitHub and run it.";
+    tray({ tray_running: false, cannot_update_reason: reason });
+    render(<UpdateActions status={STATUS} />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent(reason);
+    expect(screen.getByRole("alert")).not.toHaveTextContent(
+      "tray isn't running",
+    );
+    for (const name of ["Check now", "Download update", "Restart and apply"]) {
+      expect(button(name)).toBeDisabled();
+    }
+  });
+
   describe("once the restart is signalled", () => {
     beforeEach(() => {
       tray({ state: "downloaded", downloaded: true, pending_version: "2.0.8" });
