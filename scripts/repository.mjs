@@ -7,3 +7,10 @@ export const API_REPOSITORY_URL = `https://api.github.com/repos/${REPOSITORY}`;
 
 /** The container image's name, which the registry needs in lower case. */
 export const IMAGE_REPOSITORY = `ghcr.io/${REPOSITORY.toLowerCase()}`;
+
+/**
+ * Releases up to and including this one were published before the move to EJM-Digital (20 Oct 2026), under the former owner's
+ * image name, which ghcr does not forward. A test that starts from an older release pulls it from there.
+ */
+export const LAST_RELEASE_BEFORE_MOVE = "1.0.0-rc.18";
+export const FORMER_IMAGE_REPOSITORY = "ghcr.io/jampat000/weir";
