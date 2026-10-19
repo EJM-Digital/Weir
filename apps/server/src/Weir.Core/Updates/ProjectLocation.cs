@@ -7,7 +7,7 @@ namespace Weir.Core.Updates;
 /// </summary>
 public static class ProjectLocation
 {
-    public const string Owner = "jampat000";
+    public const string Owner = "EJM-Digital";
     public const string Repo = "Weir";
     public const string Slug = Owner + "/" + Repo;
     public const string RepositoryUrl = "https://github.com/" + Slug;

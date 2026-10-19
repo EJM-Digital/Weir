@@ -1,7 +1,13 @@
 // Which published image a build is upgraded from.
 import { findPreviousVersion } from "../find-previous-release.mjs";
-import { IMAGE_REPOSITORY } from "../repository.mjs";
+import { FORMER_IMAGE_REPOSITORY, IMAGE_REPOSITORY, LAST_RELEASE_BEFORE_MOVE } from "../repository.mjs";
 import { compareSemver, parseSemver } from "../semver.mjs";
+
+/** A published release's image: under the former owner's name for a release made before the move, under the current one after it. */
+export function releaseImage(version) {
+  const moved = compareSemver(parseSemver(version), parseSemver(LAST_RELEASE_BEFORE_MOVE)) > 0;
+  return `${moved ? IMAGE_REPOSITORY : FORMER_IMAGE_REPOSITORY}:${version}`;
+}
 
 function newestVersion(tags) {
   let newest = null;
@@ -18,5 +24,5 @@ function newestVersion(tags) {
  */
 export function previousRelease(tags, releasing) {
   const version = releasing ? findPreviousVersion(tags, releasing) : newestVersion(tags);
-  return version ? { version, image: `${IMAGE_REPOSITORY}:${version}` } : null;
+  return version ? { version, image: releaseImage(version) } : null;
 }

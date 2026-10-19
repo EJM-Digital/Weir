@@ -12,7 +12,7 @@ Weir exposes a REST API from its .NET server. The API is served at `/api/v1` und
 The OpenAPI document is a hand-maintained contract committed to the repository. The server embeds it and serves the operations it implements:
 
 - **Running server**: `http://localhost:9347/openapi.json`
-- **Source**: [`apps/web/openapi/weir-openapi.json`](https://github.com/jampat000/Weir/blob/main/apps/web/openapi/weir-openapi.json)
+- **Source**: [`apps/web/openapi/weir-openapi.json`](https://github.com/EJM-Digital/Weir/blob/main/apps/web/openapi/weir-openapi.json)
 
 When you change an endpoint's request or response shape, update this file in the same change.
 
