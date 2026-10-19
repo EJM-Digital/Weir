@@ -2,8 +2,8 @@
 
 GitHub Actions bills by the minute, and a Windows minute costs twice a Linux one. A few jobs are most of the bill, so
 they run when their result can change something, not on every pull request. This page says which jobs those are, when
-each runs, how a release still gets their proof, and how to watch the cost. It is Weir's own policy; the shared
-[`ci-standard.md`](ci-standard.md) says nothing about it.
+each runs, how a release still gets their proof, and how to watch the cost. The rules both repositories share are in the "CI cost" section of
+[`ci-standard.md`](ci-standard.md); this page is how Weir applies them.
 
 Nothing is dropped. Every heavy job still runs on `main`, nightly or before a tag; a pull request only skips the ones
 its change cannot affect.

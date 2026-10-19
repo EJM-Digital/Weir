@@ -69,6 +69,17 @@ The job ids and display names below are the same in both repositories.
 11. **Browser tests retry once on CI; backend tests never retry.** Playwright runs with `retries: process.env.CI ? 1 : 0`, so one failed attempt is run again, and the job summary lists every test that passed only on the retry under "Flaky (passed on retry)". Nothing is hidden, and a test on that list is fixed. The backend xUnit tests are not retried at all: a failure is a failure.
 12. **A skip is never a pass.** A test that needs a real external tool skips itself where the tool is missing. CI installs the pinned tool, sets a require variable that turns the skip into a failure, and fails the leg unless the expected number of those tests ran; a skip is never a pass.
 
+## CI cost
+
+GitHub Actions bills by the minute, and a Windows minute costs twice a Linux one. A few heavy jobs are most of the bill (mutation testing, the Windows legs, the installer, the end-to-end suites), so each runs only where its result can change something, and a release still has the proof of every one. Nothing is dropped. Each repository says in its own CI cost page which jobs are heavy and when each runs.
+
+1. **Mutation testing never runs on a pull request or an ordinary push.** It runs on a schedule and by hand, and a tag needs a passing run.
+2. **Every other heavy job runs only when its result can change.** On a pull request, that means only when the change touches the paths that job's result depends on. Otherwise it runs on a push to `main`, on a schedule or by hand. A repository may keep a heavy job to manual runs only, and then a tag needs a green manual run.
+3. **The release needs every heavy job's proof, and does not wait for it.** A passing run counts if it is on the tagged commit, or on an earlier commit when no file that ships has changed since (the same rule as the golden path's carry-over). For mutation testing, the tests and the mutation setup must also be unchanged, because a changed test can lower a score without changing a shipped file. A run started by a pull request never counts. When no run counts, the check fails at once and prints the command that starts one.
+4. **A run on `main` or a scheduled run is never cancelled.** Only a superseded run of the same branch or pull request is (rule 6 above), so a regression in a heavy job is still caught on `main`.
+5. **The hygiene script holds the shape.** `scripts/check-workflow-hygiene.mjs` fails when a workflow that a pull request triggers runs mutation testing, and `scripts/check-release-workflow-gates.mjs` fails when a publish job does not need the heavy jobs' proof.
+6. **The cost is measured, not guessed.** `scripts/ci-minutes.mjs --days 7` reports the minutes per workflow and job, with Windows minutes counted double. Run it a week after any change to when jobs run.
+
 ## The release
 
 1. **A tag is made only after CI is green on that exact commit.** The first job in `release.yml`, `ci-passed`, runs `scripts/verify-ci-for-release.mjs`: it asks GitHub (`gh run list --commit`) whether `ci.yml` has a completed `push` or manual run for the tagged commit whose `ci-passed` job passed. Deluno adds one condition: the Windows installer and both end-to-end job sets run only on a manual run (an ordinary push never builds them), so the run must have passed those jobs, which means a tag needs a green manual run (`gh workflow run ci.yml`) on the commit. It does not wait. A tag made while CI is still running fails at once, and the fix is to wait for CI and re-run the release.
@@ -103,6 +114,7 @@ Security updates only. Every ecosystem in `dependabot.yml` has `open-pull-reques
 | `scripts/verify-golden-path-for-release.mjs` | The release's check that the golden path passed on the tagged commit, or on an earlier one with the same shipped files (`golden-path` commit status). |
 | `scripts/check-release-workflow-gates.mjs` | Fails when the release workflow's publish shape is broken. |
 | `scripts/summarize-test-results.mjs` | Writes TRX and Playwright results to the job summary. |
+| `scripts/ci-minutes.mjs` | Reports the Actions minutes per workflow and job over a period, and what they bill as. |
 
 ## Repository settings that go with this
 
