@@ -58,11 +58,18 @@ var listenPort = app.Services.GetRequiredService<ServerListenOptions>().Port;
 var startupLog = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Weir.Host.Startup");
 try
 {
-    await app.RunAsync().ConfigureAwait(false);
+    await ServerRun.RunAsync(
+        app,
+        failure =>
+        {
+            if (PortInUse.Caused(failure))
+            {
+                startupLog.LogCritical("Weir cannot listen: port {Port} is already in use by another program", listenPort);
+            }
+        }).ConfigureAwait(false);
 }
 catch (Exception exception) when (PortInUse.Caused(exception))
 {
-    startupLog.LogCritical("Weir cannot listen: port {Port} is already in use by another program", listenPort);
     return StartRefusal.ReportPortInUse(listenPort, NonBlockingConsole.ForStandardError());
 }
 

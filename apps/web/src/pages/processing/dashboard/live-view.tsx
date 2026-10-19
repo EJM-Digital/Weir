@@ -104,7 +104,7 @@ export function LiveView({ filter, workflowId, layout }: LiveViewProps) {
   const board = useLanes(workflowId);
   const { files, libraries, lanes, scoped } = board;
   const filesAtOnce = useProcessingFilesAtOnceQuery();
-  const today = useTodayFigures(workflowId, filter, now);
+  const today = useTodayFigures(workflowId, filter, now).figures;
   const pause = usePauseQuery();
   const fileLog = useProcessingFileLog();
   const navigate = useNavigate();
@@ -112,7 +112,10 @@ export function LiveView({ filter, workflowId, layout }: LiveViewProps) {
   const [lowNeed, setLowNeed] = useState<number>();
   // Cards that left are tracked against every workflow's lanes, so narrowing the page to one kind of file or
   // one workflow is never taken for a file leaving.
-  const finished = useFinishedFiles(filter, workflowId);
+  const { files: finished, error: finishedError } = useFinishedFiles(
+    filter,
+    workflowId,
+  );
   const leaving = useLeavingCards(
     lanes.waiting,
     lanes.working,
@@ -243,6 +246,7 @@ export function LiveView({ filter, workflowId, layout }: LiveViewProps) {
         >
           <JustFinishedShelf
             items={finished}
+            readError={finishedError}
             filter={filter}
             workflowId={workflowId}
             now={now}

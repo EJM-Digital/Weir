@@ -26,6 +26,8 @@ its progress, as the tray judges one (`docs/start-supervision.md`): a server tha
 `startup-progress.json` is waited for however long it takes, and one whose record has not changed for 30 seconds (longer if it asks
 for more) has hung. Each server writes its output to `<data folder>/contract-logs/server-<n>.log`.
 
+In CI every area runs twice, on `ubuntu-latest` and on `windows-latest` (`.github/workflows/ci-contract.yml`, `contract (<area>, <platform>)`), each with the pinned ffmpeg and mkvmerge of its platform and `WEIR_REQUIRE_REAL_TOOLS=1`. `scripts/check-contract-areas.mjs` fails if the Windows leg is dropped. A test that cannot run on one platform says why in its skip reason (`[RealFfmpegWindowsFact]` is the only one), and the leg's job summary lists it.
+
 ## When a test fails
 
 A test that fails keeps what its servers wrote in `artifacts/contract-failures/<run>/<Class.Method>/` at the repository

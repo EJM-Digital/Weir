@@ -631,3 +631,51 @@ describe("the size of the tiles", () => {
     });
   });
 });
+
+describe("what a screen reader is told when a file finishes", () => {
+  const announcement = () => screen.getByTestId("shelf-announcement");
+
+  it("says nothing for the files already there when the page first loads", () => {
+    render(shelf([finished(2), finished(1)]));
+
+    expect(announcement()).toHaveTextContent("");
+    expect(announcement()).toHaveAttribute("aria-live", "polite");
+  });
+
+  it("names the file and how it came out the moment a new one lands", () => {
+    const { rerender } = render(shelf([finished(1)]));
+
+    rerender(shelf([finished(2), finished(1)]));
+
+    expect(announcement()).toHaveTextContent(
+      "The Quiet Harbour S01E02 finished: Saved 318 MB · removed 2 audio, 4 subtitles",
+    );
+  });
+
+  it("says nothing again for the same newest file, and speaks again for the next", () => {
+    const { rerender } = render(shelf([finished(1)]));
+    rerender(shelf([finished(2), finished(1)]));
+    const first = announcement().textContent;
+
+    rerender(shelf([finished(2), finished(1)], { now: NOW + 60_000 }));
+    expect(announcement()).toHaveTextContent(first ?? "");
+
+    rerender(
+      shelf([finished(3, { kind: "already" }), finished(2), finished(1)]),
+    );
+    expect(announcement()).toHaveTextContent(
+      "The Quiet Harbour S01E03 finished: Already clean",
+    );
+  });
+
+  it("announces the first file of a page that opened with an empty shelf", () => {
+    const { rerender } = render(shelf([]));
+    expect(announcement()).toHaveTextContent("");
+
+    rerender(shelf([finished(1)]));
+
+    expect(announcement()).toHaveTextContent(
+      "The Quiet Harbour S01E01 finished:",
+    );
+  });
+});

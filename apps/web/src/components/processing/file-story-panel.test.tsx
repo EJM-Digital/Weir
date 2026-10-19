@@ -144,6 +144,15 @@ it("explains an empty record rather than showing nothing", () => {
   expect(screen.getByText(/hasn.t worked on this file/)).toBeInTheDocument();
 });
 
+it("says it is loading while the record is read, and claims nothing about the file yet", () => {
+  mount({ log: undefined, loading: true });
+
+  expect(screen.getByText("Loading…")).toBeInTheDocument();
+  expect(screen.queryByText(/hasn.t worked on this file/)).toBeNull();
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(screen.queryByText("Technical detail")).toBeNull();
+});
+
 it("shows a failure to load", () => {
   mount({
     log: undefined,
