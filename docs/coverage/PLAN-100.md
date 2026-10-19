@@ -61,7 +61,14 @@ Biggest uncovered area first. Each step is one or a few pull requests, each rais
 
 Each step ends with that project's floor raised to the figure the run printed, and a bug found by a new test is fixed in the same
 pull request with its failing test first. The first step, done with this plan, covered Weir.Core's pure files and found three bugs
-(see the pull request).
+(see the pull request). The second step covered `Browse/DirectoryBrowser.cs`, `Processing/WatchedFolderScanOps.cs`,
+`Processing/RemuxPass/TvSeasonFolderCleanup.cs` and `Processing/RemuxPass/RejectRoutes.cs`, and the refusal paths of
+`LibraryCleanHandler`, `LibraryScanHandler` and `RemuxPassRunner.PostSuccessCleanup.cs`, with real folders and real SQLite, and
+found one bug (a manager that could not be reached when asked to remove a queue item threw out of the reject route instead of
+being asked again later). Branches the tests showed no input can reach were deleted rather than excluded. What is left of
+Weir.Infrastructure starts with `MediaManagers/HandbackOutcomes.cs`, `MediaManagers/ManagerSetupCheck.cs`,
+`Processing/LibraryDiscoveryService.cs`, `RemuxPass/RemuxPassEnqueue.cs`, `MediaManagers/HandoffLedgerStore.Status.cs`,
+`MediaManagers/MediaManagerIntake.cs` and the rest of `LibraryMode/LibraryScanHandler.cs`.
 
 ## When code may be left out
 

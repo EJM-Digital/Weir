@@ -85,21 +85,42 @@
       "home": "linux",
       "shard": "with-deluno",
       "state": "ported",
-      "why": "Needs a release whose folder in a real download client holds a small extra, read through that client's own API."
+      "why": "Needs a release whose folder in a real download client holds a small extra, read through that client's own API.",
+      "passedInCi": [
+        {
+          "run": 39208578019,
+          "commit": "f6b63d947339e637900ef4e0ae0513edca25660f",
+          "ref": "main"
+        }
+      ]
     },
     {
       "id": "deluno-resend",
       "home": "linux",
       "shard": "with-deluno",
       "state": "ported",
-      "why": "Deluno's send-again is its own API call; both sides are read over HTTP."
+      "why": "Deluno's send-again is its own API call; both sides are read over HTTP.",
+      "passedInCi": [
+        {
+          "run": 39208578019,
+          "commit": "f6b63d947339e637900ef4e0ae0513edca25660f",
+          "ref": "main"
+        }
+      ]
     },
     {
       "id": "deluno-outcomes",
       "home": "linux",
       "shard": "with-deluno",
       "state": "ported",
-      "why": "Compares the outcome each app recorded for every hand-off; both are read over HTTP."
+      "why": "Compares the outcome each app recorded for every hand-off; both are read over HTTP.",
+      "passedInCi": [
+        {
+          "run": 39208578019,
+          "commit": "f6b63d947339e637900ef4e0ae0513edca25660f",
+          "ref": "main"
+        }
+      ]
     },
     {
       "id": "deluno-failed-release",
@@ -454,6 +475,30 @@
       "shard": "windows-files",
       "state": "ported",
       "why": "Other devices switched on and off through the API on the installed Weir: the listener, the firewall rule for every profile and the machine's own network address are read; a second machine is not available on one runner."
+    },
+    {
+      "id": "install-hooks",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-tray",
+      "state": "ported",
+      "why": "Setup --silent is run over a running Weir and over one that was quit: the tray's after-install hook logs, ends only the install's own processes and arranges the restart only for a Weir that was running; the VM suite installed Weir over nothing."
+    },
+    {
+      "id": "tray-portable",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-tray",
+      "state": "ported",
+      "why": "A copy of the install's files with no Update.exe beside it is run as a portable copy would be: it checks for no update, writes no heartbeat, and Weir refuses the update buttons in words; the VM suite only ran the installed tray."
+    },
+    {
+      "id": "network-access-from-weir",
+      "catalogue": false,
+      "home": "windows",
+      "shard": "windows-tray",
+      "state": "ported",
+      "why": "System > About's choice of who can reach Weir is sent as the web app sends it; the tray makes the Windows Firewall rule for real and restarts the server, and the status follows; the VM suite only chose from the tray's menu."
     },
     {
       "id": "update-installs-when-idle",

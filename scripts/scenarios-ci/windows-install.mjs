@@ -303,14 +303,25 @@ export function dataFolderProblems(before, after, { mayGrow = [] } = {}) {
   return problems;
 }
 
-/** Returns once no job waits for a worker or is held by one: a Weir stopped while a worker holds a job warns, when it next starts, that it ran the job again. */
-async function waitForNoJobInFlight(world) {
+/**
+ * Pauses Weir, scans included, and returns once no worker holds a job. Jobs come on their own (the scan Weir makes after it starts, the ones its
+ * timers book), so an empty job list says nothing about the moment after it is read; a paused Weir takes none, and a Weir stopped while a worker holds
+ * a job warns, when it next starts, that it ran the job again.
+ */
+async function pauseAndWaitForNoJobHeld(world) {
+  const paused = await world.weir.write("PUT", "/pause", { paused: true, scan_while_paused: false });
+  assert.equal(paused.status, 200, `pausing Weir answered ${paused.status}`);
   await wait(
     world,
-    async () => ((await world.weir.get("/processing/jobs/inspection?limit=100&status=pending&status=leased")).jobs.length === 0 ? true : undefined),
-    "every job to end",
+    async () => ((await world.weir.get("/processing/jobs/inspection?limit=100&status=leased")).jobs.length === 0 ? true : undefined),
+    "every job a worker holds to end",
     JOBS_CEILING_MS,
   );
+}
+
+async function resume(world) {
+  const resumed = await world.weir.write("PUT", "/pause", { paused: false });
+  assert.equal(resumed.status, 200, `resuming Weir answered ${resumed.status}`);
 }
 
 async function makeWorkflow(world) {
@@ -372,7 +383,7 @@ async function uninstallKeepsTheData(world) {
 
   // Weir stopped: nothing in the data folder may differ, but the line the tray logs that it was uninstalled.
   assert.ok((await machine.trayMark()) !== null, "a running tray leaves no mark in the registry, so there is nothing for the uninstall to remove");
-  await waitForNoJobInFlight(world);
+  await pauseAndWaitForNoJobHeld(world);
   await machine.stopWeir();
   const stopped = await machine.files(home, { hash: true });
   assert.ok(stopped.some((file) => file.path === join("data", "weir.sqlite3")), "the data folder holds no database");
@@ -383,7 +394,7 @@ async function uninstallKeepsTheData(world) {
   assert.deepEqual(await secretsOf(world), secrets, "the reinstall replaced a secret");
 
   // Weir running: the uninstaller stops it first, and nothing in the data folder is deleted.
-  await waitForNoJobInFlight(world);
+  await pauseAndWaitForNoJobHeld(world);
   const shortcuts = await machine.shortcuts();
   const running = await machine.files(home);
   await expectUninstalled(world);
@@ -394,6 +405,7 @@ async function uninstallKeepsTheData(world) {
   assert.ok((await machine.readText(machine.paths.trayLog)).includes("Velopack: before uninstall"), "the tray log does not show the uninstall hook ran");
   await reinstallAndSignIn(world, kept);
   assert.deepEqual(await secretsOf(world), secrets, "the second reinstall replaced a secret");
+  await resume(world);
 
   return (
     `Uninstalled twice, once with Weir stopped (the ${stopped.length} files of the data folder unchanged but the tray's own log) and once with it running (the uninstaller stopped it, ${running.length} files still there); ` +

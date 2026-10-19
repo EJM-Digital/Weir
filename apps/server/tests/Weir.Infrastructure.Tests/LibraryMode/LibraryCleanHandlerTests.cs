@@ -2,7 +2,9 @@ using System.Globalization;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weir.Core.Activity;
 using Weir.Core.Jobs;
+using Weir.Core.Library;
 using Weir.Core.LibraryMode;
+using Weir.Core.MediaManagers;
 using Weir.Core.Processing;
 using Weir.Core.Processing.RemuxPass;
 using Weir.Infrastructure.Activity;
@@ -24,7 +26,7 @@ namespace Weir.Infrastructure.Tests.LibraryMode;
 /// to the #506 safe swap. Refuses removal without confirmation, never touches the failure policy, and sorts behind
 /// download-pipeline jobs.
 /// </summary>
-public sealed class LibraryCleanHandlerTests : IDisposable
+public sealed partial class LibraryCleanHandlerTests : IDisposable
 {
     private readonly MediaManagerFixture _fixture = new();
     private readonly TempDirectory _libraryFolder = new();
@@ -40,7 +42,11 @@ public sealed class LibraryCleanHandlerTests : IDisposable
         _fixture.Dispose();
     }
 
-    private LibraryCleanHandler Handler()
+    private LibraryCleanHandler Handler(IHardlinkInspector? hardlinks = null, ILibraryFileChangeNotifier? notifier = null, IRemovedTrackStore? removedTracks = null) =>
+        (LibraryCleanHandler)Activator.CreateInstance(typeof(LibraryCleanHandler), HandlerArguments(hardlinks, notifier, removedTracks))!;
+
+    /// <summary>What the handler is built from, in the order of its constructor.</summary>
+    private object[] HandlerArguments(IHardlinkInspector? hardlinks = null, ILibraryFileChangeNotifier? notifier = null, IRemovedTrackStore? removedTracks = null)
     {
         var tools = new MediaTools(_media, new FixedResolver(), new ListLogger<MediaTools>(), TimeProvider.System);
         var swap = new SafeSwap(
@@ -51,12 +57,14 @@ public sealed class LibraryCleanHandlerTests : IDisposable
         // No manager connections are configured in this fixture, so the real notifier finds nothing that owns
         // the changed path and makes no HTTP call — equivalent to a no-op for these tests, but exercising the
         // same #507 code the running server does.
-        var notifier = new LibraryFileChangeNotifier(
+        notifier ??= new LibraryFileChangeNotifier(
             _fixture.Connections, _fixture.Store.Database, new SqliteActivityWriter(_fixture.Store.Database), _fixture.Store.Clock, delay: (_, _) => Task.CompletedTask);
-        var removedTrackStore = new Weir.Infrastructure.Library.FileLogRemovedTrackStore(_fixture.Store.Database, _fixture.Store.Clock);
-        return new LibraryCleanHandler(
-            _fixture.Store.Database, tools, swap, notifier, PhysicalHardlinkInspector.Instance, removedTrackStore,
-            _librarySettings, _fileMarks, _scans, _fixture.Jobs, _libraries, _fixture.Changes, _fixture.Store.Clock, NullLogger<LibraryCleanHandler>.Instance);
+        removedTracks ??= new Weir.Infrastructure.Library.FileLogRemovedTrackStore(_fixture.Store.Database, _fixture.Store.Clock);
+        return
+        [
+            _fixture.Store.Database, tools, swap, notifier, hardlinks ?? PhysicalHardlinkInspector.Instance, removedTracks,
+            _librarySettings, _fileMarks, _scans, _fixture.Jobs, _libraries, _fixture.Changes, _fixture.Store.Clock, NullLogger<LibraryCleanHandler>.Instance,
+        ];
     }
 
     /// <summary>A library whose rule set keeps only English audio, strictly — the same policy proven in
@@ -86,13 +94,13 @@ public sealed class LibraryCleanHandlerTests : IDisposable
         new(indices.Select((index, position) => new ManualKeepEntry(index, Default: position == 1, Forced: false)).ToList(), indices);
 
     /// <summary>Claims, runs and completes one clean job exactly as the real worker would.</summary>
-    private async Task RunCleanAsync(long jobId)
+    private async Task RunCleanAsync(long jobId, LibraryCleanHandler? handler = null)
     {
         const string leaseOwner = "test-worker";
         var claimed = await _fixture.Jobs.ClaimNextAsync(leaseOwner, _fixture.Store.Clock.GetUtcNow().AddMinutes(5), _fixture.Store.Clock.GetUtcNow());
         Assert.NotNull(claimed);
         Assert.Equal(jobId, claimed!.Id);
-        await Handler().HandleAsync(new JobWorkContext(claimed.Id, claimed.JobKind, claimed.PayloadJson, leaseOwner), CancellationToken.None);
+        await (handler ?? Handler()).HandleAsync(new JobWorkContext(claimed.Id, claimed.JobKind, claimed.PayloadJson, leaseOwner), CancellationToken.None);
         await _fixture.Jobs.CompleteClaimedAsync(claimed.Id, leaseOwner);
     }
 

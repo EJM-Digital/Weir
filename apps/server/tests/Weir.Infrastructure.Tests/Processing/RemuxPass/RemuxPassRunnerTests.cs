@@ -214,7 +214,7 @@ internal sealed class PassFolders : IDisposable
 /// A remux pass run on real temporary folders, with ffprobe and ffmpeg
 /// replaced by a fake process runner rather than by patching the pass.
 /// </summary>
-public sealed class RemuxPassRunnerTests : IDisposable
+public sealed partial class RemuxPassRunnerTests : IDisposable
 {
     private readonly PassFolders _folders = new();
     private readonly FakeMediaRunner _media = new();

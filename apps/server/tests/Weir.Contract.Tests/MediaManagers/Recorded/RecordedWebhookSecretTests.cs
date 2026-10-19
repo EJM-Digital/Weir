@@ -18,12 +18,6 @@ public sealed class RecordedWebhookSecretTests
     private static Replay ReplayWith(RecordedWorld world, string secret) =>
         new(() => world.Scenario.Server.CreateClient(), secret, world.Translation);
 
-    private static RecordedCall StatusOf(string handoffId) =>
-        DelunoSide.Request("status-ask-queued").Exchanges[0].Request with { Path = $"/api/v1/intake/handoffs/deluno/{handoffId}" };
-
-    private static RecordedCall CancelOf(string handoffId) =>
-        DelunoSide.Request("cancel-queued").Exchanges[0].Request with { Path = $"/api/v1/intake/handoffs/deluno/{handoffId}" };
-
     [Fact]
     public async Task With_the_instance_secret_set_a_hand_off_with_no_secret_or_a_wrong_one_is_refused_as_recorded_and_leaves_no_trace()
     {
@@ -96,14 +90,14 @@ public sealed class RecordedWebhookSecretTests
         var refusal = Recording.Load("handoff-refused-wrong-secret").Only.Reply;
 
         // The second connection's secret is a good one for the intake, but this hand-off is the first connection's.
-        var polled = await other.SendCallAsync(StatusOf(id));
-        var cancelled = await other.SendCallAsync(CancelOf(id));
+        var polled = await other.SendCallAsync(DelunoCalls.Poll(id));
+        var cancelled = await other.SendCallAsync(DelunoCalls.Cancel(id));
 
         Assert.Equal((HttpStatusCode.Unauthorized, HttpStatusCode.Unauthorized), (polled.Status, cancelled.Status));
         Assert.Equal((string)refusal.Body!["detail"]!, (string)polled.Fields["detail"]!);
         Assert.Equal((string)refusal.Body["detail"]!, (string)cancelled.Fields["detail"]!);
         Assert.NotEqual("cancelled", await RemuxJobs.StatusForHandoffAsync(admin, id));
-        Assert.Equal(HttpStatusCode.OK, (await first.SendCallAsync(StatusOf(id))).Status);
+        Assert.Equal(HttpStatusCode.OK, (await first.SendCallAsync(DelunoCalls.Poll(id))).Status);
         await File.WriteAllTextAsync(release, string.Empty);
     }
 
@@ -120,10 +114,10 @@ public sealed class RecordedWebhookSecretTests
         var connection = await world.Scenario.Admin.GetAsync($"{ManagerConnections.Route}/{await world.ConnectionIdAsync()}");
         Assert.False((bool)connection.Fields["webhook_secret_is_set"]!);
         Assert.False(string.IsNullOrEmpty((string?)connection.Fields["unsigned_webhook_warning"]));
-        var polled = await world.Replay.SendCallAsync(StatusOf(hand.HandoffId()), Credential.None);
+        var polled = await world.Replay.SendCallAsync(DelunoCalls.Poll(hand.HandoffId()), Credential.None);
         Assert.Equal(HttpStatusCode.Forbidden, polled.Status);
         Assert.Equal("Set a webhook secret in Weir so a media manager can ask about hand-offs.", (string)polled.Fields["detail"]!);
-        Assert.Equal(HttpStatusCode.Forbidden, (await world.Replay.SendCallAsync(CancelOf(hand.HandoffId()), Credential.None)).Status);
+        Assert.Equal(HttpStatusCode.Forbidden, (await world.Replay.SendCallAsync(DelunoCalls.Cancel(hand.HandoffId()), Credential.None)).Status);
         await new JobWait().UntilAsync(
             () => RemuxJobs.StatusesForHandoffAsync(world.Scenario.Admin, hand.HandoffId()),
             async () => await RemuxJobs.StatusForHandoffAsync(world.Scenario.Admin, hand.HandoffId()) == "completed" ? "done" : null,
