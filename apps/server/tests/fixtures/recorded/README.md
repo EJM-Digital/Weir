@@ -48,8 +48,8 @@ Same format. Each client is the published Docker image, pinned by digest in `app
 
 | Client | Version | Recorded states | Replayed by |
 | --- | --- | --- | --- |
-| `qbittorrent/` | 4.6.7 and 5.1.4 | `test`, `test-wrong-password`, `folders` | `QBittorrentRepliesTests` (each version) |
-| `transmission/` | 4.0.6 | `test-open`, `test`, `test-wrong-password`, `test-nothing-saved`, `folders` | `TransmissionRepliesTests` |
+| `qbittorrent/` | 4.6.7, 5.1.4 and 5.2.4 | `test`, `test-wrong-password`, `folders` | `QBittorrentRepliesTests` (each version) |
+| `transmission/` | 4.0.6 and 4.1.3 | `test-open`, `test`, `test-wrong-password`, `test-nothing-saved`, `folders` | `TransmissionRepliesTests` (each version) |
 | `deluge/` | 2.2.0 | `test`, `test-wrong-password`, `folders-stock`, `folders-move-completed-off`, `folders` | `DelugeRepliesTests`, `DelugeRulesTests`, `SessionCookieTests` |
 | `sabnzbd/` | 5.1.3 | `test`, `test-wrong-key`, `folders`, `folders-wrong-key` | `SabnzbdRepliesTests` |
 | `nzbget/` | 26.3 | `test`, `test-wrong-password`, `folders`, `folders-wrong-password` | `NzbgetRepliesTests` |
