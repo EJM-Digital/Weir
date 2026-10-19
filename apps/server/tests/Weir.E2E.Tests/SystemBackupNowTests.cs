@@ -17,6 +17,9 @@ public sealed class SystemBackupNowTests(E2EServer server) : E2ETestBase(server)
     private const float ScheduledBackupMs = 30_000;
     private static readonly TimeSpan ThreeDays = TimeSpan.FromDays(3);
 
+    /// <summary>The hour a missed backup is first called overdue: the page allows an hour past the scheduled midnight.</summary>
+    private const int FirstHourPastGrace = 2;
+
     private static ILocator RestoreButtons(IPage page) => page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("^Restore the backup taken") });
 
     private static ILocator Schedule(IPage page) => page.GetByRole(AriaRole.Region, new() { Name = "Schedule", Exact = true });
@@ -84,7 +87,14 @@ public sealed class SystemBackupNowTests(E2EServer server) : E2ETestBase(server)
         await Expect(RestoreButtons(page)).ToHaveCountAsync(1);
         Assert.False(string.IsNullOrEmpty((string?)(await system.ReadAsync("/api/v1/suite/settings"))["configuration_backup_last_run_at"]));
 
+        // Land on a time of day past the one-hour allowance after midnight, so the result does not depend on when the test runs.
         await page.Clock.FastForwardAsync((long)ThreeDays.TotalMilliseconds);
+        var zone = (string?)(await system.ReadAsync("/api/v1/suite/settings"))["app_timezone"];
+        var hour = await page.EvaluateAsync<int>("zone => Number(new Intl.DateTimeFormat('en-GB', { timeZone: zone || undefined, hour: 'numeric', hourCycle: 'h23' }).format(Date.now()))", zone);
+        if (hour < FirstHourPastGrace)
+        {
+            await page.Clock.FastForwardAsync((long)TimeSpan.FromHours(FirstHourPastGrace - hour).TotalMilliseconds);
+        }
 
         await Expect(Schedule(page).GetByText("Overdue", new() { Exact = true })).ToBeVisibleAsync();
         await Expect(Schedule(page).GetByText("Up to date")).ToHaveCountAsync(0);
