@@ -36,7 +36,7 @@ Weir should be easy for coding agents to inspect, modify, validate, and repair w
 - Docs index: [`README.md`](README.md). Architecture: [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
 - Server: `apps/server` (.NET 10). Web app: `apps/web` (React/Vite). Windows tray: `apps/tray`.
 - Page layout rules: [`design/content-language.md`](design/content-language.md).
-- Planned and in-flight work: [GitHub issues](https://github.com/jampat000/Weir/issues). Completed historical plans: [`archive/`](archive/).
+- Planned and in-flight work: [GitHub issues](https://github.com/EJM-Digital/Weir/issues). Completed historical plans: [`archive/`](archive/).
 - Local setup and ports: [`local-development.md`](local-development.md), [`ports.md`](ports.md).
 
 ## Validation commands
