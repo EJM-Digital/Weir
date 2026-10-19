@@ -14,3 +14,6 @@ export const IMAGE_REPOSITORY = `ghcr.io/${REPOSITORY.toLowerCase()}`;
  */
 export const LAST_RELEASE_BEFORE_MOVE = "1.0.0-rc.18";
 export const FORMER_IMAGE_REPOSITORY = "ghcr.io/jampat000/weir";
+
+/** Where Weir lived before, which GitHub redirects to where it lives now. A release made before the move asks for these. */
+export const FORMER_REPOSITORIES = ["jampat000/Weir"];
