@@ -96,6 +96,20 @@ public sealed class DelunoRecordingComparisonTests
         Assert.Contains("$.outputFiles[0]: recorded", failure.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void A_report_recorded_in_Compose_that_stops_matching_fails_naming_its_file_and_the_member()
+    {
+        var recording = RealStackSide.Load("real-rejected-audio-only");
+        var report = RealStackSide.ReportIndex(recording, "failed");
+        var sent = recording.Exchanges[report].Request.Body!.DeepClone().AsObject();
+        sent["disposition"] = "held";
+
+        var failure = Assert.Throws<XunitException>(() => EmittedReport.AssertMatches(recording, report, sent));
+
+        Assert.Contains($"apps/server/tests/fixtures/recorded/deluno-side/{Recording.DelunoSideRealStackVersion}/real-rejected-audio-only.json, exchange {report}: POST /api/integrations/processors/events", failure.Message, StringComparison.Ordinal);
+        Assert.Contains("$.disposition: recorded \"rejected\", Weir sent \"held\"", failure.Message, StringComparison.Ordinal);
+    }
+
     // --- what Weir answers ----------------------------------------------------------------------------
 
     [Fact]

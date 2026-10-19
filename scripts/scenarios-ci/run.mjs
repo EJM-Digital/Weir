@@ -2,12 +2,13 @@
 import { LogWatch } from "./log-watch.mjs";
 
 // A hang guard: a scenario that has not ended by then is failed, saying which, instead of leaving the run to wait for ever.
+// A scenario that has to wait out a grace period of Weir's own names a longer ceiling (`ceilingMinutes`).
 const SCENARIO_CEILING_MS = 10 * 60_000;
 
-async function within(running, id) {
+async function within(running, id, ceilingMs) {
   let timer;
   const hung = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`${id} was still running after ${SCENARIO_CEILING_MS / 60_000} minutes.`)), SCENARIO_CEILING_MS);
+    timer = setTimeout(() => reject(new Error(`${id} was still running after ${ceilingMs / 60_000} minutes.`)), ceilingMs);
   });
   try {
     return await Promise.race([running, hung]);
@@ -19,9 +20,11 @@ async function within(running, id) {
 /**
  * Runs the scenarios in order; one that fails does not stop the next, so one run reports every failure.
  * @param {string[]} ids
- * @param {Record<string, ((world: object) => Promise<string>) | {run: (world: object) => Promise<string>, logs?: "since-start"}>} registry
- *   The scenarios that are ported, by id. A scenario that is signed out when it begins has its logs judged from the start of the stack.
- * @param {{weir: object, watchLogs?: (world: object) => Promise<{finish(): Promise<void>}>}} world `watchLogs` replaces the default watch of System > Logs, for a shard whose first scenario begins before Weir is there.
+ * @param {Record<string, ((world: object) => Promise<string>) | {run: (world: object) => Promise<string>, logs?: "since-start", expectedLogs?: (world: object) => (row: object) => boolean}>} registry
+ *   The scenarios that are ported, by id. A scenario that is signed out when it begins has its logs judged from the start of the stack. One that makes
+ *   Weir fail on purpose says which warnings that is expected to log (`expectedLogs`); any other warning or error still fails it.
+ *   One that waits out a grace period longer than ten minutes says how long it may run (`ceilingMinutes`).
+ * @param {{weir: object, watchLogs?: (world: object) => Promise<{finish(expected?: (row: object) => boolean): Promise<object[]>}>}} world `watchLogs` replaces the default watch of System > Logs, for a shard whose first scenario begins before Weir is there.
  */
 export async function runScenarios({ ids, registry, world }) {
   for (const id of ids) {
@@ -32,12 +35,13 @@ export async function runScenarios({ ids, registry, world }) {
     const began = Date.now();
     let outcome;
     try {
-      const { run, logs } = typeof registry[id] === "function" ? { run: registry[id] } : registry[id];
+      const { run, logs, expectedLogs, ceilingMinutes } = typeof registry[id] === "function" ? { run: registry[id] } : registry[id];
       const watch = await (world.watchLogs ? world.watchLogs(world) : logs === "since-start" ? LogWatch.sinceStart(world.weir) : LogWatch.begin(world.weir));
       world.logWatch = watch;
-      const detail = await within(run(world), id);
-      await watch.finish();
-      outcome = { status: "passed", detail: `${detail} The logs gained no unexpected warning or error.` };
+      const detail = await within(run(world), id, ceilingMinutes ? ceilingMinutes * 60_000 : SCENARIO_CEILING_MS);
+      const accepted = await watch.finish(expectedLogs?.(world));
+      const logged = accepted.length === 0 ? "The logs gained no unexpected warning or error." : `The logs gained only what the scenario expected: ${accepted.map((row) => row.title).join(" | ")}.`;
+      outcome = { status: "passed", detail: `${detail} ${logged}` };
     } catch (error) {
       outcome = { status: "failed", detail: error.message };
     }

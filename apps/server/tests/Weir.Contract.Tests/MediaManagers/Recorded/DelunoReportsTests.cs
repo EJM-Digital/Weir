@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
 using Weir.Contract.Tests.Harness.Fakes;
 using Weir.Contract.Tests.Processing;
+using static Weir.Contract.Tests.MediaManagers.Recorded.DelunoReportSteps;
 
 namespace Weir.Contract.Tests.MediaManagers.Recorded;
 
@@ -98,20 +99,7 @@ public sealed partial class DelunoReportsTests
         await Poll.UntilAsync(
             async () => (bool?)(await world.Scenario.FileRowAsync(world.Movies, Path.GetFileName(path)))?["source_gone"] is true ? "held as gone" : null,
             "Weir to hold the file as gone after its first look");
-        // The first look is not final: Weir looks again after the vanished-file grace and a minute, and only then tells Deluno. The
-        // second look is made due now, as it would be once that time has passed; the file shows as gone a moment before the look is
-        // booked, so the server is stopped and asked again until it is there.
-        await Poll.UntilAsync(
-            async () =>
-            {
-                await using var database = await world.Scenario.Server.StopForDatabaseAsync();
-                var due = SeedSql.Execute(
-                    database.Connection,
-                    "UPDATE jobs SET not_before = $past WHERE status = 'pending' AND dedupe_key LIKE '%:gone-wait:%'",
-                    ("$past", Handoffs.StoredTime(DateTime.UtcNow.AddMinutes(-1))));
-                return due > 0 ? "due" : null;
-            },
-            "Weir to book a second look at the gone file");
+        await MakeSecondLookDueAsync(world);
 
         var report = await ReportAsync(world, hand.HandoffId());
         EmittedReport.AssertMatches(recorded, 0, report.Body);
@@ -290,12 +278,6 @@ public sealed partial class DelunoReportsTests
     private static RecordedCall HandoffFor(Recording report, int exchange) =>
         DelunoSide.HandoffLike((string)report.Exchanges[exchange].Request.Body!["handoffId"]!, DelunoSide.ReleaseNameOf(report.Exchanges[exchange]));
 
-    private static async Task HandOffAsync(RecordedWorld world, RecordedCall hand)
-    {
-        var accepted = await world.Replay.SendCallAsync(hand);
-        Assert.True(accepted.Status == System.Net.HttpStatusCode.OK, accepted.ToString());
-    }
-
     /// <summary>Hands the release off while the file is there, takes the file away, and waits until Weir holds it as gone with a look booked for later.</summary>
     private static async Task HoldAsGoneAsync(RecordedWorld world, RecordedCall hand)
     {
@@ -334,18 +316,6 @@ public sealed partial class DelunoReportsTests
         }
 
         world.PutFilm(hand.SourcePath(), needsWork: true);
-    }
-
-    private sealed record Sent(RecordedRequest Request, JsonObject Body);
-
-    /// <summary>The report Weir sent for the hand-off, once it has, for as long as a worker has the job that makes it (see <see cref="JobWait"/>).</summary>
-    private static async Task<Sent> ReportAsync(RecordedWorld world, string handoffId)
-    {
-        var request = await new JobWait().UntilAsync(
-            world.Scenario.JobStatusesAsync,
-            () => Task.FromResult(world.Deluno.RequestsTo("POST", ReportsTo).FirstOrDefault(sent => ((JsonObject)sent.Json!)["handoffId"]!.ToString() == handoffId)),
-            $"Weir's report of {handoffId}");
-        return new Sent(request, (JsonObject)request.Json!);
     }
 
     /// <summary>

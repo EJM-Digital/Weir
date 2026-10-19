@@ -6,7 +6,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { afterEach, test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { imageEnvironment, imageVariable, loadImages, problemsWithImages } from "./scenarios-ci/images.mjs";
+import { imageEnvironment, imageVariable, loadImages, overrideVariable, problemsWithImages, withOverrides } from "./scenarios-ci/images.mjs";
 import { runScenarios } from "./scenarios-ci/run.mjs";
 import { SHARDS } from "./scenarios-ci/shards.mjs";
 import { QbittorrentApi } from "./scenarios-ci/with-deluno/qbittorrent-api.mjs";
@@ -53,6 +53,17 @@ function filesBelow(folder) {
     return statSync(join(repository, path)).isDirectory() ? filesBelow(path) : [path];
   });
 }
+
+test("an image can be replaced for one run, by a reference with a digest, and by nothing else", () => {
+  const newest = `registry.example/deluno@sha256:${"a".repeat(64)}`;
+  const replaced = withOverrides(images, { [overrideVariable("DELUNO")]: newest });
+  assert.equal(replaced.DELUNO.reference, newest);
+  assert.match(replaced.DELUNO.label, /replaced for this run/);
+  assert.deepEqual(replaced.QBITTORRENT, images.QBITTORRENT, "the others are as pinned");
+  assert.deepEqual(withOverrides(images, {}), images);
+  assert.throws(() => withOverrides(images, { [overrideVariable("DELUNO")]: "registry.example/deluno:latest" }), /must be a reference with a sha256 digest/);
+  assert.equal(imageEnvironment(replaced)[imageVariable("DELUNO")], newest);
+});
 
 test("no digest is written anywhere in the scenarios but images.json", () => {
   const shipped = filesBelow("scripts/scenarios-ci").filter((path) => !path.endsWith("images.json") && !path.endsWith("package-lock.json"));
@@ -220,11 +231,11 @@ test("Weir and Deluno are connected once: a key made in Deluno, Weir's secret gi
   assert.equal(first, second, "a second call is the same connection, not a second one");
   assert.equal(first.id, 7);
   assert.deepEqual(weirCalls, [
-    ["POST", "/media-managers/connections", { kind: "deluno", base_url: "http://deluno:8080", api_key: "deluno_key", enabled: true }],
+    ["POST", "/media-managers/connections", { kind: "deluno", base_url: "http://recorder:8081", api_key: "deluno_key", enabled: true }],
     ["POST", "/media-managers/connections/7/webhook-secret", undefined],
   ]);
   const processor = requests.find((request) => request.path === "/api/integrations/processors/connections").body;
-  assert.deepEqual([processor.submissionUrl, processor.authHeaderName, processor.secret], ["http://weir:9347/api/v1/hooks/abc", "X-Webhook-Secret", "shh"]);
+  assert.deepEqual([processor.submissionUrl, processor.authHeaderName, processor.secret], ["http://recorder:8082/api/v1/hooks/abc", "X-Webhook-Secret", "shh"]);
   const workflow = requests.find((request) => request.method === "PUT" && request.path === "/api/libraries/library-1/workflow").body;
   assert.deepEqual([workflow.importWorkflow, workflow.processorConnectionId, workflow.processorOutputPath], ["refine-before-import", "processor-1", FOLDERS.weirOutput]);
 });
@@ -278,10 +289,10 @@ test("a workflow not linked to Deluno, or whose folder chain is not ready, fails
   assert.match(notReady[0].detail, /the folder chain for 'Movies' is ready/);
 });
 
-test("the shard starts Deluno and qBittorrent beside Weir, with an account, and keeps their logs", () => {
+test("the shard starts Deluno, qBittorrent and the recording proxy beside Weir, with an account, and keeps their logs", () => {
   const shard = SHARDS["with-deluno"];
   assert.deepEqual([shard.account, shard.browser], [true, false]);
-  assert.deepEqual(shard.beside.services, ["deluno", "qbittorrent"]);
+  assert.deepEqual(shard.beside.services, ["deluno", "qbittorrent", "recorder"]);
   assert.deepEqual(shard.beside.files, ["scripts/scenarios-ci/with-deluno/compose.yaml"]);
   const started = shard.beside.start();
   assert.deepEqual(started.pull.sort(), Object.values(images).map((image) => image.reference).sort());

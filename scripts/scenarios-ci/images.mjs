@@ -17,6 +17,24 @@ export function imageEnvironment(images = loadImages()) {
   return Object.fromEntries(Object.entries(images).map(([name, image]) => [imageVariable(name), image.reference]));
 }
 
+/** The environment variable that replaces an image for one run: the weekly drift job tries the newest Deluno with it. */
+export const overrideVariable = (name) => `SCENARIO_${name}_IMAGE_OVERRIDE`;
+
+/**
+ * The pinned images with any the environment replaces for this run. A replacement is held to the same rule as a pin, a reference with a digest,
+ * so a run never starts an image that a tag could change under it.
+ */
+export function withOverrides(images = loadImages(), env = process.env) {
+  return Object.fromEntries(
+    Object.entries(images).map(([name, image]) => {
+      const replacement = env[overrideVariable(name)];
+      if (!replacement) return [name, image];
+      if (!DIGEST_REFERENCE.test(replacement)) throw new Error(`${overrideVariable(name)} must be a reference with a sha256 digest, not "${replacement}".`);
+      return [name, { ...image, label: `${image.label} (replaced for this run)`, reference: replacement }];
+    }),
+  );
+}
+
 /** What is wrong with the pins, in words; nothing when every image is named by digest and has a label. */
 export function problemsWithImages(images) {
   const problems = [];

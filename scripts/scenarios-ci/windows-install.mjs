@@ -113,9 +113,9 @@ export async function watchLogs(world) {
   return {
     expect: (title, options) => watch.expect(title, options),
     expectMatching: (pattern, options) => watch.expectMatching(pattern, options),
-    finish: async () => {
+    finish: async (expected) => {
       await ensureSignedIn(world);
-      await watch.finish();
+      return watch.finish(expected);
     },
   };
 }

@@ -54,7 +54,7 @@ export function testFiles(root) {
 const TS_TITLE = /\b(?:it|test|describe)(?:\.(?:each|skip|only|fixme|fails|concurrent|serial|describe|configure))*(?:\([^)]*\))?\(\s*(['"`])((?:\\.|(?!\1)[^\\\n])+)\1/g;
 const CS_METHOD = /\[(?:[A-Za-z0-9]*Fact|[A-Za-z0-9]*Theory)\b[^\]]*\]\s*(?:\[[^\]]*\]\s*)*(?:public\s+|internal\s+)?(?:static\s+)?(?:async\s+)?(?:Task|void|ValueTask)\s+(\w+)/g;
 const CS_CLASS = /\b(?:class|record)\s+(\w+)/g;
-const RECORDING = /\bArrRecording\b|\bRecordedDeluno\b|\bDelunoSide\b|\bRecordedWorld\b|\bRecordedReplies\b|fixtures[\\/]+recorded/;
+const RECORDING = /\bArrRecording\b|\bRealStackSide\b|\bRecordedDeluno\b|\bDelunoSide\b|\bRecordedWorld\b|\bRecordedReplies\b|fixtures[\\/]+recorded/;
 
 // real-fs: the test (or its class setup) creates a real temp folder or a real SQLite file, works on it with real file or database code,
 // and neither names a fake or in-memory file system or store. What cannot be decided is refused.

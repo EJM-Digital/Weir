@@ -3,17 +3,17 @@
     "run": 38551264717,
     "samples": [38549249570, 38551264717],
     "commit": "fb7a6dfa7e09eaa2d9d2b2989e8d44661ecd6d32",
-    "note": "CI runs of the coverage branch, whose product code is main's at f33af83f. Each floor is the lowest of the two runs' figures rounded down to one decimal. Weir.Infrastructure and Weir.Api differed between the runs (seven timing-dependent files, mostly background services and watchers), so their four floors are a further 0.1 lower; every other figure was identical in both runs."
+    "note": "CI runs of the coverage branch, whose product code is main's at f33af83f. Each floor is the lowest of the two runs' figures rounded down to one decimal. Weir.Infrastructure and Weir.Api differed between the runs (seven timing-dependent files, mostly background services and watchers), so their four floors are a further 0.1 lower; every other figure was identical in both runs. The four out-of-process floors are from CI run 39124799698 (the contract suite and the E2E smoke, one sample), rounded down to one decimal and a further 0.1 lower because the figure depends on the timing of background services in the server process."
   },
   "floors": {
     "server-core": { "line": 91.7, "branch": 82.1 },
     "server-infrastructure": { "line": 89.5, "branch": 76.0 },
     "server-api": { "line": 89.1, "branch": 70.7 },
     "server-host": { "line": 87.2, "branch": 76.0 },
-    "out-of-process-core": { "line": 0, "branch": 0 },
-    "out-of-process-infrastructure": { "line": 0, "branch": 0 },
-    "out-of-process-api": { "line": 0, "branch": 0 },
-    "out-of-process-host": { "line": 0, "branch": 0 },
+    "out-of-process-core": { "line": 74.6, "branch": 60.6 },
+    "out-of-process-infrastructure": { "line": 78, "branch": 59.7 },
+    "out-of-process-api": { "line": 94.5, "branch": 67.9 },
+    "out-of-process-host": { "line": 80.9, "branch": 67.6 },
     "tray": { "line": 74.1, "branch": 73.1 },
     "web": { "line": 88.3, "branch": 82.7 }
   }

@@ -1,4 +1,10 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { KeptFile } from "../../lib/processing/kept-files-api";
@@ -54,8 +60,14 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  expect(api.unmatched).toEqual([]);
-  vi.unstubAllGlobals();
+  // The page comes down while the stubs are still in place: a page left up would ask the real fetch and matchMedia
+  // for what a late answer brings, and fail the test that happens to be running then.
+  cleanup();
+  try {
+    expect(api.unmatched).toEqual([]);
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });
 
 describe("while Activity is reading", () => {

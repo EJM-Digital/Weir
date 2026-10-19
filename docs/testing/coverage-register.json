@@ -11066,9 +11066,9 @@
           "name": "WatchedFolderScanDispatchTests"
         },
         {
-          "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffSourceFilesTests.cs",
-          "name": "HandoffSourceFilesTests"
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_small_extra_the_real_Deluno_left_out_of_its_hand_off_stays_in_the_download_untouched"
         },
         {
           "type": "xunit",
@@ -49873,27 +49873,16 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffFolderTests.cs",
           "name": "HandoffFolderTests"
         },
         {
-          "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffSourceFilesTests.cs",
-          "name": "HandoffSourceFilesTests"
-        },
-        {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/HandoffSourceFilesTests.cs",
           "name": "HandoffSourceFilesTests"
-        },
-        {
-          "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/IntakeTests.cs",
-          "name": "Deluno_tv_handoff_uses_the_tv_watched_folder"
         },
         {
           "type": "xunit",
@@ -49909,13 +49898,23 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "deluno-release-with-extra"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_release_folder_the_real_Deluno_handed_over_is_cleaned_reported_and_its_import_recorded_as_they_said"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_small_extra_the_real_Deluno_left_out_of_its_hand_off_stays_in_the_download_untouched"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_show_the_real_Deluno_handed_over_is_cleaned_in_the_TV_workflow_reported_and_its_unmatched_import_recorded_as_they_said"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "These request shapes are written by the test authors; none of them is in Deluno's recordings (the recordings hold single files). A real Deluno season-pack hand-off is never made in the VM (films only)"
-      },
-      "issue": 1017,
       "audit": {
         "id": "INT-DEL-02",
         "verdict": "Partly"
@@ -49924,7 +49923,37 @@
     {
       "id": "integrations.del-03.deluno-x-status-poll-get-intake-handoffs-deluno-id",
       "area": "integrations",
-      "behaviour": "Deluno x status poll (GET /intake/handoffs/deluno/{id}): queued, working, completed with output path, scheduled retry, failed, cancelled, unknown 404",
+      "behaviour": "Deluno x status poll (GET /intake/handoffs/deluno/{id}): queued, working, completed with output path, unknown 404",
+      "kind": "integration-operation",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffStatusTests.cs",
+          "name": "HandoffStatusTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "A_hand_off_Weir_holds_queued_while_paused_reads_queued_in_position_one_each_time_Deluno_asks"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.Waiting.cs",
+          "name": "A_download_deleted_while_Weir_holds_the_hand_off_is_answered_queued_with_the_reason_and_then_reported_gone_as_they_said"
+        }
+      ],
+      "audit": {
+        "id": "INT-DEL-03",
+        "verdict": "Partly"
+      }
+    },
+    {
+      "id": "integrations.del-03b.deluno-x-status-poll-scheduled-retry-failed-cancelled",
+      "area": "integrations",
+      "behaviour": "Deluno x status poll (GET /intake/handoffs/deluno/{id}): scheduled retry, failed, cancelled",
       "kind": "integration-operation",
       "severity": "medium",
       "touches": "other-app",
@@ -49938,14 +49967,10 @@
         }
       ],
       "needs": {
-        "kind": "xunit",
-        "test": "Deluno branches on `scheduled` / `failed` / `cancelled` states; those replies are the test authors' construction, not recorded from a real Deluno poll"
+        "kind": "recording-replay",
+        "test": "A real Deluno asks about a hand-off only while it waits for Weir, and Weir tells it of a failure, a cancel or a retry in its report, so the stack never sees these replies. Producing them needs the report to be held back in the recording proxy until Deluno asks"
       },
-      "issue": 1017,
-      "audit": {
-        "id": "INT-DEL-03",
-        "verdict": "Partly"
-      }
+      "issue": 1017
     },
     {
       "id": "integrations.del-04.deluno-x-outcome-post-intake-handoffs-deluno-id-outcome",
@@ -50212,7 +50237,7 @@
         "kind": "xunit",
         "test": "The happy path is proven against a real Deluno; every edge (library stops refining or is removed, no downloads folder, shared folders, unreadable destinations) runs against a fake Deluno the test authors built from Deluno's documented API"
       },
-      "issue": 1017,
+      "issue": 1142,
       "audit": {
         "id": "INT-DEL-09",
         "verdict": "Partly"
@@ -50221,13 +50246,12 @@
     {
       "id": "integrations.del-10.deluno-x-weir-s-reports-to-deluno-completed-with",
       "area": "integrations",
-      "behaviour": "Deluno x Weir's reports to Deluno (completed with output path, failed with disposition, source_gone, superseded, not_taken, rejected, cancelled) delivered through Deluno's processor events",
+      "behaviour": "Deluno x Weir's reports to Deluno (completed with output path, failed with disposition, source_gone, superseded, rejected) delivered through Deluno's processor events",
       "kind": "integration-operation",
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/FakeManagerTests.cs",
@@ -50302,17 +50326,54 @@
           "type": "recording-replay",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.Releases.cs",
           "name": "A_release_with_no_video_is_rejected_and_reported_failed_rejected_and_left_for_Deluno_to_remove_as_Deluno_recorded"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_release_folder_the_real_Deluno_handed_over_is_cleaned_reported_and_its_import_recorded_as_they_said"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_file_Weir_cannot_read_is_reported_failed_and_held_as_the_real_Weir_reported_it_to_the_real_Deluno"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_release_with_no_video_is_rejected_and_the_real_Deluno_answers_the_report_by_refusing_it_and_looking_for_another"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.Waiting.cs",
+          "name": "A_download_deleted_while_Weir_holds_the_hand_off_is_answered_queued_with_the_reason_and_then_reported_gone_as_they_said"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Only the completed report meets a real Deluno. The failure, rejection, source-gone, superseded and cancelled reports (the ones that make Deluno retry, blocklist, remove a download or refuse) are checked only against a hand-written fake"
-      },
-      "issue": 1018,
       "audit": {
         "id": "INT-DEL-10",
         "verdict": "Partly"
       }
+    },
+    {
+      "id": "integrations.del-10b.deluno-x-weir-s-not-taken-and-cancelled-reports",
+      "area": "integrations",
+      "behaviour": "Deluno x Weir's reports to Deluno: not_taken and cancelled, delivered through Deluno's processor events",
+      "kind": "integration-operation",
+      "severity": "medium",
+      "touches": "other-app",
+      "required": "inproc",
+      "proofs": [],
+      "partial": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Processing/FailurePoliciesTests.cs",
+          "name": "FailurePoliciesTests"
+        }
+      ],
+      "needs": {
+        "kind": "recording-replay",
+        "test": "Weir sends a not_taken report when a release it was handed is not one it takes, and a cancelled one when a person cancels in Weir; neither happens in the stack's scenarios, and Deluno has not recorded either"
+      },
+      "issue": 1018
     },
     {
       "id": "integrations.del-10a.weir-s-reports-to-deluno-refused-for-now-or-for-good",
@@ -50520,7 +50581,7 @@
         "kind": "xunit",
         "test": "Fake HTTP only"
       },
-      "issue": 1017,
+      "issue": 1142,
       "audit": {
         "id": "INT-DEL-13",
         "verdict": "Partly"
@@ -54508,8 +54569,7 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/ProcessingRejectHandlerTests.cs",
@@ -54524,13 +54584,13 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Processing/FailurePoliciesTests.cs",
           "name": "Content_rejection_under_reject_policy_removes_and_blocklists_the_radarr_queue_item"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_release_with_no_video_is_rejected_and_the_real_Deluno_answers_the_report_by_refusing_it_and_looking_for_another"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Both managers are hand-written fakes; no real Deluno or Radarr ever receives a rejection (no VM scenario). The exact Activity sentence is not asserted by name"
-      },
-      "issue": 1018,
       "audit": {
         "id": "FL-38",
         "verdict": "Partly"
@@ -59721,7 +59781,7 @@
       "touches": "none",
       "required": "inproc",
       "proofs": [],
-      "issue": 1017,
+      "issue": 1142,
       "covers": [
         "event:library.file_change_notify_skipped"
       ],
@@ -59827,8 +59887,7 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Harness/Fakes/FakeManagerTests.cs",
@@ -59838,9 +59897,18 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffStatusTests.cs",
           "name": "Capabilities_name_every_ability"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "Deluno_asking_what_Weir_can_do_gets_the_capabilities_it_recorded"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.Connection.cs",
+          "name": "The_manifest_the_real_Deluno_answers_is_read_into_what_it_manages_and_where_its_libraries_are"
         }
       ],
-      "issue": 1017,
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -59979,8 +60047,18 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "A_release_folder_is_accepted_and_only_the_files_it_lists_are_cleaned_into_a_folder_named_for_the_release"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_release_folder_the_real_Deluno_handed_over_is_cleaned_reported_and_its_import_recorded_as_they_said"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -59997,8 +60075,18 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_small_extra_the_real_Deluno_left_out_of_its_hand_off_stays_in_the_download_untouched"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_release_folder_the_real_Deluno_handed_over_is_cleaned_reported_and_its_import_recorded_as_they_said"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60112,8 +60200,18 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "A_hand_off_Weir_holds_queued_while_paused_reads_queued_in_position_one_each_time_Deluno_asks"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.Waiting.cs",
+          "name": "A_download_deleted_while_Weir_holds_the_hand_off_is_answered_queued_with_the_reason_and_then_reported_gone_as_they_said"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60437,8 +60535,18 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "Stop_waiting_cancels_a_queued_hand_off_with_a_204_and_the_work_is_never_done"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.Waiting.cs",
+          "name": "A_hand_off_the_person_stopped_waiting_for_is_dropped_with_a_204_and_is_never_worked"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",

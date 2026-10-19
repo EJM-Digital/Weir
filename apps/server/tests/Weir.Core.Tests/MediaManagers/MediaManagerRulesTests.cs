@@ -175,6 +175,15 @@ public sealed class MediaManagerRulesTests
     }
 
     [Fact]
+    public void A_deluno_library_names_its_folder_by_rootPath_alone()
+    {
+        var connection = new ManagerConnection("deluno", "Main", "http://manager.local", "k", 1);
+        var description = ManagerDialectRules.ExternalDescription(connection, ManagerKindProfiles.CapabilitiesForKind("deluno")!, WireJsonParser.Parse(
+            """{"libraries":[{"id":"abc","name":"Movies","mediaType":"movies","rootPath":"/media/Movies","downloadsPath":"/downloads/completed/Movies"}]}"""));
+        Assert.Equal(["/media/Movies"], description.LibraryRoots);
+    }
+
+    [Fact]
     public void Arr_answers_read_records_roots_and_nested_files()
     {
         Assert.Equal(["movie"], ManagerDialectRules.ArrQueueRows(WireJsonParser.Parse("""{"records":[{"status":"downloading"},"junk"]}"""), "movie").Select(r => r.Scope));

@@ -49,3 +49,12 @@ c5850fc966af6d4d02fe96d2ca938843e8815c62af87c4237d3055aa247f3633  1.0.0-rc.30.32
 5e3a0c62d506d5d0bad0cbba871ba98303dd7dbd6c5f17ab87333143bfd90ae7  1.0.0-rc.30.32/reply-send-again-weir-not-finished.json
 d5e278252599284743b14cca21c17cfd5544dc330b8c989754410a15d3a37b46  1.0.0-rc.30.32/reply-send-again-weir-refuses-secret.json
 af090d25e7e08bb31b3b68611be79595cf910eb65a23ce383ca44b6767256ec7  1.0.0-rc.30.32/reply-send-again-weir-unreachable.json
+e1b9fdd6b3963b9d272cca79e0c5c3815242ae9f05047a8599f167c00242610d  1.0.0-rc.30.33/real-connection.json
+d49914ac17f490d09a0a30507e6f0318df6db8b56e961aa77936d87bd7a111a2  1.0.0-rc.30.33/real-deleted-before-cleaning.json
+3638e4e1f2251a344f72817e8256950b9e2c9f15fc676de20d12847f64c74461  1.0.0-rc.30.33/real-failed-unreadable.json
+ab7b75f3582c7ee26cc7a418b5027665c7cf76ce08a12304556e0bf19eb672db  1.0.0-rc.30.33/real-rejected-audio-only.json
+34feefc3634da2b9b4dc88915a49002c5a3ce6585282a1e268d6ed085d357fb1  1.0.0-rc.30.33/real-release-folder.json
+ceea93e06d9a70b10a91b13a9f407e66f8e04c03336bc0e3e1f5cb769bc9be73  1.0.0-rc.30.33/real-release-with-extra.json
+f3eaeca3288ca145cf0ca837d449be5770539a329d0caadbc14dc1ff6fbe2bbc  1.0.0-rc.30.33/real-season-pack.json
+355a702e485e5a7c5455f8670c05b037c497517832711f6a198446da820c0ce8  1.0.0-rc.30.33/real-stop-waiting.json
+dc370c6444f031a07679fb169287ad4930b5f040b7225d9c166a7195579506f8  1.0.0-rc.30.33/real-tv-episode.json
