@@ -118,11 +118,11 @@ export class RunningTray {
   }
 }
 
-/** Starts the installed tray with the arguments, and notes where its log stood. */
-export async function startTray(world, args, env) {
+/** Starts the installed tray, or the Weir.exe at `executable`, with the arguments, and notes where the log stood. */
+export async function startTray(world, args, env, executable) {
   const { machine } = world;
   const mark = (await machine.exists(machine.paths.trayLog)) ? (await machine.readText(machine.paths.trayLog)).length : 0;
-  return new RunningTray(world, machine.startTrayWith({ args, env }), mark);
+  return new RunningTray(world, machine.startTrayWith({ args, env, executable }), mark);
 }
 
 /** A client of Weir on another port, signed in as the account this run made. */
