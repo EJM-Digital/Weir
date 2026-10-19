@@ -44,10 +44,10 @@ export function watchLogs(world) {
       for (const [title, options] of expected) watch.expect(title, options);
     },
     expect: (title, options) => (watch ? watch.expect(title, options) : expected.push([title, options])),
-    finish: async () => {
+    finish: async (expected) => {
       assert.ok(watch, "the scenario never began watching System > Logs");
       await ensureSignedIn(world);
-      await watch.finish();
+      return watch.finish(expected);
     },
   };
 }

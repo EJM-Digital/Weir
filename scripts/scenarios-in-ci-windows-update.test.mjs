@@ -14,7 +14,8 @@ import { GithubStandIn, atomFeed, withOneByteChanged, withoutDeltas } from "./sc
 import { hostsRedirecting, hostsRestored } from "./scenarios-ci/github-redirect.mjs";
 import { loadHomes, scenariosOfShard } from "./scenarios-ci/homes.mjs";
 import { updateVersions } from "./scenarios-ci/update-versions.mjs";
-import { SCENARIOS, activityProblems, expectPlainFailure } from "./scenarios-ci/windows-update.mjs";
+import { runScenarios } from "./scenarios-ci/run.mjs";
+import { SCENARIOS, activityProblems, expectPlainFailure, watchLogs } from "./scenarios-ci/windows-update.mjs";
 import { packagesOf } from "./scenarios-ci/windows-shard.mjs";
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -31,6 +32,18 @@ test("the build is the newest release's patch number plus one, and that release 
 test("with no release published there is nothing to update from", () => {
   assert.throws(() => updateVersions([]), /No release is published/);
   assert.throws(() => updateVersions(["latest"]), /No release is published/);
+});
+
+// --- the watch on the logs ---------------------------------------------------------------------------------------------------------------
+
+test("a scenario that ends well is passed by the shard's watch on the logs when the logs gained nothing", async () => {
+  const weir = { get: async () => ({ items: [], next_cursor: null }), bootstrapStatus: async () => ({ bootstrap_allowed: false }), signedInAs: async () => "owner" };
+  const world = { weir, account: { username: "owner", password: "unused" } };
+  world.watchLogs = watchLogs;
+  const registry = { quiet: async (running) => { await running.logWatch.begin(); return "It did what it should."; } };
+  const [result] = await runScenarios({ ids: ["quiet"], registry, world });
+  assert.equal(result.status, "passed", result.detail);
+  assert.match(result.detail, /The logs gained no unexpected warning or error./);
 });
 
 // --- the release feed -----------------------------------------------------------------------------------------------------------------
