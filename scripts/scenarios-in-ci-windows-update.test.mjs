@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { REPOSITORY } from "./repository.mjs";
+import { FORMER_REPOSITORIES, REPOSITORY } from "./repository.mjs";
 import { GithubStandIn, atomFeed, withOneByteChanged, withoutDeltas } from "./scenarios-ci/github-stand-in.mjs";
 import { hostsRedirecting, hostsRestored } from "./scenarios-ci/github-redirect.mjs";
 import { loadHomes, scenariosOfShard } from "./scenarios-ci/homes.mjs";
@@ -92,7 +92,7 @@ async function withStandIn(use) {
     return { status: answer.status, text: await answer.text() };
   };
   try {
-    await use({ feed, get });
+    await use({ feed, get, port });
   } finally {
     await feed.close();
     await rm(folder, { recursive: true, force: true });
@@ -113,6 +113,19 @@ test("in newer mode the feed shows the build and serves its Velopack feed and pa
     assert.equal((await get(download("Weir-9.9.9-full.nupkg"))).status, 404);
     assert.deepEqual(feed.packagesAskedFor(), ["Weir-1.0.1-delta.nupkg", "Weir-1.0.1-full.nupkg"]);
     assert.deepEqual(feed.packagesAskedFor(feed.requests.length), []);
+  });
+});
+
+test("a request for a former address is sent on to where Weir lives now, as GitHub does", async () => {
+  await withStandIn(async ({ get, port }) => {
+    for (const former of FORMER_REPOSITORIES) {
+      for (const path of ["/releases.atom", "/releases/download/v1.0.1/releases.win.json"]) {
+        const answer = await fetch(`http://localhost:${port}/${former}${path}`, { headers: { host: `github.com:${port}` }, redirect: "manual" });
+        assert.equal(answer.status, 301);
+        assert.equal(answer.headers.get("location"), `https://github.com/${REPOSITORY}${path}`);
+      }
+    }
+    assert.equal((await get(atom)).status, 200);
   });
 });
 

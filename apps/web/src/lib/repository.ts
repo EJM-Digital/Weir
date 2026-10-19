@@ -6,6 +6,6 @@
  * The one place the web app writes the repository's owner and name; scripts/check-repository-owner.mjs fails when
  * another file does, or when this differs from the server's, the tray's and the scripts'.
  */
-const REPOSITORY_SLUG = "jampat000/Weir";
+const REPOSITORY_SLUG = "EJM-Digital/Weir";
 export const REPOSITORY_URL = `https://github.com/${REPOSITORY_SLUG}`;
 export const LICENSE_URL = `${REPOSITORY_URL}/blob/main/LICENSE`;

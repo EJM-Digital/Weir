@@ -20,7 +20,7 @@ Python; the contract suite and the E2E tests are .NET too (see below).
 ## Clone and run
 
 ```bash
-git clone https://github.com/jampat000/Weir.git
+git clone https://github.com/EJM-Digital/Weir.git
 cd Weir
 ```
 

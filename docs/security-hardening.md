@@ -18,7 +18,7 @@ This checklist defines the current practical hardening baseline for Weir.
 - Secure cookies should be enabled when deployed behind HTTPS.
 - Existing users must persist across restarts and upgrades.
 - Requests are only answered for a `Host` Weir recognises (see
-  [Reverse Proxy: Host header allow-list](https://github.com/jampat000/Weir/blob/main/docs-site/docs/deployment/reverse-proxy.md)) — set `WEIR_ALLOWED_HOSTS` for a reverse-proxy domain.
+  [Reverse Proxy: Host header allow-list](https://github.com/EJM-Digital/Weir/blob/main/docs-site/docs/deployment/reverse-proxy.md)) — set `WEIR_ALLOWED_HOSTS` for a reverse-proxy domain.
 - Install-level routes (configuration bundle, backups, updates, the directory browser, media
   manager and notification channel credentials, history reset) require the admin role.
 
