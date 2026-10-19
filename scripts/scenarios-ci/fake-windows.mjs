@@ -42,6 +42,8 @@ function signCsrf(secret) {
  * @param {boolean} [behaviour.recoverChangesNothing] It says it reset the password and did not.
  * @param {boolean} [behaviour.recoverKeepsSessions]
  * @param {string} [behaviour.warnsWhenStarted] A warning the server logs when it starts.
+ * @param {number} [behaviour.jobsInFlight] How many times the job list is read, after each start, before the job Weir starts with ends.
+ * @param {boolean} [behaviour.jobNeverEnds] The job Weir starts with does not end.
  * @param {boolean} [behaviour.feedHasNewerRelease] A release newer than the build is published, and the tray installs it at its next start unless told only to announce updates.
  */
 export class FakeWindows {
@@ -61,6 +63,8 @@ export class FakeWindows {
   #sessions = new Set();
   #shortcuts = [];
   #mark = null;
+  #jobReadsLeft = 0;
+  #interrupted = false;
 
   constructor(behaviour = {}) {
     this.#behaviour = behaviour;
@@ -193,9 +197,13 @@ export class FakeWindows {
     serverLogs: async () => this.#files.get(join("logs", "weir.log")) ?? "",
   };
 
+  /** A server stopped while a job is held by a worker owes that job a second run, and says so when it starts again. */
   #stop() {
+    if (this.#jobInFlight()) this.#interrupted = true;
     this.#tray = null;
   }
+
+  #jobInFlight = () => this.#behaviour.jobNeverEnds === true || this.#jobReadsLeft > 0;
 
   /** The tray's first start makes the secrets; the server then starts with them and opens its database. */
   #start() {
@@ -209,7 +217,17 @@ export class FakeWindows {
     this.#updateWaiting = !this.#files.has("update-settings.json");
     this.#db ??= { account: null, settings: { app_timezone: "UTC", log_retention_days: 30 }, libraries: [], activity: [], logs: [] };
     if (this.#behaviour.warnsWhenStarted) this.#db.logs.push({ source: "server", id: this.#db.logs.length + 1, at: this.#now, title: this.#behaviour.warnsWhenStarted });
+    if (this.#interrupted) this.#db.logs.push({ source: "server", id: this.#db.logs.length + 1, at: this.#now, title: "Weir startup recovered interrupted work recovered_jobs={'processing_requeued': 1}" });
+    this.#interrupted = false;
+    this.#jobReadsLeft = this.#behaviour.jobsInFlight ?? 0;
     this.logRows = this.#db.logs;
+  }
+
+  /** The jobs a worker holds or that wait for one, as the job list shows them; each read is a moment later. */
+  jobsInFlight() {
+    const held = this.#jobInFlight();
+    if (this.#jobReadsLeft > 0) this.#jobReadsLeft -= 1;
+    return held ? [{ job_kind: "processing.watched_folder.remux_scan_dispatch", status: "leased" }] : [];
   }
 
   #recover(args) {
@@ -318,6 +336,7 @@ class FakeBrowser {
 
   async get(path) {
     if (path === "/auth/csrf") return { csrf_token: this.#world.csrfToken() };
+    if (path.startsWith("/processing/jobs/inspection")) return { jobs: this.#world.jobsInFlight() };
     if (path.startsWith("/system/log")) return { items: [...this.#world.db.logs], next_cursor: null };
     throw new Error(`the stand-in does not answer ${path}`);
   }
