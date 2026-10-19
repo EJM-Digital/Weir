@@ -107,7 +107,8 @@ public sealed class ScheduleTabTests(E2EServer server) : E2ETestBase(server)
     {
         using var admin = await AdminSession.OpenAsync(BaseUrl);
         using var folders = new TemporaryFolder();
-        var id = await CreateAsync(admin, "E2E Viewer hours", WeekGrids.AllExcept(0, 3), Directory.CreateDirectory(Path.Join(folders.Path, "in")).FullName);
+        var (day, hour) = WeekGrids.Of(DateTime.UtcNow.AddHours(HoursAhead));
+        var id = await CreateAsync(admin, "E2E Viewer hours", WeekGrids.AllExcept(day, hour), Directory.CreateDirectory(Path.Join(folders.Path, "in")).FullName);
         var adminPage = await NewPageAsync();
         await Navigation.EnsureSignedInAsync(adminPage, BaseUrl);
         try
@@ -121,7 +122,7 @@ public sealed class ScheduleTabTests(E2EServer server) : E2ETestBase(server)
             await row.GetByRole(AriaRole.Button, new() { Name = "Change hours" }).ClickAsync();
             var editor = page.GetByTestId("schedule-library-editor");
             await Expect(editor).ToBeVisibleAsync();
-            await Expect(editor.GetByTestId("schedule-cell-0-3")).ToBeDisabledAsync();
+            await Expect(editor.GetByTestId($"schedule-cell-{day}-{hour}")).ToBeDisabledAsync();
             await Expect(editor.GetByTestId("schedule-clear")).ToBeDisabledAsync();
             await Expect(editor.GetByTestId("schedule-none")).ToBeDisabledAsync();
             await Expect(page.GetByTestId("schedule-library-save")).ToBeDisabledAsync();
