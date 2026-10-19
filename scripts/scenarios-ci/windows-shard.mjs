@@ -10,9 +10,7 @@ import { WeirClient } from "../docker-smoke/weir-client.mjs";
 import { runScenarios } from "./run.mjs";
 import { TrayDesktop } from "./tray-desktop.mjs";
 
-/** The longest each scenario of a shard may run, in milliseconds, by id or `default`; a hang costs that scenario and not the shard's other results. */
 const CLEANUP_CEILING_MS = 120_000;
-const SCENARIO_CEILINGS = { "windows-files": { default: 360_000, "library-swap-crash": 720_000 } };
 
 /** The server as an outsider asks it: is it ready, and which version does it report. */
 export function httpServer(origin) {
@@ -95,7 +93,6 @@ export async function runWindowsShard({ shard, ids, registry, watchLogs, machine
     runId: randomBytes(3).toString("hex"),
     scratch,
     cleanups: [],
-    scenarioCeilingMs: SCENARIO_CEILINGS[shard],
     watchLogs,
     record: (name, text) => writeFile(join(recordings, name), text),
   };

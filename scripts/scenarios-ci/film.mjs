@@ -64,3 +64,9 @@ export function cleanedFilmProblems(original, cleaned) {
   if (cleaned.bytes >= original.bytes) problems.push(`the cleaned film should be smaller (${cleaned.bytes} bytes of ${original.bytes})`);
   return problems;
 }
+
+/** The shell command that makes a file with sound and no picture: uncompressed 24-bit stereo at 96 kHz, about 0.58 MB a second, so it is large enough to pass a size minimum. */
+export function audioOnlyCommand({ path, seconds }) {
+  const ffmpeg = ["ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i", `sine=frequency=440:duration=${seconds}`, "-ac", "2", "-ar", "96000", "-c:a", "pcm_s24le", path].map(shellQuote).join(" ");
+  return `mkdir -p ${shellQuote(posix.dirname(path))} && ${ffmpeg}`;
+}

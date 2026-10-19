@@ -12,7 +12,7 @@ export { watchLogs } from "./files-world.mjs";
 /** The scenarios of the windows-files shard, by id. */
 export const SCENARIOS = {
   "library-clean-in-place": libraryCleanInPlace,
-  "library-swap-crash": librarySwapCrash,
+  "library-swap-crash": { run: librarySwapCrash, ceilingMinutes: 12 },
   "publish-across-volumes": publishAcrossVolumes,
   "keep-original-across-volumes": keepOriginalAcrossVolumes,
   "full-disk": fullDisk,

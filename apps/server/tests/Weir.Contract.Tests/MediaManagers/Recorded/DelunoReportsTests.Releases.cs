@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Weir.Contract.Tests.Harness.Fakes;
+using static Weir.Contract.Tests.MediaManagers.Recorded.DelunoReportSteps;
 
 namespace Weir.Contract.Tests.MediaManagers.Recorded;
 

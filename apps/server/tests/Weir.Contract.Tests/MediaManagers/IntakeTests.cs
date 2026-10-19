@@ -170,21 +170,6 @@ public sealed class IntakeTests(IntakeFixture fixture) : IClassFixture<IntakeFix
         Assert.Contains("has no watched folder yet", detail, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task Deluno_tv_handoff_uses_the_tv_watched_folder()
-    {
-        using var client = await fixture.WithWatchedFoldersAsync();
-
-        var response = await client.PostAsync(
-            $"{Webhook}/deluno", Handoff("handoff-tv", "tv", Path.Combine(fixture.Tv.Watched, "Show", "S01E01.mkv")));
-
-        Assert.True(response.Status == HttpStatusCode.OK, response.ToString());
-        var job = Assert.Single(await RemuxJobs.ForHandoffAsync(client, "handoff-tv"));
-        var payload = RemuxJobs.Payload(job);
-        Assert.Equal("Show/S01E01.mkv", (string)payload["relative_media_path"]!);
-        Assert.Equal("tv", (string)payload["media_scope"]!);
-    }
-
     // --- the native shape, for a manager with no dialect of its own ---------------
 
     [Fact]

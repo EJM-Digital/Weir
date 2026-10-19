@@ -1,0 +1,88 @@
+# Records a real Deluno and a real Weir talking to each other (#1017, #1018), and weekly checks that Deluno still says what is checked in.
+#
+# The with-deluno scenario shard (scripts/scenarios-ci/with-deluno) runs Weir's image from this commit against Deluno's published image and a real
+# qBittorrent, with a recording proxy between Weir and Deluno. Each scenario keeps the conversation of its hand-off as a recording, written to the
+# artifact in the format of apps/server/tests/fixtures/recorded/deluno-side. To refresh the checked-in ones, run this by hand and copy the
+# artifact's recordings/<version>/real-*.json files to apps/server/tests/fixtures/recorded/deluno-side/<version>/ unchanged, then regenerate the
+# manifest with `node scripts/check-recorded-manifest.mjs --write`.
+#
+# Weekly it is also the drift check: it records against the Deluno pinned in scripts/scenarios-ci/images.json and against the newest Deluno
+# release, and fails when the kinds of exchange differ from the checked-in ones (scripts/compare-deluno-recordings.mjs). A failure on the pinned
+# image means the recording is not repeatable; a failure on the newest release means Deluno has changed what it says. Nothing is bumped silently:
+# a difference becomes an issue, and moving the pin is its own commit.
+name: Record Deluno and Weir
+
+on:
+  workflow_dispatch:
+    inputs:
+      images:
+        description: "Which Deluno to record against: pinned (the digest in scripts/scenarios-ci/images.json) or latest (the newest release)."
+        type: choice
+        options: [pinned, latest]
+        default: pinned
+      compare:
+        description: "Also fail when the exchanges differ in kind from the checked-in ones."
+        type: boolean
+        default: false
+  schedule:
+    # Mondays, 06:17 UTC.
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    name: Record against ${{ matrix.images }} Deluno
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        images: ${{ fromJSON(github.event_name == 'schedule' && '["pinned","latest"]' || format('["{0}"]', inputs.images || 'pinned')) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # The scenarios read SQLite files with node:sqlite, which the runner's default Node may not have.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      # The same image and cache as the scenario shards of CI.
+      - name: Build Weir Docker image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          push: false
+          tags: weir-ci-smoke
+          cache-from: type=gha,scope=weir-ci-amd64
+          cache-to: type=gha,mode=max,scope=weir-ci-amd64,ignore-error=true
+
+      # A run only ever starts an image named by digest: the newest release is pulled here and handed to the scenarios by the digest it has.
+      - name: Use the newest Deluno
+        if: matrix.images == 'latest'
+        run: |
+          repository="$(node -e "console.log(require('./scripts/scenarios-ci/images.json').images.DELUNO.reference.split('@')[0])")"
+          docker pull "$repository:latest"
+          digest="$(docker image inspect --format '{{index .RepoDigests 0}}' "$repository:latest")"
+          echo "SCENARIO_DELUNO_IMAGE_OVERRIDE=$digest" >> "$GITHUB_ENV"
+          echo "Recording against $digest" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run the with-deluno scenarios, keeping what passed between Weir and Deluno
+        run: node scripts/scenarios-in-ci.mjs with-deluno --candidate weir-ci-smoke --logs "artifacts/deluno-${{ matrix.images }}"
+
+      - name: The recordings
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deluno-recordings-${{ matrix.images }}
+          path: artifacts/deluno-${{ matrix.images }}/**
+          if-no-files-found: error
+
+      - name: Compare with the checked-in exchanges
+        if: (github.event_name == 'schedule' || inputs.compare) && !cancelled()
+        run: node scripts/compare-deluno-recordings.mjs "artifacts/deluno-${{ matrix.images }}/with-deluno/recordings"

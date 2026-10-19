@@ -120,7 +120,7 @@ export async function networkShare(world) {
 
   // The share goes away. A film that arrives meanwhile (in the folder behind the share) is not touched, and the folders are reported.
   world.logWatch.expectMatching(/^Weir can no longer see .*weir-ci-.*watched/, { times: 2, why: "the share is taken away, so Weir says in the logs that it can no longer see the watched folder" });
-  world.logWatch.expectMatching(/^The filesystem watcher for Scenario share .* reported an error/, { times: 2, why: "the share is taken away, so the watcher on its folder fails and is restarted" });
+  world.logWatch.expectMatching(/^The filesystem watcher for Scenario share .* reported an error/, { times: 2, why: "the share is taken away, so the watcher on its folder fails once, and its replacement can start before the share is seen to be gone and fail the same way" });
   world.logWatch.expectMatching(/^Did not scan Scenario share .*: Weir can't see its watched folder/, { times: 1, why: "Weir is asked to look at the folder while the share is gone, refuses, and says so in the logs" });
   await removeShare(name);
   assert.equal(await exists(join(unc, "watched")), false, "the share is still reachable after it was removed");

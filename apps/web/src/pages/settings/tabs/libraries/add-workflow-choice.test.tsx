@@ -1,5 +1,11 @@
 import { QueryClient } from "@tanstack/react-query";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SuggestedLibrary } from "../../../../lib/processing/library-setup-api";
@@ -43,6 +49,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // The page comes down while the stand-in server still answers: a request it makes in its last moments must not reach the
+  // refusing fetch the setup file puts back, which would fail the next test.
+  cleanup();
   expect(server.unmatched).toEqual([]);
   vi.unstubAllGlobals();
 });
