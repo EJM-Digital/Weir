@@ -52,19 +52,19 @@ Use the Velopack setup exe from the release being validated.
 ## Docker smoke
 
 Use the published release image, not a locally built image. The Git tag is `vX.Y.Z`; the image tag
-drops the `v`, so `ghcr.io/jampat000/weir:X.Y.Z` is the image for tag `vX.Y.Z`. Run the checks on
+drops the `v`, so `ghcr.io/ejm-digital/weir:X.Y.Z` is the image for tag `vX.Y.Z`. Run the checks on
 both `linux/amd64` and `linux/arm64` when hardware for both is available.
 
 1. Pull the versioned image:
 
    ```bash
-   docker pull ghcr.io/jampat000/weir:X.Y.Z
+   docker pull ghcr.io/ejm-digital/weir:X.Y.Z
    ```
 
 2. Start with a fresh named volume:
 
    ```bash
-   docker run --rm -p 9347:9347 -v weir-smoke:/data/weir ghcr.io/jampat000/weir:X.Y.Z
+   docker run --rm -p 9347:9347 -v weir-smoke:/data/weir ghcr.io/ejm-digital/weir:X.Y.Z
    ```
 
 3. Open `http://localhost:9347/`.

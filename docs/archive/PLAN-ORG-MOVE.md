@@ -1,6 +1,6 @@
 # Plan: move Weir to the EJM-Digital organisation
 
-Status: prepared, not yet moved. Today every value stays `jampat000/Weir`.
+Status: done. Weir moved to `EJM-Digital/Weir` on 20 Oct 2026, and the sweep below was run the same day. The proof after the move is made with the first release from the new home.
 
 Weir moves from the repository `jampat000/Weir` to the GitHub organisation `EJM-Digital`, so the repository becomes `EJM-Digital/Weir` and the container image `ghcr.io/ejm-digital/weir`. This plan is written so the move itself is one small commit, plus the settings and the proof below.
 
