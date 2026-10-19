@@ -32,7 +32,7 @@ export async function watchLogs(world) {
   return {
     expect: (title, options) => world.logExpectations.push({ title, options }),
     expectMatching: (pattern, options) => world.logExpectations.push({ pattern, options }),
-    finish: async () => {},
+    finish: async () => [],
   };
 }
 

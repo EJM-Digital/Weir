@@ -14,7 +14,8 @@ import { FILM_PATH, KEPT_BESIDE_PATH, POINTS, commits, filesAfterRecovery, files
 import { createScript, detachScript, freeLetter } from "./scenarios-ci/files-volumes.mjs";
 import { lanAddresses, ruleProblems } from "./scenarios-ci/files-network.mjs";
 import { loadHomes, scenariosOfShard } from "./scenarios-ci/homes.mjs";
-import { SCENARIOS } from "./scenarios-ci/windows-files.mjs";
+import { runScenarios } from "./scenarios-ci/run.mjs";
+import { SCENARIOS, watchLogs } from "./scenarios-ci/windows-files.mjs";
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(join(repository, path), "utf8");
@@ -23,6 +24,12 @@ const homes = loadHomes();
 test("every ported windows-files scenario has code, in the order the shard runs them", () => {
   const ported = scenariosOfShard(homes, "windows-files").filter((scenario) => scenario.state !== "to-port").map((scenario) => scenario.id);
   assert.deepEqual(Object.keys(SCENARIOS), ported);
+});
+
+test("a scenario that ends well is passed by the shard's watch on the logs, which leaves each server's logs to the scenario", async () => {
+  const [result] = await runScenarios({ ids: ["quiet"], registry: { quiet: async () => "It did what it should." }, world: { watchLogs } });
+  assert.equal(result.status, "passed", result.detail);
+  assert.match(result.detail, /The logs gained no unexpected warning or error./);
 });
 
 test("the swap's points are the ones the server and the contract suite name, in the same order", () => {
