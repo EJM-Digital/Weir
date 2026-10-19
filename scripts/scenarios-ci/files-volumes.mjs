@@ -109,7 +109,17 @@ export class Volume {
           () => undefined,
         ),
       { what: `the virtual disk ${this.file} to be released`, ceilingMs: RELEASE_CEILING_MS, intervalMs: 500, clock: this.clock },
-    ).catch((error) => console.error(`::warning::${error.message}`));
+    ).catch(async (error) => {
+      // Said with what Windows still holds, so a disk that is not released can be traced.
+      const attached = await this.#attached().catch((listError) => `(the disks could not be listed: ${listError.message})`);
+      console.error(`::warning::${error.message} The virtual disks Windows still has:\n${attached}`);
+    });
+  }
+
+  async #attached() {
+    const script = join(this.scratch, `list-${this.letter}.txt`);
+    await writeFile(script, "list vdisk\r\n");
+    return diskpart(script);
   }
 }
 

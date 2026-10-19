@@ -9,8 +9,20 @@ import { WeirServerProcess } from "./files-server.mjs";
 import { packagedTools } from "./files-media.mjs";
 import { Volumes } from "./files-volumes.mjs";
 import { installBuildUnderTest } from "./windows-install.mjs";
+import { json } from "./windows-machine.mjs";
 
 const FIRST_PORT = 9361;
+
+/**
+ * Ends every process that runs from the installed Weir's folder: the server and the ffmpeg it started. A server ended the way a crash ends it
+ * leaves its ffmpeg behind, and a process with a file open on a volume keeps that volume's virtual disk from being released.
+ */
+export function stopProcessesOf(folder) {
+  return json(
+    `Get-Process | Where-Object { $_.Path -and $_.Path.StartsWith($env:SCENARIO_FOLDER + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) } | Stop-Process -Force -ErrorAction SilentlyContinue`,
+    { FOLDER: folder },
+  );
+}
 
 export const wait = (world, check, what, ceilingMs, intervalMs = 1000) => pollUntil(check, { what, ceilingMs, intervalMs, clock: world.clock });
 
@@ -50,6 +62,7 @@ export async function filesWorld(world) {
   };
   world.files = files;
   world.cleanups.push(() => volumes.removeAll());
+  world.cleanups.push(() => stopProcessesOf(serverFolder));
   return files;
 }
 
