@@ -184,9 +184,12 @@ public sealed class RejectRoutes
     }
 
     /// <summary>A manager that hands files over gets a failed report with disposition: rejected. When the workflow is linked
-    /// to the manager, the download is the manager's and its client's to remove: the report says Weir did not remove it, and Weir leaves it in place.</summary>
+    /// to the manager, the download is the manager's and its client's to remove: the report says Weir did not remove it, and Weir leaves it in place.
+    /// <paramref name="accepted"/>, when given, is called as soon as the manager has accepted the report, before anything else is done, to save that
+    /// it did and to record the report (see <see cref="AfterAcceptedRejection"/> for the rest); the outcome then carries no report to record.</summary>
     public async Task<RejectRouteOutcome> ThroughHandoffAsync(
-        HandoffReportTarget target, HandoffOrigin origin, string source, string watchedRoot, string reason, string? failureClass, WorkflowManagerLinks links, CancellationToken cancellationToken)
+        HandoffReportTarget target, HandoffOrigin origin, string source, string watchedRoot, string reason, string? failureClass, WorkflowManagerLinks links,
+        CancellationToken cancellationToken, Func<RejectDeliveryReport, CancellationToken, Task>? accepted = null)
     {
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(origin);
@@ -237,21 +240,45 @@ public sealed class RejectRoutes
             return new RejectRouteOutcome(false, $"{label} did not accept the rejection ({status}), so Weir kept the download.", label, null, report, transient);
         }
 
+        if (accepted is null)
+        {
+            return AfterAcceptedRejection(label, source, watchedRoot, links) with { Report = report };
+        }
+
+        await accepted(report, cancellationToken).ConfigureAwait(false);
+        return AfterAcceptedRejection(label, source, watchedRoot, links);
+    }
+
+    /// <summary>
+    /// What is left to do once <paramref name="label"/> has accepted the rejection: a linked workflow's download stays for the manager to remove,
+    /// and any other is removed here. Also how a job that runs again finishes a rejection the manager already accepted, without reporting it twice.
+    /// </summary>
+    public static RejectRouteOutcome AfterAcceptedRejection(string label, string source, string watchedRoot, WorkflowManagerLinks links)
+    {
+        ArgumentNullException.ThrowIfNull(links);
         if (links.KeepsOriginals)
         {
             return new RejectRouteOutcome(
                 true,
                 $"{label} accepted that this release is bad and can find a different one. {label} will remove the download; Weir left it in place.",
                 label,
-                new WireObject().Set("route", "handoff").Set("source_removed", false),
-                report);
+                new WireObject().Set("route", "handoff").Set("source_removed", false));
+        }
+
+        if (!File.Exists(source))
+        {
+            return new RejectRouteOutcome(
+                true,
+                $"{label} accepted that this release is bad and can find a different one. The download was already removed.",
+                label,
+                new WireObject().Set("route", "handoff").Set("source_removed", true));
         }
 
         var cleanup = RemuxPassPaths.CleanupRejectedFile(watchedRoot, source, "delete_file");
         var sentence = cleanup.Deleted
             ? $"{label} accepted that this release is bad and can find a different one. {cleanup.Detail}"
             : $"{label} accepted that this release is bad, but Weir could not remove the download: {cleanup.Detail} Remove it by hand; Weir will not process it again.";
-        return new RejectRouteOutcome(true, sentence, label, new WireObject().Set("route", "handoff").Set("source_removed", cleanup.Deleted), report);
+        return new RejectRouteOutcome(true, sentence, label, new WireObject().Set("route", "handoff").Set("source_removed", cleanup.Deleted));
     }
 
     /// <summary>A path in a form that compares equal across slash direction, surrounding spaces and case.</summary>
