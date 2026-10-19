@@ -38,50 +38,6 @@ public sealed class LanAccessSyncTests : IDisposable
         File.SetLastWriteTimeUtc(Path.Combine(Home, LanAccessSetting.FileName), new DateTime(2026, 10, 1, 12, 0, 0, DateTimeKind.Utc).AddMinutes(++_saves));
     }
 
-    private sealed class FakeFirewall : IFirewallAccess
-    {
-        public bool Allows { get; set; }
-
-        public FirewallElevation.Outcome Answer { get; set; } = FirewallElevation.Outcome.Configured;
-
-        public int Asked { get; private set; }
-
-        public bool AllowsWeirIn() => Allows;
-
-        public FirewallElevation.Outcome AskToAllow()
-        {
-            Asked++;
-            if (Answer == FirewallElevation.Outcome.Configured)
-            {
-                Allows = true;
-            }
-            return Answer;
-        }
-    }
-
-    private sealed class FakeServer(ListenScope scope) : IServerListenScope
-    {
-        public ListenScope Scope { get; private set; } = scope;
-
-        public ScopeChange ResultOfARealMove { get; set; } = ScopeChange.Applied;
-
-        public List<ListenScope> Moves { get; } = [];
-
-        public Task<ScopeChange> MoveToScopeAsync(ListenScope to, CancellationToken cancellationToken)
-        {
-            Moves.Add(to);
-            if (to == Scope)
-            {
-                return Task.FromResult(ScopeChange.Unchanged);
-            }
-            if (ResultOfARealMove == ScopeChange.Applied)
-            {
-                Scope = to;
-            }
-            return Task.FromResult(ResultOfARealMove);
-        }
-    }
-
     // -- Saving from the tray's own menu ---------------------------------------
 
     [Fact]

@@ -128,4 +128,82 @@ public sealed class UpdateApiTests
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
     }
+
+    [Fact]
+    public async Task Update_settings_are_not_saved_by_someone_signed_out_or_only_able_to_view()
+    {
+        var (server, admin) = await SignedInAdminAsync("1.0.0");
+        await using var _ = server;
+        await TestDatabase.SeedViewerAsync(server);
+        var viewer = new ApiTestClient(server);
+        await viewer.SignInAsync("bob", ViewerPassword);
+        var signedOut = new ApiTestClient(server);
+
+        using var byNobody = await signedOut.PutAsync("/api/v1/suite/update-settings", new { csrf_token = await signedOut.CsrfAsync(), mode = "NotifyOnly", check_on_startup = false });
+        using var byViewer = await viewer.PutAsync("/api/v1/suite/update-settings", new { csrf_token = await viewer.CsrfAsync(), mode = "NotifyOnly", check_on_startup = false });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, byNobody.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, byViewer.StatusCode);
+        var kept = await Json(await admin.GetAsync("/api/v1/suite/update-settings"));
+        Assert.Equal(("Auto", true), (kept["mode"]!.GetValue<string>(), kept["check_on_startup"]!.GetValue<bool>()));
+        Assert.False(File.Exists(Path.Join(server.Home, "update-settings.json")));
+    }
+
+    [Fact]
+    public async Task Update_settings_are_not_saved_without_the_confirmation_token_the_page_was_given()
+    {
+        var (server, admin) = await SignedInAdminAsync("1.0.0");
+        await using var _ = server;
+
+        using var forged = await admin.PutAsync("/api/v1/suite/update-settings", new { csrf_token = "not-a-token-this-server-made", mode = "NotifyOnly", check_on_startup = false });
+        using var missing = await admin.PutAsync("/api/v1/suite/update-settings", new { mode = "NotifyOnly", check_on_startup = false });
+
+        Assert.Equal(HttpStatusCode.BadRequest, forged.StatusCode);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, missing.StatusCode);
+        Assert.False(File.Exists(Path.Join(server.Home, "update-settings.json")));
+    }
+
+    [Fact]
+    public async Task Update_settings_refuse_a_save_that_does_not_name_a_mode()
+    {
+        var (server, admin) = await SignedInAdminAsync("1.0.0");
+        await using var _ = server;
+
+        using var refused = await admin.PutAsync("/api/v1/suite/update-settings", new { csrf_token = await admin.CsrfAsync(), check_on_startup = false });
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
+        Assert.False(File.Exists(Path.Join(server.Home, "update-settings.json")));
+    }
+
+    [Fact]
+    public async Task Update_settings_check_every_hour_and_on_start_up_for_what_a_save_leaves_out()
+    {
+        var (server, admin) = await SignedInAdminAsync("1.0.0");
+        await using var _ = server;
+
+        using var saved = await admin.PutAsync("/api/v1/suite/update-settings", new { csrf_token = await admin.CsrfAsync(), mode = "DownloadOnly" });
+        var again = await Json(await admin.GetAsync("/api/v1/suite/update-settings"));
+
+        Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
+        Assert.Equal(("DownloadOnly", true, 60), (again["mode"]!.GetValue<string>(), again["check_on_startup"]!.GetValue<bool>(), again["check_interval_minutes"]!.GetValue<int>()));
+    }
+
+    /// <summary>The tray follows this file. UpdateSettingsTests in the tray's tests load the very same text (A_file_the_settings_page_wrote_is_followed_as_saved).</summary>
+    [Theory]
+    [InlineData("Auto", true, 60, "{\n  \"mode\": \"Auto\",\n  \"checkOnStartup\": true,\n  \"checkIntervalMinutes\": 60\n}")]
+    [InlineData("DownloadOnly", false, 240, "{\n  \"mode\": \"DownloadOnly\",\n  \"checkOnStartup\": false,\n  \"checkIntervalMinutes\": 240\n}")]
+    [InlineData("NotifyOnly", true, 10080, "{\n  \"mode\": \"NotifyOnly\",\n  \"checkOnStartup\": true,\n  \"checkIntervalMinutes\": 10080\n}")]
+    public async Task A_saved_choice_reaches_the_tray_in_the_file_it_follows(string mode, bool checkOnStartup, int minutes, string expected)
+    {
+        var (server, admin) = await SignedInAdminAsync("1.0.0");
+        await using var _ = server;
+
+        using var saved = await admin.PutAsync(
+            "/api/v1/suite/update-settings",
+            new { csrf_token = await admin.CsrfAsync(), mode, check_on_startup = checkOnStartup, check_interval_minutes = minutes });
+
+        Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
+        var written = await File.ReadAllTextAsync(Path.Join(server.Home, "update-settings.json"));
+        Assert.Equal(expected, written.Replace("\r\n", "\n", StringComparison.Ordinal));
+    }
 }

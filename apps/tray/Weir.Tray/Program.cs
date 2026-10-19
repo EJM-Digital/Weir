@@ -413,7 +413,7 @@ static class Program
     internal static bool HasInteractiveDesktop(IEnumerable<string> args, Func<bool> desktopCheck) => !IsSilent(args) && desktopCheck();
 
     /// <summary>
-    /// Whether the first-run firewall prompt (<see cref="FirewallInstallHooks.AskOnFirstRun"/>) may show anything at all.
+    /// Whether the first-run firewall prompt (<see cref="FirewallInstallHooks.AskOnFirstRun(string[])"/>) may show anything at all.
     /// Belt and suspenders alongside Setup's own <c>--silent</c> skipping the post-install app launch entirely
     /// (docs/release.md, #779): this never shows the prompt during a silent start or without an interactive
     /// desktop to show it on, whatever else changes about how this process was started.

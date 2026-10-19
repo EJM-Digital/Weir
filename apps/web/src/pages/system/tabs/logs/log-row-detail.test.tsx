@@ -233,6 +233,53 @@ describe("an open row", () => {
     );
   });
 
+  it("offers the job an event names, and no job for one that names none", async () => {
+    mocks.fetchSystemLog.mockResolvedValue(
+      logPage([
+        {
+          ...EVENT_ROW,
+          event: {
+            ...EVENT_ROW.event!,
+            detail: '{"job_id":7,"message":"Done."}',
+          },
+        },
+        {
+          ...EVENT_ROW,
+          id: "event:42",
+          title: "Sign-out finished",
+          event: {
+            ...EVENT_ROW.event!,
+            id: 42,
+            event_type: "auth.logout",
+            title: "Sign-out finished",
+            detail: "alice",
+          },
+        },
+      ]),
+    );
+    await rendered();
+
+    const plain = open("Sign-out finished");
+    expect(
+      within(plain).queryByRole("button", { name: /Everything about job/ }),
+    ).not.toBeInTheDocument();
+    const named = open("Sign-in finished");
+    fireEvent.click(
+      within(named).getByRole("button", {
+        name: "Everything about job #7 →",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(mocks.fetchSystemLog).toHaveBeenLastCalledWith(
+        expect.objectContaining({ job: 7 }),
+      ),
+    );
+    expect(screen.getByTestId("logs-job-filter")).toHaveTextContent(
+      "Everything about job #7",
+    );
+  });
+
   it("offers the job a server line names", async () => {
     await rendered();
 
