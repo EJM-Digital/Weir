@@ -237,6 +237,7 @@ export function atLogLine(world, tray, wanted, action, skip = 0, ceilingMs = STA
   let timer;
   const done = new Promise((resolve, reject) => {
     let running = false;
+    let changedWhileReading = false;
     // A hang guard: the line never came.
     timer = setTimeout(() => {
       stopped = true;
@@ -244,15 +245,24 @@ export function atLogLine(world, tray, wanted, action, skip = 0, ceilingMs = STA
       reject(new Error(`the tray did not log ${wanted} within ${ceilingMs / 1000} s.`));
     }, ceilingMs);
     const look = async () => {
-      if (stopped || running) return;
+      if (stopped) return;
+      // A change while the log is being read may have come after the read: look again when this one is done, so no line is missed.
+      if (running) {
+        changedWhileReading = true;
+        return;
+      }
+
       running = true;
       try {
-        if (lineWith((await tray.log()).slice(skip), wanted) !== undefined) {
-          stopped = true;
-          watcher.close();
-          clearTimeout(timer);
-          resolve(await action());
-        }
+        do {
+          changedWhileReading = false;
+          if (lineWith((await tray.log()).slice(skip), wanted) !== undefined) {
+            stopped = true;
+            watcher.close();
+            clearTimeout(timer);
+            resolve(await action());
+          }
+        } while (changedWhileReading && !stopped);
       } catch (error) {
         stopped = true;
         watcher.close();

@@ -140,11 +140,55 @@ public sealed class ExternalJsonPosterStandInTests : IDisposable
     [Fact]
     public async Task Nothing_listening_where_the_stand_in_is_reads_as_could_not_connect()
     {
-        _listener.Stop();
+        using var held = HoldPortNothingListensOn();
+        var port = ((IPEndPoint)held[0].LocalEndPoint!).Port;
 
-        var refused = await Assert.ThrowsAsync<ExternalEndpointException>(() => new ExternalJsonPoster(_port).PostJsonAsync(
+        var refused = await Assert.ThrowsAsync<ExternalEndpointException>(() => new ExternalJsonPoster(port).PostJsonAsync(
             "http://hooks.example.com/hook", [], new Dictionary<string, string>(), Timeout, CancellationToken.None));
 
         Assert.Equal(ExternalUrlPolicy.CouldNotConnect, refused.Message);
+    }
+
+    /// <summary>
+    /// A port on every loopback address that is bound and never listened on: a connect to it is refused, and no other test running at the same
+    /// time can be given the port, which a listener that was stopped would let it.
+    /// </summary>
+    private static HeldPort HoldPortNothingListensOn()
+    {
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            var held = new HeldPort();
+            try
+            {
+                var first = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                held.Add(first);
+                first.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+                if (Socket.OSSupportsIPv6)
+                {
+                    var second = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+                    held.Add(second);
+                    second.Bind(new IPEndPoint(IPAddress.IPv6Loopback, ((IPEndPoint)first.LocalEndPoint!).Port));
+                }
+
+                return held;
+            }
+            catch (SocketException)
+            {
+                held.Dispose();
+            }
+        }
+
+        throw new InvalidOperationException("No loopback port could be held on both address families.");
+    }
+
+    private sealed class HeldPort : List<Socket>, IDisposable
+    {
+        public void Dispose()
+        {
+            foreach (var socket in this)
+            {
+                socket.Dispose();
+            }
+        }
     }
 }
