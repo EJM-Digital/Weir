@@ -87,6 +87,38 @@ public sealed class UpdateFilesTests : IDisposable
     }
 
     [Fact]
+    public void A_tray_from_a_copy_that_was_not_installed_is_alive_but_cannot_take_a_request()
+    {
+        File.WriteAllText(Path.Join(Home, UpdateFiles.TrayHeartbeatFileName), $"{{\"at\": \"{_store.Clock.GetUtcNow():O}\", \"installed\": false}}");
+
+        var state = Files().ReadState();
+
+        Assert.False(Files().TrayIsRunning());
+        Assert.True(Files().TrayIsFromACopyThatCannotUpdate());
+        Assert.False(state["tray_running"].IsTruthy);
+        Assert.Equal(UpdateFiles.CopyCannotUpdateText, ((WireString)state["cannot_update_reason"]).Value);
+    }
+
+    [Fact]
+    public void A_copy_that_was_not_installed_stops_being_a_tray_once_it_goes_quiet()
+    {
+        File.WriteAllText(Path.Join(Home, UpdateFiles.TrayHeartbeatFileName), $"{{\"at\": \"{_store.Clock.GetUtcNow():O}\", \"installed\": false}}");
+        _store.Clock.Advance(UpdateFiles.TrayHeartbeatMaxAge + TimeSpan.FromSeconds(1));
+
+        Assert.False(Files().TrayIsFromACopyThatCannotUpdate());
+        Assert.Null(Files().ReadState().Get("cannot_update_reason"));
+    }
+
+    [Fact]
+    public void A_heartbeat_that_does_not_say_whether_it_was_installed_is_an_installed_tray()
+    {
+        Beat(TimeSpan.Zero);
+
+        Assert.True(Files().TrayIsRunning());
+        Assert.False(Files().TrayIsFromACopyThatCannotUpdate());
+    }
+
+    [Fact]
     public void A_click_the_tray_has_not_taken_up_yet_reads_as_under_way()
     {
         Beat(TimeSpan.Zero);
