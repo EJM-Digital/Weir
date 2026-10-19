@@ -33,7 +33,7 @@ const WITH_DELUNO_SCENARIOS = {
   "deluno-stop-waiting": { run: delunoStopWaiting, expectedLogs: aboutItsFilm },
   "deluno-tv-episode": delunoTvEpisode,
   "deluno-season-pack": delunoSeasonPack,
-  "deluno-deleted-before-cleaning": { run: delunoDeletedBeforeCleaning, expectedLogs: aboutItsFilm },
+  "deluno-deleted-before-cleaning": { run: delunoDeletedBeforeCleaning, expectedLogs: aboutItsFilm, ceilingMinutes: 20 },
 };
 
 export const SHARDS = {
