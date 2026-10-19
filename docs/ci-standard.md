@@ -1,6 +1,6 @@
 # CI standard
 
-The CI and release standard for Deluno and Weir. This page is the same, word for word, in both repositories; each repository adds only its own jobs between the shared ones. Decided by the owner, 3 Oct 2026 (Deluno [#1124](https://github.com/jampat000/Deluno/issues/1124)).
+The CI and release standard for Deluno and Weir. This page is the same, word for word, in both repositories; each repository adds only its own jobs between the shared ones. Decided by the owner, 3 Oct 2026 (Deluno [#1124](https://github.com/EJM-Digital/Deluno/issues/1124)).
 
 ## Two copies, on purpose
 

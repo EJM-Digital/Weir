@@ -10,7 +10,7 @@ the latest release to receive them.
 Don't open a public GitHub issue for a vulnerability that isn't fixed yet. Report it privately
 through GitHub's security advisories:
 
-https://github.com/jampat000/Weir/security/advisories/new
+https://github.com/EJM-Digital/Weir/security/advisories/new
 
 Include:
 
