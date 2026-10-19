@@ -20,7 +20,7 @@ public sealed class ReleaseUpgradeTests
         try
         {
             await server.StopAsync();
-            ReleaseFixtures.PlaceDatabase(version, server);
+            await ReleaseFixtures.PlaceDatabaseAsync(version, server);
             await server.RestartAsync();
             return server;
         }
