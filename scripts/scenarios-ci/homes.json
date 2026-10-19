@@ -13,7 +13,7 @@
     },
     "with-deluno": {
       "home": "linux",
-      "budgetMinutes": 20,
+      "budgetMinutes": 25,
       "what": "Weir, Deluno and the real download clients, each hand-off followed through both apps."
     },
     "windows-install": {
@@ -72,22 +72,70 @@
       "id": "deluno-release-with-extra",
       "home": "linux",
       "shard": "with-deluno",
-      "state": "to-port",
+      "state": "ported",
       "why": "Needs a release whose folder in a real download client holds a small extra, read through that client's own API."
     },
     {
       "id": "deluno-resend",
       "home": "linux",
       "shard": "with-deluno",
-      "state": "to-port",
+      "state": "ported",
       "why": "Deluno's send-again is its own API call; both sides are read over HTTP."
     },
     {
       "id": "deluno-outcomes",
       "home": "linux",
       "shard": "with-deluno",
-      "state": "to-port",
+      "state": "ported",
       "why": "Compares the outcome each app recorded for every hand-off; both are read over HTTP."
+    },
+    {
+      "id": "deluno-failed-release",
+      "catalogue": false,
+      "home": "linux",
+      "shard": "with-deluno",
+      "state": "ported",
+      "why": "Deluno hands over a release Weir cannot read; Weir and Deluno are read over HTTP and the report between them is recorded."
+    },
+    {
+      "id": "deluno-rejected-release",
+      "catalogue": false,
+      "home": "linux",
+      "shard": "with-deluno",
+      "state": "ported",
+      "why": "Deluno hands over a release Weir rejects by its rules; Deluno refuses it and removes the download, Weir leaves it."
+    },
+    {
+      "id": "deluno-stop-waiting",
+      "catalogue": false,
+      "home": "linux",
+      "shard": "with-deluno",
+      "state": "ported",
+      "why": "A hand-off Weir holds while paused is dropped by Stop waiting in Deluno; Deluno asks Weir to drop it and both are read over HTTP."
+    },
+    {
+      "id": "deluno-tv-episode",
+      "catalogue": false,
+      "home": "linux",
+      "shard": "with-deluno",
+      "state": "ported",
+      "why": "A show added by title and an episode of it sent to qBittorrent; a real Deluno hands it to Weir as TV and both are read over HTTP."
+    },
+    {
+      "id": "deluno-season-pack",
+      "catalogue": false,
+      "home": "linux",
+      "shard": "with-deluno",
+      "state": "ported",
+      "why": "A season pack of two episodes handed to Weir by a real Deluno as one hand-off; both applications are read over HTTP."
+    },
+    {
+      "id": "deluno-deleted-before-cleaning",
+      "catalogue": false,
+      "home": "linux",
+      "shard": "with-deluno",
+      "state": "ported",
+      "why": "A download deleted from its folder while Weir is paused and holds the hand-off; read through both applications."
     },
     {
       "id": "fresh-install",

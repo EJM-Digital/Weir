@@ -312,7 +312,7 @@ public static class ManagerDialectRules
         }
 
         var roots = libraries
-            .Select(library => WireStrings.Strip(ManagerValues.FirstText(library, "path", "rootFolder", "root_folder", "root") ?? string.Empty))
+            .Select(library => WireStrings.Strip(ManagerValues.FirstText(library, "rootPath", "path", "rootFolder", "root_folder", "root") ?? string.Empty))
             .Where(path => path.Length > 0)
             .ToList();
         var capabilities = scopes.Count > 0

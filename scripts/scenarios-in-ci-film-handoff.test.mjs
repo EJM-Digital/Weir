@@ -12,7 +12,7 @@ function fakeClock() {
   return { now: () => now, sleep: async (ms) => void (now += ms) };
 }
 
-const RELEASE = "Scna1b2c3Film.2020.1080p.WEB-DL.x264-WEIR";
+const RELEASE = "ScnFilm.2020.1080p.WEB-DL.x264-WEIR";
 const OUTPUT = `/weir/Ready/Movies/${RELEASE}`;
 
 /**
@@ -27,7 +27,7 @@ const OUTPUT = `/weir/Ready/Movies/${RELEASE}`;
  */
 function world(wrong = {}) {
   const sent = [];
-  const handoff = { releaseName: RELEASE, mediaType: "movies", status: "completed", importJobId: "job-1", outputPath: OUTPUT, createdUtc: "2026-10-17T10:00:00Z", outcome: wrong.noImportedOutcome ? null : { outcome: "imported" }, ...wrong.handoff };
+  const handoff = { id: "h1", releaseName: RELEASE, mediaType: "movies", status: "completed", importJobId: "job-1", outputPath: OUTPUT, createdUtc: "2026-10-17T10:00:00Z", outcome: wrong.noImportedOutcome ? null : { outcome: "imported" }, ...wrong.handoff };
   const file = { id: 1, relative_path: `${RELEASE}/${RELEASE}.mkv`, status: wrong.fileStatus ?? "processed", handback: { output_path: `${OUTPUT}/${RELEASE}.mkv`, outcome: wrong.answerRecorded ?? "imported" } };
   const calls = [];
   const weir = {
@@ -44,6 +44,7 @@ function world(wrong = {}) {
     connectWeir: async () => ({ id: 7, how: "connected Weir to Deluno" }),
     makeFilm: async ({ title, year }) => (calls.push(`makeFilm ${title} ${year}`), { title, year, release: RELEASE, infohash: "abc123", size: 56_000_000, url: `http://fixture:8765/dl/${RELEASE}.torrent` }),
     sendFilm: async (film) => void sent.push(film.release),
+    keepConversation: (kept, recording) => void calls.push(`keep ${recording.state} ${kept.id}`),
     handoffOf: async () => handoff,
     qbittorrent: { torrent: async (hash) => (hash === "abc123" ? { progress: wrong.neverFinishes ? 0.4 : 1, amount_left: wrong.neverFinishes ? 30_000_000 : 0, size: 56_000_000 } : undefined) },
   };
@@ -60,6 +61,7 @@ test("a film Deluno sends, qBittorrent downloads, Deluno hands to Weir and impor
   assert.match(result.detail, /as processed with Deluno's imported answer recorded against it, and Deluno's own record says imported/);
   assert.deepEqual(stand.sent, [RELEASE]);
   assert.ok(stand.calls.includes("POST /media-managers/connections/7/test"), "Weir was set up from Deluno first");
+  assert.ok(stand.calls.includes("keep real-release-folder h1"), "the conversation about the hand-off was kept as a recording");
 });
 
 test("a download qBittorrent never finishes fails the scenario, saying which release", async () => {
@@ -89,7 +91,7 @@ test("a hand-off that is not a film fails the scenario", async () => {
 test("a scenario that stops says where: what Weir, its Activity and Deluno show about the film", async () => {
   const result = await run(world({ handoff: { status: "pending", importJobId: null } }));
   assert.ok(result.detail.includes(`Weir shows [{"path":"${RELEASE}/${RELEASE}.mkv","status":"processed"`), result.detail);
-  assert.ok(result.detail.includes(`its recent Activity: ["failed: Cleaning failed"]; Deluno shows {"releaseName":"${RELEASE}"`), result.detail);
+  assert.ok(result.detail.includes(`its recent Activity: ["failed: Cleaning failed"]; Deluno shows {"id":"h1","releaseName":"${RELEASE}"`), result.detail);
 });
 
 test("Weir that shows no cleaned file for the hand-off fails the scenario", async () => {
