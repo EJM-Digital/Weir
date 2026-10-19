@@ -108,6 +108,69 @@ public sealed class ProcessingRejectHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_rejection_the_manager_accepted_is_reported_once_however_often_the_job_runs()
+    {
+        var library = await LibraryAsync();
+        _folders.Source("Film/film.mkv");
+        await FileRowAsync(library, "Film/film.mkv");
+        var connection = await _fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
+        await LinkAsync(library, connection);
+        await _fixture.Db(async uow => { await _fixture.Ledger.RecordReceivedAsync(uow, "deluno", "h1", library, "Film/film.mkv"); return 0; });
+        _fixture.Http.Json(HttpMethod.Get, ManifestPath, """{"capabilities":["processor-reject-regrab"],"libraries":[]}""");
+        _fixture.Http.Json(HttpMethod.Post, EventsPath, "{}", HttpStatusCode.Accepted);
+        var payload = $$$"""{"relative_media_path":"Film/film.mkv","library_id":{{{library}}},"reason":"ffmpeg could not read the audio track.","origin":{"source_key":"deluno","handoff_id":"h1","callback_path":"{{{EventsPath}}}"}}""";
+
+        await Handler().HandleAsync(Context(46, payload), CancellationToken.None);
+        await Handler().HandleAsync(Context(46, payload), CancellationToken.None);
+
+        Assert.Single(_fixture.Http.RequestsTo(HttpMethod.Post, EventsPath));
+        Assert.Equal("rejected", await ScalarText("SELECT state FROM media_manager_handoffs WHERE handoff_id = 'h1'"));
+        Assert.Equal(1, await _fixture.Store.Scalar("SELECT count(*) FROM activity_events WHERE event_type = 'processing.handoff_reported'"));
+    }
+
+    [Fact]
+    public async Task A_rejection_the_manager_accepted_before_the_rest_could_be_saved_is_finished_without_reporting_it_again()
+    {
+        var library = await LibraryAsync();
+        var source = _folders.Source("Film/film.mkv");
+        await FileRowAsync(library, "Film/film.mkv");
+        var connection = await _fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
+        await LinkAsync(library, connection);
+        await _fixture.Db(async uow => { await _fixture.Ledger.RecordReceivedAsync(uow, "deluno", "h1", library, "Film/film.mkv"); return 0; });
+        await _fixture.Store.Execute("UPDATE media_manager_handoffs SET reported_status = 'rejected' WHERE handoff_id = 'h1'");
+        _fixture.Http.Json(HttpMethod.Get, ManifestPath, """{"capabilities":["processor-reject-regrab"],"libraries":[]}""");
+        _fixture.Http.Json(HttpMethod.Post, EventsPath, "{}", HttpStatusCode.Accepted);
+        var payload = $$$"""{"relative_media_path":"Film/film.mkv","library_id":{{{library}}},"reason":"ffmpeg could not read the audio track.","origin":{"source_key":"deluno","handoff_id":"h1","callback_path":"{{{EventsPath}}}"}}""";
+
+        await Handler().HandleAsync(Context(47, payload), CancellationToken.None);
+
+        Assert.Empty(_fixture.Http.RequestsTo(HttpMethod.Post, EventsPath));
+        Assert.True(File.Exists(source));
+        Assert.Equal("rejected", await ScalarText("SELECT status FROM files"));
+        Assert.Equal("rejected", await ScalarText("SELECT state FROM media_manager_handoffs WHERE handoff_id = 'h1'"));
+        Assert.Equal(1, await _fixture.Store.Scalar("SELECT count(*) FROM activity_events WHERE event_type = 'processing.file_rejected'"));
+        Assert.Equal(0, await _fixture.Store.Scalar($"SELECT count(*) FROM jobs WHERE job_kind = '{IntakeRules.PassThroughJobKind}'"));
+    }
+
+    [Fact]
+    public async Task A_rejection_the_manager_accepted_is_noted_on_the_handoff_before_anything_else_is_saved()
+    {
+        var library = await LibraryAsync();
+        _folders.Source("Film/film.mkv");
+        await FileRowAsync(library, "Film/film.mkv");
+        var connection = await _fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
+        await LinkAsync(library, connection);
+        await _fixture.Db(async uow => { await _fixture.Ledger.RecordReceivedAsync(uow, "deluno", "h1", library, "Film/film.mkv"); return 0; });
+        _fixture.Http.Json(HttpMethod.Get, ManifestPath, """{"capabilities":["processor-reject-regrab"],"libraries":[]}""");
+        _fixture.Http.Json(HttpMethod.Post, EventsPath, "{}", HttpStatusCode.Accepted);
+        var payload = $$$"""{"relative_media_path":"Film/film.mkv","library_id":{{{library}}},"origin":{"source_key":"deluno","handoff_id":"h1","callback_path":"{{{EventsPath}}}"}}""";
+
+        await Handler().HandleAsync(Context(48, payload), CancellationToken.None);
+
+        Assert.Equal("rejected", await ScalarText("SELECT reported_status FROM media_manager_handoffs WHERE handoff_id = 'h1'"));
+    }
+
+    [Fact]
     public async Task An_accepted_handoff_rejection_removes_the_source_of_a_workflow_no_manager_is_linked_to()
     {
         var library = await LibraryAsync(rejectedFileAction: "delete_file");
