@@ -32,9 +32,6 @@ public sealed class UpdateFiles
     /// <summary>How old a check or download flag may be and still read as under way: the tray takes one up within a second.</summary>
     public static readonly TimeSpan RequestMaxAge = TimeSpan.FromMinutes(2);
 
-    /// <summary>What a person is told when they ask for a check or a download while update checking is switched off.</summary>
-    public const string CheckingIsOffText = "Update checking is off. Turn it on in System, About, then try again.";
-
     /// <summary>The tray's record of an update it held back for want of a copy of Weir's data: <c>{ "version": …, "reason": … }</c>.</summary>
     public const string NotAppliedFileName = "update-not-applied.json";
 

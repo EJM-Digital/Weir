@@ -364,10 +364,10 @@ sealed class TrayApp : IDisposable
                 _opener.Open("tray-update-settings", Program.UpdateCheckPath);
                 break;
             case UpdateMenuAction.Check:
-                _updates.CheckInBackground();
+                _ = _updates.CheckInBackground(asked: true);
                 break;
             case UpdateMenuAction.Download:
-                _updates.DownloadInBackground();
+                _ = _updates.DownloadInBackground(asked: true);
                 break;
             case UpdateMenuAction.Restart:
                 TrayLog.Write("Restart to update chosen from the tray menu.");

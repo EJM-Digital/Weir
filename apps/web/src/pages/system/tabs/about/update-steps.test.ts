@@ -39,18 +39,24 @@ function enabled(buttons: ReturnType<typeof updateButtons>) {
 }
 
 describe("updateButtons", () => {
-  it("offers neither a check nor a download while update checking is off, even when the tray knows of an update", () => {
+  it("offers Check now while update checking is off, since a person asking is never refused", () => {
+    const buttons = updateButtons(state(), status({ status: "off" }), idle);
+
+    expect(enabled(buttons)).toEqual([true, false, false]);
+  });
+
+  it("offers the download of an update the tray found when a person checked while update checking was off", () => {
     const buttons = updateButtons(
       state({ pending_version: "1.1.0" }),
       status({ status: "off" }),
       idle,
     );
 
-    expect(enabled(buttons)).toEqual([false, false, false]);
-    expect(buttons.download.primary).toBe(false);
+    expect(enabled(buttons)).toEqual([true, true, false]);
+    expect(buttons.download.primary).toBe(true);
   });
 
-  it("still offers the restart into an update downloaded before checking was switched off", () => {
+  it("still offers only the restart for an update downloaded before checking was switched off", () => {
     const buttons = updateButtons(
       state({
         downloaded: true,

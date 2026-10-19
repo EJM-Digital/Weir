@@ -263,9 +263,9 @@ public static class UpdateStatus
     public static string ClockText(DateTimeOffset at, string? timezoneName) =>
         TimeZones.ToLocal(at, timezoneName).ToString("h:mm tt", CultureInfo.InvariantCulture).ToLowerInvariant();
 
-    /// <summary>The status when update checking is off: nothing was asked of GitHub, and the summary says how to turn it on.</summary>
+    /// <summary>The status when update checking is off: nothing was asked of GitHub, and the summary says how to look once or turn it on.</summary>
     public static WireObject Off(string currentVersion, string installType) =>
-        Unavailable(currentVersion, installType, OffStatus, "Update checking is off. Turn it on below to look for new versions of Weir.");
+        Unavailable(currentVersion, installType, OffStatus, "Update checking is off, so Weir is not looking for new versions. Press Check now to look once, or turn it on below.");
 
     public static WireObject UpdateSettingsOut(string mode, bool checkOnStartup, long checkIntervalMinutes, bool checkForUpdates) => new WireObject()
         .Set("mode", mode)

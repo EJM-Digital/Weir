@@ -45,8 +45,6 @@ export function updateButtons(
     restarting ||
     step === "checking" ||
     step === "downloading";
-  // With update checking off the tray looks at nothing, so neither a check nor a download applies; only a restart into an update already downloaded does.
-  const checkingOff = status.status === "off";
   const updateKnown =
     Boolean(state?.pending_version) ||
     status.status === "update_available" ||
@@ -54,13 +52,13 @@ export function updateButtons(
   return {
     check: {
       label: step === "checking" ? "Checking…" : "Check now",
-      enabled: !busy && !downloaded && !checkingOff,
+      enabled: !busy && !downloaded,
       primary: false,
     },
     download: {
       label: step === "downloading" ? "Downloading update…" : "Download update",
-      enabled: !busy && !downloaded && !checkingOff && updateKnown,
-      primary: !downloaded && !checkingOff && updateKnown,
+      enabled: !busy && !downloaded && updateKnown,
+      primary: !downloaded && updateKnown,
     },
     apply: {
       label: restarting ? "Restarting…" : "Restart and apply",

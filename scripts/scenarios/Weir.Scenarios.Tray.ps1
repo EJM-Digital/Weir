@@ -39,9 +39,6 @@ function Scenario_update_requests {
     Initialize-FreshScenario
     $session = $script:Ctx.Session
     if ($script:Ctx.Rehearsal) { Invoke-RehearsalTray }
-    # A new install does not check for updates, and these buttons are for an install that does: it is switched on for this run and put back at the end.
-    $original = Get-WeirJson $session '/api/v1/suite/update-settings'
-    Get-WeirJson $session '/api/v1/suite/update-settings' -Method PUT -Body @{ mode = $original.mode; check_on_startup = [bool]$original.check_on_startup; check_interval_minutes = [int]$original.check_interval_minutes; check_for_updates = $true } | Out-Null
     $state = Wait-Until -What 'the tray to say it is alive' -TimeoutSeconds 90 -Probe {
         if ($script:Ctx.Rehearsal) { Invoke-RehearsalTray }
         $current = Get-UpdateState
@@ -50,7 +47,8 @@ function Scenario_update_requests {
     Assert-That ($state.tray_running -eq $true) "Weir counts the tray alive, so the buttons are offered (update state: $($state.state))"
 
     # A tray set to install by itself must not restart Weir under the run: only the person's own buttons are pressed.
-    Get-WeirJson $session '/api/v1/suite/update-settings' -Method PUT -Body @{ mode = 'NotifyOnly'; check_on_startup = [bool]$original.check_on_startup; check_interval_minutes = [int]$original.check_interval_minutes; check_for_updates = $true } | Out-Null
+    $original = Get-WeirJson $session '/api/v1/suite/update-settings'
+    Get-WeirJson $session '/api/v1/suite/update-settings' -Method PUT -Body @{ mode = 'NotifyOnly'; check_on_startup = [bool]$original.check_on_startup; check_interval_minutes = [int]$original.check_interval_minutes } | Out-Null
     try {
         $mark = (Get-TrayLogText).Length
         $check = Invoke-Weir -Session $session -Method POST -Path '/api/v1/suite/check-update' -Body @{}
@@ -82,7 +80,7 @@ function Scenario_update_requests {
         else { $downloadText = 'not pressed: the check had already downloaded the update' }
     }
     finally {
-        Get-WeirJson $session '/api/v1/suite/update-settings' -Method PUT -Body @{ mode = $original.mode; check_on_startup = [bool]$original.check_on_startup; check_interval_minutes = [int]$original.check_interval_minutes; check_for_updates = [bool]$original.check_for_updates } | Out-Null
+        Get-WeirJson $session '/api/v1/suite/update-settings' -Method PUT -Body @{ mode = $original.mode; check_on_startup = [bool]$original.check_on_startup; check_interval_minutes = [int]$original.check_interval_minutes } | Out-Null
     }
     "The tray was alive; Check for updates -> the tray logged ""Check-now flag detected"" and the check $checkedText; Download update -> the tray logged ""Download-now flag detected"" and $downloadText."
 }

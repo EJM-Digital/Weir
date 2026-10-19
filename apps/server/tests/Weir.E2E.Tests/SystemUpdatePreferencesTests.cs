@@ -76,7 +76,7 @@ public sealed class SystemUpdatePreferencesTests(E2EServer server) : E2ETestBase
         var (page, requests) = (system.Page, system.Requests);
         await Expect(Checking(page, "Off")).ToBeCheckedAsync(new() { Timeout = SlowCheckMs });
         await Expect(page.GetByText("Weir looks for nothing until you switch this on.", new() { Exact = true })).ToBeVisibleAsync();
-        await Expect(page.GetByTestId("suite-settings-release-status")).ToContainTextAsync("Update checking is off.");
+        await Expect(page.GetByTestId("suite-settings-release-status")).ToContainTextAsync("Update checking is off, so Weir is not looking for new versions.");
         await Expect(page.GetByRole(AriaRole.Group, new() { Name = "Update mode", Exact = true })).ToHaveCountAsync(0);
         await Expect(Every(page)).ToHaveCountAsync(0);
         Assert.False((bool)(await system.ReadAsync(UpdateSettings))["check_for_updates"]!);

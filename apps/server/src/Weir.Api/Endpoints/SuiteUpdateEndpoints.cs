@@ -73,17 +73,8 @@ internal sealed class SuiteUpdateEndpointHandlers
         issues.ThrowIfAny();
 
         request.RequireConfirmationToken(csrfToken);
-        var before = CheckingIsOn(_files.ReadSettings());
-        var checkForUpdates = asked ?? before;
-        var saved = _files.WriteSettings(mode, checkOnStartup, interval, checkForUpdates);
-
-        // The tray reads the choice when it is asked to look, so a change is told to it the way a press of Check now is.
-        if (checkForUpdates != before && _files.TrayIsRunning())
-        {
-            _files.WriteCheckFlag();
-        }
-
-        return ApiRoutes.Ok(saved);
+        var checkForUpdates = asked ?? CheckingIsOn(_files.ReadSettings());
+        return ApiRoutes.Ok(_files.WriteSettings(mode, checkOnStartup, interval, checkForUpdates));
     }
 
     private static bool CheckingIsOn(WireObject settings) => settings.Get("check_for_updates")?.IsTruthy ?? false;
@@ -112,11 +103,6 @@ internal sealed class SuiteUpdateEndpointHandlers
         if (state.Get("downloaded")?.IsTruthy ?? false)
         {
             throw new ApiException(StatusCodes.Status409Conflict, "An update is already downloaded. Restart Weir to apply it.");
-        }
-
-        if (!CheckingIsOn(_files.ReadSettings()))
-        {
-            throw new ApiException(StatusCodes.Status409Conflict, UpdateFiles.CheckingIsOffText);
         }
 
         var current = (state.Get("state") as WireString)?.Value;

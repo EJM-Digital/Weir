@@ -3,15 +3,16 @@ using Xunit;
 namespace Weir.Tray.Tests;
 
 /// <summary>
-/// While update checking is off the tray looks at nothing: not at start, not on the hour, not when a button in System or the menu
-/// asks. The choice is read from the file each time, so switching it in System takes hold at once.
+/// While update checking is off, Weir's own checks and downloads stop: the start-up check, the hourly check and the download after
+/// a check. A check or download a person asks for, in System or from the menu, is never refused. The choice is read from the file
+/// each time, so switching it in System takes hold at once.
 /// </summary>
 public sealed class TrayUpdatesCheckingOffTests : IDisposable
 {
     private readonly TempDirectory _home = TempDirectory.AsWeirHome();
     private readonly DelayWatchingTimeProvider _clock = new();
     private readonly CancellationTokenSource _shutdown = new();
-    private int _redrawn;
+    private readonly List<UpdateMode> _announced = [];
 
     public void Dispose()
     {
@@ -25,7 +26,7 @@ public sealed class TrayUpdatesCheckingOffTests : IDisposable
             service,
             _home.Path,
             settings,
-            new UpdateCallbacks(OnUi: action => action(), Changed: () => Interlocked.Increment(ref _redrawn), Announce: _ => { }, ApplyNow: () => { }),
+            new UpdateCallbacks(OnUi: action => action(), Changed: () => { }, Announce: _announced.Add, ApplyNow: () => { }),
             _clock,
             _shutdown.Token,
             read);
@@ -33,15 +34,13 @@ public sealed class TrayUpdatesCheckingOffTests : IDisposable
     private string StateText() => File.ReadAllText(Path.Combine(_home.Path, "update-state.json"));
 
     [Fact]
-    public async Task Nothing_is_looked_for_or_downloaded_whoever_asks()
+    public async Task Weirs_own_check_and_download_look_at_nothing()
     {
         var service = new FakeUpdateService();
         var updates = Build(service, new UpdateSettings { Mode = UpdateMode.Auto, CheckForUpdates = false });
 
         await updates.CheckAsync();
         await updates.DownloadAsync();
-        await updates.CheckAsync(asked: true);
-        await updates.DownloadAsync(asked: true);
 
         Assert.Equal(0, service.Checks);
         Assert.Equal(0, service.Downloads);
@@ -49,47 +48,74 @@ public sealed class TrayUpdatesCheckingOffTests : IDisposable
     }
 
     [Fact]
-    public async Task A_check_asked_for_in_System_is_answered_with_the_state_as_it_is_and_nothing_is_looked_for()
+    public async Task A_check_asked_for_in_System_goes_ahead_and_the_update_it_finds_is_not_downloaded_by_itself()
     {
         var service = new FakeUpdateService();
-        var updates = Build(service, new UpdateSettings { CheckForUpdates = false });
+        var updates = Build(service, new UpdateSettings { Mode = UpdateMode.Auto, CheckForUpdates = false });
         File.WriteAllText(Path.Combine(_home.Path, "update-check-now"), string.Empty);
 
         updates.ActOnRequests();
         await updates.RequestedWork!;
 
-        Assert.Equal(0, service.Checks);
+        Assert.Equal(1, service.Checks);
+        Assert.Equal(0, service.Downloads);
         Assert.False(File.Exists(Path.Combine(_home.Path, "update-check-now")));
-        Assert.DoesNotContain("checking", StateText(), StringComparison.Ordinal);
-        Assert.Contains("Update checking is off, so nothing was looked for.", File.ReadAllText(Path.Combine(_home.Path, "tray-host.log")), StringComparison.Ordinal);
+        Assert.Contains("\"9.9.9\"", StateText(), StringComparison.Ordinal);
+        Assert.Equal([UpdateMode.NotifyOnly], _announced);
     }
 
     [Fact]
-    public async Task A_download_asked_for_in_System_is_answered_and_nothing_is_downloaded()
+    public async Task A_download_asked_for_in_System_goes_ahead_and_finds_the_update_first()
     {
         var service = new FakeUpdateService();
-        var updates = Build(service, new UpdateSettings { CheckForUpdates = false });
+        var updates = Build(service, new UpdateSettings { Mode = UpdateMode.Auto, CheckForUpdates = false });
         File.WriteAllText(Path.Combine(_home.Path, "update-download-now"), string.Empty);
 
         updates.ActOnRequests();
         await updates.RequestedWork!;
 
-        Assert.Equal(0, service.Checks);
-        Assert.Equal(0, service.Downloads);
-        Assert.DoesNotContain("downloading", StateText(), StringComparison.Ordinal);
+        Assert.Equal(1, service.Checks);
+        Assert.Equal(1, service.Downloads);
+        Assert.True(updates.IsDownloaded);
     }
 
     [Fact]
-    public async Task The_menu_says_checking_is_off_and_opens_the_page_where_it_is_switched_on()
+    public async Task A_check_chosen_from_the_menu_goes_ahead()
+    {
+        var service = new FakeUpdateService();
+        var updates = Build(service, new UpdateSettings { CheckForUpdates = false });
+
+        await updates.CheckInBackground(asked: true);
+
+        Assert.Equal(1, service.Checks);
+        Assert.Equal(UpdateMenuAction.Download, updates.MenuState().Action);
+    }
+
+    [Fact]
+    public async Task A_download_chosen_from_the_menu_goes_ahead()
+    {
+        var service = new FakeUpdateService();
+        var updates = Build(service, new UpdateSettings { CheckForUpdates = false });
+        await updates.CheckInBackground(asked: true);
+
+        await updates.DownloadInBackground(asked: true);
+
+        Assert.Equal(1, service.Downloads);
+        Assert.Equal(UpdateMenuAction.Restart, updates.MenuState().Action);
+    }
+
+    [Fact]
+    public async Task The_menu_item_keeps_offering_a_check_while_checking_is_off()
     {
         var updates = Build(new FakeUpdateService(), new UpdateSettings { CheckForUpdates = false });
+
         await updates.CheckAsync();
 
-        Assert.Equal(new UpdateMenuState("Update checking is off", true, UpdateMenuAction.OpenUpdatePage), updates.MenuState());
+        Assert.Equal(new UpdateMenuState("Check for updates", true, UpdateMenuAction.Check), updates.MenuState());
     }
 
     [Fact]
-    public async Task The_choice_is_read_again_before_every_check_so_a_change_in_System_takes_hold_at_once()
+    public async Task The_choice_is_read_again_before_every_automatic_check_so_a_change_in_System_takes_hold_at_once()
     {
         var service = new FakeUpdateService();
         var checking = true;
@@ -98,33 +124,10 @@ public sealed class TrayUpdatesCheckingOffTests : IDisposable
         await updates.CheckAsync();
         checking = false;
         await updates.CheckAsync();
-        await updates.CheckAsync(asked: true);
         checking = true;
         await updates.CheckAsync();
 
         Assert.Equal(2, service.Checks);
-    }
-
-    [Fact]
-    public async Task The_menu_is_drawn_again_when_the_choice_changes_and_not_when_it_stays()
-    {
-        var checking = true;
-        var updates = Build(new FakeUpdateService(), new UpdateSettings { Mode = UpdateMode.NotifyOnly }, () => new UpdateSettings { Mode = UpdateMode.NotifyOnly, CheckForUpdates = checking });
-        await updates.CheckAsync();
-        var drawnForChecks = Volatile.Read(ref _redrawn);
-
-        checking = false;
-        await updates.CheckAsync();
-        var afterOff = Volatile.Read(ref _redrawn);
-        await updates.CheckAsync();
-
-        Assert.Equal(drawnForChecks + 1, afterOff);
-        Assert.Equal(afterOff, Volatile.Read(ref _redrawn));
-        Assert.Equal(UpdateMenuAction.OpenUpdatePage, updates.MenuState().Action);
-
-        checking = true;
-        await updates.CheckAsync();
-        Assert.Equal(UpdateMenuAction.Download, updates.MenuState().Action);
     }
 
     [Fact]

@@ -64,7 +64,7 @@ Report a problem...
 Quit <App>                                   (hover text says what it stops)
 ```
 
-- **The update item:** `Check for updates`, then `Checking for updates...` (greyed out), then `Downloading update...` (greyed out), then `Download update (v<version>)`, then `Restart to update (v<version>)`. While update checking is off (the default for a new install) the item reads `Update checking is off` and opens System › About, where it is switched on; nothing is looked for or downloaded until then, though an update already downloaded can still be restarted into.
+- **The update item:** `Check for updates`, then `Checking for updates...` (greyed out), then `Downloading update...` (greyed out), then `Download update (v<version>)`, then `Restart to update (v<version>)`. While update checking is off (the default for a new install) the item is the same: choosing it checks, and choosing the download that follows downloads. Only what the tray starts itself, the check at start-up and on the hour and the download after a check, stops.
 - **Report a problem...** opens the logs folder while the repositories are private. Once they are public, it opens a new GitHub issue page with the version filled in. No paths or addresses ever go in the link.
 - **Start with Windows** is asked once, at install or first run: "Start <App> when you sign in to Windows?", Yes or No. Nothing is on by default. The tick in the menu shows the current choice and flips it at any time, without closing the app.
 - **Quit <App>** stops the app. Its hover text says so:

@@ -46,7 +46,7 @@ public sealed class UpdateCheckingOffTests : IDisposable
 
         Assert.Equal("off", TextOf(status, "status"));
         Assert.Equal("windows", TextOf(status, "install_type"));
-        Assert.Equal("Update checking is off. Turn it on below to look for new versions of Weir.", TextOf(status, "summary"));
+        Assert.Equal("Update checking is off, so Weir is not looking for new versions. Press Check now to look once, or turn it on below.", TextOf(status, "summary"));
         Assert.Equal(0, _catalog.Calls);
     }
 

@@ -35,7 +35,6 @@ sealed class TrayUpdates
     private readonly Lock _requestsLock = new();
     private readonly Lock _stateLock = new();
     private int _activity;
-    private int _checkingOn;
     private Task? _idleWatch;
     private Task? _requestedWork;
     private (UpdatePhase Phase, string? Version, string? Failure) _lastState = (UpdatePhase.Idle, null, null);
@@ -47,8 +46,8 @@ sealed class TrayUpdates
     /// <param name="clock">Times the wait for Weir to be idle and the log of a failing watcher.</param>
     /// <param name="shutdown">Cancelled when the tray is ending, which ends every loop here.</param>
     /// <param name="readSettings">
-    /// Reads the settings file again. Whether to look for updates at all is asked of it before every check and download, so
-    /// switching checking off in System › About stops the next one. Without it the settings given stand for good.
+    /// Reads the settings file again. Whether Weir looks for updates by itself is asked of it before every automatic check
+    /// and download, so switching checking off in System › About stops the next one. Without it the settings given stand for good.
     /// </param>
     internal TrayUpdates(
         IUpdateService service,
@@ -63,7 +62,6 @@ sealed class TrayUpdates
         _runtimeHome = runtimeHome;
         _settings = settings;
         _readSettings = readSettings;
-        _checkingOn = settings.CheckForUpdates ? 1 : 0;
         _callbacks = callbacks;
         _clock = clock;
         _shutdown = shutdown;
@@ -97,8 +95,7 @@ sealed class TrayUpdates
             (UpdateActivity)Volatile.Read(ref _activity),
             _service.HasPendingUpdate,
             _service.IsDownloaded,
-            _service.PendingVersion,
-            Volatile.Read(ref _checkingOn) == 1);
+            _service.PendingVersion);
 
     /// <summary>Starts the start-up check, the periodic check and the watch for requests, as the settings say.</summary>
     internal void Start()
@@ -123,7 +120,7 @@ sealed class TrayUpdates
 
         if (_settings.CheckOnStartup)
         {
-            CheckInBackground();
+            _ = CheckInBackground();
         }
 
         if (_settings.CheckIntervalMinutes > 0)
@@ -181,9 +178,9 @@ sealed class TrayUpdates
         }
     }
 
-    internal void CheckInBackground() => _ = StartInBackground("Update check", () => CheckAsync());
+    internal Task CheckInBackground(bool asked = false) => StartInBackground("Update check", () => CheckAsync(asked));
 
-    internal void DownloadInBackground() => _ = StartInBackground("Update download", () => DownloadAsync());
+    internal Task DownloadInBackground(bool asked = false) => StartInBackground("Update download", () => DownloadAsync(asked));
 
     private static Task StartInBackground(string name, Func<Task> work)
     {
@@ -312,10 +309,13 @@ sealed class TrayUpdates
         return _service.IsDownloaded;
     }
 
-    // asked: a person pressed the button, so a step that cannot be taken is answered by writing the state as it is.
+    // asked: a person pressed the button (in System or in the menu). A check Weir starts itself, at start-up or on the hour, stops
+    // while checking is off; one a person asks for is never refused, and neither is the download they then ask for. A step that
+    // cannot be taken is answered by writing the state as it is.
     internal async Task CheckAsync(bool asked = false)
     {
-        if (!CheckingIsOn(asked))
+        var automatic = CheckingIsOn();
+        if (!asked && !automatic)
         {
             return;
         }
@@ -338,7 +338,9 @@ sealed class TrayUpdates
                 return;
             }
 
-            var mode = _settings.Mode;
+            // Downloading what was found is Weir's own doing, so it stays off with checking: a person who asked for the check is told
+            // of the update and takes it with the download button.
+            var mode = automatic ? _settings.Mode : UpdateMode.NotifyOnly;
             if (mode == UpdateMode.NotifyOnly)
             {
                 WriteState(UpdatePhase.Idle, PendingVersion);
@@ -356,10 +358,10 @@ sealed class TrayUpdates
     }
 
     // A person's click is the choice to download, so this runs in every mode, and finds the update first when the tray
-    // has not looked yet.
+    // has not looked yet. Called without a click it is Weir's own doing, which stops while checking is off.
     internal async Task DownloadAsync(bool asked = false)
     {
-        if (!CheckingIsOn(asked))
+        if (!asked && !CheckingIsOn())
         {
             return;
         }
@@ -392,23 +394,8 @@ sealed class TrayUpdates
         }
     }
 
-    // While checking is off nothing reaches the release feed, whoever asks: the periodic check, a click or a button in System. The
-    // choice is read from the file each time, so a change made in System takes effect at once, and the menu is drawn again when it
-    // changed. A request is answered by writing the state as it is, so the page is not left waiting.
-    private bool CheckingIsOn(bool asked)
-    {
-        var on = (_readSettings?.Invoke() ?? _settings).CheckForUpdates;
-        if (Interlocked.Exchange(ref _checkingOn, on ? 1 : 0) != (on ? 1 : 0))
-        {
-            _callbacks.OnUi(_callbacks.Changed);
-        }
-        if (!on && asked)
-        {
-            TrayLog.Write("Update checking is off, so nothing was looked for.");
-            RepublishState();
-        }
-        return on;
-    }
+    // The choice is read from the file each time, so a change made in System takes effect at once.
+    private bool CheckingIsOn() => (_readSettings?.Invoke() ?? _settings).CheckForUpdates;
 
     private async Task DownloadFoundAsync(UpdateMode announce)
     {

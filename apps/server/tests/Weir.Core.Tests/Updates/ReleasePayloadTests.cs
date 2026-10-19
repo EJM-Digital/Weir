@@ -272,7 +272,7 @@ public sealed class ReleasePayloadTests
         var status = UpdateStatus.Off("3.2.16", "windows");
 
         Assert.Equal("off", Text(status, "status"));
-        Assert.Equal("Update checking is off. Turn it on below to look for new versions of Weir.", Text(status, "summary"));
+        Assert.Equal("Update checking is off, so Weir is not looking for new versions. Press Check now to look once, or turn it on below.", Text(status, "summary"));
         Assert.IsType<WireNull>(status["latest_version"]);
         Assert.Equal(WireBool.True, status["in_app_upgrade_supported"]);
     }

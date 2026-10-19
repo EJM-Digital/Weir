@@ -61778,9 +61778,9 @@
       ]
     },
     {
-      "id": "tray.tray.update-checking-off-nothing-is-looked-for-or-downloaded",
+      "id": "tray.tray.update-checking-off-stops-weirs-own-checks-and-downloads",
       "area": "tray",
-      "behaviour": "While update checking is off the tray makes no check and no download, whoever asks (start-up, the hourly check, a menu click, a button in System); the choice is read again before every one, so a change in System takes hold at once; the update menu item reads \"Update checking is off\" and opens System > About; an update already downloaded can still be restarted into",
+      "behaviour": "While update checking is off the tray makes no check and no download of its own (start-up, the hourly check, the download after a check); a check or download a person asks for, from the menu or a button in System, goes ahead and the update it finds is not downloaded by itself; the choice is read again before every automatic one, so a change in System takes hold at once; the update menu item is unchanged; an update already downloaded can still be restarted into",
       "kind": "tray",
       "severity": "medium",
       "touches": "none",
@@ -61789,54 +61789,49 @@
         {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
-          "name": "Nothing_is_looked_for_or_downloaded_whoever_asks"
+          "name": "Weirs_own_check_and_download_look_at_nothing"
         },
         {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
-          "name": "A_check_asked_for_in_System_is_answered_with_the_state_as_it_is_and_nothing_is_looked_for"
+          "name": "A_check_asked_for_in_System_goes_ahead_and_the_update_it_finds_is_not_downloaded_by_itself"
         },
         {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
-          "name": "A_download_asked_for_in_System_is_answered_and_nothing_is_downloaded"
+          "name": "A_download_asked_for_in_System_goes_ahead_and_finds_the_update_first"
         },
         {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
-          "name": "The_menu_says_checking_is_off_and_opens_the_page_where_it_is_switched_on"
+          "name": "A_check_chosen_from_the_menu_goes_ahead"
         },
         {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
-          "name": "The_choice_is_read_again_before_every_check_so_a_change_in_System_takes_hold_at_once"
+          "name": "A_download_chosen_from_the_menu_goes_ahead"
         },
         {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
-          "name": "The_menu_is_drawn_again_when_the_choice_changes_and_not_when_it_stays"
+          "name": "The_menu_item_keeps_offering_a_check_while_checking_is_off"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
+          "name": "The_choice_is_read_again_before_every_automatic_check_so_a_change_in_System_takes_hold_at_once"
         },
         {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
           "name": "An_update_downloaded_before_checking_was_switched_off_can_still_be_installed"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/tray/Weir.Tray.Tests/UpdateMenuStateTests.cs",
-          "name": "While_checking_is_off_the_item_says_so_and_opens_the_page_where_it_is_switched_on"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/tray/Weir.Tray.Tests/UpdateMenuStateTests.cs",
-          "name": "An_update_downloaded_before_checking_was_switched_off_can_still_be_restarted_into"
         }
       ]
     },
     {
-      "id": "api.suite.update-checking-off-asks-github-nothing-and-refuses-a-check-or-download",
+      "id": "api.suite.update-checking-off-asks-github-nothing-until-a-person-checks",
       "area": "api",
-      "behaviour": "On a Windows install with update checking off, GET /suite/update-status answers status off without asking GitHub (a Docker or source install keeps asking), the outlook shows a switch-on at once, and POST /suite/check-update and /suite/download-update are refused 409 with a flag left; saving a change to the choice tells a running tray; an update already downloaded can still be applied",
+      "behaviour": "On a Windows install with update checking off, GET /suite/update-status answers status off without asking GitHub (a Docker or source install keeps asking) and the outlook shows a switch-on at once; POST /suite/check-update and /suite/download-update from a person still go to the tray; saving a change to the choice asks the tray for nothing; an update already downloaded can still be applied",
       "kind": "failure-mode",
       "severity": "medium",
       "touches": "none",
@@ -61880,7 +61875,7 @@
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteUpdateRequestsApiTests.cs",
-          "name": "While_update_checking_is_off_a_check_or_a_download_is_refused_and_leaves_no_flag"
+          "name": "While_update_checking_is_off_a_check_or_a_download_a_person_asks_for_is_passed_to_the_tray"
         },
         {
           "type": "xunit",
@@ -61890,7 +61885,7 @@
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteUpdateRequestsApiTests.cs",
-          "name": "Turning_update_checking_on_or_off_tells_the_tray_so_it_looks_at_once"
+          "name": "Turning_update_checking_on_or_off_asks_the_tray_to_look_at_nothing"
         },
         {
           "type": "xunit",
@@ -61900,14 +61895,14 @@
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteUpdateRequestsApiTests.cs",
-          "name": "With_no_tray_to_tell_the_choice_is_saved_and_no_flag_is_left"
+          "name": "With_no_tray_running_the_choice_is_still_saved"
         }
       ]
     },
     {
       "id": "web-system.about-tab.update-preferences-check-for-updates-switch-saves",
       "area": "web-system",
-      "behaviour": "Update preferences: \"Check for updates\" switch saves as it is made; while it is off only the switch shows and the page says Weir looks for nothing; the status reads Off and the Check now and Download buttons do not apply",
+      "behaviour": "Update preferences: \"Check for updates\" switch saves as it is made; while it is off only the switch shows and the page says Weir looks for nothing; the status reads Off, and Check now and Download still apply",
       "kind": "screen action",
       "severity": "medium",
       "touches": "none",
@@ -61929,19 +61924,29 @@
           "name": "switches checking off and keeps the other choices to send back"
         },
         {
-          "type": "vitest",
-          "file": "apps/web/src/pages/system/tabs/about/update-steps.test.ts",
-          "name": "offers neither a check nor a download while update checking is off, even when the tray knows of an update"
-        },
-        {
-          "type": "vitest",
-          "file": "apps/web/src/pages/system/tabs/about/update-steps.test.ts",
-          "name": "still offers the restart into an update downloaded before checking was switched off"
-        },
-        {
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/SystemUpdatePreferencesTests.cs",
           "name": "A_new_install_shows_only_the_choice_to_check_for_updates_and_switching_it_on_shows_the_rest"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/update-steps.test.ts",
+          "name": "offers Check now while update checking is off, since a person asking is never refused"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/update-steps.test.ts",
+          "name": "offers the download of an update the tray found when a person checked while update checking was off"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/update-steps.test.ts",
+          "name": "still offers only the restart for an update downloaded before checking was switched off"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemUpdateLiveTests.cs",
+          "name": "While_update_checking_is_off_Check_now_and_Download_update_still_go_to_the_tray"
         }
       ]
     },
