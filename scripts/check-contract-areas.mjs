@@ -33,11 +33,21 @@ export function compareAreas(listed, used) {
   return problems;
 }
 
-/** What is wrong with .github/workflows/ci-contract.yml's platforms, one sentence each; empty when every area runs on both. */
-export function platformProblems(workflow) {
+/**
+ * What is wrong with the platforms the contract suite runs on, one sentence each; empty when every area runs on both.
+ * ci-contract.yml takes the platforms as an input and ci.yml calls it once for each, so Windows can be a job of its own.
+ */
+export function platformProblems(workflow, caller) {
   const problems = [];
-  if (!/^\s+platform:\s*\[linux, windows\]\s*$/m.test(workflow)) {
-    problems.push("ci-contract.yml must list `platform: [linux, windows]` in its matrix, so every contract area runs on Windows as well as Linux.");
+  if (!/^\s+platform:\s*\$\{\{ fromJSON\(inputs\.platforms\) \}\}\s*$/m.test(workflow)) {
+    problems.push("ci-contract.yml must take its matrix's `platform:` from `fromJSON(inputs.platforms)`, so ci.yml can run Windows as a job of its own.");
+  }
+  if (caller !== undefined) {
+    for (const platform of ["linux", "windows"]) {
+      if (!caller.includes(`platforms: '["${platform}"]'`)) {
+        problems.push(`ci.yml must call ci-contract.yml with \`platforms: '["${platform}"]'\`, so every contract area runs on ${platform === "windows" ? "Windows" : "Linux"}.`);
+      }
+    }
   }
   if (!/runs-on:.*windows-latest/.test(workflow)) {
     problems.push("ci-contract.yml must run the windows platform on windows-latest.");
@@ -70,7 +80,8 @@ function main() {
       if (!used.has(name)) used.set(name, relative);
     }
   }
-  const problems = [...compareAreas(listed, used), ...platformProblems(readFileSync(path.join(root, ".github", "workflows", "ci-contract.yml"), "utf8"))];
+  const workflow = (name) => readFileSync(path.join(root, ".github", "workflows", name), "utf8");
+  const problems = [...compareAreas(listed, used), ...platformProblems(workflow("ci-contract.yml"), workflow("ci.yml"))];
   if (problems.length > 0) {
     console.error(problems.join("\n"));
     process.exit(1);

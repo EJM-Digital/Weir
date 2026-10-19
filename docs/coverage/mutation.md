@@ -66,11 +66,11 @@ a new target is added there, to `mutation-floors.json` and as a config in the `m
 
 ## When it runs
 
-Weekly (Sunday, 02:41 UTC), on demand (Actions, Mutation, Run workflow) and on a pull request that changes a file a target
-mutates. The weekly and manual runs mutate every target. A pull request mutates only the targets whose files it changes
-(`scripts/select-mutation-targets.mjs` picks them from the pull request's changed paths, or the target's own config), so
-one that touches none starts no Stryker job, and its check holds only those targets to their floors. A target takes
-tens of minutes, because Stryker first runs the whole test project once to learn which tests cover which line. To try
+Weekly (Sunday, 02:41 UTC), on demand (Actions, Mutation, Run workflow, or `gh workflow run mutation.yml --ref <branch>`) and
+before a release tag, and never on a pull request: a target takes tens of minutes to hours on a Windows runner, because
+Stryker first runs the whole test project once to learn which tests cover which line. Every run mutates every target and
+holds each score to its floor. The release will not publish unless a run passed on the tagged commit or on an earlier one
+with the same shipped files, tests and mutation setup ([`../ci-cost.md`](../ci-cost.md)). To try
 one target by hand, run it from its test project:
 
 ```

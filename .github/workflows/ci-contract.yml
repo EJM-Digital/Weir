@@ -1,7 +1,9 @@
-# The contract suite (#516), called by ci.yml: apps/server/tests/Weir.Contract.Tests starts the built .NET server as
+# The contract suite (#516), called twice by ci.yml, once for the Linux legs and once for the Windows ones:
+# apps/server/tests/Weir.Contract.Tests starts the built .NET server as
 # a separate process and talks to it only over HTTP (its README.md). One leg per area in that project's areas.json and
 # per platform, all at once, rather than one long runner. Windows is the platform people install on, so every area runs
-# there too, against the Windows builds of ffmpeg and mkvmerge the package ships (#995).
+# there too, against the Windows builds of ffmpeg and mkvmerge the package ships (#995). A Windows leg costs twice what a
+# Linux one does, so on a pull request the Windows legs run only when it touches Windows code (docs/ci-cost.md).
 name: Contract suite
 
 on:
@@ -9,6 +11,10 @@ on:
     inputs:
       areas:
         description: JSON list of contract area names, one leg each.
+        type: string
+        required: true
+      platforms:
+        description: JSON list of the platforms to run, '["linux"]' or '["windows"]'.
         type: string
         required: true
 
@@ -28,7 +34,7 @@ jobs:
       fail-fast: false
       matrix:
         area: ${{ fromJSON(inputs.areas) }}
-        platform: [linux, windows]
+        platform: ${{ fromJSON(inputs.platforms) }}
     defaults:
       run:
         shell: bash
