@@ -49978,19 +49978,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffStatusTests.cs",
           "name": "HandoffStatusTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedStatusAndCancelTests.cs",
+          "name": "A_hand_off_Weir_failed_reads_failed_in_Weirs_words_with_the_members_Deluno_recorded"
         }
-      ],
-      "needs": {
-        "kind": "recording-replay",
-        "test": "A real Deluno asks about a hand-off only while it waits for Weir, and Weir tells it of a failure, a cancel or a retry in its report, so the stack never sees these replies. Producing them needs the report to be held back in the recording proxy until Deluno asks"
-      },
-      "issue": 1017
+      ]
     },
     {
       "id": "integrations.del-04.deluno-x-outcome-post-intake-handoffs-deluno-id-outcome",
@@ -50381,19 +50380,33 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ReplacedHandoffReportTests.cs",
+          "name": "A_refusal_to_start_a_single_file_send_is_exactly_failed_not_taken_with_no_disposition"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/MediaManagers/ReplacedHandoffReportTests.cs",
+          "name": "A_folder_send_Weir_would_not_start_is_refused_with_the_reason_and_nothing_held"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/HeldFileReturnTests.Resend.cs",
+          "name": "A_release_sent_by_another_connection_of_the_same_manager_is_refused_and_told_to_that_connection"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/MediaManagerApiTests.cs",
+          "name": "Cancelling_a_hand_offs_job_on_the_jobs_screen_tells_the_manager_it_is_cancelled"
+        },
         {
           "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Processing/FailurePoliciesTests.cs",
-          "name": "FailurePoliciesTests"
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffLifecycleTests.cs",
+          "name": "A_queued_hand_off_can_be_cancelled"
         }
-      ],
-      "needs": {
-        "kind": "recording-replay",
-        "test": "Weir sends a not_taken report when a release it was handed is not one it takes, and a cancelled one when a person cancels in Weir; neither happens in the stack's scenarios, and Deluno has not recorded either"
-      },
-      "issue": 1018
+      ]
     },
     {
       "id": "integrations.del-10a.weir-s-reports-to-deluno-refused-for-now-or-for-good",
@@ -55010,19 +55023,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/shards.mjs",
+          "name": "workflows-from-deluno"
+        },
         {
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "workflows-from-deluno"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
-      },
-      "issue": 982,
       "covers": [
         "scenario:workflows-from-deluno"
       ],
@@ -55039,19 +55051,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/shards.mjs",
+          "name": "deluno-film-handoff"
+        },
         {
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "deluno-film-handoff"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
-      },
-      "issue": 982,
       "covers": [
         "scenario:deluno-film-handoff"
       ],
@@ -55358,19 +55369,18 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "update-requests"
+        },
         {
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "update-requests"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Cannot be run on its own yet: it depends on the machine state an earlier scenario leaves."
-      },
-      "issue": 982,
       "covers": [
         "scenario:update-requests"
       ],
@@ -60304,8 +60314,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedStatusAndCancelTests.cs",
+          "name": "A_hand_off_Weir_failed_reads_failed_in_Weirs_words_with_the_members_Deluno_recorded"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60322,8 +60337,18 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.Waiting.cs",
+          "name": "A_hand_off_the_person_stopped_waiting_for_is_dropped_with_a_204_and_is_never_worked"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "Stop_waiting_cancels_a_queued_hand_off_with_a_204_and_the_work_is_never_done"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60396,8 +60421,18 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "A_single_file_in_the_watched_folder_is_accepted_and_cleaned_into_the_output_folder_without_a_folder_of_its_own"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "A_single_file_in_the_watched_folder_is_accepted_finished_and_reported_imported_as_recorded"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60414,8 +60449,23 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "A_release_folder_is_accepted_and_only_the_files_it_lists_are_cleaned_into_a_folder_named_for_the_release"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "A_Usenet_job_folder_is_accepted_and_cleaned_into_a_folder_named_for_the_release"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RealStackTests.cs",
+          "name": "A_release_folder_the_real_Deluno_handed_over_is_cleaned_reported_and_its_import_recorded_as_they_said"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60456,8 +60506,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffStatusTests.cs",
+          "name": "A_wrong_or_missing_secret_is_refused"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedWebhookSecretTests.cs",
+          "name": "One_connections_secret_does_not_open_the_hand_offs_of_another"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60475,8 +60535,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedReadTests.cs",
+          "name": "A_status_poll_and_an_outcome_for_a_hand_off_Weir_never_had_are_both_404_as_recorded"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffStatusTests.cs",
+          "name": "An_unknown_hand_off_is_404"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60494,8 +60564,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedStatusAndCancelTests.cs",
+          "name": "A_source_Weir_does_not_know_is_a_404_for_the_poll_and_the_cancel_whatever_secret_is_sent"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60512,8 +60587,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedWebhookSecretTests.cs",
+          "name": "With_no_instance_secret_and_none_on_the_connection_Deluno_is_taken_unsigned_and_the_routes_that_show_paths_stay_shut"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffStatusTests.cs",
+          "name": "No_configured_secret_is_a_403_that_says_what_to_set"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60559,8 +60644,18 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffCancelTests.cs",
+          "name": "A_hand_off_Weir_is_working_on_is_refused_as_recorded_for_a_finished_one_and_the_pass_carries_on"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffLifecycleTests.cs",
+          "name": "Work_that_has_started_is_never_cancelled"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60629,8 +60724,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedWebhookSecretTests.cs",
+          "name": "One_connections_secret_does_not_open_the_hand_offs_of_another"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60647,8 +60747,18 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedStatusAndCancelTests.cs",
+          "name": "A_cancel_for_a_hand_off_Weir_never_received_is_a_404_in_the_words_Deluno_recorded_for_the_poll"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/HandoffLifecycleTests.cs",
+          "name": "Cancelling_an_unknown_hand_off_is_404"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60665,8 +60775,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "An_import_from_the_watched_folder_releases_Weirs_copy_and_leaves_the_watched_folder_alone"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60683,8 +60798,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedStatusAndCancelTests.cs",
+          "name": "A_cancel_that_carries_an_Origin_and_no_X_Requested_With_is_refused_403_and_the_hand_off_stays_queued"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60751,8 +60871,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedOutcomeTests.cs",
+          "name": "An_import_that_carries_a_note_is_a_200_with_the_members_Deluno_recorded_and_Weir_keeps_the_note"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60769,8 +60894,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedOutcomeTests.cs",
+          "name": "A_refusal_to_import_with_no_reason_is_a_200_in_the_words_Deluno_recorded_and_Weir_keeps_its_copy"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60789,8 +60919,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedOutcomeTests.cs",
+          "name": "An_outcome_sent_before_Weir_has_finished_is_a_409_to_send_again_whether_the_hand_off_is_queued_or_working"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60808,8 +60943,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedOutcomeTests.cs",
+          "name": "An_outcome_for_a_hand_off_that_was_cancelled_or_failed_is_a_409_that_says_it_ended_and_changes_nothing"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60873,8 +61013,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedOutcomeTests.cs",
+          "name": "An_outcome_with_a_wrong_secret_or_none_is_a_401_in_the_words_Deluno_recorded_for_a_hand_off_and_records_nothing"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60891,8 +61036,13 @@
       "severity": "high",
       "touches": "other-app",
       "required": "real",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedReadTests.cs",
+          "name": "A_status_poll_and_an_outcome_for_a_hand_off_Weir_never_had_are_both_404_as_recorded"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
@@ -60909,8 +61059,13 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "issue": 1017,
+      "proofs": [
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedOutcomeTests.cs",
+          "name": "An_outcome_body_Deluno_never_sends_is_refused_422_with_a_list_of_what_is_wrong_or_415_with_a_sentence_before_the_secret_is_looked_at"
+        }
+      ],
       "audit": {
         "id": "contract",
         "source": "docs/deluno-weir-contract.md",
