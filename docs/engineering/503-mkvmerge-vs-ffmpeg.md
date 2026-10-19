@@ -1,8 +1,8 @@
 # Trial: mkvmerge vs ffmpeg for Matroska output
 
-Trial date: 2026-09-17. Answers [#503](https://github.com/jampat000/Weir/issues/503).
+Trial date: 2026-09-17. Answers [#503](https://github.com/EJM-Digital/Weir/issues/503).
 
-**Outcome.** Adopted in [#548](https://github.com/jampat000/Weir/issues/548). A workflow's writer is
+**Outcome.** Adopted in [#548](https://github.com/EJM-Digital/Weir/issues/548). A workflow's writer is
 `best` by default: mkvmerge writes Matroska when it is installed and ffmpeg writes everything else,
 and a write that fails to run or fails output validation is rewritten by ffmpeg and validated again
 (`apps/server/src/Weir.Core/Media/RemuxWriterChoice.cs`). `ffmpeg` is the other choice. ffmpeg's own
@@ -28,7 +28,7 @@ says so; ffmpeg keeps probing, validation and non-Matroska containers either way
    token for token as the remux pass would call it. A throwaway console harness,
    `Trial503Harness` (not in `Weir.slnx`, not built by CI, not referenced by any
    production project — removed after this trial concluded; its source is at
-   commit [`d26e4743`](https://github.com/jampat000/Weir/commit/d26e4743)), does
+   commit [`d26e4743`](https://github.com/EJM-Digital/Weir/commit/d26e4743)), does
    this and builds the equivalent `mkvmerge` command line for the same kept
    tracks/order/flags (`-d`/`-a`/`-s`, `--default-track-flag`,
    `--forced-display-flag`, `--track-order`), then runs both tools for real.
