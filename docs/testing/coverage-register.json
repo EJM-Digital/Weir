@@ -49173,12 +49173,18 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "`UpdateService` (the only code that touches Velopack's `UpdateManager`) has no test. A feed/channel/asset-name mismatch makes every Weir silently stop updating, and a download that is not verified could install a bad package. Needs a VM (or CI-smoke) scenario that serves a local Velopack feed (a newer build, a corrupted package, an older build) to the installed tray and asserts: found, downloaded, corrupted rejected with a plain message, old version untouched."
-      },
-      "issue": 989,
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-over-installed-weir"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-failure-leaves-the-old-weir"
+        }
+      ],
       "audit": {
         "id": "TRAY-071",
         "verdict": "Gap"
@@ -49243,12 +49249,23 @@
       "severity": "high",
       "touches": "install",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "`UpdateService.ApplyAndRestart/ApplyAndExit/ApplyLeftWaitingUpdateAndRestart` -> `UpdateManager.WaitExitThenApplyUpdates(silent, restart, args)` has never been run by any automated test; `UpdateHandOver` is only checked as data. The default install path (Auto mode) therefore has no proof it ends with Weir running the new version; a wrong flag leaves Weir stopped (Weir down) or pops Velopack's window or a browser. Only the manual smoke item 25 covers it. Needs a VM scenario (with the local feed from TRAY-071): for each of Restart-to-update (apply-now flag), Auto idle install, Quit-with-update a"
-      },
-      "issue": 989,
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-over-installed-weir"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-installs-when-idle"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-left-waiting-installs-at-start"
+        }
+      ],
       "audit": {
         "id": "TRAY-073",
         "verdict": "Gap"
@@ -51692,12 +51709,28 @@
       "severity": "high",
       "touches": "install",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "No test ever downloads and applies a real newer package through the tray. A broken update path strands every installed copy on the old version or leaves Weir stopped. Needs a VM scenario with a local release feed holding a newer build (check, download, apply, back on the new version, data intact) and its failure variant"
-      },
-      "issue": 989,
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-over-installed-weir"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-installs-when-idle"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-left-waiting-installs-at-start"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-update.mjs",
+          "name": "update-failure-leaves-the-old-weir"
+        }
+      ],
       "audit": {
         "id": "PLAT-05",
         "verdict": "Gap"
