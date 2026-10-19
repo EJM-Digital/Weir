@@ -48,6 +48,22 @@ public sealed class UpdateSettingsTests : IDisposable
         Assert.Equal(240, got.CheckIntervalMinutes);
     }
 
+    /// <summary>The same text the server writes when the Settings page saves (UpdateApiTests.A_saved_choice_reaches_the_tray_in_the_file_it_follows).</summary>
+    [Theory]
+    [InlineData("Auto", true, 60, "{\n  \"mode\": \"Auto\",\n  \"checkOnStartup\": true,\n  \"checkIntervalMinutes\": 60\n}")]
+    [InlineData("DownloadOnly", false, 240, "{\n  \"mode\": \"DownloadOnly\",\n  \"checkOnStartup\": false,\n  \"checkIntervalMinutes\": 240\n}")]
+    [InlineData("NotifyOnly", true, 10080, "{\n  \"mode\": \"NotifyOnly\",\n  \"checkOnStartup\": true,\n  \"checkIntervalMinutes\": 10080\n}")]
+    public void A_file_the_settings_page_wrote_is_followed_as_saved(string mode, bool checkOnStartup, int minutes, string text)
+    {
+        File.WriteAllText(SettingsPath, text.Replace("\n", "\r\n", StringComparison.Ordinal));
+
+        var got = UpdateSettings.Load(Home);
+
+        Assert.Equal(Enum.Parse<UpdateMode>(mode), got.Mode);
+        Assert.Equal(checkOnStartup, got.CheckOnStartup);
+        Assert.Equal(minutes, got.CheckIntervalMinutes);
+    }
+
     [Fact]
     public void A_truncated_file_falls_back_to_notify_only_not_to_auto()
     {

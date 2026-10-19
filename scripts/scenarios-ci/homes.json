@@ -80,21 +80,42 @@
       "home": "linux",
       "shard": "with-deluno",
       "state": "ported",
-      "why": "Needs a release whose folder in a real download client holds a small extra, read through that client's own API."
+      "why": "Needs a release whose folder in a real download client holds a small extra, read through that client's own API.",
+      "passedInCi": [
+        {
+          "run": 39208578019,
+          "commit": "f6b63d947339e637900ef4e0ae0513edca25660f",
+          "ref": "main"
+        }
+      ]
     },
     {
       "id": "deluno-resend",
       "home": "linux",
       "shard": "with-deluno",
       "state": "ported",
-      "why": "Deluno's send-again is its own API call; both sides are read over HTTP."
+      "why": "Deluno's send-again is its own API call; both sides are read over HTTP.",
+      "passedInCi": [
+        {
+          "run": 39208578019,
+          "commit": "f6b63d947339e637900ef4e0ae0513edca25660f",
+          "ref": "main"
+        }
+      ]
     },
     {
       "id": "deluno-outcomes",
       "home": "linux",
       "shard": "with-deluno",
       "state": "ported",
-      "why": "Compares the outcome each app recorded for every hand-off; both are read over HTTP."
+      "why": "Compares the outcome each app recorded for every hand-off; both are read over HTTP.",
+      "passedInCi": [
+        {
+          "run": 39208578019,
+          "commit": "f6b63d947339e637900ef4e0ae0513edca25660f",
+          "ref": "main"
+        }
+      ]
     },
     {
       "id": "deluno-failed-release",
