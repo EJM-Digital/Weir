@@ -26,11 +26,14 @@ public sealed record RejectRouteOutcome(
 /// </summary>
 public sealed record QueueMatch(ManagerConnection? Connection, WireObject? Row, string? RefusalReason, string? RefusalManager, bool RefusalTransient = false)
 {
+    /// <summary>The port that removes the matched item.</summary>
+    internal IMediaManagerPort? Port { get; init; }
+
     public bool Found => Connection is not null && Row is not null;
 
     public static QueueMatch Refused(string reason, string? manager = null, bool transient = false) => new(null, null, reason, manager, transient);
 
-    public static QueueMatch Ok(ManagerConnection connection, WireObject row) => new(connection, row, null, null);
+    internal static QueueMatch Ok(ManagerConnection connection, WireObject row, IMediaManagerPort port) => new(connection, row, null, null) { Port = port };
 }
 
 /// <summary>
@@ -69,12 +72,11 @@ public sealed class RejectRoutes
         var row = match.Row!;
         var label = connection.Label;
         var downloadId = ManagerValues.FirstText(row, "downloadId");
-        var removePort = _ports.PortForKind(connection.Kind)!;
         try
         {
-            await removePort.RemoveQueueItemAsync(connection, row, cancellationToken).ConfigureAwait(false);
+            await match.Port!.RemoveQueueItemAsync(connection, row, cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception exception) when (exception is MediaManagerHttpException or IOException)
+        catch (Exception exception) when (exception is MediaManagerHttpException or MediaManagerUnreachableException)
         {
             return new RejectRouteOutcome(
                 false, $"{label} did not accept the rejection, so nothing was removed.", label,
@@ -86,7 +88,7 @@ public sealed class RejectRoutes
             true,
             $"{label} removed the download and blocklisted the release, so it will not be grabbed again and {label} can search for a different one.",
             label,
-            new WireObject().Set("route", "queue").Set("queue_item", row.Get("id") ?? WireNull.Instance).Set("download_id", downloadId));
+            new WireObject().Set("route", "queue").Set("queue_item", row["id"]).Set("download_id", downloadId));
     }
 
     /// <summary>
@@ -100,7 +102,7 @@ public sealed class RejectRoutes
     {
         ArgumentNullException.ThrowIfNull(connections);
         ArgumentNullException.ThrowIfNull(source);
-        var matches = new List<(ManagerConnection Connection, WireObject Row, bool IsFolder, int Index)>();
+        var matches = new List<(ManagerConnection Connection, IMediaManagerPort Port, WireObject Row, bool IsFolder, int Index)>();
         var rowsByConnection = new Dictionary<int, List<WireObject>>();
         var wanted = NormalizeStoragePath(source);
         for (var index = 0; index < connections.Count; index++)
@@ -115,12 +117,7 @@ public sealed class RejectRoutes
             var signal = await port.QueueRowsAsync(connection, cancellationToken).ConfigureAwait(false);
             if (!signal.IsReported)
             {
-                return QueueMatch.Refused(
-                    signal.Status == SignalStatus.Unreachable
-                        ? ManagerWaitMessages.RejectNotAnswering(connection.Label)
-                        : signal.Detail ?? $"Weir could not read {connection.Label}'s queue.",
-                    connection.Label,
-                    transient: signal.Status == SignalStatus.Unreachable);
+                return QueueMatch.Refused(ManagerWaitMessages.RejectNotAnswering(connection.Label), connection.Label, transient: true);
             }
 
             var rows = signal.Rows.Select(row => row.Payload).ToList();
@@ -136,11 +133,11 @@ public sealed class RejectRoutes
                 var folder = NormalizeStoragePath(outputPath).TrimEnd('/');
                 if (folder == wanted)
                 {
-                    matches.Add((connection, row, false, index));
+                    matches.Add((connection, port, row, false, index));
                 }
                 else if (folder.Length > 0 && wanted.StartsWith(folder + "/", StringComparison.Ordinal))
                 {
-                    matches.Add((connection, row, true, index));
+                    matches.Add((connection, port, row, true, index));
                 }
             }
         }
@@ -155,7 +152,7 @@ public sealed class RejectRoutes
             return QueueMatch.Refused("More than one download in the queue points at this file, so Weir could not tell which one to reject.");
         }
 
-        var (matchedConnection, matchedRow, isFolder, matchedIndex) = matches[0];
+        var (matchedConnection, matchedPort, matchedRow, isFolder, matchedIndex) = matches[0];
         var label = matchedConnection.Label;
         var downloadId = ManagerValues.FirstText(matchedRow, "downloadId");
         if (downloadId is not null)
@@ -172,7 +169,7 @@ public sealed class RejectRoutes
 
         if (isFolder)
         {
-            var downloadFolder = ManagerValues.FirstText(matchedRow, "outputPath", "output_path") ?? string.Empty;
+            var downloadFolder = ManagerValues.FirstText(matchedRow, "outputPath", "output_path")!;
             var only = SingleVideoFileUnder(downloadFolder);
             if (only is null || !string.Equals(only, RemuxPassPaths.Resolve(source), PathComparison))
             {
@@ -183,13 +180,7 @@ public sealed class RejectRoutes
             }
         }
 
-        var removePort = _ports.PortForKind(matchedConnection.Kind);
-        if (removePort is null)
-        {
-            return QueueMatch.Refused($"Weir does not know how to ask {label} to remove a download.", label);
-        }
-
-        return QueueMatch.Ok(matchedConnection, matchedRow);
+        return QueueMatch.Ok(matchedConnection, matchedRow, matchedPort);
     }
 
     /// <summary>A manager that hands files over gets a failed report with disposition: rejected. When the workflow is linked
@@ -215,13 +206,7 @@ public sealed class RejectRoutes
         if (description.Status != SignalStatus.Reported)
         {
             // #652 item 5: a manager that is not answering is said to be not answering, in those words.
-            return new RejectRouteOutcome(
-                false,
-                description.Status == SignalStatus.Unreachable
-                    ? ManagerWaitMessages.RejectNotAnswering(label)
-                    : description.Detail ?? $"Weir could not ask {label} what it can do.",
-                label,
-                Transient: description.Status == SignalStatus.Unreachable);
+            return new RejectRouteOutcome(false, ManagerWaitMessages.RejectNotAnswering(label), label, Transient: true);
         }
 
         if (description.AdvertisedCapabilities is null || !description.AdvertisedCapabilities.Contains(RejectSupportRules.RejectCapability))
@@ -251,7 +236,7 @@ public sealed class RejectRoutes
                 return new RejectRouteOutcome(false, $"{ManagerWaitMessages.RejectNotAnswering(label)} Weir kept the download.", label, null, report, transient);
             }
 
-            var status = delivery.Status.StartsWith("failed: ", StringComparison.Ordinal) ? delivery.Status["failed: ".Length..] : delivery.Status;
+            var status = delivery.Status["failed: ".Length..];
             return new RejectRouteOutcome(false, $"{label} did not accept the rejection ({status}), so Weir kept the download.", label, null, report, transient);
         }
 
@@ -302,7 +287,7 @@ public sealed class RejectRoutes
     /// <summary>The only video file in a download folder, or null.</summary>
     private static string? SingleVideoFileUnder(string folder)
     {
-        if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
+        if (!Directory.Exists(folder))
         {
             return null;
         }

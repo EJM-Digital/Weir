@@ -20,19 +20,8 @@ public static class WatchedFolderScanOps
 
     private static bool ExistingCompletedOutputPathIsSafe(string path)
     {
-        try
-        {
-            var info = new FileInfo(path);
-            return info.Exists && info.Length > 0;
-        }
-        catch (IOException)
-        {
-            return false;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return false;
-        }
+        var info = new FileInfo(path);
+        return info.Exists && info.Length > 0;
     }
 
     private static string? ExpectedOutputFileForRelativePath(string outputRoot, string relativePosix)
@@ -152,20 +141,8 @@ public static class WatchedFolderScanOps
 
     private static bool CompletedEventMatchesCurrentSource(WireObject data, string sourcePath)
     {
-        FileInfo stat;
-        try
-        {
-            stat = new FileInfo(sourcePath);
-            if (!stat.Exists)
-            {
-                return false;
-            }
-        }
-        catch (IOException)
-        {
-            return false;
-        }
-        catch (UnauthorizedAccessException)
+        var stat = new FileInfo(sourcePath);
+        if (!stat.Exists)
         {
             return false;
         }
@@ -220,8 +197,8 @@ public static class WatchedFolderScanOps
         }
 
         // The file is strictly inside the root, so its folder is either the root itself or a release folder inside it.
-        var movieFolder = Path.GetDirectoryName(src);
-        if (movieFolder is null || !PathContainment.IsUnder(root, movieFolder))
+        var movieFolder = Path.GetDirectoryName(src)!;
+        if (!PathContainment.IsUnder(root, movieFolder))
         {
             return (false, false, "Source cleanup retry skipped because the file sits directly in the watched folder root.");
         }
@@ -231,19 +208,16 @@ public static class WatchedFolderScanOps
             var removal = ReleaseFolderRemoval.Remove(root, src, mediaExtensionsCsv);
             return (removal.FileRemoved, removal.FolderRemoved, removal.Reason);
         }
-        catch (DirectoryNotFoundException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            return (true, true, null);
-        }
-        catch (IOException exception)
-        {
-            return (false, false, $"Source cleanup retry could not remove the release folder because this path is still locked or blocked ({exception.Message}).");
-        }
-        catch (UnauthorizedAccessException exception)
-        {
-            return (false, false, $"Source cleanup retry could not remove the release folder because this path is still locked or blocked ({exception.Message}).");
+            return CleanupFailure(exception);
         }
     }
+
+    /// <summary>A release folder that is already gone is a finished cleanup; any other failure to remove it is a lock or block to try again.</summary>
+    internal static (bool Ok, bool FolderRemoved, string? Reason) CleanupFailure(Exception exception) => exception is DirectoryNotFoundException
+        ? (true, true, null)
+        : (false, false, $"Source cleanup retry could not remove the release folder because this path is still locked or blocked ({exception.Message}).");
 
     /// <summary>
     /// Why the source cannot be opened for reading, or null when it can. The read uses .NET's file-share enforcement (the
@@ -277,7 +251,7 @@ public static class WatchedFolderScanOps
         ArgumentNullException.ThrowIfNull(library);
         var label = library.Name.Trim().Length > 0 ? library.Name.Trim() : (library.MediaType == ProcessingMediaScopes.Tv ? "TV" : "Movies");
 
-        var watchedRaw = (library.WatchedFolder ?? string.Empty).Trim();
+        var watchedRaw = library.WatchedFolder.Trim();
         if (watchedRaw.Length == 0)
         {
             return (null, $"The {label} workflow has no watched folder set. Manual remux and folder-scan jobs need a watched folder to resolve relative paths. Set it in Setup › Workflows before enqueueing or running those jobs.");
@@ -290,12 +264,12 @@ public static class WatchedFolderScanOps
         }
 
         var folderRow = new ProcessingLibraryFolderRow(library.Id, library.MediaType, (int)library.DisplayOrder, library.WorkFolder, library.OutputFolder);
-        var workRaw = (library.WorkFolder ?? string.Empty).Trim();
+        var workRaw = library.WorkFolder.Trim();
         var workEffectiveRaw = ProcessingLibraryFolders.EffectiveWorkFolder(folderRow, weirHome);
         var workIsDefault = !string.Equals(workEffectiveRaw, workRaw, StringComparison.Ordinal);
         var workPath = ProcessingLibraryFolders.ExpandForFilesystem(workEffectiveRaw);
 
-        var outRaw = (library.OutputFolder ?? string.Empty).Trim();
+        var outRaw = library.OutputFolder.Trim();
         if (outRaw.Length == 0)
         {
             return (null, $"The {label} workflow has no output folder set. Set it in Setup › Workflows before running a live remux pass.");
@@ -334,22 +308,19 @@ public static class WatchedFolderScanOps
     }
 
     /// <summary>Why the watched, work and output folders cannot be used together, or null when none overlaps another.</summary>
-    private static string? ValidatePathSeparation(string? watched, string work, string? output)
+    private static string? ValidatePathSeparation(string watched, string work, string output)
     {
-        if (output is not null)
+        if (IsSameOrNested(work, output))
         {
-            if (IsSameOrNested(work, output))
-            {
-                return "The work/temp folder and output folder must be separate (no overlap or containment).";
-            }
-
-            if (watched is not null && IsSameOrNested(watched, output))
-            {
-                return "The watched folder and output folder must be separate (no overlap or containment).";
-            }
+            return "The work/temp folder and output folder must be separate (no overlap or containment).";
         }
 
-        if (watched is not null && IsSameOrNested(watched, work))
+        if (IsSameOrNested(watched, output))
+        {
+            return "The watched folder and output folder must be separate (no overlap or containment).";
+        }
+
+        if (IsSameOrNested(watched, work))
         {
             return "The watched folder and work/temp folder must be separate (no overlap or containment).";
         }
@@ -369,11 +340,7 @@ public static class WatchedFolderScanOps
             Directory.CreateDirectory(outputFolder);
             File.WriteAllBytes(probe, [0]);
         }
-        catch (IOException exception)
-        {
-            return $"Weir cannot write to the output folder ({outputFolder}), so it did not start work that would have nowhere to go. The system reported: {exception.Message}.";
-        }
-        catch (UnauthorizedAccessException exception)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             return $"Weir cannot write to the output folder ({outputFolder}), so it did not start work that would have nowhere to go. The system reported: {exception.Message}.";
         }
@@ -383,11 +350,9 @@ public static class WatchedFolderScanOps
             {
                 File.Delete(probe);
             }
-            catch (IOException)
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
-            }
-            catch (UnauthorizedAccessException)
-            {
+                // A probe left behind is harmless: the next scan overwrites it.
             }
         }
 

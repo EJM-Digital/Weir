@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
+using static Weir.Contract.Tests.MediaManagers.Recorded.DelunoCalls;
 
 namespace Weir.Contract.Tests.MediaManagers.Recorded;
 
@@ -235,21 +236,6 @@ public sealed class DelunoRequestsTests
     }
 
     // --- steps ----------------------------------------------------------------------------------------
-
-    /// <summary>Weir paused, the film in place, and the hand-off made; it waits for its turn.</summary>
-    private static async Task<RecordedCall> HandOffQueuedAsync(RecordedWorld world, string handoffId, string release)
-    {
-        await world.Scenario.SetPauseAsync(paused: true);
-        var hand = DelunoSide.HandoffLike(handoffId, release);
-        world.PutFilm(hand.SourcePath(), needsWork: true);
-        var accepted = await world.Replay.SendCallAsync(hand);
-        Assert.True(accepted.Status == System.Net.HttpStatusCode.OK, accepted.ToString());
-        Assert.Equal("queued", await StateOfAsync(world, hand.HandoffId()));
-        return hand;
-    }
-
-    private static async Task<string> StateOfAsync(RecordedWorld world, string handoffId) =>
-        (string)(await world.Scenario.HandoffStatusAsync(handoffId))["state"]!;
 
     /// <summary>Each hand-off made, with its film in place, and left until Weir has finished it.</summary>
     private static async Task FinishedAsync(RecordedWorld world, params RecordedCall[] hands)

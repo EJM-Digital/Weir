@@ -27,6 +27,7 @@ sealed class TrayApp : IDisposable
     private readonly string _runtimeHome;
     private readonly TrayStart _start;
     private readonly ServerHost _server;
+    private readonly IFirewallAccess _firewall = new WindowsFirewallAccess();
     private readonly LanAccessSync _lanAccess;
     private readonly UpdateSettings _updateSettings;
     private readonly IUpdateService _updateService;
@@ -73,7 +74,7 @@ sealed class TrayApp : IDisposable
             // dialog can be shown.
             _server.ResolvePort = _ => ResolveOnUiAsync(resolvePort);
         }
-        _lanAccess = new LanAccessSync(_runtimeHome, _server, new WindowsFirewallAccess(), TimeProvider.System);
+        _lanAccess = new LanAccessSync(_runtimeHome, _server, _firewall, TimeProvider.System);
         _updateSettings = updateSettings;
         _updateService = updateService;
         _shutdown = new TrayShutdown(
@@ -414,7 +415,7 @@ sealed class TrayApp : IDisposable
 
     private void CreateTrayIcon()
     {
-        _lanAccessMenu = new LanAccessMenu(_lanAccess, _server, ShowLanAccessNotice, Render, _cts.Token);
+        _lanAccessMenu = new LanAccessMenu(_lanAccess, _server, _firewall, ShowLanAccessNotice, Render, _cts.Token);
         _updates = new TrayUpdates(
             _updateService,
             _runtimeHome,

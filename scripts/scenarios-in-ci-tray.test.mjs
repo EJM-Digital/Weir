@@ -36,7 +36,7 @@ test("every ported scenario of the windows-tray shard has code, and every scenar
 test("the shard runs update-requests first, and the scenarios written for CI after it", () => {
   assert.deepEqual(
     scenariosOfShard(homes, "windows-tray").map((scenario) => scenario.id),
-    ["update-requests", "tray-menu", "tray-supervision", "tray-give-up", "tray-change-port", "tray-lan-access", "tray-second-launch", "tray-start"],
+    ["update-requests", "tray-menu", "tray-supervision", "tray-give-up", "tray-change-port", "tray-lan-access", "tray-second-launch", "tray-start", "install-hooks", "tray-portable", "network-access-from-weir"],
   );
 });
 
