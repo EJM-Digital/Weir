@@ -16,7 +16,7 @@ namespace Weir.Infrastructure.Tests.Processing.RemuxPass;
 /// <see cref="TvSeasonFolderCleanup"/> with a fake Sonarr behind <see cref="FakeManagerHttp"/> — reuses
 /// <see cref="PassFolders"/> from <c>RemuxPassRunnerTests</c> for the folder tree.
 /// </summary>
-public sealed class TvSeasonFolderCleanupTests : IDisposable
+public sealed partial class TvSeasonFolderCleanupTests : IDisposable
 {
     private readonly PassFolders _folders = new();
 
@@ -49,11 +49,12 @@ public sealed class TvSeasonFolderCleanupTests : IDisposable
         .Set("relative_media_path", relativeMediaPath);
 
     private Task<WireObject> RunAsync(
-        TvSeasonFolderCleanup cleanup, string source, long minFileAgeSeconds = 0, long? currentJobId = null, WireObject? remuxContext = null, string? finalOutputFile = null)
+        TvSeasonFolderCleanup cleanup, string source, long minFileAgeSeconds = 0, long? currentJobId = null, WireObject? remuxContext = null, string? finalOutputFile = null,
+        ProcessingPathRuntime? runtime = null)
     {
         var output = new WireObject();
         var context = new TvSeasonCleanupContext(
-            output, _folders.Runtime(), source, _folders.Watched, minFileAgeSeconds, currentJobId, remuxContext ?? new WireObject(), finalOutputFile);
+            output, runtime ?? _folders.Runtime(), source, _folders.Watched, minFileAgeSeconds, currentJobId, remuxContext ?? new WireObject(), finalOutputFile);
         return cleanup.RunAsync(context, CancellationToken.None).ContinueWith(_ => output, TaskScheduler.Default);
     }
 

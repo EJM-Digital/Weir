@@ -18,7 +18,7 @@ namespace Weir.Infrastructure.Tests.LibraryMode;
 /// #505 point 2: the scan job walks library folders, probes (cached by path/size/mtime), classifies with the library's
 /// rules, and never writes to a file it looked at.
 /// </summary>
-public sealed class LibraryScanHandlerTests : IDisposable
+public sealed partial class LibraryScanHandlerTests : IDisposable
 {
     private readonly MediaManagerFixture _fixture = new();
     private readonly TempDirectory _libraryFolder = new();
@@ -39,7 +39,11 @@ public sealed class LibraryScanHandlerTests : IDisposable
         _fixture.Dispose();
     }
 
-    private LibraryScanHandler Handler() => new(
+    private LibraryScanHandler Handler() => (LibraryScanHandler)Activator.CreateInstance(typeof(LibraryScanHandler), HandlerArguments())!;
+
+    /// <summary>What the handler is built from, in the order of its constructor.</summary>
+    private object?[] HandlerArguments() =>
+    [
         _fixture.Store.Database,
         new MediaTools(_media, new FixedResolver(), new ListLogger<MediaTools>(), TimeProvider.System),
         _fixture.Connections,
@@ -54,7 +58,8 @@ public sealed class LibraryScanHandlerTests : IDisposable
         _progress,
         _fixture.Store.Clock,
         NullLogger<LibraryScanHandler>.Instance,
-        _changes);
+        _changes,
+    ];
 
     private async Task<long> LibraryAsync() =>
         Convert.ToInt64(await _fixture.Db(uow => uow.ExecuteScalarWriteAsync(

@@ -135,7 +135,7 @@ public sealed class TvSeasonFolderCleanup : ITvSeasonFolderCleanup
             return;
         }
 
-        var outputFolderRaw = WireStrings.Strip(context.Runtime.OutputFolder ?? string.Empty);
+        var outputFolderRaw = WireStrings.Strip(context.Runtime.OutputFolder);
         if (outputFolderRaw.Length == 0)
         {
             output.Set("tv_season_folder_skip_reason", "No TV output folder is configured, so season cleanup was skipped.");
@@ -206,16 +206,7 @@ public sealed class TvSeasonFolderCleanup : ITvSeasonFolderCleanup
             }
             else
             {
-                double ageSeconds;
-                try
-                {
-                    ageSeconds = (_time.GetUtcNow() - File.GetLastWriteTimeUtc(episode)).TotalSeconds;
-                }
-                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-                {
-                    ageSeconds = -1;
-                }
-
+                var ageSeconds = (_time.GetUtcNow() - File.GetLastWriteTimeUtc(episode)).TotalSeconds;
                 var minAge = Math.Max(0, context.MinFileAgeSeconds);
                 if (minAge > 0 && ageSeconds < minAge)
                 {
@@ -290,9 +281,7 @@ public sealed class TvSeasonFolderCleanup : ITvSeasonFolderCleanup
             return true;
         }
 
-        var note = check.Get("output_completeness_note") is WireString n && n.Value.Length > 0
-            ? n.Value
-            : $"Weir expected a finished output file for {name}, but the safety check did not pass.";
+        var note = ((WireString)check.Get("output_completeness_note")!).Value;
         output.Set("tv_season_folder_skip_reason", note);
         lineParts.Add($"{failurePrefix} — {note}.");
         addSummary(string.Join(" ", lineParts));

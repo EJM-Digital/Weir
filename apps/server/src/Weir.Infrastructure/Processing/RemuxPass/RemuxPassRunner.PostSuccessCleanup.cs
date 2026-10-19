@@ -95,21 +95,7 @@ public sealed partial class RemuxPassRunner
         InitFolderCleanupFields(output);
         var src = context.Source;
         var watched = context.WatchedRoot;
-        if (!RemuxPassPaths.IsUnder(src, watched))
-        {
-            output.Set("source_folder_skip_reason", "The video file is not under the saved watched folder, so nothing was removed.");
-            output.Set("source_deleted_after_success", false);
-            return;
-        }
-
         var movieFolder = Path.GetDirectoryName(src)!;
-        if (!RemuxPassPaths.IsUnder(movieFolder, watched))
-        {
-            output.Set("source_folder_skip_reason", "The release folder would sit outside the watched folder, so Weir did not change it.");
-            output.Set("source_deleted_after_success", false);
-            return;
-        }
-
         if (RemuxPassPaths.SamePath(movieFolder, watched))
         {
             output.Set("source_folder_skip_reason", "The video file sits directly in the watched folder root, so Weir does not remove a release folder here.");
@@ -119,16 +105,6 @@ public sealed partial class RemuxPassRunner
         }
 
         output.Set("source_folder_path", movieFolder);
-        if (WireStrings.Strip(context.Request.Runtime.OutputFolder ?? string.Empty).Length == 0)
-        {
-            const string NoOutput = "No output folder is configured for Movies, so the release folder was not removed.";
-            output.Set("output_completeness_check", "skipped");
-            output.Set("source_folder_skip_reason", NoOutput);
-            output.Set("output_completeness_note", NoOutput);
-            output.Set("source_deleted_after_success", false);
-            return;
-        }
-
         var outputFile = finalOutputFile ?? Path.Join(context.OutputDirectory, RemuxPassPaths.RelativeTo(src, watched)!);
         var check = CheckOutputFileCompleteness(outputFile, src);
         foreach (var (key, value) in check.Items)
@@ -141,9 +117,7 @@ public sealed partial class RemuxPassRunner
 
         if (check.Get("output_completeness_check") is not WireString { Value: "passed" })
         {
-            output.Set("source_folder_skip_reason", check.Get("output_completeness_note") is { IsTruthy: true } note
-                ? note
-                : new WireString("The output file did not pass the safety check, so the release folder was not removed."));
+            output.Set("source_folder_skip_reason", check["output_completeness_note"]);
             output.Set("source_deleted_after_success", false);
             _logger.LogWarning("Movies cleanup: skipped — {Reason}", WireConvert.Str(output["source_folder_skip_reason"]));
             return;
