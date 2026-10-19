@@ -7,7 +7,7 @@ import { createServer as createHttpServer } from "node:http";
 import { createServer as createHttpsServer } from "node:https";
 import { join } from "node:path";
 
-import { REPOSITORY } from "../repository.mjs";
+import { FORMER_REPOSITORIES, REPOSITORY } from "../repository.mjs";
 
 const DOWNLOADS = new RegExp(`^/${REPOSITORY}/releases/download/([^/]+)/([^/]+)$`, "i");
 
@@ -128,7 +128,9 @@ export class GithubStandIn {
 
   #send(request, response, answer) {
     this.requests.push({ host: request.headers.host ?? "", path: new URL(request.url, "http://stand-in").pathname, status: answer.status });
-    response.writeHead(answer.status, { "Content-Type": answer.type, "Content-Length": answer.body.length, Connection: "close" });
+    const headers = { "Content-Type": answer.type, "Content-Length": answer.body.length, Connection: "close" };
+    if (answer.location) headers.Location = answer.location;
+    response.writeHead(answer.status, headers);
     response.end(request.method === "HEAD" ? undefined : answer.body);
   }
 
@@ -137,6 +139,11 @@ export class GithubStandIn {
     const path = new URL(request.url, "http://stand-in").pathname;
     if (this.#mode === "down") return text(503, "GitHub is down.");
     if (host === "api.github.com") return text(404, "Not found.");
+
+    // GitHub answers a request for a repository's former address with a redirect to where it lives now, and a release made before the
+    // move still asks for the former one.
+    const former = FORMER_REPOSITORIES.find((name) => path.toLowerCase().startsWith(`/${name.toLowerCase()}/`));
+    if (former) return moved(`https://github.com/${REPOSITORY}${path.slice(former.length + 1)}`);
 
     if (path.toLowerCase() === `/${REPOSITORY}/releases.atom`.toLowerCase()) {
       const tags = this.#mode === "current" ? [this.#previous.tag] : [this.#current.tag, this.#previous.tag];
@@ -158,4 +165,5 @@ export class GithubStandIn {
 }
 
 const text = (status, body) => ({ status, type: "text/plain; charset=utf-8", body: Buffer.from(body) });
+const moved = (location) => ({ status: 301, type: "text/plain; charset=utf-8", body: Buffer.from("Moved."), location });
 const json = (body) => ({ status: 200, type: "application/json", body: Buffer.from(body) });

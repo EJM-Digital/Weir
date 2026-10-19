@@ -28,9 +28,10 @@ test("every place the repository is kept is found in the real repository's list,
   assert.equal(PLACES.length, 4);
 });
 
-test("the real Node place reads as owner/name, and no former owner is listed before the move", () => {
+test("the real Node place reads as owner/name, and no former owner is the current one", () => {
   assert.match(REPOSITORY, /^[^/\s]+\/[^/\s]+$/);
-  assert.deepEqual(FORMER_OWNERS, []);
+  const owner = REPOSITORY.split("/")[0].toLowerCase();
+  assert.ok(FORMER_OWNERS.every((former) => former.toLowerCase() !== owner));
 });
 
 test("a place that differs from the Node place is named, with what it holds", () => {
@@ -78,7 +79,7 @@ test("history, the plan and the files naming the person are left alone", () => {
       "CHANGELOG.md": "old-org/Weir",
       "docs/release-notes/v1.0.0.md": "ghcr.io/old-org/weir",
       "docs/archive/plan.md": "old-org/Weir",
-      "docs/exec-plans/active/PLAN-ORG-MOVE.md": "old-org/Weir",
+      "docs/archive/PLAN-ORG-MOVE.md": "old-org/Weir",
       ".github/CODEOWNERS": "* @old-org",
       ".github/FUNDING.yml": "github: [old-org]",
     }),
@@ -101,6 +102,6 @@ test("the copyright holder, a sponsorship link and a link to one of Weir's issue
 test("a build that runs in another repository than the code holds fails, whatever the case", () => {
   assert.deepEqual(problems({}, { running: "NEW-ORG/weir" }), []);
   assert.deepEqual(problems({}, { running: "third-org/Weir" }), [
-    "scripts/repository.mjs:1: the code holds new-org/Weir, but this build runs in third-org/Weir. Sweep the move (docs/exec-plans/active/PLAN-ORG-MOVE.md).",
+    "scripts/repository.mjs:1: the code holds new-org/Weir, but this build runs in third-org/Weir. Sweep the move (docs/archive/PLAN-ORG-MOVE.md).",
   ]);
 });

@@ -9,11 +9,11 @@ Radarr, Sonarr or Deluno. Every variable Weir reads is listed in the [Docker ref
 
 ## Which image
 
-The image is `ghcr.io/jampat000/weir`. The tag after the colon picks the version.
+The image is `ghcr.io/ejm-digital/weir`. The tag after the colon picks the version.
 
 | Tag | What it is | Use it when |
 | --- | --- | --- |
-| `1.0.0-rc.18` | Exactly that release, forever | You want to choose when Weir changes. **Use this while Weir is a release candidate.** Newer ones are listed on the [Releases page](https://github.com/jampat000/Weir/releases). |
+| `1.0.0-rc.18` | Exactly that release, forever | You want to choose when Weir changes. **Use this while Weir is a release candidate.** Newer ones are listed on the [Releases page](https://github.com/EJM-Digital/Weir/releases). |
 | `latest` | The newest stable release | You are happy for `docker compose pull` to move you to whatever is newest. It does not exist yet: it arrives with 1.0.0. |
 
 Release candidates are published under their version tag only. They never move `latest`, so until 1.0.0 you
@@ -28,7 +28,7 @@ Make a folder for Weir, and save this as `compose.yaml` inside it:
 ```yaml
 services:
   weir:
-    image: ghcr.io/jampat000/weir:1.0.0-rc.18
+    image: ghcr.io/ejm-digital/weir:1.0.0-rc.18
     container_name: weir
     hostname: my-server        # what Weir calls itself: "Weir on my-server"
     ports:
@@ -59,7 +59,7 @@ This is the version most people want: your media folders, the right file owner, 
 ```yaml
 services:
   weir:
-    image: ghcr.io/jampat000/weir:1.0.0-rc.18
+    image: ghcr.io/ejm-digital/weir:1.0.0-rc.18
     container_name: weir
     hostname: my-server
     ports:
@@ -88,7 +88,7 @@ docker run -d \
   -v "$(pwd)/weir-data:/data/weir" \
   -v /srv/media:/media \
   --restart unless-stopped \
-  ghcr.io/jampat000/weir:1.0.0-rc.18
+  ghcr.io/ejm-digital/weir:1.0.0-rc.18
 ```
 
 What each part means:
@@ -223,7 +223,7 @@ Once 1.0.0 is out and you use `latest`, only the two commands are needed. With `
 remove the old container and run the same `docker run` command again:
 
 ```bash
-docker pull ghcr.io/jampat000/weir:1.0.0-rc.18
+docker pull ghcr.io/ejm-digital/weir:1.0.0-rc.18
 docker stop weir && docker rm weir
 ```
 
@@ -265,4 +265,4 @@ Never run two Weir containers against the same `weir-data`. SQLite is for one pr
 | "Permission denied" on a file | Set `WEIR_PUID` and `WEIR_PGID` to the owner of your media folders. |
 | Signed out after every restart | `WEIR_SESSION_SECRET` is set to something that changes. Remove it and let Weir manage it. |
 | Weir shows a random name | Add `hostname:`. |
-| Anything else | `docker logs weir` and **System › Logs**, then [open an issue](https://github.com/jampat000/Weir/issues) with what they say. |
+| Anything else | `docker logs weir` and **System › Logs**, then [open an issue](https://github.com/EJM-Digital/Weir/issues) with what they say. |
