@@ -26,7 +26,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { gzipSync } from "node:zlib";
 
-import { IMAGE_REPOSITORY } from "./repository.mjs";
+import { releaseImage } from "./docker-smoke/previous-image.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const databasesFolder = path.join(repositoryRoot, "apps", "server", "tests", "fixtures", "databases");
@@ -175,7 +175,7 @@ export function describeDatabase(file) {
 const run = (program, args, options = {}) => execFileSync(program, args, { stdio: "inherit", ...options });
 
 /** The image a release published. */
-export const imageOf = (version) => `${IMAGE_REPOSITORY}:${version}`;
+export const imageOf = releaseImage;
 
 /** Pulls the release's image and copies its program out: the program's path, and the image's digest. */
 function fetchRelease(version, scratch) {

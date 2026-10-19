@@ -1,6 +1,6 @@
 # Execution Plans
 
-Execution plans live in [GitHub issues](https://github.com/jampat000/Weir/issues). Open an issue (or an
+Execution plans live in [GitHub issues](https://github.com/EJM-Digital/Weir/issues). Open an issue (or an
 epic with sub-issues) for work that is too large or risky for a single change: anything that touches
 several modules, changes release or installer behavior, changes file deletion or mutation safety,
 changes data migrations, or needs staged validation across Windows, Docker, server and web.
