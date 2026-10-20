@@ -17,7 +17,7 @@ import { loadHomes, scenariosOfShard } from "./scenarios-ci/homes.mjs";
 import { LogWatch } from "./scenarios-ci/log-watch.mjs";
 import { menuProblems, runningMenu } from "./scenarios-ci/tray-actions.mjs";
 import { backoffProblem, failedStarts, lineWith, linesAfter, linesWith, serverProcessIds } from "./scenarios-ci/tray-log.mjs";
-import { menuVersion } from "./scenarios-ci/tray-menu.mjs";
+import { menuVersion, UPDATE_CHECK_ANSWER, updateAnswerProblem } from "./scenarios-ci/tray-menu.mjs";
 import { atLogLine, holdPort, RunningTray } from "./scenarios-ci/tray-world.mjs";
 import { address, balloonLine, balloons, menu, status } from "./scenarios-ci/tray-words.mjs";
 import { SCENARIOS } from "./scenarios-ci/windows-tray.mjs";
@@ -157,6 +157,19 @@ test("the menu is the standard's, item for item, and a build's metadata is not i
   assert.equal(menuVersion("1.0.0-rc.4+abc1234"), "1.0.0-rc.4");
   assert.equal(menuVersion("0.0.1-dev"), "0.0.1-dev");
   assert.deepEqual(menuProblems(expected, structuredClone(expected)), []);
+});
+
+test("a check for updates ends in the tray's two answers, and the placeholder build must be offered an update", () => {
+  assert.ok(UPDATE_CHECK_ANSWER.test("Update available: v1.0.0-rc.18"));
+  assert.ok(UPDATE_CHECK_ANSWER.test("No update available."));
+  assert.ok(!UPDATE_CHECK_ANSWER.test("Checking for updates..."));
+  assert.equal(updateAnswerProblem("0.0.1-dev", "Update available: v1.0.0-rc.18"), undefined);
+  assert.match(updateAnswerProblem("0.0.1-dev", "No update available."), /older than every release/);
+});
+
+test("a build given a release version is the newest release, so finding nothing newer is right for it", () => {
+  assert.equal(updateAnswerProblem("1.0.0-rc.19+3fd151f", "No update available."), undefined);
+  assert.equal(updateAnswerProblem("1.0.0-rc.19+3fd151f", "Update available: v1.0.0-rc.20"), undefined);
 });
 
 test("a menu that differs says how: a missing item, another word, an item enabled that should not be", () => {
