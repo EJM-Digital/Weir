@@ -28,6 +28,7 @@
     <Compile Include="..\Shared\FileChangingPathsTable.cs" Link="TestSupport\FileChangingPathsTable.cs" />
     <!-- Recordings of a real Sonarr and Radarr (fixtures/recorded) and the handler that replays them. -->
     <Compile Include="..\Shared\ArrRecordings.cs" Link="TestSupport\ArrRecordings.cs" />
+    <Compile Include="..\Shared\RedownloadRiskReplies.cs" Link="TestSupport\RedownloadRiskReplies.cs" />
     <!-- GitHub, as it answered when recorded (fixtures/recorded/github-releases). -->
     <Compile Include="..\Shared\RecordedGitHub.cs" Link="TestSupport\RecordedGitHub.cs" />
   </ItemGroup>

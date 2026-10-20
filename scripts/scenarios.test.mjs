@@ -231,6 +231,7 @@ function harness(body) {
     `. '${join(scenarios, "Weir.Scenarios.Lib.ps1")}'`,
     `. '${join(scenarios, "Weir.Scenarios.Context.ps1")}'`,
     `. '${join(scenarios, "Weir.Scenarios.Deluno.ps1")}'`,
+    `. '${join(scenarios, "Weir.Scenarios.DelunoSetup.ps1")}'`,
     "New-Item -ItemType Directory -Force -Path '" + run + "' | Out-Null",
     "$script:Ctx.RunFolder = '" + run + "'",
     "$script:Ctx.Version = '1.0.0-rc.99'",
@@ -335,6 +336,12 @@ function New-WeirFile($name, $word = 'imported', $status = 'processed', $library
     }
 }
 function Test-DelunoPreconditions { $null }
+# What the run does to put Deluno in the state a scenario needs is stood in for: the library is counted, and a hand-off made by the run is
+# whatever the test says the run's hand-off leaves behind ($script:OnMake), so each case can say what making one would give.
+$script:Libraries = 0; $script:Made = 0; $script:OnMake = { }
+function Initialize-DelunoRefiningLibrary { $script:Libraries++; $null }
+function Wait-WeirWorkflowsFromDeluno { $null }
+function New-DelunoFilmHandoff { $script:Made++; & $script:OnMake; $null }
 function Get-DelunoHandoffs { $script:Handoffs }
 function Get-ScenarioFiles { param([int] $LibraryId) $script:Files }
 function Get-ActivityItems { @() }
@@ -349,12 +356,15 @@ $before = '2026-10-11T19:36:00+00:00'; $after = '2026-10-11T20:30:00+00:00'
 # Gpreduring...: the previous release never recorded Deluno's answer (rc.14's first run); it is not the build's to answer for.
 $script:Handoffs = @(New-Handoff 'Gpreduringbndf23' $before)
 $script:Files = @(New-WeirFile 'Gpreduringbndf23' $null)
-'only-previous: ' + (Show { Scenario_deluno_film_handoff })
+# With nothing made since the build began answering, the run makes the hand-off itself instead of skipping.
+$script:OnMake = { $script:Handoffs = @($script:Handoffs) + (New-Handoff 'Gpmade' $after); $script:Files = @($script:Files) + (New-WeirFile 'Gpmade' 'imported') }
+'only-previous: ' + (Show { Scenario_deluno_film_handoff }) + ' | made ' + $script:Made
+$script:OnMake = { }; $script:Made = 0
 # The same hand-off made after the build took over, with Weir having recorded nothing: that is the build's fault.
 $script:Handoffs = @(New-Handoff 'Gpreduringbndf23' $after)
 'build-no-answer: ' + (Show { Scenario_deluno_film_handoff })
 $script:Files = @(New-WeirFile 'Gpreduringbndf23' 'imported')
-'build-answered: ' + (Show { Scenario_deluno_film_handoff })
+'build-answered: ' + (Show { Scenario_deluno_film_handoff }) + ' | made ' + $script:Made
 $script:Files = @(New-WeirFile 'Gpreduringbndf23' 'imported' 'processing_failed')
 'build-not-processed: ' + (Show { Scenario_deluno_film_handoff })
 # Both kinds together: the previous release's is not judged and the build's is.
@@ -365,9 +375,9 @@ $script:Files = @((New-WeirFile 'Gpold' $null), (New-WeirFile 'Gpnew' 'imported'
   const run = psFile(source);
   assert.equal(run.status, 0, run.err + run.out);
   const lines = run.out.trim().split(/\r?\n/);
-  assert.match(lines[0], /^only-previous: NA: 1 hand-off\(s\) from Deluno exist and none was made after the build under test began answering \(2026-10-11 20:00:00Z; the update scenario saw it begin answering\).* -Phases Update/);
+  assert.match(lines[0], /^only-previous: PASSED: Followed 1 completed film hand-off\(s\) Deluno made after the build under test took over \(1 imported\) .* 1 hand-off\(s\) made before that, by the previous release, were not judged\. \| made 1$/);
   assert.match(lines[1], /^build-no-answer: FAILED: Weir has Deluno's imported answer recorded against Gpreduringbndf23\/Gpreduringbndf23\.mkv$/);
-  assert.match(lines[2], /^build-answered: PASSED: Followed 1 completed film hand-off\(s\) .* 0 hand-off\(s\) made before that/);
+  assert.match(lines[2], /^build-answered: PASSED: Followed 1 completed film hand-off\(s\) .* 0 hand-off\(s\) made before that.* \| made 0$/, "a hand-off the build already took is followed as it is: the run makes none");
   assert.match(lines[3], /^build-not-processed: FAILED: Weir shows Gpreduringbndf23\/Gpreduringbndf23\.mkv as processed \(it reads processing_failed\)$/);
   assert.match(lines[4], /^mixed: PASSED: Followed 1 completed film hand-off\(s\) .* 1 hand-off\(s\) made before that, by the previous release, were not judged\.$/);
 });
@@ -394,7 +404,8 @@ $script:Files = @((New-WeirFile 'Gpgood' 'not-imported'))
 $problem.createdUtc = '2026-10-11T19:10:00+00:00'
 $script:Handoffs = @($problem, (New-Handoff 'Gpearly' '2026-10-11T19:00:00+00:00'))
 $script:Files = @((New-WeirFile 'Gpearly' $null))
-'previous-only: ' + (Show { Scenario_deluno_outcomes })
+$script:OnMake = { $script:Handoffs = @($script:Handoffs) + (New-Handoff 'Gpmade' '2026-10-11T20:40:00+00:00'); $script:Files = @($script:Files) + (New-WeirFile 'Gpmade' 'imported') }
+'previous-only: ' + (Show { Scenario_deluno_outcomes }) + ' | made ' + $script:Made
 `);
   const run = psFile(source);
   assert.equal(run.status, 0, run.err + run.out);
@@ -403,7 +414,7 @@ $script:Files = @((New-WeirFile 'Gpearly' $null))
   assert.match(lines[1], /^a-week: FAILED: Deluno's outcome for Gpproblem is not-imported, delivery given-up, not pending, refused, never received or given up \(Deluno said: Nobody acknowledged/);
   assert.match(lines[2], /^weir-has-nothing: FAILED: Gpgood\/Gpgood\.mkv: Deluno says imported and Weir says nothing$/);
   assert.match(lines[3], /^weir-disagrees: FAILED: Gpgood\/Gpgood\.mkv: Deluno says imported and Weir says not-imported$/);
-  assert.match(lines[4], /^previous-only: NA: 2 hand-off\(s\) from Deluno exist and none was made after the build under test began answering/);
+  assert.match(lines[4], /^previous-only: PASSED: Read the outcomes of 3 hand-off\(s\) in Deluno: .* 1 of Weir's files from the 1 hand-off\(s\) made after the build under test took over carry the same answer as Deluno\. 2 made before that, by the previous release, were not compared\. \| made 1$/);
 });
 
 test("the resend scenario reads Deluno's own record of the attempt: a real new attempt, delivered or settled, never refused", { skip }, () => {
@@ -426,7 +437,12 @@ $script:Delivery = 'delivered'; $script:LastAttempt = [DateTime]::UtcNow.AddMinu
 'not-sent-now: ' + (Show { Scenario_deluno_resend })
 $script:LastAttempt = [DateTime]::UtcNow.AddSeconds(1).ToString('o'); $script:Handoffs[0].outcome.delivery = 'delivered'
 $script:Files = @(New-WeirFile 'Gpretry' $null)
-'weir-never-recorded-it: ' + (Show { Scenario_deluno_resend })
+# With nothing to send again the run makes the hand-off first.
+$script:OnMake = { $script:Files = @(New-WeirFile 'Gpretry' 'imported') }
+'weir-never-recorded-it: ' + (Show { Scenario_deluno_resend }) + ' | made ' + $script:Made
+$script:OnMake = { }; $script:Made = 0
+$script:Files = @(New-WeirFile 'Gpretry' $null)
+'made-and-still-not-recorded: ' + (Show { Scenario_deluno_resend }) + ' | made ' + $script:Made
 `);
   const run = psFile(source);
   assert.equal(run.status, 0, run.err + run.out);
@@ -435,7 +451,8 @@ $script:Files = @(New-WeirFile 'Gpretry' $null)
   assert.match(lines[1], /^settled: PASSED: /);
   assert.match(lines[2], /^refused: FAILED: Weir took the repeat: Deluno records it as delivered or settled, never refused \(it reads refused: Weir recorded that Deluno imported the file\.\)$/);
   assert.match(lines[3], /^not-sent-now: FAILED: Deluno really sent it to Weir just now/);
-  assert.match(lines[4], /^weir-never-recorded-it: NA: Deluno has no imported hand-off with its outcome delivered and recorded in Weir/);
+  assert.match(lines[4], /^weir-never-recorded-it: PASSED: Deluno sent the outcome for Gpretry again; .* \| made 1$/);
+  assert.match(lines[5], /^made-and-still-not-recorded: FAILED: Deluno has an imported hand-off with its outcome delivered and recorded in Weir, to send again \| made 1$/);
 });
 
 test("the release with a small extra is read where the extra stays: the client's folder, left alone by Weir, and a failed extra or a copied one fails it", { skip }, () => {
@@ -472,9 +489,10 @@ $script:Failed = 2
 'workflow-has-failures: ' + (Show { Scenario_deluno_release_with_extra })
 $script:Failed = 0
 Remove-Item -Recurse -Force (Join-Path $release 'Featurettes')
-'extra-gone-from-disk: ' + (Show { Scenario_deluno_release_with_extra })
+'extra-gone-from-disk: ' + (Show { Scenario_deluno_release_with_extra }) + ' | made ' + $script:Made
 $script:Handoffs = @(New-Handoff 'Gpfilm.2020.1080p' '2026-10-11T19:00:00+00:00' 'imported' 'delivered' $release)
-'handled-by-previous: ' + (Show { Scenario_deluno_release_with_extra })
+$script:OnMake = { $script:Handoffs = @($script:Handoffs) + (New-Handoff 'Gpfilm.2020.1080p' '2026-10-11T20:30:00+00:00' 'imported' 'delivered' $release) }
+'handled-by-previous: ' + (Show { Scenario_deluno_release_with_extra }) + ' | made ' + $script:Made
 `;
   const run = psFile(source + "\n" + body);
   assert.equal(run.status, 0, run.err + run.out);
@@ -484,8 +502,8 @@ $script:Handoffs = @(New-Handoff 'Gpfilm.2020.1080p' '2026-10-11T19:00:00+00:00'
   assert.match(lines[2], /^extra-failed: FAILED: Weir either never saw the extra featurette\.mkv or left it alone as skipped \(it has 1 row\(s\) and 1 of them read something else: processing_failed\)$/);
   assert.match(lines[3], /^extra-copied: FAILED: Weir wrote nothing named featurette\.mkv into the workflow's output folder/);
   assert.match(lines[4], /^workflow-has-failures: FAILED: nothing in 'Movies' needs the person \(failed 2, rejected 0\)$/);
-  assert.match(lines[5], /^extra-gone-from-disk: NA: None of the 1 completed film hand-off\(s\) the build under test handled has a source folder that still exists and holds a video file under its workflow's minimum size/);
-  assert.match(lines[6], /^handled-by-previous: NA: 1 hand-off\(s\) from Deluno exist and none was made after the build under test began answering/);
+  assert.match(lines[5], /^extra-gone-from-disk: FAILED: None of the 1 completed film hand-off\(s\) the build under test handled has a source folder that still exists and holds a video file under its workflow's minimum size.* \| made 0$/, "an extra that is gone is a failure, not a skip");
+  assert.match(lines[6], /^handled-by-previous: FAILED: None of the 1 completed film hand-off\(s\).* \| made 1$/, "with only the previous release's hand-off the run makes one, and judges that");
 });
 
 test("the phase wrapper always leaves a number in the exit code file, so a run that ends without one is read, not lost", { skip }, () => {

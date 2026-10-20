@@ -114,6 +114,34 @@ public sealed class ActivityNarrowLayoutTests(E2EServer server) : E2ETestBase(se
         await Expect(page).ToHaveURLAsync(new Regex(@"[?&]q=nothing(&|$)"), new() { Timeout = PushMs });
     }
 
+    [E2EFact]
+    public async Task The_detail_of_the_chosen_file_sits_beside_the_list_with_room_and_under_it_on_a_phone()
+    {
+        const string film = "Arrival 2016.mkv";
+        await using var rig = await ProcessingRig.StartAsync();
+        await rig.PlaceFileAsync("r-arrival", film);
+        await rig.ScanAsync();
+        await rig.WaitForStatusAsync(film, "processed");
+
+        var wide = await OpenActivityAsync(rig, Wide);
+        var (wideList, wideDetail) = await BoxesAsync(wide);
+        Assert.True(wideDetail.X >= wideList.X + wideList.Width, $"At {Wide.Width}px the detail starts at {wideDetail.X} but the list ends at {wideList.X + wideList.Width}.");
+        Assert.True(wideDetail.Y < wideList.Y + wideList.Height, "With room to spare the detail starts level with the list, not below it.");
+
+        var phone = await OpenActivityAsync(rig, Phone);
+        var (phoneList, phoneDetail) = await BoxesAsync(phone);
+        Assert.True(phoneDetail.Y >= phoneList.Y + phoneList.Height, $"On a phone the detail starts at {phoneDetail.Y} but the list ends at {phoneList.Y + phoneList.Height}.");
+        Assert.True(phoneDetail.X >= 0 && phoneDetail.X + phoneDetail.Width <= Phone.Width, $"On a phone the detail runs from {phoneDetail.X} to {phoneDetail.X + phoneDetail.Width}, past the {Phone.Width}px screen.");
+    }
+
+    private static async Task<(LocatorBoundingBoxResult List, LocatorBoundingBoxResult Detail)> BoxesAsync(IPage page)
+    {
+        var detail = page.GetByTestId("activity-detail");
+        await Expect(detail).ToBeVisibleAsync(new() { Timeout = PushMs });
+        var list = page.GetByRole(AriaRole.Region, new() { Name = "Files" });
+        return ((await list.BoundingBoxAsync())!, (await detail.BoundingBoxAsync())!);
+    }
+
     /// <summary>
     /// Where the chips run out of room depends on the width of the letters, which differs from one machine's fonts to the next, so this narrows the
     /// window from <see cref="Short"/> until the last chip has folded. Everything that gives way before the chips (the search, the pickers) has by then.
