@@ -21,6 +21,7 @@ const STATUS_LABELS: Readonly<Record<string, string>> = {
   up_to_date: "Up to date",
   update_available: "Update available",
   rate_limited: "Limited by GitHub",
+  off: "Off",
 };
 
 /** What a status pill says about the update check. */

@@ -160,11 +160,15 @@ async function expectServerUsesSecrets(world, secrets) {
   }
 }
 
-/** fresh-install: Setup --silent on a clean machine, then the installed Weir started the way an unattended caller starts it. */
+/**
+ * fresh-install: Setup --silent on a clean machine, then the installed Weir started the way an unattended caller starts it. Nothing
+ * is written to the update choices first: a new install must start with update checking off on its own, and so never reach the release feed.
+ */
 async function freshInstall(world) {
   const { machine } = world;
   await machine.stopWeir();
-  const setup = await installBuildUnderTest(world);
+  const setup = await machine.install(world.setupPath);
+  assert.equal(setup.exitCode, 0, `Setup --silent exited ${setup.exitCode}, not 0`);
   assert.ok(await machine.exists(machine.paths.trayExe), `Weir.exe is not installed at ${machine.paths.trayExe}`);
   assert.ok(await machine.exists(machine.paths.serverExe), `WeirServer.exe is not installed at ${machine.paths.serverExe}`);
 
@@ -190,11 +194,18 @@ async function freshInstall(world) {
   assert.ok(trayLog.includes(`Using port ${PORT} from --port`), "the tray log does not say it used the port it was given");
   assert.ok(trayLog.includes(`Weir is healthy on http://127.0.0.1:${PORT}/`), "the tray log does not say Weir is healthy");
 
+  const choices = JSON.parse(await machine.readText(join(machine.paths.runtimeHome, "update-settings.json")));
+  assert.equal(choices.checkForUpdates, false, `a new install saved checkForUpdates ${choices.checkForUpdates}, not false`);
+  assert.ok(trayLog.includes("This is a new install, so update checking starts off."), "the tray log does not say a new install starts with update checking off");
+  assert.ok(!trayLog.includes("Checking for updates"), "a new install looked for updates");
+  // The scenarios after this one keep the build under test the way every install in them does.
+  await machine.keepUpdatesFromInstalling();
+
   const secrets = await secretsMadeByTheInstall(world);
   await expectServerUsesSecrets(world, secrets);
   return (
     `Setup --silent exited 0 in ${setup.seconds} s; Weir ${reported} answered /ready; tray pid ${trayPid} with the server as its child and no window; ` +
-    `listening on ${addresses.join(", ")} only; session.secret and credentials.secret are ${MINIMUM_SECRET_LENGTH}+ characters, readable only by SYSTEM, the administrators and the installing account, ` +
+    `listening on ${addresses.join(", ")} only; update checking started off and nothing reached the release feed; session.secret and credentials.secret are ${MINIMUM_SECRET_LENGTH}+ characters, readable only by SYSTEM, the administrators and the installing account, ` +
     "and the server signs with the session secret."
   );
 }

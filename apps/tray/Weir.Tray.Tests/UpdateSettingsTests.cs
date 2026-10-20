@@ -50,10 +50,10 @@ public sealed class UpdateSettingsTests : IDisposable
 
     /// <summary>The same text the server writes when the Settings page saves (UpdateApiTests.A_saved_choice_reaches_the_tray_in_the_file_it_follows).</summary>
     [Theory]
-    [InlineData("Auto", true, 60, "{\n  \"mode\": \"Auto\",\n  \"checkOnStartup\": true,\n  \"checkIntervalMinutes\": 60\n}")]
-    [InlineData("DownloadOnly", false, 240, "{\n  \"mode\": \"DownloadOnly\",\n  \"checkOnStartup\": false,\n  \"checkIntervalMinutes\": 240\n}")]
-    [InlineData("NotifyOnly", true, 10080, "{\n  \"mode\": \"NotifyOnly\",\n  \"checkOnStartup\": true,\n  \"checkIntervalMinutes\": 10080\n}")]
-    public void A_file_the_settings_page_wrote_is_followed_as_saved(string mode, bool checkOnStartup, int minutes, string text)
+    [InlineData("Auto", true, 60, true, "{\n  \"mode\": \"Auto\",\n  \"checkOnStartup\": true,\n  \"checkIntervalMinutes\": 60,\n  \"checkForUpdates\": true\n}")]
+    [InlineData("DownloadOnly", false, 240, false, "{\n  \"mode\": \"DownloadOnly\",\n  \"checkOnStartup\": false,\n  \"checkIntervalMinutes\": 240,\n  \"checkForUpdates\": false\n}")]
+    [InlineData("NotifyOnly", true, 10080, true, "{\n  \"mode\": \"NotifyOnly\",\n  \"checkOnStartup\": true,\n  \"checkIntervalMinutes\": 10080,\n  \"checkForUpdates\": true\n}")]
+    public void A_file_the_settings_page_wrote_is_followed_as_saved(string mode, bool checkOnStartup, int minutes, bool checkForUpdates, string text)
     {
         File.WriteAllText(SettingsPath, text.Replace("\n", "\r\n", StringComparison.Ordinal));
 
@@ -62,6 +62,120 @@ public sealed class UpdateSettingsTests : IDisposable
         Assert.Equal(Enum.Parse<UpdateMode>(mode), got.Mode);
         Assert.Equal(checkOnStartup, got.CheckOnStartup);
         Assert.Equal(minutes, got.CheckIntervalMinutes);
+        Assert.Equal(checkForUpdates, got.CheckForUpdates);
+    }
+
+    [Fact]
+    public void No_file_checks_for_nothing_because_nobody_has_chosen_to()
+    {
+        Assert.False(UpdateSettings.Load(Home).CheckForUpdates);
+    }
+
+    [Fact]
+    public void A_file_saved_before_the_choice_existed_keeps_checking()
+    {
+        File.WriteAllText(SettingsPath, "{\n  \"mode\": \"DownloadOnly\",\n  \"checkOnStartup\": false,\n  \"checkIntervalMinutes\": 240\n}");
+
+        var got = UpdateSettings.Load(Home);
+
+        Assert.True(got.CheckForUpdates);
+        Assert.Equal(UpdateMode.DownloadOnly, got.Mode);
+    }
+
+    [Fact]
+    public void Switching_checking_off_is_kept()
+    {
+        new UpdateSettings { CheckForUpdates = false }.Save(Home);
+
+        Assert.False(UpdateSettings.Load(Home).CheckForUpdates);
+        Assert.Contains("\"checkForUpdates\": false", File.ReadAllText(SettingsPath), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("{\"mode\": \"Notify")]
+    [InlineData("null")]
+    [InlineData("{\"mode\": \"InstallEverythingNow\"}")]
+    public void A_file_that_cannot_be_read_checks_for_nothing_as_well_as_installing_nothing(string text)
+    {
+        File.WriteAllText(SettingsPath, text);
+
+        var got = UpdateSettings.Load(Home);
+
+        Assert.False(got.CheckForUpdates);
+        Assert.Equal(UpdateMode.NotifyOnly, got.Mode);
+    }
+
+    [Fact]
+    public void The_first_start_of_a_new_install_saves_checking_as_off_and_says_so()
+    {
+        UpdateSettings.SettleFirstRun(Home, _ => null);
+
+        var got = UpdateSettings.Load(Home);
+
+        Assert.True(File.Exists(SettingsPath));
+        Assert.False(got.CheckForUpdates);
+        Assert.Equal(UpdateMode.Auto, got.Mode);
+        Assert.Contains("This is a new install, so update checking starts off.", File.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_first_start_of_an_upgrade_keeps_checking_because_Weir_has_run_here_before()
+    {
+        Directory.CreateDirectory(Path.Combine(Home, "data"));
+        File.WriteAllText(Path.Combine(Home, "data", "weir.sqlite3"), "a database");
+
+        UpdateSettings.SettleFirstRun(Home, _ => null);
+
+        Assert.True(UpdateSettings.Load(Home).CheckForUpdates);
+        Assert.Contains("Weir has run here before, so update checking stays on.", File.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_upgrade_with_its_database_somewhere_else_is_still_an_upgrade()
+    {
+        var elsewhere = Path.Combine(Home, "elsewhere", "weir-data.db");
+        Directory.CreateDirectory(Path.GetDirectoryName(elsewhere)!);
+        File.WriteAllText(elsewhere, "a database");
+
+        UpdateSettings.SettleFirstRun(Home, name => name == "WEIR_DB_PATH" ? elsewhere : null);
+
+        Assert.True(UpdateSettings.Load(Home).CheckForUpdates);
+    }
+
+    [Fact]
+    public void A_database_path_relative_to_the_home_is_looked_for_in_the_home()
+    {
+        Directory.CreateDirectory(Path.Combine(Home, "db"));
+        File.WriteAllText(Path.Combine(Home, "db", "weir.db"), "a database");
+
+        UpdateSettings.SettleFirstRun(Home, name => name == "WEIR_DB_PATH" ? Path.Combine("db", "weir.db") : null);
+
+        Assert.True(UpdateSettings.Load(Home).CheckForUpdates);
+    }
+
+    [Fact]
+    public void A_start_that_finds_the_file_leaves_it_alone()
+    {
+        new UpdateSettings { Mode = UpdateMode.DownloadOnly, CheckForUpdates = false }.Save(Home);
+        Directory.CreateDirectory(Path.Combine(Home, "data"));
+        File.WriteAllText(Path.Combine(Home, "data", "weir.sqlite3"), "a database");
+
+        UpdateSettings.SettleFirstRun(Home, _ => null);
+
+        var got = UpdateSettings.Load(Home);
+        Assert.False(got.CheckForUpdates);
+        Assert.Equal(UpdateMode.DownloadOnly, got.Mode);
+    }
+
+    [Fact]
+    public void A_first_start_that_cannot_save_the_file_says_so_and_the_tray_checks_for_nothing()
+    {
+        var blocked = Path.Combine(Home, "not-a-folder");
+        File.WriteAllText(blocked, "a file where the folder should be");
+
+        UpdateSettings.SettleFirstRun(blocked, _ => null);
+
+        Assert.False(UpdateSettings.Load(blocked).CheckForUpdates);
     }
 
     [Fact]

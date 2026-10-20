@@ -7,6 +7,7 @@ const UPDATE_MEANING: Readonly<Record<string, StatusMeaning>> = {
   downloaded: "todo",
   not_published: "idle",
   rate_limited: "attention",
+  off: "idle",
   unavailable: "attention",
 };
 

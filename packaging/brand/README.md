@@ -90,3 +90,12 @@ The raster icons derived from them, all committed:
 - `apps/web/public/favicon.svg`, `favicon.ico`, `apple-touch-icon.png`
 - `packaging/windows/assets/weir-tray-icon.ico` (tray, executable and installer icon)
 - `docs-site/static/img/favicon.ico`, `logo.svg`, `logo-dark.svg`
+
+## Social preview
+
+`social-preview.png` is the card GitHub and chat apps show when someone shares a link to the repository. It is 1280×640, set
+under Settings > General > Social preview. GitHub does not read it from the repository, so a new card is uploaded there by hand.
+Its source is `social-preview.html`: the app icon and name large, the one-line description, and EJM Digital's mark in the
+corner, with at least 40px of margin because the card is cropped. After `npm ci` in `apps/web`, which brings in the Inter font
+it uses, render it with any Chromium browser, for example
+`msedge --headless=new --allow-file-access-from-files --window-size=1280,640 --screenshot=social-preview.png social-preview.html`.

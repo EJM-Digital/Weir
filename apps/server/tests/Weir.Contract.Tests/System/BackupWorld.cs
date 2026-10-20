@@ -9,13 +9,15 @@ namespace Weir.Contract.Tests.SystemArea;
 /// <summary>
 /// An install a person has set up: rule sets, workflows with schedules, operator and suite settings, direct play devices, two alerts, a
 /// media manager and a download client with their secrets. Every step goes through the public API. <see cref="ExportAsync"/> is the
-/// backup the Settings screen downloads; <see cref="RestoreAsync"/> is the restore it uploads.
+/// backup the Settings screen downloads; <see cref="RestoreAsync(System.Text.Json.Nodes.JsonNode)"/> is the restore it uploads.
 /// </summary>
 internal sealed class BackupWorld : IAsyncDisposable
 {
     public const string Api = WeirClient.Api;
     public const string Bundle = $"{Api}/suite/configuration-bundle";
     public const string Channels = $"{Api}/suite/notification-channels";
+    public const string BackupPassword = $"{Api}/suite/backup-password";
+    public const string Backups = $"{Api}/suite/configuration-backups";
     public const string Secret = "download-client-secret-31ac";
 
     private readonly TemporaryFolder _folders = new();
@@ -280,6 +282,27 @@ internal sealed class BackupWorld : IAsyncDisposable
 
     public Task<WeirResponse> RestoreAsync(JsonNode bundle) =>
         Admin.PutWithCsrfAsync(Bundle, new JsonObject { ["bundle"] = bundle.DeepClone() });
+
+    /// <summary>A restore that types the backup password a backup with locked secrets asks for.</summary>
+    public Task<WeirResponse> RestoreAsync(JsonNode bundle, string password) =>
+        Admin.PutWithCsrfAsync(Bundle, new JsonObject { ["bundle"] = bundle.DeepClone(), ["password"] = password });
+
+    /// <summary>Sets the backup password, typed twice as the Backups screen asks.</summary>
+    public async Task SetBackupPasswordAsync(string password)
+    {
+        var set = await Admin.PutWithCsrfAsync(BackupPassword, new JsonObject { ["password"] = password, ["confirm_password"] = password });
+        Assert.True(set.Status == HttpStatusCode.OK, set.ToString());
+    }
+
+    /// <summary>"Back up now", then the stored file as the Backups screen downloads it: its text, as written on disk.</summary>
+    public async Task<(JsonObject Item, string Text)> BackUpNowAsync()
+    {
+        var made = await Admin.PostWithCsrfAsync(Backups);
+        Assert.True(made.Status == HttpStatusCode.Created, made.ToString());
+        var download = await Admin.GetAsync($"{Backups}/{(long)made.Fields["id"]!}/download");
+        Assert.True(download.Status == HttpStatusCode.OK, download.ToString());
+        return (made.Fields, download.Text);
+    }
 
     /// <summary>The alerts as the Settings screen lists them, by label.</summary>
     public async Task<Dictionary<string, JsonObject>> AlertsAsync() =>

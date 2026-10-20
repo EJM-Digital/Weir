@@ -7,7 +7,11 @@ import type { MediaManagerConnection } from "../../lib/media-managers/media-mana
 import type { ProcessingLibrary } from "../../lib/processing/libraries-api";
 import type { LibrarySuggestions } from "../../lib/processing/library-setup-api";
 import { processingKeys } from "../../lib/processing/query-keys";
-import type { AppSettings } from "../../lib/settings/types";
+import type {
+  AppSettings,
+  UpdateSettingsOut,
+  UpdateStatus,
+} from "../../lib/settings/types";
 import { library } from "../settings/tabs/libraries/library-test-fixtures";
 import { SetupWizardPage } from "./setup-wizard-page";
 
@@ -25,7 +29,31 @@ export type WizardServerState = {
   suggestions: LibrarySuggestions;
   /** How many of the next settings saves the server refuses. */
   refuseSettingsSaves: number;
+  /** How this Weir was installed; only the Windows app lets its owner choose whether it checks for updates. */
+  installType: UpdateStatus["install_type"];
+  /** The update choices the tray follows: a new install checks for nothing. */
+  updateSettings: UpdateSettingsOut;
 };
+
+/** What the server says of updates on an install of this kind; the wizard reads only how it was installed. */
+function updateStatusOf(installType: string): UpdateStatus {
+  return {
+    current_version: "3.2.16",
+    install_type: installType,
+    status: installType === "windows" ? "off" : "up_to_date",
+    summary: "",
+    latest_version: null,
+    latest_name: null,
+    published_at: null,
+    release_url: null,
+    windows_installer_url: null,
+    docker_image: null,
+    docker_tag: null,
+    docker_update_command: null,
+    in_app_upgrade_supported: installType === "windows",
+    in_app_upgrade_summary: null,
+  };
+}
 
 export function pendingSettings(over: Partial<AppSettings> = {}): AppSettings {
   return {
@@ -110,6 +138,13 @@ export class WizardServer {
       managers: [],
       suggestions: { libraries: [], notes: [] },
       refuseSettingsSaves: 0,
+      installType: "source",
+      updateSettings: {
+        mode: "Auto",
+        check_on_startup: true,
+        check_interval_minutes: 60,
+        check_for_updates: false,
+      },
       ...over,
     };
     this.nextLibraryId =
@@ -160,6 +195,16 @@ export class WizardServer {
         return jsonReply(200, this.state.settings);
       case "PUT /api/v1/suite/settings":
         return this.saveSettings(body ?? {});
+      case "GET /api/v1/suite/update-status":
+        return jsonReply(200, updateStatusOf(this.state.installType));
+      case "GET /api/v1/suite/update-settings":
+        return jsonReply(200, this.state.updateSettings);
+      case "PUT /api/v1/suite/update-settings":
+        this.state.updateSettings = {
+          ...this.state.updateSettings,
+          ...body,
+        } as UpdateSettingsOut;
+        return jsonReply(200, this.state.updateSettings);
       case "GET /api/v1/media-managers/connections":
         return jsonReply(200, this.state.managers);
       case "GET /api/v1/processing/library-suggestions":

@@ -139,6 +139,8 @@ export function useUpdateSettingsMutation() {
     mutationFn: (body: UpdateSettingsPutBody) => putUpdateSettings(body),
     onSuccess: (data) => {
       qc.setQueryData(settingsKeys.updateSettings, data);
+      // Whether Weir looks for updates decides what the status says, and what the buttons offer.
+      void qc.invalidateQueries({ queryKey: settingsKeys.updateStatus });
     },
   });
 }

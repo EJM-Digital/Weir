@@ -153,10 +153,10 @@ to do). So in a combined round the Deluno session installs Weir with its picker,
 ```powershell
 # 1. Right after Deluno's suite installed Weir with its picker, before it sends any film (leave the Weir login file first):
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.18 -CommitSha <the 40-character SHA that will be tagged> -Phases Update
+  -Version 1.0.0-rc.19 -CommitSha <the 40-character SHA that will be tagged> -Phases Update
 # 2. After Deluno's suite has made its hand-offs (leave the Deluno key file and the Weir login file again):
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.18 -CommitSha <the same SHA> -Phases WithDeluno,Fresh
+  -Version 1.0.0-rc.19 -CommitSha <the same SHA> -Phases WithDeluno,Fresh
 ```
 
 Both invocations write into the same `artifacts/weir-scenarios-<version>-<short sha>/` folder (a full run has no time in its folder name, so its invocations merge), and the record merges every
@@ -219,7 +219,7 @@ account to read System > Logs with, so it is judged on the two log files, and th
 
 ```powershell
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.18 -CommitSha <the 40-character SHA> -Scenarios process-again
+  -Version 1.0.0-rc.19 -CommitSha <the 40-character SHA> -Scenarios process-again
 ```
 
 A Fresh scenario restores the clean checkpoint, then makes what it needs itself (`Initialize-FreshScenario`): it installs the build under test when
@@ -241,7 +241,7 @@ unless `fresh-install` is among the chosen scenarios, because nothing else would
 
 ```powershell
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.18 -CommitSha <the 40-character SHA> -Scenarios process-again -NoRestore
+  -Version 1.0.0-rc.19 -CommitSha <the 40-character SHA> -Scenarios process-again -NoRestore
 ```
 
 **Combining a full run with the re-runs of what it failed (the owner, 17 Oct 2026).** A full run that fails only on harness or
@@ -316,7 +316,7 @@ ticked list.
 ```bash
 gh api repos/EJM-Digital/Weir/statuses/<full sha> \
   -f state=success -f context=golden-path \
-  -f description="Weir scenarios passed: 13 of 13, 1.0.0-rc.18+abc1234" \
+  -f description="Weir scenarios passed: 13 of 13, 1.0.0-rc.19+abc1234" \
   -f target_url="https://github.com/EJM-Digital/Weir/issues/<n>#issuecomment-<id>"
 ```
 

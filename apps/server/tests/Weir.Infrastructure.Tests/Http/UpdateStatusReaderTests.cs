@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Weir.Core.Json;
 using Weir.Core.Updates;
 using Weir.Infrastructure.Http;
+using Weir.Infrastructure.Runtime;
 using Weir.Infrastructure.Settings;
 using Weir.Infrastructure.Tests.Platform;
 
@@ -19,7 +20,7 @@ public sealed class UpdateStatusReaderTests : IDisposable
 
     public UpdateStatusReaderTests()
     {
-        _reader = new UpdateStatusReader(new FailingCatalog(this), _fixture.Options, _fixture.Database, new SuiteSettingsStore(_fixture.Users), _log);
+        _reader = new UpdateStatusReader(new FailingCatalog(this), _fixture.Options, _fixture.Database, new SuiteSettingsStore(_fixture.Users), new UpdateFiles(_fixture.Options), _log);
     }
 
     public void Dispose() => _fixture.Dispose();

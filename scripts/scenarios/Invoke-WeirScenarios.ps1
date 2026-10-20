@@ -67,7 +67,7 @@
     (`gh workflow run ci.yml --repo <owner>/Weir --ref main -f version=<version>`, artifact weir-windows-<short sha>).
 
 .PARAMETER Version
-    The version under test, for example 1.0.0-rc.18. The installed build must report it.
+    The version under test, for example 1.0.0-rc.19. The installed build must report it.
 
 .PARAMETER CommitSha
     The full 40-character SHA of the commit that build was made from, and that the tag will point at. The status is set on it. The
@@ -108,7 +108,7 @@
     Where the status points. Defaults to the commit's page; pass the issue comment holding the record once it is posted.
 
 .EXAMPLE
-    ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe -Version 1.0.0-rc.18 -CommitSha <40 hex>
+    ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe -Version 1.0.0-rc.19 -CommitSha <40 hex>
 #>
 [CmdletBinding(SupportsShouldProcess)]
 param(

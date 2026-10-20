@@ -76,6 +76,7 @@ public sealed class FolderHandoffCompletionTests
     {
         using var fixture = new MediaManagerFixture();
         fixture.Http.Json(HttpMethod.Post, ReportPath, "{}", HttpStatusCode.Accepted);
+        fixture.DelunoListsNoLibraries();
         await fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
         var watched = fixture.Store.Home.Join("tv");
         const string folder = "Show.S01";
@@ -133,6 +134,7 @@ public sealed class FolderHandoffCompletionTests
     {
         using var fixture = new MediaManagerFixture();
         fixture.Http.Json(HttpMethod.Post, ReportPath, "{}", HttpStatusCode.Accepted);
+        fixture.DelunoListsNoLibraries();
         await fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
         var watched = fixture.Store.Home.Join("tv");
         const string folder = "Show.S02";
@@ -177,6 +179,7 @@ public sealed class FolderHandoffCompletionTests
     {
         using var fixture = new MediaManagerFixture();
         fixture.Http.Json(HttpMethod.Post, ReportPath, "{}", HttpStatusCode.Accepted);
+        fixture.DelunoListsNoLibraries();
         await fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
         var watched = fixture.Store.Home.Join("tv");
         const string folder = "Show.S03";
@@ -211,6 +214,7 @@ public sealed class FolderHandoffCompletionTests
     {
         using var fixture = new MediaManagerFixture();
         fixture.Http.Json(HttpMethod.Post, ReportPath, "{}", HttpStatusCode.Accepted);
+        fixture.DelunoListsNoLibraries();
         await fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
         var watched = fixture.Store.Home.Join("tv");
         const string folder = "Show.S04";
@@ -253,6 +257,7 @@ public sealed class FolderHandoffCompletionTests
     {
         using var fixture = new MediaManagerFixture();
         fixture.Http.Json(HttpMethod.Post, ReportPath, "{}", HttpStatusCode.Accepted);
+        fixture.DelunoListsNoLibraries();
         await fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
         var watched = fixture.Store.Home.Join("tv");
         const string folder = "Show.S06";
@@ -296,6 +301,7 @@ public sealed class FolderHandoffCompletionTests
     {
         using var fixture = new MediaManagerFixture();
         fixture.Http.Throw(HttpMethod.Post, ReportPath, new NotSupportedException("simulated crash during delivery"));
+        fixture.DelunoListsNoLibraries();
         await fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
         var watched = fixture.Store.Home.Join("movies");
         Directory.CreateDirectory(Path.Join(watched, "Film"));
@@ -316,6 +322,7 @@ public sealed class FolderHandoffCompletionTests
 
         // The manager starts answering; the heartbeat sends the durably-owed report exactly once.
         fixture.Http.Json(HttpMethod.Post, ReportPath, "{}", HttpStatusCode.Accepted);
+        fixture.DelunoListsNoLibraries();
         var answered = await fixture.Db(uow => fixture.Reporter.SendWaitingReportsAsync(uow, "deluno"));
 
         Assert.Equal(1, answered);
@@ -329,6 +336,7 @@ public sealed class FolderHandoffCompletionTests
     {
         using var fixture = new MediaManagerFixture();
         fixture.Http.Json(HttpMethod.Post, ReportPath, "{}", HttpStatusCode.Accepted);
+        fixture.DelunoListsNoLibraries();
         await fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
         var watched = fixture.Store.Home.Join("tv");
         const string folder = "Show.S07";
@@ -374,6 +382,7 @@ public sealed class FolderHandoffCompletionTests
     {
         using var fixture = new MediaManagerFixture();
         fixture.Http.Json(HttpMethod.Post, ReportPath, "{}", HttpStatusCode.Accepted);
+        fixture.DelunoListsNoLibraries();
         await fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
         var watched = fixture.Store.Home.Join("tv");
         const string folder = "Show.S08";

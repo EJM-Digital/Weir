@@ -5012,6 +5012,16 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/System/ReleaseBackupRestoreTests.cs",
           "name": "ReleaseBackupRestoreTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/BackupPasswordApiTests.cs",
+          "name": "Restoring_a_locked_backup_needs_its_password_and_a_wrong_one_changes_nothing"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/BackupPasswordTests.cs",
+          "name": "A_wrong_or_missing_password_refuses_plainly_and_changes_nothing"
         }
       ],
       "partial": [
@@ -5072,6 +5082,11 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/SetupLiveTests.cs",
           "name": "SetupLiveTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/BackupPasswordApiTests.cs",
+          "name": "A_backup_made_before_a_password_is_set_holds_no_secret_and_says_so_and_a_later_one_holds_them_locked"
         }
       ],
       "covers": [
@@ -61682,6 +61697,628 @@
       ],
       "covers": [
         "setting:env:WEIR_NOTIFICATION_STAND_IN_PORT"
+      ]
+    },
+    {
+      "id": "api.suite.put-suite-backup-password",
+      "area": "api",
+      "behaviour": "PUT /api/v1/suite/backup-password",
+      "kind": "API route",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/BackupPasswordApiTests.cs",
+          "name": "Setting_the_password_is_listed_as_set_and_the_password_is_not_echoed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/BackupPasswordApiTests.cs",
+          "name": "Two_different_passwords_are_refused_in_plain_words_and_none_is_set"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/BackupPasswordApiTests.cs",
+          "name": "A_weak_password_is_refused_with_the_reason"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/BackupPasswordApiTests.cs",
+          "name": "Setting_the_password_is_refused_to_an_operator_and_an_anonymous_caller_and_without_the_confirmation_token"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/BackupPasswordTests.cs",
+          "name": "A_password_that_is_too_weak_or_typed_differently_is_refused_in_plain_words_and_none_is_set"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/BackupPasswordTests.cs",
+          "name": "BackupPasswordAccessTests"
+        }
+      ],
+      "covers": [
+        "route:PUT /api/v1/suite/backup-password"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "system.backups.secrets-in-a-backup-are-locked-with-the-backup-password",
+      "area": "api",
+      "behaviour": "With a backup password set, a backup holds the connections' API keys, webhook secrets, download-client passwords and alert addresses only locked with a key made from it (Argon2id, AES-GCM); with none set, a backup holds no secret. The password is never stored, returned or logged",
+      "kind": "state",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Security/BackupSecretsSealTests.cs",
+          "name": "The_sealed_section_holds_no_secret_in_the_clear_and_names_how_it_was_made"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Security/BackupSecretsSealTests.cs",
+          "name": "A_section_that_was_changed_is_not_opened"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/ConfigurationBackupPasswordTests.cs",
+          "name": "A_backup_made_with_no_password_holds_no_secret_and_says_so"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/ConfigurationBackupPasswordTests.cs",
+          "name": "A_backup_made_with_a_password_holds_every_secret_only_locked_and_records_it"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/ConfigurationBackupPasswordTests.cs",
+          "name": "The_password_is_never_stored_and_only_a_key_locked_with_the_credentials_secret_is_kept"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/BackupPasswordApiTests.cs",
+          "name": "The_password_and_the_secrets_are_not_in_the_server_log"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/BackupPasswordTests.cs",
+          "name": "A_backup_with_no_password_holds_no_secret_and_says_so_and_a_password_changes_what_the_next_one_holds"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "system.backups.restoring-a-locked-backup-needs-its-password",
+      "area": "api",
+      "behaviour": "Restoring a backup that holds locked secrets needs the password it was made with; a wrong or missing one is refused in plain words before anything changes; a backup made before a password was set restores without one; changing the password leaves older backups on their own password",
+      "kind": "state",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/ConfigurationBackupPasswordTests.cs",
+          "name": "A_restore_with_the_right_password_brings_back_each_secret_on_a_switched_off_connection"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/ConfigurationBackupPasswordTests.cs",
+          "name": "A_restore_leaves_a_connection_this_install_already_has_exactly_as_it_is"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/ConfigurationBackupPasswordTests.cs",
+          "name": "A_wrong_password_refuses_plainly_and_changes_nothing"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/ConfigurationBackupPasswordTests.cs",
+          "name": "A_restore_with_no_password_asks_for_it_and_changes_nothing"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/ConfigurationBackupPasswordTests.cs",
+          "name": "A_backup_made_before_there_was_a_password_still_restores_with_or_without_one_typed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/ConfigurationBackupPasswordTests.cs",
+          "name": "Changing_the_password_locks_later_backups_with_the_new_one_and_leaves_older_ones_on_the_old_one"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/BackupPasswordApiTests.cs",
+          "name": "Restoring_a_locked_backup_needs_its_password_and_a_wrong_one_changes_nothing"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/BackupPasswordTests.cs",
+          "name": "A_locked_backup_restores_on_another_install_with_its_password_and_brings_the_secrets_with_it"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/BackupPasswordTests.cs",
+          "name": "A_wrong_or_missing_password_refuses_plainly_and_changes_nothing"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/BackupPasswordTests.cs",
+          "name": "A_backup_made_before_the_password_was_set_still_restores_with_no_password_and_brings_no_secret"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/BackupPasswordTests.cs",
+          "name": "Changing_the_password_locks_later_backups_with_the_new_one_and_leaves_older_ones_on_the_old_one"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "system.backups.an-install-that-already-backs-up-keeps-working-after-the-update",
+      "area": "api",
+      "behaviour": "An install that already backs up automatically keeps its backups after the update, takes the next one without secrets (and says so on System, Backups) until a backup password is set, and never writes a secret in the clear",
+      "kind": "migration",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/BackupPasswordMigrationTests.cs",
+          "name": "An_install_that_already_backs_up_keeps_its_backups_unsealed_and_has_no_password"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/ConfigurationBackupPasswordTests.cs",
+          "name": "A_backup_made_with_no_password_holds_no_secret_and_says_so"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/System/StartupSchemaTests.cs",
+          "name": "An_upgrade_first_saves_a_copy_of_the_database_at_its_old_revision"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-system.backups.set-or-change-the-backup-password-typed-twice",
+      "area": "web-system",
+      "behaviour": "Backup password panel: says whether one is set and what that means for the keys in a backup; sends the password typed twice; refuses two different ones without sending; shows the server's reason for a weak one; says older backups keep their password",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backup-password.test.tsx",
+          "name": "says that without a password the keys and passwords are left out, and offers to set one"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backup-password.test.tsx",
+          "name": "sends the password typed twice, then says it is set and that older backups keep theirs"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backup-password.test.tsx",
+          "name": "sends nothing when the two boxes differ, and says so"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backup-password.test.tsx",
+          "name": "shows the server's reason for a password that is too weak and keeps what was typed"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemBackupPasswordTests.cs",
+          "name": "SystemBackupPasswordTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-system.backups.restoring-a-locked-backup-asks-for-the-backup-password",
+      "area": "web-system",
+      "behaviour": "Restore confirmation for a backup with locked secrets asks for the backup password, keeps Replace settings off until one is typed, stays open on a wrong one and says so, and restores on the right one",
+      "kind": "screen action",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backup-password.test.tsx",
+          "name": "asks for the backup password, and will not restore until one is typed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backup-password.test.tsx",
+          "name": "sends the password with the backup and says it was restored"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backup-password.test.tsx",
+          "name": "stays open on a wrong password, says so, and restores once the right one is typed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/backups/backup-password.test.tsx",
+          "name": "does not ask for a password for a backup made without one"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemBackupPasswordTests.cs",
+          "name": "SystemBackupPasswordTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "settings.update.check-for-updates",
+      "area": "settings",
+      "behaviour": "check_for_updates (update-settings.json checkForUpdates): the Windows app looks for updates only when this is on; off on a new install; a file saved before the choice existed reads as on; an unreadable file reads as off; a PUT that leaves it out keeps it",
+      "kind": "setting",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_settings_start_as_Auto_and_a_saved_choice_is_what_the_next_read_returns"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "The_choice_to_check_for_updates_is_kept_until_it_is_changed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "A_settings_file_saved_before_the_choice_existed_reads_as_checking_for_updates"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "A_choice_to_check_for_updates_that_is_not_true_or_false_is_refused"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "A_saved_choice_reaches_the_tray_in_the_file_it_follows"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Updates/ReleasePayloadTests.cs",
+          "name": "A_new_install_and_a_file_that_cannot_be_read_check_for_nothing"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Updates/ReleasePayloadTests.cs",
+          "name": "A_file_saved_before_the_choice_existed_keeps_checking_and_a_saved_choice_is_followed"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/UpdateSettingsTests.cs",
+          "name": "No_file_checks_for_nothing_because_nobody_has_chosen_to"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/UpdateSettingsTests.cs",
+          "name": "A_file_saved_before_the_choice_existed_keeps_checking"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/UpdateSettingsTests.cs",
+          "name": "Switching_checking_off_is_kept"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/UpdateSettingsTests.cs",
+          "name": "A_file_that_cannot_be_read_checks_for_nothing_as_well_as_installing_nothing"
+        }
+      ],
+      "covers": [
+        "setting:UpdateSettings.CheckForUpdates"
+      ]
+    },
+    {
+      "id": "platform.update.a-new-install-starts-with-update-checking-off-an-upgrade-keeps-it",
+      "area": "platform",
+      "behaviour": "The Windows tray's first start with no update-settings.json: a new install (no database yet) saves update checking off and says so in its log; an install that has run before (its database is in the data folder, or where WEIR_DB_PATH puts it) saves it on, so an upgrade keeps checking; a start that finds the file leaves it alone; a file that cannot be saved is logged and the tray checks for nothing",
+      "kind": "install-update",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/UpdateSettingsTests.cs",
+          "name": "The_first_start_of_a_new_install_saves_checking_as_off_and_says_so"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/UpdateSettingsTests.cs",
+          "name": "The_first_start_of_an_upgrade_keeps_checking_because_Weir_has_run_here_before"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/UpdateSettingsTests.cs",
+          "name": "An_upgrade_with_its_database_somewhere_else_is_still_an_upgrade"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/UpdateSettingsTests.cs",
+          "name": "A_database_path_relative_to_the_home_is_looked_for_in_the_home"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/UpdateSettingsTests.cs",
+          "name": "A_start_that_finds_the_file_leaves_it_alone"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/UpdateSettingsTests.cs",
+          "name": "A_first_start_that_cannot_save_the_file_says_so_and_the_tray_checks_for_nothing"
+        },
+        {
+          "type": "node",
+          "file": "scripts/scenarios-in-ci-windows.test.mjs",
+          "name": "a fresh install whose Setup fails, whose server reports another version or whose tray misbehaves does not pass"
+        },
+        {
+          "type": "node",
+          "file": "scripts/scenarios-in-ci-windows.test.mjs",
+          "name": "a newer release in the feed does not replace the build under test, because a new install starts with update checking off"
+        }
+      ]
+    },
+    {
+      "id": "tray.tray.update-checking-off-stops-weirs-own-checks-and-downloads",
+      "area": "tray",
+      "behaviour": "While update checking is off the tray makes no check and no download of its own (start-up, the hourly check, the download after a check); a check or download a person asks for, from the menu or a button in System, goes ahead and the update it finds is not downloaded by itself; the choice is read again before every automatic one, so a change in System takes hold at once; the update menu item is unchanged; an update already downloaded can still be restarted into",
+      "kind": "tray",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
+          "name": "Weirs_own_check_and_download_look_at_nothing"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
+          "name": "A_check_asked_for_in_System_goes_ahead_and_the_update_it_finds_is_not_downloaded_by_itself"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
+          "name": "A_download_asked_for_in_System_goes_ahead_and_finds_the_update_first"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
+          "name": "A_check_chosen_from_the_menu_goes_ahead"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
+          "name": "A_download_chosen_from_the_menu_goes_ahead"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
+          "name": "The_menu_item_keeps_offering_a_check_while_checking_is_off"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
+          "name": "The_choice_is_read_again_before_every_automatic_check_so_a_change_in_System_takes_hold_at_once"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayUpdatesCheckingOffTests.cs",
+          "name": "An_update_downloaded_before_checking_was_switched_off_can_still_be_installed"
+        }
+      ]
+    },
+    {
+      "id": "api.suite.update-checking-off-asks-github-nothing-until-a-person-checks",
+      "area": "api",
+      "behaviour": "On a Windows install with update checking off, GET /suite/update-status answers status off without asking GitHub (a Docker or source install keeps asking) and the outlook shows a switch-on at once; POST /suite/check-update and /suite/download-update from a person still go to the tray; saving a change to the choice asks the tray for nothing; an update already downloaded can still be applied",
+      "kind": "failure-mode",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/UpdateCheckingOffTests.cs",
+          "name": "A_new_Windows_install_asks_GitHub_nothing_and_says_checking_is_off"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/UpdateCheckingOffTests.cs",
+          "name": "A_Windows_install_that_turned_checking_on_asks_GitHub"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/UpdateCheckingOffTests.cs",
+          "name": "A_Windows_install_whose_file_was_saved_before_the_choice_existed_keeps_checking"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/UpdateCheckingOffTests.cs",
+          "name": "A_Windows_install_that_switched_checking_off_asks_GitHub_nothing"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/UpdateCheckingOffTests.cs",
+          "name": "An_unreadable_settings_file_asks_GitHub_nothing"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/UpdateCheckingOffTests.cs",
+          "name": "A_Docker_or_source_install_has_no_choice_to_hold_and_keeps_looking"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/UpdateCheckingOffTests.cs",
+          "name": "Switching_checking_on_shows_in_the_outlook_at_once"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteUpdateRequestsApiTests.cs",
+          "name": "While_update_checking_is_off_a_check_or_a_download_a_person_asks_for_is_passed_to_the_tray"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteUpdateRequestsApiTests.cs",
+          "name": "An_update_already_downloaded_can_still_be_applied_while_update_checking_is_off"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteUpdateRequestsApiTests.cs",
+          "name": "Turning_update_checking_on_or_off_asks_the_tray_to_look_at_nothing"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteUpdateRequestsApiTests.cs",
+          "name": "Saving_the_update_settings_without_the_choice_leaves_it_as_it_was"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/SuiteUpdateRequestsApiTests.cs",
+          "name": "With_no_tray_running_the_choice_is_still_saved"
+        }
+      ]
+    },
+    {
+      "id": "web-system.about-tab.update-preferences-check-for-updates-switch-saves",
+      "area": "web-system",
+      "behaviour": "Update preferences: \"Check for updates\" switch saves as it is made; while it is off only the switch shows and the page says Weir looks for nothing; the status reads Off, and Check now and Download still apply",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/about-tab.states.test.tsx",
+          "name": "shows only the choice to check for updates while it is off, and says Weir looks for nothing"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/about-tab.states.test.tsx",
+          "name": "switches checking on with the other choices as they were, and then shows how updates are taken"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/about-tab.states.test.tsx",
+          "name": "switches checking off and keeps the other choices to send back"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemUpdatePreferencesTests.cs",
+          "name": "A_new_install_shows_only_the_choice_to_check_for_updates_and_switching_it_on_shows_the_rest"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/update-steps.test.ts",
+          "name": "offers Check now while update checking is off, since a person asking is never refused"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/update-steps.test.ts",
+          "name": "offers the download of an update the tray found when a person checked while update checking was off"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/about/update-steps.test.ts",
+          "name": "still offers only the restart for an update downloaded before checking was switched off"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemUpdateLiveTests.cs",
+          "name": "While_update_checking_is_off_Check_now_and_Download_update_still_go_to_the_tray"
+        }
+      ]
+    },
+    {
+      "id": "web-shell.first-run-setup-wizard.updates-step-asks-whether-to-check-for-updates",
+      "area": "web-shell",
+      "behaviour": "Setup wizard, Updates step (Windows app only): asks plainly whether to check for updates with the answer off on a new install, saves a changed answer before it marks setup done, saves nothing when the answer is unchanged or setup is skipped, and is not shown on a Docker or source install",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-updates.test.tsx",
+          "name": "asks plainly, with the answer off on a new install"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-updates.test.tsx",
+          "name": "saves a yes before it marks setup finished"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-updates.test.tsx",
+          "name": "leaves checking off when the answer is no, and saves nothing for it"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-updates.test.tsx",
+          "name": "saves a no to an answer that was yes, when setup is opened again"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-updates.test.tsx",
+          "name": "changes nothing about updates when setup is skipped"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-updates.test.tsx",
+          "name": "a %s install is not asked, and nothing about updates is read or saved"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "The_Windows_app_asks_whether_to_check_for_updates_starts_with_no_and_saves_a_yes_before_it_marks_setup_done"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SetupWizardTests.cs",
+          "name": "A_Docker_install_is_not_asked_whether_to_check_for_updates_and_saves_nothing_about_it"
+        }
       ]
     }
   ]

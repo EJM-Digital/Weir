@@ -44,6 +44,12 @@ public sealed partial class HandoffCompletionReporter
                 continue;
             }
 
+            if (await PlaceOwedReportAsync(uow, origin, target, pending, cancellationToken).ConfigureAwait(false) is not { } placed)
+            {
+                continue;
+            }
+
+            pending = placed;
             var (delivery, stillOwed) = await DeliverOwedReportAsync(uow, sourceKey, handoffId, target, pending, cancellationToken).ConfigureAwait(false);
             if (stillOwed)
             {
@@ -179,7 +185,8 @@ public sealed partial class HandoffCompletionReporter
         IReadOnlyList<string> Files,
         int Refusals = 0,
         DateTimeOffset? FirstRefusedAt = null,
-        DateTimeOffset? NotBefore = null)
+        DateTimeOffset? NotBefore = null,
+        Unplaced? Unplaced = null)
     {
         /// <summary>This report after the manager answered that it cannot take it yet: when it was first refused, and the earliest it is sent again.</summary>
         public PendingReport AfterRefusal(DateTimeOffset now, TimeSpan? retryAfter)
@@ -203,6 +210,11 @@ public sealed partial class HandoffCompletionReporter
                 json.Set("refusals", Refusals)
                     .Set("first_refused_at", WireTime(FirstRefusedAt))
                     .Set("not_before", WireTime(NotBefore));
+            }
+
+            if (Unplaced is not null)
+            {
+                json.Set("unplaced", new WireObject().Set("local_folder", Unplaced.LocalFolder).Set("state", Unplaced.State));
             }
 
             return WireJsonWriter.Dumps(json, WireJsonFormat.Compact);
@@ -237,7 +249,12 @@ public sealed partial class HandoffCompletionReporter
                     files,
                     dict.Get("refusals") is WireInteger refusals ? (int)refusals.Value : 0,
                     ReadTime(dict.Get("first_refused_at")),
-                    ReadTime(dict.Get("not_before")));
+                    ReadTime(dict.Get("not_before")),
+                    dict.Get("unplaced") is WireObject unplaced
+                        && HandoffOrigin.OptionalText(unplaced.Get("local_folder")) is { } localFolder
+                        && HandoffOrigin.OptionalText(unplaced.Get("state")) is { } state
+                        ? new Unplaced(localFolder, state)
+                        : null);
             }
             catch (WireJsonDecodeException)
             {

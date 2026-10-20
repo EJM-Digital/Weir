@@ -67,7 +67,7 @@ Click the tray icon to open Weir. Right-click it to pause processing, restart We
 
 Images are published to GitHub's container registry as `ghcr.io/ejm-digital/weir`, for 64-bit Intel/AMD (`amd64`) and ARM (`arm64`). That covers Synology, Unraid, TrueNAS, Linux servers and a Raspberry Pi running a 64-bit system.
 
-Use a version tag such as `1.0.0-rc.18`. Release candidates are published under their version tag only, so `latest` does not exist yet. It arrives with 1.0.0 and will follow stable releases. The tag has no `v`: the release `v1.0.0-rc.18` is the image `1.0.0-rc.18`. Newer ones are on the [Releases page](https://github.com/EJM-Digital/Weir/releases).
+Use a version tag such as `1.0.0-rc.19`. Release candidates are published under their version tag only, so `latest` does not exist yet. It arrives with 1.0.0 and will follow stable releases. The tag has no `v`: the release `v1.0.0-rc.19` is the image `1.0.0-rc.19`. Newer ones are on the [Releases page](https://github.com/EJM-Digital/Weir/releases).
 
 ### Getting the folders right first
 
@@ -99,7 +99,7 @@ docker run -d \
   -v "$(pwd)/weir-data:/data/weir" \
   -v /srv/media:/media \
   --restart unless-stopped \
-  ghcr.io/ejm-digital/weir:1.0.0-rc.18
+  ghcr.io/ejm-digital/weir:1.0.0-rc.19
 ```
 
 Then open `http://<server>:9347`, where `<server>` is the name or address of the machine running Docker.
@@ -115,7 +115,7 @@ This puts a qBittorrent container beside Weir, with the shared folder laid out a
 ```yaml
 services:
   weir:
-    image: ghcr.io/ejm-digital/weir:1.0.0-rc.18
+    image: ghcr.io/ejm-digital/weir:1.0.0-rc.19
     container_name: weir
     hostname: my-server
     ports:
@@ -231,7 +231,7 @@ Deluno and Weir are independent. Each works without the other, and neither conta
 
 **Windows.** Weir checks GitHub for new versions and tells you through the tray icon. **System › About** has the **Update mode**: **Auto**, **Download only** or **Notify only**. Updates need no administrator rights and keep your data. A release candidate is offered the next release candidate as well as stable releases, while a stable install is only ever offered stable ones. You can also download the new `Weir-win-Setup.exe` and run it: it installs over the old one.
 
-Before a big update, take a backup under **System › Backups**. It keeps a rolling copy of your configuration, and you can copy it somewhere else. To back up everything, quit Weir from the tray icon and copy `C:\ProgramData\Weir`.
+Before a big update, take a backup under **System › Backups**. It keeps a rolling copy of your configuration, and you can copy it somewhere else. Set a backup password there to include your connections' keys and passwords, locked so only the password opens them; without one they are left out. To back up everything, quit Weir from the tray icon and copy `C:\ProgramData\Weir`.
 
 To uninstall, use **Settings › Apps › Installed apps** in Windows. That removes the program and its shortcuts, and the **Weir** firewall rule if you run the uninstaller as administrator. Your data in `C:\ProgramData\Weir` stays, and so do the files in your media folders: Weir never deletes those by uninstalling. Delete `C:\ProgramData\Weir` yourself if you want it gone.
 
