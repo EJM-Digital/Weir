@@ -15,7 +15,7 @@ import { hostsRedirecting, hostsRestored } from "./scenarios-ci/github-redirect.
 import { loadHomes, scenariosOfShard } from "./scenarios-ci/homes.mjs";
 import { updateVersions } from "./scenarios-ci/update-versions.mjs";
 import { runScenarios } from "./scenarios-ci/run.mjs";
-import { SCENARIOS, activityProblems, expectPlainFailure, watchLogs } from "./scenarios-ci/windows-update.mjs";
+import { SCENARIOS, activityProblems, expectPlainFailure, revisionOfBuild, updateMigrates, watchLogs } from "./scenarios-ci/windows-update.mjs";
 import { packagesOf } from "./scenarios-ci/windows-shard.mjs";
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -197,6 +197,15 @@ test("a failure the page shows has to be a sentence of plain words that names wh
   assert.throws(() => expectPlainFailure("Checksum mismatch for Weir-1.0.1-full.nupkg", "download the update"), /plain words/);
   assert.throws(() => expectPlainFailure("Weir could not reach GitHub.", "download the update"), /could not download the update/);
   assert.throws(() => expectPlainFailure("Weir could not download the update: Velopack.Exception at Velopack.Sources.Get", "download the update"), /shows what the code threw/);
+});
+
+test("a new server saves a copy at the tray's start only when the build under test records a different schema revision than the release", () => {
+  assert.equal(updateMigrates("0085_backup_password", "0086_next"), true);
+  assert.equal(updateMigrates("0085_backup_password", "0085_backup_password"), false);
+});
+
+test("the build under test's schema revision is read from the migrations of this checkout", () => {
+  assert.match(revisionOfBuild(), /^[0-9]{4}_[a-z0-9_]+$/);
 });
 
 // --- the shard ------------------------------------------------------------------------------------------------------------------------
