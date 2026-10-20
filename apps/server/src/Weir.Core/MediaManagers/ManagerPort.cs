@@ -144,7 +144,8 @@ public sealed record ManagerDescription(
     IReadOnlyList<ManagerLibraryDescriptor> Libraries,
     string? Detail = null,
     IReadOnlySet<string>? AdvertisedCapabilities = null,
-    IReadOnlyList<ManagerDownloadClientDescriptor>? DownloadClients = null);
+    IReadOnlyList<ManagerDownloadClientDescriptor>? DownloadClients = null,
+    bool MayAnswerLater = false);
 
 /// <summary>A call to a manager failed.</summary>
 public class MediaManagerHttpException : Exception

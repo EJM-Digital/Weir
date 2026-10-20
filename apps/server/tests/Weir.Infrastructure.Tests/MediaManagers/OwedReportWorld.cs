@@ -42,6 +42,7 @@ internal sealed class OwedReportWorld : IDisposable
         var fixture = new MediaManagerFixture();
         var deluno = new FakeDelunoServer();
         var world = new OwedReportWorld(fixture, deluno);
+        fixture.DelunoListsNoLibraries();
         await fixture.AddConnectionAsync("deluno", deluno.BaseUrl, "k1");
         var watched = fixture.Store.Home.Join("watched");
         world._library = await fixture.LibraryAsync("movie", watched);
