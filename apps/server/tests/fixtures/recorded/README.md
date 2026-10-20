@@ -8,6 +8,7 @@ a request or a reply by hand. Where a case has no recording, the test says so an
 | `deluno/` | Weir's replies to Deluno | Deluno's own recorder (Weir #953) |
 | `deluno-side/` | Deluno's side of its talk with Weir | Deluno's recorder, copied byte for byte (`deluno-side/README.md`, Weir #971) |
 | `sonarr/`, `radarr/` | Weir's manager client code talking to a real Sonarr and a real Radarr, and the webhooks they post | `apps/server/tools/Weir.ArrRecorder`, run by `.github/workflows/record-arr.yml` (Weir #1013, #1014) |
+| `metadata-gateway/` | The public metadata service's answers to the read-only lookups Weir makes for posters and original languages (`metadata-gateway/README.md`) | read-only requests to the public service, 20 October 2026 (Weir #1142) |
 | `qbittorrent/`, `transmission/`, `deluge/`, `sabnzbd/`, `nzbget/` | Weir's download-client code talking to a real qBittorrent (4.x and 5.x), Transmission, Deluge, SABnzbd and NZBGet | `apps/server/tools/Weir.ClientRecorder`, run by `.github/workflows/record-clients.yml` (Weir #1015) |
 
 ## Sonarr and Radarr
