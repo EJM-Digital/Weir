@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Moves Weir to another owner or name in one commit, once the repository has been transferred or renamed
-// (docs/exec-plans/active/PLAN-ORG-MOVE.md):
+// (docs/archive/PLAN-ORG-MOVE.md):
 //
 //   node scripts/sweep-repository-owner.mjs --to <owner/name>
 //

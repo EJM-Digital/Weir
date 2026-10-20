@@ -120,11 +120,11 @@ public sealed class ProcessingEndpointsContractTests(ProcessingEndpointsContract
         var byPath = await admin.GetAsync(Files, ("path_contains", "Alpha"));
         Assert.Equal(["Alpha/alpha.mkv"], RelativePaths(byPath));
 
-        // within_days filters on when a scan last saw the file.
+        // within_days filters on when a scan last saw the file, or on when the file was recorded if no scan has: Show/S01E01.mkv was recorded just now.
         var recent = RelativePaths(await admin.GetAsync(Files, ("within_days", 30))).ToHashSet();
         Assert.Contains("Alpha/alpha.mkv", recent);
         Assert.DoesNotContain("Beta/beta.mkv", recent);
-        Assert.DoesNotContain("Show/S01E01.mkv", recent);
+        Assert.Contains("Show/S01E01.mkv", recent);
 
         var limited = (await admin.GetAsync(Files, ("limit", 1))).Fields;
         Assert.Equal(1, (int)limited["returned"]!);

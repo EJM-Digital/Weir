@@ -213,9 +213,9 @@ public sealed class UpdateFiles
     }
 
     /// <summary>Save the update settings: written whole to a unique scratch file, then renamed into place.</summary>
-    public WireObject WriteSettings(string mode, bool checkOnStartup, long checkIntervalMinutes)
+    public WireObject WriteSettings(string mode, bool checkOnStartup, long checkIntervalMinutes, bool checkForUpdates)
     {
-        var text = UpdateStatus.SerializeUpdateSettings(mode, checkOnStartup, checkIntervalMinutes);
+        var text = UpdateStatus.SerializeUpdateSettings(mode, checkOnStartup, checkIntervalMinutes, checkForUpdates);
         if (OperatingSystem.IsWindows())
         {
             // The file is written as Windows text, with CRLF newlines.
@@ -223,7 +223,7 @@ public sealed class UpdateFiles
         }
 
         ReplaceFile(SettingsFileName, Encoding.UTF8.GetBytes(text));
-        return RememberSettings(UpdateStatus.UpdateSettingsOut(mode, checkOnStartup, checkIntervalMinutes));
+        return RememberSettings(UpdateStatus.UpdateSettingsOut(mode, checkOnStartup, checkIntervalMinutes, checkForUpdates));
     }
 
     /// <summary>

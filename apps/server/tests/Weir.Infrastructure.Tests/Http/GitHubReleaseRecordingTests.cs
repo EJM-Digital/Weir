@@ -62,8 +62,12 @@ public sealed class GitHubReleaseRecordingTests
         var fromApi = await ClientOn(viaApi).FetchLatestAsync(Older, CancellationToken.None);
 
         Assert.Equal(fromFeed?.Version, fromApi?.Version);
-        Assert.Equal(fromFeed?.HtmlUrl, fromApi?.HtmlUrl);
+        Assert.Equal(ReleasePage(fromFeed?.HtmlUrl), ReleasePage(fromApi?.HtmlUrl));
     }
+
+    // The recording was made before Weir moved to its organisation, so the API's own link names the former owner while the feed's is built
+    // from where Weir lives now; GitHub redirects one to the other. Both must name the same release page.
+    private static string? ReleasePage(string? url) => url?[url.IndexOf("/releases/", StringComparison.Ordinal)..];
 
     [Fact]
     public async Task A_refusal_from_the_API_after_a_feed_that_cannot_be_read_is_a_failed_lookup()

@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { configure } from "@testing-library/react";
-import { afterEach } from "vitest";
+import { cleanup, configure } from "@testing-library/react";
+import { afterEach, vi } from "vitest";
 
 // A wait for the page (findBy, waitFor) ends the moment what it waits for is there. The time it is given is only a hang
 // guard for a test that is broken, so it is far longer than anything a working test needs. Library default is 1 second, and
@@ -8,6 +8,16 @@ import { afterEach } from "vitest";
 // to be ready: test/hang-guard.test.tsx. vite.config.ts gives the test itself longer still.
 const HANG_GUARD_MS = 15_000;
 configure({ asyncUtilTimeout: HANG_GUARD_MS });
+
+// A test file takes its stand-ins for browser globals (matchMedia, fetch) away in an afterEach, and Vitest runs that before the
+// afterEach Testing Library registers to unmount the page. For that moment the page is still up with the real globals under
+// it: an effect or request it has not yet made runs against jsdom's missing matchMedia or the refusing fetch below, and the
+// test fails (or the next one does). So taking the stand-ins away brings the page down first: test/unmount-before-unstub.test.tsx.
+const unstubAllGlobals = vi.unstubAllGlobals.bind(vi);
+vi.unstubAllGlobals = () => {
+  cleanup();
+  return unstubAllGlobals();
+};
 
 // A test must never reach the network: the answer would depend on what is listening on the test
 // host and how fast it replies. Tests stub the api module (or `fetch` itself) for what they need;

@@ -19,7 +19,7 @@ public sealed class UpdateOutlookTests : IDisposable
     public UpdateOutlookTests()
     {
         var files = new UpdateFiles(_fixture.Options);
-        _outlook = new UpdateOutlook(new UpdateStatusReader(_catalog, _fixture.Options, _fixture.Database, new SuiteSettingsStore(_fixture.Users), NullLogger<UpdateStatusReader>.Instance), files, _fixture.Clock, _changes);
+        _outlook = new UpdateOutlook(new UpdateStatusReader(_catalog, _fixture.Options, _fixture.Database, new SuiteSettingsStore(_fixture.Users), files, NullLogger<UpdateStatusReader>.Instance), files, _fixture.Clock, _changes);
     }
 
     public void Dispose() => _fixture.Dispose();

@@ -60,7 +60,7 @@ function Hero(): ReactNode {
           </Link>
           <Link
             className="button button--secondary button--lg"
-            to="https://github.com/jampat000/Weir">
+            to="https://github.com/EJM-Digital/Weir">
             GitHub
           </Link>
         </div>

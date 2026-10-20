@@ -3,12 +3,12 @@
 This takes about five minutes. You need Windows 10 or 11 (64-bit) and a normal user account. You do not
 need administrator rights to install.
 
-Weir is in its release-candidate stage, so the installer is on the [Releases page](https://github.com/jampat000/Weir/releases)
+Weir is in its release-candidate stage, so the installer is on the [Releases page](https://github.com/EJM-Digital/Weir/releases)
 marked **Pre-release**. It is not the "Latest" release, so use the list, not the Latest button.
 
 ## 1. Download the installer
 
-1. Open the [Releases page](https://github.com/jampat000/Weir/releases).
+1. Open the [Releases page](https://github.com/EJM-Digital/Weir/releases).
 2. Pick the newest release at the top.
 3. Under **Assets**, download **`Weir-win-Setup.exe`**.
 
@@ -109,8 +109,13 @@ your home, put it behind a reverse proxy with HTTPS. See the [reverse proxy guid
 
 ## Update Weir
 
-Weir checks GitHub for new versions and tells you through the tray icon. Under **System › About**, **Update
-mode** decides what happens:
+A new install does not check for updates. Setup asks whether to, and the answer can be changed at any time under
+**System › About**, **Check for updates**. While it is off, Weir does not look on its own and does not download anything on its own. **Check now**
+(in System › About or the tray menu) and a download you then ask for still work. An install that was already checking before this
+choice existed keeps checking.
+
+When it is on, Weir checks GitHub for new versions and tells you through the tray icon. Under **System › About**,
+**Update mode** decides what happens:
 
 - **Auto**: downloads and installs by itself (the default).
 - **Download only**: downloads, then waits for you to choose **Restart to update**.
@@ -164,4 +169,4 @@ network without a prompt, are in the [Windows installer reference](../docs-site/
   **Restart Weir** to try again; `tray-host.log` says why each try failed (it hung in a step, or it stopped with a code), and
   `server-host.log` has what the server printed. If Weir starts only on a retry it still works, and System › Logs shows a warning that it needed one.
 - **Anything else.** Read `C:\ProgramData\Weir\tray-host.log` and **System › Logs**, then
-  [open an issue](https://github.com/jampat000/Weir/issues) and include what they say.
+  [open an issue](https://github.com/EJM-Digital/Weir/issues) and include what they say.

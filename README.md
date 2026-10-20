@@ -12,7 +12,7 @@ It runs on Windows and in Docker. It is for one person, and your files and setti
 > rough edges, and please do not point it at the only copy of anything you cannot
 > replace. Weir works on a copy of each file and only replaces the original once the
 > new one checks out, and everything it does is written to Activity. If something looks
-> wrong, confusing or just ugly, [tell us](https://github.com/jampat000/Weir/issues/new/choose).
+> wrong, confusing or just ugly, [tell us](https://github.com/EJM-Digital/Weir/issues/new/choose).
 > That is the most useful thing you can do right now, and every report gets read.
 
 <img src="docs/assets/screenshots/dashboard-live.png" width="49%"> <img src="docs/assets/screenshots/dashboard-system.png" width="49%">
@@ -46,7 +46,7 @@ You can also set schedules, so a large library is cleaned overnight, and send al
 
 You need 64-bit Windows 10 or 11. You do not need administrator rights to install Weir.
 
-1. Download `Weir-win-Setup.exe` from [Releases](https://github.com/jampat000/Weir/releases). Weir is a pre-release for now, and GitHub's "Latest" button skips pre-releases, so pick the newest release from the list. Beside the installer you will find `SHA256SUMS.txt`, if you want to check the download.
+1. Download `Weir-win-Setup.exe` from [Releases](https://github.com/EJM-Digital/Weir/releases). Weir is a pre-release for now, and GitHub's "Latest" button skips pre-releases, so pick the newest release from the list. Beside the installer you will find `SHA256SUMS.txt`, if you want to check the download.
 2. Run it. Weir is not code-signed, so Windows SmartScreen may say "Windows protected your PC". Choose **More info**, then **Run anyway**. That warning means the publisher is not verified, not that anything is wrong with the file. Your browser may also say the file "isn't commonly downloaded". Choose **Keep**.
 3. Weir installs for your user account and starts. Its icon appears in the system tray, next to the clock.
 4. **Weir asks for a port.** Keep **9347** unless something else uses it.
@@ -65,9 +65,9 @@ Click the tray icon to open Weir. Right-click it to pause processing, restart We
 
 ## Install with Docker
 
-Images are published to GitHub's container registry as `ghcr.io/jampat000/weir`, for 64-bit Intel/AMD (`amd64`) and ARM (`arm64`). That covers Synology, Unraid, TrueNAS, Linux servers and a Raspberry Pi running a 64-bit system.
+Images are published to GitHub's container registry as `ghcr.io/ejm-digital/weir`, for 64-bit Intel/AMD (`amd64`) and ARM (`arm64`). That covers Synology, Unraid, TrueNAS, Linux servers and a Raspberry Pi running a 64-bit system.
 
-Use a version tag such as `1.0.0-rc.18`. Release candidates are published under their version tag only, so `latest` does not exist yet. It arrives with 1.0.0 and will follow stable releases. The tag has no `v`: the release `v1.0.0-rc.18` is the image `1.0.0-rc.18`. Newer ones are on the [Releases page](https://github.com/jampat000/Weir/releases).
+Use a version tag such as `1.0.0-rc.19`. Release candidates are published under their version tag only, so `latest` does not exist yet. It arrives with 1.0.0 and will follow stable releases. The tag has no `v`: the release `v1.0.0-rc.19` is the image `1.0.0-rc.19`. Newer ones are on the [Releases page](https://github.com/EJM-Digital/Weir/releases).
 
 ### Getting the folders right first
 
@@ -99,7 +99,7 @@ docker run -d \
   -v "$(pwd)/weir-data:/data/weir" \
   -v /srv/media:/media \
   --restart unless-stopped \
-  ghcr.io/jampat000/weir:1.0.0-rc.18
+  ghcr.io/ejm-digital/weir:1.0.0-rc.19
 ```
 
 Then open `http://<server>:9347`, where `<server>` is the name or address of the machine running Docker.
@@ -115,7 +115,7 @@ This puts a qBittorrent container beside Weir, with the shared folder laid out a
 ```yaml
 services:
   weir:
-    image: ghcr.io/jampat000/weir:1.0.0-rc.18
+    image: ghcr.io/ejm-digital/weir:1.0.0-rc.19
     container_name: weir
     hostname: my-server
     ports:
@@ -196,7 +196,7 @@ Your download client finishes into Weir's watched folder, Weir writes the cleane
 | Remote Path | `/media/downloads/complete/movies/` |
 | Local Path | `/media/weir/movies/` |
 
-Weir's workflow page shows the exact mapping to add, with copy buttons, and **Check again** reads Radarr's settings (it never changes them) to confirm. Weir never deletes the original download for a workflow linked to Sonarr or Radarr, so a torrent keeps seeding. Sonarr works the same way with a `tv` folder. The [media managers guide](https://jampat000.github.io/Weir/docs/guides/media-managers) has all of it.
+Weir's workflow page shows the exact mapping to add, with copy buttons, and **Check again** reads Radarr's settings (it never changes them) to confirm. Weir never deletes the original download for a workflow linked to Sonarr or Radarr, so a torrent keeps seeding. Sonarr works the same way with a `tv` folder. The [media managers guide](https://ejm-digital.github.io/Weir/docs/guides/media-managers) has all of it.
 
 ## Reaching Weir from another computer, safely
 
@@ -207,7 +207,7 @@ Weir listens only on the computer it runs on until you allow more, because a fre
 
 Weir has one admin account protected by your password, so treat it like the admin page of a router. Choose a long, unique password. Do not forward its port from your router to the internet.
 
-If you want to reach it away from home, the safest options are a VPN you already trust (WireGuard, Tailscale and the like), or a reverse proxy that serves it over HTTPS. The [reverse proxy guide](https://jampat000.github.io/Weir/docs/deployment/reverse-proxy) shows how.
+If you want to reach it away from home, the safest options are a VPN you already trust (WireGuard, Tailscale and the like), or a reverse proxy that serves it over HTTPS. The [reverse proxy guide](https://ejm-digital.github.io/Weir/docs/deployment/reverse-proxy) shows how.
 
 ## Working with Deluno
 
@@ -231,7 +231,7 @@ Deluno and Weir are independent. Each works without the other, and neither conta
 
 **Windows.** Weir checks GitHub for new versions and tells you through the tray icon. **System › About** has the **Update mode**: **Auto**, **Download only** or **Notify only**. Updates need no administrator rights and keep your data. A release candidate is offered the next release candidate as well as stable releases, while a stable install is only ever offered stable ones. You can also download the new `Weir-win-Setup.exe` and run it: it installs over the old one.
 
-Before a big update, take a backup under **System › Backups**. It keeps a rolling copy of your configuration, and you can copy it somewhere else. To back up everything, quit Weir from the tray icon and copy `C:\ProgramData\Weir`.
+Before a big update, take a backup under **System › Backups**. It keeps a rolling copy of your configuration, and you can copy it somewhere else. Set a backup password there to include your connections' keys and passwords, locked so only the password opens them; without one they are left out. To back up everything, quit Weir from the tray icon and copy `C:\ProgramData\Weir`.
 
 To uninstall, use **Settings › Apps › Installed apps** in Windows. That removes the program and its shortcuts, and the **Weir** firewall rule if you run the uninstaller as administrator. Your data in `C:\ProgramData\Weir` stays, and so do the files in your media folders: Weir never deletes those by uninstalling. Delete `C:\ProgramData\Weir` yourself if you want it gone.
 
@@ -254,31 +254,31 @@ Keep the copy somewhere other than the same disk, together with `WEIR_CREDENTIAL
 
 ## Getting help
 
-- **Something broke, looks wrong, or is confusing:** open an [issue](https://github.com/jampat000/Weir/issues/new/choose) with the bug report form. Say what you did, what you expected and what happened. Lines from **System › Logs**, or `docker logs weir`, help a great deal. Leave out API keys and passwords.
+- **Something broke, looks wrong, or is confusing:** open an [issue](https://github.com/EJM-Digital/Weir/issues/new/choose) with the bug report form. Say what you did, what you expected and what happened. Lines from **System › Logs**, or `docker logs weir`, help a great deal. Leave out API keys and passwords.
 - **A security problem:** please do not post details in a public issue. [SECURITY.md](SECURITY.md) says how to report it privately.
-- **What changed in each version:** the [release notes](https://github.com/jampat000/Weir/releases) and the [changelog](CHANGELOG.md).
+- **What changed in each version:** the [release notes](https://github.com/EJM-Digital/Weir/releases) and the [changelog](CHANGELOG.md).
 - **Stuck:** the "If something goes wrong" sections of the [Windows guide](docs/install-windows.md#if-something-goes-wrong) and the [Docker guide](docs/install-docker.md#if-something-goes-wrong) cover the usual first checks, and [SUPPORT.md](SUPPORT.md) lists what else helps.
 
 ## More documentation
 
-- [Documentation site](https://jampat000.github.io/Weir/): quickstart, installing, reverse proxies, security and the API
+- [Documentation site](https://ejm-digital.github.io/Weir/): quickstart, installing, reverse proxies, security and the API
 - [Windows guide](docs/install-windows.md) and [Docker guide](docs/install-docker.md): installing, updating and removing, step by step
 - [Docker reference](docker/README.md): every variable, GPUs, file ownership, network shares
-- [Connecting Deluno, Sonarr and Radarr](https://jampat000.github.io/Weir/docs/guides/media-managers)
-- [How Weir keeps your files safe](https://jampat000.github.io/Weir/docs/guides/file-lifecycle)
+- [Connecting Deluno, Sonarr and Radarr](https://ejm-digital.github.io/Weir/docs/guides/media-managers)
+- [How Weir keeps your files safe](https://ejm-digital.github.io/Weir/docs/guides/file-lifecycle)
 - [Architecture](ARCHITECTURE.md)
 - [Changelog](CHANGELOG.md) and [release notes](docs/release-notes/)
 
 ## Privacy
 
-Weir has no analytics and sends no usage reports. It talks only to the media managers and download clients you connect, to GitHub to check for new versions, and to Deluno's metadata service to find posters and each title's original language. That service needs no account. Weir sends it only the title and year it read from a file's name, or the ids your media manager already gave it, never a file name, a folder path, your library or anything about you. Your browser only ever talks to Weir, and posters are kept on your machine. See [Posters](https://jampat000.github.io/Weir/docs/guides/posters) for how it works, including how to switch lookups off. Keys for your connections are kept in Weir's own database, and `WEIR_CREDENTIALS_SECRET` encrypts them.
+Weir has no analytics and sends no usage reports. It talks only to the media managers and download clients you connect, to GitHub to check for new versions, and to Deluno's metadata service to find posters and each title's original language. That service needs no account. Weir sends it only the title and year it read from a file's name, or the ids your media manager already gave it, never a file name, a folder path, your library or anything about you. Your browser only ever talks to Weir, and posters are kept on your machine. See [Posters](https://ejm-digital.github.io/Weir/docs/guides/posters) for how it works, including how to switch lookups off. Keys for your connections are kept in Weir's own database, and `WEIR_CREDENTIALS_SECRET` encrypts them.
 
 ## Development
 
 For people building Weir from source. You need the [.NET 10 SDK](https://dotnet.microsoft.com/download) and [Node.js 24](https://nodejs.org).
 
 ```bash
-git clone https://github.com/jampat000/Weir.git
+git clone https://github.com/EJM-Digital/Weir.git
 cd Weir/apps/web
 npm ci
 npm run dev

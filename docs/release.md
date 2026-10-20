@@ -153,10 +153,10 @@ to do). So in a combined round the Deluno session installs Weir with its picker,
 ```powershell
 # 1. Right after Deluno's suite installed Weir with its picker, before it sends any film (leave the Weir login file first):
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.18 -CommitSha <the 40-character SHA that will be tagged> -Phases Update
+  -Version 1.0.0-rc.19 -CommitSha <the 40-character SHA that will be tagged> -Phases Update
 # 2. After Deluno's suite has made its hand-offs (leave the Deluno key file and the Weir login file again):
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.18 -CommitSha <the same SHA> -Phases WithDeluno,Fresh
+  -Version 1.0.0-rc.19 -CommitSha <the same SHA> -Phases WithDeluno,Fresh
 ```
 
 Both invocations write into the same `artifacts/weir-scenarios-<version>-<short sha>/` folder (a full run has no time in its folder name, so its invocations merge), and the record merges every
@@ -192,8 +192,8 @@ cannot pass without the real-Deluno scenarios. A failure, or a run cut short aft
 
 | Phase | Scenario | What it proves |
 | --- | --- | --- |
-| Update | An update over the Weir Deluno installed | The build under test installed with `Setup --silent` over the running picker-installed Weir brings it back by itself on the right version and commit; the account, a workflow and every Activity entry from before (all of them, paged, unchanged) survive; the copy saved before the update exists when the database changed; the updated server saves the tray's requested copy; a film is cleaned afterwards. |
-| WithDeluno | Workflows set up from Deluno | With the key from the key file, Weir's workflows are linked to the Deluno in the VM with its folders and the folder chain is ready. |
+| Update | An update over the Weir Deluno installed | Once Deluno's picker, if its install log shows one at work, has said it is done, the build under test installed with `Setup --silent` over the running picker-installed Weir brings it back by itself on the right version and commit; the account, a workflow and every Activity entry from before (all of them, paged, unchanged) survive; the copy saved before the update exists when the database changed; the updated server saves the tray's requested copy; a film is cleaned afterwards. |
+| WithDeluno | Workflows set up from Deluno | With the key from the key file, Weir's workflows are linked to the Deluno in the VM with its folders and the folder chain is ready; not applicable while no library in that Deluno is set to refine before import. |
 | WithDeluno | A film Deluno handed over | Every completed film hand-off Deluno made after the build under test began answering shows in Weir as processed with Deluno's imported answer recorded against it. |
 | WithDeluno | A release with a small extra | A release the build under test took, whose folder in the download client still holds a film and a video file under the workflow's minimum size: the film is cleaned, the extra is still in the client's folder, Weir wrote nothing for it, and Weir never saw it or left it alone as skipped; nothing in the workflow is failed or rejected. Deluno leaves such an extra out of the hand-off, and must leave the release in the client's completed folder until the scenarios have run. |
 | WithDeluno | A hand-off sent again from Deluno | Deluno's own send-again of an imported outcome really sends it (a new attempt) and is recorded delivered or settled, never refused, and Weir keeps its one answer and raises no failure. |
@@ -219,7 +219,7 @@ account to read System > Logs with, so it is judged on the two log files, and th
 
 ```powershell
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.18 -CommitSha <the 40-character SHA> -Scenarios process-again
+  -Version 1.0.0-rc.19 -CommitSha <the 40-character SHA> -Scenarios process-again
 ```
 
 A Fresh scenario restores the clean checkpoint, then makes what it needs itself (`Initialize-FreshScenario`): it installs the build under test when
@@ -241,7 +241,7 @@ unless `fresh-install` is among the chosen scenarios, because nothing else would
 
 ```powershell
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.18 -CommitSha <the 40-character SHA> -Scenarios process-again -NoRestore
+  -Version 1.0.0-rc.19 -CommitSha <the 40-character SHA> -Scenarios process-again -NoRestore
 ```
 
 **Combining a full run with the re-runs of what it failed (the owner, 17 Oct 2026).** A full run that fails only on harness or
@@ -280,16 +280,16 @@ root cause is found (the owner, 11 Oct 2026), and a failure is fixed with a test
   the release the commit is meant to become:
 
   ```bash
-  gh workflow run ci.yml --repo jampat000/Weir --ref main -f version=1.0.0-rc.4
+  gh workflow run ci.yml --repo EJM-Digital/Weir --ref main -f version=1.0.0-rc.4
   ```
 
   `--ref` takes a branch or a tag; for a commit that no branch points at, push a branch at it first.
 - Find the run, check it is for the commit you mean, and download it:
 
   ```bash
-  gh run list --repo jampat000/Weir --workflow ci.yml --commit <full sha> --json databaseId,event,conclusion
-  gh run view <run id> --repo jampat000/Weir --json headSha
-  gh run download <run id> --repo jampat000/Weir -n weir-windows-<short sha> -D weir-build
+  gh run list --repo EJM-Digital/Weir --workflow ci.yml --commit <full sha> --json databaseId,event,conclusion
+  gh run view <run id> --repo EJM-Digital/Weir --json headSha
+  gh run download <run id> --repo EJM-Digital/Weir -n weir-windows-<short sha> -D weir-build
   ```
 
 - Given a version, the build reports that version with the commit as build metadata, such as
@@ -314,10 +314,10 @@ ticked list.
 `Invoke-WeirScenarios.ps1` does at the end of the run, with a link to the evidence:
 
 ```bash
-gh api repos/jampat000/Weir/statuses/<full sha> \
+gh api repos/EJM-Digital/Weir/statuses/<full sha> \
   -f state=success -f context=golden-path \
-  -f description="Weir scenarios passed: 13 of 13, 1.0.0-rc.18+abc1234" \
-  -f target_url="https://github.com/jampat000/Weir/issues/<n>#issuecomment-<id>"
+  -f description="Weir scenarios passed: 13 of 13, 1.0.0-rc.19+abc1234" \
+  -f target_url="https://github.com/EJM-Digital/Weir/issues/<n>#issuecomment-<id>"
 ```
 
 A run that fails is recorded the same way with `state=failure`. The newest status for the context is the one that
@@ -362,7 +362,7 @@ breaking changes.
 
 ### Which version an install is offered
 
-Weir's own update check reads the public release feed (`https://github.com/jampat000/Weir/releases.atom`) and
+Weir's own update check reads the public release feed (`https://github.com/EJM-Digital/Weir/releases.atom`) and
 offers the newest release by SemVer precedence, skipping drafts. An install running a pre-release is offered
 pre-releases and stable releases; an install running a stable version is offered stable releases only. The feed
 has no pre-release flag, so a release is a pre-release when its tag has a pre-release suffix (`-rc.1`). The
@@ -630,10 +630,10 @@ few seconds to listen for the network), with no prompt of any kind. From a proce
 also creates the firewall rule; it never tries to elevate itself. An unelevated caller still gets LAN access
 turned on and a zero exit code, plus a log line saying the rule was not created, so Windows Firewall decides
 whether other devices get through. Full detail:
-[Windows Installer → Firewall and LAN access](https://github.com/jampat000/Weir/blob/main/docs-site/docs/deployment/windows.md#firewall-and-lan-access).
+[Windows Installer → Firewall and LAN access](https://github.com/EJM-Digital/Weir/blob/main/docs-site/docs/deployment/windows.md#firewall-and-lan-access).
 
 Full detail, including `WEIR_PORT` as an alternative to `--port`: [Windows Installer → Installing
-Weir from another program](https://github.com/jampat000/Weir/blob/main/docs-site/docs/deployment/windows.md).
+Weir from another program](https://github.com/EJM-Digital/Weir/blob/main/docs-site/docs/deployment/windows.md).
 
 ## Docker
 
@@ -652,11 +652,11 @@ The Docker image build and Docker smoke test run on GitHub infrastructure.
 Pull and run:
 
 ```bash
-docker pull ghcr.io/jampat000/weir:1.0.0-rc.1
+docker pull ghcr.io/ejm-digital/weir:1.0.0-rc.1
 docker run --rm \
   -p 9347:9347 \
   -v weir-data:/data/weir \
-  ghcr.io/jampat000/weir:1.0.0-rc.1
+  ghcr.io/ejm-digital/weir:1.0.0-rc.1
 ```
 
 Or use the root `compose.yaml`:

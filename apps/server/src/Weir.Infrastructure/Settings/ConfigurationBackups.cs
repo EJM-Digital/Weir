@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.Data.Sqlite;
 using Weir.Core.Configuration;
 using Weir.Core.Json;
+using Weir.Core.Security;
 using Weir.Core.Settings;
 using Weir.Core.Time;
 using Weir.Infrastructure.Activity;
@@ -11,7 +12,7 @@ using Weir.Infrastructure.Sqlite;
 namespace Weir.Infrastructure.Settings;
 
 /// <summary>A <c>suite_configuration_backup</c> row.</summary>
-public sealed record ConfigurationBackupRecord(long Id, Timestamp CreatedAt, string FileName, long SizeBytes, BackupSource? MadeBy);
+public sealed record ConfigurationBackupRecord(long Id, Timestamp CreatedAt, string FileName, long SizeBytes, BackupSource? MadeBy, bool SecretsSealed = false);
 
 /// <summary>Who made a backup: the schedule, or a person pressing "Back up now".</summary>
 public enum BackupSource
@@ -47,17 +48,19 @@ public sealed class ConfigurationBackups
     private readonly ITimeZoneResolver _zones;
     private readonly SuiteSettingsStore _suiteSettings;
     private readonly ConfigurationBundleStore _bundle;
+    private readonly BackupPasswordStore _passwords;
     private readonly DataChangePublisher? _changes;
 
     /// <summary>Once a snapshot commits, <paramref name="changes"/> tells every open screen that the backups changed.</summary>
     public ConfigurationBackups(
-        WeirOptions options, TimeProvider time, ITimeZoneResolver zones, SuiteSettingsStore suiteSettings, ConfigurationBundleStore bundle, DataChangePublisher? changes = null)
+        WeirOptions options, TimeProvider time, ITimeZoneResolver zones, SuiteSettingsStore suiteSettings, ConfigurationBundleStore bundle, BackupPasswordStore passwords, DataChangePublisher? changes = null)
     {
         _options = options;
         _time = time;
         _zones = zones;
         _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
         _bundle = bundle ?? throw new ArgumentNullException(nameof(bundle));
+        _passwords = passwords ?? throw new ArgumentNullException(nameof(passwords));
         _changes = changes;
     }
 
@@ -68,7 +71,7 @@ public sealed class ConfigurationBackups
     {
         ArgumentNullException.ThrowIfNull(uow);
         return uow.QueryAsync(
-            "SELECT id, created_at, file_name, size_bytes, made_by FROM suite_configuration_backup " +
+            "SELECT id, created_at, file_name, size_bytes, made_by, secrets_sealed FROM suite_configuration_backup " +
             "ORDER BY suite_configuration_backup.created_at DESC, suite_configuration_backup.id DESC",
             Read);
     }
@@ -81,7 +84,8 @@ public sealed class ConfigurationBackups
             .Set("created_at", row.CreatedAt.ToWireText())
             .Set("file_name", row.FileName)
             .Set("size_bytes", row.SizeBytes)
-            .Set("made_by", row.MadeBy?.ToText());
+            .Set("made_by", row.MadeBy?.ToText())
+            .Set("secrets_sealed", row.SecretsSealed);
     }
 
     /// <summary>
@@ -92,7 +96,7 @@ public sealed class ConfigurationBackups
     {
         ArgumentNullException.ThrowIfNull(uow);
         var row = await uow.QuerySingleAsync(
-            "SELECT id, created_at, file_name, size_bytes, made_by FROM suite_configuration_backup WHERE suite_configuration_backup.id = $id",
+            "SELECT id, created_at, file_name, size_bytes, made_by, secrets_sealed FROM suite_configuration_backup WHERE suite_configuration_backup.id = $id",
             Read,
             ("$id", backupId)).ConfigureAwait(false) ?? throw new WireValueException("Configuration snapshot not found.");
         if (PurePathName(row.FileName) != row.FileName || !row.FileName.StartsWith("suite-configuration-", StringComparison.Ordinal))
@@ -124,6 +128,7 @@ public sealed class ConfigurationBackups
         System.IO.Directory.CreateDirectory(root);
         var now = Timestamp.UtcNow(_time);
         var bundle = await _bundle.BuildAsync(uow).ConfigureAwait(false);
+        var sealedSecrets = await SealSecretsAsync(uow, bundle).ConfigureAwait(false);
         var stamp = now.Clock.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
         var fileName = $"suite-configuration-{stamp}.json";
         var path = Path.Join(root, fileName);
@@ -136,14 +141,31 @@ public sealed class ConfigurationBackups
         var payload = Encoding.UTF8.GetBytes(WireJsonWriter.Dumps(bundle, WireJsonFormat.IndentedSorted));
         await File.WriteAllBytesAsync(path, payload).ConfigureAwait(false);
         var id = await uow.ExecuteScalarWriteAsync(
-            "INSERT INTO suite_configuration_backup (created_at, file_name, size_bytes, made_by) VALUES ($created, $name, $size, $madeBy) RETURNING id",
+            "INSERT INTO suite_configuration_backup (created_at, file_name, size_bytes, made_by, secrets_sealed) VALUES ($created, $name, $size, $madeBy, $sealed) RETURNING id",
             ("$created", now.ToSqlite()),
             ("$name", fileName),
             ("$size", payload.LongLength),
-            ("$madeBy", madeBy.ToText())).ConfigureAwait(false);
+            ("$madeBy", madeBy.ToText()),
+            ("$sealed", sealedSecrets ? 1 : 0)).ConfigureAwait(false);
         await PruneAsync(uow).ConfigureAwait(false);
         _changes?.PublishOnCommit(uow, DataTopics.Backups);
-        return new ConfigurationBackupRecord(Convert.ToInt64(id, CultureInfo.InvariantCulture), now, fileName, payload.LongLength, madeBy);
+        return new ConfigurationBackupRecord(Convert.ToInt64(id, CultureInfo.InvariantCulture), now, fileName, payload.LongLength, madeBy, sealedSecrets);
+    }
+
+    /// <summary>
+    /// With a backup password set, adds the connections' secrets to <paramref name="bundle"/> sealed with its key. With none, the backup
+    /// leaves them out, as it always has: a secret is never written in the clear.
+    /// </summary>
+    private async Task<bool> SealSecretsAsync(UnitOfWork uow, WireObject bundle)
+    {
+        if (await _passwords.GetKeyAsync(uow).ConfigureAwait(false) is not { } key)
+        {
+            return false;
+        }
+
+        var secrets = await _bundle.ExportSecretsAsync(uow).ConfigureAwait(false);
+        bundle.Set(BackupSecretsSeal.SectionName, BackupSecretsSeal.Seal(WireJsonWriter.Dumps(secrets, WireJsonFormat.Compact), key.Key, key.Salt));
+        return true;
     }
 
     /// <summary>One scheduled check: 1 when a snapshot was due and written, else 0.</summary>
@@ -229,5 +251,6 @@ public sealed class ConfigurationBackups
         SqliteValues.GetDateTime(reader, 1),
         SqliteValues.GetString(reader, 2),
         SqliteValues.GetInt64(reader, 3),
-        BackupSourceText.FromText(SqliteValues.GetStringOrNull(reader, 4)));
+        BackupSourceText.FromText(SqliteValues.GetStringOrNull(reader, 4)),
+        SqliteValues.GetBool(reader, 5));
 }

@@ -40,8 +40,8 @@ public sealed class SetupDataChangeTests : IDisposable
         _operator = new OperatorSettingsStore(_changes);
         _channels = new NotificationChannelStore(_changes);
         _kept = new FileSkipMarkerStore(_changes);
-        _bundle = new ConfigurationBundleStore(_suite, new ConfigurationBundleConnections(_channels, _managers), _changes);
-        _backups = new ConfigurationBackups(_store.Options, _store.Clock, new IanaTimeZoneResolver(), _suite, _bundle, _changes);
+        _bundle = new ConfigurationBundleStore(_suite, BackupParts.Connections(_channels, _managers, _clients), _changes);
+        _backups = new ConfigurationBackups(_store.Options, _store.Clock, new IanaTimeZoneResolver(), _suite, _bundle, BackupParts.Passwords(_changes), _changes);
     }
 
     public void Dispose() => _store.Dispose();

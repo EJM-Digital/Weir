@@ -142,6 +142,43 @@ public sealed class UnitOfWorkLifecycleTests
         }
     }
 
+    /// <summary>Code handed only the read transaction can still find the unit that began it, to act once that unit commits.</summary>
+    [Fact]
+    public async Task The_unit_that_began_a_read_transaction_is_found_from_it()
+    {
+        using var db = new JobsTestDatabase();
+        var uow = await UnitOfWork.OpenAsync(db.Database);
+        await using (uow.ConfigureAwait(false))
+        {
+            uow.BeginRead();
+
+            Assert.Same(uow, UnitOfWork.OwnerOf(uow.ReadTransaction()));
+        }
+    }
+
+    /// <summary>
+    /// A unit that ends with nothing wrong hands its connection back to the pool as it is. Only a connection left inside a
+    /// transaction is closed instead, so a connection's own state, here a temporary table, is still there for the next unit.
+    /// </summary>
+    [Fact]
+    public async Task A_unit_that_ends_cleanly_returns_its_connection_to_the_pool()
+    {
+        using var db = new JobsTestDatabase();
+        const string CountMarker = "SELECT count(*) FROM sqlite_temp_master WHERE name = 'pool_marker'";
+        var first = await UnitOfWork.OpenAsync(db.Database);
+        await using (first.ConfigureAwait(false))
+        {
+            await first.ExecuteAsync("CREATE TEMP TABLE pool_marker (id INTEGER)");
+            await first.CommitAsync();
+        }
+
+        var second = await UnitOfWork.OpenAsync(db.Database);
+        await using (second.ConfigureAwait(false))
+        {
+            Assert.Equal(1L, await second.CountAsync(CountMarker));
+        }
+    }
+
     [Fact]
     public async Task Asking_for_the_read_transaction_before_beginning_one_is_refused()
     {

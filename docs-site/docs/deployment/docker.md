@@ -10,14 +10,14 @@ Weir runs on any machine with Docker, including Synology, Unraid, TrueNAS and Ra
 
 ## The quickest way
 
-Weir is at release-candidate stage, and a release candidate is published under its version tag only, so the examples below name `1.0.0-rc.18`. The `latest` tag arrives with 1.0.0.
+Weir is at release-candidate stage, and a release candidate is published under its version tag only, so the examples below name `1.0.0-rc.19`. The `latest` tag arrives with 1.0.0.
 
 Make a folder, save this as `compose.yaml` inside it:
 
 ```yaml
 services:
   weir:
-    image: ghcr.io/jampat000/weir:1.0.0-rc.18
+    image: ghcr.io/ejm-digital/weir:1.0.0-rc.19
     container_name: weir
     ports:
       - "9347:9347"
@@ -59,7 +59,7 @@ people want:
 ```yaml
 services:
   weir:
-    image: ghcr.io/jampat000/weir:1.0.0-rc.18
+    image: ghcr.io/ejm-digital/weir:1.0.0-rc.19
     container_name: weir
     ports:
       - "9347:9347"
@@ -86,7 +86,7 @@ When one app tells another where a file is, that path has to mean the same thing
 ```yaml
 services:
   weir:
-    image: ghcr.io/jampat000/weir:1.0.0-rc.18
+    image: ghcr.io/ejm-digital/weir:1.0.0-rc.19
     container_name: weir
     ports:
       - "9347:9347"
@@ -146,7 +146,7 @@ folder and that last step becomes an instant move:
 ```yaml
 services:
   weir:
-    image: ghcr.io/jampat000/weir:1.0.0-rc.18
+    image: ghcr.io/ejm-digital/weir:1.0.0-rc.19
     container_name: weir
     ports:
       - "9347:9347"
@@ -164,7 +164,7 @@ alongside `/media/weir/movies` (the output folder) rather than under `/data/weir
 
 ## What's in the image
 
-- Images are published for **linux/amd64** and **linux/arm64**, under their version tag (`ghcr.io/jampat000/weir:X.Y.Z`); `latest` and `X.Y` follow stable releases only, so they arrive with 1.0.0
+- Images are published for **linux/amd64** and **linux/arm64**, under their version tag (`ghcr.io/ejm-digital/weir:X.Y.Z`); `latest` and `X.Y` follow stable releases only, so they arrive with 1.0.0
 - A self-contained .NET server, with the bundled web UI
 - ffmpeg, mkvmerge (MKVToolNix), curl and gosu on an Ubuntu base (.NET runtime-deps, noble)
 - Runs as the `weir` user (UID/GID 1000 by default, or whatever `WEIR_PUID`/`WEIR_PGID` you set)
@@ -187,13 +187,13 @@ the tray locks the folder to its owner; a bare source install should restrict `W
 | I want to… | Do this |
 | --- | --- |
 | Use a different port | Change the left number: `"8080:9347"` puts Weir at `http://your-server-ip:8080` |
-| Use a different version | `image: ghcr.io/jampat000/weir:X.Y.Z`, with a version from [the releases page](https://github.com/jampat000/Weir/releases) |
+| Use a different version | `image: ghcr.io/ejm-digital/weir:X.Y.Z`, with a version from [the releases page](https://github.com/EJM-Digital/Weir/releases) |
 | Use HTTPS through a reverse proxy | Set `WEIR_TRUSTED_PROXY_IPS=<your proxy's IP>`. The sign-in cookie becomes HTTPS-only on its own once requests arrive over HTTPS; set `WEIR_SESSION_COOKIE_SECURE=true` only to force it. See [Reverse proxy](reverse-proxy) |
 | Reach Weir by a domain name through a reverse proxy | Add it to `WEIR_ALLOWED_HOSTS` — Weir refuses a `Host` header it doesn't recognise. See [Host header allow-list](reverse-proxy#host-header-allow-list) |
 | Manage the secret that protects saved API keys yourself | Weir makes its own on first start. To use your own, set `WEIR_CREDENTIALS_SECRET` to a long random value (`openssl rand -hex 32`) **before** you add Sonarr or Radarr |
-| Use a GPU | See [hardware acceleration](https://github.com/jampat000/Weir/blob/main/docker/README.md#hardware-acceleration-and-device-passthrough) in the Docker reference. It's optional; Weir doesn't re-encode, so you usually don't need it |
+| Use a GPU | See [hardware acceleration](https://github.com/EJM-Digital/Weir/blob/main/docker/README.md#hardware-acceleration-and-device-passthrough) in the Docker reference. It's optional; Weir doesn't re-encode, so you usually don't need it |
 
-Every variable Weir reads is documented in the [Docker reference](https://github.com/jampat000/Weir/blob/main/docker/README.md).
+Every variable Weir reads is documented in the [Docker reference](https://github.com/EJM-Digital/Weir/blob/main/docker/README.md).
 
 ## What Docker does not do
 

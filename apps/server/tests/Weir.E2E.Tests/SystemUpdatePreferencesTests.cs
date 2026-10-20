@@ -24,6 +24,9 @@ public sealed class SystemUpdatePreferencesTests(E2EServer server) : E2ETestBase
     private static ILocator Startup(IPage page, string choice) =>
         page.GetByRole(AriaRole.Radiogroup, new() { Name = "Check for updates on startup", Exact = true }).GetByRole(AriaRole.Radio, new() { Name = choice, Exact = true });
 
+    private static ILocator Checking(IPage page, string choice) =>
+        page.GetByRole(AriaRole.Radiogroup, new() { Name = "Check for updates", Exact = true }).GetByRole(AriaRole.Radio, new() { Name = choice, Exact = true });
+
     private static ILocator Every(IPage page) => page.GetByLabel("Check every", new() { Exact = true });
 
     private static ILocator Saved(IPage page) => page.GetByText("Update settings saved.", new() { Exact = true });
@@ -64,6 +67,30 @@ public sealed class SystemUpdatePreferencesTests(E2EServer server) : E2ETestBase
             Assert.False(string.IsNullOrEmpty((string?)body["csrf_token"]));
             Assert.Equal(value, (string?)(await system.ReadAsync(UpdateSettings))["mode"]);
         }
+    }
+
+    [E2EFact]
+    public async Task A_new_install_shows_only_the_choice_to_check_for_updates_and_switching_it_on_shows_the_rest()
+    {
+        await using var system = await SystemSession.OpenAsync(await NewPageAsync(), await E2EServer.StartWindowsInstallAsync(checksForUpdates: false), "About");
+        var (page, requests) = (system.Page, system.Requests);
+        await Expect(Checking(page, "Off")).ToBeCheckedAsync(new() { Timeout = SlowCheckMs });
+        await Expect(page.GetByText("Weir looks for nothing until you switch this on.", new() { Exact = true })).ToBeVisibleAsync();
+        await Expect(page.GetByTestId("suite-settings-release-status")).ToContainTextAsync("Update checking is off, so Weir is not looking for new versions.");
+        await Expect(page.GetByRole(AriaRole.Group, new() { Name = "Update mode", Exact = true })).ToHaveCountAsync(0);
+        await Expect(Every(page)).ToHaveCountAsync(0);
+        Assert.False((bool)(await system.ReadAsync(UpdateSettings))["check_for_updates"]!);
+
+        var mark = requests.Mark();
+        await Checking(page, "On").ClickAsync();
+
+        await Expect(Saved(page)).ToBeVisibleAsync();
+        var sent = Sent(await requests.OnlyChangeSinceAsync(mark, "the choice to check for updates"));
+        Assert.True((bool)sent["check_for_updates"]!);
+        Assert.True((bool)(await system.ReadAsync(UpdateSettings))["check_for_updates"]!);
+        Assert.Contains("\"checkForUpdates\": true", File.ReadAllText(Path.Join(system.Server.Home, "update-settings.json")), StringComparison.Ordinal);
+        await Expect(Mode(page, "Auto")).ToBeVisibleAsync();
+        await Expect(Every(page)).ToBeVisibleAsync();
     }
 
     [E2EFact]

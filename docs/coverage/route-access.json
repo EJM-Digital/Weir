@@ -115,6 +115,7 @@
     { "method": "DELETE", "path": "/api/v1/processing/rule-sets/{rule_set_id}", "access": "operator" },
     { "method": "GET", "path": "/api/v1/processing/runtime-settings", "access": "operator" },
     { "method": "POST", "path": "/api/v1/suite/apply-update", "access": "admin" },
+    { "method": "PUT", "path": "/api/v1/suite/backup-password", "access": "admin" },
     { "method": "POST", "path": "/api/v1/suite/check-update", "access": "admin" },
     { "method": "GET", "path": "/api/v1/suite/configuration-backups", "access": "operator" },
     { "method": "POST", "path": "/api/v1/suite/configuration-backups", "access": "admin" },
