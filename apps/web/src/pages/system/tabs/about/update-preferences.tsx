@@ -12,7 +12,10 @@ import {
   useUpdateSettingsMutation,
   useUpdateSettingsQuery,
 } from "../../../../lib/settings/queries";
-import type { UpdateMode } from "../../../../lib/settings/types";
+import type {
+  UpdateMode,
+  UpdateSettingsOut,
+} from "../../../../lib/settings/types";
 
 const UPDATE_MODES: readonly {
   value: UpdateMode;
@@ -59,6 +62,7 @@ const CHECK_INTERVALS = [
   { value: 1440, label: "24 hours" },
 ];
 
+const CHECK_FOR_UPDATES_ID = "update-check-for-updates";
 const CHECK_ON_STARTUP_ID = "update-check-on-startup";
 const CHECK_INTERVAL_ID = "update-check-interval";
 
@@ -93,45 +97,32 @@ export function UpdatePreferences() {
   return (
     <div className="mm-setgroup__rows">
       <SettingRow
-        label="Mode"
-        hint={<span title={mode?.detail}>{mode?.summary}</span>}
+        label="Check for updates"
+        hint={
+          current.check_for_updates
+            ? "Weir looks for new versions on GitHub."
+            : "Weir looks for nothing until you switch this on."
+        }
       >
-        <SegmentedControl
-          ariaLabel="Update mode"
-          options={MODE_OPTIONS}
-          value={current.mode}
-          onChange={(value) => change({ mode: value })}
-        />
-      </SettingRow>
-      <SettingRow label="Check on startup">
         <span className="mm-sys-switch">
           <MmOnOffSwitch
-            id={CHECK_ON_STARTUP_ID}
-            label="Check for updates on startup"
+            id={CHECK_FOR_UPDATES_ID}
+            label="Check for updates"
             layout="control"
-            enabled={current.check_on_startup}
+            enabled={current.check_for_updates}
             disabled={save.isPending}
-            onChange={(enabled) => change({ check_on_startup: enabled })}
+            onChange={(enabled) => change({ check_for_updates: enabled })}
           />
         </span>
       </SettingRow>
-      <SettingRow label="Check every" htmlFor={CHECK_INTERVAL_ID}>
-        <select
-          id={CHECK_INTERVAL_ID}
-          className="mm-input mm-sys-field"
-          value={current.check_interval_minutes}
-          disabled={save.isPending}
-          onChange={(event) =>
-            change({ check_interval_minutes: Number(event.target.value) })
-          }
-        >
-          {CHECK_INTERVALS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </SettingRow>
+      {current.check_for_updates ? (
+        <UpdateChoices
+          current={current}
+          mode={mode}
+          pending={save.isPending}
+          onChange={change}
+        />
+      ) : null}
       {save.isError ? (
         <p
           className="mm-status-text mm-sys-note"
@@ -151,5 +142,63 @@ export function UpdatePreferences() {
         </p>
       ) : null}
     </div>
+  );
+}
+
+/** How updates are found and taken, shown while Weir is looking for them. */
+function UpdateChoices({
+  current,
+  mode,
+  pending,
+  onChange,
+}: {
+  current: UpdateSettingsOut;
+  mode: (typeof UPDATE_MODES)[number] | undefined;
+  pending: boolean;
+  onChange: (next: Partial<UpdateSettingsOut>) => void;
+}) {
+  return (
+    <>
+      <SettingRow
+        label="Mode"
+        hint={<span title={mode?.detail}>{mode?.summary}</span>}
+      >
+        <SegmentedControl
+          ariaLabel="Update mode"
+          options={MODE_OPTIONS}
+          value={current.mode}
+          onChange={(value) => onChange({ mode: value })}
+        />
+      </SettingRow>
+      <SettingRow label="Check on startup">
+        <span className="mm-sys-switch">
+          <MmOnOffSwitch
+            id={CHECK_ON_STARTUP_ID}
+            label="Check for updates on startup"
+            layout="control"
+            enabled={current.check_on_startup}
+            disabled={pending}
+            onChange={(enabled) => onChange({ check_on_startup: enabled })}
+          />
+        </span>
+      </SettingRow>
+      <SettingRow label="Check every" htmlFor={CHECK_INTERVAL_ID}>
+        <select
+          id={CHECK_INTERVAL_ID}
+          className="mm-input mm-sys-field"
+          value={current.check_interval_minutes}
+          disabled={pending}
+          onChange={(event) =>
+            onChange({ check_interval_minutes: Number(event.target.value) })
+          }
+        >
+          {CHECK_INTERVALS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </SettingRow>
+    </>
   );
 }

@@ -10732,7 +10732,7 @@
             "title": "Retry At"
           },
           "status": {
-            "description": "up_to_date, update_available, rate_limited (GitHub is limiting update checks; the latest_ fields are the last release Weir knew), or unavailable",
+            "description": "up_to_date, update_available, rate_limited (GitHub is limiting update checks; the latest_ fields are the last release Weir knew), off (the Windows app's owner switched update checking off), or unavailable",
             "minLength": 1,
             "title": "Status",
             "type": "string"
@@ -11401,7 +11401,7 @@
             "title": "Latest Version"
           },
           "status": {
-            "description": "checking: nothing learned yet. up_to_date. update_available. downloaded: the tray holds an update waiting to install. not_published: no release exists yet. rate_limited: GitHub is limiting update checks from this network, so the newest version is the last one known. unavailable: the release list could not be reached.",
+            "description": "checking: nothing learned yet. up_to_date. update_available. downloaded: the tray holds an update waiting to install. not_published: no release exists yet. rate_limited: GitHub is limiting update checks from this network, so the newest version is the last one known. off: the Windows app's owner switched update checking off, so nothing was asked of GitHub. unavailable: the release list could not be reached.",
             "enum": [
               "checking",
               "up_to_date",
@@ -11409,6 +11409,7 @@
               "downloaded",
               "not_published",
               "rate_limited",
+              "off",
               "unavailable"
             ],
             "title": "Status",
@@ -12168,6 +12169,12 @@
         "additionalProperties": false,
         "description": "Tray update behaviour persisted in update-settings.json.",
         "properties": {
+          "check_for_updates": {
+            "default": false,
+            "description": "Whether the Windows app looks for updates at all. Off on a new install; a file saved before this choice existed reads as on.",
+            "title": "Check For Updates",
+            "type": "boolean"
+          },
           "check_interval_minutes": {
             "maximum": 10080.0,
             "minimum": 1.0,
@@ -12191,7 +12198,8 @@
         },
         "required": [
           "mode",
-          "check_interval_minutes"
+          "check_interval_minutes",
+          "check_for_updates"
         ],
         "title": "UpdateSettingsOut",
         "type": "object"
@@ -12200,6 +12208,11 @@
         "additionalProperties": false,
         "description": "Body for PUT /suite/update-settings.",
         "properties": {
+          "check_for_updates": {
+            "description": "Whether the Windows app looks for updates at all. Left out, it stays as it was.",
+            "title": "Check For Updates",
+            "type": "boolean"
+          },
           "check_interval_minutes": {
             "default": 60,
             "maximum": 10080.0,

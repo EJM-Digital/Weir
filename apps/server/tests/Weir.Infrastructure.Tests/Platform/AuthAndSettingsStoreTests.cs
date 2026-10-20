@@ -212,11 +212,11 @@ public sealed class AuthAndSettingsStoreTests
     {
         using var fixture = new StoreFixture();
         var files = new UpdateFiles(fixture.Options);
-        Assert.Equal("{\"mode\":\"Auto\",\"check_on_startup\":true,\"check_interval_minutes\":60}", WireJsonWriter.Dumps(files.ReadSettings(), WireJsonFormat.Response));
+        Assert.Equal("{\"mode\":\"Auto\",\"check_on_startup\":true,\"check_interval_minutes\":60,\"check_for_updates\":false}", WireJsonWriter.Dumps(files.ReadSettings(), WireJsonFormat.Response));
         var foreign = Path.Join(fixture.Home.Path, "update-settings.json.tmp");
         File.WriteAllText(foreign, "{\"mode\": \"Auto\"}");
-        files.WriteSettings("DownloadOnly", false, 240);
-        Assert.Equal("{\"mode\":\"DownloadOnly\",\"check_on_startup\":false,\"check_interval_minutes\":240}", WireJsonWriter.Dumps(files.ReadSettings(), WireJsonFormat.Response));
+        files.WriteSettings("DownloadOnly", false, 240, true);
+        Assert.Equal("{\"mode\":\"DownloadOnly\",\"check_on_startup\":false,\"check_interval_minutes\":240,\"check_for_updates\":true}", WireJsonWriter.Dumps(files.ReadSettings(), WireJsonFormat.Response));
         Assert.True(File.Exists(foreign));
         Assert.Empty(Directory.GetFiles(fixture.Home.Path, ".update-settings.json.*.tmp"));
         File.WriteAllText(Path.Join(fixture.Home.Path, "update-settings.json"), "{\"mode\": \"Notify");

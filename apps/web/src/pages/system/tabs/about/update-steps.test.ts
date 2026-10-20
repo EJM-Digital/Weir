@@ -39,6 +39,37 @@ function enabled(buttons: ReturnType<typeof updateButtons>) {
 }
 
 describe("updateButtons", () => {
+  it("offers Check now while update checking is off, since a person asking is never refused", () => {
+    const buttons = updateButtons(state(), status({ status: "off" }), idle);
+
+    expect(enabled(buttons)).toEqual([true, false, false]);
+  });
+
+  it("offers the download of an update the tray found when a person checked while update checking was off", () => {
+    const buttons = updateButtons(
+      state({ pending_version: "1.1.0" }),
+      status({ status: "off" }),
+      idle,
+    );
+
+    expect(enabled(buttons)).toEqual([true, true, false]);
+    expect(buttons.download.primary).toBe(true);
+  });
+
+  it("still offers only the restart for an update downloaded before checking was switched off", () => {
+    const buttons = updateButtons(
+      state({
+        downloaded: true,
+        pending_version: "1.1.0",
+        state: "downloaded",
+      }),
+      status({ status: "off" }),
+      idle,
+    );
+
+    expect(enabled(buttons)).toEqual([false, false, true]);
+  });
+
   it("offers only Check now when Weir is up to date", () => {
     const buttons = updateButtons(state(), status(), idle);
 

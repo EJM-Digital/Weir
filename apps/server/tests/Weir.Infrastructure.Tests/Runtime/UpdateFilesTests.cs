@@ -276,7 +276,7 @@ public sealed class UpdateFilesTests : IDisposable
     public void Settings_that_are_refused_for_a_moment_are_the_last_good_settings_and_nothing_waits()
     {
         var files = FilesThatNeverWait();
-        files.WriteSettings("DownloadOnly", false, 240);
+        files.WriteSettings("DownloadOnly", false, 240, true);
         Assert.Equal("DownloadOnly", ((WireString)files.ReadSettings()["mode"]).Value);
         var warned = new List<string>();
 
@@ -289,7 +289,7 @@ public sealed class UpdateFilesTests : IDisposable
         }
 
         Assert.Empty(warned);
-        files.WriteSettings("NotifyOnly", true, 60);
+        files.WriteSettings("NotifyOnly", true, 60, true);
         Assert.Equal("NotifyOnly", ((WireString)files.ReadSettings()["mode"]).Value);
     }
 
