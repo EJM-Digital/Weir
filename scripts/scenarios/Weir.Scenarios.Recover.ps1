@@ -157,7 +157,7 @@ function Scenario_recover_locked_out_account {
         Assert-That ($answer.Status -eq 401) "a session from before the reset is ended (HTTP $($answer.Status))"
     }
     # Weir logs every refused sign-in as a warning, which is right; this one is made on purpose.
-    Add-ExpectedLogRow -Pattern 'auth event: login failed' -Why 'the forgotten password is tried once to show it is refused'
+    Add-ExpectedLogRow -Pattern 'auth event: login failed' -PageTitlePattern '^Sign-in failed$' -Why 'the forgotten password is tried once to show it is refused'
     $withForgotten = Invoke-Weir -Session (New-WeirSession -BaseUrl $script:Ctx.Base) -Method POST -Path '/api/v1/auth/login' -Body @{ username = $username; password = $forgotten; trusted_device = $false }
     Assert-That ($withForgotten.Status -eq 401) "the forgotten password is refused (HTTP $($withForgotten.Status))"
 
