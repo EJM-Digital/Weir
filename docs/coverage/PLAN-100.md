@@ -39,6 +39,11 @@ Biggest uncovered area first. Each step is one or a few pull requests, each rais
    the form into classes the unit tests can call, leaving only the thin form code for the UI tests. Then `Program.cs` (163),
    `Firewall/ComFirewallPolicy.cs` (67 lines, 82 branches, 0%), `UpdateService.cs` (83, 0%), `LanAccess/LanAccessMenu.cs` (69, 0%),
    `UpdateBackup.cs` (36) and `Firewall/FirewallInstallHooks.cs` (41, 0%).
+   The first tray pull request moved the logic of `TrayApp.cs` into `TrayController` (what the icon, hover text, menu and balloons say, and
+   how the server is started, watched, restarted and stopped), which the unit tests drive with a fake server and a fake shell, and left
+   `WindowsTrayShell` as the thin Windows Forms layer, driven in a test on a thread of its own. Seven one-line calls into Windows (starting
+   a program, the clipboard, three for the message loop, the start-with-Windows question and the port window) are listed in the exclusions. What is left of the
+   tray starts with `Program.cs`, `Firewall/ComFirewallPolicy.cs`, `UpdateService.cs` and `UpdateBackup.cs`.
 3. **Weir.Api** (983 lines, 1,112 branches): `Endpoints/ProcessingFileTracksEndpoints.cs` (88), `ProcessingRulesPreviewEndpoints.cs` (106),
    `ProcessingJobsEndpoints.cs` (82), `ProcessingWatchedFolderScanDispatchEndpoints.cs` (82; 19.6%), `Http/ApiHttp.cs` (57),
    `ProcessingLibraryEndpoints.cs` (64), `ProcessingLibraryMapping.cs` (26 lines, 60 branches), `AuthSessionLifecycleEndpoints.cs` (46),

@@ -10,7 +10,7 @@ namespace Weir.Tray;
 /// moving it to another port or to another set of devices that may connect, and stopping it. Nothing here touches
 /// the UI; the tray is told about outcomes and shows them itself.
 /// </summary>
-sealed partial class ServerHost : IServerListenScope, IDisposable
+sealed partial class ServerHost : ITrayServer, IDisposable
 {
     /// <summary>The port the server listens on at the moment. The saved choice is port.txt (PortChoice).</summary>
     internal const string CurrentPortFileName = "current-port.txt";
@@ -71,45 +71,45 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
     }
 
     /// <summary>Whether the server process this host started is still running, ready or not.</summary>
-    internal bool ServerIsRunning => _process is { HasExited: false };
+    public bool ServerIsRunning => _process is { HasExited: false };
 
     /// <summary>Raised, on whichever thread changed it, when <see cref="Phase"/> changes.</summary>
-    internal event Action? PhaseChanged;
+    public event Action? PhaseChanged;
 
-    internal int Port => _port;
+    public int Port => _port;
 
     /// <summary>
     /// Finds the port when it is not known (0), at the start of each attempt, until it is. Null when the port was known from the start.
     /// A saved port that cannot be read yet is a failed attempt like any other (back-off, the start limit); once a port is found it is
     /// kept. A test replaces it.
     /// </summary>
-    internal Func<CancellationToken, Task<PortChoice.Resolution>>? ResolvePort { get; set; }
+    public Func<CancellationToken, Task<PortChoice.Resolution>>? ResolvePort { get; set; }
 
     /// <summary>The server process this host started, while it runs, or null.</summary>
-    internal RunningServer? Running =>
+    public RunningServer? Running =>
         _process is { HasExited: false } process && StartedAtUtc is { } started ? new RunningServer(process.Id, started) : null;
 
     /// <summary>Where the server is: being started, answering, or stopped with nothing about to bring it back.</summary>
-    internal ServerPhase Phase => _phase;
+    public ServerPhase Phase => _phase;
 
     public ListenScope Scope => _scope;
 
     /// <summary>When the server process this host last started began, or null if it has started none.</summary>
-    internal DateTime? StartedAtUtc => Volatile.Read(ref _startedAtTicks) is > 0 and var ticks ? new DateTime(ticks, DateTimeKind.Utc) : null;
+    public DateTime? StartedAtUtc => Volatile.Read(ref _startedAtTicks) is > 0 and var ticks ? new DateTime(ticks, DateTimeKind.Utc) : null;
 
     /// <summary>
     /// Why the server could not start, in its own words, while <see cref="Phase"/> is Stopped and the server said why
     /// (StartupNotes); null otherwise.
     /// </summary>
-    internal StartupError? StartupError => _startupError;
+    public StartupError? StartupError => _startupError;
 
     /// <summary>
     /// How many attempts the supervision made before it gave up, while <see cref="Phase"/> is Stopped for that reason; 0 otherwise.
     /// </summary>
-    internal int GaveUpAfterAttempts => _gaveUpAttempts;
+    public int GaveUpAfterAttempts => _gaveUpAttempts;
 
     /// <summary>The hover text's reason for a server the supervision gave up on, when it did and the server itself said nothing.</summary>
-    internal StartupError? GaveUpError =>
+    public StartupError? GaveUpError =>
         NoPortChosen ? new StartupError("No port chosen", string.Empty)
         : GaveUpPortInUse > 0 ? new StartupError(string.Create(CultureInfo.InvariantCulture, $"Port {GaveUpPortInUse} is in use"), string.Empty)
         : _gaveUpAttempts > 0 ? new StartupError($"Didn't start after {TrayBalloons.Tries(_gaveUpAttempts)}", string.Empty)
@@ -119,10 +119,10 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
     /// The port another program held, while <see cref="Phase"/> is Stopped because the last attempt of the supervision ended on it; 0
     /// otherwise.
     /// </summary>
-    internal int GaveUpPortInUse => _gaveUpAttempts > 0 && _lastAttemptFoundPortInUse ? _port : 0;
+    public int GaveUpPortInUse => _gaveUpAttempts > 0 && _lastAttemptFoundPortInUse ? _port : 0;
 
     /// <summary>The person closed the port window without choosing a port, so the start stopped before any server was run.</summary>
-    internal bool NoPortChosen => _noPortChosen;
+    public bool NoPortChosen => _noPortChosen;
 
     private void SetPhase(ServerPhase phase)
     {
@@ -136,9 +136,9 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
     }
 
     /// <summary>Sets what every server process is started with (ServerEnvironment).</summary>
-    internal void PrepareEnvironment() => ServerEnvironment.Apply(_runtimeHome, FindServerExeDirectory());
+    public void PrepareEnvironment() => ServerEnvironment.Apply(_runtimeHome, FindServerExeDirectory());
 
-    internal void WritePortFile() =>
+    public void WritePortFile() =>
         File.WriteAllText(Path.Combine(_runtimeHome, CurrentPortFileName), _port.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>
@@ -146,7 +146,7 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
     /// goes back to the port it had, which was working a moment ago and is still the saved one. Returns whether
     /// how it ended: moved, kept where it was, or stopped because the old port could not be taken again either.
     /// </summary>
-    internal async Task<PortMove> MoveToPortAsync(int to, CancellationToken cancellationToken)
+    public async Task<PortMove> MoveToPortAsync(int to, CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         var from = _port;
@@ -222,7 +222,7 @@ sealed partial class ServerHost : IServerListenScope, IDisposable
     }
 
     /// <summary>Stops the server, waiting briefly for a restart or port change in progress to let go of it first.</summary>
-    internal async Task StopAsync()
+    public async Task StopAsync()
     {
         var entered = await _gate.WaitAsync(StopGateWait).ConfigureAwait(false);
         try

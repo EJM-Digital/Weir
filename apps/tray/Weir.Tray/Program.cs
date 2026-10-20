@@ -329,7 +329,7 @@ static class Program
                     ForegroundWindow.Bring(open);
                 }
             });
-        return PortDialog.Ask(prompt, PortChoice.IsInUse, LoadAppIcon());
+        return PortDialog.Ask(prompt, LoadAppIcon());
     }
 
     private static void StopOrphanedServers() =>
@@ -440,7 +440,7 @@ static class Program
 
         try
         {
-            (startProcess ?? (info => Process.Start(info)?.Dispose()))(startInfo);
+            (startProcess ?? WindowsEffects.StartProcess)(startInfo);
             return true;
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or PlatformNotSupportedException)

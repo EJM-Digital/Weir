@@ -111,7 +111,7 @@ const csharp = {
   menu: read("apps/tray/Weir.Tray/TrayMenu.cs") + read("apps/tray/Weir.Tray/UpdateMenuState.cs") + read("apps/tray/Weir.Tray/LanAccess/LanAccessMenuState.cs"),
   state: read("apps/tray/Weir.Tray/TrayState.cs"),
   change: read("apps/tray/Weir.Tray/PortChange.cs"),
-  app: read("apps/tray/Weir.Tray/TrayApp.cs"),
+  controller: read("apps/tray/Weir.Tray/TrayController.cs"),
 };
 
 test("the balloons the scenarios expect are the ones the tray's source says, word for word", () => {
@@ -126,7 +126,7 @@ test("the balloons the scenarios expect are the ones the tray's source says, wor
     [balloons.portMoveFailed(9353, 9352), csharp.change, 9353, 9352],
     [balloons.lanOpened, csharp.lan],
     [balloons.lanClosed, csharp.lan],
-    [balloons.updateAvailable("3.4.0"), csharp.app, "3.4.0"],
+    [balloons.updateAvailable("3.4.0"), csharp.controller, "3.4.0"],
   ];
   for (const [text, source, ...parameters] of checks) {
     for (const piece of fixedPieces(text, ...parameters)) assert.ok(source.includes(piece), `"${piece}" (of "${text}") is not in the C# source`);

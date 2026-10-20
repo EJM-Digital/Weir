@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace Weir.Tray;
@@ -328,9 +329,10 @@ sealed class PortDialog : Form
     }
 
     /// <summary>Show the dialog modally and return the chosen port, or null if they quit.</summary>
-    internal static int? Ask(PortPrompt prompt, Func<int, bool> isInUse, Icon? icon)
+    [ExcludeFromCodeCoverage]
+    internal static int? Ask(PortPrompt prompt, Icon? icon)
     {
-        using var dialog = new PortDialog(prompt, isInUse, icon);
+        using var dialog = new PortDialog(prompt, PortChoice.IsInUse, icon);
         return dialog.ShowDialog() == DialogResult.OK ? dialog.ChosenPort : null;
     }
 }
