@@ -143,7 +143,7 @@ function passDisplay(ev: ActivityEventItem): ActivityDisplay {
     meaning:
       rejected || passedThrough
         ? "attention"
-        : ev.detail?.includes('"ok":false')
+        : failed || ev.detail?.includes('"ok":false')
           ? "broken"
           : "done",
     compact: false,

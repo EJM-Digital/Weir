@@ -155,19 +155,14 @@ export function formatSavings(
   if (delta === 0) return "No size change";
   const percent = source > 0 ? Math.abs(delta / source) * 100 : null;
   const sizeText = formatBytes(Math.abs(delta));
-  if (!sizeText) return null;
   if (percent != null && (percent < 0.1 || Math.abs(delta) < 1024 * 1024)) {
     const direction = delta > 0 ? "saved" : "container overhead";
     return `Size basically unchanged (${sizeText} ${direction})`;
   }
-  if (delta > 0) {
-    return percent != null
-      ? `Saved ${sizeText} (${percent.toFixed(1)}%)`
-      : `Saved ${sizeText}`;
-  }
-  return percent != null
-    ? `Grew by ${sizeText} (${percent.toFixed(1)}%)`
-    : `Grew by ${sizeText}`;
+  const share = percent != null ? ` (${percent.toFixed(1)}%)` : "";
+  return delta > 0
+    ? `Saved ${sizeText}${share}`
+    : `Grew by ${sizeText}${share}`;
 }
 
 /** What happened to the watched and output folders after the pass, for the scope it ran in. */

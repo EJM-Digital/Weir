@@ -19,7 +19,7 @@ export function isLikelyNetworkFailure(error: unknown): boolean {
 }
 
 /** True when the API was reached and answered with an HTTP status. */
-export function isHttpErrorFromApi(error: unknown): boolean {
+export function isHttpErrorFromApi(error: unknown): error is ApiHttpError {
   return error instanceof ApiHttpError;
 }
 

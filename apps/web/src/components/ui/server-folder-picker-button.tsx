@@ -79,8 +79,8 @@ function FolderList({
       </div>
     );
   }
-  const entries = browse.data?.entries ?? [];
-  if (entries.length === 0) {
+  const entries = browse.data?.entries;
+  if (!entries?.length) {
     return (
       <div className="mm-folder-picker__empty">No folders found here.</div>
     );
@@ -128,12 +128,13 @@ function PathBar({
 }: {
   browse: Browse;
   onGo: (path: string) => void;
-  onUp: () => void;
+  onUp: (parent: string | null) => void;
   onDrives: () => void;
   onChoose: (path: string) => void;
 }) {
   const [manualPath, setManualPath] = useState("");
   const current = browse.data?.current_path ?? null;
+  const parent = browse.data?.parent_path ?? null;
   return (
     <div className="mm-folder-picker__section">
       <form
@@ -166,8 +167,8 @@ function PathBar({
         <button
           type="button"
           className={mmActionButtonClass({ variant: "secondary" })}
-          disabled={browse.loading || !browse.data?.parent_path}
-          onClick={onUp}
+          disabled={browse.loading || parent === null}
+          onClick={() => onUp(parent)}
         >
           Up
         </button>
@@ -252,7 +253,7 @@ function FolderPickerDialog({
         <PathBar
           browse={browse}
           onGo={setPath}
-          onUp={() => setPath(browse.data?.parent_path ?? null)}
+          onUp={setPath}
           onDrives={() => setPath(null)}
           onChoose={onChoose}
         />
