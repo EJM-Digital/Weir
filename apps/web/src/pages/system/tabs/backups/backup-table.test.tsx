@@ -21,6 +21,7 @@ const BACKUPS: ConfigurationBackupItem[] = [
     file_name: "b1.json",
     size_bytes: 300,
     made_by: "schedule",
+    secrets_sealed: false,
   },
   {
     id: 2,
@@ -28,6 +29,7 @@ const BACKUPS: ConfigurationBackupItem[] = [
     file_name: "b2.json",
     size_bytes: 100,
     made_by: "schedule",
+    secrets_sealed: false,
   },
   {
     id: 3,
@@ -35,6 +37,7 @@ const BACKUPS: ConfigurationBackupItem[] = [
     file_name: "b3.json",
     size_bytes: 200,
     made_by: "schedule",
+    secrets_sealed: false,
   },
 ];
 

@@ -7,6 +7,7 @@ import type {
   NotificationChannelListOut,
   NotificationChannelOut,
   NotificationChannelTestOut,
+  BackupPasswordOut,
   ConfigurationBackupItem,
   ConfigurationBackupList,
   ServerLogs,
@@ -43,6 +44,7 @@ export const configurationBundlePath = () =>
   "/api/v1/suite/configuration-bundle";
 export const configurationBackupsPath = () =>
   "/api/v1/suite/configuration-backups";
+export const backupPasswordPath = () => "/api/v1/suite/backup-password";
 
 export type ConfigurationBundle = Record<string, unknown> & {
   format_version: number;
@@ -212,14 +214,16 @@ export async function fetchConfigurationBundle(): Promise<ConfigurationBundle> {
   return readJson<ConfigurationBundle>(r);
 }
 
+/** Restores a configuration; `password` is the backup password, for a backup that holds locked secrets. */
 export async function putConfigurationBundle(
   bundle: ConfigurationBundle,
+  password?: string,
 ): Promise<ConfigurationBundle> {
   const path = configurationBundlePath();
   const r = await sendJson(
     path,
     "PUT",
-    { bundle },
+    password ? { bundle, password } : { bundle },
     "Could not restore configuration",
   );
   return readJson<ConfigurationBundle>(r);
@@ -230,6 +234,20 @@ export async function postConfigurationBackupNow(): Promise<ConfigurationBackupI
   const path = configurationBackupsPath();
   const r = await sendJson(path, "POST", {}, "Could not create a backup");
   return readJson<ConfigurationBackupItem>(r);
+}
+
+/** Sets or changes the password future backups lock their secrets with. The server never sends it back. */
+export async function putBackupPassword(
+  password: string,
+  confirmPassword: string,
+): Promise<BackupPasswordOut> {
+  const r = await sendJson(
+    backupPasswordPath(),
+    "PUT",
+    { password, confirm_password: confirmPassword },
+    "Could not set the backup password",
+  );
+  return readJson<BackupPasswordOut>(r);
 }
 
 export async function fetchConfigurationBackupList(): Promise<ConfigurationBackupList> {

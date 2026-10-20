@@ -126,11 +126,11 @@ public sealed partial class SuiteEndpointsContractTests(NoInternetUsersFixture f
 
         Assert.True(response.Status == HttpStatusCode.OK, response.ToString());
         var body = response.Fields;
-        AssertKeys(["directory", "items"], body);
+        AssertKeys(["directory", "password_set", "items"], body);
         Assert.True(IsString(body["directory"]));
         foreach (var item in body["items"]!.AsArray())
         {
-            AssertKeys(["id", "created_at", "file_name", "size_bytes"], item);
+            AssertKeys(["id", "created_at", "file_name", "size_bytes", "made_by", "secrets_sealed"], item);
         }
     }
 

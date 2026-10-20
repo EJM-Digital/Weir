@@ -303,6 +303,50 @@
         "title": "ApplyUpdateIn",
         "type": "object"
       },
+      "BackupPasswordIn": {
+        "additionalProperties": false,
+        "description": "Body for PUT /suite/backup-password: the password the secrets in future backups are locked with, typed twice.",
+        "properties": {
+          "confirm_password": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Confirm Password",
+            "type": "string"
+          },
+          "csrf_token": {
+            "minLength": 1,
+            "title": "Csrf Token",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "csrf_token",
+          "password",
+          "confirm_password"
+        ],
+        "title": "BackupPasswordIn",
+        "type": "object"
+      },
+      "BackupPasswordOut": {
+        "additionalProperties": false,
+        "properties": {
+          "password_set": {
+            "title": "Password Set",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "password_set"
+        ],
+        "title": "BackupPasswordOut",
+        "type": "object"
+      },
       "CheckUpdateIn": {
         "additionalProperties": false,
         "description": "Body for POST /suite/check-update.",
@@ -538,6 +582,13 @@
           "csrf_token": {
             "minLength": 1,
             "title": "Csrf Token",
+            "type": "string"
+          },
+          "password": {
+            "description": "The backup password, when the backup holds secrets locked with one. Left out for a backup that does not.",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Password",
             "type": "string"
           }
         },
@@ -9838,6 +9889,11 @@
             "description": "Who made the backup: the schedule, or a person pressing Back up now. Null for a backup made before this was kept.",
             "title": "Made By"
           },
+          "secrets_sealed": {
+            "description": "Whether the backup holds the connections' secrets, locked with the backup password that was set when it was made.",
+            "title": "Secrets Sealed",
+            "type": "boolean"
+          },
           "size_bytes": {
             "title": "Size Bytes",
             "type": "integer"
@@ -9848,7 +9904,8 @@
           "created_at",
           "file_name",
           "size_bytes",
-          "made_by"
+          "made_by",
+          "secrets_sealed"
         ],
         "title": "SuiteConfigurationBackupItemOut",
         "type": "object"
@@ -9866,11 +9923,17 @@
             },
             "title": "Items",
             "type": "array"
+          },
+          "password_set": {
+            "description": "Whether a backup password is set. The password itself is never returned.",
+            "title": "Password Set",
+            "type": "boolean"
           }
         },
         "required": [
           "directory",
-          "items"
+          "items",
+          "password_set"
         ],
         "title": "SuiteConfigurationBackupListOut",
         "type": "object"
@@ -18981,6 +19044,54 @@
           }
         },
         "summary": "Post Suite Apply Update",
+        "tags": [
+          "suite"
+        ]
+      }
+    },
+    "/api/v1/suite/backup-password": {
+      "put": {
+        "description": "Set or change the backup password (admins only). Backups made later lock their secrets with it; backups already made keep the password they were made with.",
+        "operationId": "put_backup_password_api_v1_suite_backup_password_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupPasswordIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupPasswordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
+          }
+        },
+        "summary": "Put Backup Password",
         "tags": [
           "suite"
         ]

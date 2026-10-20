@@ -20,6 +20,7 @@ export type AppSettings = {
 export type AppSettingsPutBody = RequestBody<"SuiteSettingsPutIn">;
 
 export type SecurityOverview = Schema<"SuiteSecurityOverviewOut">;
+export type BackupPasswordOut = Schema<"BackupPasswordOut">;
 export type ConfigurationBackupList = Schema<"SuiteConfigurationBackupListOut">;
 export type ConfigurationBackupItem = Schema<"SuiteConfigurationBackupItemOut">;
 export type UpdateStatus = Schema<"SuiteUpdateStatusOut">;

@@ -8,7 +8,14 @@ function backup(
   created_at: string,
   made_by: ConfigurationBackupItem["made_by"],
 ): ConfigurationBackupItem {
-  return { id, created_at, file_name: `b${id}.json`, size_bytes: 1, made_by };
+  return {
+    id,
+    created_at,
+    file_name: `b${id}.json`,
+    size_bytes: 1,
+    made_by,
+    secrets_sealed: false,
+  };
 }
 
 describe("newestBackup", () => {
