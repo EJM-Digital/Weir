@@ -50,6 +50,16 @@ public sealed partial class HandoffCompletionReporter
 
         if (ready.Unplaced is not null)
         {
+            if (ready.Outcome.LibraryId is { } waitingLibrary)
+            {
+                foreach (var relativePath in ready.Outcome.Files)
+                {
+                    await AppendFileSentenceAsync(uow, waitingLibrary, relativePath, ManagerWaitMessages.ReportWaiting(ready.Target.Connection.Label)).ConfigureAwait(false);
+                }
+
+                await uow.CommitAsync().ConfigureAwait(false);
+            }
+
             return "queued: the manager would not list its libraries, so the report waits until Weir can say where it sees the output";
         }
 

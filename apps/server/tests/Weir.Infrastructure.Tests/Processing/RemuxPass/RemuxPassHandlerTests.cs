@@ -33,6 +33,7 @@ public sealed partial class RemuxPassHandlerTests : IDisposable
             "UPDATE operator_settings SET minimum_free_disk_space_mb = 0")
             .GetAwaiter().GetResult();
         _fixture.Http.Json(HttpMethod.Post, EventsPath, "{}", HttpStatusCode.Accepted);
+        _fixture.DelunoListsNoLibraries();
     }
 
     public void Dispose()

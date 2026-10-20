@@ -71,6 +71,10 @@ public sealed partial class HttpMediaManagerPort : IMediaManagerPort
 
     public ManagerCapabilities Capabilities() => _profile.Capabilities;
 
+    /// <summary>Whether a failed call may succeed when made again: the manager did not answer, or answered that it is busy or failing. A refusal or an answer Weir cannot read will not change.</summary>
+    private static bool MayAnswerLater(Exception exception) =>
+        exception is MediaManagerUnreachableException or MediaManagerRateLimitedException or MediaManagerHttpException { StatusCode: >= 500 or 408 };
+
     public async Task<ManagerDescription> DescribeAsync(ManagerConnection connection, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(connection);
@@ -90,7 +94,8 @@ public sealed partial class HttpMediaManagerPort : IMediaManagerPort
                 [],
                 [],
                 UnreachableText(connection, exception, _profile.IsArr ? "which folders it manages" : "what it manages"),
-                new SortedSet<string>(StringComparer.Ordinal));
+                new SortedSet<string>(StringComparer.Ordinal),
+                MayAnswerLater: MayAnswerLater(exception));
         }
 
         if (!_profile.IsArr)

@@ -47,6 +47,7 @@ public sealed class HandoffReportPlacementTests
         Assert.Empty(world.Fixture.Http.RequestsTo(HttpMethod.Post, Callback));
         Assert.Equal(1, await world.OwedAsync());
         Assert.Null(await world.LedgerOutputPathAsync());
+        Assert.Contains("Waiting for Deluno on 192.0.2.30", await world.ReasonAsync(), StringComparison.Ordinal);
 
         // Still no manifest: the report stays owed, unsent, and nothing about the hand-off changes.
         var stillWaiting = world.SendWaitingAsync();
@@ -62,6 +63,7 @@ public sealed class HandoffReportPlacementTests
         Assert.Equal(0, await world.OwedAsync());
         Assert.Equal(DelunoPath, await world.LedgerOutputPathAsync());
         Assert.Equal("completed", await world.LedgerStateAsync());
+        Assert.Contains("Deluno on 192.0.2.30 is answering again, and Weir has told it this file is ready", await world.ReasonAsync(), StringComparison.Ordinal);
     }
 
     private static HttpRequestException Refused() => new("No connection could be made because the target machine actively refused it.");
@@ -120,6 +122,9 @@ public sealed class HandoffReportPlacementTests
 
         public Task<string?> LedgerOutputPathAsync() =>
             Fixture.Db(async uow => await uow.ScalarAsync("SELECT output_path FROM media_manager_handoffs WHERE handoff_id = 'h1'") as string, commit: false);
+
+        public Task<string?> ReasonAsync() =>
+            Fixture.Db(async uow => await uow.ScalarAsync($"SELECT status_reason FROM files WHERE relative_path = '{Relative}'") as string, commit: false);
 
         public Task<string?> LedgerStateAsync() =>
             Fixture.Db(async uow => await uow.ScalarAsync("SELECT state FROM media_manager_handoffs WHERE handoff_id = 'h1'") as string, commit: false);

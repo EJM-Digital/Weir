@@ -94,19 +94,20 @@ public sealed partial class HandoffCompletionReporter
 
         for (var attempt = 1; ; attempt++)
         {
-            ManagerDescription? description = null;
+            ManagerDescription description;
             try
             {
                 description = await port.DescribeAsync(connection, cancellationToken).ConfigureAwait(false);
             }
-#pragma warning disable CA1031 // An unreadable library list only means the output path cannot be placed yet; the report waits.
+#pragma warning disable CA1031 // An unreadable library list only means the output path cannot be placed; the report still goes out.
             catch (Exception exception) when (exception is not OperationCanceledException)
 #pragma warning restore CA1031
             {
                 _logger.LogWarning(exception, "Could not read {Label}'s libraries to place the output path.", connection.Label);
+                return new ManagerOutputFolder(null, true);
             }
 
-            if (description is { Status: not SignalStatus.Unreachable })
+            if (description.Status != SignalStatus.Unreachable || !description.MayAnswerLater)
             {
                 return new ManagerOutputFolder(
                     description.Libraries
