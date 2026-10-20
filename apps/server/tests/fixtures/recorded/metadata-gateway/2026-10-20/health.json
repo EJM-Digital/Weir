@@ -1,0 +1,26 @@
+{
+  "app": "metadata-gateway",
+  "version": "2026-10-20",
+  "state": "health",
+  "recordedAt": "2026-10-20T19:46:16.000Z",
+  "note": "A read-only GET of the public metadata service, as Weir's ArtworkGatewayClient makes it (the request path is the one Weir sends). Only the content type of the reply's headers is kept.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/health",
+        "headers": {}
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "service": "deluno-metadata-gateway",
+          "status": "ok"
+        }
+      }
+    }
+  ]
+}
