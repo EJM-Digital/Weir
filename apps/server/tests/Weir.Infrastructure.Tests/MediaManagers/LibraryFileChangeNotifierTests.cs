@@ -110,6 +110,27 @@ public sealed class LibraryFileChangeNotifierTests
     }
 
     [Fact]
+    public async Task The_manifest_a_real_Deluno_answered_advertises_the_capability_and_its_library_root_is_the_one_the_path_is_translated_to()
+    {
+        using var fixture = new MediaManagerFixture();
+        await fixture.AddConnectionAsync("deluno");
+        // The manifest is the real Deluno's own (fixtures/recorded/deluno-side, rc.30.33); its answer to the notification was never recorded.
+        var manifest = RecordedDelunoReply.Of("1.0.0-rc.30.33", "real-connection", "/api/integrations/external/manifest");
+        fixture.Http
+            .Route(HttpMethod.Get, "/api/integrations/external/manifest", _ => FakeManagerHttp.Response((HttpStatusCode)manifest.Status, manifest.Body))
+            .Json(HttpMethod.Post, "/api/integrations/external/file-changed", """{"path":"/media/Movies/Solaris (1972)/f.mkv","coalesced":false,"titles":[]}""", HttpStatusCode.Accepted);
+
+        var (localFile, localRoot) = OperatingSystem.IsWindows()
+            ? (@"D:\Data\Movies\Solaris (1972)\f.mkv", @"D:\Data\Movies")
+            : ("/data/movies/Solaris (1972)/f.mkv", "/data/movies");
+        await Notifier(fixture).NotifyAsync(new LibraryFileChange("movie", localFile, LocalLibraryRoot: localRoot, Reason: "removed 2 audio tracks"));
+
+        var request = Assert.Single(fixture.Http.RequestsTo(HttpMethod.Post, "/api/integrations/external/file-changed"));
+        Assert.Equal("""{"path":"/media/Movies/Solaris (1972)/f.mkv","tool":"Weir","reason":"removed 2 audio tracks"}""", WireJsonWriter.Dumps(request.Json!, WireJsonFormat.Compact));
+        Assert.Equal(1, await fixture.Store.Scalar("SELECT count(*) FROM activity_events WHERE event_type = 'library.file_change_notified'"));
+    }
+
+    [Fact]
     public async Task A_manager_that_does_not_hold_the_file_is_left_alone()
     {
         using var fixture = new MediaManagerFixture();
