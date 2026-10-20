@@ -11,6 +11,8 @@
 //   * for each kind, the shape of the request and of the reply: every member and the type of its value, and the words of the members that
 //     carry a decision (status, outcome, disposition, failureClass, delivery, code, error, event, enqueued) as written. The state a status
 //     poll reports is not one of them: which state Deluno finds depends on how fast the run was.
+//   * Deluno's status poll of a hand-off is compared by nobody: whether it asks at all before the outcome arrives depends on how fast the
+//     run was, so a state that holds the poll in one run and not in the next is not drift. Its reply is Weir's own, and Weir's tests judge it.
 //
 // A newer Deluno shows up as a different version folder, and its kinds are compared with the checked-in ones all the same.
 //
@@ -55,9 +57,17 @@ export function kindOf(exchange) {
   });
 }
 
-/** The kinds of exchange in a recording, each once. */
+/** Deluno asking Weir where a hand-off stands: whether it asks before the outcome arrives depends on how fast the run was. */
+const STATUS_POLL = /^\/api\/v1\/intake\/handoffs\/deluno\/<id>$/;
+
+function isStatusPoll(kind) {
+  const { method, path: target } = JSON.parse(kind);
+  return method === "GET" && STATUS_POLL.test(target);
+}
+
+/** The kinds of exchange in a recording, each once, set apart from the status poll. */
 export function kindsOf(recording) {
-  return [...new Set(recording.exchanges.map(kindOf))].sort();
+  return [...new Set(recording.exchanges.map(kindOf))].filter((kind) => !isStatusPoll(kind)).sort();
 }
 
 function recordingsIn(root) {

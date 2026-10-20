@@ -37,6 +37,13 @@ test("ids, texts, the state a poll found and how often Deluno asked are not drif
   assert.deepEqual(problems(now, OLD), []);
 });
 
+test("a state that holds Deluno's status poll in one run and not in the next is not drift, either way round", () => {
+  const id = "01a137341a3c7198ae8f4dcabd658222";
+  const withoutPoll = folderOf({ v: { "real-failed": [hand(id), report(id, "failed")] } });
+  assert.deepEqual(problems(withoutPoll, OLD), []);
+  assert.deepEqual(problems(OLD, withoutPoll), []);
+});
+
 test("a decision that changed, a member that went, a new member, a new status and a new route are each reported", () => {
   const id = "01a137341a3c7198ae8f4dcabd658222";
   const changed = problems(folderOf({ v: { "real-failed": [hand(id), ask(id, "queued"), report(id, "completed")] } }), OLD);

@@ -12,6 +12,12 @@ public sealed class QBittorrentRepliesTests
 {
     private const string Kind = DownloadClientKinds.QBittorrent;
 
+    /// <summary>How the versions recorded answer a good login: 4.x and 5.1 with a body, 5.2 with nothing.</summary>
+    private static readonly (int Status, string Text)[] AcceptedLogins = [(200, "Ok."), (204, "")];
+
+    /// <summary>How the versions recorded answer a password they do not know.</summary>
+    private static readonly (int Status, string Text)[] RefusedLogins = [(200, "Fails."), (401, "Unauthorized")];
+
     public static TheoryData<string> Versions => [.. ArrRecording.Versions(Kind)];
 
     [Theory]
@@ -23,8 +29,8 @@ public sealed class QBittorrentRepliesTests
 
         var (ok, detail) = await replay.Port(Kind).TestAsync(ClientReplay.Right(Kind));
 
-        Assert.Equal(200, recording.Exchanges[0].Reply.Status);
-        Assert.Equal("Ok.", recording.Exchanges[0].Reply.Text);
+        var login = recording.Exchanges[0].Reply;
+        Assert.Contains((login.Status, login.Text), AcceptedLogins);
         Assert.True(ok);
         Assert.Equal("Connected. Weir can reach qBittorrent (recorded).", detail);
         replay.AssertSentAsRecorded();
@@ -40,8 +46,8 @@ public sealed class QBittorrentRepliesTests
 
         var (ok, detail) = await replay.Port(Kind).TestAsync(ClientReplay.Wrong(Kind));
 
-        Assert.Equal(200, recording.Only.Reply.Status);
-        Assert.Equal("Fails.", recording.Only.Reply.Text);
+        var login = recording.Only.Reply;
+        Assert.Contains((login.Status, login.Text), RefusedLogins);
         Assert.False(ok);
         Assert.Equal("Weir reached qBittorrent (recorded), but the username or password was refused. Check them and save again.", detail);
         replay.AssertSentAsRecorded();
