@@ -81,11 +81,6 @@ public sealed class SlidingWindowLimiter
             }
 
             var events = node.Value.Events;
-            while (events.Count > 0 && events.Peek() < cutoff)
-            {
-                events.Dequeue();
-            }
-
             if (events.Count >= MaxEvents)
             {
                 return false;
