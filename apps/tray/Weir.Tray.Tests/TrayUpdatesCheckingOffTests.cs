@@ -64,6 +64,22 @@ public sealed class TrayUpdatesCheckingOffTests : IDisposable
         Assert.Equal([UpdateMode.NotifyOnly], _announced);
     }
 
+    [Theory]
+    [InlineData((int)UpdateMode.Auto)]
+    [InlineData((int)UpdateMode.DownloadOnly)]
+    [InlineData((int)UpdateMode.NotifyOnly)]
+    public async Task A_check_chosen_from_the_menu_announces_the_update_it_found_whatever_the_mode_and_downloads_nothing(int mode)
+    {
+        var service = new FakeUpdateService();
+        var updates = Build(service, new UpdateSettings { Mode = (UpdateMode)mode, CheckForUpdates = false });
+
+        await updates.CheckInBackground(asked: true);
+
+        Assert.Equal([UpdateMode.NotifyOnly], _announced);
+        Assert.Equal(0, service.Downloads);
+        Assert.Equal(UpdateMenuAction.Download, updates.MenuState().Action);
+    }
+
     [Fact]
     public async Task A_download_asked_for_in_System_goes_ahead_and_finds_the_update_first()
     {

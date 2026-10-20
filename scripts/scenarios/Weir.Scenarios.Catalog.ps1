@@ -22,14 +22,14 @@ $ScenarioCatalog = @(
     [pscustomobject]@{
         Id = 'update-over-installed-weir'; Phase = 'Update'; Required = $true
         Title = 'An update over the Weir Deluno installed'
-        Does = 'Takes the Weir Deluno''s picker installed (the previous release, running), signs in (or creates the account when it has none), makes a Weir-only workflow and has Weir clean a film in it, reads every Activity entry, then installs the build under test over the running Weir with Setup --silent and reads every Activity entry again. Asks the updated server for the copy of Weir''s data the tray asks for before an update. Leaves a note of the moment the build under test began answering, for the Deluno scenarios.'
+        Does = 'When Deluno''s install log shows its picker at work, waits for it to say it has finished installing; then takes the Weir it installed (the previous release, running), signs in (or creates the account when it has none), makes a Weir-only workflow and has Weir clean a film in it, reads every Activity entry, then installs the build under test over the running Weir with Setup --silent and reads every Activity entry again. Asks the updated server for the copy of Weir''s data the tray asks for before an update. Leaves a note of the moment the build under test began answering, for the Deluno scenarios.'
         Passes = 'Weir is running again on the build under test, with its commit, without being started by hand; the tray log says it was running before the install and started again; the account, the workflow and every Activity entry from before (all of them, paged, with the same time, kind, title, detail and result) are still there; when the update changed the database the copy saved before it exists and System overview names it; the updated server saves the tray''s requested copy under backups\pre-update; a film dropped in afterwards is cleaned.'
     }
     [pscustomobject]@{
         Id = 'workflows-from-deluno'; Phase = 'WithDeluno'; Required = $true
         Title = 'Workflows set up from Deluno'
-        Does = 'Gets an API key for the Deluno in the VM from the key file the Deluno session left there (read inside the VM, then deleted), connects Weir to Deluno, or finds the connection Deluno''s Connect Weir already made, and waits for Weir to set up its workflows from Deluno''s libraries and folders.'
-        Passes = 'Weir''s workflows are linked to Deluno with their folders from Deluno and the folder chain check shows every step ready, with nothing typed in Weir.'
+        Does = 'Gets an API key for the Deluno in the VM from the key file the Deluno session left there (read inside the VM, then deleted), connects Weir to Deluno, or finds the connection Deluno''s Connect Weir already made, and waits for Weir to set up its workflows from Deluno''s libraries and folders. A Deluno with no library set to refine before import has none to set up, and the scenario says so.'
+        Passes = 'Weir''s workflows are linked to Deluno with their folders from Deluno and the folder chain check shows every step ready, with nothing typed in Weir. With no library in Deluno set to refine before import the scenario is not applicable and says what Deluno''s suite has to set up.'
     }
     [pscustomobject]@{
         Id = 'deluno-film-handoff'; Phase = 'WithDeluno'; Required = $true

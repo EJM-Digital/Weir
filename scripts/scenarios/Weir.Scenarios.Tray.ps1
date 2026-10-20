@@ -178,7 +178,17 @@ function Start-LogWatch {
     $files = Get-LogFileProblems
     # Mark is the second the scenario began (UTC). A scenario that begins with no account cannot note the Logs page, and on a machine that
     # was not restored (-NoRestore) the page holds what earlier runs and builds wrote, so only rows written from the mark on are its own.
-    $script:Ctx.LogWatch = [pscustomobject]@{ Server = @($files.Server | ForEach-Object { $_.Key }); Tray = @($files.Tray | ForEach-Object { $_.Key }); Page = $null; Mark = Get-SecondMark }
+    $script:Ctx.LogWatch = [pscustomobject]@{ Server = @($files.Server | ForEach-Object { $_.Key }); Tray = @($files.Tray | ForEach-Object { $_.Key }); Page = $null; Mark = Get-SecondMark; Expected = New-Object System.Collections.Generic.List[object] }
+}
+
+# Names a warning or error the running scenario is about to cause on purpose (a sign-in it makes with a password it knows is wrong, say),
+# so that the log watch does not take it for trouble. It holds for this scenario only: the next one begins with none. Pattern is matched
+# against the message in the log files and the title of the row on System > Logs. System > Logs also lists the Activity entry the same
+# event leaves, under a title of its own: PageTitlePattern names that one, and it is looked for on System > Logs only.
+function Add-ExpectedLogRow {
+    param([Parameter(Mandatory)] [string] $Pattern, [Parameter(Mandatory)] [string] $Why, [string] $PageTitlePattern)
+    if ($null -eq $script:Ctx.LogWatch) { throw 'A log row was named as caused on purpose with no log watch running: Start-LogWatch was not called when the scenario began.' }
+    $script:Ctx.LogWatch.Expected.Add([pscustomobject]@{ Pattern = $Pattern; PageTitlePattern = $PageTitlePattern; Why = $Why })
 }
 
 # Notes the rows on the Logs page, once, when the scenario first has a session.
@@ -203,7 +213,7 @@ function Complete-LogWatch {
     if ($null -eq $watch) { throw 'The scenario ended with no log watch to judge: Start-LogWatch was not called when it began.' }
     $script:Ctx.LogWatch = $null
     $paths = Get-WeirPaths
-    $known = @($script:Ctx.KnownLogRows | Where-Object { $_ })
+    $known = @(@($script:Ctx.KnownLogRows) + $watch.Expected.ToArray() | Where-Object { $_ })
     $files = Get-LogFileProblems
 
     $serverText = Get-FileTextOrNull -Path $paths.ServerLog
@@ -220,7 +230,8 @@ function Complete-LogWatch {
     $page = Get-LogPageRows
     $rows = @($page.Items | ForEach-Object { [pscustomobject]@{ Key = Get-LogPageKey -Row $_; Message = [string]$_.title; At = $_.at } })
     if ($null -eq $watch.Page) { $rows = @($rows | Where-Object { Test-WrittenFrom -At $_.At -Mark $watch.Mark }) }
-    $newRows = @(Select-NewProblems -Problems $rows -Before $watch.Page -Known $known)
+    $knownOnPage = @($known | ForEach-Object { $_; if ($_.PSObject.Properties['PageTitlePattern'] -and $_.PageTitlePattern) { [pscustomobject]@{ Pattern = $_.PageTitlePattern; Why = $_.Why } } })
+    $newRows = @(Select-NewProblems -Problems $rows -Before $watch.Page -Known $knownOnPage)
     Assert-That (-not ($page.More -and $newRows.Count -ge $rows.Count)) 'System > Logs holds more new warnings and errors than one page shows, which is not a clean run'
     Assert-That ($newRows.Count -eq 0) "System > Logs gained no unexpected warning or error (found $($newRows.Count): $((@($newRows | ForEach-Object { $_.Message }) -join ' | ')))"
     "Logs since it began: no unexpected warning or error on System > Logs, in the server log file or in the tray log$onPurpose."

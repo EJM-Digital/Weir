@@ -138,9 +138,25 @@ function Ensure-WeirDelunoConnection {
 
 # --- workflows-from-deluno ----------------------------------------------------------------------------------------------
 
+# Deluno's libraries as its manifest lists them, and which of them are set to refine before import: Weir sets a workflow up for those and
+# for no others. Throws when Deluno does not answer its manifest.
+function Get-DelunoLibraries {
+    $answer = Invoke-Deluno -Path '/api/integrations/external/manifest'
+    if ($answer.Status -ne 200) { throw "Deluno's manifest answered $($answer.Status): $($answer.Text)" }
+    $libraries = @(Get-Prop $answer.Json 'libraries' | Where-Object { $_ })
+    $refining = @($libraries | Where-Object { ([string](Get-Prop $_ 'importWorkflow')).Trim().ToLowerInvariant() -eq 'refine-before-import' })
+    Add-Evidence "Deluno lists $($libraries.Count) library(ies): $((@($libraries | ForEach-Object { "$(Get-Prop $_ 'name') ($(Get-Prop $_ 'importWorkflow'))" }) -join ', ')); $($refining.Count) set to refine before import"
+    [pscustomobject]@{ Libraries = $libraries; Refining = $refining }
+}
+
 function Scenario_workflows_from_deluno {
     $unmet = Test-DelunoPreconditions
     if ($unmet) { return $unmet }
+    # A Deluno nobody has set a library to refine before import on (its suite does that) has nothing for Weir to set up; waiting would only time out.
+    $libraries = Get-DelunoLibraries
+    if ($libraries.Refining.Count -eq 0) {
+        return New-NotApplicable "The Deluno at $($script:Ctx.DelunoUrl) lists $($libraries.Libraries.Count) library(ies) and none is set to refine before import, so Weir has no workflow to set up from it. Deluno's own suite sets its libraries up (and makes its hand-offs) before this phase."
+    }
     $session = $script:Ctx.Session
     $connected = Ensure-WeirDelunoConnection
     $how = $connected.How
