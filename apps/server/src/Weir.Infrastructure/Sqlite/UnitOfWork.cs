@@ -14,12 +14,12 @@ namespace Weir.Infrastructure.Sqlite;
 /// deferred one could not survive another writer committing mid-unit (#586).
 /// </summary>
 /// <remarks>
-/// The only transaction mechanism server-wide: every query, command, commit and rollback that runs
+/// The only transaction mechanism server-wide: every query, command and commit that runs
 /// inside a unit of work uses the <see cref="CancellationToken"/> it was opened with — there is one token per
 /// unit, not one per call, since every operation in a unit belongs to the same request or background pass and
 /// a caller that wants different cancellation semantics for part of its work opens a second unit of work with
 /// a different token (as the library clean handler's own-transaction history write already does). See
-/// <see cref="RollbackAsync"/> for what happens to that token once it is the reason the unit is rolling back.
+/// <see cref="RollbackAsync"/> for why a rollback does not use it.
 /// </remarks>
 public sealed class UnitOfWork : IAsyncDisposable
 {
@@ -211,8 +211,8 @@ public sealed class UnitOfWork : IAsyncDisposable
     /// A caller whose own operation was cancelled reaches this with a token that is already cancelled, but the
     /// rollback itself must still complete — a ROLLBACK abandoned half-way leaves the transaction, and the
     /// write lock it may hold, open on a connection that is about to go back into the pool (#640). There is
-    /// nothing left worth cancelling at this point, so a cancelled token rolls back with
-    /// <see cref="CancellationToken.None"/> instead of propagating it into the ROLLBACK statement.
+    /// nothing left worth cancelling at this point, so the rollback never takes the unit's token: it runs with
+    /// <see cref="CancellationToken.None"/>, whether or not that token is cancelled.
     /// </remarks>
     public async Task RollbackAsync()
     {
@@ -223,10 +223,9 @@ public sealed class UnitOfWork : IAsyncDisposable
             return;
         }
 
-        var rollbackToken = _cancellationToken.IsCancellationRequested ? CancellationToken.None : _cancellationToken;
         try
         {
-            await _transaction.RollbackAsync(rollbackToken).ConfigureAwait(false);
+            await _transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
             ReleaseWriteGate();
         }
         finally
@@ -408,7 +407,7 @@ public static class SqliteValues
             return null;
         }
 
-        var text = Convert.ToString(reader.GetValue(ordinal), CultureInfo.InvariantCulture) ?? string.Empty;
+        var text = Convert.ToString(reader.GetValue(ordinal), CultureInfo.InvariantCulture)!;
         return Timestamp.TryFromIsoFormat(text, out var value)
             ? value
             : throw new FormatException($"Invalid isoformat string: {WireStrings.Repr(text)}");
