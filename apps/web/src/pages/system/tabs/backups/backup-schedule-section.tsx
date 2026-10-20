@@ -24,7 +24,7 @@ const HOURS_PER_WEEK = 168;
 const CLOCK_TICK_MS = 60_000;
 
 const WHAT_A_BACKUP_HOLDS =
-  "A backup holds your workflows, rules, schedule and time zone, plus your media managers and alerts. Media managers and alerts come back without their API keys and webhook addresses; enter those again after restoring. It does not include your sign-in or file history.";
+  "A backup holds your workflows, rules, schedule and time zone, plus your media managers, download clients and alerts. Their API keys, passwords and alert addresses are in it only when a backup password is set, locked with that password; without one, enter them again after restoring. It does not include your sign-in or file history.";
 
 /**
  * When Weir backs up its own settings. The choices are drafts until Save, which appears once one has changed: they
@@ -34,6 +34,7 @@ export function BackupScheduleSection({
   form,
   settings,
   backups,
+  passwordSet,
   onSave,
   saved,
 }: {
@@ -41,6 +42,8 @@ export function BackupScheduleSection({
   settings: AppSettings;
   /** The backups on this machine, or undefined while they are still being read. */
   backups: readonly ConfigurationBackupItem[] | undefined;
+  /** Whether a backup password is set, so the note says whether keys and passwords go into a backup. */
+  passwordSet: boolean;
   onSave: () => void;
   saved: boolean;
 }) {
@@ -59,8 +62,9 @@ export function BackupScheduleSection({
       padded
       note={
         <span title={WHAT_A_BACKUP_HOLDS}>
-          Workflows, rules and settings. Keys and passwords aren&apos;t
-          included.
+          {passwordSet
+            ? "Workflows, rules and settings, with your keys and passwords locked by the backup password."
+            : "Workflows, rules and settings. Keys and passwords aren't included until you set a backup password."}
         </span>
       }
     >

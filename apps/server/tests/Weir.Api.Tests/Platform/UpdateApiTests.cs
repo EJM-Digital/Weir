@@ -85,6 +85,7 @@ public sealed class UpdateApiTests
         await using var _ = server;
         var first = await Json(await admin.GetAsync("/api/v1/suite/update-settings"));
         Assert.Equal(("Auto", true, 60), (first["mode"]!.GetValue<string>(), first["check_on_startup"]!.GetValue<bool>(), first["check_interval_minutes"]!.GetValue<int>()));
+        Assert.False(first["check_for_updates"]!.GetValue<bool>());
 
         using var saved = await admin.PutAsync(
             "/api/v1/suite/update-settings",
@@ -94,6 +95,46 @@ public sealed class UpdateApiTests
         Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
         Assert.Equal(("NotifyOnly", false, 240), (again["mode"]!.GetValue<string>(), again["check_on_startup"]!.GetValue<bool>(), again["check_interval_minutes"]!.GetValue<int>()));
         Assert.Equal(again.ToJsonString(), (await Json(saved)).ToJsonString());
+    }
+
+    [Fact]
+    public async Task The_choice_to_check_for_updates_is_kept_until_it_is_changed()
+    {
+        var (server, admin) = await SignedInAdminAsync("1.0.0");
+        await using var _ = server;
+
+        using var on = await admin.PutAsync("/api/v1/suite/update-settings", new { csrf_token = await admin.CsrfAsync(), mode = "Auto", check_for_updates = true });
+        using var otherChange = await admin.PutAsync("/api/v1/suite/update-settings", new { csrf_token = await admin.CsrfAsync(), mode = "NotifyOnly" });
+        var kept = await Json(await admin.GetAsync("/api/v1/suite/update-settings"));
+        using var off = await admin.PutAsync("/api/v1/suite/update-settings", new { csrf_token = await admin.CsrfAsync(), mode = "NotifyOnly", check_for_updates = false });
+
+        Assert.True((await Json(on))["check_for_updates"]!.GetValue<bool>());
+        Assert.True(kept["check_for_updates"]!.GetValue<bool>());
+        Assert.False((await Json(off))["check_for_updates"]!.GetValue<bool>());
+    }
+
+    [Fact]
+    public async Task A_settings_file_saved_before_the_choice_existed_reads_as_checking_for_updates()
+    {
+        var (server, admin) = await SignedInAdminAsync("1.0.0");
+        await using var _ = server;
+        await File.WriteAllTextAsync(Path.Join(server.Home, "update-settings.json"), "{\"mode\": \"NotifyOnly\", \"checkOnStartup\": false, \"checkIntervalMinutes\": 240}");
+
+        var settings = await Json(await admin.GetAsync("/api/v1/suite/update-settings"));
+
+        Assert.Equal(("NotifyOnly", true), (settings["mode"]!.GetValue<string>(), settings["check_for_updates"]!.GetValue<bool>()));
+    }
+
+    [Fact]
+    public async Task A_choice_to_check_for_updates_that_is_not_true_or_false_is_refused()
+    {
+        var (server, admin) = await SignedInAdminAsync("1.0.0");
+        await using var _ = server;
+
+        using var refused = await admin.PutAsync("/api/v1/suite/update-settings", new { csrf_token = await admin.CsrfAsync(), mode = "Auto", check_for_updates = "sometimes" });
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
+        Assert.False(File.Exists(Path.Join(server.Home, "update-settings.json")));
     }
 
     [Theory]
@@ -190,17 +231,17 @@ public sealed class UpdateApiTests
 
     /// <summary>The tray follows this file. UpdateSettingsTests in the tray's tests load the very same text (A_file_the_settings_page_wrote_is_followed_as_saved).</summary>
     [Theory]
-    [InlineData("Auto", true, 60, "{\n  \"mode\": \"Auto\",\n  \"checkOnStartup\": true,\n  \"checkIntervalMinutes\": 60\n}")]
-    [InlineData("DownloadOnly", false, 240, "{\n  \"mode\": \"DownloadOnly\",\n  \"checkOnStartup\": false,\n  \"checkIntervalMinutes\": 240\n}")]
-    [InlineData("NotifyOnly", true, 10080, "{\n  \"mode\": \"NotifyOnly\",\n  \"checkOnStartup\": true,\n  \"checkIntervalMinutes\": 10080\n}")]
-    public async Task A_saved_choice_reaches_the_tray_in_the_file_it_follows(string mode, bool checkOnStartup, int minutes, string expected)
+    [InlineData("Auto", true, 60, true, "{\n  \"mode\": \"Auto\",\n  \"checkOnStartup\": true,\n  \"checkIntervalMinutes\": 60,\n  \"checkForUpdates\": true\n}")]
+    [InlineData("DownloadOnly", false, 240, false, "{\n  \"mode\": \"DownloadOnly\",\n  \"checkOnStartup\": false,\n  \"checkIntervalMinutes\": 240,\n  \"checkForUpdates\": false\n}")]
+    [InlineData("NotifyOnly", true, 10080, true, "{\n  \"mode\": \"NotifyOnly\",\n  \"checkOnStartup\": true,\n  \"checkIntervalMinutes\": 10080,\n  \"checkForUpdates\": true\n}")]
+    public async Task A_saved_choice_reaches_the_tray_in_the_file_it_follows(string mode, bool checkOnStartup, int minutes, bool checkForUpdates, string expected)
     {
         var (server, admin) = await SignedInAdminAsync("1.0.0");
         await using var _ = server;
 
         using var saved = await admin.PutAsync(
             "/api/v1/suite/update-settings",
-            new { csrf_token = await admin.CsrfAsync(), mode, check_on_startup = checkOnStartup, check_interval_minutes = minutes });
+            new { csrf_token = await admin.CsrfAsync(), mode, check_on_startup = checkOnStartup, check_interval_minutes = minutes, check_for_updates = checkForUpdates });
 
         Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
         var written = await File.ReadAllTextAsync(Path.Join(server.Home, "update-settings.json"));

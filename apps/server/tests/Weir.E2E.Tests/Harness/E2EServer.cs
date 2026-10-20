@@ -56,15 +56,24 @@ public sealed class E2EServer : IAsyncLifetime
     /// A server of its own, set up as the Windows package is (the About screen offers an update to install only there), for a
     /// test that has to stop and start it: the shared server serves every other test and is left running. Its own look at the
     /// releases goes through a proxy that refuses every connection, so what the tray says (the test, through the tray's files) is
-    /// all the About screen has to go on, whatever Weir has been released since.
+    /// all the About screen has to go on, whatever Weir has been released since. It looks for updates, as an install that has said yes does;
+    /// <paramref name="checksForUpdates"/> false is a new install, which has said nothing and checks for nothing.
     /// </summary>
-    public static Task<WeirServer> StartWindowsInstallAsync() =>
-        WeirServer.StartNewAsync(Environment.With(
+    public static async Task<WeirServer> StartWindowsInstallAsync(bool checksForUpdates = true)
+    {
+        var server = await WeirServer.StartNewAsync(Environment.With(
             ("WEIR_RUNTIME", "windows"),
             ("HTTPS_PROXY", NoRouteToTheInternet),
             ("HTTP_PROXY", NoRouteToTheInternet),
             ("ALL_PROXY", NoRouteToTheInternet),
             ("NO_PROXY", string.Empty)));
+        if (checksForUpdates)
+        {
+            TrayFiles.WriteUpdateSettings(server.Home, checkForUpdates: true);
+        }
+
+        return server;
+    }
 
     /// <summary>A server of its own with these settings (environment variables) on top of the shared one's, for a test of a screen that reads the server's startup configuration.</summary>
     public static Task<WeirServer> StartWithSettingsAsync(params (string Name, string Value)[] settings) =>
@@ -82,16 +91,24 @@ public sealed class E2EServer : IAsyncLifetime
     /// (windows, docker or source). GitHub's API, which Weir asks only when the feed cannot answer, goes through a proxy that refuses every connection, so the feed
     /// is all the Updates card has to go on, whatever Weir has been released since.
     /// </summary>
-    public static Task<WeirServer> StartWithReleaseFeedAsync(FakeReleaseFeed feed, string version, string runtime)
+    public static async Task<WeirServer> StartWithReleaseFeedAsync(FakeReleaseFeed feed, string version, string runtime)
     {
         ArgumentNullException.ThrowIfNull(feed);
-        return StartOwnAsync(
+        var server = await StartOwnAsync(
             ("WEIR_ENV", "development"),
             ("WEIR_RELEASES_FEED_URL", feed.Url),
             ("WEIR_VERSION", version),
             ("WEIR_RUNTIME", runtime),
             ("HTTPS_PROXY", NoRouteToTheInternet),
             ("NO_PROXY", string.Empty));
+
+        // A Windows install that looks for updates; a new one does not, and has nothing to show of the feed.
+        if (runtime == "windows")
+        {
+            TrayFiles.WriteUpdateSettings(server.Home, checkForUpdates: true);
+        }
+
+        return server;
     }
 
     /// <summary>

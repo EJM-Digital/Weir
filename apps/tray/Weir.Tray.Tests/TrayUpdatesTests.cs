@@ -171,7 +171,7 @@ public sealed class TrayUpdatesTests : IDisposable
             _clock,
             _shutdown.Token);
 
-        updates.CheckInBackground();
+        _ = updates.CheckInBackground();
 
         await announced.Task.WaitAsync(FinishCeiling);
         return updates;

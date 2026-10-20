@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
 using Weir.Contract.Tests.Harness.Fakes;
 
@@ -40,14 +39,8 @@ public sealed class HandoffRetryCorrectnessTests
             "a hand-off must record the file's size at intake, not leave it for the first scan to discover");
 
         // The retries come from the hand-off itself; each adds to the count and none starts it over (#531 item 1).
-        var retried = await scenario.DriveRetriesUntilAsync<JsonObject>(
-            library,
-            async () =>
-            {
-                var row = await scenario.FileRowAsync(library, rel);
-                return row is not null && Scenario.Whole(row["failure_attempts"]) >= 3 ? row : null;
-            },
-            "the hand-off to retry itself twice");
+        // The count is read between attempts: a retry already under way still shows the failures before it, as "processing".
+        var retried = await scenario.FailureAttemptsReachAsync(library, rel, 3);
         Assert.Equal("processing_failed", (string)retried["status"]!);
     }
 

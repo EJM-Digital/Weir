@@ -13,7 +13,7 @@
 //   * the numbers in a path (`/queue/12`) and in a query (`seriesId=3`).
 //
 // The version folder may differ: that is how a newer release shows up, and then the replies are compared across the two versions. When
-// several versions of an app are checked in (qBittorrent 4.x and 5.x), a fresh recording is compared with the one of the same major version.
+// several versions of an app are checked in (qBittorrent 4.x and 5.x), a fresh recording is compared with the one of the same version, else the newest of the same major version.
 //
 // Usage: node scripts/compare-arr-recordings.mjs <fresh folder> [<checked-in folder>] [--apps sonarr,radarr]   (the apps default to Sonarr and Radarr)
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
@@ -117,11 +117,24 @@ function onlyVersionFolder(appFolder) {
   return folders.length === 1 ? path.join(appFolder, folders[0]) : null;
 }
 
-/** The checked-in version folder to compare a fresh one with: the same version, the only one, or the one of the same major version. */
+/** Orders version names part by part, so 5.10.0 comes after 5.2.4. */
+function byVersion(left, right) {
+  const [a, b] = [left, right].map((name) => name.split(".").map(Number));
+  for (let part = 0; part < Math.max(a.length, b.length); part++) {
+    const difference = (a[part] ?? 0) - (b[part] ?? 0);
+    if (difference !== 0) return difference;
+  }
+  return 0;
+}
+
+/**
+ * The checked-in version folder to compare a fresh one with: the same version, the only one, or the newest of the same major version
+ * (a newer release is compared with the latest one already checked in, not with the one it replaced).
+ */
 function matchingVersionFolder(appFolder, version) {
   const folders = versionFolders(appFolder);
   const major = (name) => name.split(".")[0];
-  const found = folders.includes(version) ? [version] : folders.length === 1 ? folders : folders.filter((name) => major(name) === major(version));
+  const found = folders.includes(version) ? [version] : folders.length === 1 ? folders : folders.filter((name) => major(name) === major(version)).sort(byVersion).slice(-1);
   return found.length === 1 ? path.join(appFolder, found[0]) : null;
 }
 

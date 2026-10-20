@@ -65,6 +65,7 @@ const PREFERENCES: UpdateSettingsOut = {
   mode: "Auto",
   check_on_startup: true,
   check_interval_minutes: 60,
+  check_for_updates: true,
 };
 const SETTINGS = {
   setup_wizard_state: "completed",
@@ -300,6 +301,86 @@ describe("Update preferences", () => {
       "Weir couldn't load update preferences.",
     );
     expect(screen.queryByRole("radiogroup")).toBeNull();
+  });
+
+  it("shows only the choice to check for updates while it is off, and says Weir looks for nothing", async () => {
+    serve(preferencesFor({ ...PREFERENCES, check_for_updates: false }));
+    show(<UpdatePreferences />);
+
+    const choice = await screen.findByRole("radiogroup", {
+      name: "Check for updates",
+    });
+
+    expect(within(choice).getByRole("radio", { name: "Off" })).toBeChecked();
+    expect(
+      screen.getByText("Weir looks for nothing until you switch this on."),
+    ).toBeVisible();
+    expect(screen.queryByRole("group", { name: "Update mode" })).toBeNull();
+    expect(screen.queryByLabelText("Check every")).toBeNull();
+    expect(
+      screen.queryByRole("radiogroup", {
+        name: "Check for updates on startup",
+      }),
+    ).toBeNull();
+  });
+
+  it("switches checking on with the other choices as they were, and then shows how updates are taken", async () => {
+    serve({
+      [UPDATE_SETTINGS]: reply({ ...PREFERENCES, check_for_updates: false }),
+      [SAVE_UPDATE_SETTINGS]: () => Promise.resolve(reply(PREFERENCES)),
+    });
+    show(<UpdatePreferences />);
+
+    fireEvent.click(
+      within(
+        await screen.findByRole("radiogroup", { name: "Check for updates" }),
+      ).getByRole("radio", { name: "On" }),
+    );
+
+    expect(await screen.findByText("Update settings saved.")).toBeVisible();
+    expect(everyRequestBody()).toEqual([
+      expect.objectContaining({
+        mode: "Auto",
+        check_on_startup: true,
+        check_interval_minutes: 60,
+        check_for_updates: true,
+      }),
+    ]);
+    expect(
+      await screen.findByRole("group", { name: "Update mode" }),
+    ).toBeVisible();
+  });
+
+  it("switches checking off and keeps the other choices to send back", async () => {
+    serve({
+      [UPDATE_SETTINGS]: reply({ ...PREFERENCES, mode: "DownloadOnly" }),
+      [SAVE_UPDATE_SETTINGS]: () =>
+        Promise.resolve(
+          reply({
+            ...PREFERENCES,
+            mode: "DownloadOnly",
+            check_for_updates: false,
+          }),
+        ),
+    });
+    show(<UpdatePreferences />);
+
+    fireEvent.click(
+      within(
+        await screen.findByRole("radiogroup", { name: "Check for updates" }),
+      ).getByRole("radio", { name: "Off" }),
+    );
+
+    expect(await screen.findByText("Update settings saved.")).toBeVisible();
+    expect(everyRequestBody()).toEqual([
+      expect.objectContaining({
+        mode: "DownloadOnly",
+        check_for_updates: false,
+      }),
+    ]);
+    await waitFor(() =>
+      expect(screen.queryByRole("group", { name: "Update mode" })).toBeNull(),
+    );
   });
 
   it("saves Check on startup being switched off with the other choices as they were, and says so", async () => {

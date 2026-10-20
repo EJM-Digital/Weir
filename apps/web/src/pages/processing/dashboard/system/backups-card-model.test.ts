@@ -19,6 +19,7 @@ describe("latestBackups", () => {
         file_name: "a",
         size_bytes: 1024,
         made_by: "schedule",
+        secrets_sealed: false,
       },
       {
         id: 4,
@@ -26,6 +27,7 @@ describe("latestBackups", () => {
         file_name: "d",
         size_bytes: 3 * 1024 * 1024,
         made_by: "schedule",
+        secrets_sealed: false,
       },
       {
         id: 2,
@@ -33,6 +35,7 @@ describe("latestBackups", () => {
         file_name: "b",
         size_bytes: 2048,
         made_by: "schedule",
+        secrets_sealed: false,
       },
       {
         id: 3,
@@ -40,6 +43,7 @@ describe("latestBackups", () => {
         file_name: "c",
         size_bytes: 4096,
         made_by: "schedule",
+        secrets_sealed: false,
       },
     ]);
     expect(rows.map((row) => row.id)).toEqual([4, 3, 2]);
@@ -55,6 +59,7 @@ describe("latestBackups", () => {
           file_name: "a",
           size_bytes: 1,
           made_by: "schedule",
+          secrets_sealed: false,
         },
       ]),
     ).toEqual([]);

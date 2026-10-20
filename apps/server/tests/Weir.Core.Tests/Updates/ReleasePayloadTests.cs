@@ -240,6 +240,44 @@ public sealed class ReleasePayloadTests
     }
 
     [Fact]
+    public void A_new_install_and_a_file_that_cannot_be_read_check_for_nothing()
+    {
+        Assert.Equal(WireBool.False, UpdateStatus.DefaultUpdateSettings["check_for_updates"]);
+        Assert.Equal(WireBool.False, UpdateStatus.UnreadableUpdateSettings["check_for_updates"]);
+    }
+
+    [Fact]
+    public void A_file_saved_before_the_choice_existed_keeps_checking_and_a_saved_choice_is_followed()
+    {
+        var older = UpdateStatus.ParseUpdateSettings("""{"mode": "DownloadOnly", "checkOnStartup": false, "checkIntervalMinutes": 240}""")!;
+        var off = UpdateStatus.ParseUpdateSettings("""{"mode": "Auto", "checkForUpdates": false}""")!;
+        var on = UpdateStatus.ParseUpdateSettings("""{"mode": "Auto", "checkForUpdates": true}""")!;
+
+        Assert.Equal(WireBool.True, older["check_for_updates"]);
+        Assert.Equal(WireBool.False, off["check_for_updates"]);
+        Assert.Equal(WireBool.True, on["check_for_updates"]);
+    }
+
+    [Fact]
+    public void The_choice_to_check_is_written_for_the_tray_to_read()
+    {
+        var written = Assert.IsType<WireObject>(WireJsonParser.Parse(UpdateStatus.SerializeUpdateSettings("Auto", true, 60, false)));
+
+        Assert.Equal(WireBool.False, written["checkForUpdates"]);
+    }
+
+    [Fact]
+    public void Update_checking_that_is_off_is_a_status_of_its_own_with_no_release_in_it()
+    {
+        var status = UpdateStatus.Off("3.2.16", "windows");
+
+        Assert.Equal("off", Text(status, "status"));
+        Assert.Equal("Update checking is off, so Weir is not looking for new versions. Press Check now to look once, or turn it on below.", Text(status, "summary"));
+        Assert.IsType<WireNull>(status["latest_version"]);
+        Assert.Equal(WireBool.True, status["in_app_upgrade_supported"]);
+    }
+
+    [Fact]
     public void A_settings_file_is_read_with_its_defaults_filled_in()
     {
         var full = UpdateStatus.ParseUpdateSettings("""{"mode": " DownloadOnly ", "checkOnStartup": false, "checkIntervalMinutes": 120}""");
@@ -279,7 +317,7 @@ public sealed class ReleasePayloadTests
     [Fact]
     public void The_files_the_tray_reads_are_written_as_json()
     {
-        var settings = UpdateStatus.SerializeUpdateSettings("Auto", true, 60);
+        var settings = UpdateStatus.SerializeUpdateSettings("Auto", true, 60, true);
         var work = UpdateStatus.SerializeWorkState(true, new DateTimeOffset(2026, 10, 19, 12, 0, 0, TimeSpan.FromHours(2)));
 
         Assert.Equal("Auto", Text(Assert.IsType<WireObject>(WireJsonParser.Parse(settings)), "mode"));

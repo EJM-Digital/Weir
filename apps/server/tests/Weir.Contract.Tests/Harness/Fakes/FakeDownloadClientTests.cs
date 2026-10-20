@@ -32,8 +32,8 @@ public sealed class FakeDownloadClientTests : IDisposable
         withSession.Headers.Add("Cookie", accepted.Headers.GetValues("Set-Cookie").Single().Split(';')[0]);
         var preferences = JsonNode.Parse(await (await _http.SendAsync(withSession)).Content.ReadAsStringAsync())!;
 
-        Assert.Equal("Fails.", await refused.Content.ReadAsStringAsync());
-        Assert.Equal("Ok.", await accepted.Content.ReadAsStringAsync());
+        Assert.Equal((HttpStatusCode.Unauthorized, "Unauthorized"), (refused.StatusCode, await refused.Content.ReadAsStringAsync()));
+        Assert.Equal((HttpStatusCode.NoContent, string.Empty), (accepted.StatusCode, await accepted.Content.ReadAsStringAsync()));
         Assert.Equal(HttpStatusCode.Forbidden, withoutSession.StatusCode);
         Assert.Equal("/downloads", (string)preferences["save_path"]!);
         Assert.Equal([new SignInAttempt("alice", "wrong", false), new SignInAttempt("alice", "right", true)], client.Attempts);

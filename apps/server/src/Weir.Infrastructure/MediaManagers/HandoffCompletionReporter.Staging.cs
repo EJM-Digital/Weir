@@ -33,7 +33,7 @@ public sealed partial class HandoffCompletionReporter
         PendingReport? owed;
         try
         {
-            owed = await PersistClaimedReportAsync(uow, origin, ready.Outcome, ready.Target, ready.KeepOwed).ConfigureAwait(false);
+            owed = await PersistClaimedReportAsync(uow, origin, ready.Outcome, ready.Target, ready.KeepOwed, ready.Unplaced).ConfigureAwait(false);
             await uow.CommitAsync().ConfigureAwait(false);
         }
         catch (Exception exception) when (exception is SqliteException or InvalidOperationException or IOException)
@@ -46,6 +46,21 @@ public sealed partial class HandoffCompletionReporter
         if (ready.Target is null)
         {
             return $"skipped: {ready.SkipReason}";
+        }
+
+        if (ready.Unplaced is not null)
+        {
+            if (ready.Outcome.LibraryId is { } waitingLibrary)
+            {
+                foreach (var relativePath in ready.Outcome.Files)
+                {
+                    await AppendFileSentenceAsync(uow, waitingLibrary, relativePath, ManagerWaitMessages.ReportWaiting(ready.Target.Connection.Label)).ConfigureAwait(false);
+                }
+
+                await uow.CommitAsync().ConfigureAwait(false);
+            }
+
+            return "queued: the manager would not list its libraries, so the report waits until Weir can say where it sees the output";
         }
 
         if (!deliverNow)
@@ -80,12 +95,12 @@ public sealed partial class HandoffCompletionReporter
         var staged = await StageReadyReportAsync(uow, origin, finish, result: null, libraryId: null, viaCancellation: true, cancellationToken).ConfigureAwait(false);
         if (staged is { } ready)
         {
-            await PersistClaimedReportAsync(uow, origin, ready.Outcome, ready.Target, ready.KeepOwed).ConfigureAwait(false);
+            await PersistClaimedReportAsync(uow, origin, ready.Outcome, ready.Target, ready.KeepOwed, ready.Unplaced).ConfigureAwait(false);
         }
     }
 
     /// <summary>A report staged and ready to persist, once its target's readiness check claimed the hand-off.</summary>
-    private sealed record StagedReport(ReportedOutcome Outcome, HandoffReportTarget? Target, string? SkipReason, bool KeepOwed = false);
+    private sealed record StagedReport(ReportedOutcome Outcome, HandoffReportTarget? Target, string? SkipReason, bool KeepOwed = false, Unplaced? Unplaced = null);
 
     /// <summary>
     /// Build the report for a hand-off whose targets are all now final: a folder-style report naming every delivered
@@ -105,13 +120,14 @@ public sealed partial class HandoffCompletionReporter
         if (!viaCancellation && targets.Count <= 1)
         {
             ArgumentNullException.ThrowIfNull(result);
-            var outputPath = target is not null && CompletionReports.IsSucceeded(result)
-                ? await ManagerOutputPathAsync(target.Connection, origin, result, cancellationToken).ConfigureAwait(false)
-                : null;
+            var (outputPath, unplacedFolder) = target is not null && CompletionReports.IsSucceeded(result)
+                ? await PlaceOutputAsync(target.Connection, origin, result, cancellationToken).ConfigureAwait(false)
+                : (null, null);
             var body = CompletionReports.BuildCompletionBody(origin, result, outputPath);
             var relative = targets.Count == 1 ? targets[0].RelativePath : null;
-            var outcome = new ReportedOutcome(FileReportState(body), body, relative, relative is null ? [] : [relative], libraryId);
-            return new StagedReport(outcome, target, target is null ? reason : null, resolution.KeepOwed);
+            var fileState = FileReportState(body);
+            var outcome = new ReportedOutcome(fileState, body, relative, relative is null ? [] : [relative], libraryId);
+            return new StagedReport(outcome, target, target is null ? reason : null, resolution.KeepOwed, unplacedFolder is null ? null : new Unplaced(unplacedFolder, fileState));
         }
 
         var state = FolderHandoffReports.State(targets);
@@ -123,16 +139,18 @@ public sealed partial class HandoffCompletionReporter
         var localFolder = await LocalOutputFolderAsync(uow, row, result).ConfigureAwait(false);
         var managerFolder = target is not null && localFolder is not null
             ? await ManagerOutputFolderAsync(target.Connection, origin, cancellationToken).ConfigureAwait(false)
-            : null;
+            : new ManagerOutputFolder(null, true);
         string AsManagerSees(string local) =>
-            managerFolder is not null && TranslateOutputPath(local, localFolder!, managerFolder) is { } translated ? translated : local;
+            managerFolder.Path is not null && TranslateOutputPath(local, localFolder!, managerFolder.Path) is { } translated ? translated : local;
 
         var outputFiles = targets.Where(file => file.Delivered && file.OutputFile is not null).Select(file => AsManagerSees(file.OutputFile!)).ToList();
         var handBackFolder = localFolder is null ? null : AsManagerSees(Path.Join(localFolder, row.RelativePath));
         var folderBody = FolderHandoffReports.BuildBody(origin, targets, handBackFolder, outputFiles);
         var delivered = targets.Where(file => file.Delivered).Select(file => file.RelativePath).ToList();
-        var folderOutcome = new ReportedOutcome(IsSupersededReport(folderBody) ? HandoffLedgerRules.Cancelled : state, folderBody, row.RelativePath, delivered, libraryId ?? row.LibraryId);
-        return new StagedReport(folderOutcome, target, target is null ? reason : null, resolution.KeepOwed);
+        var folderState = IsSupersededReport(folderBody) ? HandoffLedgerRules.Cancelled : state;
+        var folderOutcome = new ReportedOutcome(folderState, folderBody, row.RelativePath, delivered, libraryId ?? row.LibraryId);
+        var unplaced = !managerFolder.Readable && delivered.Count > 0 ? new Unplaced(localFolder!, folderState) : null;
+        return new StagedReport(folderOutcome, target, target is null ? reason : null, resolution.KeepOwed, unplaced);
     }
 
     /// <summary>The library's output folder as Weir sees it: from the pass that just finished, else from the library itself.</summary>
@@ -174,25 +192,24 @@ public sealed partial class HandoffCompletionReporter
     /// Persist a staged report's ledger state and, when there is somewhere to send it, the report itself as owed —
     /// unconditionally, before delivery is even attempted (#667), so a crash or exception between claiming and sending
     /// never leaves the claim behind with nothing for the heartbeat to find. Does not commit: the caller does, in the
-    /// same transaction as the claim that produced <paramref name="outcome"/>.
+    /// same transaction as the claim that produced <paramref name="outcome"/>. A report that is <paramref name="unplaced"/> leaves the
+    /// ledger as it is: the hand-off has no output path to show until the report is placed (<see cref="PlaceOwedReportAsync"/>).
     /// </summary>
-    private async Task<PendingReport?> PersistClaimedReportAsync(UnitOfWork uow, HandoffOrigin origin, ReportedOutcome outcome, HandoffReportTarget? target, bool keepOwed = false)
+    private async Task<PendingReport?> PersistClaimedReportAsync(
+        UnitOfWork uow, HandoffOrigin origin, ReportedOutcome outcome, HandoffReportTarget? target, bool keepOwed = false, Unplaced? unplaced = null)
     {
         var body = outcome.Body;
-        await _ledger.RecordOutcomeAsync(
-            uow,
-            origin.SourceKey,
-            origin.HandoffId,
-            outcome.State,
-            body.Get("outputPath") is WireString output ? output.Value : null,
-            body.Get("message") is WireString message ? message.Value : null,
-            body.Get("outputFiles") is WireArray files ? [.. files.Items.OfType<WireString>().Select(file => file.Value)] : null).ConfigureAwait(false);
+        if (unplaced is null)
+        {
+            await RecordOutcomeOfAsync(uow, origin.SourceKey, origin.HandoffId, outcome.State, body).ConfigureAwait(false);
+        }
+
         if ((target is null && !keepOwed) || string.IsNullOrEmpty(origin.HandoffId))
         {
             return null;
         }
 
-        var owed = new PendingReport(origin.CallbackPath, origin.ReleaseName, origin.LibraryId, body, outcome.LibraryId, outcome.Subject, outcome.Files);
+        var owed = new PendingReport(origin.CallbackPath, origin.ReleaseName, origin.LibraryId, body, outcome.LibraryId, outcome.Subject, outcome.Files, Unplaced: unplaced);
         await HandoffLedgerStore.SetPendingReportAsync(uow, origin.SourceKey, origin.HandoffId, owed.ToJson()).ConfigureAwait(false);
         return owed;
     }

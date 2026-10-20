@@ -21,6 +21,9 @@ internal static class PoolStarvationSampler
 {
     internal const string FileVariable = "WEIR_POOL_SAMPLE";
 
+    /// <summary>Whether this run asked for the report.</summary>
+    internal static bool IsAsked => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(FileVariable));
+
     private static readonly TimeSpan Every = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan Report = TimeSpan.FromMilliseconds(500);
 
@@ -30,12 +33,12 @@ internal static class PoolStarvationSampler
 #pragma warning restore CA2255
     internal static void StartIfAsked()
     {
-        var path = Environment.GetEnvironmentVariable(FileVariable);
-        if (string.IsNullOrWhiteSpace(path))
+        if (!IsAsked)
         {
             return;
         }
 
+        var path = Environment.GetEnvironmentVariable(FileVariable)!;
         new Thread(() => Sample(path)) { IsBackground = true, Name = nameof(PoolStarvationSampler) }.Start();
     }
 

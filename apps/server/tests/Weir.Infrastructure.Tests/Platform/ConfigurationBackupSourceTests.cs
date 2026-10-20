@@ -17,8 +17,8 @@ public sealed class ConfigurationBackupSourceTests
         var suiteSettings = new SuiteSettingsStore(fixture.Users);
         var bundle = new ConfigurationBundleStore(
             suiteSettings,
-            new ConfigurationBundleConnections(new Weir.Infrastructure.Notifications.NotificationChannelStore(), new Weir.Infrastructure.MediaManagers.MediaManagerConnectionStore()));
-        return new ConfigurationBackups(fixture.Options, fixture.Clock, new IanaTimeZoneResolver(), suiteSettings, bundle);
+            BackupParts.Connections());
+        return new ConfigurationBackups(fixture.Options, fixture.Clock, new IanaTimeZoneResolver(), suiteSettings, bundle, BackupParts.Passwords());
     }
 
     private static async Task<StoreFixture> DailyAtTwoAsync()

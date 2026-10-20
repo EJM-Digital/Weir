@@ -51,6 +51,47 @@ public sealed class SetupWizardTests(E2EServer server) : E2ETestBase(server)
         await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "What's next", Exact = true })).ToBeVisibleAsync(new() { Timeout = Navigation.SubmitSettleMs });
     }
 
+    private static ILocator CheckForUpdates(IPage page) => page.GetByRole(AriaRole.Checkbox, new() { Name = "Check for updates", Exact = true });
+
+    [E2EFact]
+    public async Task The_Windows_app_asks_whether_to_check_for_updates_starts_with_no_and_saves_a_yes_before_it_marks_setup_done()
+    {
+        await using var weir = await E2EServer.StartWindowsInstallAsync(checksForUpdates: false);
+        var page = await NewPageAsync();
+        var requests = RequestLog.Watch(page);
+        await SetupWizard.CreateAccountAsync(page, weir.BaseUrl.GetLeftPart(UriPartial.Authority));
+        await Expect(CheckForUpdates(page)).Not.ToBeCheckedAsync();
+        await Expect(page.GetByText("It checks nothing unless you say so.", new() { Exact = false })).ToBeVisibleAsync();
+        await Axe.AssertNoViolationsAsync(page, "The wizard asking whether to check for updates");
+        await CheckForUpdates(page).CheckAsync();
+        var mark = requests.Mark();
+
+        await FinishWithNothingTypedAsync(page);
+
+        var sent = requests.Since(mark);
+        Assert.Equal([$"PUT /api/v1/suite/update-settings", $"PUT {SettingsPath}"], Lines(sent));
+        Assert.True(BodyOf(sent[0]).GetProperty("check_for_updates").GetBoolean());
+        Assert.Contains("\"checkForUpdates\": true", File.ReadAllText(Path.Join(weir.Home, "update-settings.json")), StringComparison.Ordinal);
+    }
+
+    [E2EFact]
+    public async Task A_Docker_install_is_not_asked_whether_to_check_for_updates_and_saves_nothing_about_it()
+    {
+        await using var weir = await E2EServer.StartOwnAsync(("WEIR_RUNTIME", "docker"));
+        var page = await NewPageAsync();
+        var requests = RequestLog.Watch(page);
+        await SetupWizard.CreateAccountAsync(page, weir.BaseUrl.GetLeftPart(UriPartial.Authority));
+        await Expect(page.GetByRole(AriaRole.Radio)).ToHaveCountAsync(4);
+        await Expect(CheckForUpdates(page)).ToHaveCountAsync(0);
+        await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Updates", Exact = true })).ToHaveCountAsync(0);
+        var mark = requests.Mark();
+
+        await FinishWithNothingTypedAsync(page);
+
+        Assert.Equal([$"PUT {SettingsPath}"], Lines(requests.Since(mark)));
+        Assert.False(File.Exists(Path.Join(weir.Home, "update-settings.json")));
+    }
+
     [E2EFact]
     public async Task Finishing_with_typed_folders_fills_in_the_first_workflow_of_each_type_saves_the_settings_and_says_whats_next()
     {

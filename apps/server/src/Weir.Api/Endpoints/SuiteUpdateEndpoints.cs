@@ -66,12 +66,18 @@ internal sealed class SuiteUpdateEndpointHandlers
         var mode = model.Literal("mode", UpdateStatus.Modes);
         var checkOnStartup = model.Bool("check_on_startup", defaultValue: true);
         var interval = model.Number("check_interval_minutes", 60, required: false, ge: 1, le: 10080);
+
+        // A save that does not mention the choice leaves it as it was.
+        var asked = model.OptionalBool("check_for_updates");
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
         request.RequireConfirmationToken(csrfToken);
-        return ApiRoutes.Ok(_files.WriteSettings(mode, checkOnStartup, interval));
+        var checkForUpdates = asked ?? CheckingIsOn(_files.ReadSettings());
+        return ApiRoutes.Ok(_files.WriteSettings(mode, checkOnStartup, interval, checkForUpdates));
     }
+
+    private static bool CheckingIsOn(WireObject settings) => settings.Get("check_for_updates")?.IsTruthy ?? false;
 
     public async Task<ApiResult> GetUpdateStateAsync(ApiRequest request)
     {

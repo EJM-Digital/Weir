@@ -63,6 +63,7 @@ public static class WeirPlatformServices
         services.TryAddSingleton<NotificationChannelStore>();
         services.TryAddSingleton<SuiteSettingsStore>();
         services.TryAddSingleton<SuitePauseService>();
+        services.TryAddSingleton<BackupPasswordStore>();
         services.TryAddSingleton<ConfigurationBundleConnections>();
         services.TryAddSingleton<ConfigurationBundleStore>();
 

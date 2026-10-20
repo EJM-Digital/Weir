@@ -71,6 +71,7 @@ function updateStatuses(): Record<string, StatusMeaning> {
     "downloaded",
     "not_published",
     "rate_limited",
+    "off",
     "unavailable",
   ];
   return Object.fromEntries(
@@ -160,6 +161,7 @@ const PRODUCTION_MEANINGS = {
       downloaded: "todo",
       not_published: "idle",
       rate_limited: "attention",
+      off: "idle",
       unavailable: "attention",
     } satisfies Record<SystemOverview["update"]["status"], StatusMeaning>,
   },

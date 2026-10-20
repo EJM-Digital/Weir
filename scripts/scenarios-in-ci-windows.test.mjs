@@ -154,15 +154,15 @@ test("the recovery command's output is kept with the record, and not the passwor
 
 // --- the build under test stays the build under test --------------------------------------------------------------------------------
 
-test("a newer release in the feed does not replace the build under test, because the install only announces updates", async () => {
+test("a newer release in the feed does not replace the build under test, because a new install starts with update checking off", async () => {
   const stand = new FakeWindows({ feedHasNewerRelease: true });
   const results = await runScenarios({ ids: Object.keys(SCENARIOS), registry: SCENARIOS, world: { ...stand.world(), watchLogs } });
   assert.deepEqual(results.map((result) => result.status), ["passed", "passed", "passed"], results.map((result) => result.detail).join(" | "));
-  assert.ok(stand.calls.indexOf("keepUpdatesFromInstalling") < stand.calls.indexOf("startTray 9347"));
+  assert.match(await stand.machine.readText(stand.paths.trayLog), /This is a new install, so update checking starts off/);
 });
 
 test("a Weir that installs the newest release when it next starts fails the scenario that restarts it", async () => {
-  const stand = new FakeWindows({ feedHasNewerRelease: true });
+  const stand = new FakeWindows({ feedHasNewerRelease: true, newInstallChecksForUpdates: true });
   stand.machine.keepUpdatesFromInstalling = async () => undefined;
   const [result] = await runScenarios({ ids: ["recover-locked-out-account"], registry: SCENARIOS, world: { ...stand.world(), watchLogs } });
   assert.equal(result.status, "failed");
@@ -175,6 +175,7 @@ test("a fresh install whose Setup fails, whose server reports another version or
   assert.match(await failureOf("fresh-install", { setupExit: 1603 }), /Setup --silent exited 1603, not 0/);
   assert.match(await failureOf("fresh-install", { reportedVersion: "3.3.9" }), /reports 3\.3\.9, not the build under test \(3\.4\.0\)/);
   assert.match(await failureOf("fresh-install", { trayShowsWindow: true }), /the tray opened a window/);
+  assert.match(await failureOf("fresh-install", { newInstallChecksForUpdates: true }), /a new install saved checkForUpdates true, not false/);
   assert.match(await failureOf("fresh-install", { listensOn: ["127.0.0.1", "0.0.0.0"] }), /listens on 127\.0\.0\.1, 0\.0\.0\.0, not on this PC only/);
 });
 
@@ -220,9 +221,8 @@ test("a recovery that leaves an earlier session signed in does not pass", async 
 
 test("Weir is running again after a recovery that failed, so the next scenario finds it", async () => {
   const stand = new FakeWindows({ recoverLooksElsewhere: true });
-  const results = await runScenarios({ ids: ["recover-locked-out-account", "fresh-install"], registry: SCENARIOS, world: { ...stand.world(), watchLogs } });
-  assert.deepEqual(results.map((result) => result.status), ["failed", "passed"]);
-  assert.equal(stand.calls.at(-1), "startTray 9347");
+  const results = await runScenarios({ ids: ["recover-locked-out-account", "uninstall-keeps-the-data"], registry: SCENARIOS, world: { ...stand.world(), watchLogs } });
+  assert.deepEqual(results.map((result) => result.status), ["failed", "passed"], results.map((result) => result.detail).join(" | "));
 });
 
 // --- uninstall-keeps-the-data, broken -------------------------------------------------------------------------------------------------

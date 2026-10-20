@@ -192,6 +192,7 @@ function renderSettings(
   qc.setQueryData(authKeys.session, minimalCurrentSession);
   qc.setQueryData(settingsKeys.configurationBackups, {
     directory: "C:/Weir/backups/suite-configuration",
+    password_set: false,
     items: overrides?.backupItems ?? [],
   });
   qc.setQueryData(
@@ -233,6 +234,7 @@ async function renderSettingsWithSupportConfig(
   qc.setQueryData(authKeys.session, minimalCurrentSession);
   qc.setQueryData(settingsKeys.configurationBackups, {
     directory: "C:/Weir/backups/suite-configuration",
+    password_set: false,
     items: [],
   });
   qc.setQueryData(
@@ -329,6 +331,7 @@ describe("SystemPage", () => {
         size_bytes: 512,
         file_name: "weir-configuration-2026-04-12.json",
         made_by: "manual",
+        secrets_sealed: false,
       });
     renderSettings(operatorMe, { initialEntries: ["/system?tab=backups"] });
 
@@ -347,6 +350,7 @@ describe("SystemPage", () => {
       size_bytes: 512,
       file_name: "suite-configuration-20260410-020000.json",
       made_by: "schedule" as const,
+      secrets_sealed: false,
     };
     const byHand = {
       id: 9,
@@ -354,12 +358,14 @@ describe("SystemPage", () => {
       size_bytes: 512,
       file_name: "suite-configuration-20260412-120000.json",
       made_by: "manual" as const,
+      secrets_sealed: false,
     };
     vi.spyOn(settingsApi, "postConfigurationBackupNow").mockResolvedValue(
       byHand,
     );
     vi.spyOn(settingsApi, "fetchConfigurationBackupList").mockResolvedValue({
       directory: "C:/Weir/backups/suite-configuration",
+      password_set: false,
       items: [byHand, scheduled],
     });
     renderSettings(operatorMe, {
@@ -715,6 +721,7 @@ describe("SystemPage", () => {
     qc.setQueryData(authKeys.session, minimalCurrentSession);
     qc.setQueryData(settingsKeys.configurationBackups, {
       directory: "C:/Weir/backups/suite-configuration",
+      password_set: false,
       items: [],
     });
     qc.setQueryData(settingsKeys.updateStatus, minimalUpdateStatus);
@@ -770,6 +777,7 @@ describe("SystemPage", () => {
       mode: "Auto" | "DownloadOnly" | "NotifyOnly";
       check_on_startup: boolean;
       check_interval_minutes: number;
+      check_for_updates: boolean;
     };
   }) {
     const qc = new QueryClient({
@@ -781,6 +789,7 @@ describe("SystemPage", () => {
     qc.setQueryData(authKeys.session, minimalCurrentSession);
     qc.setQueryData(settingsKeys.configurationBackups, {
       directory: "C:/Weir/backups/suite-configuration",
+      password_set: false,
       items: [],
     });
     qc.setQueryData(settingsKeys.updateStatus, overrides.updateStatus);
@@ -804,6 +813,7 @@ describe("SystemPage", () => {
         mode: "NotifyOnly",
         check_on_startup: true,
         check_interval_minutes: 60,
+        check_for_updates: true,
       },
     });
 
@@ -970,6 +980,7 @@ describe("SystemPage", () => {
         mode: body.mode,
         check_on_startup: body.check_on_startup ?? true,
         check_interval_minutes: body.check_interval_minutes ?? 60,
+        check_for_updates: body.check_for_updates ?? true,
       }));
     const qc = seededUpdateClient({
       updateStatus: windowsUpdateAvailableStatus,
@@ -977,6 +988,7 @@ describe("SystemPage", () => {
         mode: "NotifyOnly",
         check_on_startup: true,
         check_interval_minutes: 60,
+        check_for_updates: true,
       },
     });
     render(wrap(<SystemPage />, qc));
@@ -988,6 +1000,7 @@ describe("SystemPage", () => {
         mode: "Auto",
         check_on_startup: true,
         check_interval_minutes: 60,
+        check_for_updates: true,
       });
     });
     expect(

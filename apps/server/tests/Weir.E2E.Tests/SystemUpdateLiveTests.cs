@@ -103,6 +103,24 @@ public sealed class SystemUpdateLiveTests(E2EServer server) : E2ETestBase(server
     }
 
     [E2EFact]
+    public async Task While_update_checking_is_off_Check_now_and_Download_update_still_go_to_the_tray()
+    {
+        await using var own = await E2EServer.StartWindowsInstallAsync(checksForUpdates: false);
+        var page = await OpenAboutAsync(own);
+        await Expect(page.GetByTestId("suite-settings-release-status")).ToContainTextAsync("Off");
+        await Expect(Button(page, "Check now")).ToBeEnabledAsync();
+
+        await Button(page, "Check now").ClickAsync();
+        await TrayFiles.TakeRequestAsync(own.Home, TrayFiles.CheckRequest);
+        TrayFiles.WriteUpdateStep(own.Home, "idle", Version);
+        await Expect(Button(page, "Download update")).ToBeEnabledAsync(new() { Timeout = NoticeMs });
+
+        await Button(page, "Download update").ClickAsync();
+        await TrayFiles.TakeRequestAsync(own.Home, TrayFiles.DownloadRequest);
+        await AssertNotReloadedAsync(page);
+    }
+
+    [E2EFact]
     public async Task Check_now_then_Download_update_then_Restart_and_apply_follow_the_tray_without_a_reload()
     {
         await using var own = await E2EServer.StartWindowsInstallAsync();

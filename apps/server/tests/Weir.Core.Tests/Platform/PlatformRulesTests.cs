@@ -341,9 +341,9 @@ public sealed class PlatformRulesTests
 
         Assert.Null(UpdateStatus.ParseUpdateSettings("{\"mode\": \"Notify"));
         Assert.Null(UpdateStatus.ParseUpdateSettings("{\"mode\": \"InstallEverythingNow\"}"));
-        Assert.Equal("{\"mode\":\"DownloadOnly\",\"check_on_startup\":false,\"check_interval_minutes\":240}",
+        Assert.Equal("{\"mode\":\"DownloadOnly\",\"check_on_startup\":false,\"check_interval_minutes\":240,\"check_for_updates\":true}",
             WireJsonWriter.Dumps(UpdateStatus.ParseUpdateSettings("{\"mode\": \"DownloadOnly\", \"checkOnStartup\": false, \"checkIntervalMinutes\": 240}")!, WireJsonFormat.Response));
-        Assert.Equal("{\n  \"mode\": \"Auto\",\n  \"checkOnStartup\": true,\n  \"checkIntervalMinutes\": 1\n}", UpdateStatus.SerializeUpdateSettings("Auto", true, 1));
+        Assert.Equal("{\n  \"mode\": \"Auto\",\n  \"checkOnStartup\": true,\n  \"checkIntervalMinutes\": 1,\n  \"checkForUpdates\": false\n}", UpdateStatus.SerializeUpdateSettings("Auto", true, 1, false));
     }
 
     [Fact]
