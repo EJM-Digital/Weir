@@ -46,6 +46,8 @@ services:
     environment:
       WEIR_PUID: "1654"
       WEIR_PGID: "1654"
+      # Posters come from a service on the internet. No scenario looks at one, and a lookup that cannot connect is a warning the scenarios rightly reject.
+      WEIR_ARTWORK_GATEWAY_URL: "off"
     volumes:
       - downloads:/downloads
       - weir-output:/weir

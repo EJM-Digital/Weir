@@ -490,7 +490,7 @@
       "home": "windows",
       "shard": "windows-tray",
       "state": "ported",
-      "why": "A copy of the install's files with no Update.exe beside it is run as a portable copy would be: it checks for no update, writes no heartbeat, and Weir refuses the update buttons in words; the VM suite only ran the installed tray."
+      "why": "A copy of the install's files with no Update.exe beside it is run as a portable copy would be: it checks for no update, writes a heartbeat that says it is not installed, and Weir refuses the update buttons in words; the VM suite only ran the installed tray."
     },
     {
       "id": "network-access-from-weir",
