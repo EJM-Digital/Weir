@@ -97,8 +97,8 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Tray.ps1')
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Recover.ps1')
 
-# The warnings and errors a run is allowed to cause on purpose, each with why. An unexplained one fails the scenario that was running
-# when it appeared. Empty unless a scenario provokes one deliberately; the scenarios here provoke none.
+# The warnings and errors every scenario of a run is allowed to cause on purpose, each with why. An unexplained one fails the scenario that was
+# running when it appeared. Empty: a scenario that provokes one names it for itself with Add-ExpectedLogRow.
 $KnownLogRows = @()
 
 function Get-ScenarioFunction {

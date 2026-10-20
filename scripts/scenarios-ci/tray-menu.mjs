@@ -16,6 +16,21 @@ const sameFolder = (a, b) => a.replaceAll("/", "\\").replace(/\\+$/, "").toLower
 /** The version the menu's version line shows: without the build metadata after a plus sign. */
 export const menuVersion = (version) => version.split("+")[0];
 
+/** The line the tray logs when a check for updates ends: an update found, or nothing newer. */
+export const UPDATE_CHECK_ANSWER = /^(Update available: v\S+|No update available\.)/;
+
+/**
+ * What is wrong with the answer a check for updates came to, for the build under test; nothing when it is as it should be. The placeholder
+ * build (0.x) is older than every release, so the release feed always holds a newer one. A build given a release version is that release
+ * itself, as on a golden-path run, and the feed holds nothing newer: finding nothing is right for it, and an update found is right too.
+ */
+export function updateAnswerProblem(buildVersion, answer) {
+  const nothingNewer = answer.startsWith("No update available");
+  return nothingNewer && menuVersion(buildVersion).startsWith("0.")
+    ? `the build under test (${buildVersion}) is older than every release, so the release feed has a newer one, but the tray logged "${answer}"`
+    : undefined;
+}
+
 async function expectFolderOpened(world, folder, what) {
   const { machine } = world;
   await wait(world, async () => ((await machine.explorerFolders()) ?? []).some((open) => sameFolder(open, folder)) || undefined, `File Explorer to show the ${what} (${folder})`, 60_000, 500);
@@ -108,17 +123,26 @@ export async function trayMenu(world) {
     assert.equal(version.stdout.trim().split("+")[0], menuVersion(world.expectedVersion), `Weir.exe --version says ${version.stdout.trim()}`);
     facts.push(`Weir.exe --version said ${version.stdout.trim()}`);
 
-    // Check for updates: the check runs, and an update found is announced with a balloon whose click opens System > About.
+    // Check for updates: the check runs although this install checks only when asked, and an update found is announced with a balloon whose click opens System > About.
+    const beforeCheck = await tray.lineCount();
     await choose(world, tray, menu.checkForUpdates);
-    await tray.line("Checking for updates...", { what: "the tray to check for updates" });
-    const offer = await tray.line(/^Balloon \(info\) Weir Update: Version \S+ is available\./, { what: "the tray to announce the update it found", ceilingMs: UPDATE_CEILING_MS });
-    const offered = /Version (\S+) is available/.exec(offer)[1];
-    assert.equal(offer, balloonLine("info", "Weir Update", balloons.updateAvailable(offered)), "the update balloon says what the tray's words say");
-    await desktop.clickBalloon(tray.pid);
-    await tray.line("Opening Weir in browser on port 9347 (source=tray-update-balloon)", { what: "the click on the update balloon to open Weir" });
-    const aboutPage = await browserOn(world, PORT, "/system?tab=about");
-    facts.push(`Check for updates found v${offered}, the balloon said so, and a click on it opened ${aboutPage.commandLine.match(/http\S+/)[0]}`);
-    await closeBrowsers(world, PORT);
+    await tray.line("Checking for updates...", { what: "the tray to check for updates", after: beforeCheck });
+    const answer = await tray.line(UPDATE_CHECK_ANSWER, { what: "the check for updates to come to an answer", ceilingMs: UPDATE_CEILING_MS, after: beforeCheck });
+    const problem = updateAnswerProblem(world.expectedVersion, answer);
+    assert.equal(problem, undefined, problem);
+    if (answer.startsWith("Update available")) {
+      const offer = await tray.line(/^Balloon \(info\) Weir Update: Version \S+ is available\./, { what: "the tray to announce the update it found", ceilingMs: UPDATE_CEILING_MS, after: beforeCheck });
+      const offered = /Version (\S+) is available/.exec(offer)[1];
+      assert.equal(offer, balloonLine("info", "Weir Update", balloons.updateAvailable(offered)), "the update balloon says what the tray's words say");
+      await desktop.clickBalloon(tray.pid);
+      await tray.line("Opening Weir in browser on port 9347 (source=tray-update-balloon)", { what: "the click on the update balloon to open Weir" });
+      const aboutPage = await browserOn(world, PORT, "/system?tab=about");
+      facts.push(`Check for updates found v${offered}, the balloon said so, and a click on it opened ${aboutPage.commandLine.match(/http\S+/)[0]}`);
+      await closeBrowsers(world, PORT);
+    } else {
+      assert.deepEqual(linesWith((await tray.log()).slice(beforeCheck), "Weir Update:"), [], "the tray announced an update after finding none");
+      facts.push(`Check for updates found nothing newer than v${menuVersion(world.expectedVersion)}, which is the newest release, and announced nothing`);
+    }
 
     // Open Weir, and the click on the icon.
     await choose(world, tray, menu.openWeir);

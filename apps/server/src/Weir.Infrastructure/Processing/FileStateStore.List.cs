@@ -72,7 +72,8 @@ public sealed partial class FileStateStore
 
         if (filter.Since is { } since)
         {
-            clauses.Add("last_seen_at >= @since");
+            // A file the pass was asked to work on before any scan saw it has no last-seen time yet: it counts from when it was recorded.
+            clauses.Add("coalesce(last_seen_at, updated_at, created_at) >= @since");
             parameters.Add(("@since", SqliteValues.ToSqlite(since)));
         }
 
