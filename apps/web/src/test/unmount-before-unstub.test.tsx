@@ -36,7 +36,15 @@ beforeEach(() => {
 
 afterEach(async () => {
   vi.unstubAllGlobals();
-  await new Promise((resolve) => setImmediate(resolve));
+  // One turn of the event loop, the way the browser gives one: everything the page had queued runs before the next test.
+  await new Promise<void>((resolve) => {
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => {
+      channel.port1.close();
+      resolve();
+    };
+    channel.port2.postMessage(null);
+  });
 });
 
 it("ends a test the moment after a click, before the page has run the effect the click set off", () => {
