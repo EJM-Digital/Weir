@@ -1,0 +1,124 @@
+{
+  "app": "metadata-gateway",
+  "version": "2026-10-20",
+  "state": "search-film-by-tmdb-id-only",
+  "recordedAt": "2026-10-20T19:46:17.000Z",
+  "note": "A read-only GET of the public metadata service, as Weir's ArtworkGatewayClient makes it (the request path is the one Weir sends). Only the content type of the reply's headers is kept.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/metadata/search?mediaType=movies&query=10378&providerId=10378",
+        "headers": {}
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "provider": "deluno-broker",
+          "mode": "broker",
+          "resultCount": 1,
+          "results": [
+            {
+              "provider": "tmdb",
+              "providerId": "10378",
+              "mediaType": "movies",
+              "runtimeMinutes": 8,
+              "popularity": 2.8155,
+              "voteCount": 201,
+              "title": "Big Buck Bunny",
+              "originalTitle": "Big Buck Bunny",
+              "year": 2008,
+              "overview": "Follow a day of the life of Big Buck Bunny when he meets three bullying rodents: Frank, Rinky, and Gamera. The rodents amuse themselves by harassing helpless creatures by throwing fruits, nuts and rocks at them. After the deaths of two of Bunny's favorite butterflies, and an offensive attack on Bunny himself, Bunny sets aside his gentle nature and orchestrates a complex plan for revenge.",
+              "posterUrl": "https://deluno-metadata-gateway.ejmdigital.workers.dev/artwork/w780/i9jJzvoXET4D9pOkoEwncSdNNER.jpg",
+              "backdropUrl": "https://deluno-metadata-gateway.ejmdigital.workers.dev/artwork/original/xtdybjRRZ15mCrPOvEld305myys.jpg",
+              "rating": 6.473,
+              "ratings": [
+                {
+                  "source": "tmdb",
+                  "label": "TMDb",
+                  "score": 6.473,
+                  "maxScore": 10,
+                  "voteCount": 201,
+                  "url": "https://www.themoviedb.org/movie/10378",
+                  "kind": "community"
+                }
+              ],
+              "genres": [
+                "Animation",
+                "Comedy",
+                "Family"
+              ],
+              "keywords": [
+                "squirrel",
+                "bunny",
+                "repayment",
+                "mobbing",
+                "revenge",
+                "open source",
+                "blender",
+                "conejo",
+                "short film",
+                "hilarious"
+              ],
+              "cast": [],
+              "crew": [
+                {
+                  "personId": "64936",
+                  "name": "Sacha Goedegebure",
+                  "job": "Director, Screenplay",
+                  "profileUrl": null,
+                  "imdbUrl": "https://deluno-metadata-gateway.ejmdigital.workers.dev/person/64936/imdb"
+                },
+                {
+                  "personId": "133632",
+                  "name": "Ton Roosendaal",
+                  "job": "Producer",
+                  "profileUrl": "https://deluno-metadata-gateway.ejmdigital.workers.dev/artwork/w185/2iRRkA2oCsPLSSLz1HKDhwJZlgy.jpg",
+                  "imdbUrl": "https://deluno-metadata-gateway.ejmdigital.workers.dev/person/133632/imdb"
+                },
+                {
+                  "personId": "133634",
+                  "name": "Jan Morgenstern",
+                  "job": "Original Music Composer",
+                  "profileUrl": null,
+                  "imdbUrl": "https://deluno-metadata-gateway.ejmdigital.workers.dev/person/133634/imdb"
+                },
+                {
+                  "personId": "64937",
+                  "name": "Enrico Valenza",
+                  "job": "Art Direction",
+                  "profileUrl": null,
+                  "imdbUrl": "https://deluno-metadata-gateway.ejmdigital.workers.dev/person/64937/imdb"
+                },
+                {
+                  "personId": "58958",
+                  "name": "Andreas Goralczyk",
+                  "job": "Art Direction",
+                  "profileUrl": null,
+                  "imdbUrl": "https://deluno-metadata-gateway.ejmdigital.workers.dev/person/58958/imdb"
+                }
+              ],
+              "imdbId": "tt1254207",
+              "tvDbId": null,
+              "externalUrl": "https://www.themoviedb.org/movie/10378",
+              "certification": "G",
+              "studio": "Blender Foundation",
+              "network": null,
+              "collection": null,
+              "collectionProviderId": null,
+              "director": "Sacha Goedegebure",
+              "trailerUrl": "https://www.youtube.com/watch?v=yUQM7H4Swgw",
+              "tagline": null,
+              "homepage": "https://peach.blender.org/",
+              "originalLanguage": "en",
+              "status": "Released"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
