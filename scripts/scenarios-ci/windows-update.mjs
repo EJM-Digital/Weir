@@ -6,8 +6,10 @@
 // The build under test is built again under a version just above the release (update-versions.mjs): an update only goes to a newer version.
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
+import { headRevision, readRevision } from "../docker-smoke/database.mjs";
 import { pollUntil } from "../docker-smoke/poll.mjs";
 import { LOG_RETENTION_DAYS, expectKept, pick } from "../docker-smoke/smoke-data.mjs";
 import { LogWatch } from "./log-watch.mjs";
@@ -15,6 +17,8 @@ import { SabnzbdStandIn } from "./sabnzbd-stand-in.mjs";
 import { PORT, ensureSignedIn, waitReady } from "./windows-install.mjs";
 import { differencesInEntries, zipEntries } from "./zip-entries.mjs";
 
+// The migrations of the build under test: the schema revision its database records once it has started.
+const SCHEMA_MIGRATOR = "apps/server/src/Weir.Infrastructure/Sqlite/SchemaMigrator.cs";
 const SECRET_FILES = ["session.secret", "credentials.secret"];
 const IDLE_MINUTES = 5;
 // How much of the tray's log a wait that ran out shows.
@@ -223,7 +227,7 @@ async function expectPreviousReleaseStillRunning(world, before) {
  * Weir after the update, judged against what it held before: the build under test answers, started by the update and not by hand, with a
  * tray and a server that are not the old ones and no window; the account is still signed in, the workflow and setting are as saved, the
  * secrets are the same bytes, the saved API key still works, Activity is as it was, and the copy of the data taken before the update is
- * named by System overview.
+ * named by System overview. With `copyBy: "none"` the update changed nothing in the database, so no copy is taken and System overview names none.
  */
 async function expectUpdatedWithDataKept(world, before, { oldProcesses, copyBy }) {
   const { machine, weir } = world;
@@ -247,6 +251,11 @@ async function expectUpdatedWithDataKept(world, before, { oldProcesses, copyBy }
   const problems = activityProblems(before.activity, await allActivity(weir));
   assert.deepEqual(problems.slice(0, 5), [], `Activity entries from before the update are not as they were (${problems.length})`);
 
+  if (copyBy === "none") {
+    // The server has opened its database before it answers, so a copy it was going to take is already there.
+    assert.equal((await weir.overview()).last_update_backup, null, "System overview names a copy of the data although the update changed nothing in it");
+    return { tray, backup: undefined };
+  }
   const backup = await wait(
     world,
     async () => (await weir.overview()).last_update_backup ?? undefined,
@@ -263,7 +272,8 @@ async function expectUpdatedWithDataKept(world, before, { oldProcesses, copyBy }
 /**
  * The copies saved for this update say which version they were taken for. A running release that was asked to save one knows it was taken at
  * its own version; when no release is running (the update was installed at the tray's start), the server that starts on the new version
- * saves it as it migrates, and does not know which version it replaced.
+ * saves it as it migrates, and does not know which version it replaced. That server migrates only when the build under test records a newer
+ * schema revision than the release.
  * @param {"running release"|"new server"} copyBy
  */
 async function expectCopiesKnowTheirVersions(world, folder, copyBy) {
@@ -402,18 +412,33 @@ async function updateLeftWaitingInstallsAtStart(world) {
 
   // The tray is ended the way a sign-out ends it, with the update downloaded and nothing installed.
   await machine.stopWeir();
+  // A new server saves a copy of the data only when it migrates the database; the schema revisions say whether this update does.
+  const releaseRevision = readRevision(machine.paths.database);
+  const buildRevision = revisionOfBuild();
+  const migrates = updateMigrates(releaseRevision, buildRevision);
+  await world.record("update-left-waiting-schema.txt", `release ${world.previousVersion} records ${releaseRevision}; the build under test records ${buildRevision}; the update ${migrates ? "migrates" : "does not migrate"} the database\n`);
   const mark = await logMark(world);
   machine.startTray(PORT);
   await waitForTrayLine(world, `Update v${world.expectedVersion} was left waiting to install. Installing it before the server starts.`, mark);
-  const { tray, backup } = await expectUpdatedWithDataKept(world, before, { oldProcesses, copyBy: "new server" });
+  const { tray, backup } = await expectUpdatedWithDataKept(world, before, { oldProcesses, copyBy: migrates ? "new server" : "none" });
   await waitForTrayLine(world, `Velopack: after update to v${world.expectedVersion}`, mark);
   assert.ok(await machine.exists(join(machine.paths.runtimeHome, "update-start-attempt")), "the tray did not record that it tried the update at start");
 
   return (
     `In Download only mode the tray downloaded ${world.expectedVersion} and left ${oldRelease(world)} running; with the tray ended by force, the next start logged that the update was left waiting, ` +
     `installed it before the server started, and Weir came back as ${world.expectedVersion} (new tray pid ${tray.pid}, no window) with the account, workflow, setting, secrets, saved API key and Activity as they were; ` +
-    `System overview names the copy ${basename(backup.path)}.`
+    (backup
+      ? `System overview names the copy ${basename(backup.path)}.`
+      : `The build under test records the same schema revision as the release (${releaseRevision}), so the new server migrated nothing and saved no copy.`)
   );
+}
+
+/** The schema revision the database of the build under test records, from the migrations of the checkout the shard runs in. */
+export const revisionOfBuild = () => headRevision(readFileSync(SCHEMA_MIGRATOR, "utf8"));
+
+/** Whether the server of the build under test migrates a database the release left: the two record different schema revisions. */
+export function updateMigrates(releaseRevision, buildRevision) {
+  return releaseRevision !== buildRevision;
 }
 
 // --- update-failure-leaves-the-old-weir -----------------------------------------------------------------------------------------------------

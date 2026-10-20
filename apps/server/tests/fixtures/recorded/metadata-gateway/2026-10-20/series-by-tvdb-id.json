@@ -1,0 +1,78 @@
+{
+  "app": "metadata-gateway",
+  "version": "2026-10-20",
+  "state": "series-by-tvdb-id",
+  "recordedAt": "2026-10-20T19:46:18.000Z",
+  "note": "A read-only GET of the public metadata service, as Weir's ArtworkGatewayClient makes it (the request path is the one Weir sends). Only the content type of the reply's headers is kept.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/metadata/tvdb/tv/81189",
+        "headers": {}
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "provider": "tvdb",
+          "series": {
+            "provider": "tvdb",
+            "tvdbId": "81189",
+            "tmdbId": "1396",
+            "imdbId": "tt0903747",
+            "title": "Breaking Bad",
+            "originalTitle": null,
+            "year": 2008,
+            "overview": "When Walter White, a chemistry teacher, is diagnosed with Stage III cancer and given a prognosis of two years left to live, he chooses to enter a dangerous world of drugs and crime with the intent to secure his family's financial security.",
+            "posterUrl": "https://artworks.thetvdb.com/banners/posters/81189-10.jpg",
+            "backdropUrl": "https://artworks.thetvdb.com/banners/fanart/original/81189-21.jpg",
+            "bannerUrl": "https://artworks.thetvdb.com/banners/graphical/81189-g21.jpg",
+            "logoUrl": "https://artworks.thetvdb.com/banners/v4/series/81189/clearlogo/611b4df33bac5.png",
+            "screenshots": [
+              "https://artworks.thetvdb.com/banners/fanart/original/81189-28.jpg",
+              "https://artworks.thetvdb.com/banners/fanart/original/81189-30.jpg",
+              "https://artworks.thetvdb.com/banners/fanart/original/81189-13.jpg",
+              "https://artworks.thetvdb.com/banners/fanart/original/81189-9.jpg",
+              "https://artworks.thetvdb.com/banners/fanart/original/81189-5.jpg",
+              "https://artworks.thetvdb.com/banners/fanart/original/81189-34.jpg",
+              "https://artworks.thetvdb.com/banners/fanart/original/81189-50.jpg",
+              "https://artworks.thetvdb.com/banners/fanart/original/81189-6.jpg",
+              "https://artworks.thetvdb.com/banners/fanart/original/81189-42.jpg",
+              "https://artworks.thetvdb.com/banners/fanart/original/81189-40.jpg",
+              "https://artworks.thetvdb.com/banners/fanart/original/81189-25.jpg",
+              "https://artworks.thetvdb.com/banners/fanart/original/81189-8.jpg"
+            ],
+            "genres": [
+              "Drama",
+              "Crime",
+              "Thriller",
+              "Western"
+            ],
+            "network": "AMC",
+            "status": "Ended",
+            "runtimeMinutes": 48,
+            "originalLanguage": "eng",
+            "certification": "TV-MA",
+            "aliases": [
+              "絕命毒師",
+              "Breaking Bad: Original Minisodes",
+              "Breaking Bad - Reazioni collaterali",
+              "Ruptura Total",
+              "Во все тяжкие",
+              "Breaking Bad"
+            ],
+            "externalUrl": "https://thetvdb.com/dereferrer/series/81189",
+            "defaultSeasonType": 1
+          },
+          "attribution": {
+            "text": "TV metadata provided by TheTVDB",
+            "url": "https://thetvdb.com"
+          }
+        }
+      }
+    }
+  ]
+}

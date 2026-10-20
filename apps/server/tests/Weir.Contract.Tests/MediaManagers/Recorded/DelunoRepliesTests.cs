@@ -190,10 +190,13 @@ public sealed class DelunoRepliesTests
         [.. check["lines"]!.AsArray().Select(line => ((string)line!["state"]!, (string)line["text"]!))];
 
     /// <summary>A fake Deluno whose manifest lists the Movies library the recordings call films, set to Refine before import, and a Shows library that is not.</summary>
-    private static FakeManager RigFake(DelunoPlaceholders placeholders, string dataRoot)
+    internal static FakeManager RigFake(DelunoPlaceholders placeholders, string dataRoot) => FakeManager.StartDeluno(RigLibraries(placeholders, dataRoot));
+
+    /// <summary>The manifest's libraries for a Deluno whose data root is <paramref name="dataRoot"/>.</summary>
+    internal static JsonObject[] RigLibraries(DelunoPlaceholders placeholders, string dataRoot)
     {
         var root = dataRoot.Replace('\\', '/');
-        return FakeManager.StartDeluno(
+        return
         [
             new JsonObject
             {
@@ -215,7 +218,7 @@ public sealed class DelunoRepliesTests
                 ["processorOutputPath"] = string.Empty,
                 ["downloadsPath"] = $"{root}/shows-downloads",
             },
-        ]);
+        ];
     }
 
     /// <summary>A server, a workflow's folders on this machine, and a fake Deluno the recordings are served from.</summary>

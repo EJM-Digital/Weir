@@ -15,6 +15,15 @@ internal sealed partial class DelunoPlaceholders(string dataRoot)
 {
     private readonly Dictionary<string, string> _named = [];
 
+    private DelunoPlaceholders(string dataRoot, Dictionary<string, string> named)
+        : this(dataRoot)
+    {
+        _named = named;
+    }
+
+    /// <summary>These placeholders with Deluno's data root somewhere else: every id they gave a name stays what it was.</summary>
+    public DelunoPlaceholders MovedTo(string newDataRoot) => new(newDataRoot, _named);
+
     [GeneratedRegex("<(?<kind>data-root|id|utc|library|handoff|connection)(?::(?<name>[^>]+))?>")]
     private static partial Regex Placeholder();
 
