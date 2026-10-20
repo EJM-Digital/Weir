@@ -1,4 +1,5 @@
 using Weir.Core.Processing;
+using Weir.Core.Time;
 using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Sqlite;
 using Weir.Infrastructure.Tests.Jobs;
@@ -124,6 +125,26 @@ public sealed class FileStateStoreTests
 
         Assert.Equal(2, rows.Count);
     }
+
+    [Fact]
+    public async Task A_window_in_days_lists_a_file_no_scan_has_seen_yet_by_the_time_it_was_recorded()
+    {
+        using var db = new JobsTestDatabase();
+        var libraryId = InsertLibrary(db);
+        InsertFileWithTimes(db, libraryId, "unseen-now.mkv", lastSeenAt: null, recordedAt: "CURRENT_TIMESTAMP");
+        InsertFileWithTimes(db, libraryId, "unseen-long-ago.mkv", lastSeenAt: null, recordedAt: "'2020-01-01 00:00:00'");
+        InsertFileWithTimes(db, libraryId, "seen-long-ago.mkv", lastSeenAt: "'2020-01-01 00:00:00'", recordedAt: "CURRENT_TIMESTAMP");
+        await using var uow = await UnitOfWork.OpenAsync(db.Database);
+
+        var rows = await Store.ListAsync(uow, new ProcessingFileListFilter { Since = Timestamp.FromUtc(DateTime.UtcNow.AddDays(-7)) });
+
+        Assert.Equal(["unseen-now.mkv"], rows.Select(row => row.RelativePath));
+    }
+
+    private static void InsertFileWithTimes(JobsTestDatabase db, long libraryId, string relativePath, string? lastSeenAt, string recordedAt) =>
+        db.Execute(
+            $"INSERT INTO files (library_id, relative_path, status, last_seen_at, created_at, updated_at) VALUES (@lib, @path, @status, {lastSeenAt ?? "NULL"}, {recordedAt}, {recordedAt})",
+            ("@lib", libraryId), ("@path", relativePath), ("@status", ProcessingFileStatuses.ProcessingFailed));
 
     [Fact]
     public async Task Forgetting_a_file_removes_its_record_only()
