@@ -38,6 +38,7 @@ sealed class TrayUpdates
     private Task? _idleWatch;
     private Task? _requestedWork;
     private (UpdatePhase Phase, string? Version, string? Failure) _lastState = (UpdatePhase.Idle, null, null);
+    private DateTimeOffset? _lastCheckedAt;
 
     /// <param name="service">Velopack: checking for updates and downloading them. A download installs nothing.</param>
     /// <param name="runtimeHome">Where update-state.json, the request flags and the server's work-state.json live.</param>
@@ -331,7 +332,7 @@ sealed class TrayUpdates
         }
         try
         {
-            var check = await _service.CheckForUpdateAsync().ConfigureAwait(false);
+            var check = await LookForUpdateAsync().ConfigureAwait(false);
             if (!check.Done)
             {
                 WriteState(check.Failure is null ? UpdatePhase.Idle : UpdatePhase.Failed, PendingVersion, check.Failure);
@@ -378,7 +379,7 @@ sealed class TrayUpdates
         {
             if (!_service.HasPendingUpdate)
             {
-                var check = await _service.CheckForUpdateAsync().ConfigureAwait(false);
+                var check = await LookForUpdateAsync().ConfigureAwait(false);
                 if (!check.Done)
                 {
                     WriteState(UpdatePhase.Failed, PendingVersion, check.Failure ?? NoNewerVersion);
@@ -396,6 +397,20 @@ sealed class TrayUpdates
 
     // The choice is read from the file each time, so a change made in System takes effect at once.
     private bool CheckingIsOn() => (_readSettings?.Invoke() ?? _settings).CheckForUpdates;
+
+    // A look that reached GitHub is remembered with its time, whatever it found, so System can tell a person who asked that nothing is newer.
+    private async Task<UpdateOutcome> LookForUpdateAsync()
+    {
+        var check = await _service.CheckForUpdateAsync().ConfigureAwait(false);
+        if (check.Failure is null)
+        {
+            lock (_stateLock)
+            {
+                _lastCheckedAt = _clock.GetUtcNow();
+            }
+        }
+        return check;
+    }
 
     private async Task DownloadFoundAsync(UpdateMode announce)
     {
@@ -465,7 +480,7 @@ sealed class TrayUpdates
     {
         try
         {
-            UpdateStateFile.Write(_runtimeHome, _lastState.Phase, _lastState.Version, _lastState.Failure);
+            UpdateStateFile.Write(_runtimeHome, _lastState.Phase, _lastState.Version, _lastState.Failure, _lastCheckedAt);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

@@ -68,6 +68,37 @@ public sealed class UpdateStatusTests
     }
 
     [Fact]
+    public void The_tray_state_says_when_the_last_check_was_made_whether_or_not_it_found_a_newer_version()
+    {
+        Assert.Equal(
+            "{\"downloaded\":false,\"pending_version\":null,\"state\":\"idle\",\"failure\":null,\"last_checked_at\":\"2026-10-21T09:30:00Z\"}",
+            StateOf("""{"state":"idle","downloaded":false,"checkedAt":"2026-10-21T09:30:00Z"}"""));
+        Assert.Equal(
+            "{\"downloaded\":false,\"pending_version\":\"2.0.0\",\"state\":\"idle\",\"failure\":null,\"last_checked_at\":\"2026-10-21T09:30:00Z\"}",
+            StateOf("""{"state":"idle","version":"2.0.0","checkedAt":"2026-10-21T10:30:00+01:00"}"""));
+    }
+
+    [Theory]
+    [InlineData("""{"state":"idle","checkedAt":"yesterday"}""")]
+    [InlineData("""{"state":"idle","checkedAt":12}""")]
+    [InlineData("""{"state":"idle","checkedAt":null}""")]
+    [InlineData("""{"state":"idle"}""")]
+    public void A_time_of_the_last_check_that_is_missing_or_cannot_be_read_is_left_out(string file)
+    {
+        Assert.Equal("{\"downloaded\":false,\"pending_version\":null,\"state\":\"idle\",\"failure\":null}", StateOf(file));
+    }
+
+    [Fact]
+    public void A_step_a_person_asked_for_keeps_the_time_of_the_last_check()
+    {
+        var read = UpdateStatus.ParseUpdateState("""{"state":"idle","checkedAt":"2026-10-21T09:30:00Z"}""");
+
+        var stepped = UpdateStatus.WithStep(read, UpdateStatus.StateChecking);
+
+        Assert.Equal("2026-10-21T09:30:00Z", Assert.IsType<WireString>(stepped["last_checked_at"]).Value);
+    }
+
+    [Fact]
     public void A_failure_is_only_read_from_a_failed_state()
     {
         Assert.Equal("{\"downloaded\":false,\"pending_version\":null,\"state\":\"idle\",\"failure\":null}", StateOf("""{"state":"idle","failure":"stale"}"""));
