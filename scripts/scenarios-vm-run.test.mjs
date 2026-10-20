@@ -31,8 +31,10 @@ const hereString = (lines) => ["@'", ...lines, "'@"].join("\n");
 
 // --- the update scenario and Deluno's picker ------------------------------------------------------------------------------------------
 
-// Deluno's picker log as the run found it when the update scenario began: Weir, the last component, still being fetched.
+// Deluno's install log as the run found it when the update scenario began: first run under way, Weir, the last component, still being fetched.
 const pickerLogWhileInstalling = [
+  "2026-10-20T00:44:28.8749696-07:00 first run: the tray icon is shown while Deluno sets itself up.",
+  "2026-10-20T00:44:39.3604958-07:00 start with Windows: no.",
   "2026-10-20T00:48:13.7980094-07:00 NZBGet: SHA-256 matches the vendor's published checksum",
   "2026-10-20T00:48:31.6892678-07:00 NZBGet: categories and download folders set up.",
   "2026-10-20T00:48:43.0267392-07:00 Weir: SHA-256 matches the vendor's published checksum",
@@ -60,11 +62,11 @@ test("the update scenario waits for Deluno's picker to say it is done, not for s
     `$installing = ${hereString(pickerLogWhileInstalling)}`,
     `$finished = ${hereString(pickerLogFinished)}`,
     "Set-Content -LiteralPath $log -Value $installing",
-    "'installing: ' + [string]($null -eq (Get-PickerOutcome -LogPaths @($log)))",
+    "'installing: ' + (Get-PickerState -LogPaths @($log)).State",
     "Show 'waits' { Wait-PickerInstalledWeir -LogPaths @($log) -CeilingSeconds 1 -IntervalMilliseconds 100 }",
     "'ready-asked-while-installing: ' + $script:ReadyCalls.Count",
     "Add-Content -LiteralPath $log -Value $finished",
-    "$outcome = Get-PickerOutcome -LogPaths @($log)",
+    "$outcome = Get-PickerState -LogPaths @($log)",
     "'finished: ' + $outcome.WeirInstalled + ' | ' + $outcome.Said",
     "Show 'proceeds' { Wait-PickerInstalledWeir -LogPaths @($log) -CeilingSeconds 1 -IntervalMilliseconds 100; 'ok' }",
     "'ready-asked-after: ' + ($script:ReadyCalls -join ',')",
@@ -76,7 +78,7 @@ test("the update scenario waits for Deluno's picker to say it is done, not for s
     "Show 'no-picker' { Wait-PickerInstalledWeir -LogPaths @(); 'ok' }",
     "'ready-asked-no-picker: ' + ($script:ReadyCalls -join ',')",
   ]);
-  assert.equal(lines[0], "installing: True");
+  assert.equal(lines[0], "installing: Running");
   assert.match(lines[1], /^waits: THREW Timed out after 1 s waiting for Deluno's picker to finish installing the components it was asked for\.$/);
   assert.equal(lines[2], "ready-asked-while-installing: 0");
   assert.match(lines[3], /^finished: True \| 2026-10-20T00:49:56\.8019863-07:00 component 'weir': Installed: Weir installed and is ready\.$/);
@@ -89,6 +91,64 @@ test("the update scenario waits for Deluno's picker to say it is done, not for s
   const scenario = readFileSync(join(scenarios, "Weir.Scenarios.Update.ps1"), "utf8");
   assert.match(scenario, /Scenario_update_over_installed_weir \{[\s\S]*?\n {4}Wait-PickerInstalledWeir\n/, "the scenario waits for the picker first");
   assert.doesNotMatch(scenario, /Scenario_update_over_installed_weir \{[\s\S]*?\n {4}Wait-WeirReady -TimeoutSeconds 60/);
+});
+
+// Deluno's install log as the re-run found it after Deluno was updated over an existing Deluno: Setup ran, no first run, no picker.
+const logAfterUpdatingDeluno = [
+  "2026-10-20T02:10:58.8392206-07:00 Main starting: args=[--veloapp-install 1.0.0-rc.30.34].",
+  "2026-10-20T02:10:58.8525148-07:00 Standard handles at start: in=none, out=none, err=none; now the null device.",
+  "2026-10-20T02:10:58.9033151-07:00 after install/update: done; a true first install runs its first-run steps on its first start, a reinstall over existing data does not.",
+  "2026-10-20T02:10:59.5874312-07:00 Deluno was running before this install. It starts again once Setup (pid 1776) has exited, unless Setup starts it.",
+  "2026-10-20T02:11:02.5233277-07:00 Main starting: args=[--after-setup].",
+  "2026-10-20T02:11:02.7063227-07:00 Setup has exited: started Deluno.",
+];
+const reinstallAsksNothing =
+  "2026-10-20T02:10:59.1000000-07:00 first run: this is a reinstall over an existing Deluno (its settings or data are there), so the component picker, the firewall question and the Start with Windows question are not asked again.";
+
+test("the update scenario never waits for a picker that has already finished, never ran, or left no log", { skip }, () => {
+  const folder = mkdtempSync(join(tmpdir(), "weir-scenarios-picker-ran-"));
+  const log = join(folder, "install-hook.log");
+  const lines = psFile([
+    "$ErrorActionPreference = 'Stop'",
+    ...dotSource("Lib", "Context", "Update"),
+    `$log = '${log}'`,
+    "function Show($label, $block) { try { $r = & $block; $label + ': ' + $r } catch { $label + ': THREW ' + $_.Exception.Message } }",
+    "$script:ReadyCalls = New-Object System.Collections.Generic.List[int]",
+    "function Wait-WeirReady { param([int] $TimeoutSeconds = 120) $script:ReadyCalls.Add($TimeoutSeconds) }",
+    "function Settle { $script:ReadyCalls.Clear(); Wait-PickerInstalledWeir -LogPaths @($log) -CeilingSeconds 1 -IntervalMilliseconds 100; 'settled, asked Weir for ' + ($script:ReadyCalls -join ',') }",
+    `$installing = ${hereString(pickerLogWhileInstalling)}`,
+    `$finished = ${hereString(pickerLogFinished)}`,
+    `$updated = ${hereString(logAfterUpdatingDeluno)}`,
+    "$firstRun = @($installing -split \"`r?`n\" | Select-Object -First 2)",
+    // The picker finished before the scenario began: its own log says so at once.
+    "Set-Content -LiteralPath $log -Value ($installing + \"`n\" + $finished)",
+    "'finished-earlier-state: ' + (Get-PickerState -LogPaths @($log)).State",
+    "Show 'finished-earlier' { Settle }",
+    // Deluno updated over an existing Deluno: the picker did not run, so its log never will say it finished.
+    "Set-Content -LiteralPath $log -Value $updated",
+    "'updated-state: ' + (Get-PickerState -LogPaths @($log)).State",
+    "Show 'updated' { Settle }",
+    // A reinstall's first run asks nothing, even with the tray icon shown.
+    `Set-Content -LiteralPath $log -Value ($firstRun[0] + "\`n${reinstallAsksNothing}")`,
+    "'reinstall-state: ' + (Get-PickerState -LogPaths @($log)).State",
+    "Show 'reinstall' { Settle }",
+    // A log kept from an earlier install that finished says nothing about a picker now at work.
+    "Set-Content -LiteralPath $log -Value ($installing + \"`n\" + $finished + \"`n\" + $firstRun[0] + \"`n\" + $firstRun[1])",
+    "'second-run-state: ' + (Get-PickerState -LogPaths @($log)).State",
+    "Show 'second-run' { Settle }",
+    // A log with no first run in it at all (an empty file) is no picker either.
+    "Set-Content -LiteralPath $log -Value ''",
+    "Show 'empty' { Settle }",
+  ]);
+  assert.equal(lines[0], "finished-earlier-state: Done");
+  assert.equal(lines[1], "finished-earlier: settled, asked Weir for 120");
+  assert.equal(lines[2], "updated-state: NotRun");
+  assert.equal(lines[3], "updated: settled, asked Weir for 60");
+  assert.equal(lines[4], "reinstall-state: NotRun");
+  assert.equal(lines[5], "reinstall: settled, asked Weir for 60");
+  assert.equal(lines[6], "second-run-state: Running");
+  assert.match(lines[7], /^second-run: THREW Timed out after 1 s waiting for Deluno's picker/);
+  assert.equal(lines[8], "empty: settled, asked Weir for 60");
 });
 
 // --- workflows set up from Deluno -------------------------------------------------------------------------------------------------------
@@ -177,4 +237,68 @@ test("a sign-in a scenario makes on purpose is named for that scenario alone: th
     /Add-ExpectedLogRow -Pattern 'auth event: login failed'[^\n]*\n\s*\$withForgotten = Invoke-Weir/,
     "the recover scenario names the refused sign-in before it makes it",
   );
+});
+
+test("the Logs page excuses the Activity entry a deliberate refused sign-in leaves, by the title the page gives it, for that scenario alone", { skip }, () => {
+  const folder = mkdtempSync(join(tmpdir(), "weir-scenarios-expected-page-"));
+  const home = join(folder, "home");
+  const run = join(folder, "run");
+  mkdirSync(join(home, "logs"), { recursive: true });
+  mkdirSync(join(run, "evidence"), { recursive: true });
+  const refusedAt = (second) => JSON.stringify({ level: "WARNING", message: "auth event: login failed", timestamp: `2026-10-20T09:40:${second}Z` });
+  // The two rows System > Logs lists for one refused sign-in, as recorded in the run that found this: the server's own warning, and the
+  // Activity entry for the same event.
+  const rows = [
+    "[pscustomobject]@{ source = 'server'; id = 'server:27'; at = '2026-10-20T09:40:42.719037Z'; title = 'auth event: login failed' }",
+    "[pscustomobject]@{ source = 'event'; id = 'event:17'; at = '2026-10-20T09:40:42Z'; title = 'Sign-in failed' }",
+  ].join(", ");
+  const named = "Add-ExpectedLogRow -Pattern 'auth event: login failed' -PageTitlePattern '^Sign-in failed$' -Why 'the forgotten password is tried once'";
+  const lines = psFile([
+    "$ErrorActionPreference = 'Stop'",
+    ...dotSource("Lib", "Catalog", "Context", "Install", "Tray", "FreshWeir", "WeirOnly"),
+    `$script:Ctx.RunFolder = '${run}'`,
+    `$script:Ctx.RuntimeHome = '${home}'`,
+    `$script:Ctx.InstallRoot = '${join(folder, "install")}'`,
+    "$script:Ctx.Base = 'http://localhost:1'",
+    "$script:Ctx.KnownLogRows = @()",
+    "$script:Ctx.Session = 'a session'",
+    "$script:Ctx.Rehearsal = $true",
+    "$script:Rows = @()",
+    "function Get-WeirJson { param($Session, $Path) [pscustomobject]@{ items = $script:Rows; next_cursor = $null } }",
+    "function Show($label, $block) { try { $r = & $block; $label + ': PASSED ' + $r } catch { $label + ': FAILED ' + $_.Exception.Message } }",
+    `$server = Join-Path '${home}' 'logs\\weir.log'`,
+    `Set-Content -LiteralPath $server -Value '${JSON.stringify({ level: "INFO", message: "started", timestamp: "2026-10-20T09:00:00Z" })}'`,
+    "function Begin { $script:Rows = @(); Start-LogWatch; Set-LogWatchPage }",
+    // Named with the page title: both rows are excused.
+    "Begin",
+    named,
+    `Add-Content -LiteralPath $server -Value '${refusedAt("10")}'`,
+    `$script:Rows = @(${rows})`,
+    "Show 'named' { Complete-LogWatch }",
+    // Named without it: the Activity entry is still seen, as it was in the run.
+    "Begin",
+    "Add-ExpectedLogRow -Pattern 'auth event: login failed' -Why 'the forgotten password is tried once'",
+    `Add-Content -LiteralPath $server -Value '${refusedAt("20")}'`,
+    `$script:Rows = @(${rows})`,
+    "Show 'page-title-not-named' { Complete-LogWatch }",
+    // The next scenario has no excuse.
+    "Begin",
+    `Add-Content -LiteralPath $server -Value '${refusedAt("30")}'`,
+    "Show 'next-scenario' { Complete-LogWatch }",
+    // A different Activity entry is not excused by the sign-in's title, nor is that title excused in the server log file.
+    "Begin",
+    named,
+    `$script:Rows = @(${rows}, [pscustomobject]@{ source = 'event'; id = 'event:18'; at = '2026-10-20T09:41:00Z'; title = 'Sign-in failed again' })`,
+    `Add-Content -LiteralPath $server -Value '${refusedAt("40")}'`,
+    "Show 'another-entry' { Complete-LogWatch }",
+    "Begin",
+    named,
+    `Add-Content -LiteralPath $server -Value '${JSON.stringify({ level: "WARNING", message: "Sign-in failed", timestamp: "2026-10-20T09:42:00Z" })}'`,
+    "Show 'file-title' { Complete-LogWatch }",
+  ]);
+  assert.match(lines[0], /^named: PASSED .*named as caused on purpose: the forgotten password is tried once/);
+  assert.match(lines[1], /^page-title-not-named: FAILED System > Logs gained no unexpected warning or error \(found 1: Sign-in failed\)$/);
+  assert.match(lines[2], /^next-scenario: FAILED the server log file gained no unexpected warning or error \(found 1: WARNING auth event: login failed\)$/);
+  assert.match(lines[3], /^another-entry: FAILED System > Logs gained no unexpected warning or error \(found 1: Sign-in failed again\)$/);
+  assert.match(lines[4], /^file-title: FAILED the server log file gained no unexpected warning or error \(found 1: WARNING Sign-in failed\)$/);
 });
