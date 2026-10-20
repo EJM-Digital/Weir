@@ -81,7 +81,11 @@ sealed class TrayApp : IDisposable
             StopServerAsync,
             updateService,
             new UpdateBackupHook(
-                new UpdateBackupRequest(_runtimeHome, TimeProvider.System, () => _server.Running).AskAsync,
+                new UpdateBackupRequest(
+                    _runtimeHome,
+                    TimeProvider.System,
+                    () => _server.Running,
+                    message => OnUi(() => ShowBalloon("Weir Update", message, ToolTipIcon.Info))).AskAsync,
                 _runtimeHome,
                 () => _server.ServerIsRunning,
                 reason => OnUi(() => ShowNotUpdated(reason))));
