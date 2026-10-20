@@ -36,7 +36,7 @@ beforeEach(() => {
 
 afterEach(async () => {
   vi.unstubAllGlobals();
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await new Promise((resolve) => setImmediate(resolve));
 });
 
 it("ends a test the moment after a click, before the page has run the effect the click set off", () => {
