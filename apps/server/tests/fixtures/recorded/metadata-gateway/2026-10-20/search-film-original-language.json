@@ -1,0 +1,205 @@
+{
+  "app": "metadata-gateway",
+  "version": "2026-10-20",
+  "state": "search-film-original-language",
+  "recordedAt": "2026-10-20T19:46:17.000Z",
+  "note": "A read-only GET of the public metadata service, as Weir's ArtworkGatewayClient makes it (the request path is the one Weir sends). Only the content type of the reply's headers is kept.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/metadata/search?mediaType=movies&query=parasite&year=2019",
+        "headers": {}
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "provider": "deluno-broker",
+          "mode": "broker",
+          "resultCount": 4,
+          "results": [
+            {
+              "provider": "tmdb",
+              "providerId": "496243",
+              "mediaType": "movies",
+              "runtimeMinutes": null,
+              "popularity": 39.3687,
+              "voteCount": 21522,
+              "title": "Parasite",
+              "originalTitle": "기생충",
+              "year": 2019,
+              "overview": "All unemployed, Ki-taek's family takes peculiar interest in the wealthy and glamorous Parks for their livelihood until they get entangled in an unexpected incident.",
+              "posterUrl": "https://deluno-metadata-gateway.ejmdigital.workers.dev/artwork/w780/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg",
+              "backdropUrl": "https://deluno-metadata-gateway.ejmdigital.workers.dev/artwork/original/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg",
+              "rating": 8.5,
+              "ratings": [
+                {
+                  "source": "tmdb",
+                  "label": "TMDb",
+                  "score": 8.5,
+                  "maxScore": 10,
+                  "voteCount": 21522,
+                  "url": "https://www.themoviedb.org/movie/496243",
+                  "kind": "community"
+                }
+              ],
+              "genres": [],
+              "keywords": [],
+              "cast": [],
+              "crew": [],
+              "imdbId": null,
+              "tvDbId": null,
+              "externalUrl": "https://www.themoviedb.org/movie/496243",
+              "certification": null,
+              "studio": null,
+              "network": null,
+              "collection": null,
+              "collectionProviderId": null,
+              "director": null,
+              "trailerUrl": null,
+              "tagline": null,
+              "homepage": null,
+              "originalLanguage": "ko",
+              "status": null
+            },
+            {
+              "provider": "tmdb",
+              "providerId": "1100466",
+              "mediaType": "movies",
+              "runtimeMinutes": null,
+              "popularity": 0.6501,
+              "voteCount": 0,
+              "title": "Sealed Video 44: Parasite",
+              "originalTitle": "封印映像44 寄生虫",
+              "year": 2019,
+              "overview": "44th entry in the 'Sealed Video' franchise from the production team of 'Honto ni Atta. Noroi no Video'.",
+              "posterUrl": "https://deluno-metadata-gateway.ejmdigital.workers.dev/artwork/w780/7lUu9vV2tgH2ZGbBaIo5vSLvFle.jpg",
+              "backdropUrl": "https://deluno-metadata-gateway.ejmdigital.workers.dev/artwork/original/sRQgHkE5Z1wPK8wvVcVjbNBtI6h.jpg",
+              "rating": 0,
+              "ratings": [
+                {
+                  "source": "tmdb",
+                  "label": "TMDb",
+                  "score": 0,
+                  "maxScore": 10,
+                  "voteCount": 0,
+                  "url": "https://www.themoviedb.org/movie/1100466",
+                  "kind": "community"
+                }
+              ],
+              "genres": [],
+              "keywords": [],
+              "cast": [],
+              "crew": [],
+              "imdbId": null,
+              "tvDbId": null,
+              "externalUrl": "https://www.themoviedb.org/movie/1100466",
+              "certification": null,
+              "studio": null,
+              "network": null,
+              "collection": null,
+              "collectionProviderId": null,
+              "director": null,
+              "trailerUrl": null,
+              "tagline": null,
+              "homepage": null,
+              "originalLanguage": "ja",
+              "status": null
+            },
+            {
+              "provider": "tmdb",
+              "providerId": "1309516",
+              "mediaType": "movies",
+              "runtimeMinutes": null,
+              "popularity": 0.4371,
+              "voteCount": 1,
+              "title": "More Animated Worker and Parasite",
+              "originalTitle": "More Animated Worker and Parasite",
+              "year": null,
+              "overview": "\"The follow up to my previous silly video where Worker and Parasite finally make it home in their Lada\".",
+              "posterUrl": null,
+              "backdropUrl": null,
+              "rating": 7,
+              "ratings": [
+                {
+                  "source": "tmdb",
+                  "label": "TMDb",
+                  "score": 7,
+                  "maxScore": 10,
+                  "voteCount": 1,
+                  "url": "https://www.themoviedb.org/movie/1309516",
+                  "kind": "community"
+                }
+              ],
+              "genres": [],
+              "keywords": [],
+              "cast": [],
+              "crew": [],
+              "imdbId": null,
+              "tvDbId": null,
+              "externalUrl": "https://www.themoviedb.org/movie/1309516",
+              "certification": null,
+              "studio": null,
+              "network": null,
+              "collection": null,
+              "collectionProviderId": null,
+              "director": null,
+              "trailerUrl": null,
+              "tagline": null,
+              "homepage": null,
+              "originalLanguage": "en",
+              "status": null
+            },
+            {
+              "provider": "tmdb",
+              "providerId": "1493942",
+              "mediaType": "movies",
+              "runtimeMinutes": null,
+              "popularity": 1.3406,
+              "voteCount": 0,
+              "title": "Parasites",
+              "originalTitle": "Parasites",
+              "year": 2019,
+              "overview": "A group of five friends get together for a dinner party. Problem is, one of them has been infected by a polite but awkward alien parasite intent on taking over the world.",
+              "posterUrl": null,
+              "backdropUrl": null,
+              "rating": 0,
+              "ratings": [
+                {
+                  "source": "tmdb",
+                  "label": "TMDb",
+                  "score": 0,
+                  "maxScore": 10,
+                  "voteCount": 0,
+                  "url": "https://www.themoviedb.org/movie/1493942",
+                  "kind": "community"
+                }
+              ],
+              "genres": [],
+              "keywords": [],
+              "cast": [],
+              "crew": [],
+              "imdbId": null,
+              "tvDbId": null,
+              "externalUrl": "https://www.themoviedb.org/movie/1493942",
+              "certification": null,
+              "studio": null,
+              "network": null,
+              "collection": null,
+              "collectionProviderId": null,
+              "director": null,
+              "trailerUrl": null,
+              "tagline": null,
+              "homepage": null,
+              "originalLanguage": "en",
+              "status": null
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
