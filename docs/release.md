@@ -280,16 +280,16 @@ root cause is found (the owner, 11 Oct 2026), and a failure is fixed with a test
   the release the commit is meant to become:
 
   ```bash
-  gh workflow run ci.yml --repo jampat000/Weir --ref main -f version=1.0.0-rc.4
+  gh workflow run ci.yml --repo EJM-Digital/Weir --ref main -f version=1.0.0-rc.4
   ```
 
   `--ref` takes a branch or a tag; for a commit that no branch points at, push a branch at it first.
 - Find the run, check it is for the commit you mean, and download it:
 
   ```bash
-  gh run list --repo jampat000/Weir --workflow ci.yml --commit <full sha> --json databaseId,event,conclusion
-  gh run view <run id> --repo jampat000/Weir --json headSha
-  gh run download <run id> --repo jampat000/Weir -n weir-windows-<short sha> -D weir-build
+  gh run list --repo EJM-Digital/Weir --workflow ci.yml --commit <full sha> --json databaseId,event,conclusion
+  gh run view <run id> --repo EJM-Digital/Weir --json headSha
+  gh run download <run id> --repo EJM-Digital/Weir -n weir-windows-<short sha> -D weir-build
   ```
 
 - Given a version, the build reports that version with the commit as build metadata, such as
@@ -314,10 +314,10 @@ ticked list.
 `Invoke-WeirScenarios.ps1` does at the end of the run, with a link to the evidence:
 
 ```bash
-gh api repos/jampat000/Weir/statuses/<full sha> \
+gh api repos/EJM-Digital/Weir/statuses/<full sha> \
   -f state=success -f context=golden-path \
   -f description="Weir scenarios passed: 13 of 13, 1.0.0-rc.18+abc1234" \
-  -f target_url="https://github.com/jampat000/Weir/issues/<n>#issuecomment-<id>"
+  -f target_url="https://github.com/EJM-Digital/Weir/issues/<n>#issuecomment-<id>"
 ```
 
 A run that fails is recorded the same way with `state=failure`. The newest status for the context is the one that
@@ -362,7 +362,7 @@ breaking changes.
 
 ### Which version an install is offered
 
-Weir's own update check reads the public release feed (`https://github.com/jampat000/Weir/releases.atom`) and
+Weir's own update check reads the public release feed (`https://github.com/EJM-Digital/Weir/releases.atom`) and
 offers the newest release by SemVer precedence, skipping drafts. An install running a pre-release is offered
 pre-releases and stable releases; an install running a stable version is offered stable releases only. The feed
 has no pre-release flag, so a release is a pre-release when its tag has a pre-release suffix (`-rc.1`). The
@@ -622,10 +622,10 @@ few seconds to listen for the network), with no prompt of any kind. From a proce
 also creates the firewall rule; it never tries to elevate itself. An unelevated caller still gets LAN access
 turned on and a zero exit code, plus a log line saying the rule was not created, so Windows Firewall decides
 whether other devices get through. Full detail:
-[Windows Installer → Firewall and LAN access](https://github.com/jampat000/Weir/blob/main/docs-site/docs/deployment/windows.md#firewall-and-lan-access).
+[Windows Installer → Firewall and LAN access](https://github.com/EJM-Digital/Weir/blob/main/docs-site/docs/deployment/windows.md#firewall-and-lan-access).
 
 Full detail, including `WEIR_PORT` as an alternative to `--port`: [Windows Installer → Installing
-Weir from another program](https://github.com/jampat000/Weir/blob/main/docs-site/docs/deployment/windows.md).
+Weir from another program](https://github.com/EJM-Digital/Weir/blob/main/docs-site/docs/deployment/windows.md).
 
 ## Docker
 
@@ -644,11 +644,11 @@ The Docker image build and Docker smoke test run on GitHub infrastructure.
 Pull and run:
 
 ```bash
-docker pull ghcr.io/jampat000/weir:1.0.0-rc.1
+docker pull ghcr.io/ejm-digital/weir:1.0.0-rc.1
 docker run --rm \
   -p 9347:9347 \
   -v weir-data:/data/weir \
-  ghcr.io/jampat000/weir:1.0.0-rc.1
+  ghcr.io/ejm-digital/weir:1.0.0-rc.1
 ```
 
 Or use the root `compose.yaml`:

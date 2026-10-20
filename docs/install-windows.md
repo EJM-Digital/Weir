@@ -3,12 +3,12 @@
 This takes about five minutes. You need Windows 10 or 11 (64-bit) and a normal user account. You do not
 need administrator rights to install.
 
-Weir is in its release-candidate stage, so the installer is on the [Releases page](https://github.com/jampat000/Weir/releases)
+Weir is in its release-candidate stage, so the installer is on the [Releases page](https://github.com/EJM-Digital/Weir/releases)
 marked **Pre-release**. It is not the "Latest" release, so use the list, not the Latest button.
 
 ## 1. Download the installer
 
-1. Open the [Releases page](https://github.com/jampat000/Weir/releases).
+1. Open the [Releases page](https://github.com/EJM-Digital/Weir/releases).
 2. Pick the newest release at the top.
 3. Under **Assets**, download **`Weir-win-Setup.exe`**.
 
@@ -164,4 +164,4 @@ network without a prompt, are in the [Windows installer reference](../docs-site/
   **Restart Weir** to try again; `tray-host.log` says why each try failed (it hung in a step, or it stopped with a code), and
   `server-host.log` has what the server printed. If Weir starts only on a retry it still works, and System › Logs shows a warning that it needed one.
 - **Anything else.** Read `C:\ProgramData\Weir\tray-host.log` and **System › Logs**, then
-  [open an issue](https://github.com/jampat000/Weir/issues) and include what they say.
+  [open an issue](https://github.com/EJM-Digital/Weir/issues) and include what they say.
