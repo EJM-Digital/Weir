@@ -3,12 +3,51 @@
     holding what it was used for. Needs Weir.Scenarios.Install.ps1 (Invoke-WeirSetup) and Weir.Scenarios.WeirOnly.ps1.
 #>
 
+# Deluno's tray keeps the picker's install log in its program or data folder.
+function Get-DelunoInstallHookLogs {
+    @('Deluno', 'DelunoData') | ForEach-Object { Join-Path (Join-Path $env:LOCALAPPDATA $_) 'logs\install-hook.log' } | Where-Object { Test-Path -LiteralPath $_ }
+}
+
+# How Deluno's component picker ended, from its install log, or $null while it is still installing. The picker writes one
+# "component '<kind>': <Outcome>: <message>" line per component only when it has finished with all of them, so the first such line
+# (or "component picker failed") is the picker saying it is done. Returns { Said; WeirInstalled }: the line about Weir (or the
+# picker's failure), and whether it says Weir is in.
+function Get-PickerOutcome {
+    param([Parameter(Mandatory)] [string[]] $LogPaths)
+    $lines = @($LogPaths | ForEach-Object { Get-FileTextOrNull -Path $_ } | Where-Object { $_ } | ForEach-Object { $_ -split "`r?`n" })
+    $weir = $null
+    foreach ($line in $lines) {
+        if ($line -match "^\S+ component 'weir': (?<outcome>\w+): ") {
+            $weir = [pscustomobject]@{ Said = $line.Trim(); WeirInstalled = ($Matches['outcome'] -in 'Installed', 'AlreadyInstalled', 'InstalledNeedsSetup') }
+        }
+    }
+    if ($weir) { return $weir }
+    $other = @($lines | Where-Object { $_ -match "^\S+ component '|^\S+ component picker failed" }) | Select-Object -Last 1
+    if ($other) { [pscustomobject]@{ Said = $other.Trim(); WeirInstalled = $false } }
+}
+
+# The Weir Deluno's picker installs comes last, after every download client, and the picker takes as long as those installs take. So
+# the scenario waits for the picker to say it is done (its ceiling is a limit on a wait for that event, not a guess at how long it takes),
+# then for Weir to answer. A machine with no Deluno picker log has no picker to wait for: Weir must simply be running.
+function Wait-PickerInstalledWeir {
+    param([string[]] $LogPaths = @(Get-DelunoInstallHookLogs), [int] $CeilingSeconds = 1200, [int] $IntervalMilliseconds = 2000)
+    if ($LogPaths.Count -eq 0) {
+        Add-Evidence 'no Deluno picker log is on this machine, so there is no picker to wait for'
+        Wait-WeirReady -TimeoutSeconds 60
+        return
+    }
+    $outcome = Wait-Until -What "Deluno's picker to finish installing the components it was asked for" -TimeoutSeconds $CeilingSeconds -IntervalMilliseconds $IntervalMilliseconds -Probe { Get-PickerOutcome -LogPaths $LogPaths }
+    if (-not $outcome.WeirInstalled) { throw "Deluno's picker finished without installing Weir: $($outcome.Said)" }
+    Add-Evidence "Deluno's picker finished: $($outcome.Said)"
+    Wait-WeirReady -TimeoutSeconds 120
+}
+
 function Scenario_update_over_installed_weir {
     $paths = Get-WeirPaths
     Assert-That (Test-Path -LiteralPath $script:Ctx.SetupPath) "the build under test's installer is in the machine ($($script:Ctx.SetupPath))"
 
     # 1. The Weir Deluno's picker installed, as it was left.
-    Wait-WeirReady -TimeoutSeconds 60
+    Wait-PickerInstalledWeir
     $oldVersion = Get-ServerVersion
     Assert-That (-not (Test-VersionUnderTest -Reported $oldVersion -Expected $script:Ctx.Version)) "the machine runs the Weir Deluno installed ($oldVersion), not the build under test"
     if (-not (Initialize-WeirSession)) { return New-NotApplicable $script:Ctx.NoSessionReason }

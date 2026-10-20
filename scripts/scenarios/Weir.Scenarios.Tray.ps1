@@ -178,7 +178,15 @@ function Start-LogWatch {
     $files = Get-LogFileProblems
     # Mark is the second the scenario began (UTC). A scenario that begins with no account cannot note the Logs page, and on a machine that
     # was not restored (-NoRestore) the page holds what earlier runs and builds wrote, so only rows written from the mark on are its own.
-    $script:Ctx.LogWatch = [pscustomobject]@{ Server = @($files.Server | ForEach-Object { $_.Key }); Tray = @($files.Tray | ForEach-Object { $_.Key }); Page = $null; Mark = Get-SecondMark }
+    $script:Ctx.LogWatch = [pscustomobject]@{ Server = @($files.Server | ForEach-Object { $_.Key }); Tray = @($files.Tray | ForEach-Object { $_.Key }); Page = $null; Mark = Get-SecondMark; Expected = New-Object System.Collections.Generic.List[object] }
+}
+
+# Names a warning or error the running scenario is about to cause on purpose (a sign-in it makes with a password it knows is wrong, say),
+# so that the log watch does not take it for trouble. It holds for this scenario only: the next one begins with none.
+function Add-ExpectedLogRow {
+    param([Parameter(Mandatory)] [string] $Pattern, [Parameter(Mandatory)] [string] $Why)
+    if ($null -eq $script:Ctx.LogWatch) { throw 'A log row was named as caused on purpose with no log watch running: Start-LogWatch was not called when the scenario began.' }
+    $script:Ctx.LogWatch.Expected.Add([pscustomobject]@{ Pattern = $Pattern; Why = $Why })
 }
 
 # Notes the rows on the Logs page, once, when the scenario first has a session.
@@ -203,7 +211,7 @@ function Complete-LogWatch {
     if ($null -eq $watch) { throw 'The scenario ended with no log watch to judge: Start-LogWatch was not called when it began.' }
     $script:Ctx.LogWatch = $null
     $paths = Get-WeirPaths
-    $known = @($script:Ctx.KnownLogRows | Where-Object { $_ })
+    $known = @(@($script:Ctx.KnownLogRows) + $watch.Expected.ToArray() | Where-Object { $_ })
     $files = Get-LogFileProblems
 
     $serverText = Get-FileTextOrNull -Path $paths.ServerLog
