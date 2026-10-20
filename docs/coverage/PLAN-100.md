@@ -66,9 +66,12 @@ pull request with its failing test first. The first step, done with this plan, c
 `LibraryCleanHandler`, `LibraryScanHandler` and `RemuxPassRunner.PostSuccessCleanup.cs`, with real folders and real SQLite, and
 found one bug (a manager that could not be reached when asked to remove a queue item threw out of the reject route instead of
 being asked again later). Branches the tests showed no input can reach were deleted rather than excluded. What is left of
-Weir.Infrastructure starts with `MediaManagers/HandbackOutcomes.cs`, `MediaManagers/ManagerSetupCheck.cs`,
-`Processing/LibraryDiscoveryService.cs`, `RemuxPass/RemuxPassEnqueue.cs`, `MediaManagers/HandoffLedgerStore.Status.cs`,
-`MediaManagers/MediaManagerIntake.cs` and the rest of `LibraryMode/LibraryScanHandler.cs`.
+Weir.Infrastructure was the third step, which covered `MediaManagers/HandbackOutcomes.cs`, `Processing/LibraryDiscoveryService.cs`,
+`RemuxPass/RemuxPassEnqueue.cs`, the job and file states of `MediaManagers/HandoffLedgerStore.Status.cs`, the kept-file and sign-in paths of
+`MediaManagers/MediaManagerIntake.cs` and the folder checks of `RemuxPass/RemuxPassPaths.cs`, and deleted code no input could reach (a second
+copy of the job reader, and payload parses of jobs found only because their payload already parsed). What is left of Weir.Infrastructure starts with
+`MediaManagers/ManagerSetupCheck.cs`, `MediaManagers/HandoffCompletionReporter.cs`, `MediaManagers/LibraryFileChangeNotifier.cs`,
+`MediaManagers/DownloadClientConnectionService.cs` and the rest of `LibraryMode/LibraryScanHandler.cs`.
 
 ## When code may be left out
 

@@ -507,15 +507,8 @@ public sealed partial class MediaManagerIntake
         long? ownerConnectionId,
         List<(string PayloadJson, string Target)> superseded)
     {
-        WireObject existing;
-        try
-        {
-            existing = WireJsonParser.Parse(string.IsNullOrEmpty(active.PayloadJson) ? "{}" : active.PayloadJson) as WireObject ?? new WireObject();
-        }
-        catch (WireJsonDecodeException)
-        {
-            existing = new WireObject();
-        }
+        // Both ways a pass is found for a file read its payload as a JSON object that names the file.
+        var existing = (WireObject)WireJsonParser.Parse(active.PayloadJson!);
 
         if (HandoffOrigin.FromPayload(existing) is { HandoffId: { } ownerId } owner &&
             (owner.SourceKey != importEvent.SourceKey || ownerId != importEvent.HandoffId))
