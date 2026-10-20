@@ -1,0 +1,28 @@
+{
+  "app": "metadata-gateway",
+  "version": "2026-10-20",
+  "state": "search-unknown-title",
+  "recordedAt": "2026-10-20T19:46:17.000Z",
+  "note": "A read-only GET of the public metadata service, as Weir's ArtworkGatewayClient makes it (the request path is the one Weir sends). Only the content type of the reply's headers is kept.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/metadata/search?mediaType=movies&query=zzqxv%20nonexistent%20title%20qq&year=1901",
+        "headers": {}
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "provider": "deluno-broker",
+          "mode": "broker",
+          "resultCount": 0,
+          "results": []
+        }
+      }
+    }
+  ]
+}
