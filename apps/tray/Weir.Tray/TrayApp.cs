@@ -51,7 +51,7 @@ sealed class TrayApp : IDisposable
     private TrayUpdates? _updates;
     private LanAccessMenu? _lanAccessMenu;
     private bool _watching;
-    private Action? _balloonClick;
+    private BalloonPresenter? _balloons;
     private int _exitCode;
 
     public TrayApp(
@@ -173,7 +173,7 @@ sealed class TrayApp : IDisposable
         // A start never opens the browser; the balloon offers it, and a click opens it.
         if (_start.AnnounceOnReady)
         {
-            ShowBalloon("Weir", TrayBalloons.RunningText(_server.Port), ToolTipIcon.Info, () => _opener.Open("start-balloon"));
+            _opener.ShowRunning();
         }
         else
         {
@@ -322,37 +322,17 @@ sealed class TrayApp : IDisposable
 
     private void ShowUpdateNotice(UpdateMode mode)
     {
-        var version = _updates?.PendingVersion ?? "new version";
-        switch (mode)
-        {
-            case UpdateMode.Auto:
-                TrayLog.Write($"Notifying user: update v{version} downloaded; it installs once Weir has been idle for {IdleInstall.IdlePeriodText}, or when Weir next quits or starts.");
-                ShowBalloon(
-                    "Weir Update Ready",
-                    $"Version {version} has been downloaded. Weir installs it and restarts by itself once it has been idle for {IdleInstall.IdlePeriodText}, or when Weir next quits or starts.",
-                    ToolTipIcon.Info);
-                break;
-            case UpdateMode.DownloadOnly:
-                TrayLog.Write($"Notifying user: update v{version} downloaded and ready to install.");
-                ShowBalloon(
-                    "Weir Update Ready",
-                    $"Version {version} has been downloaded. Click here to restart and install it, or it installs the next time Weir quits or starts.",
-                    ToolTipIcon.Info,
-                    () =>
-                    {
-                        TrayLog.Write("Restart to update chosen from the update notice.");
-                        BackgroundWork.Observe("Apply update", ApplyUpdateAndRestartAsync());
-                    });
-                break;
-            default:
-                TrayLog.Write($"Notifying user: update v{version} available.");
-                ShowBalloon(
-                    "Weir Update",
-                    $"Version {version} is available. Open System › About in Weir to update.",
-                    ToolTipIcon.Info,
-                    () => _opener.Open("tray-update-balloon", Program.UpdateCheckPath));
-                break;
-        }
+        var notice = UpdateNotices.For(
+            mode,
+            _updates?.PendingVersion ?? "new version",
+            restartToUpdate: () =>
+            {
+                TrayLog.Write("Restart to update chosen from the update notice.");
+                BackgroundWork.Observe("Apply update", ApplyUpdateAndRestartAsync());
+            },
+            openAbout: () => _opener.Open("tray-update-balloon", Program.UpdateCheckPath));
+        TrayLog.Write(notice.Log);
+        ShowBalloon(notice.Title, notice.Text, ToolTipIcon.Info, notice.OnClick);
         Render();
     }
 
@@ -378,18 +358,8 @@ sealed class TrayApp : IDisposable
         }
     }
 
-    private async Task ApplyUpdateAndRestartAsync()
-    {
-        if (_updates is not { IsDownloaded: true })
-        {
-            return;
-        }
-        TrayLog.Write("Applying the downloaded update and restarting.");
-        if (!await _shutdown.RestartToUpdateAsync())
-        {
-            ShowBalloon("Weir Update", TrayBalloons.UpdateUnderWayText, ToolTipIcon.Info);
-        }
-    }
+    private Task ApplyUpdateAndRestartAsync() =>
+        new UpdateRestart(() => _updates is { IsDownloaded: true }, _shutdown.RestartToUpdateAsync, ShowBalloon, TrayLog.Write).RunAsync();
 
     // The update stays downloaded and the old version keeps running; the next scheduled check, or a click, tries again.
     private void ShowNotUpdated(string reason)
@@ -448,25 +418,14 @@ sealed class TrayApp : IDisposable
 
         _notifyIcon = new NotifyIcon { ContextMenuStrip = _menu.Strip };
 
-        // Clicking the icon is a person asking for Weir, so one click opens it (#638). A double-click still opens
-        // one window: its second event falls inside the debounce.
-        _notifyIcon.MouseClick += (_, e) =>
-        {
-            if (e.Button == MouseButtons.Left)
-            {
-                _opener.OpenFromClick("tray-click");
-            }
-        };
-        _notifyIcon.DoubleClick += (_, _) => _opener.OpenFromClick("tray-dblclick");
+        var clicks = new TrayIconClicks(_opener);
+        _notifyIcon.MouseClick += (_, e) => clicks.OnMouseClick(e.Button);
+        _notifyIcon.DoubleClick += (_, _) => clicks.OnDoubleClick();
 
         // One handler for every balloon: a click does what the balloon on screen offered, and nothing for a balloon
         // that offered nothing.
-        _notifyIcon.BalloonTipClicked += (_, _) =>
-        {
-            var onClick = _balloonClick;
-            _balloonClick = null;
-            onClick?.Invoke();
-        };
+        _balloons = new BalloonPresenter(new NotifyIconBalloons(_notifyIcon), TrayLog.Write);
+        _notifyIcon.BalloonTipClicked += (_, _) => _balloons.OnClicked();
 
         Render();
         _notifyIcon.Visible = true;
@@ -495,13 +454,7 @@ sealed class TrayApp : IDisposable
 
     private void ShowBalloon(string title, string text, ToolTipIcon icon, Action? onClick = null)
     {
-        if (_notifyIcon is null)
-        {
-            return;
-        }
-        _balloonClick = onClick;
-        TrayLog.Write(TrayBalloons.LogLine(title, text, icon));
-        _notifyIcon.ShowBalloonTip(TrayBalloons.TimeoutMs(icon), title, text, icon);
+        _balloons?.Show(title, text, icon, onClick);
     }
 
     private string LogsFolder() => RuntimeFolders.Logs(_runtimeHome, Environment.GetEnvironmentVariable);

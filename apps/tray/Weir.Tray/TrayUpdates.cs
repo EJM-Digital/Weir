@@ -43,7 +43,7 @@ sealed class TrayUpdates
     /// <param name="runtimeHome">Where update-state.json, the request flags and the server's work-state.json live.</param>
     /// <param name="settings">The operator's update choices.</param>
     /// <param name="callbacks">How the rest of the tray hears about updates and applies them.</param>
-    /// <param name="clock">Times the wait for Weir to be idle and the log of a failing watcher.</param>
+    /// <param name="clock">Times the periodic check, the heartbeat, the wait for Weir to be idle and the log of a failing watcher.</param>
     /// <param name="shutdown">Cancelled when the tray is ending, which ends every loop here.</param>
     /// <param name="readSettings">
     /// Reads the settings file again. Whether Weir looks for updates by itself is asked of it before every automatic check
@@ -191,7 +191,7 @@ sealed class TrayUpdates
 
     private async Task CheckPeriodicallyAsync(TimeSpan interval, CancellationToken cancellationToken)
     {
-        using var timer = new PeriodicTimer(interval);
+        using var timer = new PeriodicTimer(interval, _clock);
         while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
         {
             await CheckAsync().ConfigureAwait(false);
