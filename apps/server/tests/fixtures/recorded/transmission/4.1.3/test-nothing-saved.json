@@ -1,0 +1,34 @@
+{
+  "app": "transmission",
+  "version": "4.1.3",
+  "state": "test-nothing-saved",
+  "recordedAt": "2026-10-19T13:29:17Z",
+  "note": "The connection test with no user name or password saved, against a Transmission that asks for them.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/transmission/rpc",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "method": "session-get",
+          "arguments": {
+            "fields": [
+              "download-dir"
+            ]
+          }
+        }
+      },
+      "reply": {
+        "status": 401,
+        "headers": {
+          "content-type": "text/html; charset=ISO-8859-1",
+          "www-authenticate": "Basic realm=\"Transmission\""
+        },
+        "bodyText": "<h1>401: Unauthorized</h1>"
+      }
+    }
+  ]
+}

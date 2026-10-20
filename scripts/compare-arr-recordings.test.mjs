@@ -85,6 +85,18 @@ test("a download client checked in at two versions is compared with the version 
   assert.match(problems("qbittorrent", other, root)[0], /same release line/);
 });
 
+test("a release newer than every checked-in version of its major release is compared with the newest of them", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "client-compare-"));
+  for (const [version, extra] of [["5.2.4", { added_setting: true }], ["5.10.0", { added_setting: true, other_setting: 1 }], ["5.1.4", {}]]) {
+    mkdirSync(path.join(root, "qbittorrent", version), { recursive: true });
+    writeFileSync(path.join(root, "qbittorrent", version, "test.json"), JSON.stringify(recording("qbittorrent", version, "test", { save_path: "/downloads", ...extra })));
+  }
+  const newer = folder("qbittorrent", "5.11.0", { test: recording("qbittorrent", "5.11.0", "test", { save_path: "/downloads", added_setting: true, other_setting: 1 }) });
+  assert.deepEqual(problems("qbittorrent", newer, root), []);
+  const same = folder("qbittorrent", "5.1.4", { test: recording("qbittorrent", "5.1.4", "test", { save_path: "/downloads" }) });
+  assert.deepEqual(problems("qbittorrent", same, root), []);
+});
+
 test("the date a client sets a cookie to expire and the id of its container do not make two runs differ", () => {
   const reply = (expires, container) => ({
     status: 200,

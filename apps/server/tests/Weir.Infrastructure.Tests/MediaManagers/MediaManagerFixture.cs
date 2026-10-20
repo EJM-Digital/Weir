@@ -52,6 +52,16 @@ internal sealed class MediaManagerFixture : IDisposable
 
     public FakeManagerHttp Http { get; }
 
+    /// <summary>
+    /// A Deluno that answers its manifest and lists no libraries. A report that places its output path asks for the manifest, and
+    /// a Deluno that does not answer it holds the report back, so a test that reports to a Deluno without caring about its libraries says this.
+    /// </summary>
+    public MediaManagerFixture DelunoListsNoLibraries()
+    {
+        Http.Json(HttpMethod.Get, "/api/integrations/external/manifest", """{"name":"Deluno","capabilities":[],"libraries":[]}""");
+        return this;
+    }
+
     public HttpMediaManagerPorts Ports { get; }
 
     public MediaManagerConnectionService Connections { get; }

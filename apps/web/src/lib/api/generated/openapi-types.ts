@@ -1935,6 +1935,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/suite/backup-password": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Put Backup Password
+     * @description Set or change the backup password (admins only). Backups made later lock their secrets with it; backups already made keep the password they were made with.
+     */
+    put: operations["put_backup_password_api_v1_suite_backup_password_put"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/suite/check-update": {
     parameters: {
       query?: never;
@@ -2674,6 +2694,23 @@ export interface components {
       csrf_token: string;
     };
     /**
+     * BackupPasswordIn
+     * @description Body for PUT /suite/backup-password: the password the secrets in future backups are locked with, typed twice.
+     */
+    BackupPasswordIn: {
+      /** Confirm Password */
+      confirm_password: string;
+      /** Csrf Token */
+      csrf_token: string;
+      /** Password */
+      password: string;
+    };
+    /** BackupPasswordOut */
+    BackupPasswordOut: {
+      /** Password Set */
+      password_set: boolean;
+    };
+    /**
      * CheckUpdateIn
      * @description Body for POST /suite/check-update.
      */
@@ -2772,6 +2809,11 @@ export interface components {
       };
       /** Csrf Token */
       csrf_token: string;
+      /**
+       * Password
+       * @description The backup password, when the backup holds secrets locked with one. Left out for a backup that does not.
+       */
+      password?: string;
     };
     /**
      * ConnectionActivityFrame
@@ -7416,6 +7458,11 @@ export interface components {
        * @description Who made the backup: the schedule, or a person pressing Back up now. Null for a backup made before this was kept.
        */
       made_by: ("schedule" | "manual") | null;
+      /**
+       * Secrets Sealed
+       * @description Whether the backup holds the connections' secrets, locked with the backup password that was set when it was made.
+       */
+      secrets_sealed: boolean;
       /** Size Bytes */
       size_bytes: number;
     };
@@ -7425,6 +7472,11 @@ export interface components {
       directory: string;
       /** Items */
       items: components["schemas"]["SuiteConfigurationBackupItemOut"][];
+      /**
+       * Password Set
+       * @description Whether a backup password is set. The password itself is never returned.
+       */
+      password_set: boolean;
     };
     /** SuiteLogCountsOut */
     SuiteLogCountsOut: {
@@ -12618,6 +12670,41 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["UpdateStateOut"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
+    };
+  };
+  put_backup_password_api_v1_suite_backup_password_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BackupPasswordIn"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BackupPasswordOut"];
         };
       };
       /** @description Validation Error */

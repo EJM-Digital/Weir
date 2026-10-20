@@ -12,6 +12,9 @@ import {
 import { settingsKeys } from "../../../../lib/settings/query-keys";
 import { saveBlobAs } from "../../../../lib/ui/save-file";
 
+/** The part of a backup that holds the connections' secrets, locked with the backup password. */
+const SEALED_SECRETS = "sealed_secrets";
+
 /** The longest file name a stored snapshot is saved under. */
 const MAX_SNAPSHOT_NAME = 120;
 
@@ -53,6 +56,7 @@ export function useBackupActions() {
   const [problem, setProblem] = useState<string | null>(null);
   const [pendingRestore, setPendingRestore] =
     useState<ConfigurationBundle | null>(null);
+  const [restoreProblem, setRestoreProblem] = useState<string | null>(null);
 
   const run = async (work: () => Promise<string>, failure: string) => {
     setProblem(null);
@@ -70,6 +74,11 @@ export function useBackupActions() {
   return {
     busy,
     pendingRestore,
+    /** Whether the backup waiting to be restored holds secrets that only the backup password opens. */
+    restoreNeedsPassword:
+      pendingRestore !== null && SEALED_SECRETS in pendingRestore,
+    /** Why the last attempt to restore it was refused, while the confirmation is still open. */
+    restoreProblem,
     /** What the last action did, or why it could not. */
     result: { message, problem },
     downloadConfiguration: () =>
@@ -108,6 +117,7 @@ export function useBackupActions() {
       if ("problem" in read) {
         setProblem(read.problem);
       } else {
+        setRestoreProblem(null);
         setPendingRestore(read.bundle);
       }
     },
@@ -121,6 +131,7 @@ export function useBackupActions() {
         if ("problem" in read) {
           setProblem(read.problem);
         } else {
+          setRestoreProblem(null);
           setPendingRestore(read.bundle);
         }
       } catch (error) {
@@ -129,17 +140,39 @@ export function useBackupActions() {
         setBusy(false);
       }
     },
-    cancelRestore: () => setPendingRestore(null),
-    confirmRestore: () => {
+    cancelRestore: () => {
+      setRestoreProblem(null);
+      setPendingRestore(null);
+    },
+    /** Restores the backup held for confirmation. `password` is the backup password, asked for only when the backup holds locked secrets. */
+    confirmRestore: (password?: string) => {
       const bundle = pendingRestore;
       if (!bundle) return;
-      setPendingRestore(null);
-      void run(async () => {
-        await putConfigurationBundle(bundle);
+      const restore = async () => {
+        await putConfigurationBundle(bundle, password || undefined);
         // Everything read from the server may have changed, the settings drafts included.
         await queryClient.invalidateQueries();
         return "Configuration restored.";
-      }, "Could not restore.");
+      };
+      if (!(SEALED_SECRETS in bundle)) {
+        setPendingRestore(null);
+        void run(restore, "Could not restore.");
+        return;
+      }
+      // A wrong password leaves the confirmation open, so the password can be typed again.
+      setRestoreProblem(null);
+      setProblem(null);
+      setMessage(null);
+      setBusy(true);
+      void restore()
+        .then((done) => {
+          setPendingRestore(null);
+          setMessage(done);
+        })
+        .catch((error: unknown) =>
+          setRestoreProblem(errorMessage(error, "Could not restore.")),
+        )
+        .finally(() => setBusy(false));
     },
   };
 }

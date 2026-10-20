@@ -239,7 +239,9 @@ before updating…" first; the image's healthcheck allows five minutes for that.
 Weir has two kinds of backup.
 
 - **Settings backup, inside Weir.** **System › Backups** keeps a rolling copy of your configuration (your workflows,
-  rules and connections) and has **Back up now** and **Restore from file**. Copies are saved in `weir-data/backups`.
+  rules and connections) and has **Back up now** and **Restore from file**. Copies are saved in `weir-data/backups`. A copy holds your
+  connections' API keys, passwords and alert addresses only when you set a backup password there; they are locked with it, and a
+  restore asks for it. Without a password they are left out and you enter them again after restoring.
 - **Everything, from Docker.** The whole `weir-data` folder is Weir's database, logs, secrets and backups. To copy
   it safely, stop Weir first so the database is not in the middle of a write:
 
