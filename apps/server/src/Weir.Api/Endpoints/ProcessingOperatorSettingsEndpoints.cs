@@ -33,9 +33,9 @@ internal sealed class ProcessingOperatorSettingsEndpointHandlers
     public ProcessingOperatorSettingsEndpointHandlers(
         OperatorSettingsStore operatorSettings, ScanSettingsChanges scanSettingsChanges, SuiteSettingsStore suiteSettings)
     {
-        _operatorSettings = operatorSettings ?? throw new ArgumentNullException(nameof(operatorSettings));
-        _scanSettingsChanges = scanSettingsChanges ?? throw new ArgumentNullException(nameof(scanSettingsChanges));
-        _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
+        _operatorSettings = operatorSettings;
+        _scanSettingsChanges = scanSettingsChanges;
+        _suiteSettings = suiteSettings;
     }
 
     private static WireObject OperatorSettingsOut(ProcessingOperatorSettingsRecord row, string timezone) => new WireObject()

@@ -34,6 +34,8 @@
   <ItemGroup>
     <!-- A frozen fixture from an older release, shared with the infrastructure tests. -->
     <None Include="..\Weir.Infrastructure.Tests\Fixtures\bundle-v4.json" Link="Fixtures\bundle-v4.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- What the real ffprobe printed for two files made with the real ffmpeg (fixtures/recorded/ffprobe). -->
+    <None Include="..\fixtures\recorded\ffprobe\*.json" Link="fixtures\recorded\ffprobe\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

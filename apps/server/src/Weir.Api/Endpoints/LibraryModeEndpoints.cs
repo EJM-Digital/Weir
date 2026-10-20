@@ -44,10 +44,10 @@ internal sealed class LibraryModeEndpointHandlers
 
     public LibraryModeEndpointHandlers(LibrarySettingsStore librarySettings, LibraryScanStore scans, ProcessingJobStore jobs, LibraryStore libraries)
     {
-        _librarySettings = librarySettings ?? throw new ArgumentNullException(nameof(librarySettings));
-        _scans = scans ?? throw new ArgumentNullException(nameof(scans));
-        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
+        _librarySettings = librarySettings;
+        _scans = scans;
+        _jobs = jobs;
+        _libraries = libraries;
     }
 
     public async Task<ApiResult> GetSettingsAsync(ApiRequest request)

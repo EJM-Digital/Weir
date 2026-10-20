@@ -48,9 +48,9 @@ internal sealed class NotificationEndpointHandlers
 
     public NotificationEndpointHandlers(NotificationChannelStore channels, NotificationDispatcher dispatcher, RuntimeMetricsStore metrics)
     {
-        _channels = channels ?? throw new ArgumentNullException(nameof(channels));
-        _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
-        _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
+        _channels = channels;
+        _dispatcher = dispatcher;
+        _metrics = metrics;
     }
 
     private const string AddressTaken = "An alert already sends to that address.";

@@ -84,13 +84,13 @@ internal sealed class SuiteConfigurationEndpointHandlers
         ScanSettingsChanges scanSettingsChanges,
         WeirLogFile logFile)
     {
-        _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
-        _bundle = bundle ?? throw new ArgumentNullException(nameof(bundle));
-        _backups = backups ?? throw new ArgumentNullException(nameof(backups));
-        _backupPassword = backupPassword ?? throw new ArgumentNullException(nameof(backupPassword));
-        _zones = zones ?? throw new ArgumentNullException(nameof(zones));
-        _scanSettingsChanges = scanSettingsChanges ?? throw new ArgumentNullException(nameof(scanSettingsChanges));
-        _logFile = logFile ?? throw new ArgumentNullException(nameof(logFile));
+        _suiteSettings = suiteSettings;
+        _bundle = bundle;
+        _backups = backups;
+        _backupPassword = backupPassword;
+        _zones = zones;
+        _scanSettingsChanges = scanSettingsChanges;
+        _logFile = logFile;
     }
 
     public async Task<ApiResult> GetSettingsAsync(ApiRequest request)

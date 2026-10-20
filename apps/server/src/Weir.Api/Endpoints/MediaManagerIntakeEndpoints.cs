@@ -59,12 +59,12 @@ internal sealed class MediaManagerIntakeEndpointHandlers
     {
         ArgumentNullException.ThrowIfNull(options);
         _version = WeirVersion.Resolve(options.VersionOverride);
-        _artwork = artwork ?? throw new ArgumentNullException(nameof(artwork));
-        _machine = machine ?? throw new ArgumentNullException(nameof(machine));
-        _intake = intake ?? throw new ArgumentNullException(nameof(intake));
-        _handbackOutcomes = handbackOutcomes ?? throw new ArgumentNullException(nameof(handbackOutcomes));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
+        _artwork = artwork;
+        _machine = machine;
+        _intake = intake;
+        _handbackOutcomes = handbackOutcomes;
+        _libraries = libraries;
+        _connections = connections;
     }
 
     private static async Task<T> RefusalsAsApiErrors<T>(Func<Task<T>> work)

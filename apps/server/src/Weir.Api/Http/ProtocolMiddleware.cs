@@ -143,7 +143,7 @@ public sealed class CorsMiddleware
             return;
         }
 
-        var origin = originValues[0] ?? string.Empty;
+        var origin = originValues[0]!;
         if (context.Request.Method == HttpMethods.Options && context.Request.Headers.ContainsKey("Access-Control-Request-Method"))
         {
             await PreflightAsync(context, origin).ConfigureAwait(false);
@@ -187,7 +187,7 @@ public sealed class CorsMiddleware
             failures.Add("origin");
         }
 
-        var requestedMethod = context.Request.Headers["Access-Control-Request-Method"][0] ?? string.Empty;
+        var requestedMethod = context.Request.Headers["Access-Control-Request-Method"][0]!;
         if (!AllowMethods.Contains(requestedMethod, StringComparer.Ordinal))
         {
             failures.Add("method");
@@ -196,7 +196,7 @@ public sealed class CorsMiddleware
         var requestedHeaders = context.Request.Headers["Access-Control-Request-Headers"];
         if (requestedHeaders.Count > 0)
         {
-            foreach (var header in (requestedHeaders[0] ?? string.Empty).ToLowerInvariant().Split(','))
+            foreach (var header in requestedHeaders[0]!.ToLowerInvariant().Split(','))
             {
                 if (!_allowHeadersLower.Contains(header.Trim()))
                 {
@@ -244,7 +244,7 @@ public sealed class TrustedProxySchemeMiddleware
             var values = context.Request.Headers["X-Forwarded-Proto"];
             if (values.Count > 0)
             {
-                var scheme = (values[^1] ?? string.Empty).Trim().ToLowerInvariant();
+                var scheme = values[^1]!.Trim().ToLowerInvariant();
                 if (scheme is "http" or "https")
                 {
                     context.Request.Scheme = scheme;

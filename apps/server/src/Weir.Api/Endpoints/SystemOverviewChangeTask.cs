@@ -15,8 +15,8 @@ internal sealed class SystemOverviewChangeTask : IPeriodicTask
 
     public SystemOverviewChangeTask(SystemOverviewFrames frames, ActivityStreamClients clients)
     {
-        _frames = frames ?? throw new ArgumentNullException(nameof(frames));
-        _clients = clients ?? throw new ArgumentNullException(nameof(clients));
+        _frames = frames;
+        _clients = clients;
     }
 
     public string Name => "system-overview";

@@ -153,19 +153,19 @@ internal sealed class ActivityEndpointHandlers
         IHostApplicationLifetime lifetime,
         ArtworkPosterUrls posters)
     {
-        _history = history ?? throw new ArgumentNullException(nameof(history));
-        _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
-        _progressFrames = progressFrames ?? throw new ArgumentNullException(nameof(progressFrames));
-        _connectionFrames = connectionFrames ?? throw new ArgumentNullException(nameof(connectionFrames));
-        _liveFrames = liveFrames ?? throw new ArgumentNullException(nameof(liveFrames));
-        _statsFrames = statsFrames ?? throw new ArgumentNullException(nameof(statsFrames));
-        _tasksFrames = tasksFrames ?? throw new ArgumentNullException(nameof(tasksFrames));
-        _overviewFrames = overviewFrames ?? throw new ArgumentNullException(nameof(overviewFrames));
-        _checksFrames = checksFrames ?? throw new ArgumentNullException(nameof(checksFrames));
-        _logFrames = logFrames ?? throw new ArgumentNullException(nameof(logFrames));
-        _streamClients = streamClients ?? throw new ArgumentNullException(nameof(streamClients));
-        _lifetime = lifetime ?? throw new ArgumentNullException(nameof(lifetime));
-        _posters = posters ?? throw new ArgumentNullException(nameof(posters));
+        _history = history;
+        _suiteSettings = suiteSettings;
+        _progressFrames = progressFrames;
+        _connectionFrames = connectionFrames;
+        _liveFrames = liveFrames;
+        _statsFrames = statsFrames;
+        _tasksFrames = tasksFrames;
+        _overviewFrames = overviewFrames;
+        _checksFrames = checksFrames;
+        _logFrames = logFrames;
+        _streamClients = streamClients;
+        _lifetime = lifetime;
+        _posters = posters;
     }
 
     public async Task<ApiResult> GetRecentAsync(ApiRequest request)

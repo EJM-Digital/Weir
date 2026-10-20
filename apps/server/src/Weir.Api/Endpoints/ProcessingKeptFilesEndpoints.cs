@@ -38,10 +38,10 @@ internal sealed class ProcessingKeptFilesEndpointHandlers
 
     public ProcessingKeptFilesEndpointHandlers(FileSkipMarkerStore skipMarkers, ProcessingJobStore jobs, LibraryStore libraries, ArtworkPosterUrls posters)
     {
-        _skipMarkers = skipMarkers ?? throw new ArgumentNullException(nameof(skipMarkers));
-        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _posters = posters ?? throw new ArgumentNullException(nameof(posters));
+        _skipMarkers = skipMarkers;
+        _jobs = jobs;
+        _libraries = libraries;
+        _posters = posters;
     }
 
     public async Task<ApiResult> GetKeptFilesAsync(ApiRequest request)

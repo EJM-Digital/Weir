@@ -22,9 +22,9 @@ internal sealed class SystemChecks
 
     public SystemChecks(MediaManagerConnectionStore managers, DownloadClientConnectionStore downloadClients, IMediaToolResolver tools)
     {
-        _managers = managers ?? throw new ArgumentNullException(nameof(managers));
-        _downloadClients = downloadClients ?? throw new ArgumentNullException(nameof(downloadClients));
-        _tools = tools ?? throw new ArgumentNullException(nameof(tools));
+        _managers = managers;
+        _downloadClients = downloadClients;
+        _tools = tools;
     }
 
     public async Task<CheckCount> CountAsync(UnitOfWork uow, ReadinessReport readiness)

@@ -88,13 +88,13 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
         MediaManagerConnectionDependents dependents,
         ScanSettingsChanges scanSettingsChanges)
     {
-        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
-        _connectionStore = connectionStore ?? throw new ArgumentNullException(nameof(connectionStore));
-        _folderChainCheck = folderChainCheck ?? throw new ArgumentNullException(nameof(folderChainCheck));
-        _handlers = handlers ?? throw new ArgumentNullException(nameof(handlers));
-        _workflowSync = workflowSync ?? throw new ArgumentNullException(nameof(workflowSync));
-        _dependents = dependents ?? throw new ArgumentNullException(nameof(dependents));
-        _scanSettingsChanges = scanSettingsChanges ?? throw new ArgumentNullException(nameof(scanSettingsChanges));
+        _connections = connections;
+        _connectionStore = connectionStore;
+        _folderChainCheck = folderChainCheck;
+        _handlers = handlers;
+        _workflowSync = workflowSync;
+        _dependents = dependents;
+        _scanSettingsChanges = scanSettingsChanges;
     }
 
     public async Task<ApiResult> ListConnectionsAsync(ApiRequest request)

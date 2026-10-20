@@ -30,9 +30,9 @@ internal sealed class SystemOverviewFrames : IDisposable
 
     public SystemOverviewFrames(SystemOverviewReader overview, SqliteDatabase database, IServiceProvider services, ILoggerFactory loggers)
     {
-        _overview = overview ?? throw new ArgumentNullException(nameof(overview));
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _services = services ?? throw new ArgumentNullException(nameof(services));
+        _overview = overview;
+        _database = database;
+        _services = services;
         ArgumentNullException.ThrowIfNull(loggers);
         _logger = loggers.CreateLogger("weir.platform.system.overview");
     }

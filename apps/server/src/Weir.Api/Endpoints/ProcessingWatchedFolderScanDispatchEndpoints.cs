@@ -30,8 +30,8 @@ internal sealed class ProcessingWatchedFolderScanDispatchEndpointHandlers
 
     public ProcessingWatchedFolderScanDispatchEndpointHandlers(ProcessingJobStore jobs, LibraryStore libraries)
     {
-        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
+        _jobs = jobs;
+        _libraries = libraries;
     }
 
     public async Task<ApiResult> PostEnqueueAsync(ApiRequest request)

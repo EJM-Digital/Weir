@@ -42,11 +42,11 @@ internal sealed class LibraryModeOverviewEndpointHandlers
     public LibraryModeOverviewEndpointHandlers(
         LibrarySettingsStore librarySettings, LibraryViewStore libraryView, LibraryScanStore scans, SuiteSettingsStore suiteSettings, LibraryStore libraries)
     {
-        _librarySettings = librarySettings ?? throw new ArgumentNullException(nameof(librarySettings));
-        _libraryView = libraryView ?? throw new ArgumentNullException(nameof(libraryView));
-        _scans = scans ?? throw new ArgumentNullException(nameof(scans));
-        _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
+        _librarySettings = librarySettings;
+        _libraryView = libraryView;
+        _scans = scans;
+        _suiteSettings = suiteSettings;
+        _libraries = libraries;
     }
 
     /// <summary>

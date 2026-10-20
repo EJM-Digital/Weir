@@ -44,10 +44,10 @@ internal sealed class ProcessingRulesPreviewEndpointHandlers
     public ProcessingRulesPreviewEndpointHandlers(
         RulesPreviewGate gate, MediaTools mediaTools, IOriginalLanguageLookup originalLanguageLookup, LibraryStore libraries)
     {
-        _gate = gate ?? throw new ArgumentNullException(nameof(gate));
-        _mediaTools = mediaTools ?? throw new ArgumentNullException(nameof(mediaTools));
-        _originalLanguageLookup = originalLanguageLookup ?? throw new ArgumentNullException(nameof(originalLanguageLookup));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
+        _gate = gate;
+        _mediaTools = mediaTools;
+        _originalLanguageLookup = originalLanguageLookup;
+        _libraries = libraries;
     }
 
     private static ILogger PreviewLogger(ApiRequest request) => request.LoggerFactory.CreateLogger("weir.processing.rules_preview");

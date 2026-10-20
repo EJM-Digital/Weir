@@ -37,9 +37,9 @@ internal sealed class ProcessingLibraryCleansEndpointHandlers
 
     public ProcessingLibraryCleansEndpointHandlers(LibraryCleanHistoryStore cleanHistory, FileStateStore files, ArtworkPosterUrls posters)
     {
-        _cleanHistory = cleanHistory ?? throw new ArgumentNullException(nameof(cleanHistory));
-        _files = files ?? throw new ArgumentNullException(nameof(files));
-        _posters = posters ?? throw new ArgumentNullException(nameof(posters));
+        _cleanHistory = cleanHistory;
+        _files = files;
+        _posters = posters;
     }
 
     public async Task<ApiResult> GetLibraryCleansAsync(ApiRequest request)

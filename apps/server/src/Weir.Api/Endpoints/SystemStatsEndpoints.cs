@@ -21,7 +21,7 @@ internal sealed class SystemStatsEndpointHandlers
 {
     private readonly SystemStatsStore _store;
 
-    public SystemStatsEndpointHandlers(SystemStatsStore store) => _store = store ?? throw new ArgumentNullException(nameof(store));
+    public SystemStatsEndpointHandlers(SystemStatsStore store) => _store = store;
 
     public async Task<ApiResult> GetStatsAsync(ApiRequest request)
     {

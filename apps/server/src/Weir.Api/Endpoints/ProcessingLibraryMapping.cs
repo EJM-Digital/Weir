@@ -97,10 +97,10 @@ internal static class ProcessingLibraryMapping
             .Set("max_file_size_mb", row.MaxFileSizeMb)
             .Set("rejected_file_action", row.RejectedFileAction.Length > 0 ? row.RejectedFileAction : "leave")
             .Set("ready_after_seconds", row.ReadyAfterSeconds)
-            .Set("created_after", row.CreatedAfter?.ToWireText())
-            .Set("created_before", row.CreatedBefore?.ToWireText())
-            .Set("modified_after", row.ModifiedAfter?.ToWireText())
-            .Set("modified_before", row.ModifiedBefore?.ToWireText())
+            .Set("created_after", WindowText(row.CreatedAfter))
+            .Set("created_before", WindowText(row.CreatedBefore))
+            .Set("modified_after", WindowText(row.ModifiedAfter))
+            .Set("modified_before", WindowText(row.ModifiedBefore))
             .Set("exclude_hidden", row.ExcludeHidden)
             .Set("top_level_only", row.TopLevelOnly)
             .Set("scan_interval_seconds", row.ScanIntervalSeconds)
@@ -144,6 +144,12 @@ internal static class ProcessingLibraryMapping
             .Set("next_scan_at", periodicScan.NextScanAt is { } nextScan ? Timestamp.FromDateTimeOffset(nextScan).ToWireText() : null)
             .Set("updated_at", row.UpdatedAt.ToWireText());
     }
+
+    /// <summary>
+    /// A detection-window time as UTC with its timezone written out, which is what a save asks for: the stored time has no offset,
+    /// so a window read back and saved again would otherwise be refused for naming no timezone.
+    /// </summary>
+    private static string? WindowText(Timestamp? value) => value is { } time ? Timestamp.FromUtc(time.AsUtc).ToWireText() : null;
 
     /// <summary>Resolves <see cref="PeriodicScanStatus"/> for one library from the same switches and schedule window
     /// the periodic scan-dispatch scheduler and the worker's upkeep admission read.</summary>
@@ -311,6 +317,22 @@ internal static class ProcessingLibraryMapping
         {
             issues.Add(new ValidationIssue("value_error", ["body"], "Value error, Modified after must be earlier than modified before.", WireValue.Null));
         }
+    }
+
+    /// <summary>
+    /// The detection windows of a save that passed <see cref="ValidateDetectionWindows"/>, each as the same instant in UTC. The
+    /// database keeps the wall clock only and drops the offset, so a time given as <c>02:00+02:00</c> would otherwise be kept as 02:00 UTC.
+    /// </summary>
+    internal static ProcessingLibraryInput WithWindowsInUtc(ProcessingLibraryInput body)
+    {
+        static Timestamp? InUtc(Timestamp? value) => value is { } time ? Timestamp.FromUtc(time.AsUtc) : null;
+        return body with
+        {
+            CreatedAfter = InUtc(body.CreatedAfter),
+            CreatedBefore = InUtc(body.CreatedBefore),
+            ModifiedAfter = InUtc(body.ModifiedAfter),
+            ModifiedBefore = InUtc(body.ModifiedBefore),
+        };
     }
 
     /// <summary>
