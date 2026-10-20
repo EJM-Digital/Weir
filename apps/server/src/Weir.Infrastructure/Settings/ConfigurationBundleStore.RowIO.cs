@@ -88,7 +88,7 @@ public sealed partial class ConfigurationBundleStore
         switch (column.Kind)
         {
             case ColumnKind.DateTime:
-                return value is WireTimestampValue dt ? dt.Value.ToSqlite() : DBNull.Value;
+                return value is WireTimestampValue dt ? Timestamp.FromUtc(dt.Value.AsUtc).ToSqlite() : DBNull.Value;
             case ColumnKind.Boolean:
                 return value switch
                 {

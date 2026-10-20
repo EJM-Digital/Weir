@@ -154,7 +154,17 @@ public sealed partial class LibraryCleanHandler
     /// </summary>
     private async Task RecordMeasuredCostAsync(long jobId, ProbeResult probe, CancellationToken cancellationToken)
     {
-        var resolution = RunnerUnits.ResolutionClassForProbe(probe);
+        string resolution;
+        try
+        {
+            resolution = RunnerUnits.ResolutionClassForProbe(probe);
+        }
+        catch (RulesInputException)
+        {
+            // Track details nobody can read have no resolution to count; the planning step that follows says so in plain words.
+            return;
+        }
+
         try
         {
             await LockedWrites.RunAsync(

@@ -184,15 +184,7 @@ public sealed partial class LibraryCleanHandler : IJobHandler
         }
         else
         {
-            try
-            {
-                plan = LibraryFilePlanner.Classify(probe, rules);
-            }
-            catch (RulesInputException)
-            {
-                await RecordAsync(libraryId, path, trigger, LibraryActivityEventTypes.FileFailed, ToolFailureText.UnusableTrackData).ConfigureAwait(false);
-                return;
-            }
+            plan = LibraryFilePlanner.Classify(probe, rules);
         }
 
         if (plan.Classification == LibraryFileClassification.Matches)
