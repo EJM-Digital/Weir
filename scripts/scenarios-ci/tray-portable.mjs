@@ -10,7 +10,7 @@ import { choose } from "./tray-actions.mjs";
 import { lineWith, linesWith, serverProcessIds } from "./tray-log.mjs";
 import { menu } from "./tray-words.mjs";
 import { browserOn, closeBrowsers, expectNoBrowser, installedAndStopped, PORT, restoreWeir, startTray } from "./tray-world.mjs";
-import { ensureSignedIn } from "./windows-install.mjs";
+import { ensureSignedIn, wait } from "./windows-install.mjs";
 
 /** What the tray of a copy that is not an install logs in place of starting its update checks (apps/tray/Weir.Tray/TrayUpdates.cs). */
 export const NOT_INSTALLED_LINE = "Velopack: not installed (portable or development copy), skipping update checks.";
@@ -19,7 +19,20 @@ export const NOT_INSTALLED_LINE = "Velopack: not installed (portable or developm
 export const CANNOT_UPDATE_DETAIL =
   "This copy of Weir wasn't installed with the installer, so it can't update itself. To get a newer version, download the newest Weir-win-Setup.exe from the Weir releases page on GitHub and run it.";
 
-const UPDATE_STARTS = [/^Checking for updates/, /^Update available/, /^No update available/, /^Downloading update/, /^Update downloaded/];
+/**
+ * How long the copy's heartbeat may take to appear: the tray writes it right after the "not installed" line, and when that first write is refused
+ * (a virus scanner holds the folder) the next beat, 30 s on (TrayUpdates.HeartbeatInterval), writes it. Every wait ends the moment the file is there.
+ */
+export const HEARTBEAT_CEILING_MS = 60_000;
+
+const UPDATE_STARTS =[/^Checking for updates/, /^Update available/, /^No update available/, /^Downloading update/, /^Update downloaded/];
+
+/** What the copy's heartbeat says. The tray logs that it is not an install and then writes the file, so a log line is no proof the file is there yet. */
+export async function copyHeartbeat(world) {
+  const file = join(world.machine.paths.runtimeHome, "tray-heartbeat.json");
+  const read = async () => ((await world.machine.exists(file)) ? JSON.parse(await world.machine.readText(file)) : undefined);
+  return wait(world, read, "the copy's tray to write its heartbeat", HEARTBEAT_CEILING_MS, 250);
+}
 
 /** tray-portable: a copy of the install's files, run from a folder with no Update.exe beside it, checks for no update and says it cannot update. Its heartbeat says it is alive and not installed. */
 export async function trayPortable(world) {
@@ -40,7 +53,7 @@ export async function trayPortable(world) {
     await tray.line(NOT_INSTALLED_LINE, { what: "the tray to say it is not an install and skips its update checks" });
     const log = await tray.log();
     for (const started of UPDATE_STARTS) assert.equal(linesWith(log, started).length, 0, `the copy started an update check although it is not an install: ${lineWith(log, started)}`);
-    const heartbeat = JSON.parse(await machine.readText(join(machine.paths.runtimeHome, "tray-heartbeat.json")));
+    const heartbeat = await copyHeartbeat(world);
     assert.equal(heartbeat.installed, false, "the copy's heartbeat says it was installed, which tells Weir a tray is there to update it");
     assert.deepEqual(await machine.processes(), [], "the install's own tray or server runs although only the copy was started");
     const state = await weir.get("/suite/update-state");

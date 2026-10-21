@@ -87,6 +87,12 @@ test("Weir and the applications beside it share the download and output folders 
   assert.match(compose, /Server__AllowLan: "true"/);
 });
 
+test("Weir in the world looks up no posters, so no scenario depends on an outside service answering", () => {
+  const compose = read("scripts/scenarios-ci/with-deluno/compose.yaml");
+  const weir = /^ {2}weir:\n((?: {4}.*\n|\n)+)/m.exec(compose)[1];
+  assert.match(weir, /^ {6}WEIR_ARTWORK_GATEWAY_URL: "off"$/m);
+});
+
 // --- qBittorrent's login ------------------------------------------------------------------------------------------------
 
 test("a password is held as qBittorrent holds it: the PBKDF2 of a recorded login reproduces", () => {
