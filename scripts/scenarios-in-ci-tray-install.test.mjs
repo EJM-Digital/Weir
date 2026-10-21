@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 import { hookLines, stoppedByTheHook } from "./scenarios-ci/install-hooks.mjs";
 import { linesAfter } from "./scenarios-ci/tray-log.mjs";
-import { CANNOT_UPDATE_DETAIL, NOT_INSTALLED_LINE } from "./scenarios-ci/tray-portable.mjs";
+import { CANNOT_UPDATE_DETAIL, HEARTBEAT_CEILING_MS, NOT_INSTALLED_LINE, copyHeartbeat } from "./scenarios-ci/tray-portable.mjs";
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(join(repository, path), "utf8");
@@ -54,4 +54,27 @@ test("the portable scenario expects the words the tray and the page use", () => 
   assert.ok(read("apps/tray/Weir.Tray/TrayUpdates.cs").includes(`"${NOT_INSTALLED_LINE}"`));
   assert.ok(read("apps/web/src/pages/system/tabs/about/update-actions.tsx").includes("cannot_update_reason"));
   assert.ok(read("apps/server/src/Weir.Infrastructure/Runtime/SystemServices.cs").includes(`"${CANNOT_UPDATE_DETAIL}"`));
+});
+
+function fakeClock() {
+  let now = 0;
+  return { now: () => now, sleep: async (ms) => void (now += ms) };
+}
+
+test("the portable scenario waits for the heartbeat the tray writes just after its line, and reads what it says", async () => {
+  let looks = 0;
+  const machine = {
+    paths: { runtimeHome: "C:\\ProgramData\\Weir" },
+    exists: async () => ++looks > 3,
+    readText: async () => JSON.stringify({ at: "2026-10-20T14:11:38Z", installed: false }),
+  };
+  assert.deepEqual(await copyHeartbeat({ machine, clock: fakeClock() }), { at: "2026-10-20T14:11:38Z", installed: false });
+  assert.equal(looks, 4);
+  const never = { paths: machine.paths, exists: async () => false };
+  await assert.rejects(copyHeartbeat({ machine: never, clock: fakeClock() }), /the copy's tray to write its heartbeat did not happen within 60 s/);
+});
+
+test("the portable scenario's wait for the heartbeat lasts as long as two beats of the tray", () => {
+  const beat = /HeartbeatInterval = TimeSpan\.FromSeconds\((\d+)\)/.exec(read("apps/tray/Weir.Tray/TrayUpdates.cs"));
+  assert.equal(HEARTBEAT_CEILING_MS, 2 * Number(beat[1]) * 1000);
 });
