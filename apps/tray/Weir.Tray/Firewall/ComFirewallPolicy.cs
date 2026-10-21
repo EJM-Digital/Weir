@@ -31,8 +31,23 @@ sealed class ComFirewallPolicy : IFirewallPolicy
     private const int ActionAllow = 1;
 
     private readonly dynamic _policy;
+    private readonly Func<string, object> _create;
 
-    internal ComFirewallPolicy() => _policy = CreateComObject(PolicyProgId);
+    internal ComFirewallPolicy()
+        : this(CreateComObject(PolicyProgId), CreateComObject)
+    {
+    }
+
+    /// <summary>The real firewall's rules, for the code that takes them as <see cref="IFirewallPolicy"/>.</summary>
+    internal static IFirewallPolicy Open() => new ComFirewallPolicy();
+
+    /// <param name="policy">The firewall's policy object (<c>INetFwPolicy2</c>).</param>
+    /// <param name="create">Makes a COM object from its ProgID; a new rule is made through it.</param>
+    internal ComFirewallPolicy(object policy, Func<string, object> create)
+    {
+        _policy = policy;
+        _create = create;
+    }
 
     public IReadOnlyList<FirewallRule> Rules
     {
@@ -60,7 +75,7 @@ sealed class ComFirewallPolicy : IFirewallPolicy
         // never more than one Weir rule, whatever the previous call left behind.
         RemoveRule(rule.Name);
 
-        dynamic comRule = CreateComObject(RuleProgId);
+        dynamic comRule = _create(RuleProgId);
         comRule.Name = rule.Name;
         comRule.Description = RuleDescription;
         comRule.ApplicationName = rule.ProgramPath;
@@ -86,12 +101,11 @@ sealed class ComFirewallPolicy : IFirewallPolicy
         }
     }
 
-    private static dynamic CreateComObject(string progId)
+    internal static object CreateComObject(string progId)
     {
         var type = Type.GetTypeFromProgID(progId)
             ?? throw new InvalidOperationException($"Windows Firewall's COM object '{progId}' is not registered on this machine.");
-        return Activator.CreateInstance(type)
-            ?? throw new InvalidOperationException($"Could not create Windows Firewall's COM object '{progId}'.");
+        return Activator.CreateInstance(type)!;
     }
 
     // A rule this narrow mapping cannot make sense of (an unrecognised protocol or direction, or one COM would not

@@ -74,11 +74,11 @@
       "id": "tray-windows-effects",
       "file": "apps/tray/Weir.Tray/WindowsEffects.cs",
       "marker": "ExcludeFromCodeCoverage",
-      "count": 5,
+      "count": 6,
       "kind": "platform-only",
       "coveredBy": "windows",
-      "provedBy": "scripts/scenarios-ci/tray-menu.mjs, which chooses Copy address, Open data folder, Open logs folder and Report a problem on the real tray and reads the clipboard, File Explorer and the browser; the tray scenarios end the loop through Quit",
-      "reason": "Five one-line calls into Windows: start a program or open a folder or an address (Process.Start), put text on the clipboard, run the message loop, and end the thread's or the application's message loop. A unit test cannot answer them: they would open File Explorer and a browser on the machine, replace the person's clipboard, or block on a message loop that nothing ends. The tray's shell takes them as ShellEffects, so every line around them is run with recorders in WindowsTrayShellTests and TrayAppTests."
+      "provedBy": "scripts/scenarios-ci/tray-menu.mjs, which chooses Copy address, Open data folder, Open logs folder and Report a problem on the real tray and reads the clipboard, File Explorer and the browser; scripts/scenarios-ci/tray-network.mjs (tray-lan-access), which chooses Allow other devices and answers the Windows admin prompt; the tray scenarios end the loop through Quit",
+      "reason": "Six one-line calls into Windows: start a program or open a folder or an address (Process.Start), start a program through the Windows admin (UAC) prompt, put text on the clipboard, run the message loop, and end the thread's or the application's message loop. A unit test cannot answer them: they would open File Explorer and a browser on the machine, raise an admin prompt nobody can answer, replace the person's clipboard, or block on a message loop that nothing ends. The tray's shell takes them as ShellEffects, and the firewall access takes the elevated start as a function, so every line around them is run with recorders in WindowsTrayShellTests, TrayAppTests and FirewallAccessTests."
     },
     {
       "id": "tray-start-with-windows-message-box",
@@ -97,6 +97,55 @@
       "coveredBy": "windows",
       "provedBy": "scripts/scenarios-ci/tray-network.mjs, which chooses Change port, types a port into the real window and closes it without choosing",
       "reason": "PortDialog.Ask opens the port window modally with ShowDialog and returns what the person chose; a unit test has nobody to close it. The window itself, its two options and its validation are run directly in PortDialogTests, and the controller takes the question as a function in TrayControllerMenuTests."
+    },
+    {
+      "id": "tray-windows-startup",
+      "file": "apps/tray/Weir.Tray/WindowsStartup.cs",
+      "marker": "ExcludeFromCodeCoverage",
+      "count": 10,
+      "kind": "platform-only",
+      "coveredBy": "windows",
+      "provedBy": "scripts/scenarios-ci/tray-launch.mjs: tray-start and the silent starts start the real tray, which sets up Windows Forms, makes Velopack's update manager, stops orphaned servers, runs the message loop and shows the error box; tray-second-launch listens for and raises the second launch; takenPortAndTheDesktop answers the port window; scripts/scenarios-ci/install-hooks.mjs runs Velopack's hooks",
+      "reason": "Ten one-line calls the start makes into Windows: Velopack's install hooks (which read the process's own command line and end the process), the named event a second launch uses (a test that listened or raised it would reach a real Weir on the PC), the process-wide error handlers, Windows Forms set-up (refused once any window exists), Velopack's update manager (made only by a process Velopack's installer started), the stop of every server of this install in this session (which includes other tests' stand-in servers), the modal port window and error box, and the tray's message loop. TrayStartup takes them as StartupEffects, so every decision around them is run with recorders in TrayStartupTests."
+    },
+    {
+      "id": "tray-first-run-firewall-question",
+      "file": "apps/tray/Weir.Tray/Firewall/FirewallInstallHooks.cs",
+      "marker": "ExcludeFromCodeCoverage",
+      "count": 2,
+      "kind": "platform-only",
+      "coveredBy": "windows",
+      "provedBy": "scripts/scenarios-ci/tray-network.mjs (tray-lan-access) answers the Windows admin prompt, and scripts/smoke-windows-package.ps1 uninstalls the package as an administrator and checks the rule is gone",
+      "reason": "PersonAllows shows the modal question \"Allow Weir on your network?\" and waits for a click, and the no-argument RemoveRuleIfElevated removes the real Weir firewall rule when the tests happen to run as an administrator. A unit test has nobody to answer the first, and must not touch the rule on a PC that has Weir installed for the second. What they decide and do is run with a stand-in firewall and an elevation answer in FirewallAccessTests and FirstRunFirewallQuestionTests."
+    },
+    {
+      "id": "tray-firewall-command-line",
+      "file": "apps/tray/Weir.Tray/Firewall/FirewallCommand.cs",
+      "marker": "ExcludeFromCodeCoverage",
+      "kind": "platform-only",
+      "coveredBy": "windows",
+      "provedBy": "scripts/smoke-windows-package.ps1 runs the installed Weir.exe with --allow-lan, --remove-firewall and --configure-firewall as an administrator and checks the rule each time, and scripts/scenarios-ci/tray-network.mjs runs --configure-firewall",
+      "reason": "The two-argument Run hands the real elevation check, the real Windows Firewall and the real LAN access file to the command; run as an administrator, a test would add or remove the firewall rule of a Weir installed on the PC. The five-argument Run it calls is run with a stand-in firewall in FirewallCommandTests."
+    },
+    {
+      "id": "tray-program-entry-and-hooks",
+      "file": "apps/tray/Weir.Tray/Program.cs",
+      "marker": "ExcludeFromCodeCoverage",
+      "count": 2,
+      "kind": "platform-only",
+      "coveredBy": "windows",
+      "provedBy": "scripts/scenarios-ci/tray-launch.mjs starts the real tray through Main, and scripts/scenarios-ci/install-hooks.mjs runs Velopack's install and uninstall hooks, which stop the install's own tray and server",
+      "reason": "Main is the process's entry point, a single call that hands the real effects to TrayStartup; and KillRunningProcesses stops every tray and server of this install, which in a test run includes the stand-in servers other tests have running. TrayStartup is run with recorders in TrayStartupTests."
+    },
+    {
+      "id": "tray-inherited-stdio-handles",
+      "file": "apps/tray/Weir.Tray/InheritedStdioHandles.cs",
+      "marker": "ExcludeFromCodeCoverage",
+      "count": 2,
+      "kind": "platform-only",
+      "coveredBy": "windows",
+      "provedBy": "scripts/scenarios-ci/tray-launch.mjs (tray-start) starts the real tray through a caller that waits for the pipes it lent to close, and the install scenarios in scripts/scenarios-ci/windows-install.mjs start it through Setup",
+      "reason": "The process's own standard handles: WindowsStdHandles calls GetStdHandle, CloseHandle and SetStdHandle, and CloseInherited gives it to the closer. Closing them in the test host would cut off the test run's own output. The closer itself is run with stand-in handles in InheritedStdioHandlesTests."
     },
     {
       "id": "tray-obj-folder",

@@ -7,6 +7,7 @@ sealed class UpdateService : IUpdateService
 {
     private readonly UpdateManager _mgr;
     private readonly Action<string> _log;
+    private readonly Action<int> _exit;
     private volatile UpdateInfo? _pendingUpdate;
     private volatile bool _downloaded;
     private volatile int _downloadProgress;
@@ -14,12 +15,16 @@ sealed class UpdateService : IUpdateService
     public bool HasPendingUpdate => _pendingUpdate is not null;
     public bool IsDownloaded => _downloaded;
     internal int DownloadProgress => _downloadProgress;
-    public string? PendingVersion => _pendingUpdate?.TargetFullRelease?.Version?.ToString();
+    public string? PendingVersion => _pendingUpdate?.TargetFullRelease.Version.ToString();
 
-    internal UpdateService(Action<string> log)
+    /// <param name="manager">Velopack's update manager, with the release source and install location it is to use.</param>
+    /// <param name="log">Where each step is written.</param>
+    /// <param name="exit">Ends this process once an update has been handed over; the exit code is 0.</param>
+    internal UpdateService(UpdateManager manager, Action<string> log, Action<int> exit)
     {
+        _mgr = manager;
         _log = log;
-        _mgr = new UpdateManager(UpdateChannel.SourceForThisBuild(ProjectLocation.RepositoryUrl));
+        _exit = exit;
     }
 
     public bool IsInstalled => _mgr.IsInstalled;
@@ -82,7 +87,7 @@ sealed class UpdateService : IUpdateService
         }
         try
         {
-            return _mgr.UpdatePendingRestart?.Version?.ToString();
+            return _mgr.UpdatePendingRestart?.Version.ToString();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -100,7 +105,7 @@ sealed class UpdateService : IUpdateService
         }
         _log($"Applying update v{pending.TargetFullRelease.Version} and exiting...");
         HandOver(pending.TargetFullRelease, UpdateHandOver.ThenStayStopped);
-        Environment.Exit(0);
+        _exit(0);
     }
 
     public void ApplyAndRestart()
@@ -112,7 +117,7 @@ sealed class UpdateService : IUpdateService
         }
         _log($"Applying update v{pending.TargetFullRelease.Version} and restarting...");
         HandOver(pending.TargetFullRelease, UpdateHandOver.ThenRestart);
-        Environment.Exit(0);
+        _exit(0);
     }
 
     public void ApplyLeftWaitingUpdateAndRestart()
