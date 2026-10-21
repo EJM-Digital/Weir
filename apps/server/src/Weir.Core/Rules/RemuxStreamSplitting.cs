@@ -5,20 +5,6 @@ namespace Weir.Core.Rules;
 /// <summary>Splits a probe's streams by type and reads each stream's usable index, for every other planning concern to key off.</summary>
 public static partial class RemuxRules
 {
-    public static bool IsCommentaryAudio(ProbeStreamInfo stream)
-    {
-        ArgumentNullException.ThrowIfNull(stream);
-        var tags = stream.Tags;
-        var title = RulesJson.Lower(tags.GetValueOrDefault("title") ?? string.Empty);
-        if (title.Contains("commentary", StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        var comment = tags.GetValueOrDefault("comment");
-        return !string.IsNullOrEmpty(comment) && RulesJson.Lower(comment).Contains("commentary", StringComparison.Ordinal);
-    }
-
     /// <summary>Attached fonts and similar; not part of <see cref="SplitStreams"/>.</summary>
     public static IReadOnlyList<ProbeStreamInfo> AttachmentStreams(ProbeResult probe)
     {

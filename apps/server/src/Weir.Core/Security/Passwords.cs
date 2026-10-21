@@ -163,15 +163,8 @@ public static class PasswordHasher
             return false;
         }
 
-        try
-        {
-            bytes = Convert.FromBase64String(text.PadRight(text.Length + ((4 - (text.Length % 4)) % 4), '='));
-            return EncodeB64(bytes) == text;
-        }
-        catch (FormatException)
-        {
-            return false;
-        }
+        bytes = Convert.FromBase64String(text.PadRight(text.Length + ((4 - (text.Length % 4)) % 4), '='));
+        return EncodeB64(bytes) == text;
     }
 }
 

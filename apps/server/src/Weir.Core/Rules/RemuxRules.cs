@@ -88,7 +88,7 @@ public static partial class RemuxRules
                 keptAudioTracks.Add(BuildPlannedAudioTrack(audio, candidate, isDefault: i == defaultIndex));
             }
 
-            defaultAudioOutputIndex = defaultIndex >= 0 ? defaultIndex : 0;
+            defaultAudioOutputIndex = defaultIndex;
 
             var keptIndices = keptAudioTracks.Select(t => t.InputIndex).ToHashSet();
             foreach (var c in candidates.Where(c => !keptIndices.Contains(c.InputIndex)).OrderBy(c => c.InputIndex))
@@ -300,7 +300,8 @@ public static partial class RemuxRules
 
             // Subtitle order: the profile's saved ranking orders the kept subtitles, so the ranking a person saves is
             // the one the output has. The order above breaks ties, because the key ends in the position a track already has.
-            if (SubtitleOrder(config) is { Count: > 0 } subtitleSorters)
+            var subtitleSorters = SubtitleOrder(config);
+            if (subtitleSorters.Count > 0)
             {
                 var position = keptSubtitles.Select((t, i) => (t.InputIndex, i)).ToDictionary(p => p.InputIndex, p => p.i);
                 keptSubtitles = [.. keptSubtitles.OrderBy(

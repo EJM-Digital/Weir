@@ -40,7 +40,7 @@ public sealed record TrackFlags
 
 /// <summary>
 /// Reads <see cref="TrackFlags"/> from one ffprobe stream: the disposition first, then the track's
-/// name (<c>tags.title</c>, plus <c>tags.comment</c> for commentary, matching <see cref="RemuxRules.IsCommentaryAudio"/>).
+/// name (<c>tags.title</c>, plus <c>tags.comment</c> for commentary).
 /// A name only adds a flag; it never clears one the disposition set, and a disposition flag is
 /// never itself derived from the name. Short abbreviations match only as a whole word, so "CC"
 /// inside "Accessibility" and "HI" inside "This" do not count; the longer keywords match as a

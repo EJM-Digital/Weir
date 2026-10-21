@@ -127,14 +127,7 @@ public sealed class TimestampSigner
             return null;
         }
 
-        try
-        {
-            return Convert.FromBase64String(data + new string('=', (4 - (data.Length % 4)) % 4));
-        }
-        catch (FormatException)
-        {
-            return null;
-        }
+        return Convert.FromBase64String(data + new string('=', (4 - (data.Length % 4)) % 4));
     }
 }
 
