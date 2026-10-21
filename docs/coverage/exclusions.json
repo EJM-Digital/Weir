@@ -74,11 +74,11 @@
       "id": "tray-windows-effects",
       "file": "apps/tray/Weir.Tray/WindowsEffects.cs",
       "marker": "ExcludeFromCodeCoverage",
-      "count": 6,
+      "count": 7,
       "kind": "platform-only",
       "coveredBy": "windows",
-      "provedBy": "scripts/scenarios-ci/tray-menu.mjs, which chooses Copy address, Open data folder, Open logs folder and Report a problem on the real tray and reads the clipboard, File Explorer and the browser; scripts/scenarios-ci/tray-network.mjs (tray-lan-access), which chooses Allow other devices and answers the Windows admin prompt; the tray scenarios end the loop through Quit",
-      "reason": "Six one-line calls into Windows: start a program or open a folder or an address (Process.Start), start a program through the Windows admin (UAC) prompt, put text on the clipboard, run the message loop, and end the thread's or the application's message loop. A unit test cannot answer them: they would open File Explorer and a browser on the machine, raise an admin prompt nobody can answer, replace the person's clipboard, or block on a message loop that nothing ends. The tray's shell takes them as ShellEffects, and the firewall access takes the elevated start as a function, so every line around them is run with recorders in WindowsTrayShellTests, TrayAppTests and FirewallAccessTests."
+      "provedBy": "scripts/scenarios-ci/tray-menu.mjs, which chooses Copy address, Open data folder, Open logs folder and Report a problem on the real tray and reads the clipboard, File Explorer and the browser; scripts/scenarios-ci/tray-network.mjs (tray-lan-access), which chooses Allow other devices and answers the Windows admin prompt; the tray scenarios end the loop through Quit; for the warning box, scripts/scenarios-ci/tray-menu.mjs chooses Open data folder and Open logs folder on the real tray, which run the same RuntimeFolders.Open up to that call (no scenario makes File Explorer fail, so no scenario shows the box itself)",
+      "reason": "Seven one-line calls into Windows: start a program or open a folder or an address (Process.Start), start a program through the Windows admin (UAC) prompt, put text on the clipboard, show a warning message box, run the message loop, and end the thread's or the application's message loop. A unit test cannot answer them: they would open File Explorer and a browser on the machine, raise an admin prompt nobody can answer, replace the person's clipboard, wait for a click nobody can give, or block on a message loop that nothing ends. The tray's shell takes them as ShellEffects, and the firewall access takes the elevated start as a function, so every line around them is run with recorders in WindowsTrayShellTests, TrayAppTests and FirewallAccessTests. The words of the warning are checked in RuntimeFoldersFailureTests."
     },
     {
       "id": "tray-start-with-windows-message-box",
@@ -97,6 +97,16 @@
       "coveredBy": "windows",
       "provedBy": "scripts/scenarios-ci/tray-network.mjs, which chooses Change port, types a port into the real window and closes it without choosing",
       "reason": "PortDialog.Ask opens the port window modally with ShowDialog and returns what the person chose; a unit test has nobody to close it. The window itself, its two options and its validation are run directly in PortDialogTests, and the controller takes the question as a function in TrayControllerMenuTests."
+    },
+    {
+      "id": "tray-foreground-window",
+      "file": "apps/tray/Weir.Tray/ForegroundWindow.cs",
+      "marker": "ExcludeFromCodeCoverage",
+      "count": 2,
+      "kind": "platform-only",
+      "coveredBy": "windows",
+      "provedBy": "scripts/scenarios-ci/tray-launch.mjs (takenPortAndTheDesktop) starts the real tray with its port taken, so the port window is brought to the front on a real desktop",
+      "reason": "Win32Windows is the tray's window system: each member is one call into user32 or kernel32 (SetWindowPos, SetForegroundWindow, GetForegroundWindow, AttachThreadInput, FlashWindowEx), and Bring(Form) hands the real window system to the decision. A unit test cannot answer them: they would raise a window on the desktop of whoever runs the tests and take the foreground from what they are doing. The decision itself (when to put a window on top, ask for the foreground, join the holder thread or flash the taskbar button) is run with a stand-in window system in ForegroundWindowTests and ForegroundHolderTests."
     },
     {
       "id": "tray-windows-startup",

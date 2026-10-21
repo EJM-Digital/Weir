@@ -75,9 +75,9 @@ sealed class WindowsTrayShell(ShellEffects effects) : ITrayShell, IDisposable
 
     public bool OpenBrowser(int port, string relativePath) => Program.OpenBrowser(port, effects.StartProcess, relativePath);
 
-    public void OpenFolder(string folder, string what) => RuntimeFolders.Open(folder, what, effects.StartProcess);
+    public void OpenFolder(string folder, string what) => RuntimeFolders.Open(folder, what, effects.StartProcess, effects.ShowWarning);
 
-    public void RevealFile(string file) => RuntimeFolders.Reveal(file, effects.StartProcess);
+    public void RevealFile(string file) => RuntimeFolders.Reveal(file, effects.StartProcess, effects.ShowWarning);
 
     public int? AskPort(PortPrompt prompt) => effects.AskPort(prompt, _notifyIcon?.Icon);
 

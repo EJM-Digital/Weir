@@ -119,6 +119,19 @@ public sealed class LanAccessStartupTests : IDisposable
     }
 
     [Fact]
+    public void A_choice_that_cannot_be_saved_is_still_followed_and_the_log_says_it_is_worked_out_again()
+    {
+        var folder = Path.Combine(Home, "refused");
+        using var denied = new DeniedFolder(folder, System.Security.AccessControl.FileSystemRights.CreateFiles);
+        var logged = new List<string>();
+
+        var scope = LanAccessStartup.Resolve(folder, InstallRoot, () => new FakeFirewallPolicy(WeirFirewallRule.DesiredRule(InstallRoot)), logged.Add);
+
+        Assert.Equal(ListenScope.OtherDevices, scope);
+        Assert.Contains(logged, line => line.Contains("the choice could not be saved", StringComparison.Ordinal) && line.Contains("worked out again at the next start", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void A_firewall_that_cannot_be_read_means_this_pc_only_for_now_and_nothing_is_saved()
     {
         IFirewallPolicy Unreadable() => throw new InvalidOperationException("The firewall service is not running.");

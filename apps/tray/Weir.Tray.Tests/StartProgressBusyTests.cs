@@ -164,6 +164,26 @@ public sealed class StartProgressBusyTests : IDisposable
     }
 
     [Fact]
+    public void A_line_the_feed_has_already_taken_adds_nothing()
+    {
+        var feed = new StartProgressFeed(5764);
+        feed.Accept(Line("migrating", 1, 1));
+
+        Assert.Null(feed.Accept(Line("migrating", 1, 1)));
+    }
+
+    [Fact]
+    public void Clearing_leaves_a_file_another_program_holds_open_where_it_is()
+    {
+        File.WriteAllText(FilePath, Starting);
+        using var held = new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+        StartProgressFile.Clear(_home.Path);
+
+        Assert.True(File.Exists(FilePath));
+    }
+
+    [Fact]
     public void The_feed_ignores_another_process_a_broken_line_and_any_other_output()
     {
         var feed = new StartProgressFeed(5764);

@@ -292,7 +292,8 @@ sealed class UpdateBackupHook(
         }
 
         var version = string.IsNullOrWhiteSpace(targetVersion) ? "unknown" : targetVersion;
-        TrayLog.Write($"Asking the server to save a copy of Weir's data before updating to v{version}.");
+        var to = string.IsNullOrWhiteSpace(targetVersion) ? string.Empty : $" to v{targetVersion}";
+        TrayLog.Write($"Asking the server to save a copy of Weir's data before updating{to}.");
         UpdateBackupAnswer answer;
         try
         {
@@ -319,7 +320,7 @@ sealed class UpdateBackupHook(
                 return true;
             default:
                 var reason = answer.Reason ?? "Something unexpected went wrong. The details are in Weir's log files.";
-                TrayLog.Write($"The update to v{version} was not applied: the server could not save a copy of Weir's data. {reason}");
+                TrayLog.Write($"The update{to} was not applied: the server could not save a copy of Weir's data. {reason}");
                 Remember(version, reason);
                 onNotUpdated(reason);
                 return false;
@@ -396,7 +397,7 @@ sealed class UpdateBackupHook(
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            TrayLog.Write($"Could not record that the copy for v{version} failed: {ex.Message}");
+            TrayLog.Write($"Could not record that saving a copy of Weir's data failed: {ex.Message}");
         }
     }
 

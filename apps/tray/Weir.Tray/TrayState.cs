@@ -161,7 +161,8 @@ sealed record TrayState(
         }
     }
 
-    // Cut at a word, never in the middle of one, so a long connection name costs the end of the line and nothing else.
+    // Cut at a word, never in the middle of one, so a long connection name costs the end of the line and nothing else. The text starts
+    // with the product name and a space, so there is always a word to cut after.
     private static string Fit(string text)
     {
         if (text.Length <= HoverLimit)
@@ -169,7 +170,7 @@ sealed record TrayState(
             return text;
         }
         var cut = text.LastIndexOf(' ', HoverLimit - Ellipsis.Length);
-        var kept = text.AsSpan(0, cut > 0 ? cut : HoverLimit - Ellipsis.Length).TrimEnd(" -");
+        var kept = text.AsSpan(0, cut).TrimEnd(" -");
         return string.Concat(kept, Ellipsis);
     }
 }

@@ -134,6 +134,47 @@ public sealed class ServerOutputLogTests : IDisposable
         await StartRig.UntilAsync(() => !standardOutput.BaseStream.CanRead && !standardError.BaseStream.CanRead, "the pipes to be closed");
     }
 
+    [Fact]
+    public void A_writer_that_cannot_even_be_let_go_is_dropped_and_the_next_line_opens_the_file_afresh()
+    {
+        var opened = 0;
+        using var log = new ServerOutputLog(_home.Path)
+        {
+            OpenWriter = path =>
+            {
+                var first = opened++ == 0;
+                var stream = new TrackingStream(new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete), failFirstWrite: first, () => { }, failDispose: first);
+                return new StreamWriter(stream, new System.Text.UTF8Encoding(false)) { AutoFlush = true, NewLine = "\n" };
+            },
+        };
+
+        log.Write("this line meets the failure");
+        log.Write("this line is written");
+
+        Assert.Equal(2, opened);
+        Assert.Contains("this line is written", ReadShared(LogPath), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_pipe_that_breaks_ends_the_reading_quietly_and_is_let_go()
+    {
+        using var log = new ServerOutputLog(_home.Path);
+        var stream = new BrokenPipe();
+        var reader = new StreamReader(stream);
+
+        await log.Pump(reader, 7, "out", feed: null);
+
+        Assert.True(stream.Disposed);
+    }
+
+    [Fact]
+    public void The_server_s_output_is_read_in_the_code_page_of_this_PC_or_in_UTF_8_when_it_has_none()
+    {
+        Assert.Equal(437, ServerOutputLog.ServerEncoding(437).CodePage);
+        Assert.Same(System.Text.Encoding.UTF8, ServerOutputLog.ServerEncoding(-1));
+        Assert.NotNull(ServerOutputLog.ServerEncoding());
+    }
+
     // The log is open for writing while a test reads it.
     private static string ReadShared(string path)
     {
@@ -167,7 +208,7 @@ public sealed class ServerOutputLogTests : IDisposable
         public bool Disposed { get; private set; }
     }
 
-    private sealed class TrackingStream(Stream inner, bool failFirstWrite, Action disposed) : Stream
+    private sealed class TrackingStream(Stream inner, bool failFirstWrite, Action disposed, bool failDispose = false) : Stream
     {
         private bool _failNext = failFirstWrite;
 
@@ -210,8 +251,49 @@ public sealed class ServerOutputLogTests : IDisposable
             {
                 disposed();
                 inner.Dispose();
+                if (failDispose)
+                {
+                    throw new IOException("The disk went away.");
+                }
             }
 
+            base.Dispose(disposing);
+        }
+    }
+
+    private sealed class BrokenPipe : Stream
+    {
+        public bool Disposed { get; private set; }
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new IOException("The pipe has been ended.");
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        protected override void Dispose(bool disposing)
+        {
+            Disposed = true;
             base.Dispose(disposing);
         }
     }

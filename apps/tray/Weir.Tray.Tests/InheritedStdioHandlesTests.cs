@@ -142,6 +142,18 @@ public sealed class InheritedStdioHandlesTests
     }
 
     [Fact]
+    public void When_there_is_no_null_device_and_a_handle_cannot_be_set_to_nothing_the_log_says_nothing()
+    {
+        _calls.NullFails = true;
+        _calls.Standard[StdOutput] = 200;
+        _calls.SetFails.Add(StdOutput);
+
+        Run();
+
+        Assert.Contains(_log, line => line.Contains("Could not point the stdout handle at nothing (Win32 error 87)", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Running_it_a_second_time_closes_nothing_more()
     {
         _calls.Standard[StdOutput] = 200;

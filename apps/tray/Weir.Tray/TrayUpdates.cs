@@ -191,9 +191,10 @@ sealed class TrayUpdates
 
     private async Task CheckPeriodicallyAsync(TimeSpan interval, CancellationToken cancellationToken)
     {
-        using var timer = new PeriodicTimer(interval);
-        while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+        using var timer = new PeriodicTimer(interval, _clock);
+        while (true)
         {
+            await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false);
             await CheckAsync().ConfigureAwait(false);
         }
     }
@@ -272,7 +273,7 @@ sealed class TrayUpdates
     }
 
     // Automatic mode only: the person who chose it is not there to press Restart to update.
-    private void InstallWhenIdle()
+    internal void InstallWhenIdle()
     {
         lock (_idleWatchLock)
         {

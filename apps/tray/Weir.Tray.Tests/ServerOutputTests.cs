@@ -105,6 +105,44 @@ public sealed class ServerOutputTests
     }
 
     [Fact]
+    public void A_process_that_was_never_started_is_said_to_be_beyond_looking_at()
+    {
+        using var never = new Process();
+
+        var text = ServerProcessSnapshot.Describe(never);
+
+        Assert.StartsWith("could not be looked at (", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_process_that_has_gone_has_no_modules_to_list()
+    {
+        var started = Process.Start(new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "whoami.exe")) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true })!;
+        started.WaitForExit();
+
+        Assert.Empty(ServerProcessSnapshot.LoadedFiles(started));
+    }
+
+    [Fact]
+    public void A_process_that_has_loaded_only_windows_files_is_described_without_a_list_of_more()
+    {
+        var start = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/c pause") { UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true, RedirectStandardOutput = true };
+        using var holder = Process.Start(start)!;
+        try
+        {
+            var text = ServerProcessSnapshot.Describe(holder);
+
+            Assert.Contains("had loaded 0 files outside Windows: ", text, StringComparison.Ordinal);
+            Assert.DoesNotContain(" more", text, StringComparison.Ordinal);
+        }
+        finally
+        {
+            holder.Kill();
+            holder.WaitForExit();
+        }
+    }
+
+    [Fact]
     public void The_log_is_started_over_rather_than_growing_without_bound()
     {
         using var home = TempDirectory.Create();

@@ -150,6 +150,14 @@ public sealed class StartWithWindowsTests : IDisposable
     }
 
     [Fact]
+    public void The_first_run_of_a_silent_start_asks_nothing_and_says_so_in_the_log()
+    {
+        StartWithWindowsPrompt.AskOnFirstRun(["--silent"]);
+
+        Assert.Contains("First-run start-with-Windows question skipped", File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName)), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void With_no_desktop_to_ask_on_it_asks_nothing_and_leaves_it_off()
     {
         var asked = false;

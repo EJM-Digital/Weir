@@ -28,8 +28,11 @@ static class OwnerOnlyAccess
     internal static SecurityIdentifier CurrentUser()
     {
         using var identity = WindowsIdentity.GetCurrent();
-        return identity.User ?? throw new InvalidOperationException("The tray's Windows account has no security identifier.");
+        return Required(identity.User);
     }
+
+    internal static SecurityIdentifier Required(SecurityIdentifier? user) =>
+        user ?? throw new InvalidOperationException("The tray's Windows account has no security identifier.");
 
     /// <summary>
     /// Whether a folder owned by <paramref name="owner"/> can be taken over as this account's runtime home: owned by

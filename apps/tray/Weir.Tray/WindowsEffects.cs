@@ -18,6 +18,10 @@ static class WindowsEffects
     [ExcludeFromCodeCoverage]
     internal static void SetClipboardText(string text) => Clipboard.SetText(text);
 
+    /// <summary>Tells the person something went wrong, in a message box they must close.</summary>
+    [ExcludeFromCodeCoverage]
+    internal static void ShowWarning(string message) => MessageBox.Show(message, "Weir", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
     [ExcludeFromCodeCoverage]
     internal static void RunMessageLoop() => Application.Run();
 
@@ -37,6 +41,7 @@ static class WindowsEffects
 /// <param name="AskStartWithWindows">Asks "Start Weir when you sign in to Windows?" in a message box.</param>
 /// <param name="AskPort">Shows the port window; the chosen port, or null when the person closed it. The icon is the window's own.</param>
 /// <param name="SetClipboardText">Puts text on the clipboard.</param>
+/// <param name="ShowWarning">Tells the person something went wrong, in a message box they must close.</param>
 /// <param name="RunMessageLoop">Runs the message loop until the application exits.</param>
 /// <param name="ExitThread">Ends the message loop of the thread.</param>
 /// <param name="ExitApplication">Ends every message loop.</param>
@@ -45,6 +50,7 @@ sealed record ShellEffects(
     Func<bool> AskStartWithWindows,
     Func<PortPrompt, Icon?, int?> AskPort,
     Action<string> SetClipboardText,
+    Action<string> ShowWarning,
     Action RunMessageLoop,
     Action ExitThread,
     Action ExitApplication)
@@ -54,6 +60,7 @@ sealed record ShellEffects(
         StartWithWindowsPrompt.AskInMessageBox,
         PortDialog.Ask,
         WindowsEffects.SetClipboardText,
+        WindowsEffects.ShowWarning,
         WindowsEffects.RunMessageLoop,
         WindowsEffects.ExitThread,
         WindowsEffects.ExitApplication);

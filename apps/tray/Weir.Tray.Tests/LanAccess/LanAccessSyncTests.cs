@@ -149,6 +149,23 @@ public sealed class LanAccessSyncTests : IDisposable
     }
 
     [Fact]
+    public async Task A_saved_choice_that_cannot_be_put_back_is_logged_and_the_server_is_left_as_it_is()
+    {
+        var folder = Path.Combine(Home, "refused");
+        Directory.CreateDirectory(folder);
+        LanAccessSetting.Write(folder, ListenScope.OtherDevices);
+        _firewall.Allows = true;
+        var server = new FakeServer(ListenScope.ThisPcOnly) { ResultOfARealMove = ScopeChange.Failed };
+        using var sync = new LanAccessSync(folder, server, _firewall, _time);
+        using var denied = new DeniedFolder(folder, System.Security.AccessControl.FileSystemRights.CreateFiles);
+
+        await sync.CheckAsync(Watch(), CancellationToken.None);
+
+        Assert.Equal([ScopeChange.Failed], _applied.Select(applied => applied.Change));
+        Assert.Contains("the saved choice could not be put back", File.ReadAllText(Path.Combine(Home, TrayLog.FileName)), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Watching_notices_a_change_when_the_poll_interval_passes()
     {
         _firewall.Allows = true;

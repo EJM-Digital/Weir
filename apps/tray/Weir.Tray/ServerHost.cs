@@ -16,7 +16,8 @@ sealed partial class ServerHost : ITrayServer, IDisposable
     internal const string CurrentPortFileName = "current-port.txt";
 
     private const string ServerExeName = "WeirServer.exe";
-    private static readonly TimeSpan WatchInterval = TimeSpan.FromSeconds(3);
+    /// <summary>How often the watchdog looks at the server process.</summary>
+    internal static readonly TimeSpan WatchInterval = TimeSpan.FromSeconds(3);
 
     /// <summary>How long a stop waits for a restart or port change in progress to let go of the server.</summary>
     private static readonly TimeSpan StopGateWait = TimeSpan.FromSeconds(5);
@@ -43,6 +44,7 @@ sealed partial class ServerHost : ITrayServer, IDisposable
     private volatile bool _noPortChosen;
     private volatile bool _lastAttemptFoundPortInUse;
     private Task? _watchdog;
+    private int _watchLooks;
     private Action? _onGaveUp;
     private CancellationToken _watchdogToken;
 
@@ -282,7 +284,7 @@ sealed partial class ServerHost : ITrayServer, IDisposable
     }
 
     // A server that has already exited cannot say when it started; it started no later than now.
-    private static DateTime StartTimeUtc(Process process)
+    internal static DateTime StartTimeUtc(Process process)
     {
         try
         {

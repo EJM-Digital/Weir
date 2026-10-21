@@ -32,23 +32,24 @@ static class RuntimeFolders
     /// opens its folder instead, because Explorer would otherwise open an unrelated one.
     /// </summary>
     /// <param name="file">The file.</param>
-    /// <param name="startExplorer">Starts Explorer; the tray's own is used when null.</param>
-    internal static void Reveal(string file, Action<ProcessStartInfo>? startExplorer = null)
+    /// <param name="startExplorer">Starts Explorer.</param>
+    /// <param name="tell">Tells the person what went wrong.</param>
+    internal static void Reveal(string file, Action<ProcessStartInfo> startExplorer, Action<string> tell)
     {
         if (!File.Exists(file))
         {
-            Open(Path.GetDirectoryName(file)!, "data folder", startExplorer);
+            Open(Path.GetDirectoryName(file)!, "data folder", startExplorer, tell);
             return;
         }
         try
         {
             var start = new ProcessStartInfo { FileName = "explorer.exe", Arguments = SelectArguments(file), UseShellExecute = true };
-            (startExplorer ?? WindowsEffects.StartProcess)(start);
+            startExplorer(start);
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
         {
             TrayLog.Write($"Could not show {file} in File Explorer: {ex.Message}");
-            Open(Path.GetDirectoryName(file)!, "data folder");
+            Open(Path.GetDirectoryName(file)!, "data folder", startExplorer, tell);
         }
     }
 
@@ -58,22 +59,19 @@ static class RuntimeFolders
     /// </summary>
     /// <param name="folder">The folder to open.</param>
     /// <param name="what">What the folder is, in the person's words: "data folder", "logs folder".</param>
-    /// <param name="start">Starts the shell on it; the real shell when null.</param>
-    internal static void Open(string folder, string what, Action<ProcessStartInfo>? start = null)
+    /// <param name="start">Starts the shell on it.</param>
+    /// <param name="tell">Tells the person where the folder is.</param>
+    internal static void Open(string folder, string what, Action<ProcessStartInfo> start, Action<string> tell)
     {
         try
         {
             Directory.CreateDirectory(folder);
-            (start ?? WindowsEffects.StartProcess)(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
+            start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or FileNotFoundException or IOException or UnauthorizedAccessException)
         {
             TrayLog.Write($"Could not open the {what} {folder}: {ex.Message}");
-            MessageBox.Show(
-                $"Weir could not open its {what}. You can open it in File Explorer yourself:\n\n{folder}",
-                "Weir",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning);
+            tell($"Weir could not open its {what}. You can open it in File Explorer yourself:\n\n{folder}");
         }
     }
 }

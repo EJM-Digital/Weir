@@ -57,4 +57,16 @@ public sealed class ServerEnvironmentTests : IDisposable
         Assert.Equal(session, File.ReadAllText(sessionPath));
         Assert.NotEqual(session, credentials);
     }
+
+    [Fact]
+    public void A_package_without_the_web_app_refuses_to_start_and_changes_nothing()
+    {
+        using var server = TempDirectory.Create();
+        var before = Environment.GetEnvironmentVariable(Program.RuntimeHomeVariable);
+
+        var failure = Assert.Throws<InvalidOperationException>(() => ServerEnvironment.Apply(_home.Path, server.Path));
+
+        Assert.Equal("Bundled web assets are missing from the Weir desktop package.", failure.Message);
+        Assert.Equal(before, Environment.GetEnvironmentVariable(Program.RuntimeHomeVariable));
+    }
 }

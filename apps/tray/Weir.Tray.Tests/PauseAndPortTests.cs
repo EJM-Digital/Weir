@@ -61,6 +61,20 @@ public sealed class PauseAndPortTests : IDisposable
         Assert.Equal(["log shown"], _events);
     }
 
+    [Fact]
+    public void When_the_resume_request_cannot_be_written_the_person_is_told_that_resuming_failed()
+    {
+        _paused = true;
+        var blocked = Path.Combine(_home.Path, "a-file");
+        File.WriteAllText(blocked, "x");
+
+        Pause(runtimeHome: blocked).Toggle();
+
+        var balloon = Assert.Single(_balloons);
+        Assert.Equal("Weir couldn't resume processing. See tray-host.log in the data folder.", balloon.Text);
+        Assert.Contains("Could not ask the server to resume:", File.ReadAllText(Path.Combine(_home.Path, "tray-host.log")), StringComparison.Ordinal);
+    }
+
     private PortChange Change(int? chosen, Func<int, Task<PortMove>>? move = null) => new(
         () => 9347,
         prompt =>

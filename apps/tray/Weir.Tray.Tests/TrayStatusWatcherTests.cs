@@ -202,4 +202,12 @@ public sealed class TrayStatusWatcherTests : IDisposable
 
         Assert.Equal(64 * 1024, watcher.BufferBytes);
     }
+
+    [Fact]
+    public void A_watcher_with_no_folder_to_watch_has_no_buffer()
+    {
+        using var watcher = new TrayStatusWatcher(() => TrayStatusReading.Missing, _heard.Add, _logged.Add, new FakeTimeProvider(), QuickRetry);
+
+        Assert.Equal(0, watcher.BufferBytes);
+    }
 }

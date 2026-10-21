@@ -42,6 +42,9 @@ static class ParentProcess
             ref information,
             Marshal.SizeOf<ProcessBasicInformation>(),
             out _);
-        return status == 0 ? (int)information.InheritedFromUniqueProcessId : null;
+        return Parent(status, information.InheritedFromUniqueProcessId);
     }
+
+    /// <summary>The parent Windows reported, or null when its status says it did not (any status but 0).</summary>
+    internal static int? Parent(int status, nint inheritedFrom) => status == 0 ? (int)inheritedFrom : null;
 }

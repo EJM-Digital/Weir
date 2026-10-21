@@ -208,6 +208,19 @@ public sealed class UpdateSettingsTests : IDisposable
     }
 
     [Fact]
+    public void A_file_that_stays_busy_installs_and_checks_nothing_for_now_and_the_log_says_so()
+    {
+        File.WriteAllText(SettingsPath, "{ \"mode\": \"Auto\" }");
+        using var held = new FileStream(SettingsPath, FileMode.Open, FileAccess.Read, FileShare.None);
+
+        var got = UpdateSettings.Load(Home);
+
+        Assert.Equal(UpdateMode.NotifyOnly, got.Mode);
+        Assert.False(got.CheckForUpdates);
+        Assert.Contains("update-settings.json could not be read just now", File.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void The_failure_path_says_why_in_the_tray_log()
     {
         File.WriteAllText(SettingsPath, "{ not json");

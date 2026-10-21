@@ -24,7 +24,7 @@ sealed class ReleaseFeedSource : IUpdateSource
     private readonly bool _includePreReleases;
     private readonly IFileDownloader _downloader;
     private readonly GithubSource _api;
-    private volatile IUpdateSource? _serving;
+    private volatile IUpdateSource _serving;
 
     /// <param name="repoUrl">The repository's address, <see cref="ProjectLocation.RepositoryUrl"/>.</param>
     /// <param name="includePreReleases">Whether pre-releases are offered; <see cref="UpdateChannel.IncludesPreReleases"/> says for an install.</param>
@@ -35,6 +35,7 @@ sealed class ReleaseFeedSource : IUpdateSource
         _includePreReleases = includePreReleases;
         _downloader = downloader ?? new HttpClientFileDownloader();
         _api = new GithubSource(_repoUrl, accessToken: null, prerelease: includePreReleases, _downloader);
+        _serving = _api;
     }
 
     public async Task<VelopackAssetFeed> GetReleaseFeed(IVelopackLogger logger, string? appId, string channel, Guid? stagingId = null, VelopackAsset? latestLocalRelease = null)
@@ -71,7 +72,7 @@ sealed class ReleaseFeedSource : IUpdateSource
     }
 
     public Task DownloadReleaseEntry(IVelopackLogger logger, VelopackAsset releaseEntry, string localFile, Action<int> progress, CancellationToken cancelToken = default) =>
-        (_serving ?? _api).DownloadReleaseEntry(logger, releaseEntry, localFile, progress, cancelToken);
+        _serving.DownloadReleaseEntry(logger, releaseEntry, localFile, progress, cancelToken);
 
     /// <summary>
     /// The tags of the releases in the release feed, newest first by SemVer precedence, counting pre-releases only when asked.

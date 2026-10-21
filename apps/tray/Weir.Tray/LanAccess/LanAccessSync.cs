@@ -61,8 +61,9 @@ sealed class LanAccessSync(string runtimeHome, IServerListenScope server, IFirew
     internal async Task WatchAsync(LanAccessWatch watch, CancellationToken cancellationToken)
     {
         using var timer = new PeriodicTimer(PollInterval, time);
-        while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+        while (true)
         {
+            await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false);
             await CheckAsync(watch, cancellationToken).ConfigureAwait(false);
         }
     }

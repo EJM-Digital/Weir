@@ -41,10 +41,8 @@ sealed class StartupIcon : IDisposable
     /// <summary>One blink: swaps to the other icon, which was made once and is kept.</summary>
     internal void Tick()
     {
-        if (_blink.Tick())
-        {
-            _icon.Icon = _icons.For(_state.IconKey(_blink.Lit));
-        }
+        _blink.Tick();
+        _icon.Icon = _icons.For(_state.IconKey(_blink.Lit));
     }
 
     public void Dispose()

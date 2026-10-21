@@ -97,7 +97,7 @@ public sealed class TrayBehaviourTests : IDisposable
         File.WriteAllText(log, "x");
         ProcessStartInfo? started = null;
 
-        RuntimeFolders.Reveal(log, info => started = info);
+        RuntimeFolders.Reveal(log, info => started = info, _ => { });
 
         Assert.NotNull(started);
         Assert.Equal("explorer.exe", started.FileName);
@@ -110,7 +110,7 @@ public sealed class TrayBehaviourTests : IDisposable
         ProcessStartInfo? started = null;
         var missing = Path.Combine(_home.Path, "tray-host.log");
 
-        RuntimeFolders.Reveal(missing, info => started = info);
+        RuntimeFolders.Reveal(missing, info => started = info, _ => { });
 
         Assert.NotNull(started);
         Assert.Equal(_home.Path, started.FileName);
@@ -126,5 +126,12 @@ public sealed class TrayBehaviourTests : IDisposable
         Assert.NotSame(fallback, Program.FallbackIcon());
         fallback.Dispose();
         Assert.True(SystemIcons.Application.Width > 0);
+    }
+
+    [Fact]
+    public void The_installed_tray_is_the_running_program_or_the_install_root_s_own()
+    {
+        Assert.Equal("C:/Weir/Weir.exe", Program.InstalledTray("C:/Weir/Weir.exe"));
+        Assert.Equal(Path.Combine(InstallProcesses.Root(), "Weir.exe"), Program.InstalledTray(null));
     }
 }
