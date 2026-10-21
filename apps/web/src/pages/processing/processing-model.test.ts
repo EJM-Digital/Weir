@@ -9,7 +9,10 @@ import {
   LIBRARY_CLEAN_JOB_KIND,
   arrivingDeadline,
   buildLanes,
+  countWorking,
   fileFacts,
+  firstSentence,
+  libraryCleanWorkflowId,
   mergeWorkingFiles,
   prettyName,
   secondsLeft,
@@ -117,6 +120,10 @@ describe("prettyName", () => {
     );
   });
 
+  it("keeps the whole name when taking the extension off leaves nothing", () => {
+    expect(prettyName(".mkv")).toBe(".mkv");
+  });
+
   it("falls back to the file name in words", () => {
     expect(prettyName("downloads/home_video_final.mkv")).toBe(
       "home video final",
@@ -130,6 +137,37 @@ describe("fileFacts", () => {
     expect(fileFacts(file({ video_height: null, video_codec: null }))).toBe(
       "2.27 GB",
     );
+  });
+});
+
+describe("firstSentence", () => {
+  it.each([
+    ["Waits 60s. Then starts.", "Waits 60s."],
+    ["Is it ready? Soon.", "Is it ready?"],
+    ["No full stop", "No full stop"],
+    ["  Padded.  ", "Padded."],
+    [".", "."],
+    ["", ""],
+    [null, ""],
+    [undefined, ""],
+  ])("takes %j as %j", (text, sentence) => {
+    expect(firstSentence(text)).toBe(sentence);
+  });
+});
+
+describe("the workflow and the count of library cleans", () => {
+  it("names the workflow a clean belongs to, or none when its payload does not say", () => {
+    expect(libraryCleanWorkflowId(job({}))).toBe(1);
+    expect(libraryCleanWorkflowId(job({ payload_json: "{" }))).toBeNull();
+  });
+
+  it("counts what is being worked on, whatever the page's names", () => {
+    expect(
+      countWorking(
+        [file({ status: "processing", progress_status: "processing" })],
+        [job({ status: "leased" }), job({ id: 41, status: "pending" })],
+      ),
+    ).toBe(2);
   });
 });
 
@@ -279,6 +317,73 @@ describe("buildLanes", () => {
       percent: null,
     });
     expect(lanes.waiting.map((item) => item.key)).toEqual(["job-41"]);
+  });
+
+  it.each([
+    ["no payload", { payload_json: null }, "Library file 40", "Workflow"],
+    [
+      "a payload that is not JSON",
+      { payload_json: "{" },
+      "Library file 40",
+      "Workflow",
+    ],
+    [
+      "a payload with no path or workflow",
+      { payload_json: "{}" },
+      "Library file 40",
+      "Workflow",
+    ],
+    [
+      "a path and workflow of the wrong kind",
+      { payload_json: JSON.stringify({ path: 7, library_id: "1" }) },
+      "Library file 40",
+      "Workflow",
+    ],
+    [
+      "a workflow the page does not know",
+      {
+        payload_json: JSON.stringify({
+          path: "Film.2020.mkv",
+          library_id: 9,
+        }),
+      },
+      "Film (2020)",
+      "Workflow",
+    ],
+  ])(
+    "names a library clean from %s as best it can",
+    (_name, change, name, library) => {
+      const lanes = buildLanes(
+        [],
+        [job({ status: "leased", ...change })],
+        NAMES,
+        AGES,
+      );
+
+      expect(lanes.working[0]).toMatchObject({ name, libraryName: library });
+    },
+  );
+
+  it("names a file's workflow from the page's list when the file does not say, and plainly when neither does", () => {
+    const lanes = buildLanes(
+      [
+        file({ id: 1, library_id: 2, library_name: "", status: "unprocessed" }),
+        file({
+          id: 2,
+          library_id: 77,
+          library_name: "",
+          status: "unprocessed",
+        }),
+      ],
+      [],
+      NAMES,
+      AGES,
+    );
+
+    expect(lanes.waiting.map((item) => item.libraryName)).toEqual([
+      "TV",
+      "Workflow",
+    ]);
   });
 
   it("orders Arriving by who starts first", () => {
@@ -692,6 +797,44 @@ describe("an arriving file's ring", () => {
     // A file with its own hold counts down to that, not to the next look.
     expect(arrivingDeadline(timed)).toBe(Date.parse("2026-08-18T10:00:30Z"));
     expect(timed.nextLook).toBeNull();
+  });
+});
+
+describe("a held file Weir has found gone", () => {
+  it("waits for no clock and no look at its workflow", () => {
+    const lanes = buildLanes(
+      [
+        file({
+          status: "on_hold",
+          source_gone: true,
+          hold_until: "2026-08-18T10:00:30",
+          library_id: 2,
+        }),
+      ],
+      [],
+      NAMES,
+      AGES,
+      new Map([[2, { at: NOW, interval: 300 }]]),
+    );
+
+    expect(lanes.arriving[0]).toMatchObject({
+      holdUntil: null,
+      nextLook: null,
+    });
+  });
+});
+
+describe("a held file when its workflow's next look is not known", () => {
+  it("has no look to count down to", () => {
+    const lanes = buildLanes(
+      [file({ status: "on_hold", hold_until: null, library_id: 1 })],
+      [],
+      new Map(),
+      new Map(),
+      new Map([[2, { at: NOW, interval: 300 }]]),
+    );
+
+    expect(lanes.arriving[0].nextLook).toBeNull();
   });
 });
 

@@ -113,9 +113,6 @@ export function apiUrl(path: string): string {
 }
 
 function buildTimeoutSignal(timeoutMs: number): AbortSignal | null {
-  if (typeof AbortSignal === "undefined") {
-    return null;
-  }
   if (typeof AbortSignal.timeout === "function") {
     return AbortSignal.timeout(timeoutMs);
   }

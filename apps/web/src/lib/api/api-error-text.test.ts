@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   SIGN_IN_ENDED_MESSAGE,
   asSentence,
+  codeOf,
   fieldLabel,
   responseErrorText,
   validationText,
@@ -163,5 +164,119 @@ describe("responseErrorText", () => {
         fallback: "Could not load settings",
       }),
     ).toBe("Could not load settings.");
+  });
+});
+
+describe("validationText for every wording the server uses", () => {
+  it.each([
+    [
+      "String should have at least 3 characters",
+      "Name must be at least 3 characters.",
+    ],
+    [
+      "String should have at least 2 character",
+      "Name must be at least 2 character.",
+    ],
+    [
+      "String should have at most 40 characters",
+      "Name must be at most 40 characters.",
+    ],
+    [
+      "Input should be a valid integer, unable to parse string",
+      "Name must be a whole number.",
+    ],
+    ["Input should be a finite number", "Name must be a number."],
+    ["Input should be a valid number", "Name must be a number."],
+    [
+      "List should have at least 1 item after validation, not 0",
+      "Name needs at least one entry.",
+    ],
+    ["Something nobody has seen", "Name isn't valid."],
+  ])("says %j as %j", (msg, words) => {
+    expect(validationText([{ loc: ["body", "name"], msg }])).toBe(words);
+  });
+
+  it.each([
+    ["no problems at all", []],
+    ["a problem that is not a record", ["nope", null]],
+    ["a problem with no place", [{ msg: "Field required" }]],
+    ["a place of the wrong kind", [{ loc: "name", msg: "Field required" }]],
+    [
+      "a place with only the body in it",
+      [{ loc: ["body", 0], msg: "Field required" }],
+    ],
+  ])("asks for a check on %s", (_name, issues) => {
+    expect(validationText(issues)).toBe(
+      "Weir couldn't accept that. Check the details and try again.",
+    );
+  });
+
+  it("names the last place in the path to the field, skipping list positions", () => {
+    expect(
+      validationText([
+        { loc: ["body", "windows", 2, "start_time"], msg: "Field required" },
+      ]),
+    ).toBe("Start time is required.");
+  });
+
+  it("says a message with no text as the field not being valid", () => {
+    expect(validationText([{ loc: ["body", "name"] }])).toBe(
+      "Name isn't valid.",
+    );
+  });
+});
+
+describe("codeOf", () => {
+  it.each([
+    ["a code", { code: "database_busy" }, "database_busy"],
+    ["a code that is not text", { code: 5 }, undefined],
+    ["no code", { detail: "x" }, undefined],
+    ["no record", "words", undefined],
+    ["nothing", null, undefined],
+  ])("reads %s", (_name, body, code) => {
+    expect(codeOf(body)).toBe(code);
+  });
+});
+
+describe("responseErrorText for the answers a person is shown", () => {
+  const say = (status: number, body: unknown, path = "/api/v1/things") =>
+    responseErrorText({ path, status, body, fallback: "Could not do it" });
+
+  it.each([
+    ["a refusal", 400, { detail: "Pick a folder" }, "Pick a folder."],
+    [
+      "a media manager's failure",
+      502,
+      { detail: "Sonarr said no." },
+      "Sonarr said no.",
+    ],
+    [
+      "a failure of Weir's own",
+      500,
+      { detail: "Traceback (most recent call last)" },
+      "Could not do it.",
+    ],
+    ["a detail with only spaces", 400, { detail: "   " }, "Could not do it."],
+    [
+      "a detail that is not text",
+      400,
+      { detail: { a: 1 } },
+      "Could not do it.",
+    ],
+    ["a body that is not a record", 400, "words", "Could not do it."],
+    ["no body", 400, undefined, "Could not do it."],
+    [
+      "a list of problems",
+      422,
+      { detail: [{ loc: ["body", "name"], msg: "Field required" }] },
+      "Name is required.",
+    ],
+  ])("shows the right words for %s", (_name, status, body, words) => {
+    expect(say(status, body)).toBe(words);
+  });
+
+  it("says there have been too many attempts", () => {
+    expect(say(429, { detail: "slow down" })).not.toBe("slow down.");
+    expect(say(429, {})).toMatch(/too many/i);
   });
 });

@@ -188,6 +188,48 @@ describe("the activity stream", () => {
     expect(rows[1].meaning).toBe("attention");
   });
 
+  it.each([
+    [
+      "a manager that did not name itself",
+      { outcome: "imported", relative_media_path: "Heat.1995.mkv" },
+      {},
+      "A media manager imported Heat (1995)",
+      "/activity?q=Heat.1995.mkv",
+    ],
+    [
+      "a file named only by the entry",
+      { outcome: "imported", outcome_by: "Radarr" },
+      { relative_path: "Heat.1995.mkv" },
+      "Radarr imported Heat (1995)",
+      "/activity?q=Heat.1995.mkv",
+    ],
+    [
+      "no file named at all",
+      { outcome: "imported", outcome_by: "Radarr" },
+      {},
+      "Radarr imported ",
+      "/system?tab=logs",
+    ],
+  ])("words a handed-back copy with %s", (_name, detail, entry, words, to) => {
+    const { rows } = buildStream([
+      event({
+        event_type: "processing.handback_outcome",
+        module: "processing",
+        detail: JSON.stringify(detail),
+        ...entry,
+      }),
+    ]);
+
+    expect(sentenceOf(rows[0])).toBe(words);
+    expect(rows[0].to).toBe(to);
+  });
+
+  it("leaves out a pass that finished nothing", () => {
+    expect(
+      buildStream([pass({ outcome: "skipped_guardrail", ok: true })]).rows,
+    ).toEqual([]);
+  });
+
   it("uses the log's own title for anything else, and links to the log", () => {
     const { rows } = buildStream([
       event({ event_type: "auth.login_succeeded", module: "auth" }),

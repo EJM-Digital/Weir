@@ -221,6 +221,77 @@ describe("the Backups and tools card", () => {
     );
   });
 
+  it("says it is reading the tools until they are known", () => {
+    tools.data = undefined;
+    const card = renderCard();
+
+    expect(within(card).getByTestId("system-tools")).toHaveTextContent(
+      "Reading the tools…",
+    );
+    expect(within(card).queryAllByTestId("system-tool")).toHaveLength(0);
+  });
+
+  it("marks a tool that is not installed", () => {
+    tools.data = {
+      ffmpeg: "ffmpeg version 7.1 Copyright",
+      mkvmerge: "not installed",
+    };
+    const card = renderCard();
+
+    const missing = within(card).getAllByTestId("system-tool")[1];
+    expect(within(missing).getByLabelText("Not installed")).toHaveTextContent(
+      "—",
+    );
+  });
+
+  it("says it is checking for updates until the answer comes", () => {
+    updateStatus.data = undefined;
+    const card = renderCard();
+
+    expect(within(card).getByTestId("system-updates")).toHaveTextContent(
+      "Checking…",
+    );
+  });
+
+  it("names only the version running when it is the newest", () => {
+    updateStatus.data = {
+      current_version: "3.3.0",
+      latest_version: "3.3.0",
+      status: "up_to_date",
+    };
+    const card = renderCard();
+
+    const updates = within(card).getByTestId("system-updates");
+    expect(updates).toHaveTextContent("Running 3.3.0");
+    expect(updates).toHaveTextContent("Up to date");
+    expect(updates).not.toHaveTextContent("Latest");
+  });
+
+  it("says nothing of the schedule or the backups until they are known", () => {
+    settings.data = undefined;
+    backups.data = undefined;
+    backups.isSuccess = false;
+    const card = renderCard();
+
+    expect(
+      within(card).getByTestId("system-backup-head"),
+    ).not.toHaveTextContent(/Every|Automatic|next in/);
+    expect(card).not.toHaveTextContent("No backup has been made yet.");
+    expect(within(card).queryAllByTestId("system-backup")).toHaveLength(0);
+  });
+
+  it("tells the times in the browser's time zone when none is chosen", () => {
+    settings.data = {
+      ...(settings.data as Settings),
+      app_timezone: "",
+    };
+    const card = renderCard();
+
+    expect(within(card).getAllByTestId("system-backup")[0]).toHaveTextContent(
+      "Today",
+    );
+  });
+
   it("says how many parts the card's height left out", () => {
     fits = 2;
     const card = renderCard();

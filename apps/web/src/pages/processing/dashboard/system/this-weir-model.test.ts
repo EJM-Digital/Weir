@@ -225,12 +225,54 @@ describe("the order of the tiles", () => {
   });
 });
 
+describe("the fact tiles when a reading is odd", () => {
+  it("says nothing of the size of a backup whose size is unknown", () => {
+    expect(facts({ lastBackupBytes: null }).backup).toMatchObject({
+      value: "3 h ago",
+      sub: "",
+    });
+  });
+
+  it("falls back on the uptime the server reported when it gave no readable start time", () => {
+    expect(
+      facts({ overview: { ...overview, started_at: "not a time" } }).uptime
+        .value,
+    ).toBe("1:40");
+  });
+
+  it.each([
+    ["no host at all", "", "–", "", undefined],
+    ["a host with no port", "https://weir.home", "weir.home", "", "weir"],
+    [
+      "a bracketed address",
+      "http://[::1]:9347/",
+      "[::1]",
+      "port 9347",
+      undefined,
+    ],
+    ["a host with no dot", "http://nas:9347/", "nas", "port 9347", undefined],
+  ])("shows the address for %s", (_name, address, value, sub, valueShort) => {
+    expect(facts({ overview: { ...overview, address } }).address).toMatchObject(
+      { value, sub, valueShort },
+    );
+  });
+});
+
 describe("the newest backup", () => {
   it("is the one made last, whatever order the list is in", () => {
     const older = { created_at: "2026-10-01T03:00:00", size_bytes: 1 };
     const newer = { created_at: "2026-10-02T03:00:00", size_bytes: 2 };
     expect(newestBackup([newer, older])).toBe(newer);
     expect(newestBackup([older, newer])).toBe(newer);
+  });
+
+  it("keeps the first of two made at the same time, and reads a backup with no readable time as the oldest", () => {
+    const first = { created_at: "2026-10-02T03:00:00", size_bytes: 1 };
+    const same = { created_at: "2026-10-02T03:00:00", size_bytes: 2 };
+    const unreadable = { created_at: "not a time", size_bytes: 3 };
+    expect(newestBackup([first, same])).toBe(first);
+    expect(newestBackup([unreadable, first])).toBe(first);
+    expect(newestBackup([first, unreadable])).toBe(first);
   });
 
   it("is nothing when there are no backups", () => {

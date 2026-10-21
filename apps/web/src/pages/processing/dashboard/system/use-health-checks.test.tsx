@@ -52,6 +52,7 @@ const queries = {
 };
 let entries: ConnectionEntry[] = [];
 let drives: SystemDrive[] = [];
+const readStats = vi.fn();
 
 const useHealth = vi.fn<(workflows: unknown) => Health>(() => health);
 vi.mock("../use-health", () => ({
@@ -88,7 +89,10 @@ vi.mock("../../../../lib/system/use-system-stats", () => ({
   useSystemOverviewQuery: () => queries.overview,
 }));
 vi.mock("../../../../lib/system/system-stats-api", () => ({
-  fetchSystemStats: async () => ({ drives }),
+  fetchSystemStats: async () => {
+    readStats();
+    return { drives };
+  },
 }));
 
 function wrapper() {
@@ -146,7 +150,11 @@ beforeEach(() => {
   queries.readiness.data = undefined;
   queries.update.data = undefined;
   queries.overview.data = undefined;
+  queries.tools.dataUpdatedAt = NOW;
+  queries.settings.dataUpdatedAt = NOW;
+  queries.readiness.dataUpdatedAt = NOW;
   for (const mock of [
+    readStats,
     recheckMovies,
     testConnection,
     queries.tools.refetch,
@@ -325,4 +333,131 @@ describe("useHealthChecks", () => {
     });
     expect(result.current.busy.size).toBe(0);
   });
+
+  it.each([
+    {
+      name: "no backup has ever run",
+      settings: { last_run_at: null },
+      backups: undefined,
+      words: "No backup yet",
+    },
+    {
+      name: "the backup list has not loaded and the last run is unreadable",
+      settings: { last_run_at: "not a time" },
+      backups: undefined,
+      words: "No backup yet",
+    },
+    {
+      name: "the only backup has no readable time",
+      settings: { last_run_at: null },
+      backups: { items: [{ created_at: "not a time" }] },
+      words: "No backup yet",
+    },
+    {
+      name: "the last run is old and the newest backup is recent",
+      settings: { last_run_at: "2026-09-01T00:00:00Z" },
+      backups: { items: [{ created_at: "2026-10-02T09:00:00Z" }] },
+      words: "On schedule",
+    },
+  ])("judges the backup when $name", ({ settings, backups, words }) => {
+    queries.settings.data = {
+      configuration_backup_enabled: true,
+      configuration_backup_interval_hours: 24,
+      configuration_backup_last_run_at: settings.last_run_at,
+    };
+    queries.backups.data = backups;
+    const { result } = renderChecks();
+
+    expect(
+      result.current.checks.find((check) => check.area === "backups")?.words,
+    ).toBe(words);
+  });
+
+  it("does not say when the settings were read before they have been", () => {
+    queries.settings.data = {
+      configuration_backup_enabled: false,
+      configuration_backup_interval_hours: 24,
+      configuration_backup_last_run_at: null,
+    };
+    queries.settings.dataUpdatedAt = 0;
+    const { result } = renderChecks();
+
+    expect(
+      result.current.checks.find((check) => check.area === "backups")
+        ?.checkedAt,
+    ).toBeNull();
+  });
+
+  it("says every worker is running when readiness lists none, and names no update the server did not name", () => {
+    queries.readiness.data = {};
+    queries.readiness.dataUpdatedAt = 0;
+    queries.update.data = { status: "update_available" };
+    const { result } = renderChecks();
+
+    const weir = result.current.checks.filter((check) => check.area === "weir");
+    expect(weir.map((check) => [check.id, check.words])).toEqual([
+      ["weir:workers", "All running"],
+    ]);
+    expect(weir[0].checkedAt).toBeNull();
+  });
+
+  it("does not say when the tools were read before they have been, nor when anything was read", () => {
+    health.tools = [
+      {
+        key: "ffmpeg",
+        name: "FFmpeg",
+        version: "7.1",
+        banner: "ffmpeg 7.1",
+        meaning: "done",
+      },
+    ];
+    queries.tools.dataUpdatedAt = 0;
+    queries.settings.dataUpdatedAt = 0;
+    queries.readiness.dataUpdatedAt = 0;
+    const { result } = renderChecks();
+
+    expect(result.current.checks[1].checkedAt).toBeNull();
+    expect(result.current.readAt).toBeNull();
+  });
+
+  it("looks at the drives again by reading them again", async () => {
+    drives = [drive("D:", [2])];
+    const { result } = renderChecks();
+    await waitFor(() => expect(readStats).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(
+        result.current.checks.some((check) => check.area === "storage"),
+      ).toBe(true),
+    );
+    const target = result.current.checks.find(
+      (check) => check.area === "storage",
+    ) as HealthCheck;
+
+    await act(async () => {
+      await result.current.again(target);
+    });
+
+    expect(readStats).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ["a workflow that is no longer listed", "workflows", "99"],
+    ["a connection that is no longer listed", "connections", "gone"],
+  ] as const)(
+    "does nothing when asked to look again at %s",
+    async (_name, area, key) => {
+      const { result } = renderChecks();
+
+      await act(async () => {
+        await result.current.again({
+          again: { area, key },
+          id: "x",
+        } as HealthCheck);
+      });
+
+      expect(recheckMovies).not.toHaveBeenCalled();
+      expect(testConnection).not.toHaveBeenCalled();
+      expect(result.current.busy.size).toBe(0);
+    },
+  );
 });
