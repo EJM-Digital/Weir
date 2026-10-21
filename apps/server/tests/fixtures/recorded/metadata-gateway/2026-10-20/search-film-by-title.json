@@ -1,0 +1,73 @@
+{
+  "app": "metadata-gateway",
+  "version": "2026-10-20",
+  "state": "search-film-by-title",
+  "recordedAt": "2026-10-20T19:46:16.000Z",
+  "note": "A read-only GET of the public metadata service, as Weir's ArtworkGatewayClient makes it (the request path is the one Weir sends). Only the content type of the reply's headers is kept.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/metadata/search?mediaType=movies&query=big%20buck%20bunny&year=2008",
+        "headers": {}
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "provider": "deluno-broker",
+          "mode": "broker",
+          "resultCount": 1,
+          "results": [
+            {
+              "provider": "tmdb",
+              "providerId": "10378",
+              "mediaType": "movies",
+              "runtimeMinutes": null,
+              "popularity": 2.8155,
+              "voteCount": 201,
+              "title": "Big Buck Bunny",
+              "originalTitle": "Big Buck Bunny",
+              "year": 2008,
+              "overview": "Follow a day of the life of Big Buck Bunny when he meets three bullying rodents: Frank, Rinky, and Gamera. The rodents amuse themselves by harassing helpless creatures by throwing fruits, nuts and rocks at them. After the deaths of two of Bunny's favorite butterflies, and an offensive attack on Bunny himself, Bunny sets aside his gentle nature and orchestrates a complex plan for revenge.",
+              "posterUrl": "https://deluno-metadata-gateway.ejmdigital.workers.dev/artwork/w780/i9jJzvoXET4D9pOkoEwncSdNNER.jpg",
+              "backdropUrl": "https://deluno-metadata-gateway.ejmdigital.workers.dev/artwork/original/xtdybjRRZ15mCrPOvEld305myys.jpg",
+              "rating": 6.473,
+              "ratings": [
+                {
+                  "source": "tmdb",
+                  "label": "TMDb",
+                  "score": 6.473,
+                  "maxScore": 10,
+                  "voteCount": 201,
+                  "url": "https://www.themoviedb.org/movie/10378",
+                  "kind": "community"
+                }
+              ],
+              "genres": [],
+              "keywords": [],
+              "cast": [],
+              "crew": [],
+              "imdbId": null,
+              "tvDbId": null,
+              "externalUrl": "https://www.themoviedb.org/movie/10378",
+              "certification": null,
+              "studio": null,
+              "network": null,
+              "collection": null,
+              "collectionProviderId": null,
+              "director": null,
+              "trailerUrl": null,
+              "tagline": null,
+              "homepage": null,
+              "originalLanguage": "en",
+              "status": null
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -29,7 +29,10 @@ internal sealed class TimerWatchingClock(FakeTimeProvider clock) : TimeProvider
 
     public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
     {
+        // Counted only once the clock holds it: a test that sees the count rise moves the clock on at once, and a timer not yet set would miss that.
+        // Counted only once the clock holds it: a test that sees the count rise moves the clock on at once, and a timer not yet set would miss that.
+        var timer = clock.CreateTimer(callback, state, dueTime, period);
         Interlocked.Increment(ref _timers);
-        return clock.CreateTimer(callback, state, dueTime, period);
+        return timer;
     }
 }
