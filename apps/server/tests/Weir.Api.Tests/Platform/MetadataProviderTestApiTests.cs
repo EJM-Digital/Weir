@@ -2,11 +2,12 @@ using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using Weir.Api.Tests.MediaManagers;
 using Weir.Infrastructure.MediaManagers;
+using Weir.Tests.Shared;
 using static Weir.Api.Tests.Platform.ApiTestClient;
 
 namespace Weir.Api.Tests.Platform;
 
-/// <summary>The kept-for-older-clients "test the metadata service" route, against a service that answers, one that is unwell and one nothing answers for.</summary>
+/// <summary>The kept-for-older-clients "test the metadata service" route, against the service's recorded health reply, one that is changed to say it is unwell and one nothing answers for.</summary>
 public sealed class MetadataProviderTestApiTests
 {
     private const string Gateway = "http://gateway.test";
@@ -22,19 +23,34 @@ public sealed class MetadataProviderTestApiTests
         return (server, client);
     }
 
-    [Theory]
-    [InlineData("""{"status":"ok"}""", "matched", "Weir reached Deluno's metadata service.")]
-    [InlineData("""{"status":"starting"}""", "unreachable", "Weir could not reach Deluno's metadata service just now.")]
-    public async Task The_test_says_whether_the_metadata_service_is_well(string health, string status, string detail)
+    private static ScriptedManager GatewayAnswering(string healthBody) => new ScriptedManager().Json(HttpMethod.Get, "/health", healthBody);
+
+    [Fact]
+    public async Task The_test_says_the_metadata_service_was_reached_when_it_answers_its_recorded_health_reply()
     {
-        var (server, client) = await StartAsync(new ScriptedManager().Json(HttpMethod.Get, "/health", health));
+        var (server, client) = await StartAsync(GatewayAnswering(ArrRecording.Load("metadata-gateway", "health").Only.Reply.Text));
         await using var _ = server;
 
         using var response = await client.PostAsync("/api/v1/processing/metadata-provider/test", new { csrf_token = await client.CsrfAsync() });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await Json(response);
-        Assert.Equal((status, detail), (body["status"]!.GetValue<string>(), body["detail"]!.GetValue<string>()));
+        Assert.Equal(("matched", "Weir reached Deluno's metadata service."), (body["status"]!.GetValue<string>(), body["detail"]!.GetValue<string>()));
+    }
+
+    [Fact]
+    public async Task The_test_says_the_metadata_service_could_not_be_reached_when_its_health_reply_is_not_ok()
+    {
+        // The service cannot be made unwell on demand, so the one member that says it is well, the status in the recorded health reply, is changed.
+        var recorded = ArrRecording.Load("metadata-gateway", "health").Only.Reply.Body!.DeepClone();
+        recorded["status"] = "starting";
+        var (server, client) = await StartAsync(GatewayAnswering(recorded.ToJsonString()));
+        await using var _ = server;
+
+        using var response = await client.PostAsync("/api/v1/processing/metadata-provider/test", new { csrf_token = await client.CsrfAsync() });
+
+        var body = await Json(response);
+        Assert.Equal(("unreachable", "Weir could not reach Deluno's metadata service just now."), (body["status"]!.GetValue<string>(), body["detail"]!.GetValue<string>()));
     }
 
     [Fact]
