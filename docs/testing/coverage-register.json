@@ -50147,13 +50147,23 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "deluno-outcomes"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
+          "name": "DelunoRequestsTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedHandoffTests.cs",
+          "name": "RecordedHandoffTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedOutcomeTests.cs",
+          "name": "RecordedOutcomeTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The first-time not-imported (refusal) and its replacement by an import are tested with hand-written requests; only the 409 reply is recorded"
-      },
-      "issue": 1142,
       "audit": {
         "id": "INT-DEL-04",
         "verdict": "Partly"
@@ -50322,8 +50332,7 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/WorkflowSyncTests.cs",
@@ -50368,13 +50377,23 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "workflows-from-deluno"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedWorkflowSyncTests.cs",
+          "name": "RecordedWorkflowSyncTests"
+        },
+        {
+          "type": "recording-replay",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRepliesTests.cs",
+          "name": "Every_library_Deluno_recorded_is_read_when_workflows_are_set_up_and_one_with_no_processor_connection_does_no_harm"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/RecordedLibraryFoldersTests.cs",
+          "name": "RecordedLibraryFoldersTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The happy path is proven against a real Deluno; every edge (library stops refining or is removed, no downloads folder, shared folders, unreadable destinations) runs against a fake Deluno the test authors built from Deluno's documented API"
-      },
-      "issue": 1142,
       "audit": {
         "id": "INT-DEL-09",
         "verdict": "Partly"
@@ -50635,13 +50654,13 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "workflows-from-deluno"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRepliesTests.cs",
+          "name": "DelunoRepliesTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Real Deluno's destinations answer is exercised only through \"chain ready\"; mismatch cases and older-Deluno fallbacks are fakes"
-      },
-      "issue": 1142,
       "audit": {
         "id": "INT-DEL-11",
         "verdict": "Partly"
@@ -50715,8 +50734,7 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/LibraryFileChangeNotifierTests.cs",
@@ -50726,13 +50744,13 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/ManagerHttpAndPortTests.cs",
           "name": "Deluno_has_no_listing_but_accepts_file_changed_when_it_advertises_the_capability"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/MediaManagers/LibraryFileChangeNotifierTests.cs",
+          "name": "The_manifest_a_real_Deluno_answered_advertises_the_capability_and_its_library_root_is_the_one_the_path_is_translated_to"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Fake HTTP only"
-      },
-      "issue": 1142,
       "audit": {
         "id": "INT-DEL-13",
         "verdict": "Partly"
@@ -51291,8 +51309,7 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Artwork/ArtworkGatewayClientTests.cs",
@@ -51357,13 +51374,13 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/MediaManagers/ImportArtworkApiTests.cs",
           "name": "ImportArtworkApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Artwork/RecordedGatewayTests.cs",
+          "name": "RecordedGatewayTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The gateway is a fake built by the test authors; the real service's replies are never recorded or exercised, in the suite or the VM (a failure shows as missing posters or a wrong original language, which changes which audio is kept)"
-      },
-      "issue": 1142,
       "audit": {
         "id": "INT-ART",
         "verdict": "Partly"
@@ -51377,8 +51394,7 @@
       "severity": "low",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/GitHubReleaseCatalogClientTests.cs",
@@ -51428,13 +51444,23 @@
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "update-requests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Http/GitHubReleaseRecordingTests.cs",
+          "name": "GitHubReleaseRecordingTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_status_says_an_update_is_available_to_a_copy_behind_the_recorded_release_feed"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/SystemUpdateStatusTests.cs",
+          "name": "A_newer_release_in_the_feed_is_named_with_its_notes_and_installer_and_Check_again_reads_the_feed_again"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Hand-written feed JSON; no run against the real GitHub releases API or a Velopack feed with a newer package (PLAT-05)"
-      },
-      "issue": 1142,
       "audit": {
         "id": "INT-RELEASEFEED",
         "verdict": "Partly"
