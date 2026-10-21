@@ -10,14 +10,15 @@ namespace Weir.Api.Tests.Startup;
 public sealed class ExclusiveListenSocketTests
 {
     [Fact]
-    public void Kestrels_socket_transport_binds_exclusively_on_windows_and_unchanged_elsewhere()
+    public void Kestrels_socket_transport_binds_exclusively_on_windows_and_as_kestrel_would_elsewhere()
     {
         var options = new SocketTransportOptions();
+        using var kestrelsOwn = options.CreateBoundListenSocket(new IPEndPoint(IPAddress.Loopback, 0));
 
         ExclusiveListenSocket.Configure(options);
 
         using var socket = options.CreateBoundListenSocket(new IPEndPoint(IPAddress.Loopback, 0));
-        Assert.Equal(OperatingSystem.IsWindows(), socket.ExclusiveAddressUse);
+        Assert.Equal(OperatingSystem.IsWindows() || kestrelsOwn.ExclusiveAddressUse, socket.ExclusiveAddressUse);
     }
 
     [Fact]

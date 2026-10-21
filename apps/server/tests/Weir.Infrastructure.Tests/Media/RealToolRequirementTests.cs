@@ -85,6 +85,17 @@ public sealed class RealToolRequirementTests
         Assert.DoesNotContain(RealToolRequirement.FfmpegMissing, error.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void A_tool_that_does_not_run_is_refused_with_the_reason()
+    {
+        var tool = Path.Join(Path.GetTempPath(), "weir-no-such-tool-" + Guid.NewGuid().ToString("N"));
+
+        var runs = RealToolAvailability.Runs([tool, "-version"]);
+
+        Assert.False(runs);
+        Assert.Contains(RealToolAvailability.Refused, reason => reason.StartsWith(tool, StringComparison.Ordinal) && reason.Contains("could not be started", StringComparison.Ordinal));
+    }
+
     [Theory]
     [InlineData(true, true, true)]
     [InlineData(false, true, true)]
