@@ -265,7 +265,7 @@ public sealed class TrayControllerShowTests : IDisposable
         rig.Controller.ShowUpdateNotice(UpdateMode.DownloadOnly);
         var balloon = rig.Shell.LastBalloon;
         rig.Shell.Handlers!.BalloonClicked();
-        await SettleAsync(() => rig.Updates.Applied.Count > 0);
+        await rig.Activity.UntilAsync(() => rig.Updates.Applied.Count > 0);
 
         Assert.Equal(
             ("Weir Update Ready", "Version 9.9.9 has been downloaded. Click here to restart and install it, or it installs the next time Weir quits or starts.", ToolTipIcon.Info),
@@ -299,16 +299,5 @@ public sealed class TrayControllerShowTests : IDisposable
         rig.Controller.ShowUpdateNotice(UpdateMode.NotifyOnly);
 
         Assert.Contains("Version 9.9.9 is available", rig.Shell.LastBalloon.Text, StringComparison.Ordinal);
-    }
-
-    // Waits for background work the controller starts and does not return a task for.
-    internal static async Task SettleAsync(Func<bool> done)
-    {
-        var deadline = DateTime.UtcNow.AddSeconds(30);
-        while (!done())
-        {
-            Assert.True(DateTime.UtcNow < deadline, "The background work did not finish.");
-            await Task.Delay(10);
-        }
     }
 }
