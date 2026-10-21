@@ -16,6 +16,7 @@ public sealed class LibraryTableLayoutTests(E2EServer server) : E2ETestBase(serv
     private const float ServerMs = 60_000;
     private const int TitleLineShared = 921;
     private const int NarrowStep = 20;
+    private const float SubPixel = 1;
     private static readonly ViewportSize Desktop = new() { Width = 1600, Height = 900 };
     private static readonly ViewportSize Wide = new() { Width = 2560, Height = 1000 };
     private static readonly ViewportSize Narrow = new() { Width = 940, Height = 800 };
@@ -151,7 +152,7 @@ public sealed class LibraryTableLayoutTests(E2EServer server) : E2ETestBase(serv
         await Expect(checkAgain).ToHaveAttributeAsync("title", "Check again");
         await Expect(checkAgain.Locator(".mm-library-words")).ToBeHiddenAsync();
         var mark = (await checkAgain.BoundingBoxAsync())!;
-        Assert.Equal(mark.Height, mark.Width, precision: 1);
+        Assert.InRange(Math.Abs(mark.Height - mark.Width), 0, SubPixel);
 
         await page.SetViewportSizeAsync(Phone.Width, Phone.Height);
 

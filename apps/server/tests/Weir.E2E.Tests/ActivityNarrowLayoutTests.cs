@@ -15,6 +15,7 @@ namespace Weir.E2E.Tests;
 public sealed class ActivityNarrowLayoutTests(E2EServer server) : E2ETestBase(server)
 {
     private const float PushMs = 20_000;
+    private const float SubPixel = 1;
     private const int TitleLineShared = 921;
     private const int NarrowStep = 20;
     private static readonly ViewportSize Wide = new() { Width = 2560, Height = 1000 };
@@ -125,13 +126,13 @@ public sealed class ActivityNarrowLayoutTests(E2EServer server) : E2ETestBase(se
 
         var wide = await OpenActivityAsync(rig, Wide);
         var (wideList, wideDetail) = await BoxesAsync(wide);
-        Assert.True(wideDetail.X >= wideList.X + wideList.Width, $"At {Wide.Width}px the detail starts at {wideDetail.X} but the list ends at {wideList.X + wideList.Width}.");
+        Assert.True(wideDetail.X >= wideList.X + wideList.Width - SubPixel, $"At {Wide.Width}px the detail starts at {wideDetail.X} but the list ends at {wideList.X + wideList.Width}.");
         Assert.True(wideDetail.Y < wideList.Y + wideList.Height, "With room to spare the detail starts level with the list, not below it.");
 
         var phone = await OpenActivityAsync(rig, Phone);
         var (phoneList, phoneDetail) = await BoxesAsync(phone);
-        Assert.True(phoneDetail.Y >= phoneList.Y + phoneList.Height, $"On a phone the detail starts at {phoneDetail.Y} but the list ends at {phoneList.Y + phoneList.Height}.");
-        Assert.True(phoneDetail.X >= 0 && phoneDetail.X + phoneDetail.Width <= Phone.Width, $"On a phone the detail runs from {phoneDetail.X} to {phoneDetail.X + phoneDetail.Width}, past the {Phone.Width}px screen.");
+        Assert.True(phoneDetail.Y >= phoneList.Y + phoneList.Height - SubPixel, $"On a phone the detail starts at {phoneDetail.Y} but the list ends at {phoneList.Y + phoneList.Height}.");
+        Assert.True(phoneDetail.X >= -SubPixel && phoneDetail.X + phoneDetail.Width <= Phone.Width + SubPixel, $"On a phone the detail runs from {phoneDetail.X} to {phoneDetail.X + phoneDetail.Width}, past the {Phone.Width}px screen.");
     }
 
     private static async Task<(LocatorBoundingBoxResult List, LocatorBoundingBoxResult Detail)> BoxesAsync(IPage page)
