@@ -138,11 +138,6 @@ public static class WireJsonWriter
         all = all[leading..];
         point -= leading;
         all = all.TrimEnd('0');
-        if (all.Length == 0)
-        {
-            all = "0";
-        }
-
         return (all, point);
     }
 

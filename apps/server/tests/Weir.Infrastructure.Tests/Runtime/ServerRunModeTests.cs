@@ -6,15 +6,17 @@ namespace Weir.Infrastructure.Tests.Runtime;
 public sealed class ServerRunModeTests
 {
     [Theory]
-    [InlineData("docker", true, "docker")]
-    [InlineData("docker", false, "docker")]
-    [InlineData("windows", true, "service")]
-    [InlineData("source", true, "service")]
-    [InlineData("windows", false, "app")]
-    [InlineData("source", false, "app")]
+    [InlineData("docker", true, false, "docker")]
+    [InlineData("docker", false, true, "docker")]
+    [InlineData("docker", false, false, "docker")]
+    [InlineData("windows", true, false, "service")]
+    [InlineData("source", false, true, "service")]
+    [InlineData("source", true, true, "service")]
+    [InlineData("windows", false, false, "app")]
+    [InlineData("source", false, false, "app")]
     public void A_container_is_docker_whatever_started_it_and_otherwise_a_service_manager_makes_a_service(
-        string installType, bool startedByServiceManager, string expected)
+        string installType, bool startedByWindowsService, bool startedBySystemd, string expected)
     {
-        Assert.Equal(expected, ServerRunMode.Detect(installType, startedByServiceManager).Name);
+        Assert.Equal(expected, ServerRunMode.Detect(installType, startedByWindowsService, startedBySystemd).Name);
     }
 }

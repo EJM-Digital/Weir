@@ -139,10 +139,6 @@ public static partial class WireJsonParser
         {
             throw new WireJsonEncodingException("The body is not valid text.", exception);
         }
-        catch (ArgumentException exception)
-        {
-            throw new WireJsonEncodingException("The body is not valid text.", exception);
-        }
     }
 
     /// <summary>Parses one JSON value; surrounding whitespace is allowed, a leading BOM or trailing data is not.</summary>

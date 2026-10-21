@@ -82,10 +82,10 @@ public static class RemovedTrackDiff
         {
             RemovedTrackType.Audio => PreferredAudioLangs(rules),
             RemovedTrackType.Subtitle => KeptSubtitleLangs(rules),
-            _ => (HashSet<string>?)null,
+            _ => throw new ArgumentOutOfRangeException(nameof(removed), removed.Type, "Unknown removed track type."),
         };
 
-        return configuredLangs is not null && configuredLangs.Any(configured => LanguageVariants.Matches(configured, removed.Language, removed.Variant));
+        return configuredLangs.Any(configured => LanguageVariants.Matches(configured, removed.Language, removed.Variant));
     }
 
     /// <summary>The removed tracks of one file that current rules would now keep, in their original order.</summary>
