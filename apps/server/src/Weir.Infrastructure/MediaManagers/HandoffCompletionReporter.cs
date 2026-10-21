@@ -235,13 +235,13 @@ public sealed partial class HandoffCompletionReporter
         {
             title = $"Told {name} that {fileName} is no longer there";
         }
-        else if (IsSupersededReport(body))
-        {
-            title = $"Told {name} that its newer send of {fileName} has the answer";
-        }
         else if (body.Get("failureClass") is WireString { Value: CompletionReports.NotTakenFailureClass })
         {
             title = $"Told {name} that Weir did not start {fileName}, because it is working on it for another connection";
+        }
+        else if (IsSupersededReport(body))
+        {
+            title = $"Told {name} that its newer send of {fileName} has the answer";
         }
         else
         {
