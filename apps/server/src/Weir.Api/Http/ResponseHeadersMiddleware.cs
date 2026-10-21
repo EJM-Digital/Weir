@@ -65,8 +65,9 @@ public sealed class RequestContextMiddleware
             _metrics.RecordStreamRequest(context.Request.Method, RouteLabelFor(context), ClientClosedRequest, _time.GetElapsedTime(started).TotalMilliseconds);
             return;
         }
-        catch (Exception exception) when (LogUnhandled(exception, requestId, context, started))
+        catch (Exception exception)
         {
+            LogUnhandled(exception, requestId, context, started);
             throw;
         }
 
@@ -100,7 +101,7 @@ public sealed class RequestContextMiddleware
             HttpLogSanitizer.Sanitize(context.Request.Method),
             HttpLogSanitizer.Sanitize(RouteLabelFor(context)));
 
-    private bool LogUnhandled(Exception exception, string requestId, HttpContext context, long started)
+    private void LogUnhandled(Exception exception, string requestId, HttpContext context, long started)
     {
         // requestId is already sanitized (see InvokeAsync). Method and RouteLabelFor are sanitized here,
         // for this text log line only: Kestrel rejects control characters in the method token, so Method
@@ -119,7 +120,6 @@ public sealed class RequestContextMiddleware
             HttpLogSanitizer.Sanitize(context.Request.Method),
             HttpLogSanitizer.Sanitize(RouteLabelFor(context)));
         _metrics.RecordRequest(context.Request.Method, RouteLabelFor(context), 500, _time.GetElapsedTime(started).TotalMilliseconds);
-        return false;
     }
 }
 

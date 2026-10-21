@@ -83,6 +83,20 @@ public sealed class HostAllowListMiddlewareTests
     }
 
     [Fact]
+    public async Task A_refused_host_is_warned_about_once_however_often_it_asks()
+    {
+        await using var server = await WeirTestServer.StartAsync([("WEIR_SESSION_SECRET", Secret)]);
+
+        var first = await RequestAsync(server, "evil.example");
+        var second = await RequestAsync(server, "evil.example");
+
+        Assert.Equal([StatusCodes.Status400BadRequest, StatusCodes.Status400BadRequest], [first.Response.StatusCode, second.Response.StatusCode]);
+        using var log = new StreamReader(new FileStream(Path.Join(server.Home, "logs", "weir.log"), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete));
+        var warnings = System.Text.RegularExpressions.Regex.Count(await log.ReadToEndAsync(), "Refused a request with Host 'evil.example'");
+        Assert.Equal(1, warnings);
+    }
+
+    [Fact]
     public async Task Health_answers_for_a_loopback_healthcheck_with_no_configuration()
     {
         await using var server = await WeirTestServer.StartAsync([("WEIR_SESSION_SECRET", Secret)]);

@@ -1,4 +1,5 @@
 using System.Net;
+using Weir.Api.Tests.Platform;
 using Weir.Core.Json;
 using static Weir.Api.Tests.Platform.ApiTestClient;
 
@@ -25,6 +26,21 @@ public sealed class LibraryRedownloadRequestApiTests
         Assert.Equal(
             ("requested", RedownloadRig.FilmPath, $"{RedownloadRig.RadarrName} deleted the existing file and is searching for a replacement."),
             (body["outcome"]!.GetValue<string>(), body["path"]!.GetValue<string>(), body["message"]!.GetValue<string>()));
+        Assert.Equal(RedownloadScripts.RadarrDeleteThenSearch, rig.Manager.Asked());
+    }
+
+    [Fact]
+    public async Task The_answer_still_comes_back_when_the_activity_entry_for_it_cannot_be_written()
+    {
+        await using var rig = await RedownloadRig.StartAsync();
+        var (libraryId, _) = await rig.AddRadarrFilmAsync();
+        rig.Manager.RadarrThatDeletesAndSearches();
+        await TestDatabase.ExecuteAsync(rig.Server, "DROP TABLE activity_events");
+
+        using var response = await rig.RedownloadAsync(rig.Admin, libraryId, RedownloadRig.FilmPath);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("requested", (await Json(response))["outcome"]!.GetValue<string>());
         Assert.Equal(RedownloadScripts.RadarrDeleteThenSearch, rig.Manager.Asked());
     }
 

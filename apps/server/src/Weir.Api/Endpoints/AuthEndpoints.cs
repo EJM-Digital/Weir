@@ -7,7 +7,6 @@ namespace Weir.Api.Endpoints;
 /// <summary>Cookie-session auth under <c>/api/v1/auth</c>.</summary>
 public static class AuthEndpoints
 {
-    internal const string InvalidCsrf = "Invalid or expired CSRF token.";
     internal const string ConfirmationExpired = "Your confirmation token expired. Refresh the page and try again.";
 
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder endpoints)

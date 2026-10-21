@@ -30,7 +30,7 @@ public static class MediaManagerReconciliationEndpoints
     /// <summary>
     /// Runs a reconciliation repair. Like every other operator POST it requires the browser origin check and a
     /// session-bound <c>csrf_token</c> (#527), answering 403 for a bad origin and 400
-    /// <c>Invalid or expired CSRF token.</c> for a missing or wrong token.
+    /// the plain confirmation-token sentence for a missing or wrong token.
     /// </summary>
     private static async Task<ApiResult> PostReconciliationRepairAsync(ApiRequest request)
     {

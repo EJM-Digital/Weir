@@ -51,7 +51,7 @@ internal sealed class AuthAccountEndpointHandlers
         request.ValidateBrowserPostOrigin();
         if (!request.VerifyCsrf(secret, csrfToken, allowAnonymous: false))
         {
-            throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.InvalidCsrf);
+            throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.ConfirmationExpired);
         }
 
         var uow = await request.DbAsync().ConfigureAwait(false);
@@ -88,7 +88,7 @@ internal sealed class AuthAccountEndpointHandlers
         request.ValidateBrowserPostOrigin();
         if (!request.VerifyCsrf(secret, csrfToken, allowAnonymous: false))
         {
-            throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.InvalidCsrf);
+            throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.ConfirmationExpired);
         }
 
         var uow = await request.DbAsync().ConfigureAwait(false);
@@ -122,7 +122,7 @@ internal sealed class AuthAccountEndpointHandlers
         request.ValidateBrowserPostOrigin();
         if (!request.VerifyCsrf(secret, csrfToken, allowAnonymous: false))
         {
-            throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.InvalidCsrf);
+            throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.ConfirmationExpired);
         }
 
         var uow = await request.DbAsync().ConfigureAwait(false);

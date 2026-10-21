@@ -101,7 +101,7 @@ public sealed class ReconciliationServiceTests(ServerFixture fixture) : IClassFi
 
         var missing = await admin.PostAsync(Repair, RepairBody());
         JobsApi.Expect(missing, HttpStatusCode.BadRequest);
-        var expected = new JsonObject { ["detail"] = "Invalid or expired CSRF token." };
+        var expected = new JsonObject { ["detail"] = "Your confirmation token expired. Refresh the page and try again." };
         Assert.True(JsonNode.DeepEquals(missing.Json, expected), missing.ToString());
 
         var body = RepairBody();

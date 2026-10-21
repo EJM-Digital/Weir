@@ -286,7 +286,6 @@ public static class WeirServer
         // The database is at this build's schema. What follows touches it with ordinary statements, so it is a phase of its own: a hang here
         // is not reported as updating the database, and carries nothing the update asked for.
         progress.Enter(StartupPhase.Preparing);
-        app.Services.GetRequiredService<ServerLifecycle>().MarkDatabaseOpened();
         RecordServerStart(app, database, logger);
 
         // The suite log's own prune (LogRetentionTask, RunAtStart) runs in the background once the periodic-task

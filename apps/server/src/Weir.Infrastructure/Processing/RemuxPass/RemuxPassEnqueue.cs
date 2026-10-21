@@ -58,9 +58,7 @@ public static class RemuxPassEnqueue
             var label = mediaScope == "tv" ? "TV" : "Movies";
             throw new RemuxPassEnqueueException(
                 400,
-                $"{label} watched folder is not set in saved path settings. " +
-                "Manual processing.file.remux_pass.v1 jobs require it to resolve relative_media_path and for bounded source cleanup. " +
-                "Saving path settings does not require a watched folder, but you must configure it before enqueueing this job kind.");
+                $"{label} has no watched folder yet, so Weir cannot find that file. Set the watched folder on the {label} workflow, then try again.");
         }
 
         var relative = WireStrings.Strip(relativeMediaPath);

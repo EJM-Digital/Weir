@@ -46,21 +46,15 @@ internal sealed class AuthSessionEndpointHandlers
 
     public async Task<ApiResult> GetSessionAsync(ApiRequest request)
     {
-        var uow = await request.DbAsync().ConfigureAwait(false);
-        var pair = await request.Auth.LoadValidSessionAsync(uow, request.RawSessionToken).ConfigureAwait(false)
-            ?? throw new ApiException(StatusCodes.Status401Unauthorized, "Not authenticated.");
-        return ApiRoutes.Ok(request.Auth.SessionPublic(pair.Session, current: true));
+        var user = await request.RequireUserAsync().ConfigureAwait(false);
+        return ApiRoutes.Ok(request.Auth.SessionPublic(user.Session, current: true));
     }
 
     public async Task<ApiResult> GetSessionsAsync(ApiRequest request)
     {
         var user = await request.RequireUserAsync().ConfigureAwait(false);
         var uow = await request.DbAsync().ConfigureAwait(false);
-        var pair = await request.Auth.LoadValidSessionAsync(uow, request.RawSessionToken).ConfigureAwait(false)
-            ?? throw new ApiException(StatusCodes.Status401Unauthorized, "Not authenticated.");
-        // Prefer the row RequireUserAsync already loaded: it may carry this request's last-seen touch.
-        var current = user.Session.Id == pair.Session.Id ? user.Session : pair.Session;
-        var items = await request.Auth.ListActiveSessionsAsync(uow, user.User.Id, current).ConfigureAwait(false);
+        var items = await request.Auth.ListActiveSessionsAsync(uow, user.User.Id, user.Session).ConfigureAwait(false);
         return ApiRoutes.Ok(new WireObject().Set("items", new WireArray(items)));
     }
 
@@ -77,9 +71,7 @@ internal sealed class AuthSessionEndpointHandlers
         }
 
         var uow = await request.DbAsync().ConfigureAwait(false);
-        var pair = await request.Auth.LoadValidSessionAsync(uow, request.RawSessionToken).ConfigureAwait(false)
-            ?? throw new ApiException(StatusCodes.Status401Unauthorized, "Not authenticated.");
-        var count = await request.Auth.RevokeOtherUserSessionsAsync(uow, user.User.Id, pair.Session.Id).ConfigureAwait(false);
+        var count = await request.Auth.RevokeOtherUserSessionsAsync(uow, user.User.Id, user.Session.Id).ConfigureAwait(false);
         await _activity.RecordAsync(
             uow, ActivityEventTypes.AuthSessionsRevoked, "auth", "Other sessions signed out",
             count.ToString(System.Globalization.CultureInfo.InvariantCulture)).ConfigureAwait(false);
@@ -93,7 +85,7 @@ internal sealed class AuthSessionEndpointHandlers
         request.RefuseOversizedBody();
         var headerToken = request.FirstHeader("X-CSRF-Token");
         var issues = new ValidationIssues();
-        FieldRules.TryUuid(request.RouteValue("session_id") ?? string.Empty, ["path", "session_id"], issues, out var sessionId);
+        FieldRules.TryUuid(request.RouteValue("session_id"), ["path", "session_id"], issues, out var sessionId);
         issues.ThrowIfAny();
 
         request.ValidateBrowserPostOrigin();
@@ -104,9 +96,7 @@ internal sealed class AuthSessionEndpointHandlers
         }
 
         var uow = await request.DbAsync().ConfigureAwait(false);
-        var pair = await request.Auth.LoadValidSessionAsync(uow, request.RawSessionToken).ConfigureAwait(false)
-            ?? throw new ApiException(StatusCodes.Status401Unauthorized, "Not authenticated.");
-        if (sessionId.ToString("N") == pair.Session.Id)
+        if (sessionId.ToString("N") == user.Session.Id)
         {
             throw new ApiException(StatusCodes.Status400BadRequest, "The current session cannot be revoked here.");
         }

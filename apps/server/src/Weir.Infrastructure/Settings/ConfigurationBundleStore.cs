@@ -22,6 +22,7 @@ public sealed partial class ConfigurationBundleStore
     public const int FormatVersion = 4;
 
     private const string SuiteTable = "suite_settings";
+    private const string MissingSettingsRow = "Weir could not export its settings because part of what it has saved is missing. Check the server log, then try again.";
     private const string ArrTable = "arr_library_operator_settings";
     private const string ProcessingOperatorTable = "operator_settings";
     private const string RuleSetsTable = "rule_sets";
@@ -51,7 +52,7 @@ public sealed partial class ConfigurationBundleStore
         _changes = changes;
     }
 
-    /// <summary>Build the export bundle from the settings rows. Throws <see cref="WireValueException"/> when a required row is missing.</summary>
+    /// <summary>Build the export bundle from the settings rows. Throws <see cref="WireValueException"/>, worded for the person exporting, when a required row is missing.</summary>
     public async Task<WireObject> BuildAsync(UnitOfWork uow)
     {
         ArgumentNullException.ThrowIfNull(uow);
@@ -70,12 +71,12 @@ public sealed partial class ConfigurationBundleStore
         var ruleSets = await ReadRowsAsync(uow, RuleSetsTable, "ORDER BY id").ConfigureAwait(false);
         if (arr.Count == 0)
         {
-            throw new WireValueException("Missing required configuration row: arr_library_operator_settings");
+            throw new WireValueException(MissingSettingsRow);
         }
 
         if (processingOperator.Count == 0)
         {
-            throw new WireValueException("Missing required configuration row: operator_settings");
+            throw new WireValueException(MissingSettingsRow);
         }
 
         return new WireObject()
