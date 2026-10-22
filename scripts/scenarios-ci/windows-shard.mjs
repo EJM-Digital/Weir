@@ -13,6 +13,8 @@ import { GithubStandIn } from "./github-stand-in.mjs";
 import { runScenarios } from "./run.mjs";
 import { TrayDesktop } from "./tray-desktop.mjs";
 
+const CLEANUP_CEILING_MS = 120_000;
+
 /** The server as an outsider asks it: is it ready, and which version does it report. */
 export function httpServer(origin) {
   return {
@@ -54,6 +56,25 @@ async function keepInstallLogs(machine, logFolder, name = "install-logs") {
   ];
   for (const file of await machine.files(machine.paths.logsFolder)) files.push({ from: join(machine.paths.logsFolder, file.path), name: `logs-${file.path.replaceAll(/[\/]/g, "-")}` });
   for (const file of files) await copyFile(file.from, join(kept, file.name)).catch((error) => console.error(`::warning::${file.from} could not be kept: ${error.message}`));
+}
+
+/** The work, or a warning and a move on once `ms` have passed: a clean-up that hangs must not lose the shard's results. */
+function bounded(work, ms, what) {
+  let timer;
+  const late = new Promise((resolve) => {
+    timer = setTimeout(() => {
+      console.error(`::warning::${what} did not finish within ${ms / 1000} s.`);
+      resolve();
+    }, ms);
+  });
+  return Promise.race([work, late]).finally(() => clearTimeout(timer));
+}
+
+/** The console and logs of each server a scenario started itself. */
+async function keepServerConsoles(world, logFolder) {
+  const kept = join(logFolder, "server-consoles");
+  await mkdir(kept, { recursive: true });
+  for (const { name, server } of world.serverConsoles ?? []) await writeFile(join(kept, `${name}.log`), await server.console());
 }
 
 /** The release the shard updates to, from the `releases.win.json` vpk wrote: its full package and the delta against the release. */
@@ -144,13 +165,14 @@ export async function runWindowsShard({ ids, registry: scenarios, watchLogs, mac
     }
     return await runScenarios({ ids, registry, world });
   } finally {
-    // What a scenario started on the machine (a stand-in server), taken down last made first, whatever happened.
+    // What a scenario made on the machine (servers, volumes, shares, stand-ins), taken down last made first, whatever happened.
     for (const cleanup of world.cleanups.splice(0).reverse()) {
-      await cleanup().catch((error) => console.error(`::warning::A clean-up failed: ${error.message}`));
+      await bounded(cleanup().catch((error) => console.error(`::warning::A clean-up failed: ${error.message}`)), CLEANUP_CEILING_MS, "A clean-up");
     }
-    await github?.stop();
-    await keepInstallLogs(machine, logFolder).catch((error) => console.error(`::warning::The install's logs could not be kept: ${error.message}`));
-    await machine.stopWeir().catch((error) => console.error(`::warning::Weir could not be stopped: ${error.message}`));
-    await rm(scratch, { recursive: true, force: true });
+    await bounded(github?.stop() ?? Promise.resolve(), CLEANUP_CEILING_MS, "Putting the PC back as it was");
+    await bounded(keepServerConsoles(world, logFolder), CLEANUP_CEILING_MS, "Keeping the servers' consoles").catch((error) => console.error(`::warning::The servers' consoles could not be kept: ${error.message}`));
+    await bounded(keepInstallLogs(machine, logFolder), CLEANUP_CEILING_MS, "Keeping the install's logs").catch((error) => console.error(`::warning::The install's logs could not be kept: ${error.message}`));
+    await bounded(machine.stopWeir(), CLEANUP_CEILING_MS, "Stopping Weir").catch((error) => console.error(`::warning::Weir could not be stopped: ${error.message}`));
+    await bounded(rm(scratch, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 }), CLEANUP_CEILING_MS, "Removing the scratch folder").catch((error) => console.error(`::warning::The scratch folder could not be removed: ${error.message}`));
   }
 }

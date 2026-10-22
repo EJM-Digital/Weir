@@ -103,6 +103,8 @@ jobs:
               - 'apps/tray/**'
               # The tray imports the server's build rules and product version.
               - 'apps/server/Directory.Build.props'
+              # The tray's tests read the files the tray and the server write for each other.
+              - 'apps/server/tests/fixtures/tray-files/**'
             # Only files the package smokes actually exercise: the packaged artefacts (Dockerfile, docker/**,
             # compose.yaml, .dockerignore, packaging/**, the tray), the host entry point that ships inside them
             # (apps/server/src/Weir.Host/**, not the whole server), the database migrations the upgrade smoke carries an
@@ -346,7 +348,7 @@ jobs:
         run: node --test scripts/docker-entrypoint.test.mjs
 
       - name: Scenarios in CI - their homes, the film, the logs and the scenarios against a stand-in
-        run: node --test scripts/scenarios-in-ci.test.mjs scripts/scenarios-in-ci-windows.test.mjs scripts/scenarios-in-ci-fixture.test.mjs scripts/scenarios-in-ci-with-deluno.test.mjs scripts/scenarios-in-ci-film-handoff.test.mjs scripts/scenarios-in-ci-deluno-outcomes.test.mjs scripts/scenarios-in-ci-recorder.test.mjs scripts/docker-compose-smoke.test.mjs
+        run: node --test scripts/scenarios-in-ci.test.mjs scripts/scenarios-in-ci-windows.test.mjs scripts/scenarios-in-ci-fixture.test.mjs scripts/scenarios-in-ci-with-deluno.test.mjs scripts/scenarios-in-ci-film-handoff.test.mjs scripts/scenarios-in-ci-deluno-outcomes.test.mjs scripts/scenarios-in-ci-recorder.test.mjs scripts/docker-compose-smoke.test.mjs scripts/docker-smoke-pull.test.mjs
 
       - name: Release and CI gate rules
         run: |

@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -85,12 +86,8 @@ public sealed class TimestampSigner
 
     private static byte[] IntToBytes(ulong value)
     {
-        var bytes = BitConverter.GetBytes(value);
-        if (BitConverter.IsLittleEndian)
-        {
-            Array.Reverse(bytes);
-        }
-
+        var bytes = new byte[sizeof(ulong)];
+        BinaryPrimitives.WriteUInt64BigEndian(bytes, value);
         var first = 0;
         while (first < bytes.Length && bytes[first] == 0)
         {
@@ -175,16 +172,7 @@ public static class CsrfTokens
             return false;
         }
 
-        string payload;
-        try
-        {
-            payload = new UTF8Encoding(false, throwOnInvalidBytes: true).GetString(raw);
-        }
-        catch (DecoderFallbackException)
-        {
-            return false;
-        }
-
+        var payload = Encoding.UTF8.GetString(raw);
         if (allowAnonymous && payload == SubjectAnonymous)
         {
             return true;
