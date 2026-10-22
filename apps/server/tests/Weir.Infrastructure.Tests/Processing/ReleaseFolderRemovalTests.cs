@@ -123,4 +123,84 @@ public sealed class ReleaseFolderRemovalTests : IDisposable
     [InlineData("Film.2024.mkv", false)]
     public void Samples_are_recognised_by_folder_or_by_word(string relative, bool expected) =>
         Assert.Equal(expected, ReleaseFolderRemoval.IsSample(relative));
+
+    [Fact]
+    public void A_file_outside_the_workflow_folder_is_left_alone_and_the_reason_says_so()
+    {
+        var outside = Path.Join(_dir.Join("elsewhere"), "Film", "Film.mkv");
+        Directory.CreateDirectory(Path.GetDirectoryName(outside)!);
+        File.WriteAllBytes(outside, new byte[16]);
+
+        var removal = ReleaseFolderRemoval.Remove(Root, outside, null);
+
+        Assert.Equal(ReleaseRemovalKind.NothingRemoved, removal.Kind);
+        Assert.Equal("The release folder is not inside the workflow's folder, so Weir did not change it.", removal.Reason);
+        Assert.True(File.Exists(outside));
+    }
+
+    [Fact]
+    public void A_file_directly_in_the_workflow_folder_is_not_inside_a_release_folder_so_nothing_is_removed()
+    {
+        var film = Write("Film.mkv");
+
+        var removal = ReleaseFolderRemoval.Remove(Root, film, null);
+
+        Assert.Equal(ReleaseRemovalKind.NothingRemoved, removal.Kind);
+        Assert.True(File.Exists(film));
+    }
+
+    [Fact]
+    public void A_lone_film_takes_its_whole_folder_with_it()
+    {
+        var film = Write(Path.Join("Film", "Film.mkv"));
+        Write(Path.Join("Film", "Film.nfo"));
+
+        var removal = ReleaseFolderRemoval.Remove(Root, film, null);
+
+        Assert.Equal(ReleaseRemovalKind.FolderRemoved, removal.Kind);
+        Assert.Null(removal.Reason);
+        Assert.False(Directory.Exists(Path.GetDirectoryName(film)));
+        Assert.True(Directory.Exists(Root));
+    }
+
+    [Fact]
+    public void A_folder_that_is_already_gone_holds_no_other_video()
+    {
+        var gone = Path.Join(Root, "Gone");
+
+        Assert.False(ReleaseFolderRemoval.HoldsOtherVideos(gone, Path.Join(gone, "Film.mkv"), ReleaseFolderRemoval.VideoExtensions(null)));
+    }
+
+    [Fact]
+    public void The_film_itself_is_never_another_video_but_the_same_name_in_another_case_is_one_only_where_names_are_case_sensitive()
+    {
+        var film = Write(Path.Join("Pack", "Film.mkv"));
+        var extensions = ReleaseFolderRemoval.VideoExtensions(null);
+        var differentCase = Path.Join(Path.GetDirectoryName(film)!, "FILM.MKV");
+
+        Assert.False(ReleaseFolderRemoval.HoldsOtherVideos(Path.GetDirectoryName(film)!, film, extensions));
+        Assert.Equal(!OperatingSystem.IsWindows(), ReleaseFolderRemoval.HoldsOtherVideos(Path.GetDirectoryName(film)!, differentCase, extensions));
+    }
+
+    [Fact]
+    public void A_path_with_nothing_in_it_is_not_a_sample()
+    {
+        Assert.False(ReleaseFolderRemoval.IsSample(string.Empty));
+        Assert.False(ReleaseFolderRemoval.IsSample("/"));
+    }
+
+    [Fact]
+    public void With_no_library_list_the_video_containers_are_exactly_the_built_in_ones()
+    {
+        Assert.Equal(Weir.Core.Rules.RemuxRules.MediaExtensions.Order(), ReleaseFolderRemoval.VideoExtensions(null).Order());
+        Assert.Equal(Weir.Core.Rules.RemuxRules.MediaExtensions.Order(), ReleaseFolderRemoval.VideoExtensions("  ,, ").Order());
+    }
+
+    [Fact]
+    public void The_library_list_is_trimmed_lower_cased_and_given_its_dot()
+    {
+        var extensions = ReleaseFolderRemoval.VideoExtensions(" M2TS , .OGV,,  ");
+
+        Assert.True(extensions.SetEquals([.. Weir.Core.Rules.RemuxRules.MediaExtensions, ".m2ts", ".ogv"]));
+    }
 }

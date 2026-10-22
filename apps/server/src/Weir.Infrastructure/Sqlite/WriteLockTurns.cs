@@ -28,13 +28,19 @@ public static class WriteLockTurns
     /// </summary>
     public static readonly TimeSpan MaximumPause = TimeSpan.FromSeconds(1);
 
+    /// <summary>How long a bulk job stands back after a transaction that held the lock for <paramref name="held"/>.</summary>
+    public static TimeSpan PauseAfter(TimeSpan held)
+    {
+        var pause = held * PauseFactor;
+        return pause < MinimumPause ? MinimumPause : pause > MaximumPause ? MaximumPause : pause;
+    }
+
     /// <summary>Runs one of a bulk job's transactions, then leaves the lock free for a while before the job's next one.</summary>
     public static async Task TakeAsync(Func<Task> transaction, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(transaction);
         var started = Stopwatch.GetTimestamp();
         await transaction().ConfigureAwait(false);
-        var pause = Stopwatch.GetElapsedTime(started) * PauseFactor;
-        await Task.Delay(pause < MinimumPause ? MinimumPause : pause > MaximumPause ? MaximumPause : pause, cancellationToken).ConfigureAwait(false);
+        await Task.Delay(PauseAfter(Stopwatch.GetElapsedTime(started)), cancellationToken).ConfigureAwait(false);
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Time.Testing;
+using SQLitePCL;
 using Weir.Infrastructure.Processing.RemuxPass;
 using Weir.Infrastructure.Sqlite;
 using Weir.Infrastructure.Tests.Jobs;
@@ -143,6 +144,47 @@ public sealed class UnitOfWorkWriteGateTests
         {
             await uow.ExecuteAsync(InsertJob, ("@dedupe", "abandoned"));
         }
+
+        await WriteAsync(database, "next").WaitAsync(Limit);
+        Assert.Equal(1L, db.Count("SELECT count(*) FROM jobs"));
+    }
+
+    /// <summary>A unit rolled back by hand gives its turn up there and then, not only when it is later disposed.</summary>
+    [Fact]
+    public async Task A_unit_rolled_back_by_hand_gives_its_turn_to_the_next_writer_before_it_is_disposed()
+    {
+        using var db = new JobsTestDatabase();
+        var database = ShortTimeout(db);
+        var uow = await UnitOfWork.OpenAsync(database);
+        await using (uow.ConfigureAwait(false))
+        {
+            await uow.ExecuteAsync(InsertJob, ("@dedupe", "rolled-back"));
+            await uow.RollbackAsync();
+
+            await WriteAsync(database, "next").WaitAsync(Limit);
+        }
+
+        Assert.Equal(1L, db.Count("SELECT count(*) FROM jobs"));
+    }
+
+    /// <summary>
+    /// A ROLLBACK that fails (SQLite's authorizer refusing it stands in for an I/O error) leaves the unit with nothing to give back
+    /// at the rollback itself, so disposing it is what gives its turn up.
+    /// </summary>
+    [Fact]
+    public async Task A_unit_whose_rollback_fails_gives_its_turn_to_the_next_writer_when_it_is_disposed()
+    {
+        using var db = new JobsTestDatabase();
+        var database = ShortTimeout(db);
+        var uow = await UnitOfWork.OpenAsync(database);
+        await uow.ExecuteAsync(InsertJob, ("@dedupe", "abandoned"));
+        raw.sqlite3_set_authorizer(
+            uow.Connection.Handle,
+            (object _, int action, string param0, string _, string _, string _) =>
+                action == raw.SQLITE_TRANSACTION && param0 == "ROLLBACK" ? raw.SQLITE_DENY : raw.SQLITE_OK,
+            null);
+
+        await uow.DisposeAsync();
 
         await WriteAsync(database, "next").WaitAsync(Limit);
         Assert.Equal(1L, db.Count("SELECT count(*) FROM jobs"));

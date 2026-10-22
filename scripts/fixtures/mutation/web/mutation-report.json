@@ -1,0 +1,1773 @@
+{
+  "schemaVersion": "1.0",
+  "thresholds": {
+    "high": 90,
+    "low": 70,
+    "break": null
+  },
+  "files": {
+    "src/pages/activity/activity-remove-dialog.tsx": {
+      "language": "typescript",
+      "mutants": [
+        {
+          "id": "0",
+          "mutatorName": "BlockStatement",
+          "replacement": "{}",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 2,
+              "line": 65
+            },
+            "start": {
+              "column": 5,
+              "line": 29
+            }
+          }
+        },
+        {
+          "id": "3",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 22,
+              "line": 33
+            },
+            "start": {
+              "column": 14,
+              "line": 33
+            }
+          }
+        },
+        {
+          "id": "1",
+          "mutatorName": "ArrayDeclaration",
+          "replacement": "[]",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 4,
+              "line": 64
+            },
+            "start": {
+              "column": 10,
+              "line": 31
+            }
+          }
+        },
+        {
+          "id": "2",
+          "mutatorName": "ObjectLiteral",
+          "replacement": "{}",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 6,
+              "line": 44
+            },
+            "start": {
+              "column": 5,
+              "line": 32
+            }
+          }
+        },
+        {
+          "id": "5",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 53,
+              "line": 35
+            },
+            "start": {
+              "column": 9,
+              "line": 35
+            }
+          }
+        },
+        {
+          "id": "6",
+          "mutatorName": "LogicalOperator",
+          "replacement": "options.delete_handled_by_manager || manager",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 53,
+              "line": 35
+            },
+            "start": {
+              "column": 9,
+              "line": 35
+            }
+          }
+        },
+        {
+          "id": "4",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 53,
+              "line": 35
+            },
+            "start": {
+              "column": 9,
+              "line": 35
+            }
+          }
+        },
+        {
+          "id": "7",
+          "mutatorName": "StringLiteral",
+          "replacement": "``",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 70,
+              "line": 36
+            },
+            "start": {
+              "column": 13,
+              "line": 36
+            }
+          }
+        },
+        {
+          "id": "10",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "status": "Timeout",
+          "location": {
+            "end": {
+              "column": 54,
+              "line": 40
+            },
+            "start": {
+              "column": 10,
+              "line": 40
+            }
+          }
+        },
+        {
+          "id": "8",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Timeout",
+          "location": {
+            "end": {
+              "column": 30,
+              "line": 37
+            },
+            "start": {
+              "column": 13,
+              "line": 37
+            }
+          }
+        },
+        {
+          "id": "9",
+          "mutatorName": "LogicalOperator",
+          "replacement": "options.delete_refused_reason && (options.delete_handled_by_manager && manager ? `${manager} removes it, blocks this release and searches again.` : \"Weir alone: the file is deleted.\")",
+          "status": "Timeout",
+          "location": {
+            "end": {
+              "column": 48,
+              "line": 42
+            },
+            "start": {
+              "column": 9,
+              "line": 39
+            }
+          }
+        },
+        {
+          "id": "11",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Timeout",
+          "location": {
+            "end": {
+              "column": 54,
+              "line": 40
+            },
+            "start": {
+              "column": 10,
+              "line": 40
+            }
+          }
+        },
+        {
+          "id": "12",
+          "mutatorName": "LogicalOperator",
+          "replacement": "options.delete_handled_by_manager || manager",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 54,
+              "line": 40
+            },
+            "start": {
+              "column": 10,
+              "line": 40
+            }
+          }
+        },
+        {
+          "id": "14",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 47,
+              "line": 42
+            },
+            "start": {
+              "column": 13,
+              "line": 42
+            }
+          }
+        },
+        {
+          "id": "13",
+          "mutatorName": "StringLiteral",
+          "replacement": "``",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 77,
+              "line": 41
+            },
+            "start": {
+              "column": 13,
+              "line": 41
+            }
+          }
+        },
+        {
+          "id": "15",
+          "mutatorName": "LogicalOperator",
+          "replacement": "options.delete_refused_reason && undefined",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 62,
+              "line": 43
+            },
+            "start": {
+              "column": 20,
+              "line": 43
+            }
+          }
+        },
+        {
+          "id": "16",
+          "mutatorName": "ObjectLiteral",
+          "replacement": "{}",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 6,
+              "line": 52
+            },
+            "start": {
+              "column": 5,
+              "line": 45
+            }
+          }
+        },
+        {
+          "id": "17",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 20,
+              "line": 46
+            },
+            "start": {
+              "column": 14,
+              "line": 46
+            }
+          }
+        },
+        {
+          "id": "18",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 57,
+              "line": 47
+            },
+            "start": {
+              "column": 14,
+              "line": 47
+            }
+          }
+        },
+        {
+          "id": "19",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 49,
+              "line": 49
+            },
+            "start": {
+              "column": 9,
+              "line": 49
+            }
+          }
+        },
+        {
+          "id": "20",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 49,
+              "line": 49
+            },
+            "start": {
+              "column": 9,
+              "line": 49
+            }
+          }
+        },
+        {
+          "id": "23",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 47,
+              "line": 51
+            },
+            "start": {
+              "column": 13,
+              "line": 51
+            }
+          }
+        },
+        {
+          "id": "21",
+          "mutatorName": "LogicalOperator",
+          "replacement": "options.keep_notifies_manager || manager",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 49,
+              "line": 49
+            },
+            "start": {
+              "column": 9,
+              "line": 49
+            }
+          }
+        },
+        {
+          "id": "22",
+          "mutatorName": "StringLiteral",
+          "replacement": "``",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 88,
+              "line": 50
+            },
+            "start": {
+              "column": 13,
+              "line": 50
+            }
+          }
+        },
+        {
+          "id": "27",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 52,
+              "line": 56
+            },
+            "start": {
+              "column": 15,
+              "line": 56
+            }
+          }
+        },
+        {
+          "id": "24",
+          "mutatorName": "ObjectLiteral",
+          "replacement": "{}",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 6,
+              "line": 57
+            },
+            "start": {
+              "column": 5,
+              "line": 53
+            }
+          }
+        },
+        {
+          "id": "25",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 21,
+              "line": 54
+            },
+            "start": {
+              "column": 14,
+              "line": 54
+            }
+          }
+        },
+        {
+          "id": "26",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 28,
+              "line": 55
+            },
+            "start": {
+              "column": 14,
+              "line": 55
+            }
+          }
+        },
+        {
+          "id": "29",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 22,
+              "line": 59
+            },
+            "start": {
+              "column": 14,
+              "line": 59
+            }
+          }
+        },
+        {
+          "id": "30",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 44,
+              "line": 60
+            },
+            "start": {
+              "column": 14,
+              "line": 60
+            }
+          }
+        },
+        {
+          "id": "28",
+          "mutatorName": "ObjectLiteral",
+          "replacement": "{}",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 6,
+              "line": 63
+            },
+            "start": {
+              "column": 5,
+              "line": 58
+            }
+          }
+        },
+        {
+          "id": "31",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 108,
+              "line": 62
+            },
+            "start": {
+              "column": 9,
+              "line": 62
+            }
+          }
+        },
+        {
+          "id": "32",
+          "mutatorName": "BlockStatement",
+          "replacement": "{}",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 2,
+              "line": 169
+            },
+            "start": {
+              "column": 4,
+              "line": 92
+            }
+          }
+        },
+        {
+          "id": "34",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 43,
+              "line": 98
+            },
+            "start": {
+              "column": 14,
+              "line": 98
+            }
+          }
+        },
+        {
+          "id": "33",
+          "mutatorName": "ArrowFunction",
+          "replacement": "() => undefined",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 43,
+              "line": 98
+            },
+            "start": {
+              "column": 5,
+              "line": 98
+            }
+          }
+        },
+        {
+          "id": "35",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 43,
+              "line": 98
+            },
+            "start": {
+              "column": 14,
+              "line": 98
+            }
+          }
+        },
+        {
+          "id": "36",
+          "mutatorName": "EqualityOperator",
+          "replacement": "opt.unavailable !== undefined",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 43,
+              "line": 98
+            },
+            "start": {
+              "column": 14,
+              "line": 98
+            }
+          }
+        },
+        {
+          "id": "39",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 39,
+              "line": 110
+            },
+            "start": {
+              "column": 24,
+              "line": 110
+            }
+          }
+        },
+        {
+          "id": "37",
+          "mutatorName": "StringLiteral",
+          "replacement": "``",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 51,
+              "line": 104
+            },
+            "start": {
+              "column": 14,
+              "line": 104
+            }
+          }
+        },
+        {
+          "id": "38",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 39,
+              "line": 110
+            },
+            "start": {
+              "column": 24,
+              "line": 110
+            }
+          }
+        },
+        {
+          "id": "42",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 19,
+              "line": 115
+            },
+            "start": {
+              "column": 13,
+              "line": 115
+            }
+          }
+        },
+        {
+          "id": "40",
+          "mutatorName": "EqualityOperator",
+          "replacement": "choice !== null",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 39,
+              "line": 110
+            },
+            "start": {
+              "column": 24,
+              "line": 110
+            }
+          }
+        },
+        {
+          "id": "43",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 19,
+              "line": 115
+            },
+            "start": {
+              "column": 13,
+              "line": 115
+            }
+          }
+        },
+        {
+          "id": "41",
+          "mutatorName": "BlockStatement",
+          "replacement": "{}",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 8,
+              "line": 116
+            },
+            "start": {
+              "column": 24,
+              "line": 114
+            }
+          }
+        },
+        {
+          "id": "44",
+          "mutatorName": "CallExpression",
+          "replacement": ";",
+          "status": "Timeout",
+          "location": {
+            "end": {
+              "column": 39,
+              "line": 115
+            },
+            "start": {
+              "column": 21,
+              "line": 115
+            }
+          }
+        },
+        {
+          "id": "45",
+          "mutatorName": "BooleanLiteral",
+          "replacement": "options.fingerprint_recorded",
+          "status": "Timeout",
+          "location": {
+            "end": {
+              "column": 41,
+              "line": 122
+            },
+            "start": {
+              "column": 12,
+              "line": 122
+            }
+          }
+        },
+        {
+          "id": "46",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Timeout",
+          "location": {
+            "end": {
+              "column": 23,
+              "line": 129
+            },
+            "start": {
+              "column": 18,
+              "line": 129
+            }
+          }
+        },
+        {
+          "id": "47",
+          "mutatorName": "LogicalOperator",
+          "replacement": "options.unconfirmed_size_bytes && 0",
+          "status": "Timeout",
+          "location": {
+            "end": {
+              "column": 65,
+              "line": 130
+            },
+            "start": {
+              "column": 30,
+              "line": 130
+            }
+          }
+        },
+        {
+          "id": "48",
+          "mutatorName": "StringLiteral",
+          "replacement": "``",
+          "status": "Timeout",
+          "location": {
+            "end": {
+              "column": 81,
+              "line": 132
+            },
+            "start": {
+              "column": 21,
+              "line": 132
+            }
+          }
+        },
+        {
+          "id": "49",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"Stryker was here!\"",
+          "status": "Timeout",
+          "location": {
+            "end": {
+              "column": 23,
+              "line": 133
+            },
+            "start": {
+              "column": 21,
+              "line": 133
+            }
+          }
+        },
+        {
+          "id": "50",
+          "mutatorName": "ArrowFunction",
+          "replacement": "() => undefined",
+          "status": "Timeout",
+          "location": {
+            "end": {
+              "column": 12,
+              "line": 164
+            },
+            "start": {
+              "column": 27,
+              "line": 141
+            }
+          }
+        },
+        {
+          "id": "51",
+          "mutatorName": "StringLiteral",
+          "replacement": "``",
+          "status": "Timeout",
+          "location": {
+            "end": {
+              "column": 72,
+              "line": 144
+            },
+            "start": {
+              "column": 28,
+              "line": 144
+            }
+          }
+        },
+        {
+          "id": "53",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 65,
+              "line": 145
+            },
+            "start": {
+              "column": 45,
+              "line": 145
+            }
+          }
+        },
+        {
+          "id": "52",
+          "mutatorName": "StringLiteral",
+          "replacement": "``",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 102,
+              "line": 145
+            },
+            "start": {
+              "column": 26,
+              "line": 145
+            }
+          }
+        },
+        {
+          "id": "55",
+          "mutatorName": "EqualityOperator",
+          "replacement": "choice !== opt.value",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 65,
+              "line": 145
+            },
+            "start": {
+              "column": 45,
+              "line": 145
+            }
+          }
+        },
+        {
+          "id": "54",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 65,
+              "line": 145
+            },
+            "start": {
+              "column": 45,
+              "line": 145
+            }
+          }
+        },
+        {
+          "id": "58",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 46,
+              "line": 148
+            },
+            "start": {
+              "column": 22,
+              "line": 148
+            }
+          }
+        },
+        {
+          "id": "57",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"Stryker was here!\"",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 100,
+              "line": 145
+            },
+            "start": {
+              "column": 98,
+              "line": 145
+            }
+          }
+        },
+        {
+          "id": "56",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 95,
+              "line": 145
+            },
+            "start": {
+              "column": 68,
+              "line": 145
+            }
+          }
+        },
+        {
+          "id": "59",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 46,
+              "line": 148
+            },
+            "start": {
+              "column": 22,
+              "line": 148
+            }
+          }
+        },
+        {
+          "id": "61",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 46,
+              "line": 152
+            },
+            "start": {
+              "column": 26,
+              "line": 152
+            }
+          }
+        },
+        {
+          "id": "63",
+          "mutatorName": "EqualityOperator",
+          "replacement": "choice !== opt.value",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 46,
+              "line": 152
+            },
+            "start": {
+              "column": 26,
+              "line": 152
+            }
+          }
+        },
+        {
+          "id": "60",
+          "mutatorName": "EqualityOperator",
+          "replacement": "index !== firstAvailable",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 46,
+              "line": 148
+            },
+            "start": {
+              "column": 22,
+              "line": 148
+            }
+          }
+        },
+        {
+          "id": "62",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 46,
+              "line": 152
+            },
+            "start": {
+              "column": 26,
+              "line": 152
+            }
+          }
+        },
+        {
+          "id": "64",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 56,
+              "line": 153
+            },
+            "start": {
+              "column": 27,
+              "line": 153
+            }
+          }
+        },
+        {
+          "id": "67",
+          "mutatorName": "ArrowFunction",
+          "replacement": "() => undefined",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 53,
+              "line": 154
+            },
+            "start": {
+              "column": 27,
+              "line": 154
+            }
+          }
+        },
+        {
+          "id": "65",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 56,
+              "line": 153
+            },
+            "start": {
+              "column": 27,
+              "line": 153
+            }
+          }
+        },
+        {
+          "id": "66",
+          "mutatorName": "EqualityOperator",
+          "replacement": "opt.unavailable === undefined",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 56,
+              "line": 153
+            },
+            "start": {
+              "column": 27,
+              "line": 153
+            }
+          }
+        }
+      ],
+      "source": "import { useRef, useState } from \"react\";\n\nimport { FileName } from \"../../components/shared/file-name\";\nimport { ConfirmDialog } from \"../../components/ui/confirm-dialog\";\nimport { formatBytes } from \"../../lib/format/bytes\";\nimport type {\n  ProcessingFileRemoveOptions,\n  ProcessingFileRemovalResolution,\n} from \"../../lib/processing/files-api\";\nimport { useAppDateFormatter } from \"../../lib/ui/mm-format-date\";\n\n/** The four choices offered when a title's file is still in the watched folder (#785). */\ntype ActivityRemoveChoice = Extract<\n  ProcessingFileRemovalResolution,\n  \"remove\" | \"delete\" | \"keep\" | \"retry\"\n>;\n\n/**\n * The label and explanation for each choice, built from what `remove-options` reported. \"remove\" is always\n * offered, whatever the other three say, since it is the one choice that never needs the file's identity\n * confirmed — it never touches the file at all (#786 follow-up).\n */\nfunction choices(options: ProcessingFileRemoveOptions): {\n  value: ActivityRemoveChoice;\n  label: string;\n  detail: string;\n  /** Why this choice cannot be picked, when it cannot. */\n  unavailable?: string;\n}[] {\n  const manager = options.manager_label;\n  return [\n    {\n      value: \"delete\",\n      label:\n        options.delete_handled_by_manager && manager\n          ? `Delete the download and ask ${manager} for another copy`\n          : \"Delete the file\",\n      detail:\n        options.delete_refused_reason ??\n        (options.delete_handled_by_manager && manager\n          ? `${manager} removes it, blocks this release and searches again.`\n          : \"Weir alone: the file is deleted.\"),\n      unavailable: options.delete_refused_reason ?? undefined,\n    },\n    {\n      value: \"keep\",\n      label: \"Keep the file, but don't process it again\",\n      detail:\n        options.keep_notifies_manager && manager\n          ? `Weir leaves it until it changes. ${manager} is told it won't be imported.`\n          : \"Weir leaves it until it changes.\",\n    },\n    {\n      value: \"retry\",\n      label: \"Try it again\",\n      detail: \"Weir processes it on the next pass.\",\n    },\n    {\n      value: \"remove\",\n      label: \"Just remove it from the list\",\n      detail:\n        \"Leaves the file exactly as it is. Weir stops watching it, so a later scan could pick it up again.\",\n    },\n  ];\n}\n\n/**\n * Activity's remove dialog for a failed or rejected title whose file is still in the watched folder (#785):\n * delete the download (naming whichever manager will do it, or saying Weir will delete it itself), keep it\n * without processing it again, try it again, or just remove it from the list. A title that does not qualify for\n * this — finished, or its file already gone — keeps the plain confirm in {@link ActivityFileActions} instead of\n * this dialog. When `options.fingerprint_recorded` is false (a title that failed or was rejected before Weir\n * started recording one, #786 follow-up), the file Weir means is shown plainly so the owner can check it before\n * choosing delete or keep — \"remove\" needs no such check, since it never touches the file. Nothing is chosen when\n * the dialog opens, Remove stays disabled until something is, and focus starts on the first choice, so nothing\n * happens to the file unless the person picks what should (#838).\n */\nexport function ActivityRemoveDialog({\n  fileName,\n  options,\n  busy,\n  error,\n  onCancel,\n  onConfirm,\n}: {\n  fileName: string;\n  options: ProcessingFileRemoveOptions;\n  busy: boolean;\n  error: string | null;\n  onCancel: () => void;\n  onConfirm: (resolution: ActivityRemoveChoice) => void;\n}) {\n  const [choice, setChoice] = useState<ActivityRemoveChoice | null>(null);\n  const firstChoice = useRef<HTMLInputElement>(null);\n  const formatDate = useAppDateFormatter();\n  const choiceList = choices(options);\n  const firstAvailable = choiceList.findIndex(\n    (opt) => opt.unavailable === undefined,\n  );\n\n  return (\n    <ConfirmDialog\n      testId=\"activity-remove-dialog\"\n      title={`Remove \"${fileName}\" from Activity?`}\n      confirmLabel=\"Remove\"\n      tone=\"danger\"\n      cancelLabel=\"Cancel\"\n      busy={busy}\n      busyLabel=\"Removing…\"\n      confirmDisabled={choice === null}\n      initialFocus={firstChoice}\n      error={error}\n      onCancel={onCancel}\n      onConfirm={() => {\n        if (choice) onConfirm(choice);\n      }}\n      description={\n        <fieldset>\n          <legend className=\"mb-2\">\n            Its file is still in the watched folder.\n          </legend>\n          {!options.fingerprint_recorded ? (\n            <div\n              className=\"mb-3\"\n              data-testid=\"activity-remove-dialog-unconfirmed\"\n            >\n              <p className=\"font-medium\">\n                <FileName path={fileName} />\n                {\" · \"}\n                {formatBytes(options.unconfirmed_size_bytes ?? 0)}\n                {options.unconfirmed_modified_at\n                  ? ` · modified ${formatDate(options.unconfirmed_modified_at)}`\n                  : \"\"}\n              </p>\n              <p className=\"mm-quiet-note\">\n                Weir didn&apos;t note this file&apos;s details when it failed,\n                so check it&apos;s the one you mean.\n              </p>\n            </div>\n          ) : null}\n          {choiceList.map((opt, index) => (\n            <label\n              key={opt.value}\n              data-testid={`activity-remove-dialog-choice-${opt.value}`}\n              className={`mm-dialog-choice${choice === opt.value ? \" mm-dialog-choice--chosen\" : \"\"}`}\n            >\n              <input\n                ref={index === firstAvailable ? firstChoice : undefined}\n                type=\"radio\"\n                name=\"activity-remove-resolution\"\n                value={opt.value}\n                checked={choice === opt.value}\n                disabled={opt.unavailable !== undefined}\n                onChange={() => setChoice(opt.value)}\n                className=\"mt-0.5 h-4 w-4 shrink-0 accent-mm-accent\"\n              />\n              <span className=\"min-w-0\">\n                <span className=\"block font-medium\">{opt.label}</span>\n                <span className=\"block text-xs text-mm-text3\">\n                  {opt.detail}\n                </span>\n              </span>\n            </label>\n          ))}\n        </fieldset>\n      }\n    />\n  );\n}\n"
+    },
+    "src/pages/library/library-clean-dialog.tsx": {
+      "language": "typescript",
+      "mutants": [
+        {
+          "id": "70",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 18,
+              "line": 20
+            },
+            "start": {
+              "column": 7,
+              "line": 20
+            }
+          }
+        },
+        {
+          "id": "68",
+          "mutatorName": "BlockStatement",
+          "replacement": "{}",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 2,
+              "line": 59
+            },
+            "start": {
+              "column": 71,
+              "line": 18
+            }
+          }
+        },
+        {
+          "id": "69",
+          "mutatorName": "BooleanLiteral",
+          "replacement": "confirming",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 18,
+              "line": 20
+            },
+            "start": {
+              "column": 7,
+              "line": 20
+            }
+          }
+        },
+        {
+          "id": "71",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 18,
+              "line": 20
+            },
+            "start": {
+              "column": 7,
+              "line": 20
+            }
+          }
+        },
+        {
+          "id": "72",
+          "mutatorName": "LogicalOperator",
+          "replacement": "asked.warnings && []",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 40,
+              "line": 23
+            },
+            "start": {
+              "column": 20,
+              "line": 23
+            }
+          }
+        },
+        {
+          "id": "73",
+          "mutatorName": "ArrayDeclaration",
+          "replacement": "[\"Stryker was here\"]",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 40,
+              "line": 23
+            },
+            "start": {
+              "column": 38,
+              "line": 23
+            }
+          }
+        },
+        {
+          "id": "75",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 34,
+              "line": 28
+            },
+            "start": {
+              "column": 9,
+              "line": 28
+            }
+          }
+        },
+        {
+          "id": "74",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 34,
+              "line": 28
+            },
+            "start": {
+              "column": 9,
+              "line": 28
+            }
+          }
+        },
+        {
+          "id": "78",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 31,
+              "line": 29
+            },
+            "start": {
+              "column": 13,
+              "line": 29
+            }
+          }
+        },
+        {
+          "id": "79",
+          "mutatorName": "StringLiteral",
+          "replacement": "``",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 55,
+              "line": 30
+            },
+            "start": {
+              "column": 13,
+              "line": 30
+            }
+          }
+        },
+        {
+          "id": "77",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 34,
+              "line": 28
+            },
+            "start": {
+              "column": 28,
+              "line": 28
+            }
+          }
+        },
+        {
+          "id": "76",
+          "mutatorName": "EqualityOperator",
+          "replacement": "request.source !== \"file\"",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 34,
+              "line": 28
+            },
+            "start": {
+              "column": 9,
+              "line": 28
+            }
+          }
+        },
+        {
+          "id": "82",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 31,
+              "line": 37
+            },
+            "start": {
+              "column": 12,
+              "line": 37
+            }
+          }
+        },
+        {
+          "id": "80",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 42,
+              "line": 30
+            },
+            "start": {
+              "column": 36,
+              "line": 30
+            }
+          }
+        },
+        {
+          "id": "83",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 31,
+              "line": 37
+            },
+            "start": {
+              "column": 12,
+              "line": 37
+            }
+          }
+        },
+        {
+          "id": "81",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 51,
+              "line": 30
+            },
+            "start": {
+              "column": 44,
+              "line": 30
+            }
+          }
+        },
+        {
+          "id": "84",
+          "mutatorName": "EqualityOperator",
+          "replacement": "warnings.length >= 0",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 31,
+              "line": 37
+            },
+            "start": {
+              "column": 12,
+              "line": 37
+            }
+          }
+        },
+        {
+          "id": "87",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 32,
+              "line": 49
+            },
+            "start": {
+              "column": 21,
+              "line": 49
+            }
+          }
+        },
+        {
+          "id": "85",
+          "mutatorName": "EqualityOperator",
+          "replacement": "warnings.length <= 0",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 31,
+              "line": 37
+            },
+            "start": {
+              "column": 12,
+              "line": 37
+            }
+          }
+        },
+        {
+          "id": "86",
+          "mutatorName": "ArrowFunction",
+          "replacement": "() => undefined",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 18,
+              "line": 43
+            },
+            "start": {
+              "column": 31,
+              "line": 41
+            }
+          }
+        },
+        {
+          "id": "88",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 32,
+              "line": 49
+            },
+            "start": {
+              "column": 21,
+              "line": 49
+            }
+          }
+        },
+        {
+          "id": "89",
+          "mutatorName": "EqualityOperator",
+          "replacement": "count !== 1",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 32,
+              "line": 49
+            },
+            "start": {
+              "column": 21,
+              "line": 49
+            }
+          }
+        },
+        {
+          "id": "90",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 50,
+              "line": 49
+            },
+            "start": {
+              "column": 35,
+              "line": 49
+            }
+          }
+        },
+        {
+          "id": "91",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "status": "Survived",
+          "testsCompleted": 1,
+          "location": {
+            "end": {
+              "column": 70,
+              "line": 49
+            },
+            "start": {
+              "column": 53,
+              "line": 49
+            }
+          }
+        },
+        {
+          "id": "93",
+          "mutatorName": "ArrowFunction",
+          "replacement": "() => undefined",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 8,
+              "line": 80
+            },
+            "start": {
+              "column": 40,
+              "line": 78
+            }
+          }
+        },
+        {
+          "id": "92",
+          "mutatorName": "BlockStatement",
+          "replacement": "{}",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 2,
+              "line": 91
+            },
+            "start": {
+              "column": 4,
+              "line": 71
+            }
+          }
+        },
+        {
+          "id": "94",
+          "mutatorName": "ArrowFunction",
+          "replacement": "() => undefined",
+          "status": "Killed",
+          "testsCompleted": 1,
+          "killedBy": [
+            "0"
+          ],
+          "location": {
+            "end": {
+              "column": 8,
+              "line": 85
+            },
+            "start": {
+              "column": 28,
+              "line": 81
+            }
+          }
+        }
+      ],
+      "source": "import { ConfirmDialog } from \"../../components/ui/confirm-dialog\";\nimport type {\n  LibraryCleanResult,\n  LibraryFile,\n} from \"../../lib/processing/library-mode-api\";\nimport { plural } from \"../../lib/ui/mm-plural\";\nimport {\n  REMOVAL_IS_FINAL,\n  confirmationSummary,\n  outcomeLines,\n} from \"./library-clean-model\";\nimport type { LibraryClean } from \"./use-library-clean\";\n\n/**\n * The one confirmation every clean passes through, from the selection or from a file's panel. It quotes what\n * the server says the clean removes, and the files Weir's checks will leave out, before anything changes.\n */\nexport function LibraryCleanConfirm({ flow }: { flow: LibraryClean }) {\n  const confirming = flow.confirming;\n  if (!confirming) return null;\n  const { request, asked } = confirming;\n  const count = request.paths.length;\n  const warnings = asked.warnings ?? [];\n\n  return (\n    <ConfirmDialog\n      title={\n        request.source === \"file\"\n          ? \"Clean this file?\"\n          : `Clean ${plural(count, \"file\", \"files\")}?`\n      }\n      description={\n        <>\n          <p>\n            {confirmationSummary(asked)} {REMOVAL_IS_FINAL}\n          </p>\n          {warnings.length > 0 ? (\n            <div data-testid=\"library-confirm-warnings\">\n              <p>Weir will leave these out of the clean:</p>\n              <ul className=\"mm-library-confirm__warnings\">\n                {warnings.map((warning) => (\n                  <li key={warning}>{warning}</li>\n                ))}\n              </ul>\n            </div>\n          ) : null}\n        </>\n      }\n      confirmLabel={count === 1 ? \"Yes, clean it\" : \"Yes, clean them\"}\n      cancelLabel=\"Not now\"\n      busy={flow.confirmPending}\n      busyLabel=\"Starting the clean…\"\n      error={flow.confirmFailure}\n      testId=\"library-confirm\"\n      onCancel={flow.cancel}\n      onConfirm={flow.confirm}\n    />\n  );\n}\n\n/** What a clean did, including the files it would not touch and why. */\nexport function LibraryCleanOutcome({\n  result,\n  known,\n  onClose,\n}: {\n  result: LibraryCleanResult;\n  /** The files the page has, which say why a skipped one was skipped. */\n  known: readonly LibraryFile[];\n  onClose: () => void;\n}) {\n  return (\n    <div\n      className=\"mm-library-outcome\"\n      role=\"status\"\n      data-testid=\"library-outcome\"\n    >\n      {outcomeLines(result, known).map((line) => (\n        <p key={line}>{line}</p>\n      ))}\n      {result.warnings.map((warning) => (\n        <p key={warning} className=\"mm-library-outcome__why\">\n          {warning}\n        </p>\n      ))}\n      <button type=\"button\" className=\"mm-head-control\" onClick={onClose}>\n        Close\n      </button>\n    </div>\n  );\n}\n"
+    }
+  },
+  "testFiles": {}
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-js/master/packages/core/schema/stryker-core.json",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "npx vitest related src/components/ui/confirm-dialog.tsx src/pages/library/library-clean-dialog.tsx src/pages/settings/tabs/libraries/remove-library-dialog.tsx --run"
+  },
+  "mutate": [
+    "src/components/ui/confirm-dialog.tsx",
+    "src/pages/library/library-clean-dialog.tsx",
+    "src/pages/settings/tabs/libraries/remove-library-dialog.tsx"
+  ],
+  "coverageAnalysis": "off",
+  "tempDirName": "../../.stryker-tmp",
+  "concurrency": 2,
+  "timeoutFactor": 3,
+  "timeoutMS": 60000,
+  "dryRunTimeoutMinutes": 30,
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json",
+    "html"
+  ],
+  "jsonReporter": {
+    "fileName": "reports/mutation/web-dialogs-library/mutation-report.json"
+  },
+  "htmlReporter": {
+    "fileName": "reports/mutation/web-dialogs-library/mutation-report.html"
+  },
+  "thresholds": {
+    "high": 90,
+    "low": 70,
+    "break": null
+  }
+}

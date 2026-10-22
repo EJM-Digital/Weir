@@ -147,6 +147,36 @@ public sealed class StartProgressFileTests : IDisposable
         Assert.Equal(words, new StartProgress(1, phase, step, steps, TimeSpan.Zero, DateTimeOffset.UtcNow).Words);
     }
 
+    [Fact]
+    public void A_progress_line_that_is_not_valid_json_is_no_reading()
+    {
+        Assert.Null(StartProgressFile.ParseLine(StartProgressFile.Prefix + "{not json"));
+        Assert.Null(StartProgressFile.ParseLine("a line the server printed for some other reason"));
+    }
+
+    [Fact]
+    public void Clearing_a_file_that_cannot_be_deleted_leaves_it_and_does_not_fail()
+    {
+        Directory.CreateDirectory(FilePath);
+
+        var failure = Xunit.Record.Exception(() => StartProgressFile.Clear(_home.Path));
+
+        Assert.Null(failure);
+        Assert.True(Directory.Exists(FilePath));
+    }
+
+    [Fact]
+    public void A_file_the_server_has_open_for_writing_can_still_be_read()
+    {
+        File.WriteAllText(FilePath, """{"pid":5764,"phase":"starting","at":"2026-10-13T06:22:58Z"}""");
+        using var server = new FileStream(FilePath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+
+        var reading = Read();
+
+        Assert.NotNull(reading);
+        Assert.Equal("starting", reading.Phase);
+    }
+
     private static string Record(int step) =>
         JsonSerializer.Serialize(new { pid = 5764, phase = "migrating", step, steps = 2_000, expect_within_s = 468, at = DateTimeOffset.UtcNow });
 }

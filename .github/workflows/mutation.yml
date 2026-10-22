@@ -1,0 +1,175 @@
+# Mutation testing of the code that can lose a person's film or lock them out (#977, docs/coverage/mutation.md).
+# Line coverage says a line ran; a mutation run changes the code (flips a condition, drops a statement, swaps an
+# operator) and checks that some test fails. A change no test notices is a survivor, and each survivor is a test that
+# is missing.
+#
+# One matrix job per target (the targets are in .github/mutation-targets.json), each running Stryker.NET (the server and
+# the tray) or StrykerJS (the web app) over only the files the target names, then one job that holds each score to its floor
+# in docs/coverage/mutation-floors.json and lists the survivors on its summary page. It runs every target weekly and on
+# demand, and on a pull request only the targets whose mutated files the pull request changes (a target takes tens of
+# minutes, so a pull request that touches none starts no Stryker job).
+name: Mutation
+
+on:
+  schedule:
+    - cron: "41 2 * * 0"
+  workflow_dispatch:
+  pull_request:
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+jobs:
+  # The targets to run: all of them on the schedule and on demand, and on a pull request the ones it touches.
+  select:
+    name: Select the targets
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.select.outputs.matrix }}
+      targets: ${{ steps.select.outputs.targets }}
+      any: ${{ steps.select.outputs.any }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+
+      # On a pull request the checkout is the merge of the branch into its base, so HEAD^1 is the base and the diff is
+      # exactly what the pull request changes.
+      - id: select
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = pull_request ]; then
+            git diff --name-only HEAD^1 HEAD > changed-files.txt
+            node scripts/select-mutation-targets.mjs --changed changed-files.txt
+          else
+            node scripts/select-mutation-targets.mjs --all
+          fi
+
+  mutate:
+    name: Mutate ${{ matrix.target }}
+    runs-on: windows-latest
+    timeout-minutes: 200
+    needs: select
+    if: needs.select.outputs.any == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        if: matrix.kind == 'dotnet'
+        with:
+          global-json-file: apps/server/global.json
+          cache: true
+          cache-dependency-path: apps/*/**/packages.lock.json
+
+      # Restored from the solution's own folder, so its global.json picks the pinned SDK the lock files were made with.
+      - name: Restore (locked) and the pinned Stryker.NET
+        if: matrix.kind == 'dotnet'
+        working-directory: ${{ matrix.restore }}
+        shell: bash
+        run: |
+          dotnet restore "${{ matrix.solution }}" --locked-mode
+          dotnet tool restore
+
+      # The real-tool tests skip themselves here: a mutation run needs the tests that judge the code, and the ones that
+      # need ffmpeg or mkvmerge judge the media layer, not these targets. Stryker runs the test project in its own folder
+      # (each config path is from that folder), 4 mutants at a time.
+      - name: Mutate with Stryker.NET
+        if: matrix.kind == 'dotnet'
+        timeout-minutes: 180
+        working-directory: ${{ matrix.directory }}
+        shell: bash
+        run: dotnet stryker -f "${{ matrix.config }}" -O "$GITHUB_WORKSPACE/mutation-output" --skip-version-check
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        if: matrix.kind == 'web'
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install the web app
+        if: matrix.kind == 'web'
+        timeout-minutes: 10
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Mutate with StrykerJS
+        if: matrix.kind == 'web'
+        timeout-minutes: 180
+        working-directory: apps/web
+        shell: bash
+        run: |
+          npx stryker run mutation/${{ matrix.target }}/stryker.config.json
+
+      - name: Gather the report
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          mkdir -p mutation-report
+          if [ "${{ matrix.kind }}" = dotnet ]; then
+            cp mutation-output/reports/mutation-report.json mutation-output/reports/mutation-report.html mutation-report/ || true
+          else
+            cp apps/web/reports/mutation/${{ matrix.target }}/mutation-report.json apps/web/reports/mutation/${{ matrix.target }}/mutation-report.html mutation-report/ || true
+          fi
+
+      - name: Upload the mutation report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: mutation-${{ matrix.target }}
+          if-no-files-found: error
+          retention-days: 30
+          path: mutation-report
+
+  # Every target's score against its floor; the survivors on the summary page and in an artifact.
+  check:
+    needs: [select, mutate]
+    if: ${{ !cancelled() && needs.select.outputs.any == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+
+      - name: Download every target's report
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: mutation-*
+          path: mutation-reports
+
+      - name: Mutation scores against the floors
+        env:
+          # A pull request mutated only the targets it touches; the schedule and a manual run mutated them all.
+          TARGETS: ${{ github.event_name == 'pull_request' && needs.select.outputs.targets || '' }}
+        run: |
+          args=(--floors docs/coverage/mutation-floors.json --reports mutation-reports --out mutation-survivors)
+          if [ -n "$TARGETS" ]; then args+=(--only "$TARGETS"); fi
+          node scripts/check-mutation-floors.mjs "${args[@]}"
+
+      - name: Upload the survivors
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: mutation-survivors
+          if-no-files-found: ignore
+          retention-days: 90
+          path: mutation-survivors

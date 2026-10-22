@@ -148,6 +148,44 @@ public sealed class ProcessingJobSwapJournalTests : IDisposable
         Assert.Null((await _journal.ListUnfinishedAsync()).Single(entry => entry.JobId == id).KeptOriginalPath);
     }
 
+    [Theory]
+    [InlineData(SwapJournalState.Writing, "writing")]
+    [InlineData(SwapJournalState.Committing, "committing")]
+    [InlineData(SwapJournalState.Committed, "committed")]
+    [InlineData(SwapJournalState.Finished, "finished")]
+    [InlineData(SwapJournalState.RolledBack, "rolled_back")]
+    [InlineData(SwapJournalState.Recovered, "recovered")]
+    [InlineData(SwapJournalState.KeepConflict, "keep_conflict")]
+    public async Task Every_state_is_stored_under_the_name_an_earlier_version_wrote_it_with(SwapJournalState state, string stored)
+    {
+        var id = Job("a", null);
+
+        await _journal.RecordAsync(new SwapJournalEntry(id, "/lib/a.mkv", state));
+
+        Assert.Equal(stored, SwapRowOf(id)!.Value.State);
+        Assert.Equal(stored, ProcessingJobSwapJournal.StateName(state));
+    }
+
+    [Fact]
+    public async Task A_row_with_a_state_this_version_does_not_know_is_left_out_of_the_unfinished_list()
+    {
+        var known = Job("a", null);
+        var unknown = Job("b", null);
+        await _journal.RecordAsync(new SwapJournalEntry(known, "/lib/a.mkv", SwapJournalState.Writing));
+        await _journal.RecordAsync(new SwapJournalEntry(unknown, "/lib/b.mkv", SwapJournalState.Writing));
+        _db.Execute("UPDATE library_swaps SET state = 'from_a_newer_version' WHERE job_id = $id", ("$id", unknown));
+
+        var unfinished = await _journal.ListUnfinishedAsync();
+
+        Assert.Equal([known], unfinished.Select(entry => entry.JobId));
+    }
+
+    [Fact]
+    public void A_state_that_does_not_exist_has_no_stored_name()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => ProcessingJobSwapJournal.StateName((SwapJournalState)99));
+    }
+
     [Fact]
     public async Task A_missing_job_row_is_an_error()
     {

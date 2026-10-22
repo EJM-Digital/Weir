@@ -47,6 +47,40 @@ public sealed class OriginalsMoverTests
     }
 
     [Fact]
+    public void Reserve_tries_exactly_the_number_of_names_it_is_allowed()
+    {
+        var files = new FakeSwapFileSystem();
+        files.Put(Source, "taken");
+
+        var reserved = OriginalsMover.Reserve(files, Source, limit: 2);
+
+        Assert.Equal("/lib/.weir-originals/film (2).mkv", reserved);
+    }
+
+    [Fact]
+    public void Reserve_fails_naming_the_folder_and_the_number_of_tries_when_every_name_is_taken()
+    {
+        var files = new FakeSwapFileSystem();
+        files.Put(Source, "taken");
+        files.Put("/lib/.weir-originals/film (2).mkv", "taken");
+
+        var error = Assert.Throws<IOException>(() => OriginalsMover.Reserve(files, Source, limit: 2));
+
+        Assert.Equal($"Weir could not find a free name for the kept original near '{Source}' after 2 attempts.", error.Message);
+    }
+
+    [Fact]
+    public void Reserve_makes_the_folder_first_and_a_bare_file_name_has_none_to_make()
+    {
+        var files = new FakeSwapFileSystem();
+
+        OriginalsMover.Reserve(files, Source);
+        OriginalsMover.Reserve(files, "film.mkv");
+
+        Assert.Equal(["EnsureDirectory(/lib/.weir-originals)", $"TryReserve({Source})", "TryReserve(film.mkv)"], files.Operations);
+    }
+
+    [Fact]
     public void Fill_replaces_the_reservation_on_the_same_volume()
     {
         var files = new FakeSwapFileSystem();

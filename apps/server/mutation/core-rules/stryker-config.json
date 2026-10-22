@@ -1,0 +1,31 @@
+{
+  "stryker-config": {
+    "project": "Weir.Core.csproj",
+    "test-projects": [
+      "../Weir.Core.Tests/Weir.Core.Tests.csproj",
+      "../Weir.Infrastructure.Tests/Weir.Infrastructure.Tests.csproj"
+    ],
+    "mutate": [
+      "**/LibraryMode/SafeSwapRules.cs",
+      "**/MediaManagers/LibraryFolderPublishing.cs",
+      "**/MediaManagers/HandoffLedgerRules.cs",
+      "**/MediaManagers/HandoffPaths.cs",
+      "**/MediaManagers/HandoffSourceFiles.cs",
+      "**/MediaManagers/HandbackRules.cs",
+      "**/MediaManagers/CompletionReports.cs"
+    ],
+    "ignore-methods": [
+      "*ConfigureAwait",
+      "*ThrowIfNull",
+      "*ThrowIfNullOrEmpty"
+    ],
+    "test-case-filter": "Category!=Stress&Category!=Contract&Category!=E2E",
+    "coverage-analysis": "perTest",
+    "reporters": [
+      "json",
+      "html",
+      "dots"
+    ],
+    "concurrency": 4
+  }
+}
