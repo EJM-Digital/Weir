@@ -2,7 +2,7 @@
 // decide: it installs and uninstalls, makes the tray's secrets, answers the routes the scenarios use, runs the recovery command the way the
 // real one behaves, and can be told to go wrong in the ways the scenarios must catch. The real ones are the runner and the Setup, in CI.
 import { createHash, createHmac } from "node:crypto";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 
 const SYSTEM = { sid: "S-1-5-18", name: "NT AUTHORITY\\SYSTEM" };
 const ADMINISTRATORS = { sid: "S-1-5-32-544", name: "BUILTIN\\Administrators" };
@@ -33,6 +33,8 @@ function signCsrf(secret) {
  * @param {string} [behaviour.reportedVersion] What the server reports as its version.
  * @param {boolean} [behaviour.uninstallDeletesData]
  * @param {boolean} [behaviour.uninstallEditsDatabase]
+ * @param {boolean} [behaviour.installMakesNoShortcut] Setup makes no Start Menu shortcut.
+ * @param {boolean} [behaviour.trayKeepsDataElsewhere] The tray says its data folder is not the default one.
  * @param {boolean} [behaviour.uninstallLeavesShortcut]
  * @param {boolean} [behaviour.uninstallLeavesMark]
  * @param {boolean} [behaviour.uninstallLeavesRunning]
@@ -135,7 +137,7 @@ export class FakeWindows {
       const exitCode = this.#behaviour.setupExit ?? 0;
       if (exitCode === 0) {
         this.#installed = true;
-        this.#shortcuts = [join("C:", "Users", "runneradmin", "Start Menu", "Programs", "Weir.lnk")];
+        this.#shortcuts = this.#behaviour.installMakesNoShortcut ? [] : [join("C:", "Users", "runneradmin", "Start Menu", "Programs", "Weir.lnk")];
         if (this.#behaviour.reinstallReplacesSecrets && this.#files.has("session.secret")) this.#files.delete("session.secret");
         if (this.#behaviour.reinstallForgetsAccount) this.#db = null;
       }
@@ -232,7 +234,11 @@ export class FakeWindows {
     if (!this.#files.has("session.secret")) this.#put("session.secret", made("session"));
     if (!this.#files.has("credentials.secret")) this.#put("credentials.secret", this.#behaviour.sameSecrets ? this.#files.get("session.secret") : made("credentials"));
     this.#put(join("data", "weir.sqlite3"), this.#files.get(join("data", "weir.sqlite3")) ?? "database");
-    this.#put("tray-host.log", `${this.#files.get("tray-host.log") ?? ""}Using port 9347 from --port\nWeir is healthy on http://127.0.0.1:9347/\n`);
+    const dataFolder = this.#behaviour.trayKeepsDataElsewhere ? join("D:", "Elsewhere") : this.#home;
+    this.#put(
+      "tray-host.log",
+      `${this.#files.get("tray-host.log") ?? ""}Starting tray host. installRoot=${join(this.#install, "current")}${sep} runtimeHome=${dataFolder}\nUsing port 9347 from --port\nWeir is healthy on http://127.0.0.1:9347/\n`,
+    );
     this.#put(join("logs", "weir.log"), `${this.#files.get(join("logs", "weir.log")) ?? ""}${this.#behaviour.serverLogLine ?? "Weir started"}\n`);
     this.#updateWaiting = this.#installsItsOwnUpdates();
     this.#db ??= { account: null, settings: { app_timezone: "UTC", log_retention_days: 30 }, libraries: [], activity: [], logs: [], paused: false };
