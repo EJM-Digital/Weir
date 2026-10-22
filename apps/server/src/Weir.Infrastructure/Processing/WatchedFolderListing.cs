@@ -63,18 +63,7 @@ public static class WatchedFolderListing
     /// <see cref="RemuxRules.MediaExtensions"/>).</summary>
     public static bool IsProcessingMediaCandidate(string path)
     {
-        try
-        {
-            return File.Exists(path) && IsMediaExtension(Path.GetExtension(path).ToLowerInvariant());
-        }
-        catch (IOException)
-        {
-            return false;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return false;
-        }
+        return File.Exists(path) && IsMediaExtension(Path.GetExtension(path).ToLowerInvariant());
     }
 
     /// <summary>Whether the path looks like a download client's in-progress artifact: a hash-named file, or a
@@ -119,21 +108,7 @@ public static class WatchedFolderListing
         foreach (var info in Walk(root, topLevelOnly).OrderBy(file => file.FullName, StringComparer.Ordinal))
         {
             var p = info.FullName;
-            string relative;
-            try
-            {
-                relative = Path.GetRelativePath(root, Path.GetFullPath(p));
-            }
-            catch (ArgumentException)
-            {
-                continue;
-            }
-
-            if (relative.StartsWith("..", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
+            var relative = Path.GetRelativePath(root, p);
             var relativeParts = relative.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
             if ((excludeHidden && relativeParts.Any(part => part.StartsWith('.'))) || IsTransientDownloadArtifactMediaPath(p, excludeMarkers))
             {
