@@ -274,3 +274,56 @@ it("hands a count that failed to the page as a failure", async () => {
     expect(onNotice).toHaveBeenCalledWith("Weir is not answering.", true),
   );
 });
+
+it("counts what it skipped beside what it queued", async () => {
+  vi.spyOn(api, "fetchRejectedFilesSummary").mockResolvedValue({
+    rejected: 4,
+    ready: 3,
+  });
+  vi.spyOn(api, "processRejectedFilesAgain").mockResolvedValue({
+    requeued: 3,
+    skipped: 1,
+    detail: "Queued 3 files again.",
+  });
+  renderButton();
+  pressProcessAllAgain();
+
+  fireEvent.click(await screen.findByTestId(`${CONFIRM}-confirm`));
+
+  expect(
+    await screen.findByText("Queued 3 files · 1 skipped."),
+  ).toBeInTheDocument();
+});
+
+it("shows the server's own words when nothing was queued", async () => {
+  vi.spyOn(api, "fetchRejectedFilesSummary").mockResolvedValue({
+    rejected: 1,
+    ready: 1,
+  });
+  vi.spyOn(api, "processRejectedFilesAgain").mockResolvedValue({
+    requeued: 0,
+    skipped: 1,
+    detail: "Nothing was queued: the file is already waiting.",
+  });
+  renderButton();
+  pressProcessAllAgain();
+
+  fireEvent.click(await screen.findByTestId(`${CONFIRM}-confirm`));
+
+  expect(
+    await screen.findByText("Nothing was queued: the file is already waiting."),
+  ).toBeInTheDocument();
+});
+
+it("says Checking, and is off, while the rejected files are counted", async () => {
+  vi.spyOn(api, "fetchRejectedFilesSummary").mockReturnValue(
+    new Promise(() => undefined),
+  );
+  renderButton();
+
+  pressProcessAllAgain();
+
+  expect(
+    await screen.findByRole("button", { name: "Checking…" }),
+  ).toBeDisabled();
+});

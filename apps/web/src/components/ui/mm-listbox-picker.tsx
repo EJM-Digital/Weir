@@ -77,11 +77,7 @@ export function MmListboxPicker({
         aria-labelledby={ariaLabelledBy}
         aria-describedby={ariaDescribedBy}
         data-testid={dataTestId}
-        onClick={() => {
-          if (!disabled) {
-            setOpen((v) => !v);
-          }
-        }}
+        onClick={() => setOpen((v) => !v)}
         onKeyDown={nav.onKeyDown}
       >
         <span className="min-w-0 max-h-16 flex-1 overflow-y-auto whitespace-normal break-words text-left">

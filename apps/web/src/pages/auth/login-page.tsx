@@ -54,7 +54,7 @@ export function LoginPage() {
       </main>
     );
   }
-  if (boot.data?.bootstrap_allowed && !fromSetup && !manualSignIn) {
+  if (boot.data.bootstrap_allowed && !fromSetup && !manualSignIn) {
     return <Navigate to="/setup" replace />;
   }
 
@@ -116,7 +116,7 @@ export function LoginPage() {
             </div>
           ) : null}
 
-          {boot.data?.bootstrap_allowed ? (
+          {boot.data.bootstrap_allowed ? (
             // No `mt-2`: `.mm-auth-lead` sets its own margin, so the utility never applied.
             // The gap above comes from the banner or lead paragraph before it, as it always did.
             <p className="mm-auth-lead">

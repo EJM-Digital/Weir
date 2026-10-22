@@ -229,4 +229,12 @@ describe("useListboxKeyboardNav keys", () => {
     const empty = open();
     expect(press(empty.result, "ArrowDown")).not.toHaveBeenCalled();
   });
+
+  it("does nothing for an arrow key when there are no options to move to", () => {
+    const { result, onActivate } = open();
+
+    press(result, "ArrowDown");
+
+    expect(onActivate).not.toHaveBeenCalled();
+  });
 });

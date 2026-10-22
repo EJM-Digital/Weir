@@ -14,7 +14,6 @@ import type { AppSettings } from "../../lib/settings/types";
 import { mmActionButtonClass } from "../../lib/ui/mm-control-roles";
 import {
   BackupFields,
-  DEFAULT_BACKUP_TIME,
   WizardLoadFailed,
   WizardSection,
   WizardWhatsNext,
@@ -36,7 +35,6 @@ import { WizardUpdatesSection } from "./wizard-updates-section";
 import { isConnectedSource, type DownloadSource } from "./wizard-source";
 
 const FALLBACK_ZONE = "UTC";
-const DEFAULT_BACKUP_HOURS = 24;
 
 /** The draft starts from what is saved: the zone, the backup schedule and the first library of each type. */
 function initialDraft(
@@ -55,13 +53,8 @@ function initialDraft(
     timezone: zone,
     backup: {
       enabled: Boolean(settings.configuration_backup_enabled),
-      intervalHours: String(
-        settings.configuration_backup_interval_hours || DEFAULT_BACKUP_HOURS,
-      ),
-      preferredTime:
-        (
-          settings.configuration_backup_preferred_time || DEFAULT_BACKUP_TIME
-        ).trim() || DEFAULT_BACKUP_TIME,
+      intervalHours: String(settings.configuration_backup_interval_hours),
+      preferredTime: settings.configuration_backup_preferred_time.trim(),
     },
     movie: folders("movie"),
     tv: folders("tv"),

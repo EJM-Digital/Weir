@@ -90,3 +90,22 @@ it("shows Paused only from what the server answers once it has stored the pause"
   );
   expect(screen.getByTestId("pause-resume")).toBeInTheDocument();
 });
+
+it("says Resuming, and is off, while the server is asked to resume", async () => {
+  vi.spyOn(authQueries, "useMeQuery").mockReturnValue({
+    data: { role: "operator" },
+  } as ReturnType<typeof authQueries.useMeQuery>);
+  vi.spyOn(pauseApi, "fetchPause").mockResolvedValue({
+    ...running,
+    paused: true,
+  });
+  vi.spyOn(pauseApi, "savePause").mockReturnValue(new Promise(() => undefined));
+
+  renderHeader();
+  fireEvent.click(await screen.findByTestId("pause-resume"));
+
+  await waitFor(() =>
+    expect(screen.getByTestId("pause-resume")).toHaveTextContent("Resuming…"),
+  );
+  expect(screen.getByTestId("pause-resume")).toBeDisabled();
+});

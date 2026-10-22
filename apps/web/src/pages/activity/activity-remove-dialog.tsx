@@ -126,8 +126,9 @@ export function ActivityRemoveDialog({
             >
               <p className="font-medium">
                 <FileName path={fileName} />
-                {" · "}
-                {formatBytes(options.unconfirmed_size_bytes ?? 0)}
+                {options.unconfirmed_size_bytes === null
+                  ? ""
+                  : ` · ${formatBytes(options.unconfirmed_size_bytes)}`}
                 {options.unconfirmed_modified_at
                   ? ` · modified ${formatDate(options.unconfirmed_modified_at)}`
                   : ""}

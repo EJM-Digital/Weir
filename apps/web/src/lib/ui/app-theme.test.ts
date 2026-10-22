@@ -136,3 +136,42 @@ describe("app-theme", () => {
     stop();
   });
 });
+
+describe("when the browser will not let the theme be stored", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const blocked = () => new DOMException("blocked", "SecurityError");
+
+  it("reads no choice, as if nobody had picked one", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw blocked();
+    });
+
+    expect(readStoredAppTheme()).toBeNull();
+  });
+
+  it("still changes the theme for this visit", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw blocked();
+    });
+
+    persistAppTheme("light");
+
+    expect(document.documentElement.getAttribute("data-mm-theme")).toBe(
+      "light",
+    );
+  });
+
+  it("does not hide a failure that is not the browser refusing", () => {
+    const broken = new TypeError("not storage");
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw broken;
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw broken;
+    });
+
+    expect(() => readStoredAppTheme()).toThrow(broken);
+    expect(() => persistAppTheme("dark")).toThrow(broken);
+  });
+});

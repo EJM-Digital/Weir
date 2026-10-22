@@ -1,10 +1,17 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { LibraryOverview } from "../../lib/processing/library-mode-api";
 import {
   LIBRARY_CHIP_COUNT,
   LibraryFilters,
+  LibraryReasonSelect,
   NO_FILTER,
   type LibraryFilter,
 } from "./library-filters";
@@ -92,5 +99,65 @@ describe("LibraryFilters", () => {
       "Left alone 1",
       "More",
     ]);
+  });
+});
+
+describe("LibraryReasonSelect", () => {
+  const WITH_REASONS = {
+    ...OVERVIEW,
+    problems: [
+      {
+        kind: "seeding",
+        files: 3,
+        size_bytes: 0,
+        sample_paths: [],
+        title: "Still seeding",
+      },
+    ],
+  } as unknown as LibraryOverview;
+
+  function renderSelect(
+    filter: LibraryFilter,
+    overview: LibraryOverview | null = WITH_REASONS,
+  ) {
+    const onFilter = vi.fn();
+    render(
+      <LibraryReasonSelect
+        overview={overview ?? undefined}
+        filter={filter}
+        onFilter={onFilter}
+      />,
+    );
+    return onFilter;
+  }
+
+  it("narrows the files Weir cannot clean yet to one reason, and back to any", () => {
+    const onFilter = renderSelect({ status: "cant_clean_yet", problem: null });
+    const select = screen.getByRole("combobox");
+
+    fireEvent.change(select, { target: { value: "seeding" } });
+    expect(onFilter).toHaveBeenLastCalledWith({
+      status: "cant_clean_yet",
+      problem: "seeding",
+    });
+
+    fireEvent.change(select, { target: { value: "" } });
+    expect(onFilter).toHaveBeenLastCalledWith({
+      status: "cant_clean_yet",
+      problem: null,
+    });
+  });
+
+  it("is not there for another status, or before the overview has been read, or with no reasons to give", () => {
+    renderSelect({ status: "matches", problem: null });
+    expect(screen.queryByRole("combobox")).toBeNull();
+    cleanup();
+
+    renderSelect({ status: "cant_clean_yet", problem: null }, null);
+    expect(screen.queryByRole("combobox")).toBeNull();
+    cleanup();
+
+    renderSelect({ status: "cant_clean_yet", problem: null }, OVERVIEW);
+    expect(screen.queryByRole("combobox")).toBeNull();
   });
 });

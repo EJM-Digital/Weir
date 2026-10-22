@@ -108,3 +108,27 @@ describe("the active sessions table", () => {
     expect(browsers()[0]).toBe("Firefox on Linux");
   });
 });
+
+describe("a trusted device", () => {
+  it("is marked Trusted beside its browser", () => {
+    function Trusted() {
+      const columns = useTableColumns(SESSION_COLUMNS);
+      return (
+        <SessionsTable
+          sessions={[
+            {
+              ...session("t", "Safari on Mac", "2026-10-01T00:00:00Z"),
+              trusted_device: true,
+            },
+          ]}
+          columns={columns}
+          revoking={false}
+          onRevoke={vi.fn()}
+        />
+      );
+    }
+    render(<Trusted />);
+
+    expect(screen.getByText("Trusted")).toBeInTheDocument();
+  });
+});

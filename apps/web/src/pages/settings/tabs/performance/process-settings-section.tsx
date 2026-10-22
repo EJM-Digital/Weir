@@ -36,7 +36,6 @@ export function ProcessSettingsSection() {
   if (q.isError) {
     return <SettingsLoadError what="performance settings" />;
   }
-  if (!q.data) return null;
 
   // Keyed by what this form edits, so it starts from the saved values and a change saved elsewhere replaces what is typed.
   const savedKey = [

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { HeaderSearch } from "./header-search";
 
@@ -54,5 +54,19 @@ describe("HeaderSearch", () => {
 
     expect(box).not.toHaveFocus();
     expect(keys).toEqual(["Escape"]);
+  });
+
+  it("lets go of the focus on Escape, and passes every key on to the page", () => {
+    const onKeyDown = vi.fn();
+    render(<HeaderSearch label="Find a file" onKeyDown={onKeyDown} />);
+    const box = screen.getByRole("searchbox");
+    box.focus();
+
+    fireEvent.keyDown(box, { key: "a" });
+    expect(box).toHaveFocus();
+    fireEvent.keyDown(box, { key: "Escape" });
+
+    expect(box).not.toHaveFocus();
+    expect(onKeyDown).toHaveBeenCalledTimes(2);
   });
 });

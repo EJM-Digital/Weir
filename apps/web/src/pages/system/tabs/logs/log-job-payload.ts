@@ -3,6 +3,7 @@ import {
   asString,
   parseActivityDetail,
 } from "../../../../lib/activity/detail";
+import { baseName } from "../../../../lib/format/path";
 import { ACTIVITY_PATH } from "../../../activity/activity-links";
 
 /** The payload a job was made from, indented to read; text that is not JSON is shown as it is, and an empty one as nothing. */
@@ -32,7 +33,7 @@ export function activityFileOfJob(job: {
   const path = asString(payload?.relative_media_path);
   if (!path) return null;
   const params = new URLSearchParams({
-    q: path.split(/[\\/]/).pop() ?? path,
+    q: baseName(path),
     within: EVERYTHING_KEPT,
   });
   const workflow = asNumber(payload?.library_id);

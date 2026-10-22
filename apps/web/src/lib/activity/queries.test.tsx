@@ -183,3 +183,18 @@ describe("the Activity window the Today figures count from", () => {
     expect(api.requests).toEqual([]);
   });
 });
+
+describe("a window when the server lists no entries", () => {
+  it("is empty, with the total the server gave, when the reply has no list at all", async () => {
+    api = stubWeirApi({ [RECENT]: { total: 0, has_more: false } });
+
+    const { result } = windowOf();
+
+    await waitFor(() => expect(result.current.data).toBeDefined());
+    expect(result.current.data).toEqual({
+      items: [],
+      total: 0,
+      complete: true,
+    });
+  });
+});

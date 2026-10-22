@@ -71,3 +71,17 @@ describe("what says which file and work a card is", () => {
     expect(placeFact(13)).toBe("13th in line");
   });
 });
+
+describe("what a file the media manager is still importing is told", () => {
+  it("says Weir is checking again now, once Weir's next look has come", () => {
+    const [item] = lanesOf(
+      [aFile(1, "blocked_upstream", { blocked_by_connection: "Sonarr" })],
+      [],
+      new Map([[2, { at: NOW - 1000, interval: 300 }]]),
+    ).arriving;
+
+    expect(arrivingNote(item, NOW)).toBe(
+      "Sonarr is still importing it. Weir is checking again now.",
+    );
+  });
+});

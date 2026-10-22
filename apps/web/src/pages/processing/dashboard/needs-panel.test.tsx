@@ -35,6 +35,7 @@ const failedJobs = { jobs: [] as unknown[] };
 const needFiles = { files: [] as ProcessingFile[] };
 const rejectedAgain = vi.fn();
 const checkAgain = { mutate: vi.fn(), isPending: false };
+const removalPending = { options: false, forgetting: false };
 let fits = Number.MAX_SAFE_INTEGER;
 
 vi.mock("./fit-rows", () => ({
@@ -44,10 +45,13 @@ vi.mock("./fit-rows", () => ({
 vi.mock("../../../lib/processing/files-queries", () => ({
   useRequeueProcessingFile: () => requeue,
   useProcessingCheckLibraryAgain: () => checkAgain,
-  useForgetProcessingFile: () => ({ mutateAsync: forget, isPending: false }),
+  useForgetProcessingFile: () => ({
+    mutateAsync: forget,
+    isPending: removalPending.forgetting,
+  }),
   useProcessingFileRemoveOptions: () => ({
     mutateAsync: removeOptions,
-    isPending: false,
+    isPending: removalPending.options,
   }),
 }));
 vi.mock("../../../lib/settings/queries", () => ({
@@ -138,6 +142,8 @@ beforeEach(() => {
   requeue.isPending = false;
   checkAgain.mutate = vi.fn();
   checkAgain.isPending = false;
+  removalPending.options = false;
+  removalPending.forgetting = false;
   forget.mockReset().mockResolvedValue({ detail: "Removed." });
   removeOptions.mockReset();
   rejectedAgain.mockReset();
@@ -545,6 +551,14 @@ describe("asking a workflow to look again at a held or skipped file", () => {
     );
   });
 
+  it("shows that it is checking while the workflow looks again", () => {
+    needFiles.files = [held];
+    checkAgain.isPending = true;
+    renderPanel();
+
+    expect(screen.getByRole("button", { name: "Checking…" })).toBeDisabled();
+  });
+
   it("does not offer to check a workflow a media manager hands its downloads to, and says why", () => {
     needFiles.files = [held];
     handedOffNote.mockReturnValue("Deluno hands this workflow its downloads.");
@@ -617,6 +631,22 @@ describe("removing a file", () => {
 
     await waitFor(() => expect(forget).toHaveBeenCalledWith({ id: 9 }));
     expect(screen.queryByTestId("activity-remove-dialog")).toBeNull();
+  });
+
+  it("shows that it is checking while Weir works out what removing would do", () => {
+    needFiles.files = [stuckFile];
+    removalPending.options = true;
+    renderPanel();
+
+    expect(screen.getByRole("button", { name: "Checking…" })).toBeDisabled();
+  });
+
+  it("shows that it is removing while the removal runs", () => {
+    needFiles.files = [stuckFile];
+    removalPending.forgetting = true;
+    renderPanel();
+
+    expect(screen.getByRole("button", { name: "Removing…" })).toBeDisabled();
   });
 
   it("says when Weir could not tell what removing would do", async () => {

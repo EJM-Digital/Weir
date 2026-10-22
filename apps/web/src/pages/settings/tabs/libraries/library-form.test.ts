@@ -110,3 +110,25 @@ describe("formFrom", () => {
     }
   });
 });
+
+describe("dates and free space the form cannot read", () => {
+  it("shows a stored date it cannot read as blank", () => {
+    expect(
+      formFrom(library({ created_after: "not a date" })).created_after,
+    ).toBe("");
+  });
+
+  it("sends a date it cannot read as no limit", () => {
+    expect(
+      writeFrom({ ...EMPTY_LIBRARY_FORM, created_before: "not a date" })
+        .created_before,
+    ).toBeNull();
+  });
+
+  it("sends a negative amount of free space as the default", () => {
+    expect(
+      writeFrom({ ...EMPTY_LIBRARY_FORM, minimum_free_disk_space_gb: "-2" })
+        .minimum_free_disk_space_mb,
+    ).toBe(5 * 1024);
+  });
+});

@@ -543,3 +543,21 @@ describe("turning a connection on or off", () => {
     );
   });
 });
+
+describe("turning a switched-off connection back on", () => {
+  it("shows Enabling while the change is in flight", async () => {
+    vi.spyOn(api, "fetchDownloadClientConnections").mockResolvedValue([
+      connection({ enabled: false }),
+    ]);
+    vi.spyOn(api, "updateDownloadClientConnection").mockReturnValue(
+      new Promise(() => undefined),
+    );
+
+    render(<DownloadClientsSection />, { wrapper });
+    fireEvent.click(await screen.findByRole("button", { name: "Enable" }));
+
+    expect(
+      await screen.findByRole("button", { name: "Enabling…" }),
+    ).toBeDisabled();
+  });
+});

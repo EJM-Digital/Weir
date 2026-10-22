@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
@@ -299,5 +299,58 @@ describe("UpdateSection while update checking is off", () => {
     showOff({ last_checked_at: "2026-10-21T09:30:00Z" }, "docker");
 
     expect(screen.queryByTestId("suite-settings-manual-check")).toBeNull();
+  });
+});
+
+describe("the Docker update command", () => {
+  const withCommand = (command: string | null) =>
+    status(
+      {
+        summary: LIMITED,
+        latest_version: "3.3.0",
+        known_update_available: true,
+        docker_update_command: command,
+      },
+      "docker",
+    );
+
+  function stubClipboard(writeText: () => Promise<void>) {
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+  }
+
+  it("says Copied once the command is on the clipboard", async () => {
+    stubClipboard(() => Promise.resolve());
+    showStatus(withCommand("docker compose pull"));
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy the update command" }),
+    );
+
+    expect(await screen.findByText("Copied")).toBeInTheDocument();
+  });
+
+  it("keeps offering Copy when the browser would not copy it", async () => {
+    const writeText = vi.fn(() => Promise.reject(new Error("blocked")));
+    stubClipboard(writeText);
+    showStatus(withCommand("docker compose pull"));
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy the update command" }),
+    );
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText("Copied")).toBeNull();
+    expect(screen.getByText("Copy →")).toBeInTheDocument();
+  });
+
+  it("shows no command when the server sent none", () => {
+    showStatus(withCommand(null));
+
+    expect(
+      screen.queryByRole("button", { name: "Copy the update command" }),
+    ).toBeNull();
   });
 });

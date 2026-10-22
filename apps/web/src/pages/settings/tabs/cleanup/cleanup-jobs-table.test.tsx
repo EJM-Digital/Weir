@@ -37,7 +37,13 @@ const STATES = [
   }),
 ];
 
-function Jobs({ editable = true }: { editable?: boolean }) {
+function Jobs({
+  editable = true,
+  states = STATES,
+}: {
+  editable?: boolean;
+  states?: MaintenanceFamilyState[];
+}) {
   const columns = useTableColumns(CLEANUP_COLUMNS);
   const shown = editable
     ? columns.order
@@ -48,7 +54,7 @@ function Jobs({ editable = true }: { editable?: boolean }) {
       <CleanupJobsTable
         columns={columns}
         shown={shown}
-        states={STATES}
+        states={states}
         row={({ job: entry }) => (
           <tr>
             <th scope="row">{entry.name}</th>
@@ -133,5 +139,42 @@ describe("the cleanup jobs table", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Reset columns" }));
 
     expect(rows()[0]).toBe("Leftover work files");
+  });
+
+  it("sorts a job with no interval of its own as running hourly", () => {
+    const withoutInterval = {
+      ...job("work_temp_stale_sweep", {}),
+      interval_seconds: undefined,
+    };
+    render(
+      <Jobs
+        states={[
+          withoutInterval,
+          job("unclaimed_handbacks", { interval_seconds: 7200 }),
+        ]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Every" }));
+
+    expect(rows()[0]).toBe("Leftover work files");
+  });
+
+  it("sorts by the next run, with a job that is off last however it is sorted", () => {
+    render(
+      <Jobs
+        states={[
+          job("work_temp_stale_sweep", {
+            enabled: false,
+            next_run_at: "2026-10-02T09:00:00Z",
+          }),
+          job("unclaimed_handbacks", { next_run_at: "2026-10-02T12:00:00Z" }),
+        ]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Next run" }));
+
+    expect(rows()[0]).toBe("Cleaned copies nobody picked up");
   });
 });

@@ -78,7 +78,7 @@ function cleanedToday(figures: TodayFigures | undefined): string | undefined {
   if (!figures) return undefined;
   const cleaned = `${figures.cleaned.toLocaleString()} cleaned today`;
   if (figures.savedBytes === null) return cleaned;
-  return `${cleaned} · ${formatBytes(figures.savedBytes) || "0 B"} saved`;
+  return `${cleaned} · ${formatBytes(figures.savedBytes)} saved`;
 }
 
 /** The file whose story is open: its name, and what its header shows beside it. */

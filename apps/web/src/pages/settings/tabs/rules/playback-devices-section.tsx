@@ -77,7 +77,6 @@ export function PlaybackDevicesSection() {
   if (q.isError) {
     return <SettingsLoadError what="playback devices" />;
   }
-  if (!q.data) return null;
 
   // Keyed by the saved selection, so ticks start from it and a change saved elsewhere replaces them.
   const savedKey = q.data.devices

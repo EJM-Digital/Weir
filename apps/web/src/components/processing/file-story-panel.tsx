@@ -19,10 +19,7 @@ import type {
 
 function Step({ step }: { step: ProcessingFileStoryStep }): React.ReactElement {
   return (
-    <li
-      className="mm-story-step"
-      data-status={STORY_STEP_MEANING[step.tone] ?? "idle"}
-    >
+    <li className="mm-story-step" data-status={STORY_STEP_MEANING[step.tone]}>
       <p className="mm-story-step__heading">{step.heading}</p>
       <p className="mm-story-step__sentence">{step.sentence}</p>
     </li>

@@ -171,3 +171,18 @@ describe("the This Weir card", () => {
     ).toBeNull();
   });
 });
+
+describe("the tiles before the other readings arrive", () => {
+  it("shows a dash for work, use of the computer, waiting files and backups that have not been read", () => {
+    stats = {};
+    backups = {};
+    filesAtOnce = {};
+    show();
+
+    const tiles = screen.getByRole("group", { name: "Facts about Weir" });
+    expect(tiles.querySelectorAll('[title^="Files at once: –"]').length).toBe(
+      1,
+    );
+    expect(tiles.querySelectorAll('[title^="Waiting: –"]').length).toBe(1);
+  });
+});

@@ -15,11 +15,7 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 function savedBackupTime(settings: AppSettings): string {
-  return (
-    (
-      settings.configuration_backup_preferred_time || DEFAULT_BACKUP_TIME
-    ).trim() || DEFAULT_BACKUP_TIME
-  );
+  return settings.configuration_backup_preferred_time.trim();
 }
 
 /** How long the System log and Events are kept, as the Logs tab edits them. */
@@ -51,11 +47,11 @@ function useRetentionDraft(settings: AppSettings | undefined) {
       return clamp(n, 1, MAX_RETENTION_DAYS);
     },
     /** 0 keeps Events until they are cleared; blank or nonsense keeps the saved value. */
-    finalizeActivityDays: (): number | undefined => {
+    finalizeActivityDays: (): number => {
       const raw = activityValue.trim();
       const n = Number(raw);
       if (raw === "" || !Number.isFinite(n)) {
-        return settings?.activity_retention_days;
+        return settings?.activity_retention_days ?? 0;
       }
       return clamp(n, 0, MAX_RETENTION_DAYS);
     },
@@ -76,11 +72,8 @@ function useBackupScheduleDraft(settings: AppSettings | undefined) {
   );
   const [time, setTime] = useState(DEFAULT_BACKUP_TIME);
   const discard = useCallback((saved: AppSettings) => {
-    const hours = Number(saved.configuration_backup_interval_hours);
     setEnabled(Boolean(saved.configuration_backup_enabled));
-    setIntervalHours(
-      Number.isFinite(hours) ? hours : DEFAULT_BACKUP_INTERVAL_HOURS,
-    );
+    setIntervalHours(saved.configuration_backup_interval_hours);
     setTime(savedBackupTime(saved));
   }, []);
 
@@ -95,11 +88,7 @@ function useBackupScheduleDraft(settings: AppSettings | undefined) {
     dirty:
       settings !== undefined &&
       (enabled !== Boolean(settings.configuration_backup_enabled) ||
-        intervalHours !==
-          Number(
-            settings.configuration_backup_interval_hours ||
-              DEFAULT_BACKUP_INTERVAL_HOURS,
-          ) ||
+        intervalHours !== settings.configuration_backup_interval_hours ||
         time !== savedBackupTime(settings)),
   };
 }
@@ -127,22 +116,18 @@ export function useSystemSettingsForm(settings: AppSettings | undefined) {
   }, [settings, discardRetention, discardBackup]);
 
   const putBody = (current: AppSettings): AppSettingsPutBody => {
-    const activityDays = retention.finalizeActivityDays();
     return {
       setup_wizard_state: current.setup_wizard_state,
-      app_timezone: (current.app_timezone ?? "UTC").trim() || "UTC",
+      app_timezone: current.app_timezone,
       log_retention_days: retention.finalizeLogDays(),
-      ...(activityDays !== undefined
-        ? { activity_retention_days: activityDays }
-        : {}),
+      activity_retention_days: retention.finalizeActivityDays(),
       configuration_backup_enabled: backupSchedule.enabled,
       configuration_backup_interval_hours: clamp(
         backupSchedule.intervalHours,
         1,
         MAX_BACKUP_INTERVAL_HOURS,
       ),
-      configuration_backup_preferred_time:
-        backupSchedule.time.trim() || DEFAULT_BACKUP_TIME,
+      configuration_backup_preferred_time: backupSchedule.time,
     };
   };
 

@@ -180,3 +180,21 @@ describe("editing a media manager in place", () => {
     );
   });
 });
+
+describe("turning a switched-off media manager back on", () => {
+  it("shows Enabling while the change is in flight", async () => {
+    vi.spyOn(api, "fetchMediaManagerConnections").mockResolvedValue([
+      connection({ enabled: false }),
+    ]);
+    vi.spyOn(api, "updateMediaManagerConnection").mockReturnValue(
+      new Promise(() => undefined),
+    );
+
+    render(<MediaManagersTab />, { wrapper });
+    fireEvent.click(await screen.findByRole("button", { name: "Enable" }));
+
+    expect(
+      await screen.findByRole("button", { name: "Enabling…" }),
+    ).toBeDisabled();
+  });
+});

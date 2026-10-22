@@ -127,10 +127,6 @@ export function LibraryImportSection({
     run: (id: number) => Promise<unknown>,
     failure: string,
   ) => {
-    if (!Number.isFinite(chosen)) {
-      onNotice("Choose a media manager first.");
-      return;
-    }
     onNotice(null);
     run(chosen).catch((error: unknown) =>
       onNotice(errorMessage(error, failure)),
@@ -146,7 +142,6 @@ export function LibraryImportSection({
   };
 
   const importSelected = () => {
-    if (!Number.isFinite(chosen) || selectedKeys.length === 0) return;
     askManager(async (id) => {
       const created = await importDiscovered.mutateAsync({
         connectionId: id,

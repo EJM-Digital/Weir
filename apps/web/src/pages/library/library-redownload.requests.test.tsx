@@ -322,3 +322,34 @@ describe("a title whose file is gone and whose search did not go through", () =>
     expect(await downloadAgain()).toBeEnabled();
   });
 });
+
+describe("Download again when the title leaves the list or the manager has nothing more to say", () => {
+  it("keeps showing what the manager answered after the title has left the list", async () => {
+    stubServer([title()]);
+    open();
+    fireEvent.click(await downloadAgain());
+    api.set(LIST, { library_id: 1, titles: [], total: 0 });
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Yes, download it again" }),
+    );
+
+    expect(
+      await screen.findByText(/is searching for a replacement/),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByText(/A past clean removed/)).toBeNull(),
+    );
+  });
+
+  it("asks for confirmation without a line from the manager when it sent none", async () => {
+    stubServer([title({ confirmation_message: null })]);
+    open();
+
+    fireEvent.click(await downloadAgain());
+
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("Weir asks your media manager to delete");
+    expect(dialog).not.toHaveTextContent("will delete Arrival");
+  });
+});

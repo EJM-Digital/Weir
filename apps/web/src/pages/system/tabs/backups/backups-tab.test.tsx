@@ -235,6 +235,17 @@ describe("Backups: Restore from a file", () => {
     return screen.findByTestId(RESTORE_DIALOG);
   }
 
+  it("asks nothing when the file picker is closed without a file", async () => {
+    renderBackups({ [`PUT ${BUNDLE_PATH}`]: systemReplies.bundlePut });
+    await button("Restore from file…");
+    const input =
+      document.querySelector<HTMLInputElement>('input[type="file"]');
+
+    fireEvent.change(input as HTMLInputElement, { target: { files: [] } });
+
+    expect(screen.queryByTestId(RESTORE_DIALOG)).toBeNull();
+  });
+
   it("replaces nothing when the person keeps the current settings", async () => {
     const weir = renderBackups({
       [`PUT ${BUNDLE_PATH}`]: systemReplies.bundlePut,

@@ -90,3 +90,17 @@ describe("the time zone a server is in", () => {
     expect(savedZone(settingsIn(""))).toBe("UTC");
   });
 });
+
+describe("saving a new time zone", () => {
+  it("says Saving, and offers no second save, until the server answers", async () => {
+    const put = renderRow("Europe/Dublin");
+    put.mockReturnValue(new Promise(() => undefined));
+
+    fireEvent.click(picker());
+    fireEvent.click(screen.getByRole("option", { name: /Japan — Tokyo/ }));
+    fireEvent.click(screen.getByTestId("schedule-save-timezone"));
+
+    expect(await screen.findByText("Saving…")).toBeInTheDocument();
+    expect(screen.getByTestId("schedule-save-timezone")).toBeDisabled();
+  });
+});

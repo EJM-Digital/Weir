@@ -175,3 +175,46 @@ it("does not let a viewer change the grid", () => {
 
   expect(onChange).not.toHaveBeenCalled();
 });
+
+it("jumps to the first and last hour of the day with Home and End", () => {
+  render(<ScheduleGridEditor value="" onChange={vi.fn()} />);
+  const noon = screen.getByTestId("schedule-cell-2-12");
+  noon.focus();
+
+  fireEvent.keyDown(noon, { key: "End" });
+  expect(screen.getByTestId("schedule-cell-2-23")).toHaveFocus();
+
+  fireEvent.keyDown(screen.getByTestId("schedule-cell-2-23"), { key: "Home" });
+  expect(screen.getByTestId("schedule-cell-2-0")).toHaveFocus();
+});
+
+it("leaves the focus and the grid alone for a key that is not for moving or switching", () => {
+  const onChange = vi.fn();
+  render(<ScheduleGridEditor value="" onChange={onChange} />);
+  const start = screen.getByTestId("schedule-cell-0-0");
+  start.focus();
+
+  fireEvent.keyDown(start, { key: "x" });
+
+  expect(start).toHaveFocus();
+  expect(onChange).not.toHaveBeenCalled();
+});
+
+it("paints nothing when a pointer passes over hours without being pressed, or after it is let go", () => {
+  const onChange = vi.fn();
+  render(
+    <ScheduleGridEditor
+      value={"0".repeat(SLOTS_PER_WEEK)}
+      onChange={onChange}
+    />,
+  );
+
+  fireEvent.pointerEnter(screen.getByTestId("schedule-cell-0-9"));
+  expect(onChange).not.toHaveBeenCalled();
+
+  fireEvent.pointerDown(screen.getByTestId("schedule-cell-0-9"));
+  fireEvent.pointerUp(screen.getByRole("group", { name: "Hours in the week" }));
+  onChange.mockClear();
+  fireEvent.pointerEnter(screen.getByTestId("schedule-cell-0-10"));
+  expect(onChange).not.toHaveBeenCalled();
+});

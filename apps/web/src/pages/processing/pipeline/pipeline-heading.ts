@@ -27,8 +27,9 @@ export function allDoneBy(
   const remaining = working.map((item) =>
     item.step === "write" ? item.etaSeconds : null,
   );
-  if (remaining.some((seconds) => seconds == null)) return undefined;
-  return now + Math.max(...remaining.map((seconds) => seconds ?? 0)) * 1000;
+  const known = remaining.filter((seconds) => seconds != null);
+  if (known.length < remaining.length) return undefined;
+  return now + Math.max(...known) * 1000;
 }
 
 /** What follows "Pipeline" in the heading: "8 in progress · done by 2:28 pm". */

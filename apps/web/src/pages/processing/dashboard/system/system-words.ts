@@ -100,4 +100,4 @@ export function splitAddress(address: string): {
 }
 
 /** A size, or "0 B" for none. */
-export const sizeWords = (bytes: number): string => formatBytes(bytes) || "0 B";
+export const sizeWords = (bytes: number): string => formatBytes(bytes);

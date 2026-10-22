@@ -159,6 +159,31 @@ describe("useSystemLog", () => {
     expect(intervals.every((interval) => !interval)).toBe(true);
   });
 
+  it("leaves out a logged line whose time cannot be read", async () => {
+    read.mockImplementation(async () => ({
+      items: [INFO, { ...ERROR, timestamp: "no time" }],
+    }));
+    const { result } = renderHook(() => useSystemLog(), { wrapper: wrapper() });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.lines.map((line) => line.message)).toEqual([
+      "Scan finished.",
+    ]);
+  });
+
+  it("ignores a line the stream pushes with a time that cannot be read", async () => {
+    const { result } = renderHook(() => useSystemLog(), { wrapper: wrapper() });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const before = result.current.lines.length;
+
+    act(() => {
+      deliver?.({ at: "no time", level: "ERROR", message: "Lost." });
+    });
+
+    expect(result.current.lines).toHaveLength(before);
+  });
+
   it("lists a line once when the log later holds the one the stream pushed", async () => {
     const { result } = renderHook(() => useSystemLog(), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.loading).toBe(false));

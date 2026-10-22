@@ -161,6 +161,13 @@ describe("UpdateActions", () => {
     expect(apply.mutate).toHaveBeenCalledTimes(1);
   });
 
+  it("says the update is ready without a version when the tray named none", () => {
+    tray({ state: "downloaded", downloaded: true, pending_version: null });
+    render(<UpdateActions status={STATUS} />);
+
+    expect(screen.getByText("Update ready to install")).toBeInTheDocument();
+  });
+
   it("says why a step failed, and offers the steps again", () => {
     tray({
       state: "failed",

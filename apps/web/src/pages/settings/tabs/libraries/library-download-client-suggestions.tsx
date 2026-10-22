@@ -14,8 +14,8 @@ function Suggestion({
   editable: boolean;
   onUseFolder: (watched: string) => void;
 }) {
-  const suggested = item.suggested_watched_folder ?? null;
-  if (suggested === null || suggested === watchedFolder.trim()) return null;
+  const suggested = item.suggested_watched_folder;
+  if (!suggested || suggested === watchedFolder.trim()) return null;
   return (
     <p className="text-sm text-mm-text2">
       {item.label}&apos;s completed-downloads folder is{" "}

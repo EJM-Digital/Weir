@@ -40,16 +40,18 @@ type SidebarLinkProps = {
 
 const SidebarLink = forwardRef<HTMLAnchorElement, SidebarLinkProps>(
   function SidebarLink({ item, current, count, onNavigate }, ref) {
-    const badge = item.badge && count > 0 ? item.badge : null;
-    const words = badge ? `${count} ${BADGE_WORDS[badge]}` : null;
-    const target = (badge && BADGE_TARGETS[badge]) || item.to;
+    const badge =
+      item.badge && count > 0
+        ? { kind: item.badge, words: `${count} ${BADGE_WORDS[item.badge]}` }
+        : null;
+    const target = (badge && BADGE_TARGETS[badge.kind]) || item.to;
     return (
       <Link
         ref={ref}
         to={target}
         className="mm-sidebar-link"
         aria-current={current ? "page" : undefined}
-        aria-label={words ? `${item.label}, ${words}` : undefined}
+        aria-label={badge ? `${item.label}, ${badge.words}` : undefined}
         title={item.label}
         onClick={onNavigate}
       >
@@ -60,9 +62,9 @@ const SidebarLink = forwardRef<HTMLAnchorElement, SidebarLinkProps>(
         {badge ? (
           <span
             className="mm-sidebar-link-badge"
-            data-status={NAV_BADGE_MEANING[badge]}
-            data-testid={BADGE_TEST_IDS[badge]}
-            title={words ?? undefined}
+            data-status={NAV_BADGE_MEANING[badge.kind]}
+            data-testid={BADGE_TEST_IDS[badge.kind]}
+            title={badge.words}
           >
             {count}
           </span>

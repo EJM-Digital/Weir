@@ -1,9 +1,16 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DownloadClientConnection } from "../../../lib/download-clients/download-clients-api";
 import type { MediaManagerConnection } from "../../../lib/media-managers/media-managers-api";
-import { useCheckNow } from "./check-now";
+import { CheckNowButton, useCheckNow } from "./check-now";
 
 const testManager = vi.fn();
 const testClient = vi.fn();
@@ -79,5 +86,28 @@ describe("Check now", () => {
 
     await waitFor(() => expect(result.current.notice).toBe("Folders checked."));
     expect(testManager).not.toHaveBeenCalled();
+  });
+});
+
+describe("the Check now button", () => {
+  const checkNow = (pending: boolean) => ({
+    pending,
+    notice: null,
+    run: vi.fn(),
+  });
+
+  it("offers the check, and runs it when pressed", () => {
+    const check = checkNow(false);
+    render(<CheckNowButton check={check} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Check now" }));
+
+    expect(check.run).toHaveBeenCalledTimes(1);
+  });
+
+  it("says Checking, and is off, while the checks run", () => {
+    render(<CheckNowButton check={checkNow(true)} />);
+
+    expect(screen.getByRole("button", { name: "Checking…" })).toBeDisabled();
   });
 });

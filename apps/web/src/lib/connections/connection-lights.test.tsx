@@ -209,3 +209,26 @@ describe("what a connection's row shows", () => {
     expect(connectionRowMeaning("ok", "failed")).toBe("broken");
   });
 });
+
+describe("lights that were never on, and screens that share the stream", () => {
+  it("shows no light, and starts no timer, for a call that comes while motion is reduced", async () => {
+    motionAllowed.mockReturnValue(false);
+    const { hook, send } = await openStore();
+
+    send();
+
+    expect(hook.result.current.lights.size).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("keeps listening to the stream while another screen still shows a connection", async () => {
+    const { store, hook } = await openStore();
+    const second = renderHook(() => store.useConnectionActivity());
+
+    second.unmount();
+    expect(stopListening).not.toHaveBeenCalled();
+
+    hook.unmount();
+    expect(stopListening).toHaveBeenCalledTimes(1);
+  });
+});

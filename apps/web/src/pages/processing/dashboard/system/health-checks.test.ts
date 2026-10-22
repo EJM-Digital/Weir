@@ -190,6 +190,13 @@ describe("connectionChecks", () => {
     });
   });
 
+  it("says a connection is answering, without a time, when no time was taken", () => {
+    const [check] = connectionChecks([
+      connection({ key: "a", answerMs: null }),
+    ]);
+    expect(check).toMatchObject({ why: "Answering.", words: "Answering" });
+  });
+
   it("passes an answering connection and leaves an untested one open", () => {
     const [ok, untested] = connectionChecks([
       connection({ key: "a" }),

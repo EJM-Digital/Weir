@@ -68,19 +68,21 @@ function ReleaseStatus({
   const links = [
     { label: "Download installer →", href: status.windows_installer_url },
     { label: "Release notes →", href: status.release_url },
-  ]
-    .filter((link) => link.href)
-    .map((link) => (
-      <a
-        key={link.label}
-        className="mm-quiet-link"
-        href={link.href ?? undefined}
-        target="_blank"
-        rel="noreferrer"
-      >
-        {link.label}
-      </a>
-    ));
+  ].flatMap(({ label, href }) =>
+    href
+      ? [
+          <a
+            key={label}
+            className="mm-quiet-link"
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {label}
+          </a>,
+        ]
+      : [],
+  );
 
   return (
     <Panel

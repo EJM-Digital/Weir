@@ -211,7 +211,7 @@ describe("Retention Save", () => {
 });
 
 describe("a System log number that is not a number", () => {
-  function formFor(settings: AppSettings) {
+  function formFor(settings: AppSettings | undefined) {
     const client = new QueryClient();
     const wrapper = ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -233,5 +233,20 @@ describe("a System log number that is not a number", () => {
     act(() => result.current.retention.setActivityDraft("abc"));
 
     expect(result.current.retention.finalizeActivityDays()).toBe(0);
+  });
+
+  it("falls back to the defaults before the settings have been read", () => {
+    const { result } = formFor(undefined);
+
+    act(() => result.current.retention.setLogDraft("abc"));
+    expect(result.current.retention.finalizeLogDays()).toBe(30);
+    expect(result.current.retention.finalizeActivityDays()).toBe(0);
+
+    act(() => result.current.retention.setActivityDraft("abc"));
+    expect(result.current.retention.finalizeActivityDays()).toBe(0);
+    expect(result.current.isDirty).toBe(false);
+
+    act(() => result.current.saveFrom("logs"));
+    expect(result.current.lastSaveTarget).toBeNull();
   });
 });

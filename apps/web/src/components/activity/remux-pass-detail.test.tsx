@@ -61,3 +61,43 @@ describe("RemuxPassDetail", () => {
     ).toHaveTextContent("not-json");
   });
 });
+
+describe("RemuxPassDetail with less in the record", () => {
+  const show = (record: Record<string, unknown>) =>
+    render(
+      <RemuxPassDetail
+        detail={JSON.stringify({
+          outcome: "live_skipped_not_required",
+          relative_media_path: "movies/a.mkv",
+          ...record,
+        })}
+      />,
+    );
+
+  it("counts a kind of stream the record does not list as none", () => {
+    show({ stream_counts: { video: 1 } });
+
+    expect(
+      screen.getByText("Video 1, audio 0, subtitles 0"),
+    ).toBeInTheDocument();
+  });
+
+  it("says no changes were needed when the plan needed none", () => {
+    show({ remux_required: false });
+
+    expect(
+      screen.getByText("Changes needed").nextElementSibling,
+    ).toHaveTextContent("No");
+  });
+
+  it("says when the logged ffmpeg command line was cut short", () => {
+    show({
+      ffmpeg_argv: ["ffmpeg", "-i", "a.mkv"],
+      ffmpeg_argv_truncated: true,
+    });
+
+    expect(
+      screen.getByText(/ffmpeg command line \(truncated in log\)/),
+    ).toBeInTheDocument();
+  });
+});

@@ -101,3 +101,19 @@ it("shows the server's refusal when processing a kept file again fails", async (
     ).toBeInTheDocument(),
   );
 });
+
+it("says Queueing, and is off, while the server is asked to process a kept file again", async () => {
+  vi.spyOn(api, "processKeptFileAgain").mockReturnValue(
+    new Promise(() => undefined),
+  );
+  render(
+    <KeptListWithColumns files={[keptFile]} editable onProcessed={vi.fn()} />,
+    { wrapper },
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Process again" }));
+
+  expect(
+    await screen.findByRole("button", { name: "Queueing…" }),
+  ).toBeDisabled();
+});
