@@ -165,7 +165,9 @@ public sealed class RemoveFromActivityChoicesTests(E2EServer server) : E2ETestBa
         var page = await NewPageAsync();
         var log = RequestLog.Watch(page);
         await Navigation.EnsureSignedInAsync(page, rig.BaseUrl);
-        await Navigation.OpenSidebarAsync(page, "Activity");
+        // The side menu's Activity link goes to Needs you only while its badge shows, and the badge arrives after the page does, so
+        // the link alone leaves it to chance which view is open. The retried film leaves Needs you but is listed in All.
+        await page.GotoAsync($"{rig.BaseUrl}/activity?show=attention");
         return (page, log);
     }
 
