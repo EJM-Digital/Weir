@@ -10022,11 +10022,6 @@
           "name": "fresh-install"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Not provable on one runner: that Windows Firewall lets a packet from a second machine in (traffic from a PC to its own address never meets the firewall); the rule is read instead"
-      },
-      "issue": 1142,
       "audit": {
         "id": "SET-N01",
         "verdict": "Partly"
@@ -51951,6 +51946,11 @@
           "type": "scenario",
           "file": "scripts/scenarios-ci/windows-files.mjs",
           "name": "network-share-hang"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/WatchedFolderListingPathTests.cs",
+          "name": "WatchedFolderListingPathTests"
         }
       ],
       "partial": [
@@ -52000,11 +52000,6 @@
           "name": "deleted-queued-file"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Not proved on a real machine: case sensitivity and long paths (the share, its discovery, a dropped share and a hung share are proved by the windows-files shard)"
-      },
-      "issue": 1142,
       "audit": {
         "id": "INT-OS-FS",
         "verdict": "Partly"
@@ -52673,7 +52668,13 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "container-smoke",
+          "file": "scripts/docker-compose-smoke.mjs",
+          "name": "*"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -52721,11 +52722,6 @@
           "name": "HttpHardeningTests"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Parsing is unit-tested; the combination as a container sees it (e.g. loopback bind inside a container, a published port on a LAN host and the setup-code path) is only the default case in docker-smoke"
-      },
-      "issue": 1142,
       "audit": {
         "id": "PLAT-17",
         "verdict": "Partly"
