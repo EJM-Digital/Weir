@@ -145,3 +145,13 @@ database and a real port already in use, and the `recover` and `--healthcheck` c
 `ServerRunMode.Detect` takes the Windows service and systemd answers separately so each is run on its own. What is left of
 Weir.Core is in the Mkvmerge and output-validation helpers, the completion and hand-off reports, the remux planner and the
 language-name matching.
+
+The third part of step 4 took Weir.Core to about 99.4% of lines and 96.7% of branches (Weir.Core, Weir.Infrastructure and Weir.Api
+unit tests together) with tests for the Mkvmerge and output-validation helpers, the completion and hand-off reports, the remux
+planner, language-name matching, manual track plans, field and body validation, the library truth gate and the pass wording. The
+branches no input can reach were deleted (the attachment check of the Mkvmerge track mapping, the untyped-stream wording, the
+null arms of the track-title comparison, `IsCommentaryAudio`, which nothing called, and the `FormatException` catches behind a
+checked base64 alphabet). Weir.Host stays at 100% of lines and 97.1% of branches: the two branches left test which operating system
+the server is on, so each is run only by the other operating system's unit leg. What is left of Weir.Core is a long tail of files
+with one to thirteen branches each (the manager setup and hand-back rules, the queue signals, runtime metrics, the story and
+rejection wording).

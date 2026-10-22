@@ -296,7 +296,7 @@ public static class CompletionReports
             if (normalized.StartsWith(@"\\", StringComparison.Ordinal))
             {
                 var pieces = normalized[2..].Split('\\');
-                var share = pieces.Length > 1 ? $@"\\{pieces[0]}\{pieces[1]}\" : @"\\" + normalized[2..];
+                var share = pieces.Length > 1 ? $@"\\{pieces[0]}\{pieces[1]}\" : $@"\\{pieces[0]}\";
                 anchor = share;
                 rest = pieces.Length > 2 ? string.Join('\\', pieces.Skip(2)) : string.Empty;
             }

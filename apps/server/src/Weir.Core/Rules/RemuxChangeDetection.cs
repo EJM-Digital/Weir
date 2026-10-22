@@ -80,13 +80,13 @@ public static partial class RemuxRules
         return plan.Metadata.ClearVideoTrackNames && VideoTitlesPresent(plan.VideoIndices, videoProbe);
     }
 
-    /// <summary>#498: true when any kept audio or subtitle track's current title does not match what <see cref="TrackNaming"/> would render for it.</summary>
+    /// <summary>#498: true when any kept audio or subtitle track's current title does not match what <see cref="TrackNaming"/> would render for it. Only called once the plan's tracks are known to be the probe's own.</summary>
     private static bool TrackTitlesDiffer(RemuxPlan plan, IReadOnlyList<ProbeStreamInfo> audioProbe, IReadOnlyList<ProbeStreamInfo> subtitleProbe)
     {
         var audioByIndex = audioProbe.ToDictionary(IndexOf, s => s);
         foreach (var track in plan.Audio)
         {
-            var current = audioByIndex.TryGetValue(track.InputIndex, out var stream) ? stream.Tag("title") ?? string.Empty : string.Empty;
+            var current = audioByIndex[track.InputIndex].Tag("title") ?? string.Empty;
             if (!string.Equals(current, TrackNaming.RenderTrackName(plan.Metadata, track), StringComparison.Ordinal))
             {
                 return true;
@@ -96,7 +96,7 @@ public static partial class RemuxRules
         var subtitleByIndex = subtitleProbe.ToDictionary(IndexOf, s => s);
         foreach (var track in plan.Subtitles)
         {
-            var current = subtitleByIndex.TryGetValue(track.InputIndex, out var stream) ? stream.Tag("title") ?? string.Empty : string.Empty;
+            var current = subtitleByIndex[track.InputIndex].Tag("title") ?? string.Empty;
             if (!string.Equals(current, TrackNaming.RenderTrackName(plan.Metadata, track), StringComparison.Ordinal))
             {
                 return true;

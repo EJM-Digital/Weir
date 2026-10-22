@@ -80,7 +80,7 @@ public static partial class RemuxOutputValidation
             var position = i.ToString(CultureInfo.InvariantCulture);
             if (want.CodecType != got.CodecType)
             {
-                throw Mismatch($"Planned output position {position} to be {want.CodecType}, output has {Describe(got.CodecType)}.");
+                throw Mismatch($"Planned output position {position} to be {want.CodecType}, output has {got.CodecType}.");
             }
 
             if (want.Default is { } wantDefault && wantDefault != got.Default)
@@ -145,8 +145,6 @@ public static partial class RemuxOutputValidation
     /// <summary>A way the output differs from the plan: named exactly for the log, worded for a person as a copy that was not published.</summary>
     private static MediaToolException Mismatch(string message) =>
         new(message) { PlainMessage = ToolFailureText.OutputNotPublishable };
-
-    private static string Describe(string codecType) => codecType.Length > 0 ? codecType : "an untyped stream";
 
     private static string BoolText(bool value) => value ? "True" : "False";
 }
