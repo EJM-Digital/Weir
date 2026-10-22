@@ -1,0 +1,39 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.34",
+  "state": "events-completed-reject-policy-",
+  "recordedAt": "2026-10-22T10:30:12Z",
+  "note": "The report Weir sent for an audio-only file under the reject failure policy (status completed, disposition , sourceRemoved ). Deluno answered 409 (it has no row for this hand-off, as the script made it straight to Weir).",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "9dc84957-d092-4153-a2b9-74d7039956dc",
+          "status": "completed",
+          "processorName": "Weir",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "releaseName": "Big Buck Bunny (2008) Recorded AudioOnly",
+          "outputPath": "C:\\Weir\\Ready\\Movies\\Recorded.Weir.AudioOnly.mkv",
+          "message": "Weir could not process this file, so it handed the original back unchanged; it is ready to import.",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\Movies\\Recorded.Weir.AudioOnly.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": "Deluno could not match this processor event to a waiting hand-off. Use the handoff ID from GET /api/integrations/processors/handoffs or the exact source path Deluno recorded. No import was queued."
+        }
+      }
+    }
+  ]
+}

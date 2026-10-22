@@ -1,0 +1,33 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "outcome-imported-with-reason",
+  "recordedAt": "2026-10-22T10:28:26Z",
+  "note": "An imported outcome that also carries a reason: the note a season pack sends about the files it left alone.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/5b8fd7fb-5033-4cc1-ac2b-d9632cb9b7c8/outcome",
+        "body": {
+          "outcome": "imported",
+          "occurredUtc": "2026-10-22T10:28:26.6916586Z",
+          "importedPath": "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Note.mkv",
+          "reason": "Left alone: Recorded.Sample.mkv, Recorded.Featurette.mkv"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "5b8fd7fb-5033-4cc1-ac2b-d9632cb9b7c8",
+          "outcome": "imported",
+          "released": false,
+          "message": "Weir recorded that Deluno imported the file. The manager's library file is Weir's copy itself, so Weir left it where it is."
+        }
+      }
+    }
+  ]
+}

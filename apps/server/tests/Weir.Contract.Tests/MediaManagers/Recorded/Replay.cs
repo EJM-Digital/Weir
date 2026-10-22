@@ -39,6 +39,10 @@ internal sealed class Replay(Func<WeirClient> createClient, string secret, Trans
     public Task<WeirResponse> SendAsync(Recording recording, Credential credential) =>
         SendAsync(recording, recording.Only, credential, []);
 
+    /// <summary>Replays one exchange of the recording with the secret header the recording's state says Deluno sent.</summary>
+    public Task<WeirResponse> SendAsync(Recording recording, int exchange, Credential credential) =>
+        SendAsync(recording, recording.Exchanges[exchange], credential, []);
+
     /// <summary>
     /// Sends a call Deluno makes the same way as a recorded one but for a hand-off the recording does not cover (<see cref="DelunoSide.HandoffLike"/>),
     /// and returns Weir's answer without holding it to a recording.

@@ -23,14 +23,15 @@ public sealed partial class DelunoReportsTests
         await using var world = await DelunoSide.StartWorldAsync();
         var recorded = DelunoSide.Request("events-completed");
         world.Deluno.AnswerReportsAsRecorded(recorded);
-        var handoffs = new[] { "handoff-single-file", "handoff-release-folder", "handoff-usenet-folder" }.Select(DelunoSide.Request).ToList();
+        var handoffs = recorded.Exchanges.Select(report => DelunoSide.RecordedHandoff((string)report.Request.Body!["handoffId"]!)!).ToList();
 
         var ids = new List<string>();
         for (var index = 0; index < handoffs.Count; index++)
         {
-            var hand = handoffs[index].Only.Request;
+            var hand = handoffs[index];
             PutFilms(world, hand);
-            await world.Replay.SendAsync(handoffs[index]);
+            var accepted = await world.Replay.SendCallAsync(hand);
+            Assert.True(accepted.Status == System.Net.HttpStatusCode.OK, accepted.ToString());
 
             var report = await ReportAsync(world, hand.HandoffId());
 
@@ -51,15 +52,16 @@ public sealed partial class DelunoReportsTests
     {
         await using var world = await DelunoSide.StartWorldAsync();
         var recorded = DelunoSide.Request("events-failed-under-minimum");
-        world.Deluno.AnswerReportsAsRecorded(recorded);
+        world.Deluno.AnswerReportsAsRecorded(world.Translation, recorded);
         await world.Scenario.UpdateLibraryAsync(world.Movies, ("min_file_size_mb", 50));
-        var hand = HandoffFor(recorded, 0);
+        // The report names no file: the file's name is what the recorder's other films are called.
+        var hand = HandoffFor(recorded, 0, "Recorded.Weir.tiny.mkv");
         world.PutFilm(hand.SourcePath(), needsWork: true);
 
         await HandOffAsync(world, hand);
 
-        var report = await ReportAsync(world, hand.HandoffId());
-        EmittedReport.AssertMatches(recorded, 0, report.Body);
+        var report = await ReportAsync(world, world.Translation.Id(hand.HandoffId()));
+        EmittedReport.AssertMatches(recorded, 0, report.Body, world.Translation);
     }
 
     [Fact]
@@ -67,8 +69,8 @@ public sealed partial class DelunoReportsTests
     {
         await using var world = await DelunoSide.StartWorldAsync();
         var recorded = DelunoSide.Request("events-failed-unreadable");
-        world.Deluno.AnswerReportsAsRecorded(recorded);
-        var hand = HandoffFor(recorded, 0);
+        world.Deluno.AnswerReportsAsRecorded(world.Translation, recorded);
+        var hand = HandoffFor(recorded, 0, "Recorded.Weir.unreadable.mkv");
         var junk = new byte[256 * 1024];
         new Random(971).NextBytes(junk);
         var path = world.Translation.Apply(hand.SourcePath());
@@ -78,8 +80,8 @@ public sealed partial class DelunoReportsTests
 
         await HandOffAsync(world, hand);
 
-        var report = await ReportAsync(world, hand.HandoffId());
-        EmittedReport.AssertMatches(recorded, 0, report.Body);
+        var report = await ReportAsync(world, world.Translation.Id(hand.HandoffId()));
+        EmittedReport.AssertMatches(recorded, 0, report.Body, world.Translation);
         Assert.Equal(junk, await File.ReadAllBytesAsync(path));
     }
 
@@ -111,7 +113,7 @@ public sealed partial class DelunoReportsTests
         await using var world = await DelunoSide.StartWorldAsync();
         var recorded = DelunoSide.Request("events-completed-resent");
         world.Deluno.AnswerReportsAsRecorded(recorded);
-        var first = HandoffFor(DelunoSide.Request("events-too-late"), 1);
+        var first = FirstSendOf(recorded, 1);
         var again = HandoffFor(recorded, 1);
         await HoldAsGoneAsync(world, first);
         var booked = await BookedLookAsync(world);
@@ -134,7 +136,8 @@ public sealed partial class DelunoReportsTests
         await using var world = await DelunoSide.StartWorldAsync();
         var recorded = DelunoSide.Request("events-completed");
         world.Deluno.AnswerReportsAsRecorded(recorded);
-        var hand = HandoffFor(recorded, 0);
+        var single = SingleFileReport(recorded);
+        var hand = HandoffFor(recorded, single);
         await HoldAsGoneAsync(world, hand);
         var booked = await BookedLookAsync(world);
 
@@ -143,7 +146,7 @@ public sealed partial class DelunoReportsTests
         await world.Scenario.RestartServerAsync();
 
         var report = await ReportAsync(world, hand.HandoffId());
-        EmittedReport.AssertMatches(recorded, 0, report.Body);
+        EmittedReport.AssertMatches(recorded, single, report.Body);
         Assert.True(string.CompareOrdinal(booked, Handoffs.StoredTime(DateTime.UtcNow)) > 0, "the look was not booked for later");
         await world.Scenario.WaitForHandoffStateAsync(hand.HandoffId(), "completed");
         Assert.Empty(await BookedLooksAsync(world));
@@ -152,10 +155,10 @@ public sealed partial class DelunoReportsTests
     [Fact]
     public async Task A_report_of_a_release_Deluno_removed_is_answered_409_dismissed_and_Weir_stops_owing_it()
     {
-        await using var world = await DelunoSide.StartWorldAsync();
-        var tooLate = DelunoSide.Request("events-too-late");
+        await using var world = await DelunoSide.StartFirstSessionWorldAsync();
+        var tooLate = DelunoSide.FirstSession("events-too-late");
         world.Deluno.AnswerReportsAsRecorded(tooLate);
-        var sends = DelunoSide.Request("handoff-resend");
+        var sends = DelunoSide.FirstSession("handoff-resend");
         var first = sends.Exchanges[0].Request;
         world.PutFilm(first.SourcePath(), needsWork: true);
 
@@ -179,12 +182,12 @@ public sealed partial class DelunoReportsTests
     }
 
     [Fact]
-    public async Task A_release_sent_again_after_it_was_cleaned_is_reported_finished_with_the_copy_made_before_as_Deluno_recorded()
+    public async Task A_release_sent_again_after_it_was_cleaned_is_reported_finished_with_the_copy_made_before_and_says_it_cleaned_nothing_twice_as_Deluno_recorded()
     {
         await using var world = await DelunoSide.StartWorldAsync();
-        var recorded = DelunoSide.Request("events-completed-resent");
-        world.Deluno.AnswerReportsAsRecorded(recorded, DelunoSide.Request("events-too-late"));
-        var sends = DelunoSide.Request("handoff-resend");
+        var recorded = DelunoSide.Request("events-completed-already-cleaned");
+        world.Deluno.AnswerReportsAsRecorded(recorded);
+        var sends = DelunoSide.Request("handoff-resend-during");
         world.PutFilm(sends.Exchanges[0].Request.SourcePath(), needsWork: true);
         await world.Replay.SendAsync(sends, 0);
         await ReportAsync(world, sends.Exchanges[0].Request.HandoffId());
@@ -194,16 +197,17 @@ public sealed partial class DelunoReportsTests
 
         var report = await ReportAsync(world, sends.Exchanges[1].Request.HandoffId());
         EmittedReport.AssertMatches(recorded, 0, report.Body);
+        Assert.Single(world.Scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux"));
     }
 
     [Fact]
     public async Task A_release_sent_again_while_the_first_send_is_in_Weir_is_reported_finished_once_for_the_new_send_only()
     {
-        await using var world = await DelunoSide.StartWorldAsync();
-        var recorded = DelunoSide.Request("events-completed-resent");
+        await using var world = await DelunoSide.StartFirstSessionWorldAsync();
+        var recorded = DelunoSide.FirstSession("events-completed-resent");
         world.Deluno.AnswerReportsAsRecorded(recorded);
         var release = world.HoldEveryPass();
-        var first = HandoffFor(DelunoSide.Request("events-too-late"), 1);
+        var first = HandoffFor(DelunoSide.FirstSession("events-too-late"), 1);
         var again = HandoffFor(recorded, 1);
         world.PutFilm(first.SourcePath(), needsWork: true);
         await HandOffAsync(world, first);
@@ -231,12 +235,12 @@ public sealed partial class DelunoReportsTests
         await using var world = await DelunoSide.StartWorldAsync();
         var recorded = DelunoSide.Request("events-completed-resent");
         world.Deluno.AnswerReportsAsRecorded(recorded);
-        var hand = HandoffFor(recorded, 2);
+        var hand = HandoffFor(recorded, 0);
         world.PutFilm(hand.SourcePath(), needsWork: true);
 
         await HandOffAsync(world, hand);
 
-        EmittedReport.AssertMatches(recorded, 2, (await ReportAsync(world, hand.HandoffId())).Body);
+        EmittedReport.AssertMatches(recorded, 0, (await ReportAsync(world, hand.HandoffId())).Body);
     }
 
     [Theory]
@@ -249,13 +253,15 @@ public sealed partial class DelunoReportsTests
         var refusal = DelunoSide.Reply(state);
         // Deluno recorded these refusals for the routes a key without the right permission meets; its report route is one of them.
         world.Deluno.Route("POST", ReportsTo, new Reply(refusal.Exchanges[exchange].Reply.Status, refusal.Exchanges[exchange].Reply.Body?.DeepClone()));
-        var hand = DelunoSide.Request("handoff-single-file").Only.Request;
+        var completed = DelunoSide.Request("events-completed");
+        var single = SingleFileReport(completed);
+        var hand = DelunoSide.RecordedHandoff((string)completed.Exchanges[single].Request.Body!["handoffId"]!)!;
         world.PutFilm(hand.SourcePath(), needsWork: true);
 
-        await world.Replay.SendAsync(DelunoSide.Request("handoff-single-file"));
+        await world.Replay.SendCallAsync(hand);
 
         var report = await ReportAsync(world, hand.HandoffId());
-        EmittedReport.AssertMatches(DelunoSide.Request("events-completed"), 0, report.Body);
+        EmittedReport.AssertMatches(completed, single, report.Body);
         var file = FileNameIn((string)report.Body["outputPath"]!);
         var entry = Assert.Single(await RecordedReportsAsync(world, 1));
         Assert.Equal($"Weir could not tell {Deluno(world)} about {file}", (string)entry["title"]!);
@@ -275,8 +281,28 @@ public sealed partial class DelunoReportsTests
     private static string Deluno(RecordedWorld world) => $"Deluno on {new Uri(world.Deluno.BaseUrl).Host}";
 
     /// <summary>The hand-off Deluno made for the release a report recording names: the recorded single-file hand-off with that id and release.</summary>
-    private static RecordedCall HandoffFor(Recording report, int exchange) =>
-        DelunoSide.HandoffLike((string)report.Exchanges[exchange].Request.Body!["handoffId"]!, DelunoSide.ReleaseNameOf(report.Exchanges[exchange]));
+    private static RecordedCall HandoffFor(Recording report, int exchange, string? fileName = null)
+    {
+        var hand = DelunoSide.HandoffLike((string)report.Exchanges[exchange].Request.Body!["handoffId"]!, DelunoSide.ReleaseNameOf(report.Exchanges[exchange]), fileName);
+        hand.Body!["libraryId"] = (string)report.Exchanges[exchange].Request.Body!["libraryId"]!;
+        return hand;
+    }
+
+    /// <summary>The report of a single file (its release is the file's name) among the reports of finished releases.</summary>
+    private static int SingleFileReport(Recording completed) =>
+        completed.Exchanges.ToList().FindIndex(report => DelunoSide.ReleaseNameOf(report).EndsWith(".mkv", StringComparison.Ordinal));
+
+    /// <summary>
+    /// The first send of the release a report of its second send names, as Deluno recorded the report of the first being replaced: the hand-off
+    /// of the recording of replaced sends that has the same release.
+    /// </summary>
+    private static RecordedCall FirstSendOf(Recording report, int exchange)
+    {
+        var release = DelunoSide.ReleaseNameOf(report.Exchanges[exchange]);
+        var superseded = DelunoSide.Report("events-failed-superseded");
+        var replaced = superseded.Exchanges.Single(sent => DelunoSide.ReleaseNameOf(sent) == release);
+        return DelunoSide.RecordedHandoff((string)replaced.Request.Body!["handoffId"]!) ?? HandoffFor(superseded, superseded.Exchanges.ToList().IndexOf(replaced));
+    }
 
     /// <summary>Hands the release off while the file is there, takes the file away, and waits until Weir holds it as gone with a look booked for later.</summary>
     private static async Task HoldAsGoneAsync(RecordedWorld world, RecordedCall hand)

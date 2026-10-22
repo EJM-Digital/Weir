@@ -33,7 +33,7 @@
     The Weir-win-Setup.exe of the build under test (the manual CI run's artifact weir-windows-<short sha>).
 
 .PARAMETER Version
-    The version under test, such as 1.0.0-rc.19. The installed build must report it.
+    The version under test, such as 1.0.0-rc.20. The installed build must report it.
 
 .PARAMETER ShortSha
     The commit of the build under test (at least 7 characters). The build must report it.

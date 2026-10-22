@@ -74,7 +74,7 @@ public sealed class ReleaseDatabaseUpgradeTests : IDisposable
         Assert.Equal(release.Sha256, ReleaseDatabases.Sha256Of(version));
         Assert.Equal(release.SchemaRevision, Text("SELECT revision FROM schema_version"));
         Assert.Matches("^sha256:[0-9a-f]{64}$", release.ImageDigest);
-        Assert.NotEqual(SchemaMigrator.HeadRevision, release.SchemaRevision);
+        Assert.True(string.CompareOrdinal(release.SchemaRevision, SchemaMigrator.HeadRevision) <= 0, "a release cannot have written a schema newer than this build knows");
         foreach (var (table, rows) in release.Rows)
         {
             Assert.Equal(rows, Count(table));
@@ -89,7 +89,7 @@ public sealed class ReleaseDatabaseUpgradeTests : IDisposable
 
         var outcome = Start(version);
 
-        Assert.Equal(SchemaStartupOutcome.Upgraded, outcome);
+        Assert.Equal(MigratesOnStart(version) ? SchemaStartupOutcome.Upgraded : SchemaStartupOutcome.AlreadyCurrent, outcome);
         Assert.Equal(SchemaMigrator.HeadRevision, Text("SELECT revision FROM schema_version"));
         Assert.Equal("ok", Text("PRAGMA integrity_check"));
         Assert.Equal(string.Empty, Text("PRAGMA foreign_key_check"));
@@ -103,7 +103,7 @@ public sealed class ReleaseDatabaseUpgradeTests : IDisposable
 
     [Theory]
     [MemberData(nameof(Versions))]
-    public void The_copy_saved_before_the_upgrade_is_the_old_database(string version)
+    public void The_copy_saved_before_the_upgrade_is_the_old_database_and_none_is_saved_when_nothing_migrates(string version)
     {
         var release = ReleaseDatabases.Of(version);
         ReleaseDatabases.Unpack(version, DatabasePath);
@@ -111,6 +111,12 @@ public sealed class ReleaseDatabaseUpgradeTests : IDisposable
         Start(version);
 
         var copy = PreUpdateBackup.Latest(BackupDir);
+        if (!MigratesOnStart(version))
+        {
+            Assert.Null(copy);
+            return;
+        }
+
         Assert.NotNull(copy);
         Assert.Equal(version, copy.FromVersion);
         using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = copy.DatabasePath, Mode = SqliteOpenMode.ReadOnly, Pooling = false }.ToString());
@@ -161,14 +167,20 @@ public sealed class ReleaseDatabaseUpgradeTests : IDisposable
         ReleaseDatabases.Unpack(version, DatabasePath);
         Start(version);
         var before = SchemaSnapshot.Describe(DatabasePath);
-        var copies = Directory.EnumerateFiles(PreUpdateBackup.FolderIn(BackupDir)).Count();
+        var copies = CopiesSaved();
 
         var outcome = Start(version);
 
         Assert.Equal(SchemaStartupOutcome.AlreadyCurrent, outcome);
         Assert.Equal(before, SchemaSnapshot.Describe(DatabasePath));
-        Assert.Equal(copies, Directory.EnumerateFiles(PreUpdateBackup.FolderIn(BackupDir)).Count());
+        Assert.Equal(copies, CopiesSaved());
     }
+
+    /// <summary>Whether the release wrote a schema older than this build's, which is what makes a start migrate and save a copy first.</summary>
+    private static bool MigratesOnStart(string version) =>
+        string.CompareOrdinal(ReleaseDatabases.Of(version).SchemaRevision, SchemaMigrator.HeadRevision) < 0;
+
+    private int CopiesSaved() => Directory.Exists(PreUpdateBackup.FolderIn(BackupDir)) ? Directory.EnumerateFiles(PreUpdateBackup.FolderIn(BackupDir)).Count() : 0;
 
     [Fact]
     public void Every_release_fixture_is_listed_and_every_listed_release_has_its_file()

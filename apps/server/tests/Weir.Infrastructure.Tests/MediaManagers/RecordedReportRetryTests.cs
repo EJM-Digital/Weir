@@ -1,13 +1,13 @@
 namespace Weir.Infrastructure.Tests.MediaManagers;
 
 /// <summary>
-/// Weir's heartbeat against the answers Deluno recorded to a report of a finished hand-off (<c>fixtures/recorded/deluno-side/1.0.0-rc.30.32</c>):
+/// Weir's heartbeat against the answers Deluno recorded to a report of a finished hand-off (<c>fixtures/recorded/deluno-side/1.0.0-rc.30.34</c>):
 /// the 503 it answered once, the 401 and the 403 it answered for good. The heartbeat is the production task on a fake clock, so the minute
 /// the retry waits is the test's to pass. The report Weir sent is held to the recording by <c>DelunoReportsTests</c> in the contract suite.
 /// </summary>
 public sealed class RecordedReportRetryTests
 {
-    private const string Recordings = "1.0.0-rc.30.32";
+    private const string Recordings = "1.0.0-rc.30.34";
     private const string ReadyToImport = "Told % that film.mkv is ready to import";
     private const string CouldNotTell = "Weir could not tell % about film.mkv";
 
@@ -16,7 +16,7 @@ public sealed class RecordedReportRetryTests
     {
         using var world = await OwedReportWorld.StartAsync();
         world.Deluno.Answer(RecordedDelunoReply.Of(Recordings, "events-completed-answered-503-not-repeated"));
-        world.Deluno.Answer(RecordedDelunoReply.Of("1.0.0-rc.30.30", "events-completed"));
+        world.Deluno.Answer(RecordedDelunoReply.Of(Recordings, "events-completed"));
 
         await world.FinishHandoffAsync("h1");
 

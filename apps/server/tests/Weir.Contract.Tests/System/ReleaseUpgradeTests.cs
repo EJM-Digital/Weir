@@ -33,12 +33,13 @@ public sealed class ReleaseUpgradeTests
 
     [Theory]
     [MemberData(nameof(Versions))]
-    public async Task A_server_started_on_the_database_of_a_published_release_upgrades_it_and_saves_a_copy_first(string version)
+    public async Task A_server_started_on_the_database_of_a_published_release_saves_a_copy_first_only_when_the_schema_has_moved_on(string version)
     {
         await using var server = await StartOnAsync(version);
 
-        Assert.Contains("Before updating, Weir saved a copy of its data", server.LogText(), StringComparison.Ordinal);
-        Assert.Single(Directory.GetFiles(Path.Combine(server.Home, "backups", "pre-update"), "weir-*-to-*.db"));
+        var migrates = ReleaseFixtures.MigratesOnStart(version, server);
+        Assert.Equal(migrates, server.LogText().Contains("Before updating, Weir saved a copy of its data", StringComparison.Ordinal));
+        Assert.Equal(migrates ? 1 : 0, CopiesSaved(server).Length);
         using var client = server.CreateClient();
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health")).Status);
     }
@@ -79,6 +80,12 @@ public sealed class ReleaseUpgradeTests
 
         await using var second = await server.StopForDatabaseAsync(restart: false);
         Assert.Equal(head, Revision(second));
-        Assert.Single(Directory.GetFiles(Path.Combine(server.Home, "backups", "pre-update"), "weir-*-to-*.db"));
+        Assert.Equal(ReleaseFixtures.MigratesOnStart(version, server) ? 1 : 0, CopiesSaved(server).Length);
+    }
+
+    private static string[] CopiesSaved(WeirServer server)
+    {
+        var folder = Path.Combine(server.Home, "backups", "pre-update");
+        return Directory.Exists(folder) ? Directory.GetFiles(folder, "weir-*-to-*.db") : [];
     }
 }

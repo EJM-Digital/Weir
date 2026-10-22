@@ -1,0 +1,31 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "status-failed",
+  "recordedAt": "2026-10-22T10:28:15Z",
+  "note": "The status of a hand-off that failed: the file is under the workflow's minimum size.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/ebb2def8-ebb3-47c9-af66-0630f8111f03"
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "ebb2def8-ebb3-47c9-af66-0630f8111f03",
+          "state": "failed",
+          "queuePosition": null,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-10-22T10:28:15.181781Z",
+          "outputPath": null,
+          "outputFiles": null,
+          "message": "Skipped because this file is 0.0 MB, under the 50 MB minimum."
+        }
+      }
+    }
+  ]
+}

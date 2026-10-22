@@ -1,0 +1,47 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "library-folders",
+  "recordedAt": "2026-10-22T10:24:44Z",
+  "note": "GET /api/v1/intake/library-folders: the folder Weir watches for each library.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/library-folders"
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "libraries": [
+            {
+              "id": 1,
+              "name": "Movies",
+              "media_type": "movie",
+              "watched_folder": "C:\\Downloads\\Completed\\Movies",
+              "work_folder": "C:\\ProgramData\\Weir\\processing\\processing-movie-work",
+              "output_folder": "C:\\Weir\\Ready\\Movies",
+              "manager_library_key": "01a15b1396de7496acceacea8a64ca24",
+              "folders_from_manager": true,
+              "minimum_file_size_bytes": 52428800
+            },
+            {
+              "id": 2,
+              "name": "TV Shows",
+              "media_type": "tv",
+              "watched_folder": "C:\\Downloads\\Completed\\TV",
+              "work_folder": "C:\\ProgramData\\Weir\\processing\\processing-tv-work",
+              "output_folder": "C:\\Weir\\Ready\\TV",
+              "manager_library_key": "01a15b139c927b8bb03a4c20a550895e",
+              "folders_from_manager": true,
+              "minimum_file_size_bytes": 52428800
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

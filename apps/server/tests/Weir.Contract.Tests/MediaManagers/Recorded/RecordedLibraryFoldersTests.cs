@@ -12,11 +12,9 @@ namespace Weir.Contract.Tests.MediaManagers.Recorded;
 [ContractArea("media_managers")]
 public sealed class RecordedLibraryFoldersTests
 {
-    private const string TvKey = "01a127b7c0eb7b108e7ec900f36acb11";
-
     [Fact]
     public async Task The_library_folders_of_workflows_set_up_from_Deluno_are_what_Deluno_recorded() =>
-        await ReplayAsync(Recording.Load("library-folders"), RecordedWorld.MoviesKey, TvKey);
+        await ReplayAsync(Recording.Load("library-folders"), RecordedWorld.MoviesKey, DelunoSide.TvKey);
 
     [Fact]
     public async Task The_library_folders_Deluno_asked_for_in_its_own_session_are_what_Deluno_recorded() =>

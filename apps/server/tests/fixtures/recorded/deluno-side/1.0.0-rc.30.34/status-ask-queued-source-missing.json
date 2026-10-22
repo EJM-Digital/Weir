@@ -1,0 +1,59 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.34",
+  "state": "status-ask-queued-source-missing",
+  "recordedAt": "2026-10-22T11:13:25Z",
+  "note": "Deluno's status poll for hand-offs Weir holds queued while their download has been deleted (Weir paused, then resumed later): state queued with the message that the file is no longer in the watched folder. Weir 1.0.0-rc.19 (build 3460f96).",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/01a1634fed2677769e10bd2cb166282e",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1634fed2677769e10bd2cb166282e",
+          "state": "queued",
+          "queuePosition": null,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-10-22T11:12:40Z",
+          "outputPath": null,
+          "outputFiles": null,
+          "message": "This file is no longer in the watched folder. Weir will look again shortly, and stops listing it if it has not come back."
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/01a1634fec9876ef8811410262fd057c",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1634fec9876ef8811410262fd057c",
+          "state": "queued",
+          "queuePosition": null,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-10-22T11:12:35Z",
+          "outputPath": null,
+          "outputFiles": null,
+          "message": "This file is no longer in the watched folder. Weir will look again shortly, and stops listing it if it has not come back."
+        }
+      }
+    }
+  ]
+}

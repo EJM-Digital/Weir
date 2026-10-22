@@ -1,0 +1,45 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "no-record",
+  "recordedAt": "2026-10-22T10:27:57Z",
+  "note": "A status poll and an outcome report for a hand-off id Weir never had.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/9cedb937-2ec6-4c95-8e6f-706abcc76d8f"
+      },
+      "reply": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "detail": "Weir has never received this hand-off."
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/9cedb937-2ec6-4c95-8e6f-706abcc76d8f/outcome",
+        "body": {
+          "outcome": "imported",
+          "occurredUtc": "2026-10-22T10:27:57.0554027Z",
+          "importedPath": "C:\\x.mkv",
+          "reason": null
+        }
+      },
+      "reply": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "detail": "Weir has never received this hand-off."
+        }
+      }
+    }
+  ]
+}

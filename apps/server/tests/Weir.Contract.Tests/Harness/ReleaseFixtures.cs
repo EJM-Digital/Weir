@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 namespace Weir.Contract.Tests.Harness;
 
@@ -8,7 +9,7 @@ namespace Weir.Contract.Tests.Harness;
 /// What each published release left behind (<c>fixtures/databases/README.md</c>): the database its image wrote after a short scripted
 /// session, and the configuration backup it made. The tests start the current server on the database and restore the backup.
 /// </summary>
-internal static class ReleaseFixtures
+internal static partial class ReleaseFixtures
 {
     private static readonly string Folder = Path.Combine(AppContext.BaseDirectory, "fixtures");
 
@@ -39,6 +40,23 @@ internal static class ReleaseFixtures
         using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
         using var output = File.Create(server.DatabasePath);
         gzip.CopyTo(output);
+    }
+
+    /// <summary>Whether the release wrote a schema older than the one <paramref name="server"/> created on its first start, which is what makes an update migrate and save a copy first.</summary>
+    public static bool MigratesOnStart(string version, WeirServer server)
+    {
+        var head = CreatedRevision().Match(server.LogText());
+        Assert.True(head.Success, "the server's first start should log the schema revision it created");
+        return string.CompareOrdinal(Manifest(version).GetProperty("schema_revision").GetString(), head.Groups[1].Value) < 0;
+    }
+
+    [GeneratedRegex(@"Created database schema revision=(\S+)")]
+    private static partial Regex CreatedRevision();
+
+    private static JsonElement Manifest(string version)
+    {
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(Folder, "databases", "manifest.json")));
+        return manifest.RootElement.GetProperty("databases").EnumerateArray().Single(entry => entry.GetProperty("version").GetString() == version).Clone();
     }
 
     /// <summary>The configuration backup the release made.</summary>

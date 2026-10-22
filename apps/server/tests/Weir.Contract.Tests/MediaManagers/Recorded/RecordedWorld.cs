@@ -12,8 +12,11 @@ namespace Weir.Contract.Tests.MediaManagers.Recorded;
 /// </summary>
 internal sealed class RecordedWorld : IAsyncDisposable
 {
-    /// <summary>Deluno's id for its Movies library, as the recorded hand-offs name it.</summary>
-    public const string MoviesKey = "01a127b7c0c9718d90fc38b21d1b9daf";
+    /// <summary>Deluno's id for its Movies library, as the hand-offs recorded with Weir 1.0.0-rc.19 name it.</summary>
+    public const string MoviesKey = "01a15b1396de7496acceacea8a64ca24";
+
+    /// <summary>Deluno's id for its Movies library, as the hand-offs recorded with Weir 1.0.0-rc.13 name it.</summary>
+    public const string EarlierMoviesKey = "01a127b7c0c9718d90fc38b21d1b9daf";
 
     public const string RecordedMoviesWatched = @"C:\Downloads\Completed\Movies";
     public const string RecordedMoviesOutput = @"C:\Weir\Ready\Movies";

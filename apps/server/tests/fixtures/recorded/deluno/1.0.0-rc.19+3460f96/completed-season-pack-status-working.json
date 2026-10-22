@@ -1,0 +1,31 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "completed-season-pack-status-working",
+  "recordedAt": "2026-10-22T10:30:23Z",
+  "note": "The status of a season-pack hand-off (two episodes) while it was working.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/76e2ae37-fa62-4ac2-b574-19639ec503d8"
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "76e2ae37-fa62-4ac2-b574-19639ec503d8",
+          "state": "working",
+          "queuePosition": null,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-10-22T10:30:18.075504Z",
+          "outputPath": null,
+          "outputFiles": null,
+          "message": "Weir has claimed this file and is checking it now."
+        }
+      }
+    }
+  ]
+}

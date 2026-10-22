@@ -1,0 +1,31 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "outcome-handoff-not-finished-queued",
+  "recordedAt": "2026-10-22T10:28:09Z",
+  "note": "The outcome reported for a hand-off still waiting its turn: 409 handoff_not_finished.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/0f92127c-6f16-4ded-856c-f76b7597c213/outcome",
+        "body": {
+          "outcome": "imported",
+          "occurredUtc": "2026-10-22T10:28:09.1477637Z",
+          "importedPath": "C:\\Downloads\\Completed\\Movies\\Recorded.Weir.Q8.mkv",
+          "reason": null
+        }
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "detail": "Weir has not finished this hand-off yet (it is queued), so there is no file to import.",
+          "code": "handoff_not_finished"
+        }
+      }
+    }
+  ]
+}

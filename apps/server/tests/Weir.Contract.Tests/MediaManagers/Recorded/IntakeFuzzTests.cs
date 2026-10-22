@@ -84,7 +84,7 @@ public sealed class IntakeFuzzTests
     public async Task Outcome_bodies_made_from_the_recordings_are_answered_with_a_documented_status()
     {
         await using var world = await DelunoSide.StartWorldAsync();
-        var handoff = DelunoSide.Request("handoff-single-file").Only.Request;
+        var handoff = DelunoSide.Request("handoff-single-file").Exchanges[0].Request;
         Assert.Equal(HttpStatusCode.OK, (await world.Replay.SendCallAsync(handoff)).Status);
         foreach (var recorded in OutcomeStates.SelectMany(state => DelunoSide.Request(state).Exchanges).Select(exchange => exchange.Request).Where(call => call.Body is JsonObject))
         {

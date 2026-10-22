@@ -197,6 +197,38 @@
         "suite_settings": 1,
         "users": 1
       }
+    },
+    {
+      "version": "1.0.0-rc.19",
+      "image_digest": "sha256:6b95dc51eaae86a5dbbdbd1054a7a2ff2ef92becbab17a8d64b7737ec4d9c19b",
+      "schema_revision": "0085_backup_password",
+      "sha256": "8a6cca54c991778a307c4f7442b9a8c26411cf88f6a5f529280e81fe7b49807d",
+      "rows": {
+        "activity_events": 10,
+        "arr_library_operator_settings": 1,
+        "artwork_files": 2,
+        "artwork_lookups": 2,
+        "file_logs": 2,
+        "files": 2,
+        "handbacks": 1,
+        "jobs": 5,
+        "libraries": 4,
+        "library_file_facets": 10,
+        "library_file_probes": 2,
+        "library_files": 2,
+        "library_folders": 1,
+        "library_manager_links": 1,
+        "media_manager_connections": 1,
+        "media_manager_handoff_targets": 2,
+        "media_manager_handoffs": 2,
+        "notification_channels": 1,
+        "operator_settings": 1,
+        "rule_sets": 3,
+        "schema_version": 1,
+        "server_starts": 1,
+        "suite_settings": 1,
+        "users": 1
+      }
     }
   ]
 }

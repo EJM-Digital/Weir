@@ -1,0 +1,133 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.34",
+  "state": "events-failed-superseded",
+  "recordedAt": "2026-10-22T10:45:50Z",
+  "note": "Weir reports the first send of a release that was sent again as failed, failureClass superseded (\"This release was sent again, so Weir is answering the newer send\"): Deluno answers 202. Before Weir started, while it worked. Weir 1.0.0-rc.19 (build 3460f96).",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a163362cc478219e381196e0994134",
+          "status": "failed",
+          "processorName": "Weir",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "releaseName": "Gprebeforeibhp06.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "message": "This release was sent again, so Weir is answering the newer send and has nothing to add here.",
+          "sourceRemoved": false,
+          "failureClass": "superseded",
+          "outputFiles": []
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "superseded",
+          "handoffId": "01a163362cc478219e381196e0994134",
+          "alreadyHandled": true
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a163362d457cad9f252b4d16063e81",
+          "status": "failed",
+          "processorName": "Weir",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "releaseName": "Gprebeforeatoe08.2020.1080p.WEB-DL.x264-GOLDEN",
+          "message": "This release was sent again, so Weir is answering the newer send and has nothing to add here.",
+          "sourceRemoved": false,
+          "failureClass": "superseded",
+          "outputFiles": []
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "superseded",
+          "handoffId": "01a163362d457cad9f252b4d16063e81",
+          "alreadyHandled": true
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a163362dc27d35a740f3752ee17455",
+          "status": "failed",
+          "processorName": "Weir",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "releaseName": "Gprebeforeawvz07.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "message": "This release was sent again, so Weir is answering the newer send and has nothing to add here.",
+          "sourceRemoved": false,
+          "failureClass": "superseded",
+          "outputFiles": []
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "superseded",
+          "handoffId": "01a163362dc27d35a740f3752ee17455",
+          "alreadyHandled": true
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a16339dd1f737587e8301b428cdac5",
+          "status": "failed",
+          "processorName": "Weir",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "releaseName": "Gpreduringcybl10.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "message": "This release was sent again, so Weir is answering the newer send and has nothing to add here.",
+          "sourceRemoved": false,
+          "failureClass": "superseded",
+          "outputFiles": []
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "superseded",
+          "handoffId": "01a16339dd1f737587e8301b428cdac5",
+          "alreadyHandled": true
+        }
+      }
+    }
+  ]
+}

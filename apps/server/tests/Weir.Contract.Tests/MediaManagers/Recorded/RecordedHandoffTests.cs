@@ -15,11 +15,12 @@ public sealed class RecordedHandoffTests
     private const string SourceQ8 = @"C:\Downloads\Completed\Movies\Recorded.Weir.Q8.mkv";
     private const string SourceR = @"C:\Downloads\Completed\Movies\Recorded.Weir.R.mkv";
     private const string BusySource = @"C:\Downloads\Completed\Movies\Recorded.Weir.Busy.mkv";
-    private const string IdA = "9b6c9b15-87af-4770-b39a-3fa9d27bc81f";
     private const string IdQ8 = "0f24ba4d-794e-4f24-9dfb-437fe97f0ff7";
-    private const string IdWaiting = "18cc9422-6cbc-4d24-971b-02f8719417c9";
-    private const string IdMissing = "7d95da06-6d1c-4c31-b12a-410eff952852";
-    private const string IdResent = "0b3372c0-0298-41ce-9f47-b3e81ad40ac1";
+    private const string IdEarlierResent = "0b3372c0-0298-41ce-9f47-b3e81ad40ac1";
+
+    /// <summary>The id of the hand-off the recording's first exchange names, in the call or the path.</summary>
+    private static string IdOf(Recording recording) =>
+        recording.Exchanges[0].Request.Body?["handoffId"]?.GetValue<string>() ?? recording.Exchanges[0].Request.HandoffIdInPath();
 
     /// <summary>
     /// #956: when a release is sent again, the new send takes the pass over and is read as completed with the output, never
@@ -42,10 +43,10 @@ public sealed class RecordedHandoffTests
     public async Task A_single_file_in_the_watched_folder_is_accepted_finished_and_reported_imported_as_recorded()
     {
         await using var world = await RecordedWorld.StartAsync();
-        var source = Untouched.Of(world.PutFilm(SourceA));
+        var source = Untouched.Of(world.PutFilm(SourceA, needsWork: true));
 
         await world.Replay.SendAsync(Recording.Load("handoff-accepted"));
-        await world.Scenario.WaitForHandoffStateAsync(world.Translation.Id(IdA), "completed");
+        await world.Scenario.WaitForHandoffStateAsync(world.Translation.Id(IdOf(Recording.Load("handoff-accepted"))), "completed");
         await world.Replay.SendAsync(Recording.Load("status-completed"));
         await world.Replay.SendAsync(Recording.Load("outcome-delivered"));
         await world.Replay.SendAsync(Recording.Load("outcome-already-recorded"));
@@ -88,16 +89,35 @@ public sealed class RecordedHandoffTests
     public async Task A_resent_release_after_the_first_send_finished_is_accepted_and_answered_with_the_output()
     {
         await using var world = await RecordedWorld.StartAsync();
+        var source = Untouched.Of(world.PutFilm(SourceR, needsWork: true));
+        const string first = "first-send-of-the-release";
+        await world.Scenario.PostHandoffAsync(first, world.Translation.Apply(SourceR));
+        await world.Scenario.WaitForHandoffStateAsync(first, "completed");
+        var resend = Recording.Load("handoff-resend-accepted");
+
+        await world.Replay.SendAsync(resend);
+        await world.Scenario.WaitForHandoffStateAsync(world.Translation.Id(IdOf(resend)), "completed");
+        await world.Replay.SendAsync(Recording.Load("resend-status-completed"));
+
+        var output = world.Translation.Apply(@"C:\Weir\Ready\Movies\Recorded.Weir.R.mkv");
+        Assert.True(File.Exists(output), "the resent release's output is in the output folder");
+        source.AssertStill();
+    }
+
+    [Fact]
+    public async Task A_resent_release_after_the_first_send_finished_is_imported_as_the_first_session_recorded()
+    {
+        await using var world = await RecordedWorld.StartAsync(RecordedWorld.EarlierMoviesKey);
         var source = Untouched.Of(world.PutFilm(SourceR));
         const string first = "first-send-of-the-release";
         await world.Scenario.PostHandoffAsync(first, world.Translation.Apply(SourceR));
         await world.Scenario.WaitForHandoffStateAsync(first, "completed");
 
-        await world.Replay.SendAsync(Recording.Load("handoff-resend-accepted"));
-        await world.Scenario.WaitForHandoffStateAsync(world.Translation.Id(IdResent), "completed");
+        await world.Replay.SendAsync(Recording.LoadEarlier("handoff-resend-accepted"));
+        await world.Scenario.WaitForHandoffStateAsync(world.Translation.Id(IdEarlierResent), "completed");
         var pins = ResendIsReadWithItsOutput(world);
-        await world.Replay.SendAsync(Recording.Load("resend-status-completed"), 0, pins);
-        await world.Replay.SendAsync(Recording.Load("completed-without-output-path"), 0, pins);
+        await world.Replay.SendAsync(Recording.LoadEarlier("resend-status-completed"), 0, pins);
+        await world.Replay.SendAsync(Recording.LoadEarlier("completed-without-output-path"), 0, pins);
         await world.Replay.SendAsync(Recording.Load("outcome-delivered-without-output-path"));
 
         var handback = await world.HandbackAsync("Recorded.Weir.R.mkv");
@@ -118,10 +138,11 @@ public sealed class RecordedHandoffTests
         await world.Scenario.PostHandoffAsync(first, world.Translation.Apply(SourceR));
         await world.WaitUntilWorkingAsync(first);
 
-        await world.Replay.SendAsync(Recording.Load("handoff-resend-accepted"));
+        var resend = Recording.Load("handoff-resend-accepted");
+        await world.Replay.SendAsync(resend);
         await File.WriteAllTextAsync(release, string.Empty);
 
-        var resent = await world.Scenario.WaitForHandoffStateAsync(world.Translation.Id(IdResent), "completed");
+        var resent = await world.Scenario.WaitForHandoffStateAsync(world.Translation.Id(IdOf(resend)), "completed");
         var output = world.Translation.Apply(@"C:\Weir\Ready\Movies\Recorded.Weir.R.mkv");
         Assert.Equal(output, (string)resent["outputPath"]!);
         Assert.Equal([output], resent["outputFiles"]!.AsArray().Select(file => (string)file!).ToArray());
@@ -142,7 +163,7 @@ public sealed class RecordedHandoffTests
         var missing = world.Translation.Apply(@"C:\Downloads\Completed\Movies\Recorded.Weir.D.mkv");
 
         await world.Replay.SendAsync(Recording.Load("handoff-accepted-missing-file"));
-        await world.Scenario.WaitForHandoffStateAsync(world.Translation.Id(IdMissing), "working");
+        await world.Scenario.WaitForHandoffStateAsync(world.Translation.Id(IdOf(Recording.Load("handoff-accepted-missing-file"))), "working");
         await world.Replay.SendAsync(Recording.Load("missing-file-status-working"));
 
         Assert.False(File.Exists(missing), "Weir wrote nothing where the file should have been");
@@ -161,12 +182,14 @@ public sealed class RecordedHandoffTests
         const string busy = "the-hand-off-ahead";
         await world.Scenario.PostHandoffAsync(busy, world.Translation.Apply(BusySource));
         await world.WaitUntilWorkingAsync(busy);
-        var waiting = world.Translation.Id(IdWaiting);
+        var cancel = Recording.Load("handoff-cancelled");
+        var waiting = world.Translation.Id(IdOf(cancel));
         await world.Scenario.PostHandoffAsync(waiting, world.Translation.Apply(SourceQ8));
         Assert.Equal("queued", (string)(await world.Scenario.HandoffStatusAsync(waiting))["state"]!);
 
-        await world.Replay.SendAsync(Recording.Load("handoff-cancel-too-late"));
+        await world.Replay.SendAsync(cancel, 0);
         await File.WriteAllTextAsync(release, string.Empty);
+        await world.Replay.SendAsync(cancel, 1);
 
         Assert.Equal("cancelled", (string)(await world.Scenario.HandoffStatusAsync(waiting))["state"]!);
         Assert.Equal("cancelled", await RemuxJobs.StatusForHandoffAsync(world.Scenario.Admin, waiting));

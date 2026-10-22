@@ -64,10 +64,14 @@ public sealed class ConnectionActivityApiTests
         return new StreamReader(await response.Content.ReadAsStreamAsync());
     }
 
-    /// <summary>The next <c>connection.activity</c> frame's data, repeating <paramref name="provoke"/> until one arrives so the test waits out the stream's own start.</summary>
-    private static async Task<JsonNode> NextConnectionFrameAsync(StreamReader reader, Func<Task> provoke)
+    /// <summary>
+    /// The next <c>connection.activity</c> frame's data that satisfies <paramref name="wanted"/> (any frame, when omitted), repeating
+    /// <paramref name="provoke"/> until one arrives so the test waits out the stream's own start. Connecting a manager also starts a
+    /// background workflow sync that calls it, so a test about something else names the frame it wants.
+    /// </summary>
+    private static async Task<JsonNode> NextConnectionFrameAsync(StreamReader reader, Func<Task> provoke, Func<JsonNode, bool>? wanted = null)
     {
-        var pending = ReadConnectionFrameAsync(reader);
+        var pending = ReadConnectionFrameAsync(reader, wanted ?? (_ => true));
         await Eventually.ThatAsync(
             async () =>
             {
@@ -81,7 +85,7 @@ public sealed class ConnectionActivityApiTests
         return await pending;
     }
 
-    private static async Task<JsonNode> ReadConnectionFrameAsync(StreamReader reader)
+    private static async Task<JsonNode> ReadConnectionFrameAsync(StreamReader reader, Func<JsonNode, bool> wanted)
     {
         string? eventName = null;
         while (await reader.ReadLineAsync() is { } line)
@@ -92,7 +96,11 @@ public sealed class ConnectionActivityApiTests
             }
             else if (line.StartsWith("data: ", StringComparison.Ordinal) && eventName == "connection.activity")
             {
-                return JsonNode.Parse(line["data: ".Length..])!;
+                var frame = JsonNode.Parse(line["data: ".Length..])!;
+                if (wanted(frame))
+                {
+                    return frame;
+                }
             }
         }
 
@@ -157,7 +165,7 @@ public sealed class ConnectionActivityApiTests
         {
             using var posted = await anonymous.PostAsync("/api/v1/intake/webhook/radarr", new { eventType = "Test" }, new Dictionary<string, string> { ["X-Webhook-Secret"] = secret });
             Assert.Equal(HttpStatusCode.OK, posted.StatusCode);
-        });
+        }, wanted: candidate => candidate["direction"]!.GetValue<string>() == "inbound");
 
         Assert.Equal(("media_manager", id, "answered", "inbound"), (
             frame["kind"]!.GetValue<string>(), frame["id"]!.GetValue<int>(), frame["phase"]!.GetValue<string>(), frame["direction"]!.GetValue<string>()));

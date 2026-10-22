@@ -1,0 +1,126 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.34",
+  "state": "handoff-release-folder",
+  "recordedAt": "2026-10-22T10:42:16Z",
+  "note": "A release-folder torrent download handed to Weir: sourcePath is the release folder (qBittorrent, Transmission, Deluge). The real requests Deluno 1.0.0-rc.30.34 sent and Weir 1.0.0-rc.19 (build 3460f96) replies.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a1633455b87b8e89291c172dfabf27:1792665736630",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a1633455b87b8e89291c172dfabf27",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "mediaType": "movies",
+          "sourcePath": "C:\\Downloads\\Completed\\Movies\\Gpfilmoqfd01.2020.1080p.WEB-DL.x264-GOLDEN",
+          "releaseName": "Gpfilmoqfd01.2020.1080p.WEB-DL.x264-GOLDEN",
+          "queueItemId": "6655f8d86ee49eed941e4999036a874f4439c841",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "Gpfilmoqfd01",
+          "year": 2020,
+          "sourceFiles": [
+            "C:\\Downloads\\Completed\\Movies\\Gpfilmoqfd01.2020.1080p.WEB-DL.x264-GOLDEN\\Gpfilmoqfd01.2020.1080p.WEB-DL.x264-GOLDEN.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a16334570e753a95c4605b98f883c6:1792665736973",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a16334570e753a95c4605b98f883c6",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "mediaType": "movies",
+          "sourcePath": "C:\\Downloads\\Completed\\Movies\\Gpfilmgscn02.2020.1080p.WEB-DL.x264-GOLDEN",
+          "releaseName": "Gpfilmgscn02.2020.1080p.WEB-DL.x264-GOLDEN",
+          "queueItemId": "da83b212471d237916cb95a7f33affaf05580d9d",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "Gpfilmgscn02",
+          "year": 2020,
+          "sourceFiles": [
+            "C:\\Downloads\\Completed\\Movies\\Gpfilmgscn02.2020.1080p.WEB-DL.x264-GOLDEN\\Gpfilmgscn02.2020.1080p.WEB-DL.x264-GOLDEN.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a1633453ea7f5c8ca9dd050539fc39:1792665736169",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a1633453ea7f5c8ca9dd050539fc39",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "mediaType": "movies",
+          "sourcePath": "C:\\Downloads\\Completed\\Movies\\Gpfilmobjs03.2020.1080p.WEB-DL.x264-GOLDEN",
+          "releaseName": "Gpfilmobjs03.2020.1080p.WEB-DL.x264-GOLDEN",
+          "queueItemId": "42b410352b5994ed43edaf4a43b088aaccb78bc2",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "Gpfilmobjs03",
+          "year": 2020,
+          "sourceFiles": [
+            "C:\\Downloads\\Completed\\Movies\\Gpfilmobjs03.2020.1080p.WEB-DL.x264-GOLDEN\\Gpfilmobjs03.2020.1080p.WEB-DL.x264-GOLDEN.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    }
+  ]
+}

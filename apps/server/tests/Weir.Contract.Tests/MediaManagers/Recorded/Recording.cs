@@ -15,15 +15,18 @@ internal sealed record RecordedExchange(RecordedCall Request, RecordedAnswer Rep
 /// One recording made of the talk between Deluno and Weir, loaded as it is. A test never writes a request or a reply by hand: a state
 /// nobody recorded fails with where to record it. Two sets exist: Deluno's recordings of Weir's real replies
 /// (<c>fixtures/recorded/deluno/&lt;version&gt;/&lt;state&gt;.json</c>, <see cref="Load"/>) and Deluno's recordings of its own side
-/// (<c>fixtures/recorded/deluno-side/&lt;version&gt;/&lt;state&gt;.json</c>, <see cref="LoadDelunoSide"/>).
+/// (<c>fixtures/recorded/deluno-side/&lt;version&gt;/&lt;state&gt;.json</c>, <see cref="LoadDelunoSide(string, string)"/>).
 /// </summary>
 internal sealed class Recording
 {
     /// <summary>The Weir version Deluno recorded the replies from.</summary>
     public const string Version = "1.0.0-rc.13";
 
-    /// <summary>The Deluno version whose requests to Weir, and whose reports from Weir, were recorded.</summary>
-    public const string DelunoSideRequestsVersion = "1.0.0-rc.30.30";
+    /// <summary>The Deluno version whose requests to Weir, and whose reports from Weir, were recorded against Weir 1.0.0-rc.19 on the golden VM.</summary>
+    public const string DelunoSideRequestsVersion = "1.0.0-rc.30.34";
+
+    /// <summary>The earlier session (Weir 1.0.0-rc.13) that recorded the one report the newer session did not: a send Deluno replaced, reported too late.</summary>
+    public const string DelunoSideFirstSessionVersion = "1.0.0-rc.30.30";
 
     /// <summary>The Deluno version whose own replies to Weir were recorded, in the server code.</summary>
     public const string DelunoSideRepliesVersion = "1.0.0-rc.30.32";
@@ -34,7 +37,12 @@ internal sealed class Recording
     /// </summary>
     public const string DelunoSideRealStackVersion = "1.0.0-rc.30.33";
 
+    /// <summary>The Weir build whose replies Deluno recorded in the newer session; a state it holds is read from there, any other from <see cref="Version"/>.</summary>
+    public const string NewerVersion = "1.0.0-rc.19+3460f96";
+
     private const string WeirRecordedByDeluno = "fixtures/recorded/deluno/" + Version;
+
+    private const string NewerWeirRecordedByDeluno = "fixtures/recorded/deluno/" + NewerVersion;
 
     private Recording(string folder, string state, string note, IReadOnlyList<RecordedExchange> exchanges)
     {
@@ -61,11 +69,21 @@ internal sealed class Recording
         : throw new InvalidOperationException($"{File} holds {Exchanges.Count} exchanges; name the one to replay.");
 
     /// <summary>Deluno's recording of what Weir answered (<c>app</c> is weir).</summary>
-    public static Recording Load(string state) => Read(WeirRecordedByDeluno, "weir", Version, state);
+    public static Recording Load(string state) =>
+        Exists(NewerWeirRecordedByDeluno, state) ? Read(NewerWeirRecordedByDeluno, "weir", NewerVersion, state) : Read(WeirRecordedByDeluno, "weir", Version, state);
+
+    /// <summary>Deluno's recording of what rc.13 answered, for a scenario only the first session recorded or a state whose meaning the newer session changed.</summary>
+    public static Recording LoadEarlier(string state) => Read(WeirRecordedByDeluno, "weir", Version, state);
 
     /// <summary>Deluno's recording of its own side (<c>app</c> is deluno): the rc.30.30 requests and reports, or the rc.30.32 replies.</summary>
     public static Recording LoadDelunoSide(string version, string state) =>
         Read($"fixtures/recorded/deluno-side/{version}", "deluno", version, state);
+
+    /// <summary>The same from the first version that holds the state, newest first.</summary>
+    public static Recording LoadDelunoSide(string version, string state, string fallbackVersion) =>
+        Exists($"fixtures/recorded/deluno-side/{version}", state) ? LoadDelunoSide(version, state) : LoadDelunoSide(fallbackVersion, state);
+
+    private static bool Exists(string folder, string state) => System.IO.File.Exists(Path.Combine(AppContext.BaseDirectory, folder, $"{state}.json"));
 
     private static Recording Read(string folder, string app, string version, string state)
     {

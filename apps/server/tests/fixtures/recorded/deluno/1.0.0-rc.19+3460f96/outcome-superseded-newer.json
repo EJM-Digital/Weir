@@ -1,0 +1,57 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "outcome-superseded-newer",
+  "recordedAt": "2026-10-22T10:28:30Z",
+  "note": "The outcome of the NEWER hand-off, reported after Weir finished it, once the older hand-off's outcome had been recorded.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/bda4a193-3c6b-49f2-bd88-c447c7c4ab81"
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "bda4a193-3c6b-49f2-bd88-c447c7c4ab81",
+          "state": "completed",
+          "queuePosition": null,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-10-22T10:28:29.875728Z",
+          "outputPath": "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Superseded.mkv",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Superseded.mkv"
+          ],
+          "message": "Finished processing this file. The original download was kept in the watched folder for your download client, because this workflow is linked to a media manager."
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/bda4a193-3c6b-49f2-bd88-c447c7c4ab81/outcome",
+        "body": {
+          "outcome": "imported",
+          "occurredUtc": "2026-10-22T10:28:30.2454426Z",
+          "importedPath": "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Superseded.mkv",
+          "reason": null
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "bda4a193-3c6b-49f2-bd88-c447c7c4ab81",
+          "outcome": "imported",
+          "released": false,
+          "message": "Weir recorded that Deluno imported the file. Weir had already settled its copy, so it left it as it is."
+        }
+      }
+    }
+  ]
+}

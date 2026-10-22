@@ -1,0 +1,31 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "failed-rejected-status-working",
+  "recordedAt": "2026-10-22T10:30:12Z",
+  "note": "The status of a hand-off of an audio-only file under the reject failure policy while it was working.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/9dc84957-d092-4153-a2b9-74d7039956dc"
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "9dc84957-d092-4153-a2b9-74d7039956dc",
+          "state": "working",
+          "queuePosition": null,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-10-22T10:30:10Z",
+          "outputPath": null,
+          "outputFiles": null,
+          "message": "Weir has claimed this file and is checking it now."
+        }
+      }
+    }
+  ]
+}
