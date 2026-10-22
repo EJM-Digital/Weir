@@ -131,8 +131,7 @@ export function fileFacts(file: ProcessingFile): string {
   const bits: string[] = [];
   if (file.video_height) bits.push(`${file.video_height}p`);
   if (file.video_codec) bits.push(file.video_codec.toUpperCase());
-  const size = formatBytes(file.size_bytes);
-  if (size) bits.push(size);
+  bits.push(formatBytes(file.size_bytes));
   return bits.join(" · ");
 }
 

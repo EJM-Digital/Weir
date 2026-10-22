@@ -62,4 +62,59 @@ describe("activity runs", () => {
       ]).headline,
     ).toBe("Run · 2 entries");
   });
+
+  it.each([
+    [
+      "a file passed through",
+      { event_type: "processing.file_passed_through" },
+      "passed through",
+    ],
+    [
+      "a file whose rejection fell back to passing through",
+      { event_type: "processing.file_reject_fell_back" },
+      "passed through",
+    ],
+    [
+      "a file rejected by the rules",
+      { event_type: "processing.file_rejected" },
+      "rejected",
+    ],
+    [
+      "a pass that left the file unchanged",
+      { detail: '{"pass_through_unchanged":true}' },
+      "passed through",
+    ],
+    [
+      "a pass that found nothing to change",
+      { detail: '{"outcome":"live_skipped_not_required"}' },
+      "no changes needed",
+    ],
+    ["a pass whose detail cannot be read", { detail: "words" }, "processed"],
+    ["a pass with no detail", {}, "processed"],
+  ])("counts %s", (_name, entry, outcome) => {
+    expect(
+      summarizeRun([ev({ id: 1, relative_path: "a.mkv", ...entry })]).headline,
+    ).toBe(`Run · 1 file: 1 ${outcome}`);
+  });
+
+  it("counts a final outcome of its own for each entry that names no file", () => {
+    expect(
+      summarizeRun([
+        ev({ id: 2, event_type: "processing.file_rejected" }),
+        ev({ id: 1, event_type: "processing.file_rejected" }),
+      ]).headline,
+    ).toBe("Run · 2 entries: 2 rejected");
+  });
+
+  it("names no outcome for entries that are not one", () => {
+    expect(
+      summarizeRun([
+        ev({
+          id: 1,
+          relative_path: "a.mkv",
+          event_type: "processing.handoff_reported",
+        }),
+      ]),
+    ).toEqual({ headline: "Run · 1 file", failed: 0 });
+  });
 });

@@ -9,6 +9,9 @@ import {
   ApiHttpError,
   apiFetch,
   apiResponseErrorMessage,
+  apiUrl,
+  readJson,
+  requireOk,
   resetUnauthorizedHandlingForTests,
   setUnauthorizedHandler,
   throwApiResponseError,
@@ -398,5 +401,126 @@ describe("apiFetch requests", () => {
       name: "AbortError",
     });
     await expect(request).rejects.not.toBeInstanceOf(ApiHttpError);
+  });
+});
+
+describe("apiUrl in a built page", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it.each([
+    ["no address is configured", "", "/api/v1/suite/settings"],
+    ["only spaces are configured", "   ", "/api/v1/suite/settings"],
+    [
+      "an address is configured, with or without a closing slash",
+      " https://weir.example/ ",
+      "https://weir.example/api/v1/suite/settings",
+    ],
+  ])("goes to the page's own origin when %s", (_name, configured, url) => {
+    vi.stubEnv("DEV", false);
+    vi.stubEnv("VITE_API_BASE_URL", configured);
+
+    expect(apiUrl(SETTINGS)).toBe(url);
+  });
+
+  it("adds the slash an address lacks, and refuses one outside /api/v1", () => {
+    expect(apiUrl("api/v1/suite/settings")).toBe(SETTINGS);
+    expect(() => apiUrl("/other")).toThrow("API paths must be under");
+  });
+});
+
+describe("apiFetch where the browser cannot time a request out or join two stops", () => {
+  const timeout = Object.getOwnPropertyDescriptor(AbortSignal, "timeout");
+  const any = Object.getOwnPropertyDescriptor(AbortSignal, "any");
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    if (timeout) Object.defineProperty(AbortSignal, "timeout", timeout);
+    if (any) Object.defineProperty(AbortSignal, "any", any);
+  });
+
+  it("sends the request without a time limit when the browser has no timeout signal", async () => {
+    const fetchStub = vi.fn().mockResolvedValue(new Response("{}"));
+    vi.stubGlobal("fetch", fetchStub);
+    Object.defineProperty(AbortSignal, "timeout", {
+      configurable: true,
+      value: undefined,
+    });
+
+    await apiFetch(SETTINGS);
+
+    expect(fetchStub.mock.calls[0][1].signal).toBeUndefined();
+  });
+
+  it("keeps the caller's stop when the browser cannot join it with the time limit", async () => {
+    const fetchStub = vi.fn().mockResolvedValue(new Response("{}"));
+    vi.stubGlobal("fetch", fetchStub);
+    Object.defineProperty(AbortSignal, "any", {
+      configurable: true,
+      value: undefined,
+    });
+    const caller = new AbortController();
+
+    await apiFetch(SETTINGS, { signal: caller.signal });
+
+    expect(fetchStub.mock.calls[0][1].signal).toBe(caller.signal);
+  });
+
+  it.each([
+    ["a rejection that is not an error", "refused"],
+    ["an error that is not about the network", new Error("Something else")],
+  ])("passes on %s as it came", async (_name, rejection) => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(rejection));
+
+    await expect(apiFetch(SETTINGS)).rejects.toBe(rejection);
+  });
+});
+
+describe("reading an answer", () => {
+  it("reads nothing from an answer with no body, and the body when there is one", async () => {
+    await expect(
+      readJson(new Response(null, { status: 204 })),
+    ).resolves.toBeUndefined();
+    await expect(readJson(jsonResponse(200, { a: 1 }))).resolves.toEqual({
+      a: 1,
+    });
+  });
+
+  it("lets a good answer through and says why a bad one failed", async () => {
+    await expect(
+      requireOk(SETTINGS, new Response("{}"), "Failed"),
+    ).resolves.toBeUndefined();
+    await expect(
+      requireOk(SETTINGS, jsonResponse(400, { detail: "No." }), "Failed"),
+    ).rejects.toThrow("No.");
+  });
+});
+
+describe("apiResponseErrorMessage when the body says nothing usable", () => {
+  const withType = (type: string | null) =>
+    new Response(type === null ? null : "<html>", {
+      status: 400,
+      headers: type === null ? {} : { "Content-Type": type },
+    });
+
+  it.each([
+    ["has no type", null],
+    ["claims to be JSON and is not", "application/json"],
+  ])("says what failed when the body %s", async (_name, type) => {
+    await expect(
+      apiResponseErrorMessage(SETTINGS, withType(type), "Could not do it"),
+    ).resolves.toMatchObject({ message: "Could not do it." });
+  });
+});
+
+describe("apiResponseErrorMessage when the body cannot be read at all", () => {
+  it("passes on a failure that is not a badly formed body", async () => {
+    const response = {
+      status: 500,
+      headers: new Headers({ "Content-Type": "application/json" }),
+      clone: () => ({ json: () => Promise.reject(new Error("disk gone")) }),
+    } as unknown as Response;
+
+    await expect(
+      apiResponseErrorMessage(SETTINGS, response, "Could not do it"),
+    ).rejects.toThrow("disk gone");
   });
 });

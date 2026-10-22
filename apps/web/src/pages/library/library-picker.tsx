@@ -19,8 +19,8 @@ const MOVES: Record<string, (at: number, count: number) => number> = {
   End: (_at, count) => count - 1,
 };
 
-function options(menu: HTMLElement | null): HTMLElement[] {
-  return menu ? [...menu.querySelectorAll<HTMLElement>('[role="option"]')] : [];
+function options(menu: HTMLElement): HTMLElement[] {
+  return [...menu.querySelectorAll<HTMLElement>('[role="option"]')];
 }
 
 export function LibraryPicker({
@@ -46,16 +46,16 @@ export function LibraryPicker({
   useEffect(() => {
     if (!open) return undefined;
     // Opening lands on the search box when there is one, otherwise on the library already chosen.
-    const list = options(menu.current);
+    const root = menu.current;
     const start = searchable
-      ? menu.current?.querySelector<HTMLElement>("input")
-      : (list.find((o) => o.getAttribute("aria-selected") === "true") ??
-        list[0]);
+      ? root?.querySelector<HTMLElement>("input")
+      : (root?.querySelector<HTMLElement>(
+          '[role="option"][aria-selected="true"]',
+        ) ?? root?.querySelector<HTMLElement>('[role="option"]'));
     start?.focus();
 
     const away = (event: MouseEvent) => {
-      if (wrap.current && !wrap.current.contains(event.target as Node))
-        setOpen(false);
+      if (!wrap.current?.contains(event.target as Node)) setOpen(false);
     };
     const key = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
@@ -88,9 +88,9 @@ export function LibraryPicker({
       )
     : libraries;
 
-  const moveFocus = (event: React.KeyboardEvent) => {
+  const moveFocus = (event: React.KeyboardEvent<HTMLElement>) => {
     const move = MOVES[event.key];
-    const list = options(menu.current);
+    const list = options(event.currentTarget);
     if (!move || list.length === 0) return;
     // Home and End still move the caret while typing in the search box.
     const inSearch = event.target instanceof HTMLInputElement;

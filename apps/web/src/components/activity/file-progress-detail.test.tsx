@@ -77,4 +77,117 @@ describe("FileProgressDetail", () => {
       "mm-activity-processing__raw",
     );
   });
+
+  it.each([
+    {
+      name: "nothing is known yet",
+      detail: {},
+      title: "Weir is processing this file.",
+      percent: "Working",
+      metric: "Estimating time left",
+      valuenow: null,
+      width: "8%",
+    },
+    {
+      name: "the file is named only by where it was inspected",
+      detail: { inspected_source_path: "D:\\Incoming\\Alpha.mkv" },
+      title: "Weir is processing Alpha.mkv.",
+      percent: "Working",
+      metric: "Estimating time left",
+      valuenow: null,
+      width: "8%",
+    },
+    {
+      name: "the percentage is not a number",
+      detail: { percent: "half", relative_media_path: "a/B.mkv" },
+      title: "Weir is processing B.mkv.",
+      percent: "Working",
+      metric: "Estimating time left",
+      valuenow: null,
+      width: "8%",
+    },
+    {
+      name: "the percentage is above a whole",
+      detail: { percent: 150, relative_media_path: "a/B.mkv" },
+      title: "Weir is processing B.mkv.",
+      percent: "100%",
+      metric: "Estimating time left",
+      valuenow: "100",
+      width: "100%",
+    },
+    {
+      name: "the percentage is below none",
+      detail: { percent: -5, relative_media_path: "a/B.mkv" },
+      title: "Weir is processing B.mkv.",
+      percent: "0%",
+      metric: "Estimating time left",
+      valuenow: "0",
+      width: "0%",
+    },
+    {
+      name: "a failed pass gives no reason of its own",
+      detail: { status: "failed", percent: 10 },
+      title: "Weir could not finish this file.",
+      percent: "10%",
+      metric: "Stopped",
+      valuenow: "10",
+      width: "10%",
+    },
+    {
+      name: "the final checks have no time left to give",
+      detail: { status: "finishing", percent: 99 },
+      title: "Weir is processing this file.",
+      percent: "99%",
+      metric: "Final checks",
+      valuenow: "99",
+      width: "99%",
+    },
+    {
+      name: "the final checks know how long are left",
+      detail: { status: "finishing", percent: 99, eta_seconds: 71 },
+      title: "Weir is processing this file.",
+      percent: "99%",
+      metric: "About 1m 11s left",
+      valuenow: "99",
+      width: "99%",
+    },
+    {
+      name: "the status is one Weir does not know",
+      detail: { status: "queued", percent: 3 },
+      title: "Weir is processing this file.",
+      percent: "3%",
+      metric: "Processing",
+      valuenow: "3",
+      width: "3%",
+    },
+  ])(
+    "reads a pass where $name",
+    ({ detail, title, percent, metric, valuenow, width }) => {
+      const { container } = render(
+        <FileProgressDetail detail={JSON.stringify(detail)} />,
+      );
+      const bar = screen.getByRole("progressbar");
+
+      expect(screen.getByText(title)).toBeInTheDocument();
+      expect(screen.getByText(percent)).toBeInTheDocument();
+      expect(
+        container.querySelector(".mm-activity-processing__metrics"),
+      ).toHaveTextContent(metric);
+      if (valuenow === null) expect(bar).not.toHaveAttribute("aria-valuenow");
+      else expect(bar).toHaveAttribute("aria-valuenow", valuenow);
+      expect(bar.firstElementChild).toHaveStyle({ width });
+    },
+  );
+
+  it("shows only the facts it has: no running time, no speed, and no progress through the file without its length", () => {
+    render(
+      <FileProgressDetail
+        detail={JSON.stringify({ status: "processing", processed_seconds: 60 })}
+      />,
+    );
+
+    expect(screen.queryByText(/Running/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Processed/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Processing speed/)).not.toBeInTheDocument();
+  });
 });

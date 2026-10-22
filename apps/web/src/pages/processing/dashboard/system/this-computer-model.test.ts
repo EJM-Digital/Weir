@@ -131,7 +131,26 @@ describe("the memory column", () => {
   });
 });
 
+describe("the memory column when the machine does not say", () => {
+  it("is a gap, not a made-up zero, when the memory in use cannot be read", () => {
+    expect(column("memory", { memory_used_bytes: null }).value).toBeNull();
+  });
+
+  it("says only Weir's share when the total cannot be read", () => {
+    expect(column("memory", { memory_total_bytes: null }).sub).toEqual([
+      "Weir 255 MB",
+    ]);
+  });
+});
+
 describe("the disk column", () => {
+  it("leaves out the busy time when the machine does not give one", () => {
+    expect(column("disk", { disk_busy_percent: null }).sub).toEqual([
+      "read 4.0 · write 12",
+      "R 4.0 · W 12",
+    ]);
+  });
+
   it("adds reads and writes into one figure, with busy time in the note", () => {
     expect(column("disk")).toMatchObject({
       value: 16,
@@ -172,6 +191,14 @@ describe("the machine's tags", () => {
       { text: "Windows 11 Pro" },
       { text: "up 3 days" },
     ]);
+  });
+
+  it.each([
+    ["no system name", { os: "" }, [{ text: "up 3 days" }]],
+    ["no uptime", { uptime_seconds: null }, [{ text: "Windows 11 Pro" }]],
+    ["nothing to say", { os: "", uptime_seconds: null }, []],
+  ])("leaves out what it cannot say: %s", (_name, change, tags) => {
+    expect(machineTags({ ...stats().machine, ...change })).toEqual(tags);
   });
 
   it("warns when a reboot is waiting", () => {

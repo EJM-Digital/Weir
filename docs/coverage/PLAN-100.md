@@ -60,7 +60,9 @@ Biggest uncovered area first. Each step is one or a few pull requests, each rais
    `components/error-boundary.tsx`, `components/shared/developer-entry-error.tsx`, `pages/library/library-picker.tsx` and
    `lib/activity/use-activity-stream-invalidation.ts`. The first web pull request covered the activity display and pass-detail words, the drag gesture and its geometry, the folder
    picker, the developer and route error screens, the Activity, Library and schedule models and the live stream's edge cases, and
-   raised the web floors to 98.2% lines and 92.6% branches.
+   raised the web floors to 98.2% lines and 92.6% branches. The second covered the Health, Backups and System cards' models and hooks, the library
+   manager setup, the row-reorder keyboard moves, the Activity run and outcome words, the Processing words and model, the API client and its error words, and raised the web
+   floors to 98.5% lines and 94.4% branches.
 7. **Node scripts** (`scripts/*.mjs`, 118 files, 59 with a test file) are not measured yet. The first step is to measure them
    (`node --test --experimental-test-coverage`), add a `scripts` row to `floors.json` and the check, and list what cannot run in CI
    (a script that needs Docker or a published release) in the exclusions file.

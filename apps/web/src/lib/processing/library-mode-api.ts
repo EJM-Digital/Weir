@@ -202,7 +202,10 @@ async function readConfirmationOr<T>(
   fallback: string,
 ): Promise<LibraryConfirmationRequired | T> {
   if (r.status === 400) {
-    const body = await readJson<Record<string, unknown>>(r);
+    // Read from a copy: a refusal that is not a confirmation is read again for its reason.
+    const body = await readJson<Record<string, unknown>>(r.clone()).catch(
+      () => null,
+    );
     if (body && body.error === "confirm_final_removal_required") {
       return {
         kind: "confirmation_required",
