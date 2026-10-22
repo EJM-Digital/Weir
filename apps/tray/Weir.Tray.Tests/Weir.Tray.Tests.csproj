@@ -13,6 +13,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The files the tray and the server write for each other, as each really writes them (apps/server/tests/fixtures/tray-files/README.md). -->
+    <None Include="..\..\server\tests\fixtures\tray-files\*" Link="TrayFiles\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Weir.Tray\Weir.Tray.csproj" />
     <!-- The stand-in server the install-process tests start; its apphost is copied next to the test assembly. -->
     <ProjectReference Include="..\Weir.Tray.StandInServer\Weir.Tray.StandInServer.csproj" />

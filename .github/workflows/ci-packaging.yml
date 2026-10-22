@@ -461,11 +461,11 @@ jobs:
   scenarios-windows:
     needs: [windows-package-smoke, windows-update-package]
     runs-on: windows-latest
-    timeout-minutes: 40
+    timeout-minutes: 70
     strategy:
       fail-fast: false
       matrix:
-        shard: [windows-install, windows-update, windows-tray]
+        shard: [windows-install, windows-update, windows-tray, windows-files]
     env:
       SHARD: ${{ matrix.shard }}
       BUILD_VERSION: ${{ needs.windows-package-smoke.outputs.version }}
