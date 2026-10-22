@@ -155,7 +155,7 @@ public sealed class WatchedFolderListingEdgeTests
         Assert.Equal(["Top.mkv"], result.Files.Select(Path.GetFileName));
     }
 
-    [Fact]
+    [PosixFact("A file link needs a privilege Windows grants only to administrators.")]
     public void A_link_to_a_file_is_listed_with_the_size_of_the_file_it_points_to()
     {
         using var dir = new TempDirectory();
@@ -164,14 +164,7 @@ public sealed class WatchedFolderListingEdgeTests
         var target = dir.Join("target.mkv");
         File.WriteAllBytes(target, [1, 2, 3, 4, 5]);
         var link = Path.Combine(watched, "Linked.mkv");
-        try
-        {
-            File.CreateSymbolicLink(link, target);
-        }
-        catch (Exception exception) when (exception is UnauthorizedAccessException or IOException)
-        {
-            return;
-        }
+        File.CreateSymbolicLink(link, target);
 
         var result = WatchedFolderListing.Candidates(watched, null, null, excludeHidden: false, topLevelOnly: false);
 

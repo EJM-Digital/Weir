@@ -21,8 +21,14 @@ public sealed record WatchedMediaFile(string FullPath, long SizeBytes, DateTime 
         }
     }
 
-    internal static WatchedMediaFile? From(FileInfo info) =>
-        info.Exists ? new WatchedMediaFile(info.FullName, info.Length, info.LastWriteTimeUtc, info.CreationTimeUtc) : null;
+    /// <summary>A link is described by the file it points to, and is null when that file is not there.</summary>
+    internal static WatchedMediaFile? From(FileInfo info)
+    {
+        var target = info.LinkTarget is null ? info : info.ResolveLinkTarget(returnFinalTarget: true) as FileInfo;
+        return target is { Exists: true }
+            ? new WatchedMediaFile(info.FullName, target.Length, target.LastWriteTimeUtc, target.CreationTimeUtc)
+            : null;
+    }
 }
 
 /// <summary>What a watched-folder walk found, and what it decided not to look at.</summary>

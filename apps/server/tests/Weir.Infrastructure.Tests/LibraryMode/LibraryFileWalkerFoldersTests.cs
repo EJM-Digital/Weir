@@ -55,15 +55,9 @@ public sealed class LibraryFileWalkerFoldersTests : IDisposable
         Assert.Equal(new DateTimeOffset(2025, 3, 4, 5, 6, 7, TimeSpan.Zero).ToUnixTimeSeconds(), file.ModifiedTimeUnixSeconds);
     }
 
-    [Fact]
+    [PosixFact("A file link needs a privilege Windows grants only to administrators.")]
     public void A_link_to_a_file_that_is_not_there_is_left_out()
     {
-        if (OperatingSystem.IsWindows())
-        {
-            // A file link needs a privilege Windows grants only to administrators; the Linux leg runs this.
-            return;
-        }
-
         var kept = Write("films", "Kept.mkv");
         File.CreateSymbolicLink(_dir.Join("films", "Dangling.mkv"), _dir.Join("nowhere.mkv"));
 

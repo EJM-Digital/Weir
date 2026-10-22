@@ -115,13 +115,33 @@ public sealed class TrayFilesTheServerWritesTests : IDisposable
         {
             await File.WriteAllTextAsync(Path.Join(Home, TrayUpdateBackupWatcher.RequestFileName), Recorded("update-backup-request.json"));
             var resultPath = Path.Join(Home, TrayUpdateBackupWatcher.ResultFileName);
-            await Eventually.ThatAsync(() => File.Exists(resultPath) && ((string?)JsonNode.Parse(File.ReadAllText(resultPath))?["state"]) is "saved" or "failed");
-            return File.ReadAllText(resultPath);
+            string? answer = null;
+            await Eventually.ThatAsync(() =>
+            {
+                answer = ReadWhileItIsBeingReplaced(resultPath);
+                return answer is not null && ((string?)JsonNode.Parse(answer)?["state"]) is "saved" or "failed";
+            });
+            return answer!;
         }
         finally
         {
             await watcher.StopAsync(CancellationToken.None);
             watcher.Dispose();
+        }
+    }
+
+    // The server swaps the file in whole, and Windows refuses a read for the instant of the swap; the tray reads it the same way.
+    private static string? ReadWhileItIsBeingReplaced(string path)
+    {
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return null;
         }
     }
 
