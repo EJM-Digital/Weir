@@ -346,7 +346,7 @@ jobs:
         run: node --test scripts/docker-entrypoint.test.mjs
 
       - name: Scenarios in CI - their homes, the film, the logs and the scenarios against a stand-in
-        run: node --test scripts/scenarios-in-ci.test.mjs scripts/scenarios-in-ci-windows.test.mjs scripts/scenarios-in-ci-fixture.test.mjs scripts/scenarios-in-ci-with-deluno.test.mjs scripts/scenarios-in-ci-film-handoff.test.mjs scripts/scenarios-in-ci-deluno-outcomes.test.mjs scripts/scenarios-in-ci-recorder.test.mjs scripts/docker-compose-smoke.test.mjs
+        run: node --test scripts/scenarios-in-ci.test.mjs scripts/scenarios-in-ci-windows.test.mjs scripts/scenarios-in-ci-fixture.test.mjs scripts/scenarios-in-ci-with-deluno.test.mjs scripts/scenarios-in-ci-film-handoff.test.mjs scripts/scenarios-in-ci-deluno-outcomes.test.mjs scripts/scenarios-in-ci-recorder.test.mjs scripts/docker-compose-smoke.test.mjs scripts/docker-smoke-pull.test.mjs
 
       - name: Release and CI gate rules
         run: |
