@@ -270,13 +270,13 @@ export function ActivityPage() {
       {group === "kept" ? (
         kept.isError ? (
           <LoadError thing="your kept files" error={kept.error} />
-        ) : kept.isLoading ? (
+        ) : kept.isPending ? (
           <PanelLoading label="Reading kept files…" />
         ) : (
           <Panel
             title="Kept files"
             className="mm-history-list"
-            count={`${(kept.data?.files.length ?? 0).toLocaleString()} kept`}
+            count={`${kept.data.files.length.toLocaleString()} kept`}
             aside={
               <>
                 {pickersAside}
@@ -285,7 +285,7 @@ export function ActivityPage() {
             }
           >
             <ActivityKeptList
-              files={kept.data?.files ?? []}
+              files={kept.data.files}
               columns={keptColumns}
               editable={editable}
               onProcessed={setRemovedNotice}

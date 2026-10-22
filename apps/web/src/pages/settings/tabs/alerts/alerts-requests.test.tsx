@@ -557,3 +557,23 @@ describe("Send test", () => {
     );
   });
 });
+
+describe("a test alert that fails without saying why", () => {
+  it("says Unknown error", async () => {
+    serve({
+      [`GET ${CHANNELS}`]: twoChannels,
+      [`POST ${CHANNELS}/1/test`]: {
+        status: 200,
+        body: '{"ok":false,"error":null}',
+      },
+    });
+    render(<AlertsTab />, { wrapper });
+    const row = await rowOf(discord.label);
+
+    fireEvent.click(within(row).getByRole("button", { name: "Send test" }));
+
+    expect(await within(row).findByRole("alert")).toHaveTextContent(
+      "Test failed: Unknown error",
+    );
+  });
+});

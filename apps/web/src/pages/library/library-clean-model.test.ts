@@ -69,4 +69,19 @@ describe("outcomeLines", () => {
       "Weir skipped 1: Three.mkv.",
     ]);
   });
+
+  it("says several seeding files are still seeding, in the plural", () => {
+    const lines = outcomeLines(
+      result({ queued: 1, skipped_paths: ["D:/a/One.mkv", "D:/a/Two.mkv"] }),
+      [
+        known("D:/a/One.mkv", { problem_kind: "seeding" }),
+        known("D:/a/Two.mkv", { problem_kind: "seeding" }),
+      ],
+    );
+
+    expect(lines).toEqual([
+      "1 file is queued to clean.",
+      "Weir skipped 2 that are still seeding: One.mkv, Two.mkv.",
+    ]);
+  });
 });

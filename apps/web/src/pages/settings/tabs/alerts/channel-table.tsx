@@ -89,9 +89,7 @@ function useChannelTests() {
         })),
     });
   };
-  const testingId = testMutation.isPending
-    ? (testMutation.variables ?? null)
-    : null;
+  const testingId = testMutation.isPending ? testMutation.variables : null;
   return { results, testingId, test };
 }
 

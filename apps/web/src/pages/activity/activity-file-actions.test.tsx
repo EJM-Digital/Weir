@@ -15,15 +15,17 @@ import { ActivityFileActions } from "./activity-file-actions";
 
 const forget = vi.fn().mockResolvedValue(undefined);
 const removeOptions = vi.fn<() => Promise<ProcessingFileRemoveOptions>>();
+const pending = { options: false, forgetting: false };
 
 vi.mock("../../lib/processing/files-queries", () => {
-  const mutation = (fn = vi.fn()) => ({
+  const mutation = (fn = vi.fn(), isPending = false) => ({
     mutateAsync: fn,
-    isPending: false,
+    isPending,
   });
   return {
-    useForgetProcessingFile: () => mutation(forget),
-    useProcessingFileRemoveOptions: () => mutation(removeOptions),
+    useForgetProcessingFile: () => mutation(forget, pending.forgetting),
+    useProcessingFileRemoveOptions: () =>
+      mutation(removeOptions, pending.options),
     useMoveProcessingFileToTop: () => mutation(),
     useRequeueProcessingFile: () => mutation(),
     useProcessingWhyHeld: () => mutation(),
@@ -109,6 +111,22 @@ describe("ActivityFileActions remove dialog", () => {
   beforeEach(() => {
     forget.mockReset().mockResolvedValue(undefined);
     removeOptions.mockReset();
+    pending.options = false;
+    pending.forgetting = false;
+  });
+
+  it("says Checking while Weir works out what removing would do", () => {
+    pending.options = true;
+    renderActions();
+
+    expect(screen.getByRole("button", { name: "Checking…" })).toBeDisabled();
+  });
+
+  it("says Removing while the removal runs", () => {
+    pending.forgetting = true;
+    renderActions();
+
+    expect(screen.getByRole("button", { name: "Removing…" })).toBeDisabled();
   });
   handedOffNote.mockReset().mockReturnValue(null);
 

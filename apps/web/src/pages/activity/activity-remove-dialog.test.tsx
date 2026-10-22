@@ -217,6 +217,20 @@ describe("ActivityRemoveDialog", () => {
     expect(details.textContent).not.toContain("Stryker");
   });
 
+  it("shows the file's name with no size when neither its size nor its time was recorded", () => {
+    renderDialog({
+      fingerprint_recorded: false,
+      unconfirmed_size_bytes: null,
+      unconfirmed_modified_at: null,
+    });
+
+    const details = screen.getByTestId("activity-remove-dialog-unconfirmed");
+    expect(details).toHaveTextContent("Film (2024).mkv");
+    expect(details).not.toHaveTextContent("0 B");
+    expect(details).not.toHaveTextContent("·");
+    expect(details).not.toHaveTextContent("modified");
+  });
+
   it("shows no details block when the file's details were recorded", () => {
     renderDialog({ fingerprint_recorded: true });
 

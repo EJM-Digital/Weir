@@ -36,7 +36,6 @@ import {
 /** The wait before an unclaimed hand-back copy may be removed. */
 const WINDOW_MIN_DAYS = 1;
 const WINDOW_MAX_DAYS = 365;
-const WINDOW_DEFAULT_DAYS = 14;
 
 /** Saves a setting, refreshes the jobs it changes, and says what happened. */
 function useSaveSetting(onNotice: (notice: string | null) => void) {
@@ -199,10 +198,7 @@ export function CleanupTab() {
                 inputId={`${ids}-window`}
                 inputLabel="Cleaned copies nobody picked up wait for"
                 unsavedThing="the days cleaned copies nobody picked up wait"
-                saved={
-                  settings.data.unclaimed_handback_window_days ??
-                  WINDOW_DEFAULT_DAYS
-                }
+                saved={settings.data.unclaimed_handback_window_days}
                 min={WINDOW_MIN_DAYS}
                 max={WINDOW_MAX_DAYS}
                 editable={editable}

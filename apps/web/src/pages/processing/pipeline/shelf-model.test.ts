@@ -204,6 +204,12 @@ describe("the shelf's tiles", () => {
     expect(tile.workflowKnown).toBe(false);
   });
 
+  it("do not name a workflow for a file that belongs to none", () => {
+    const [tile] = shelf([finished(1, { libraryId: null })]).tiles;
+
+    expect(tile.workflowKnown).toBe(false);
+  });
+
   it("honour the page filter", () => {
     const items = [finished(1), finished(2, { source: "library" })];
     const keys = (filter: ShelfScope["filter"]) =>

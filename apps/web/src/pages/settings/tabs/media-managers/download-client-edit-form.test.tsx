@@ -34,10 +34,13 @@ function openForm(connection: DownloadClientConnection) {
   return onClose;
 }
 
-function serve(save: RecordedReply | (() => Promise<RecordedReply>)) {
+function serve(
+  save: RecordedReply | (() => Promise<RecordedReply>),
+  path = SAVE_PATH,
+) {
   return serveRecordedReplies({
     "GET /api/v1/auth/csrf": csrfToken,
-    [`PUT ${SAVE_PATH}`]: save,
+    [`PUT ${path}`]: save,
   });
 }
 
@@ -175,5 +178,51 @@ describe("Cancel on a download client's edit form", () => {
     );
     finish(sabnzbdKeyReplaced);
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+  });
+});
+
+const QBITTORRENT_PATH = `/api/v1/download-clients/connections/${qbittorrent.id}`;
+
+describe("the sign-in details of a download client that uses a name and password", () => {
+  it("sends the name, password and nickname that were typed, trimmed, and nothing that was left as it was", async () => {
+    const weir = serve(sabnzbdKeyReplaced, QBITTORRENT_PATH);
+    const onClose = openForm(qbittorrent);
+
+    fireEvent.change(screen.getByTestId("download-client-edit-username"), {
+      target: { value: "  alice " },
+    });
+    fireEvent.change(screen.getByTestId("download-client-edit-password"), {
+      target: { value: " secret " },
+    });
+    fireEvent.change(screen.getByTestId("download-client-edit-nickname"), {
+      target: { value: " Seedbox " },
+    });
+    fireEvent.click(screen.getByTestId("download-client-edit-save"));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(weir.sent("PUT", QBITTORRENT_PATH).map((r) => r.body)).toEqual([
+      {
+        base_url: qbittorrent.base_url,
+        username: "alice",
+        password: "secret",
+        nickname: "Seedbox",
+        csrf_token: CSRF,
+      },
+    ]);
+  });
+
+  it("sends only the address when just the address changed", async () => {
+    const weir = serve(sabnzbdKeyReplaced, QBITTORRENT_PATH);
+    const onClose = openForm(qbittorrent);
+
+    fireEvent.change(screen.getByTestId("download-client-edit-base-url"), {
+      target: { value: "http://localhost:18999" },
+    });
+    fireEvent.click(screen.getByTestId("download-client-edit-save"));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(weir.sent("PUT", QBITTORRENT_PATH).map((r) => r.body)).toEqual([
+      { base_url: "http://localhost:18999", csrf_token: CSRF },
+    ]);
   });
 });

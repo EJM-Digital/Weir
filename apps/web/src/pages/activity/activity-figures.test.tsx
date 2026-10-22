@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { expect, it } from "vitest";
 
-import { SizeFigures } from "./activity-figures";
+import type { ProcessingFile } from "../../lib/processing/files-api";
+import { SizeFigures, WorkingFigures } from "./activity-figures";
 import { detailSizes } from "./activity-model";
 
 const FILE = { status: "processed", size_bytes: 3826958687 } as const;
@@ -71,4 +72,22 @@ it("says plainly when the sizes were not recorded, instead of showing equal numb
   });
   expect(screen.getByText(/^Size not recorded/)).toBeInTheDocument();
   expect(screen.queryByText(/handed the file back as it was/)).toBeNull();
+});
+
+it("shows an unknown size as a dash, and a pass the server has not measured as no progress", () => {
+  const { unmount } = render(
+    <SizeFigures
+      sizes={detailSizes({ status: "processed", size_bytes: 0 }, null)}
+    />,
+  );
+  expect(screen.getByText("Before").nextElementSibling).toHaveTextContent("—");
+  unmount();
+
+  render(
+    <WorkingFigures
+      file={{ status: "processing", progress_percent: null } as ProcessingFile}
+    />,
+  );
+  expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
+  expect(screen.getByText("0%")).toBeInTheDocument();
 });

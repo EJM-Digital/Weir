@@ -213,6 +213,21 @@ it("offers a folder browser when the file is anywhere on the machine", () => {
   expect(screen.getByRole("button", { name: "Browse" })).toBeInTheDocument();
 });
 
+it("goes back to a path inside the workflow when the person picks that again", () => {
+  stubLibraries();
+  render(<RulesPreviewPanel rules={rules} />, { wrapper });
+  fireEvent.click(screen.getByRole("button", { name: "Try on a file" }));
+  const where = screen.getByLabelText("Where is the file?");
+  fireEvent.change(where, { target: { value: "anywhere" } });
+
+  fireEvent.change(where, { target: { value: "library" } });
+
+  expect(
+    screen.getByLabelText("Path within the watched or output folder"),
+  ).toBeInTheDocument();
+  expect(screen.queryByLabelText("Folder")).toBeNull();
+});
+
 it("re-runs automatically a moment after the rules draft changes", async () => {
   useFakeClock();
   stubLibraries();

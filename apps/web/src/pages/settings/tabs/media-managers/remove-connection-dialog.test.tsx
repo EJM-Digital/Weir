@@ -394,3 +394,46 @@ describe("a connection that workflows still come from", () => {
     );
   });
 });
+
+describe("while a step is under way", () => {
+  it("says Working on every step, and offers none of them again, until the server answers", async () => {
+    vi.spyOn(api, "deleteMediaManagerConnection").mockResolvedValue(
+      inUse({ reports: owedReports() }),
+    );
+    vi.spyOn(api, "unlinkMediaManagerConnectionWorkflows").mockReturnValue(
+      new Promise(() => undefined),
+    );
+
+    await askToRemove();
+    fireEvent.click(await screen.findByTestId("media-manager-in-use-unlink"));
+
+    for (const step of [
+      "media-manager-in-use-give-up-reports",
+      "media-manager-in-use-unlink",
+      "media-manager-in-use-remove-workflows",
+    ]) {
+      await waitFor(() => expect(screen.getByTestId(step)).toBeDisabled());
+      expect(screen.getByTestId(step)).toHaveTextContent("Working…");
+    }
+  });
+
+  it("names a single removed workflow in the singular", async () => {
+    vi.spyOn(api, "deleteMediaManagerConnection").mockResolvedValue(
+      inUse({ workflows: [{ id: 1, name: "Movies" }] }),
+    );
+    vi.spyOn(librariesApi, "deleteProcessingLibrary").mockResolvedValue(
+      undefined,
+    );
+
+    await askToRemove();
+    fireEvent.click(
+      await screen.findByTestId("media-manager-in-use-remove-workflows"),
+    );
+
+    expect(
+      await screen.findByTestId("media-manager-remove-outcome"),
+    ).toHaveTextContent(
+      "Movies was removed. The folders and files it watched were not touched.",
+    );
+  });
+});

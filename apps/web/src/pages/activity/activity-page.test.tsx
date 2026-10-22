@@ -104,6 +104,7 @@ vi.mock("../../lib/processing/kept-files-queries", () => ({
   useKeptFilesQuery: () => ({
     data: kept,
     isLoading: keptQueryState.isLoading,
+    isPending: keptQueryState.isLoading,
     isError: keptQueryState.isError,
     error: keptQueryState.error,
   }),
@@ -937,6 +938,38 @@ describe("ActivityPage", () => {
     renderPage();
 
     expect(screen.getAllByText("Heat.mkv").length).toBeGreaterThan(0);
+  });
+
+  it("opens a library clean from the list, and a download after it, each in place of the other", () => {
+    files.files = [file({ id: 1 })];
+    cleans.cleans = [
+      {
+        kind: "library_clean",
+        id: 5,
+        library_id: 2,
+        library_name: "Films",
+        relative_path: "Heat (1995)/Heat.mkv",
+        outcome: "cleaned",
+        detail: "Cleaned Heat.mkv: removed 1 audio track.",
+        trigger: null,
+        recorded_at: "2026-08-19T04:00:00",
+      },
+    ];
+    renderPage();
+
+    fireEvent.click(screen.getByTitle(/Heat\.mkv/));
+    expect(screen.getByTestId("activity-detail")).toHaveTextContent(
+      "Cleaned Heat.mkv: removed 1 audio track.",
+    );
+
+    const downloads = screen
+      .getAllByRole("button")
+      .filter((button) => button.className.includes("mm-history-file"))
+      .filter((button) => !/Heat\.mkv/.test(button.title));
+    fireEvent.click(downloads[0]);
+    expect(screen.getByTestId("activity-detail")).not.toHaveTextContent(
+      "Cleaned Heat.mkv: removed 1 audio track.",
+    );
   });
 
   it("counts kept files on their own chip, since a kept file has no entry to count", () => {

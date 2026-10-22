@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  columnOf,
   meaningRank,
   movableOrder,
   readLayout,
@@ -187,5 +188,17 @@ describe("a status's place in a sort", () => {
     expect(ranks).toEqual([0, 1, 2, 3, 4, 5]);
     expect(meaningRank("done")).toBeLessThan(meaningRank("todo"));
     expect(meaningRank("broken")).toBeLessThan(meaningRank("idle"));
+  });
+});
+
+describe("looking up a column", () => {
+  it("finds a column by its id", () => {
+    expect(columnOf(config, "size").label).toBe("Size");
+  });
+
+  it("names the table and the column when there is no such column", () => {
+    expect(() => columnOf(config, "missing" as Id)).toThrow(
+      "The table things has no column missing.",
+    );
   });
 });

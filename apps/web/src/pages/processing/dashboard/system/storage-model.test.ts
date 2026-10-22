@@ -72,6 +72,12 @@ describe("a drive's block", () => {
     ).toBe("");
   });
 
+  it("gives the speed without a busy time when the drive does not report one", () => {
+    expect(driveBlocks([drive({ busy_percent: null })])[0].ioLine).toBe(
+      "read 4.0 · write 12 MB/s",
+    );
+  });
+
   it("names the workflows that use it", () => {
     expect(driveBlocks([drive()])[0].workflows).toBe("Movies, TV");
   });

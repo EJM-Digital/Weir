@@ -157,7 +157,7 @@ export function RetentionSection({
             onChange={(e) => retention.setActivityDraft(e.target.value)}
             onBlur={() =>
               retention.setActivityDraft(
-                String(retention.finalizeActivityDays() ?? ""),
+                String(retention.finalizeActivityDays()),
               )
             }
           />

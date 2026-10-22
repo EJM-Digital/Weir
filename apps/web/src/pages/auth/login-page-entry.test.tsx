@@ -9,7 +9,10 @@ import {
   stubWeirApi,
   unexpectedProblem,
 } from "../../test/stub-weir-api";
-import { bootstrapStatusAfterSetup } from "../system/tabs/security/security-replies";
+import {
+  bootstrapStatusAfterSetup,
+  me,
+} from "../system/tabs/security/security-replies";
 import { noOneSignedIn } from "../setup/setup-replies";
 import { LoginPage } from "./login-page";
 
@@ -113,5 +116,34 @@ describe("the sign-in form with nothing typed in it", () => {
     fireEvent.click(screen.getByTestId("login-submit"));
 
     expect(server.sent("POST", "/api/v1/auth/login")).toEqual([]);
+  });
+});
+
+describe("the sign-in page for someone who is already signed in", () => {
+  it("takes them to the Dashboard instead of showing the form", async () => {
+    serveRecordedReplies({
+      [ME]: me,
+      [BOOTSTRAP_STATUS]: bootstrapStatusAfterSetup,
+    });
+    const client = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={["/login"]}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<p>The Dashboard</p>} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText("The Dashboard")).toBeInTheDocument();
+    expect(screen.queryByTestId("login-form")).not.toBeInTheDocument();
   });
 });

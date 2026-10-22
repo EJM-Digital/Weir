@@ -187,3 +187,54 @@ it("shows a selection saved in another browser when the server says the devices 
     screen.getByRole("checkbox", { name: "Apple TV 4K" }),
   ).not.toBeChecked();
 });
+
+it("says the source of a built-in device, one with no web address, and one with no check date", async () => {
+  asRole("operator");
+  vi.spyOn(api, "fetchDirectPlayDevices").mockResolvedValue({
+    customised: false,
+    devices: [
+      {
+        id: "tv",
+        name: "Living room TV",
+        source: "builtin",
+        note: "The TV's own player.",
+        selected: false,
+      },
+      {
+        id: "stick",
+        name: "Stick",
+        source: "Checked by hand",
+        note: "A streaming stick.",
+        selected: false,
+      },
+      {
+        id: "box",
+        name: "Box",
+        source: "https://example.com/box",
+        note: "A set-top box.",
+        selected: false,
+      },
+    ],
+  });
+
+  render(<PlaybackDevicesSection />, { wrapper });
+
+  expect(await screen.findByText("Built in")).toBeInTheDocument();
+  expect(screen.getByText("Checked by hand")).toBeInTheDocument();
+  expect(
+    screen.getByRole("link", { name: "Source for Box" }),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/checked 20/)).toBeNull();
+});
+
+it("says no devices are listed when the list is empty", async () => {
+  asRole("operator");
+  vi.spyOn(api, "fetchDirectPlayDevices").mockResolvedValue({
+    customised: true,
+    devices: [],
+  });
+
+  render(<PlaybackDevicesSection />, { wrapper });
+
+  expect(await screen.findByText("No devices are listed.")).toBeInTheDocument();
+});

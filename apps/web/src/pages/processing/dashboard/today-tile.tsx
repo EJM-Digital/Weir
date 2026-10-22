@@ -63,9 +63,7 @@ export function TodayTile({ filter, now, workflowId = null }: TodayTileProps) {
             </>
           ) : null}
           {figures?.savedBytes != null ? (
-            <StatSide>
-              {formatBytes(figures.savedBytes) || "0 B"} saved
-            </StatSide>
+            <StatSide>{formatBytes(figures.savedBytes)} saved</StatSide>
           ) : null}
         </>
       }

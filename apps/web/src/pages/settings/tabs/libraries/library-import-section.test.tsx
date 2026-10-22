@@ -242,3 +242,63 @@ describe("the Import section", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("what the media manager leaves out", () => {
+  it("says so for each path the manager did not report", async () => {
+    server.set(DRIFT, [
+      {
+        kind: "library_added",
+        library_id: null,
+        library_name: "Anime",
+        manager_value: null,
+        weir_value: "/srv/anime",
+        detail: "Weir holds a workflow the manager does not.",
+      },
+      {
+        kind: "library_removed",
+        library_id: null,
+        library_name: "Cartoons",
+        manager_value: "/media/cartoons",
+        weir_value: null,
+        detail: "The manager holds a workflow Weir does not.",
+      },
+      {
+        kind: "path_not_local",
+        library_id: 4,
+        library_name: "Shorts",
+        manager_value: null,
+        weir_value: null,
+        detail: "No paths on either side.",
+      },
+    ]);
+
+    await askDeluno("Check for changes");
+
+    const result = await screen.findByLabelText("Workflow comparison");
+    expect(result).toHaveTextContent(
+      "Manager: Not reported · Weir: /srv/anime",
+    );
+    expect(result).toHaveTextContent(
+      "Manager: /media/cartoons · Weir: Not configured",
+    );
+    expect(result).not.toHaveTextContent("Not reported · Weir: Not");
+  });
+
+  it("shows no folders for a workflow the manager gave none, and lets a choice be taken back", async () => {
+    server.set(DISCOVER, [discovered({ root_path: null, output_path: null })]);
+
+    await askDeluno("Discover workflows");
+
+    const list = await screen.findByLabelText("Discovered workflows");
+    expect(list).toHaveTextContent("Manager path: Not supplied");
+    expect(list).not.toHaveTextContent("Processed output");
+    const box = within(list).getByRole("checkbox", { name: /Movies 4K/ });
+    fireEvent.click(box);
+    expect(box).toBeChecked();
+    fireEvent.click(box);
+    expect(box).not.toBeChecked();
+    expect(
+      screen.getByRole("button", { name: "Import selected" }),
+    ).toBeDisabled();
+  });
+});

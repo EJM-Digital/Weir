@@ -256,3 +256,22 @@ describe("a file set aside in its panel", () => {
     expect(leftAloneBox(drawer)).not.toBeChecked();
   });
 });
+
+describe("a file being set aside", () => {
+  it("shows the box ticked and says Saving until the server answers", async () => {
+    stubServerRemembering(false, new Promise(() => undefined));
+    renderLibraryPage();
+    const drawer = await openTheFilm();
+    await within(drawer).findByText(/Audio · 2 tracks/);
+
+    fireEvent.click(leftAloneBox(drawer));
+
+    await waitFor(() =>
+      expect(
+        within(drawer).getByTestId("library-leave-alone-status"),
+      ).toHaveTextContent("Saving…"),
+    );
+    expect(leftAloneBox(drawer)).toBeChecked();
+    expect(leftAloneBox(drawer)).toBeDisabled();
+  });
+});

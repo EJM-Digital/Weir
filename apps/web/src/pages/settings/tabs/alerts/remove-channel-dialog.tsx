@@ -30,9 +30,7 @@ export function useChannelRemoval() {
         setError(errorMessage(err, "Could not remove this alert.")),
     });
   };
-  const deletingId = deleteMutation.isPending
-    ? (deleteMutation.variables ?? null)
-    : null;
+  const deletingId = deleteMutation.isPending ? deleteMutation.variables : null;
   return { pending, error, deletingId, ask, cancel, confirm };
 }
 

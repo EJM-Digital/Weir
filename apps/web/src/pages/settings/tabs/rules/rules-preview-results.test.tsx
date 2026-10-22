@@ -98,3 +98,50 @@ describe("the preview's track table", () => {
     expect(trackNumbers()).toEqual(["0", "1", "2", "3"]);
   });
 });
+
+describe("the notes under the track table", () => {
+  it("states the original language and the container changes when the plan has them", () => {
+    render(
+      <RulesPreviewResults
+        result={{
+          ...RESULT,
+          original_language: {
+            lookup_detail: "Matched by title.",
+            lookup_status: "matched",
+            note: "The original language is Japanese.",
+            original_language: "jpn",
+          },
+          metadata_notes: ["The title tag would be cleared."],
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText("Original language: The original language is Japanese."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Container changes")).toBeInTheDocument();
+    expect(
+      screen.getByText("The title tag would be cleared."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows neither heading when the plan has no such notes", () => {
+    render(<RulesPreviewResults result={RESULT} />);
+
+    expect(screen.queryByText(/Original language:/)).toBeNull();
+    expect(screen.queryByText("Container changes")).toBeNull();
+  });
+});
+
+it("shows a track with no codec as a dash", () => {
+  render(
+    <RulesPreviewResults
+      result={{
+        ...RESULT,
+        tracks: [track({ index: 0, type: "audio", codec: "" })],
+      }}
+    />,
+  );
+
+  expect(screen.getAllByRole("row")[1]).toHaveTextContent("—");
+});

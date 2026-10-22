@@ -87,6 +87,22 @@ describe("what Weir does next on its own", () => {
     expect(items).toEqual([]);
   });
 
+  it("lists a cleanup job with no interval of its own, with no interval", () => {
+    const withoutInterval = {
+      ...cleanupJob({}),
+      interval_seconds: undefined,
+    };
+
+    const [item] = nextItems({
+      workflows: [],
+      cleanRuns: [],
+      cleanupJobs: [withoutInterval],
+      filter: "all",
+    });
+
+    expect(item.intervalSeconds).toBeNull();
+  });
+
   describe("narrowed to one kind of work", () => {
     const sources = {
       workflows: [workflow({ id: 1 })],

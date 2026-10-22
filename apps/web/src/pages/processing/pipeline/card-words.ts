@@ -26,7 +26,6 @@ import {
   workingFigures,
 } from "../processing-words";
 import { holdWords, outOfScheduleWords } from "../reason-words";
-import type { FlowStepId } from "../stage-flow-model";
 import type {
   CardBar,
   CardStatus,
@@ -196,15 +195,14 @@ export function queuedWords(item: WaitingItem, place: number): CardWords {
   };
 }
 
-const ANALYSING_TEXT: Partial<Record<FlowStepId, string>> = {
-  checking: "Checking file",
-  plan: "Planning",
-};
-
 function analysingWords(item: WorkingItem): CardWords {
   const running = workingFigures(item).running;
   return {
-    status: said(ANALYSING_TEXT[item.step] ?? "Checking file", "doing", true),
+    status: said(
+      item.step === "plan" ? "Planning" : "Checking file",
+      "doing",
+      true,
+    ),
     bar: MOVING_BAR,
     details: present([
       factsLine(item.facts, running ? `running ${running}` : undefined),

@@ -118,20 +118,18 @@ export function RemuxPassDetail({ detail }: { detail: string }) {
       className="mm-activity-remux-detail"
       data-testid="processing-remux-activity-detail"
     >
-      {summaryTiles.length > 0 ? (
-        <div className="mm-activity-remux-detail__tiles">
-          {summaryTiles.map((tile) => (
-            <div key={tile.label} className="mm-activity-remux-detail__tile">
-              <span className="mm-activity-remux-detail__tile-label">
-                {tile.label}
-              </span>
-              <span className="mm-activity-remux-detail__tile-value">
-                {tile.value}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : null}
+      <div className="mm-activity-remux-detail__tiles">
+        {summaryTiles.map((tile) => (
+          <div key={tile.label} className="mm-activity-remux-detail__tile">
+            <span className="mm-activity-remux-detail__tile-label">
+              {tile.label}
+            </span>
+            <span className="mm-activity-remux-detail__tile-value">
+              {tile.value}
+            </span>
+          </div>
+        ))}
+      </div>
       <details className="mm-activity-remux-detail__expand">
         <summary>Show track and cleanup details</summary>
         <div className="mm-activity-remux-detail__expand-body">

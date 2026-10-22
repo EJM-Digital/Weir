@@ -453,6 +453,24 @@ describe("LibraryPage", () => {
     );
   });
 
+  it("takes a file out of the selection when its box is unticked, and offers nothing to clean once none is left", () => {
+    renderLibrary();
+    const box = () =>
+      within(
+        screen
+          .getAllByTestId("library-row")
+          .find((row) =>
+            row.textContent?.includes("The.Quiet.Harbour.S01E01.mkv"),
+          )!,
+      ).getByRole("checkbox");
+
+    fireEvent.click(box());
+    expect(screen.getByTestId("library-bulk")).toHaveTextContent("1 selected");
+    fireEvent.click(box());
+
+    expect(screen.queryByTestId("library-bulk")).toBeNull();
+  });
+
   it("cleans exactly the selection it confirmed, even if the checkboxes change before you confirm", () => {
     // A second file to change the selection into, after the confirmation has already been asked for.
     filesResult = {

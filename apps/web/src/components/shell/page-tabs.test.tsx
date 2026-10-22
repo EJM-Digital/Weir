@@ -92,6 +92,40 @@ describe("page tabs", () => {
   });
 });
 
+describe("page tabs, further keys", () => {
+  it("moves back with ArrowLeft, wrapping from the first tab to the last", () => {
+    const onSelect = vi.fn();
+    renderTabs("overview", onSelect);
+
+    fireEvent.keyDown(screen.getByRole("tab", { name: "Overview" }), {
+      key: "ArrowLeft",
+    });
+
+    expect(onSelect).toHaveBeenLastCalledWith("logs");
+    expect(screen.getByRole("tab", { name: "Logs" })).toHaveFocus();
+  });
+
+  it("chooses nothing for a key that is not for moving", () => {
+    const onSelect = vi.fn();
+    renderTabs("overview", onSelect);
+
+    fireEvent.keyDown(screen.getByRole("tab", { name: "Overview" }), {
+      key: "x",
+    });
+
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("lets Tab reach the first tab when none is chosen", () => {
+    renderTabs("nothing-chosen", vi.fn());
+
+    expect(screen.getByRole("tab", { name: "Overview" })).toHaveAttribute(
+      "tabindex",
+      "0",
+    );
+  });
+});
+
 describe("page toolbar", () => {
   it("names the landmark apart from the tab list inside it", () => {
     render(

@@ -213,8 +213,7 @@ export function formFrom(library: ProcessingLibrary): LibraryForm {
     skip_access_tests: library.skip_access_tests,
     file_system_events_enabled: library.file_system_events_enabled,
     preserve_original_timestamps: library.preserve_original_timestamps,
-    remove_original_after_success:
-      library.remove_original_after_success ?? true,
+    remove_original_after_success: library.remove_original_after_success,
     retry_execution_failures: library.retry_execution_failures,
     retry_preflight_failures: library.retry_preflight_failures,
     failure_policy: library.failure_policy,
