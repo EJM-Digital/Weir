@@ -613,7 +613,7 @@ public sealed class ProcessingLibraryDiscoveryApiTests
             using var response = await client.PostAsync(UnlinkPath(libraryId), new { csrf_token = "bad" });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-            Assert.Equal("Invalid or expired CSRF token.", await Detail(response));
+            Assert.Equal("Your confirmation token expired. Refresh the page and try again.", await Detail(response));
         }
         finally
         {

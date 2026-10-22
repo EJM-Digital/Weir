@@ -33,10 +33,10 @@ internal sealed class ProcessingRuntimeEndpointHandlers
 
     public ProcessingRuntimeEndpointHandlers(ProcessingJobStore jobs, TimeProvider time, IMediaToolResolver resolver, MediaTools mediaTools)
     {
-        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
-        _mediaTools = mediaTools ?? throw new ArgumentNullException(nameof(mediaTools));
+        _jobs = jobs;
+        _time = time;
+        _resolver = resolver;
+        _mediaTools = mediaTools;
     }
 
     /// <summary>What is running, what is waiting and which limit the waiting files are waiting on (#633).</summary>

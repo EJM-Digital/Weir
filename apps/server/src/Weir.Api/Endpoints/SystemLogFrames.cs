@@ -13,7 +13,7 @@ public sealed class SystemLogFrames
 {
     private readonly LogAlerts _alerts;
 
-    public SystemLogFrames(LogAlerts alerts) => _alerts = alerts ?? throw new ArgumentNullException(nameof(alerts));
+    public SystemLogFrames(LogAlerts alerts) => _alerts = alerts;
 
     /// <summary>The frames for one open stream, from when it opens until it ends.</summary>
     public async IAsyncEnumerable<string> ForAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)

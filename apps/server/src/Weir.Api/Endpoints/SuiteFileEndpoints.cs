@@ -36,8 +36,8 @@ internal sealed class SuiteFileEndpointHandlers
 
     public SuiteFileEndpointHandlers(ConfigurationBackups backups, WeirLogFile logFile)
     {
-        _backups = backups ?? throw new ArgumentNullException(nameof(backups));
-        _logFile = logFile ?? throw new ArgumentNullException(nameof(logFile));
+        _backups = backups;
+        _logFile = logFile;
     }
 
     public async Task<ApiResult> PostBackupAsync(ApiRequest request)

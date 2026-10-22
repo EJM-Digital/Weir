@@ -63,16 +63,16 @@ internal sealed class LibraryModeFilesEndpointHandlers
         LibraryStore libraries,
         ArtworkPosterUrls posters)
     {
-        _scans = scans ?? throw new ArgumentNullException(nameof(scans));
-        _fileMarks = fileMarks ?? throw new ArgumentNullException(nameof(fileMarks));
-        _librarySettings = librarySettings ?? throw new ArgumentNullException(nameof(librarySettings));
-        _libraryView = libraryView ?? throw new ArgumentNullException(nameof(libraryView));
-        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
-        _hardlinkInspector = hardlinkInspector ?? throw new ArgumentNullException(nameof(hardlinkInspector));
-        _riskChecker = riskChecker ?? throw new ArgumentNullException(nameof(riskChecker));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
-        _posters = posters ?? throw new ArgumentNullException(nameof(posters));
+        _scans = scans;
+        _fileMarks = fileMarks;
+        _librarySettings = librarySettings;
+        _libraryView = libraryView;
+        _connections = connections;
+        _hardlinkInspector = hardlinkInspector;
+        _riskChecker = riskChecker;
+        _libraries = libraries;
+        _jobs = jobs;
+        _posters = posters;
     }
 
     private static WireObject FileOut(LibraryFileRow row, string? posterUrl) => new WireObject()

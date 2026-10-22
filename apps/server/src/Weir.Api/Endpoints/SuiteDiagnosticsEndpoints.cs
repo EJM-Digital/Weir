@@ -41,9 +41,9 @@ internal sealed class SuiteDiagnosticsEndpointHandlers
 
     public SuiteDiagnosticsEndpointHandlers(MediaTools mediaTools, WeirLogFile logFile, RuntimeMetricsStore metrics)
     {
-        _mediaTools = mediaTools ?? throw new ArgumentNullException(nameof(mediaTools));
-        _logFile = logFile ?? throw new ArgumentNullException(nameof(logFile));
-        _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
+        _mediaTools = mediaTools;
+        _logFile = logFile;
+        _metrics = metrics;
     }
 
     /// <summary>

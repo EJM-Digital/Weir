@@ -2973,6 +2973,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Rules/RemuxTrackExplainTests.cs",
           "name": "RemuxTrackExplainTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingFileTracksApiTests.cs",
+          "name": "ProcessingFileTracksApiTests"
         }
       ],
       "covers": [
@@ -3011,6 +3016,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingFileTracksApiTests.cs",
+          "name": "ProcessingFileTracksApiTests"
         }
       ],
       "covers": [
@@ -3292,6 +3302,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/RemuxJobs.cs",
           "name": "RemuxJobs"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingJobsApiTests.cs",
+          "name": "ProcessingJobsApiTests"
         }
       ],
       "covers": [
@@ -3330,6 +3345,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingJobsApiTests.cs",
+          "name": "ProcessingJobsApiTests"
         }
       ],
       "covers": [
@@ -3391,6 +3411,11 @@
           "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/HoldDiagnosticStoreTests.cs",
           "name": "HoldDiagnosticStoreTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingJobsApiTests.cs",
+          "name": "ProcessingJobsApiTests"
         }
       ],
       "covers": [
@@ -3640,6 +3665,11 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/SetupLiveTests.cs",
           "name": "SetupLiveTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -3688,6 +3718,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -3731,6 +3766,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingRejectSupportApiTests.cs",
           "name": "ProcessingRejectSupportApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -3769,6 +3809,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/MixedWorkflowsApiTests.cs",
           "name": "MixedWorkflowsApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -3840,6 +3885,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/LibraryRoundTripApiTests.cs",
           "name": "Saving_a_workflow_back_as_reported_keeps_every_setting"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -3893,6 +3943,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -3936,6 +3991,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -3974,6 +4034,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -4476,6 +4541,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingSettingsEndpointsContractTests.RuleSets.cs",
           "name": "Rule_set_rejects_invalid_fields"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingRuleSetsApiTests.cs",
+          "name": "ProcessingRuleSetsApiTests"
         }
       ],
       "covers": [
@@ -4519,6 +4589,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingRuleSetsApiTests.cs",
+          "name": "ProcessingRuleSetsApiTests"
         }
       ],
       "covers": [
@@ -4552,6 +4627,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingRuleSetsApiTests.cs",
+          "name": "ProcessingRuleSetsApiTests"
         }
       ],
       "covers": [
@@ -4600,6 +4680,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingRuleSetsApiTests.cs",
+          "name": "ProcessingRuleSetsApiTests"
         }
       ],
       "covers": [
@@ -4638,6 +4723,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingRulesPreviewRefusalsApiTests.cs",
+          "name": "ProcessingRulesPreviewRefusalsApiTests"
         }
       ],
       "covers": [

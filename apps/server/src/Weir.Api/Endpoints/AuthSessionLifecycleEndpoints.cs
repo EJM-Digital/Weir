@@ -43,11 +43,11 @@ internal sealed class AuthSessionLifecycleEndpointHandlers
     public AuthSessionLifecycleEndpointHandlers(
         AuthStore users, ActivityStore activity, SuiteSettingsStore suiteSettings, AuthRateLimiters limiters, SetupCodeGate setupCodes)
     {
-        _users = users ?? throw new ArgumentNullException(nameof(users));
-        _activity = activity ?? throw new ArgumentNullException(nameof(activity));
-        _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
-        _limiters = limiters ?? throw new ArgumentNullException(nameof(limiters));
-        _setupCodes = setupCodes ?? throw new ArgumentNullException(nameof(setupCodes));
+        _users = users;
+        _activity = activity;
+        _suiteSettings = suiteSettings;
+        _limiters = limiters;
+        _setupCodes = setupCodes;
     }
 
     public async Task<ApiResult> GetCsrfAsync(ApiRequest request)

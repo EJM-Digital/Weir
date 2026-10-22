@@ -27,7 +27,7 @@ internal sealed class ProcessingDirectPlayEndpointHandlers
 
     public ProcessingDirectPlayEndpointHandlers(DirectPlayService directPlay)
     {
-        _directPlay = directPlay ?? throw new ArgumentNullException(nameof(directPlay));
+        _directPlay = directPlay;
     }
 
     private async Task<WireObject> BuildOutAsync(ApiRequest request)

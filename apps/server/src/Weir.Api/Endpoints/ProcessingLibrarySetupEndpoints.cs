@@ -36,8 +36,8 @@ internal sealed class ProcessingLibrarySetupEndpointHandlers
 
     public ProcessingLibrarySetupEndpointHandlers(LibrarySuggestions suggestions, ProposedLibraryCheck check)
     {
-        _suggestions = suggestions ?? throw new ArgumentNullException(nameof(suggestions));
-        _check = check ?? throw new ArgumentNullException(nameof(check));
+        _suggestions = suggestions;
+        _check = check;
     }
 
     private static string FolderField(string mediaType, string kind) => $"{mediaType}_{kind}_folder";

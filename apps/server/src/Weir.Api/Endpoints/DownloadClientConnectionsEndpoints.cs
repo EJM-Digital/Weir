@@ -49,10 +49,10 @@ internal sealed class DownloadClientConnectionsEndpointHandlers
     public DownloadClientConnectionsEndpointHandlers(
         DownloadClientConnectionStore store, DownloadClientConnectionService connections, DownloadClientSuggestions suggestions, IDownloadClientPorts ports)
     {
-        _store = store ?? throw new ArgumentNullException(nameof(store));
-        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
-        _suggestions = suggestions ?? throw new ArgumentNullException(nameof(suggestions));
-        _ports = ports ?? throw new ArgumentNullException(nameof(ports));
+        _store = store;
+        _connections = connections;
+        _suggestions = suggestions;
+        _ports = ports;
     }
 
     public async Task<ApiResult> ListConnectionsAsync(ApiRequest request)

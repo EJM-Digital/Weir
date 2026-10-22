@@ -21,10 +21,10 @@ internal sealed class ReadinessChangeTask : IPeriodicTask
 
     public ReadinessChangeTask(IServiceProvider services, ActivityStreamClients clients, DataChangePublisher changes, ServerLooks looks)
     {
-        _services = services ?? throw new ArgumentNullException(nameof(services));
-        _clients = clients ?? throw new ArgumentNullException(nameof(clients));
-        _changes = changes ?? throw new ArgumentNullException(nameof(changes));
-        _looks = looks ?? throw new ArgumentNullException(nameof(looks));
+        _services = services;
+        _clients = clients;
+        _changes = changes;
+        _looks = looks;
     }
 
     public string Name => "readiness-changes";

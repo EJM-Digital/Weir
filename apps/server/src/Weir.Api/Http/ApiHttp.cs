@@ -232,9 +232,9 @@ public static class CookieHeaders
     public static Dictionary<string, string> Parse(StringValues cookieHeaders)
     {
         var cookies = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var header in cookieHeaders)
+        foreach (var header in cookieHeaders.OfType<string>())
         {
-            foreach (var chunk in (header ?? string.Empty).Split(';'))
+            foreach (var chunk in header.Split(';'))
             {
                 string key;
                 string value;

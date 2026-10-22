@@ -16,8 +16,8 @@ public sealed class LiveStreamFrames
 
     public LiveStreamFrames(DataChangePublisher changes, ServerBoot boot)
     {
-        _changes = changes ?? throw new ArgumentNullException(nameof(changes));
-        _boot = boot ?? throw new ArgumentNullException(nameof(boot));
+        _changes = changes;
+        _boot = boot;
     }
 
     /// <summary>The frames for one open stream, from when it opens until it ends.</summary>

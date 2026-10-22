@@ -52,20 +52,20 @@ internal sealed class SystemOverviewReader
         SystemChecks checks,
         WeirOptions options)
     {
-        _lifecycle = lifecycle ?? throw new ArgumentNullException(nameof(lifecycle));
-        _listen = listen ?? throw new ArgumentNullException(nameof(listen));
-        _machine = machine ?? throw new ArgumentNullException(nameof(machine));
-        _runMode = runMode ?? throw new ArgumentNullException(nameof(runMode));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _streamClients = streamClients ?? throw new ArgumentNullException(nameof(streamClients));
-        _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
-        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
-        _starts = starts ?? throw new ArgumentNullException(nameof(starts));
-        _footprint = footprint ?? throw new ArgumentNullException(nameof(footprint));
-        _updates = updates ?? throw new ArgumentNullException(nameof(updates));
-        _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
-        _checks = checks ?? throw new ArgumentNullException(nameof(checks));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
+        _lifecycle = lifecycle;
+        _listen = listen;
+        _machine = machine;
+        _runMode = runMode;
+        _time = time;
+        _streamClients = streamClients;
+        _metrics = metrics;
+        _jobs = jobs;
+        _starts = starts;
+        _footprint = footprint;
+        _updates = updates;
+        _suiteSettings = suiteSettings;
+        _checks = checks;
+        _options = options;
     }
 
     public async Task<WireObject> ReadAsync(UnitOfWork uow, IServiceProvider services, CancellationToken cancellationToken)

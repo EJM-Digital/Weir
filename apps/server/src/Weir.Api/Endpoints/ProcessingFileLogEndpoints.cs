@@ -34,10 +34,10 @@ internal sealed class ProcessingFileLogEndpointHandlers
 
     public ProcessingFileLogEndpointHandlers(OperatorSettingsStore operatorSettings, FileLogStore fileLogs, FileStateStore files, LibraryStore libraries)
     {
-        _operatorSettings = operatorSettings ?? throw new ArgumentNullException(nameof(operatorSettings));
-        _fileLogs = fileLogs ?? throw new ArgumentNullException(nameof(fileLogs));
-        _files = files ?? throw new ArgumentNullException(nameof(files));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
+        _operatorSettings = operatorSettings;
+        _fileLogs = fileLogs;
+        _files = files;
+        _libraries = libraries;
     }
 
     public async Task<ApiResult> GetFileLogAsync(ApiRequest request)

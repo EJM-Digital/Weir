@@ -36,9 +36,9 @@ internal sealed class SuiteNetworkAccessEndpointHandlers
 
     public SuiteNetworkAccessEndpointHandlers(INetworkAccess access, MachineIdentity machine, ActivityStore activity)
     {
-        _access = access ?? throw new ArgumentNullException(nameof(access));
-        _machine = machine ?? throw new ArgumentNullException(nameof(machine));
-        _activity = activity ?? throw new ArgumentNullException(nameof(activity));
+        _access = access;
+        _machine = machine;
+        _activity = activity;
     }
 
     public async Task<ApiResult> GetNetworkAccessAsync(ApiRequest request)

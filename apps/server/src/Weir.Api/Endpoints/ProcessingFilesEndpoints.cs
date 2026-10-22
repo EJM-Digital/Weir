@@ -72,15 +72,15 @@ internal sealed class ProcessingFilesEndpointHandlers
         SuitePauseService pause,
         ArtworkPosterUrls posters)
     {
-        _files = files ?? throw new ArgumentNullException(nameof(files));
-        _directPlay = directPlay ?? throw new ArgumentNullException(nameof(directPlay));
-        _liveProgress = liveProgress ?? throw new ArgumentNullException(nameof(liveProgress));
-        _handback = handback ?? throw new ArgumentNullException(nameof(handback));
-        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _removal = removal ?? throw new ArgumentNullException(nameof(removal));
-        _pause = pause ?? throw new ArgumentNullException(nameof(pause));
-        _posters = posters ?? throw new ArgumentNullException(nameof(posters));
+        _files = files;
+        _directPlay = directPlay;
+        _liveProgress = liveProgress;
+        _handback = handback;
+        _jobs = jobs;
+        _libraries = libraries;
+        _removal = removal;
+        _pause = pause;
+        _posters = posters;
     }
 
     private static WireObject FileOut(ProcessingFileRecord row, string libraryName, List<DirectPlayBadge> directPlay, LiveProgress? progress, string? posterUrl)

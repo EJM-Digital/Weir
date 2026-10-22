@@ -82,7 +82,14 @@ plans, the folder-hand-off and setup rules, the JSON writer and the rest of the 
 exclusive listening socket, a duplicate stop event, the version command, the short-secret warning and a host that can only be disposed
 synchronously. What stays is the start-up steps that need a failing database (the `catch` blocks of `WeirServer`) and the
 `recover` and `--healthcheck` commands in `Program.cs`, which the contract suite and the E2E smoke run out of process.
->
+
+The third step is in parts. Part 1 covered `Http/ApiHttp.cs`, the request middleware in `Http/ProtocolMiddleware.cs`, `Endpoints/ProcessingFileTracksEndpoints.cs`,
+`ProcessingJobsEndpoints.cs`, `ProcessingRulesPreviewEndpoints.cs`, `ProcessingLibraryEndpoints.cs`, `ProcessingLibraryMapping.cs` and `ProcessingRuleSetsEndpoints.cs` through the real host, with what the real
+ffprobe printed (`tests/fixtures/recorded/ffprobe`) and what a real Radarr answered for its queue. It found four bugs (a track-list error that named a file path, four confirmation messages that said
+"CSRF", a detection window that was refused when saved as it was read, and a window given with a timezone offset that was kept as the wrong time) and deleted the 213 null checks on constructor arguments in the endpoint handlers, which dependency
+injection can never trip. What is left of Weir.Api starts with `ProcessingWatchedFolderScanDispatchEndpoints.cs`, `AuthSessionLifecycleEndpoints.cs`, `LibraryModeFilesEndpoints.cs`,
+`DownloadClientConnectionsEndpoints.cs`, `MediaManagerIntakeEndpoints.cs` and `ProcessingFilesEndpoints.cs`.
+
 ## When code may be left out
 
 Everything the coverage figures leave out is listed in [`exclusions.json`](exclusions.json), and

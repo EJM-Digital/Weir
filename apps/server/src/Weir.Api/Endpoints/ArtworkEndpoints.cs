@@ -34,8 +34,8 @@ internal sealed class ArtworkEndpointHandlers
 
     public ArtworkEndpointHandlers(ArtworkLookupStore lookups, ArtworkPosterFiles posterFiles)
     {
-        _lookups = lookups ?? throw new ArgumentNullException(nameof(lookups));
-        _posterFiles = posterFiles ?? throw new ArgumentNullException(nameof(posterFiles));
+        _lookups = lookups;
+        _posterFiles = posterFiles;
     }
 
     public async Task<ApiResult> GetPosterAsync(ApiRequest request)

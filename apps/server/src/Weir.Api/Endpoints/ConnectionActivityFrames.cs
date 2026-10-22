@@ -14,7 +14,7 @@ public sealed class ConnectionActivityFrames
 {
     private readonly ConnectionActivityHub _hub;
 
-    public ConnectionActivityFrames(ConnectionActivityHub hub) => _hub = hub ?? throw new ArgumentNullException(nameof(hub));
+    public ConnectionActivityFrames(ConnectionActivityHub hub) => _hub = hub;
 
     /// <summary>The frames for one open stream, from when it opens until it ends.</summary>
     public async IAsyncEnumerable<string> ForAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)

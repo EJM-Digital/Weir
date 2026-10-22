@@ -30,8 +30,8 @@ internal sealed class ProcessingRemuxPassEndpointHandlers
 
     public ProcessingRemuxPassEndpointHandlers(ProcessingJobStore jobs, LibraryStore libraries)
     {
-        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
+        _jobs = jobs;
+        _libraries = libraries;
     }
 
     public async Task<ApiResult> PostEnqueueAsync(ApiRequest request)
@@ -48,7 +48,7 @@ internal sealed class ProcessingRemuxPassEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        request.RequireConfirmationToken(csrfToken, "Invalid or expired CSRF token.");
+        request.RequireConfirmationToken(csrfToken);
 
         var uow = await request.DbAsync().ConfigureAwait(false);
         ProcessingJob job;

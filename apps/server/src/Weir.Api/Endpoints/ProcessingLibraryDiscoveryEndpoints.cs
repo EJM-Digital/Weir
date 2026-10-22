@@ -50,13 +50,13 @@ internal sealed class ProcessingLibraryDiscoveryEndpointHandlers
         LibraryDiscoveryService discovery,
         ScanSettingsChanges scanSettingsChanges)
     {
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _connectionStore = connectionStore ?? throw new ArgumentNullException(nameof(connectionStore));
-        _operatorSettings = operatorSettings ?? throw new ArgumentNullException(nameof(operatorSettings));
-        _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
-        _scanWakeups = scanWakeups ?? throw new ArgumentNullException(nameof(scanWakeups));
-        _discovery = discovery ?? throw new ArgumentNullException(nameof(discovery));
-        _scanSettingsChanges = scanSettingsChanges ?? throw new ArgumentNullException(nameof(scanSettingsChanges));
+        _libraries = libraries;
+        _connectionStore = connectionStore;
+        _operatorSettings = operatorSettings;
+        _suiteSettings = suiteSettings;
+        _scanWakeups = scanWakeups;
+        _discovery = discovery;
+        _scanSettingsChanges = scanSettingsChanges;
     }
 
     private Task<WireObject> LibraryOutAsync(ApiRequest request, Weir.Infrastructure.Sqlite.UnitOfWork uow, ProcessingLibraryRecord row) =>
@@ -126,7 +126,7 @@ internal sealed class ProcessingLibraryDiscoveryEndpointHandlers
         issues.ThrowIfAny();
 
         // Every route in this file refuses a bad token with this exact wording, which clients match on.
-        request.RequireConfirmationToken(csrfToken, "Invalid or expired CSRF token.");
+        request.RequireConfirmationToken(csrfToken);
 
         var uow = await request.DbAsync().ConfigureAwait(false);
         var connection = await RequireConnectionAsync(uow, _connectionStore, connectionId).ConfigureAwait(false);
@@ -191,7 +191,7 @@ internal sealed class ProcessingLibraryDiscoveryEndpointHandlers
         issues.ThrowIfAny();
 
         // Every route in this file refuses a bad token with this exact wording, which clients match on.
-        request.RequireConfirmationToken(csrfToken, "Invalid or expired CSRF token.");
+        request.RequireConfirmationToken(csrfToken);
 
         var uow = await request.DbAsync().ConfigureAwait(false);
         var row = await RequireLibraryAsync(uow, _libraries, id).ConfigureAwait(false);

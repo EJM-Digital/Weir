@@ -32,7 +32,7 @@ internal sealed class AuthAccountEndpointHandlers
 
     public AuthAccountEndpointHandlers(ActivityStore activity)
     {
-        _activity = activity ?? throw new ArgumentNullException(nameof(activity));
+        _activity = activity;
     }
 
     public async Task<ApiResult> PostChangeUsernameAsync(ApiRequest request)

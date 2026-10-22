@@ -29,7 +29,7 @@ internal sealed class SuitePauseEndpointHandlers
 
     public SuitePauseEndpointHandlers(SuitePauseService pause)
     {
-        _pause = pause ?? throw new ArgumentNullException(nameof(pause));
+        _pause = pause;
     }
 
     public async Task<ApiResult> GetPauseAsync(ApiRequest request)

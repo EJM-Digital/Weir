@@ -35,7 +35,7 @@ internal sealed class AuthSessionEndpointHandlers
 
     public AuthSessionEndpointHandlers(ActivityStore activity)
     {
-        _activity = activity ?? throw new ArgumentNullException(nameof(activity));
+        _activity = activity;
     }
 
     public async Task<ApiResult> GetMeAsync(ApiRequest request)

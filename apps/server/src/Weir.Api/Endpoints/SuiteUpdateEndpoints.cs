@@ -37,8 +37,8 @@ internal sealed class SuiteUpdateEndpointHandlers
 
     public SuiteUpdateEndpointHandlers(UpdateStatusReader status, UpdateFiles files)
     {
-        _status = status ?? throw new ArgumentNullException(nameof(status));
-        _files = files ?? throw new ArgumentNullException(nameof(files));
+        _status = status;
+        _files = files;
     }
 
     public async Task<ApiResult> GetUpdateStatusAsync(ApiRequest request)

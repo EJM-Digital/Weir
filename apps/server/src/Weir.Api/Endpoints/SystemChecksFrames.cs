@@ -13,7 +13,7 @@ public sealed class SystemChecksFrames
 {
     private readonly ServerLooks _looks;
 
-    public SystemChecksFrames(ServerLooks looks) => _looks = looks ?? throw new ArgumentNullException(nameof(looks));
+    public SystemChecksFrames(ServerLooks looks) => _looks = looks;
 
     /// <summary>The frames for one open stream, from when it opens until it ends.</summary>
     public async IAsyncEnumerable<string> ForAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
