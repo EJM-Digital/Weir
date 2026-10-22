@@ -293,8 +293,16 @@ public class ProcessingWatchedFolderWatcherService : BackgroundService
             watcher.Changed += OnEvent;
             watcher.Deleted += OnEvent;
             watcher.Renamed += (sender, e) => OnEvent(sender, e);
+            // One failure of a watcher is reported once: the system can raise the same error several times for it (a share that goes
+            // away does, within the same moment), and the watcher is replaced after the first.
+            var failed = 0;
             watcher.Error += (sender, e) =>
             {
+                if (Interlocked.Exchange(ref failed, 1) == 1)
+                {
+                    return;
+                }
+
                 if (LogWatcherError(libraryId, library.Name, folder, e.GetException()))
                 {
                     immediateScans.Enqueue(libraryId);

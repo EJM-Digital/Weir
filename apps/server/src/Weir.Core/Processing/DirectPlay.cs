@@ -105,9 +105,8 @@ public static class DirectPlayEvaluation
         }
 
         var codec = (facts.VideoCodec ?? string.Empty).Trim().ToLowerInvariant();
-        codec = codec.Length == 0 ? null! : codec;
-        var label = codec is not null ? VideoLabels.GetValueOrDefault(codec, codec.ToUpperInvariant()) : string.Empty;
-        if (codec is null)
+        var label = VideoLabels.GetValueOrDefault(codec, codec.ToUpperInvariant());
+        if (codec.Length == 0)
         {
             unknown = true;
         }

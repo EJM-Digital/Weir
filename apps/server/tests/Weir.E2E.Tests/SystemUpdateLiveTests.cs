@@ -112,11 +112,33 @@ public sealed class SystemUpdateLiveTests(E2EServer server) : E2ETestBase(server
 
         await Button(page, "Check now").ClickAsync();
         await TrayFiles.TakeRequestAsync(own.Home, TrayFiles.CheckRequest);
-        TrayFiles.WriteUpdateStep(own.Home, "idle", Version);
+        TrayFiles.WriteUpdateStep(own.Home, "idle", Version, checkedAt: DateTimeOffset.UtcNow);
         await Expect(Button(page, "Download update")).ToBeEnabledAsync(new() { Timeout = NoticeMs });
+        await Expect(page.GetByTestId("suite-settings-release-status")).ToContainTextAsync($"Weir v{Version} is available", new() { Timeout = NoticeMs });
+        await Expect(page.GetByTestId("suite-settings-manual-check")).ToContainTextAsync("Update checking is off");
 
         await Button(page, "Download update").ClickAsync();
         await TrayFiles.TakeRequestAsync(own.Home, TrayFiles.DownloadRequest);
+        await AssertNotReloadedAsync(page);
+    }
+
+    [E2EFact]
+    public async Task While_update_checking_is_off_a_Check_now_that_finds_nothing_newer_says_so_and_still_says_checking_is_off()
+    {
+        await using var own = await E2EServer.StartWindowsInstallAsync(checksForUpdates: false);
+        var page = await OpenAboutAsync(own);
+        var line = page.GetByTestId("suite-settings-release-status");
+        await Expect(line).ToContainTextAsync("Update checking is off");
+
+        await Button(page, "Check now").ClickAsync();
+        await TrayFiles.TakeRequestAsync(own.Home, TrayFiles.CheckRequest);
+        TrayFiles.WriteUpdateStep(own.Home, "checking");
+        TrayFiles.WriteUpdateStep(own.Home, "idle", checkedAt: DateTimeOffset.UtcNow);
+
+        await Expect(line).ToContainTextAsync("Up to date", new() { Timeout = NoticeMs });
+        await Expect(line).ToContainTextAsync("You have Weir v");
+        await Expect(page.GetByTestId("suite-settings-manual-check")).ToContainTextAsync("Update checking is off, so Weir will not look again by itself.");
+        await Expect(Button(page, "Download update")).ToBeDisabledAsync();
         await AssertNotReloadedAsync(page);
     }
 

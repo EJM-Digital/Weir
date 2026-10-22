@@ -33,6 +33,8 @@
   <ItemGroup>
     <!-- A configuration bundle exported by an older release (format version 4): a frozen compatibility fixture. -->
     <None Include="Fixtures/*.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The files the tray and the server write for each other, as each really writes them (fixtures/tray-files/README.md); the tray's tests read the same ones. -->
+    <None Include="..\fixtures\tray-files\*" Link="fixtures\tray-files\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <!-- The ffmpeg layer's golden fixtures, shared with Weir.Core.Tests (checked-in .NET fixtures; see apps/server/README.md). -->
     <None Include="../Weir.Core.Tests/Media/golden/*.json" CopyToOutputDirectory="PreserveNewest" LinkBase="Media/golden" />
   </ItemGroup>

@@ -16,7 +16,7 @@ public static partial class RemuxRules
     private static readonly string[] OrdinalWords =
         ["zeroth", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"];
 
-    private static string Ordinal(int position) => position >= 0 && position < OrdinalWords.Length ? OrdinalWords[position] : $"{position}th";
+    private static string Ordinal(int position) => position < OrdinalWords.Length ? OrdinalWords[position] : $"{position}th";
 
     /// <summary>A short, human word for a subtitle's format, for the cap's plan notes (e.g. "kept the text track over PGS").</summary>
     private static string SubtitleFormatWord(string codecName)
