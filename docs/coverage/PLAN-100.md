@@ -66,9 +66,12 @@ pull request with its failing test first. The first step, done with this plan, c
 `LibraryCleanHandler`, `LibraryScanHandler` and `RemuxPassRunner.PostSuccessCleanup.cs`, with real folders and real SQLite, and
 found one bug (a manager that could not be reached when asked to remove a queue item threw out of the reject route instead of
 being asked again later). Branches the tests showed no input can reach were deleted rather than excluded. What is left of
-Weir.Infrastructure starts with `MediaManagers/HandbackOutcomes.cs`, `MediaManagers/ManagerSetupCheck.cs`,
-`Processing/LibraryDiscoveryService.cs`, `RemuxPass/RemuxPassEnqueue.cs`, `MediaManagers/HandoffLedgerStore.Status.cs`,
-`MediaManagers/MediaManagerIntake.cs` and the rest of `LibraryMode/LibraryScanHandler.cs`.
+Weir.Infrastructure was the third step, which covered `MediaManagers/HandbackOutcomes.cs`, `Processing/LibraryDiscoveryService.cs`,
+`RemuxPass/RemuxPassEnqueue.cs`, the job and file states of `MediaManagers/HandoffLedgerStore.Status.cs`, the kept-file and sign-in paths of
+`MediaManagers/MediaManagerIntake.cs` and the folder checks of `RemuxPass/RemuxPassPaths.cs`, and deleted code no input could reach (a second
+copy of the job reader, and payload parses of jobs found only because their payload already parsed). What is left of Weir.Infrastructure starts with
+`MediaManagers/ManagerSetupCheck.cs`, `MediaManagers/HandoffCompletionReporter.cs`, `MediaManagers/LibraryFileChangeNotifier.cs`,
+`MediaManagers/DownloadClientConnectionService.cs` and the rest of `LibraryMode/LibraryScanHandler.cs`.
 The Weir.Core part of step 4 began with the files that had the most lines and branches never run (settings, alerts and their
 addresses, the subtitle cap, job and log wording, the media-manager dialects and import events, the track explanation and preview,
 CSRF tokens, glob patterns, direct play, the session and rate-limit rules, the library file planner) and took Weir.Core from 95.9% to
@@ -79,7 +82,7 @@ plans, the folder-hand-off and setup rules, the JSON writer and the rest of the 
 exclusive listening socket, a duplicate stop event, the version command, the short-secret warning and a host that can only be disposed
 synchronously. What stays is the start-up steps that need a failing database (the `catch` blocks of `WeirServer`) and the
 `recover` and `--healthcheck` commands in `Program.cs`, which the contract suite and the E2E smoke run out of process.
-
+>
 ## When code may be left out
 
 Everything the coverage figures leave out is listed in [`exclusions.json`](exclusions.json), and

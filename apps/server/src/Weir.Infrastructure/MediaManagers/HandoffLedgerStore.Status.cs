@@ -1,5 +1,4 @@
 using System.Globalization;
-using Microsoft.Data.Sqlite;
 using Weir.Core.Jobs;
 using Weir.Core.Json;
 using Weir.Core.MediaManagers;
@@ -415,21 +414,4 @@ public sealed partial class HandoffLedgerStore
     /// <summary>Whether a record last written at <paramref name="at"/> belongs to an earlier hand-off of the same path.</summary>
     internal static bool IsFromEarlierHandoff(HandoffLedgerRow row, DateTimeOffset? at) =>
         row.ReceivedAt is { } received && at is { } written && written < received - EarlierHandoffMargin;
-
-    internal static ProcessingJob ReadJob(SqliteDataReader reader) => new(
-        reader.GetInt64(0),
-        reader.GetString(1),
-        reader.GetString(2),
-        reader.IsDBNull(3) ? null : reader.GetString(3),
-        reader.GetString(4),
-        reader.IsDBNull(5) ? null : reader.GetString(5),
-        TimestampColumns.Parse(reader.GetValue(6)),
-        (int)reader.GetInt64(7),
-        (int)reader.GetInt64(8),
-        reader.IsDBNull(9) ? null : reader.GetString(9),
-        TimestampColumns.Parse(reader.GetValue(10)),
-        (int)reader.GetInt64(11),
-        (int)reader.GetInt64(12),
-        TimestampColumns.Parse(reader.GetValue(13)) ?? DateTimeOffset.MinValue,
-        TimestampColumns.Parse(reader.GetValue(14)) ?? DateTimeOffset.MinValue);
 }
