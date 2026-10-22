@@ -28,7 +28,7 @@ public sealed class TrayControllerMenuTests : IDisposable
     {
         var rig = RunningRig();
 
-        rig.Shell.Handlers!.IconClicked();
+        rig.Shell.Handlers!.IconClicked(MouseButtons.Left);
 
         Assert.Equal([(9347, "/")], rig.Shell.BrowserOpens);
     }
@@ -37,7 +37,7 @@ public sealed class TrayControllerMenuTests : IDisposable
     public void A_double_click_right_after_a_click_opens_no_second_window_but_a_later_one_does()
     {
         var rig = RunningRig();
-        rig.Shell.Handlers!.IconClicked();
+        rig.Shell.Handlers!.IconClicked(MouseButtons.Left);
 
         rig.Clock.Advance(TimeSpan.FromMilliseconds(200));
         rig.Shell.Handlers.IconDoubleClicked();
@@ -360,6 +360,51 @@ public sealed class TrayControllerMenuTests : IDisposable
         await first;
 
         Assert.Equal(("Weir Update", TrayBalloons.UpdateUnderWayText, ToolTipIcon.Info, 10_000), rig.Shell.LastBalloon);
+    }
+
+    [Fact]
+    public async Task A_server_too_busy_to_hear_the_request_for_a_copy_of_its_data_is_said_to_be_busy_in_a_notice()
+    {
+        var rig = RunningRig(new FakeUpdateService().AlreadyDownloaded());
+        var started = DateTime.UtcNow.AddMinutes(-1);
+        rig.Server.Running = new RunningServer(Environment.ProcessId, started);
+        rig.Server.ServerIsRunning = true;
+        File.WriteAllText(
+            Path.Combine(rig.Home, UpdateBackupReady.FileName),
+            $$"""{"pid":{{Environment.ProcessId}},"started_at":"{{started:O}}"}""");
+        rig.Shell.Balloons.Clear();
+
+        var update = rig.Controller.ApplyUpdateAndRestartAsync();
+        for (var polls = 0; rig.Shell.Balloons.Count == 0 && polls < 2 * UpdateBackupRequest.HearingTime / UpdateBackupRequest.PollInterval; polls++)
+        {
+            rig.Clock.Advance(UpdateBackupRequest.PollInterval);
+            await Task.Yield();
+            rig.Shell.Drain();
+        }
+
+        Assert.Equal("Weir Update", rig.Shell.Balloons[0].Title);
+        Assert.Contains("Weir is busy", rig.Shell.Balloons[0].Text, StringComparison.Ordinal);
+        File.WriteAllText(
+            Path.Combine(rig.Home, UpdateBackupRequest.ResultFileName),
+            $$"""{"id":"{{System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(rig.Home, UpdateBackupRequest.RequestFileName)))!["id"]}}","state":"failed","reason":"No room."}""");
+        while (!update.IsCompleted)
+        {
+            rig.Clock.Advance(UpdateBackupRequest.PollInterval);
+            await Task.Yield();
+        }
+        await update;
+    }
+
+    [Theory]
+    [InlineData(MouseButtons.Right)]
+    [InlineData(MouseButtons.Middle)]
+    public void Clicking_the_icon_with_any_other_button_opens_nothing(MouseButtons button)
+    {
+        var rig = RunningRig();
+
+        rig.Shell.Handlers!.IconClicked(button);
+
+        Assert.Empty(rig.Shell.BrowserOpens);
     }
 
     [Fact]

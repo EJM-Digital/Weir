@@ -5,6 +5,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { composeOverride } from "./override.mjs";
+import { pullImage } from "./pull.mjs";
 import { run, runForStatus, shellQuote } from "./shell.mjs";
 
 /** Where the stack's Weir answers: compose.yaml publishes its port on this machine. */
@@ -39,7 +40,7 @@ export class Stack {
   }
 
   pull(image) {
-    run(`docker pull ${image}`);
+    pullImage(image);
   }
 
   /**

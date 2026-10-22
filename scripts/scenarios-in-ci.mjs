@@ -28,6 +28,7 @@ import { catalogIds, linuxShards, loadHomes, problemsWithHomes, scenariosOfShard
 import { exitCode, runScenarios, summaryMarkdown } from "./scenarios-ci/run.mjs";
 import { SHARDS } from "./scenarios-ci/shards.mjs";
 import { WindowsMachine, whyNotAThrowawayMachine } from "./scenarios-ci/windows-machine.mjs";
+import * as windowsFiles from "./scenarios-ci/windows-files.mjs";
 import * as windowsInstall from "./scenarios-ci/windows-install.mjs";
 import * as windowsTray from "./scenarios-ci/windows-tray.mjs";
 import * as windowsUpdate from "./scenarios-ci/windows-update.mjs";
@@ -36,6 +37,7 @@ import { expectedVersion, runWindowsShard } from "./scenarios-ci/windows-shard.m
 /** The scenarios of each Windows shard, and the watch on the logs they are judged by. */
 const WINDOWS_SHARDS = {
   "windows-install": windowsInstall,
+  "windows-files": windowsFiles,
   "windows-tray": windowsTray,
   "windows-update": windowsUpdate,
 };
@@ -172,6 +174,8 @@ async function main() {
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   for (const result of results.filter((entry) => entry.status !== "passed")) console.error(`::error::${result.id}: ${result.detail}`);
   process.exitCode = collectFailed ? 1 : exitCode(results);
+  // Anything a scenario left running (a server, a relay, a call to a share that hangs) must not hold the job after its results are written.
+  process.exit(process.exitCode);
 }
 
 await main();

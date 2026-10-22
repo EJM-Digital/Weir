@@ -85,6 +85,26 @@ public sealed partial class LibraryCleanHandler
     }
 
     /// <summary>
+    /// The list of files is only as new as the last scan. A file that turns out to match already (a media manager replaced it, or an earlier
+    /// clean was interrupted after it had taken effect) is still listed as needing the clean, so the library is looked at again.
+    /// </summary>
+    private async Task LookAtLibraryAgainAsync(long libraryId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var uow = await UnitOfWork.OpenAsync(_database, cancellationToken).ConfigureAwait(false);
+            await RequestScanAsync(uow, libraryId).ConfigureAwait(false);
+            await uow.CommitAsync().ConfigureAwait(false);
+        }
+#pragma warning disable CA1031 // Best-effort: a file that needs nothing is not made a failure by the list being a scan behind.
+        catch (Exception exception)
+#pragma warning restore CA1031
+        {
+            _logger.LogWarning(exception, "A library clean found its file already matching but could not ask for the library to be scanned again.");
+        }
+    }
+
+    /// <summary>
     /// Asks for the library to be scanned again, unless a scan is already waiting to start: it will see every file cleaned so far,
     /// so the cleans of a whole selection ask for one scan between them. A scan already under way may have passed the file, so it does not count.
     /// </summary>
@@ -133,7 +153,7 @@ public sealed partial class LibraryCleanHandler
 
     /// <summary>
     /// Puts the row back to <c>pending</c> with a future <c>not_before</c> and clears the lease ourselves, so
-    /// <see cref="ProcessingJobStore.CompleteClaimedAsync"/> finds the lease already gone and leaves this update alone.
+    /// the worker, told by <see cref="JobWorkContext.ReleasedLease"/>, leaves this update alone.
     /// </summary>
     private async Task PostponeAsync(JobWorkContext context, WireObject payload, DateTimeOffset notBefore)
     {
@@ -146,6 +166,7 @@ public sealed partial class LibraryCleanHandler
             ("@id", context.Id)).ConfigureAwait(false);
         _changes.PublishQueueChangeOnCommit(uow, LibraryModeJobKinds.CleanKind);
         await uow.CommitAsync().ConfigureAwait(false);
+        context.ReleasedLease = true;
     }
 
     /// <summary>

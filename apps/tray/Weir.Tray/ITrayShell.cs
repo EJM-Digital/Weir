@@ -3,14 +3,14 @@ namespace Weir.Tray;
 /// <summary>What the person does to the tray icon, handed to the shell when it opens.</summary>
 /// <param name="MenuClicks">What each menu item does when clicked.</param>
 /// <param name="MenuOpening">The menu is about to be shown.</param>
-/// <param name="IconClicked">The icon was clicked with the left button.</param>
+/// <param name="IconClicked">The icon was clicked with this button.</param>
 /// <param name="IconDoubleClicked">The icon was double-clicked.</param>
 /// <param name="BalloonClicked">The balloon on screen was clicked.</param>
 /// <param name="BlinkTick">The blink timer ticked.</param>
 sealed record TrayShellHandlers(
     Dictionary<TrayMenuItem, Action> MenuClicks,
     Action MenuOpening,
-    Action IconClicked,
+    Action<MouseButtons> IconClicked,
     Action IconDoubleClicked,
     Action BalloonClicked,
     Action BlinkTick);

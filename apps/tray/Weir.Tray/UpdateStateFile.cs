@@ -34,12 +34,15 @@ static class UpdateStateFile
         Converters = { new JsonStringEnumConverter<UpdatePhase>(JsonNamingPolicy.CamelCase) },
     };
 
-    /// <summary>Replaces the file. <c>downloaded</c> is kept beside <c>state</c> for the readers that only ask that.</summary>
-    internal static void Write(string runtimeHome, UpdatePhase state, string? version, string? failure = null) =>
+    /// <summary>
+    /// Replaces the file. <c>downloaded</c> is kept beside <c>state</c> for the readers that only ask that. <c>checkedAt</c> is when
+    /// the last check that reached GitHub was made, whether or not it found a newer version, so a person who asked for one is told.
+    /// </summary>
+    internal static void Write(string runtimeHome, UpdatePhase state, string? version, string? failure = null, DateTimeOffset? checkedAt = null) =>
         AtomicFile.WriteAllText(
             runtimeHome,
             FileName,
-            JsonSerializer.Serialize(new Contents(state, state == UpdatePhase.Downloaded, version, failure), Json));
+            JsonSerializer.Serialize(new Contents(state, state == UpdatePhase.Downloaded, version, failure, checkedAt?.UtcDateTime), Json));
 
-    private sealed record Contents(UpdatePhase State, bool Downloaded, string? Version, string? Failure);
+    private sealed record Contents(UpdatePhase State, bool Downloaded, string? Version, string? Failure, DateTime? CheckedAt);
 }

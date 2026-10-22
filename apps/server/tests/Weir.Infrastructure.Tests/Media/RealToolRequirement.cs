@@ -65,5 +65,15 @@ internal static class RealToolRequirement
     }
 
     /// <summary>Fails the fixtures every real-tool test class shares when the tools are required and not all there.</summary>
-    public static void EnsureAvailable() => EnsureAvailable(Required, RealFfmpeg.Tools is not null, RealMkvmerge.Tool is not null);
+    public static void EnsureAvailable()
+    {
+        try
+        {
+            EnsureAvailable(Required, RealFfmpeg.Tools is not null, RealMkvmerge.Tool is not null);
+        }
+        catch (InvalidOperationException missing) when (RealToolAvailability.Refused.Count > 0)
+        {
+            throw new InvalidOperationException($"{missing.Message} {string.Join(' ', RealToolAvailability.Refused)}", missing);
+        }
+    }
 }
