@@ -72,6 +72,7 @@ export class DragGesture<Id> {
   private slots = new Map<Id, Slot>();
   private span: readonly [number, number] = [0, 0];
   private grabOffset = 0;
+  private size = 0;
   private translate = 0;
   private frame = 0;
   private timer = 0;
@@ -117,30 +118,31 @@ export class DragGesture<Id> {
     const leader = this.heldElements()[0];
     if (!leader) return;
     const { axis } = this.host;
-    this.scroller = scrollParentOf(leader, axis);
-    const position = scrollPosition(this.scroller, axis);
+    const scroller = scrollParentOf(leader, axis);
+    this.scroller = scroller;
+    const position = scrollPosition(scroller, axis);
+    const measure = (element: HTMLElement): Slot => {
+      const box = element.getBoundingClientRect();
+      return { start: startOf(box, axis) + position, size: sizeOf(box, axis) };
+    };
     this.slots = new Map();
     for (const id of this.host.order()) {
       const element = this.host.elementsOf(id)[0];
-      if (!element) continue;
-      const box = element.getBoundingClientRect();
-      this.slots.set(id, {
-        start: startOf(box, axis) + position,
-        size: sizeOf(box, axis),
-      });
+      if (element) this.slots.set(id, measure(element));
     }
     const slots = [...this.slots.values()];
     this.span = [
       Math.min(...slots.map((slot) => slot.start)),
       Math.max(...slots.map((slot) => slot.start + slot.size)),
     ];
-    const own = this.slots.get(this.id);
-    this.grabOffset = this.pointer - ((own?.start ?? 0) - position);
+    const own = measure(leader);
+    this.size = own.size;
+    this.grabOffset = this.pointer - (own.start - position);
     this.active = true;
     markHeld(this.heldElements(), true);
     document.documentElement.classList.add(DRAGGING_CLASS);
     this.host.began(this.id);
-    this.frame = requestAnimationFrame(this.scrollLoop);
+    this.frame = requestAnimationFrame(() => this.scrollLoop(scroller));
   }
 
   private onMove = (event: PointerEvent): void => {
@@ -158,7 +160,7 @@ export class DragGesture<Id> {
     if (!this.active || this.settling || !this.scroller || !leader) return;
     const { axis } = this.host;
     const position = scrollPosition(this.scroller, axis);
-    const size = this.slots.get(this.id)?.size ?? 0;
+    const { size } = this;
     const wanted = this.pointer - this.grabOffset + position;
     const heldStart = clamp(wanted, this.span[0], this.span[1] - size);
     const layoutStart =
@@ -181,17 +183,17 @@ export class DragGesture<Id> {
     }
   };
 
-  private scrollLoop = (): void => {
-    if (!this.active || this.settling || !this.scroller) return;
+  /** Each frame while held: scrolls towards the edge the pointer is near. Every way the gesture ends cancels the next frame. */
+  private scrollLoop(scroller: Element): void {
     const { axis } = this.host;
-    const [viewStart, viewEnd] = visibleSpan(this.scroller, axis);
+    const [viewStart, viewEnd] = visibleSpan(scroller, axis);
     const step = edgeScrollStep(this.pointer, viewStart, viewEnd);
     if (step !== 0) {
-      this.scroller.scrollBy(axis === "y" ? { top: step } : { left: step });
+      scroller.scrollBy(axis === "y" ? { top: step } : { left: step });
       this.follow();
     }
-    this.frame = requestAnimationFrame(this.scrollLoop);
-  };
+    this.frame = requestAnimationFrame(() => this.scrollLoop(scroller));
+  }
 
   private onKey = (event: KeyboardEvent): void => {
     if (event.key === ESCAPE_KEY) this.cancel();

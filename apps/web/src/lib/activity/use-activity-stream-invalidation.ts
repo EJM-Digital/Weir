@@ -291,7 +291,7 @@ function closeActivityStream(): void {
 function reopenActivityStreamSoon(): void {
   reopenTimer ??= window.setTimeout(() => {
     reopenTimer = null;
-    if (hasSubscribers()) ensureActivityStream();
+    ensureActivityStream();
   }, REOPEN_DELAY_MS);
 }
 
@@ -664,11 +664,9 @@ export function useActivityStreamInvalidations(
   useEffect(() => {
     let lastRunAt = 0;
     let trailingTimer: number | null = null;
-    let trailingPending = false;
 
     const invalidate = () => {
       lastRunAt = Date.now();
-      trailingPending = false;
       queryKeys.forEach((queryKey) => invalidateLive(qc, { queryKey, exact }));
     };
 
@@ -683,11 +681,10 @@ export function useActivityStreamInvalidations(
         return;
       }
 
-      trailingPending = true;
       if (trailingTimer === null) {
         trailingTimer = window.setTimeout(() => {
           trailingTimer = null;
-          if (trailingPending) invalidate();
+          invalidate();
         }, remaining);
       }
     });

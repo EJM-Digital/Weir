@@ -263,7 +263,7 @@ export function handbackStory(
       ? ` It is in the library at ${handback.imported_path}.`
       : "";
     return {
-      heading: `Imported by ${by}`,
+      heading: `Imported by ${handback.outcome_by ?? "your media manager"}`,
       sentence: `${by} imported it${when}.${where} ${note}`.trim(),
       meaning: "done",
     };

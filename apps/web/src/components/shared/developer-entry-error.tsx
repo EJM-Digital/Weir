@@ -1,5 +1,4 @@
 import {
-  httpStatusFromApiError,
   isHttpErrorFromApi,
   isLikelyNetworkFailure,
   isLikelyViteProxyUpstreamDown,
@@ -71,7 +70,7 @@ export function DeveloperEntryError({ error }: { error: unknown }) {
   }
 
   if (isHttpErrorFromApi(error)) {
-    const status = httpStatusFromApiError(error);
+    const { status } = error;
     if (status === 503) {
       return (
         <>
@@ -111,13 +110,10 @@ export function DeveloperEntryError({ error }: { error: unknown }) {
           Unexpected API error
         </h1>
         <p className="mm-auth-lead">
-          The server responded but the request failed
-          {status != null ? ` (HTTP ${status})` : ""}. Check the backend
-          terminal for details.
+          The server responded but the request failed (HTTP {status}). Check the
+          backend terminal for details.
         </p>
-        {error instanceof Error ? (
-          <p className="mm-auth-lead mm-entry-detail">{error.message}</p>
-        ) : null}
+        <p className="mm-auth-lead mm-entry-detail">{error.message}</p>
       </>
     );
   }

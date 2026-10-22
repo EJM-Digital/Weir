@@ -97,9 +97,8 @@ function fileLine(path: string): DetailLine | null {
   return name ? { parts: [name], mono: true } : null;
 }
 
-/** The facts the last probe measured, with a quiet remark at the right. Nothing when both are empty. */
-function factsLine(facts: string, right?: string): DetailLine | null {
-  if (!facts && !right) return null;
+/** The facts the last probe measured, with a quiet remark at the right. A library clean has no facts, only the remark. */
+function factsLine(facts: string, right?: string): DetailLine {
   if (!facts) return { parts: [], right };
   // The first fact matters most ("1080p"), the last least ("2.27 GB"): a narrow card drops from the end.
   const [, ...fits] = narrowing(

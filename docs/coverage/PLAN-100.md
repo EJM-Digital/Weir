@@ -16,7 +16,7 @@ real number; the order of the gaps changes slowly.
 | Server: Weir.Api | 92.9% | 74.0% | 983 | 1,112 |
 | Server: Weir.Host | 89.2% | 79.1% | 51 | 15 |
 | Tray | 75.2% | 74.1% | 1,209 | 406 |
-| Web app | 97.4% | 90.2% | 296 | 914 |
+| Web app | 98.3% | 92.7% | 193 | 678 |
 | Node scripts | not measured | not measured | | |
 
 The Weir.Core row is from before the first step. The server rows merge the Linux and Windows unit legs (`Weir.Core.Tests`, `Weir.Infrastructure.Tests`,
@@ -53,8 +53,9 @@ Biggest uncovered area first. Each step is one or a few pull requests, each rais
 6. **Web app** (296 lines, 914 branches): `lib/activity/activity-display.ts` (57 branches), `components/activity/structured-detail-facts.tsx` (0%),
    `lib/activity/pass-detail.ts` (33 branches), `lib/ui/drag-gesture.ts`, `components/ui/server-folder-picker-button.tsx`, `lib/ui/drag-geometry.ts`,
    `components/error-boundary.tsx`, `components/shared/developer-entry-error.tsx`, `pages/library/library-picker.tsx` and
-   `lib/activity/use-activity-stream-invalidation.ts`. The web floors (88.3% lines, 82.7% branches) are far below the measured figures
-   (97.4%, 90.2%), so the first web pull request raises them to what `main` measures.
+   `lib/activity/use-activity-stream-invalidation.ts`. The first web pull request covered the activity display and pass-detail words, the drag gesture and its geometry, the folder
+   picker, the developer and route error screens, the Activity, Library and schedule models and the live stream's edge cases, and
+   raised the web floors to 98.2% lines and 92.6% branches.
 7. **Node scripts** (`scripts/*.mjs`, 118 files, 59 with a test file) are not measured yet. The first step is to measure them
    (`node --test --experimental-test-coverage`), add a `scripts` row to `floors.json` and the check, and list what cannot run in CI
    (a script that needs Docker or a published release) in the exclusions file.
