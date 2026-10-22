@@ -12,7 +12,7 @@ namespace Weir.Tray;
 /// </remarks>
 sealed class SecondLaunchSignal : IDisposable
 {
-    internal const string DefaultName = @"Local\WeirTraySecondLaunch";
+    internal const string DefaultName = RuntimeHomeStart.Names.SessionPrefix + "WeirTraySecondLaunch";
 
     private readonly EventWaitHandle _event;
     private readonly RegisteredWaitHandle _registration;

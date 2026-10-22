@@ -72,7 +72,17 @@ Weir.Infrastructure was the third step, which covered `MediaManagers/HandbackOut
 copy of the job reader, and payload parses of jobs found only because their payload already parsed). What is left of Weir.Infrastructure starts with
 `MediaManagers/ManagerSetupCheck.cs`, `MediaManagers/HandoffCompletionReporter.cs`, `MediaManagers/LibraryFileChangeNotifier.cs`,
 `MediaManagers/DownloadClientConnectionService.cs` and the rest of `LibraryMode/LibraryScanHandler.cs`.
-
+The Weir.Core part of step 4 began with the files that had the most lines and branches never run (settings, alerts and their
+addresses, the subtitle cap, job and log wording, the media-manager dialects and import events, the track explanation and preview,
+CSRF tokens, glob patterns, direct play, the session and rate-limit rules, the library file planner) and took Weir.Core from 95.9% to
+about 98.0% of lines and from 89.7% to about 93.5% of branches. Branches no input can reach were deleted (the unreachable arms of the
+float and truth-value readers, an eviction loop the limiter had already run, the byte-order check in the token writer). What is left
+of Weir.Core is in the files the new tests did not reach (the Mkvmerge and output-validation helpers, the library and manual track
+plans, the folder-hand-off and setup rules, the JSON writer and the rest of the remux planner). In Weir.Host the new tests cover the
+exclusive listening socket, a duplicate stop event, the version command, the short-secret warning and a host that can only be disposed
+synchronously. What stays is the start-up steps that need a failing database (the `catch` blocks of `WeirServer`) and the
+`recover` and `--healthcheck` commands in `Program.cs`, which the contract suite and the E2E smoke run out of process.
+>
 ## When code may be left out
 
 Everything the coverage figures leave out is listed in [`exclusions.json`](exclusions.json), and

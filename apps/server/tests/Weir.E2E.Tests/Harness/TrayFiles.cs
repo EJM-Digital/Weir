@@ -30,9 +30,12 @@ public static class TrayFiles
     public static void WriteUpdateState(string home, bool downloaded, string version) =>
         Replace(home, string.Create(CultureInfo.InvariantCulture, $"{{\"downloaded\": {(downloaded ? "true" : "false")}, \"version\": \"{version}\"}}"));
 
-    /// <summary>The tray is at <paramref name="step"/> (idle, checking, downloading, downloaded or failed) with an update to <paramref name="version"/>, if it has found one.</summary>
-    public static void WriteUpdateStep(string home, string step, string? version = null, string? failure = null) =>
-        Replace(home, JsonSerializer.Serialize(new { state = step, downloaded = step == "downloaded", version, failure }));
+    /// <summary>
+    /// The tray is at <paramref name="step"/> (idle, checking, downloading, downloaded or failed) with an update to <paramref name="version"/>,
+    /// if it has found one. <paramref name="checkedAt"/> is when its last look at GitHub was, whether or not it found anything newer.
+    /// </summary>
+    public static void WriteUpdateStep(string home, string step, string? version = null, string? failure = null, DateTimeOffset? checkedAt = null) =>
+        Replace(home, JsonSerializer.Serialize(new { state = step, downloaded = step == "downloaded", version, failure, checkedAt }));
 
     /// <summary>The tray has installed the update: the file that said one was waiting is gone.</summary>
     public static void ClearUpdateState(string home) => File.Delete(Path.Join(home, UpdateState));

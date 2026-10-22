@@ -136,6 +136,8 @@ public sealed class LibraryCleanRefusalTests
         Assert.Equal("This file already matches the workflow's rules; nothing to clean.", (string)clean["detail"]!);
         Assert.Equal(replacementHash, LibraryCleanWorld.Sha256(path));
         Assert.Equal([Film], world.FilesOnDisk());
+        // The scan listed the film as needing a clean it will never get; the clean looks at the library again, so the list catches up.
+        await world.WaitForFileStatusAsync(path, "matches");
     }
 
     [RealFfmpegFact]

@@ -42,6 +42,8 @@ export type UpdateStateOut = {
   failure: string | null;
   /** Whether a tray is there to take a request: not on Docker or source, and not once the tray has gone quiet. */
   tray_running: boolean;
+  /** When the tray last looked for an update, whether or not it found one. Absent until it has looked. */
+  last_checked_at?: string;
   /** Why the tray held the update back: it could not save a copy of Weir's data first. Absent otherwise. */
   not_updated_reason?: string;
   /** Why this copy cannot update itself: it was not installed with the installer. Absent otherwise. */

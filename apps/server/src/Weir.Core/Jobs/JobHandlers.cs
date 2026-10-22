@@ -17,7 +17,7 @@ public enum JobAlert
 
 /// <summary>
 /// The view passed to a job handler after a successful claim, outside the claim transaction. It is immutable apart from
-/// <see cref="Alert"/>, which a handler sets when the job's end does not say what happened to the work.
+/// <see cref="Alert"/>, which a handler sets when the job's end does not say what happened to the work, and <see cref="ReleasedLease"/>.
 /// </summary>
 public sealed record JobWorkContext(
     long Id,
@@ -29,6 +29,12 @@ public sealed record JobWorkContext(
 {
     /// <summary>What the alert channels hear once the handler returns; <see cref="JobAlert.Finished"/> unless the handler says otherwise.</summary>
     public JobAlert Alert { get; set; } = JobAlert.Finished;
+
+    /// <summary>
+    /// Set by a handler that has put its own row back in the queue to be looked at later, so the worker does not complete it: the row is
+    /// pending again with no lease, which is where the handler meant it to be.
+    /// </summary>
+    public bool ReleasedLease { get; set; }
 }
 
 /// <summary>

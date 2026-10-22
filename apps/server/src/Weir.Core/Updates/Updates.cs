@@ -390,7 +390,7 @@ public static class UpdateStatus
             var downloaded = (dict.Get("downloaded") ?? WireBool.False).IsTruthy;
             var state = dict.Get("state") is WireString named && ActiveOrFailedStates.Contains(named.Value, StringComparer.Ordinal) ? named.Value : StateIdle;
             var failure = state == StateFailed && dict.Get("failure") is WireString { Value.Length: > 0 } reason ? reason.Value : null;
-            return StateOut(downloaded, pending, downloaded ? StateDownloaded : state, failure);
+            return StateOut(downloaded, pending, downloaded ? StateDownloaded : state, failure, LastCheckedAt(dict));
         }
         catch (WireJsonDecodeException)
         {
@@ -406,14 +406,25 @@ public static class UpdateStatus
     public static WireObject WithStep(WireObject state, string step)
     {
         ArgumentNullException.ThrowIfNull(state);
-        return StateOut(false, state.Get("pending_version") is WireString { Value.Length: > 0 } version ? version.Value : null, step, null);
+        return StateOut(false, state.Get("pending_version") is WireString { Value.Length: > 0 } version ? version.Value : null, step, null, (state.Get("last_checked_at") as WireString)?.Value);
     }
 
-    private static WireObject StateOut(bool downloaded, string? pendingVersion, string state, string? failure) => new WireObject()
-        .Set("downloaded", downloaded)
-        .Set("pending_version", pendingVersion)
-        .Set("state", state)
-        .Set("failure", failure);
+    // When the tray last looked, in the form the rest of the API uses; left out when the tray has not looked or wrote a time that cannot be read.
+    private static string? LastCheckedAt(WireObject dict) =>
+        dict.Get("checkedAt") is WireString { Value: var text }
+        && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at)
+            ? Timestamp.FromDateTimeOffset(at.ToUniversalTime()).ToWireText()
+            : null;
+
+    private static WireObject StateOut(bool downloaded, string? pendingVersion, string state, string? failure, string? lastCheckedAt = null)
+    {
+        var shown = new WireObject()
+            .Set("downloaded", downloaded)
+            .Set("pending_version", pendingVersion)
+            .Set("state", state)
+            .Set("failure", failure);
+        return lastCheckedAt is null ? shown : shown.Set("last_checked_at", lastCheckedAt);
+    }
 
     private static WireObject Base(string currentVersion, string installType, string status, string summary) => new WireObject()
         .Set("current_version", currentVersion)
