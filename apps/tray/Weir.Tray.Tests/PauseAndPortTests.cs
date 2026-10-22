@@ -72,7 +72,7 @@ public sealed class PauseAndPortTests : IDisposable
 
         var balloon = Assert.Single(_balloons);
         Assert.Equal("Weir couldn't resume processing. See tray-host.log in the data folder.", balloon.Text);
-        Assert.Contains("Could not ask the server to resume:", File.ReadAllText(Path.Combine(_home.Path, "tray-host.log")), StringComparison.Ordinal);
+        Assert.Contains("Could not ask the server to resume:", LogFile.ReadAllText(Path.Combine(_home.Path, "tray-host.log")), StringComparison.Ordinal);
     }
 
     private PortChange Change(int? chosen, Func<int, Task<PortMove>>? move = null) => new(

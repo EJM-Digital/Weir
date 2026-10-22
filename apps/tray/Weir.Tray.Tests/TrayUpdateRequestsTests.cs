@@ -488,7 +488,7 @@ public sealed class TrayUpdateRequestsTests : IDisposable
         await UntilSettledAsync();
 
         Assert.Equal(1, service.Checks);
-        Assert.Contains("Could not delete", File.ReadAllText(FlagPath("tray-host.log")), StringComparison.Ordinal);
+        Assert.Contains("Could not delete", LogFile.ReadAllText(FlagPath("tray-host.log")), StringComparison.Ordinal);
     }
 
     [Fact(Timeout = 30_000)]

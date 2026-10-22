@@ -12,7 +12,7 @@ public sealed class BackgroundWorkTests : IDisposable
 
     public void Dispose() => _home.Dispose();
 
-    private string Log => File.ReadAllText(Path.Combine(_home.Path, "tray-host.log"));
+    private string Log => LogFile.ReadAllText(Path.Combine(_home.Path, "tray-host.log"));
 
     [Fact]
     public async Task A_loop_that_fails_is_logged_with_its_name_and_the_error()

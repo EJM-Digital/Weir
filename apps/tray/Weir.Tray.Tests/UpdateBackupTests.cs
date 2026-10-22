@@ -761,7 +761,7 @@ public sealed class UpdateBackupTests : IDisposable
         Assert.Equal("No room.", UpdateBackupHook.PendingReason(_home.Path, "1.0.0"));
     }
 
-    private string Log => File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName));
+    private string Log => LogFile.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName));
 
     [Fact(Timeout = 10_000)]
     public async Task An_answer_that_is_not_whole_yet_is_read_again_on_the_next_look()

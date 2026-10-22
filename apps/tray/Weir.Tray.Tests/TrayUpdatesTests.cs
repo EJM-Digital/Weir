@@ -99,7 +99,7 @@ public sealed class TrayUpdatesTests : IDisposable
         updates.InstallWhenIdle();
 
         Assert.Same(first, updates.IdleWatch);
-        var started = File.ReadAllLines(Path.Combine(_home.Path, "tray-host.log")).Count(line => line.Contains("installing once Weir has been idle", StringComparison.Ordinal));
+        var started = LogFile.ReadAllLines(Path.Combine(_home.Path, "tray-host.log")).Count(line => line.Contains("installing once Weir has been idle", StringComparison.Ordinal));
         Assert.Equal(1, started);
     }
 

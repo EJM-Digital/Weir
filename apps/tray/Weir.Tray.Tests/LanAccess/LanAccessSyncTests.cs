@@ -162,7 +162,7 @@ public sealed class LanAccessSyncTests : IDisposable
         await sync.CheckAsync(Watch(), CancellationToken.None);
 
         Assert.Equal([ScopeChange.Failed], _applied.Select(applied => applied.Change));
-        Assert.Contains("the saved choice could not be put back", File.ReadAllText(Path.Combine(Home, TrayLog.FileName)), StringComparison.Ordinal);
+        Assert.Contains("the saved choice could not be put back", LogFile.ReadAllText(Path.Combine(Home, TrayLog.FileName)), StringComparison.Ordinal);
     }
 
     [Fact]

@@ -14,7 +14,7 @@ public sealed class FirewallAccessTests : IDisposable
 {
     private readonly TempDirectory _home = TempDirectory.AsWeirHome();
 
-    private string Log => File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName));
+    private string Log => LogFile.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName));
 
     public void Dispose() => _home.Dispose();
 

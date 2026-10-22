@@ -139,7 +139,7 @@ public sealed class SecretFileTests : IDisposable
         var secret = SecretFile.Ensure(_home.Path, FileName, restrict: _ => throw new UnauthorizedAccessException("denied"));
 
         Assert.Equal(saved, secret);
-        Assert.Contains($"Could not restrict who can read {SecretPath} (denied); it keeps its current access list.", File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName)), StringComparison.Ordinal);
+        Assert.Contains($"Could not restrict who can read {SecretPath} (denied); it keeps its current access list.", LogFile.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName)), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -149,7 +149,7 @@ public sealed class SecretFileTests : IDisposable
 
         SecretFile.Ensure(_home.Path, FileName, restrict: _ => true);
 
-        Assert.Contains($"Restricted {SecretPath} to SYSTEM, Administrators and", File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName)), StringComparison.Ordinal);
+        Assert.Contains($"Restricted {SecretPath} to SYSTEM, Administrators and", LogFile.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName)), StringComparison.Ordinal);
     }
 
     [Fact]

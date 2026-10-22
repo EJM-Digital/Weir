@@ -115,7 +115,7 @@ public sealed class UpdateOnStartTests : IDisposable
 
         Assert.False(handedOver);
         Assert.Empty(service.Applied);
-        Assert.Contains($"Update v{LeftWaiting} is waiting, but Weir could not record trying it", File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName)), StringComparison.Ordinal);
+        Assert.Contains($"Update v{LeftWaiting} is waiting, but Weir could not record trying it", LogFile.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName)), StringComparison.Ordinal);
     }
 
     [Fact]

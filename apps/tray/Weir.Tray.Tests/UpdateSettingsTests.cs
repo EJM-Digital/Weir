@@ -115,7 +115,7 @@ public sealed class UpdateSettingsTests : IDisposable
         Assert.True(File.Exists(SettingsPath));
         Assert.False(got.CheckForUpdates);
         Assert.Equal(UpdateMode.Auto, got.Mode);
-        Assert.Contains("This is a new install, so update checking starts off.", File.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
+        Assert.Contains("This is a new install, so update checking starts off.", LogFile.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public sealed class UpdateSettingsTests : IDisposable
         UpdateSettings.SettleFirstRun(Home, _ => null);
 
         Assert.True(UpdateSettings.Load(Home).CheckForUpdates);
-        Assert.Contains("Weir has run here before, so update checking stays on.", File.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
+        Assert.Contains("Weir has run here before, so update checking stays on.", LogFile.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -217,7 +217,7 @@ public sealed class UpdateSettingsTests : IDisposable
 
         Assert.Equal(UpdateMode.NotifyOnly, got.Mode);
         Assert.False(got.CheckForUpdates);
-        Assert.Contains("update-settings.json could not be read just now", File.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
+        Assert.Contains("update-settings.json could not be read just now", LogFile.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -227,7 +227,7 @@ public sealed class UpdateSettingsTests : IDisposable
 
         UpdateSettings.Load(Home);
 
-        var log = File.ReadAllText(Path.Combine(Home, "tray-host.log"));
+        var log = LogFile.ReadAllText(Path.Combine(Home, "tray-host.log"));
         Assert.Contains("update-settings.json could not be read", log);
         Assert.Contains("NotifyOnly", log);
     }

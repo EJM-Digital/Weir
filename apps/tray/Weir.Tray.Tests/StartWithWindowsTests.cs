@@ -154,7 +154,7 @@ public sealed class StartWithWindowsTests : IDisposable
     {
         StartWithWindowsPrompt.AskOnFirstRun(["--silent"]);
 
-        Assert.Contains("First-run start-with-Windows question skipped", File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName)), StringComparison.Ordinal);
+        Assert.Contains("First-run start-with-Windows question skipped", LogFile.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName)), StringComparison.Ordinal);
     }
 
     [Fact]

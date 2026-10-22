@@ -84,7 +84,7 @@ public sealed class FirstRunFirewallQuestionTests : IDisposable
 
         Assert.Equal(0, _asked);
         Assert.False(File.Exists(Path.Combine(_home.Path, FirewallPromptFile.FileName)));
-        Assert.Contains("First-run firewall prompt skipped", File.ReadAllText(Path.Combine(_home.Path, "tray-host.log")), StringComparison.Ordinal);
+        Assert.Contains("First-run firewall prompt skipped", LogFile.ReadAllText(Path.Combine(_home.Path, "tray-host.log")), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -104,6 +104,6 @@ public sealed class FirstRunFirewallQuestionTests : IDisposable
 
         FirewallInstallHooks.AskOnFirstRun([], () => true, () => false, _firewall, Path.Combine(file, "data"));
 
-        Assert.Contains("First-run firewall prompt could not record its answer", File.ReadAllText(Path.Combine(_home.Path, "tray-host.log")), StringComparison.Ordinal);
+        Assert.Contains("First-run firewall prompt could not record its answer", LogFile.ReadAllText(Path.Combine(_home.Path, "tray-host.log")), StringComparison.Ordinal);
     }
 }

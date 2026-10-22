@@ -95,7 +95,7 @@ public sealed class TrayAppTests : IDisposable
             Assert.Equal(0, exitCode);
             Assert.Equal(["run"], loop);
             Assert.Equal("9347", File.ReadAllText(Path.Combine(_home.Path, ServerHost.CurrentPortFileName)));
-            Assert.Contains("Tray icon event loop ended.", File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName)), StringComparison.Ordinal);
+            Assert.Contains("Tray icon event loop ended.", LogFile.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName)), StringComparison.Ordinal);
         });
     }
 

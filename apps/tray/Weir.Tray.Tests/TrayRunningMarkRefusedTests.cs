@@ -24,7 +24,7 @@ public sealed class TrayRunningMarkRefusedTests : IDisposable
         _home.Dispose();
     }
 
-    private string Log => File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName));
+    private string Log => LogFile.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName));
 
     private TrayRunningMark Mark() => new(_key.Path);
 

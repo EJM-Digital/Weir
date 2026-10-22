@@ -107,5 +107,5 @@ public sealed class ServerProcessStopTests : IDisposable
 
     private string ServerFolder() => Path.Combine(_home.Path, "server-" + Guid.NewGuid().ToString("n"));
 
-    private string TrayLogText() => File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName));
+    private string TrayLogText() => LogFile.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName));
 }

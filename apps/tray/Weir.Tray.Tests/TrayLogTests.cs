@@ -28,7 +28,7 @@ public sealed partial class TrayLogTests : IDisposable
 
         TrayLog.Write("Weir is healthy on http://127.0.0.1:9347/");
 
-        var line = Assert.Single(File.ReadAllLines(LogPath));
+        var line = Assert.Single(LogFile.ReadAllLines(LogPath));
         var match = Line().Match(line);
         Assert.True(match.Success, line);
         Assert.Equal("Weir is healthy on http://127.0.0.1:9347/", match.Groups[1].Value);
@@ -47,7 +47,7 @@ public sealed partial class TrayLogTests : IDisposable
 
         var text = File.ReadAllText(LogPath);
         Assert.StartsWith(afterFirst, text, StringComparison.Ordinal);
-        Assert.Equal(["first", "second", "third"], File.ReadAllLines(LogPath).Select(line => Line().Match(line).Groups[1].Value));
+        Assert.Equal(["first", "second", "third"], LogFile.ReadAllLines(LogPath).Select(line => Line().Match(line).Groups[1].Value));
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public sealed partial class TrayLogTests : IDisposable
         TrayLog.Write("Background work stopped after an error:\nSystem.InvalidOperationException: boom");
         TrayLog.Write("next");
 
-        var lines = File.ReadAllLines(LogPath);
+        var lines = LogFile.ReadAllLines(LogPath);
         Assert.Equal(3, lines.Length);
         Assert.Matches(Line(), lines[0]);
         Assert.Equal("System.InvalidOperationException: boom", lines[1]);
@@ -70,7 +70,7 @@ public sealed partial class TrayLogTests : IDisposable
 
         TrayLog.Write("in the other home");
 
-        Assert.Equal("in the other home", Line().Match(Assert.Single(File.ReadAllLines(Path.Combine(other.Path, "tray-host.log")))).Groups[1].Value);
+        Assert.Equal("in the other home", Line().Match(Assert.Single(LogFile.ReadAllLines(Path.Combine(other.Path, "tray-host.log")))).Groups[1].Value);
         Assert.False(File.Exists(LogPath));
     }
 
@@ -87,7 +87,7 @@ public sealed partial class TrayLogTests : IDisposable
 
         await Task.WhenAll(writers);
 
-        var messages = File.ReadAllLines(LogPath).Select(line => Line().Match(line)).ToList();
+        var messages = LogFile.ReadAllLines(LogPath).Select(line => Line().Match(line)).ToList();
         Assert.All(messages, match => Assert.True(match.Success, match.Value));
         var expected = Enumerable.Range(0, 8).SelectMany(writer => Enumerable.Range(0, 50).Select(line => $"writer {writer} line {line}"));
         Assert.Equal(expected.Order(StringComparer.Ordinal), messages.Select(match => match.Groups[1].Value).Order(StringComparer.Ordinal));

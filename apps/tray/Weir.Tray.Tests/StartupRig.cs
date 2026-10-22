@@ -51,7 +51,7 @@ internal sealed class StartupRig : IDisposable
 
     internal TrayRunningMark Mark => new(_key.Path);
 
-    internal string Log => File.Exists(Path.Combine(Home, TrayLog.FileName)) ? File.ReadAllText(Path.Combine(Home, TrayLog.FileName)) : "";
+    internal string Log => File.Exists(Path.Combine(Home, TrayLog.FileName)) ? LogFile.ReadAllText(Path.Combine(Home, TrayLog.FileName)) : "";
 
     internal int Run(params string[] args) => new TrayStartup(Effects, MutexName).Run(args);
 

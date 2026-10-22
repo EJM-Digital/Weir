@@ -360,7 +360,7 @@ public sealed class PortChoiceTests : IDisposable
         var interactive = PortChoice.HasInteractiveDesktop(() => true, () => throw new InvalidOperationException("no process"), () => true);
 
         Assert.False(interactive);
-        Assert.Contains("Could not tell whether this is an interactive desktop (no process); treating it as not.", File.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
+        Assert.Contains("Could not tell whether this is an interactive desktop (no process); treating it as not.", LogFile.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -395,7 +395,7 @@ public sealed class PortChoiceTests : IDisposable
 
         Assert.False(inUse);
         Assert.Equal([9350], bound);
-        Assert.Contains("checking port 9350 by binding it", File.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
+        Assert.Contains("checking port 9350 by binding it", LogFile.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
     }
 
     [Fact]

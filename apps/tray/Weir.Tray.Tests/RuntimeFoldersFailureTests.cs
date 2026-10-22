@@ -14,7 +14,7 @@ public sealed class RuntimeFoldersFailureTests : IDisposable
 
     public void Dispose() => _home.Dispose();
 
-    private string Log => File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName));
+    private string Log => LogFile.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName));
 
     [Fact]
     public void A_file_Explorer_cannot_select_is_shown_by_opening_its_folder()
