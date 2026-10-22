@@ -44,7 +44,7 @@ public sealed class TrayFilesTheTrayWritesTests : IDisposable
     [Fact]
     public void The_state_of_an_update_is_written_as_recorded()
     {
-        UpdateStateFile.Write(_home.Path, UpdatePhase.Downloaded, "9.9.9");
+        UpdateStateFile.Write(_home.Path, UpdatePhase.Downloaded, "9.9.9", checkedAt: RecordedTrayFiles.WrittenAt);
 
         Assert.Equal(Recorded("update-state.json"), Written(UpdateStateFile.FileName));
     }

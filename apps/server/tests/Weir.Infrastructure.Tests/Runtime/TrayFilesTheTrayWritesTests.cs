@@ -83,6 +83,7 @@ public sealed class TrayFilesTheTrayWritesTests : IDisposable
         Assert.True(files.HasDownloadedUpdate());
         Assert.Equal(UpdateStatus.StateDownloaded, (state["state"] as WireString)?.Value);
         Assert.Equal("9.9.9", (state["pending_version"] as WireString)?.Value);
+        Assert.Equal("2026-01-15T10:00:00Z", (state["last_checked_at"] as WireString)?.Value);
         Assert.True(state["tray_running"].IsTruthy);
     }
 
