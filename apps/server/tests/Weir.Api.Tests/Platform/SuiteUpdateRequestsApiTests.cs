@@ -80,6 +80,36 @@ public sealed class SuiteUpdateRequestsApiTests
         Assert.True(File.Exists(Path.Join(server.Home, flag)));
     }
 
+    [Fact]
+    public async Task While_update_checking_is_off_the_answer_to_a_check_by_hand_is_kept_and_the_status_still_says_automatic_checking_is_off()
+    {
+        var (server, client) = await SignedInAdminAsync(TimeSpan.Zero, checking: false);
+        await using var _ = server;
+        TrayWrites(server, "{\"state\": \"idle\", \"downloaded\": false, \"version\": \"9.9.9\", \"checkedAt\": \"2026-10-21T09:30:00Z\"}");
+
+        using var state = await client.GetAsync(UpdateState);
+        using var status = await client.GetAsync("/api/v1/suite/update-status");
+
+        var shown = await Json(state);
+        Assert.Equal(("9.9.9", "2026-10-21T09:30:00Z"), (shown["pending_version"]!.GetValue<string>(), shown["last_checked_at"]!.GetValue<string>()));
+        Assert.Equal("off", (await Json(status))["status"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task A_check_with_nothing_found_says_when_it_was_made_and_names_no_version()
+    {
+        var (server, client) = await SignedInAdminAsync(TimeSpan.Zero, checking: false);
+        await using var _ = server;
+        TrayWrites(server, "{\"state\": \"idle\", \"downloaded\": false, \"version\": null, \"checkedAt\": \"2026-10-21T09:30:00Z\"}");
+
+        using var asked = await AskAsync(client, CheckUpdate);
+        using var state = await client.GetAsync(UpdateState);
+
+        var answer = await Json(asked);
+        Assert.Equal(("checking", "2026-10-21T09:30:00Z"), (answer["state"]!.GetValue<string>(), answer["last_checked_at"]!.GetValue<string>()));
+        Assert.Null((await Json(state))["pending_version"]);
+    }
+
     private const string Settings = "/api/v1/suite/update-settings";
 
     private static async Task<HttpResponseMessage> SaveAsync(ApiTestClient client, object choices) =>

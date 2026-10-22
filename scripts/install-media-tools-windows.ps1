@@ -16,6 +16,20 @@ $ffmpegDir = [System.IO.Path]::GetFullPath($ffmpegVendorDir)
 $mkvtoolnixDir = [System.IO.Path]::GetFullPath($mkvtoolnixVendorDir)
 Write-Host "FFmpeg is in $ffmpegDir"
 Write-Host "MKVToolNix is in $mkvtoolnixDir"
+
+# Each tool is started once here, before the test run loads the machine: a build that does not start (missing libraries,
+# a blocked file) fails this step with its own output, and the first start of a freshly restored file is not paid
+# during the test run.
+foreach ($tool in @(
+    @{ Path = Join-Path $ffmpegDir "ffmpeg.exe"; Argument = "-version" },
+    @{ Path = Join-Path $ffmpegDir "ffprobe.exe"; Argument = "-version" },
+    @{ Path = Join-Path $mkvtoolnixDir "mkvmerge.exe"; Argument = "--version" })) {
+  $banner = & $tool.Path $tool.Argument
+  if ($LASTEXITCODE -ne 0) {
+    throw "$($tool.Path) did not run: exit code $LASTEXITCODE. $($banner | Select-Object -First 3)"
+  }
+  Write-Host ($banner | Select-Object -First 1)
+}
 if ($env:GITHUB_OUTPUT) {
   Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding ascii -Value "ffmpeg-dir=$ffmpegDir"
   Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding ascii -Value "mkvtoolnix-dir=$mkvtoolnixDir"
