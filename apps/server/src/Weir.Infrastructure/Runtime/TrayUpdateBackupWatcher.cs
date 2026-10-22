@@ -44,7 +44,7 @@ public sealed class TrayUpdateBackupWatcher : BackgroundService
     /// <summary>How long a request that cannot be read yet is given to be finished before it is read once more.</summary>
     public static readonly TimeSpan HalfWrittenWait = TimeSpan.FromMilliseconds(500);
 
-    /// <summary>How long a request that was refused for a moment waits before it is looked at again; the tray waits 15 s for the first answer.</summary>
+    /// <summary>How long a request that was refused for a moment waits before it is looked at again; the tray asks again at 15 s, 45 s and 105 s, and gives up at 225 s.</summary>
     public static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(1);
 
     private static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
