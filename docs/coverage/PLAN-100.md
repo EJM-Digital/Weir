@@ -20,7 +20,7 @@ real number; the order of the gaps changes slowly.
 | Node scripts | not measured | not measured | | |
 
 The Weir.Core row is from before the first step. The server rows merge the Linux and Windows unit legs (`Weir.Core.Tests`, `Weir.Infrastructure.Tests`,
-`Weir.Api.Tests`); the tray row is `Weir.Tray.Tests` on Windows; the web row is the whole vitest suite. The out-of-process figure
+`Weir.Api.Tests`); the tray row is `Weir.Tray.Tests` on Windows; the web row is the whole vitest suite, and from the browser-coverage pull request the web figure also counts the browser (E2E) tests, merged with it (`README.md`, "The web figure counts the browser tests"). The out-of-process figure
 (contract suite and E2E smoke, 74.7% to 94.6% lines by project) is counted a different way and is not part of this target; it rises
 as a side effect.
 
@@ -55,7 +55,7 @@ Biggest uncovered area first. Each step is one or a few pull requests, each rais
    `MediaManagers/ImportEvents.cs`, `Rules/SortableTrack.cs` and `LibraryMode/LibraryFilePlanner.cs`.
 5. **Weir.Host** (51 lines): `WeirServer.cs` (22), `Program.cs` (18), `ExclusiveListenSocket.cs`, `StopRequestListener.cs` and `ServerRun.cs`.
    Start-up and shutdown paths, run against the real host process.
-6. **Web app** (296 lines, 914 branches): `lib/activity/activity-display.ts` (57 branches), `components/activity/structured-detail-facts.tsx` (0%),
+6. **Web app** (296 lines, 914 branches; about 230 branches at the end can only run in a real browser, because jsdom has no layout, canvas or `ResizeObserver`, so the web figure now counts the Playwright tests as well): `lib/activity/activity-display.ts` (57 branches), `components/activity/structured-detail-facts.tsx` (0%),
    `lib/activity/pass-detail.ts` (33 branches), `lib/ui/drag-gesture.ts`, `components/ui/server-folder-picker-button.tsx`, `lib/ui/drag-geometry.ts`,
    `components/error-boundary.tsx`, `components/shared/developer-entry-error.tsx`, `pages/library/library-picker.tsx` and
    `lib/activity/use-activity-stream-invalidation.ts`. The first web pull request covered the activity display and pass-detail words, the drag gesture and its geometry, the folder
