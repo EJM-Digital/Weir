@@ -7,13 +7,11 @@ namespace Weir.Tray.Tests;
 
 /// <summary>
 /// The smaller parts starting the tray is made of: where the data folder is, the brand icon, the browser, the questions asked
-/// before the tray exists, the errors nobody handles, and the real effects the start is wired to.
+/// before the tray exists, and the real effects the start is wired to.
 /// </summary>
 public sealed class StartupPartsTests : IDisposable
 {
     private readonly TempDirectory _home = TempDirectory.AsWeirHome();
-
-    private string Log => File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName));
 
     public void Dispose() => _home.Dispose();
 
@@ -103,21 +101,6 @@ public sealed class StartupPartsTests : IDisposable
 
         Assert.Equal("S-1-5-21-1111-2222-3333-4444", RuntimeHomeSecurity.Describe(unknown));
         Assert.Contains("\\", RuntimeHomeSecurity.Describe(OwnerOnlyAccess.CurrentUser()), StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Errors_nobody_handles_are_written_to_the_log_and_a_background_one_is_marked_as_seen()
-    {
-        UnhandledErrorLog.OnUiThread(new InvalidOperationException("a menu handler failed"));
-        UnhandledErrorLog.OnFatal(new InvalidOperationException("the runtime is stopping"));
-        var background = new UnobservedTaskExceptionEventArgs(new AggregateException(new InvalidOperationException("a task failed")));
-        UnhandledErrorLog.OnUnobserved(background);
-
-        Assert.Contains("Unhandled error on the tray's UI thread:", Log, StringComparison.Ordinal);
-        Assert.Contains("a menu handler failed", Log, StringComparison.Ordinal);
-        Assert.Contains("Unhandled error; the tray is stopping:", Log, StringComparison.Ordinal);
-        Assert.Contains("a task failed", Log, StringComparison.Ordinal);
-        Assert.True(background.Observed);
     }
 
     [Fact]

@@ -8658,6 +8658,11 @@ export interface components {
       /** Failure */
       failure?: string | null;
       /**
+       * Last Checked At
+       * @description Present only once the tray has looked for an update since it started, whether or not it found a newer one: when it last did, so a check a person asked for is answered even while Weir does not look by itself. A newer version it found is named in pending_version.
+       */
+      last_checked_at?: string;
+      /**
        * Not Updated Reason
        * @description Present only while the tray holds the downloaded update back because it could not save a copy of Weir's data first: why, in plain words, and what to do.
        */

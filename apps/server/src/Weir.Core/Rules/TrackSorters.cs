@@ -87,7 +87,7 @@ public static partial class TrackSorters
 
         if (LargerIsBetter(sorter.Field))
         {
-            var number = LongOrZero(actual);
+            var number = Number(actual);
             // Unknown sorts after known, in both directions.
             long unknown = number <= 0 ? 1 : 0;
             var score = number > 0 ? -Math.Min(number, 2_000_000_000) : 0;
@@ -105,7 +105,7 @@ public static partial class TrackSorters
             return [sorter.Reversed ? -rank : rank];
         }
 
-        var text = RulesJson.Lower(WireStrings.Strip(Truthy(actual) ? Str(actual) : string.Empty));
+        var text = RulesJson.Lower(WireStrings.Strip(Truthy(actual) ? Str(actual!) : string.Empty));
         var parts = new List<long> { text.Length == 0 ? 1 : 0 };
         foreach (var rune in WireStrings.Slice(text, 32).EnumerateRunes())
         {

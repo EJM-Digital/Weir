@@ -112,6 +112,9 @@ internal sealed class FakeTrayShell : ITrayShell
 
     public List<(string Title, string Text, ToolTipIcon Icon, int TimeoutMs)> Balloons { get; } = [];
 
+    /// <summary>Raised after each balloon and each hand-over to the UI thread, so a test can wait for what the controller does from background work.</summary>
+    public TestActivity Activity { get; set; } = new();
+
     public bool Hidden { get; private set; }
 
     public List<string> Clipboard { get; } = [];
@@ -158,7 +161,11 @@ internal sealed class FakeTrayShell : ITrayShell
 
     public void Open(TrayShellHandlers handlers) => Handlers = handlers;
 
-    public void Post(Action action) => _posted.Enqueue(action);
+    public void Post(Action action)
+    {
+        _posted.Enqueue(action);
+        Activity.Raise();
+    }
 
     public void ShowIcon(TrayIconKey key) => Icons.Add(key);
 
@@ -168,7 +175,11 @@ internal sealed class FakeTrayShell : ITrayShell
 
     public void SetBlinking(bool on) => Blinking = on;
 
-    public void ShowBalloon(string title, string text, ToolTipIcon icon, int timeoutMs) => Balloons.Add((title, text, icon, timeoutMs));
+    public void ShowBalloon(string title, string text, ToolTipIcon icon, int timeoutMs)
+    {
+        Balloons.Add((title, text, icon, timeoutMs));
+        Activity.Raise();
+    }
 
     public void Hide() => Hidden = true;
 
@@ -230,6 +241,8 @@ internal sealed class TrayRig : IDisposable
         Func<PortChoice.Resolution>? resolvePort = null)
     {
         Updates = updates ?? new FakeUpdateService { IsInstalled = false };
+        Updates.Activity = Activity;
+        Shell.Activity = Activity;
         Startup = new StartupRegistration(_run.Path, new StartWithWindowsAnswer(_answer.Path), _startupFolder.Path, @"C:\Weir\Weir.exe");
         Controller = new TrayController(
             _home.Path,
@@ -247,6 +260,9 @@ internal sealed class TrayRig : IDisposable
     }
 
     internal string Home => _home.Path;
+
+    /// <summary>Raised by the shell and the update service whenever the controller changes either, so a test waits for a change and not for the clock.</summary>
+    internal TestActivity Activity { get; } = new();
 
     internal FakeTrayServer Server { get; } = new();
 

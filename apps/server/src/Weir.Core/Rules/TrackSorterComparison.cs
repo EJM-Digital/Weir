@@ -46,7 +46,7 @@ public static partial class TrackSorters
         if (field == "channels")
         {
             var wanted = ParseChannels(expected);
-            var have = NumberOrZero(actual);
+            var have = (double)Number(actual);
             return wanted is not null && NumericCompare(have, op, wanted.Value);
         }
 
@@ -63,7 +63,7 @@ public static partial class TrackSorters
                 wantedNumber *= 1000;
             }
 
-            return NumericCompare(NumberOrZero(actual), op, wantedNumber);
+            return NumericCompare(Number(actual), op, wantedNumber);
         }
 
         if (field is "default" or "forced" or "commentary")
@@ -74,7 +74,7 @@ public static partial class TrackSorters
         }
 
         // Text compares case-insensitively; title is a containment test.
-        var haveText = RulesJson.Lower(WireStrings.Strip(Truthy(actual) ? Str(actual) : string.Empty));
+        var haveText = RulesJson.Lower(WireStrings.Strip(Truthy(actual) ? Str(actual!) : string.Empty));
         var wantText = RulesJson.Lower(WireStrings.Strip(expected));
         var matched = field == "title" ? haveText.Contains(wantText, StringComparison.Ordinal) : haveText == wantText;
         return op == "!=" ? !matched : matched;
@@ -101,32 +101,23 @@ public static partial class TrackSorters
         return (match.Groups[1].Success ? match.Groups[1].Value : "=", match.Groups[2].Value);
     }
 
+    /// <summary>A track fact as a truth value: a flag as it is, a number when not zero, text when not empty; a fact the track does not have is false.</summary>
     private static bool Truthy(object? value) => value switch
     {
-        null => false,
         bool b => b,
         long n => n != 0,
         string s => s.Length > 0,
-        _ => true,
+        _ => false,
     };
 
-    private static string Str(object? value) => value switch
+    /// <summary>The text of a fact that is <see cref="Truthy"/>: a flag that is on reads <c>True</c>.</summary>
+    private static string Str(object value) => value switch
     {
-        null => "None",
-        bool b => b ? "True" : "False",
+        bool => "True",
         long n => n.ToString(CultureInfo.InvariantCulture),
-        string s => s,
-        _ => value.ToString() ?? string.Empty,
+        _ => (string)value,
     };
 
-    /// <summary>A track fact as a number, 0 when falsy.</summary>
-    private static double NumberOrZero(object? actual) => (double)LongOrZero(actual);
-
-    private static long LongOrZero(object? actual) => actual switch
-    {
-        long n => n,
-        bool b => b ? 1 : 0,
-        string s when s.Length > 0 => RulesJson.IntFromText(s),
-        _ => 0,
-    };
+    /// <summary>A numeric track fact (channels or bitrate), which the track always has.</summary>
+    private static long Number(object? actual) => (long)actual!;
 }

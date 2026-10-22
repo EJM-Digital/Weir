@@ -1,15 +1,20 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { UpdateStatus } from "../../../../lib/settings/types";
+import type {
+  UpdateStateOut,
+  UpdateStatus,
+} from "../../../../lib/settings/types";
 import { UpdateSection } from "./update-section";
 
 const mocks = vi.hoisted(() => ({
   useUpdateStatusQuery: vi.fn(),
+  useUpdateStateQuery: vi.fn(),
 }));
 
 vi.mock("../../../../lib/settings/queries", () => ({
   useUpdateStatusQuery: () => mocks.useUpdateStatusQuery(),
+  useUpdateStateQuery: () => mocks.useUpdateStateQuery(),
   useAppSettingsQuery: () => ({ data: { app_timezone: "UTC" } }),
 }));
 
@@ -57,6 +62,7 @@ function showStatus(update: UpdateStatus) {
 describe("UpdateSection while GitHub limits update checks", () => {
   beforeEach(() => {
     mocks.useUpdateStatusQuery.mockReset();
+    mocks.useUpdateStateQuery.mockReset();
   });
 
   it("says plainly when Weir will check again", () => {
@@ -202,5 +208,96 @@ describe("UpdateSection while GitHub limits update checks", () => {
     expect(
       screen.getByTestId("suite-settings-release-status"),
     ).toHaveTextContent("You have Weir v3.2.16");
+  });
+});
+
+describe("UpdateSection while update checking is off", () => {
+  const OFF_SUMMARY =
+    "Update checking is off, so Weir is not looking for new versions. Press Check now to look once, or turn it on below.";
+
+  beforeEach(() => {
+    mocks.useUpdateStatusQuery.mockReset();
+    mocks.useUpdateStateQuery.mockReset();
+  });
+
+  function showOff(
+    state: Partial<UpdateStateOut> | undefined,
+    installType = "windows",
+  ) {
+    mocks.useUpdateStateQuery.mockReturnValue({
+      data: state && {
+        downloaded: false,
+        pending_version: null,
+        state: "idle",
+        failure: null,
+        tray_running: true,
+        ...state,
+      },
+    });
+    showStatus({
+      ...status({ summary: OFF_SUMMARY }, installType),
+      status: "off",
+    });
+  }
+
+  it("says checking is off and how to look once, before anything has been checked", () => {
+    showOff({});
+
+    const line = screen.getByTestId("suite-settings-release-status");
+    expect(line).toHaveTextContent("Off");
+    expect(line).toHaveTextContent(OFF_SUMMARY);
+    expect(screen.queryByTestId("suite-settings-manual-check")).toBeNull();
+  });
+
+  it("says the same while the tray has not answered yet", () => {
+    showOff(undefined);
+
+    expect(
+      screen.getByTestId("suite-settings-release-status"),
+    ).toHaveTextContent(OFF_SUMMARY);
+  });
+
+  it("answers a check made by hand that found nothing newer, and when it was made", () => {
+    showOff({ last_checked_at: "2026-10-21T09:30:00Z" });
+
+    const line = screen.getByTestId("suite-settings-release-status");
+    expect(line).toHaveTextContent("Up to date");
+    expect(line).toHaveTextContent("You have Weir v3.2.16");
+    expect(line).not.toHaveTextContent(OFF_SUMMARY);
+    const note = screen.getByTestId("suite-settings-manual-check");
+    expect(note).toHaveTextContent(/Checked .*2026, 9:30/);
+    expect(note).toHaveTextContent(
+      "Update checking is off, so Weir will not look again by itself.",
+    );
+  });
+
+  it("names the newer version a check made by hand found", () => {
+    showOff({
+      last_checked_at: "2026-10-21T09:30:00Z",
+      pending_version: "9.9.9",
+    });
+
+    const line = screen.getByTestId("suite-settings-release-status");
+    expect(line).toHaveTextContent("Update available");
+    expect(line).toHaveTextContent(
+      "Weir v9.9.9 is available (you have v3.2.16)",
+    );
+    expect(screen.getByTestId("suite-settings-manual-check")).toHaveTextContent(
+      "Update checking is off",
+    );
+  });
+
+  it("keeps the last answer in view while the next check is under way", () => {
+    showOff({ last_checked_at: "2026-10-21T09:30:00Z", state: "checking" });
+
+    expect(
+      screen.getByTestId("suite-settings-release-status"),
+    ).toHaveTextContent("You have Weir v3.2.16");
+  });
+
+  it("leaves a Docker install alone, which has no tray to hold the choice", () => {
+    showOff({ last_checked_at: "2026-10-21T09:30:00Z" }, "docker");
+
+    expect(screen.queryByTestId("suite-settings-manual-check")).toBeNull();
   });
 });

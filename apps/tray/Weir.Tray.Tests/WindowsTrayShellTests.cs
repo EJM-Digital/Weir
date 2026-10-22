@@ -51,7 +51,7 @@ public sealed class WindowsTrayShellTests : IDisposable
         public TrayShellHandlers Handlers => new(
             Clicks,
             () => Calls.Add("menu-opening"),
-            () => Calls.Add("icon-clicked"),
+            button => Calls.Add($"icon-clicked-{button}"),
             () => Calls.Add("icon-double-clicked"),
             () => Calls.Add("balloon-clicked"),
             () => Calls.Add("blink-tick"));
@@ -198,7 +198,7 @@ public sealed class WindowsTrayShellTests : IDisposable
             shell.OnBlinkTimer(null, EventArgs.Empty);
             shell.OnMenuOpening(null, new System.ComponentModel.CancelEventArgs());
 
-            Assert.Equal(["icon-clicked", "icon-double-clicked", "balloon-clicked", "blink-tick", "menu-opening"], handled.Calls);
+            Assert.Equal(["icon-clicked-Left", "icon-clicked-Right", "icon-clicked-Middle", "icon-double-clicked", "balloon-clicked", "blink-tick", "menu-opening"], handled.Calls);
         });
     }
 

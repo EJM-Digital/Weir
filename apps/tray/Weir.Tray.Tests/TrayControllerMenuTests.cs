@@ -28,7 +28,7 @@ public sealed class TrayControllerMenuTests : IDisposable
     {
         var rig = RunningRig();
 
-        rig.Shell.Handlers!.IconClicked();
+        rig.Shell.Handlers!.IconClicked(MouseButtons.Left);
 
         Assert.Equal([(9347, "/")], rig.Shell.BrowserOpens);
     }
@@ -37,7 +37,7 @@ public sealed class TrayControllerMenuTests : IDisposable
     public void A_double_click_right_after_a_click_opens_no_second_window_but_a_later_one_does()
     {
         var rig = RunningRig();
-        rig.Shell.Handlers!.IconClicked();
+        rig.Shell.Handlers!.IconClicked(MouseButtons.Left);
 
         rig.Clock.Advance(TimeSpan.FromMilliseconds(200));
         rig.Shell.Handlers.IconDoubleClicked();
@@ -151,7 +151,7 @@ public sealed class TrayControllerMenuTests : IDisposable
         var rig = RunningRig();
 
         rig.Click(TrayMenuItem.AllowOtherDevices);
-        await TrayControllerShowTests.SettleAsync(() => rig.Shell.Balloons.Count > 0);
+        await rig.Activity.UntilAsync(() => rig.Shell.Balloons.Count > 0);
 
         Assert.Contains($"move-to-scope-{ListenScope.OtherDevices}", rig.Server.Calls);
         Assert.Equal(ListenScope.OtherDevices, rig.Server.Scope);
@@ -164,7 +164,7 @@ public sealed class TrayControllerMenuTests : IDisposable
         rig.Server.Scope = ListenScope.OtherDevices;
 
         rig.Click(TrayMenuItem.OnlyThisPc);
-        await TrayControllerShowTests.SettleAsync(() => rig.Shell.Balloons.Count > 0);
+        await rig.Activity.UntilAsync(() => rig.Shell.Balloons.Count > 0);
 
         Assert.Equal(ListenScope.ThisPcOnly, rig.Server.Scope);
     }
@@ -177,7 +177,7 @@ public sealed class TrayControllerMenuTests : IDisposable
         rig.Firewall.Answer = Weir.Tray.Firewall.FirewallElevation.Outcome.Failed;
 
         rig.Click(TrayMenuItem.AllowOtherDevices);
-        await TrayControllerShowTests.SettleAsync(() => rig.Shell.Balloons.Count > 0);
+        await rig.Activity.UntilAsync(() => rig.Shell.Balloons.Count > 0);
         rig.Shell.Handlers!.BalloonClicked();
 
         Assert.Equal(ToolTipIcon.Warning, rig.Shell.LastBalloon.Icon);
@@ -196,7 +196,7 @@ public sealed class TrayControllerMenuTests : IDisposable
         };
 
         rig.Click(TrayMenuItem.ChangePort);
-        await TrayControllerShowTests.SettleAsync(() => rig.Shell.Balloons.Count > 0);
+        await rig.Activity.UntilAsync(() => rig.Shell.Balloons.Count > 0);
         rig.Shell.Handlers!.BalloonClicked();
 
         Assert.Equal(PortPromptReason.Change, rig.Shell.PortQuestions.Single().Reason);
@@ -212,7 +212,7 @@ public sealed class TrayControllerMenuTests : IDisposable
         rig.Server.OnMove = _ => Task.FromResult(PortMove.KeptOldPort);
 
         rig.Click(TrayMenuItem.ChangePort);
-        await TrayControllerShowTests.SettleAsync(() => rig.Shell.Balloons.Count > 0);
+        await rig.Activity.UntilAsync(() => rig.Shell.Balloons.Count > 0);
         rig.Shell.Handlers!.BalloonClicked();
 
         Assert.Equal([Path.Combine(rig.Home, TrayLog.FileName)], rig.Shell.Revealed);
@@ -229,7 +229,7 @@ public sealed class TrayControllerMenuTests : IDisposable
         rig.Click(TrayMenuItem.ChangePort);
         var during = rig.Shell.LastMenu.Single(entry => entry.Item == TrayMenuItem.ChangePort).Text;
         release.SetResult(PortMove.Moved);
-        await TrayControllerShowTests.SettleAsync(() => rig.Shell.Balloons.Count > 0);
+        await rig.Activity.UntilAsync(() => rig.Shell.Balloons.Count > 0);
 
         Assert.Contains("9400", during, StringComparison.Ordinal);
         Assert.DoesNotContain("9400", rig.Shell.LastMenu.Single(entry => entry.Item == TrayMenuItem.ChangePort).Text, StringComparison.Ordinal);
@@ -278,17 +278,15 @@ public sealed class TrayControllerMenuTests : IDisposable
         var rig = RunningRig(new FakeUpdateService());
 
         rig.Click(TrayMenuItem.Update);
-        await TrayControllerShowTests.SettleAsync(() => rig.Updates.Checks == 1 && rig.Updates.HasPendingUpdate);
-        rig.Shell.Handlers!.MenuOpening();
+        await rig.Activity.UntilAsync(() => UpdateItemReads(rig, "Download update (v9.9.9)"));
         Assert.Contains(rig.Shell.LastMenu, entry => entry.Item == TrayMenuItem.Update && entry.Text == "Download update (v9.9.9)");
 
         rig.Click(TrayMenuItem.Update);
-        await TrayControllerShowTests.SettleAsync(() => rig.Updates.IsDownloaded);
-        rig.Shell.Handlers.MenuOpening();
+        await rig.Activity.UntilAsync(() => UpdateItemReads(rig, "Restart to update (v9.9.9)"));
         Assert.Contains(rig.Shell.LastMenu, entry => entry.Item == TrayMenuItem.Update && entry.Text == "Restart to update (v9.9.9)");
 
         rig.Click(TrayMenuItem.Update);
-        await TrayControllerShowTests.SettleAsync(() => rig.Updates.Applied.Count > 0);
+        await rig.Activity.UntilAsync(() => rig.Updates.Applied.Count > 0);
         Assert.Equal([FakeUpdateService.AppliedAndRestarted], rig.Updates.Applied);
         Assert.Equal(1, rig.Updates.Downloads);
         Assert.True(rig.Shell.Hidden);
@@ -300,7 +298,7 @@ public sealed class TrayControllerMenuTests : IDisposable
         var hold = new TaskCompletionSource();
         var rig = RunningRig(new FakeUpdateService { HoldCheck = hold.Task });
         rig.Click(TrayMenuItem.Update);
-        await TrayControllerShowTests.SettleAsync(() => rig.Updates.Checks == 1);
+        await rig.Activity.UntilAsync(() => rig.Updates.Checks == 1);
 
         rig.Click(TrayMenuItem.Update);
         hold.SetResult();
@@ -365,6 +363,51 @@ public sealed class TrayControllerMenuTests : IDisposable
     }
 
     [Fact]
+    public async Task A_server_too_busy_to_hear_the_request_for_a_copy_of_its_data_is_said_to_be_busy_in_a_notice()
+    {
+        var rig = RunningRig(new FakeUpdateService().AlreadyDownloaded());
+        var started = DateTime.UtcNow.AddMinutes(-1);
+        rig.Server.Running = new RunningServer(Environment.ProcessId, started);
+        rig.Server.ServerIsRunning = true;
+        File.WriteAllText(
+            Path.Combine(rig.Home, UpdateBackupReady.FileName),
+            $$"""{"pid":{{Environment.ProcessId}},"started_at":"{{started:O}}"}""");
+        rig.Shell.Balloons.Clear();
+
+        var update = rig.Controller.ApplyUpdateAndRestartAsync();
+        for (var polls = 0; rig.Shell.Balloons.Count == 0 && polls < 2 * UpdateBackupRequest.HearingTime / UpdateBackupRequest.PollInterval; polls++)
+        {
+            rig.Clock.Advance(UpdateBackupRequest.PollInterval);
+            await Task.Yield();
+            rig.Shell.Drain();
+        }
+
+        Assert.Equal("Weir Update", rig.Shell.Balloons[0].Title);
+        Assert.Contains("Weir is busy", rig.Shell.Balloons[0].Text, StringComparison.Ordinal);
+        File.WriteAllText(
+            Path.Combine(rig.Home, UpdateBackupRequest.ResultFileName),
+            $$"""{"id":"{{System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(rig.Home, UpdateBackupRequest.RequestFileName)))!["id"]}}","state":"failed","reason":"No room."}""");
+        while (!update.IsCompleted)
+        {
+            rig.Clock.Advance(UpdateBackupRequest.PollInterval);
+            await Task.Yield();
+        }
+        await update;
+    }
+
+    [Theory]
+    [InlineData(MouseButtons.Right)]
+    [InlineData(MouseButtons.Middle)]
+    public void Clicking_the_icon_with_any_other_button_opens_nothing(MouseButtons button)
+    {
+        var rig = RunningRig();
+
+        rig.Shell.Handlers!.IconClicked(button);
+
+        Assert.Empty(rig.Shell.BrowserOpens);
+    }
+
+    [Fact]
     public async Task Asking_to_install_with_nothing_downloaded_does_nothing()
     {
         var rig = RunningRig();
@@ -373,5 +416,12 @@ public sealed class TrayControllerMenuTests : IDisposable
 
         Assert.Empty(rig.Updates.Applied);
         Assert.DoesNotContain("stop", rig.Server.Calls);
+    }
+
+    // The update item only reads as it will once the check or download has ended, so it is read the way a person does: by opening the menu.
+    private static bool UpdateItemReads(TrayRig rig, string text)
+    {
+        rig.Shell.Handlers!.MenuOpening();
+        return rig.Shell.LastMenu.Any(entry => entry.Item == TrayMenuItem.Update && entry.Text == text);
     }
 }

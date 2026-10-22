@@ -1,0 +1,2 @@
+Weir can't open its data
+Weir can't open its database because another program is using it. Close that program, then start Weir again.
