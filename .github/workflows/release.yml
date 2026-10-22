@@ -8,6 +8,11 @@
 #   golden-path       for every tag, release candidates included, Weir's scenario suite already passed on this exact
 #                     commit: a `golden-path` commit status of `success` on it
 #                     (scripts/verify-golden-path-for-release.mjs, docs/release.md). Nothing skips it.
+#   windows-proof     the Windows legs of the contract suite and the Windows scenario shards, which a pull request runs only
+#                     when it touches Windows code, passed in ci.yml on this commit or an earlier one with the same shipped
+#                     files (scripts/verify-heavy-ci-for-release.mjs, docs/ci-cost.md).
+#   mutation-proof    the Mutation workflow, which never runs on a pull request, passed on this commit or an earlier one
+#                     with the same shipped files, tests and mutation setup (the same script).
 #   validate          release-only checks: notes file, gate ordering, dependency advisories as of
 #                     today, and the production web build that ships as an asset.
 #   e2e               the browser tests against this build, one job per shard (scripts/e2e-shards.mjs), all at
@@ -19,13 +24,13 @@
 # Two jobs publish, one per thing published. Neither waits for the other, so a slow or failed Docker build never
 # holds back the Windows release that installed Weirs update from, and either can be re-run alone:
 #
-#   publish-windows   needs ci-passed, golden-path, validate, e2e and windows-smoke. It alone has `contents: write` and
-#                     publishes the GitHub Release: the Windows installer and update files, the web build and
-#                     the release notes, which name the Docker image.
-#   publish-docker    needs ci-passed, golden-path, validate, e2e, docker-candidate and docker-arm64. It alone holds
-#                     registry credentials and `packages: write`. It pushes only the version tag, smokes that
-#                     image, and only then moves the moving tags (`major.minor` and `latest`). A release
-#                     candidate moves none.
+#   publish-windows   needs ci-passed, golden-path, windows-proof, mutation-proof, validate, e2e and windows-smoke.
+#                     It alone has `contents: write` and publishes the GitHub Release: the Windows installer and
+#                     update files, the web build and the release notes, which name the Docker image.
+#   publish-docker    needs ci-passed, golden-path, windows-proof, mutation-proof, validate, e2e, docker-candidate
+#                     and docker-arm64. It alone holds registry credentials and `packages: write`. It pushes only
+#                     the version tag, smokes that image, and only then moves the moving tags (`major.minor` and
+#                     `latest`). A release candidate moves none.
 #
 # Nothing reaches ghcr or the Releases page unless every check its job needs passed. Signed provenance attestations
 # for the image and the release files are switched by the repository variable ATTEST_PROVENANCE.
@@ -94,6 +99,41 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/verify-golden-path-for-release.mjs
+
+  # Neither proof waits or runs the tests again; both read a passing run that already exists, and both fail at once saying what to
+  # run. Nothing may skip them or wave a failure on (release-workflow-gates keeps it that way), and the full history is checked out
+  # so an earlier commit's pass can be judged.
+  windows-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: The Windows legs passed on the tagged commit or one with the same shipped files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/verify-heavy-ci-for-release.mjs windows
+
+  mutation-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: The mutation scores held their floors on the tagged commit or one with the same code
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/verify-heavy-ci-for-release.mjs mutation
 
   windows-smoke:
     runs-on: windows-latest
@@ -591,7 +631,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # Without ci-passed a commit CI never passed could ship; without windows-smoke there is no installer to release.
-    needs: [ci-passed, golden-path, validate, e2e, windows-smoke]
+    needs: [ci-passed, golden-path, windows-proof, mutation-proof, validate, e2e, windows-smoke]
     permissions:
       contents: write
       # For actions/attest-build-provenance below (OIDC signing, then recording the attestation on the repo).
@@ -660,7 +700,7 @@ jobs:
     timeout-minutes: 25
     # Without ci-passed a commit CI never passed could ship; without docker-candidate and docker-arm64 an image
     # that was never built and audited unpushed could reach ghcr.
-    needs: [ci-passed, golden-path, validate, e2e, docker-candidate, docker-arm64]
+    needs: [ci-passed, golden-path, windows-proof, mutation-proof, validate, e2e, docker-candidate, docker-arm64]
     permissions:
       contents: read
       packages: write

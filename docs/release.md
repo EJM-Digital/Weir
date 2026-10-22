@@ -400,6 +400,14 @@ The `Release` workflow:
   gh workflow run ci.yml --ref vX.Y.Z
   ```
 
+- **`windows-proof`** and **`mutation-proof`**: confirm that the CI a pull request skips has passed. The Windows legs of the
+  contract suite and the Windows scenario shards must have passed in `ci.yml` (a push to main, the nightly run or a manual run)
+  on the tagged commit or an earlier one with the same shipped files, and the Mutation workflow must have passed on the tagged
+  commit or an earlier one with the same shipped files, tests and mutation setup (`scripts/verify-heavy-ci-for-release.mjs`,
+  [`ci-cost.md`](ci-cost.md)). Neither waits or can be skipped. When one fails it prints the command that makes the proof:
+  `gh workflow run ci.yml --ref vX.Y.Z` for Windows, `gh workflow run mutation.yml --ref vX.Y.Z` for mutation (it takes hours, so
+  start it before tagging).
+
 - **`golden-path`**: for every tag, release candidates included, confirms Weir's scenario suite passed on the exact tagged
   commit (the newest commit status with the context `golden-path` is `success`) or on an earlier commit with the same
   shipped files and the same version ([A pass carries over](#a-pass-carries-over))

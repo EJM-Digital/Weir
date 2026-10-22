@@ -58,3 +58,15 @@ test("a missing flag, a missing job or an unknown job is refused", () => {
   const extra = { ...needs(), "new-job": { result: "success" } };
   assert.match(verdict(extra).join("\n"), /new-job is not in scripts\/ci-passed.mjs GATES/);
 });
+
+test("the Windows legs may be skipped on a pull request while the Linux ones run", () => {
+  const skipped = { run_contract_windows: false, run_packaging_windows: false };
+  assert.deepEqual(verdict(needs({ due: skipped })), []);
+});
+
+test("a Windows leg that was due and failed fails the verdict, and one that ran unasked disagrees with the flags", () => {
+  assert.match(verdict(needs({ results: { "contract-windows": "failure" } })).join("\n"), /contract-windows ended failure; it was due/);
+  assert.match(verdict(needs({ results: { "packaging-windows": "skipped" } })).join("\n"), /packaging-windows ended skipped; it was due/);
+  const unasked = verdict(needs({ due: { run_contract_windows: false }, results: { "contract-windows": "success" } }));
+  assert.match(unasked.join("\n"), /contract-windows ended success; it was not due/);
+});

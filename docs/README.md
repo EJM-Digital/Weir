@@ -33,6 +33,7 @@ whose source is in [`../docs-site/docs`](../docs-site/docs).
 - [`start-supervision.md`](start-supervision.md) - how the tray supervises every start of the server: progress, hung starts, retries, the start limit, what it logs and shows, and the measurements behind the numbers.
 - [`release-governance.md`](release-governance.md) - repository controls and the checks before and after a release.
 - [`ci-standard.md`](ci-standard.md) - the CI and release standard Weir shares, as an identical separate copy, with Deluno.
+- [`ci-cost.md`](ci-cost.md) - what CI costs in Actions minutes and when each heavy job runs: mutation weekly and before a tag, the Windows legs on main, nightly and before a tag but on a pull request only for Windows code, and the script that sums the minutes.
 - [`tray-standard.md`](tray-standard.md) - what the tray icon shows, its menu and its behaviour, the same in Weir and Deluno (a word-for-word copy).
 - [`golden-path.md`](golden-path.md) - the shared checklist for Deluno's golden path, the same in Weir and Deluno: install on a clean VM, use it like a person, record the pass. Weir's own gate is the scenario suite in `scripts/scenarios` (see `release.md`, "Proof before tagging").
 - [`deluno-weir-contract.md`](deluno-weir-contract.md) - the shared Deluno–Weir contract, the same in Weir and Deluno: every reply Weir gives Deluno, its real recording, what Deluno does with it and the test that proves it.

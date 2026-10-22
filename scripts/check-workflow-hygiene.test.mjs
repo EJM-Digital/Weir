@@ -67,3 +67,73 @@ test("a job with no timeout and a workflow with no permissions are still refused
   const problems = findProblems("ci.yml", "jobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo hi\n");
   assert.equal(problems.length, 2);
 });
+
+const pullRequestWorkflow = (jobs, trigger = "pull_request:") => `name: ci
+on:
+  push:
+    branches: ["main"]
+  ${trigger}
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+${jobs}
+`;
+
+const windowsLegCall = (condition) => `  contract-windows:
+    needs: changes
+${condition}    uses: ./.github/workflows/ci-contract.yml
+`;
+
+test("a Windows job that a pull request can start must carry the path filter", () => {
+  const problems = findProblems("ci.yml", pullRequestWorkflow(windowsLegCall("")));
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /ci\.yml: job "contract-windows" runs on Windows .* no path filter/);
+  assert.deepEqual(findProblems("ci.yml", pullRequestWorkflow(windowsLegCall("    if: needs.changes.outputs.run_contract_windows == 'true'\n"))), []);
+});
+
+test("a filter that is not a path flag does not excuse a Windows job", () => {
+  const problems = findProblems("ci.yml", pullRequestWorkflow(windowsLegCall("    if: github.event_name != 'schedule'\n")));
+  assert.equal(problems.length, 1);
+});
+
+test("a Windows runner or a Windows scenario shard is a Windows job whatever the job is called", () => {
+  const runner = `  tray:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - run: echo hi
+`;
+  assert.equal(findProblems("ci.yml", pullRequestWorkflow(runner)).length, 1);
+  const shard = `  scenarios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - run: node scripts/scenarios-in-ci.mjs windows-tray --setup x
+`;
+  assert.equal(findProblems("ci.yml", pullRequestWorkflow(shard)).length, 1);
+});
+
+test("a workflow no pull request starts may hold Windows jobs without a filter", () => {
+  const nightly = `  nightly:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - run: echo hi
+`;
+  assert.deepEqual(findProblems("ci-stress.yml", pullRequestWorkflow(nightly, "schedule:")), []);
+});
+
+test("mutation testing is refused in a workflow a pull request triggers, and allowed in a scheduled one", () => {
+  const stryker = `  mutate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 200
+    steps:
+      - run: dotnet stryker -f config.json
+`;
+  const problems = findProblems("mutation.yml", pullRequestWorkflow(stryker));
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /runs mutation testing and is triggered by a pull request/);
+  assert.deepEqual(findProblems("mutation.yml", pullRequestWorkflow(stryker, "schedule:")), []);
+  assert.equal(findProblems("mutation.yml", pullRequestWorkflow(stryker, "pull_request_target:")).length, 1);
+});

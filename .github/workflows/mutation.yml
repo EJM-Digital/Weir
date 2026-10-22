@@ -5,20 +5,24 @@
 #
 # One matrix job per target (the targets are in .github/mutation-targets.json), each running Stryker.NET (the server and
 # the tray) or StrykerJS (the web app) over only the files the target names, then one job that holds each score to its floor
-# in docs/coverage/mutation-floors.json and lists the survivors on its summary page. It runs every target weekly and on
-# demand, and on a pull request only the targets whose mutated files the pull request changes (a target takes tens of
-# minutes, so a pull request that touches none starts no Stryker job).
+# in docs/coverage/mutation-floors.json and lists the survivors on its summary page.
+#
+# A target takes tens of minutes to hours on a Windows runner, so this workflow never runs on a pull request (a rule
+# scripts/check-workflow-hygiene.mjs holds). It runs every target weekly, by hand, and before a release: the release asks
+# for a passing run on the tagged commit or an earlier one that mutated the same code and tests
+# (scripts/verify-heavy-ci-for-release.mjs, docs/ci-cost.md). Run it by hand on a branch with
+# `gh workflow run mutation.yml --ref <branch>` after raising a score, and the floors are checked whenever it runs.
 name: Mutation
 
 on:
   schedule:
     - cron: "41 2 * * 0"
   workflow_dispatch:
-  pull_request:
 
+# A run that has started is never cancelled: it is the proof a release is waiting for.
 concurrency:
   group: mutation-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -28,7 +32,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
 
 jobs:
-  # The targets to run: all of them on the schedule and on demand, and on a pull request the ones it touches.
+  # The targets to run: all of them.
   select:
     name: Select the targets
     runs-on: ubuntu-latest
@@ -39,24 +43,13 @@ jobs:
       any: ${{ steps.select.outputs.any }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 2
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version-file: .node-version
 
-      # On a pull request the checkout is the merge of the branch into its base, so HEAD^1 is the base and the diff is
-      # exactly what the pull request changes.
       - id: select
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = pull_request ]; then
-            git diff --name-only HEAD^1 HEAD > changed-files.txt
-            node scripts/select-mutation-targets.mjs --changed changed-files.txt
-          else
-            node scripts/select-mutation-targets.mjs --all
-          fi
+        run: node scripts/select-mutation-targets.mjs --all
 
   mutate:
     name: Mutate ${{ matrix.target }}
@@ -157,13 +150,7 @@ jobs:
           path: mutation-reports
 
       - name: Mutation scores against the floors
-        env:
-          # A pull request mutated only the targets it touches; the schedule and a manual run mutated them all.
-          TARGETS: ${{ github.event_name == 'pull_request' && needs.select.outputs.targets || '' }}
-        run: |
-          args=(--floors docs/coverage/mutation-floors.json --reports mutation-reports --out mutation-survivors)
-          if [ -n "$TARGETS" ]; then args+=(--only "$TARGETS"); fi
-          node scripts/check-mutation-floors.mjs "${args[@]}"
+        run: node scripts/check-mutation-floors.mjs --floors docs/coverage/mutation-floors.json --reports mutation-reports --out mutation-survivors
 
       - name: Upload the survivors
         if: ${{ !cancelled() }}

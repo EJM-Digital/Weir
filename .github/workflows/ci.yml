@@ -1,6 +1,13 @@
 # Weir CI: the server on Linux and Windows, the web app, the E2E smoke, the contract suite (ci-contract.yml), the
 # tray, the coverage check, and the Docker and Windows package smokes (ci-packaging.yml). Triggers: push to main,
-# pull_request, workflow_dispatch.
+# pull_request, workflow_dispatch, and a nightly schedule that runs only the Windows legs.
+#
+# The Windows legs of the contract suite (contract-windows) and the Windows package smoke and scenario shards
+# (packaging-windows) cost twice what a Linux job does, so docs/ci-cost.md sets when they run: on a push to main, on the
+# nightly run, by hand and before a tag as ever, but on a pull request only when it touches a Windows path (the
+# `windows` filter below, kept honest by scripts/check-windows-paths.mjs). The release asks for a passing run of them on
+# the tagged commit or an earlier one with the same shipped files (scripts/verify-heavy-ci-for-release.mjs), which is why
+# ci-passed has a step that succeeds only when they ran.
 #
 # `changes` turns the paths a change touches into one run_* flag per job, and each job runs only when its flag
 # is true; a manual run runs everything. `ci-passed` needs every job and passes only when each job that was due
@@ -22,6 +29,8 @@ on:
   push:
     branches: ["main"]
   pull_request:
+  schedule:
+    - cron: "17 3 * * *"
   workflow_dispatch:
     inputs:
       version:
@@ -33,7 +42,9 @@ on:
         default: ""
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # The nightly run has a group of its own: a run waiting behind another in one group is replaced by the next, and it
+  # must never replace a push to main.
+  group: ci-${{ github.workflow }}-${{ github.event_name == 'schedule' && 'nightly' || github.event.pull_request.number || github.ref }}
   # A superseded pull request run is cancelled; a push to main never is, so two merges landing close
   # together each get a real, uncancelled run instead of leaving a cancelled one on main's history.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -60,10 +71,12 @@ jobs:
       run_web_audit: ${{ steps.flags.outputs.run_web_audit }}
       run_e2e: ${{ steps.flags.outputs.run_e2e }}
       run_contract: ${{ steps.flags.outputs.run_contract }}
+      run_contract_windows: ${{ steps.flags.outputs.run_contract_windows }}
       run_tray: ${{ steps.flags.outputs.run_tray }}
       run_coverage: ${{ steps.flags.outputs.run_coverage }}
       run_coverage_out_of_process: ${{ steps.flags.outputs.run_coverage_out_of_process }}
       run_packaging: ${{ steps.flags.outputs.run_packaging }}
+      run_packaging_windows: ${{ steps.flags.outputs.run_packaging_windows }}
       run_arm64: ${{ steps.flags.outputs.run_arm64 }}
       contract_areas: ${{ steps.areas.outputs.areas }}
       e2e_shards: ${{ steps.e2e_shards.outputs.shards }}
@@ -90,7 +103,7 @@ jobs:
 
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
-        if: github.event_name != 'workflow_dispatch'
+        if: github.event_name != 'workflow_dispatch' && github.event_name != 'schedule'
         with:
           filters: |
             server:
@@ -139,6 +152,50 @@ jobs:
               # The recovery command the package smokes run (PLAT-20).
               - 'apps/server/src/Weir.Infrastructure/Auth/Recover*'
               - '.github/workflows/ci-packaging.yml'
+            # What a Windows leg tests that a Linux one cannot: the tray, the server code that is Windows-only (the *.Windows.cs
+            # files, the firewall, the Velopack updater, the Win32 calls) or branches on the platform for file locking and
+            # paths, the host the installer packs, the database migrations a Windows upgrade carries across, the installer
+            # packaging, the scenario scripts and the contract suite's own project. scripts/check-windows-paths.mjs fails
+            # when a server file that is Windows-only is not matched here.
+            windows:
+              - 'apps/tray/**'
+              - 'apps/server/Directory.Build.props'
+              - 'apps/server/Directory.Packages.props'
+              - 'apps/server/global.json'
+              - 'apps/server/src/**/*.Windows.cs'
+              - 'apps/server/src/Weir.Host/**'
+              - 'apps/server/src/Weir.Core/Updates/**'
+              - 'apps/server/src/Weir.Infrastructure/WeirPlatformServices.cs'
+              - 'apps/server/src/Weir.Infrastructure/Browse/**'
+              - 'apps/server/src/Weir.Infrastructure/LibraryMode/**'
+              - 'apps/server/src/Weir.Infrastructure/Runtime/**'
+              - 'apps/server/src/Weir.Infrastructure/SystemReadings/**'
+              - 'apps/server/src/Weir.Infrastructure/Processing/OutputOwnership.cs'
+              - 'apps/server/src/Weir.Infrastructure/Processing/RemuxPass/FileLifecycle.cs'
+              - 'apps/server/src/Weir.Infrastructure/Processing/RemuxPass/SourceFiles.cs'
+              - 'apps/server/src/Weir.Infrastructure/Migrations/**'
+              - 'apps/server/src/Weir.Infrastructure/Sqlite/**'
+              - 'apps/server/src/Weir.Infrastructure/Auth/Recover*'
+              - 'apps/server/tests/Weir.Contract.Tests/**'
+              - 'apps/server/tools/Weir.LiveAudit/**'
+              - 'packaging/windows/**'
+              - 'scripts/smoke-windows-package.ps1'
+              - 'scripts/smoke-windows-recover.ps1'
+              - 'scripts/install-media-tools-windows.ps1'
+              - 'scripts/wait-for-health.mjs'
+              - 'scripts/scenarios-in-ci.mjs'
+              - 'scripts/scenarios-ci/**'
+              - 'scripts/scenarios/**'
+              - 'scripts/find-previous-release.mjs'
+              - 'scripts/prune-release-feed.mjs'
+              - 'scripts/pinned-download.mjs'
+              - 'scripts/semver.mjs'
+              - 'scripts/repository.mjs'
+              - 'scripts/repository.ps1'
+              - 'scripts/ffmpeg-cache-key.mjs'
+              - 'scripts/ffmpeg-pin.mjs'
+              - 'scripts/mkvtoolnix-cache-key.mjs'
+              - 'scripts/mkvtoolnix-pin.mjs'
             # The real ffmpeg, ffprobe and mkvmerge the server tests run against (their pins and installers) and the check
             # that every real-tool test ran. The workflows filter below covers the actions that call them.
             media_tools:
@@ -182,6 +239,7 @@ jobs:
           TRAY: ${{ steps.filter.outputs.tray }}
           FLOORS: ${{ steps.filter.outputs.coverage_floors }}
           PACKAGING: ${{ steps.filter.outputs.packaging }}
+          WINDOWS: ${{ steps.filter.outputs.windows }}
           MEDIA_TOOLS: ${{ steps.filter.outputs.media_tools }}
           DOCKER: ${{ steps.filter.outputs.docker }}
           WORKFLOWS: ${{ steps.filter.outputs.workflows }}
@@ -191,8 +249,17 @@ jobs:
           both() { for value in "$@"; do if [ "$value" != true ]; then echo false; return; fi; done; echo true; }
           manual=$([ "$EVENT" = workflow_dispatch ] && echo true || echo false)
           main_push=$([ "$EVENT" = push ] && echo true || echo false)
+          nightly=$([ "$EVENT" = schedule ] && echo true || echo false)
           all=$(either "$manual" "$WORKFLOWS")
           on_pull_request() { if [ "$main_push" = true ]; then echo false; else echo "$1"; fi; }
+          # A Windows leg is due when its Linux twin is: on a push to main, by hand and when a workflow changes. A pull request
+          # also needs a Windows path in it, and the nightly run (which the Linux twins skip) always runs them.
+          windows_paths=$(either "$all" "$WINDOWS" "$MEDIA_TOOLS")
+          windows_leg() {
+            if [ "$nightly" = true ]; then echo true
+            elif [ "$EVENT" = pull_request ]; then both "$1" "$windows_paths"
+            else echo "$1"; fi
+          }
 
           web=$(either "$all" "$SERVER" "$HARNESS" "$WEB")
           # The unit tests of all three projects, the contract suite and the E2E smoke run to measure coverage when the floors change.
@@ -203,6 +270,7 @@ jobs:
           # packaging's own filter stays narrow on a pull request (see below); a server or web change
           # outside it still needs packaging tested once it lands on main, since nothing else will.
           packaging_reached_by_main=$(both "$main_push" "$(either "$SERVER" "$WEB")")
+          packaging_due=$(either "$all" "$PACKAGING" "$packaging_reached_by_main")
           {
             echo "run_server_linux=$(either "$all" "$SERVER" "$MEDIA_TOOLS" "$FLOORS")"
             echo "run_server_windows=$(either "$all" "$SERVER" "$MEDIA_TOOLS" "$FLOORS")"
@@ -215,7 +283,9 @@ jobs:
             echo "run_coverage=$(either "$web_tests" "$tray_tests")"
             # The out-of-process figure is the contract suite and the E2E smoke together: judged only when both ran.
             echo "run_coverage_out_of_process=$(both "$contract_tests" "$e2e_tests")"
-            echo "run_packaging=$(either "$all" "$PACKAGING" "$packaging_reached_by_main")"
+            echo "run_packaging=$packaging_due"
+            echo "run_packaging_windows=$(windows_leg "$packaging_due")"
+            echo "run_contract_windows=$(windows_leg "$contract_tests")"
             echo "run_arm64=$(either "$manual" "$DOCKER")"
           } | tee -a "$GITHUB_OUTPUT"
 
@@ -280,6 +350,12 @@ jobs:
         run: |
           node scripts/check-contract-areas.mjs
           node --test scripts/check-contract-areas.test.mjs
+
+      # A Windows-only server file outside the `windows` path filter would change without the Windows legs running (docs/ci-cost.md).
+      - name: The windows path filter matches the Windows-only server files
+        run: |
+          node scripts/check-windows-paths.mjs
+          node --test scripts/check-windows-paths.test.mjs
 
       - name: The recordings of Deluno, Sonarr and Radarr match the manifests they were checked in with
         run: |
@@ -369,7 +445,7 @@ jobs:
       - name: Release and CI gate rules
         run: |
           node scripts/check-release-workflow-gates.mjs
-          node --test scripts/check-release-workflow-gates.test.mjs scripts/verify-ci-for-release.test.mjs scripts/ci-passed.test.mjs scripts/verify-golden-path-for-release.test.mjs scripts/verify-golden-path-carry-over.test.mjs scripts/release/shipped-paths.test.mjs scripts/scenarios.test.mjs
+          node --test scripts/check-release-workflow-gates.test.mjs scripts/verify-ci-for-release.test.mjs scripts/verify-heavy-ci-for-release.test.mjs scripts/ci-passed.test.mjs scripts/verify-golden-path-for-release.test.mjs scripts/verify-golden-path-carry-over.test.mjs scripts/release/shipped-paths.test.mjs scripts/scenarios.test.mjs
           node --test scripts/semver.test.mjs scripts/check-release-version.test.mjs scripts/find-previous-release.test.mjs scripts/prune-release-feed.test.mjs scripts/check-release-assets-single-version.test.mjs
 
   server-linux:
@@ -713,13 +789,24 @@ jobs:
           retention-days: 7
           path: artifacts/e2e-failures
 
-  # The contract suite, one leg per area (ci-contract.yml).
+  # The contract suite, one leg per area (ci-contract.yml), on Linux here and on Windows in the job below.
   contract:
     needs: changes
     if: needs.changes.outputs.run_contract == 'true'
     uses: ./.github/workflows/ci-contract.yml
     with:
       areas: ${{ needs.changes.outputs.contract_areas }}
+      platforms: '["linux"]'
+
+  # The Windows legs of the contract suite: on a push to main, on the nightly run and by hand like the Linux ones, on a pull
+  # request only when it touches a Windows path (docs/ci-cost.md).
+  contract-windows:
+    needs: changes
+    if: needs.changes.outputs.run_contract_windows == 'true'
+    uses: ./.github/workflows/ci-contract.yml
+    with:
+      areas: ${{ needs.changes.outputs.contract_areas }}
+      platforms: '["windows"]'
 
   # The tray's unit tests: port choice, update settings and menu state, the health wait, the access lists of the
   # data folder and the secrets, and which processes the installer may stop.
@@ -775,7 +862,7 @@ jobs:
   # their own beside the unit figure (docs/coverage/README.md). A project whose tests did not run for this change is
   # not judged.
   coverage:
-    needs: [changes, server-linux, server-windows, web, tray, contract, e2e-smoke]
+    needs: [changes, server-linux, server-windows, web, tray, contract, contract-windows, e2e-smoke]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.run_coverage == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -893,18 +980,32 @@ jobs:
           retention-days: 14
           path: coverage
 
-  # The Docker and Windows package smokes (ci-packaging.yml).
+  # The Docker package smokes and the Linux scenario shards (ci-packaging.yml).
   packaging:
     needs: changes
     if: needs.changes.outputs.run_packaging == 'true'
     uses: ./.github/workflows/ci-packaging.yml
     with:
+      docker: true
+      windows: false
       arm64: ${{ needs.changes.outputs.run_arm64 == 'true' }}
+      version: ${{ inputs.version || '' }}
+
+  # The Windows package smoke, the update package and the Windows scenario shards (ci-packaging.yml): on a push to main, on the
+  # nightly run and by hand like the Docker ones, on a pull request only when it touches a Windows path (docs/ci-cost.md).
+  packaging-windows:
+    needs: changes
+    if: needs.changes.outputs.run_packaging_windows == 'true'
+    uses: ./.github/workflows/ci-packaging.yml
+    with:
+      docker: false
+      windows: true
+      arm64: false
       version: ${{ inputs.version || '' }}
 
   # The verdict. `always()` so it reports even when a job it needs failed or was skipped.
   ci-passed:
-    needs: [changes, repo-checks, server-linux, server-windows, web-dist, web, e2e-smoke, contract, tray, coverage, packaging]
+    needs: [changes, repo-checks, server-linux, server-windows, web-dist, web, e2e-smoke, contract, contract-windows, tray, coverage, packaging, packaging-windows]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -915,3 +1016,10 @@ jobs:
         env:
           NEEDS: ${{ toJSON(needs) }}
         run: node scripts/ci-passed.mjs
+
+      # Reached only when the Windows contract legs and the Windows scenario shards were due and the step above passed, so a
+      # skipped step means the Windows legs did not run. The release reads this step on the tagged commit or an earlier one
+      # with the same shipped files (scripts/verify-heavy-ci-for-release.mjs).
+      - name: The Windows legs ran and passed
+        if: ${{ needs.changes.outputs.run_contract_windows == 'true' && needs.changes.outputs.run_packaging_windows == 'true' }}
+        run: echo "The Windows contract legs and the Windows scenario shards ran and passed."
