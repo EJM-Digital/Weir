@@ -79,15 +79,15 @@ public sealed class ExternalJsonPosterRefusalsTests : IDisposable
     [Fact]
     public async Task A_destination_that_never_answers_reads_as_could_not_deliver_when_the_time_is_up()
     {
-        using var release = new CancellationTokenSource();
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var accepted = Task.Run(async () =>
         {
             using var client = await _listener.AcceptTcpClientAsync();
-            await Task.Delay(Ceiling, release.Token).ContinueWith(_ => { }, TaskScheduler.Default);
+            await release.Task;
         });
 
         var refused = await Assert.ThrowsAsync<ExternalEndpointException>(() => PostAsync("http://hooks.example.com/alert", TimeSpan.FromMilliseconds(300)));
-        await release.CancelAsync();
+        release.SetResult();
         await accepted.WaitAsync(Ceiling);
 
         Assert.Equal(ExternalUrlPolicy.CouldNotDeliver, refused.Message);
