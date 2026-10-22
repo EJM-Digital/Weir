@@ -91,13 +91,8 @@ public sealed partial class OutputFolderCleanup
                 break;
             }
 
-            var parent = Path.GetDirectoryName(current);
-            if (parent is null)
-            {
-                break;
-            }
-
-            current = parent;
+            // Strictly under the root, so it is not a filesystem root and has a parent.
+            current = Path.GetDirectoryName(current)!;
         }
     }
 }
