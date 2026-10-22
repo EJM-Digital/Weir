@@ -86,9 +86,5 @@ export function followSystemAppTheme(): () => void {
 
 /** The theme in force, kept current as the system setting or someone's choice changes it. */
 export function useAppTheme(): AppTheme {
-  return useSyncExternalStore(
-    subscribeToAppTheme,
-    currentAppTheme,
-    (): AppTheme => "dark",
-  );
+  return useSyncExternalStore(subscribeToAppTheme, currentAppTheme);
 }

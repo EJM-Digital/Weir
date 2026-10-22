@@ -112,9 +112,7 @@ export function setupAreaOfTab(tabId: SetupTabId): SetupArea {
 
 /** Where a tab lives. */
 export function setupTabPath(tabId: SetupTabId): string {
-  const found = setupAreaOfTab(tabId).tabs.find((tab) => tab.id === tabId);
-  if (!found) throw new Error(`No setup tab is named ${tabId}.`);
-  return found.path;
+  return setupAreaOfTab(tabId).tabs.find((tab) => tab.id === tabId)!.path;
 }
 
 /** The area an address belongs to, or null when it is not one of the setup areas. */

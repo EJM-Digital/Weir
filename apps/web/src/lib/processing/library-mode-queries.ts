@@ -119,7 +119,7 @@ export function useLibraryFilePreviewQuery(
     queryFn: () =>
       previewProcessingRules({
         libraryId,
-        absolutePath: path ?? "",
+        absolutePath: path as string,
         ruleSetId: ruleSetId ?? undefined,
       }),
     enabled: enabled && path !== null,

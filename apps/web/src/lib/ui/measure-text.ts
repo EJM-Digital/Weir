@@ -16,10 +16,7 @@ let context: CanvasRenderingContext2D | null | undefined;
 
 function measuringContext(): CanvasRenderingContext2D | null {
   if (context === undefined) {
-    context =
-      typeof document === "undefined"
-        ? null
-        : document.createElement("canvas").getContext("2d");
+    context = document.createElement("canvas").getContext("2d");
   }
   return context;
 }
