@@ -147,9 +147,14 @@ public sealed class LibraryTableLayoutTests(E2EServer server) : E2ETestBase(serv
     private static async Task<IReadOnlyList<string>> CellOrderAsync(IPage page) =>
         await page.GetByTestId("library-row").First.Locator("[data-col]").EvaluateAllAsync<string[]>("cells => cells.map(cell => cell.dataset.col)");
 
+    /// <summary>A moved column slides to its place; it is measured only once every heading and cell has finished sliding.</summary>
+    private static async Task CellsAtRestAsync(IPage page) =>
+        await page.WaitForFunctionAsync("() => [...document.querySelectorAll('[data-col]')].every(cell => cell.getAnimations().length === 0 && getComputedStyle(cell).transform === 'none')");
+
     /// <summary>The middle of the heading lies within the width of the first row's cell for that column.</summary>
     private static async Task AssertCellsUnderTheirHeadingsAsync(IPage page, string heading, string column)
     {
+        await CellsAtRestAsync(page);
         var head = (await Heading(page, heading).BoundingBoxAsync())!;
         var cell = (await page.GetByTestId("library-row").First.Locator($"[data-col='{column}']").BoundingBoxAsync())!;
         var middle = head.X + (head.Width / 2);
