@@ -144,7 +144,8 @@ public sealed class RemuxPassPathsFoldersTests : IDisposable
 
         Assert.Equal(RemuxPassPaths.Resolve(profile), RemuxPassPaths.Resolve("~"));
         Assert.Equal(RemuxPassPaths.Resolve(Path.Join(profile, "films")), RemuxPassPaths.Resolve("~/films"));
-        Assert.Equal(RemuxPassPaths.Resolve(Path.Join(profile, "films")), RemuxPassPaths.Resolve("~\\films"));
+        var backslashed = OperatingSystem.IsWindows() ? Path.Join(profile, "films") : profile + "\\films";
+        Assert.Equal(RemuxPassPaths.Resolve(backslashed), RemuxPassPaths.Resolve("~\\films"));
         Assert.Equal(Path.GetFullPath("."), RemuxPassPaths.Resolve(string.Empty));
         var root = Path.GetPathRoot(Path.GetFullPath("."))!;
         Assert.Equal(root, RemuxPassPaths.Resolve(root));
