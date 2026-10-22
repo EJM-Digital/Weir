@@ -234,7 +234,9 @@ public sealed class UpdateServiceTests : IDisposable
             using var stream = new MemoryStream();
             using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
             {
-                using var writer = new StreamWriter(zip.CreateEntry("Weir.nuspec").Open());
+                var entry = zip.CreateEntry("Weir.nuspec");
+                entry.LastWriteTime = new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero);
+                using var writer = new StreamWriter(entry.Open());
                 writer.Write($"""<?xml version="1.0"?><package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd"><metadata><id>Weir</id><version>{version}</version><title>Weir</title></metadata></package>""");
             }
             return stream.ToArray();
