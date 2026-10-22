@@ -12,6 +12,5 @@ export function useMediaQuery(query: string): boolean {
     () =>
       typeof window.matchMedia === "function" &&
       window.matchMedia(query).matches,
-    () => false,
   );
 }

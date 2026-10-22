@@ -29,6 +29,5 @@ export function useSignOutFailed(): boolean {
       return () => listeners.delete(listener);
     },
     () => failed,
-    () => false,
   );
 }

@@ -93,7 +93,7 @@ export function previewTrackName(
 
   const rendered = template.replace(
     PLACEHOLDER_PATTERN,
-    (whole, name: string) => {
+    (_whole, name: string) => {
       switch (name) {
         case "language":
           return sample.language;
@@ -103,10 +103,9 @@ export function previewTrackName(
           return formatChannels(sample.channels);
         case "codec":
           return sample.codec;
-        case "flags":
-          return formatFlags(sample.flags);
+        // "flags": the template check above has already refused every other name.
         default:
-          return whole;
+          return formatFlags(sample.flags);
       }
     },
   );

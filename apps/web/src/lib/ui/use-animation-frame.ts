@@ -11,7 +11,6 @@ export function useAnimationFrame(onFrame: (time: number) => void): void {
     latest.current = onFrame;
   });
   useEffect(() => {
-    if (typeof requestAnimationFrame === "undefined") return undefined;
     let handle = 0;
     const step = (time: number) => {
       latest.current(time);

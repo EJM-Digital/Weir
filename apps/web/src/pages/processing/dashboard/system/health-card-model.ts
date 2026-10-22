@@ -117,6 +117,8 @@ export function listedChecks(
 /** What the list says when it has no row to show. */
 export function emptyHealthWords(area: HealthArea | null): string {
   if (area === null) return "Weir is still looking.";
-  const name = HEALTH_AREAS.find((entry) => entry.key === area)?.name ?? "";
+  const { name } = HEALTH_AREAS.find((entry) => entry.key === area) as {
+    name: string;
+  };
   return `Nothing to show for ${name}.`;
 }

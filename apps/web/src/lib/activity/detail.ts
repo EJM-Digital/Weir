@@ -10,10 +10,7 @@ export function parseActivityDetail(
 ): ActivityDetail | null {
   if (!detail?.trim().startsWith("{")) return null;
   try {
-    const parsed = JSON.parse(detail) as unknown;
-    return parsed && typeof parsed === "object"
-      ? (parsed as ActivityDetail)
-      : null;
+    return JSON.parse(detail) as ActivityDetail;
   } catch {
     return null;
   }

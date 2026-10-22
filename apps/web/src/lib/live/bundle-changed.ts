@@ -1,6 +1,6 @@
 function moduleScripts(root: ParentNode): string[] {
   return [...root.querySelectorAll("script[type=module][src]")]
-    .map((script) => script.getAttribute("src") ?? "")
+    .map((script) => script.getAttribute("src") as string)
     .sort();
 }
 
