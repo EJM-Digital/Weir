@@ -33,7 +33,7 @@ public static class WeirServer
         var variables = new Dictionary<string, string>(comparer);
         foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
         {
-            variables[(string)entry.Key] = entry.Value as string ?? string.Empty;
+            variables[(string)entry.Key] = (string)entry.Value!;
         }
 
         return new RuntimeEnvironment(
@@ -127,7 +127,8 @@ public static class WeirServer
         builder.Services.AddSingleton(listen);
         builder.Services.AddSingleton(ServerRunMode.Detect(
             UpdateFiles.DetectInstallType(options.RuntimeKind),
-            WindowsServiceHelpers.IsWindowsService() || SystemdHelpers.IsSystemdService()));
+            WindowsServiceHelpers.IsWindowsService(),
+            SystemdHelpers.IsSystemdService()));
         builder.Services.AddWeirApi(options);
         builder.Services.AddWeirJobs(options, runtime);
         configureBuilder?.Invoke(builder);

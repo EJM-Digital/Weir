@@ -130,3 +130,12 @@ Rules that go with the kinds:
 Known candidates (to be confirmed, with their proofs, when their project is worked): `Runtime/ComServerFirewall.cs` and the tray's
 `Firewall/ComFirewallPolicy.cs` and `Firewall/FirewallInstallHooks.cs` (Windows firewall COM, run by the Windows install scenarios),
 and the unreachable last arms of switches over `JsonValueKind` in `Rules/RulesJson.cs`.
+
+The second part of step 4 took Weir.Core to about 98.4% of lines and 94.8% of branches (Weir.Core, Weir.Infrastructure and Weir.Api
+unit tests together) with tests for the activity, artwork, username back-off, configuration, job, JSON and library-mode edges, and
+deleted the branches no input can reach (the second `ArgumentException` catch of the body reader, the empty-digits fallback of the
+number writer, the null folder arms of the library folder rules). Weir.Host's start-up steps are now run against a real failing
+database and a real port already in use, and the `recover` and `--healthcheck` commands are run as the process's own entry point.
+`ServerRunMode.Detect` takes the Windows service and systemd answers separately so each is run on its own. What is left of
+Weir.Core is in the Mkvmerge and output-validation helpers, the completion and hand-off reports, the remux planner and the
+language-name matching.

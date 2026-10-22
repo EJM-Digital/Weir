@@ -179,7 +179,7 @@ public static class WireConvert
         string s => new WireString(s),
         byte[] bytes => new WireString(Encoding.UTF8.GetString(bytes)),
         bool b => WireValue.Of(b),
-        _ => new WireString(Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty),
+        _ => new WireString(string.Create(CultureInfo.InvariantCulture, $"{value}")),
     };
 
     /// <summary>A JSON value as a SQLite parameter, the way the sqlite3 driver binds it.</summary>
@@ -199,10 +199,6 @@ public static class WireConvert
     private static string KindText(WireValue value) => value switch
     {
         WireNull => "nothing",
-        WireBool => "true or false",
-        WireInteger => "a whole number",
-        WireNumber => "a decimal number",
-        WireString => "text",
         WireArray => "a list",
         WireObject => "an object",
         _ => "a date and time",

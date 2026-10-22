@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using static Weir.Api.Tests.Platform.ApiTestClient;
@@ -21,33 +20,5 @@ public sealed class StartupSettingWarningsTests
         var startup = logger.Entries.Where(entry => entry.Category == "Weir.Host.Startup").ToList();
         Assert.NotEmpty(startup);
         Assert.DoesNotContain(startup, entry => entry.Level >= LogLevel.Warning && entry.Message.Contains("WEIR_", StringComparison.Ordinal));
-    }
-
-    /// <summary>A logger that keeps every message with its category, so a test can assert on what start-up wrote.</summary>
-    private sealed class CapturingLoggerFactory : ILoggerFactory
-    {
-        // Background timers log through this factory too, from their own threads.
-        public ConcurrentQueue<(string Category, LogLevel Level, string Message)> Entries { get; } = new();
-
-        public ILogger CreateLogger(string categoryName) => new CapturingLogger(this, categoryName);
-
-        public void AddProvider(ILoggerProvider provider)
-        {
-        }
-
-        public void Dispose()
-        {
-        }
-
-        private sealed class CapturingLogger(CapturingLoggerFactory owner, string category) : ILogger
-        {
-            public IDisposable? BeginScope<TState>(TState state)
-                where TState : notnull => null;
-
-            public bool IsEnabled(LogLevel logLevel) => true;
-
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
-                owner.Entries.Enqueue((category, logLevel, formatter(state, exception)));
-        }
     }
 }

@@ -10,7 +10,7 @@ public static partial class WireJsonParser
     {
         end = start;
         var idx = start;
-        if (idx < s.Length && s[idx] == '-')
+        if (s[idx] == '-')
         {
             idx++;
         }
