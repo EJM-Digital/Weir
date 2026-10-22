@@ -71,7 +71,7 @@ export async function installBuildUnderTest(world) {
 }
 
 /** Installs the build under test if it is not what is installed, and starts it if it is not running. */
-async function ensureInstalledAndRunning(world) {
+export async function ensureInstalledAndRunning(world) {
   const { machine } = world;
   if (await world.server.ready()) return expectBuildUnderTest(world);
   if (!(await machine.exists(machine.paths.serverExe))) {

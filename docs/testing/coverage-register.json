@@ -9892,7 +9892,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "network-access"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -9916,10 +9922,10 @@
         }
       ],
       "needs": {
-        "kind": "xunit",
-        "test": "[missing: P1] No test or scenario ever flips the setting on a real machine: nothing proves Weir then listens beyond loopback, that a second device can reach it, that the firewall rule is really created on all profiles, or that flipping it back closes the port. A wrong bind either locks the owner out of the UI (Weir \"down\" for other devices) or exposes it. Needed: VM scenario (allow other devices, probe from the host, restore) at layer vm."
+        "kind": "scenario",
+        "test": "Not provable on one runner: that Windows Firewall lets a packet from a second machine in (traffic from a PC to its own address never meets the firewall); the rule is read instead"
       },
-      "issue": 1009,
+      "issue": 1142,
       "audit": {
         "id": "SET-N01",
         "verdict": "Partly"
@@ -51704,7 +51710,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "network-share"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "network-share-hang"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -51753,10 +51770,10 @@
         }
       ],
       "needs": {
-        "kind": "xunit",
-        "test": "No test touches a real network share (SMB/NAS), which is where users keep media; share-drops and hung shares are simulated (FolderReachabilityTests.A_share_that_hangs_is_unreachable)"
+        "kind": "scenario",
+        "test": "Not proved on a real machine: case sensitivity and long paths (the share, its discovery, a dropped share and a hung share are proved by the windows-files shard)"
       },
-      "issue": 1016,
+      "issue": 1142,
       "audit": {
         "id": "INT-OS-FS",
         "verdict": "Partly"
@@ -52477,7 +52494,7 @@
         "kind": "scenario",
         "test": "Parsing is unit-tested; the combination as a container sees it (e.g. loopback bind inside a container, a published port on a LAN host and the setup-code path) is only the default case in docker-smoke"
       },
-      "issue": 1009,
+      "issue": 1142,
       "audit": {
         "id": "PLAT-17",
         "verdict": "Partly"
@@ -53241,7 +53258,13 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "publish-across-volumes"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -53254,11 +53277,6 @@
           "name": "A_staged_file_that_cannot_be_moved_is_copied_to_the_partial_and_still_published_atomically"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No test publishes across two real volumes (two drives/shares). The VM scenarios and the contract suite use one drive. The headline rule of the document is proven only by a simulated seam"
-      },
-      "issue": 1011,
       "audit": {
         "id": "FL-03",
         "verdict": "Partly"
@@ -53423,7 +53441,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "publish-across-volumes"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -53436,11 +53460,6 @@
           "name": "A_hard_link_is_validated_before_it_is_exposed"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No test where the link is refused (different volume or a filesystem without hard links) and the copy fallback runs"
-      },
-      "issue": 1011,
       "audit": {
         "id": "FL-07",
         "verdict": "Partly"
@@ -54004,7 +54023,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "keep-original-across-volumes"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -54042,11 +54067,6 @@
           "name": "LibraryFileWalkerTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The cross-volume copy-verify-delete runs on FakeSwapFileSystem only (OriginalsMoverTests.Fill_copies_and_verifies_across_volumes); never across two real volumes"
-      },
-      "issue": 1011,
       "audit": {
         "id": "FL-19",
         "verdict": "Partly"
@@ -54127,12 +54147,18 @@
       "severity": "high",
       "touches": "disk",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "No contract test and no VM scenario cleans a library file in place. This is the only feature that replaces a user's existing file. Needs a contract test (real ffmpeg, as RealFfmpegTests) and a VM scenario"
-      },
-      "issue": 990,
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "library-clean-in-place"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "library-swap-crash"
+        }
+      ],
       "audit": {
         "id": "FL-21",
         "verdict": "Gap"
@@ -54366,7 +54392,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "full-disk"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -54409,11 +54441,6 @@
           "name": "WorkflowFreeSpaceMigrationTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Free space is an injected number in every test; no run fills a real drive. The \"unchanged publish\" check is not named by any test"
-      },
-      "issue": 1011,
       "audit": {
         "id": "FL-27",
         "verdict": "Partly"
