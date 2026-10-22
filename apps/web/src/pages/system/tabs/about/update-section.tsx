@@ -1,15 +1,13 @@
 import { useState } from "react";
 
-import { Chip } from "../../../../components/panels/chip";
 import { Panel } from "../../../../components/panels/panel";
 import { errorMessage } from "../../../../lib/api/error-message";
 import { useUpdateStatusQuery } from "../../../../lib/settings/queries";
 import type { UpdateStatus } from "../../../../lib/settings/types";
-import { updateMeaning } from "../../../../lib/settings/update-status";
 import { useAppDateFormatter } from "../../../../lib/ui/mm-format-date";
 import { UpdateActions } from "./update-actions";
 import { UpdatePreferences } from "./update-preferences";
-import { updateStatusLabel } from "./update-words";
+import { UpdateStatusLine } from "./update-status-line";
 
 const COPIED_MS = 2000;
 
@@ -34,15 +32,6 @@ function CopyCommandButton({ command }: { command: string }) {
       {copied ? "Copied" : "Copy →"}
     </button>
   );
-}
-
-/** The line beside the status pill, as a sentence: the new version and the one running, or the one running, else the server's own summary. */
-function statusText(status: UpdateStatus): string {
-  if (status.status === "update_available" && status.latest_version)
-    return `Weir v${status.latest_version} is available (you have v${status.current_version})`;
-  if (status.status === "up_to_date")
-    return `You have Weir v${status.current_version}`;
-  return status.summary;
 }
 
 /** While GitHub is limiting the checks, the newest release Weir had learned of before that. */
@@ -116,16 +105,7 @@ function ReleaseStatus({
         )
       }
     >
-      <p
-        className="mm-status-line"
-        title={status.summary}
-        data-testid="suite-settings-release-status"
-      >
-        <Chip meaning={updateMeaning(status.status)}>
-          {updateStatusLabel(status.status)}
-        </Chip>
-        <span>{statusText(status)}</span>
-      </p>
+      <UpdateStatusLine status={status} isWindows={isWindows} />
       <LastKnownRelease status={status} />
       {isWindows ? (
         <>
