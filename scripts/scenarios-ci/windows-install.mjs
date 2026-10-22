@@ -28,6 +28,9 @@ export const START_CEILING_MS = 120_000;
 const UNINSTALL_CEILING_MS = 120_000;
 const JOBS_CEILING_MS = 60_000;
 
+/** A shortcut to Weir in the Start Menu's Programs, which is where a person looks for it. */
+const isStartMenuShortcut = (path) => /[\\/]Start Menu[\\/]Programs[\\/](?:.*[\\/])?Weir[^\\/]*\.lnk$/i.test(path);
+
 /** Fails with each thing found when there is any. */
 function expectNone(found, what) {
   assert.equal(found.length, 0, `${what}: ${found.join("; ")}`);
@@ -193,6 +196,10 @@ async function freshInstall(world) {
   const trayLog = await machine.readText(machine.paths.trayLog);
   assert.ok(trayLog.includes(`Using port ${PORT} from --port`), "the tray log does not say it used the port it was given");
   assert.ok(trayLog.includes(`Weir is healthy on http://127.0.0.1:${PORT}/`), "the tray log does not say Weir is healthy");
+  assert.ok(trayLog.includes(`installRoot=${join(machine.paths.installRoot, "current")}`), "the tray log does not say Weir runs from the install folder");
+  assert.ok(trayLog.includes(`runtimeHome=${machine.paths.runtimeHome}`), "the tray log does not say Weir keeps its data in the data folder");
+  const shortcuts = await machine.shortcuts();
+  assert.ok(shortcuts.some(isStartMenuShortcut), `Setup made no Start Menu shortcut (shortcuts found: ${shortcuts.join("; ") || "none"})`);
 
   const choices = JSON.parse(await machine.readText(join(machine.paths.runtimeHome, "update-settings.json")));
   assert.equal(choices.checkForUpdates, false, `a new install saved checkForUpdates ${choices.checkForUpdates}, not false`);
@@ -204,7 +211,7 @@ async function freshInstall(world) {
   const secrets = await secretsMadeByTheInstall(world);
   await expectServerUsesSecrets(world, secrets);
   return (
-    `Setup --silent exited 0 in ${setup.seconds} s; Weir ${reported} answered /ready; tray pid ${trayPid} with the server as its child and no window; ` +
+    `Setup --silent exited 0 in ${setup.seconds} s with Weir in ${machine.paths.installRoot}, its data in ${machine.paths.runtimeHome} and ${shortcuts.length} shortcuts (one in the Start Menu); Weir ${reported} answered /ready; tray pid ${trayPid} with the server as its child and no window; ` +
     `listening on ${addresses.join(", ")} only; update checking started off and nothing reached the release feed; session.secret and credentials.secret are ${MINIMUM_SECRET_LENGTH}+ characters, readable only by SYSTEM, the administrators and the installing account, ` +
     "and the server signs with the session secret."
   );

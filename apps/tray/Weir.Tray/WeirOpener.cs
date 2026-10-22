@@ -39,6 +39,10 @@ sealed class WeirOpener(
         }
     }
 
+    /// <summary>Weir has started, and the person started it: says it is running, with the address. The start opens nothing; a click on the balloon opens Weir.</summary>
+    internal void ShowRunning() =>
+        balloon("Weir", TrayBalloons.RunningText(port()), ToolTipIcon.Info, () => Open("start-balloon"));
+
     /// <summary>Weir was started again while it was running: says so, with the address, and a click on the balloon opens Weir.</summary>
     internal void ShowAlreadyRunning() =>
         balloon("Weir", TrayBalloons.AlreadyRunningText(port()), ToolTipIcon.Info, () => Open("already-running-balloon"));

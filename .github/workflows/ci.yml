@@ -103,6 +103,8 @@ jobs:
               - 'apps/tray/**'
               # The tray imports the server's build rules and product version.
               - 'apps/server/Directory.Build.props'
+              # The tray's tests read the files the tray and the server write for each other.
+              - 'apps/server/tests/fixtures/tray-files/**'
             # Only files the package smokes actually exercise: the packaged artefacts (Dockerfile, docker/**,
             # compose.yaml, .dockerignore, packaging/**, the tray), the host entry point that ships inside them
             # (apps/server/src/Weir.Host/**, not the whole server), the database migrations the upgrade smoke carries an
