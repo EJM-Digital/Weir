@@ -1,20 +1,53 @@
 {
   "measuredFrom": {
     "run": 38551264717,
-    "samples": [38549249570, 38551264717],
+    "samples": [
+      38549249570,
+      38551264717
+    ],
     "commit": "fb7a6dfa7e09eaa2d9d2b2989e8d44661ecd6d32",
-    "note": "CI runs of the coverage branch, whose product code is main's at f33af83f. Each floor is the lowest of the two runs' figures rounded down to one decimal. Weir.Infrastructure and Weir.Api differed between the runs (seven timing-dependent files, mostly background services and watchers), so their four floors are a further 0.1 lower; every other figure was identical in both runs. The four out-of-process floors are from CI run 39124799698 (the contract suite and the E2E smoke, one sample), rounded down to one decimal and a further 0.1 lower because the figure depends on the timing of background services in the server process. The server-core floors were raised in #1060: CI run 39208578019 on main measured 93.0% lines and 84.6% branches for Weir.Core, the new Weir.Core tests add at least 2.8 points of lines and 4.7 of branches (their coverage laid over that run's merged report), and the floors are the sum less 0.1. The server-infrastructure floors were raised in #1060 step 2: CI run 39208578019 on main measured 91.1% lines and 77.9% branches for Weir.Infrastructure; the new Weir.Infrastructure.Tests add 1.7 points of lines and 2.7 of branches on their own (a local run of that one project: 82.4% to 84.1% lines, 71.0% to 73.6% branches), the new tests mostly cover files no Api or Core test runs, and each floor is the CI figure plus 60% of that gain, less 0.1 and rounded down to leave room for the timing-dependent background services. The server-core and server-host floors were raised again in #1060 step 4: CI run 39385150942 on main measured 95.9% lines and 89.7% branches for Weir.Core and 89.2% and 79.2% for Weir.Host; laying the new Weir.Core.Tests coverage (a local run of that one project, taken alone for the six files whose line numbers moved) over that run's merged report gives 98.0% and 93.5% for Weir.Core, and the new Host tests add 20 lines and 8 branches to Weir.Host (93.4% and 90.3%); each floor is that figure less 0.2 for Weir.Core and less 2 to 6 points for Weir.Host, which has no tests of its own and depends on which unit legs run the Windows-only ones. The server-infrastructure floors were raised again in #1060 step 3: the new Weir.Infrastructure.Tests add 1.7 points of lines and 2.4 of branches on their own (a local run of that one project: 84.2% to 86.0% lines, 73.8% to 76.2% branches) and 0.4 of each over the Weir.Api.Tests run (a local merge of the two projects, 92.1% to 92.4% lines, 80.2% to 80.6% branches), so each floor is the previous floor plus 60% of that merged gain, less 0.1 and rounded down."
+    "note": "CI runs of the coverage branch, whose product code is main's at f33af83f. Each floor is the lowest of the two runs' figures rounded down to one decimal. Weir.Infrastructure and Weir.Api differed between the runs (seven timing-dependent files, mostly background services and watchers), so their four floors are a further 0.1 lower; every other figure was identical in both runs. The four out-of-process floors are from CI run 39124799698 (the contract suite and the E2E smoke, one sample), rounded down to one decimal and a further 0.1 lower because the figure depends on the timing of background services in the server process. The server-core floors were raised in #1060: CI run 39208578019 on main measured 93.0% lines and 84.6% branches for Weir.Core, the new Weir.Core tests add at least 2.8 points of lines and 4.7 of branches (their coverage laid over that run's merged report), and the floors are the sum less 0.1. The server-infrastructure floors were raised in #1060 step 2: CI run 39208578019 on main measured 91.1% lines and 77.9% branches for Weir.Infrastructure; the new Weir.Infrastructure.Tests add 1.7 points of lines and 2.7 of branches on their own (a local run of that one project: 82.4% to 84.1% lines, 71.0% to 73.6% branches), the new tests mostly cover files no Api or Core test runs, and each floor is the CI figure plus 60% of that gain, less 0.1 and rounded down to leave room for the timing-dependent background services. The server-core and server-host floors were raised again in #1060 step 4: CI run 39385150942 on main measured 95.9% lines and 89.7% branches for Weir.Core and 89.2% and 79.2% for Weir.Host; laying the new Weir.Core.Tests coverage (a local run of that one project, taken alone for the six files whose line numbers moved) over that run's merged report gives 98.0% and 93.5% for Weir.Core, and the new Host tests add 20 lines and 8 branches to Weir.Host (93.4% and 90.3%); each floor is that figure less 0.2 for Weir.Core and less 2 to 6 points for Weir.Host, which has no tests of its own and depends on which unit legs run the Windows-only ones. The server-infrastructure floors were raised again in #1060 step 3: the new Weir.Infrastructure.Tests add 1.7 points of lines and 2.4 of branches on their own (a local run of that one project: 84.2% to 86.0% lines, 73.8% to 76.2% branches) and 0.4 of each over the Weir.Api.Tests run (a local merge of the two projects, 92.1% to 92.4% lines, 80.2% to 80.6% branches), so each floor is the previous floor plus 60% of that merged gain, less 0.1 and rounded down. The server-infrastructure floors were raised again in #1060 step 2, part 2: the new Weir.Infrastructure.Tests add 0.2 points of lines and 0.6 of branches to a local run of Weir.Infrastructure.Tests and Weir.Api.Tests together (92.1% to 92.3% lines, 80.1% to 80.7% branches), and each floor is raised by 60% of that gain, less the margin for the timing-dependent background services."
   },
   "floors": {
-    "server-core": { "line": 97.8, "branch": 93.3 },
-    "server-infrastructure": { "line": 92.0, "branch": 79.3 },
-    "server-api": { "line": 89.1, "branch": 70.7 },
-    "server-host": { "line": 91.0, "branch": 84.0 },
-    "out-of-process-core": { "line": 74.6, "branch": 60.6 },
-    "out-of-process-infrastructure": { "line": 78, "branch": 59.7 },
-    "out-of-process-api": { "line": 94.5, "branch": 67.9 },
-    "out-of-process-host": { "line": 80.9, "branch": 67.6 },
-    "tray": { "line": 74.1, "branch": 73.1 },
-    "web": { "line": 88.3, "branch": 82.7 }
+    "server-core": {
+      "line": 97.8,
+      "branch": 93.3
+    },
+    "server-infrastructure": {
+      "line": 92,
+      "branch": 79.5
+    },
+    "server-api": {
+      "line": 89.1,
+      "branch": 70.7
+    },
+    "server-host": {
+      "line": 91,
+      "branch": 84
+    },
+    "out-of-process-core": {
+      "line": 74.6,
+      "branch": 60.6
+    },
+    "out-of-process-infrastructure": {
+      "line": 78,
+      "branch": 59.7
+    },
+    "out-of-process-api": {
+      "line": 94.5,
+      "branch": 67.9
+    },
+    "out-of-process-host": {
+      "line": 80.9,
+      "branch": 67.6
+    },
+    "tray": {
+      "line": 74.1,
+      "branch": 73.1
+    },
+    "web": {
+      "line": 88.3,
+      "branch": 82.7
+    }
   }
 }

@@ -4,6 +4,7 @@ using Weir.Core.Activity;
 using Weir.Core.Jobs;
 using Weir.Core.Library;
 using Weir.Core.LibraryMode;
+using Weir.Core.Media;
 using Weir.Core.MediaManagers;
 using Weir.Core.Rules;
 using Weir.Infrastructure.Jobs;
@@ -139,6 +140,20 @@ public sealed partial class LibraryCleanHandlerTests
         await HandleAsync(Handler(), Payload(library, path));
 
         Assert.Equal(["This file has no video track that Weir could find."], await TitlesAsync(LibraryActivityEventTypes.FileFailed));
+        Assert.Empty(_media.Remuxes);
+    }
+
+    [Fact]
+    public async Task A_file_whose_track_details_make_no_sense_fails_in_plain_words_and_is_left_untouched()
+    {
+        var library = await LibraryAsync();
+        var path = _libraryFolder.Join("film.mkv");
+        await File.WriteAllBytesAsync(path, [1, 2, 3]);
+        _media.Probes["film.mkv"] = """{"format":{"duration":"100.0"},"streams":[{"index":0,"codec_type":5}]}""";
+
+        await HandleAsync(Handler(), Payload(library, path));
+
+        Assert.Equal([ToolFailureText.UnusableTrackData], await TitlesAsync(LibraryActivityEventTypes.FileFailed));
         Assert.Empty(_media.Remuxes);
     }
 

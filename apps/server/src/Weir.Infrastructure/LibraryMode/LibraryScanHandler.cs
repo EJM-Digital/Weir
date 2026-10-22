@@ -300,15 +300,7 @@ public sealed class LibraryScanHandler : IJobHandler
             }
         }
 
-        LibraryFilePlanResult classification;
-        try
-        {
-            classification = LibraryFilePlanner.Classify(ProbeResult.Parse(probeJson), rules);
-        }
-        catch (RulesInputException)
-        {
-            classification = LibraryFilePlanResult.CannotProcess(ToolFailureText.UnusableTrackData);
-        }
+        var classification = LibraryFilePlanner.Classify(ProbeResult.Parse(probeJson), rules);
 
         return new LibraryScanFileEntry(
             walked.Path,
