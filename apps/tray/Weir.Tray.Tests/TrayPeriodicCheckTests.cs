@@ -64,6 +64,29 @@ public sealed class TrayPeriodicCheckTests : IDisposable
         Assert.Equal(2, service.Checks);
     }
 
+    [Theory(Timeout = 60_000)]
+    [InlineData(1)]
+    [InlineData(45)]
+    [InlineData(10080)]
+    public async Task The_next_check_comes_one_interval_after_the_last_for_every_interval_the_settings_allow(int minutes)
+    {
+        var interval = TimeSpan.FromMinutes(minutes);
+        var service = new FakeUpdateService();
+        _ = Started(service, new UpdateSettings { Mode = UpdateMode.NotifyOnly, CheckOnStartup = false, CheckIntervalMinutes = minutes });
+        await WaitUntilParkedForAsync(interval);
+
+        _clock.Advance(interval - TimeSpan.FromSeconds(1));
+        Assert.Equal(0, service.Checks);
+
+        _clock.Advance(TimeSpan.FromSeconds(1));
+        await _announced.WaitAsync(Ceiling);
+        Assert.Equal(1, service.Checks);
+
+        _clock.Advance(interval);
+        await _announced.WaitAsync(Ceiling);
+        Assert.Equal(2, service.Checks);
+    }
+
     [Fact(Timeout = 60_000)]
     public async Task A_check_made_by_the_interval_downloads_what_it_finds_when_the_mode_downloads()
     {

@@ -39,6 +39,9 @@ internal sealed class FakeUpdateService : IUpdateService
 
     public Action<string>? OnApply { get; set; }
 
+    /// <summary>Called as each check starts, so a test hears of it without polling.</summary>
+    public Action? OnCheck { get; set; }
+
     /// <summary>The apply calls made so far, by the constants above.</summary>
     public IReadOnlyList<string> Applied => _applied;
 
@@ -61,6 +64,7 @@ internal sealed class FakeUpdateService : IUpdateService
     public async Task<UpdateOutcome> CheckForUpdateAsync()
     {
         Checks++;
+        OnCheck?.Invoke();
         if (HoldCheck is not null)
         {
             await HoldCheck;

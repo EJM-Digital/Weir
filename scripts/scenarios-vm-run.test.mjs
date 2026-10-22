@@ -1,15 +1,17 @@
 // node --test scripts/scenarios-vm-run.test.mjs
 // What the golden-VM scenario suite got wrong on its first run of 1.0.0-rc.19, each pinned with the shape it was found in: the update scenario
-// began before Deluno's picker had finished installing Weir, the Deluno workflows scenario waited on a Deluno nobody had set up, and the
-// recover scenario's deliberate refused sign-in was taken for trouble by the log watch. Windows PowerShell exists on Windows only, so
-// elsewhere these tests are skipped.
+// began before Deluno's picker had finished installing Weir, the Deluno scenarios skipped for want of a library and a hand-off that nothing had
+// set up (the run now sets them up through Deluno's API), and the recover scenario's deliberate refused sign-in was taken for trouble by the log
+// watch. Windows PowerShell exists on Windows only, so elsewhere these tests are skipped.
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
+import { createServer } from "node:http";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { test } from "node:test";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const scenarios = join(repoRoot, "scripts", "scenarios");
@@ -151,38 +153,301 @@ test("the update scenario never waits for a picker that has already finished, ne
   assert.equal(lines[8], "empty: settled, asked Weir for 60");
 });
 
-// --- workflows set up from Deluno -------------------------------------------------------------------------------------------------------
+// --- Deluno set up by the run (#1257) -------------------------------------------------------------------------------------------------
 
-test("workflows from Deluno: a Deluno with no library set to refine before import has nothing to set up, so the scenario is not applicable, not a timeout", { skip }, () => {
+// Windows PowerShell 5.1 run as a child that is waited for without blocking this process, so a server in this process can answer it.
+function psFileAsync(lines, { onLine } = {}) {
+  const folder = mkdtempSync(join(tmpdir(), "weir-scenarios-vm-run-"));
+  const file = join(folder, "test.ps1");
+  writeFileSync(file, lines.join("\n"));
+  const child = spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", file], { stdio: ["pipe", "pipe", "pipe"] });
+  let stdout = "";
+  let stderr = "";
+  child.stdout.on("data", (chunk) => {
+    stdout += chunk;
+    onLine?.(stdout, child);
+  });
+  child.stderr.on("data", (chunk) => (stderr += chunk));
+  const done = new Promise((resolveRun) => child.on("close", (status) => resolveRun({ status, stdout: stdout.trim().split(/\r?\n/), stderr })));
+  return { child, done };
+}
+
+// A library as Deluno's manifest lists it (the recorded one, a library nobody has set to refine before import), with the one member /api/libraries
+// adds that the setup reads: the processor connection it hands to. No recording of /api/libraries or of the processor routes exists; they are
+// shaped as the setup reads them, and the manifest is the recorded shape.
+const recordedLibrary = () => {
   const recorded = JSON.parse(
     readFileSync(join(repoRoot, "apps", "server", "tests", "fixtures", "recorded", "deluno-side", "1.0.0-rc.30.33", "real-connection.json"), "utf8"),
   );
-  const manifest = recorded.exchanges.find((exchange) => exchange.request.path === "/api/integrations/external/manifest").reply.body;
-  assert.deepEqual(
-    manifest.libraries.map((library) => library.importWorkflow),
-    ["standard"],
-    "the recorded Deluno is one nobody has set a library to refine before import on",
-  );
-  const refining = structuredClone(manifest);
-  refining.libraries[0].importWorkflow = "refine-before-import";
-  const lines = psFile([
+  return { ...recorded.exchanges.find((exchange) => exchange.request.path === "/api/integrations/external/manifest").reply.body.libraries[0], processorConnectionId: null };
+};
+
+// A Deluno answering the routes the setup uses, keeping what it was asked. `refuse` is the status the library save answers with, instead of accepting it.
+async function delunoStandIn({ libraries = [recordedLibrary()], processors = [], refuse = 0 } = {}) {
+  const calls = [];
+  const state = { libraries: structuredClone(libraries), processors: structuredClone(processors) };
+  const server = createServer((request, response) => {
+    let text = "";
+    request.on("data", (chunk) => (text += chunk));
+    request.on("end", () => {
+      const body = text ? JSON.parse(text) : null;
+      calls.push({ method: request.method, path: request.url, key: request.headers["x-api-key"], body });
+      const send = (status, json) => {
+        response.writeHead(status, { "content-type": "application/json" });
+        response.end(JSON.stringify(json));
+      };
+      const workflow = /^\/api\/libraries\/([^/]+)\/workflow$/.exec(request.url);
+      if (request.method === "GET" && request.url === "/api/integrations/processors/connections") return send(200, state.processors);
+      if (request.method === "POST" && request.url === "/api/integrations/processors/connections") {
+        const made = { id: "processor-1", name: "Weir on test-machine", provider: body.provider, submissionUrl: body.submissionUrl, isEnabled: body.isEnabled };
+        state.processors.push(made);
+        return send(200, made);
+      }
+      if (request.method === "GET" && request.url === "/api/libraries") return send(200, state.libraries);
+      if (request.method === "PUT" && workflow) {
+        if (refuse) return send(refuse, { title: "This API key does not include the required scope: write." });
+        Object.assign(state.libraries.find((library) => library.id === workflow[1]), body);
+        return send(200, state.libraries.find((library) => library.id === workflow[1]));
+      }
+      if (request.method === "GET" && request.url === "/api/integrations/external/manifest") return send(200, { libraries: state.libraries });
+      return send(404, { title: "not here" });
+    });
+  });
+  await new Promise((resolveListening) => server.listen(0, "localhost", resolveListening));
+  return { calls, state, url: `http://localhost:${server.address().port}`, close: () => server.close() };
+}
+
+const setupKey = "deluno_SetupKey0123456789abcdef";
+
+// PowerShell that sets Deluno up against the stand-in, with Weir's side stood in for: its connection to Deluno and the webhook secret it makes.
+function setupScript(deluno, body) {
+  const folder = mkdtempSync(join(tmpdir(), "weir-scenarios-setup-"));
+  return {
+    folder,
+    lines: [
+      "$ErrorActionPreference = 'Stop'",
+      ...dotSource("Lib", "Context", "Deluno", "DelunoSetup"),
+      `$script:Ctx.DelunoUrl = '${deluno.url}'`,
+      `$script:Ctx.DelunoKey = '${setupKey}'`,
+      "$script:Ctx.Base = 'http://localhost:5555'",
+      `$script:Ctx.MediaRoot = '${join(folder, "media")}'`,
+      "$script:Ctx.Session = 'a session'",
+      `$script:EvidenceFile = '${join(folder, "evidence.txt")}'`,
+      "$script:WebhookSecrets = 0",
+      "function Ensure-WeirDelunoConnection { [pscustomobject]@{ Id = 7; How = 'stood in' } }",
+      "function Invoke-Weir { param($Session, $Method, $Path, $Body) $script:WebhookSecrets++; [pscustomobject]@{ Status = 200; Text = ''; Json = [pscustomobject]@{ webhook_url_path = '/api/v1/media-managers/webhooks/deluno/7'; header_name = 'X-Webhook-Secret'; webhook_secret = 'whsec-0123456789abcdef' } } }",
+      "function Show($label, $block) { try { $r = & $block; $label + ': PASSED ' + $r } catch { $label + ': FAILED ' + $_.Exception.Message } }",
+      body,
+    ],
+  };
+}
+
+test("a Deluno with no library that refines before import is set up through its API: Weir as its processor, one library handing back to Weir's folder", { skip }, async () => {
+  const deluno = await delunoStandIn();
+  try {
+    const { folder, lines } = setupScript(deluno, "$set = Initialize-DelunoRefiningLibrary; 'summary: ' + $set.Summary; 'again: ' + [object]::ReferenceEquals($set, (Initialize-DelunoRefiningLibrary))");
+    const { status, stdout, stderr } = await psFileAsync(lines).done;
+    assert.equal(status, 0, stderr + stdout.join("\n"));
+
+    assert.deepEqual(
+      deluno.calls.map((call) => `${call.method} ${call.path}`),
+      [
+        "GET /api/integrations/processors/connections",
+        "POST /api/integrations/processors/connections",
+        "GET /api/libraries",
+        "PUT /api/libraries/01a14dd7a3277ea09b4c8cf79f45b536/workflow",
+        "GET /api/integrations/external/manifest",
+      ],
+    );
+    assert.ok(deluno.calls.every((call) => call.key === setupKey), "every call carries the key from the key file");
+    const ready = join(folder, "media", "deluno", "Ready", "Movies");
+    assert.deepEqual(deluno.calls[1].body, {
+      name: "Weir",
+      provider: "generic-webhook",
+      submissionUrl: "http://localhost:5555/api/v1/media-managers/webhooks/deluno/7",
+      authHeaderName: "X-Webhook-Secret",
+      secret: "whsec-0123456789abcdef",
+      isEnabled: true,
+      healthCheckUrl: "http://localhost:5555/ready",
+    });
+    assert.deepEqual(deluno.calls[3].body, {
+      importWorkflow: "refine-before-import",
+      processorConnectionId: "processor-1",
+      processorName: "Weir on test-machine",
+      processorOutputPath: ready,
+      processorTimeoutMinutes: 2880,
+      processorFailureMode: "block",
+      cleanupMode: "keep-source",
+      removeEmptySourceFolders: false,
+    });
+    assert.ok(existsSync(ready), "Weir's output folder exists");
+    assert.match(stdout[0], /^summary: added Weir to Deluno as a processor, with a webhook secret made in Weir; set Deluno's library 'Movies' to refine before import, with 'Weir on test-machine' as its processor, failure mode block and its cleaned films handed back to /);
+    assert.equal(stdout[1], "again: True", "done once per run");
+    const evidence = readFileSync(join(folder, "evidence.txt"), "utf8");
+    assert.match(evidence, /Deluno PUT \/api\/libraries\/01a14dd7a3277ea09b4c8cf79f45b536\/workflow -> 200/, "the record shows the call that set the library up");
+    assert.doesNotMatch(evidence, /whsec-0123456789abcdef|deluno_SetupKey/, "neither the key nor the webhook secret is written down");
+  } finally {
+    deluno.close();
+  }
+});
+
+test("a library that already refines before import with an enabled Weir processor is left as it is, and no new webhook secret stops the connection working", { skip }, async () => {
+  const processor = { id: "processor-9", name: "Weir on test-machine", provider: "generic-webhook", submissionUrl: "http://localhost:5555/api/v1/media-managers/webhooks/deluno/7", isEnabled: true };
+  const refining = { ...recordedLibrary(), importWorkflow: "refine-before-import", processorConnectionId: "processor-9", processorName: processor.name, processorOutputPath: "C:\\Weir\\Ready\\Movies" };
+  const deluno = await delunoStandIn({ libraries: [refining], processors: [processor] });
+  try {
+    const { lines } = setupScript(deluno, "$set = Initialize-DelunoRefiningLibrary; 'summary: ' + $set.Summary; 'secrets made: ' + $script:WebhookSecrets");
+    const { status, stdout, stderr } = await psFileAsync(lines).done;
+    assert.equal(status, 0, stderr + stdout.join("\n"));
+
+    assert.deepEqual(
+      deluno.calls.map((call) => `${call.method} ${call.path}`),
+      ["GET /api/integrations/processors/connections", "GET /api/libraries", "GET /api/integrations/external/manifest"],
+    );
+    assert.match(stdout[0], /^summary: used the processor connection 'Weir on test-machine' Deluno already had for Weir; found Deluno's library 'Movies' already refining before import/);
+    assert.equal(stdout[1], "secrets made: 0");
+  } finally {
+    deluno.close();
+  }
+});
+
+test("Deluno refusing the setup is a failure, and one that names the scopes the key needs; it is never a skip", { skip }, async () => {
+  const deluno = await delunoStandIn({ refuse: 403 });
+  try {
+    const { lines } = setupScript(
+      deluno,
+      "Show 'setup' { Initialize-DelunoRefiningLibrary | Out-Null }\nfunction Test-DelunoPreconditions { $null }\nShow 'workflows' { $r = Scenario_workflows_from_deluno; if ($r.NotApplicable) { 'NOT APPLICABLE ' + $r.Detail } else { $r } }",
+    );
+    const { status, stdout, stderr } = await psFileAsync(lines).done;
+    assert.equal(status, 0, stderr + stdout.join("\n"));
+
+    const refused = /FAILED Deluno refused to set its library 'Movies' to refine before import \(answered 403: .*required scope: write.*\)\. The key from the key file did not allow it: setting Deluno up through its API needs a key with the scopes read, imports and write\.$/;
+    assert.match(stdout[0], new RegExp(`^setup: ${refused.source}`));
+    assert.match(stdout[1], new RegExp(`^workflows: ${refused.source}`));
+  } finally {
+    deluno.close();
+  }
+});
+
+test("a Deluno with no movie library has nothing to refine films with, and says so rather than waiting", { skip }, async () => {
+  const deluno = await delunoStandIn({ libraries: [{ ...recordedLibrary(), mediaType: "tv" }] });
+  try {
+    const { lines } = setupScript(deluno, "Show 'setup' { Initialize-DelunoRefiningLibrary | Out-Null }");
+    const { status, stdout, stderr } = await psFileAsync(lines).done;
+    assert.equal(status, 0, stderr + stdout.join("\n"));
+
+    assert.match(stdout[0], /^setup: FAILED The Deluno at http:\/\/localhost:\d+ has no movie library to refine films with/);
+    assert.equal(deluno.calls.some((call) => call.method === "PUT"), false, "no library was changed");
+  } finally {
+    deluno.close();
+  }
+});
+
+// --- the hand-off the run makes ------------------------------------------------------------------------------------------------------
+
+// A release folder as the run makes one: a film that spans several pieces of a torrent, an .nfo, and a nested extra.
+function releaseFolder() {
+  const folder = mkdtempSync(join(tmpdir(), "weir-scenarios-release-"));
+  const release = join(folder, "Scn1a2b3c.2020.1080p.WEB-DL.x264-WEIR");
+  mkdirSync(join(release, "Extras"), { recursive: true });
+  writeFileSync(join(release, "Scn1a2b3c.2020.1080p.WEB-DL.x264-WEIR.mkv"), randomBytes(700_000));
+  writeFileSync(join(release, "Scn1a2b3c.2020.1080p.WEB-DL.x264-WEIR.nfo"), "Weir scenario release\n");
+  writeFileSync(join(release, "Extras", "Featurette.mkv"), Buffer.alloc(2_000_000));
+  return { folder, release, name: "Scn1a2b3c.2020.1080p.WEB-DL.x264-WEIR" };
+}
+
+test("the torrent the run writes is byte for byte the one the CI shard's release source writes for the same folder", { skip }, async () => {
+  const { release, name } = releaseFolder();
+  const { makeTorrent } = await import(pathToFileURL(join(repoRoot, "scripts", "scenarios-ci", "with-deluno", "fixture", "torrent.mjs")).href);
+  const expected = makeTorrent({ folder: release, name, webSeedBase: "http://localhost:18700/webseed/" });
+  const { status, stdout, stderr } = await psFileAsync([
     "$ErrorActionPreference = 'Stop'",
-    ...dotSource("Lib", "Context", "Deluno"),
-    "$script:Ctx.DelunoUrl = 'http://localhost:7879'",
-    "function Test-DelunoPreconditions { $null }",
-    "function Invoke-Deluno { param($Method, $Path) [pscustomobject]@{ Status = 200; Json = ($script:Manifest | ConvertFrom-Json); Text = $script:Manifest } }",
-    "function Ensure-WeirDelunoConnection { throw 'PAST-THE-CHECK' }",
-    "function Show($scenario) { try { $r = & $scenario; if ($r.NotApplicable) { 'NA: ' + $r.Detail } else { 'PASSED: ' + $r } } catch { 'FAILED: ' + $_.Exception.Message } }",
-    `$script:Manifest = ${hereString([JSON.stringify(manifest)])}`,
-    "Show { Scenario_workflows_from_deluno }",
-    `$script:Manifest = ${hereString([JSON.stringify(refining)])}`,
-    "Show { Scenario_workflows_from_deluno }",
-  ]);
-  assert.match(
-    lines[0],
-    /^NA: The Deluno at http:\/\/localhost:7879 lists 1 library\(ies\) and none is set to refine before import, so Weir has no workflow to set up from it\. Deluno's own suite sets its libraries up/,
-  );
-  assert.equal(lines[1], "FAILED: PAST-THE-CHECK");
+    ...dotSource("Lib", "Context", "DelunoSetup"),
+    `$made = New-ReleaseTorrent -Folder '${release}' -Name '${name}' -WebSeedBase 'http://localhost:18700/webseed/'`,
+    "'hash: ' + $made.InfoHash",
+    "'total: ' + $made.Total",
+    "'files: ' + (($made.Files | ForEach-Object { $_.Path + '=' + $_.Size }) -join ',')",
+    "'torrent: ' + [Convert]::ToBase64String($made.Torrent)",
+  ]).done;
+  assert.equal(status, 0, stderr + stdout.join("\n"));
+
+  assert.equal(stdout[0], `hash: ${expected.infohash}`);
+  assert.equal(stdout[1], `total: ${expected.total}`);
+  assert.equal(stdout[2], `files: ${expected.files.map((file) => `${file.path}=${file.size}`).join(",")}`);
+  assert.equal(stdout[3], `torrent: ${expected.torrent.toString("base64")}`);
+});
+
+test("the release source serves the torrent and the release's bytes with the ranges a download client asks for, and nothing outside the release", { skip }, async () => {
+  const { release, name } = releaseFolder();
+  let running;
+  const started = new Promise((resolveStarted) => {
+    running = psFileAsync(
+      [
+        "$ErrorActionPreference = 'Stop'",
+        ...dotSource("Lib", "Context", "DelunoSetup"),
+        `$source = Start-ReleaseSource -Folder '${release}' -Name '${name}'`,
+        "'origin: ' + $source.Origin",
+        "[Console]::In.ReadLine() | Out-Null",
+        "& $source.Stop",
+        "'stopped'",
+      ],
+      {
+        onLine: (output) => {
+          const found = /origin: (\S+)/.exec(output);
+          if (found) resolveStarted(found[1]);
+        },
+      },
+    );
+    void running.done.then(() => resolveStarted(null));
+  });
+  const origin = await started;
+  if (origin === null) assert.fail(`the release source did not start: ${(await running.done).stderr}`);
+  try {
+    const film = readFileSync(join(release, `${name}.mkv`));
+    const get = async (path, headers = {}) => {
+      const answer = await fetch(`${origin}${path}`, { headers });
+      return { status: answer.status, headers: answer.headers, bytes: Buffer.from(await answer.arrayBuffer()) };
+    };
+
+    const torrent = await get(`/dl/${name}.torrent`);
+    assert.equal(torrent.status, 200);
+    assert.equal(torrent.headers.get("content-type"), "application/x-bittorrent");
+    assert.match(torrent.bytes.toString("latin1"), new RegExp(`url-list.*${origin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/webseed/`));
+
+    const whole = await get(`/webseed/${name}/${name}.mkv`);
+    assert.equal(whole.status, 200);
+    assert.ok(whole.bytes.equals(film), "the whole file");
+    const middle = await get(`/webseed/${name}/${name}.mkv`, { Range: "bytes=10-19" });
+    assert.equal(middle.status, 206);
+    assert.equal(middle.headers.get("content-range"), `bytes 10-19/${film.length}`);
+    assert.ok(middle.bytes.equals(film.subarray(10, 20)));
+    const open = await get(`/webseed/${name}/${name}.mkv`, { Range: `bytes=${film.length - 5}-` });
+    assert.ok(open.bytes.equals(film.subarray(film.length - 5)));
+    const tail = await get(`/webseed/${name}/${name}.mkv`, { Range: "bytes=-5" });
+    assert.ok(tail.bytes.equals(film.subarray(film.length - 5)));
+    const beyond = await get(`/webseed/${name}/${name}.mkv`, { Range: `bytes=${film.length}-` });
+    assert.equal(beyond.status, 416);
+    const nested = await get(`/webseed/${name}/Extras/Featurette.mkv`);
+    assert.equal(nested.bytes.length, 2_000_000);
+
+    assert.equal((await get(`/webseed/${name}/missing.mkv`)).status, 404);
+    assert.equal((await get(`/webseed/${name}/..%5C..%5Cescape.txt`)).status, 404);
+    assert.equal((await get("/dl/another-release.torrent")).status, 404);
+  } finally {
+    running.child.stdin.write("\n");
+  }
+  const { status, stdout, stderr } = await running.done;
+  assert.equal(status, 0, stderr + stdout.join("\n"));
+  assert.equal(stdout.at(-1), "stopped");
+});
+
+test("with no hand-off made since the build began, the film hand-off scenario makes one before it judges anything, and says what it made", { skip }, () => {
+  const scenarios = readFileSync(join(repoRoot, "scripts", "scenarios", "Weir.Scenarios.Deluno.ps1"), "utf8");
+  for (const scenario of ["deluno_film_handoff", "deluno_release_with_extra", "deluno_outcomes"]) {
+    assert.match(scenarios, new RegExp(`Scenario_${scenario} \\{[\\s\\S]*?\\n {4}(\\$split = )?Get-OrMakeBuildFilmHandoffs`), `${scenario} makes the hand-off it needs`);
+  }
+  assert.match(scenarios, /Scenario_deluno_resend \{[\s\S]*?New-DelunoFilmHandoff/, "the resend scenario makes the hand-off it sends again");
+  assert.doesNotMatch(scenarios, /New-NotApplicable[^\n]*(hand-off|library)/, "no Deluno scenario skips for want of a library or a hand-off");
 });
 
 // --- the log watch and a refused sign-in made on purpose ---------------------------------------------------------------------------------

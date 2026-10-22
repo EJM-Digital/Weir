@@ -28,14 +28,14 @@ $ScenarioCatalog = @(
     [pscustomobject]@{
         Id = 'workflows-from-deluno'; Phase = 'WithDeluno'; Required = $true
         Title = 'Workflows set up from Deluno'
-        Does = 'Gets an API key for the Deluno in the VM from the key file the Deluno session left there (read inside the VM, then deleted), connects Weir to Deluno, or finds the connection Deluno''s Connect Weir already made, and waits for Weir to set up its workflows from Deluno''s libraries and folders. A Deluno with no library set to refine before import has none to set up, and the scenario says so.'
-        Passes = 'Weir''s workflows are linked to Deluno with their folders from Deluno and the folder chain check shows every step ready, with nothing typed in Weir. With no library in Deluno set to refine before import the scenario is not applicable and says what Deluno''s suite has to set up.'
+        Does = 'Gets an API key for the Deluno in the VM from the key file the Deluno session left there (read inside the VM, then deleted), connects Weir to Deluno, or finds the connection Deluno''s Connect Weir already made, and waits for Weir to set up its workflows from Deluno''s libraries and folders. A Deluno with no library set to refine before import is set up through its own API first, the way Deluno''s suite does it: one library refines before import with Weir as its processor (the failure mode block, Weir''s output folder as its output path).'
+        Passes = 'Weir''s workflows are linked to Deluno with their folders from Deluno and the folder chain check shows every step ready, with nothing typed in Weir. Where Deluno had no such library the record shows the one this run set up; Deluno refusing the setup fails the scenario.'
     }
     [pscustomobject]@{
         Id = 'deluno-film-handoff'; Phase = 'WithDeluno'; Required = $true
         Title = 'A film Deluno handed over'
-        Does = 'Lists the hand-offs Deluno really made (its own API, with the key) and follows each film the build under test took (made after it began answering) through Weir. Films made before that were handled by the previous release and are not judged.'
-        Passes = 'At least one film hand-off was made after the build under test took over and finished; for every such film, Weir shows the cleaned file as processed with Deluno''s imported answer recorded against it, and Deluno shows its own import done. With none made after the build took over, the scenario is not applicable and says what Deluno''s suite has to do.'
+        Does = 'Lists the hand-offs Deluno really made (its own API, with the key) and follows each film the build under test took (made after it began answering) through Weir. Films made before that were handled by the previous release and are not judged. When Deluno has made none after the build began answering, the run makes one itself: a release folder (the film, an .nfo and a small extra) is offered from the VM as a torrent, Deluno is asked to grab it, its download client fetches it, and Deluno hands it to Weir.'
+        Passes = 'At least one film hand-off was made after the build under test took over and finished; for every such film, Weir shows the cleaned file as processed with Deluno''s imported answer recorded against it, and Deluno shows its own import done. Where the run made the hand-off, the record shows the library and the hand-off it made; Deluno refusing a step of that fails the scenario.'
     }
     [pscustomobject]@{
         Id = 'deluno-release-with-extra'; Phase = 'WithDeluno'; Required = $true

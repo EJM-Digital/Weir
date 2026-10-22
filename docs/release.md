@@ -141,14 +141,15 @@ one VM round. It runs three phases, **in this order**:
    release, running). It installs the build under test over that Weir and checks what survives (every Activity entry, paged,
    unchanged). It leaves a note of the moment the build under test began answering.
 2. **WithDeluno, next, with no restore,** on the VM exactly as Deluno's suite leaves it, with the key file for Deluno's API
-   in the VM. It follows what Deluno really did through the build under test.
+   in the VM. It puts Deluno into the state it needs through Deluno's API (a library that refines before import with Weir as
+   its processor, and one real hand-off when the build under test has none) and follows what Deluno really did through the
+   build under test.
 3. **Fresh, last:** the clean checkpoint is restored (it has no Deluno, which is why this phase is last), the build under
    test is installed alone, and the scenarios that need no manager run.
 
 **Deluno's hand-offs must be made while the build under test is the Weir installed.** A hand-off the previous release
 handled says nothing about the build, and the Deluno scenarios judge only hand-offs made after the build began answering (a
-hand-off made earlier is counted, not judged; with none made later the scenario is recorded not-applicable and says what
-to do). So in a combined round the Deluno session installs Weir with its picker, then the suite is run twice:
+hand-off made earlier is counted, not judged; with none made later the run makes one itself, see below). So in a combined round the Deluno session installs Weir with its picker, then the suite is run twice:
 
 ```powershell
 # 1. Right after Deluno's suite installed Weir with its picker, before it sends any film (leave the Weir login file first):
@@ -170,9 +171,11 @@ copied back, and the next phase still runs. Each scenario inside a phase gets it
 No secret is ever passed on a command line or carried between sessions; every secret is read only inside the VM, and the
 orchestrator only passes paths. `-DelunoUrl` (default `http://127.0.0.1:7879`) is where Deluno is looked for in the VM.
 `-DelunoKeyFileInVm` (default `C:\golden\deluno-weir-scenario-key.txt`, a path inside the VM) is a file of **one line: a
-`read,imports` Deluno API key and nothing else**, which the Deluno session writes there; the suite reads it in the VM session
-and deletes it. If it is not there, a Deluno with no account gets a throwaway one and a minted key; otherwise the Deluno
-scenarios are recorded not-applicable with the reason. `-WeirLoginFileInVm` (default `C:\golden\weir-scenario-login.txt`,
+`read,imports,write` Deluno API key and nothing else**, which the Deluno session writes there; the suite reads it in the VM session
+and deletes it. The `write` scope is for setting Deluno up: a library that refines before import with Weir as its processor
+(`PUT /api/libraries/{id}/workflow`), the film to grab and the grab. A key without it is refused by Deluno, and that refusal
+fails the scenario that needed it. If the file is not there, a Deluno with no account gets a throwaway one and a minted key;
+otherwise the Deluno scenarios are recorded not-applicable with the reason (there is no Deluno to ask). `-WeirLoginFileInVm` (default `C:\golden\weir-scenario-login.txt`,
 two lines: user name, then password) is only for a Weir that already has an account the run did not make (Deluno's Connect Weir
 makes one); a Weir with no account gets the run's own. Both files are read and deleted inside the VM. `-SourceFilm <path>`
 drops a real film (Big Buck Bunny, Creative Commons) in instead of the one the run makes with Weir's own FFmpeg, `-NoStatus`
@@ -186,15 +189,14 @@ it does and what passes. The run keeps both apps' logs and writes `scenario-<ver
 when Deluno is installed, and Weir's request log.
 
 **The pass record needs all three phases and every scenario.** Success is set only when every scenario passed. A scenario whose
-preconditions are not met (no Deluno answering, no key file, no film hand-off or small extra to follow, a Weir whose login was
-not left) is recorded not-applicable with the reason, and a run with any of them sets `pending`, not success, so a release
+preconditions are not met (no Deluno answering, no key file, a Weir whose login was not left) is recorded not-applicable with the reason, and a run with any of them sets `pending`, not success, so a release
 cannot pass without the real-Deluno scenarios. A failure, or a run cut short after tests began, sets `failure`.
 
 | Phase | Scenario | What it proves |
 | --- | --- | --- |
 | Update | An update over the Weir Deluno installed | Once Deluno's picker, if its install log shows one at work, has said it is done, the build under test installed with `Setup --silent` over the running picker-installed Weir brings it back by itself on the right version and commit; the account, a workflow and every Activity entry from before (all of them, paged, unchanged) survive; the copy saved before the update exists when the database changed; the updated server saves the tray's requested copy; a film is cleaned afterwards. |
-| WithDeluno | Workflows set up from Deluno | With the key from the key file, Weir's workflows are linked to the Deluno in the VM with its folders and the folder chain is ready; not applicable while no library in that Deluno is set to refine before import. |
-| WithDeluno | A film Deluno handed over | Every completed film hand-off Deluno made after the build under test began answering shows in Weir as processed with Deluno's imported answer recorded against it. |
+| WithDeluno | Workflows set up from Deluno | With the key from the key file, Weir's workflows are linked to the Deluno in the VM with its folders and the folder chain is ready; a Deluno with no library set to refine before import is set up through its own API first (the record shows the library), and Deluno refusing that fails the scenario. |
+| WithDeluno | A film Deluno handed over | Every completed film hand-off Deluno made after the build under test began answering shows in Weir as processed with Deluno's imported answer recorded against it. With none made after the build began, the run makes one: a release folder offered from the VM as a torrent, grabbed by Deluno, downloaded by its client and handed to Weir, and the record shows it. |
 | WithDeluno | A release with a small extra | A release the build under test took, whose folder in the download client still holds a film and a video file under the workflow's minimum size: the film is cleaned, the extra is still in the client's folder, Weir wrote nothing for it, and Weir never saw it or left it alone as skipped; nothing in the workflow is failed or rejected. Deluno leaves such an extra out of the hand-off, and must leave the release in the client's completed folder until the scenarios have run. |
 | WithDeluno | A hand-off sent again from Deluno | Deluno's own send-again of an imported outcome really sends it (a new attempt) and is recorded delivered or settled, never refused, and Weir keeps its one answer and raises no failure. |
 | WithDeluno | What Deluno was told about every outcome | No outcome is pending, refused, never received or given up on, except a hand-off that handed no file back (Weir was down for it), which Deluno closes as not-imported and given-up with nothing owed and says so; for the hand-offs the build under test took, Deluno's and Weir's answers for each file agree. |
