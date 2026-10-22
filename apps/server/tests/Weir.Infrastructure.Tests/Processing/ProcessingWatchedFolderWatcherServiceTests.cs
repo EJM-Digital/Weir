@@ -540,6 +540,38 @@ public sealed class ProcessingWatchedFolderWatcherServiceTests
     }
 
     [Fact]
+    public async Task A_watcher_that_fails_reports_it_once_however_many_times_the_system_raises_the_error()
+    {
+        using var store = new StoreFixture(("WEIR_CREDENTIALS_SECRET", "watcher-tests-secret-12"));
+        var watched = store.Home.Join("watch");
+        var output = store.Home.Join("out");
+        Directory.CreateDirectory(watched);
+        Directory.CreateDirectory(output);
+        await CreateLibraryAsync(store, watched, output);
+        var log = new ListLogger<ProcessingWatchedFolderWatcherService>();
+
+        var service = new FakeWatcherService(store.Database, store.Options, new ProcessingJobStore(store.Database, TimeProvider.System),
+            new WatcherStateStore(), Libraries, TimeProvider.System, log);
+        await service.StartAsync(CancellationToken.None);
+        try
+        {
+            await Eventually.ThatAsync(() => service.CreatedFor(watched).Count == 1);
+            var failing = service.CreatedFor(watched)[0];
+
+            // A network share that goes away makes Windows raise the error for one watcher twice within the same moment.
+            failing.RaiseError(new System.ComponentModel.Win32Exception(5, "Access is denied."));
+            failing.RaiseError(new System.ComponentModel.Win32Exception(5, "Access is denied."));
+
+            await Eventually.ThatAsync(() => service.CreatedFor(watched).Count == 2);
+            Assert.Single(log.Entries, entry => entry.Level == Microsoft.Extensions.Logging.LogLevel.Warning);
+        }
+        finally
+        {
+            await service.StopAsync(CancellationToken.None);
+        }
+    }
+
+    [Fact]
     public async Task A_watched_folder_that_is_itself_gone_warns_in_plain_words_and_queues_no_scan()
     {
         using var store = new StoreFixture(("WEIR_CREDENTIALS_SECRET", "watcher-tests-secret-10"));

@@ -9322,7 +9322,33 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayPeriodicCheckTests.cs",
+          "name": "TrayPeriodicCheckTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/UpdateRequestWatcherTests.cs",
+          "name": "UpdateRequestWatcherTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayStatusWatcherTests.cs",
+          "name": "TrayStatusWatcherTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/LanAccess/LanAccessSyncTests.cs",
+          "name": "LanAccessSyncTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/ServerHostWatchdogTests.cs",
+          "name": "ServerHostWatchdogTests"
+        }
+      ],
       "partial": [
         {
           "type": "scenario",
@@ -9345,11 +9371,6 @@
           "name": "update-requests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Outside this slice, not audited in depth. One in-scope finding: the periodic update check loop (CheckIntervalMinutes) is never run by any test - every TrayUpdates fixture sets CheckIntervalMinutes = 0 (see SET-U03)."
-      },
-      "issue": 1142,
       "audit": {
         "id": "JOB-066",
         "verdict": "Partly"
@@ -9961,7 +9982,13 @@
       "severity": "medium",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "network-access"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -9985,10 +10012,10 @@
         }
       ],
       "needs": {
-        "kind": "xunit",
-        "test": "[missing: P1] No test or scenario ever flips the setting on a real machine: nothing proves Weir then listens beyond loopback, that a second device can reach it, that the firewall rule is really created on all profiles, or that flipping it back closes the port. A wrong bind either locks the owner out of the UI (Weir \"down\" for other devices) or exposes it. Needed: VM scenario (allow other devices, probe from the host, restore) at layer vm."
+        "kind": "scenario",
+        "test": "Not provable on one runner: that Windows Firewall lets a packet from a second machine in (traffic from a PC to its own address never meets the firewall); the rule is read instead"
       },
-      "issue": 1009,
+      "issue": 1142,
       "audit": {
         "id": "SET-N01",
         "verdict": "Partly"
@@ -47388,12 +47415,13 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "`e.Button == MouseButtons.Left` filter is in untested `TrayApp`; the standard states \"A middle click does nothing\". Needs the same shell seam/UIA test as TRAY-003."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayIconClicksTests.cs",
+          "name": "TrayIconClicksTests"
+        }
+      ],
       "audit": {
         "id": "TRAY-016",
         "verdict": "Gap"
@@ -47525,12 +47553,18 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "`ShowBalloon` / `BalloonTipClicked` / `_balloonClick` are untested; a stale click running the wrong action (e.g. a restart) after an unrelated balloon is plausible and unobserved."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/BalloonPresenterTests.cs",
+          "name": "BalloonPresenterTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayBalloonLogTests.cs",
+          "name": "TrayBalloonLogTests"
+        }
+      ],
       "audit": {
         "id": "TRAY-020",
         "verdict": "Gap"
@@ -47692,12 +47726,13 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "The texts and click actions live only in `TrayApp.ShowUpdateNotice`/`ApplyUpdateAndRestartAsync`; `TrayUpdatesTests` and `TrayUpdateRequestsTests` assert that `Announce(mode)` is called, never what the person sees or what a click does."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/UpdateNoticesTests.cs",
+          "name": "UpdateNoticesTests"
+        }
+      ],
       "audit": {
         "id": "TRAY-025",
         "verdict": "Gap"
@@ -49199,12 +49234,18 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "No test passes the tray's actual output file to the server's reader (the two sides' fixtures even differ: `+00:00` vs `Z`). It works today only because the server parser (`DateTimeOffset.TryParse`) happens to be lenient. Needs a shared recorded fixture (generated by the tray code, parsed by the server tests, or the reverse) or a VM step that presses the real tray item."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayFilesTheTrayWritesTests.cs",
+          "name": "TrayFilesTheTrayWritesTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/TrayFilesTheTrayWritesTests.cs",
+          "name": "TrayFilesTheTrayWritesTests"
+        }
+      ],
       "audit": {
         "id": "TRAY-066",
         "verdict": "Gap"
@@ -49218,12 +49259,18 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "The keys happen to match today (checked by reading both), but no test would fail if the server renamed a key or the tray changed a name or case rule. Needs a recorded real file from the server fixed in the repo and read by the tray tests, and a VM step that reads the tray's displayed status after pausing a real Weir."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayFilesTheServerWritesTests.cs",
+          "name": "TrayFilesTheServerWritesTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Runtime/TrayFilesTheServerWritesTests.cs",
+          "name": "TrayFilesTheServerWritesTests"
+        }
+      ],
       "audit": {
         "id": "TRAY-067",
         "verdict": "Gap"
@@ -49878,12 +49925,33 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "The multi-user story (second user signs in with Start-with-Windows on, finds the port/data owned by the first) is undocumented-by-test; the VM has one signed-in user. Needs a VM scenario with two accounts (or a documented, tested refusal message)."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/RuntimeHomeStartTests.cs",
+          "name": "RuntimeHomeStartTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/RuntimeHomeSecurityTests.cs",
+          "name": "RuntimeHomeSecurityTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/SecondLaunchTests.cs",
+          "name": "SecondLaunchTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/PortChoiceTests.cs",
+          "name": "PortChoiceTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/ServerHostPortInUseTests.cs",
+          "name": "ServerHostPortInUseTests"
+        }
+      ],
       "audit": {
         "id": "TRAY-086",
         "verdict": "Gap"
@@ -49913,28 +49981,27 @@
     {
       "id": "tray.tray.background-work-that-fails-is-logged-with-its-name",
       "area": "tray",
-      "behaviour": "Background work that fails is logged with its name (loops, menu actions); the tray keeps running after an unhandled UI-thread, domain or task error (`LogUnhandledErrors`); a fatal start-up error is logged and exits 1",
+      "behaviour": "Background work that fails is logged with its name (loops, menu actions); the tray keeps running after an unhandled UI-thread or task error and logs one that reaches the process before it ends (`TrayFailureLog`); a fatal start-up error is logged and exits 1",
       "kind": "tray",
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "BackgroundWork is proved. Still untested: LogUnhandledErrors (the UI-thread, domain and task handlers keep the tray running) and the fatal start-up error that is logged with exit code 1, both private to Program."
-      },
-      "issue": 1142,
-      "audit": {
-        "id": "TRAY-088",
-        "verdict": "Gap"
-      },
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/BackgroundWorkTests.cs",
           "name": "BackgroundWorkTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayFailureLogTests.cs",
+          "name": "TrayFailureLogTests"
         }
-      ]
+      ],
+      "audit": {
+        "id": "TRAY-088",
+        "verdict": "Gap"
+      }
     },
     {
       "id": "tray.tray.open-data-folder-open-logs-folder-honours-weir-log",
@@ -51733,7 +51800,18 @@
       "severity": "medium",
       "touches": "other-app",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "network-share"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "network-share-hang"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -51782,10 +51860,10 @@
         }
       ],
       "needs": {
-        "kind": "xunit",
-        "test": "No test touches a real network share (SMB/NAS), which is where users keep media; share-drops and hung shares are simulated (FolderReachabilityTests.A_share_that_hangs_is_unreachable)"
+        "kind": "scenario",
+        "test": "Not proved on a real machine: case sensitivity and long paths (the share, its discovery, a dropped share and a hung share are proved by the windows-files shard)"
       },
-      "issue": 1016,
+      "issue": 1142,
       "audit": {
         "id": "INT-OS-FS",
         "verdict": "Partly"
@@ -51799,7 +51877,13 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-install.mjs",
+          "name": "fresh-install"
+        }
+      ],
       "partial": [
         {
           "type": "contract",
@@ -51822,11 +51906,6 @@
           "name": "*"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "Not asserted anywhere: Start Menu/desktop shortcuts, the data folder created under C:\\ProgramData with the intended access list on a real install, the interactive (non-silent) Setup screens, a second Windows version"
-      },
-      "issue": 1142,
       "audit": {
         "id": "PLAT-01",
         "verdict": "Partly"
@@ -51928,12 +52007,33 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "scenario",
-        "test": "Needs an interactive session; a VM scenario in the signed-in desktop session could run it"
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/SetupOverARunningWeirTests.cs",
+          "name": "SetupOverARunningWeirTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/RestartAfterSetupTests.cs",
+          "name": "RestartAfterSetupTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/SecondLaunchTests.cs",
+          "name": "SecondLaunchTests"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "install-hooks"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-second-launch"
+        }
+      ],
       "audit": {
         "id": "PLAT-04",
         "verdict": "Gap"
@@ -52043,8 +52143,12 @@
       "severity": "low",
       "touches": "install",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/FirstRunTests.cs",
+          "name": "FirstRunTests"
+        },
         {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/StartWithWindowsTests.cs",
@@ -52069,13 +52173,13 @@
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/BrowserLaunchTests.cs",
           "name": "BrowserLaunchTests"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-tray.mjs",
+          "name": "tray-start"
         }
       ],
-      "needs": {
-        "kind": "scenario",
-        "test": "The interactive dialogs run only in unit tests with the UI faked; no automated run shows them in the signed-in desktop session"
-      },
-      "issue": 1142,
       "audit": {
         "id": "PLAT-07",
         "verdict": "Partly"
@@ -52480,7 +52584,7 @@
         "kind": "scenario",
         "test": "Parsing is unit-tested; the combination as a container sees it (e.g. loopback bind inside a container, a published port on a LAN host and the setup-code path) is only the default case in docker-smoke"
       },
-      "issue": 1009,
+      "issue": 1142,
       "audit": {
         "id": "PLAT-17",
         "verdict": "Partly"
@@ -53244,7 +53348,13 @@
       "severity": "medium",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "publish-across-volumes"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -53257,11 +53367,6 @@
           "name": "A_staged_file_that_cannot_be_moved_is_copied_to_the_partial_and_still_published_atomically"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No test publishes across two real volumes (two drives/shares). The VM scenarios and the contract suite use one drive. The headline rule of the document is proven only by a simulated seam"
-      },
-      "issue": 1011,
       "audit": {
         "id": "FL-03",
         "verdict": "Partly"
@@ -53426,7 +53531,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "publish-across-volumes"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -53439,11 +53550,6 @@
           "name": "A_hard_link_is_validated_before_it_is_exposed"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "No test where the link is refused (different volume or a filesystem without hard links) and the copy fallback runs"
-      },
-      "issue": 1011,
       "audit": {
         "id": "FL-07",
         "verdict": "Partly"
@@ -54007,7 +54113,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "keep-original-across-volumes"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -54045,11 +54157,6 @@
           "name": "LibraryFileWalkerTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "The cross-volume copy-verify-delete runs on FakeSwapFileSystem only (OriginalsMoverTests.Fill_copies_and_verifies_across_volumes); never across two real volumes"
-      },
-      "issue": 1011,
       "audit": {
         "id": "FL-19",
         "verdict": "Partly"
@@ -54130,12 +54237,18 @@
       "severity": "high",
       "touches": "disk",
       "required": "real",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "No contract test and no VM scenario cleans a library file in place. This is the only feature that replaces a user's existing file. Needs a contract test (real ffmpeg, as RealFfmpegTests) and a VM scenario"
-      },
-      "issue": 990,
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "library-clean-in-place"
+        },
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "library-swap-crash"
+        }
+      ],
       "audit": {
         "id": "FL-21",
         "verdict": "Gap"
@@ -54369,7 +54482,13 @@
       "severity": "low",
       "touches": "disk",
       "required": "inproc",
-      "proofs": [],
+      "proofs": [
+        {
+          "type": "scenario",
+          "file": "scripts/scenarios-ci/windows-files.mjs",
+          "name": "full-disk"
+        }
+      ],
       "partial": [
         {
           "type": "xunit",
@@ -54412,11 +54531,6 @@
           "name": "WorkflowFreeSpaceMigrationTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "Free space is an injected number in every test; no run fills a real drive. The \"unchanged publish\" check is not named by any test"
-      },
-      "issue": 1011,
       "audit": {
         "id": "FL-27",
         "verdict": "Partly"
