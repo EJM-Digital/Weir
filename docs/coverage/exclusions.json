@@ -112,11 +112,11 @@
       "id": "tray-windows-startup",
       "file": "apps/tray/Weir.Tray/WindowsStartup.cs",
       "marker": "ExcludeFromCodeCoverage",
-      "count": 10,
+      "count": 9,
       "kind": "platform-only",
       "coveredBy": "windows",
       "provedBy": "scripts/scenarios-ci/tray-launch.mjs: tray-start and the silent starts start the real tray, which sets up Windows Forms, makes Velopack's update manager, stops orphaned servers, runs the message loop and shows the error box; tray-second-launch listens for and raises the second launch; takenPortAndTheDesktop answers the port window; scripts/scenarios-ci/install-hooks.mjs runs Velopack's hooks",
-      "reason": "Ten one-line calls the start makes into Windows: Velopack's install hooks (which read the process's own command line and end the process), the named event a second launch uses (a test that listened or raised it would reach a real Weir on the PC), the process-wide error handlers, Windows Forms set-up (refused once any window exists), Velopack's update manager (made only by a process Velopack's installer started), the stop of every server of this install in this session (which includes other tests' stand-in servers), the modal port window and error box, and the tray's message loop. TrayStartup takes them as StartupEffects, so every decision around them is run with recorders in TrayStartupTests."
+      "reason": "Nine one-line calls the start makes into Windows: Velopack's install hooks (which read the process's own command line and end the process), the named event a second launch uses (a test that listened or raised it would reach a real Weir on the PC), Windows Forms set-up (refused once any window exists), Velopack's update manager (made only by a process Velopack's installer started), the stop of every server of this install in this session (which includes other tests' stand-in servers), the modal port window and error box, and the tray's message loop. TrayStartup takes them as StartupEffects, so every decision around them is run with recorders in TrayStartupTests."
     },
     {
       "id": "tray-first-run-firewall-question",

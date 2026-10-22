@@ -214,6 +214,14 @@ public sealed class ProcessingJobProcessor
             return JobProcessOutcome.Processed;
         }
 
+        // A handler that put its own row back in the queue (a clean that finds its file in use, or the drive short of room) has nothing left
+        // to complete: the row is pending again, not finished, and that is not a failure to record.
+        if (context.ReleasedLease)
+        {
+            PublishLibraryScanEnded(context.JobKind);
+            return JobProcessOutcome.Processed;
+        }
+
         var completeOk = true;
         string? completeError = null;
         try

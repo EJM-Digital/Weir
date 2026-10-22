@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Security.AccessControl;
 using Weir.Tray.Firewall;
 using Weir.Tray.LanAccess;
 
@@ -60,7 +59,7 @@ sealed record StartupEffects(
         WindowsStartup.RaiseSecondLaunch,
         TrayRunningMark.ForThisUser,
         WindowsStartup.AtProcessExit,
-        UnhandledErrorLog.Attach,
+        () => TrayFailureLog.Install(TrayLog.Write),
         InheritedStdioHandles.CloseInherited,
         WindowsStartup.InitializeApplication,
         WindowsStartup.CreateUpdateService,
@@ -96,7 +95,7 @@ sealed record TrayLaunch(
 sealed class TrayStartup(StartupEffects effects, string mutexName)
 {
     /// <summary>Weir's single tray for this Windows session.</summary>
-    internal const string SessionMutexName = @"Local\WeirTrayHostSingleton";
+    internal const string SessionMutexName = RuntimeHomeStart.Names.SingleInstanceLock;
 
     private readonly StartupEffects _fx = effects;
 
@@ -160,68 +159,61 @@ sealed class TrayStartup(StartupEffects effects, string mutexName)
         _fx.AtProcessExit(() => mark.Clear(Environment.ProcessId));
     }
 
-    private int RunTray(string[] args, SecondLaunchSignal secondLaunch)
+    private int RunTray(string[] args, SecondLaunchSignal secondLaunch) =>
+        TrayFailureLog.RunOrFail(() => StartTray(args, secondLaunch), TrayLog.Write);
+
+    private int StartTray(string[] args, SecondLaunchSignal secondLaunch)
     {
-        try
+        // Before anything else: whatever started Weir may have redirected our stdio through pipes
+        // it is waiting to see closed. Weir runs until Quit, so holding those open would make that
+        // wait never end (#779). See InheritedStdioHandles.
+        _fx.CloseInheritedStdio(TrayLog.Write);
+
+        // Before any window, including the port dialog.
+        _fx.InitializeApplication();
+
+        var runtimeHome = Program.RuntimeHome();
+        if (!SecureRuntimeHome(args, runtimeHome))
         {
-            // Before anything else: whatever started Weir may have redirected our stdio through pipes
-            // it is waiting to see closed. Weir runs until Quit, so holding those open would make that
-            // wait never end (#779). See InheritedStdioHandles.
-            _fx.CloseInheritedStdio(TrayLog.Write);
-
-            // Before any window, including the port dialog.
-            _fx.InitializeApplication();
-
-            var runtimeHome = Program.RuntimeHome();
-            if (!SecureRuntimeHome(args, runtimeHome))
-            {
-                return 1;
-            }
-
-            // Before the port is asked for and before any server runs: an update left waiting is installed while
-            // nothing is running that the install could interrupt (#857).
-            var updateService = _fx.CreateUpdateService(TrayLog.Write);
-            UpdateSettings.SettleFirstRun(runtimeHome);
-            var updateSettings = UpdateSettings.Load(runtimeHome);
-            Func<RunningServer?> orphan = () => UpdateBackupReady.FindLiveServer(runtimeHome);
-            var backup = new UpdateBackupHook(
-                new UpdateBackupRequest(runtimeHome, TimeProvider.System, orphan).AskAsync,
-                runtimeHome,
-                () => orphan() is not null,
-                reason => TrayLog.Write($"Weir did not update because it could not save a copy of its data: {reason}"));
-            if (UpdateOnStart.TryApply(
-                updateService, updateSettings.Mode, runtimeHome, _fx.StopOrphanedServers, backup, () => orphan() is not null))
-            {
-                return 0;
-            }
-
-            var resolution = ResolvePort(args, runtimeHome);
-            if (resolution.Port is null && !resolution.Busy)
-            {
-                return 1;
-            }
-            var listenScope = LanAccessStartup.Resolve(runtimeHome, InstallProcesses.Root(), _fx.OpenFirewall, TrayLog.Write);
-            var interactive = Program.HasInteractiveDesktop(args, _fx.HasInteractiveDesktop);
-            _fx.WidenFirewallRule(runtimeHome, listenScope, interactive);
-
-            // A port.txt that is busy leaves the port unknown: the server host looks again with the same back-off as any start, and gives
-            // up the same way (the balloon, the red icon, Restart Weir; or exit 1 with nobody at the desktop).
-            return _fx.RunApp(new TrayLaunch(
-                resolution.Port ?? 0,
-                listenScope,
-                new TrayStart(Program.AnnouncesStart(args), interactive),
-                updateService,
-                updateSettings,
-                secondLaunch,
-                resolution.Busy ? () => ResolvePort(args, runtimeHome) : null));
-        }
-        catch (Exception ex)
-        {
-            // The last boundary before the process ends. The tray has no console, so whatever start-up threw is
-            // logged here or not at all.
-            TrayLog.Write($"Fatal startup error:\n{ex}");
             return 1;
         }
+
+        // Before the port is asked for and before any server runs: an update left waiting is installed while
+        // nothing is running that the install could interrupt (#857).
+        var updateService = _fx.CreateUpdateService(TrayLog.Write);
+        UpdateSettings.SettleFirstRun(runtimeHome);
+        var updateSettings = UpdateSettings.Load(runtimeHome);
+        Func<RunningServer?> orphan = () => UpdateBackupReady.FindLiveServer(runtimeHome);
+        var backup = new UpdateBackupHook(
+            new UpdateBackupRequest(runtimeHome, TimeProvider.System, orphan).AskAsync,
+            runtimeHome,
+            () => orphan() is not null,
+            reason => TrayLog.Write($"Weir did not update because it could not save a copy of its data: {reason}"));
+        if (UpdateOnStart.TryApply(
+            updateService, updateSettings.Mode, runtimeHome, _fx.StopOrphanedServers, backup, () => orphan() is not null))
+        {
+            return 0;
+        }
+
+        var resolution = ResolvePort(args, runtimeHome);
+        if (resolution.Port is null && !resolution.Busy)
+        {
+            return 1;
+        }
+        var listenScope = LanAccessStartup.Resolve(runtimeHome, InstallProcesses.Root(), _fx.OpenFirewall, TrayLog.Write);
+        var interactive = Program.HasInteractiveDesktop(args, _fx.HasInteractiveDesktop);
+        _fx.WidenFirewallRule(runtimeHome, listenScope, interactive);
+
+        // A port.txt that is busy leaves the port unknown: the server host looks again with the same back-off as any start, and gives
+        // up the same way (the balloon, the red icon, Restart Weir; or exit 1 with nobody at the desktop).
+        return _fx.RunApp(new TrayLaunch(
+            resolution.Port ?? 0,
+            listenScope,
+            new TrayStart(Program.AnnouncesStart(args), interactive),
+            updateService,
+            updateSettings,
+            secondLaunch,
+            resolution.Busy ? () => ResolvePort(args, runtimeHome) : null));
     }
 
     /// <summary>
@@ -229,32 +221,13 @@ sealed class TrayStartup(StartupEffects effects, string mutexName)
     /// start because another account owns the folder; the person at the desktop, if any, is told why, unless
     /// <see cref="Program.SilentArgument"/> rules out showing anything.
     /// </summary>
-    internal bool SecureRuntimeHome(string[] args, string runtimeHome)
-    {
-        try
-        {
-            if (_fx.SecureRuntimeHome(runtimeHome))
-            {
-                TrayLog.Write($"Restricted {runtimeHome} to SYSTEM, Administrators and {Environment.UserName}.");
-            }
-            return true;
-        }
-        catch (RuntimeHomeOwnedByAnotherAccountException ex)
-        {
-            TrayLog.Write($"Not starting: {ex.Message}");
-            if (Program.HasInteractiveDesktop(args, _fx.HasInteractiveDesktop))
-            {
-                _fx.ShowError(ex.Message);
-            }
-            return false;
-        }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or PrivilegeNotHeldException)
-        {
-            // Weir still starts: its data works, it is only readable by more accounts than it should be.
-            TrayLog.Write($"Could not restrict who can read {runtimeHome} ({ex.Message}); it keeps its current access list.");
-            return true;
-        }
-    }
+    internal bool SecureRuntimeHome(string[] args, string runtimeHome) =>
+        RuntimeHomeStart.Secure(
+            runtimeHome,
+            _fx.SecureRuntimeHome,
+            () => Program.HasInteractiveDesktop(args, _fx.HasInteractiveDesktop),
+            _fx.ShowError,
+            TrayLog.Write);
 
     /// <summary>
     /// The port to run on: supplied on the command line or in WEIR_PORT, else saved by an

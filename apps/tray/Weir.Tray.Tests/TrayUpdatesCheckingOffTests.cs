@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Xunit;
 
 namespace Weir.Tray.Tests;
@@ -118,6 +119,58 @@ public sealed class TrayUpdatesCheckingOffTests : IDisposable
 
         Assert.Equal(1, service.Downloads);
         Assert.Equal(UpdateMenuAction.Restart, updates.MenuState().Action);
+    }
+
+    private JsonNode State() => JsonNode.Parse(StateText())!;
+
+    [Fact]
+    public async Task A_check_asked_for_in_System_that_finds_nothing_newer_says_when_it_was_made()
+    {
+        var updates = Build(new FakeUpdateService { FindsUpdate = false }, new UpdateSettings { CheckForUpdates = false });
+        File.WriteAllText(Path.Combine(_home.Path, "update-check-now"), string.Empty);
+
+        updates.ActOnRequests();
+        await updates.RequestedWork!;
+
+        Assert.Equal(("idle", null), (State()["state"]!.GetValue<string>(), State()["version"]?.GetValue<string>()));
+        Assert.Equal(_clock.GetUtcNow(), State()["checkedAt"]!.GetValue<DateTimeOffset>());
+    }
+
+    [Fact]
+    public async Task A_check_that_finds_an_update_names_it_and_says_when_it_was_made()
+    {
+        _clock.SetUtcNow(new DateTimeOffset(2026, 10, 21, 9, 30, 0, TimeSpan.Zero));
+        var updates = Build(new FakeUpdateService(), new UpdateSettings { CheckForUpdates = false });
+
+        await updates.CheckInBackground(asked: true);
+
+        Assert.Equal("9.9.9", State()["version"]!.GetValue<string>());
+        Assert.Equal(new DateTimeOffset(2026, 10, 21, 9, 30, 0, TimeSpan.Zero), State()["checkedAt"]!.GetValue<DateTimeOffset>());
+    }
+
+    [Fact]
+    public async Task A_check_that_failed_does_not_claim_to_have_looked()
+    {
+        var updates = Build(new FakeUpdateService { CheckFailure = "Weir could not reach GitHub." }, new UpdateSettings { CheckForUpdates = false });
+
+        await updates.CheckInBackground(asked: true);
+
+        Assert.Equal("failed", State()["state"]!.GetValue<string>());
+        Assert.Null(State()["checkedAt"]);
+    }
+
+    [Fact]
+    public async Task The_time_of_the_last_check_stays_in_the_file_when_the_update_it_found_is_downloaded()
+    {
+        _clock.SetUtcNow(new DateTimeOffset(2026, 10, 21, 9, 30, 0, TimeSpan.Zero));
+        var updates = Build(new FakeUpdateService(), new UpdateSettings { CheckForUpdates = false });
+        await updates.CheckInBackground(asked: true);
+        _clock.Advance(TimeSpan.FromMinutes(5));
+
+        await updates.DownloadInBackground(asked: true);
+
+        Assert.Equal("downloaded", State()["state"]!.GetValue<string>());
+        Assert.Equal(new DateTimeOffset(2026, 10, 21, 9, 30, 0, TimeSpan.Zero), State()["checkedAt"]!.GetValue<DateTimeOffset>());
     }
 
     [Fact]

@@ -107,15 +107,132 @@ public sealed class UpdateBackupTests : IDisposable
     }
 
     [Fact(Timeout = 10_000)]
+    public async Task A_busy_server_that_answers_after_the_first_wait_has_still_saved_the_copy()
+    {
+        var (answer, id) = await AskAsync();
+
+        _clock.Advance(UpdateBackupRequest.HearingTime);
+        await _clock.NextDelay();
+        Assert.False(answer.IsCompleted);
+        ServerWrites(id, "started");
+        await StepAsync(answer);
+        ServerWrites(id, "saved");
+        await StepAsync(answer);
+
+        Assert.Equal(new UpdateBackupAnswer(UpdateBackupOutcome.Saved, null), await answer);
+    }
+
+    [Fact(Timeout = 10_000)]
+    public async Task A_server_that_missed_the_request_is_asked_again_on_a_doubling_schedule_with_the_same_id_and_a_fresh_time()
+    {
+        var (answer, id) = await AskAsync();
+        var asks = new List<(string Id, DateTimeOffset At)> { ReadAsk() };
+
+        for (var ask = 0; ask < UpdateBackupRequest.Asks - 1; ask++)
+        {
+            // The server missed it: the file is as the tray left it, so a new one is the only way it is heard.
+            File.Delete(RequestPath);
+            _clock.Advance(UpdateBackupRequest.HearingWindow(ask));
+            await _clock.NextDelay();
+            Assert.False(answer.IsCompleted);
+            asks.Add(ReadAsk());
+        }
+
+        Assert.All(asks, made => Assert.Equal(id, made.Id));
+        Assert.Equal(asks.OrderBy(made => made.At), asks);
+        Assert.Equal(asks.Count, asks.Select(made => made.At).Distinct().Count());
+
+        ServerWrites(id, "saved");
+        await StepAsync(answer);
+        Assert.Equal(UpdateBackupOutcome.Saved, (await answer).Outcome);
+    }
+
+    [Fact(Timeout = 10_000)]
+    public async Task A_server_that_stays_unheard_gets_the_whole_ceiling_and_the_person_is_told_once_that_Weir_is_busy()
+    {
+        var told = new List<string>();
+        ServerIsReady(_server!.Value.ProcessId, _server.Value.StartedUtc);
+        var answer = new UpdateBackupRequest(_home.Path, _clock, () => _server, told.Add).AskAsync(Target, CancellationToken.None);
+        await _clock.NextDelay();
+
+        var waited = TimeSpan.Zero;
+        for (var ask = 0; ask < UpdateBackupRequest.Asks - 1; ask++)
+        {
+            var window = UpdateBackupRequest.HearingWindow(ask);
+            _clock.Advance(window);
+            waited += window;
+            await _clock.NextDelay();
+            Assert.False(answer.IsCompleted);
+        }
+
+        Assert.Single(told);
+        Assert.Contains("Weir is busy", told[0], StringComparison.Ordinal);
+        _clock.Advance(UpdateBackupRequest.HearingWindow(UpdateBackupRequest.Asks - 1));
+
+        Assert.Equal(UpdateBackupOutcome.Failed, (await answer).Outcome);
+        Assert.Equal(UpdateBackupRequest.HearingCeiling, waited + UpdateBackupRequest.HearingWindow(UpdateBackupRequest.Asks - 1));
+        Assert.False(File.Exists(RequestPath));
+    }
+
+    [Fact(Timeout = 10_000)]
+    public async Task A_busy_server_that_then_says_it_cannot_make_the_copy_ends_the_wait_with_its_reason()
+    {
+        var (answer, id) = await AskAsync();
+
+        _clock.Advance(UpdateBackupRequest.HearingTime);
+        await _clock.NextDelay();
+        ServerWrites(id, "failed", DiskFull);
+        await StepAsync(answer);
+
+        Assert.Equal(new UpdateBackupAnswer(UpdateBackupOutcome.Failed, DiskFull), await answer);
+    }
+
+    [Fact(Timeout = 10_000)]
+    public async Task A_server_that_has_heard_is_not_asked_again_however_long_it_takes_to_save()
+    {
+        var (answer, id) = await AskAsync();
+
+        ServerWrites(id, "started");
+        await StepAsync(answer);
+        File.Delete(RequestPath);
+        _clock.Advance(UpdateBackupRequest.HearingCeiling);
+        await _clock.NextDelay();
+
+        Assert.False(answer.IsCompleted);
+        Assert.False(File.Exists(RequestPath));
+        ServerWrites(id, "saved");
+        await StepAsync(answer);
+        Assert.Equal(UpdateBackupOutcome.Saved, (await answer).Outcome);
+    }
+
+    // The clock is moved one wait at a time: the tray looks at it once a poll, and asks again at the end of each wait.
+    private async Task RunOutTheHearingAsync()
+    {
+        for (var ask = 0; ask < UpdateBackupRequest.Asks - 1; ask++)
+        {
+            _clock.Advance(UpdateBackupRequest.HearingWindow(ask));
+            await _clock.NextDelay();
+        }
+
+        _clock.Advance(UpdateBackupRequest.HearingWindow(UpdateBackupRequest.Asks - 1));
+    }
+
+    private (string Id, DateTimeOffset At) ReadAsk()
+    {
+        var request = JsonNode.Parse(File.ReadAllText(RequestPath))!;
+        return ((string)request["id"]!, DateTimeOffset.Parse((string)request["requested_at"]!, System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    [Fact(Timeout = 10_000)]
     public async Task A_server_that_said_it_can_answer_and_does_not_has_failed_and_the_request_is_taken_back()
     {
         var (answer, _) = await AskAsync();
 
-        _clock.Advance(UpdateBackupRequest.HearingTime);
+        await RunOutTheHearingAsync();
 
         var result = await answer;
         Assert.Equal(UpdateBackupOutcome.Failed, result.Outcome);
-        Assert.Contains("didn't answer the request", result.Reason, StringComparison.Ordinal);
+        Assert.Contains("too busy to answer the request", result.Reason, StringComparison.Ordinal);
         Assert.False(File.Exists(RequestPath));
     }
 
@@ -157,7 +274,7 @@ public sealed class UpdateBackupTests : IDisposable
         var (answer, _) = await AskAsync();
 
         ServerWrites("an-earlier-request", "saved");
-        _clock.Advance(UpdateBackupRequest.HearingTime);
+        await RunOutTheHearingAsync();
 
         Assert.Equal(UpdateBackupOutcome.Failed, (await answer).Outcome);
     }
@@ -664,12 +781,17 @@ public sealed class UpdateBackupTests : IDisposable
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task A_data_folder_that_disappears_while_waiting_ends_in_no_answer_and_the_log_says_what_could_not_be_removed()
+    public async Task A_request_that_cannot_be_taken_back_ends_in_no_answer_and_the_log_says_what_could_not_be_removed()
     {
         var (answer, _) = await AskAsync();
 
-        Directory.Delete(_home.Path, recursive: true);
-        _clock.Advance(UpdateBackupRequest.HearingTime);
+        for (var ask = 0; ask < UpdateBackupRequest.Asks - 1; ask++)
+        {
+            _clock.Advance(UpdateBackupRequest.HearingWindow(ask));
+            await _clock.NextDelay();
+        }
+        using var held = new FileStream(RequestPath, FileMode.Open, FileAccess.Read, FileShare.None);
+        _clock.Advance(UpdateBackupRequest.HearingWindow(UpdateBackupRequest.Asks - 1));
 
         var result = await answer;
         Assert.Equal(UpdateBackupOutcome.Failed, result.Outcome);

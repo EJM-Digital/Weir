@@ -41,7 +41,8 @@ sealed class TrayController : IDisposable
     private TrayStatusWatcher? _statusWatcher;
     private bool _opened;
     private bool _watching;
-    private Action? _balloonClick;
+    private readonly BalloonPresenter _balloons;
+    private readonly TrayIconClicks _iconClicks;
 
     /// <param name="runtimeHome">Where Weir keeps its data, and the tray its log and the files it shares with the server.</param>
     /// <param name="start">How this run was started.</param>
@@ -76,6 +77,7 @@ sealed class TrayController : IDisposable
         _start = start;
         _server = server;
         _shell = shell;
+        _balloons = new BalloonPresenter(new ShellBalloons(shell), TrayLog.Write);
         _firewall = firewall;
         _startup = startup;
         _secondLaunch = secondLaunch;
@@ -93,7 +95,11 @@ sealed class TrayController : IDisposable
             StopServerAsync,
             updateService,
             new UpdateBackupHook(
-                new UpdateBackupRequest(_runtimeHome, time, () => _server.Running).AskAsync,
+                new UpdateBackupRequest(
+                    _runtimeHome,
+                    time,
+                    () => _server.Running,
+                    message => OnUi(() => ShowBalloon(UpdateNotices.AvailableTitle, message, ToolTipIcon.Info))).AskAsync,
                 _runtimeHome,
                 () => _server.ServerIsRunning,
                 reason => OnUi(() => ShowNotUpdated(reason))));
@@ -105,6 +111,7 @@ sealed class TrayController : IDisposable
             _shell.OpenBrowser,
             ShowBalloon,
             RestartObserved);
+        _iconClicks = new TrayIconClicks(_opener);
         _pause = new PauseControl(_runtimeHome, time, () => State().IsPaused, ShowBalloon, ShowTrayLog);
         _portChange = new PortChange(
             () => _server.Port,
@@ -192,7 +199,7 @@ sealed class TrayController : IDisposable
         // A start never opens the browser; the balloon offers it, and a click opens it.
         if (_start.AnnounceOnReady)
         {
-            ShowBalloon("Weir", TrayBalloons.RunningText(_server.Port), ToolTipIcon.Info, () => _opener.Open("start-balloon"));
+            _opener.ShowRunning();
         }
         else
         {
@@ -356,37 +363,17 @@ sealed class TrayController : IDisposable
 
     internal void ShowUpdateNotice(UpdateMode mode)
     {
-        var version = _updates.PendingVersion ?? "new version";
-        switch (mode)
-        {
-            case UpdateMode.Auto:
-                TrayLog.Write($"Notifying user: update v{version} downloaded; it installs once Weir has been idle for {IdleInstall.IdlePeriodText}, or when Weir next quits or starts.");
-                ShowBalloon(
-                    "Weir Update Ready",
-                    $"Version {version} has been downloaded. Weir installs it and restarts by itself once it has been idle for {IdleInstall.IdlePeriodText}, or when Weir next quits or starts.",
-                    ToolTipIcon.Info);
-                break;
-            case UpdateMode.DownloadOnly:
-                TrayLog.Write($"Notifying user: update v{version} downloaded and ready to install.");
-                ShowBalloon(
-                    "Weir Update Ready",
-                    $"Version {version} has been downloaded. Click here to restart and install it, or it installs the next time Weir quits or starts.",
-                    ToolTipIcon.Info,
-                    () =>
-                    {
-                        TrayLog.Write("Restart to update chosen from the update notice.");
-                        BackgroundWork.Observe("Apply update", ApplyUpdateAndRestartAsync());
-                    });
-                break;
-            default:
-                TrayLog.Write($"Notifying user: update v{version} available.");
-                ShowBalloon(
-                    "Weir Update",
-                    $"Version {version} is available. Open System › About in Weir to update.",
-                    ToolTipIcon.Info,
-                    () => _opener.Open("tray-update-balloon", Program.UpdateCheckPath));
-                break;
-        }
+        var notice = UpdateNotices.For(
+            mode,
+            _updates.PendingVersion ?? "new version",
+            restartToUpdate: () =>
+            {
+                TrayLog.Write("Restart to update chosen from the update notice.");
+                BackgroundWork.Observe("Apply update", ApplyUpdateAndRestartAsync());
+            },
+            openAbout: () => _opener.Open("tray-update-balloon", Program.UpdateCheckPath));
+        TrayLog.Write(notice.Log);
+        ShowBalloon(notice.Title, notice.Text, ToolTipIcon.Info, notice.OnClick);
         Render();
     }
 
@@ -412,18 +399,8 @@ sealed class TrayController : IDisposable
         }
     }
 
-    internal async Task ApplyUpdateAndRestartAsync()
-    {
-        if (!_updates.IsDownloaded)
-        {
-            return;
-        }
-        TrayLog.Write("Applying the downloaded update and restarting.");
-        if (!await _shutdown.RestartToUpdateAsync())
-        {
-            ShowBalloon("Weir Update", TrayBalloons.UpdateUnderWayText, ToolTipIcon.Info);
-        }
-    }
+    internal Task ApplyUpdateAndRestartAsync() =>
+        new UpdateRestart(() => _updates.IsDownloaded, _shutdown.RestartToUpdateAsync, ShowBalloon, TrayLog.Write).RunAsync();
 
     // The update stays downloaded and the old version keeps running; the next scheduled check, or a click, tries again.
     internal void ShowNotUpdated(string reason)
@@ -452,21 +429,12 @@ sealed class TrayController : IDisposable
         _shell.Open(new TrayShellHandlers(
             MenuClicks(),
             Render,
-            () => _opener.OpenFromClick("tray-click"),
-            () => _opener.OpenFromClick("tray-dblclick"),
-            OnBalloonClicked,
+            _iconClicks.OnMouseClick,
+            _iconClicks.OnDoubleClick,
+            _balloons.OnClicked,
             OnBlinkTick));
         _opened = true;
         Render();
-    }
-
-    // One handler for every balloon: a click does what the balloon on screen offered, and nothing for a balloon
-    // that offered nothing.
-    private void OnBalloonClicked()
-    {
-        var onClick = _balloonClick;
-        _balloonClick = null;
-        onClick?.Invoke();
     }
 
     internal Dictionary<TrayMenuItem, Action> MenuClicks() => new()
@@ -496,9 +464,7 @@ sealed class TrayController : IDisposable
         {
             return;
         }
-        _balloonClick = onClick;
-        TrayLog.Write(TrayBalloons.LogLine(title, text, icon));
-        _shell.ShowBalloon(title, text, icon, TrayBalloons.TimeoutMs(icon));
+        _balloons.Show(title, text, icon, onClick);
     }
 
     private string LogsFolder() => RuntimeFolders.Logs(_runtimeHome, Environment.GetEnvironmentVariable);

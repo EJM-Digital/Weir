@@ -101,15 +101,7 @@ sealed class WindowsTrayShell(ShellEffects effects) : ITrayShell, IDisposable
 
     internal void OnMenuOpening(object? sender, CancelEventArgs e) => _handlers!.MenuOpening();
 
-    // Clicking the icon is a person asking for Weir, so one click opens it (#638). A double-click still opens
-    // one window: its second event falls inside the debounce.
-    internal void OnMouseClick(object? sender, MouseEventArgs e)
-    {
-        if (e.Button == MouseButtons.Left)
-        {
-            _handlers!.IconClicked();
-        }
-    }
+    internal void OnMouseClick(object? sender, MouseEventArgs e) => _handlers!.IconClicked(e.Button);
 
     internal void OnDoubleClick(object? sender, EventArgs e) => _handlers!.IconDoubleClicked();
 

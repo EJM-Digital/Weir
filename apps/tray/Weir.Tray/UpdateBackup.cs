@@ -118,12 +118,14 @@ static class UpdateBackupReady
 /// server's answer, first <c>started</c> (it heard, and is saving), then <c>saved</c> or <c>failed</c> with a plain reason. Files,
 /// not a route, because the tray has no signed-in session, nothing is added to the server's public surface, and only a process
 /// that can write the runtime home (readable by the account running Weir alone) can ask. It asks only a server that has said it can
-/// answer (<see cref="UpdateBackupReady"/>), and one that has said so and then does not answer has failed.
+/// answer (<see cref="UpdateBackupReady"/>). A server too busy to hear is asked again on a doubling schedule
+/// (<see cref="HearingWindow"/>) up to <see cref="HearingCeiling"/>; one that has said so and then does not answer by then has failed.
 /// </summary>
 /// <param name="runtimeHome">The data folder.</param>
 /// <param name="clock">Times the wait.</param>
 /// <param name="server">The server process to ask, or null when none runs.</param>
-sealed class UpdateBackupRequest(string runtimeHome, TimeProvider clock, Func<RunningServer?> server)
+/// <param name="onBusy">Told, in plain words, when the server has not heard by the end of the first wait.</param>
+sealed class UpdateBackupRequest(string runtimeHome, TimeProvider clock, Func<RunningServer?> server, Action<string>? onBusy = null)
 {
     internal const string RequestFileName = "update-backup-request.json";
     internal const string ResultFileName = "update-backup-result.json";
@@ -132,8 +134,18 @@ sealed class UpdateBackupRequest(string runtimeHome, TimeProvider clock, Func<Ru
     private const string SavedState = "saved";
     private const string FailedState = "failed";
 
-    /// <summary>How long a server that has said it can answer has to say it heard the request. It answers within a second.</summary>
+    /// <summary>
+    /// How long a server that has said it can answer has to say it heard the request the first time it is asked. An idle server
+    /// answers within a second. A machine at full load stalls Weir's server for up to 17 s at a time (measured on a busy Windows
+    /// VM, where the first request went unanswered for about two minutes), so each later ask waits twice as long as the one before.
+    /// </summary>
     internal static readonly TimeSpan HearingTime = TimeSpan.FromSeconds(15);
+
+    /// <summary>How many times the request is made before a server that has not said it heard is given up on.</summary>
+    internal const int Asks = 4;
+
+    /// <summary>The longest a server that has said it can answer is given to say it heard: all the asks, 15 s then 30 s, 60 s and 120 s.</summary>
+    internal static readonly TimeSpan HearingCeiling = HearingTime * ((1 << Asks) - 1);
 
     /// <summary>The longest a copy may take once the server has said it is saving.</summary>
     internal static readonly TimeSpan LongestSave = TimeSpan.FromMinutes(30);
@@ -142,6 +154,9 @@ sealed class UpdateBackupRequest(string runtimeHome, TimeProvider clock, Func<Ru
     internal static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(250);
 
     private static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
+
+    /// <summary>How long the server has to say it heard the request made for the <paramref name="ask"/>th time (from 0): <see cref="HearingTime"/>, doubled each time.</summary>
+    internal static TimeSpan HearingWindow(int ask) => HearingTime * (1 << ask);
 
     internal async Task<UpdateBackupAnswer> AskAsync(string targetVersion, CancellationToken cancellationToken)
     {
@@ -164,12 +179,11 @@ sealed class UpdateBackupRequest(string runtimeHome, TimeProvider clock, Func<Ru
         var id = Guid.NewGuid().ToString("n");
         var asked = clock.GetTimestamp();
         Remove(ResultFileName);
-        AtomicFile.WriteAllText(
-            runtimeHome,
-            RequestFileName,
-            JsonSerializer.Serialize(new { id, requested_at = clock.GetUtcNow(), target_version = targetVersion }, Json));
+        WriteRequest(id, targetVersion);
 
         var heard = false;
+        var ask = 0;
+        var hearBy = HearingWindow(0);
         while (true)
         {
             var result = Read(id);
@@ -191,11 +205,27 @@ sealed class UpdateBackupRequest(string runtimeHome, TimeProvider clock, Func<Ru
             {
                 return Failed("Weir stopped while it was saving the copy. Start Weir again, then try again.");
             }
-            if (!heard && waited >= HearingTime)
+            if (!heard && waited >= hearBy)
             {
-                // Taken back, so a server that wakes up later does not save a copy for an update the tray did not go ahead with.
-                Remove(RequestFileName);
-                return Failed("Weir didn't answer the request to save a copy of its data. Try again in a moment; if it keeps happening, restart Weir.");
+                if (ask == Asks - 1)
+                {
+                    // Taken back, so a server that wakes up later does not save a copy for an update the tray did not go ahead with.
+                    Remove(RequestFileName);
+                    TrayLog.Write($"Weir did not answer the request to save a copy of its data in {HearingCeiling.TotalSeconds:0} seconds, so the update is not applied.");
+                    return Failed("Weir was too busy to answer the request to save a copy of its data. Try again when the computer is less busy; if it keeps happening, restart Weir.");
+                }
+
+                ask++;
+                hearBy += HearingWindow(ask);
+                TrayLog.Write($"Weir has not answered the request to save a copy of its data yet; the computer may be busy. Asking again (request {ask + 1} of {Asks}).");
+                if (ask == 1)
+                {
+                    onBusy?.Invoke("Weir is busy, so saving a copy of its data before the update is taking longer than usual. The update goes ahead once the copy is saved.");
+                }
+
+                // A new request over the old one, so a server that missed the first is told again, and one that reads it late never
+                // finds it older than the two minutes it answers within.
+                WriteRequest(id, targetVersion);
             }
             if (heard && waited >= LongestSave)
             {
@@ -204,6 +234,12 @@ sealed class UpdateBackupRequest(string runtimeHome, TimeProvider clock, Func<Ru
             await Task.Delay(PollInterval, clock, cancellationToken).ConfigureAwait(false);
         }
     }
+
+    private void WriteRequest(string id, string targetVersion) =>
+        AtomicFile.WriteAllText(
+            runtimeHome,
+            RequestFileName,
+            JsonSerializer.Serialize(new { id, requested_at = clock.GetUtcNow(), target_version = targetVersion }, Json));
 
     private static UpdateBackupAnswer Failed(string reason) => new(UpdateBackupOutcome.Failed, reason);
 

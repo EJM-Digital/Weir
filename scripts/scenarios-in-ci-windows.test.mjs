@@ -179,6 +179,11 @@ test("a fresh install whose Setup fails, whose server reports another version or
   assert.match(await failureOf("fresh-install", { listensOn: ["127.0.0.1", "0.0.0.0"] }), /listens on 127\.0\.0\.1, 0\.0\.0\.0, not on this PC only/);
 });
 
+test("a fresh install that makes no Start Menu shortcut, or whose tray keeps Weir's data somewhere else, does not pass", async () => {
+  assert.match(await failureOf("fresh-install", { installMakesNoShortcut: true }), /Setup made no Start Menu shortcut \(shortcuts found: none\)/);
+  assert.match(await failureOf("fresh-install", { trayKeepsDataElsewhere: true }), /the tray log does not say Weir keeps its data in the data folder/);
+});
+
 test("secrets that are short, shared, readable by other accounts or inherited from the folder do not pass", async () => {
   assert.match(await failureOf("fresh-install", { secretLength: 20 }), /session\.secret is 20 characters, shorter than 32/);
   assert.match(await failureOf("fresh-install", { sameSecrets: true }), /the session secret and the credentials secret are the same/);

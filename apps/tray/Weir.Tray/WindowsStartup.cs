@@ -74,35 +74,6 @@ static class WindowsStartup
     internal static void AtProcessExit(Action action) => AppDomain.CurrentDomain.ProcessExit += (_, _) => action();
 }
 
-/// <summary>Errors nobody handles: written to the tray's log, because a tray has no window to show them in.</summary>
-static class UnhandledErrorLog
-{
-    /// <summary>
-    /// A tray icon has no window to show an error in, so a failure in a menu handler or a background loop is
-    /// written to tray-host.log and the tray keeps running, instead of WinForms' crash dialog or a silent exit.
-    /// </summary>
-    [ExcludeFromCodeCoverage]
-    internal static void Attach()
-    {
-        Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
-        Application.ThreadException += (_, e) => OnUiThread(e.Exception);
-        AppDomain.CurrentDomain.UnhandledException += (_, e) => OnFatal(e.ExceptionObject);
-        TaskScheduler.UnobservedTaskException += (_, e) => OnUnobserved(e);
-    }
-
-    internal static void OnUiThread(Exception error) =>
-        TrayLog.Write($"Unhandled error on the tray's UI thread:\n{error}");
-
-    internal static void OnFatal(object error) =>
-        TrayLog.Write($"Unhandled error; the tray is stopping:\n{error}");
-
-    internal static void OnUnobserved(UnobservedTaskExceptionEventArgs e)
-    {
-        TrayLog.Write($"Unobserved background error:\n{e.Exception}");
-        e.SetObserved();
-    }
-}
-
 /// <summary>The question Weir asks before it runs when it cannot decide the port itself.</summary>
 static class StartupQuestions
 {
