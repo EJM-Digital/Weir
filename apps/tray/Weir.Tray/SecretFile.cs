@@ -23,7 +23,11 @@ static class SecretFile
     /// it is looser than owner-only, otherwise a new one written owner-only. A usable saved secret is never
     /// replaced, because sessions and stored credentials depend on it.
     /// </summary>
-    internal static string Ensure(string runtimeHome, string fileName, Action<TimeSpan>? pause = null)
+    /// <param name="runtimeHome">The runtime home holding the file.</param>
+    /// <param name="fileName">The secret's file name.</param>
+    /// <param name="pause">Waits between looks at a file that is busy; the real wait when null.</param>
+    /// <param name="restrict">Tightens a file's access list; <see cref="Restrict"/> when null.</param>
+    internal static string Ensure(string runtimeHome, string fileName, Action<TimeSpan>? pause = null, Func<string, bool>? restrict = null)
     {
         var path = Path.Combine(runtimeHome, fileName);
         if (File.Exists(path))
@@ -31,7 +35,7 @@ static class SecretFile
             var existing = ReadSaved(path, pause);
             if (existing.Length >= MinimumLength)
             {
-                TryRestrict(path);
+                TryRestrict(path, restrict);
                 return existing;
             }
             TrayLog.Write($"{path} is shorter than {MinimumLength} characters, so a new secret replaces it.");
@@ -39,7 +43,7 @@ static class SecretFile
 
         var secret = NewSecret();
         Directory.CreateDirectory(runtimeHome);
-        WriteOwnerOnly(path, secret);
+        WriteOwnerOnly(path, secret, restrict);
         return secret;
     }
 
@@ -63,7 +67,7 @@ static class SecretFile
     /// file for a moment is looked past. A file that stays refused is an error and never a reason to write a new secret, which would
     /// sign everyone out and make the stored credentials unreadable. A file that is gone has no secret.
     /// </summary>
-    private static string ReadSaved(string path, Action<TimeSpan>? pause)
+    internal static string ReadSaved(string path, Action<TimeSpan>? pause)
     {
         var reading = ReplacedFile.ReadText(path, pause: pause);
         return reading.State switch
@@ -76,11 +80,11 @@ static class SecretFile
         };
     }
 
-    private static void TryRestrict(string path)
+    private static void TryRestrict(string path, Func<string, bool>? restrict)
     {
         try
         {
-            if (Restrict(path))
+            if ((restrict ?? Restrict)(path))
             {
                 TrayLog.Write($"Restricted {path} to SYSTEM, Administrators and {Environment.UserName}.");
             }
@@ -92,7 +96,7 @@ static class SecretFile
         }
     }
 
-    private static void WriteOwnerOnly(string path, string secret)
+    private static void WriteOwnerOnly(string path, string secret, Func<string, bool>? restrict)
     {
         // Created with its access list already in place, then renamed over any unusable old file, so the secret is
         // never on disk under the folder's permissions. A rename on one volume keeps the file's own list.
@@ -112,7 +116,7 @@ static class SecretFile
             // Only still there when the write or the rename failed.
             File.Delete(scratch);
         }
-        TryRestrict(path);
+        TryRestrict(path, restrict);
     }
 
     private static string NewSecret()

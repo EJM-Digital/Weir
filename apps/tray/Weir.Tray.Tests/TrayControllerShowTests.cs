@@ -205,6 +205,23 @@ public sealed class TrayControllerShowTests : IDisposable
     }
 
     [Fact]
+    public void A_blink_that_finds_the_dot_has_turned_to_starting_draws_everything_again_and_begins_to_blink()
+    {
+        var rig = Rig();
+        rig.Controller.Begin();
+        rig.Server.SetPhase(ServerPhase.Stopped);
+        rig.Controller.Render();
+        rig.Server.SetPhase(ServerPhase.Starting);
+        var menus = rig.Shell.Menus.Count;
+
+        rig.Shell.Handlers!.BlinkTick();
+
+        Assert.Equal(menus + 1, rig.Shell.Menus.Count);
+        Assert.True(rig.Shell.Blinking);
+        Assert.Equal(new TrayIconKey(TrayDot.Starting, TrayMark.None), rig.Shell.LastIcon);
+    }
+
+    [Fact]
     public void The_menu_is_drawn_again_as_it_opens()
     {
         var rig = Rig();

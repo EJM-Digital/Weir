@@ -38,7 +38,7 @@ static class ServerProcessSnapshot
     }
 
     // Only files outside the Windows folder: the server's own, the .NET runtime's and what it extracted.
-    private static List<string> LoadedFiles(Process process)
+    internal static List<string> LoadedFiles(Process process)
     {
         var windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
         var files = new List<string>();

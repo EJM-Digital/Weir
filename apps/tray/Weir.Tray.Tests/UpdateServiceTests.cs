@@ -158,12 +158,29 @@ public sealed class UpdateServiceTests : IDisposable
         Assert.Empty(_exits);
     }
 
+    [Fact]
+    public void Packages_that_cannot_be_read_are_logged_not_thrown()
+    {
+        var service = Service(new UnreadablePackages(new FeedSource("1.0.0"), Locator()));
+
+        Assert.Null(service.FindUpdateLeftWaiting());
+
+        Assert.Contains(_log, line => line.StartsWith("Could not look for an update left waiting:", StringComparison.Ordinal));
+    }
+
     private UpdateService Service(UpdateManager manager) => new(manager, _log.Add, _exits.Add);
 
-    private UpdateManager Manager(FeedSource source, UpdateProgram? updater = null) =>
-        new(source, new UpdateOptions(), new TestVelopackLocator(
-            "Weir", "1.0.0", Path.Combine(_install.Path, "packages"), _install.Path, _install.Path,
-            updater?.Path ?? Path.Combine(_install.Path, "Update.exe"), "win", null, null, Path.Combine(_install.Path, "Weir.exe")));
+    private UpdateManager Manager(FeedSource source, UpdateProgram? updater = null) => new(source, new UpdateOptions(), Locator(updater));
+
+    private TestVelopackLocator Locator(UpdateProgram? updater = null) =>
+        new("Weir", "1.0.0", Path.Combine(_install.Path, "packages"), _install.Path, _install.Path,
+            updater?.Path ?? Path.Combine(_install.Path, "Update.exe"), "win", null, null, Path.Combine(_install.Path, "Weir.exe"));
+
+    /// <summary>An update manager whose look at the packages folder is refused, as a disk that fails or a scanner that holds a package would.</summary>
+    private sealed class UnreadablePackages(IUpdateSource source, IVelopackLocator locator) : UpdateManager(source, new UpdateOptions(), locator)
+    {
+        public override VelopackAsset? UpdatePendingRestart => throw new IOException("The packages folder cannot be read.");
+    }
 
     /// <summary>A release source serving one version of Weir, whose package is a real one on disk.</summary>
     private sealed class FeedSource(string? offered) : IUpdateSource
@@ -245,10 +262,25 @@ public sealed class UpdateServiceTests : IDisposable
 
         internal string Path { get; }
 
+        // The script still has the file open while it finishes writing, so a refusal is only not yet.
+        private string? TryRead()
+        {
+            try
+            {
+                var text = File.Exists(_record) ? File.ReadAllText(_record) : string.Empty;
+                return text.Length > 0 ? text : null;
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+        }
+
         internal string WaitForArguments()
         {
-            Assert.True(SpinWait.SpinUntil(() => File.Exists(_record) && new FileInfo(_record).Length > 0, Ceiling));
-            return File.ReadAllText(_record);
+            string? told = null;
+            Assert.True(SpinWait.SpinUntil(() => (told = TryRead()) is not null, Ceiling));
+            return told!;
         }
     }
 }

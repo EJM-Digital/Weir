@@ -98,6 +98,9 @@ sealed partial class ServerHost
         LaunchWatchdog();
     }
 
+    /// <summary>How many times the watchdog has looked at the server process.</summary>
+    internal int WatchLooks => Volatile.Read(ref _watchLooks);
+
     /// <summary>Whether the watchdog is running: it ends when the server is stopped on purpose and when it gives up, and a restart or a move starts it again.</summary>
     internal bool IsWatching => _watchdog is { IsCompleted: false };
 
@@ -111,7 +114,7 @@ sealed partial class ServerHost
     // cleared, and when it gives up after repeated failures.
     private void RestartWatchdogIfStopped()
     {
-        if (_onGaveUp is null || _watchdogToken.IsCancellationRequested || _watchdog is { IsCompleted: false })
+        if (_onGaveUp is null || _watchdogToken.IsCancellationRequested || IsWatching)
         {
             return;
         }
@@ -121,9 +124,11 @@ sealed partial class ServerHost
     private async Task WatchAsync(Action onGaveUp, CancellationToken cancellationToken)
     {
         using var timer = new PeriodicTimer(WatchInterval, _time);
-        while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+        while (true)
         {
+            await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false);
             var (state, exited) = await CheckProcessAsync(cancellationToken).ConfigureAwait(false);
+            Interlocked.Increment(ref _watchLooks);
             if (state == ProcessState.Stopped)
             {
                 // Stopped on purpose (quit, update).
@@ -171,7 +176,7 @@ sealed partial class ServerHost
 
     // The server ran and then exited. That is a failed run like any other: counted, waited for, tried again, or given up on.
     // Returns whether the server is back and ready.
-    private async Task<bool> RestartAfterExitAsync(Process exited, CancellationToken cancellationToken)
+    internal async Task<bool> RestartAfterExitAsync(Process exited, CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -427,7 +432,7 @@ sealed partial class ServerHost
 
     // The attempt is over and the process with it. Whoever takes the process out of _process owns disposing it, so a quit that stops the
     // server at the same moment and the attempt never both do.
-    private void ForgetFailedProcess(Process process)
+    internal void ForgetFailedProcess(Process process)
     {
         if (TakeProcess(process))
         {
@@ -475,6 +480,10 @@ sealed partial class ServerHost
         return true;
     }
 
+    /// <summary>The process Windows started, or the reason there is none.</summary>
+    internal static Process Started(Process? process) =>
+        process ?? throw new InvalidOperationException($"Failed to start {ServerExeName}");
+
     private Process StartProcess()
     {
         var serverExe = FindServerExe();
@@ -509,7 +518,7 @@ sealed partial class ServerHost
         // The server reports its progress on standard output as well as in the file; the tray owns that pipe.
         start.Environment[StartProgressFile.PipeVariable] = "1";
 
-        var process = Process.Start(start) ?? throw new InvalidOperationException($"Failed to start {ServerExeName}");
+        var process = Started(Process.Start(start));
         _feed = new StartProgressFeed(process.Id);
         _output.Attach(process, _feed);
 

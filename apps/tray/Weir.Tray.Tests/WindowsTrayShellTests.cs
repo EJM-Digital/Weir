@@ -20,6 +20,8 @@ public sealed class WindowsTrayShellTests : IDisposable
 
         public List<string> Clipboard { get; } = [];
 
+        public List<string> Warned { get; } = [];
+
         public List<Icon?> PortIcons { get; } = [];
 
         public int? PortAnswer { get; set; } = 9400;
@@ -37,6 +39,7 @@ public sealed class WindowsTrayShellTests : IDisposable
                 return PortAnswer;
             },
             Clipboard.Add,
+            Warned.Add,
             () => Loop.Add("run"),
             () => Loop.Add("exit-thread"),
             () => Loop.Add("exit"));
@@ -242,6 +245,20 @@ public sealed class WindowsTrayShellTests : IDisposable
                 _recorder.Started.Select(info => info.FileName));
             Assert.Equal(RuntimeFolders.SelectArguments(file), _recorder.Started[2].Arguments);
             Assert.True(Directory.Exists(folder));
+        });
+    }
+
+    [Fact]
+    public void A_folder_that_will_not_open_is_told_to_the_person_through_the_effects()
+    {
+        OnSta(() =>
+        {
+            var shell = new WindowsTrayShell(_recorder.Effects with { StartProcess = _ => throw new System.ComponentModel.Win32Exception("Explorer is not available") });
+            var folder = Path.Combine(_home.Path, "logs");
+
+            shell.OpenFolder(folder, "logs folder");
+
+            Assert.Equal($"Weir could not open its logs folder. You can open it in File Explorer yourself:\n\n{folder}", Assert.Single(_recorder.Warned));
         });
     }
 

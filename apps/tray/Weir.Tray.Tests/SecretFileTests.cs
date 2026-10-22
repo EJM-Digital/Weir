@@ -129,6 +129,35 @@ public sealed class SecretFileTests : IDisposable
         Assert.NotEqual(session, credentials);
     }
 
+
+    [Fact]
+    public void A_saved_secret_whose_access_list_cannot_be_tightened_is_still_used_and_the_log_says_so()
+    {
+        var saved = new string('s', SecretFile.MinimumLength);
+        File.WriteAllText(SecretPath, saved);
+
+        var secret = SecretFile.Ensure(_home.Path, FileName, restrict: _ => throw new UnauthorizedAccessException("denied"));
+
+        Assert.Equal(saved, secret);
+        Assert.Contains($"Could not restrict who can read {SecretPath} (denied); it keeps its current access list.", File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName)), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_saved_secret_that_was_tightened_is_logged_as_restricted()
+    {
+        File.WriteAllText(SecretPath, new string('s', SecretFile.MinimumLength));
+
+        SecretFile.Ensure(_home.Path, FileName, restrict: _ => true);
+
+        Assert.Contains($"Restricted {SecretPath} to SYSTEM, Administrators and", File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName)), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_secret_file_that_is_gone_when_it_is_read_has_no_secret()
+    {
+        Assert.Equal(string.Empty, SecretFile.ReadSaved(SecretPath, pause: null));
+    }
+
     internal static HashSet<SecurityIdentifier> Accounts(FileSystemSecurity security) =>
         security.GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier))
             .Cast<FileSystemAccessRule>()

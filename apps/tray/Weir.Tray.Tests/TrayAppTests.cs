@@ -68,6 +68,7 @@ public sealed class TrayAppTests : IDisposable
         () => false,
         (_, _) => null,
         _ => { },
+        _ => { },
         () => loop.Add("run"),
         () => loop.Add("exit-thread"),
         () => loop.Add("exit"));

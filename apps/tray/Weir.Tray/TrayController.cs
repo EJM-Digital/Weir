@@ -346,16 +346,17 @@ sealed class TrayController : IDisposable
 
     private void OnBlinkTick()
     {
-        // A status that has not come in time ends the blink, and that changes more than the icon.
+        // A status that has not come in time ends the blink, and that changes more than the icon. A dot that has turned to starting
+        // since the last drawing begins to blink with that drawing.
         var state = State();
-        if (state.Dot != TrayDot.Starting)
+        if (state.Dot != TrayDot.Starting || !_blink.Active)
         {
             Render();
+            return;
         }
-        else if (_blink.Tick())
-        {
-            ShowIcon(state);
-        }
+
+        _blink.Tick();
+        ShowIcon(state);
     }
 
     // -- Updates ------------------------------------------------------------

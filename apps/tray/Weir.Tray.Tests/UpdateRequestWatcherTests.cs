@@ -171,4 +171,34 @@ public sealed class UpdateRequestWatcherTests : IDisposable
         Assert.Null(thrown);
         Assert.Equal(0, watcher.Rebuilt);
     }
+
+    [Fact]
+    public void A_settle_that_was_already_on_its_way_when_the_watcher_was_disposed_looks_at_nothing()
+    {
+        var watcher = StartWatching();
+        NextLook();
+        watcher.Dispose();
+
+        watcher.Settled();
+
+        Assert.Empty(_looks);
+    }
+
+    [Fact]
+    public void A_watcher_that_could_not_be_built_again_has_no_buffer_until_it_is()
+    {
+        var builds = 0;
+        using var watcher = new UpdateRequestWatcher(
+            _home.Path,
+            () => _looks.Add(Interlocked.Increment(ref _looked)),
+            _logged.Add,
+            _clock,
+            () => ++builds is 2 ? throw new IOException("Not now.") : new FileSystemWatcher(_home.Path, "update-*-now"));
+        watcher.Start();
+        NextLook();
+
+        watcher.OnWatcherError(new IOException("Gone."));
+
+        Assert.Equal(0, watcher.BufferBytes);
+    }
 }

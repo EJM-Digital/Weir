@@ -178,4 +178,104 @@ public sealed class PortDialogTests
             Assert.Equal(error, dialog.ErrorText);
         });
     }
+
+    [Fact]
+    public void A_dialog_nobody_has_answered_wrongly_shows_no_error()
+    {
+        OnSta(() =>
+        {
+            using var dialog = new PortDialog(new PortPrompt(PortPromptReason.FirstRun, 9347, false, 9347), Busy(), null);
+
+            Assert.Null(dialog.ErrorText);
+        });
+    }
+
+    [Fact]
+    public void The_window_takes_the_icon_it_is_given()
+    {
+        OnSta(() =>
+        {
+            using var icon = (Icon)SystemIcons.Application.Clone();
+            using var dialog = new PortDialog(new PortPrompt(PortPromptReason.Change, 9347, false, 9347), Busy(), icon);
+
+            Assert.NotNull(dialog.Icon);
+        });
+    }
+
+    [Fact]
+    public void A_desktop_with_no_message_box_font_gets_the_default_font()
+    {
+        Assert.Equal(SystemFonts.DefaultFont, PortDialog.DialogFont(null));
+        using var own = new Font("Segoe UI", 9f);
+        Assert.Same(own, PortDialog.DialogFont(own));
+    }
+
+    [Fact]
+    public void A_first_run_with_the_default_busy_and_no_free_port_found_leaves_the_box_empty()
+    {
+        OnSta(() =>
+        {
+            using var dialog = new PortDialog(new PortPrompt(PortPromptReason.FirstRun, 9347, true, null), Busy(9347), null);
+
+            Assert.True(dialog.CustomOption.Checked);
+            Assert.Equal("", dialog.CustomPortBox.Text);
+        });
+    }
+
+    [Fact]
+    public void A_first_run_with_no_suggestion_and_the_default_free_starts_on_the_default()
+    {
+        OnSta(() =>
+        {
+            using var dialog = new PortDialog(new PortPrompt(PortPromptReason.FirstRun, 9347, false, null), Busy(), null);
+
+            Assert.True(dialog.DefaultOption.Checked);
+        });
+    }
+
+    [Fact]
+    public void Changing_to_a_port_that_is_not_the_default_starts_on_that_port()
+    {
+        OnSta(() =>
+        {
+            using var dialog = new PortDialog(new PortPrompt(PortPromptReason.Change, 9400, false, null), Busy(9400), null);
+
+            Assert.True(dialog.CustomOption.Checked);
+            Assert.Equal("9400", dialog.CustomPortBox.Text);
+        });
+    }
+
+    [Fact]
+    public void The_default_that_became_busy_since_the_question_was_asked_is_refused_with_the_reason()
+    {
+        OnSta(() =>
+        {
+            using var dialog = new PortDialog(new PortPrompt(PortPromptReason.FirstRun, 9347, false, 9347), Busy(9347), null);
+
+            dialog.PressOk();
+
+            Assert.Null(dialog.ChosenPort);
+            Assert.Equal("Another program on this computer is already using port 9347. Choose a different number.", dialog.ErrorText);
+        });
+    }
+
+    [Fact]
+    public void Each_reason_explains_the_situation_in_its_own_words()
+    {
+        Assert.Equal(
+            "Another program on this computer is already using 9347, Weir's default. Enter a different port below.",
+            PortDialog.Situation(new PortPrompt(PortPromptReason.FirstRun, 9347, true, null)));
+        Assert.Equal(
+            "Another program on this computer is already using 9347, Weir's default. Port 9348 is free, so it is filled in below.",
+            PortDialog.Situation(new PortPrompt(PortPromptReason.FirstRun, 9347, true, 9348)));
+        Assert.Equal(
+            "Weir will remember your choice. You can change it later from the Weir icon in the taskbar.",
+            PortDialog.Situation(new PortPrompt(PortPromptReason.FirstRun, 9347, false, 9347)));
+        Assert.Equal(
+            "Weir was set to use port 9360, but another program is using it now. Weir will not switch ports without asking you. Choose a different port, or quit, close the other program and start Weir again.",
+            PortDialog.Situation(new PortPrompt(PortPromptReason.SavedPortBusy, 9360, true, null)));
+        Assert.EndsWith(
+            " Port 9361 is free, so it is filled in below.",
+            PortDialog.Situation(new PortPrompt(PortPromptReason.SavedPortBusy, 9360, true, 9361)));
+    }
 }

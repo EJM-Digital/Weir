@@ -23,7 +23,7 @@ static class Program
 
     /// <summary>
     /// Start with no UI at all, ever: no browser, no port dialog, no error message box, no matter what the desktop
-    /// heuristic in <see cref="PortChoice.HasInteractiveDesktop"/> reports. This is what a program driving Weir
+    /// heuristic in <see cref="PortChoice.HasInteractiveDesktop()"/> reports. This is what a program driving Weir
     /// unattended (an installer, a provisioning script) should pass, because a wrong "yes, there's a desktop"
     /// answer from that heuristic must never turn into a dialog nobody can see or answer (#779). A silent start
     /// that cannot get a usable port still exits with a non-zero code instead of asking.
@@ -146,7 +146,9 @@ static class Program
         InstallProcesses.StopOwn(InstallProcesses.Root(), sameSessionOnly: false, TrayLog.Write, why, ServerStopTimeouts.Hook);
 
     // The Weir.exe these hooks run from: the install's own tray, which is what a mark must name to count for the install.
-    internal static string InstalledTray() => Environment.ProcessPath ?? Path.Combine(InstallProcesses.Root(), "Weir.exe");
+    internal static string InstalledTray() => InstalledTray(Environment.ProcessPath);
+
+    internal static string InstalledTray(string? processPath) => processPath ?? Path.Combine(InstallProcesses.Root(), "Weir.exe");
 
     internal static string RuntimeHome() =>
         RuntimeHome(Environment.GetEnvironmentVariable, () => Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData));

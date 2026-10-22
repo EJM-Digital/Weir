@@ -104,6 +104,43 @@ public sealed class UpdateOnStartTests : IDisposable
         Assert.Empty(service.Applied);
     }
 
+    [Fact]
+    public void An_install_is_not_started_when_the_attempt_cannot_be_recorded_and_the_log_says_so()
+    {
+        using var runtimeHome = TempDirectory.Create();
+        using var denied = new DeniedFolder(runtimeHome.Path, System.Security.AccessControl.FileSystemRights.CreateFiles);
+        var service = new FakeUpdateService { LeftWaitingVersion = LeftWaiting };
+
+        var handedOver = UpdateOnStart.TryApply(service, UpdateMode.Auto, runtimeHome.Path, () => { });
+
+        Assert.False(handedOver);
+        Assert.Empty(service.Applied);
+        Assert.Contains($"Update v{LeftWaiting} is waiting, but Weir could not record trying it", File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName)), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_backup_with_no_way_to_tell_whether_a_server_runs_is_not_asked_and_the_update_goes_ahead()
+    {
+        var service = new FakeUpdateService { LeftWaitingVersion = LeftWaiting };
+        var backup = new NeverAskedBackup();
+
+        var handedOver = UpdateOnStart.TryApply(service, UpdateMode.Auto, _home.Path, () => { }, backup, orphanRuns: null);
+
+        Assert.True(handedOver);
+        Assert.False(backup.Asked);
+    }
+
+    private sealed class NeverAskedBackup : IUpdateBackup
+    {
+        public bool Asked { get; private set; }
+
+        public Task<bool> SaveBeforeApplyAsync(string? targetVersion)
+        {
+            Asked = true;
+            return Task.FromResult(true);
+        }
+    }
+
     private bool TryApply(FakeUpdateService service, UpdateMode mode, Action stopOrphanedServers) =>
         UpdateOnStart.TryApply(service, mode, _home.Path, stopOrphanedServers);
 }

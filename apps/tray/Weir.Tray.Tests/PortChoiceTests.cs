@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
 using Xunit;
@@ -307,5 +308,99 @@ public sealed class PortChoiceTests : IDisposable
         }
 
         Assert.False(PortChoice.IsInUse(free));
+    }
+
+    [Fact]
+    public void A_port_argument_with_nothing_after_it_is_supplied_as_empty_text()
+    {
+        Assert.Equal(("", "--port"), PortChoice.SuppliedPort(["--no-browser", "--port"], _ => null));
+    }
+
+    [Fact]
+    public void No_text_is_no_port()
+    {
+        Assert.Null(PortChoice.ParsePort(null));
+    }
+
+    [Fact]
+    public void A_later_start_with_the_saved_port_busy_and_the_dialog_closed_does_not_start_or_save()
+    {
+        var decision = PortChoice.Decide(null, saved: 9360, interactive: true, Busy(9360), _ => null);
+
+        Assert.Null(decision.Port);
+        Assert.False(decision.Save);
+        Assert.Contains("quit without choosing another", decision.Reason);
+    }
+
+    [Fact]
+    public void A_later_start_with_the_saved_port_busy_and_the_same_port_chosen_again_saves_nothing()
+    {
+        var decision = PortChoice.Decide(null, saved: 9360, interactive: true, Busy(9360), _ => 9360);
+
+        Assert.Equal(9360, decision.Port);
+        Assert.False(decision.Save);
+    }
+
+    // -- The desktop and the listener table, answered by stand-ins --------------
+
+    [Theory]
+    [InlineData(true, 1, true, true)]
+    [InlineData(false, 1, true, false)]
+    [InlineData(true, 0, true, false)]
+    [InlineData(true, 1, false, false)]
+    public void A_person_can_answer_only_in_an_interactive_process_outside_session_zero_on_a_visible_window_station(
+        bool processInteractive, int session, bool windowStation, bool expected)
+    {
+        Assert.Equal(expected, PortChoice.HasInteractiveDesktop(() => processInteractive, () => session, () => windowStation));
+    }
+
+    [Fact]
+    public void When_the_session_cannot_be_read_nobody_is_asked_and_the_log_says_why()
+    {
+        var interactive = PortChoice.HasInteractiveDesktop(() => true, () => throw new InvalidOperationException("no process"), () => true);
+
+        Assert.False(interactive);
+        Assert.Contains("Could not tell whether this is an interactive desktop (no process); treating it as not.", File.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_real_desktop_check_answers_without_failing()
+    {
+        var first = PortChoice.HasInteractiveDesktop();
+
+        Assert.Equal(first, PortChoice.HasInteractiveDesktop());
+    }
+
+    [Fact]
+    public void This_process_names_its_session_and_its_window_station()
+    {
+        Assert.Equal(System.Diagnostics.Process.GetCurrentProcess().SessionId, PortChoice.CurrentSessionId());
+        Assert.Equal(System.Windows.Forms.SystemInformation.UserInteractive, PortChoice.WindowStationIsInteractive());
+    }
+
+    [Fact]
+    public void A_port_in_the_listener_table_is_in_use_without_a_bind()
+    {
+        var inUse = PortChoice.IsInUse(9350, () => [new IPEndPoint(IPAddress.Loopback, 9350)], _ => throw new Xunit.Sdk.XunitException("The port was bound when the table already named it."));
+
+        Assert.True(inUse);
+    }
+
+    [Fact]
+    public void A_listener_table_that_cannot_be_read_leaves_the_answer_to_the_bind_and_the_log_says_so()
+    {
+        var bound = new List<int>();
+
+        var inUse = PortChoice.IsInUse(9350, () => throw new NetworkInformationException(5), bound.Add);
+
+        Assert.False(inUse);
+        Assert.Equal([9350], bound);
+        Assert.Contains("checking port 9350 by binding it", File.ReadAllText(Path.Combine(Home, "tray-host.log")), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_port_that_cannot_be_bound_is_in_use()
+    {
+        Assert.True(PortChoice.IsInUse(9350, () => [], _ => throw new SocketException((int)SocketError.AddressAlreadyInUse)));
     }
 }

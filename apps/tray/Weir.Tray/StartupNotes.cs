@@ -23,7 +23,7 @@ static class StartupNotes
         }
         var lines = text.Split('\n', 2, StringSplitOptions.TrimEntries);
         var headline = lines[0];
-        var detail = lines.Length > 1 && lines[1].Length > 0 ? lines[1] : headline;
+        var detail = lines.Length > 1 ? lines[1] : headline;
         return headline.Length == 0 ? null : new StartupError(headline, detail);
     }
 

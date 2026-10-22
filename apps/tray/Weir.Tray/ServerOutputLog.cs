@@ -47,12 +47,13 @@ sealed class ServerOutputLog : IDisposable
     /// The encoding the server writes its console output in: the PC's OEM code page, which is the one a console the server was given
     /// uses. UTF-8 when this PC's cannot be had.
     /// </summary>
-    internal static Encoding ServerEncoding()
+    /// <param name="oemCodePage">The code page to use; this PC's OEM code page when null.</param>
+    internal static Encoding ServerEncoding(int? oemCodePage = null)
     {
         try
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            return Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage);
+            return Encoding.GetEncoding(oemCodePage ?? CultureInfo.CurrentCulture.TextInfo.OEMCodePage);
         }
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException)
         {
@@ -78,7 +79,7 @@ sealed class ServerOutputLog : IDisposable
 
     // A progress line is progress, so it goes to the feed the start is judged by; the log keeps it in words, once for each phase and
     // step and not for each beat. Every other line is kept as the server wrote it.
-    private async Task Pump(StreamReader reader, int processId, string stream, StartProgressFeed? feed)
+    internal async Task Pump(StreamReader reader, int processId, string stream, StartProgressFeed? feed)
     {
         try
         {

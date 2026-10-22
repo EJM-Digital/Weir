@@ -27,6 +27,9 @@ internal sealed class FakeUpdateService : IUpdateService
     /// <summary>When set, every download ends with this failure.</summary>
     public string? DownloadFailure { get; init; }
 
+    /// <summary>Whether a download that finds the update gone ends as "nothing to download" (a check and a download that disagree).</summary>
+    public bool DownloadFindsNothing { get; init; }
+
     /// <summary>When set, a check does not finish until this task does.</summary>
     public Task? HoldCheck { get; init; }
 
@@ -101,6 +104,10 @@ internal sealed class FakeUpdateService : IUpdateService
             if (DownloadFailure is not null)
             {
                 return UpdateOutcome.Failed(DownloadFailure);
+            }
+            if (DownloadFindsNothing)
+            {
+                return UpdateOutcome.NothingToDo;
             }
             IsDownloaded = HasPendingUpdate;
             return HasPendingUpdate ? UpdateOutcome.Succeeded : UpdateOutcome.NothingToDo;
