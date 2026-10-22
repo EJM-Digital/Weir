@@ -68,7 +68,35 @@
       "file": "apps/tray/coverage.runsettings",
       "marker": "ExcludeFromCodeCoverageAttribute",
       "kind": "policy",
-      "reason": "Honours [ExcludeFromCodeCoverage] in the code. There are none today, and a new one fails the exclusions check until it is listed here with its own kind and reason."
+      "reason": "Honours [ExcludeFromCodeCoverage] in the code. Each use is a one-line call into Windows that a test cannot make, and is listed below with its own kind and reason; a new one fails the exclusions check until it is listed here."
+    },
+    {
+      "id": "tray-windows-effects",
+      "file": "apps/tray/Weir.Tray/WindowsEffects.cs",
+      "marker": "ExcludeFromCodeCoverage",
+      "count": 5,
+      "kind": "platform-only",
+      "coveredBy": "windows",
+      "provedBy": "scripts/scenarios-ci/tray-menu.mjs, which chooses Copy address, Open data folder, Open logs folder and Report a problem on the real tray and reads the clipboard, File Explorer and the browser; the tray scenarios end the loop through Quit",
+      "reason": "Five one-line calls into Windows: start a program or open a folder or an address (Process.Start), put text on the clipboard, run the message loop, and end the thread's or the application's message loop. A unit test cannot answer them: they would open File Explorer and a browser on the machine, replace the person's clipboard, or block on a message loop that nothing ends. The tray's shell takes them as ShellEffects, so every line around them is run with recorders in WindowsTrayShellTests and TrayAppTests."
+    },
+    {
+      "id": "tray-start-with-windows-message-box",
+      "file": "apps/tray/Weir.Tray/StartWithWindowsPrompt.cs",
+      "marker": "ExcludeFromCodeCoverage",
+      "kind": "platform-only",
+      "coveredBy": "windows",
+      "provedBy": "scripts/scenarios-ci/tray-menu.mjs and the install scenarios in scripts/scenarios-ci/windows-install.mjs, which answer the question on the real desktop and read the Run key",
+      "reason": "AskInMessageBox shows the modal question \"Start Weir when you sign in to Windows?\" and waits for a click; a unit test has nobody to answer it. Everything that decides whether to ask, and what the answer does, is run with a recorder in StartWithWindowsTests and TrayControllerStartTests."
+    },
+    {
+      "id": "tray-port-window-show-dialog",
+      "file": "apps/tray/Weir.Tray/PortDialog.cs",
+      "marker": "ExcludeFromCodeCoverage",
+      "kind": "platform-only",
+      "coveredBy": "windows",
+      "provedBy": "scripts/scenarios-ci/tray-network.mjs, which chooses Change port, types a port into the real window and closes it without choosing",
+      "reason": "PortDialog.Ask opens the port window modally with ShowDialog and returns what the person chose; a unit test has nobody to close it. The window itself, its two options and its validation are run directly in PortDialogTests, and the controller takes the question as a function in TrayControllerMenuTests."
     },
     {
       "id": "tray-obj-folder",

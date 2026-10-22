@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Weir.Tray;
 
 /// <summary>
@@ -45,6 +47,7 @@ static class StartWithWindowsPrompt
         startup.Choose(ask());
     }
 
+    [ExcludeFromCodeCoverage]
     internal static bool AskInMessageBox() =>
         MessageBox.Show(Question, "Weir", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
 }

@@ -42,7 +42,7 @@ sealed partial class ServerHost
 
     /// <summary>Starts the server, trying again as the supervision says, and returns once it is ready.</summary>
     /// <exception cref="StartGaveUpException">The start limit was reached.</exception>
-    internal async Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -59,7 +59,7 @@ sealed partial class ServerHost
     /// Stops the server cleanly and starts it again on the same port, for the same devices, with the whole budget of attempts
     /// again: this is the way back once the supervision has given up. Returns whether the server is back and ready.
     /// </summary>
-    internal async Task<bool> RestartNowAsync(CancellationToken cancellationToken)
+    public async Task<bool> RestartNowAsync(CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -91,7 +91,7 @@ sealed partial class ServerHost
     /// Watches the server and, when it exits on its own, starts it again through the same supervision as any start. When the
     /// supervision gives up it calls <paramref name="onGaveUp"/>.
     /// </summary>
-    internal void Watch(Action onGaveUp, CancellationToken cancellationToken)
+    public void Watch(Action onGaveUp, CancellationToken cancellationToken)
     {
         _onGaveUp = onGaveUp;
         _watchdogToken = cancellationToken;

@@ -43,7 +43,7 @@ static class RuntimeFolders
         try
         {
             var start = new ProcessStartInfo { FileName = "explorer.exe", Arguments = SelectArguments(file), UseShellExecute = true };
-            (startExplorer ?? StartProcess)(start);
+            (startExplorer ?? WindowsEffects.StartProcess)(start);
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
         {
@@ -51,8 +51,6 @@ static class RuntimeFolders
             Open(Path.GetDirectoryName(file)!, "data folder");
         }
     }
-
-    private static void StartProcess(ProcessStartInfo info) => Process.Start(info)?.Dispose();
 
     /// <summary>
     /// Opens <paramref name="folder"/> in File Explorer, creating it first if the server has not yet. When it cannot be
@@ -66,7 +64,7 @@ static class RuntimeFolders
         try
         {
             Directory.CreateDirectory(folder);
-            (start ?? StartProcess)(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
+            (start ?? WindowsEffects.StartProcess)(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or FileNotFoundException or IOException or UnauthorizedAccessException)
         {
