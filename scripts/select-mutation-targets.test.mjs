@@ -71,3 +71,15 @@ test("only --all or --changed with a file are accepted", () => {
   assert.throws(() => parseArguments([]), /--all, or --changed/);
   assert.throws(() => parseArguments(["--changed"]), /--all, or --changed/);
 });
+
+test("a run's targets input picks all, a list, or the targets that changed since a commit", async () => {
+  const { resolveTargets } = await import("./resolve-mutation-targets.mjs");
+  const ids = (requested, changed = []) => resolveTargets(requested, targets, { changedSince: () => changed, rootFolder: root }).map((target) => target.target);
+  assert.deepEqual(ids(undefined), targets.map((target) => target.target));
+  assert.deepEqual(ids("all"), targets.map((target) => target.target));
+  assert.deepEqual(ids("web-api-client, core-rules"), ["core-rules", "web-api-client"]);
+  assert.throws(() => ids("core-rules,nope"), /Unknown mutation target: nope/);
+  assert.deepEqual(ids("changed:abc1234", ["apps/web/src/lib/settings/x.test.ts", "docs/a.md"]), ["web-settings-requests", "web-dialogs-library", "web-dialogs-activity-profile"]);
+  assert.deepEqual(ids("changed:abc1234", ["docs/a.md"]), []);
+  assert.throws(() => ids("changed:main; rm -rf"), /not changed:<commit sha>/);
+});

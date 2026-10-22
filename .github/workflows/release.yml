@@ -11,8 +11,8 @@
 #   windows-proof     the Windows legs of the contract suite and the Windows scenario shards, which a pull request runs only
 #                     when it touches Windows code, passed in ci.yml on this commit or an earlier one with the same shipped
 #                     files (scripts/verify-heavy-ci-for-release.mjs, docs/ci-cost.md).
-#   mutation-proof    the Mutation workflow, which never runs on a pull request, passed on this commit or an earlier one
-#                     with the same shipped files, tests and mutation setup (the same script).
+#   mutation-proof    the Mutation workflow, which never runs on a pull request, passed for each target on this commit or an
+#                     earlier one where that target's own files, tests and mutation setup are unchanged (the same script).
 #   validate          release-only checks: notes file, gate ordering, dependency advisories as of
 #                     today, and the production web build that ships as an asset.
 #   e2e               the browser tests against this build, one job per shard (scripts/e2e-shards.mjs), all at
@@ -130,7 +130,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: The mutation scores held their floors on the tagged commit or one with the same code
+      - name: Every mutation target held its floor on the tagged commit or one where its own files, tests and setup are the same
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/verify-heavy-ci-for-release.mjs mutation

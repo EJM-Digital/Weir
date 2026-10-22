@@ -12,7 +12,7 @@ its change cannot affect.
 
 | Job | Pull request | Push to `main` | Nightly | By hand | Before a tag |
 | --- | --- | --- | --- | --- | --- |
-| Mutation testing (`mutation.yml`) | never | never | weekly (Sunday) | yes | must have passed |
+| Mutation testing (`mutation.yml`) | never | never | weekly (Sunday) | yes, all or chosen targets | each target must have passed |
 | Contract suite, Windows legs (`contract-windows`) | only with a Windows path | when the server changed | yes | yes | must have passed |
 | Windows package smoke, update package and scenario shards (`packaging-windows`) | only with a Windows path | when the package or app changed | yes | yes | must have passed |
 | Contract suite, Linux legs, E2E shards, Docker smokes, Linux scenario shards, web, server on Linux | by their own path filters in `ci.yml` | as today | no | yes | `ci-passed` on the tagged commit |
@@ -55,15 +55,31 @@ filters they had.
   does not count. The run may be on the tagged commit or on an earlier one with the same shipped files
   (`scripts/release/shipped-paths.mjs`, the rule the golden-path gate uses): a documentation commit after the last run needs
   no new one.
-- **`mutation-proof`** looks for a weekly or manual run of `mutation.yml` whose `check` job held every score to its floor. The
-  run may be on an earlier commit when the shipped files are the same and nothing under `apps/` (the tests and the Stryker
-  setup) or the mutation files (`.github/mutation-targets.json`, the floors, the workflow) changed, because a changed test
-  can lower a score without changing a shipped file.
+- **`mutation-proof`** judges each mutation target (`.github/mutation-targets.json`) on its own. A target counts as proved by
+  a weekly or manual run of `mutation.yml` in which its `Mutate <target>` job succeeded and the `check` job held the scores of
+  the targets that ran to their floors. That run may be on the tagged commit or on an earlier one, as long as the target's
+  own inputs are the same on both (`scripts/release/mutation-inputs.mjs`):
+  - the files it mutates, from the `mutate` list of its Stryker config, and the config itself;
+  - the tests that kill its mutants. A .NET target's tests are its test projects (`test-projects` in the config, else the
+    project the run starts in), the test-support projects they reference and the shared test sources. A web target that runs
+    `vitest run <paths>` has exactly those paths and the test setup; one that runs `vitest related <files>` finds its tests
+    through the import graph, which the gate cannot know, so every web test file counts (the conservative choice);
+  - its mutation setup: its entry in `mutation-targets.json`, `mutation.yml`, `check-mutation-floors.mjs`, and the build and
+    package settings (`Directory.Build.props`, `Directory.Packages.props`, `global.json`, `NuGet.Config`; `package.json`, the
+    lock file, `vite.config.ts` and the tsconfig files for the web app).
+
+  A change to another target's files does not matter, so unchanged targets carry forward from their last passing run while
+  the changed ones need a run that covers them. A run that did not pass its `check` job proves none of its targets.
 
 Both use `scripts/verify-heavy-ci-for-release.mjs`, read at most the 100 commits before the tag, never wait, and fail at
-once with the command to run: `gh workflow run ci.yml --ref vX.Y.Z` or `gh workflow run mutation.yml --ref vX.Y.Z`. A
-`pull_request` run never counts. Mutation takes hours, so start it before tagging when the shipped code or tests changed
-since the last weekly run.
+once with the command to run. For the Windows legs that is `gh workflow run ci.yml --ref vX.Y.Z`. For mutation it lists the
+targets with no proof and the command that runs only those, for example
+`gh workflow run mutation.yml --ref vX.Y.Z -f targets=core-rules,web-api-client`. A `pull_request` run never counts.
+
+Running only some targets: the `targets` input of `mutation.yml` takes `all` (the default, and the weekly run), a comma-separated
+list of target ids, or `changed:<sha>`, which runs the targets whose own inputs differ from that commit. A run of a few
+targets takes minutes, not hours, so a release that changed only a little needs only a short run; the weekly full run and the
+only-up floors in `docs/coverage/mutation-floors.json` stay as they are.
 
 `scripts/check-release-workflow-gates.mjs` keeps this shape: both jobs exist, both publish jobs need them, neither can be
 skipped or waved through, `mutation.yml` has no pull-request trigger, and `ci-passed` keeps the step the release reads.
