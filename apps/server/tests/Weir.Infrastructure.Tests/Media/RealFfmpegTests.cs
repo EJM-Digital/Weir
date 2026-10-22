@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO.Pipes;
@@ -89,6 +90,11 @@ internal static class RealToolAvailability
     /// </summary>
     private static readonly TimeSpan VersionCheckTimeout = TimeSpan.FromSeconds(60);
 
+    private static readonly ConcurrentQueue<string> Refusals = new();
+
+    /// <summary>Why each tool that did not run was refused, so a job that requires the tools names the cause and not only that they were missing.</summary>
+    public static IReadOnlyCollection<string> Refused => Refusals;
+
     public static bool Runs(IReadOnlyList<string> versionArgv)
     {
         try
@@ -97,10 +103,20 @@ internal static class RealToolAvailability
                 .RunAsync(new ProcessRequest { Argv = versionArgv, Timeout = VersionCheckTimeout })
                 .GetAwaiter()
                 .GetResult();
+            if (result.TimedOut)
+            {
+                Refusals.Enqueue($"{versionArgv[0]} did not answer within {VersionCheckTimeout.TotalSeconds:0} seconds.");
+            }
+            else if (result.ExitCode != 0)
+            {
+                Refusals.Enqueue($"{versionArgv[0]} exited with code {result.ExitCode}: {ProbeOutput.TailText(result.Stderr)}");
+            }
+
             return !result.TimedOut && result.ExitCode == 0;
         }
         catch (Exception error) when (error is Win32Exception or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
+            Refusals.Enqueue($"{versionArgv[0]} could not be started: {error.Message}");
             return false;
         }
     }

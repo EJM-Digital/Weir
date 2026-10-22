@@ -81,13 +81,12 @@ internal static class RulesJson
 
         return v.ValueKind switch
         {
-            JsonValueKind.Null or JsonValueKind.Undefined or JsonValueKind.False => false,
             JsonValueKind.True => true,
             JsonValueKind.String => v.GetString()!.Length > 0,
             JsonValueKind.Number => IsFloatNumber(v) ? v.GetDouble() != 0.0 : !BigInteger.Parse(v.GetRawText(), CultureInfo.InvariantCulture).IsZero,
             JsonValueKind.Array => v.GetArrayLength() > 0,
             JsonValueKind.Object => v.EnumerateObject().Any(),
-            _ => false,
+            _ => false, // null and false
         };
     }
 
@@ -107,7 +106,7 @@ internal static class RulesJson
 
         if (!IsStr(value))
         {
-            throw new RulesInputException("AttributeError", $"Expected text but found {KindText(value)}.");
+            throw new RulesInputException("AttributeError", $"Expected text but found {KindText(value!.Value)}.");
         }
 
         return value!.Value.GetString()!;
@@ -172,11 +171,6 @@ internal static class RulesJson
 
     private static long FloatToInt(double value)
     {
-        if (double.IsNaN(value))
-        {
-            throw new RulesInputException("ValueError", "cannot convert float NaN to integer");
-        }
-
         if (double.IsInfinity(value))
         {
             throw new RulesInputException("OverflowError", "cannot convert float infinity to integer");
@@ -231,21 +225,10 @@ internal static class RulesJson
     {
         var i = 0;
         var mantissaDigits = ReadDigits(body, ref i);
-        if (mantissaDigits < 0)
-        {
-            return false;
-        }
-
         if (i < body.Length && body[i] == '.')
         {
             i++;
-            var fraction = ReadDigits(body, ref i);
-            if (fraction < 0)
-            {
-                return false;
-            }
-
-            mantissaDigits += fraction;
+            mantissaDigits += ReadDigits(body, ref i);
         }
 
         if (mantissaDigits == 0)
@@ -270,7 +253,7 @@ internal static class RulesJson
         return i == body.Length;
     }
 
-    /// <summary>Digits with single underscores between them. Returns the digit count, or -1 when malformed.</summary>
+    /// <summary>Digits with single underscores between them. Returns the digit count.</summary>
     private static int ReadDigits(string text, ref int i)
     {
         var count = 0;
@@ -308,7 +291,6 @@ internal static class RulesJson
     /// <summary>The repr form the golden files and error messages carry: <c>None</c>, <c>True</c>, quoted strings, <c>[...]</c>, <c>{...}</c>.</summary>
     public static string Repr(JsonElement value) => value.ValueKind switch
     {
-        JsonValueKind.Null or JsonValueKind.Undefined => "None",
         JsonValueKind.True => "True",
         JsonValueKind.False => "False",
         JsonValueKind.String => Repr(value.GetString()!),
@@ -316,21 +298,19 @@ internal static class RulesJson
         JsonValueKind.Number => BigInteger.Parse(value.GetRawText(), CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture),
         JsonValueKind.Array => "[" + string.Join(", ", value.EnumerateArray().Select(Repr)) + "]",
         JsonValueKind.Object => "{" + string.Join(", ", Items(value).Select(kv => Repr(kv.Key) + ": " + Repr(kv.Value))) + "}",
-        _ => string.Empty,
+        _ => "None", // null
     };
 
     /// <summary>The quoted repr form of a string.</summary>
     public static string Repr(string text) => WireStrings.Repr(text);
 
-    private static string KindText(JsonElement? value) => value?.ValueKind switch
+    /// <summary>What a value that is neither text nor usable as a whole number is called to a person.</summary>
+    private static string KindText(JsonElement value) => value.ValueKind switch
     {
-        null or JsonValueKind.Null or JsonValueKind.Undefined => "nothing",
         JsonValueKind.True or JsonValueKind.False => "true or false",
-        JsonValueKind.String => "text",
-        JsonValueKind.Number when IsFloatNumber(value.Value) => "a decimal number",
+        JsonValueKind.Number when IsFloatNumber(value) => "a decimal number",
         JsonValueKind.Number => "a whole number",
         JsonValueKind.Array => "a list",
-        JsonValueKind.Object => "an object",
-        _ => "an unknown value",
+        _ => "an object",
     };
 }

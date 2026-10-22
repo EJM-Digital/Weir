@@ -397,6 +397,29 @@ public sealed class ProcessingJobProcessorTests : IDisposable
     }
 
     [Fact]
+    public async Task A_handler_that_gives_its_row_back_to_the_queue_ends_the_step_without_a_warning()
+    {
+        // A clean that finds its file in use puts its own row back to wait; the worker has nothing left to complete, and that is not a failure.
+        await _db.Store.EnqueueOrGetAsync("postponed", "processing.test.ok.v1", maxAttempts: 3);
+        var logger = new CapturingLogger<ProcessingJobProcessor>();
+        var notifications = new RecordingNotifications();
+        var processor = _db.Processor(
+            [new DelegateHandler("processing.test.ok.v1", context =>
+            {
+                Assert.True(_db.Store.ReleaseClaimedAsync(context.Id, context.LeaseOwner, T0).GetAwaiter().GetResult());
+                context.ReleasedLease = true;
+            })],
+            notifications: notifications,
+            logger: logger);
+
+        Assert.Equal(JobProcessOutcome.Processed, await processor.ProcessOneAsync("w", 3600, T0));
+
+        Assert.Equal(ProcessingJobStatus.Pending, (await _db.Store.GetAsync(1))!.Status);
+        Assert.DoesNotContain(logger.Messages, message => message.Level >= LogLevel.Warning);
+        Assert.Empty(notifications.Sent);
+    }
+
+    [Fact]
     public async Task Terminalization_of_first_job_does_not_block_second_job_completion()
     {
         await _db.Store.EnqueueOrGetAsync("seq-a", "processing.test.ok.v1", maxAttempts: 3);
