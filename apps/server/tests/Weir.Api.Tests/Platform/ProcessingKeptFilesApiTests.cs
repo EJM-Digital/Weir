@@ -90,4 +90,30 @@ public sealed class ProcessingKeptFilesApiTests
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         Assert.Equal(1, await TestDatabase.ScalarAsync(server, "SELECT count(*) FROM file_skip_markers"));
     }
+
+    [Fact]
+    public async Task Process_again_for_a_workflow_Deluno_hands_downloads_to_clears_the_marker_and_scans_nothing()
+    {
+        await using var server = await ApiTestClient.StartServerAsync();
+        await TestDatabase.SeedAdminAsync(server);
+        var client = new ApiTestClient(server);
+        await client.SignInAsync();
+        var watched = Path.Combine(server.Home, "watch-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(watched);
+        var libraryId = await SeedLibraryAsync(server, watched);
+        var markerId = await SeedMarkerAsync(server, libraryId, "Film/film.mkv");
+        var connection = await TestDatabase.ScalarAsync(
+            server, "INSERT INTO media_manager_connections (kind, name, base_url) VALUES ('deluno', 'Deluno', 'http://192.0.2.10:5099') RETURNING id");
+        await TestDatabase.ExecuteAsync(server, "INSERT INTO library_manager_links (library_id, connection_id) VALUES ($l, $c)", ("$l", libraryId), ("$c", connection));
+
+        using var response = await client.SendAsync(
+            HttpMethod.Post, $"/api/v1/processing/kept-files/{markerId}/process-again", new { csrf_token = await client.CsrfAsync() });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            "Deluno hands this workflow its downloads, so Weir does not scan its watched folder. Weir processes this file when Deluno hands it over.",
+            (await ApiTestClient.Json(response))["detail"]!.GetValue<string>());
+        Assert.Equal(0, await TestDatabase.ScalarAsync(server, "SELECT count(*) FROM file_skip_markers"));
+        Assert.Equal(0, await TestDatabase.ScalarAsync(server, "SELECT count(*) FROM jobs WHERE job_kind = 'processing.watched_folder.remux_scan_dispatch.v1'"));
+    }
 }

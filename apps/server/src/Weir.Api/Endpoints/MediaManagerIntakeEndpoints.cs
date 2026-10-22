@@ -99,7 +99,7 @@ internal sealed class MediaManagerIntakeEndpointHandlers
     public async Task<ApiResult> PostWebhookAsync(ApiRequest request)
     {
         var body = await request.ReadAnonymousBodyAsync().ConfigureAwait(false);
-        var sourceKey = request.RouteValue("source_key") ?? string.Empty;
+        var sourceKey = request.RouteValue("source_key");
         var presented = request.FirstHeader("X-Webhook-Secret");
         var issues = new ValidationIssues();
         WireObject payload = new();
@@ -219,8 +219,8 @@ internal sealed class MediaManagerIntakeEndpointHandlers
 
     private async Task<(UnitOfWork Uow, string Key, HandoffLedgerRow Row)> RequireHandoffAsync(ApiRequest request)
     {
-        var sourceKey = request.RouteValue("source_key") ?? string.Empty;
-        var handoffId = request.RouteValue("handoff_id") ?? string.Empty;
+        var sourceKey = request.RouteValue("source_key");
+        var handoffId = request.RouteValue("handoff_id");
         var presented = request.FirstHeader("X-Webhook-Secret");
         var key = Source(sourceKey);
         var uow = await request.DbAsync().ConfigureAwait(false);
@@ -320,11 +320,8 @@ internal sealed class MediaManagerIntakeEndpointHandlers
         {
             if (recorded != outcome)
             {
-                throw new ApiException(
-                    StatusCodes.Status409Conflict,
-                    recorded == HandbackRules.Imported
-                        ? $"{manager} already said it imported this file, so Weir kept that answer."
-                        : $"{manager} already said it will not import this file, so Weir kept that answer.")
+                // The only answer that cannot be replaced is an import, and the only one that could contradict it is a refusal.
+                throw new ApiException(StatusCodes.Status409Conflict, $"{manager} already said it imported this file, so Weir kept that answer.")
                 {
                     Code = HandbackRules.OutcomeAlreadyRecordedCode,
                 };

@@ -1,15 +1,13 @@
 namespace Weir.Api;
 
 /// <summary>
-/// Startup facts that health and readiness report: when startup began, whether it finished, and whether the
-/// database was opened.
+/// Startup facts that readiness reports: when startup began and whether it finished.
 /// </summary>
 public sealed class ServerLifecycle
 {
     private readonly TimeProvider _time;
     private readonly long _startedAt;
     private readonly DateTimeOffset _startedAtUtc;
-    private volatile bool _databaseOpened;
     private volatile bool _startupComplete;
 
     public ServerLifecycle(TimeProvider time)
@@ -24,13 +22,8 @@ public sealed class ServerLifecycle
     /// <summary>When the server started, in UTC.</summary>
     public DateTimeOffset StartedAt => _startedAtUtc;
 
-    /// <summary>The database passed its schema check and can be queried.</summary>
-    public bool DatabaseOpened => _databaseOpened;
-
     /// <summary>Startup finished and shutdown has not begun.</summary>
     public bool StartupComplete => _startupComplete;
-
-    public void MarkDatabaseOpened() => _databaseOpened = true;
 
     public void MarkStartupComplete() => _startupComplete = true;
 

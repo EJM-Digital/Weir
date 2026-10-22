@@ -20,8 +20,6 @@ namespace Weir.Api.Endpoints;
 /// </summary>
 public static class MediaManagerConnectionsEndpoints
 {
-    internal const string InvalidCsrf = "Invalid or expired CSRF token.";
-
     private const int ConnectionNameMaxLength = 200;
 
     public static IEndpointRouteBuilder MapMediaManagerConnectionsEndpoints(this IEndpointRouteBuilder endpoints)
@@ -61,7 +59,7 @@ public static class MediaManagerConnectionsEndpoints
         var secret = request.RequireSessionSecret();
         if (!request.VerifyCsrf(secret, token, allowAnonymous: false))
         {
-            throw new ApiException(StatusCodes.Status400BadRequest, InvalidCsrf);
+            throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.ConfirmationExpired);
         }
     }
 }
@@ -381,7 +379,7 @@ internal sealed class MediaManagerConnectionsEndpointHandlers
         var body = await request.ReadBodyAsync().ConfigureAwait(false);
         var issues = new ValidationIssues();
         var connectionId = ConnectionId(request, issues);
-        FieldRules.TryLiteral(new WireString(request.RouteValue("lane") ?? string.Empty), ["path", "lane"], MediaManagerKinds.RetiredSearchLanes, issues, out _);
+        FieldRules.TryLiteral(new WireString(request.RouteValue("lane")), ["path", "lane"], MediaManagerKinds.RetiredSearchLanes, issues, out _);
         var model = new BodyModel(body, issues);
         model.AcceptAndIgnore(RetiredLaneSettings);
         var csrfToken = model.Str("csrf_token", minLength: 1);

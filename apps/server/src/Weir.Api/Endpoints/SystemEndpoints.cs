@@ -81,13 +81,10 @@ public static class SystemEndpoints
             new KeyValuePair<string, int>("processing", options.ProcessingWorkerCount),
             new KeyValuePair<string, int>(WorkLanes.UpkeepHeartbeatModule, options.ProcessingWorkerCount > 0 ? WorkLanes.UpkeepSlots : 0),
         ]);
-        // #552: the watcher (Weir.Infrastructure.Processing.ProcessingWatchedFolderWatcherService) reports here
-        // through the shared WatcherStateStore singleton; a host that never registered the Processing watched-
-        // folder area (a minimal test host) still reports "no libraries watched" rather than throwing.
-        var watcherSummary = services.GetService<WatcherStateStore>()?.Summary() ?? ReadinessBuilder.NoWatchedLibraries;
-        // #718: recovery runs after Kestrel is listening, so a host that never registered the jobs area (a
-        // minimal test host) reads as already complete rather than stuck "starting" for ever.
-        var recoveryComplete = services.GetService<JobsStartupRecoveryService>()?.RecoveryCompleted.IsCompleted ?? true;
+        // The watched-folder watcher reports through the shared WatcherStateStore singleton.
+        var watcherSummary = services.GetRequiredService<WatcherStateStore>().Summary();
+        // Recovery runs after Kestrel is listening, so Weir is not ready until it has finished.
+        var recoveryComplete = services.GetRequiredService<JobsStartupRecoveryService>().RecoveryCompleted.IsCompleted;
         var inputs = new ReadinessInputs(
             lifecycle.Elapsed,
             databaseReady,
@@ -100,11 +97,6 @@ public static class SystemEndpoints
 
     private static async Task<bool> DatabaseIsConnectedAsync(IServiceProvider services)
     {
-        if (!services.GetRequiredService<ServerLifecycle>().DatabaseOpened)
-        {
-            return false;
-        }
-
         var connected = await services.GetRequiredService<SqliteDatabase>().IsConnectedAsync().ConfigureAwait(false);
         if (!connected)
         {

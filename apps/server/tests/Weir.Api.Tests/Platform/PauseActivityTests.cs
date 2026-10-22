@@ -63,4 +63,18 @@ public sealed class PauseActivityTests
         var indefinite = await Json(await client.PutAsync("/api/v1/pause", new { csrf_token = await client.CsrfAsync(), paused = true, pause_for_minutes = (int?)null }));
         Assert.Null(indefinite["paused_until"]);
     }
+
+    [Fact]
+    public async Task A_pause_without_the_sessions_confirmation_token_is_refused_in_plain_words_and_changes_nothing()
+    {
+        await using var server = await StartServerAsync();
+        await TestDatabase.SeedAdminAsync(server);
+        var client = new ApiTestClient(server);
+        await client.SignInAsync();
+
+        using var refused = await client.PutAsync("/api/v1/pause", new { csrf_token = "not-the-session-token", paused = true });
+
+        Assert.Equal((HttpStatusCode.BadRequest, "Your confirmation token expired. Refresh the page and try again."), (refused.StatusCode, await Detail(refused)));
+        Assert.Null(await TestDatabase.ScalarStringAsync(server, Entries));
+    }
 }

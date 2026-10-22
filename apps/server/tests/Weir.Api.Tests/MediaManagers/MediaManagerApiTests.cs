@@ -194,7 +194,7 @@ public sealed class MediaManagerApiTests
 
         using (var noToken = await client.PostAsync(Connections, new { csrf_token = "bad", kind = "radarr", name = "Y" }))
         {
-            Assert.Equal((HttpStatusCode.BadRequest, "Invalid or expired CSRF token."), (noToken.StatusCode, await Detail(noToken)));
+            Assert.Equal((HttpStatusCode.BadRequest, "Your confirmation token expired. Refresh the page and try again."), (noToken.StatusCode, await Detail(noToken)));
         }
 
         using (var extra = await client.PostAsync(Connections, new { csrf_token = await client.CsrfAsync(), kind = "radarr", name = "Z", surprise = 1 }))
@@ -801,7 +801,7 @@ public sealed class MediaManagerApiTests
 
         using (var noToken = await client.PostAsync("/api/v1/system/reconciliation/repair", new { action = "remove_processing_temp_artifact", path = artifact, confirm = true }, origin))
         {
-            Assert.Equal((HttpStatusCode.BadRequest, "Invalid or expired CSRF token."), (noToken.StatusCode, await Detail(noToken)));
+            Assert.Equal((HttpStatusCode.BadRequest, "Your confirmation token expired. Refresh the page and try again."), (noToken.StatusCode, await Detail(noToken)));
         }
 
         using (var badOrigin = await client.PostAsync("/api/v1/system/reconciliation/repair", new { action = "remove_processing_temp_artifact", path = artifact, confirm = true, csrf_token = await client.CsrfAsync() }, new Dictionary<string, string> { ["Origin"] = "http://evil.example", ["X-Requested-With"] = "XMLHttpRequest" }))

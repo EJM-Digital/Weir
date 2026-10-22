@@ -41,7 +41,7 @@ internal sealed class ArtworkEndpointHandlers
     public async Task<ApiResult> GetPosterAsync(ApiRequest request)
     {
         await request.RequireUserAsync().ConfigureAwait(false);
-        var posterId = request.RouteValue("poster_id") ?? string.Empty;
+        var posterId = request.RouteValue("poster_id");
         if (!ArtworkKeys.IsPosterId(posterId))
         {
             throw new ApiException(StatusCodes.Status404NotFound, NoSuchPoster);

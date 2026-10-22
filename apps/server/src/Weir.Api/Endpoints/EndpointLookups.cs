@@ -25,7 +25,7 @@ internal static class EndpointLookups
     public static long ConnectionId(ApiRequest request, ValidationIssues issues)
     {
         ArgumentNullException.ThrowIfNull(request);
-        var raw = request.RouteValue("connection_id") ?? string.Empty;
+        var raw = request.RouteValue("connection_id");
         return FieldRules.TryInt(new WireString(raw), ["path", "connection_id"], 1, null, issues, out var value)
             ? value > long.MaxValue ? long.MaxValue : (long)value
             : 0;

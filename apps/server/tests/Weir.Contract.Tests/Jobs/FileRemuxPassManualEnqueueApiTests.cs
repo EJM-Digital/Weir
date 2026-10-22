@@ -47,8 +47,9 @@ public sealed class FileRemuxPassManualEnqueueApiTests(ServerFixture fixture) : 
 
         JobsApi.Expect(response, HttpStatusCode.BadRequest);
         var detail = Assert.IsAssignableFrom<JsonValue>(response.Fields["detail"]).GetValue<string>();
-        Assert.Contains("watched folder", detail.ToLowerInvariant());
-        Assert.Contains("path settings", detail.ToLowerInvariant());
+        Assert.Equal(
+            "Movies has no watched folder yet, so Weir cannot find that file. Set the watched folder on the Movies workflow, then try again.",
+            detail);
     }
 
     [Fact]
