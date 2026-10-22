@@ -2,5 +2,6 @@
   "state": "downloaded",
   "downloaded": true,
   "version": "9.9.9",
-  "failure": null
+  "failure": null,
+  "checkedAt": "2026-01-15T10:00:00Z"
 }

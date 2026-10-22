@@ -179,11 +179,27 @@ export async function browserOn(world, port, path = "/") {
   );
 }
 
-/** The browsers started on any address of Weir's ports, ended by their process ids, so the next check starts clean. */
+/**
+ * The browsers started on any address of Weir's ports, ended by their process ids until none is left, so the next check starts clean. A
+ * browser's launcher may still be handing over to a second process of the same command line when the first is ended, so one pass is not enough.
+ */
 export async function closeBrowsers(world, ...ports) {
-  for (const port of ports) {
-    for (const browser of (await world.machine.browsersShowing(`127.0.0.1:${port}`)) ?? []) await world.machine.killProcess(browser.pid);
-  }
+  await wait(
+    world,
+    async () => {
+      let left = 0;
+      for (const port of ports) {
+        for (const browser of (await world.machine.browsersShowing(`127.0.0.1:${port}`)) ?? []) {
+          left += 1;
+          await world.machine.killProcess(browser.pid);
+        }
+      }
+      return left === 0 ? true : undefined;
+    },
+    `the browsers on port ${ports.join(" and ")} to be gone`,
+    BROWSER_CEILING_MS,
+    500,
+  );
 }
 
 /** Fails when a browser was started on any of Weir's addresses: nothing but a click opens one. */

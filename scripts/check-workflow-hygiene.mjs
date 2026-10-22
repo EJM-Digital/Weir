@@ -7,7 +7,10 @@
 //     workflow's own jobs must); and
 //   * an output compared with a quoted string (`== 'true'`), never a bare boolean, which is never equal; and
 //   * no test step with `continue-on-error: true`, so a failed test fails the job and no later step can turn it green
-//     (an intermittent test is a bug to root-cause, not one to run twice).
+//     (an intermittent test is a bug to root-cause, not one to run twice); and
+//   * nothing that costs a lot runs on every pull request (docs/ci-cost.md): a workflow triggered by pull_request runs no
+//     mutation testing, and each of its Windows jobs (a Windows runner, a Windows scenario shard, or a job named for
+//     Windows) carries the path filter, a job-level `if:` on a `needs.changes.outputs.run_*` flag.
 //
 // A job with no timeout runs for six hours before GitHub stops it, and a Windows runner bills at twice the rate.
 //
@@ -63,6 +66,48 @@ export function findProblems(relative, source) {
   });
 
   failures.push(...findTolerantTestSteps(relative, lines));
+  failures.push(...findUnfilteredHeavyJobs(relative, lines));
+  return failures;
+}
+
+// A Windows runner bills at twice the Linux rate and a mutation run takes hours, so a pull request may start them only
+// through a path filter that says its change needs them. The workflow-level trigger is read from `on:`, and each job is
+// judged by its id, its runner and what it runs.
+const WINDOWS_SHARD = /scenarios-in-ci\.mjs[^\n]*\bwindows-(?:install|update|tray|files)\b|shard:\s*\[\s*windows-/;
+const PATH_FILTERED = /^ {4}if:.*needs\.changes\.outputs\.run_[A-Za-z0-9_]+\s*==\s*'true'/m;
+
+function findUnfilteredHeavyJobs(relative, lines) {
+  const failures = [];
+  const onAt = lines.findIndex((line) => /^on:/.test(line));
+  const triggers = [];
+  for (let i = onAt + 1; onAt >= 0 && i < lines.length && !/^\S/.test(lines[i]); i += 1) triggers.push(lines[i].split("#")[0]);
+  if (!triggers.some((line) => /^ {2}pull_request(?:_target)?:/.test(line))) return failures;
+
+  const code = lines.map((line) => line.split("#")[0]);
+  if (code.some((line) => /\bstryker\b/i.test(line))) {
+    failures.push(`${relative}: runs mutation testing and is triggered by a pull request. Mutation runs weekly, by hand and before a release only (docs/ci-cost.md).`);
+  }
+
+  const jobsAt = lines.findIndex((line) => /^jobs:/.test(line));
+  let job = null;
+  const finish = () => {
+    if (!job) return;
+    const body = job.lines.join("\n");
+    const windows = /windows/i.test(job.id) || /^ {4}runs-on:.*windows/im.test(body) || WINDOWS_SHARD.test(body);
+    if (windows && !PATH_FILTERED.test(body)) {
+      failures.push(`${relative}: job "${job.id}" runs on Windows and the workflow is triggered by a pull request, but the job has no path filter. Give it \`if: needs.changes.outputs.run_<name> == 'true'\` (docs/ci-cost.md).`);
+    }
+  };
+  for (let i = jobsAt + 1; jobsAt >= 0 && i < lines.length; i += 1) {
+    const opener = code[i].match(/^ {2}([A-Za-z0-9_-]+):\s*$/);
+    if (opener) {
+      finish();
+      job = { id: opener[1], lines: [] };
+    } else if (job) {
+      job.lines.push(code[i]);
+    }
+  }
+  finish();
   return failures;
 }
 
@@ -109,7 +154,7 @@ function main() {
     for (const failure of failures) console.error(`- ${failure}`);
     process.exit(1);
   }
-  console.log("Every workflow has least-privilege top-level permissions, a timeout on every job, compares outputs with quoted strings, and lets no test step continue on error.");
+  console.log("Every workflow has least-privilege top-level permissions, a timeout on every job, compares outputs with quoted strings, lets no test step continue on error, and starts no mutation run or unfiltered Windows job on a pull request.");
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {

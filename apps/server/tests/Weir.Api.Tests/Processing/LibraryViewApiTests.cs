@@ -13,7 +13,7 @@ namespace Weir.Api.Tests.Processing;
 /// </summary>
 public sealed class LibraryViewApiTests
 {
-    private const string FilmProbe = """
+    internal const string FilmProbe = """
     {"streams": [
       {"index": 0, "codec_type": "video", "codec_name": "hevc", "width": 3840, "height": 2160},
       {"index": 1, "codec_type": "audio", "codec_name": "eac3", "channels": 6, "channel_layout": "5.1(side)", "tags": {"language": "eng"}},
@@ -22,7 +22,7 @@ public sealed class LibraryViewApiTests
     ]}
     """;
 
-    private const string ShowProbe = """
+    internal const string ShowProbe = """
     {"streams": [
       {"index": 0, "codec_type": "video", "codec_name": "h264", "width": 1920, "height": 1080},
       {"index": 1, "codec_type": "audio", "codec_name": "ac3", "channels": 6, "tags": {"language": "eng"}}
@@ -41,10 +41,10 @@ public sealed class LibraryViewApiTests
 
     private static string ProblemsPath(long libraryId) => $"/api/v1/processing/libraries/{libraryId}/library-problems";
 
-    private static string FilesPath(long libraryId, string query = "") =>
+    internal static string FilesPath(long libraryId, string query = "") =>
         $"/api/v1/processing/libraries/{libraryId}/library-files" + (query.Length > 0 ? "?" + query : "");
 
-    private static async Task<(WeirTestServer Server, ApiTestClient Client, long LibraryId)> StartAsync()
+    internal static async Task<(WeirTestServer Server, ApiTestClient Client, long LibraryId)> StartAsync()
     {
         var server = await StartServerAsync();
         await TestDatabase.SeedAdminAsync(server);
@@ -61,7 +61,7 @@ public sealed class LibraryViewApiTests
     /// Seeds a scanned file with its derived facts, exactly as <c>LibraryScanStore</c> writes them — the facet
     /// rows included, since the view groups by those.
     /// </summary>
-    private static async Task SeedFileAsync(
+    internal static async Task SeedFileAsync(
         WeirTestServer server,
         long libraryId,
         string path,
@@ -324,12 +324,12 @@ public sealed class LibraryViewApiTests
         Assert.Equal(HttpStatusCode.NotFound, problemsNotFound.StatusCode);
     }
 
-    private static string CleanPath(long libraryId) => $"/api/v1/processing/libraries/{libraryId}/library-files/clean";
+    internal static string CleanPath(long libraryId) => $"/api/v1/processing/libraries/{libraryId}/library-files/clean";
 
-    private static string LeaveAlonePath(long libraryId) => $"/api/v1/processing/libraries/{libraryId}/library-files/leave-alone";
+    internal static string LeaveAlonePath(long libraryId) => $"/api/v1/processing/libraries/{libraryId}/library-files/leave-alone";
 
     /// <summary>Keep the video and the second audio track: the opposite of what the seeded library's rules would do.</summary>
-    private static object JapaneseOnlyChoice() => new
+    internal static object JapaneseOnlyChoice() => new
     {
         keep = new[]
         {

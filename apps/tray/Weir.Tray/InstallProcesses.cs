@@ -118,16 +118,20 @@ static class InstallProcesses
         var waiting = Stopwatch.StartNew();
         foreach (var server in asked)
         {
-            var remaining = timeouts.Graceful - waiting.Elapsed;
-            if (ExitsWithin(server.Process, remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero))
+            if (ExitsWithin(server.Process, Remaining(timeouts.Graceful, waiting.Elapsed)))
             {
                 stopped.Add(server.Process.Id);
                 log($"{why}: stopped {server.Name} (pid {server.Process.Id}) at {server.Executable} cleanly.");
             }
         }
 
-        foreach (var server in servers.Where(server => !stopped.Contains(server.Process.Id)))
+        foreach (var server in servers)
         {
+            if (stopped.Contains(server.Process.Id))
+            {
+                continue;
+            }
+
             if (TryKill(server, process => process.Kill(entireProcessTree: true), timeouts.AfterKill, log, why))
             {
                 stopped.Add(server.Process.Id);
@@ -136,7 +140,10 @@ static class InstallProcesses
         return stopped;
     }
 
-    private static bool ExitsWithin(Process process, TimeSpan timeout)
+    /// <summary>What is left of a wait that has already run for <paramref name="spent"/>; none once it is used up.</summary>
+    internal static TimeSpan Remaining(TimeSpan budget, TimeSpan spent) => budget > spent ? budget - spent : TimeSpan.Zero;
+
+    internal static bool ExitsWithin(Process process, TimeSpan timeout)
     {
         try
         {
@@ -148,7 +155,7 @@ static class InstallProcesses
         }
     }
 
-    private static bool TryKill(OwnProcess own, Action<Process> kill, TimeSpan wait, Action<string> log, string why)
+    internal static bool TryKill(OwnProcess own, Action<Process> kill, TimeSpan wait, Action<string> log, string why)
     {
         try
         {
@@ -165,7 +172,7 @@ static class InstallProcesses
     }
 
     /// <summary>The processes of this install, not yet stopped. The caller disposes each one.</summary>
-    private static List<OwnProcess> FindOwn(string root, bool sameSessionOnly, Action<string> log, string why)
+    internal static List<OwnProcess> FindOwn(string root, bool sameSessionOnly, Action<string> log, string why, Func<int>? currentSession = null)
     {
         var found = new List<OwnProcess>();
         var self = Environment.ProcessId;
@@ -174,7 +181,7 @@ static class InstallProcesses
         {
             try
             {
-                session = Process.GetCurrentProcess().SessionId;
+                session = (currentSession ?? (() => Process.GetCurrentProcess().SessionId))();
             }
             catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or PlatformNotSupportedException)
             {
@@ -200,7 +207,7 @@ static class InstallProcesses
         return found;
     }
 
-    private static bool IsOwn(Process proc, string name, int self, int? session, string root, Action<string> log, string why, out string ownExecutable)
+    internal static bool IsOwn(Process proc, string name, int self, int? session, string root, Action<string> log, string why, out string ownExecutable, Func<Process, string?>? executableOf = null)
     {
         ownExecutable = string.Empty;
         if (proc.Id == self)
@@ -216,7 +223,7 @@ static class InstallProcesses
                 return false;
             }
 
-            executable = proc.MainModule?.FileName;
+            executable = (executableOf ?? ExecutableOf)(proc);
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or NotSupportedException)
         {
@@ -233,5 +240,10 @@ static class InstallProcesses
         return true;
     }
 
-    private sealed record OwnProcess(Process Process, string Name, string Executable);
+    private static string? ExecutableOf(Process process) => PathOf(process.MainModule);
+
+    /// <summary>Where a process runs from; a process that has no main module has no path.</summary>
+    internal static string? PathOf(ProcessModule? module) => module?.FileName;
+
+    internal sealed record OwnProcess(Process Process, string Name, string Executable);
 }

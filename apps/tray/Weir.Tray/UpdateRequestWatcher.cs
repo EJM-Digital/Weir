@@ -160,7 +160,8 @@ sealed class UpdateRequestWatcher : IDisposable
         }
     }
 
-    private void Settled()
+    // The timer callback; internal so a test can run one that was already on its way when the watcher was disposed.
+    internal void Settled()
     {
         lock (_gate)
         {

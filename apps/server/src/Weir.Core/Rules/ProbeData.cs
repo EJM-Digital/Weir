@@ -72,6 +72,9 @@ public sealed record ProbeStreamInfo
     /// <summary><c>index</c> when it reads as an integer.</summary>
     public long? Index => RulesJson.TryInt(Get("index"), out var index) ? index : null;
 
+    /// <summary><c>channels</c> when it reads as an integer.</summary>
+    public long? Channels => RulesJson.TryInt(Get("channels"), out var channels) ? channels : null;
+
     /// <summary><c>codec_type</c>, stripped and lower-cased; empty when absent or not a string.</summary>
     public string CodecType => RulesJson.IsStr(Get("codec_type")) ? RulesJson.Lower(WireStrings.Strip(Get("codec_type")!.Value.GetString()!)) : string.Empty;
 

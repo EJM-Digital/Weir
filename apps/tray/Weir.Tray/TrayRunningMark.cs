@@ -8,18 +8,24 @@ namespace Weir.Tray;
 readonly record struct TrayRun(int ProcessId, long StartedAtTicks, string Executable)
 {
     /// <summary>This process.</summary>
-    internal static TrayRun ThisProcess()
+    internal static TrayRun ThisProcess() => ThisProcess(Environment.ProcessPath);
+
+    /// <param name="processPath">Where this process runs from; nothing is recorded for a process Windows names no path for.</param>
+    internal static TrayRun ThisProcess(string? processPath)
     {
         using var self = Process.GetCurrentProcess();
-        return new TrayRun(self.Id, self.StartTime.ToUniversalTime().Ticks, Environment.ProcessPath ?? string.Empty);
+        return new TrayRun(self.Id, self.StartTime.ToUniversalTime().Ticks, processPath ?? string.Empty);
     }
 
     /// <summary>Whether this very process, not a later one that was given its id, is still running.</summary>
-    internal bool IsRunning()
+    internal bool IsRunning() => IsRunning(Process.GetProcessById);
+
+    /// <param name="open">Opens the process with the given id; throws <see cref="ArgumentException"/> when there is none.</param>
+    internal bool IsRunning(Func<int, Process> open)
     {
         try
         {
-            using var process = Process.GetProcessById(ProcessId);
+            using var process = open(ProcessId);
             return !process.HasExited && process.StartTime.ToUniversalTime().Ticks == StartedAtTicks;
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)

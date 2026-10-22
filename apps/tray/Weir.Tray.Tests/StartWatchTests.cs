@@ -49,6 +49,18 @@ public sealed class StartWatchTests
     }
 
     [Fact]
+    public void Reporting_ready_again_on_either_channel_does_not_take_the_report_back()
+    {
+        var watch = Watch();
+        watch.Check(Reading("ready", at: TimeSpan.FromSeconds(1)), null);
+        Assert.True(watch.ReportedReady);
+
+        watch.Check(Reading("ready", at: TimeSpan.FromSeconds(2)), Reading("ready", at: TimeSpan.FromSeconds(3)));
+
+        Assert.True(watch.ReportedReady);
+    }
+
+    [Fact]
     public void A_server_that_has_reported_nothing_is_hung_only_after_the_first_progress_window()
     {
         var watch = Watch();

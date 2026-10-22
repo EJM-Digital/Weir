@@ -25,8 +25,8 @@ internal sealed class SystemOverviewEndpointHandlers
 
     public SystemOverviewEndpointHandlers(SystemOverviewReader overview, PeriodicTaskRegistry tasks)
     {
-        _overview = overview ?? throw new ArgumentNullException(nameof(overview));
-        _tasks = tasks ?? throw new ArgumentNullException(nameof(tasks));
+        _overview = overview;
+        _tasks = tasks;
     }
 
     public async Task<ApiResult> GetOverviewAsync(ApiRequest request)

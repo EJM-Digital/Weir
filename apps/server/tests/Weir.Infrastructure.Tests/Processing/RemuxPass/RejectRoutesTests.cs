@@ -394,4 +394,60 @@ public sealed class RejectRoutesTests : IDisposable
         Assert.False(((WireBool)outcome.DetailOrEmpty["source_removed"]!).Value);
         Assert.True(File.Exists(source));
     }
+
+    private static readonly WorkflowManagerLinks LinkedToDeluno = new(["deluno"]);
+
+    [Fact]
+    public void An_accepted_rejection_for_a_linked_workflow_leaves_the_download_for_the_manager_to_remove()
+    {
+        var source = _folders.Source("Film/film.mkv");
+
+        var outcome = RejectRoutes.AfterAcceptedRejection("Deluno", source, _folders.Watched, LinkedToDeluno);
+
+        Assert.True(outcome.Done);
+        Assert.Contains("Deluno will remove the download; Weir left it in place.", outcome.Reason, StringComparison.Ordinal);
+        Assert.False(((WireBool)outcome.DetailOrEmpty["source_removed"]).Value);
+        Assert.True(File.Exists(source));
+    }
+
+    [Fact]
+    public void An_accepted_rejection_for_a_download_already_gone_says_so_without_removing_anything()
+    {
+        var source = _folders.Source("Film/film.mkv");
+        File.Delete(source);
+
+        var outcome = RejectRoutes.AfterAcceptedRejection("Deluno", source, _folders.Watched, WorkflowManagerLinks.None);
+
+        Assert.True(outcome.Done);
+        Assert.EndsWith("The download was already removed.", outcome.Reason, StringComparison.Ordinal);
+        Assert.True(((WireBool)outcome.DetailOrEmpty["source_removed"]).Value);
+    }
+
+    [Fact]
+    public void An_accepted_rejection_for_a_workflow_with_no_manager_removes_the_download_here()
+    {
+        var source = _folders.Source("Film/film.mkv");
+
+        var outcome = RejectRoutes.AfterAcceptedRejection("Deluno", source, _folders.Watched, WorkflowManagerLinks.None);
+
+        Assert.True(outcome.Done);
+        Assert.True(((WireBool)outcome.DetailOrEmpty["source_removed"]).Value);
+        Assert.False(File.Exists(source));
+    }
+
+    [Fact]
+    public void An_accepted_rejection_for_a_file_outside_the_watched_folder_leaves_it_and_says_to_remove_it_by_hand()
+    {
+        using var elsewhere = new TempDirectory();
+        var source = elsewhere.Join("film.mkv");
+        File.WriteAllBytes(source, [1, 2, 3]);
+
+        var outcome = RejectRoutes.AfterAcceptedRejection("Deluno", source, _folders.Watched, WorkflowManagerLinks.None);
+
+        Assert.True(outcome.Done);
+        Assert.Contains("could not remove the download", outcome.Reason, StringComparison.Ordinal);
+        Assert.Contains("Remove it by hand", outcome.Reason, StringComparison.Ordinal);
+        Assert.False(((WireBool)outcome.DetailOrEmpty["source_removed"]).Value);
+        Assert.True(File.Exists(source));
+    }
 }

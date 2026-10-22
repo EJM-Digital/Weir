@@ -177,6 +177,19 @@ public sealed class ProcessingLibraryDiscoveryApiTests
         Assert.Contains("address and API key", await Detail(response), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Drift_for_a_connection_with_no_saved_key_cannot_be_judged()
+    {
+        var (server, client, _) = await StartAsync();
+        await using var _server = server;
+        var connectionId = await CreateConnectionAsync(client, apiKey: null);
+
+        using var response = await client.GetAsync(DriftPath(connectionId));
+
+        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
+        Assert.Contains("address and API key", await Detail(response), StringComparison.Ordinal);
+    }
+
     // --- import -----------------------------------------------------------------------------------
 
     [Fact]
@@ -613,7 +626,7 @@ public sealed class ProcessingLibraryDiscoveryApiTests
             using var response = await client.PostAsync(UnlinkPath(libraryId), new { csrf_token = "bad" });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-            Assert.Equal("Invalid or expired CSRF token.", await Detail(response));
+            Assert.Equal("Your confirmation token expired. Refresh the page and try again.", await Detail(response));
         }
         finally
         {

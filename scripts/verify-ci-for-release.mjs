@@ -31,11 +31,13 @@ export const ACCEPTED_EVENTS = ["push", "workflow_dispatch"];
 export const REQUIRED_EVIDENCE = [{ job: "ci-passed", steps: ["Every job that was due passed"] }];
 
 // Judges one run against the evidence. `run` has event, status, conclusion; `jobs` is the run's jobs, each with
-// name, conclusion and steps[{name, conclusion}]. Returns the reasons it does not qualify; empty means it does.
-export function evaluateRun(run, jobs, evidence = REQUIRED_EVIDENCE) {
+// name, conclusion and steps[{name, conclusion}]. Returns the reasons it does not qualify; empty means it does. `events` are
+// the events whose runs test a tree rather than a merge of a branch into its base (scripts/verify-heavy-ci-for-release.mjs
+// accepts a nightly schedule run too).
+export function evaluateRun(run, jobs, evidence = REQUIRED_EVIDENCE, events = ACCEPTED_EVENTS) {
   const problems = [];
-  if (!ACCEPTED_EVENTS.includes(run.event)) {
-    problems.push(`event is ${run.event}, and only ${ACCEPTED_EVENTS.join(" or ")} runs test this exact tree`);
+  if (!events.includes(run.event)) {
+    problems.push(`event is ${run.event}, and only ${events.join(" or ")} runs test this exact tree`);
   }
   if (run.status !== "completed") {
     problems.push(`still ${run.status}`);
@@ -62,11 +64,11 @@ export function evaluateRun(run, jobs, evidence = REQUIRED_EVIDENCE) {
   return problems;
 }
 
-function gh(args) {
+export function gh(args) {
   return JSON.parse(execFileSync("gh", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
 }
 
-function runJobs(repository, runId) {
+export function runJobs(repository, runId) {
   return gh(["run", "view", String(runId), "--repo", repository, "--json", "jobs"]).jobs;
 }
 

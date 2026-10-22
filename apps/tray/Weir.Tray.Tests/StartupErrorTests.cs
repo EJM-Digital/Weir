@@ -37,6 +37,23 @@ public sealed class StartupErrorTests : IDisposable
     }
 
     [Fact]
+    public void A_headline_followed_by_an_empty_line_uses_the_headline_for_the_balloon_too()
+    {
+        File.WriteAllText(ErrorPath, $"{Headline}\n\n");
+
+        Assert.Equal(new StartupError(Headline, Headline), StartupNotes.ReadError(_home.Path, _serverStarted));
+    }
+
+    [Fact]
+    public void A_note_is_read_whenever_it_was_written_for_a_server_whose_start_is_not_known()
+    {
+        File.WriteAllText(ErrorPath, $"{Headline}\n{Sentence}");
+        File.SetLastWriteTimeUtc(ErrorPath, _serverStarted - TimeSpan.FromDays(1));
+
+        Assert.Equal(new StartupError(Headline, Sentence), StartupNotes.ReadError(_home.Path, serverStartedUtc: null));
+    }
+
+    [Fact]
     public void A_reason_the_last_server_left_is_not_this_ones()
     {
         File.WriteAllText(ErrorPath, $"{Headline}\n{Sentence}");

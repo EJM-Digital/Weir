@@ -14,7 +14,11 @@ static class UpdateChannel
         new(repoUrl, IncludesPreReleases(runningVersion), downloader);
 
     internal static ReleaseFeedSource SourceForThisBuild(string repoUrl) =>
-        SourceFor(repoUrl, typeof(UpdateChannel).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion);
+        SourceFor(repoUrl, VersionOf(typeof(UpdateChannel).Assembly));
+
+    /// <summary>The version an assembly was built as, or null when it carries none.</summary>
+    internal static string? VersionOf(System.Reflection.Assembly assembly) =>
+        assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 
     /// <summary>
     /// Whether an install running <paramref name="runningVersion"/> is offered pre-releases. A pre-release has a hyphen in its

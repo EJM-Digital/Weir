@@ -6,10 +6,10 @@ interface IBalloonSurface
     void Show(int timeoutMs, string title, string text, ToolTipIcon icon);
 }
 
-/// <summary>The tray icon as the place balloons are drawn.</summary>
-sealed class NotifyIconBalloons(NotifyIcon notifyIcon) : IBalloonSurface
+/// <summary>The shell's notification as the place balloons are drawn.</summary>
+sealed class ShellBalloons(ITrayShell shell) : IBalloonSurface
 {
-    public void Show(int timeoutMs, string title, string text, ToolTipIcon icon) => notifyIcon.ShowBalloonTip(timeoutMs, title, text, icon);
+    public void Show(int timeoutMs, string title, string text, ToolTipIcon icon) => shell.ShowBalloon(title, text, icon, timeoutMs);
 }
 
 /// <summary>

@@ -66,13 +66,13 @@ test("neither publish job may wait for the other", () => {
 });
 
 test("each publish job needs every shared check and its own build's checks", () => {
-  for (const job of ["ci-passed", "golden-path", "validate", "e2e", "windows-smoke"]) {
+  for (const job of ["ci-passed", "golden-path", "windows-proof", "mutation-proof", "validate", "e2e", "windows-smoke"]) {
     rejects(
       editJob(real.release, "publish-windows", (body) => withoutNeed(body, job)),
       new RegExp(`publish-windows does not need ${job}`),
     );
   }
-  for (const job of ["ci-passed", "golden-path", "validate", "e2e", "docker-candidate", "docker-arm64"]) {
+  for (const job of ["ci-passed", "golden-path", "windows-proof", "mutation-proof", "validate", "e2e", "docker-candidate", "docker-arm64"]) {
     rejects(
       editJob(real.release, "publish-docker", (body) => withoutNeed(body, job)),
       new RegExp(`publish-docker does not need ${job}`),
@@ -270,4 +270,40 @@ test("the golden-path job cannot be skipped for a release candidate or anything 
     editJob(real.release, "golden-path", (body) => body.replace("    timeout-minutes: 10", "    timeout-minutes: 10\n    continue-on-error: true")),
     skipped,
   );
+});
+
+test("a release needs the Windows legs and the mutation scores to have passed, and no step of either may be dropped or skipped", () => {
+  for (const [job, script] of [["windows-proof", "windows"], ["mutation-proof", "mutation"]]) {
+    rejects(editJob(real.release, job, (body) => body.replace(`verify-heavy-ci-for-release.mjs ${script}`, "something-else.mjs")), new RegExp(`${job} job`));
+    rejects(editJob(real.release, job, (body) => body.replace("          fetch-depth: 0\n", "")), /fetch-depth: 0/);
+    rejects(editJob(real.release, job, (body) => body.replace("actions: read", "actions: write")), /actions: (read|write)/);
+    rejects(
+      editJob(real.release, job, (body) => body.replace("    timeout-minutes: 10", "    timeout-minutes: 10\n    if: ${{ contains(github.ref_name, '-') }}")),
+      new RegExp(`${job} job must run, and must fail the release`),
+    );
+    rejects(
+      editJob(real.release, job, (body) => body.replace("    timeout-minutes: 10", "    timeout-minutes: 10\n    continue-on-error: true")),
+      new RegExp(`${job} job must run, and must fail the release`),
+    );
+  }
+});
+
+test("the Windows legs stay their own CI jobs with their own flags, so a pull request can skip them", () => {
+  const withoutFlag = (job, flag) => real.ci.replace(new RegExp(`(\n  ${job}:\n(?:.*\n)*?    )if: needs.changes.outputs.${flag} == 'true'`), "$1if: true");
+  for (const [job, flag] of [["contract-windows", "run_contract_windows"], ["packaging-windows", "run_packaging_windows"]]) {
+    assert.throws(() => checkReleaseGates({ ...real, ci: withoutFlag(job, flag) }), new RegExp(`${job} job is missing required release gate marker`));
+  }
+  assert.throws(() => checkReleaseGates({ ...real, ci: real.ci.replace("platforms: '[\"windows\"]'", "platforms: '[\"linux\", \"windows\"]'") }), /platforms/);
+});
+
+test("ci-passed keeps the step that succeeds only when the Windows legs ran", () => {
+  assert.throws(() => checkReleaseGates({ ...real, ci: real.ci.replace("- name: The Windows legs ran and passed\n", "- name: Something else\n") }), /The Windows legs ran and passed/);
+});
+
+test("the mutation workflow is never triggered by a pull request and keeps the step the release reads", () => {
+  const triggered = real.mutation.replace("  workflow_dispatch:\n", "  workflow_dispatch:\n  pull_request:\n");
+  assert.throws(() => checkReleaseGates({ ...real, mutation: triggered }), /triggered by a pull request/);
+  const targeted = real.mutation.replace("  workflow_dispatch:\n", "  workflow_dispatch:\n  pull_request_target:\n");
+  assert.throws(() => checkReleaseGates({ ...real, mutation: targeted }), /triggered by a pull request/);
+  assert.throws(() => checkReleaseGates({ ...real, mutation: real.mutation.replace("- name: Mutation scores against the floors\n", "- name: Something else\n") }), /Mutation scores against the floors/);
 });

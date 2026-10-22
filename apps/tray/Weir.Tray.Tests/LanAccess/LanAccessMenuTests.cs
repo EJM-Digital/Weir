@@ -21,7 +21,7 @@ public sealed class LanAccessMenuTests : IDisposable
 
     private string Home => _temp.Path;
 
-    private string Log => File.ReadAllText(Path.Combine(Home, "tray-host.log"));
+    private string Log => LogFile.ReadAllText(Path.Combine(Home, "tray-host.log"));
 
     private ListenScope? Saved() => LanAccessSetting.Read(Home, _ => { });
 

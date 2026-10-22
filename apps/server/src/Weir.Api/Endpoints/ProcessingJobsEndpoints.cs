@@ -53,13 +53,13 @@ internal sealed class ProcessingJobsEndpointHandlers
         FileStateStore files,
         LibraryStore libraries)
     {
-        _jobsInspection = jobsInspection ?? throw new ArgumentNullException(nameof(jobsInspection));
-        _pendingJobCancellation = pendingJobCancellation ?? throw new ArgumentNullException(nameof(pendingJobCancellation));
-        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
-        _holdDiagnostic = holdDiagnostic ?? throw new ArgumentNullException(nameof(holdDiagnostic));
-        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
-        _files = files ?? throw new ArgumentNullException(nameof(files));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
+        _jobsInspection = jobsInspection;
+        _pendingJobCancellation = pendingJobCancellation;
+        _jobs = jobs;
+        _holdDiagnostic = holdDiagnostic;
+        _connections = connections;
+        _files = files;
+        _libraries = libraries;
     }
 
     public async Task<ApiResult> GetInspectionAsync(ApiRequest request)
@@ -158,6 +158,15 @@ internal sealed class ProcessingJobsEndpointHandlers
         return ApiRoutes.Ok(new WireObject().Set("ok", true).Set("job_id", id).Set("status", ProcessingJobStatus.Completed));
     }
 
+    internal static string VerdictName(CandidateGateVerdict verdict) => verdict switch
+    {
+        CandidateGateVerdict.Proceed => "proceed",
+        CandidateGateVerdict.WaitUpstream => "wait_upstream",
+        CandidateGateVerdict.NotHeld => "not_held",
+        CandidateGateVerdict.NoUpstreamSignal => "no_upstream_signal",
+        _ => throw new ArgumentOutOfRangeException(nameof(verdict), verdict, null),
+    };
+
     public async Task<ApiResult> GetWhyHeldAsync(ApiRequest request)
     {
         await request.RequireUserAsync().ConfigureAwait(false);
@@ -172,20 +181,13 @@ internal sealed class ProcessingJobsEndpointHandlers
             ?? throw new ApiException(StatusCodes.Status404NotFound, "The workflow this file belonged to no longer exists.");
 
         var outcome = await _holdDiagnostic.EvaluateAsync(uow, file, library, _connections, request.Context.RequestAborted).ConfigureAwait(false);
-        var verdict = outcome.Verdict switch
-        {
-            CandidateGateVerdict.Proceed => "proceed",
-            CandidateGateVerdict.WaitUpstream => "wait_upstream",
-            CandidateGateVerdict.NotHeld => "not_held",
-            _ => "no_upstream_signal",
-        };
         return ApiRoutes.Ok(new WireObject()
             .Set("file_id", id)
             .Set("relative_path", file.RelativePath)
             .Set("library_name", library.Name)
             .Set("recorded_status", file.Status)
             .Set("recorded_reason", file.StatusReason)
-            .Set("verdict", verdict)
+            .Set("verdict", VerdictName(outcome.Verdict))
             .Set("owned", outcome.Owned)
             .Set("blocked_upstream", outcome.BlockedUpstream)
             .Set("blocked_by_connection", outcome.BlockedByConnection)

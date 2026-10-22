@@ -12,7 +12,7 @@ public sealed class SystemTasksFrames
 {
     private readonly PeriodicTaskRegistry _tasks;
 
-    public SystemTasksFrames(PeriodicTaskRegistry tasks) => _tasks = tasks ?? throw new ArgumentNullException(nameof(tasks));
+    public SystemTasksFrames(PeriodicTaskRegistry tasks) => _tasks = tasks;
 
     /// <summary>The frames for one open stream, from when it opens until it ends.</summary>
     public async IAsyncEnumerable<string> ForAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)

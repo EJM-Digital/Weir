@@ -1,16 +1,18 @@
 <#
-    The scenarios that need the real Deluno in the VM: workflows set up from it, and the hand-offs, resends and outcomes Deluno's
-    own suite really made, read through Deluno's API with a key that never leaves the VM.
+    The scenarios that need the real Deluno in the VM: workflows set up from it, and the hand-offs, resends and outcomes of its
+    films, read through Deluno's API with a key that never leaves the VM.
 
-    Deluno's side of a hand-off cannot be made by a script (a hand-off starts when a download finishes in one of its clients), so
-    these scenarios follow the real ones from both ends and drive what Deluno does offer: its own send-again for an outcome.
-    A precondition that is not met (no Deluno answering, no key, no hand-off of the kind) is recorded not-applicable with the
-    reason, and a record with any not-applicable scenario sets no success status.
+    The state they need is put there by the run itself (Weir.Scenarios.DelunoSetup.ps1): a library that refines before import with
+    Weir as its processor, and one real hand-off when the build under test has none. Deluno's own suite may have made more, and
+    they are followed too. The scenarios then follow the hand-offs from both ends and drive what Deluno does offer: its own
+    send-again for an outcome. A precondition that is not met because there is no Deluno to ask (nothing answering, no key) is
+    recorded not-applicable with the reason, and a record with any not-applicable scenario sets no success status. Deluno refusing
+    a step of the setup is a failure.
 #>
 
 # --- the key (it never leaves this machine) ---------------------------------------------------------------------------------
 
-# The first way to have a key: the Deluno session of a combined round mints a read,imports key and leaves it in this machine, in a
+# The first way to have a key: the Deluno session of a combined round mints a read,imports,write key and leaves it in this machine, in a
 # file holding that one line (the key, nothing else). It is read here, never copied out, and the file is deleted at once so it is
 # not left lying around. Returns the key, or $null when there is no file. A file that is there but unusable is a failure.
 function Read-DelunoKeyFile {
@@ -48,9 +50,9 @@ function Get-DelunoApiKey {
     Register-Secret $signedIn.accessToken
     Add-Evidence "created a throwaway Deluno account 'weir-scenarios' on the Deluno at $url (it had none); its password was made here and is kept nowhere"
     $minted = Invoke-RestMethod -Method POST -Uri "$url/api/api-keys" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $($signedIn.accessToken)" } `
-        -Body (@{ name = 'Weir scenarios (throwaway)'; scopes = 'read,imports' } | ConvertTo-Json -Compress) -TimeoutSec 30
+        -Body (@{ name = 'Weir scenarios (throwaway)'; scopes = 'read,imports,write' } | ConvertTo-Json -Compress) -TimeoutSec 30
     Register-Secret $minted.apiKey
-    Add-Evidence 'minted an API key (scopes read, imports) through Deluno''s own API: ****'
+    Add-Evidence 'minted an API key (scopes read, imports, write) through Deluno''s own API: ****'
     [pscustomobject]@{ Key = $minted.apiKey; Reason = $null }
 }
 
@@ -78,6 +80,16 @@ function Test-DelunoPreconditions {
     $null
 }
 
+# What Deluno said with an error status. Windows PowerShell 5.1 leaves it in the response's stream, not in the error record.
+function Read-ErrorBody {
+    param($Response)
+    try {
+        $reader = New-Object IO.StreamReader($Response.GetResponseStream())
+        try { $reader.ReadToEnd() } finally { $reader.Dispose() }
+    }
+    catch { '' }
+}
+
 # One call to Deluno with the key. Never throws on an HTTP error; the key is never written anywhere.
 function Invoke-Deluno {
     param([string] $Method = 'GET', [Parameter(Mandatory)] [string] $Path, $Body)
@@ -87,7 +99,7 @@ function Invoke-Deluno {
     $text = ''
     try { $response = Invoke-WebRequest @parameters; $status = [int]$response.StatusCode; $text = [string]$response.Content }
     catch {
-        if ($_.Exception.Response) { $status = [int]$_.Exception.Response.StatusCode; $text = if ($_.ErrorDetails) { [string]$_.ErrorDetails.Message } else { '' } }
+        if ($_.Exception.Response) { $status = [int]$_.Exception.Response.StatusCode; $text = if ($_.ErrorDetails -and $_.ErrorDetails.Message) { [string]$_.ErrorDetails.Message } else { Read-ErrorBody $_.Exception.Response } }
         else { $text = $_.Exception.Message }
     }
     $json = $null
@@ -152,27 +164,21 @@ function Get-DelunoLibraries {
 function Scenario_workflows_from_deluno {
     $unmet = Test-DelunoPreconditions
     if ($unmet) { return $unmet }
-    # A Deluno nobody has set a library to refine before import on (its suite does that) has nothing for Weir to set up; waiting would only time out.
-    $libraries = Get-DelunoLibraries
-    if ($libraries.Refining.Count -eq 0) {
-        return New-NotApplicable "The Deluno at $($script:Ctx.DelunoUrl) lists $($libraries.Libraries.Count) library(ies) and none is set to refine before import, so Weir has no workflow to set up from it. Deluno's own suite sets its libraries up (and makes its hand-offs) before this phase."
-    }
+    # A Deluno nobody has set a library to refine before import on has nothing for Weir to set up, so the run sets it up through Deluno's API.
+    # Deluno refusing that is a failure, not a reason to skip.
+    Initialize-DelunoRefiningLibrary | Out-Null
     $session = $script:Ctx.Session
     $connected = Ensure-WeirDelunoConnection
     $how = $connected.How
     $connectionId = $connected.Id
-    $workflows = Wait-Until -What 'Weir to set up its workflows from Deluno' -TimeoutSeconds 120 -IntervalMilliseconds 2000 -Probe {
-        Invoke-Weir -Session $session -Method POST -Path "/api/v1/media-managers/connections/$connectionId/test" -Body @{} | Out-Null
-        $linked = @((Get-WeirJson $session '/api/v1/processing/libraries') | Where-Object { $_.folders_synced_from_connection_id -eq $connectionId -and $_.watched_folder -and $_.output_folder })
-        if ($linked.Count -ge 1) { $linked }
-    }
+    $workflows = Wait-WeirWorkflowsFromDeluno
     foreach ($workflow in $workflows) {
         Assert-That (@($workflow.manager_connection_ids) -contains $connectionId) "'$($workflow.name)' is linked to Deluno"
         Assert-That ($workflow.watched_folder -and $workflow.output_folder) "'$($workflow.name)' has its folders from Deluno (watched $($workflow.watched_folder), output $($workflow.output_folder))"
         $chain = Get-WeirJson $session "/api/v1/processing/libraries/$($workflow.id)/folder-chain"
         Assert-That ($chain.ready -eq $true) "the folder chain for '$($workflow.name)' is ready"
     }
-    "Weir $how; $($workflows.Count) workflow(s) are set up from Deluno ($(@($workflows | ForEach-Object { $_.name }) -join ', ')), linked, with their folders from Deluno and every step of the folder chain ready."
+    "Weir $how; $($workflows.Count) workflow(s) are set up from Deluno ($(@($workflows | ForEach-Object { $_.name }) -join ', ')), linked, with their folders from Deluno and every step of the folder chain ready.$(Get-DelunoMadeNote)"
 }
 
 # --- which Weir handled a hand-off ---------------------------------------------------------------------------------------
@@ -193,13 +199,6 @@ function Split-HandoffsByWeir {
     [pscustomobject]@{ Build = $build.ToArray(); Previous = $previous.ToArray(); Since = $since }
 }
 
-# The not-applicable answer for a scenario whose hand-offs were all made before the build under test took over: what it needs.
-function New-NoHandoffByBuild {
-    param([Parameter(Mandatory)] $Split, [Parameter(Mandatory)] [string] $Need)
-    New-NotApplicable ("$($Split.Previous.Count) hand-off(s) from Deluno exist and none was made after the build under test began answering ($($Split.Since.Utc.ToString('u')); $($Split.Since.Because)), so the previous release handled them all and what Weir recorded for them says nothing about the build. " +
-        "$Need Deluno's suite has to make its hand-offs while the build under test is the Weir installed: install the build over the Weir Deluno's picker installed first (Invoke-WeirScenarios.ps1 -Phases Update), then run Deluno's films, resends and outages, then the rest (-Phases WithDeluno,Fresh).")
-}
-
 # Deluno's completed film hand-offs.
 function Get-CompletedFilmHandoffs {
     @(Get-DelunoHandoffs | Where-Object { $_.mediaType -eq 'movies' -and $_.status -eq 'completed' })
@@ -210,10 +209,8 @@ function Get-CompletedFilmHandoffs {
 function Scenario_deluno_film_handoff {
     $unmet = Test-DelunoPreconditions
     if ($unmet) { return $unmet }
-    $films = @(Get-CompletedFilmHandoffs)
-    if ($films.Count -eq 0) { return New-NotApplicable 'Deluno has made no completed film hand-off, so there is no film to follow through Weir. Deluno''s own suite makes them (its torrent and Usenet films) before this phase.' }
-    $split = Split-HandoffsByWeir -Handoffs $films
-    if ($split.Build.Count -eq 0) { return New-NoHandoffByBuild -Split $split -Need 'This scenario follows the films the build under test cleaned for Deluno.' }
+    $split = Get-OrMakeBuildFilmHandoffs
+    Assert-That ($split.Build.Count -ge 1) 'Deluno has a completed film hand-off made after the build under test began answering'
     $weirFiles = @(Get-ScenarioFiles)
     $followed = 0
     foreach ($film in $split.Build) {
@@ -228,7 +225,7 @@ function Scenario_deluno_film_handoff {
     }
     $imported = @($split.Build | Where-Object { $o = Get-OutcomeOf $_; $o -and $o.outcome -eq 'imported' }).Count
     Assert-That ($imported -ge 1) 'at least one film Deluno handed to the build under test was imported by Deluno'
-    "Followed $followed completed film hand-off(s) Deluno made after the build under test took over ($imported imported) through Weir: each shows as processed, with Deluno's imported answer recorded against it. $($split.Previous.Count) hand-off(s) made before that, by the previous release, were not judged."
+    "Followed $followed completed film hand-off(s) Deluno made after the build under test took over ($imported imported) through Weir: each shows as processed, with Deluno's imported answer recorded against it. $($split.Previous.Count) hand-off(s) made before that, by the previous release, were not judged.$(Get-DelunoMadeNote)"
 }
 
 # --- deluno-release-with-extra ------------------------------------------------------------------------------------------
@@ -242,14 +239,13 @@ $script:ExtraExtensions = '.mkv', '.mp4', '.m4v', '.avi', '.mov', '.wmv', '.webm
 function Scenario_deluno_release_with_extra {
     $unmet = Test-DelunoPreconditions
     if ($unmet) { return $unmet }
+    Initialize-DelunoRefiningLibrary | Out-Null
     $connectionId = (Ensure-WeirDelunoConnection).Id
+    Wait-WeirWorkflowsFromDeluno | Out-Null
     $fed = @((Get-WeirJson $script:Ctx.Session '/api/v1/processing/libraries') | Where-Object { @($_.manager_connection_ids) -contains $connectionId })
-    if ($fed.Count -eq 0) { return New-NotApplicable 'No Weir workflow is fed by this Deluno, so there is no release to look at.' }
-    $films = @(Get-CompletedFilmHandoffs)
-    if ($films.Count -eq 0) { return New-NotApplicable 'Deluno has made no completed film hand-off, so there is no release to look at.' }
-    $split = Split-HandoffsByWeir -Handoffs $films
-    $need = 'This scenario needs a release the build under test cleaned for Deluno whose folder still holds a film and an extra under the workflow''s minimum size.'
-    if ($split.Build.Count -eq 0) { return New-NoHandoffByBuild -Split $split -Need $need }
+    Assert-That ($fed.Count -ge 1) 'a Weir workflow is fed by this Deluno'
+    $split = Get-OrMakeBuildFilmHandoffs
+    Assert-That ($split.Build.Count -ge 1) 'Deluno has a completed film hand-off made after the build under test began answering'
     $weirFiles = @(Get-ScenarioFiles)
     foreach ($handoff in $split.Build) {
         $folder = [string](Get-Prop $handoff 'sourcePath')
@@ -276,23 +272,32 @@ function Scenario_deluno_release_with_extra {
         Assert-That ((Get-Prop $counts 'processing_failed') -eq 0 -and (Get-Prop $counts 'rejected') -eq 0) "nothing in '$($workflow.name)' needs the person (failed $(Get-Prop $counts 'processing_failed'), rejected $(Get-Prop $counts 'rejected'))"
         return "In '$($workflow.name)', the release at $folder holds the film $($copies[0].relative_path) (processed) and $($extras.Count) extra(s) under the $($workflow.min_file_size_mb) MB minimum ($((@($extras | ForEach-Object { $_.Name + ' ' + $_.Length + ' bytes' }) -join ', '))): they are still in the client's folder, Weir wrote none of them to its output, and it either never saw them or left them alone as skipped; nothing in the workflow needs the person."
     }
-    New-NotApplicable "None of the $($split.Build.Count) completed film hand-off(s) the build under test handled has a source folder that still exists and holds a video file under its workflow's minimum size (a workflow with a minimum of 0 MB has no extras). $need Deluno's suite has to leave such a release in the client's completed folder until the scenarios have run (its films group does, and its Remove-this-copy scenarios use films of their own)."
+    throw "None of the $($split.Build.Count) completed film hand-off(s) the build under test handled has a source folder that still exists and holds a video file under its workflow's minimum size (a workflow with a minimum of 0 MB has no extras). The release this run makes holds one, and Deluno's download client has to leave it in its completed folder until the scenarios have run."
 }
 
 # --- deluno-resend ------------------------------------------------------------------------------------------------------
 
-function Scenario_deluno_resend {
-    $unmet = Test-DelunoPreconditions
-    if ($unmet) { return $unmet }
+# An imported hand-off whose outcome Deluno delivered and Weir recorded: { Handoff; Copies }, or $null.
+function Find-ImportedHandoffInWeir {
     $weirFiles = @(Get-ScenarioFiles)
-    $chosen = $null
     foreach ($handoff in Get-DelunoHandoffs) {
         $outcome = Get-OutcomeOf $handoff
         if (-not $outcome -or $outcome.outcome -ne 'imported' -or $outcome.delivery -notin 'delivered', 'settled') { continue }
         $copies = @(Find-WeirFilesFor -Handoff $handoff -WeirFiles $weirFiles | Where-Object { (Get-Prop $_.handback 'outcome') -eq 'imported' })
-        if ($copies.Count -ge 1) { $chosen = [pscustomobject]@{ Handoff = $handoff; Copies = $copies }; break }
+        if ($copies.Count -ge 1) { return [pscustomobject]@{ Handoff = $handoff; Copies = $copies } }
     }
-    if (-not $chosen) { return New-NotApplicable 'Deluno has no imported hand-off with its outcome delivered and recorded in Weir, so there is nothing to send again.' }
+    $null
+}
+
+function Scenario_deluno_resend {
+    $unmet = Test-DelunoPreconditions
+    if ($unmet) { return $unmet }
+    $chosen = Find-ImportedHandoffInWeir
+    if (-not $chosen) {
+        New-DelunoFilmHandoff | Out-Null
+        $chosen = Find-ImportedHandoffInWeir
+    }
+    Assert-That ($null -ne $chosen) 'Deluno has an imported hand-off with its outcome delivered and recorded in Weir, to send again'
     $before = @($chosen.Copies | ForEach-Object { "$($_.id)|$($_.handback.outcome)|$($_.handback.settled_at)|$($_.handback.released_at)" })
     $failuresBefore = @(Get-ActivityItems | Where-Object { $_.result -in 'failed', 'error' }).Count
 
@@ -315,7 +320,7 @@ function Scenario_deluno_resend {
     $afterState = @($afterCopies | ForEach-Object { "$($_.id)|$($_.handback.outcome)|$($_.handback.settled_at)|$($_.handback.released_at)" })
     Assert-That ((($before | Sort-Object) -join ';') -eq (($afterState | Sort-Object) -join ';')) 'Weir kept the one imported answer and the file it had already settled, unchanged'
     Assert-That (@(Get-ActivityItems | Where-Object { $_.result -in 'failed', 'error' }).Count -eq $failuresBefore) 'the repeat raised no failure in Weir''s Activity'
-    "Deluno sent the outcome for $($chosen.Handoff.releaseName) again; Weir took it (Deluno reads the delivery as $($after.outcome.delivery), attempt $($record.attempts)), and Weir's file stayed imported and settled as it was, with no failure."
+    "Deluno sent the outcome for $($chosen.Handoff.releaseName) again; Weir took it (Deluno reads the delivery as $($after.outcome.delivery), attempt $($record.attempts)), and Weir's file stayed imported and settled as it was, with no failure.$(Get-DelunoMadeNote)"
 }
 
 # --- deluno-outcomes ----------------------------------------------------------------------------------------------------
@@ -338,9 +343,9 @@ function Test-NothingWasOwed {
 function Scenario_deluno_outcomes {
     $unmet = Test-DelunoPreconditions
     if ($unmet) { return $unmet }
-    $handoffs = @(Get-DelunoHandoffs)
-    $withOutcome = @($handoffs | Where-Object { Get-OutcomeOf $_ })
-    if ($withOutcome.Count -eq 0) { return New-NotApplicable 'Deluno has recorded no outcome for any hand-off yet, so there is nothing to compare.' }
+    Get-OrMakeBuildFilmHandoffs | Out-Null
+    $withOutcome = @(Get-DelunoHandoffs | Where-Object { Get-OutcomeOf $_ })
+    Assert-That ($withOutcome.Count -ge 1) 'Deluno has recorded an outcome for a hand-off'
     $weirFiles = @(Get-ScenarioFiles)
 
     # What Deluno was told is Deluno's own record, true whichever Weir took the hand-off: every outcome is delivered, or settled, or
@@ -359,7 +364,7 @@ function Scenario_deluno_outcomes {
 
     # What Weir recorded is judged for the hand-offs the build under test took.
     $split = Split-HandoffsByWeir -Handoffs $withOutcome
-    if ($split.Build.Count -eq 0) { return New-NoHandoffByBuild -Split $split -Need 'This scenario compares Deluno''s answer with the one the build under test recorded for each file.' }
+    Assert-That ($split.Build.Count -ge 1) 'Deluno has an outcome for a hand-off made after the build under test began answering'
     $compared = 0
     foreach ($handoff in $split.Build) {
         $outcome = Get-OutcomeOf $handoff
@@ -373,5 +378,5 @@ function Scenario_deluno_outcomes {
         }
     }
     Assert-That ($compared -ge 1) 'at least one outcome Deluno delivered to the build under test could be compared with Weir''s'
-    "Read the outcomes of $($withOutcome.Count) hand-off(s) in Deluno: none pending, refused, never received or given up on ($owedNothing closed with nothing owed because no file was handed back); $compared of Weir's files from the $($split.Build.Count) hand-off(s) made after the build under test took over carry the same answer as Deluno. $($split.Previous.Count) made before that, by the previous release, were not compared."
+    "Read the outcomes of $($withOutcome.Count) hand-off(s) in Deluno: none pending, refused, never received or given up on ($owedNothing closed with nothing owed because no file was handed back); $compared of Weir's files from the $($split.Build.Count) hand-off(s) made after the build under test took over carry the same answer as Deluno. $($split.Previous.Count) made before that, by the previous release, were not compared.$(Get-DelunoMadeNote)"
 }

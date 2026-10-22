@@ -63,8 +63,51 @@ public sealed class SafeSwapRulesTests
     [InlineData(1023L, "1023 bytes")]
     [InlineData(1536L, "1.5 KB")]
     [InlineData(5L << 30, "5.0 GB")]
+    [InlineData(-5L, "0 bytes")]
+    [InlineData(1024L, "1.0 KB")]
+    [InlineData(1048575L, "1024.0 KB")]
+    [InlineData(1L << 20, "1.0 MB")]
+    [InlineData(1L << 40, "1.0 TB")]
+    [InlineData(1L << 50, "1024.0 TB")]
     public void Sizes_read_naturally(long bytes, string expected)
     {
         Assert.Equal(expected, SafeSwapRules.FormatBytes(bytes));
+    }
+
+    [Theory]
+    [InlineData(null, "The cleaned copy did not pass Weir's output checks, so the original was kept.")]
+    [InlineData("", "The cleaned copy did not pass Weir's output checks, so the original was kept.")]
+    [InlineData("   ", "The cleaned copy did not pass Weir's output checks, so the original was kept.")]
+    [InlineData("the output is shorter", "The cleaned copy did not pass Weir's output checks, so the original was kept: the output is shorter")]
+    public void A_failed_check_names_the_problem_when_there_is_one(string? problem, string expected)
+    {
+        Assert.Equal(expected, SafeSwapRules.ValidationFailedMessage(problem));
+    }
+
+    [Fact]
+    public void A_kept_original_that_could_not_be_moved_names_where_it_was_going_and_that_weir_tries_again()
+    {
+        Assert.Equal(
+            "Weir replaced the file but could not move the original into /originals/Film.mkv; it will try again when it next starts. The system reported: disk full",
+            SafeSwapRules.OriginalKeepFailedMessage("/originals/Film.mkv", "disk full"));
+    }
+
+    [Fact]
+    public void A_leftover_whose_name_starts_with_the_marker_belongs_to_a_file_named_by_its_extension_alone()
+    {
+        Assert.True(SafeSwapRules.TryParseLeftover("/lib/.weir-tmp.mkv", out var kind, out var original));
+        Assert.Equal(SwapLeftoverKind.Temp, kind);
+        Assert.Equal("/lib/.mkv", original);
+    }
+
+    [Theory]
+    [InlineData("/lib/")]
+    [InlineData("")]
+    public void A_path_with_no_file_name_has_no_temp_or_backup_name(string path)
+    {
+        var error = Assert.Throws<ArgumentException>(() => SafeSwapRules.TempPath(path));
+
+        Assert.StartsWith("A file path is required.", error.Message, StringComparison.Ordinal);
+        Assert.Throws<ArgumentException>(() => SafeSwapRules.BackupPath(path));
     }
 }

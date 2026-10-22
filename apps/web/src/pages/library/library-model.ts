@@ -289,7 +289,7 @@ export function savingLine(totals: LibraryTotals | undefined): string {
   if (totals && totals.would_change > 0) {
     const tracks =
       totals.total_removed_audio_tracks + totals.total_removed_subtitle_tracks;
-    return `${tracks} tracks would come out; these files do not say how big each one is`;
+    return `${plural(tracks, "track", "tracks")} would come out; these files do not say how big each one is`;
   }
   return "Nothing to reclaim here at the moment";
 }

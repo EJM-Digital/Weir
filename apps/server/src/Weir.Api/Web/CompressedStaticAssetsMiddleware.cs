@@ -113,7 +113,7 @@ public sealed class CompressedStaticAssetsMiddleware
         }
 
         var parts = urlPath[1..].Split('/', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0 || parts.Any(part => part is "." or ".." || part.Contains('\\', StringComparison.Ordinal)))
+        if (parts.Any(part => part is "." or ".." || part.Contains('\\', StringComparison.Ordinal)))
         {
             return null;
         }

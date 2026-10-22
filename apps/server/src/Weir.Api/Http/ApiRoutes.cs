@@ -52,21 +52,18 @@ public static class ApiRoutes
                 return;
             }
 
-            switch (result)
+            if (result is JsonApiResult json)
             {
-                case JsonApiResult json:
-                    foreach (var (name, value) in json.Headers)
-                    {
-                        context.Response.Headers.Append(name, value);
-                    }
+                foreach (var (name, value) in json.Headers)
+                {
+                    context.Response.Headers.Append(name, value);
+                }
 
-                    await ApiResponses.WriteJsonAsync(context, json.StatusCode, json.Body).ConfigureAwait(false);
-                    break;
-                case CustomApiResult custom:
-                    await custom.Write(context).ConfigureAwait(false);
-                    break;
-                default:
-                    throw new InvalidOperationException("Unknown API result.");
+                await ApiResponses.WriteJsonAsync(context, json.StatusCode, json.Body).ConfigureAwait(false);
+            }
+            else
+            {
+                await ((CustomApiResult)result).Write(context).ConfigureAwait(false);
             }
         }
     }

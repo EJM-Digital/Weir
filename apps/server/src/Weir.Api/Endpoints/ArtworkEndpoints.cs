@@ -34,14 +34,14 @@ internal sealed class ArtworkEndpointHandlers
 
     public ArtworkEndpointHandlers(ArtworkLookupStore lookups, ArtworkPosterFiles posterFiles)
     {
-        _lookups = lookups ?? throw new ArgumentNullException(nameof(lookups));
-        _posterFiles = posterFiles ?? throw new ArgumentNullException(nameof(posterFiles));
+        _lookups = lookups;
+        _posterFiles = posterFiles;
     }
 
     public async Task<ApiResult> GetPosterAsync(ApiRequest request)
     {
         await request.RequireUserAsync().ConfigureAwait(false);
-        var posterId = request.RouteValue("poster_id") ?? string.Empty;
+        var posterId = request.RouteValue("poster_id");
         if (!ArtworkKeys.IsPosterId(posterId))
         {
             throw new ApiException(StatusCodes.Status404NotFound, NoSuchPoster);

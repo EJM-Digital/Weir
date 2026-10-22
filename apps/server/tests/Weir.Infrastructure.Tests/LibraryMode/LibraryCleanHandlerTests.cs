@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weir.Core.Activity;
 using Weir.Core.Jobs;
@@ -42,11 +43,13 @@ public sealed partial class LibraryCleanHandlerTests : IDisposable
         _fixture.Dispose();
     }
 
-    private LibraryCleanHandler Handler(IHardlinkInspector? hardlinks = null, ILibraryFileChangeNotifier? notifier = null, IRemovedTrackStore? removedTracks = null) =>
-        (LibraryCleanHandler)Activator.CreateInstance(typeof(LibraryCleanHandler), HandlerArguments(hardlinks, notifier, removedTracks))!;
+    private LibraryCleanHandler Handler(
+        IHardlinkInspector? hardlinks = null, ILibraryFileChangeNotifier? notifier = null, IRemovedTrackStore? removedTracks = null, ILogger<LibraryCleanHandler>? logger = null) =>
+        (LibraryCleanHandler)Activator.CreateInstance(typeof(LibraryCleanHandler), HandlerArguments(hardlinks, notifier, removedTracks, logger))!;
 
     /// <summary>What the handler is built from, in the order of its constructor.</summary>
-    private object[] HandlerArguments(IHardlinkInspector? hardlinks = null, ILibraryFileChangeNotifier? notifier = null, IRemovedTrackStore? removedTracks = null)
+    private object[] HandlerArguments(
+        IHardlinkInspector? hardlinks = null, ILibraryFileChangeNotifier? notifier = null, IRemovedTrackStore? removedTracks = null, ILogger<LibraryCleanHandler>? logger = null)
     {
         var tools = new MediaTools(_media, new FixedResolver(), new ListLogger<MediaTools>(), TimeProvider.System);
         var swap = new SafeSwap(
@@ -63,7 +66,7 @@ public sealed partial class LibraryCleanHandlerTests : IDisposable
         return
         [
             _fixture.Store.Database, tools, swap, notifier, hardlinks ?? PhysicalHardlinkInspector.Instance, removedTracks,
-            _librarySettings, _fileMarks, _scans, _fixture.Jobs, _libraries, _fixture.Changes, _fixture.Store.Clock, NullLogger<LibraryCleanHandler>.Instance,
+            _librarySettings, _fileMarks, _scans, _fixture.Jobs, _libraries, _fixture.Changes, _fixture.Store.Clock, logger ?? NullLogger<LibraryCleanHandler>.Instance,
         ];
     }
 

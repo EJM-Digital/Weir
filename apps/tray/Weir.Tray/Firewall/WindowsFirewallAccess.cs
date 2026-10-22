@@ -1,15 +1,21 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Weir.Tray.Firewall;
 
 /// <summary>The real Windows Firewall, read through COM and written by the same elevated step the tray menu uses.</summary>
-sealed class WindowsFirewallAccess : IFirewallAccess
+sealed class WindowsFirewallAccess(Func<IFirewallPolicy> openPolicy, Func<ProcessStartInfo, Func<int>?> start) : IFirewallAccess
 {
+    internal WindowsFirewallAccess()
+        : this(ComFirewallPolicy.Open, WindowsEffects.StartElevated)
+    {
+    }
+
     public bool AllowsWeirIn()
     {
         try
         {
-            return WeirFirewallRule.AllowsServerOnCurrentNetwork(new ComFirewallPolicy(), InstallProcesses.Root());
+            return WeirFirewallRule.AllowsServerOnCurrentNetwork(openPolicy(), InstallProcesses.Root());
         }
         catch (Exception ex) when (ex is COMException or InvalidOperationException)
         {
@@ -20,5 +26,6 @@ sealed class WindowsFirewallAccess : IFirewallAccess
         }
     }
 
-    public FirewallElevation.Outcome AskToAllow() => FirewallElevation.ConfigureElevated(TrayLog.Write);
+    public FirewallElevation.Outcome AskToAllow() =>
+        FirewallElevation.RunElevated(FirewallCommand.ConfigureArgument, TrayLog.Write, Environment.ProcessPath, start);
 }

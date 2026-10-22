@@ -231,6 +231,6 @@ public static class ArrLanguageCatalog
             return null;
         }
 
-        return NameToCode.TryGetValue(name, out var code) ? OriginalLanguage.CanonicalLanguage(code) : null;
+        return OriginalLanguage.CanonicalLanguage(NameToCode[name]);
     }
 }

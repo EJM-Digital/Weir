@@ -19,7 +19,7 @@ public sealed class ActivityProgressFrames
 
     private readonly LiveProgressStore _liveProgress;
 
-    public ActivityProgressFrames(LiveProgressStore liveProgress) => _liveProgress = liveProgress ?? throw new ArgumentNullException(nameof(liveProgress));
+    public ActivityProgressFrames(LiveProgressStore liveProgress) => _liveProgress = liveProgress;
 
     /// <summary>Frames the live-progress store for one open stream, using its own <see cref="Throttle"/> and idle-poll window.</summary>
     public IAsyncEnumerable<string> ForAsync(TimeProvider time, CancellationToken cancellationToken) =>

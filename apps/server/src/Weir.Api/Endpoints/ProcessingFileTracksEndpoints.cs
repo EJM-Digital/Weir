@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,23 +46,18 @@ internal sealed class ProcessingFileTracksEndpointHandlers
     public ProcessingFileTracksEndpointHandlers(
         FileStateStore files, LibraryStore libraries, MediaTools mediaTools, ProcessingJobStore jobs, ActivityStore activity)
     {
-        _files = files ?? throw new ArgumentNullException(nameof(files));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _mediaTools = mediaTools ?? throw new ArgumentNullException(nameof(mediaTools));
-        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
-        _activity = activity ?? throw new ArgumentNullException(nameof(activity));
+        _files = files;
+        _libraries = libraries;
+        _mediaTools = mediaTools;
+        _jobs = jobs;
+        _activity = activity;
     }
 
     private static WireObject StreamOut(int index, string kind, ProbeStreamInfo stream, TrackDecision? decision)
     {
         var tags = stream.Tags;
         var disposition = stream.Disposition;
-        long? channels = null;
-        if (kind == "audio" && stream.Get("channels") is { } raw && raw.ValueKind == JsonValueKind.Number && raw.TryGetInt64(out var n))
-        {
-            channels = n;
-        }
-
+        var channels = kind == "audio" ? stream.Channels : null;
         return new WireObject()
             .Set("index", index)
             .Set("type", kind)
@@ -75,6 +69,18 @@ internal sealed class ProcessingFileTracksEndpointHandlers
             .Set("forced", disposition.GetValueOrDefault("forced") != 0)
             .Set("rule_would_keep", decision?.WouldKeep ?? false)
             .Set("rule_reason", decision?.Reason ?? "This pass does not act on this stream type.");
+    }
+
+    private static SourceFingerprint FingerprintOrRefuse(string sourcePath)
+    {
+        try
+        {
+            return SourceFiles.Fingerprint(sourcePath);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            throw new ApiException(StatusCodes.Status400BadRequest, "Weir could not read this file safely. Check that it is still in the watched folder, then try again.");
+        }
     }
 
     public async Task<ApiResult> GetFileTracksAsync(ApiRequest request)
@@ -96,15 +102,7 @@ internal sealed class ProcessingFileTracksEndpointHandlers
             throw new ApiException(exception.StatusCode, exception.Message);
         }
 
-        SourceFingerprint fingerprint;
-        try
-        {
-            fingerprint = SourceFiles.Fingerprint(context.SourcePath);
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            throw new ApiException(StatusCodes.Status400BadRequest, $"Weir could not read this file safely: {exception.Message}");
-        }
+        var fingerprint = FingerprintOrRefuse(context.SourcePath);
 
         await request.CommitAsync().ConfigureAwait(false);
 
@@ -135,8 +133,8 @@ internal sealed class ProcessingFileTracksEndpointHandlers
                 continue;
             }
 
-            var decision = DecisionFor((int)idx, "video", "image");
-            rows.Add(((int)idx, StreamOut((int)idx, decision?.Kind ?? "video", stream, decision)));
+            var decision = DecisionFor((int)idx, "video", "image")!;
+            rows.Add(((int)idx, StreamOut((int)idx, decision.Kind, stream, decision)));
             covered.Add((int)idx);
         }
 
@@ -203,7 +201,8 @@ internal sealed class ProcessingFileTracksEndpointHandlers
         model.Finish(ExtraFields.Ignore);
         issues.ThrowIfAny();
 
-        if (payload is not WireObject body || body.Get("keep") is not WireArray keepList)
+        var body = (WireObject)payload!;
+        if (body.Get("keep") is not WireArray keepList)
         {
             throw new ApiException(StatusCodes.Status422UnprocessableEntity, "'keep' is required and must be a list of {index, default, forced}.");
         }
@@ -239,7 +238,7 @@ internal sealed class ProcessingFileTracksEndpointHandlers
 
         var choice = new ManualPlanChoice(keep, order);
 
-        request.RequireConfirmationToken(csrfToken, "Invalid or expired CSRF token.");
+        request.RequireConfirmationToken(csrfToken);
 
         var uow = await request.DbAsync().ConfigureAwait(false);
         ManualPlanFileContext context;
@@ -267,15 +266,7 @@ internal sealed class ProcessingFileTracksEndpointHandlers
             throw new ApiException(StatusCodes.Status400BadRequest, problem);
         }
 
-        SourceFingerprint fingerprint;
-        try
-        {
-            fingerprint = SourceFiles.Fingerprint(context.SourcePath);
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            throw new ApiException(StatusCodes.Status400BadRequest, $"Weir could not read this file safely: {exception.Message}");
-        }
+        var fingerprint = FingerprintOrRefuse(context.SourcePath);
 
         var job = await ManualPlanSupport.EnqueueManualPlanAsync(uow, _jobs, context, choice, fingerprint).ConfigureAwait(false);
         var name = System.IO.Path.GetFileName(context.File.RelativePath);

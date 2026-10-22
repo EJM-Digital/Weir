@@ -126,4 +126,24 @@ public sealed class LanAccessNoticeTests
 
         Assert.Equal(LanAccessNotice.FirewallAllowsWeir(), LanAccessNotice.ForSavedChoice(applied));
     }
+
+    [Fact]
+    public void A_choice_carried_out_while_the_windows_step_failed_says_the_firewall_was_not_changed_and_where_to_look()
+    {
+        var notice = LanAccessNotice.ForSavedChoice(new SavedChoiceApplied(ListenScope.OtherDevices, ScopeChange.Applied, FirewallElevation.Outcome.Failed));
+
+        Assert.Equal("Weir now listens for other devices, but Windows Firewall was not changed, so it still blocks them. See tray-host.log in the data folder.", notice.Text);
+        Assert.True(notice.IsWarning);
+        Assert.True(notice.NamesLog);
+    }
+
+    [Theory]
+    [InlineData((int)FirewallElevation.Outcome.Declined)]
+    [InlineData((int)FirewallElevation.Outcome.Failed)]
+    public void A_windows_step_that_failed_with_the_server_left_as_it_was_is_worded_by_the_step(int outcome)
+    {
+        var notice = LanAccessNotice.ForSavedChoice(new SavedChoiceApplied(ListenScope.OtherDevices, ScopeChange.Unchanged, (FirewallElevation.Outcome)outcome));
+
+        Assert.Equal(LanAccessNotice.FirewallStepFailed((FirewallElevation.Outcome)outcome, ListenScope.OtherDevices), notice);
+    }
 }

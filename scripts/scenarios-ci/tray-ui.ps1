@@ -133,8 +133,9 @@ function Get-NotificationButtons {
     }
 }
 
+# Windows puts a space before the text of an icon it has not named after its program yet (seen in the hidden icons), so the name is read without it.
 function Find-TrayIcon {
-    @(Get-NotificationButtons | Where-Object { $_.name -like 'Weir*' })
+    @(Get-NotificationButtons | ForEach-Object { $_.name = "$($_.name)".Trim(); $_ } | Where-Object { $_.name -like 'Weir*' })
 }
 
 # It moves the real mouse and sends real keys, so it does so only where nobody else is using the desktop.

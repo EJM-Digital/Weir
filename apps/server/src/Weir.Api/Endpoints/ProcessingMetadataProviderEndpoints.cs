@@ -36,7 +36,7 @@ internal sealed class ProcessingMetadataProviderEndpointHandlers
 
     public ProcessingMetadataProviderEndpointHandlers(ArtworkGatewayClient gateway)
     {
-        _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
+        _gateway = gateway;
     }
 
     private static WireObject MetadataProviderOut() => new WireObject()

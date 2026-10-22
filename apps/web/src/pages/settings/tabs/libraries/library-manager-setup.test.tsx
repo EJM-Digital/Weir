@@ -310,3 +310,148 @@ it("reads nothing while the workflow is linked to no media manager", async () =>
   ).toBeInTheDocument();
   expect(fetch).not.toHaveBeenCalled();
 });
+
+async function showSetup(
+  item: ProcessingManagerSetupItem,
+  props: Partial<React.ComponentProps<typeof LibraryManagerSetup>> = {},
+) {
+  setup([item]);
+  render(
+    <LibraryManagerSetup
+      mediaType="tv"
+      watchedFolder="/media/downloads/complete"
+      outputFolder="/media/downloads/weir"
+      workFolder=""
+      linkedConnectionIds={[item.connection_id]}
+      editable
+      onUseFolders={() => {}}
+      {...props}
+    />,
+    { wrapper },
+  );
+  await settleFolderChecks();
+  return screen.findByRole("region", { name: item.label });
+}
+
+it("says what to look up when the manager has no download client to copy a mapping from", async () => {
+  const block = await showSetup({
+    ...sonarr,
+    mapping: { hosts: [], remote_path: "", local_path: "" },
+  });
+
+  const table = within(block).getByRole("table");
+  expect(
+    within(table).getByText(
+      "your download client's Host, exactly as it is entered in Sonarr",
+    ),
+  ).toBeInTheDocument();
+  expect(
+    within(table).getByText("this workflow's watched folder"),
+  ).toBeInTheDocument();
+  expect(
+    within(table).getByText("this workflow's output folder"),
+  ).toBeInTheDocument();
+  expect(within(block).queryByText(/more than one download client/)).toBeNull();
+});
+
+it("asks for the same mapping once for each download client", async () => {
+  const block = await showSetup({
+    ...sonarr,
+    mapping: { ...sonarr.mapping!, hosts: ["qbittorrent", "sabnzbd"] },
+  });
+
+  expect(
+    within(block).getByText("qbittorrent or sabnzbd", { selector: "code" }),
+  ).toBeInTheDocument();
+  expect(
+    within(block).getByText(
+      /Sonarr has more than one download client\. Add the same mapping once for each Host: qbittorrent or sabnzbd\./,
+    ),
+  ).toBeInTheDocument();
+});
+
+it("shows nothing to enter for a manager that needs no mapping", async () => {
+  const block = await showSetup({ ...sonarr, mapping: null });
+
+  expect(within(block).queryByRole("table")).not.toBeInTheDocument();
+  expect(within(block).getByTestId("workflow-story")).toBeInTheDocument();
+});
+
+it("names the folders it found but offers no button to use them when the workflow cannot be edited", async () => {
+  const sonarrBlock = await showSetup(
+    { ...sonarr, suggested_watched_folder: "/downloads/tv-sonarr" },
+    { editable: false },
+  );
+  expect(
+    within(sonarrBlock).getByText("/downloads/tv-sonarr"),
+  ).toBeInTheDocument();
+  expect(
+    within(sonarrBlock).queryByRole("button", {
+      name: "Use this as the watched folder",
+    }),
+  ).not.toBeInTheDocument();
+});
+
+it("shows a Deluno that reports folders without an edit button when the workflow cannot be edited", async () => {
+  const block = await showSetup(deluno, {
+    editable: false,
+    watchedFolder: "/media/tv",
+    outputFolder: "",
+  });
+
+  expect(
+    within(block).getByText(/Deluno reports downloads in/),
+  ).toBeInTheDocument();
+  expect(
+    within(block).queryByRole("button", { name: "Use Deluno's folders" }),
+  ).not.toBeInTheDocument();
+});
+
+it.each([
+  {
+    name: "reports no download folder",
+    item: { suggested_watched_folder: undefined },
+    watched: "(not set)",
+    output: "/media/downloads/weir/tv",
+  },
+  {
+    name: "reports no folder to pick cleaned files up from",
+    item: { suggested_output_folder: undefined },
+    watched: "/media/downloads/complete/tv",
+    output: "(not set)",
+  },
+])("says so when Deluno $name", async ({ item, watched, output }) => {
+  const block = await showSetup(
+    { ...deluno, ...item },
+    { watchedFolder: "/media/tv", outputFolder: "/elsewhere" },
+  );
+
+  const folders = within(block).getAllByText(
+    (_text, node) => node?.tagName === "CODE",
+  );
+  expect(folders.map((code) => code.textContent)).toEqual([watched, output]);
+});
+
+it("says so when the media managers cannot be read, and shows none of them", async () => {
+  vi.spyOn(managersApi, "fetchProcessingManagerSetup").mockRejectedValue(
+    new Error("down"),
+  );
+  render(
+    <LibraryManagerSetup
+      mediaType="tv"
+      watchedFolder="/in"
+      outputFolder="/out"
+      workFolder=""
+      linkedConnectionIds={[3]}
+      editable
+      onUseFolders={() => {}}
+    />,
+    { wrapper },
+  );
+  await settleFolderChecks();
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Weir could not read your media managers just now.",
+  );
+  expect(screen.queryByRole("region")).not.toBeInTheDocument();
+});

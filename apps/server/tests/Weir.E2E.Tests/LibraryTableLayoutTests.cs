@@ -14,7 +14,11 @@ namespace Weir.E2E.Tests;
 public sealed class LibraryTableLayoutTests(E2EServer server) : E2ETestBase(server)
 {
     private const float ServerMs = 60_000;
+    private const int TitleLineShared = 921;
+    private const int NarrowStep = 20;
+    private const float SubPixel = 1;
     private static readonly ViewportSize Desktop = new() { Width = 1600, Height = 900 };
+    private static readonly ViewportSize Wide = new() { Width = 2560, Height = 1000 };
     private static readonly ViewportSize Narrow = new() { Width = 940, Height = 800 };
     private static readonly ViewportSize Phone = new() { Width = 390, Height = 844 };
 
@@ -134,6 +138,50 @@ public sealed class LibraryTableLayoutTests(E2EServer server) : E2ETestBase(serv
         }
     }
 
+    [E2EFact]
+    public async Task Short_of_room_on_the_title_line_Check_again_shrinks_to_a_mark_that_keeps_its_name_and_a_phone_shows_its_words_again()
+    {
+        await using var rig = await StartRigAsync();
+        var page = await OpenLibraryAsync(rig, Wide);
+        var checkAgain = page.GetByRole(AriaRole.Button, new() { Name = "Check again", Exact = true });
+        await Expect(checkAgain).ToHaveAttributeAsync("data-icon-only", "false");
+        Assert.True(await IsWiderThanTallAsync(checkAgain), "With room to spare Check again shows its words.");
+
+        await NarrowUntilAsync(page, checkAgain);
+
+        await Expect(checkAgain).ToHaveAttributeAsync("title", "Check again");
+        await Expect(checkAgain.Locator(".mm-library-words")).ToBeHiddenAsync();
+        var mark = (await checkAgain.BoundingBoxAsync())!;
+        Assert.InRange(Math.Abs(mark.Height - mark.Width), 0, SubPixel);
+
+        await page.SetViewportSizeAsync(Phone.Width, Phone.Height);
+
+        await Expect(checkAgain).ToHaveAttributeAsync("data-icon-only", "false");
+        await Expect(checkAgain.Locator(".mm-library-words")).ToBeVisibleAsync();
+    }
+
+    /// <summary>Where the title line runs out of room depends on the width of the letters, which differs from one machine's fonts to the next, so the window is narrowed from a wide window until the button has become a mark.</summary>
+    private static async Task NarrowUntilAsync(IPage page, ILocator button)
+    {
+        for (var width = Wide.Width; width >= TitleLineShared; width -= NarrowStep)
+        {
+            await page.SetViewportSizeAsync(width, Wide.Height);
+            await page.EvaluateAsync("() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))");
+            if (await button.GetAttributeAsync("data-icon-only") == "true")
+            {
+                return;
+            }
+        }
+
+        Assert.Fail($"Check again was still showing its words at {TitleLineShared}px wide, the narrowest window that still shares the title line.");
+    }
+
+    private static async Task<bool> IsWiderThanTallAsync(ILocator button)
+    {
+        var box = (await button.BoundingBoxAsync())!;
+        return box.Width > box.Height;
+    }
+
     private static ILocator Heading(IPage page, string name) => page.GetByRole(AriaRole.Columnheader, new() { Name = name, Exact = true });
 
     /// <summary>The columns the headings stand for, in the order they stand in, the box that selects a file left out.</summary>
@@ -147,9 +195,14 @@ public sealed class LibraryTableLayoutTests(E2EServer server) : E2ETestBase(serv
     private static async Task<IReadOnlyList<string>> CellOrderAsync(IPage page) =>
         await page.GetByTestId("library-row").First.Locator("[data-col]").EvaluateAllAsync<string[]>("cells => cells.map(cell => cell.dataset.col)");
 
+    /// <summary>A moved column slides to its place; it is measured only once every heading and cell has finished sliding.</summary>
+    private static async Task CellsAtRestAsync(IPage page) =>
+        await page.WaitForFunctionAsync("() => [...document.querySelectorAll('[data-col]')].every(cell => cell.getAnimations().length === 0 && getComputedStyle(cell).transform === 'none')");
+
     /// <summary>The middle of the heading lies within the width of the first row's cell for that column.</summary>
     private static async Task AssertCellsUnderTheirHeadingsAsync(IPage page, string heading, string column)
     {
+        await CellsAtRestAsync(page);
         var head = (await Heading(page, heading).BoundingBoxAsync())!;
         var cell = (await page.GetByTestId("library-row").First.Locator($"[data-col='{column}']").BoundingBoxAsync())!;
         var middle = head.X + (head.Width / 2);

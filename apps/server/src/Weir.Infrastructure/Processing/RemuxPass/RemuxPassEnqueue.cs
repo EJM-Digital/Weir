@@ -58,9 +58,7 @@ public static class RemuxPassEnqueue
             var label = mediaScope == "tv" ? "TV" : "Movies";
             throw new RemuxPassEnqueueException(
                 400,
-                $"{label} watched folder is not set in saved path settings. " +
-                "Manual processing.file.remux_pass.v1 jobs require it to resolve relative_media_path and for bounded source cleanup. " +
-                "Saving path settings does not require a watched folder, but you must configure it before enqueueing this job kind.");
+                $"{label} has no watched folder yet, so Weir cannot find that file. Set the watched folder on the {label} workflow, then try again.");
         }
 
         var relative = WireStrings.Strip(relativeMediaPath);
@@ -72,32 +70,22 @@ public static class RemuxPassEnqueue
             .Set("pass_through_unchanged", passThroughUnchanged)
             // An operator asked for this, including when it replaces a queued job's choice below.
             .Set("trigger", "manual");
-        if (passThroughUnchanged && await PendingJobForPathAsync(uow, relative, effectiveLibraryId).ConfigureAwait(false) is { } pending)
+        if (passThroughUnchanged && await PendingPassForPathAsync(uow, relative, effectiveLibraryId).ConfigureAwait(false) is { } waiting)
         {
             // Keep hand-off metadata and other additive fields already carried by the queued job.
-            WireObject existing;
-            try
-            {
-                existing = WireJsonParser.Parse(string.IsNullOrEmpty(pending.PayloadJson) ? "{}" : pending.PayloadJson) as WireObject ?? new WireObject();
-            }
-            catch (WireJsonDecodeException)
-            {
-                existing = new WireObject();
-            }
-
             foreach (var (key, value) in payload.Items)
             {
-                existing.Set(key, value);
+                waiting.Payload.Set(key, value);
             }
 
-            var json = WireJsonWriter.Dumps(existing, WireJsonFormat.Compact);
+            var json = WireJsonWriter.Dumps(waiting.Payload, WireJsonFormat.Compact);
             await uow.ExecuteAsync(
                 "UPDATE jobs SET payload_json = $payload, not_before = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $id",
                 ("$payload", json),
-                ("$id", pending.Id)).ConfigureAwait(false);
+                ("$id", waiting.Job.Id)).ConfigureAwait(false);
             jobs.AnnounceOnCommit(uow, RemuxPassOutcomes.JobKind);
             jobs.WakeWorkers(RemuxPassOutcomes.JobKind);
-            return pending with { PayloadJson = json };
+            return waiting.Job with { PayloadJson = json };
         }
 
         return await jobs.EnqueueOrGetAsync(
@@ -110,12 +98,10 @@ public static class RemuxPassEnqueue
             priority: 0).ConfigureAwait(false);
     }
 
-    /// <summary>The oldest pending pass for this path.</summary>
-    public static async Task<ProcessingJob?> PendingJobForPathAsync(UnitOfWork uow, string relativePath, long? libraryId)
+    /// <summary>The oldest pending pass for this path, with its payload.</summary>
+    private static async Task<(ProcessingJob Job, WireObject Payload)?> PendingPassForPathAsync(UnitOfWork uow, string relativePath, long? libraryId)
     {
-        ArgumentNullException.ThrowIfNull(uow);
-        var wanted = WireStrings.Strip(relativePath ?? string.Empty);
-        if (wanted.Length == 0)
+        if (relativePath.Length == 0)
         {
             return null;
         }
@@ -142,7 +128,7 @@ public static class RemuxPassEnqueue
                 continue;
             }
 
-            if (data is not WireObject dict || dict.Get("relative_media_path") is not WireString { } path || path.Value != wanted)
+            if (data is not WireObject dict || dict.Get("relative_media_path") is not WireString { } path || path.Value != relativePath)
             {
                 continue;
             }
@@ -152,7 +138,7 @@ public static class RemuxPassEnqueue
                 continue;
             }
 
-            return job;
+            return (job, dict);
         }
 
         return null;

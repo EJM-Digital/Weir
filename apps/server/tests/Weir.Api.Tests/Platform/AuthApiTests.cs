@@ -53,7 +53,7 @@ public sealed class AuthApiTests
 
         using var badCsrf = await client.PostAsync("/api/v1/auth/login", new { username = "alice", password = AdminPassword, csrf_token = "invalid-token" });
         Assert.Equal(HttpStatusCode.BadRequest, badCsrf.StatusCode);
-        Assert.Equal("Invalid or expired CSRF token.", await Detail(badCsrf));
+        Assert.Equal("Your confirmation token expired. Refresh the page and try again.", await Detail(badCsrf));
 
         await client.SignInAsync();
         using var logout = await client.PostAsync("/api/v1/auth/logout");
@@ -472,7 +472,7 @@ public sealed class AuthApiTests
 
         using var badCsrf = await admin.PostAsync("/api/v1/auth/theme", new { theme = "light", csrf_token = "invalid-token" });
         Assert.Equal(HttpStatusCode.BadRequest, badCsrf.StatusCode);
-        Assert.Equal("Invalid or expired CSRF token.", await Detail(badCsrf));
+        Assert.Equal("Your confirmation token expired. Refresh the page and try again.", await Detail(badCsrf));
 
         using var invalid = await admin.PostAsync("/api/v1/auth/theme", new { theme = "purple", csrf_token = await admin.CsrfAsync() });
         Assert.Equal(HttpStatusCode.UnprocessableEntity, invalid.StatusCode);

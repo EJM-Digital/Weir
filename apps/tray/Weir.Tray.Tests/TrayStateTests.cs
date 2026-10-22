@@ -257,6 +257,22 @@ public sealed class TrayStateTests
     }
 
     [Fact]
+    public void A_name_with_no_spaces_that_does_not_fit_costs_the_whole_status_line()
+    {
+        var state = Running(AllWell with { ManagersUnreachable = [new string('x', 200)] });
+
+        Assert.Equal("Weir…", state.HoverText);
+    }
+
+    [Fact]
+    public void A_status_that_is_overdue_but_has_been_reported_still_says_where_Weir_is()
+    {
+        var state = new TrayState(ServerPhase.Running, AllWell, null, 9347, StatusOverdue: true);
+
+        Assert.Equal("Weir - Running at http://localhost:9347", state.HoverText);
+    }
+
+    [Fact]
     public void A_hover_text_of_exactly_the_limit_is_left_alone()
     {
         var filler = new string('x', TrayState.HoverLimit - "Weir - ".Length - " isn't answering".Length);

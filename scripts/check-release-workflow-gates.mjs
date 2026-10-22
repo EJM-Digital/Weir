@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 
 import { GATES } from "./ci-passed.mjs";
 import { REQUIRED_EVIDENCE } from "./verify-ci-for-release.mjs";
+import { PROOFS } from "./verify-heavy-ci-for-release.mjs";
 
 // The release's safety rule: nothing reaches ghcr or the Releases page unless every check passed.
 // release.yml runs its checks as parallel jobs, so the rule is expressed as the shape of the workflow:
@@ -18,12 +19,18 @@ const RELEASE = ".github/workflows/release.yml";
 const CI = ".github/workflows/ci.yml";
 const CI_CONTRACT = ".github/workflows/ci-contract.yml";
 const CI_PACKAGING = ".github/workflows/ci-packaging.yml";
+const MUTATION = ".github/workflows/mutation.yml";
 
 const PUBLISH_WINDOWS = "publish-windows";
 const PUBLISH_DOCKER = "publish-docker";
 const PUBLISHERS = [PUBLISH_WINDOWS, PUBLISH_DOCKER];
 
-const SHARED_GATES = ["ci-passed", "golden-path", "validate", "e2e"];
+// windows-proof and mutation-proof read the passing runs of the CI that a pull request skips (docs/ci-cost.md).
+const HEAVY_PROOFS = [
+  { job: "windows-proof", proof: "windows" },
+  { job: "mutation-proof", proof: "mutation" },
+];
+const SHARED_GATES = ["ci-passed", "golden-path", ...HEAVY_PROOFS.map((entry) => entry.job), "validate", "e2e"];
 const WINDOWS_NEEDS = [...SHARED_GATES, "windows-smoke"];
 const DOCKER_NEEDS = [...SHARED_GATES, "docker-candidate", "docker-arm64"];
 
@@ -46,6 +53,7 @@ export function loadWorkflows() {
     ci: read("ci.yml"),
     ciContract: read("ci-contract.yml"),
     ciPackaging: read("ci-packaging.yml"),
+    mutation: read("mutation.yml"),
   };
 }
 
@@ -128,7 +136,7 @@ function requireAttestationSteps(body, what, job) {
   requireText(steps[0], "if: ${{ vars.ATTEST_PROVENANCE == 'true' }}", `${RELEASE} ${job} attestation step`);
 }
 
-export function checkReleaseGates({ release, ci, ciContract, ciPackaging }) {
+export function checkReleaseGates({ release, ci, ciContract, ciPackaging, mutation }) {
   const invalidRunnerTempFixture = "WEIR_LIVE_E2E_FIXTURE_HOST_ROOT: ${{ runner.temp }}";
   rejectText(release, invalidRunnerTempFixture, RELEASE);
   rejectText(ciPackaging, invalidRunnerTempFixture, CI_PACKAGING);
@@ -277,6 +285,23 @@ export function checkReleaseGates({ release, ci, ciContract, ciPackaging }) {
     }
   }
 
+  // ...and one the heavy CI that pull requests skip already passed on: the Windows legs and the mutation run
+  // (scripts/verify-heavy-ci-for-release.mjs). Like the golden path, nothing may skip either job, and each only reads runs.
+  for (const { job, proof } of HEAVY_PROOFS) {
+    const body = requireJob(release, job, RELEASE);
+    for (const marker of ["actions: read", "fetch-depth: 0", `node scripts/verify-heavy-ci-for-release.mjs ${proof}`]) {
+      requireText(body, marker, `${RELEASE} ${job} job`);
+    }
+    for (const marker of ["actions: write", "--wait"]) {
+      rejectText(body, marker, `${RELEASE} ${job} job (the gate reads runs; it never starts or waits for one)`);
+    }
+    for (const skip of [/\n {4}if:/, /\n {6,}(?:- )?if:/, /continue-on-error:/]) {
+      if (skip.test(`\n${body}`)) {
+        throw new Error(`${RELEASE} ${job} job must run, and must fail the release, for every tag: it may have no if: and no continue-on-error:.`);
+      }
+    }
+  }
+
   const validate = requireJob(release, "validate", RELEASE);
   for (const marker of [
     "- name: Release notes file present",
@@ -407,6 +432,33 @@ export function checkReleaseGates({ release, ci, ciContract, ciPackaging }) {
     requireText(contractLeg, marker, `${CI_CONTRACT} area job`);
   }
 
+  // The Windows legs are their own jobs, so a pull request can skip them, and each is due by the flag named here.
+  requireText(requireJob(ciContract, "area", CI_CONTRACT), "platform: ${{ fromJSON(inputs.platforms) }}", `${CI_CONTRACT} area job`);
+  for (const [job, flag, markers] of [
+    ["contract", "run_contract", ["platforms: '[\"linux\"]'"]],
+    ["contract-windows", "run_contract_windows", ["platforms: '[\"windows\"]'"]],
+    ["packaging", "run_packaging", ["docker: true", "windows: false"]],
+    ["packaging-windows", "run_packaging_windows", ["docker: false", "windows: true"]],
+  ]) {
+    const body = requireJob(ci, job, CI);
+    requireText(body, `if: needs.changes.outputs.${flag} == 'true'`, `${CI} ${job} job`);
+    for (const marker of markers) requireText(body, marker, `${CI} ${job} job`);
+  }
+
+  // A pull request starts no mutation run: it runs weekly, by hand and before a release (docs/ci-cost.md).
+  const mutationTriggers = mutation
+    .slice(0, mutation.indexOf("\njobs:\n"))
+    .split("\n")
+    .filter((line) => !line.trimStart().startsWith("#"))
+    .join("\n");
+  if (/^ {2}pull_request(?:_target)?:/m.test(mutationTriggers)) {
+    throw new Error(`${MUTATION} is triggered by a pull request; mutation testing runs weekly, by hand and before a release only.`);
+  }
+  for (const want of PROOFS.mutation.evidence) {
+    const body = requireJob(mutation, want.job, MUTATION);
+    for (const step of want.steps) requireText(body, `- name: ${step}\n`, `${MUTATION} job "${want.job}"`);
+  }
+
   // ci-passed judges every other ci.yml job, always runs, and knows each job's flag.
   const ciJobIds = jobIds(ci);
   const verdictJob = requireJob(ci, "ci-passed", CI);
@@ -437,7 +489,7 @@ export function checkReleaseGates({ release, ci, ciContract, ciPackaging }) {
       `${CI} has no job named "${displayName}", which scripts/verify-ci-for-release.mjs requires. Update one to match the other.`,
     );
   }
-  for (const want of REQUIRED_EVIDENCE) {
+  for (const want of [...REQUIRED_EVIDENCE, ...PROOFS.windows.evidence]) {
     const body = ciJobBody(want.job);
     for (const step of want.steps) {
       requireText(body, `- name: ${step}\n`, `${CI} job "${want.job}"`);
@@ -449,7 +501,8 @@ export const SUCCESS_MESSAGE =
   "Only publish-windows (the GitHub Release) and publish-docker (the image) can publish, each needs the shared " +
   "checks (every browser-test shard included) plus its own build's and neither waits for the other, the moving tags move last and never for a " +
   "release candidate, the Docker candidate's live E2E runs unpushed, every tag (a release candidate too) needs a " +
-  "passing golden-path status on the tagged commit with no way to skip it, and ci-passed judges every CI job and still carries the release's evidence.";
+  "passing golden-path status on the tagged commit with no way to skip it, so does a passing run of the Windows legs and of the " +
+  "mutation scores on that commit or one with the same code, mutation never starts on a pull request, and ci-passed judges every CI job and still carries the release's evidence.";
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {

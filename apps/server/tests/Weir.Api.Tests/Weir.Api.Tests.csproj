@@ -28,12 +28,15 @@
     <Compile Include="..\Shared\FileChangingPathsTable.cs" Link="TestSupport\FileChangingPathsTable.cs" />
     <!-- Recordings of a real Sonarr and Radarr (fixtures/recorded) and the handler that replays them. -->
     <Compile Include="..\Shared\ArrRecordings.cs" Link="TestSupport\ArrRecordings.cs" />
+    <Compile Include="..\Shared\RedownloadRiskReplies.cs" Link="TestSupport\RedownloadRiskReplies.cs" />
     <!-- GitHub, as it answered when recorded (fixtures/recorded/github-releases). -->
     <Compile Include="..\Shared\RecordedGitHub.cs" Link="TestSupport\RecordedGitHub.cs" />
   </ItemGroup>
   <ItemGroup>
     <!-- A frozen fixture from an older release, shared with the infrastructure tests. -->
     <None Include="..\Weir.Infrastructure.Tests\Fixtures\bundle-v4.json" Link="Fixtures\bundle-v4.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- What the real ffprobe printed for two files made with the real ffmpeg (fixtures/recorded/ffprobe). -->
+    <None Include="..\fixtures\recorded\ffprobe\*.json" Link="fixtures\recorded\ffprobe\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

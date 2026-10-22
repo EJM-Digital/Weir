@@ -14,10 +14,10 @@ public sealed record ServerRunMode
     /// <summary>The word the API uses: <c>service</c>, <c>app</c> or <c>docker</c>.</summary>
     public string Name { get; }
 
-    /// <summary>A container is Docker whatever started it; otherwise a service manager makes it a service.</summary>
-    public static ServerRunMode Detect(string installType, bool startedByServiceManager)
+    /// <summary>A container is Docker whatever started it; otherwise either service manager (the Windows one or systemd) makes it a service.</summary>
+    public static ServerRunMode Detect(string installType, bool startedByWindowsService, bool startedBySystemd)
     {
         ArgumentNullException.ThrowIfNull(installType);
-        return installType == "docker" ? Docker : startedByServiceManager ? Service : App;
+        return installType == "docker" ? Docker : startedByWindowsService || startedBySystemd ? Service : App;
     }
 }

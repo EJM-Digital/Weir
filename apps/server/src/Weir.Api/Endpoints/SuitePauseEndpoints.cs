@@ -29,7 +29,7 @@ internal sealed class SuitePauseEndpointHandlers
 
     public SuitePauseEndpointHandlers(SuitePauseService pause)
     {
-        _pause = pause ?? throw new ArgumentNullException(nameof(pause));
+        _pause = pause;
     }
 
     public async Task<ApiResult> GetPauseAsync(ApiRequest request)
@@ -55,7 +55,7 @@ internal sealed class SuitePauseEndpointHandlers
         var secret = request.RequireSessionSecret();
         if (!request.VerifyCsrf(secret, csrfToken, allowAnonymous: false))
         {
-            throw new ApiException(StatusCodes.Status400BadRequest, "Invalid or expired CSRF token.");
+            throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.ConfirmationExpired);
         }
 
         var uow = await request.DbAsync().ConfigureAwait(false);

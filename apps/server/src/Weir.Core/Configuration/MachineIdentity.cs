@@ -29,11 +29,14 @@ public sealed record MachineIdentity
     public bool LooksGenerated => Name.Length == GeneratedContainerNameLength && Name.All(char.IsAsciiHexDigitLower);
 
     /// <summary>This machine's identity.</summary>
-    public static MachineIdentity Current()
+    public static MachineIdentity Current() => Current(() => Environment.MachineName);
+
+    /// <summary>This machine's identity from <paramref name="machineName"/>; a system that cannot give a name reads as "this computer".</summary>
+    internal static MachineIdentity Current(Func<string> machineName)
     {
         try
         {
-            return From(Environment.MachineName);
+            return From(machineName());
         }
         catch (InvalidOperationException)
         {

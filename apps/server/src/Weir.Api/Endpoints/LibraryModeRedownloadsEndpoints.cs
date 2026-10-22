@@ -61,16 +61,16 @@ internal sealed class LibraryModeRedownloadsEndpointHandlers
         SuitePauseService pause,
         ILogger<LibraryModeRedownloadsEndpointHandlers> logger)
     {
-        _scans = scans ?? throw new ArgumentNullException(nameof(scans));
-        _removedTrackStore = removedTrackStore ?? throw new ArgumentNullException(nameof(removedTrackStore));
-        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
-        _redownload = redownload ?? throw new ArgumentNullException(nameof(redownload));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _librarySettings = librarySettings ?? throw new ArgumentNullException(nameof(librarySettings));
-        _tracker = tracker ?? throw new ArgumentNullException(nameof(tracker));
-        _activity = activity ?? throw new ArgumentNullException(nameof(activity));
-        _pause = pause ?? throw new ArgumentNullException(nameof(pause));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _scans = scans;
+        _removedTrackStore = removedTrackStore;
+        _connections = connections;
+        _redownload = redownload;
+        _libraries = libraries;
+        _librarySettings = librarySettings;
+        _tracker = tracker;
+        _activity = activity;
+        _pause = pause;
+        _logger = logger;
     }
 
     private static WireObject RemovedTrackOut(RemovedTrackRecord track) => new WireObject()

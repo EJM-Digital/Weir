@@ -84,13 +84,13 @@ internal sealed class SuiteConfigurationEndpointHandlers
         ScanSettingsChanges scanSettingsChanges,
         WeirLogFile logFile)
     {
-        _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
-        _bundle = bundle ?? throw new ArgumentNullException(nameof(bundle));
-        _backups = backups ?? throw new ArgumentNullException(nameof(backups));
-        _backupPassword = backupPassword ?? throw new ArgumentNullException(nameof(backupPassword));
-        _zones = zones ?? throw new ArgumentNullException(nameof(zones));
-        _scanSettingsChanges = scanSettingsChanges ?? throw new ArgumentNullException(nameof(scanSettingsChanges));
-        _logFile = logFile ?? throw new ArgumentNullException(nameof(logFile));
+        _suiteSettings = suiteSettings;
+        _bundle = bundle;
+        _backups = backups;
+        _backupPassword = backupPassword;
+        _zones = zones;
+        _scanSettingsChanges = scanSettingsChanges;
+        _logFile = logFile;
     }
 
     public async Task<ApiResult> GetSettingsAsync(ApiRequest request)
@@ -141,25 +141,12 @@ internal sealed class SuiteConfigurationEndpointHandlers
         return ApiRoutes.Ok(output);
     }
 
-    /// <summary>
-    /// The settings are already saved, so a log that cannot be pruned (for example one holding invalid UTF-8)
-    /// is logged and never turns the response into a 500 (#536).
-    /// </summary>
+    /// <summary>The settings are already saved, so a log that cannot be rewritten is logged and never turns the response into a 500 (#536).</summary>
     private void PruneLog(ApiRequest request, int keepDays)
     {
-        var logger = request.LoggerFactory.CreateLogger("weir.core.logging");
-        try
+        if (!_logFile.Prune(keepDays))
         {
-            if (!_logFile.Prune(keepDays))
-            {
-                logger.LogWarning("Suite log prune skipped because the active log could not be rewritten.");
-            }
-        }
-#pragma warning disable CA1031 // Pruning the log is housekeeping; a failure is logged and the request still succeeds.
-        catch (Exception exception) when (exception is not OperationCanceledException)
-#pragma warning restore CA1031
-        {
-            logger.LogWarning(exception, "Suite log prune skipped because the active log could not be rewritten.");
+            request.LoggerFactory.CreateLogger("weir.core.logging").LogWarning("Suite log prune skipped because the active log could not be rewritten.");
         }
     }
 

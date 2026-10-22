@@ -65,6 +65,17 @@ public sealed class ServerProcessStopTests : IDisposable
     }
 
     [Fact]
+    public async Task A_server_that_cannot_be_killed_is_reported_as_one_the_tray_could_not_stop()
+    {
+        var server = await _servers.StartAsync(ServerFolder(), "no-stop-event");
+
+        var outcome = await ServerProcessStop.StopAsync(server, ShortTimeouts, _ => throw new System.ComponentModel.Win32Exception(5, "Access is denied"));
+
+        Assert.Equal(ServerStopOutcome.KillFailed, outcome);
+        Assert.Contains($"Could not kill the server process pid={server.Id}: Access is denied", TrayLogText(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Quit_waits_longer_than_the_servers_host_allows_its_workers_and_the_installers_hooks_less_than_Velopack_does()
     {
         // The server's host gives its workers 30 seconds to finish when asked to stop; Velopack ends an install or uninstall hook
@@ -96,5 +107,5 @@ public sealed class ServerProcessStopTests : IDisposable
 
     private string ServerFolder() => Path.Combine(_home.Path, "server-" + Guid.NewGuid().ToString("n"));
 
-    private string TrayLogText() => File.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName));
+    private string TrayLogText() => LogFile.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName));
 }

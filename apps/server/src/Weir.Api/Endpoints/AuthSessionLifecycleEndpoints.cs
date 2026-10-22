@@ -43,11 +43,11 @@ internal sealed class AuthSessionLifecycleEndpointHandlers
     public AuthSessionLifecycleEndpointHandlers(
         AuthStore users, ActivityStore activity, SuiteSettingsStore suiteSettings, AuthRateLimiters limiters, SetupCodeGate setupCodes)
     {
-        _users = users ?? throw new ArgumentNullException(nameof(users));
-        _activity = activity ?? throw new ArgumentNullException(nameof(activity));
-        _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
-        _limiters = limiters ?? throw new ArgumentNullException(nameof(limiters));
-        _setupCodes = setupCodes ?? throw new ArgumentNullException(nameof(setupCodes));
+        _users = users;
+        _activity = activity;
+        _suiteSettings = suiteSettings;
+        _limiters = limiters;
+        _setupCodes = setupCodes;
     }
 
     public async Task<ApiResult> GetCsrfAsync(ApiRequest request)
@@ -101,7 +101,7 @@ internal sealed class AuthSessionLifecycleEndpointHandlers
         request.ValidateBrowserPostOrigin();
         if (!request.VerifyCsrf(secret, csrfToken, allowAnonymous: true))
         {
-            throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.InvalidCsrf);
+            throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.ConfirmationExpired);
         }
 
         var uow = await request.DbAsync().ConfigureAwait(false);
@@ -199,16 +199,6 @@ internal sealed class AuthSessionLifecycleEndpointHandlers
 
             throw new ApiException(StatusCodes.Status503ServiceUnavailable, queryFailed);
         }
-#pragma warning disable CA1031 // Any failure reading bootstrap status becomes a 503 with a next step, never a bare 500.
-        catch (Exception exception) when (exception is not ApiException and not OperationCanceledException)
-#pragma warning restore CA1031
-        {
-            request.LoggerFactory.CreateLogger("weir.platform.auth.router").LogError(exception, "bootstrap status: unexpected failure");
-            throw new ApiException(
-                StatusCodes.Status503ServiceUnavailable,
-                "Could not read bootstrap status. Check the server log, restart Weir so it can migrate " +
-                "the database, and verify WEIR_HOME / WEIR_DB_PATH.");
-        }
 
         var setupCodes = _setupCodes;
         var requiresSetupCode = allowed && setupCodes.HasCode && !SetupCodeGate.IsLoopback(request.ClientHost);
@@ -243,7 +233,7 @@ internal sealed class AuthSessionLifecycleEndpointHandlers
         request.ValidateBrowserPostOrigin();
         if (!CsrfTokens.Verify(secret, csrfToken, null, allowAnonymous: true, request.Time))
         {
-            throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.InvalidCsrf);
+            throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.ConfirmationExpired);
         }
 
         var setupCodes = _setupCodes;
@@ -328,7 +318,7 @@ internal sealed class AuthSessionLifecycleEndpointHandlers
         var rawSession = request.RawSessionToken;
         if (!request.VerifyCsrf(secret, token, allowAnonymous: rawSession is null))
         {
-            throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.InvalidCsrf);
+            throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.ConfirmationExpired);
         }
 
         var logger = AuthEndpoints.Logger(request);

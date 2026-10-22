@@ -13,7 +13,7 @@ namespace Weir.Infrastructure.Tests.Processing.RemuxPass;
 /// Sonarr/Radarr's queue, and a Deluno-style hand-off — and the file-lifecycle containment the "Weir alone" route
 /// depends on.
 /// </summary>
-public sealed class HistoryFileRemovalServiceTests : IDisposable
+public sealed partial class HistoryFileRemovalServiceTests : IDisposable
 {
     private const string EventsPath = "/api/integrations/processors/events";
     private const string ManifestPath = "/api/integrations/external/manifest";

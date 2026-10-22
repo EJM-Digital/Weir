@@ -90,6 +90,41 @@ public sealed class TrayUpdatesTests : IDisposable
         Assert.False(updates.IdleWatch.IsCompleted);
     }
 
+    [Fact]
+    public async Task Asked_twice_to_wait_for_Weir_to_be_idle_it_waits_once()
+    {
+        var updates = await CheckUntilAnnouncedAsync(new FakeUpdateService(), UpdateMode.Auto);
+        var first = updates.IdleWatch;
+
+        updates.InstallWhenIdle();
+
+        Assert.Same(first, updates.IdleWatch);
+        var started = LogFile.ReadAllLines(Path.Combine(_home.Path, "tray-host.log")).Count(line => line.Contains("installing once Weir has been idle", StringComparison.Ordinal));
+        Assert.Equal(1, started);
+    }
+
+    [Fact]
+    public async Task Checks_go_on_at_the_interval_the_person_chose()
+    {
+        var service = new FakeUpdateService();
+        var interval = TimeSpan.FromMinutes(60);
+        var updates = new TrayUpdates(
+            service,
+            _home.Path,
+            new UpdateSettings { CheckOnStartup = false, CheckIntervalMinutes = 60, Mode = UpdateMode.NotifyOnly },
+            new UpdateCallbacks(OnUi: action => action(), Changed: () => { }, Announce: _ => { }, ApplyNow: () => { }),
+            _clock,
+            _shutdown.Token);
+
+        updates.Start();
+        while (await _clock.NextDelay() != interval)
+        {
+        }
+        _clock.Advance(interval);
+
+        Assert.True(SpinWait.SpinUntil(() => service.Checks > 0, FinishCeiling));
+    }
+
     [Theory]
     [InlineData((int)UpdateMode.DownloadOnly)]
     [InlineData((int)UpdateMode.NotifyOnly)]

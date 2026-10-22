@@ -43,31 +43,24 @@ public static class WeirOpenApiDocument
         }
 
         var document = Clone(CommittedDocument.Value);
-        if (document["paths"] is JsonObject paths)
+        var paths = document["paths"]!.AsObject();
+        foreach (var path in paths.Select(entry => entry.Key).ToList())
         {
-            foreach (var path in paths.Select(entry => entry.Key).ToList())
+            var operations = paths[path]!.AsObject();
+            foreach (var method in operations.Select(entry => entry.Key).ToList())
             {
-                if (paths[path] is not JsonObject operations)
+                if (OperationKeys.Contains(method) && !implemented.Contains((method.ToUpperInvariant(), path)))
                 {
-                    continue;
+                    operations.Remove(method);
                 }
+            }
 
-                foreach (var method in operations.Select(entry => entry.Key).ToList())
-                {
-                    if (OperationKeys.Contains(method) && !implemented.Contains((method.ToUpperInvariant(), path)))
-                    {
-                        operations.Remove(method);
-                    }
-                }
-
-                if (!operations.Select(entry => entry.Key).Any(OperationKeys.Contains))
-                {
-                    paths.Remove(path);
-                }
+            if (!operations.Select(entry => entry.Key).Any(OperationKeys.Contains))
+            {
+                paths.Remove(path);
             }
         }
 
-        document["info"] ??= new JsonObject();
         document["info"]!["version"] = version;
         return document;
     }
@@ -76,10 +69,8 @@ public static class WeirOpenApiDocument
 
     private static JsonObject LoadEmbeddedDocument()
     {
-        var assembly = typeof(WeirOpenApiDocument).Assembly;
-        using var stream = assembly.GetManifestResourceStream(ResourceName)
-            ?? throw new InvalidOperationException($"Embedded OpenAPI resource '{ResourceName}' was not found.");
-        var node = JsonNode.Parse(stream) ?? throw new InvalidOperationException("The embedded OpenAPI document is empty.");
-        return node.AsObject();
+        // The document is embedded by the build, and the parity tests fail the build of a release that lacks it or whose paths are not objects.
+        using var stream = typeof(WeirOpenApiDocument).Assembly.GetManifestResourceStream(ResourceName)!;
+        return JsonNode.Parse(stream)!.AsObject();
     }
 }

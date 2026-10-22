@@ -249,13 +249,26 @@ static class PortChoice
     /// Whether a person can answer a dialog. False for a service, a WinRM or SSH session,
     /// or anything else in session 0 — where a modal dialog would wait forever for nobody.
     /// </summary>
-    internal static bool HasInteractiveDesktop()
+    internal static bool HasInteractiveDesktop() => HasInteractiveDesktop(() => Environment.UserInteractive, CurrentSessionId, WindowStationIsInteractive);
+
+    /// <summary>The Windows session this process runs in; 0 is the services' session.</summary>
+    internal static int CurrentSessionId()
+    {
+        using var self = System.Diagnostics.Process.GetCurrentProcess();
+        return self.SessionId;
+    }
+
+    /// <summary>Whether the window station of this process is one a person can see.</summary>
+    internal static bool WindowStationIsInteractive() => SystemInformation.UserInteractive;
+
+    /// <param name="processInteractive">Whether this process was started to show windows (not as a service).</param>
+    /// <param name="sessionId">The Windows session this process runs in; 0 is the services' session.</param>
+    /// <param name="windowStationInteractive">Whether the window station of this process is one a person can see.</param>
+    internal static bool HasInteractiveDesktop(Func<bool> processInteractive, Func<int> sessionId, Func<bool> windowStationInteractive)
     {
         try
         {
-            return Environment.UserInteractive
-                && System.Diagnostics.Process.GetCurrentProcess().SessionId != 0
-                && SystemInformation.UserInteractive;
+            return processInteractive() && sessionId() != 0 && windowStationInteractive();
         }
         catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or PlatformNotSupportedException)
         {
@@ -270,11 +283,16 @@ static class PortChoice
     /// and every interface without changing its port, so this checks the listener table and then tries an exclusive
     /// bind on 0.0.0.0 — a port Windows has reserved (Hyper-V and WSL reserve ranges) fails that too.
     /// </summary>
-    internal static bool IsInUse(int port)
+    internal static bool IsInUse(int port) => IsInUse(port, () => IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners(), BindExclusively);
+
+    /// <param name="port">The port to look for.</param>
+    /// <param name="listeners">The addresses programs are listening on, as Windows lists them.</param>
+    /// <param name="bind">Tries an exclusive bind of the port on every interface; throws <see cref="SocketException"/> when it cannot.</param>
+    internal static bool IsInUse(int port, Func<IEnumerable<IPEndPoint>> listeners, Action<int> bind)
     {
         try
         {
-            if (IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners().Any(ep => ep.Port == port))
+            if (listeners().Any(ep => ep.Port == port))
             {
                 return true;
             }
@@ -287,16 +305,21 @@ static class PortChoice
 
         try
         {
-            using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
-            {
-                ExclusiveAddressUse = true,
-            };
-            socket.Bind(new IPEndPoint(IPAddress.Any, port));
+            bind(port);
             return false;
         }
         catch (SocketException)
         {
             return true;
         }
+    }
+
+    private static void BindExclusively(int port)
+    {
+        using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
+        {
+            ExclusiveAddressUse = true,
+        };
+        socket.Bind(new IPEndPoint(IPAddress.Any, port));
     }
 }

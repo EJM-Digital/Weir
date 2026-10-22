@@ -19,7 +19,7 @@ public sealed class BrowserLaunchTests : IDisposable
             _ => throw new Win32Exception(unchecked((int)0x80004021), "Shell execution unavailable"));
 
         Assert.False(result);
-        var log = File.ReadAllText(Path.Combine(_home.Path, "tray-host.log"));
+        var log = LogFile.ReadAllText(Path.Combine(_home.Path, "tray-host.log"));
         Assert.Contains("Could not open Weir in the browser", log);
         Assert.Contains("Shell execution unavailable", log);
     }

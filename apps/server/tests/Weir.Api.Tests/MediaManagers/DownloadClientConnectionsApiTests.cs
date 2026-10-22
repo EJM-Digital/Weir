@@ -13,10 +13,10 @@ namespace Weir.Api.Tests.MediaManagers;
 /// </summary>
 public sealed class DownloadClientConnectionsApiTests
 {
-    private const string Connections = "/api/v1/download-clients/connections";
+    internal const string Connections = "/api/v1/download-clients/connections";
     private const string Suggestions = "/api/v1/download-clients/suggestions";
 
-    private static async Task<(WeirTestServer Server, ApiTestClient Client, ScriptedManager Manager)> StartAsync()
+    internal static async Task<(WeirTestServer Server, ApiTestClient Client, ScriptedManager Manager)> StartAsync()
     {
         var manager = new ScriptedManager();
         var server = await WeirTestServer.StartAsync(
@@ -28,7 +28,7 @@ public sealed class DownloadClientConnectionsApiTests
         return (server, client, manager);
     }
 
-    private static async Task<JsonNode> CreateAsync(ApiTestClient client, string kind = "sabnzbd", string apiKey = "key")
+    internal static async Task<JsonNode> CreateAsync(ApiTestClient client, string kind = "sabnzbd", string apiKey = "key")
     {
         using var response = await client.PostAsync(Connections, new Dictionary<string, object?>
         {

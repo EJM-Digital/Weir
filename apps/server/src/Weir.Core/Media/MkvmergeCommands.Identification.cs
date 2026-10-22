@@ -187,16 +187,11 @@ public static partial class MkvmergeCommands
     }
 
     /// <summary>
-    /// True for a stream Matroska carries as an attachment rather than a track: cover art (which ffprobe
-    /// reports as a video stream flagged <c>attached_pic</c>) and ffprobe's own <c>attachment</c> streams.
+    /// True for a video stream Matroska carries as an attachment rather than a track: cover art, which ffprobe
+    /// reports flagged <c>attached_pic</c>. ffprobe's own <c>attachment</c> streams are not a track type to begin with.
     /// </summary>
     private static bool IsMatroskaAttachment(ProbeStreamInfo stream)
     {
-        if (string.Equals(stream.CodecType, "attachment", StringComparison.Ordinal))
-        {
-            return true;
-        }
-
         var disposition = stream.Get("disposition");
         if (!RulesJson.IsDict(disposition))
         {

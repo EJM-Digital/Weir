@@ -26,13 +26,8 @@ public static partial class LanguageVariants
     }
 
     /// <summary>Lower-case, accent-stripped, with <c>.</c>/<c>_</c> folded to a space like a word separator.</summary>
-    private static string NormalizeForMatch(string? text)
+    private static string NormalizeForMatch(string text)
     {
-        if (string.IsNullOrEmpty(text))
-        {
-            return string.Empty;
-        }
-
         var lowered = StripDiacritics(text).ToLowerInvariant();
         var sb = new StringBuilder(lowered.Length);
         var lastWasSpace = false;

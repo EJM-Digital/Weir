@@ -474,6 +474,35 @@ public sealed class TrayUpdateRequestsTests : IDisposable
         return _updates;
     }
 
+    [Fact(Timeout = 30_000)]
+    public async Task A_request_whose_flag_cannot_be_removed_is_still_acted_on_and_the_log_says_so()
+    {
+        var service = new FakeUpdateService();
+        var updates = Build(service, UpdateMode.NotifyOnly);
+        RequestFlag("update-check-now");
+
+        using (new FileStream(FlagPath("update-check-now"), FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        {
+            updates.ActOnRequests();
+        }
+        await UntilSettledAsync();
+
+        Assert.Equal(1, service.Checks);
+        Assert.Contains("Could not delete", LogFile.ReadAllText(FlagPath("tray-host.log")), StringComparison.Ordinal);
+    }
+
+    [Fact(Timeout = 30_000)]
+    public async Task A_download_that_finds_nothing_to_download_says_there_is_no_newer_version()
+    {
+        var updates = Build(new FakeUpdateService { DownloadFindsNothing = true }, UpdateMode.NotifyOnly);
+
+        RequestFlag("update-download-now");
+        updates.ActOnRequests();
+        await UntilSettledAsync();
+
+        Assert.Equal(("failed", false, "9.9.9", "There is no newer version of Weir to download."), ReadState());
+    }
+
     // The tray tells the menu of every change; the one that finds the tray idle again ends a check or download.
     private async Task<UpdateMenuAction> NextChangeAsync() =>
         await _changes.Reader.ReadAsync().AsTask().WaitAsync(FinishCeiling);

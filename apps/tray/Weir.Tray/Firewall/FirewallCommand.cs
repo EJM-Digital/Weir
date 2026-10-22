@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using Weir.Tray.LanAccess;
@@ -24,6 +25,7 @@ static class FirewallCommand
         args.Contains(ConfigureArgument) || args.Contains(RemoveArgument) || args.Contains(AllowLanArgument);
 
     /// <summary>Runs whichever firewall argument is present. <see cref="Handles"/> must be true first.</summary>
+    [ExcludeFromCodeCoverage]
     internal static int Run(IReadOnlyList<string> args, Action<string> log) =>
         Run(args, log, IsElevated, () => new ComFirewallPolicy(), scope => LanAccessSetting.Write(Program.RuntimeHome(), scope));
 

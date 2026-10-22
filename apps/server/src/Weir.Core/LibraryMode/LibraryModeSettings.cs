@@ -155,8 +155,8 @@ public static class LibraryFolderRules
         foreach (var folder in trimmed)
         {
             ValidateOne("library", folder, library, weirHome);
-            var normalized = LibraryRules.NormalizeFolder(folder);
-            if (normalized is null || !normalizedSeen.Add(normalized))
+            var normalized = LibraryRules.NormalizeFolder(folder)!;
+            if (!normalizedSeen.Add(normalized))
             {
                 continue;
             }
@@ -195,12 +195,7 @@ public static class LibraryFolderRules
 
         ValidateOne("originals", trimmed, library, weirHome);
 
-        var normalized = LibraryRules.NormalizeFolder(trimmed);
-        if (normalized is null)
-        {
-            return trimmed;
-        }
-
+        var normalized = LibraryRules.NormalizeFolder(trimmed)!;
         var dotPrefixed = LastSegment(trimmed).StartsWith('.');
         foreach (var scanFolder in scanFolders)
         {
@@ -247,12 +242,7 @@ public static class LibraryFolderRules
             throw new LibraryModeException(exception.Message);
         }
 
-        var normalized = LibraryRules.NormalizeFolder(folder);
-        if (normalized is null)
-        {
-            return;
-        }
-
+        var normalized = LibraryRules.NormalizeFolder(folder)!;
         var subject = label == "originals" ? "The originals folder" : "Library folder";
         foreach (var (otherLabel, other) in new[] { ("watched", library.WatchedFolder), ("work", library.WorkFolder), ("output", library.OutputFolder) })
         {

@@ -760,4 +760,125 @@ public sealed class UpdateBackupTests : IDisposable
 
         Assert.Equal("No room.", UpdateBackupHook.PendingReason(_home.Path, "1.0.0"));
     }
+
+    private string Log => LogFile.ReadAllText(Path.Combine(_home.Path, TrayLog.FileName));
+
+    [Fact(Timeout = 10_000)]
+    public async Task An_answer_that_is_not_whole_yet_is_read_again_on_the_next_look()
+    {
+        var (answer, id) = await AskAsync();
+
+        File.WriteAllText(ResultPath, "{ \"id\": ");
+        await StepAsync(answer);
+        Assert.False(answer.IsCompleted);
+        File.WriteAllText(ResultPath, "null");
+        await StepAsync(answer);
+        Assert.False(answer.IsCompleted);
+        ServerWrites(id, "saved");
+        await StepAsync(answer);
+
+        Assert.Equal(UpdateBackupOutcome.Saved, (await answer).Outcome);
+    }
+
+    [Fact(Timeout = 10_000)]
+    public async Task A_request_that_cannot_be_taken_back_ends_in_no_answer_and_the_log_says_what_could_not_be_removed()
+    {
+        var (answer, _) = await AskAsync();
+
+        for (var ask = 0; ask < UpdateBackupRequest.Asks - 1; ask++)
+        {
+            _clock.Advance(UpdateBackupRequest.HearingWindow(ask));
+            await _clock.NextDelay();
+        }
+        using var held = new FileStream(RequestPath, FileMode.Open, FileAccess.Read, FileShare.None);
+        _clock.Advance(UpdateBackupRequest.HearingWindow(UpdateBackupRequest.Asks - 1));
+
+        var result = await answer;
+        Assert.Equal(UpdateBackupOutcome.Failed, result.Outcome);
+        Assert.Contains($"Could not remove {UpdateBackupRequest.RequestFileName}:", Log, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task An_update_with_no_version_is_named_by_nothing_in_the_log()
+    {
+        var hook = Hook((_, _) => Task.FromResult(new UpdateBackupAnswer(UpdateBackupOutcome.Saved, null)));
+
+        Assert.True(await hook.SaveBeforeApplyAsync(null));
+
+        Assert.Contains("before updating.", Log, StringComparison.Ordinal);
+        Assert.DoesNotContain("vunknown", Log, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_refusal_with_no_reason_tells_the_person_something_unexpected_went_wrong()
+    {
+        var told = new List<string>();
+        var hook = Hook((_, _) => Task.FromResult(new UpdateBackupAnswer(UpdateBackupOutcome.Failed, null)), told.Add);
+
+        Assert.False(await hook.SaveBeforeApplyAsync(null));
+
+        Assert.Equal("Something unexpected went wrong. The details are in Weir's log files.", Assert.Single(told));
+        Assert.Contains("The update was not applied:", Log, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_failed_copy_that_cannot_be_recorded_is_still_told_to_the_person()
+    {
+        var notAFolder = Path.Combine(_home.Path, "a-file");
+        File.WriteAllText(notAFolder, "x");
+        var told = new List<string>();
+        var hook = new UpdateBackupHook(
+            (_, _) => Task.FromResult(new UpdateBackupAnswer(UpdateBackupOutcome.Failed, DiskFull)), notAFolder, () => true, told.Add);
+
+        Assert.False(await hook.SaveBeforeApplyAsync(Target));
+
+        Assert.Equal(DiskFull, Assert.Single(told));
+        Assert.Contains("Could not record that saving a copy of Weir's data failed:", Log, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_record_of_an_earlier_failure_that_cannot_be_removed_does_not_stop_the_update()
+    {
+        var marker = Path.Combine(_home.Path, "update-backup-failed");
+        File.WriteAllText(marker, "2.0.0");
+        using var held = new FileStream(marker, FileMode.Open, FileAccess.Read, FileShare.None);
+        var hook = Hook((_, _) => Task.FromResult(new UpdateBackupAnswer(UpdateBackupOutcome.Saved, null)));
+
+        Assert.True(await hook.SaveBeforeApplyAsync(Target));
+
+        Assert.Contains("Could not remove update-backup-failed:", Log, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("{\"reason\":5}")]
+    [InlineData("{\"reason\":\"   \",\"version\":\"2.0.0\"}")]
+    [InlineData("{ not json")]
+    public void A_held_back_record_that_says_no_reason_in_words_shows_nothing(string text)
+    {
+        File.WriteAllText(Path.Combine(_home.Path, "update-not-applied.json"), text);
+
+        Assert.Null(UpdateBackupHook.PendingReason(_home.Path, "1.0.0"));
+    }
+
+    [Fact]
+    public void A_held_back_reason_with_no_version_is_shown_as_it_is()
+    {
+        File.WriteAllText(Path.Combine(_home.Path, "update-not-applied.json"), "{\"reason\":\"No room.\",\"version\":5}");
+
+        Assert.Equal("No room.", UpdateBackupHook.PendingReason(_home.Path, "1.0.0"));
+    }
+
+    [Fact]
+    public void A_held_back_reason_for_the_version_now_running_is_removed_along_with_the_failed_marker()
+    {
+        var notApplied = Path.Combine(_home.Path, "update-not-applied.json");
+        File.WriteAllText(notApplied, "{\"reason\":\"No room.\",\"version\":\"1.0.0+abc\"}");
+        File.WriteAllText(Path.Combine(_home.Path, "update-backup-failed"), "1.0.0");
+
+        Assert.Null(UpdateBackupHook.PendingReason(_home.Path, "1.0.0"));
+
+        Assert.False(File.Exists(notApplied));
+        Assert.False(File.Exists(Path.Combine(_home.Path, "update-backup-failed")));
+    }
 }

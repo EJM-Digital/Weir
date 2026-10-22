@@ -1,11 +1,21 @@
-# The Docker and Windows package smokes, called by ci.yml when packaging, app or workflow files change. Each builds
-# the shippable artefact from this commit and exercises it; neither publishes anything. The Windows one also keeps
-# its Setup and portable package for a week as a workflow artifact, so any commit CI built can be installed.
+# The Docker and Windows package smokes, called twice by ci.yml: once for the Docker smokes and once for the Windows ones.
+# Each builds the shippable artefact from this commit and exercises it; neither publishes anything. The Windows one also
+# keeps its Setup and portable package for a week as a workflow artifact, so any commit CI built can be installed. The
+# Windows jobs cost twice what a Linux one does, so on a pull request they run only when it touches Windows code
+# (docs/ci-cost.md).
 name: Package smokes
 
 on:
   workflow_call:
     inputs:
+      docker:
+        description: Run the Docker smokes and the Linux scenario shards.
+        type: boolean
+        required: true
+      windows:
+        description: Run the Windows package smoke, the update package and the Windows scenario shards.
+        type: boolean
+        required: true
       arm64:
         description: Also build the linux/arm64 image (slow under QEMU).
         type: boolean
@@ -25,6 +35,7 @@ env:
 
 jobs:
   docker-smoke:
+    if: inputs.docker
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
@@ -174,6 +185,7 @@ jobs:
   # shard, each with a Compose stack of its own, against the image built from this commit with its real ffmpeg. The shards listed here
   # are those with a scenario ported (scripts/scenarios-ci/homes.json); the VM stays the release gate until each scenario has passed twice here.
   scenarios-linux:
+    if: inputs.docker
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
@@ -227,7 +239,7 @@ jobs:
   # SDK stage; the final stage's apt-get and everything that runs afterwards are emulated, which is why this is its own job: it overlaps the
   # amd64 smokes instead of following them.
   docker-arm64-smoke:
-    if: inputs.arm64
+    if: inputs.docker && inputs.arm64
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -268,6 +280,7 @@ jobs:
           path: artifacts/docker-compose-smoke/**
 
   windows-package-smoke:
+    if: inputs.windows
     # Always GitHub's own runner: this job installs Weir for real, which needs a clean machine every time.
     runs-on: windows-latest
     timeout-minutes: 30
@@ -386,6 +399,7 @@ jobs:
   # plus one (scripts/scenarios-ci/update-versions.mjs), packed with a delta against that release exactly as release.yml packs a release.
   # Nothing here is published; the packages are kept for a day for the next job.
   windows-update-package:
+    if: inputs.windows
     runs-on: windows-latest
     timeout-minutes: 30
     outputs:
@@ -459,6 +473,7 @@ jobs:
   # (scripts/scenarios-ci/homes.json). Always GitHub's own runner: the shard refuses to run on a machine that is not one, because it installs
   # and uninstalls Weir.
   scenarios-windows:
+    if: inputs.windows
     needs: [windows-package-smoke, windows-update-package]
     runs-on: windows-latest
     timeout-minutes: 70

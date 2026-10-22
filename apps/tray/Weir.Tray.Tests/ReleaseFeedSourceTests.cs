@@ -160,6 +160,14 @@ public sealed class ReleaseFeedSourceTests
         Assert.Contains(web.Asked, url => url.StartsWith(ApiReleases, StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void An_entry_whose_link_is_not_a_release_tag_is_left_out()
+    {
+        var feed = "<feed xmlns=\"http://www.w3.org/2005/Atom\"><entry><link rel=\"alternate\" href=\"" + Repo + "/discussions/4\"/></entry><entry><title>no link</title></entry></feed>";
+
+        Assert.Empty(ReleaseFeedSource.TagsNewestFirst(feed, includePreReleases: true));
+    }
+
     /// <summary>A GitHub that answers each address from the test (a missing one is a 404) and records what was asked.</summary>
     private sealed class FakeWeb : IFileDownloader
     {

@@ -7,5 +7,5 @@ namespace Weir.Tray;
 /// </summary>
 static class ProblemReport
 {
-    internal static void Open(string logsFolder) => RuntimeFolders.Open(logsFolder, "logs folder");
+    internal static void Open(ITrayShell shell, string logsFolder) => shell.OpenFolder(logsFolder, "logs folder");
 }

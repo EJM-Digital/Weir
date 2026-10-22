@@ -28,7 +28,7 @@ internal sealed class SuiteOperationalHistoryEndpointHandlers
 
     public SuiteOperationalHistoryEndpointHandlers(OperationalHistoryStore history)
     {
-        _history = history ?? throw new ArgumentNullException(nameof(history));
+        _history = history;
     }
 
     public async Task<ApiResult> GetOperationalHistoryPreviewAsync(ApiRequest request)

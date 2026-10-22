@@ -49,7 +49,10 @@ static class ServerProcessStop
 {
     internal static Task<ServerStopOutcome> StopAsync(Process process) => StopAsync(process, ServerStopTimeouts.Default);
 
-    internal static async Task<ServerStopOutcome> StopAsync(Process process, ServerStopTimeouts timeouts)
+    /// <param name="process">The server process.</param>
+    /// <param name="timeouts">How long to wait for it to exit on its own, and after a kill.</param>
+    /// <param name="kill">Kills a process and its tree; the real kill when null.</param>
+    internal static async Task<ServerStopOutcome> StopAsync(Process process, ServerStopTimeouts timeouts, Action<Process>? kill = null)
     {
         if (process.HasExited)
         {
@@ -60,7 +63,7 @@ static class ServerProcessStop
         if (!ServerStopRequest.TrySend(process.Id, out var failure))
         {
             TrayLog.Write($"Bundled server host pid={process.Id} cannot be asked to stop ({failure}); killing it");
-            return await KillAsync(process, timeouts.AfterKill).ConfigureAwait(false);
+            return await KillAsync(process, timeouts.AfterKill, kill).ConfigureAwait(false);
         }
         if (await ExitsWithinAsync(process, timeouts.Graceful).ConfigureAwait(false))
         {
@@ -68,14 +71,14 @@ static class ServerProcessStop
             return ServerStopOutcome.StoppedCleanly;
         }
         TrayLog.Write($"Bundled server host pid={process.Id} did not stop in {Seconds(timeouts.Graceful)}; killing it");
-        return await KillAsync(process, timeouts.AfterKill).ConfigureAwait(false);
+        return await KillAsync(process, timeouts.AfterKill, kill).ConfigureAwait(false);
     }
 
-    private static async Task<ServerStopOutcome> KillAsync(Process process, TimeSpan wait)
+    private static async Task<ServerStopOutcome> KillAsync(Process process, TimeSpan wait, Action<Process>? kill)
     {
         try
         {
-            process.Kill(entireProcessTree: true);
+            (kill ?? (target => target.Kill(entireProcessTree: true)))(process);
             await ExitsWithinAsync(process, wait).ConfigureAwait(false);
             return ServerStopOutcome.Killed;
         }

@@ -13,7 +13,12 @@ static class RuntimeHomeSecurity
     /// it changed anything. Throws <see cref="RuntimeHomeOwnedByAnotherAccountException"/> when another user account
     /// owns it, and never changes that folder.
     /// </summary>
-    internal static bool Secure(string runtimeHome)
+    internal static bool Secure(string runtimeHome) =>
+        Secure(runtimeHome, owner => OwnerOnlyAccess.IsTrustedOwner(owner, OwnerOnlyAccess.CurrentUser()));
+
+    /// <param name="runtimeHome">The folder.</param>
+    /// <param name="isTrustedOwner">Whether a folder owned by this account may be used.</param>
+    internal static bool Secure(string runtimeHome, Func<SecurityIdentifier, bool> isTrustedOwner)
     {
         var directory = new DirectoryInfo(runtimeHome);
         if (!directory.Exists)
@@ -24,8 +29,8 @@ static class RuntimeHomeSecurity
         }
 
         var security = directory.GetAccessControl();
-        var owner = (SecurityIdentifier?)security.GetOwner(typeof(SecurityIdentifier));
-        if (owner is not null && !OwnerOnlyAccess.IsTrustedOwner(owner, OwnerOnlyAccess.CurrentUser()))
+        var owner = (SecurityIdentifier)security.GetOwner(typeof(SecurityIdentifier))!;
+        if (!isTrustedOwner(owner))
         {
             throw new RuntimeHomeOwnedByAnotherAccountException(runtimeHome, Describe(owner));
         }
@@ -41,7 +46,7 @@ static class RuntimeHomeSecurity
         return true;
     }
 
-    private static string Describe(SecurityIdentifier sid)
+    internal static string Describe(SecurityIdentifier sid)
     {
         try
         {

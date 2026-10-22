@@ -94,6 +94,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.WeirOnly.ps1')
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Update.ps1')
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Deluno.ps1')
+. (Join-Path $PSScriptRoot 'Weir.Scenarios.DelunoSetup.ps1')
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Tray.ps1')
 . (Join-Path $PSScriptRoot 'Weir.Scenarios.Recover.ps1')
 

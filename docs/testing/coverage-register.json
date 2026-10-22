@@ -2973,6 +2973,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/Rules/RemuxTrackExplainTests.cs",
           "name": "RemuxTrackExplainTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingFileTracksApiTests.cs",
+          "name": "ProcessingFileTracksApiTests"
         }
       ],
       "covers": [
@@ -3011,6 +3016,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingFileTracksApiTests.cs",
+          "name": "ProcessingFileTracksApiTests"
         }
       ],
       "covers": [
@@ -3292,6 +3302,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/RemuxJobs.cs",
           "name": "RemuxJobs"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingJobsApiTests.cs",
+          "name": "ProcessingJobsApiTests"
         }
       ],
       "covers": [
@@ -3330,6 +3345,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingJobsApiTests.cs",
+          "name": "ProcessingJobsApiTests"
         }
       ],
       "covers": [
@@ -3391,6 +3411,11 @@
           "type": "real-fs",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/HoldDiagnosticStoreTests.cs",
           "name": "HoldDiagnosticStoreTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingJobsApiTests.cs",
+          "name": "ProcessingJobsApiTests"
         }
       ],
       "covers": [
@@ -3640,6 +3665,11 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/SetupLiveTests.cs",
           "name": "SetupLiveTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -3688,6 +3718,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -3731,6 +3766,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingRejectSupportApiTests.cs",
           "name": "ProcessingRejectSupportApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -3769,6 +3809,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Processing/MixedWorkflowsApiTests.cs",
           "name": "MixedWorkflowsApiTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -3840,6 +3885,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/LibraryRoundTripApiTests.cs",
           "name": "Saving_a_workflow_back_as_reported_keeps_every_setting"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -3893,6 +3943,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -3936,6 +3991,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -3974,6 +4034,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingLibrarySaveApiTests.cs",
+          "name": "ProcessingLibrarySaveApiTests"
         }
       ],
       "covers": [
@@ -4476,6 +4541,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Libraries/ProcessingSettingsEndpointsContractTests.RuleSets.cs",
           "name": "Rule_set_rejects_invalid_fields"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingRuleSetsApiTests.cs",
+          "name": "ProcessingRuleSetsApiTests"
         }
       ],
       "covers": [
@@ -4519,6 +4589,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingRuleSetsApiTests.cs",
+          "name": "ProcessingRuleSetsApiTests"
         }
       ],
       "covers": [
@@ -4552,6 +4627,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingRuleSetsApiTests.cs",
+          "name": "ProcessingRuleSetsApiTests"
         }
       ],
       "covers": [
@@ -4600,6 +4680,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/ProcessingRuleSetsApiTests.cs",
+          "name": "ProcessingRuleSetsApiTests"
         }
       ],
       "covers": [
@@ -4638,6 +4723,11 @@
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
           "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/ProcessingRulesPreviewRefusalsApiTests.cs",
+          "name": "ProcessingRulesPreviewRefusalsApiTests"
         }
       ],
       "covers": [
@@ -9870,12 +9960,23 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "xunit",
-        "test": "Needed: a tray test on the fake clock with a non-zero interval that advances time and asserts a second check (and none while the mode forbids it). Layer: unit/integration (tray)."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayPeriodicCheckTests.cs",
+          "name": "TrayPeriodicCheckTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/UpdateSettingsTests.cs",
+          "name": "UpdateSettingsTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/UpdateApiTests.cs",
+          "name": "Update_settings_refuse_a_mode_that_is_not_one_of_the_three_and_an_interval_outside_a_minute_to_a_week"
+        }
+      ],
       "covers": [
         "setting:UpdateSettings.CheckIntervalMinutes"
       ],
@@ -12534,27 +12635,16 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "partial": [
+      "proofs": [
         {
           "type": "xunit",
-          "file": "apps/server/tests/Weir.Core.Tests/LibraryMode/LibraryCleanPreflightTests.cs",
-          "name": "LibraryCleanPreflightTests"
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanPreflightRunnerTests.cs",
+          "name": "LibraryCleanPreflightRunnerTests"
         },
         {
           "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryScanHandlerTests.cs",
-          "name": "A_scans_match_data_feeds_a_real_redownload_risk_warning"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/JobPayloadMigrationTests.cs",
-          "name": "JobPayloadMigrationTests"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibraryRedownloadApiTests.cs",
-          "name": "LibraryRedownloadApiTests"
+          "file": "apps/server/tests/Weir.Api.Tests/Processing/LibrarySkipRedownloadApiTests.cs",
+          "name": "LibrarySkipRedownloadApiTests"
         },
         {
           "type": "xunit",
@@ -12563,15 +12653,10 @@
         },
         {
           "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/RedownloadRiskGatewayTests.cs",
-          "name": "RedownloadRiskGatewayTests"
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/JobPayloadMigrationTests.cs",
+          "name": "JobPayloadMigrationTests"
         }
       ],
-      "needs": {
-        "kind": "xunit",
-        "test": "[missing: P2] Evaluator-level; no clean-handler test that a risky file is skipped with the flag on and cleaned (with a warning) with it off."
-      },
-      "issue": 1142,
       "covers": [
         "setting:LibrarySettings.SkipIfManagerWouldRedownload"
       ],
@@ -31419,12 +31504,28 @@
       "severity": "low",
       "touches": "none",
       "required": "inproc",
-      "proofs": [],
-      "needs": {
-        "kind": "vitest",
-        "test": "Layout is jsdom-faked or untested."
-      },
-      "issue": 1142,
+      "proofs": [
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/ActivityNarrowLayoutTests.cs",
+          "name": "ActivityNarrowLayoutTests"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/LibraryTableLayoutTests.cs",
+          "name": "LibraryTableLayoutTests"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/activity/use-narrow-detail-focus.test.tsx",
+          "name": "*"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/library/library-header-controls.test.tsx",
+          "name": "*"
+        }
+      ],
       "audit": {
         "id": "WEB-564",
         "verdict": "Gap"
@@ -46787,12 +46888,67 @@
     {
       "id": "tray.tray.menu-item-click-action-mapping-trayapp-menuclicks-open-pause",
       "area": "tray",
-      "behaviour": "Menu item click -> action mapping (`TrayApp.MenuClicks`: Open, Pause, Restart, Copy address, Allow, Only this PC, Change port, Open data folder, Open logs folder, Start with Windows, Update, Report a problem, Quit each wired to the right handler)",
+      "behaviour": "Menu item click -> action mapping (`TrayController.MenuClicks`: Open, Pause, Restart, Copy address, Allow, Only this PC, Change port, Open data folder, Open logs folder, Start with Windows, Update, Report a problem, Quit each wired to the right handler)",
       "kind": "tray",
       "severity": "low",
       "touches": "install",
       "required": "inproc",
       "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerMenuTests.cs",
+          "name": "Pause_asks_the_server_to_pause_and_a_second_click_asks_it_to_resume"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerMenuTests.cs",
+          "name": "Restart_Weir_restarts_the_server"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerMenuTests.cs",
+          "name": "Copy_address_puts_the_address_on_this_pc_on_the_clipboard"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerMenuTests.cs",
+          "name": "Allow_other_devices_restarts_the_server_for_the_network_and_says_so"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerMenuTests.cs",
+          "name": "Only_this_PC_restarts_the_server_for_this_pc_alone_and_says_so"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerMenuTests.cs",
+          "name": "Change_port_moves_the_server_and_a_click_on_the_notice_opens_Weir_there"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerMenuTests.cs",
+          "name": "Open_data_folder_and_Open_logs_folder_open_those_folders"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerMenuTests.cs",
+          "name": "Start_with_Windows_flips_the_choice_and_the_menu_shows_it_at_once"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerMenuTests.cs",
+          "name": "Check_for_updates_looks_for_one_then_the_menu_offers_to_download_it_and_then_to_restart"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerMenuTests.cs",
+          "name": "Quit_stops_the_server_hides_the_icon_and_ends_the_application"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/WindowsTrayShellTests.cs",
+          "name": "A_click_on_a_menu_item_runs_what_the_controller_gave_for_it"
+        },
         {
           "type": "scenario",
           "file": "scripts/scenarios-ci/windows-tray.mjs",
@@ -47238,12 +47394,47 @@
     {
       "id": "tray.tray.shell-wiring-that-keeps-icon-hover-and-menu-in",
       "area": "tray",
-      "behaviour": "Shell wiring that keeps icon, hover and menu in step: `TrayApp.Render` after every phase/status/update/LAN/port change, menu re-render on `Opening`, blink `Timer` tick (ends the blink when the status deadline passes), `PhaseChanged` -> UI thread",
+      "behaviour": "Shell wiring that keeps icon, hover and menu in step: `TrayController.Render` after every phase/status/update/LAN/port change, menu re-render on `Opening`, blink `Timer` tick (ends the blink when the status deadline passes), `PhaseChanged` -> UI thread",
       "kind": "tray",
       "severity": "low",
       "touches": "install",
       "required": "inproc",
       "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerShowTests.cs",
+          "name": "A_status_the_running_server_wrote_turns_the_dot_green_and_stops_the_blink"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerShowTests.cs",
+          "name": "A_server_that_is_starting_again_forgets_what_the_one_before_it_said"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerShowTests.cs",
+          "name": "The_blink_swaps_between_the_lit_and_the_unlit_icon_and_leaves_the_menu_alone"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerShowTests.cs",
+          "name": "A_blink_that_finds_the_dot_known_draws_everything_again"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerShowTests.cs",
+          "name": "A_status_that_never_comes_turns_the_dot_amber_once_the_wait_is_over"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerShowTests.cs",
+          "name": "The_menu_is_drawn_again_as_it_opens"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/WindowsTrayShellTests.cs",
+          "name": "The_icon_the_hover_text_and_the_menu_are_what_the_controller_asked_for"
+        },
         {
           "type": "scenario",
           "file": "scripts/scenarios-ci/windows-tray.mjs",
@@ -47326,6 +47517,11 @@
       "touches": "install",
       "required": "inproc",
       "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/WindowsTrayShellTests.cs",
+          "name": "What_the_person_does_to_the_icon_is_handed_to_the_controller"
+        },
         {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/TrayIconClicksTests.cs",
@@ -47425,6 +47621,16 @@
       "required": "inproc",
       "proofs": [
         {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerStartTests.cs",
+          "name": "A_server_that_is_ready_is_announced_and_a_click_on_the_notice_opens_Weir"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerStartTests.cs",
+          "name": "A_start_that_is_not_to_be_announced_says_nothing_and_still_watches_the_server"
+        },
+        {
           "type": "scenario",
           "file": "scripts/scenarios-ci/windows-tray.mjs",
           "name": "tray-start"
@@ -47447,7 +47653,7 @@
       ],
       "needs": {
         "kind": "xunit",
-        "test": "The rule (decision #638, regressed before) is proven only as flag predicates. Nothing launches the real tray through each start path and asserts no browser/shell-open happened. Needs a VM scenario (or CI-smoke step) that starts the installed tray with/without `--no-browser`, after Setup, after an update, after Change port, and second launch, and fails if a browser process or shell-open of `127.0.0.1:<port>` appears; plus a tray-unit test on `TrayApp.StartAsync` with a recording opener."
+        "test": "The unit tests prove the tray itself opens nothing until a click. Still needed: a VM scenario (or CI-smoke step) that starts the installed tray with and without --no-browser, after Setup, after an update, after Change port and on a second launch, and fails if a browser process or shell-open of 127.0.0.1:<port> appears."
       },
       "audit": {
         "id": "TRAY-019",
@@ -47583,6 +47789,11 @@
       "required": "inproc",
       "proofs": [
         {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerStartTests.cs",
+          "name": "A_start_with_nobody_at_the_desktop_that_cannot_get_the_server_up_exits_with_code_1"
+        },
+        {
           "type": "scenario",
           "file": "scripts/scenarios-ci/windows-tray.mjs",
           "name": "tray-start"
@@ -47590,7 +47801,7 @@
       ],
       "needs": {
         "kind": "xunit",
-        "test": "The branch in `TrayApp.StartAsync` (`!_start.Interactive` -> `_exitCode = 1; Application.ExitThread()`) and `Program.RunTray` returning 1 when the port cannot be decided are never run. The calling program (Deluno, Setup scripts) relies on a non-zero exit. Needs a tray-unit test on the start outcome (seam) and a CI-smoke/VM scenario that starts `Weir.exe --silent --port <busy port>` and a tray whose server cannot start, asserting exit code 1 and the log line."
+        "test": "The tray-unit test proves the exit code when the server cannot start. Still never run: Program.RunTray returning 1 when the port cannot be decided. Needs a CI-smoke/VM scenario that starts Weir.exe --silent --port <busy port>, asserting exit code 1 and the log line."
       },
       "audit": {
         "id": "TRAY-023",
@@ -47637,6 +47848,26 @@
       "touches": "install",
       "required": "inproc",
       "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerShowTests.cs",
+          "name": "The_notice_of_an_update_that_installs_by_itself_says_when"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerShowTests.cs",
+          "name": "The_notice_of_an_update_that_waits_to_be_installed_offers_to_install_it_on_a_click"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerShowTests.cs",
+          "name": "The_notice_of_an_update_that_is_only_available_points_to_the_page_that_installs_it"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/tray/Weir.Tray.Tests/TrayControllerMenuTests.cs",
+          "name": "Asking_to_install_while_an_install_is_under_way_says_so"
+        },
         {
           "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/UpdateNoticesTests.cs",

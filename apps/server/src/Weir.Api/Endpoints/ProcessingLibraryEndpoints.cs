@@ -68,17 +68,17 @@ internal sealed class ProcessingLibraryEndpointHandlers
         ScanSettingsChanges scanSettingsChanges,
         LibrarySettingsStore librarySettings)
     {
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _connectionStore = connectionStore ?? throw new ArgumentNullException(nameof(connectionStore));
-        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
-        _operatorSettings = operatorSettings ?? throw new ArgumentNullException(nameof(operatorSettings));
-        _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
-        _scanWakeups = scanWakeups ?? throw new ArgumentNullException(nameof(scanWakeups));
-        _rejectSupport = rejectSupport ?? throw new ArgumentNullException(nameof(rejectSupport));
-        _managerSetupCheck = managerSetupCheck ?? throw new ArgumentNullException(nameof(managerSetupCheck));
-        _folderChainCheck = folderChainCheck ?? throw new ArgumentNullException(nameof(folderChainCheck));
-        _scanSettingsChanges = scanSettingsChanges ?? throw new ArgumentNullException(nameof(scanSettingsChanges));
-        _librarySettings = librarySettings ?? throw new ArgumentNullException(nameof(librarySettings));
+        _libraries = libraries;
+        _connectionStore = connectionStore;
+        _connections = connections;
+        _operatorSettings = operatorSettings;
+        _suiteSettings = suiteSettings;
+        _scanWakeups = scanWakeups;
+        _rejectSupport = rejectSupport;
+        _managerSetupCheck = managerSetupCheck;
+        _folderChainCheck = folderChainCheck;
+        _scanSettingsChanges = scanSettingsChanges;
+        _librarySettings = librarySettings;
     }
 
     private Task<WireObject> LibraryOutAsync(ApiRequest request, Weir.Infrastructure.Sqlite.UnitOfWork uow, ProcessingLibraryRecord row) =>
@@ -221,6 +221,7 @@ internal sealed class ProcessingLibraryEndpointHandlers
         }
 
         issues.ThrowIfAny();
+        body = ProcessingLibraryMapping.WithWindowsInUtc(body);
 
         request.RequireConfirmationToken(csrfToken);
 
@@ -259,6 +260,7 @@ internal sealed class ProcessingLibraryEndpointHandlers
         }
 
         issues.ThrowIfAny();
+        body = ProcessingLibraryMapping.WithWindowsInUtc(body);
 
         request.RequireConfirmationToken(csrfToken);
 

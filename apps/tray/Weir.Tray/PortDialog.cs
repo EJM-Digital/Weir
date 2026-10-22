@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace Weir.Tray;
@@ -6,7 +7,7 @@ namespace Weir.Tray;
 /// The one window the tray owns: asks which port Weir's web app should live at. Shown on an
 /// interactive first run, when the saved port is taken on a later start, and from the tray
 /// menu's "Change port". Never shown without a person at a desktop (see
-/// <see cref="PortChoice.HasInteractiveDesktop"/>).
+/// <see cref="PortChoice.HasInteractiveDesktop()"/>).
 ///
 /// Plain WinForms in the system dialog font, like the rest of the tray (a NotifyIcon, its
 /// context menu and balloon tips): no custom chrome, so it looks like Windows.
@@ -63,7 +64,7 @@ sealed class PortDialog : Form
         _windows = windows ?? Win32Windows.Instance;
 
         Text = "Weir";
-        Font = SystemFonts.MessageBoxFont ?? SystemFonts.DefaultFont;
+        Font = DialogFont(SystemFonts.MessageBoxFont);
         AutoScaleMode = AutoScaleMode.Dpi;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -105,11 +106,7 @@ sealed class PortDialog : Form
             + $"like http://localhost:{PortChoice.DefaultPort}.",
             width));
 
-        var situation = Situation(prompt);
-        if (situation is not null)
-        {
-            layout.Controls.Add(Paragraph(situation, width, bold: prompt.CurrentPortInUse));
-        }
+        layout.Controls.Add(Paragraph(Situation(prompt), width, bold: prompt.CurrentPortInUse));
 
         var defaultBusy = prompt.Reason == PortPromptReason.Change
             ? PortChoice.DefaultPort != prompt.CurrentPort && isInUse(PortChoice.DefaultPort)
@@ -268,7 +265,7 @@ sealed class PortDialog : Form
         _ => "Change Weir's port",
     };
 
-    private static string? Situation(PortPrompt prompt) => prompt.Reason switch
+    internal static string Situation(PortPrompt prompt) => prompt.Reason switch
     {
         PortPromptReason.FirstRun when prompt.CurrentPortInUse && prompt.Suggested is { } s =>
             $"Another program on this computer is already using {PortChoice.DefaultPort}, Weir's default. "
@@ -292,7 +289,7 @@ sealed class PortDialog : Form
         AutoSize = true,
         MaximumSize = new Size(width, 0),
         Margin = new Padding(0, 0, 0, 6),
-        Font = bold ? new Font(SystemFonts.MessageBoxFont ?? SystemFonts.DefaultFont, FontStyle.Bold) : null,
+        Font = bold ? new Font(DialogFont(SystemFonts.MessageBoxFont), FontStyle.Bold) : null,
     };
 
     private int? Selected() => _useDefault.Checked ? PortChoice.DefaultPort : PortChoice.ParsePort(_customPort.Text);
@@ -304,6 +301,9 @@ sealed class PortDialog : Form
             ? $"Weir will be at http://localhost:{p}/"
             : "Weir will be at http://localhost:<port>/";
     }
+
+    /// <summary>The font the window uses: Windows' message-box font, or its default font on a desktop that names none.</summary>
+    internal static Font DialogFont(Font? messageBox) => messageBox ?? SystemFonts.DefaultFont;
 
     private void Accept()
     {
@@ -328,9 +328,10 @@ sealed class PortDialog : Form
     }
 
     /// <summary>Show the dialog modally and return the chosen port, or null if they quit.</summary>
-    internal static int? Ask(PortPrompt prompt, Func<int, bool> isInUse, Icon? icon)
+    [ExcludeFromCodeCoverage]
+    internal static int? Ask(PortPrompt prompt, Icon? icon)
     {
-        using var dialog = new PortDialog(prompt, isInUse, icon);
+        using var dialog = new PortDialog(prompt, PortChoice.IsInUse, icon);
         return dialog.ShowDialog() == DialogResult.OK ? dialog.ChosenPort : null;
     }
 }

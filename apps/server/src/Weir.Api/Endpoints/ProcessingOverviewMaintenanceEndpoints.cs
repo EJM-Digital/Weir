@@ -37,11 +37,11 @@ internal sealed class ProcessingOverviewMaintenanceEndpointHandlers
     public ProcessingOverviewMaintenanceEndpointHandlers(
         OverviewStatsStore overviewStats, OperatorSettingsStore operatorSettings, MaintenanceStore maintenance, PeriodicEnqueueClock clock, ProcessingJobStore jobs)
     {
-        _overviewStats = overviewStats ?? throw new ArgumentNullException(nameof(overviewStats));
-        _operatorSettings = operatorSettings ?? throw new ArgumentNullException(nameof(operatorSettings));
-        _maintenance = maintenance ?? throw new ArgumentNullException(nameof(maintenance));
-        _clock = clock ?? throw new ArgumentNullException(nameof(clock));
-        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
+        _overviewStats = overviewStats;
+        _operatorSettings = operatorSettings;
+        _maintenance = maintenance;
+        _clock = clock;
+        _jobs = jobs;
     }
 
     public async Task<ApiResult> GetOverviewStatsAsync(ApiRequest request)

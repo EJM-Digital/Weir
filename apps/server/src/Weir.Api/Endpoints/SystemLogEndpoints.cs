@@ -35,7 +35,7 @@ internal sealed class SystemLogEndpointHandlers
 
     private readonly SystemLogReader _log;
 
-    public SystemLogEndpointHandlers(SystemLogReader log) => _log = log ?? throw new ArgumentNullException(nameof(log));
+    public SystemLogEndpointHandlers(SystemLogReader log) => _log = log;
 
     public async Task<ApiResult> GetLogAsync(ApiRequest request)
     {

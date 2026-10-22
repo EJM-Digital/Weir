@@ -221,8 +221,7 @@ public sealed class LibraryDiscoveryService
                 ? descriptor.OutputPath ?? string.Empty
                 : string.Empty;
 
-            var wantedName = string.IsNullOrEmpty(descriptor.Name) ? $"{connectionRow.Name} library {key}" : descriptor.Name;
-            var name = UniqueName(existingNames, wantedName);
+            var name = UniqueName(existingNames, descriptor.Name);
             existingNames.Add(name);
 
             // A library with nowhere to hand files back arrives switched off: on, it would pick up

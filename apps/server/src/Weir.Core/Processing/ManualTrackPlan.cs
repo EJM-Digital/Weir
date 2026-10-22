@@ -148,10 +148,13 @@ public static class ManualTrackPlan
         var subtitleTracks = new List<PlannedTrack>();
         foreach (var entry in ordered)
         {
-            if (!kinds.TryGetValue(entry.Index, out var kind) || !streamByIndex.TryGetValue(entry.Index, out var stream))
+            // The classification leaves out embedded images, which are never selectable, so a choice that names one is skipped.
+            if (!kinds.TryGetValue(entry.Index, out var kind))
             {
                 continue;
             }
+
+            var stream = streamByIndex[entry.Index];
 
             switch (kind)
             {

@@ -9,6 +9,7 @@ using Weir.Core.Processing;
 using Weir.Core.Time;
 using Weir.Core.Validation;
 using Weir.Infrastructure.MediaManagers;
+using static Weir.Api.Endpoints.EndpointLookups;
 
 namespace Weir.Api.Endpoints;
 
@@ -49,10 +50,10 @@ internal sealed class DownloadClientConnectionsEndpointHandlers
     public DownloadClientConnectionsEndpointHandlers(
         DownloadClientConnectionStore store, DownloadClientConnectionService connections, DownloadClientSuggestions suggestions, IDownloadClientPorts ports)
     {
-        _store = store ?? throw new ArgumentNullException(nameof(store));
-        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
-        _suggestions = suggestions ?? throw new ArgumentNullException(nameof(suggestions));
-        _ports = ports ?? throw new ArgumentNullException(nameof(ports));
+        _store = store;
+        _connections = connections;
+        _suggestions = suggestions;
+        _ports = ports;
     }
 
     public async Task<ApiResult> ListConnectionsAsync(ApiRequest request)
@@ -246,15 +247,6 @@ internal sealed class DownloadClientConnectionsEndpointHandlers
         var uow = await request.DbAsync().ConfigureAwait(false);
         var suggestions = await _suggestions.SuggestAsync(uow, request.Context.RequestAborted).ConfigureAwait(false);
         return ApiRoutes.Ok(new WireArray(suggestions.Select(item => (WireValue)item)));
-    }
-
-    /// <summary>The <c>connection_id</c> route value as an integer of at least 1; 0 with a validation issue otherwise.</summary>
-    private static long ConnectionId(ApiRequest request, ValidationIssues issues)
-    {
-        var raw = request.RouteValue("connection_id") ?? string.Empty;
-        return FieldRules.TryInt(new WireString(raw), ["path", "connection_id"], 1, null, issues, out var value)
-            ? value > long.MaxValue ? long.MaxValue : (long)value
-            : 0;
     }
 
     private async Task<DownloadClientConnectionRecord> RequireConnectionAsync(Infrastructure.Sqlite.UnitOfWork uow, long connectionId) =>

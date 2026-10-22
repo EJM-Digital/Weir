@@ -27,17 +27,26 @@ internal sealed class FakeUpdateService : IUpdateService
     /// <summary>When set, every download ends with this failure.</summary>
     public string? DownloadFailure { get; init; }
 
+    /// <summary>Whether a download that finds the update gone ends as "nothing to download" (a check and a download that disagree).</summary>
+    public bool DownloadFindsNothing { get; init; }
+
     /// <summary>When set, a check does not finish until this task does.</summary>
     public Task? HoldCheck { get; init; }
 
     /// <summary>When set, a download does not finish until this task does.</summary>
     public Task? HoldDownload { get; init; }
 
+    /// <summary>Raised after each change to the fake's state, so a test can wait for work the controller runs in the background.</summary>
+    public TestActivity Activity { get; set; } = new();
+
     public int Checks { get; private set; }
 
     public int Downloads { get; private set; }
 
     public Action<string>? OnApply { get; set; }
+
+    /// <summary>Called as each check starts, so a test hears of it without polling.</summary>
+    public Action? OnCheck { get; set; }
 
     /// <summary>The apply calls made so far, by the constants above.</summary>
     public IReadOnlyList<string> Applied => _applied;
@@ -61,31 +70,52 @@ internal sealed class FakeUpdateService : IUpdateService
     public async Task<UpdateOutcome> CheckForUpdateAsync()
     {
         Checks++;
+        OnCheck?.Invoke();
+        Activity.Raise();
         if (HoldCheck is not null)
         {
             await HoldCheck;
         }
-        if (CheckFailure is not null)
+        try
         {
-            return UpdateOutcome.Failed(CheckFailure);
+            if (CheckFailure is not null)
+            {
+                return UpdateOutcome.Failed(CheckFailure);
+            }
+            HasPendingUpdate = FindsUpdate;
+            return FindsUpdate ? UpdateOutcome.Succeeded : UpdateOutcome.NothingToDo;
         }
-        HasPendingUpdate = FindsUpdate;
-        return FindsUpdate ? UpdateOutcome.Succeeded : UpdateOutcome.NothingToDo;
+        finally
+        {
+            Activity.Raise();
+        }
     }
 
     public async Task<UpdateOutcome> DownloadUpdateAsync()
     {
         Downloads++;
+        Activity.Raise();
         if (HoldDownload is not null)
         {
             await HoldDownload;
         }
-        if (DownloadFailure is not null)
+        try
         {
-            return UpdateOutcome.Failed(DownloadFailure);
+            if (DownloadFailure is not null)
+            {
+                return UpdateOutcome.Failed(DownloadFailure);
+            }
+            if (DownloadFindsNothing)
+            {
+                return UpdateOutcome.NothingToDo;
+            }
+            IsDownloaded = HasPendingUpdate;
+            return HasPendingUpdate ? UpdateOutcome.Succeeded : UpdateOutcome.NothingToDo;
         }
-        IsDownloaded = HasPendingUpdate;
-        return HasPendingUpdate ? UpdateOutcome.Succeeded : UpdateOutcome.NothingToDo;
+        finally
+        {
+            Activity.Raise();
+        }
     }
 
     public string? FindUpdateLeftWaiting() => LeftWaitingVersion;
@@ -100,5 +130,6 @@ internal sealed class FakeUpdateService : IUpdateService
     {
         _applied.Add(call);
         OnApply?.Invoke(call);
+        Activity.Raise();
     }
 }

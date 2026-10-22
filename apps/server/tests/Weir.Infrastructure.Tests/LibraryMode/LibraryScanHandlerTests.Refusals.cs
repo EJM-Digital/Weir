@@ -1,5 +1,7 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Weir.Core.Jobs;
 using Weir.Core.LibraryMode;
+using Weir.Core.Media;
 using Weir.Infrastructure.LibraryMode;
 using Weir.Infrastructure.Tests.Processing.RemuxPass;
 
@@ -124,5 +126,41 @@ public sealed partial class LibraryScanHandlerTests
         Assert.Equal(jobId, claimed.Id);
         Assert.Null(file.LinkCount);
         Assert.Equal(LibraryFileClassification.Matches, file.Classification);
+    }
+
+    [Fact]
+    public async Task A_file_whose_track_details_make_no_sense_is_listed_as_not_processable_in_plain_words()
+    {
+        var library = await LibraryAsync();
+        await ScanFolderAsync(library);
+        await File.WriteAllBytesAsync(_libraryFolder.Join("film.mkv"), [1, 2, 3]);
+        _media.Probes["film.mkv"] = """{"format":{"duration":"100.0"},"streams":[{"index":0,"codec_type":5}]}""";
+
+        await RunScanAsync(await EnqueueScanAsync(library));
+
+        var file = Assert.Single(await _fixture.Db(uow => _scans.CurrentFilesAsync(uow, library), commit: false));
+        Assert.Equal(LibraryFileClassification.CannotProcess, file.Classification);
+        Assert.Equal(ToolFailureText.UnusableTrackData, file.Reason);
+    }
+
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("""[{"id":7,"title":"Elsewhere","movieFile":{"id":42,"path":"/somewhere/else/film.mkv"}}]""")]
+    public async Task A_manager_that_names_no_file_in_the_folder_matches_nothing_and_is_not_an_error(string movies)
+    {
+        var library = await LibraryAsync();
+        await ScanFolderAsync(library);
+        await _fixture.AddConnectionAsync("radarr");
+        _fixture.Http.Json(HttpMethod.Get, "/api/v3/movie", movies);
+        await File.WriteAllBytesAsync(_libraryFolder.Join("film.mkv"), [1, 2, 3]);
+        _media.Probes["film.mkv"] = FakeMediaRunner.EnglishOnly;
+
+        var jobId = await EnqueueScanAsync(library);
+        await RunScanAsync(jobId);
+
+        var file = Assert.Single(await _fixture.Db(uow => _scans.CurrentFilesAsync(uow, library), commit: false));
+        Assert.Null(file.ManagerTitle);
+        var outcome = await _fixture.Db(async uow => await _scans.OutcomeAsync(uow, library, await _scans.LatestAsync(uow, library), NullLogger.Instance), commit: false);
+        Assert.Empty(outcome!.Errors);
     }
 }

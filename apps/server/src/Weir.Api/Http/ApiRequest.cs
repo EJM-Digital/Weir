@@ -205,7 +205,8 @@ public sealed class ApiRequest : IAsyncDisposable
         return values.Count == 0 ? null : values[^1];
     }
 
-    public string? RouteValue(string name) => Context.Request.RouteValues.TryGetValue(name, out var value) ? value as string : null;
+    /// <summary>The text of a route value the route template names; asking for one the template does not have is a mistake in the route table.</summary>
+    public string RouteValue(string name) => (string)Context.Request.RouteValues[name]!;
 
     /// <summary>The client address after trusted forwarded headers were applied.</summary>
     public string? ClientHost => DefaultClientHost(Context);
@@ -357,7 +358,7 @@ public sealed class ApiRequest : IAsyncDisposable
     public long PathInt(string name, ValidationIssues issues)
     {
         ArgumentNullException.ThrowIfNull(issues);
-        var raw = RouteValue(name) ?? string.Empty;
+        var raw = RouteValue(name);
         return FieldRules.TryInt(new WireString(raw), ["path", name], null, null, issues, out var value)
             ? value > long.MaxValue ? long.MaxValue : value < long.MinValue ? long.MinValue : (long)value
             : 0;

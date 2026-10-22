@@ -46,13 +46,13 @@ internal sealed class LibraryModeScheduleEndpointHandlers
         LibraryStore libraries,
         DataChangePublisher changes)
     {
-        _librarySettings = librarySettings ?? throw new ArgumentNullException(nameof(librarySettings));
-        _scans = scans ?? throw new ArgumentNullException(nameof(scans));
-        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
-        _hardlinkInspector = hardlinkInspector ?? throw new ArgumentNullException(nameof(hardlinkInspector));
-        _riskChecker = riskChecker ?? throw new ArgumentNullException(nameof(riskChecker));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _changes = changes ?? throw new ArgumentNullException(nameof(changes));
+        _librarySettings = librarySettings;
+        _scans = scans;
+        _connections = connections;
+        _hardlinkInspector = hardlinkInspector;
+        _riskChecker = riskChecker;
+        _libraries = libraries;
+        _changes = changes;
     }
 
     public async Task<ApiResult> PostScheduleAsync(ApiRequest request)

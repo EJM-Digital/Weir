@@ -18,13 +18,15 @@ export const GATES = {
   "web-dist": "run_web",
   web: "run_web",
   "e2e-smoke": "run_e2e",
-  // Calls ci-contract.yml: every area's leg.
+  // Both call ci-contract.yml, every area's leg: the Linux legs and the Windows ones (docs/ci-cost.md).
   contract: "run_contract",
+  "contract-windows": "run_contract_windows",
   tray: "run_tray",
   // Merges the server, tray and web coverage and holds each to its floor (docs/coverage/floors.json).
   coverage: "run_coverage",
-  // Calls ci-packaging.yml: the Docker and Windows package smokes.
+  // Both call ci-packaging.yml: the Docker smokes and Linux scenario shards, and the Windows package smoke and scenario shards.
   packaging: "run_packaging",
+  "packaging-windows": "run_packaging_windows",
 };
 
 // Returns one line per problem; empty means CI passed.

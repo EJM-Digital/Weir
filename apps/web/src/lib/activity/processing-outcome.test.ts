@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import type { ActivityEventItem } from "../api/types";
-import { REMUX_PASS_COMPLETED_EVENT } from "./event-types";
+import {
+  LIBRARY_FILE_CLEANED_EVENT,
+  REMUX_PASS_COMPLETED_EVENT,
+} from "./event-types";
 import { finishedFileFromEvent } from "./processing-outcome";
 
 function passEvent(detail: Record<string, unknown>): ActivityEventItem {
@@ -133,5 +136,167 @@ describe("finishedFileFromEvent and the poster", () => {
     );
 
     expect(finished?.posterUrl).toBeNull();
+  });
+});
+
+describe("finishedFileFromEvent for a pass that wrote a file", () => {
+  const written = { outcome: "live_output_written", ok: true };
+
+  it("reads a file passed through untouched as passed", () => {
+    const finished = finishedFileFromEvent(
+      passEvent({ ...written, pass_through_unchanged: true }),
+    );
+
+    expect(finished?.kind).toBe("passed");
+  });
+
+  it.each([
+    [
+      "the path the pass recorded",
+      { relative_media_path: "A/a.mkv" },
+      "B/b.mkv",
+      "A/a.mkv",
+    ],
+    [
+      "the path of the entry when the pass recorded none",
+      { relative_media_path: undefined },
+      "B/b.mkv",
+      "B/b.mkv",
+    ],
+    [
+      "a plain name when neither has one",
+      { relative_media_path: undefined },
+      null,
+      "this file",
+    ],
+  ])("names the file by %s", (_name, detail, entryPath, name) => {
+    const entry = {
+      ...passEvent({ ...written, ...detail }),
+      relative_path: entryPath,
+    };
+
+    expect(finishedFileFromEvent(entry)?.relativePath).toBe(name);
+  });
+
+  it.each([
+    [
+      "the output is smaller",
+      { source_size_bytes: 900, output_size_bytes: 400 },
+      500,
+    ],
+    [
+      "the output is as big",
+      { source_size_bytes: 400, output_size_bytes: 400 },
+      null,
+    ],
+    [
+      "the output is bigger",
+      { source_size_bytes: 400, output_size_bytes: 900 },
+      null,
+    ],
+    ["a size is missing", { source_size_bytes: 900 }, null],
+  ])("counts the space saved when %s", (_name, sizes, saved) => {
+    expect(
+      finishedFileFromEvent(passEvent({ ...written, ...sizes }))?.savedBytes,
+    ).toBe(saved);
+  });
+
+  it("counts the tracks taken out", () => {
+    const finished = finishedFileFromEvent(
+      passEvent({
+        ...written,
+        removed_audio: ["fra", "deu"],
+        removed_subtitles: ["fra"],
+      }),
+    );
+
+    expect([finished?.removedAudio, finished?.removedSubtitles]).toEqual([
+      2, 1,
+    ]);
+  });
+
+  it("belongs to no workflow when the entry names none", () => {
+    const entry = { ...passEvent(written), library_id: undefined };
+
+    expect(finishedFileFromEvent(entry)?.libraryId).toBeNull();
+  });
+});
+
+describe("finishedFileFromEvent for a library file that was cleaned", () => {
+  function cleaned(
+    detail: Record<string, unknown>,
+    entry: Partial<ActivityEventItem> = {},
+  ): ActivityEventItem {
+    return {
+      id: 7,
+      created_at: "2026-09-29T09:00:00",
+      event_type: LIBRARY_FILE_CLEANED_EVENT,
+      module: "library",
+      title: "Cleaned Film.mkv",
+      library_id: 2,
+      relative_path: "entry/film.mkv",
+      detail: JSON.stringify(detail),
+      ...entry,
+    };
+  }
+
+  it("is a cleaned file of the library, told by the entry's title", () => {
+    expect(
+      finishedFileFromEvent(cleaned({ relative_path: "Film/film.mkv" })),
+    ).toMatchObject({
+      source: "library",
+      kind: "cleaned",
+      relativePath: "Film/film.mkv",
+      libraryId: 2,
+      sentence: "Cleaned Film.mkv",
+      posterUrl: null,
+    });
+  });
+
+  it.each([
+    [
+      "the entry's path when the detail has none",
+      { relative_path: "entry/film.mkv" },
+      "entry/film.mkv",
+    ],
+    ["a plain name when neither has one", { relative_path: null }, "this file"],
+  ])("names the file by %s", (_name, entry, name) => {
+    expect(
+      finishedFileFromEvent(cleaned({}, entry as Partial<ActivityEventItem>))
+        ?.relativePath,
+    ).toBe(name);
+  });
+
+  it("carries the poster, and belongs to no workflow when the entry names none", () => {
+    const finished = finishedFileFromEvent(
+      cleaned({}, { library_id: undefined, poster_url: "/api/poster" }),
+    );
+
+    expect([finished?.libraryId, finished?.posterUrl]).toEqual([
+      null,
+      "/api/poster",
+    ]);
+  });
+});
+
+describe("finishedFileFromEvent for a pass with no readable detail", () => {
+  it.each([["nothing"], ["words, not a record"]])(
+    "is no finished file when the entry carries %s",
+    (detail) => {
+      const entry = {
+        ...passEvent({}),
+        detail: detail === "nothing" ? null : "Pass done",
+      };
+
+      expect(finishedFileFromEvent(entry)).toBeNull();
+    },
+  );
+});
+
+describe("finishedFileFromEvent for any other entry", () => {
+  it("is no finished file", () => {
+    const entry = { ...passEvent({}), event_type: "something.else" };
+
+    expect(finishedFileFromEvent(entry)).toBeNull();
   });
 });

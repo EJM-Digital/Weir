@@ -89,8 +89,7 @@ public static class LibraryModeSchedule
             return grid;
         }
 
-        return window.ScheduleHoursLimited
-            ? ScheduleGrid.FromDaysAndTimes(window.ScheduleDays, window.ScheduleStart, window.ScheduleEnd)
-            : string.Empty;
+        // A window with no grid that is shut is limited to hours: with neither it is always open and this is never asked.
+        return ScheduleGrid.FromDaysAndTimes(window.ScheduleDays, window.ScheduleStart, window.ScheduleEnd);
     }
 }

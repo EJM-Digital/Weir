@@ -13,7 +13,7 @@ public sealed class SystemStatsFrames
 {
     private readonly SystemStatsStore _store;
 
-    public SystemStatsFrames(SystemStatsStore store) => _store = store ?? throw new ArgumentNullException(nameof(store));
+    public SystemStatsFrames(SystemStatsStore store) => _store = store;
 
     /// <summary>The frames for one open stream, from when it opens until it ends.</summary>
     public async IAsyncEnumerable<string> ForAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
