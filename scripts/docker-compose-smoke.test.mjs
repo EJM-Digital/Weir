@@ -13,7 +13,7 @@ import { DatabaseSync } from "node:sqlite";
 import { headRevision, readRevision, revisionNumber, usernamesIn } from "./docker-smoke/database.mjs";
 import { upgradeOutcome, parseSetupCode } from "./docker-smoke/server-log.mjs";
 import { previousRelease } from "./docker-smoke/previous-image.mjs";
-import { FORMER_IMAGE_REPOSITORY, IMAGE_REPOSITORY } from "./repository.mjs";
+import { IMAGE_REPOSITORY } from "./repository.mjs";
 import { sessionCookie } from "./docker-smoke/weir-client.mjs";
 import { composeOverride } from "./docker-smoke/override.mjs";
 import { GENERATED_SECRET, asEnvironment, notOwnedBy, parseStat, processIds } from "./docker-smoke/ownership.mjs";
@@ -54,11 +54,11 @@ test("an upgrade is told apart from a start on a database that was already curre
   assert.equal(upgradeOutcome("Created database schema revision=0082_x path=/data"), null);
 });
 
-test("the previous release of a version is the newest older one, and with no version it is the newest published; a release made before the move is pulled from the former image name", () => {
+test("the previous release of a version is the newest older one, and with no version it is the newest published", () => {
   const tags = ["v1.0.0-rc.9", "v1.0.0-rc.18", "v1.0.0-rc.10"];
-  assert.deepEqual(previousRelease(tags, "1.0.0-rc.19"), { version: "1.0.0-rc.18", image: `${FORMER_IMAGE_REPOSITORY}:1.0.0-rc.18` });
-  assert.deepEqual(previousRelease(tags, "1.0.0-rc.10"), { version: "1.0.0-rc.9", image: `${FORMER_IMAGE_REPOSITORY}:1.0.0-rc.9` });
-  assert.deepEqual(previousRelease(tags, ""), { version: "1.0.0-rc.18", image: `${FORMER_IMAGE_REPOSITORY}:1.0.0-rc.18` });
+  assert.deepEqual(previousRelease(tags, "1.0.0-rc.19"), { version: "1.0.0-rc.18", image: `${IMAGE_REPOSITORY}:1.0.0-rc.18` });
+  assert.deepEqual(previousRelease(tags, "1.0.0-rc.10"), { version: "1.0.0-rc.9", image: `${IMAGE_REPOSITORY}:1.0.0-rc.9` });
+  assert.deepEqual(previousRelease(tags, ""), { version: "1.0.0-rc.18", image: `${IMAGE_REPOSITORY}:1.0.0-rc.18` });
   assert.deepEqual(previousRelease([...tags, "v1.0.0-rc.19"], "1.0.0-rc.20"), { version: "1.0.0-rc.19", image: `${IMAGE_REPOSITORY}:1.0.0-rc.19` });
 });
 
