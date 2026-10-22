@@ -38,17 +38,7 @@ public static class LibraryFileWalker
             }
 
             var option = library.TopLevelOnly ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories;
-            IEnumerable<string> files;
-            try
-            {
-                files = Directory.EnumerateFiles(folder, "*", option);
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var path in files)
+            foreach (var path in Directory.EnumerateFiles(folder, "*", option))
             {
                 if (!seen.Add(path))
                 {
@@ -79,21 +69,10 @@ public static class LibraryFileWalker
                     continue;
                 }
 
-                FileInfo info;
-                try
+                if (WatchedMediaFile.Stat(path) is { } file)
                 {
-                    info = new FileInfo(path);
-                    if (!info.Exists)
-                    {
-                        continue;
-                    }
+                    found.Add(new LibraryWalkedFile(path, file.SizeBytes, new DateTimeOffset(file.ModifiedUtc, TimeSpan.Zero).ToUnixTimeSeconds()));
                 }
-                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-                {
-                    continue;
-                }
-
-                found.Add(new LibraryWalkedFile(path, info.Length, new DateTimeOffset(info.LastWriteTimeUtc, TimeSpan.Zero).ToUnixTimeSeconds()));
             }
         }
 

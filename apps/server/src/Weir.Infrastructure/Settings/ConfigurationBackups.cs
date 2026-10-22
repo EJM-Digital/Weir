@@ -104,14 +104,7 @@ public sealed class ConfigurationBackups
             throw new WireValueException("Configuration snapshot file name is invalid.");
         }
 
-        var root = Directory;
-        var path = Path.GetFullPath(Path.Join(root, row.FileName));
-        var relative = Path.GetRelativePath(root, path);
-        if (relative == ".." || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal) || Path.IsPathRooted(relative))
-        {
-            throw new WireValueException("Configuration snapshot path is outside the backup directory.");
-        }
-
+        var path = Path.Join(Directory, row.FileName);
         if (!File.Exists(path))
         {
             throw new WireValueException("Configuration snapshot file is missing on disk.");

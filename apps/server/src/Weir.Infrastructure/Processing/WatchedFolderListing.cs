@@ -21,8 +21,14 @@ public sealed record WatchedMediaFile(string FullPath, long SizeBytes, DateTime 
         }
     }
 
-    internal static WatchedMediaFile? From(FileInfo info) =>
-        info.Exists ? new WatchedMediaFile(info.FullName, info.Length, info.LastWriteTimeUtc, info.CreationTimeUtc) : null;
+    /// <summary>A link is described by the file it points to, and is null when that file is not there.</summary>
+    internal static WatchedMediaFile? From(FileInfo info)
+    {
+        var target = info.LinkTarget is null ? info : info.ResolveLinkTarget(returnFinalTarget: true) as FileInfo;
+        return target is { Exists: true }
+            ? new WatchedMediaFile(info.FullName, target.Length, target.LastWriteTimeUtc, target.CreationTimeUtc)
+            : null;
+    }
 }
 
 /// <summary>What a watched-folder walk found, and what it decided not to look at.</summary>
@@ -63,18 +69,7 @@ public static class WatchedFolderListing
     /// <see cref="RemuxRules.MediaExtensions"/>).</summary>
     public static bool IsProcessingMediaCandidate(string path)
     {
-        try
-        {
-            return File.Exists(path) && IsMediaExtension(Path.GetExtension(path).ToLowerInvariant());
-        }
-        catch (IOException)
-        {
-            return false;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return false;
-        }
+        return File.Exists(path) && IsMediaExtension(Path.GetExtension(path).ToLowerInvariant());
     }
 
     /// <summary>Whether the path looks like a download client's in-progress artifact: a hash-named file, or a
@@ -119,21 +114,7 @@ public static class WatchedFolderListing
         foreach (var info in Walk(root, topLevelOnly).OrderBy(file => file.FullName, StringComparer.Ordinal))
         {
             var p = info.FullName;
-            string relative;
-            try
-            {
-                relative = Path.GetRelativePath(root, Path.GetFullPath(p));
-            }
-            catch (ArgumentException)
-            {
-                continue;
-            }
-
-            if (relative.StartsWith("..", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
+            var relative = Path.GetRelativePath(root, p);
             var relativeParts = relative.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
             if ((excludeHidden && relativeParts.Any(part => part.StartsWith('.'))) || IsTransientDownloadArtifactMediaPath(p, excludeMarkers))
             {

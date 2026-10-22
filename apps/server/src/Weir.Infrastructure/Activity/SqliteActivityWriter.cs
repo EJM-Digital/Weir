@@ -75,42 +75,6 @@ public sealed class SqliteActivityWriter : IActivityWriter
         return id;
     }
 
-    /// <summary>
-    /// Updates an event inside a caller's transaction: change the given fields (a
-    /// <see langword="null"/> argument keeps the stored value), classify the row again, and tell listeners
-    /// after commit. <see langword="false"/> when the row does not exist.
-    /// </summary>
-    public static bool Update(SqliteConnection connection, SqliteTransaction transaction, long activityId, string? eventType = null, string? title = null, string? detail = null)
-    {
-        ArgumentNullException.ThrowIfNull(connection);
-        ArgumentNullException.ThrowIfNull(transaction);
-        ActivityEventDraft? current = null;
-        using (var select = connection.CreateCommand())
-        {
-            select.Transaction = transaction;
-            select.CommandText = SelectSql;
-            select.Parameters.AddWithValue("@id", activityId);
-            using var reader = select.ExecuteReader();
-            if (reader.Read())
-            {
-                current = ReadDraft(reader);
-            }
-        }
-
-        if (current is null)
-        {
-            return false;
-        }
-
-        using var command = connection.CreateCommand();
-        command.Transaction = transaction;
-        command.CommandText = UpdateSql;
-        AddParameters(command, UpdateParameters(activityId, Merge(current, eventType, title, detail)));
-        command.ExecuteNonQuery();
-        ActivityNotifications.Track(transaction, activityId);
-        return true;
-    }
-
     /// <summary>Updates an event inside a unit of work.</summary>
     public static async Task<bool> UpdateAsync(UnitOfWork uow, long activityId, string? eventType = null, string? title = null, string? detail = null)
     {

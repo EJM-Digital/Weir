@@ -187,17 +187,7 @@ public static class ReconciliationService
         return roots;
     }
 
-    private static bool PathExists(string raw)
-    {
-        try
-        {
-            return File.Exists(raw) || Directory.Exists(raw);
-        }
-        catch (Exception exception) when (exception is ArgumentException or IOException)
-        {
-            return false;
-        }
-    }
+    private static bool PathExists(string raw) => File.Exists(raw) || Directory.Exists(raw);
 
     private static string PurePathName(string path) => MediaPathNames.Name(path, OperatingSystem.IsWindows());
 
