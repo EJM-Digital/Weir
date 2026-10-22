@@ -1,0 +1,28 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "database-busy-retried",
+  "recordedAt": "2026-10-22T10:37:55Z",
+  "note": "The same outcome report sent again once the lock was gone: HTTP 404, Weir's ordinary answer for a hand-off it has no record of, so a 503 can be retried.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/recorded-no-such-handoff/outcome",
+        "body": {
+          "outcome": "imported",
+          "occurredUtc": "2026-10-22T10:37:53.9920138Z"
+        }
+      },
+      "reply": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "detail": "Weir has never received this hand-off."
+        }
+      }
+    }
+  ]
+}

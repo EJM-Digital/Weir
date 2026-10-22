@@ -1,0 +1,38 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.34",
+  "state": "events-failed-unreadable",
+  "recordedAt": "2026-10-22T11:09:15Z",
+  "note": "Weir reports a failed hand-off for a file it cannot read (random bytes named .mkv), disposition held. The hand-off was made straight to Weir (not by Deluno), so Deluno has no row for it and answers 409. The report came after Weir waited for the file about 70 seconds. Weir 1.0.0-rc.19 (build 3460f96).",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "82cc125e-9794-4761-82c4-2c7912a928ee",
+          "status": "failed",
+          "processorName": "Weir",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "releaseName": "Big Buck Bunny (2008) Recorded unreadable",
+          "message": "Weir can't read this file yet. It may still be arriving, so Weir will look again later.",
+          "disposition": "held",
+          "sourceRemoved": false,
+          "outputFiles": []
+        }
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": "Deluno could not match this processor event to a waiting hand-off. Use the handoff ID from GET /api/integrations/processors/handoffs or the exact source path Deluno recorded. No import was queued."
+        }
+      }
+    }
+  ]
+}

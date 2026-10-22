@@ -10,17 +10,14 @@ namespace Weir.Contract.Tests.MediaManagers.Recorded;
 /// </summary>
 internal static class DelunoSide
 {
-    /// <summary>Deluno's id for its Movies library in the session the rc.30.30 recordings were made in.</summary>
-    public const string MoviesKey = "01a136e9242275898618c522d88dec53";
-
-    /// <summary>Deluno's id for its Movies library in the session the rc.30.32 reports (the retries, the takeover) were recorded in.</summary>
-    public const string ReportsMoviesKey = "01a13d68ae4a7e7b84c06a96fd5d8cc7";
-
-    /// <summary>Deluno's id for its TV library in the session the rc.30.32 reports were recorded in.</summary>
-    public const string ReportsTvKey = "01a13d68af9170839d883349df5773a8";
+    /// <summary>Deluno's id for its Movies library in the session the rc.30.34 recordings were made in.</summary>
+    public const string MoviesKey = RecordedWorld.MoviesKey;
 
     /// <summary>Deluno's id for its TV library in that session.</summary>
-    public const string TvKey = "01a136e9255c79f9b93c4e6b81736481";
+    public const string TvKey = "01a15b139c927b8bb03a4c20a550895e";
+
+    /// <summary>Deluno's id for its Movies library in the first session (rc.30.30), the one <c>events-too-late</c> was recorded in.</summary>
+    public const string FirstSessionMoviesKey = "01a136e9242275898618c522d88dec53";
 
     /// <summary>Where Deluno says Weir hands its cleaned files back to, written as Deluno's machine writes it.</summary>
     public const string DelunoReadyFolder = RecordedWorld.RecordedMoviesOutput;
@@ -28,22 +25,29 @@ internal static class DelunoSide
     /// <summary>The single-file hand-off recording the nearest-recorded requests are made from.</summary>
     private const string SingleFileHandoff = "handoff-single-file";
 
-    /// <summary>A recording of what Deluno sent Weir, or Weir sent Deluno, in the rc.30.30 session.</summary>
-    public static Recording Request(string state) => Recording.LoadDelunoSide(Recording.DelunoSideRequestsVersion, state);
+    /// <summary>A recording of what Deluno sent Weir, or Weir sent Deluno, in the rc.30.34 session; <c>events-too-late</c>, which that session did not record again, is the rc.30.30 one.</summary>
+    public static Recording Request(string state) => Recording.LoadDelunoSide(Recording.DelunoSideRequestsVersion, state, Recording.DelunoSideFirstSessionVersion);
+
+    /// <summary>A recording of the first session (rc.30.30, Weir rc.13), for what the later session did not record again.</summary>
+    public static Recording FirstSession(string state) => Recording.LoadDelunoSide(Recording.DelunoSideFirstSessionVersion, state);
 
     /// <summary>A recording of Deluno's own reply to a call Weir makes, from the rc.30.32 session.</summary>
     public static Recording Reply(string state) => Recording.LoadDelunoSide(Recording.DelunoSideRepliesVersion, state);
 
-    /// <summary>A recording of a report Weir sent Deluno, with Deluno's answer to it, from the rc.30.32 session.</summary>
-    public static Recording Report(string state) => Recording.LoadDelunoSide(Recording.DelunoSideRepliesVersion, state);
+    /// <summary>A recording of a report Weir sent Deluno, with Deluno's answer to it, from the rc.30.34 session.</summary>
+    public static Recording Report(string state) => Recording.LoadDelunoSide(Recording.DelunoSideRequestsVersion, state);
 
-    /// <summary>The world of the rc.30.32 report recordings: Deluno's Movies library by the id of that session, handing back to Deluno's recorded folder.</summary>
-    public static Task<RecordedWorld> StartReportsWorldAsync(bool withTv = false, params (string Name, string Value)[] settings) =>
-        RecordedWorld.StartAsync(ReportsMoviesKey, DelunoReadyFolder, tvKey: withTv ? ReportsTvKey : null, settings: settings);
-
-    /// <summary>The world of the rc.30.30 recordings: Deluno's Movies library by its recorded id, handing back to Deluno's recorded folder.</summary>
+    /// <summary>The world of the rc.30.34 recordings: Deluno's Movies library by the id of that session, handing back to Deluno's recorded folder.</summary>
     public static Task<RecordedWorld> StartWorldAsync(params (string Name, string Value)[] settings) =>
         RecordedWorld.StartAsync(MoviesKey, DelunoReadyFolder, settings: settings);
+
+    /// <summary>The same with Deluno's TV library too, for the reports of a season pack.</summary>
+    public static Task<RecordedWorld> StartReportsWorldAsync(bool withTv = false, params (string Name, string Value)[] settings) =>
+        RecordedWorld.StartAsync(MoviesKey, DelunoReadyFolder, tvKey: withTv ? TvKey : null, settings: settings);
+
+    /// <summary>The world of the rc.30.30 session, for the tests that replay <c>events-too-late</c> beside the recordings of that session.</summary>
+    public static Task<RecordedWorld> StartFirstSessionWorldAsync(params (string Name, string Value)[] settings) =>
+        RecordedWorld.StartAsync(FirstSessionMoviesKey, DelunoReadyFolder, settings: settings);
 
     /// <summary>
     /// A hand-off for a download the recordings do not hold a hand-off of (a status poll or a report they do hold names its id and
@@ -52,7 +56,7 @@ internal static class DelunoSide
     /// </summary>
     public static RecordedCall HandoffLike(string handoffId, string releaseName, string? fileName = null)
     {
-        var recorded = Request(SingleFileHandoff).Only.Request;
+        var recorded = Request(SingleFileHandoff).Exchanges[0].Request;
         var body = recorded.Body!.DeepClone().AsObject();
         body["handoffId"] = handoffId;
         body["releaseName"] = releaseName;
@@ -113,7 +117,7 @@ internal static class DelunoSide
 
     /// <summary>The recorded hand-off request with <paramref name="handoffId"/>, from any of the hand-off recordings, if one holds it.</summary>
     public static RecordedCall? RecordedHandoff(string handoffId) =>
-        new[] { "handoff-single-file", "handoff-release-folder", "handoff-usenet-folder", "handoff-resend" }
+        new[] { "handoff-single-file", "handoff-release-folder", "handoff-usenet-folder", "handoff-resend", "handoff-resend-during" }
             .SelectMany(state => Request(state).Exchanges)
             .Select(exchange => exchange.Request)
             .FirstOrDefault(request => request.HandoffId() == handoffId);

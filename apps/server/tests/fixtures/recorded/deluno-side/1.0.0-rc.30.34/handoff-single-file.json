@@ -1,0 +1,81 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.34",
+  "state": "handoff-single-file",
+  "recordedAt": "2026-10-22T10:44:17Z",
+  "note": "A single-file download handed to Weir: sourcePath is the file itself, directly in the completed folder (qBittorrent, then Transmission; the first send of a resend scenario). The real requests Deluno 1.0.0-rc.30.34 sent (headers kept) and Weir 1.0.0-rc.19 (build 3460f96) replies.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a163362cc478219e381196e0994134:1792665857220",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a163362cc478219e381196e0994134",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "mediaType": "movies",
+          "sourcePath": "C:\\Downloads\\Completed\\Movies\\Gprebeforeibhp06.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "releaseName": "Gprebeforeibhp06.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "queueItemId": "aee85626461ad74b48971ae37b0199153c878f6b",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "Gprebeforeibhp06",
+          "year": 2020
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a163362dc27d35a740f3752ee17455:1792665857473",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a163362dc27d35a740f3752ee17455",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "mediaType": "movies",
+          "sourcePath": "C:\\Downloads\\Completed\\Movies\\Gprebeforeawvz07.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "releaseName": "Gprebeforeawvz07.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "queueItemId": "3916247c5c0995aced5d645931f185a80a1006bf",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "Gprebeforeawvz07",
+          "year": 2020
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "resend-takeover-second-status-completed",
+  "recordedAt": "2026-10-22T10:28:48Z",
+  "note": "The status of the second send of a file that was sent twice at once while it was completed.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/669547f9-907b-44b0-be2c-9cad8ab93ef8"
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "669547f9-907b-44b0-be2c-9cad8ab93ef8",
+          "state": "completed",
+          "queuePosition": null,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-10-22T10:28:48.012200Z",
+          "outputPath": "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Takeover.mkv",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Takeover.mkv"
+          ],
+          "message": "Finished processing this file. The original download was kept in the watched folder for your download client, because this workflow is linked to a media manager."
+        }
+      }
+    }
+  ]
+}

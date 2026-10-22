@@ -1,0 +1,73 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.34",
+  "state": "events-failed-source-gone",
+  "recordedAt": "2026-10-22T11:23:41Z",
+  "note": "Weir reports a hand-off whose download was deleted before it started: failureClass source_gone. Deluno answers 202. (qBittorrent file, SABnzbd.) Weir 1.0.0-rc.19 (build 3460f96).",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1634fec9876ef8811410262fd057c",
+          "status": "failed",
+          "processorName": "Weir",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "releaseName": "Gpgonewaitarzq01.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "message": "The download is no longer there, so Weir had nothing to do.",
+          "sourceRemoved": false,
+          "failureClass": "source_gone",
+          "outputFiles": []
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "failed",
+          "handoffId": "01a1634fec9876ef8811410262fd057c",
+          "activityId": "01a1635a3f9c7ac4b18156bbdfb8d964",
+          "settled": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1634fed2677769e10bd2cb166282e",
+          "status": "failed",
+          "processorName": "Weir",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "releaseName": "Gpgonewaitablt02.2020.1080p.WEB-DL.x264-GOLDEN",
+          "message": "The download is no longer there, so Weir had nothing to do.",
+          "sourceRemoved": false,
+          "failureClass": "source_gone",
+          "outputFiles": []
+        }
+      },
+      "reply": {
+        "status": 202,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "status": "failed",
+          "handoffId": "01a1634fed2677769e10bd2cb166282e",
+          "activityId": "01a1635a53737d25b10a1fca38e1d597",
+          "settled": false
+        }
+      }
+    }
+  ]
+}

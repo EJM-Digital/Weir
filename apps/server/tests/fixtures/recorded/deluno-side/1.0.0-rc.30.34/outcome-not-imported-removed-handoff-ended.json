@@ -1,0 +1,87 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.34",
+  "state": "outcome-not-imported-removed-handoff-ended",
+  "recordedAt": "2026-10-22T10:45:17Z",
+  "note": "The same outcome sent for a first send that Weir had already ended as superseded by the resend: Weir answers 409. Weir 1.0.0-rc.19 (build 3460f96).",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/01a163362d457cad9f252b4d16063e81/outcome",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "outcome": "not-imported",
+          "occurredUtc": "2026-10-22T10:45:17.6386551+00:00",
+          "importedPath": null,
+          "reason": "Deluno removed Gprebeforeatoe08.2020.1080p.WEB-DL.x264-GOLDEN from SABnzbd on <host>, so it will not import it."
+        }
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "detail": "Weir has not finished this hand-off yet (it is queued), so there is no file to import.",
+          "code": "handoff_not_finished"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/01a163362dc27d35a740f3752ee17455/outcome",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "outcome": "not-imported",
+          "occurredUtc": "2026-10-22T10:45:17.6386551+00:00",
+          "importedPath": null,
+          "reason": "Deluno removed Gprebeforeawvz07.2020.1080p.WEB-DL.x264-GOLDEN.mkv from Transmission on <host>, so it will not import it."
+        }
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "detail": "Weir has not finished this hand-off yet (it is queued), so there is no file to import.",
+          "code": "handoff_not_finished"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/01a163362cc478219e381196e0994134/outcome",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "outcome": "not-imported",
+          "occurredUtc": "2026-10-22T10:45:17.6386551+00:00",
+          "importedPath": null,
+          "reason": "Deluno removed Gprebeforeibhp06.2020.1080p.WEB-DL.x264-GOLDEN.mkv from qBittorrent on <host>, so it will not import it."
+        }
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "detail": "Weir has not finished this hand-off yet (it is queued), so there is no file to import.",
+          "code": "handoff_not_finished"
+        }
+      }
+    }
+  ]
+}

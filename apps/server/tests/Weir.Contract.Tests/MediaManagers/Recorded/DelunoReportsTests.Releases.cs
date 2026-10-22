@@ -14,11 +14,11 @@ namespace Weir.Contract.Tests.MediaManagers.Recorded;
 public sealed partial class DelunoReportsTests
 {
     [Fact]
-    public async Task A_second_different_file_with_the_name_of_one_in_the_output_replaces_it_and_is_reported_under_that_name_as_Deluno_recorded() =>
+    public async Task A_file_sent_again_under_the_replace_policy_is_not_cleaned_twice_and_is_reported_under_the_name_of_the_first_as_Deluno_recorded() =>
         await CollisionAsync("replace", DelunoSide.Report("events-completed-collision-replace-first"), DelunoSide.Report("events-completed-collision-replace-second"));
 
     [Fact]
-    public async Task A_second_different_file_with_the_name_of_one_in_the_output_is_kept_beside_it_and_reported_under_a_numbered_name_as_Deluno_recorded() =>
+    public async Task A_file_sent_again_under_the_keep_both_policy_is_not_cleaned_twice_and_is_reported_under_the_name_of_the_first_as_Deluno_recorded() =>
         await CollisionAsync("keep_both", DelunoSide.Report("events-completed-collision-keep-both-first"), DelunoSide.Report("events-completed-collision-keep-both-second"));
 
     private static async Task CollisionAsync(string policy, Recording first, Recording second)
@@ -26,19 +26,20 @@ public sealed partial class DelunoReportsTests
         await using var world = await DelunoSide.StartReportsWorldAsync();
         world.Deluno.AnswerReportsAsRecorded(world.Translation, first, second);
         await world.Scenario.UpdateLibraryAsync(world.Movies, ("output_collision_policy", policy));
-        // Both are sent as the same file: Weir keeps a source's place below the watched folder, so two folders would never meet in the output.
+        // Both are sent as the same file, as Deluno's recorder sent them: Weir keeps a source's place below the watched folder, so two
+        // folders would never meet in the output, and it has already cleaned a source whose path, size and time it sees again.
         var fileName = DelunoSide.FileNameOf((string)first.Exchanges[0].Request.Body!["outputPath"]!);
         var one = DelunoSide.HandoffFor(first.Exchanges[0]);
         var two = DelunoSide.HandoffFor(second.Exchanges[0], fileName);
-        var path = world.PutFilm(one.SourcePath(), needsWork: true);
+        world.PutFilm(one.SourcePath(), needsWork: true);
         await HandOffAsync(world, one);
         EmittedReport.AssertMatches(first, 0, (await ReportAsync(world, world.Translation.Id(one.HandoffId()))).Body, world.Translation);
 
-        // Another film under the same name, sent once the first has been cleaned and left in the output.
-        await File.WriteAllBytesAsync(path, FakeMedia.Bytes(FakeMedia.Probe(audioLanguages: ["eng", "fre", "spa"])));
+        // The same file sent again once the first has been cleaned and left in the output.
         await HandOffAsync(world, two);
 
         EmittedReport.AssertMatches(second, 0, (await ReportAsync(world, world.Translation.Id(two.HandoffId()))).Body, world.Translation);
+        Assert.Single(Directory.GetFiles(world.Translation.Apply(DelunoSide.DelunoReadyFolder)));
     }
 
     [Fact]
@@ -109,5 +110,27 @@ public sealed partial class DelunoReportsTests
 
         EmittedReport.AssertMatches(recorded, 0, (await ReportAsync(world, world.Translation.Id(hand.HandoffId()))).Body, world.Translation);
         Assert.True(File.Exists(path), "Deluno removes the download, Weir leaves it");
+    }
+
+    [Fact]
+    public async Task A_release_with_no_video_under_the_reject_policy_is_handed_back_unchanged_and_reported_finished_when_Deluno_cannot_regrab_as_Deluno_recorded()
+    {
+        await using var world = await DelunoSide.StartReportsWorldAsync();
+        var recorded = DelunoSide.Report("events-completed-reject-policy-");
+        world.Deluno.AnswerReportsAsRecorded(world.Translation, recorded);
+        // The policy was chosen while Deluno said it could replace a rejected release; by the time the file came, it no longer did.
+        world.Deluno.Capabilities.Add("processor-reject-regrab");
+        await world.Scenario.UpdateLibraryAsync(world.Movies, ("failure_policy", "reject"));
+        world.Deluno.Capabilities.Replace(world.Deluno.Capabilities.Snapshot().Where(name => name != "processor-reject-regrab"));
+        var hand = DelunoSide.HandoffFor(recorded.Exchanges[0], "Recorded.Weir.AudioOnly.mkv");
+        var path = world.Translation.Apply(hand.SourcePath());
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        await File.WriteAllBytesAsync(path, FakeMedia.Bytes(FakeMedia.Probe(video: 0, audioLanguages: ["eng"])));
+
+        await HandOffAsync(world, hand);
+
+        EmittedReport.AssertMatches(recorded, 0, (await ReportAsync(world, world.Translation.Id(hand.HandoffId()))).Body, world.Translation);
+        Assert.Equal("passed-through", (string)(await world.Scenario.HandoffStatusAsync(world.Translation.Id(hand.HandoffId())))["state"]!);
+        Assert.True(File.Exists(world.Translation.Apply((string)recorded.Exchanges[0].Request.Body!["outputPath"]!)), "Weir handed the original back");
     }
 }

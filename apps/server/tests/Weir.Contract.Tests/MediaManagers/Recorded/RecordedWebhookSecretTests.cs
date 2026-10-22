@@ -57,8 +57,8 @@ public sealed class RecordedWebhookSecretTests
 
         // The connection's own secret does, and Deluno's recorded hand-off is answered as recorded.
         var recorded = DelunoSide.Request("handoff-single-file");
-        world.PutFilm(recorded.Only.Request.SourcePath(), needsWork: true);
-        await own.SendAsync(recorded);
+        world.PutFilm(recorded.Exchanges[0].Request.SourcePath(), needsWork: true);
+        await own.SendAsync(recorded, 0);
 
         // A new secret replaces it: the old one is refused and the new one is taken.
         var replaced = (string)(await ManagerConnections.GenerateSecretAsync(admin, connectionId))["webhook_secret"]!;
@@ -106,10 +106,10 @@ public sealed class RecordedWebhookSecretTests
     {
         await using var world = await DelunoSide.StartWorldAsync((ManagerEnvironment.WebhookSecretVariable, string.Empty));
         var recorded = DelunoSide.Request("handoff-single-file");
-        var hand = recorded.Only.Request;
+        var hand = recorded.Exchanges[0].Request;
         world.PutFilm(hand.SourcePath(), needsWork: true);
 
-        await world.Replay.SendAsync(recorded, Credential.None);
+        await world.Replay.SendAsync(recorded, 0, Credential.None);
 
         var connection = await world.Scenario.Admin.GetAsync($"{ManagerConnections.Route}/{await world.ConnectionIdAsync()}");
         Assert.False((bool)connection.Fields["webhook_secret_is_set"]!);

@@ -7,7 +7,7 @@ namespace Weir.Contract.Tests.MediaManagers.Recorded;
 
 /// <summary>
 /// Removing Deluno while Weir is still working a hand-off Deluno made, or still owes Deluno its report. The hand-off is the one Deluno
-/// recorded sending (<c>handoff-single-file</c>, rc.30.30) and the report is answered as Deluno recorded answering it, so what Weir
+/// recorded sending (<c>handoff-single-file</c> and <c>handoff-resend</c>, rc.30.34) and the report is answered as Deluno recorded answering it, so what Weir
 /// refuses, and when it stops refusing, is judged against Deluno's own traffic. The download Deluno handed over is never touched.
 /// </summary>
 [ContractArea("media_managers")]
@@ -40,11 +40,12 @@ public sealed class ConnectionRemovalHandoffTests
     {
         await using var world = await DelunoSide.StartWorldAsync();
         world.Deluno.AnswerReportsAsRecorded(DelunoSide.Request("events-completed"));
-        var recorded = DelunoSide.Request("handoff-single-file");
-        var hand = recorded.Only.Request;
+        // The send Deluno's recorded report of a single file is for: the second send of the release it sent twice.
+        var recorded = DelunoSide.Request("handoff-resend");
+        var hand = recorded.Exchanges[1].Request;
         var release = world.HoldEveryPass();
         var source = Untouched.Of(world.PutFilm(hand.SourcePath(), needsWork: true));
-        await world.Replay.SendAsync(recorded);
+        await world.Replay.SendAsync(recorded, 1);
         await world.WaitUntilWorkingAsync(hand.HandoffId());
         var (connectionId, label) = await ConnectionAsync(world);
 
@@ -91,10 +92,10 @@ public sealed class ConnectionRemovalHandoffTests
     {
         await using var world = await DelunoSide.StartWorldAsync();
         var recorded = DelunoSide.Request("handoff-single-file");
-        var hand = recorded.Only.Request;
+        var hand = recorded.Exchanges[0].Request;
         var release = world.HoldEveryPass();
         var source = Untouched.Of(world.PutFilm(hand.SourcePath(), needsWork: true));
-        await world.Replay.SendAsync(recorded);
+        await world.Replay.SendAsync(recorded, 0);
         await world.WaitUntilWorkingAsync(hand.HandoffId());
         var (connectionId, label) = await ConnectionAsync(world);
 

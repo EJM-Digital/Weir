@@ -12,7 +12,7 @@ namespace Weir.Contract.Tests.MediaManagers.Recorded;
 [ContractArea("media_managers")]
 public sealed class DelunoRecordingComparisonTests
 {
-    private const string Folder = "apps/server/tests/fixtures/recorded/deluno-side/1.0.0-rc.30.30/";
+    private const string Folder = "apps/server/tests/fixtures/recorded/deluno-side/1.0.0-rc.30.34/";
 
     // --- what Weir sends ------------------------------------------------------------------------------
 

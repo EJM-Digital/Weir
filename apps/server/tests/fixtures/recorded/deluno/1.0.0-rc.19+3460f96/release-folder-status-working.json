@@ -1,0 +1,31 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "release-folder-status-working",
+  "recordedAt": "2026-10-22T10:28:05Z",
+  "note": "The status of the release-folder hand-off while it was working.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/df35efb2-6c97-450f-b5b4-11a7e3f7f2e6"
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "df35efb2-6c97-450f-b5b4-11a7e3f7f2e6",
+          "state": "working",
+          "queuePosition": null,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-10-22T10:28:03.379964Z",
+          "outputPath": null,
+          "outputFiles": null,
+          "message": "Weir has claimed this file and is checking it now."
+        }
+      }
+    }
+  ]
+}

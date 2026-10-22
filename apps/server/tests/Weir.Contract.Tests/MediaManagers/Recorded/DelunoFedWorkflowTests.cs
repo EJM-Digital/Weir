@@ -52,12 +52,12 @@ public sealed class DelunoFedWorkflowTests
         await using var world = await DelunoSide.StartWorldAsync();
         await world.Scenario.UpdateLibraryAsync(world.Movies, ("failure_policy", "hold"), ("max_attempts", 5), ("retry_backoff_seconds", 1));
         var recorded = DelunoSide.Request("handoff-single-file");
-        var hand = recorded.Only.Request;
+        var hand = recorded.Exchanges[0].Request;
         var handed = world.PutFilm(hand.SourcePath(), needsWork: true);
         var original = Untouched.Of(handed);
         world.Scenario.FakeTools.SetFileRule("*.mkv", new FileRule { RemuxError = Crash, RemuxFailTimes = 2 });
 
-        await world.Replay.SendAsync(recorded);
+        await world.Replay.SendAsync(recorded, 0);
         await world.Scenario.WaitForHandoffStateAsync(hand.HandoffId(), "completed");
 
         Assert.Equal(3, world.Scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux").Count);
@@ -72,11 +72,11 @@ public sealed class DelunoFedWorkflowTests
         await using var world = await DelunoSide.StartWorldAsync();
         await world.Scenario.UpdateLibraryAsync(world.Movies, ("remove_original_after_success", true));
         var recorded = DelunoSide.Request("handoff-single-file");
-        var hand = recorded.Only.Request;
+        var hand = recorded.Exchanges[0].Request;
         var handed = Untouched.Of(world.PutFilm(hand.SourcePath(), needsWork: true));
         var unhanded = Untouched.Of(world.PutFilm(NotHandedOver, needsWork: true));
 
-        await world.Replay.SendAsync(recorded);
+        await world.Replay.SendAsync(recorded, 0);
         await world.Scenario.WaitForHandoffStateAsync(hand.HandoffId(), "completed");
 
         Assert.Single(world.Scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux"));

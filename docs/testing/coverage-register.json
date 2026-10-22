@@ -50362,7 +50362,7 @@
         {
           "type": "recording-replay",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
-          "name": "A_hand_off_Weir_holds_queued_while_paused_reads_queued_in_position_one_each_time_Deluno_asks"
+          "name": "A_hand_off_Weir_holds_queued_while_paused_reads_queued_in_the_position_Deluno_recorded_each_time_it_asks"
         },
         {
           "type": "recording-replay",
@@ -50748,12 +50748,12 @@
         {
           "type": "recording-replay",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.Releases.cs",
-          "name": "A_second_different_file_with_the_name_of_one_in_the_output_replaces_it_and_is_reported_under_that_name_as_Deluno_recorded"
+          "name": "A_file_sent_again_under_the_replace_policy_is_not_cleaned_twice_and_is_reported_under_the_name_of_the_first_as_Deluno_recorded"
         },
         {
           "type": "recording-replay",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.Releases.cs",
-          "name": "A_second_different_file_with_the_name_of_one_in_the_output_is_kept_beside_it_and_reported_under_a_numbered_name_as_Deluno_recorded"
+          "name": "A_file_sent_again_under_the_keep_both_policy_is_not_cleaned_twice_and_is_reported_under_the_name_of_the_first_as_Deluno_recorded"
         },
         {
           "type": "recording-replay",
@@ -60714,7 +60714,7 @@
         {
           "type": "recording-replay",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
-          "name": "A_hand_off_Weir_holds_queued_while_paused_reads_queued_in_position_one_each_time_Deluno_asks"
+          "name": "A_hand_off_Weir_holds_queued_while_paused_reads_queued_in_the_position_Deluno_recorded_each_time_it_asks"
         },
         {
           "type": "recording-replay",
@@ -60992,7 +60992,7 @@
         {
           "type": "recording-replay",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoRequestsTests.cs",
-          "name": "A_hand_off_Weir_holds_queued_while_paused_reads_queued_in_position_one_each_time_Deluno_asks"
+          "name": "A_hand_off_Weir_holds_queued_while_paused_reads_queued_in_the_position_Deluno_recorded_each_time_it_asks"
         }
       ],
       "audit": {
@@ -61619,7 +61619,7 @@
         {
           "type": "recording-replay",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.cs",
-          "name": "A_release_sent_again_after_it_was_cleaned_is_reported_finished_with_the_copy_made_before_as_Deluno_recorded"
+          "name": "A_held_file_that_is_back_when_Deluno_sends_the_release_again_is_cleaned_at_once_and_reported_as_Deluno_recorded"
         },
         {
           "type": "recording-replay",
@@ -61652,7 +61652,7 @@
         {
           "type": "recording-replay",
           "file": "apps/server/tests/Weir.Contract.Tests/MediaManagers/Recorded/DelunoReportsTests.cs",
-          "name": "A_release_sent_again_after_it_was_cleaned_is_reported_finished_with_the_copy_made_before_as_Deluno_recorded"
+          "name": "A_release_sent_again_while_the_first_send_is_in_Weir_is_reported_finished_once_for_the_new_send_only"
         }
       ],
       "audit": {

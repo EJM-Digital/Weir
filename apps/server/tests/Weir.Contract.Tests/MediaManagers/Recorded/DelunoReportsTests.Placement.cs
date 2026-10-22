@@ -18,7 +18,8 @@ public sealed partial class DelunoReportsTests
         await using var world = await DelunoSide.StartWorldAsync();
         var recorded = DelunoSide.Request("events-completed");
         world.Deluno.AnswerReportsAsRecorded(recorded);
-        var hand = HandoffFor(recorded, 0);
+        var single = SingleFileReport(recorded);
+        var hand = HandoffFor(recorded, single);
         var failedReads = 0;
         world.Deluno.Route("GET", ManifestPath, _ =>
             Interlocked.Increment(ref failedReads) == 1
@@ -34,7 +35,7 @@ public sealed partial class DelunoReportsTests
         await HandOffAsync(world, hand);
 
         var report = await ReportAsync(world, hand.HandoffId());
-        EmittedReport.AssertMatches(recorded, 0, report.Body);
+        EmittedReport.AssertMatches(recorded, single, report.Body);
         Assert.True(failedReads > 1, "the first read of the manifest was never refused, so the report was not placed from a second one");
     }
 }

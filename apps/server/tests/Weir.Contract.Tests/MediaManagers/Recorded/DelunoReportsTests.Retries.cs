@@ -5,7 +5,7 @@ using static Weir.Contract.Tests.MediaManagers.Recorded.DelunoReportSteps;
 namespace Weir.Contract.Tests.MediaManagers.Recorded;
 
 /// <summary>
-/// The reports Weir sends Deluno that Deluno answered with a refusal or a 409, replayed from the rc.30.32 recordings: the 503 Weir keeps owed
+/// The reports Weir sends Deluno that Deluno answered with a refusal or a 409, replayed from the rc.30.34 recordings: the 503 Weir keeps owed
 /// and the 401 and 403 it does not (when it sends the 503 again is held on a fake clock by <c>RecordedReportRetryTests</c>, which a running
 /// server cannot have), and the two sends of one release, the first reported superseded and the second finished.
 /// The recorded ids are Deluno's; this test makes them its own (<see cref="Translation.Id"/>), as it does for a recorded request.
@@ -70,13 +70,13 @@ public sealed partial class DelunoReportsTests
     public async Task A_release_sent_twice_is_reported_superseded_for_the_first_send_and_finished_for_the_second_as_Deluno_recorded()
     {
         await using var world = await DelunoSide.StartReportsWorldAsync();
-        var superseded = DelunoSide.Report("events-superseded");
-        var takeover = DelunoSide.Report("events-completed-after-takeover");
-        world.Deluno.AnswerReportsAsRecorded(world.Translation, superseded, takeover);
+        var superseded = DelunoSide.Report("events-failed-superseded");
+        var finished = DelunoSide.Report("events-completed-resent");
+        world.Deluno.AnswerReportsAsRecorded(superseded, finished);
         var release = world.HoldEveryPass();
-        var second = DelunoSide.HandoffFor(takeover.Exchanges[0]);
-        var first = DelunoSide.HandoffFor(superseded.Exchanges[0], DelunoSide.FileNameOf((string)takeover.Exchanges[0].Request.Body!["outputPath"]!));
-        var firstId = world.Translation.Id(first.HandoffId());
+        var second = DelunoSide.HandoffFor(finished.Exchanges[0]);
+        var first = DelunoSide.HandoffFor(superseded.Exchanges[0], DelunoSide.FileNameOf((string)finished.Exchanges[0].Request.Body!["outputPath"]!));
+        var firstId = first.HandoffId();
         world.PutFilm(first.SourcePath(), needsWork: true);
         await HandOffAsync(world, first);
         await world.WaitUntilWorkingAsync(firstId);
@@ -84,12 +84,26 @@ public sealed partial class DelunoReportsTests
         await HandOffAsync(world, second);
         await File.WriteAllTextAsync(release, string.Empty);
 
-        EmittedReport.AssertMatches(takeover, 0, (await ReportAsync(world, world.Translation.Id(second.HandoffId()))).Body, world.Translation);
+        EmittedReport.AssertMatches(finished, 0, (await ReportAsync(world, second.HandoffId())).Body, world.Translation);
         var replaced = await Poll.UntilAsync(
             () => Task.FromResult(world.Deluno.RequestsTo("POST", ReportsTo).FirstOrDefault(sent => ((JsonObject)sent.Json!)["handoffId"]!.ToString() == firstId)),
             "Weir to tell Deluno the first send was replaced",
             NextHeartbeat);
         EmittedReport.AssertMatches(superseded, 0, (JsonObject)replaced.Json!, world.Translation);
         Assert.Equal("cancelled", (string)(await world.Scenario.HandoffStatusAsync(firstId))["state"]!);
+    }
+
+    [Fact]
+    public async Task A_finished_release_Deluno_has_no_waiting_hand_off_for_is_reported_as_Deluno_recorded_and_answered_409()
+    {
+        await using var world = await DelunoSide.StartReportsWorldAsync();
+        var takeover = DelunoSide.Report("events-completed-after-takeover");
+        world.Deluno.AnswerReportsAsRecorded(world.Translation, takeover);
+        var hand = DelunoSide.HandoffFor(takeover.Exchanges[0]);
+        world.PutFilm(hand.SourcePath(), needsWork: true);
+
+        await HandOffAsync(world, hand);
+
+        EmittedReport.AssertMatches(takeover, 0, (await ReportAsync(world, world.Translation.Id(hand.HandoffId()))).Body, world.Translation);
     }
 }

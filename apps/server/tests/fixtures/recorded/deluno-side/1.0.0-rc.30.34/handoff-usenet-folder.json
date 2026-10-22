@@ -1,0 +1,81 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.34",
+  "state": "handoff-usenet-folder",
+  "recordedAt": "2026-10-22T10:42:16Z",
+  "note": "A release-folder Usenet download handed to Weir (SABnzbd: the file inside its folder; NZBGet: the folder). The real requests Deluno 1.0.0-rc.30.34 sent and Weir 1.0.0-rc.19 (build 3460f96) replies.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a16334566879899f1db23124da06b5:1792665736806",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a16334566879899f1db23124da06b5",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "mediaType": "movies",
+          "sourcePath": "C:\\Downloads\\Completed\\Movies\\Gpfilmhynf04.2020.1080p.WEB-DL.x264-GOLDEN\\Gpfilmhynf04.2020.1080p.WEB-DL.x264-GOLDEN.mkv",
+          "releaseName": "Gpfilmhynf04.2020.1080p.WEB-DL.x264-GOLDEN",
+          "queueItemId": "6ce67e58-4225-45ba-825c-274f255a922f",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "Gpfilmhynf04",
+          "year": 2020
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/webhook/deluno",
+        "headers": {
+          "idempotency-key": "01a1633454f372e79b2c6e0b62ab89c9:1792665736434",
+          "x-webhook-secret": "<scrubbed>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventType": "deluno.processor-handoff",
+          "handoffId": "01a1633454f372e79b2c6e0b62ab89c9",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "mediaType": "movies",
+          "sourcePath": "C:\\Downloads\\Completed\\Movies\\Gpfilmpjrg05.2020.1080p.WEB-DL.x264-GOLDEN",
+          "releaseName": "Gpfilmpjrg05.2020.1080p.WEB-DL.x264-GOLDEN",
+          "queueItemId": "1",
+          "callbackPath": "/api/integrations/processors/events",
+          "title": "Gpfilmpjrg05",
+          "year": 2020
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "status": "ok",
+          "source": "deluno",
+          "event": "handoff",
+          "media_scope": "movie",
+          "enqueued": "processing.file.remux_pass.v1"
+        }
+      }
+    }
+  ]
+}

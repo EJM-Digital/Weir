@@ -63,9 +63,9 @@ public sealed class DelunoOnlyWorkflowTests
 
         // Deluno's own recorded hand-off is the way in.
         var recorded = DelunoSide.Request("handoff-single-file");
-        var hand = recorded.Only.Request;
+        var hand = recorded.Exchanges[0].Request;
         var handed = Untouched.Of(world.PutFilm(hand.SourcePath(), needsWork: true));
-        await world.Replay.SendAsync(recorded);
+        await world.Replay.SendAsync(recorded, 0);
         await world.Scenario.WaitForHandoffStateAsync(hand.HandoffId(), "completed");
 
         Assert.Single(world.Scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux"));

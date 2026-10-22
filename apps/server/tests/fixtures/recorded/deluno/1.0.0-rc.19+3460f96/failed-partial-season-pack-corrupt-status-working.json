@@ -1,0 +1,31 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "failed-partial-season-pack-corrupt-status-working",
+  "recordedAt": "2026-10-22T10:32:54Z",
+  "note": "The status of a season-pack hand-off where one episode is corrupt while it was working.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/e4ef27e6-8daa-4e4d-bff6-0c0ea1b72992"
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "e4ef27e6-8daa-4e4d-bff6-0c0ea1b72992",
+          "state": "working",
+          "queuePosition": null,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-10-22T10:30:24.745395Z",
+          "outputPath": null,
+          "outputFiles": null,
+          "message": "Weir has claimed this file and is checking it now."
+        }
+      }
+    }
+  ]
+}

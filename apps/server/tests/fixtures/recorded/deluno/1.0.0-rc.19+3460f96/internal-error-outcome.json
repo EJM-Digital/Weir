@@ -1,0 +1,29 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "internal-error-outcome",
+  "recordedAt": "2026-10-22T10:37:58Z",
+  "note": "An outcome report to a second Weir server whose hand-offs table had been dropped: 500 with a JSON body {\"detail\", \"code\": \"internal_error\"} and nothing of the failure in it.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/recorded-no-such-handoff/outcome",
+        "body": {
+          "outcome": "imported",
+          "occurredUtc": "2026-10-22T10:37:53.9920138Z"
+        }
+      },
+      "reply": {
+        "status": 500,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "detail": "Weir ran into an unexpected problem and could not finish this request. The details are in Weir's log.",
+          "code": "internal_error"
+        }
+      }
+    }
+  ]
+}

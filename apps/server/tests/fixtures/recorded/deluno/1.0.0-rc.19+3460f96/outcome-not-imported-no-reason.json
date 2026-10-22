@@ -1,0 +1,33 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "outcome-not-imported-no-reason",
+  "recordedAt": "2026-10-22T10:28:18Z",
+  "note": "A not-imported outcome for a finished hand-off, with no reason: Weir keeps its copy.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/f0fb7d3b-6e48-49fb-b2f8-7e11a0a6d7db/outcome",
+        "body": {
+          "outcome": "not-imported",
+          "occurredUtc": "2026-10-22T10:28:18.2227408Z",
+          "importedPath": null,
+          "reason": null
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "f0fb7d3b-6e48-49fb-b2f8-7e11a0a6d7db",
+          "outcome": "not-imported",
+          "released": false,
+          "message": "Weir recorded that the file will not be imported, and kept its copy."
+        }
+      }
+    }
+  ]
+}

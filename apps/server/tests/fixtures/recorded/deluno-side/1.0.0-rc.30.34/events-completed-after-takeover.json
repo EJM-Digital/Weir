@@ -1,0 +1,39 @@
+{
+  "app": "deluno",
+  "version": "1.0.0-rc.30.34",
+  "state": "events-completed-after-takeover",
+  "recordedAt": "2026-10-22T10:28:48Z",
+  "note": "The report Weir sent for the second of two sends of one file (status completed). Deluno answered 409 (it has no row for this hand-off, as the script made it straight to Weir).",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/integrations/processors/events",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "669547f9-907b-44b0-be2c-9cad8ab93ef8",
+          "status": "completed",
+          "processorName": "Weir",
+          "libraryId": "01a15b1396de7496acceacea8a64ca24",
+          "releaseName": "Big Buck Bunny (2008) Recorded Takeover",
+          "outputPath": "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Takeover.mkv",
+          "message": "Remux finished.",
+          "outputFiles": [
+            "C:\\Weir\\Ready\\Movies\\Recorded.Weir.Takeover.mkv"
+          ]
+        }
+      },
+      "reply": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": "Deluno could not match this processor event to a waiting hand-off. Use the handoff ID from GET /api/integrations/processors/handoffs or the exact source path Deluno recorded. No import was queued."
+        }
+      }
+    }
+  ]
+}

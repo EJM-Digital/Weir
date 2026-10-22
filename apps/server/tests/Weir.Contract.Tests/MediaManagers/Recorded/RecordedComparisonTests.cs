@@ -13,7 +13,7 @@ namespace Weir.Contract.Tests.MediaManagers.Recorded;
 public sealed class RecordedComparisonTests
 {
     private const string Status = "status-completed";
-    private const string File = "apps/server/tests/fixtures/recorded/deluno/1.0.0-rc.13/status-completed.json";
+    private const string File = "apps/server/tests/fixtures/recorded/deluno/1.0.0-rc.19+3460f96/status-completed.json";
 
     private static ExpectedDifference InventedPin => new("#9999", "$.state", "an invented change for this test", JsonValue.Create("working"));
 

@@ -1,0 +1,30 @@
+{
+  "app": "weir",
+  "version": "1.0.0-rc.19+3460f96",
+  "state": "database-busy-outcome",
+  "recordedAt": "2026-10-22T10:37:55Z",
+  "note": "An outcome report while another program holds the database write lock for longer than the busy timeout (set to 1 s on a second Weir server made for this): 503 with Retry-After and the code database_busy.",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/intake/handoffs/deluno/recorded-no-such-handoff/outcome",
+        "body": {
+          "outcome": "imported",
+          "occurredUtc": "2026-10-22T10:37:53.9920138Z"
+        }
+      },
+      "reply": {
+        "status": 503,
+        "headers": {
+          "retry-after": "1",
+          "content-type": "application/json"
+        },
+        "body": {
+          "detail": "Weir is busy with other changes and could not finish this request. Try again in 1 second.",
+          "code": "database_busy"
+        }
+      }
+    }
+  ]
+}
