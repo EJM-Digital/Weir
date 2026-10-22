@@ -23,7 +23,7 @@ static class RuntimeHomeStart
     /// owns the folder; the person at the desktop, if any, is told why.
     /// </summary>
     /// <param name="runtimeHome">The folder.</param>
-    /// <param name="secure">Makes it owner-only; true when it changed the access list (<see cref="RuntimeHomeSecurity.Secure"/>).</param>
+    /// <param name="secure">Makes it owner-only; true when it changed the access list (<see cref="RuntimeHomeSecurity.Secure(string)"/>).</param>
     /// <param name="hasDesktop">Whether there is a person to show a message to.</param>
     /// <param name="showMessage">Shows a message to that person.</param>
     /// <param name="log">Records what the tray did.</param>

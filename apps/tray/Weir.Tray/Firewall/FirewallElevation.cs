@@ -21,13 +21,6 @@ static class FirewallElevation
         Failed,
     }
 
-    internal static Outcome ConfigureElevated(Action<string> log) => RunElevated(FirewallCommand.ConfigureArgument, log);
-
-    internal static Outcome RemoveElevated(Action<string> log) => RunElevated(FirewallCommand.RemoveArgument, log);
-
-    private static Outcome RunElevated(string argument, Action<string> log) =>
-        RunElevated(argument, log, Environment.ProcessPath, StartForReal);
-
     /// <summary>
     /// <paramref name="start"/> starts the process and returns what waits for it to end and gives its exit code, or null when no process
     /// started. It is a parameter so the reading of each way the step can end is tested without a Windows consent prompt.
@@ -77,9 +70,9 @@ static class FirewallElevation
         }
     }
 
-    private static Func<int>? StartForReal(ProcessStartInfo startInfo)
+    /// <summary>What waits for a started process and gives its exit code, or null when no process started.</summary>
+    internal static Func<int>? WaitFor(Process? process)
     {
-        var process = Process.Start(startInfo);
         if (process is null)
         {
             return null;

@@ -31,12 +31,16 @@ static class FirewallRuleWidening
         allowed != FirewallProfiles.None && (allowed & WeirFirewallRule.AllowedProfiles) != WeirFirewallRule.AllowedProfiles;
 
     /// <summary>Runs <see cref="AskIfNeeded"/> for this PC off the caller's thread: neither the UI nor the server's start waits for the prompt.</summary>
-    internal static void AskInBackground(string runtimeHome, ListenScope scope, bool interactive) =>
-        BackgroundWork.Forget("Firewall rule widening", () =>
-        {
-            AskIfNeeded(runtimeHome, scope, interactive, () => new ComFirewallPolicy(), InstallProcesses.Root(), new WindowsFirewallAccess(), TrayLog.Write);
-            return Task.CompletedTask;
-        });
+    internal static Task AskInBackground(string runtimeHome, ListenScope scope, bool interactive) =>
+        AskInBackground(runtimeHome, scope, interactive, new WindowsFirewallAccess());
+
+    /// <summary>The same with Windows Firewall given; the task ends when the question, if any, has been answered.</summary>
+    internal static Task AskInBackground(string runtimeHome, ListenScope scope, bool interactive, IFirewallAccess firewall)
+    {
+        var work = Task.Run(() => AskIfNeeded(runtimeHome, scope, interactive, ComFirewallPolicy.Open, InstallProcesses.Root(), firewall, TrayLog.Write));
+        BackgroundWork.Observe("Firewall rule widening", work);
+        return work;
+    }
 
     /// <summary>
     /// Asks Windows to widen the rule when <see cref="MayAsk"/> and <see cref="IsNarrow"/> both say so, and returns

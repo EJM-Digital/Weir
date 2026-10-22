@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
@@ -53,6 +54,7 @@ static class InheritedStdioHandles
     /// Best-effort: closing a handle Weir never opened itself must never stop Weir from starting, so every failure here is logged and
     /// skipped rather than thrown.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     internal static void CloseInherited(Action<string> log) => CloseInherited(WindowsStdHandles.Instance, log);
 
     internal static void CloseInherited(IStdHandleCalls calls, Action<string> log)
@@ -101,6 +103,7 @@ static class InheritedStdioHandles
 }
 
 /// <summary>The real standard handles of this process.</summary>
+[ExcludeFromCodeCoverage]
 sealed class WindowsStdHandles : IStdHandleCalls
 {
     internal static WindowsStdHandles Instance { get; } = new();

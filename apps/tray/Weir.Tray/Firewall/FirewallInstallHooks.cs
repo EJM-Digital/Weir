@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using Weir.Tray.LanAccess;
 
@@ -19,6 +20,7 @@ static class FirewallInstallHooks
         AskOnFirstRun(args, PortChoice.HasInteractiveDesktop, PersonAllows, new WindowsFirewallAccess(), Program.RuntimeHome());
 
     /// <summary>The question as the person sees it; true when they answer Yes.</summary>
+    [ExcludeFromCodeCoverage]
     private static bool PersonAllows() =>
         MessageBox.Show(
             "Other devices on your network, such as Deluno, need Weir allowed through Windows Firewall to reach it. Allow Weir on your network?",
@@ -60,16 +62,20 @@ static class FirewallInstallHooks
     /// asks for elevation — it only acts when the uninstaller already happens to be running elevated. Left in place
     /// otherwise, the rule is harmless: it names a program that will not exist once uninstall finishes.
     /// </summary>
-    internal static void RemoveRuleIfElevated()
+    [ExcludeFromCodeCoverage]
+    internal static void RemoveRuleIfElevated() => RemoveRuleIfElevated(FirewallCommand.IsElevated, ComFirewallPolicy.Open);
+
+    /// <summary>The same with the elevation check and the firewall given.</summary>
+    internal static void RemoveRuleIfElevated(Func<bool> isElevated, Func<IFirewallPolicy> openPolicy)
     {
-        if (!FirewallCommand.IsElevated())
+        if (!isElevated())
         {
             TrayLog.Write("Uninstall: leaving the Weir firewall rule in place (not running elevated).");
             return;
         }
         try
         {
-            WeirFirewallRule.Remove(new ComFirewallPolicy());
+            WeirFirewallRule.Remove(openPolicy());
             TrayLog.Write("Uninstall: removed the Weir firewall rule.");
         }
         catch (Exception ex) when (ex is COMException or InvalidOperationException or UnauthorizedAccessException)

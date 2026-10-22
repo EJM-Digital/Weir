@@ -26,6 +26,10 @@ static class WindowsEffects
 
     [ExcludeFromCodeCoverage]
     internal static void ExitApplication() => Application.Exit();
+
+    /// <summary>Starts a program through the Windows admin (UAC) prompt; what waits for it, or null when nothing started.</summary>
+    [ExcludeFromCodeCoverage]
+    internal static Func<int>? StartElevated(ProcessStartInfo info) => Firewall.FirewallElevation.WaitFor(Process.Start(info));
 }
 
 /// <summary>What <see cref="WindowsTrayShell"/> does through Windows itself; <see cref="Windows"/> is the real thing.</summary>
