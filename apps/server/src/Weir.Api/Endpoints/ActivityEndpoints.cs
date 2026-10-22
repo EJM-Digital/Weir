@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Numerics;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -412,6 +411,6 @@ internal sealed class ActivityEndpointHandlers
             return null;
         }
 
-        return value > long.MaxValue ? long.MaxValue : (long)BigInteger.Max(value, long.MinValue);
+        return value > long.MaxValue ? long.MaxValue : (long)value;
     }
 }

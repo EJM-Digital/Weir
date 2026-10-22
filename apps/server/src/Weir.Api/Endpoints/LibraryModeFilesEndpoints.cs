@@ -249,7 +249,7 @@ internal sealed class LibraryModeFilesEndpointHandlers
         var issues = new ValidationIssues();
         var libraryId = request.PathInt("library_id", issues);
         var model = new BodyModel(payload, issues);
-        var paths = model.StrList("paths", []);
+        var paths = model.StrList("paths", []).Distinct(StringComparer.Ordinal).ToList();
         var confirmed = model.Bool("confirm_final_removal", false);
         var manualPlan = model.OptionalDict("manual_plan");
         var expectedSizeBytes = model.OptionalInt("expected_size_bytes");
@@ -331,7 +331,7 @@ internal sealed class LibraryModeFilesEndpointHandlers
 
             // #508: a file still shared with a download is never queued, confirmation or not — clean_hardlinked_files
             // is the only thing that can allow it, since this is a data-safety fact, not a "are you sure" question.
-            if (preflight.TryGetValue(entry.Path, out var fileResult) && fileResult.Skip)
+            if (preflight[entry.Path].Skip)
             {
                 skipped.Add(entry.Path);
                 continue;

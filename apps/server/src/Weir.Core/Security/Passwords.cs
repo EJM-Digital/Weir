@@ -109,7 +109,7 @@ public static class PasswordHasher
         // parts[0] is empty (leading '$').
         var index = 1;
         var version = Argon2.Version10;
-        if (parts.Length > index && parts[index].StartsWith("v=", StringComparison.Ordinal))
+        if (parts[index].StartsWith("v=", StringComparison.Ordinal))
         {
             if (!TryDecimal(parts[index][2..], out version))
             {

@@ -34,4 +34,20 @@ public sealed class SystemOverviewStreamEdgesApiTests
         Assert.True(await stream.MoveNextAsync());
         Assert.StartsWith("event: system.overview\n", stream.Current, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task Screens_that_ask_while_a_reading_is_under_way_wait_for_it_and_then_share_one_new_reading()
+    {
+        await using var server = await WeirTestServer.StartAsync();
+        var frames = server.Services.GetRequiredService<SystemOverviewFrames>();
+        await frames.ReadingInProgress.WaitAsync();
+
+        var first = frames.RefreshAsync(CancellationToken.None);
+        var second = frames.RefreshAsync(CancellationToken.None);
+        frames.ReadingInProgress.Release();
+        await Task.WhenAll(first, second);
+
+        await using var stream = frames.ForAsync(CancellationToken.None).GetAsyncEnumerator();
+        Assert.True(await stream.MoveNextAsync());
+    }
 }

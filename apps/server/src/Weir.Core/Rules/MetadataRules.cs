@@ -39,6 +39,9 @@ public static class MetadataStreams
 {
     private static readonly HashSet<string> ImageCodecs = new(StringComparer.Ordinal) { "mjpeg", "png", "bmp", "gif", "webp", "jpeg", "tiff" };
 
+    /// <summary>The frame rates a still picture reports: none at all, or zero frames a second.</summary>
+    private static readonly HashSet<string> StillFrameRates = new(StringComparer.Ordinal) { "", "0/0", "0/1" };
+
     /// <summary>True for an embedded poster or thumbnail carried as a video stream.</summary>
     public static bool IsImageStream(ProbeStreamInfo stream)
     {
@@ -67,7 +70,7 @@ public static class MetadataStreams
         }
 
         var rate = WireStrings.Strip(RulesJson.StrOr(stream.Get("avg_frame_rate"), string.Empty));
-        return rate is "" or "0/0" or "0/1";
+        return StillFrameRates.Contains(rate);
     }
 
     /// <summary>True for an attached font or similar.</summary>

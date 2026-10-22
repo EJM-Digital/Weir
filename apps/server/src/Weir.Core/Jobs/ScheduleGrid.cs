@@ -168,21 +168,14 @@ public static class ScheduleGrid
         var zone = TimeZones.Find(timezoneName);
         var local = TimeZoneInfo.ConvertTime(now, zone);
         var start = SlotIndex(MondayFirstDayIndex(local.DayOfWeek), local.Hour, local.Minute);
-        for (var ahead = 1; ahead <= SlotsPerWeek; ahead++)
-        {
-            if (text[(start + ahead) % SlotsPerWeek] != '1')
-            {
-                continue;
-            }
+        // The grid has an open slot, and a week of slots ends on the current one, so the search always finds one.
+        var ahead = Enumerable.Range(1, SlotsPerWeek).First(step => text[(start + step) % SlotsPerWeek] == '1');
 
-            // Minutes are added to the local *wall clock* (ignoring any DST transition in between), then
-            // converted back to UTC with the offset in force at the result, so the answer is the slot the grid shows.
-            var aligned = new DateTime(local.Year, local.Month, local.Day, local.Hour, (local.Minute / SlotMinutes) * SlotMinutes, 0, DateTimeKind.Unspecified);
-            var wall = aligned.AddMinutes(SlotMinutes * ahead);
-            return TimeZones.FromWallClock(wall, zone).ToUniversalTime();
-        }
-
-        return null;
+        // Minutes are added to the local *wall clock* (ignoring any DST transition in between), then
+        // converted back to UTC with the offset in force at the result, so the answer is the slot the grid shows.
+        var aligned = new DateTime(local.Year, local.Month, local.Day, local.Hour, (local.Minute / SlotMinutes) * SlotMinutes, 0, DateTimeKind.Unspecified);
+        var wall = aligned.AddMinutes(SlotMinutes * ahead);
+        return TimeZones.FromWallClock(wall, zone).ToUniversalTime();
     }
 
     /// <summary>The Monday-first day index the grid uses: Monday is 0, Sunday is 6.</summary>

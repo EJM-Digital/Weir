@@ -288,6 +288,7 @@ public sealed class FileStoryNarrationTests
         Assert.Equal("1.5", Step(new WireObject().Set("ok", false).Set("reason", 1.5), "Could not finish").Sentence);
         Assert.Equal("7", Step(new WireObject().Set("ok", false).Set("reason", 7L), "Could not finish").Sentence);
         Assert.Equal("True", Step(new WireObject().Set("ok", false).Set("reason", true), "Could not finish").Sentence);
+        Assert.Equal("False", Step(new WireObject().Set("ok", false).Set("reason", false), "Could not finish").Sentence);
         Assert.Equal(
             "Weir could not process this file, and the record does not say why.",
             Step(new WireObject().Set("ok", false).Set("reason", new WireArray()), "Could not finish").Sentence);

@@ -27,9 +27,12 @@ public static class WeirServer
     public const string WindowsServiceName = "Weir";
 
     /// <summary>The process environment as <see cref="RuntimeEnvironment"/>.</summary>
-    public static RuntimeEnvironment CurrentRuntime()
+    public static RuntimeEnvironment CurrentRuntime() => CurrentRuntime(OperatingSystem.IsWindows());
+
+    /// <summary><see cref="CurrentRuntime()"/> for a stated operating system, so both ways are exercised on any host.</summary>
+    internal static RuntimeEnvironment CurrentRuntime(bool isWindows)
     {
-        var comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        var comparer = isWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
         var variables = new Dictionary<string, string>(comparer);
         foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
         {
@@ -38,7 +41,7 @@ public static class WeirServer
 
         return new RuntimeEnvironment(
             variables,
-            OperatingSystem.IsWindows(),
+            isWindows,
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             Environment.CurrentDirectory);
     }
