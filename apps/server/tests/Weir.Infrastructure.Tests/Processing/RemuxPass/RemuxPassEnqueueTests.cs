@@ -57,8 +57,8 @@ public sealed class RemuxPassEnqueueTests : IDisposable
     }
 
     [Theory]
-    [InlineData("movie", "Movies watched folder")]
-    [InlineData("tv", "TV watched folder")]
+    [InlineData("movie", "Movies has no watched folder yet")]
+    [InlineData("tv", "TV has no watched folder yet")]
     public async Task A_scope_whose_workflow_watches_no_folder_is_refused_in_plain_words(string scope, string expected)
     {
         var refusal = await Assert.ThrowsAsync<RemuxPassEnqueueException>(() => EnqueueAsync("film.mkv", scope));

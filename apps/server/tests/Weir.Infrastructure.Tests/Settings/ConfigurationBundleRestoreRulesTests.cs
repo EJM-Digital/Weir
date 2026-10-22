@@ -88,7 +88,7 @@ public sealed class ConfigurationBundleRestoreRulesTests : IDisposable
 
         var exception = await Assert.ThrowsAsync<WireValueException>(BuildAsync);
 
-        Assert.Contains($"Missing required configuration row: {table}", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("part of what it has saved is missing", exception.Message, StringComparison.Ordinal);
     }
 
     [Theory]
