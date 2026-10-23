@@ -142,4 +142,25 @@ public sealed class OwedReportStoredFormTests : IDisposable
             $"Finished processing this file. {ManagerWaitMessages.ReportGivenUp("Deluno")}",
             await _fixture.Store.ScalarText($"SELECT status_reason FROM files WHERE library_id = {_library}"));
     }
+
+    [Fact]
+    public async Task A_saved_report_that_never_named_an_output_path_is_placed_as_it_is_and_keeps_a_refusal_count_without_times()
+    {
+        _fixture.DelunoListsNoLibraries();
+        await _fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
+        _fixture.Http.Throw(HttpMethod.Post, Callback, new HttpRequestException("refused"));
+        await OweAsync(
+            """{"callback_path":"CALLBACK","body":{"status":"failed"},"relative_media_path":"RELATIVE","refusals":2,"unplaced":{"local_folder":"/out","state":"failed"}}"""
+                .Replace("CALLBACK", Callback, StringComparison.Ordinal)
+                .Replace("RELATIVE", Relative, StringComparison.Ordinal));
+
+        Assert.Equal(0, await SendWaitingAsync());
+
+        var stored = (WireObject)WireJsonParser.Parse((await StoredAsync())!);
+        Assert.Equal(2, ((WireInteger)stored["refusals"]).Value);
+        Assert.IsType<WireNull>(stored["first_refused_at"]);
+        Assert.IsType<WireNull>(stored["not_before"]);
+        Assert.False(stored.ContainsKey("unplaced"));
+        Assert.Equal("failed", await _fixture.Store.ScalarText("SELECT state FROM media_manager_handoffs WHERE handoff_id = 'h1'"));
+    }
 }

@@ -200,12 +200,14 @@ public sealed partial class RemuxPassHandler : IJobHandler
 
         var progress = new ActivityProgressReporter(_database, context.Id, provenance, _logger, _time, _liveProgress);
         var performance = claim.Operator!;
+        // A claim with no failure always has its library, rules and paths: a pass with no library fails the claim instead.
         var workflow = claim.Library!;
+        var runtime = claim.Runtime!;
         var request = new RemuxPassRequest
         {
-            Runtime = claim.Runtime!,
+            Runtime = runtime,
             RelativeMediaPath = rel,
-            LibraryId = claim.Library?.Id ?? libraryId,
+            LibraryId = workflow.Id,
             RulesConfig = claim.Rules,
             RulesProfileName = claim.RulesProfileName,
             MinFileAgeSeconds = workflow.ReadyAfterSeconds,
@@ -248,23 +250,23 @@ public sealed partial class RemuxPassHandler : IJobHandler
         }
 
         result.Set("job_id", context.Id);
-        result.Set("library_id", claim.Library?.Id ?? libraryId);
+        result.Set("library_id", workflow.Id);
         // Before the rejection is acted on: a file that stays unreadable through the looks is refused here, and only then.
         await SettleUnreadableSourceAsync(context.Id, data, origin, result, cancellationToken).ConfigureAwait(false);
-        if (result.Get("rejection_kind") is { IsTruthy: true } && claim.Library is { } library)
+        if (result.Get("rejection_kind") is { IsTruthy: true })
         {
-            ApplyRejectedFileAction(result, library, claim.Runtime?.ManagerLinks ?? WorkflowManagerLinks.None, origin);
+            ApplyRejectedFileAction(result, workflow, runtime.ManagerLinks, origin);
         }
 
         await DeferUntilDiskSpaceAsync(context.Id, data, origin, result, cancellationToken).ConfigureAwait(false);
         Merge(result, provenance);
         await ApplyFileOutcomeStateAsync(result, libraryId, mediaScope, origin).ConfigureAwait(false);
         await DeferUntilOldEnoughAsync(context.Id, data, origin, result, cancellationToken).ConfigureAwait(false);
-        await LookAgainForGoneFileAsync(context.Id, data, origin, result, (claim.Runtime!.WatchedFolder, rel, mediaScope, claim.Library?.Id ?? libraryId), cancellationToken).ConfigureAwait(false);
+        await LookAgainForGoneFileAsync(context.Id, data, origin, result, (runtime.WatchedFolder, rel, mediaScope, workflow.Id), cancellationToken).ConfigureAwait(false);
         await RecordAsync(result, progress.ActivityId, newEntry: AddsGoneEntry(result, claim.GoneListed)).ConfigureAwait(false);
         context.Alert = AlertFor(result);
 
-        await FinishRejectedInputCleanupAsync(result, claim.Library, libraryId, mediaScope, origin).ConfigureAwait(false);
+        await FinishRejectedInputCleanupAsync(result, workflow, libraryId, mediaScope, origin).ConfigureAwait(false);
         if (BeforeReport is { } beforeReport)
         {
             await beforeReport().ConfigureAwait(false);

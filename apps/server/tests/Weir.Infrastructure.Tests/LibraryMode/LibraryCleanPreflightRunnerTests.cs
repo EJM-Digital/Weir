@@ -114,6 +114,18 @@ public sealed class LibraryCleanPreflightRunnerTests
         public int? LinkCount(string path) => throw new UnauthorizedAccessException();
     }
 
+    [Theory]
+    [InlineData(0, "{}")]
+    [InlineData(1, null)]
+    [InlineData(1, "")]
+    [InlineData(1, "this is not ffprobe output")]
+    public void A_file_with_nothing_to_remove_or_nothing_readable_to_replan_removes_no_languages(int removedAudioCount, string? probeJson)
+    {
+        var file = new LibraryScanFileEntry(FilmPath, 1, 1, LibraryFileClassification.WouldChange, null, null, removedAudioCount, 0, "radarr", "Arrival", probeJson);
+
+        Assert.Empty(LibraryCleanPreflightRunner.RemovedAudioLanguages(file, EnglishOnly));
+    }
+
     private sealed class SingleLinkInspector : IHardlinkInspector
     {
         public int? LinkCount(string path) => 1;

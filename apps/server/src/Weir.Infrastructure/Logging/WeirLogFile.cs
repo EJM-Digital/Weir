@@ -20,6 +20,7 @@ public sealed class WeirLogFile : IDisposable
     private readonly ReaderWriterLockSlim _replacing = new();
     private readonly TimeProvider _time;
     private readonly IFileSystem _files;
+    /// <summary>The append handle; null once disposed, and after a retention rewrite swapped the log in but could not open it again.</summary>
     private FileStream? _stream;
     private bool _disposed;
 
@@ -209,11 +210,11 @@ public sealed class WeirLogFile : IDisposable
         }
     }
 
-    /// <summary>Replace the append handle with a fresh one (none once disposed). The caller holds <see cref="_lock"/>.</summary>
+    /// <summary>Replace the append handle with a fresh one. The caller holds <see cref="_lock"/>.</summary>
     private void ReopenForAppend()
     {
         _stream?.Dispose();
-        _stream = _disposed ? null : OpenForAppend(Path);
+        _stream = OpenForAppend(Path);
     }
 
     /// <summary>
@@ -331,13 +332,31 @@ public sealed class WeirLogFile : IDisposable
         }
     }
 
+    /// <summary>Waits for a retention rewrite or a read already under way, so neither finds the log closed beneath it.</summary>
     public void Dispose()
     {
         lock (_lock)
         {
+            if (_disposed)
+            {
+                return;
+            }
+
             _disposed = true;
-            _stream?.Dispose();
-            _stream = null;
+        }
+
+        _replacing.EnterWriteLock();
+        try
+        {
+            lock (_lock)
+            {
+                _stream?.Dispose();
+                _stream = null;
+            }
+        }
+        finally
+        {
+            _replacing.ExitWriteLock();
         }
 
         _replacing.Dispose();

@@ -81,6 +81,6 @@ public static class LibraryFileWalker
         return found;
     }
 
-    private static List<string> SplitCsv(string? csv) =>
+    internal static List<string> SplitCsv(string? csv) =>
         (csv ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
 }

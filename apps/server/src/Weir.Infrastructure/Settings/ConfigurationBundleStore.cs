@@ -35,7 +35,7 @@ public sealed partial class ConfigurationBundleStore
     private readonly ConfigurationBundleConnections _connections;
     private readonly DataChangePublisher? _changes;
 
-    private enum ColumnKind
+    internal enum ColumnKind
     {
         Raw,
         Boolean,

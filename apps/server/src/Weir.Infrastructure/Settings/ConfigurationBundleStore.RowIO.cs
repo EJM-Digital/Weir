@@ -103,7 +103,7 @@ public sealed partial class ConfigurationBundleStore
         }
     }
 
-    private static bool ValuesEqual(ColumnKind kind, WireValue? loaded, WireValue assigned)
+    internal static bool ValuesEqual(ColumnKind kind, WireValue? loaded, WireValue assigned)
     {
         loaded ??= WireNull.Instance;
         if (kind == ColumnKind.DateTime || loaded is WireTimestampValue || assigned is WireTimestampValue)

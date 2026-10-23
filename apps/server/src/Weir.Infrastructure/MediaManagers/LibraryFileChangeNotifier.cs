@@ -47,8 +47,6 @@ public sealed class LibraryFileChangeNotifier : ILibraryFileChangeNotifier
     private readonly Func<int, CancellationToken, Task> _delay;
     private readonly ConcurrentDictionary<string, DateTimeOffset> _recentlyNotified = new(StringComparer.Ordinal);
 
-    private static readonly IReadOnlySet<string> EmptyCapabilities = new SortedSet<string>(StringComparer.Ordinal);
-
     public LibraryFileChangeNotifier(
         MediaManagerConnectionService connections,
         SqliteDatabase database,
@@ -138,9 +136,10 @@ public sealed class LibraryFileChangeNotifier : ILibraryFileChangeNotifier
             throw new MediaManagerUnreachableException(description.Detail ?? $"{connection.Label} did not answer.");
         }
 
-        var advertised = description.AdvertisedCapabilities ?? EmptyCapabilities;
+        var advertised = description.Advertised;
         var managerPath = ResolveManagerPath(change, description.Libraries);
-        var isArr = ManagerKindProfiles.ForKind(connection.Kind)?.IsArr ?? false;
+        // The notifier is only handed a connection whose kind has a port, and every kind with a port has a profile.
+        var isArr = ManagerKindProfiles.ForKind(connection.Kind)!.IsArr;
         if (isArr)
         {
             var filesSignal = await port.ListLibraryFilesAsync(connection, scope, cancellationToken).ConfigureAwait(false);
@@ -232,7 +231,7 @@ public sealed class LibraryFileChangeNotifier : ILibraryFileChangeNotifier
 
     private static string DedupeKey(ManagerConnection connection, string target)
     {
-        var connectionKey = connection.ConnectionId is { } id ? id.ToString(CultureInfo.InvariantCulture) : $"{connection.Kind}|{connection.BaseUrl}";
+        var connectionKey = Convert.ToString(connection.ConnectionId, CultureInfo.InvariantCulture);
         return $"{connectionKey}::{target}";
     }
 

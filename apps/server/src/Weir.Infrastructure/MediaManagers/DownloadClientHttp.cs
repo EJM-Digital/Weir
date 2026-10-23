@@ -44,9 +44,10 @@ public sealed record DownloadClientHttpResponse(int Status, byte[] Body, IReadOn
 /// </summary>
 public sealed class DownloadClientHttpClient
 {
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(15);
+
     private readonly string _base;
     private readonly IManagerHttpHandlerFactory _handlers;
-    private readonly TimeSpan _timeout;
     private readonly ConnectionRef? _connection;
 
     /// <summary>
@@ -54,7 +55,7 @@ public sealed class DownloadClientHttpClient
     /// talks to, so its calls light that connection up; null for one that is not saved.
     /// </summary>
     /// <exception cref="DownloadClientHttpException">The base URL is not a plain http(s) address.</exception>
-    public DownloadClientHttpClient(string baseUrl, IManagerHttpHandlerFactory handlers, TimeSpan? timeout = null, ConnectionRef? connection = null)
+    public DownloadClientHttpClient(string baseUrl, IManagerHttpHandlerFactory handlers, ConnectionRef? connection = null)
     {
         ArgumentNullException.ThrowIfNull(baseUrl);
         _handlers = handlers ?? throw new ArgumentNullException(nameof(handlers));
@@ -67,7 +68,6 @@ public sealed class DownloadClientHttpClient
             throw new DownloadClientHttpException(exception.Message, exception);
         }
 
-        _timeout = timeout ?? TimeSpan.FromSeconds(15);
         _connection = connection;
     }
 
@@ -114,7 +114,7 @@ public sealed class DownloadClientHttpClient
         using (request)
         {
             ConnectionTag.Apply(request, _connection);
-            using var client = new HttpClient(_handlers.Handler(followRedirects: false, ManagerAddressPolicy.Local), disposeHandler: false) { Timeout = _timeout };
+            using var client = new HttpClient(_handlers.Handler(followRedirects: false, ManagerAddressPolicy.Local), disposeHandler: false) { Timeout = RequestTimeout };
             HttpResponseMessage response;
             try
             {

@@ -59,4 +59,25 @@ public sealed class JobSmallEdgeTests
         Assert.Equal(["Film.mkv"], await ActiveRemuxPasses.PathsAsync(uow, "movie", 1));
         Assert.Equal(["Show.mkv"], await ActiveRemuxPasses.PathsAsync(uow, "tv", 1));
     }
+    [Fact]
+    public async Task A_file_with_several_passes_booked_for_later_is_held_until_the_earliest_and_other_files_are_not_counted()
+    {
+        using var db = new JobsTestDatabase();
+        var now = new DateTimeOffset(2026, 10, 20, 0, 0, 0, TimeSpan.Zero);
+        string At(int days) => TimestampColumns.Orm(now.AddDays(days));
+        const string film = "{\"relative_media_path\":\"Film.mkv\",\"library_id\":1}";
+        db.InsertRawJob("film-late", RemuxPassOutcomes.JobKind, payloadJson: film, notBefore: At(2));
+        db.InsertRawJob("film-early", RemuxPassOutcomes.JobKind, payloadJson: film, notBefore: At(1));
+        db.InsertRawJob("film-later", RemuxPassOutcomes.JobKind, payloadJson: film, notBefore: At(3));
+        db.InsertRawJob("film-past", RemuxPassOutcomes.JobKind, payloadJson: film, notBefore: At(-1));
+        db.InsertRawJob("film-date-only", RemuxPassOutcomes.JobKind, payloadJson: film, notBefore: "2026-10-22");
+        db.InsertRawJob("show", RemuxPassOutcomes.JobKind, payloadJson: "{\"relative_media_path\":\"Show.mkv\",\"media_scope\":\"tv\",\"library_id\":1}", notBefore: At(1));
+        db.InsertRawJob("other-library", RemuxPassOutcomes.JobKind, payloadJson: "{\"relative_media_path\":\"Other.mkv\",\"library_id\":2}", notBefore: At(1));
+        db.InsertRawJob("names-no-file", RemuxPassOutcomes.JobKind, payloadJson: "{}", notBefore: At(1));
+
+        await using var uow = await UnitOfWork.OpenAsync(db.Database);
+        var held = await ActiveRemuxPasses.HeldBackStartsAsync(uow, "movie", 1, now);
+
+        Assert.Equal(new Dictionary<string, DateTimeOffset> { ["Film.mkv"] = now.AddDays(1) }, held);
+    }
 }

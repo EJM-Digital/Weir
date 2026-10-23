@@ -44,6 +44,7 @@ public sealed class HandoffReportActivityTests : IDisposable
         { """{"status":"failed","failureClass":"superseded"}""", "Told Deluno (rig) that its newer send of film.mkv has the answer" },
         { """{"status":"failed","failureClass":"not_taken"}""", "Told Deluno (rig) that Weir did not start film.mkv, because it is working on it for another connection" },
         { """{"status":"failed"}""", "Told Deluno (rig) that Weir could not process film.mkv" },
+        { "{}", "Told Deluno (rig) that Weir could not process film.mkv" },
         { """{"status":"failed","failureClass":"unreadable"}""", "Told Deluno (rig) that Weir could not process film.mkv" },
     };
 

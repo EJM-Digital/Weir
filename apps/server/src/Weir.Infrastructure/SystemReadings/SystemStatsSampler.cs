@@ -2,6 +2,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Weir.Infrastructure.Activity;
 using Weir.Infrastructure.Runtime;
+using Weir.Infrastructure.Scheduling;
 
 namespace Weir.Infrastructure.SystemReadings;
 
@@ -77,18 +78,16 @@ public sealed partial class SystemStatsSampler : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        try
-        {
-            while (!stoppingToken.IsCancellationRequested)
+        await StoppingWork.RunAsync(
+            async () =>
             {
-                await RunDueWorkAsync(stoppingToken).ConfigureAwait(false);
-                await Task.Delay(Tick, _time, stoppingToken).ConfigureAwait(false);
-            }
-        }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-        {
-            // Weir is stopping.
-        }
+                while (true)
+                {
+                    await RunDueWorkAsync(stoppingToken).ConfigureAwait(false);
+                    await Task.Delay(Tick, _time, stoppingToken).ConfigureAwait(false);
+                }
+            },
+            stoppingToken).ConfigureAwait(false);
     }
 
     /// <summary>One turn of the loop: whatever is due, taken in order. A reading that fails leaves a gap in the traces and is tried again next turn.</summary>

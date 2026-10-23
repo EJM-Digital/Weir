@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Weir.Core.Json;
+using Weir.Core.MediaManagers;
 using Weir.Infrastructure.MediaManagers;
 
 namespace Weir.Infrastructure.Tests.MediaManagers;
@@ -43,6 +44,26 @@ public sealed class ManagerSetupCheckEdgeTests : IDisposable
         var entry = Assert.Single(entries);
         Assert.Equal(id, ((WireInteger)entry.Get("connection_id")!).Value);
         Assert.False(((WireBool)entry.Get("ready")!).Value);
+    }
+
+    [Theory]
+    [InlineData(500, "{}")]
+    [InlineData(200, "[]")]
+    [InlineData(200, "{\"enableCompletedDownloadHandling\":\"yes\"}")]
+    public async Task A_completed_download_setting_the_manager_will_not_give_is_left_unknown_and_the_check_still_finishes(int status, string body)
+    {
+        await _fixture.AddConnectionAsync("radarr", "http://192.0.2.44:7878");
+        _fixture.Http
+            .Json(HttpMethod.Get, ManagerSetupRules.RemotePathMappingPath, "[]")
+            .Json(HttpMethod.Get, ManagerSetupRules.DownloadClientPath, "[]")
+            .Json(HttpMethod.Get, ManagerSetupRules.DownloadClientConfigPath, body, (System.Net.HttpStatusCode)status);
+
+        var entries = await _fixture.Db(
+            uow => Check().CheckAsync(uow, "movie", _fixture.Store.Home.Join("watched"), _fixture.Store.Home.Join("out"), linkedConnectionIds: null), commit: false);
+
+        var entry = Assert.Single(entries);
+        Assert.NotEmpty(((WireArray)entry.Get("lines")!).Items);
+        Assert.Contains(_fixture.Http.Requests, request => request.PathAndQuery == ManagerSetupRules.DownloadClientConfigPath);
     }
 
     [Fact]

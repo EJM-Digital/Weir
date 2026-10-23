@@ -68,7 +68,7 @@ public sealed class UpdateOutlook
     public async Task CheckAsync(CancellationToken cancellationToken)
     {
         var status = await _status.ReadAsync(cancellationToken).ConfigureAwait(false);
-        var outlook = new UpdateOutlookSnapshot(TextOf(status.Get("status")) ?? Checking, TextOf(status.Get("latest_version")));
+        var outlook = new UpdateOutlookSnapshot(WireConvert.Str(status["status"]), TextOf(status.Get("latest_version")));
         bool changed;
         lock (_gate)
         {

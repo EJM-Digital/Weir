@@ -68,7 +68,7 @@ public sealed partial class AuthService : IDisposable
         var reason = SessionRules.InvalidReason(row, idle, now.AsUtc);
         if (reason is not null)
         {
-            if (row.RevokedAt is null && reason is SessionInvalidReason.AbsoluteExpired or SessionInvalidReason.IdleExpired)
+            if (reason is SessionInvalidReason.AbsoluteExpired or SessionInvalidReason.IdleExpired)
             {
                 await RevokeExpiredAsync(uow, row.Id, now).ConfigureAwait(false);
             }

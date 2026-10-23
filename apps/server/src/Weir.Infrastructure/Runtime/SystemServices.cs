@@ -354,7 +354,16 @@ public sealed class UpdateFiles
     private void ReplaceFile(string fileName, byte[] contents) => AtomicFileWriter.Replace(_options.WeirHome, fileName, contents);
 
     /// <summary>The install type: <c>WEIR_RUNTIME</c>, a Docker marker, a packaged Windows build, else source.</summary>
-    public static string DetectInstallType(string? runtimeVariable)
+    public static string DetectInstallType(string? runtimeVariable) =>
+        DetectInstallType(
+            runtimeVariable,
+            path => File.Exists(path) || Directory.Exists(path),
+            // Only the packaged Windows build is published as a single file.
+            string.IsNullOrEmpty(typeof(UpdateFiles).Assembly.Location),
+            OperatingSystem.IsWindows());
+
+    /// <summary>The install type given what the machine says: whether a path exists, whether Weir is a single file, and whether it runs on Windows.</summary>
+    internal static string DetectInstallType(string? runtimeVariable, Func<string, bool> pathExists, bool singleFile, bool windows)
     {
         var runtime = (runtimeVariable ?? string.Empty).Trim().ToLowerInvariant();
         if (runtime is "windows" or "docker" or "source")
@@ -362,13 +371,11 @@ public sealed class UpdateFiles
             return runtime;
         }
 
-        if (File.Exists("/.dockerenv") || Directory.Exists("/.dockerenv"))
+        if (pathExists("/.dockerenv"))
         {
             return "docker";
         }
 
-        // Only the packaged Windows build is published as a single file.
-        var singleFile = string.IsNullOrEmpty(typeof(UpdateFiles).Assembly.Location);
-        return singleFile && OperatingSystem.IsWindows() ? "windows" : "source";
+        return singleFile && windows ? "windows" : "source";
     }
 }

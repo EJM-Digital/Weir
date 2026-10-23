@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Weir.Core.Configuration;
 using Weir.Infrastructure.Activity;
+using Weir.Infrastructure.Scheduling;
 
 namespace Weir.Infrastructure.Runtime;
 
@@ -73,14 +74,7 @@ public sealed class TrayHandOffWatcher : BackgroundService
             return;
         }
 
-        try
-        {
-            await AnnounceAsync(stoppingToken).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-        {
-            // The server is stopping.
-        }
+        await StoppingWork.RunAsync(() => AnnounceAsync(stoppingToken), stoppingToken).ConfigureAwait(false);
     }
 
     private FileSystemWatcher? TryWatch()

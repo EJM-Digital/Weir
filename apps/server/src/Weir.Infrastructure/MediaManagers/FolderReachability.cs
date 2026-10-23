@@ -7,6 +7,7 @@ using Weir.Core.Processing;
 using Weir.Infrastructure.Activity;
 using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Runtime;
+using Weir.Infrastructure.Scheduling;
 using Weir.Infrastructure.Sqlite;
 
 namespace Weir.Infrastructure.MediaManagers;
@@ -96,17 +97,8 @@ public sealed class FolderReachability : BackgroundService
         _heard?.Dispose();
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        try
-        {
-            await Task.WhenAll(ListenAsync(stoppingToken), KeepLookingAsync(stoppingToken)).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-        {
-            // The server is stopping.
-        }
-    }
+    protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
+        StoppingWork.RunAsync(() => Task.WhenAll(ListenAsync(stoppingToken), KeepLookingAsync(stoppingToken)), stoppingToken);
 
     /// <summary>Looks at the folders now, and says so if the answer is not the one it gave last time. A look that fails keeps the last answer.</summary>
     internal async Task LookAsync(CancellationToken cancellationToken)

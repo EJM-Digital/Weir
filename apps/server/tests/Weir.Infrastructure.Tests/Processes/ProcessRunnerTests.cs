@@ -11,6 +11,22 @@ public sealed class ProcessRunnerTests
 {
     private static readonly ProcessRunner Runner = new();
 
+    [Fact]
+    public void A_kill_that_finds_nothing_left_to_kill_is_not_an_error()
+    {
+        ProcessRunner.TryKill(() => { });
+        ProcessRunner.TryKill(() => throw new InvalidOperationException("already exited"));
+        ProcessRunner.TryKill(() => throw new Win32Exception("access denied to a descendant"));
+        ProcessRunner.TryKill(() => throw new AggregateException("some descendants could not be killed"));
+        ProcessRunner.KillTree(new Process());
+    }
+
+    [Fact]
+    public void A_kill_that_fails_for_any_other_reason_is_still_an_error()
+    {
+        Assert.Throws<NotSupportedException>(() => ProcessRunner.TryKill(() => throw new NotSupportedException()));
+    }
+
     private const string StandInName = "Weir.TestChild";
 
     /// <summary>Long enough for the stand-in to have started its own child, unless the machine is starved, so a kill finds the whole tree.</summary>

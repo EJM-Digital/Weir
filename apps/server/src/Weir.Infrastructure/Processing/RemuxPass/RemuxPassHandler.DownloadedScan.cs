@@ -38,7 +38,7 @@ public sealed partial class RemuxPassHandler
     }
 
     /// <summary>Whether this pass actually wrote, or confirmed, an output file, and where.</summary>
-    private static bool PassWroteOutput(WireObject result, out string outputPath)
+    internal static bool PassWroteOutput(WireObject result, out string outputPath)
     {
         outputPath = string.Empty;
         if (result.Get("ok") is not WireBool { Value: true })
@@ -65,6 +65,6 @@ public sealed partial class RemuxPassHandler
     /// carries one. Today that is never the case for these connections (they run the remote-path-mapping flow, not a
     /// hand-off), so this is usually null; the command is sent without <c>downloadClientId</c> either way.
     /// </summary>
-    private static string? DownloadId(WireObject? origin) =>
+    internal static string? DownloadId(WireObject? origin) =>
         origin?.Get("download_id") is { IsTruthy: true } value ? WireConvert.Str(value) : null;
 }

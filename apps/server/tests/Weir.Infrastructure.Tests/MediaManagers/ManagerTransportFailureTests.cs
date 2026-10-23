@@ -89,6 +89,14 @@ public sealed class ManagerTransportFailureTests
     }
 
     [Fact]
+    public void A_download_client_path_with_an_empty_list_of_parameters_has_no_query()
+    {
+        var client = new DownloadClientHttpClient("http://client.local", Answering(HttpStatusCode.OK));
+
+        Assert.Equal("http://client.local/api/version", client.Url("api/version", []));
+    }
+
+    [Fact]
     public void A_download_client_path_with_a_scheme_is_refused()
     {
         var client = new DownloadClientHttpClient("http://client.local", Answering(HttpStatusCode.OK));

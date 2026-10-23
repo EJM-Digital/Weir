@@ -90,7 +90,7 @@ public static class LibraryCleanPreflightRunner
     /// from its cached ffprobe JSON (the scan's own plan cache carries only a count, not the languages) — the same
     /// replan <see cref="LibraryCleanHandler"/> runs before actually touching the file.
     /// </summary>
-    private static List<string> RemovedAudioLanguages(LibraryScanFileEntry file, ProcessingRulesConfig rules)
+    internal static List<string> RemovedAudioLanguages(LibraryScanFileEntry file, ProcessingRulesConfig rules)
     {
         if (file.RemovedAudioCount == 0 || file.ProbeJson is not { Length: > 0 } probeJson)
         {
@@ -105,8 +105,9 @@ public static class LibraryCleanPreflightRunner
                 .Select(track => track.Language)
                 .ToList() ?? [];
         }
-        catch (RulesInputException)
+        catch (Exception exception) when (exception is RulesInputException or System.Text.Json.JsonException)
         {
+            // A cached probe that cannot be read says nothing about what would be removed.
             return [];
         }
     }

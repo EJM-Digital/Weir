@@ -84,9 +84,29 @@ public sealed class LinuxOutputOwnershipToolsRealFilesystemTests : IDisposable
         Assert.Null(exception);
     }
 
+    [RequiresLinuxFact]
+    public void Chown_of_a_path_that_is_not_there_is_an_error_that_names_it()
+    {
+        var path = Path.Join(_folder, "missing.mkv");
+
+        var failure = Assert.Throws<IOException>(() => new LinuxOutputOwnershipTools().Chown(path, Geteuid(), Getegid()));
+
+        Assert.Contains(path, failure.Message, StringComparison.Ordinal);
+    }
+
     [DllImport("libc", EntryPoint = "geteuid")]
     private static extern uint Geteuid();
 
     [DllImport("libc", EntryPoint = "getegid")]
     private static extern uint Getegid();
+}
+
+/// <summary>The Linux tools are never used on Windows, and say so if they are.</summary>
+public sealed class LinuxOutputOwnershipToolsOnWindowsTests
+{
+    [WindowsFact("Only Windows refuses to set a mode")]
+    public void Setting_a_mode_on_Windows_is_refused()
+    {
+        Assert.Throws<PlatformNotSupportedException>(() => new LinuxOutputOwnershipTools().SetMode(Path.GetTempPath(), UnixFileMode.UserRead));
+    }
 }
