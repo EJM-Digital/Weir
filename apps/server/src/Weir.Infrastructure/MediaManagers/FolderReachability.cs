@@ -227,7 +227,7 @@ public sealed class FolderReachability : BackgroundService
         }
     }
 
-    private static string Role(LocalFolder folder) => folder switch
+    internal static string Role(LocalFolder folder) => folder switch
     {
         LocalFolder.Watched => "watched",
         LocalFolder.Work => "work",

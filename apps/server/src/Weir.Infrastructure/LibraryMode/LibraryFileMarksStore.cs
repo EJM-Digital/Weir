@@ -79,16 +79,6 @@ public sealed class LibraryFileMarksStore
         return marks;
     }
 
-    /// <summary>Forget everything Weir knows about a file that has left the library (a library's folders changed, say).</summary>
-    public Task ForgetAsync(UnitOfWork uow, long libraryId, string path)
-    {
-        ArgumentNullException.ThrowIfNull(uow);
-        return uow.ExecuteAsync(
-            "DELETE FROM library_file_marks WHERE library_id = @library AND path = @path",
-            ("@library", libraryId),
-            ("@path", path));
-    }
-
     private static LibraryFileMark Read(SqliteDataReader reader) => new(
         SqliteValues.GetString(reader, 0),
         TimestampColumns.Parse(reader.GetValue(1)),

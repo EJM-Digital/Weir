@@ -22,17 +22,20 @@ public sealed class ConsoleRecoverPasswordPrompt : IRecoverPasswordPrompt
 {
     public bool IsInteractive => !Console.IsInputRedirected;
 
-    public string ReadPassword(string prompt)
+    public string ReadPassword(string prompt) => ReadPassword(prompt, Console.ReadKey, Console.Out);
+
+    /// <summary>Test seam (<c>InternalsVisibleTo</c> to Weir.Infrastructure.Tests): the same prompt over keys and a writer a test supplies, since a test run has no console to type at.</summary>
+    internal static string ReadPassword(string prompt, Func<bool, ConsoleKeyInfo> readKey, TextWriter output)
     {
         ArgumentNullException.ThrowIfNull(prompt);
-        Console.Write(prompt);
+        output.Write(prompt);
         var buffer = new StringBuilder();
         while (true)
         {
-            var key = Console.ReadKey(intercept: true);
+            var key = readKey(true);
             if (key.Key == ConsoleKey.Enter)
             {
-                Console.WriteLine();
+                output.WriteLine();
                 return buffer.ToString();
             }
 

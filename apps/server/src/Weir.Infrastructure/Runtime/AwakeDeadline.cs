@@ -78,7 +78,8 @@ public sealed class AwakeDeadline : IDisposable
         _source.Dispose();
     }
 
-    private void OnTimer(object? state)
+    /// <summary>Test seam (<c>InternalsVisibleTo</c> to Weir.Infrastructure.Tests): the timer's callback, which can already be queued when the work ends and so must find the deadline disposed or unlimited.</summary>
+    internal void OnTimer(object? state)
     {
         lock (_gate)
         {
@@ -95,15 +96,9 @@ public sealed class AwakeDeadline : IDisposable
                 _timer.Change(limit - awake, Timeout.InfiniteTimeSpan);
                 return;
             }
-        }
 
-        try
-        {
+            // Under the gate, so that Dispose cannot release the source between the check above and this.
             _source.Cancel();
-        }
-        catch (ObjectDisposedException)
-        {
-            // The work ended while the limit was running out.
         }
     }
 }

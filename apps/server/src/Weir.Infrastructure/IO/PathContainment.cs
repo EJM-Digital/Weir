@@ -58,13 +58,8 @@ public static class PathContainment
                 return true;
             }
 
-            var parent = Path.GetDirectoryName(current);
-            if (parent is null)
-            {
-                break;
-            }
-
-            current = parent;
+            // Strictly under the root, so it is not a filesystem root itself and has a parent.
+            current = Path.GetDirectoryName(current)!;
         }
 
         return false;
