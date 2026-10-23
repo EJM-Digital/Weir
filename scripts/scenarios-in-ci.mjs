@@ -13,34 +13,15 @@
 //        node scripts/scenarios-in-ci.mjs <windows shard> --setup <Weir-win-Setup.exe> [--version <version>] [--only <id,id>] [--logs <folder>]
 //        node scripts/scenarios-in-ci.mjs windows-update --feed <folder> --previous-setup <Weir-win-Setup.exe> --previous-feed <releases.win.json>
 //          --previous-version <version> --version <version> [--only <id,id>] [--logs <folder>]
-import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { randomBytes } from "node:crypto";
+import { pathToFileURL } from "node:url";
 
-import { createFirstAccount } from "./docker-smoke/smoke-data.mjs";
-import { ORIGIN, Stack } from "./docker-smoke/stack.mjs";
-import { WeirClient } from "./docker-smoke/weir-client.mjs";
-import { Browser } from "./scenarios-ci/browser.mjs";
-import { ContainerBox } from "./scenarios-ci/container-box.mjs";
 import { catalogIds, linuxShards, loadHomes, problemsWithHomes, scenariosOfShard, windowsShards } from "./scenarios-ci/homes.mjs";
-import { exitCode, runScenarios, summaryMarkdown } from "./scenarios-ci/run.mjs";
-import { SHARDS } from "./scenarios-ci/shards.mjs";
-import { WindowsMachine, whyNotAThrowawayMachine } from "./scenarios-ci/windows-machine.mjs";
-import * as windowsFiles from "./scenarios-ci/windows-files.mjs";
-import * as windowsInstall from "./scenarios-ci/windows-install.mjs";
-import * as windowsTray from "./scenarios-ci/windows-tray.mjs";
-import * as windowsUpdate from "./scenarios-ci/windows-update.mjs";
-import { expectedVersion, runWindowsShard } from "./scenarios-ci/windows-shard.mjs";
-
-/** The scenarios of each Windows shard, and the watch on the logs they are judged by. */
-const WINDOWS_SHARDS = {
-  "windows-install": windowsInstall,
-  "windows-files": windowsFiles,
-  "windows-tray": windowsTray,
-  "windows-update": windowsUpdate,
-};
+import { exitCode, summaryMarkdown } from "./scenarios-ci/run.mjs";
+import { runLinuxShard, runWindowsShardHere } from "./scenarios-ci/shard-runners.mjs";
+import { whyNotAThrowawayMachine } from "./scenarios-ci/windows-machine.mjs";
 
 const CATALOG = "scripts/scenarios/Weir.Scenarios.Catalog.ps1";
 
@@ -50,12 +31,14 @@ const USAGE = [
   "node scripts/scenarios-in-ci.mjs windows-update --feed <folder> --previous-setup <Weir-win-Setup.exe> --previous-feed <releases.win.json> --previous-version <version> --version <version> [--only <id,id>] [--logs <folder>]",
 ].join("\n       ");
 
-function usage(message) {
-  console.error(`${message}\nUsage: ${USAGE}`);
-  process.exit(2);
-}
+/** What is wrong with the command line, to be printed with the usage. */
+export class UsageError extends Error {}
 
-function chooseScenarios(homes, shard, only) {
+const usage = (message) => {
+  throw new UsageError(message);
+};
+
+export function chooseScenarios(homes, shard, only) {
   const ported = scenariosOfShard(homes, shard).filter((scenario) => scenario.state !== "to-port").map((scenario) => scenario.id);
   if (!only) return ported;
   const chosen = only.split(",").map((id) => id.trim());
@@ -64,67 +47,24 @@ function chooseScenarios(homes, shard, only) {
   return chosen;
 }
 
-/** The ported scenarios of a Linux shard, run against the image in Compose; `collectFailed` says the recordings of what they showed could not be kept although they ran. */
-async function runLinuxShard({ shard, ids, candidate, logFolder }) {
-  const scratch = mkdtempSync(join(tmpdir(), "weir-scenarios-ci-"));
-  const stack = new Stack(logFolder, scratch);
-  const client = new WeirClient(ORIGIN);
-  const { account, browser: wantsBrowser, beside, scenarios } = SHARDS[shard];
-  const started = beside?.start();
-  let results = [];
-  let collectFailed = false;
-  let browser;
-  stack.removeEverything();
+/**
+ * Runs the shard named in `argv` and returns the exit code. `shards` starts the real thing (the image in Compose, Setup on a runner) and is
+ * what a test replaces; `env` and `platform` say whether this is a machine a Windows shard may install Weir on.
+ */
+export async function main(argv, { env = process.env, platform = process.platform, shards = { runLinuxShard, runWindowsShardHere }, homes = loadHomes(), log = console.log, error = console.error } = {}) {
   try {
-    for (const image of started?.pull ?? []) stack.pull(image);
-    stack.up(candidate, "never", null, beside ? { files: beside.files, environment: started.environment, services: beside.services } : undefined);
-    stack.waitHealthy();
-    const world = { weir: client, box: new ContainerBox(stack), runId: randomBytes(3).toString("hex"), createAccount: () => createFirstAccount({ client, stack }) };
-    if (account) await world.createAccount();
-    if (beside) world.deluno = await beside.setUp(world, started);
-    if (wantsBrowser) world.browser = browser = await Browser.launch(ORIGIN);
-    results = await runScenarios({ ids, registry: scenarios, world });
-    if (beside?.collect) {
-      const files = await beside.collect(world, logFolder);
-      console.log(`Kept ${files.length} recording(s) of what passed between the applications:\n${files.join("\n")}`);
-    }
-  } catch (error) {
-    collectFailed = results.length > 0;
-    console.error(`::error::${shard}: ${error.message}`);
-    console.error(`::group::Container log\n${stack.logs()}\n::endgroup::`);
-  } finally {
-    await browser?.close();
-    stack.keepLogs();
-    stack.removeEverything();
-    rmSync(scratch, { recursive: true, force: true });
-  }
-  return { results, collectFailed };
-}
-
-/** The ported scenarios of a Windows shard, run on this machine, which must be a clean GitHub-hosted runner. */
-async function runWindowsShardHere({ shard, ids, setup, version, logFolder, update }) {
-  const refusal = whyNotAThrowawayMachine(process.env, process.platform);
-  if (refusal) usage(`${shard} installs and uninstalls Weir for real, and ${refusal}.`);
-  const props = readFileSync("apps/server/Directory.Build.props", "utf8");
-  try {
-    return await runWindowsShard({
-      ids,
-      registry: WINDOWS_SHARDS[shard].SCENARIOS,
-      watchLogs: WINDOWS_SHARDS[shard].watchLogs,
-      machine: new WindowsMachine(),
-      setupPath: setup ? resolve(setup) : null,
-      update,
-      version: expectedVersion({ given: version ?? process.env.WEIR_BUILD_VERSION, props }),
-      logFolder,
-    });
-  } catch (error) {
-    console.error(`::error::${shard}: ${error.message}`);
-    return [];
+    return await run(argv, { env, platform, shards, homes, log, error });
+  } catch (failure) {
+    if (!(failure instanceof UsageError)) throw failure;
+    error(`${failure.message}
+Usage: ${USAGE}`);
+    return 2;
   }
 }
 
-async function main() {
+async function run(argv, { env, platform, shards, homes, log, error }) {
   const { values, positionals } = parseArgs({
+    args: argv,
     allowPositionals: true,
     options: {
       candidate: { type: "string" },
@@ -139,7 +79,6 @@ async function main() {
     },
   });
   const [shard] = positionals;
-  const homes = loadHomes();
   const broken = problemsWithHomes(homes, catalogIds(readFileSync(CATALOG, "utf8")));
   if (broken.length > 0) usage(`The scenario homes (scripts/scenarios-ci/homes.json) are wrong:\n${broken.join("\n")}`);
   const linux = linuxShards(homes).includes(shard);
@@ -153,6 +92,10 @@ async function main() {
   }
   if (!linux && !windows) usage(`The shard must be one of ${[...linuxShards(homes), ...windowsShards(homes)].join(", ")}.`);
   const ids = chooseScenarios(homes, shard, values.only);
+  if (windows) {
+    const refusal = whyNotAThrowawayMachine(env, platform);
+    if (refusal) usage(`${shard} installs and uninstalls Weir for real, and ${refusal}.`);
+  }
   const logFolder = join(values.logs, shard);
 
   const subject = linux
@@ -164,18 +107,19 @@ async function main() {
     ? { feedFolder: resolve(values.feed), previousSetup: resolve(values["previous-setup"]), previousFeed: resolve(values["previous-feed"]), previousVersion: values["previous-version"].replace(/^v/, "") }
     : undefined;
   const { results, collectFailed } = linux
-    ? await runLinuxShard({ shard, ids, candidate: values.candidate, logFolder })
-    : { results: await runWindowsShardHere({ shard, ids, setup: values.setup, version: values.version, logFolder, update }), collectFailed: false };
+    ? await shards.runLinuxShard({ shard, ids, candidate: values.candidate, logFolder })
+    : { results: await shards.runWindowsShardHere({ shard, ids, setup: values.setup, version: values.version, logFolder, update }), collectFailed: false };
 
   const summary = summaryMarkdown(results, { shard, ...subject });
-  console.log(summary);
+  log(summary);
   mkdirSync(logFolder, { recursive: true });
   writeFileSync(join(logFolder, "results.json"), JSON.stringify({ shard, [linux ? "candidate" : "setup"]: subject.value, results }, null, 2));
-  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
-  for (const result of results.filter((entry) => entry.status !== "passed")) console.error(`::error::${result.id}: ${result.detail}`);
-  process.exitCode = collectFailed ? 1 : exitCode(results);
-  // Anything a scenario left running (a server, a relay, a call to a share that hangs) must not hold the job after its results are written.
-  process.exit(process.exitCode);
+  if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, summary);
+  for (const result of results.filter((entry) => entry.status !== "passed")) error(`::error::${result.id}: ${result.detail}`);
+  return collectFailed ? 1 : exitCode(results);
 }
 
-await main();
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  // Anything a scenario left running (a server, a relay, a call to a share that hangs) must not hold the job after its results are written.
+  process.exit(await main(process.argv.slice(2)));
+}

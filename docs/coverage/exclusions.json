@@ -312,6 +312,15 @@
       "provedBy": "the coverage job of ci.yml, which installs the web app's packages, runs merge-web-coverage.mjs over the unit and browser reports and judges the web floor on what it writes"
     },
     {
+      "id": "node-scenario-shard-runners",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/scenarios-ci/shard-runners.mjs",
+      "kind": "platform-only",
+      "reason": "Starts the real thing for a shard: the image under test in Docker Compose, with Chromium and Deluno beside it, or Setup on a clean hosted Windows runner. Which shard runs, with what, and what the command writes and exits with are tested in scenarios-in-ci-command.test.mjs with stand-ins for both.",
+      "coveredBy": "linux",
+      "provedBy": "the scenarios-linux job of ci-packaging.yml, which runs scenarios-in-ci.mjs once per Linux shard, and the scenarios-windows job, which runs it for the Windows shards"
+    },
+    {
       "id": "node-developer-pre-push",
       "file": ".github/workflows/ci.yml",
       "marker": "scripts/pre-push.mjs",

@@ -436,6 +436,7 @@ jobs:
             "--test-coverage-exclude=scripts/stop-dev-api-port.mjs" \
             "--test-coverage-exclude=scripts/stop-dev-web-port.mjs" \
             "--test-coverage-exclude=scripts/merge-web-coverage-reports.mjs" \
+            "--test-coverage-exclude=scripts/scenarios-ci/shard-runners.mjs" \
             "--test-coverage-exclude=scripts/pre-push.mjs" \
             "--test-coverage-exclude=scripts/attribute-pool-stalls.mjs" \
             --test-reporter=spec --test-reporter-destination=stdout \
