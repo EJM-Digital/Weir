@@ -4,7 +4,7 @@
 //
 //   node scripts/check-coverage-floors.mjs --floors docs/coverage/floors.json \
 //     [--base-floors <floors.json as it is on the base branch>] \
-//     [--server <folder>] [--out-of-process <folder>] [--tray <folder>] [--web <folder>]
+//     [--server <folder>] [--out-of-process <folder>] [--tray <folder>] [--web <folder>] [--node-scripts <folder>]
 //
 // <folder> for the server, the out-of-process server figure (#1081) and the tray is a ReportGenerator output folder
 // (Summary.json and Cobertura.xml: the per-leg Cobertura files merged into one report); for the web app it is vitest's coverage folder
@@ -16,7 +16,7 @@
 // for it that names the old and the new figure and says why; that entry belongs in its own pull request.
 //
 // The text goes to $GITHUB_STEP_SUMMARY when that is set, and to the log either way.
-import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -37,6 +37,7 @@ export const PROJECTS = [
   { id: "out-of-process-host", label: "Out of process: Weir.Host", report: "out-of-process", assembly: "Weir", folder: "Weir.Host" },
   { id: "tray", label: "Tray", report: "tray", assembly: "Weir", folder: "Weir.Tray" },
   { id: "web", label: "Web app", report: "web" },
+  { id: "node-scripts", label: "Node scripts", report: "node-scripts", folder: "scripts" },
 ];
 
 const TEN = 10;
@@ -118,6 +119,79 @@ export function figuresFromVitest(summary) {
   return figuresOf(total.lines.covered, total.lines.total, total.branches.covered, total.branches.total);
 }
 
+const LINE_BREAK = /\r?\n/;
+
+/** The files of a node lcov report (one SF block each) with their line and branch counts. */
+export function filesFromLcov(text) {
+  const files = [];
+  let current;
+  for (const raw of text.split(LINE_BREAK)) {
+    const line = raw.trim();
+    if (line.startsWith("SF:")) {
+      current = { filename: slashed(line.slice(3)), line: { covered: 0, total: 0 }, branch: { covered: 0, total: 0 } };
+      files.push(current);
+    } else if (current) {
+      const [key, value] = [line.slice(0, line.indexOf(":")), Number(line.slice(line.indexOf(":") + 1))];
+      if (key === "LF") current.line.total = value;
+      else if (key === "LH") current.line.covered = value;
+      else if (key === "BRF") current.branch.total = value;
+      else if (key === "BRH") current.branch.covered = value;
+    }
+  }
+  return files;
+}
+
+/** Whether a repository path matches one of the globs the exclusions file lists for the Node scripts. */
+export function isExcludedScript(file, globs) {
+  return globs.some((glob) => path.posix.matchesGlob(file, glob));
+}
+
+/** The lines of a script that carry code: not blank and not a comment. A script no test loaded is counted by this. */
+export function codeLines(text) {
+  let inBlock = false;
+  let count = 0;
+  for (const raw of text.split(LINE_BREAK)) {
+    const line = raw.trim();
+    if (inBlock) {
+      if (line.includes("*/")) inBlock = false;
+      continue;
+    }
+    if (line === "" || line.startsWith("//")) continue;
+    if (line.startsWith("/*")) {
+      inBlock = !line.includes("*/");
+      continue;
+    }
+    count += 1;
+  }
+  return count;
+}
+
+/** Every shipped script under `scripts` (not a test file), as a repository path. */
+export function scriptFiles(root, folder = "scripts") {
+  return readdirSync(path.join(root, folder), { withFileTypes: true }).flatMap((entry) => {
+    const relative = `${folder}/${entry.name}`;
+    if (entry.isDirectory()) return entry.name === "fixtures" ? [] : scriptFiles(root, relative);
+    return entry.name.endsWith(".mjs") && !entry.name.endsWith(".test.mjs") ? [relative] : [];
+  });
+}
+
+/**
+ * The Node scripts as measured: node's report for the scripts a test loaded, then every other script that is not
+ * excluded, as a file none of whose lines ran. Excluded scripts are left out of both.
+ */
+export function nodeScriptFiles(lcovFiles, scripts, excludedGlobs, lineCountOf) {
+  const kept = lcovFiles.filter((file) => !isExcludedScript(file.filename, excludedGlobs));
+  const loaded = new Set(kept.map((file) => file.filename));
+  const notLoaded = scripts
+    .filter((script) => !loaded.has(script) && !isExcludedScript(script, excludedGlobs))
+    .map((script) => ({ filename: script, line: { covered: 0, total: lineCountOf(script) }, branch: { covered: 0, total: 0 } }));
+  return [...kept, ...notLoaded];
+}
+
+function sumOf(files, measure) {
+  return files.reduce((sum, file) => ({ covered: sum.covered + file[measure].covered, total: sum.total + file[measure].total }), { covered: 0, total: 0 });
+}
+
 function slashed(file) {
   return file.replace(/\\/g, "/");
 }
@@ -129,7 +203,7 @@ export function sourceName(file, folder) {
     const at = name.lastIndexOf(root);
     if (at >= 0) return name.slice(at + root.length);
   }
-  return /^([A-Za-z]:)?\//.test(name) ? name : `${folder}/${name}`;
+  return /^([A-Za-z]:)?\//.test(name) || name.startsWith(`${folder}/`) ? name : `${folder}/${name}`;
 }
 
 function attribute(tag, name) {
@@ -285,9 +359,19 @@ function coberturaFiles(file) {
 }
 
 /** Reads one project's report folder; returns the figures, or { missing } saying which file was not there. */
-export function loadFigures(project, folders) {
+export function loadFigures(project, folders, scripts = { root: ".", excluded: [] }) {
   const folder = folders[project.report];
   if (folder === undefined) return { figures: undefined };
+  if (project.report === "node-scripts") {
+    const lcovFile = path.join(folder, "lcov.info");
+    if (!existsSync(lcovFile)) {
+      return { figures: { missing: `${lcovFile} was not written, so there is nothing to compare with the floor. Look at the test step above for why.` }, files: [] };
+    }
+    const files = nodeScriptFiles(filesFromLcov(readFileSync(lcovFile, "utf8")), scriptFiles(scripts.root), scripts.excluded, (script) =>
+      codeLines(readFileSync(path.join(scripts.root, script), "utf8")),
+    );
+    return { figures: { line: sumOf(files, "line"), branch: sumOf(files, "branch") }, files };
+  }
   const summaryFile = path.join(folder, project.report === "web" ? "coverage-summary.json" : "Summary.json");
   if (!existsSync(summaryFile)) {
     return { figures: { missing: `${summaryFile} was not written, so there is nothing to compare with the floor. Look at the test step above for why.` }, files: [] };
@@ -304,12 +388,20 @@ export function loadFigures(project, folders) {
   return { figures, files };
 }
 
-export function run({ floorsFile, baseFloorsFile, folders }) {
+/** The globs of docs/coverage/exclusions.json that leave Node scripts out of the figure (those whose marker is a scripts/ path). */
+export function excludedScriptGlobs(exclusionsText) {
+  const entries = JSON.parse(exclusionsText).exclusions ?? [];
+  return entries.map((entry) => entry.marker).filter((marker) => typeof marker === "string" && marker.startsWith("scripts/"));
+}
+
+export function run({ floorsFile, baseFloorsFile, folders, scriptsRoot = "." }) {
   const floors = readFloors(readFileSync(floorsFile, "utf8"));
+  const exclusionsFile = path.join(path.dirname(floorsFile), "exclusions.json");
+  const excluded = existsSync(exclusionsFile) ? excludedScriptGlobs(readFileSync(exclusionsFile, "utf8")) : [];
   const figures = {};
   const targets = [];
   for (const project of PROJECTS) {
-    const loaded = loadFigures(project, folders);
+    const loaded = loadFigures(project, folders, { root: scriptsRoot, excluded });
     if (!loaded.figures) continue;
     figures[project.id] = loaded.figures;
     const belowFull = !loaded.figures.missing && MEASURES.some((measure) => percent(loaded.figures[measure]) < 100);
@@ -333,7 +425,7 @@ export function parseArguments(argv) {
     if (value === undefined) throw new Error(`${name} needs a value.`);
     if (name === "--floors") options.floorsFile = value;
     else if (name === "--base-floors") options.baseFloorsFile = value;
-    else if (["--server", "--out-of-process", "--tray", "--web"].includes(name)) options.folders[name.slice(2)] = value;
+    else if (["--server", "--out-of-process", "--tray", "--web", "--node-scripts"].includes(name)) options.folders[name.slice(2)] = value;
     else throw new Error(`Unknown option ${name}.`);
   }
   if (!options.floorsFile) throw new Error("--floors <file> is required.");

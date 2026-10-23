@@ -6,12 +6,9 @@
 // It reads files only, so it runs in well under a second.
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, "..");
-
-const requiredFiles = [
+export const requiredFiles = [
   "AGENTS.md",
   "ARCHITECTURE.md",
   "docs/README.md",
@@ -37,7 +34,7 @@ const historicalFiles = new Set(["CHANGELOG.md"]);
 // UI names Weir no longer has. A current doc that uses one is describing a screen that is gone.
 // A line that names one on purpose, to say it is gone, ends with this HTML comment (invisible when rendered):
 const retiredUiAllowMarker = "<!-- retired-ui: history -->";
-const retiredUiTerms = [
+export const retiredUiTerms = [
   { label: "Housekeeping", pattern: /Housekeeping/ },
   { label: "display density", pattern: /display density/i },
   { label: "Settings › General", pattern: /Settings\s*(?:›|→|->)\s*General\b/ },
@@ -49,18 +46,11 @@ const retiredUiTerms = [
   { label: "History page (now Activity)", pattern: /\bHistory (?:page|screen)\b|\b(?:in|from|on|to) History\b/ },
 ];
 
-let failures = 0;
-
-function fail(message) {
-  failures += 1;
-  console.error(`[agent-docs] ${message}`);
-}
-
 function toPosix(rel) {
   return rel.split(path.sep).join("/");
 }
 
-function collectMarkdown(dirRel, out) {
+function collectMarkdown(repoRoot, dirRel, out) {
   const abs = path.join(repoRoot, dirRel);
   if (!existsSync(abs)) {
     return;
@@ -71,48 +61,25 @@ function collectMarkdown(dirRel, out) {
     }
     const childRel = path.join(dirRel, entry.name);
     if (entry.isDirectory()) {
-      collectMarkdown(childRel, out);
+      collectMarkdown(repoRoot, childRel, out);
     } else if (/\.mdx?$/.test(entry.name)) {
       out.push(toPosix(childRel));
     }
   }
 }
 
-for (const rel of requiredFiles) {
-  if (!existsSync(path.join(repoRoot, rel))) {
-    fail(`Missing required agent documentation file: ${rel}`);
-  }
-}
-
-const markdownFiles = readdirSync(repoRoot).filter(
-  (name) => name.endsWith(".md") && statSync(path.join(repoRoot, name)).isFile(),
-);
-for (const dir of markdownDirs) {
-  collectMarkdown(dir, markdownFiles);
-}
-
-const readme = readFileSync(path.join(repoRoot, "README.md"), "utf8");
-for (const legacyUpgradeText of [
-  "Weir Updater` service",
-  "predates the updater service",
-]) {
-  if (readme.includes(legacyUpgradeText)) {
-    fail(`README.md contains obsolete pre-v2.3 Windows updater guidance: ${legacyUpgradeText}`);
-  }
-}
-
 /** Removes fenced code blocks and inline code, which hold examples rather than links or UI names. */
-function proseOnly(text) {
+export function proseOnly(text) {
   return text
     .replace(/^( {0,3})(```|~~~)[^\n]*\n[\s\S]*?^\1\2[^\n]*$/gm, "")
     .replace(/`[^`\n]*`/g, "");
 }
 
 const markdownLinkPattern = /!?\[[^\]]*]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
-const docsSiteRoot = path.join(repoRoot, "docs-site");
 
 /** Docusaurus resolves extensionless doc links and site-absolute paths; mirror that for docs-site pages. */
-function candidatesFor(rel, dir, target) {
+export function candidatesFor(repoRoot, rel, dir, target) {
+  const docsSiteRoot = path.join(repoRoot, "docs-site");
   const inDocsSite = rel.startsWith("docs-site/");
   const bases = [];
   if (target.startsWith("/")) {
@@ -133,54 +100,93 @@ function candidatesFor(rel, dir, target) {
   return bases.flatMap((base) => [base, `${base}.md`, `${base}.mdx`, path.join(base, "index.md")]);
 }
 
-for (const rel of markdownFiles) {
-  const abs = path.join(repoRoot, rel);
-  const dir = path.dirname(abs);
-  const prose = proseOnly(readFileSync(abs, "utf8"));
+/** The documentation problems under `repoRoot`, and how many Markdown files were checked. */
+export function checkDocs(repoRoot) {
+  const failures = [];
 
-  for (const match of prose.matchAll(markdownLinkPattern)) {
-    const target = match[1].trim().replace(/^<|>$/g, "");
-    if (
-      !target ||
-      target.startsWith("#") ||
-      /^[a-z][a-z0-9+.-]*:/i.test(target)
-    ) {
-      continue;
-    }
-    const withoutAnchor = target.split("#")[0].split("?")[0];
-    if (!withoutAnchor) {
-      continue;
-    }
-    const decoded = decodeURIComponent(withoutAnchor);
-    const found = candidatesFor(rel, dir, decoded).some(
-      (candidate) => candidate.startsWith(repoRoot) && existsSync(candidate),
-    );
-    if (!found) {
-      fail(`${rel} links to missing local target: ${target}`);
+  for (const rel of requiredFiles) {
+    if (!existsSync(path.join(repoRoot, rel))) {
+      failures.push(`Missing required agent documentation file: ${rel}`);
     }
   }
 
-  const historical =
-    historicalFiles.has(rel) || historicalPrefixes.some((prefix) => rel.startsWith(prefix));
-  if (historical) {
-    continue;
+  const markdownFiles = readdirSync(repoRoot).filter(
+    (name) => name.endsWith(".md") && statSync(path.join(repoRoot, name)).isFile(),
+  );
+  for (const dir of markdownDirs) {
+    collectMarkdown(repoRoot, dir, markdownFiles);
   }
-  const lines = prose.split("\n");
-  lines.forEach((line, index) => {
-    if (line.includes(retiredUiAllowMarker)) {
-      return;
+
+  const readme = readFileSync(path.join(repoRoot, "README.md"), "utf8");
+  for (const legacyUpgradeText of [
+    "Weir Updater` service",
+    "predates the updater service",
+  ]) {
+    if (readme.includes(legacyUpgradeText)) {
+      failures.push(`README.md contains obsolete pre-v2.3 Windows updater guidance: ${legacyUpgradeText}`);
     }
-    for (const term of retiredUiTerms) {
-      if (term.pattern.test(line)) {
-        fail(`${rel}:${index + 1} names retired UI "${term.label}" as if it were current`);
+  }
+
+  for (const rel of markdownFiles) {
+    const abs = path.join(repoRoot, rel);
+    const dir = path.dirname(abs);
+    const prose = proseOnly(readFileSync(abs, "utf8"));
+
+    for (const match of prose.matchAll(markdownLinkPattern)) {
+      const target = match[1].trim().replace(/^<|>$/g, "");
+      if (
+        !target ||
+        target.startsWith("#") ||
+        /^[a-z][a-z0-9+.-]*:/i.test(target)
+      ) {
+        continue;
+      }
+      const withoutAnchor = target.split("#")[0].split("?")[0];
+      if (!withoutAnchor) {
+        continue;
+      }
+      const decoded = decodeURIComponent(withoutAnchor);
+      const found = candidatesFor(repoRoot, rel, dir, decoded).some(
+        (candidate) => candidate.startsWith(repoRoot) && existsSync(candidate),
+      );
+      if (!found) {
+        failures.push(`${rel} links to missing local target: ${target}`);
       }
     }
-  });
+
+    const historical =
+      historicalFiles.has(rel) || historicalPrefixes.some((prefix) => rel.startsWith(prefix));
+    if (historical) {
+      continue;
+    }
+    const lines = prose.split("\n");
+    lines.forEach((line, index) => {
+      if (line.includes(retiredUiAllowMarker)) {
+        return;
+      }
+      for (const term of retiredUiTerms) {
+        if (term.pattern.test(line)) {
+          failures.push(`${rel}:${index + 1} names retired UI "${term.label}" as if it were current`);
+        }
+      }
+    });
+  }
+
+  return { failures, checked: markdownFiles.length };
 }
 
-if (failures > 0) {
-  console.error(`[agent-docs] Failed with ${failures} documentation issue(s).`);
-  process.exit(1);
+/** Prints the problems under `repoRoot`; returns the exit code. */
+export function main(repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."), log = console.error) {
+  const { failures, checked } = checkDocs(repoRoot);
+  for (const message of failures) {
+    log(`[agent-docs] ${message}`);
+  }
+  if (failures.length > 0) {
+    log(`[agent-docs] Failed with ${failures.length} documentation issue(s).`);
+    return 1;
+  }
+  log(`[agent-docs] Agent documentation map is valid (${checked} Markdown files checked).`);
+  return 0;
 }
 
-console.error(`[agent-docs] Agent documentation map is valid (${markdownFiles.length} Markdown files checked).`);
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) process.exitCode = main();

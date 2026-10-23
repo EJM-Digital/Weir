@@ -181,3 +181,17 @@ test("a repository folder with no exclusions file is refused, and one with a bar
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("the Node scripts' coverage run leaves out the scripts its --test-coverage-exclude options name, comments aside", () => {
+  const workflow = [
+    "      # --test-coverage-exclude=scripts/never-read.mjs is only a comment",
+    "      - run: |",
+    '          node --test --experimental-test-coverage "--test-coverage-exclude=scripts/**/*.test.mjs" \\',
+    "            --test-coverage-exclude=scripts/pre-push.mjs --test-reporter=spec",
+  ].join("\n");
+  assert.deepEqual(configItems(".github/workflows/ci.yml", workflow), ["scripts/**/*.test.mjs", "scripts/pre-push.mjs"]);
+  assert.deepEqual(
+    collectItems([".github/workflows/ci.yml"], () => workflow).map((item) => item.marker),
+    ["scripts/**/*.test.mjs", "scripts/pre-push.mjs"],
+  );
+});

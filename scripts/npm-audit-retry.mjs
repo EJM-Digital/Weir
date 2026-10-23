@@ -110,33 +110,36 @@ function readExceptions(file) {
   return JSON.parse(readFileSync(resolve(file), "utf8")).exceptions ?? [];
 }
 
-async function main() {
-  const args = process.argv.slice(2);
+/**
+ * The audit over `args` (`--level=`, `--exceptions=`); returns the exit code. `audit` is how the report is got
+ * and `exceptionsOf` how an exceptions file is read; a test replaces them.
+ */
+export async function main(args, { audit = () => auditWithRetry({ cwd: process.cwd() }), exceptionsOf = readExceptions, log = console.log, error = console.error } = {}) {
   const levelArg = args.find((arg) => arg.startsWith("--level="));
   const level = levelArg ? levelArg.slice("--level=".length) : "high";
   const exceptionsArg = args.find((arg) => arg.startsWith("--exceptions="));
 
   let report;
   try {
-    report = await auditWithRetry({ cwd: process.cwd() });
-  } catch (error) {
-    if (error instanceof RegistryUnavailableError) {
-      console.error(`[npm-audit] ${error.message}`);
-      console.error("[npm-audit] This is the npm registry, not a Weir problem. Re-run the job once npm's audit endpoint recovers.");
-      process.exit(1);
+    report = await audit();
+  } catch (failure) {
+    if (failure instanceof RegistryUnavailableError) {
+      error(`[npm-audit] ${failure.message}`);
+      error("[npm-audit] This is the npm registry, not a Weir problem. Re-run the job once npm's audit endpoint recovers.");
+      return 1;
     }
-    throw error;
+    throw failure;
   }
 
   if (exceptionsArg) {
-    const unapproved = unapprovedAdvisories(report, { exceptions: readExceptions(exceptionsArg.slice("--exceptions=".length)), level });
+    const unapproved = unapprovedAdvisories(report, { exceptions: exceptionsOf(exceptionsArg.slice("--exceptions=".length)), level });
     if (unapproved.length > 0) {
-      console.error(`[npm-audit] Advisories at or above "${level}" with no current exception:`);
-      for (const item of unapproved) console.error(`- ${item}`);
-      process.exit(1);
+      error(`[npm-audit] Advisories at or above "${level}" with no current exception:`);
+      for (const item of unapproved) error(`- ${item}`);
+      return 1;
     }
-    console.log(`[npm-audit] Every advisory at or above "${level}" is covered by a current exception.`);
-    return;
+    log(`[npm-audit] Every advisory at or above "${level}" is covered by a current exception.`);
+    return 0;
   }
 
   const counts = report?.metadata?.vulnerabilities ?? {};
@@ -144,15 +147,21 @@ async function main() {
     .map((severity) => `${counts[severity]} ${severity}`)
     .join(", ");
   if (meetsAuditLevel(report, level)) {
-    console.error(`[npm-audit] Found vulnerabilities at or above "${level}": ${found || "see npm audit for detail"}.`);
-    process.exit(1);
+    error(`[npm-audit] Found vulnerabilities at or above "${level}": ${found || "see npm audit for detail"}.`);
+    return 1;
   }
-  console.log(`[npm-audit] No vulnerabilities at or above "${level}"${found ? ` (${found} below threshold)` : ""}.`);
+  log(`[npm-audit] No vulnerabilities at or above "${level}"${found ? ` (${found} below threshold)` : ""}.`);
+  return 0;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  main().catch((error) => {
-    console.error(`[npm-audit] ${error.stack || error.message}`);
-    process.exit(1);
-  });
+  main(process.argv.slice(2)).then(
+    (code) => {
+      process.exitCode = code;
+    },
+    (failure) => {
+      console.error(`[npm-audit] ${failure.stack || failure.message}`);
+      process.exitCode = 1;
+    },
+  );
 }

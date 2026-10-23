@@ -1,9 +1,13 @@
 // node --test scripts/check-public-privacy.test.mjs
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 
-import { scanText, sha256 } from "./check-public-privacy.mjs";
+import { publicFiles, runAudit, runCheck, scanText, sha256 } from "./check-public-privacy.mjs";
 
 const kinds = (text, hashes = []) => scanText(text, hashes).map((hit) => hit.kind);
 
@@ -73,4 +77,96 @@ test("the shipped hash list holds exactly three SHA-256 hashes and no readable w
   const { sha256: list } = JSON.parse(readFileSync(new URL("./public-privacy-hashes.json", import.meta.url), "utf8"));
   assert.equal(list.length, 3);
   for (const entry of list) assert.match(entry, /^[0-9a-f]{64}$/);
+});
+
+// The files a visitor can read, the check over them and the audit over everything tracked, in a folder laid out like the repository.
+function withRepository(files, callback) {
+  const root = mkdtempSync(path.join(tmpdir(), "weir-privacy-"));
+  try {
+    for (const [file, text] of Object.entries(files)) {
+      mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      writeFileSync(path.join(root, file), text);
+    }
+    callback(root);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+const capture = () => {
+  const seen = { log: [], error: [] };
+  return { seen, out: { log: (line) => seen.log.push(line), error: (line) => seen.error.push(line) } };
+};
+
+test("the public files are the root pages, the documentation, the docs site, the docker pages and the built web app, and not the archive or plans", () => {
+  withRepository(
+    {
+      "README.md": "",
+      "notes.txt": "",
+      "docs/guide.md": "",
+      "docs/guide.txt": "",
+      "docs/archive/old.md": "",
+      "docs/exec-plans/plan.md": "",
+      "docs-site/docs/page.mdx": "",
+      "docs-site/docs/data.json": "",
+      "docs-site/docs/node_modules/x.md": "",
+      "docs-site/docs/build/x.md": "",
+      "docs-site/docs/.docusaurus/x.md": "",
+      "docker/README.md": "",
+      "apps/web/dist/index.html": "",
+      "apps/web/dist/logo.png": "",
+    },
+    (root) => {
+      assert.deepEqual(
+        publicFiles(root).map((file) => path.relative(root, file).split(path.sep).join("/")).sort(),
+        ["README.md", "apps/web/dist/index.html", "docker/README.md", "docs-site/docs/data.json", "docs-site/docs/page.mdx", "docs/guide.md"],
+      );
+    },
+  );
+});
+
+test("a public file with something private in it fails the check, naming the file and line but not the value", () => {
+  withRepository({ "README.md": "fine\nat 192.168.7.7\n", "docs/binary.md": "a\u0000b 10.1.2.3", "docs/ok.md": "nothing" }, (root) => {
+    const { seen, out } = capture();
+    assert.equal(runCheck(root, out), 1);
+    assert.equal(seen.error[0], "README.md:2  private IP address");
+    assert.match(seen.error[1], /1 private-looking value\(s\) in public files\./);
+    assert.ok(!seen.error.join("\n").includes("192.168"));
+    assert.deepEqual(seen.log, ["The web bundle is not built here, so it was not checked."]);
+  });
+});
+
+test("public files with nothing private pass, and say how many were read", () => {
+  withRepository({ "README.md": "nothing", "apps/web/dist/app.js": "x" }, (root) => {
+    const { seen, out } = capture();
+    assert.equal(runCheck(root, out), 0);
+    assert.deepEqual(seen.log, ["No private values in 2 public files."]);
+  });
+});
+
+test("the audit lists, by kind, every tracked text file that holds a match, and skips pictures and missing files", () => {
+  withRepository({ "src/a.cs": "var ip = \"10.0.0.5\";\n", "src/b.txt": "clean", "src/p.png": "10.0.0.6", "src/gone.txt": "x" }, (root) => {
+    const run = (...args) => execFileSync("git", args, { cwd: root, stdio: "ignore" });
+    run("init", "-q");
+    run("add", "-A");
+    rmSync(path.join(root, "src", "gone.txt"));
+    const { seen, out } = capture();
+    runAudit(root, out);
+    const text = seen.log.join("\n");
+    assert.match(text, /private IP address: 1\n {2}src\/a\.cs:1/);
+    assert.match(text, /email address: 0/);
+    assert.ok(!text.includes("p.png"));
+  });
+});
+
+test("run as a command it checks this repository and exits 0", () => {
+  const result = spawnSync(process.execPath, [fileURLToPath(new URL("./check-public-privacy.mjs", import.meta.url))], { encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /No private values in \d+ public files\./);
+});
+
+test("run with --audit it prints the audit", () => {
+  const result = spawnSync(process.execPath, [fileURLToPath(new URL("./check-public-privacy.mjs", import.meta.url)), "--audit"], { encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /private IP address: \d+/);
 });

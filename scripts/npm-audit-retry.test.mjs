@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { auditWithRetry, classifyAuditOutput, meetsAuditLevel, RegistryUnavailableError, unapprovedAdvisories } from "./npm-audit-retry.mjs";
+import { auditWithRetry, classifyAuditOutput, main, meetsAuditLevel, RegistryUnavailableError, unapprovedAdvisories } from "./npm-audit-retry.mjs";
 
 const CLEAN_REPORT = { metadata: { vulnerabilities: { info: 0, low: 0, moderate: 0, high: 0, critical: 0 } } };
 const HIGH_REPORT = { metadata: { vulnerabilities: { info: 0, low: 2, moderate: 0, high: 1, critical: 0 } } };
@@ -104,4 +104,59 @@ test("advisories below the level are left out, and at level info every one count
 test("an advisory of unknown severity is never skipped", () => {
   const report = { vulnerabilities: { odd: { via: [{ url: "https://github.com/advisories/GHSA-odd0-0000-0000" }] } } };
   assert.deepEqual(unapprovedAdvisories(report, { level: "critical", today: "2026-10-03" }), ["odd: GHSA-odd0-0000-0000"]);
+  assert.deepEqual(unapprovedAdvisories({ vulnerabilities: { bare: { via: [{ severity: "high" }, "bare-dependency"] } } }, { today: "2026-10-03" }), ["bare: bare (no advisory id)"]);
+  assert.deepEqual(unapprovedAdvisories(undefined), []);
+  assert.throws(() => unapprovedAdvisories(ADVISORY_REPORT, { level: "severe" }), /Unknown audit level: severe/);
+});
+
+// The command, with the audit and the exceptions file answered from memory.
+async function runCommand(args, { report, failure, exceptions = [] }) {
+  const seen = { log: [], error: [] };
+  const code = await main(args, {
+    audit: async () => {
+      if (failure) throw failure;
+      return report;
+    },
+    exceptionsOf: (file) => {
+      seen.exceptionsFile = file;
+      return exceptions;
+    },
+    log: (line) => seen.log.push(line),
+    error: (line) => seen.error.push(line),
+  });
+  return { code, ...seen };
+}
+
+const counted = (counts) => ({ metadata: { vulnerabilities: counts } });
+
+test("a report with nothing at or above the level passes, noting what is below it", async () => {
+  const clean = await runCommand([], { report: counted({ low: 2 }) });
+  assert.equal(clean.code, 0);
+  assert.deepEqual(clean.log, ['[npm-audit] No vulnerabilities at or above "high" (2 low below threshold).']);
+  assert.deepEqual((await runCommand(["--level=low"], { report: counted({}) })).log, ['[npm-audit] No vulnerabilities at or above "low".']);
+});
+
+test("a report with a finding at or above the level fails, counting what it found", async () => {
+  const result = await runCommand([], { report: counted({ high: 1, critical: 2 }) });
+  assert.equal(result.code, 1);
+  assert.deepEqual(result.error, ['[npm-audit] Found vulnerabilities at or above "high": 1 high, 2 critical.']);
+});
+
+test("with an exceptions file only advisories no current exception covers fail", async () => {
+  const exceptions = [{ advisory: "GHSA-aaaa-bbbb-cccc", expires: "2999-01-01", mitigation: "dev only" }];
+  const covered = await runCommand(["--exceptions=audit.json", "--level=high"], { report: ADVISORY_REPORT, exceptions });
+  assert.equal(covered.code, 0);
+  assert.equal(covered.exceptionsFile, "audit.json");
+  assert.deepEqual(covered.log, ['[npm-audit] Every advisory at or above "high" is covered by a current exception.']);
+  const open = await runCommand(["--exceptions=audit.json"], { report: ADVISORY_REPORT });
+  assert.equal(open.code, 1);
+  assert.deepEqual(open.error, ['[npm-audit] Advisories at or above "high" with no current exception:', "- braces: GHSA-aaaa-bbbb-cccc"]);
+});
+
+test("a registry that did not answer is said to be the registry's fault, and any other failure is thrown", async () => {
+  const down = await runCommand([], { failure: new RegistryUnavailableError("timed out", 4) });
+  assert.equal(down.code, 1);
+  assert.match(down.error[0], /did not respond after 4 attempt\(s\): timed out/);
+  assert.match(down.error[1], /not a Weir problem/);
+  await assert.rejects(runCommand([], { failure: new Error("disk full") }), /disk full/);
 });
