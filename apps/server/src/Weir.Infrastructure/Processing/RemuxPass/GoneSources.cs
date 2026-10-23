@@ -1,3 +1,5 @@
+using Weir.Infrastructure.IO;
+
 namespace Weir.Infrastructure.Processing.RemuxPass;
 
 /// <summary>
@@ -16,12 +18,13 @@ internal static class GoneSources
     /// True when the watched folder is there and the file under it is not. A watched folder that is itself missing is a real problem
     /// (an unmounted share, a deleted workflow folder), not a file that went away, so it is never reported as gone.
     /// </summary>
-    public static bool HasLeft(string watchedFolder, string relativePath)
+    public static bool HasLeft(string watchedFolder, string relativePath, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         try
         {
             var source = RemuxPassPaths.ResolveMediaFileUnderRoot(watchedFolder, relativePath);
-            return !File.Exists(source) && !Directory.Exists(source);
+            return !files.FileExists(source) && !files.DirectoryExists(source);
         }
         catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
         {
@@ -30,12 +33,13 @@ internal static class GoneSources
     }
 
     /// <summary>True when the watched folder is there and so is the file under it: neither gone nor unknown.</summary>
-    public static bool IsBack(string watchedFolder, string relativePath)
+    public static bool IsBack(string watchedFolder, string relativePath, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         try
         {
             var source = RemuxPassPaths.ResolveMediaFileUnderRoot(watchedFolder, relativePath);
-            return File.Exists(source) || Directory.Exists(source);
+            return files.FileExists(source) || files.DirectoryExists(source);
         }
         catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
         {

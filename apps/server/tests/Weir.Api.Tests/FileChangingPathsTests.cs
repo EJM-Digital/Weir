@@ -23,6 +23,8 @@ public sealed partial class FileChangingPathsTests
         InstanceMove(),
         InstanceDelete(),
         SwapFileSystemCall(),
+        FileSystemSeamCall(),
+        FileSystemSeamStreamThatWrites(),
         NativeCall(),
     ];
 
@@ -189,6 +191,12 @@ public sealed partial class FileChangingPathsTests
                 continue;
             }
 
+            // The real calls live in one place, the pass-through every other file reaches the disk by; what is counted is who calls it.
+            if (relative == "Weir.Infrastructure/IO/IFileSystem.cs")
+            {
+                continue;
+            }
+
             var text = WithoutComments(File.ReadAllText(file));
             var calls = FileChangingCalls.Sum(pattern => pattern.Count(text));
             var seams = Seams.Where(seam => seam.Call.IsMatch(text)).Select(seam => seam.Name).ToList();
@@ -221,6 +229,12 @@ public sealed partial class FileChangingPathsTests
 
     [GeneratedRegex(@"\b_?files\.(Move|Delete|ReplaceReservation|CopyOverReservation|TryReserve)\s*\(")]
     private static partial Regex SwapFileSystemCall();
+
+    [GeneratedRegex(@"\b(_?files|_fs|FileSystem|_?fileSystem)\.(DeleteFile|DeleteDirectory|MoveFile|CopyFile|WriteAllBytes|SetLastWriteTimeUtc|SetLastAccessTimeUtc)\s*\(")]
+    private static partial Regex FileSystemSeamCall();
+
+    [GeneratedRegex(@"\b(_?files|_fs|FileSystem|_?fileSystem)\.OpenFile\s*\([^;]*?FileMode\.(Create|CreateNew|Append|OpenOrCreate|Truncate)", RegexOptions.Singleline)]
+    private static partial Regex FileSystemSeamStreamThatWrites();
 
     [GeneratedRegex(@"\b(MoveFileEx\w*|CreateHardLink\w*)\s*\(")]
     private static partial Regex NativeCall();

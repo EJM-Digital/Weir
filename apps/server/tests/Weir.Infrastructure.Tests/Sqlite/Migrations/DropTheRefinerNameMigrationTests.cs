@@ -44,11 +44,9 @@ public sealed class DropTheRefinerNameMigrationTests : IDisposable
         }
     }
 
-    public void Dispose()
-    {
-        SqliteConnection.ClearAllPools();
-        _temp.Dispose();
-    }
+    // Every connection this class opens has pooling off, so there is no pool of its own to release; clearing every pool in the
+    // process here would close other tests' live pooled handles mid-test (PooledConnectionFileIdentityTests saw exactly that).
+    public void Dispose() => _temp.Dispose();
 
     private const string Rows = """
         INSERT INTO media_manager_connections (id, kind, name, base_url) VALUES (1, 'deluno', 'Deluno on nas', 'http://nas:7878');

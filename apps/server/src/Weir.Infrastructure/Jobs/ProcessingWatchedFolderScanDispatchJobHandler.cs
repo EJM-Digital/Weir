@@ -8,6 +8,7 @@ using Weir.Core.Processing;
 using Weir.Core.Settings;
 using Weir.Infrastructure.Activity;
 using Weir.Infrastructure.MediaManagers;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Processing.RemuxPass;
 using Weir.Infrastructure.Runtime;
@@ -41,6 +42,7 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
     private readonly LibraryStore _libraries;
     private readonly FileStateStore _files;
     private readonly FileSkipMarkerStore _skipMarkers;
+    private readonly IFileSystem _fs;
 
     /// <summary>The workflows whose watched folder the last scan could not see, so the warning is said once and the return once.</summary>
     private readonly ConcurrentDictionary<long, byte> _foldersNotSeen = new();
@@ -61,8 +63,10 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
         FileSkipMarkerStore skipMarkers,
         ScanWakeups? wakeups = null,
         ILogger<ProcessingWatchedFolderScanDispatchJobHandler>? logger = null,
-        DataChangePublisher? changes = null)
+        DataChangePublisher? changes = null,
+        IFileSystem? fileSystem = null)
     {
+        _fs = fileSystem ?? PhysicalFileSystem.Instance;
         _database = database ?? throw new ArgumentNullException(nameof(database));
         _time = time ?? throw new ArgumentNullException(nameof(time));
         _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -103,7 +107,8 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
             scan.Rules.MediaExtensions.Count > 0 ? scan.Rules.MediaExtensions : null,
             scan.Rules.ExcludeMarkers,
             scan.Rules.ExcludeHidden,
-            scan.Rules.TopLevelOnly)).ConfigureAwait(false);
+            scan.Rules.TopLevelOnly,
+            _fs)).ConfigureAwait(false);
 
         var reads = await UnitOfWork.OpenAsync(_database, cancellationToken).ConfigureAwait(false);
         await using (reads.ConfigureAwait(false))
@@ -125,10 +130,10 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
         // #645: a file that left the watched folder before Weir finished with it says so at once and stops being listed after a
         // while. Only while the watched folder itself can be read, so an unmounted share never empties the list. Done with no
         // transaction open, because a file that is gone is looked at again after a few seconds.
-        if (Directory.Exists(scan.Paths.WatchedFolder))
+        if (_fs.DirectoryExists(scan.Paths.WatchedFolder))
         {
             await VanishedFiles.SettleAsync(
-                _database, scan.Library.Id, scan.Paths.WatchedFolder, scan.MediaScope, scan.Now, ActivityProvenance.ScanTriggerToTrigger[request.Trigger], GoneLookAgain, _jobStore.WakeWorkers, cancellationToken)
+                _database, scan.Library.Id, scan.Paths.WatchedFolder, scan.MediaScope, scan.Now, ActivityProvenance.ScanTriggerToTrigger[request.Trigger], GoneLookAgain, _jobStore.WakeWorkers, _fs, cancellationToken)
                 .ConfigureAwait(false);
         }
 
@@ -167,7 +172,7 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
 
             if (library.WatchedFolder.Trim() is { Length: > 0 } saved)
             {
-                if (!Directory.Exists(ProcessingLibraryFolders.ExpandForFilesystem(saved)))
+                if (!_fs.DirectoryExists(ProcessingLibraryFolders.ExpandForFilesystem(saved)))
                 {
                     // Not a failed job to retry: the folder is gone (deleted, or its drive unmounted) and a retry would find the same. This
                     // is a real problem, so it is a warning in plain words, said once until the folder is back; the next scan looks again.
@@ -188,7 +193,7 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
                 }
             }
 
-            var (paths, pathError) = WatchedFolderScanOps.ResolvePathRuntimeForLibrary(library, _options.WeirHome);
+            var (paths, pathError) = WatchedFolderScanOps.ResolvePathRuntimeForLibrary(library, _options.WeirHome, _fs);
             if (paths is null)
             {
                 throw new InvalidOperationException(pathError ?? "Path settings are incomplete for this scan.");
@@ -212,7 +217,8 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
                 AdmissionWindow(library, suite, now),
                 request.EnqueueRemuxJobs,
                 now,
-                links);
+                links,
+                _fs);
         }
     }
 

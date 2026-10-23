@@ -111,10 +111,10 @@ public static class RemuxPassPaths
     /// The full path of <paramref name="relativePath"/> under the watched folder, only when it stays under that folder.
     /// Throws <see cref="ArgumentException"/> otherwise, so a crafted relative path can never reach a file outside it.
     /// </summary>
-    public static string ResolveMediaFileUnderRoot(string mediaRoot, string relativePath)
+    public static string ResolveMediaFileUnderRoot(string mediaRoot, string relativePath, IFileSystem? files = null)
     {
         var root = Resolve(mediaRoot);
-        if (!Directory.Exists(root))
+        if (!(files ?? PhysicalFileSystem.Instance).DirectoryExists(root))
         {
             throw new ArgumentException("The watched folder (saved settings) must be an existing directory");
         }
@@ -174,9 +174,10 @@ public static class RemuxPassPaths
     /// One library's folders, or the sentence saying why they cannot be used. <paramref name="links"/> are the media managers it is linked
     /// to right now (<see cref="LibraryStore.ManagerLinksAsync"/>), which decide whether the pass may remove an original.
     /// </summary>
-    public static (ProcessingPathRuntime? Runtime, string? Problem) RuntimeForLibrary(ProcessingLibraryRecord library, string weirHome, WorkflowManagerLinks links)
+    public static (ProcessingPathRuntime? Runtime, string? Problem) RuntimeForLibrary(ProcessingLibraryRecord library, string weirHome, WorkflowManagerLinks links, IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(library);
+        files ??= PhysicalFileSystem.Instance;
         ArgumentNullException.ThrowIfNull(links);
         var label = WireStrings.Strip(library.Name).Length > 0 ? WireStrings.Strip(library.Name) : library.MediaType == "tv" ? "TV" : "Movies";
         var watchedRaw = WireStrings.Strip(library.WatchedFolder ?? string.Empty);
@@ -189,7 +190,7 @@ public static class RemuxPassPaths
         }
 
         var watched = Resolve(watchedRaw);
-        if (!Directory.Exists(watched))
+        if (!files.DirectoryExists(watched))
         {
             return (null, $"The {label} workflow's watched folder must be an existing directory.");
         }
@@ -205,7 +206,7 @@ public static class RemuxPassPaths
         }
 
         var output = Resolve(outputRaw);
-        if (!Directory.Exists(output))
+        if (!files.DirectoryExists(output))
         {
             return (null, $"The {label} workflow's output folder must be an existing directory.");
         }
@@ -225,7 +226,7 @@ public static class RemuxPassPaths
             return (null, "The watched folder and work/temp folder must be separate (no overlap or containment).");
         }
 
-        if (!workIsDefault && !Directory.Exists(work))
+        if (!workIsDefault && !files.DirectoryExists(work))
         {
             return (null, $"The {label} workflow's work/temp folder must be an existing directory when set to a custom path.");
         }
@@ -300,8 +301,9 @@ public static class RemuxPassPaths
     }
 
     /// <summary>Deletes one regular file under the watched folder, never a populated folder.</summary>
-    public static RejectedFileCleanupResult CleanupRejectedFile(string watchedRoot, string filePath, string? action)
+    public static RejectedFileCleanupResult CleanupRejectedFile(string watchedRoot, string filePath, string? action, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         if (!string.Equals(WireStrings.Strip(action ?? "leave"), "delete_file", StringComparison.OrdinalIgnoreCase))
         {
             return new RejectedFileCleanupResult(false, "Weir left the rejected file in place because this workflow's cleanup action is Leave in place.");
@@ -319,12 +321,12 @@ public static class RemuxPassPaths
             return new RejectedFileCleanupResult(false, $"Weir did not delete the rejected file because it was not safely inside the watched folder ({exception.Message}).");
         }
 
-        if (!Directory.Exists(root) && !File.Exists(root))
+        if (!files.DirectoryExists(root) && !files.FileExists(root))
         {
             return new RejectedFileCleanupResult(false, $"Weir did not delete the rejected file because the watched folder {watchedRoot} could not be found.");
         }
 
-        if (!Directory.Exists(source) && !File.Exists(source))
+        if (!files.DirectoryExists(source) && !files.FileExists(source))
         {
             return new RejectedFileCleanupResult(false, $"Weir did not delete the rejected file because {filePath} could not be found.");
         }
@@ -334,21 +336,21 @@ public static class RemuxPassPaths
             return new RejectedFileCleanupResult(false, "Weir did not delete the rejected file because it was not safely inside the watched folder.");
         }
 
-        if (!File.Exists(source))
+        if (!files.FileExists(source))
         {
             return new RejectedFileCleanupResult(false, "Weir did not delete the rejected path because it is not a regular file inside the watched folder.");
         }
 
         // A junction or symlinked folder above the file, or the file itself being a link, would delete something
         // that actually lives outside the watched folder (#786 review of #785).
-        if (PathContainment.HasLinkBelowRoot(root, source))
+        if (PathContainment.HasLinkBelowRoot(root, source, files))
         {
             return new RejectedFileCleanupResult(false, "Weir did not delete the rejected file because it is reached through a link, not a plain path inside the watched folder.");
         }
 
         try
         {
-            File.Delete(source);
+            files.DeleteFile(source);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -361,7 +363,7 @@ public static class RemuxPassPaths
         {
             try
             {
-                Directory.Delete(parent, recursive: false);
+                files.DeleteDirectory(parent, recursive: false);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {

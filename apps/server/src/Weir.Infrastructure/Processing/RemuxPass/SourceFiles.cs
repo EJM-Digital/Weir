@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 using Weir.Core.Processing;
+using Weir.Infrastructure.IO;
 
 namespace Weir.Infrastructure.Processing.RemuxPass;
 
@@ -42,11 +43,11 @@ public static partial class SourceFiles
     /// Reserves a source for read-only processing, or explains why Processing must wait. The
     /// handle shares reading and deletion but not writing, so it both detects a writer and keeps one from starting.
     /// </summary>
-    public static (SourceReadGuard? Guard, string? Problem) AcquireReadGuard(string path)
+    public static (SourceReadGuard? Guard, string? Problem) AcquireReadGuard(string path, IFileSystem? files = null)
     {
         try
         {
-            var handle = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete, 1);
+            var handle = (files ?? PhysicalFileSystem.Instance).OpenFile(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete, 1);
             return (new SourceReadGuard(handle), null);
         }
         catch (IOException exception) when (IsSharingViolation(exception))
@@ -61,9 +62,9 @@ public static partial class SourceFiles
     }
 
     /// <summary>Why another program's writer keeps this source from being reserved, or null when it can be.</summary>
-    public static string? SourceWriterProblem(string path)
+    public static string? SourceWriterProblem(string path, IFileSystem? files = null)
     {
-        var (guard, problem) = AcquireReadGuard(path);
+        var (guard, problem) = AcquireReadGuard(path, files);
         guard?.Dispose();
         return problem;
     }
@@ -71,9 +72,10 @@ public static partial class SourceFiles
     /// <summary>
     /// Checks the source opens for reading and the output folder accepts a write. Null when both hold.
     /// </summary>
-    public static string? CheckFileAccess(ProcessingLibraryRecord library, string filePath, string? outputFolder)
+    public static string? CheckFileAccess(ProcessingLibraryRecord library, string filePath, string? outputFolder, IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(library);
+        files ??= PhysicalFileSystem.Instance;
         if (library.SkipAccessTests)
         {
             return null;
@@ -81,7 +83,7 @@ public static partial class SourceFiles
 
         try
         {
-            using var handle = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1);
+            using var handle = files.OpenFile(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1);
             _ = handle.ReadByte();
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
@@ -90,7 +92,7 @@ public static partial class SourceFiles
                    $"writing it. The system reported: {exception.Message}.";
         }
 
-        if (SourceWriterProblem(filePath) is { } writer)
+        if (SourceWriterProblem(filePath, files) is { } writer)
         {
             return writer;
         }
@@ -100,8 +102,8 @@ public static partial class SourceFiles
             var probe = Path.Join(outputFolder, $".weir-write-test-{Environment.ProcessId}");
             try
             {
-                Directory.CreateDirectory(outputFolder);
-                File.WriteAllBytes(probe, "0"u8.ToArray());
+                files.CreateDirectory(outputFolder);
+                files.WriteAllBytes(probe, "0"u8.ToArray());
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
@@ -110,7 +112,7 @@ public static partial class SourceFiles
             }
             finally
             {
-                FileLifecycle.BestEffortDelete(probe);
+                FileLifecycle.BestEffortDelete(probe, files);
             }
         }
 
@@ -118,22 +120,22 @@ public static partial class SourceFiles
     }
 
     /// <summary>The file's current fingerprint. Throws <see cref="IOException"/> when the file cannot be read.</summary>
-    public static SourceFingerprint Fingerprint(string path)
+    public static SourceFingerprint Fingerprint(string path, IFileSystem? files = null)
     {
-        var info = new FileInfo(path);
-        if (!info.Exists)
+        files ??= PhysicalFileSystem.Instance;
+        if (!files.FileExists(path))
         {
             throw new FileNotFoundException($"{path} could not be found.", path);
         }
 
-        var modifiedNs = (info.LastWriteTimeUtc - DateTime.UnixEpoch).Ticks * 100;
+        var modifiedNs = (files.GetLastWriteTimeUtc(path) - DateTime.UnixEpoch).Ticks * 100;
         ulong device = 0;
         ulong inode = 0;
         if (OperatingSystem.IsWindows())
         {
             try
             {
-                using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                using var handle = files.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
                 if (GetFileInformationByHandle(handle, out var byHandle))
                 {
                     device = byHandle.VolumeSerialNumber;
@@ -146,7 +148,7 @@ public static partial class SourceFiles
             }
         }
 
-        return new SourceFingerprint(device, inode, info.Length, modifiedNs);
+        return new SourceFingerprint(device, inode, files.GetLength(path), modifiedNs);
     }
 
     /// <summary>
@@ -157,11 +159,11 @@ public static partial class SourceFiles
     /// gone, or a race with the writer) falls back to a fixed tag, so two enqueue attempts for the same still-unreadable
     /// file keep deduping against each other rather than piling up job rows.
     /// </summary>
-    public static string DedupeFingerprintTag(string absolutePath)
+    public static string DedupeFingerprintTag(string absolutePath, IFileSystem? files = null)
     {
         try
         {
-            var fingerprint = Fingerprint(absolutePath);
+            var fingerprint = Fingerprint(absolutePath, files);
             return string.Create(CultureInfo.InvariantCulture, $"{fingerprint.SizeBytes}-{fingerprint.ModifiedTimeNs}");
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)

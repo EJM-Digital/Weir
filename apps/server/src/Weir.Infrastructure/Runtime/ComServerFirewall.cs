@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
@@ -46,11 +47,21 @@ public sealed class ComServerFirewall : IServerFirewall
     // NET_FW_ACTION_.
     private const int ActionAllow = 1;
 
+    private readonly Func<FirewallVerdict> _read;
+
+    public ComServerFirewall()
+        : this(Read)
+    {
+    }
+
+    /// <summary>A test passes a read that fails the way Windows Firewall's policy object can.</summary>
+    internal ComServerFirewall(Func<FirewallVerdict> read) => _read = read;
+
     public FirewallVerdict Judge()
     {
         try
         {
-            return Read();
+            return _read();
         }
         catch (Exception ex) when (ex is COMException or InvalidOperationException)
         {
@@ -61,6 +72,7 @@ public sealed class ComServerFirewall : IServerFirewall
         }
     }
 
+    [ExcludeFromCodeCoverage]
     private static FirewallVerdict Read()
     {
         var programPath = Path.Combine(AppContext.BaseDirectory, ServerExeName);
@@ -79,7 +91,7 @@ public sealed class ComServerFirewall : IServerFirewall
     }
 
     // Only inbound rules for Weir's own server exe are meaningful here; everything else reads as null.
-    private static ServerFirewallRule? TryRead(dynamic comRule, string programPath)
+    internal static ServerFirewallRule? TryRead(dynamic comRule, string programPath)
     {
         try
         {

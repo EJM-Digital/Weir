@@ -5,6 +5,7 @@ using Weir.Core.Observability;
 using Weir.Core.Processing;
 using Weir.Core.Processing.RemuxPass;
 using Weir.Infrastructure.Activity;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Processing.RemuxPass;
 using Weir.Infrastructure.Sqlite;
@@ -94,14 +95,16 @@ public static class VanishedFiles
         string trigger,
         Func<CancellationToken, Task> lookAgain,
         Action<string> lookStarted,
+        IFileSystem files,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(lookAgain);
         ArgumentNullException.ThrowIfNull(lookStarted);
+        ArgumentNullException.ThrowIfNull(files);
         var cutoff = now - Grace;
         var (rows, queued) = await ReadAsync(database, libraryId, mediaScope, cancellationToken).ConfigureAwait(false);
-        Step Judge(WaitingRow row) => queued.Contains(row.RelativePath) ? DecideQueued(row, watchedRoot) : Decide(row, cutoff, watchedRoot);
+        Step Judge(WaitingRow row) => queued.Contains(row.RelativePath) ? DecideQueued(row, watchedRoot, files) : Decide(row, cutoff, watchedRoot, files);
         var pending = rows
             .Select(row => (Row: row, Step: Judge(row)))
             .Where(item => item.Step != Step.None)
@@ -153,15 +156,15 @@ public static class VanishedFiles
     }
 
     /// <summary>What to do with a row, by whether its file is gone, how long it has been and what the row already says.</summary>
-    private static Step Decide(WaitingRow row, DateTimeOffset cutoff, string watchedRoot)
+    private static Step Decide(WaitingRow row, DateTimeOffset cutoff, string watchedRoot, IFileSystem files)
     {
         var held = GoneSourceText.IsHeld(row.Status, row.Reason);
-        if (held && GoneSources.IsBack(watchedRoot, row.RelativePath))
+        if (held && GoneSources.IsBack(watchedRoot, row.RelativePath, files))
         {
             return Step.Release;
         }
 
-        if (row.LastSeen is not { } seen || !GoneSources.HasLeft(watchedRoot, row.RelativePath))
+        if (row.LastSeen is not { } seen || !GoneSources.HasLeft(watchedRoot, row.RelativePath, files))
         {
             return Step.None;
         }
@@ -175,8 +178,8 @@ public static class VanishedFiles
     }
 
     /// <summary>What to do with a row whose file has a pass pending or leased: only a held row whose file is back, which starts the pass booked to look at it.</summary>
-    private static Step DecideQueued(WaitingRow row, string watchedRoot) =>
-        GoneSourceText.IsHeld(row.Status, row.Reason) && GoneSources.IsBack(watchedRoot, row.RelativePath) ? Step.StartLook : Step.None;
+    private static Step DecideQueued(WaitingRow row, string watchedRoot, IFileSystem files) =>
+        GoneSourceText.IsHeld(row.Status, row.Reason) && GoneSources.IsBack(watchedRoot, row.RelativePath, files) ? Step.StartLook : Step.None;
 
     /// <summary>The library's waiting rows, and the files that have a pass pending or leased, or a pass-through pending or leased, which are left to it.</summary>
     private static async Task<(List<WaitingRow> Rows, HashSet<string> Queued)> ReadAsync(
