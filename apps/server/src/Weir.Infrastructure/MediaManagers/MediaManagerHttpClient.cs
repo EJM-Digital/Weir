@@ -46,9 +46,23 @@ public interface IManagerHttpHandlerFactory
 /// connection's session to another on the same host and to its own next login (#856). A dialect that needs a
 /// session cookie reads Set-Cookie and sends the Cookie header itself.
 /// </summary>
+/// <remarks>
+/// A connection is reused only while it has sat idle for less than <see cref="DefaultIdleConnectionTimeout"/>. Managers, and the proxies in
+/// front of them, close idle connections on their own clock. A call that goes out on a connection in the instant the other side closes it
+/// fails with a reset, and the transport does not send it again because the request may already have been acted on. Staying under the
+/// shortest idle limit Weir meets keeps that from happening to any call, including one that changes something.
+/// </remarks>
 public sealed class SocketsManagerHttpHandlerFactory : IManagerHttpHandlerFactory, IDisposable
 {
+    /// <summary>
+    /// How long a connection may sit idle before it is no longer reused. It is below the 15 seconds after which .NET's HttpListener (the
+    /// server behind the contract suite's fake managers) closes an idle connection, the shortest limit measured, and well below the 60 to
+    /// 130 seconds that Kestrel and common reverse proxies allow.
+    /// </summary>
+    public static readonly TimeSpan DefaultIdleConnectionTimeout = TimeSpan.FromSeconds(10);
+
     private readonly OutboundAddressGuard.HostResolver? _resolveHost;
+    private readonly TimeSpan _idleConnectionTimeout;
     private readonly ConnectionActivityHub? _activity;
     private readonly TimeProvider _time;
     private readonly Dictionary<(bool FollowRedirects, ManagerAddressPolicy Policy), HttpMessageHandler> _handlers = [];
@@ -57,8 +71,11 @@ public sealed class SocketsManagerHttpHandlerFactory : IManagerHttpHandlerFactor
     /// <param name="resolveHost">Overrides DNS resolution; tests use this to prove the policy against fixed answers.</param>
     /// <param name="activity">Where the calls marked with <see cref="ConnectionTag"/> are reported; none reports nothing.</param>
     /// <param name="time">Times those calls.</param>
-    public SocketsManagerHttpHandlerFactory(OutboundAddressGuard.HostResolver? resolveHost = null, ConnectionActivityHub? activity = null, TimeProvider? time = null)
+    /// <param name="idleConnectionTimeout">How long a connection may sit idle before it is no longer reused; <see cref="DefaultIdleConnectionTimeout"/> when none is given.</param>
+    public SocketsManagerHttpHandlerFactory(
+        OutboundAddressGuard.HostResolver? resolveHost = null, ConnectionActivityHub? activity = null, TimeProvider? time = null, TimeSpan? idleConnectionTimeout = null)
     {
+        _idleConnectionTimeout = idleConnectionTimeout ?? DefaultIdleConnectionTimeout;
         _resolveHost = resolveHost;
         _activity = activity;
         _time = time ?? TimeProvider.System;
@@ -88,6 +105,7 @@ public sealed class SocketsManagerHttpHandlerFactory : IManagerHttpHandlerFactor
             AllowAutoRedirect = followRedirects,
             MaxAutomaticRedirections = followRedirects ? 10 : 1,
             PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+            PooledConnectionIdleTimeout = _idleConnectionTimeout,
             ConnectCallback = (context, cancellationToken) =>
                 OutboundAddressGuard.ConnectAsync(context, isAllowed, host => new ManagerAddressRefusedException(host), _resolveHost, cancellationToken),
         };
