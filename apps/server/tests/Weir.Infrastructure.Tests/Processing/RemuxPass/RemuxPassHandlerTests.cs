@@ -42,7 +42,7 @@ public sealed partial class RemuxPassHandlerTests : IDisposable
         _fixture.Dispose();
     }
 
-    private RemuxPassHandler Handler(IFailurePolicy? policy = null, Func<string, long>? freeBytes = null, ScanWakeups? wakeups = null)
+    private RemuxPassHandler Handler(IFailurePolicy? policy = null, Func<string, long>? freeBytes = null, ScanWakeups? wakeups = null, bool queuesLooks = true, bool reportsBack = true, Func<Task>? beforeReport = null)
     {
         var data = new SqliteRemuxPassData(_fixture.Store.Database, _fixture.Connections, NullLogger<SqliteRemuxPassData>.Instance);
         var runner = new RemuxPassRunner(
@@ -69,9 +69,12 @@ public sealed partial class RemuxPassHandlerTests : IDisposable
             TimeProvider.System,
             NullLogger<RemuxPassHandler>.Instance,
             new DownloadedScanNotifier(_fixture.Connections, _fixture.ConnectionStore, _fixture.Libraries, _fixture.Http, NullLogger<DownloadedScanNotifier>.Instance),
-            _fixture.Reporter,
+            reportsBack ? _fixture.Reporter : null,
             scanWakeups: wakeups,
-            jobs: _fixture.Jobs);
+            jobs: queuesLooks ? _fixture.Jobs : null)
+        {
+            BeforeReport = beforeReport,
+        };
     }
 
     private async Task<long> LibraryAsync(string failurePolicy = "pass_through", long maxAttempts = 3, string rejectedFileAction = "leave", string mediaType = "movie", long readyAfterSeconds = 0)

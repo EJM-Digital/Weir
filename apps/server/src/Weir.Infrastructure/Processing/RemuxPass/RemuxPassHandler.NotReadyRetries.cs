@@ -5,6 +5,7 @@ using Weir.Core.Json;
 using Weir.Core.Media;
 using Weir.Core.Processing.RemuxPass;
 using Weir.Core.Time;
+using Weir.Infrastructure.Jobs;
 
 namespace Weir.Infrastructure.Processing.RemuxPass;
 
@@ -69,7 +70,7 @@ public sealed partial class RemuxPassHandler
         }
 
         await BookAnotherLookAsync(
-            payload, origin, $"{RemuxPassOutcomes.JobKind}:unreadable-wait:{jobId}:{looks.ToString(CultureInfo.InvariantCulture)}", lookAgainAt, result, cancellationToken)
+            _jobs, payload, origin, $"{RemuxPassOutcomes.JobKind}:unreadable-wait:{jobId}:{looks.ToString(CultureInfo.InvariantCulture)}", lookAgainAt, result, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -79,13 +80,8 @@ public sealed partial class RemuxPassHandler
     /// origin, so its outcome is still reported to the media manager that sent it.
     /// </summary>
     private async Task BookAnotherLookAsync(
-        WireObject payload, WireObject? origin, string dedupeKey, DateTimeOffset lookAgainAt, WireObject result, CancellationToken cancellationToken)
+        ProcessingJobStore jobs, WireObject payload, WireObject? origin, string dedupeKey, DateTimeOffset lookAgainAt, WireObject result, CancellationToken cancellationToken)
     {
-        if (_jobs is not { } jobs)
-        {
-            return;
-        }
-
         if (origin is { IsTruthy: true })
         {
             payload.Set("origin", origin);
@@ -159,7 +155,7 @@ public sealed partial class RemuxPassHandler
         // A little past the moment it is old enough, so the second look does not land a fraction of a second early.
         var lookAgainAt = _time.GetUtcNow().AddSeconds(seconds + 2);
         await BookAnotherLookAsync(
-            data.Copy().Set("minimum_age_waits", waits + 1), origin, $"{RemuxPassOutcomes.JobKind}:minimum-age-wait:{jobId}:{waits + 1}", lookAgainAt, result, cancellationToken)
+            _jobs, data.Copy().Set("minimum_age_waits", waits + 1), origin, $"{RemuxPassOutcomes.JobKind}:minimum-age-wait:{jobId}:{waits + 1}", lookAgainAt, result, cancellationToken)
             .ConfigureAwait(false);
     }
 }
