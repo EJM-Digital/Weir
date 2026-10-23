@@ -10,7 +10,7 @@
     <DataCollectors>
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
-          <Format>cobertura</Format>
+          <Format>cobertura,opencover</Format>
           <Include>[Weir.Core]*,[Weir.Infrastructure]*,[Weir.Api]*,[Weir]*</Include>
           <Exclude>[Weir.*Tests]*,[Weir.TestChild]*,[Weir.Contract.*]*</Exclude>
           <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>

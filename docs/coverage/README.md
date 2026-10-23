@@ -8,7 +8,7 @@ if the riskiest code were wrong is a separate weekly measurement, in [`mutation.
 
 | Project | Measured by | Which tests |
 | --- | --- | --- |
-| Weir.Core, Weir.Infrastructure, Weir.Api, Weir.Host | coverlet.collector, merged by ReportGenerator | `Weir.Core.Tests`, `Weir.Infrastructure.Tests` and `Weir.Api.Tests` on Linux and on Windows, merged into one report |
+| Weir.Core, Weir.Infrastructure, Weir.Api, Weir.Host | coverlet.collector, merged by ReportGenerator | `Weir.Core.Tests`, `Weir.Infrastructure.Tests` and `Weir.Api.Tests` on Linux and on Windows, merged into one report, from their OpenCover files (below) |
 | Weir.Core, Weir.Infrastructure, Weir.Api, Weir.Host, **out of process** | dotnet-coverage, merged by ReportGenerator | every contract area and every E2E smoke shard, measured in the server process they start |
 | Tray | coverlet.collector, merged by ReportGenerator | `Weir.Tray.Tests` on Windows |
 | Web app | vitest with the v8 provider, merged with the browser run's Istanbul report by `scripts/merge-web-coverage.mjs` | the whole vitest suite and the browser (E2E) tests, merged into one figure |
@@ -122,13 +122,23 @@ or one that says nothing. The kinds, and what a reason has to say for each, are 
 
 To exclude a line or a file, add the marker in the code and its entry in the same pull request; to stop excluding, remove both.
 
+## Why the server's Linux and Windows legs are merged from OpenCover
+
+`coverage.runsettings` asks coverlet for Cobertura and OpenCover from the same test run (the tests run once). Cobertura keeps one
+percentage per branch condition, so a branch such as `if (OperatingSystem.IsWindows())`, taken one way on Windows and the other on
+Linux, merged to 50% whichever way round the two legs were read. OpenCover lists the visits of every branch, and ReportGenerator
+adds them up, so the same branch comes out covered. The `coverage` job therefore merges the OpenCover files and writes the
+Cobertura and JSON summary the floors read from that merge. `scripts/align-coverage-reports.mjs` makes both formats name the
+runners' checkouts and file-local types alike first, and caps each visit count, because ReportGenerator adds them in a 32-bit
+integer and the Argon2 loop's total overflowed to a negative number that read as not run. The test jobs upload only the OpenCover files. Tray and out-of-process figures come from one operating system and stay Cobertura.
+
 ## Running it locally
 
 ```powershell
 # Server: the in-process suites, then the merged report (needs: dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.11)
 cd apps/server
 dotnet test Weir.slnx --filter "Category!=Stress&Category!=Contract&Category!=E2E" --collect:"XPlat Code Coverage" --settings coverage.runsettings
-reportgenerator "-reports:tests/*/TestResults/*/coverage.cobertura.xml" "-targetdir:../../artifacts/coverage/server" "-reporttypes:Html;Cobertura;JsonSummary"
+reportgenerator "-reports:tests/*/TestResults/*/coverage.opencover.xml" "-targetdir:../../artifacts/coverage/server" "-reporttypes:Html;Cobertura;JsonSummary"
 
 # Tray: the same from apps/tray with Weir.Tray.slnx, and "-reports:*/TestResults/*/coverage.cobertura.xml"
 

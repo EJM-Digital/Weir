@@ -45,6 +45,7 @@ export async function restoreWeir(world) {
 export class RunningTray {
   #world;
   #mark;
+  #startsAtHandOut = new Map();
 
   constructor(world, { pid, exit }, mark) {
     this.#world = world;
@@ -81,7 +82,13 @@ export class RunningTray {
   async serverPid() {
     const pids = serverProcessIds(await this.log());
     assert.ok(pids.length > 0, "the tray has not logged a server process id yet");
-    return pids.at(-1);
+    return this.#handedOut(pids.at(-1), pids.length);
+  }
+
+  /** Notes how many servers the tray had started when this id was handed to a scenario: the operating system reuses process ids. */
+  #handedOut(pid, starts) {
+    this.#startsAtHandOut.set(pid, starts);
+    return pid;
   }
 
   /** Waits until the server answers /ready on the port, and returns the process id of the server the tray started last. */
@@ -92,13 +99,14 @@ export class RunningTray {
     return this.serverPid();
   }
 
-  /** Waits for a server that is not the one with this id to answer, and returns its id. */
+  /** Waits for a server the tray started after the one with this id (which it may share the id with) to answer, and returns its id. */
   async readyAfter(previousPid, port = PORT) {
     return wait(
       this.#world,
       async () => {
-        const pid = serverProcessIds(await this.log()).at(-1);
-        return pid !== undefined && pid !== previousPid && (await serverOn(port).ready()) ? pid : undefined;
+        const pids = serverProcessIds(await this.log());
+        const known = this.#startsAtHandOut.get(previousPid) ?? pids.lastIndexOf(previousPid) + 1;
+        return pids.length > known && (await serverOn(port).ready()) ? this.#handedOut(pids.at(-1), pids.length) : undefined;
       },
       `a new server to answer /ready on port ${port}`,
       START_CEILING_MS,
