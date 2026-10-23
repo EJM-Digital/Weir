@@ -137,7 +137,8 @@ public sealed class PortInUseTests : IDisposable
     {
         if (!await server.BecomesReadyAsync(Ceiling))
         {
-            Assert.Fail($"{what}. It printed: {await Describe(server)}");
+            var kept = server.Diagnostics;
+            Assert.Fail($"{what}. Kept for diagnosis: {kept}. It printed: {await Describe(server)}");
         }
     }
 

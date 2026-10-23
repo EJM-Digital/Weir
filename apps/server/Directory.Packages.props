@@ -18,6 +18,9 @@
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+    <!-- A dump and the thread stacks of a child server that missed its ceiling, so a hung start can be read afterwards (ChildDiagnostics). -->
+    <PackageVersion Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.553101" />
+    <PackageVersion Include="Microsoft.Diagnostics.Runtime" Version="3.1.512801" />
     <!-- Property-based tests: the inputs are generated, with a fixed seed so every run is the same (PropertyChecks). -->
     <PackageVersion Include="FsCheck" Version="3.4.0" />
   </ItemGroup>
