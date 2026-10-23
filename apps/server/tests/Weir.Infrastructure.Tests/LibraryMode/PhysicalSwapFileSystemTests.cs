@@ -27,6 +27,21 @@ public sealed class PhysicalSwapFileSystemTests : IDisposable
         Assert.Throws<InvalidOperationException>(() => PhysicalSwapFileSystem.WhereLibcHasIt<int>(() => throw new InvalidOperationException(), whenMissing: -1));
     }
 
+    [Theory]
+    [InlineData(32, typeof(FileInUseException))]
+    [InlineData(33, typeof(FileInUseException))]
+    [InlineData(5, typeof(UnauthorizedAccessException))]
+    [InlineData(2, typeof(FileNotFoundException))]
+    [InlineData(3, typeof(FileNotFoundException))]
+    [InlineData(1117, typeof(IOException))]
+    public void A_windows_error_number_is_named_for_what_it_means(int error, Type expected)
+    {
+        var named = PhysicalSwapFileSystem.WindowsError(error, "'a.mkv'");
+
+        Assert.Equal(expected, named.GetType());
+        Assert.Contains("'a.mkv'", named.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void A_missing_file_and_any_other_statx_failure_are_told_apart()
     {
