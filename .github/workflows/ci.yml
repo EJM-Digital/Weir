@@ -168,6 +168,7 @@ jobs:
               - 'apps/server/src/Weir.Infrastructure/WeirPlatformServices.cs'
               - 'apps/server/src/Weir.Infrastructure/Browse/**'
               - 'apps/server/src/Weir.Infrastructure/LibraryMode/**'
+              - 'apps/server/src/Weir.Infrastructure/IO/**'
               - 'apps/server/src/Weir.Infrastructure/Runtime/**'
               - 'apps/server/src/Weir.Infrastructure/SystemReadings/**'
               - 'apps/server/src/Weir.Infrastructure/Processing/OutputOwnership.cs'
