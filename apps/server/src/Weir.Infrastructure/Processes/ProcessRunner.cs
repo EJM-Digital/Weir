@@ -298,11 +298,19 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
     /// the child's main thread, which the threads a tool starts afterwards inherit. Normal is set as well, because a child
     /// otherwise inherits the priority of this process, which can itself run below normal.
     /// </summary>
-    internal void SetPriority(Process process, ProcessPriorityClass priority, string tool)
+    internal void SetPriority(Process process, ProcessPriorityClass priority, string tool) =>
+        SetPriority(process, priority, tool, static (target, wanted) => target.PriorityClass = wanted);
+
+    /// <summary>
+    /// The same with the operating system's call passed in. Whether it refuses an exited process is up to the system and the
+    /// <see cref="Process"/> object's view of the exit, which race: Windows accepts the call on a dead process some of the time. A
+    /// test that needs the refusal passes one that throws.
+    /// </summary>
+    internal void SetPriority(Process process, ProcessPriorityClass priority, string tool, Action<Process, ProcessPriorityClass> apply)
     {
         try
         {
-            process.PriorityClass = priority;
+            apply(process, priority);
         }
         catch (Exception exception) when (exception is InvalidOperationException or Win32Exception)
         {
