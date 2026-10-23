@@ -36,11 +36,11 @@ public sealed class OutputFolderCleanupTests : IDisposable
         return file;
     }
 
-    private Task<WireObject> RunMovie(string finalOutputFile, string relative = "Title/m.mkv", string scope = "movie", int minAge = 0)
+    private Task<WireObject> RunMovie(string finalOutputFile, string relative = "Title/m.mkv", string scope = "movie", int minAge = 0, long? jobId = 1)
     {
         var output = new WireObject();
         var source = _folders.Source(relative);
-        return Cleanup(minAge).RunMovieAsync(output, _folders.Runtime(), _folders.Watched, source, finalOutputFile, relative, 1, scope, null, CancellationToken.None)
+        return Cleanup(minAge).RunMovieAsync(output, _folders.Runtime(), _folders.Watched, source, finalOutputFile, relative, jobId, scope, null, CancellationToken.None)
             .ContinueWith(_ => output, TaskScheduler.Default);
     }
 
@@ -191,6 +191,19 @@ public sealed class OutputFolderCleanupTests : IDisposable
     }
 
     [Fact]
+    public async Task A_cleanup_with_no_pass_of_its_own_is_blocked_by_any_pass_for_the_same_file()
+    {
+        var final = MovieOutput();
+        _data.Truth.Add(Reported(_folders.Out(Path.Join("ManagerLibrary", "m.mkv"))));
+        _data.ActiveJobs.Add(new ActiveRemuxJob(3, """{"relative_media_path":"Title/m.mkv","media_scope":"movie"}"""));
+
+        var blocked = await RunMovie(final, jobId: null);
+
+        Assert.Contains("Another Movies video pass", Str(blocked, "movie_output_folder_skip_reason"), StringComparison.Ordinal);
+        Assert.True(File.Exists(final));
+    }
+
+    [Fact]
     public async Task A_file_at_the_output_root_or_outside_it_skips()
     {
         var atRoot = _folders.Out("m.mkv");
@@ -234,6 +247,22 @@ public sealed class OutputFolderCleanupTests : IDisposable
 
         Assert.True(((WireBool)output["tv_output_season_folder_deleted"]).Value, WireJsonWriter.Dumps(output, WireJsonFormat.Compact));
         Assert.False(Directory.Exists(_folders.Out("Show")));
+    }
+
+    [Fact]
+    public async Task A_tv_cleanup_with_no_pass_of_its_own_is_blocked_by_any_pass_for_the_season()
+    {
+        var episode = _folders.Out(Path.Join("Show", "S01", "ep.mkv"));
+        Directory.CreateDirectory(Path.GetDirectoryName(episode)!);
+        File.WriteAllText(episode, "x");
+        _data.Truth.Add(Reported());
+        _data.ActiveJobs.Add(new ActiveRemuxJob(7, """{"relative_media_path":"Show/S01/ep2.mkv","media_scope":"tv"}"""));
+        var blocked = new WireObject();
+
+        await Cleanup().RunTvAsync(blocked, _folders.Runtime(), _folders.Watched, _folders.Source(Path.Join("Show", "S01", "ep.mkv")), episode, null, "tv", null, CancellationToken.None);
+
+        Assert.Contains("Another TV video pass", Str(blocked, "tv_output_season_folder_skip_reason"), StringComparison.Ordinal);
+        Assert.True(File.Exists(episode));
     }
 
     [Fact]

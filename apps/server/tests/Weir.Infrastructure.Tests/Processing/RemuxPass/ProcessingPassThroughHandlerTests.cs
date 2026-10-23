@@ -292,6 +292,21 @@ public sealed class ProcessingPassThroughHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_hand_back_that_has_already_waited_for_room_counts_one_more_look()
+    {
+        var library = await LibraryAsync();
+        await _fixture.Store.Execute($"UPDATE libraries SET minimum_free_disk_space_mb = {MoreFreeThanAnyDriveHasMb}");
+        _folders.Source("file.mkv", bytes: 5000);
+        await FileRowAsync(library, "file.mkv");
+        var payload = $$"""{"relative_media_path":"file.mkv","library_id":{{library}},"trigger":"worker","disk_space_looks":2}""";
+
+        await Handler().HandleAsync(Context(8, payload), CancellationToken.None);
+
+        var booked = WireJsonParser.Parse(await ScalarText($"SELECT payload_json FROM jobs WHERE job_kind = '{IntakeRules.PassThroughJobKind}' AND not_before IS NOT NULL"));
+        Assert.Equal(3, (long)((WireInteger)((WireObject)booked)["disk_space_looks"]).Value);
+    }
+
+    [Fact]
     public async Task A_hand_back_that_waited_for_room_is_delivered_once_there_is_room()
     {
         var library = await LibraryAsync();

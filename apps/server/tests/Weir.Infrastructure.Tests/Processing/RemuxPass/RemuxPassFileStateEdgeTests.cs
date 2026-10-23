@@ -144,6 +144,33 @@ public sealed class RemuxPassFileStateEdgeTests : IDisposable
     }
 
     [Fact]
+    public async Task A_record_too_long_to_keep_that_names_no_outcome_is_kept_shortened_with_none()
+    {
+        var detail = new WireObject().Set("library_id", 1L).Set("log", new string('x', FileLogStore.MaxDetailChars + 10));
+
+        await InAsync(uow => RemuxPassFileState.RecordFileLogAsync(uow, Path, "Pass finished", detail, Now));
+
+        Assert.Contains("\"outcome\":null", Text("SELECT detail_json FROM file_logs")!, StringComparison.Ordinal);
+        Assert.Equal(string.Empty, Text("SELECT outcome FROM file_logs"));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task A_record_whose_outcome_is_missing_or_empty_is_kept_with_an_empty_outcome(string? outcome)
+    {
+        var detail = new WireObject().Set("library_id", 1L);
+        if (outcome is not null)
+        {
+            detail.Set("outcome", outcome);
+        }
+
+        await InAsync(uow => RemuxPassFileState.RecordFileLogAsync(uow, Path, "Pass finished", detail, Now));
+
+        Assert.Equal("1|", Text("SELECT count(*) || '|' || group_concat(outcome) FROM file_logs"));
+    }
+
+    [Fact]
     public async Task A_failure_of_a_path_outside_the_watched_folder_is_still_recorded_with_no_size_and_no_fingerprint()
     {
         var library = await LibraryAsync(1);

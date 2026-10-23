@@ -196,7 +196,8 @@ public sealed class TrayUpdateBackupWatcher : BackgroundService
         if (request is null)
         {
             // The tray may still be writing it.
-            await Task.Delay(HalfWrittenWait, stoppingToken).ConfigureAwait(false);
+            _logger.LogDebug("The tray's update backup request cannot be read yet; looking again shortly.");
+            await Task.Delay(HalfWrittenWait, _time, stoppingToken).ConfigureAwait(false);
             var again = ReplacedFile.ReadText(path);
             if (again.State != ReplacedFileState.Read)
             {
@@ -256,8 +257,7 @@ public sealed class TrayUpdateBackupWatcher : BackgroundService
     private PreUpdateBackupFile Save(string targetVersion)
     {
         using var connection = _database.Open();
-        var revision = SchemaMigrator.ReadRecordedRevision(connection)
-            ?? throw new InvalidOperationException("The database records no schema revision.");
+        var revision = SchemaMigrator.ReadRecordedRevision(connection);
         var backup = new PreUpdateBackup(
             _options.BackupDir, _options.WeirHome, targetVersion, _time, _logger, fromVersion: WeirVersion.Resolve(_options.VersionOverride));
         return backup.Save(connection, revision);
@@ -325,21 +325,18 @@ public sealed class TrayUpdateBackupWatcher : BackgroundService
         if (state == ReplacedFileState.Busy)
         {
             _logger.LogDebug("The tray's update backup request is refused for a moment; looking again shortly.");
+            return false;
         }
 
-        return state != ReplacedFileState.Busy;
+        _logger.LogDebug("The tray's update backup request is gone; there is nothing to answer.");
+        return true;
     }
 
     private void DeleteIfUnchanged(string path, string answered)
     {
         try
         {
-            // A file that is refused just now is not known to be unchanged, so it is left; it was answered, and finding it again changes nothing.
-            var now = ReplacedFile.ReadText(path);
-            if (now.State == ReplacedFileState.Read && now.Text == answered)
-            {
-                File.Delete(path);
-            }
+            ReplacedFile.DeleteIfUnchanged(path, answered);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

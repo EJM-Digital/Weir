@@ -22,7 +22,7 @@ public sealed class WindowsHostReadingSource : IHostReadingSource
     private const int FirstWindows11Build = 22000;
 
     private readonly Func<RegistryKey> _openMachine;
-    private readonly Func<DriveInfo[]> _drives;
+    private readonly Func<IReadOnlyList<HostDrive>> _drives;
     private readonly Lazy<string?> _operatingSystem;
 
     public WindowsHostReadingSource()
@@ -31,10 +31,10 @@ public sealed class WindowsHostReadingSource : IHostReadingSource
     }
 
     /// <summary>The registry's machine key and the list of drives can be replaced, so a test can have either refuse.</summary>
-    internal WindowsHostReadingSource(Func<RegistryKey>? openMachine, Func<DriveInfo[]>? drives)
+    internal WindowsHostReadingSource(Func<RegistryKey>? openMachine, Func<IReadOnlyList<HostDrive>>? drives)
     {
         _openMachine = openMachine ?? (() => RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64));
-        _drives = drives ?? DriveInfo.GetDrives;
+        _drives = drives ?? ListDrives;
         _operatingSystem = new Lazy<string?>(ReadOperatingSystemName);
     }
 
@@ -68,10 +68,10 @@ public sealed class WindowsHostReadingSource : IHostReadingSource
         {
             foreach (var drive in _drives())
             {
-                if (drive.DriveType == DriveType.Fixed && drive.IsReady
-                    && WindowsNative.ReadVolumeCounters(drive.RootDirectory.FullName) is { } counters)
+                if (drive.Type == DriveType.Fixed && drive.IsReady()
+                    && WindowsNative.ReadVolumeCounters(drive.RootPath) is { } counters)
                 {
-                    volumes[KeyOf(drive.RootDirectory.FullName)] = counters;
+                    volumes[KeyOf(drive.RootPath)] = counters;
                 }
             }
         }
@@ -114,6 +114,12 @@ public sealed class WindowsHostReadingSource : IHostReadingSource
     }
 
     public DriveSpace? ReadSpace(string driveRoot) => Guarded(() => WindowsNative.ReadSpace(driveRoot));
+
+    /// <summary>One drive as the disk readings see it. Whether it is ready is asked only of a fixed drive, because asking a removable one can stall.</summary>
+    internal sealed record HostDrive(DriveType Type, Func<bool> IsReady, string RootPath);
+
+    private static HostDrive[] ListDrives() =>
+        [.. DriveInfo.GetDrives().Select(drive => new HostDrive(drive.DriveType, () => drive.IsReady, drive.RootDirectory.FullName))];
 
     private static string KeyOf(string root) => root.TrimEnd('\\', '/').ToUpperInvariant();
 

@@ -57,6 +57,25 @@ public sealed class LibraryFileChangeNotifierTests
     }
 
     [Fact]
+    public async Task A_title_told_about_long_ago_is_forgotten_when_another_is_told_about()
+    {
+        using var fixture = new MediaManagerFixture();
+        await fixture.AddConnectionAsync("radarr");
+        fixture.Http
+            .Json(HttpMethod.Get, "/api/v3/rootfolder", "[]")
+            .Json(HttpMethod.Get, "/api/v3/movie", """[{"id":7,"title":"Solaris","movieFile":{"path":"/media/Solaris/f.mkv"}},{"id":8,"title":"Stalker","movieFile":{"path":"/media/Stalker/f.mkv"}}]""")
+            .Json(HttpMethod.Post, "/api/v3/command", """{"id":1}""", HttpStatusCode.Created);
+        var notifier = Notifier(fixture);
+
+        await notifier.NotifyAsync(new LibraryFileChange("movie", "/media/Solaris/f.mkv"));
+        fixture.Store.Clock.Set(fixture.Store.Clock.GetUtcNow() + LibraryFileChangeRules.CoalesceWindow + TimeSpan.FromSeconds(1));
+        await notifier.NotifyAsync(new LibraryFileChange("movie", "/media/Stalker/f.mkv"));
+        await notifier.NotifyAsync(new LibraryFileChange("movie", "/media/Solaris/f.mkv"));
+
+        Assert.Equal(3, fixture.Http.RequestsTo(HttpMethod.Post, "/api/v3/command").Count);
+    }
+
+    [Fact]
     public async Task Two_managers_that_own_a_file_are_each_told_again_once_the_window_has_passed()
     {
         using var fixture = new MediaManagerFixture();

@@ -442,6 +442,25 @@ public sealed class HandbackOutcomesTests : IDisposable
     }
 
     [Fact]
+    public async Task A_hand_off_that_refused_takes_its_refusal_back_from_a_copy_that_does_not_say_who_refused()
+    {
+        await HandedBackAsync();
+        var handoff = await HandoffAsync("h1", "d1");
+        await _fixture.Db(uow => _outcomes.RecordHandoffOutcomeAsync(uow, handoff, "Deluno", HandbackRules.NotImported, DateTimeOffset.UtcNow, null, null));
+        await _fixture.Store.Execute(
+            "UPDATE handbacks SET outcome_source_key = NULL, outcome_connection_id = NULL, outcome_authenticated = 1 " +
+            $"WHERE library_id = {_libraryId}");
+        var refused = (await _fixture.Db(uow => HandoffLedgerStore.FindAsync(uow, "deluno", "h1")))!;
+        Assert.Equal(HandbackRules.NotImported, refused.Outcome);
+
+        var answer = await _fixture.Db(uow => _outcomes.RecordHandoffOutcomeAsync(
+            uow, refused, "Deluno", HandbackRules.Imported, DateTimeOffset.UtcNow, "/library/Film (2024).mkv", null));
+
+        Assert.True(answer.Released);
+        Assert.False(File.Exists(CopyPath));
+    }
+
+    [Fact]
     public async Task An_import_after_a_refusal_with_nobody_on_record_as_having_said_it_is_told_as_imported_after_all()
     {
         await HandedBackAsync();

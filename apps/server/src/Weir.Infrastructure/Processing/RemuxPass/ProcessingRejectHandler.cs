@@ -146,7 +146,7 @@ public sealed partial class ProcessingRejectHandler : IJobHandler
         if (alreadyAccepted)
         {
             // The manager has this rejection already: a job that runs again finishes it and never reports it a second time.
-            attempt = RejectRoutes.AfterAcceptedRejection(target?.Connection.Label ?? "The media manager", source, watchedRoot, links);
+            attempt = RejectRoutes.AfterAcceptedRejection(target is null ? "The media manager" : target.Connection.Label, source, watchedRoot, links);
         }
         else if (origin is not null)
         {

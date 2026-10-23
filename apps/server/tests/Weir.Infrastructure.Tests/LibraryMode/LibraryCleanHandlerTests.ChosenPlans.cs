@@ -41,6 +41,20 @@ public sealed partial class LibraryCleanHandlerTests
         Assert.Equal(new byte[] { 1, 2, 3 }, await File.ReadAllBytesAsync(path));
     }
 
+    private const string JapaneseFirst =
+        """{"format":{"duration":"100.0"},"streams":[{"index":0,"codec_type":"video","codec_name":"h264","duration":"100.0"},{"index":1,"codec_type":"audio","codec_name":"aac","channels":2,"tags":{"language":"jpn"},"disposition":{"default":1},"duration":"100.0"},{"index":2,"codec_type":"audio","codec_name":"aac","channels":2,"tags":{"language":"eng"},"duration":"100.0"}]}""";
+
+    [Fact]
+    public async Task A_choice_that_only_reorders_tracks_needs_no_confirmation_and_is_carried_out()
+    {
+        // What the cleaned copy probes as: the same tracks, Japanese first.
+        _media.DefaultProbe = JapaneseFirst;
+        var (_, type, _) = await RunChosenAsync(Keeping(0, 2, 1), FakeMediaRunner.EnglishAndJapanese);
+
+        Assert.Equal(LibraryActivityEventTypes.FileCleaned, type);
+        Assert.Single(_media.Remuxes);
+    }
+
     [Fact]
     public async Task A_file_whose_track_list_cannot_be_read_is_failed_with_the_plain_reason()
     {

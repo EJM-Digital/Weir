@@ -245,6 +245,19 @@ public sealed class LibraryDiscoveryServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task The_first_workflow_imported_into_an_install_with_none_takes_the_first_place_and_the_name_it_was_given()
+    {
+        await _fixture.Store.Execute("DELETE FROM libraries");
+        var connection = await DelunoAsync();
+        Manifested(Library("a", "Movies", "movie", Folder("lib")), Library("b", "Shows", "tv", Folder("shows")));
+
+        var created = await Db(uow => Service().ImportLibrariesAsync(uow, connection, ["a", "b"]));
+
+        Assert.Equal(["Movies", "Shows"], created.Select(row => row.Name));
+        Assert.Equal([1, 2], created.Select(row => row.DisplayOrder));
+    }
+
+    [Fact]
     public async Task A_library_of_a_kind_Weir_does_not_know_is_imported_as_movies_and_a_taken_name_is_numbered()
     {
         var connection = await DelunoAsync();

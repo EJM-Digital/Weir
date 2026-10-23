@@ -181,6 +181,21 @@ public sealed class LibrarySetupApiTests
     }
 
     [Fact]
+    public async Task A_downloads_folder_with_no_folder_above_it_is_offered_with_no_output_for_the_person_to_choose()
+    {
+        var (server, client, manager) = await StartAsync();
+        await using var _server = server;
+        await ConnectManagerAsync(client, "radarr", "http://192.0.2.61:7878");
+        manager.Json(HttpMethod.Get, "/api/v3/downloadclient", ArrClients("movieDirectory", "/movies"));
+
+        var suggested = await SuggestedAsync(client);
+
+        var movies = LibraryFor(suggested, "movie");
+        Assert.Equal("/movies", movies["watched_folder"]!.GetValue<string>());
+        Assert.Equal(string.Empty, movies["output_folder"]!.GetValue<string>());
+    }
+
+    [Fact]
     public async Task A_manager_that_names_no_download_folder_says_so_and_a_connected_download_client_fills_in()
     {
         var (server, client, manager) = await StartAsync();

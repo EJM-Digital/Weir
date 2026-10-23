@@ -53,6 +53,27 @@ public sealed partial class LibraryCleanHandlerTests
         Assert.Single(await TitlesAsync(LibraryActivityEventTypes.FileCleaned));
     }
 
+    /// <summary>A journal that cannot write down that a swap committed.</summary>
+    private sealed class JournalThatCannotRecordTheCommit(ISwapJournal inner) : ISwapJournal
+    {
+        public Task RecordAsync(SwapJournalEntry entry, CancellationToken cancellationToken = default) =>
+            entry.State == SwapJournalState.Committed ? throw new IOException("the disk said no") : inner.RecordAsync(entry, cancellationToken);
+
+        public Task<IReadOnlyList<SwapJournalEntry>> ListUnfinishedAsync(CancellationToken cancellationToken = default) => inner.ListUnfinishedAsync(cancellationToken);
+
+        public Task<IReadOnlyList<string>> ListKeepConflictPathsAsync(CancellationToken cancellationToken = default) => inner.ListKeepConflictPathsAsync(cancellationToken);
+    }
+
+    [Fact]
+    public async Task A_clean_whose_commit_could_not_be_written_down_says_so_in_its_activity_entry()
+    {
+        var (_, _, jobId) = await CleanableFileAsync();
+
+        await RunCleanAsync(jobId, Handler(journal: new JournalThatCannotRecordTheCommit(new ProcessingJobSwapJournal(_fixture.Store.Database))));
+
+        Assert.Contains("could not record it on the job", await CleanedDetailAsync(), StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task A_clean_stays_cleaned_when_its_activity_entry_cannot_be_written()
     {

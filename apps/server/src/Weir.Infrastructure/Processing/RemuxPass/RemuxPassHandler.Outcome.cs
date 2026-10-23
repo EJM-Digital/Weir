@@ -166,6 +166,9 @@ public sealed partial class RemuxPassHandler
         }
     }
 
+    /// <summary>The kind of guardrail that skipped the file, when the result names one.</summary>
+    internal static string? SkipKindOf(WireObject result) => result.Get("skip_kind") is WireString { Value.Length: > 0 } kind ? kind.Value : null;
+
     /// <summary>
     /// A pass a guardrail stopped before it wrote anything (a file under the minimum size) is skipped, never done: nothing was
     /// written, and a scan looks at the file again once its size or the workflow's minimum changes.
@@ -173,7 +176,7 @@ public sealed partial class RemuxPassHandler
     private static async Task RecordGuardrailSkipAsync(UnitOfWork uow, ProcessingLibraryRecord library, string relativePath, WireObject result, WireObject updates, DateTimeOffset now)
     {
         var reason = WireStrings.Slice(CollapseWhitespace(TextOr(result.Get("reason"), "Weir skipped this file.")), 1200);
-        var skipKind = result.Get("skip_kind") is WireString { Value.Length: > 0 } kind ? kind.Value : null;
+        var skipKind = SkipKindOf(result);
         if (await RemuxPassFileState.MarkFileStatusAsync(uow, library.Id, relativePath, ProcessingFileStatuses.Skipped, reason, now, skipKind).ConfigureAwait(false))
         {
             await RemuxPassFileState.ClearFailureFieldsAsync(uow, library.Id, relativePath).ConfigureAwait(false);
@@ -208,7 +211,7 @@ public sealed partial class RemuxPassHandler
     }
 
     /// <summary><c>str(value or fallback)</c>.</summary>
-    private static string TextOr(WireValue? value, string fallback) => value is { IsTruthy: true } ? WireConvert.Str(value) : fallback;
+    internal static string TextOr(WireValue? value, string fallback) => value is { IsTruthy: true } ? WireConvert.Str(value) : fallback;
 
     /// <summary><c>" ".join(text.split())</c>.</summary>
     private static string CollapseWhitespace(string text) =>

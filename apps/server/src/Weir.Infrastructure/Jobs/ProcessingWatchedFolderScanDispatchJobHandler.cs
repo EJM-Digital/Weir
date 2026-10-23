@@ -213,7 +213,8 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
                 return null;
             }
 
-            if (library.WatchedFolder.Trim() is { Length: > 0 } saved)
+            var saved = library.WatchedFolder.Trim();
+            if (saved.Length > 0)
             {
                 if (!_fs.DirectoryExists(ProcessingLibraryFolders.ExpandForFilesystem(saved)))
                 {
@@ -258,7 +259,7 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
         }
     }
 
-    private static ScanAdmissionWindow AdmissionWindow(ProcessingLibraryRecord library, SuiteSettingsRecord suite, DateTimeOffset now)
+    internal static ScanAdmissionWindow AdmissionWindow(ProcessingLibraryRecord library, SuiteSettingsRecord suite, DateTimeOffset now)
     {
         var pause = PauseState.Resolve(suite, now.UtcDateTime);
         var timezoneName = string.IsNullOrWhiteSpace(suite.AppTimezone) ? "UTC" : suite.AppTimezone.Trim();

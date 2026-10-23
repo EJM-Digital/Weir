@@ -136,6 +136,17 @@ public sealed class FileLifecycleFaultTests : IDisposable
     }
 
     [Fact]
+    public async Task A_hard_link_that_was_published_is_given_the_owner_of_the_output()
+    {
+        var source = Staged();
+        var ownership = new RecordingOwnership();
+
+        Assert.True(await FileLifecycle.TryHardlinkToFinalAsync(source, Final, ownership: ownership));
+
+        Assert.Equal([Path.GetFullPath(Final)], ownership.Files);
+    }
+
+    [Fact]
     public async Task A_hard_link_that_fails_its_check_is_removed_and_the_source_keeps_its_one_name()
     {
         var source = Staged();
@@ -265,6 +276,18 @@ public sealed class FileLifecycleFaultTests : IDisposable
     }
 
     [Fact]
+    public void A_folder_named_relative_to_nothing_is_made_whole_and_no_owner_is_applied_when_it_cannot_be()
+    {
+        var files = new FaultingFileSystem().Fail(FileCall.CreateDirectory, FaultingFileSystem.Refused);
+        var ownership = new RecordingOwnership();
+
+        Assert.Throws<UnauthorizedAccessException>(() => FileLifecycle.EnsureOutputDirectory(Path.Join("no-such-folder-here", "below"), ownership, files));
+
+        Assert.Empty(ownership.Directories);
+        Assert.Contains(files.Calls, call => call.Call == FileCall.DirectoryExists && call.Path == "no-such-folder-here");
+    }
+
+    [Fact]
     public void Each_folder_made_for_an_output_is_given_the_owner_topmost_first_and_an_existing_one_is_left_alone()
     {
         var ownership = new RecordingOwnership();
@@ -292,10 +315,10 @@ public sealed class FileLifecycleFaultTests : IDisposable
     {
         public List<string> Directories { get; } = [];
 
+        public List<string> Files { get; } = [];
+
         public void ApplyToDirectory(string path) => Directories.Add(path);
 
-        public void ApplyToFile(string path)
-        {
-        }
+        public void ApplyToFile(string path) => Files.Add(path);
     }
 }

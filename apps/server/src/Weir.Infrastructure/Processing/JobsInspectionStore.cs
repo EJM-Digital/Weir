@@ -120,7 +120,7 @@ public sealed class JobsInspectionStore
         return new FinishedJobs(rows.Sum(row => row.Count), failed);
     }
 
-    private static DateTimeOffset? ToOffset(Timestamp? value) => value is { } v ? Utc(v) : null;
+    internal static DateTimeOffset? ToOffset(Timestamp? value) => value is { } v ? Utc(v) : null;
 
     private static DateTimeOffset Utc(Timestamp value) => new(value.AsUtc, TimeSpan.Zero);
 

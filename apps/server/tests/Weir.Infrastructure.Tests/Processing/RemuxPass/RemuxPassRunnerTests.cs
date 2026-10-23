@@ -246,7 +246,7 @@ public sealed partial class RemuxPassRunnerTests : IDisposable
 
     public void Dispose() => _folders.Dispose();
 
-    private RemuxPassRunner Runner(bool? hardlink = null, Func<string, long>? freeBytes = null, IFileSystem? files = null) =>
+    private RemuxPassRunner Runner(bool? hardlink = null, Func<string, long>? freeBytes = null, IFileSystem? files = null, Weir.Core.Metrics.RuntimeMetricsStore? metrics = null) =>
         new(
             new MediaTools(_media, new FixedResolver(), new ListLogger<MediaTools>(), TimeProvider.System),
             new FixedResolver(),
@@ -257,6 +257,7 @@ public sealed partial class RemuxPassRunnerTests : IDisposable
             new RemuxPassSettings { MovieOutputCleanupMinAgeSeconds = 0, TvOutputCleanupMinAgeSeconds = 0 },
             TimeProvider.System,
             NullLogger<RemuxPassRunner>.Instance,
+            metrics: metrics,
             files: files)
         {
             HardlinkFastPathSupported = hardlink ?? OperatingSystem.IsWindows(),
@@ -489,6 +490,37 @@ public sealed partial class RemuxPassRunnerTests : IDisposable
         Assert.False(result.ContainsKey("tv_season_folder_deleted"));
         Assert.False(result.ContainsKey("tv_output_season_folder_deleted"));
         Assert.True(result.ContainsKey("movie_output_truth_check"));
+    }
+
+    [Fact]
+    public async Task A_video_stream_that_names_no_codec_is_measured_without_one()
+    {
+        _folders.Source(Path.Join("ReleaseTitle", "one.mkv"));
+        _media.DefaultProbe = EnglishOnlyWithoutVideoCodec;
+
+        var result = await Run("ReleaseTitle/one.mkv");
+
+        Assert.True(Bool(result, "ok"));
+        Assert.Null(Assert.Single(_facts.Measured).VideoCodec);
+    }
+
+    private const string EnglishOnlyWithoutVideoCodec =
+        """{"format":{"duration":"100.0"},"streams":[{"index":0,"codec_type":"video","width":1920,"height":1080,"duration":"100.0"},{"index":1,"codec_type":"audio","codec_name":"aac","channels":2,"tags":{"language":"eng"},"disposition":{"default":1},"duration":"100.0"}]}""";
+
+    [Fact]
+    public async Task The_space_a_remux_saved_is_counted_against_the_processing_module()
+    {
+        _folders.Source(Path.Join("ReleaseTitle", "one.mkv"), 10_000);
+        _media.Probes["one.mkv"] = FakeMediaRunner.EnglishAndJapanese;
+        _media.DefaultProbe = FakeMediaRunner.EnglishOnly;
+        var metrics = new Weir.Core.Metrics.RuntimeMetricsStore(TimeProvider.System);
+
+        var result = await Run("ReleaseTitle/one.mkv", runner: Runner(metrics: metrics));
+
+        Assert.True(Bool(result, "ok"));
+        var saved = Assert.Single(metrics.GetSummary().ModuleSavingsBytes);
+        Assert.Equal("processing", saved.Key);
+        Assert.True(saved.Value > 0);
     }
 
     [Fact]

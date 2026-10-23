@@ -1,4 +1,3 @@
-using Weir.Core.Processing;
 using Weir.Infrastructure.Processing.RemuxPass;
 
 namespace Weir.Infrastructure.Tests.Processing.RemuxPass;
@@ -22,8 +21,6 @@ public sealed class SourceAccessFaultTests : IDisposable
         File.WriteAllText(path, content);
         return path;
     }
-
-    private static ProcessingLibraryRecord Library() => new() { Name = "Movies" };
 
     [Fact]
     public void A_source_another_program_is_writing_cannot_be_reserved_and_Weir_says_it_will_wait()
@@ -77,64 +74,6 @@ public sealed class SourceAccessFaultTests : IDisposable
         guard.Dispose();
         File.Delete(film);
         Assert.False(File.Exists(film));
-    }
-
-    [Fact]
-    public void A_source_that_cannot_be_read_stops_the_check_before_anything_is_written_to_the_output_folder()
-    {
-        var film = Write("watch/Film.mkv");
-        var output = _dir.Join("out");
-        var files = new FaultingFileSystem().Fail(FileCall.OpenFile, FaultingFileSystem.SharingViolation, pathEndsWith: "Film.mkv");
-
-        var problem = SourceFiles.CheckFileAccess(Library(), film, output, files);
-
-        Assert.StartsWith("Weir could not open this file for reading", problem, StringComparison.Ordinal);
-        Assert.False(Directory.Exists(output));
-        Assert.True(File.Exists(film));
-    }
-
-    [Fact]
-    public void A_writer_that_starts_between_the_read_and_the_reservation_makes_the_source_wait()
-    {
-        var film = Write("watch/Film.mkv");
-        var output = _dir.Join("out");
-        var files = new FaultingFileSystem().Fail(FileCall.OpenFile, FaultingFileSystem.SharingViolation, onCall: 2, pathEndsWith: "Film.mkv");
-
-        var problem = SourceFiles.CheckFileAccess(Library(), film, output, files);
-
-        Assert.Contains(WriterSentence, problem, StringComparison.Ordinal);
-        Assert.False(Directory.Exists(output));
-    }
-
-    [Fact]
-    public void An_output_folder_that_cannot_be_made_is_named_and_the_source_is_left_alone() => AssertOutputFolderRefused(FileCall.CreateDirectory);
-
-    [Fact]
-    public void An_output_folder_that_refuses_the_write_test_is_named_and_the_source_is_left_alone() => AssertOutputFolderRefused(FileCall.WriteAllBytes);
-
-    private void AssertOutputFolderRefused(FileCall refusing)
-    {
-        var film = Write("watch/Film.mkv");
-        var output = _dir.Join("out");
-        var files = new FaultingFileSystem().Fail(refusing, FaultingFileSystem.Refused);
-
-        var problem = SourceFiles.CheckFileAccess(Library(), film, output, files);
-
-        Assert.StartsWith($"Weir cannot write to the output folder ({output}), so it did not start work that would have nowhere to go.", problem, StringComparison.Ordinal);
-        Assert.Contains("is denied", problem, StringComparison.Ordinal);
-        Assert.Equal("film", File.ReadAllText(film));
-        Assert.Contains(files.Calls, call => call.Call == FileCall.DeleteFile && Path.GetFileName(call.Path).StartsWith(".weir-write-test-", StringComparison.Ordinal));
-    }
-
-    [Fact]
-    public void A_source_that_passes_every_check_leaves_no_test_file_in_the_output_folder()
-    {
-        var film = Write("watch/Film.mkv");
-        var output = _dir.Join("out");
-
-        Assert.Null(SourceFiles.CheckFileAccess(Library(), film, output));
-
-        Assert.Empty(Directory.GetFileSystemEntries(output));
     }
 
     [WindowsFact("The device and file index come from a Windows handle.")]

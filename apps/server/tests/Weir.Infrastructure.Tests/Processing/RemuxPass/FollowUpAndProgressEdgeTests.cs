@@ -121,6 +121,18 @@ public sealed class FollowUpAndProgressEdgeTests : IDisposable
     }
 
     [Fact]
+    public async Task A_bad_release_with_no_reason_on_record_is_handed_back_with_a_plain_one()
+    {
+        var library = await LibraryAsync(policy: "reject");
+        var record = (await _fixture.Db(uow => _fixture.Libraries.GetAsync(uow, library)))!;
+
+        var applied = await _fixture.Db(uow => new QueueingFailurePolicy(_fixture.Jobs).ApplyFailurePolicyAsync(uow, record, "bad.mkv", false, null, badRelease: true));
+
+        Assert.Equal(ProcessingFailurePolicies.Reject, applied);
+        Assert.Contains("Weir could not read this file's contents.", (await _fixture.Store.ScalarText($"SELECT payload_json FROM jobs WHERE job_kind = '{IntakeRules.RejectJobKind}'"))!, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_source_path_that_cannot_be_read_is_tagged_unreadable_in_the_dedupe_key()
     {
         var library = new ProcessingLibraryRecord { Name = "Movies", WatchedFolder = _folders.Watched };
@@ -144,6 +156,7 @@ public sealed class FollowUpAndProgressEdgeTests : IDisposable
     public void A_path_that_does_not_exist_and_has_no_parent_stays_where_it_is()
     {
         Assert.Equal(string.Empty, FileLifecycle.NearestExistingParent("no-such-folder-here"));
+        Assert.Equal(string.Empty, FileLifecycle.NearestExistingParent(string.Empty));
     }
 
     [Fact]

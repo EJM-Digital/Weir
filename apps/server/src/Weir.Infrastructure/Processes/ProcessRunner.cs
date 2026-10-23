@@ -264,12 +264,15 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
 
         return new ProcessResult
         {
-            ExitCode = process.HasExited ? process.ExitCode : -1,
+            ExitCode = ExitCodeOf(process),
             Stdout = stdoutSink.ToArray(),
             Stderr = stderrSink.ToArray(),
             Timeout = timedOut,
         };
     }
+
+    /// <summary>The code the process exited with, or -1 when it has not exited (one that could not be killed).</summary>
+    internal static int ExitCodeOf(Process process) => process.HasExited ? process.ExitCode : -1;
 
     internal static async Task DrainAsync(Process process, Task stdoutTask, Task stderrTask, TimeSpan limit)
     {

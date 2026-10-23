@@ -165,6 +165,39 @@ public sealed class SqliteWriteGateDetailTests : IDisposable
     }
 
     [Fact]
+    public async Task A_connection_handed_out_inside_a_transaction_that_cannot_be_rolled_back_is_closed_and_a_new_one_is_opened()
+    {
+        var database = new SqliteDatabase(DatabaseFile, logger: new ListLogger<SqliteDatabase>());
+        try
+        {
+            var left = await database.OpenAsync();
+            Run(left, "CREATE TABLE notes (text TEXT)");
+            Run(left, "BEGIN IMMEDIATE");
+            Run(left, "INSERT INTO notes VALUES ('never committed')");
+            var abandoned = left.Handle;
+            Assert.Equal(raw.SQLITE_OK, raw.sqlite3_set_authorizer(abandoned, RefuseRollback, null));
+            await left.DisposeAsync();
+
+            var next = await database.OpenAsync();
+            await using (next.ConfigureAwait(false))
+            {
+                Assert.NotSame(abandoned, next.Handle);
+                Assert.Equal(1, raw.sqlite3_get_autocommit(next.Handle));
+                using var count = next.CreateCommand();
+                count.CommandText = "SELECT COUNT(*) FROM notes";
+                Assert.Equal(0L, count.ExecuteScalar());
+            }
+        }
+        finally
+        {
+            database.ClearPool();
+        }
+    }
+
+    private static int RefuseRollback(object? state, int action, utf8z first, utf8z second, utf8z database, utf8z trigger) =>
+        action == raw.SQLITE_TRANSACTION && first.utf8_to_string() == "ROLLBACK" ? raw.SQLITE_DENY : raw.SQLITE_OK;
+
+    [Fact]
     public async Task A_refusal_from_sqlite_that_is_not_about_a_busy_database_is_passed_on_as_it_is()
     {
         var database = new SqliteDatabase(DatabaseFile);

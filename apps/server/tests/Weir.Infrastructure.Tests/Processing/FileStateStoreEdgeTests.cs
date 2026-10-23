@@ -78,4 +78,46 @@ public sealed class FileStateStoreEdgeTests : IDisposable
 
         Assert.IsNotType<DBNull>(_db.Scalar("SELECT last_attempt_at FROM files"));
     }
+
+    [Fact]
+    public async Task A_scan_that_only_saw_a_file_again_moves_nothing_and_stamps_when_it_looked()
+    {
+        var id = InsertFile(ProcessingFileStatuses.ProcessingFailed);
+        _db.Execute("UPDATE files SET last_seen_at = '2020-01-01 00:00:00'");
+        await using var uow = await UnitOfWork.OpenAsync(_db.Database);
+
+        var applied = await Store.RecordScannedStateAsync(uow, _library, Write(id, ProcessingFileStatuses.ProcessingFailed, null), Seen);
+        await uow.CommitAsync();
+
+        Assert.True(applied);
+        Assert.Equal(ProcessingFileStatuses.ProcessingFailed, _db.Scalar("SELECT status FROM files"));
+        Assert.Equal("2026-04-10 12:00:00.000000", _db.Scalar("SELECT last_seen_at FROM files"));
+        Assert.Equal(2L, _db.Count("SELECT failure_attempts FROM files"));
+    }
+
+    [Fact]
+    public async Task A_file_first_seen_while_a_pass_is_trying_it_is_recorded_as_tried_at_once()
+    {
+        await using (var uow = await UnitOfWork.OpenAsync(_db.Database))
+        {
+            await Store.RecordFileStateAsync(uow, _library, "a.mkv", new FileStateVerdict(ProcessingFileStatuses.Processing, "working"), null, null, Seen, isAttempt: true);
+            await uow.CommitAsync();
+        }
+
+        Assert.Equal("2026-04-10 12:00:00.000000", _db.Scalar("SELECT last_attempt_at FROM files"));
+    }
+
+    [Fact]
+    public async Task A_list_of_no_ids_lists_no_files_and_a_bit_depth_that_was_measured_is_read_back()
+    {
+        var id = InsertFile(ProcessingFileStatuses.Unprocessed);
+        _db.Execute("UPDATE files SET video_bit_depth = 10");
+        await using var uow = await UnitOfWork.OpenAsync(_db.Database);
+
+        var none = await Store.ListAsync(uow, new ProcessingFileListFilter { Ids = [] });
+        var read = await Store.GetAsync(uow, id);
+
+        Assert.Empty(none);
+        Assert.Equal(10, read!.VideoBitDepth);
+    }
 }

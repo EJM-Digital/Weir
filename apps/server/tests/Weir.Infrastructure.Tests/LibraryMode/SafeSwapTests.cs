@@ -853,6 +853,12 @@ public sealed class SafeSwapTests
     [InlineData(1UL, 2UL, 100L, 5L, 9UL, 2UL, 100L, 5L, false)]
     [InlineData(0UL, 0UL, 100L, 5L, 1UL, 2UL, 100L, 5L, true)]
     [InlineData(1UL, 2UL, 100L, 5L, 0UL, 0UL, 100L, 5L, true)]
+    [InlineData(0UL, 2UL, 100L, 5L, 0UL, 3UL, 100L, 5L, false)]
+    [InlineData(1UL, 0UL, 100L, 5L, 2UL, 0UL, 100L, 5L, false)]
+    [InlineData(0UL, 2UL, 100L, 5L, 0UL, 2UL, 100L, 5L, true)]
+    [InlineData(1UL, 0UL, 100L, 5L, 1UL, 0UL, 100L, 5L, true)]
+    [InlineData(1UL, 2UL, 100L, 5L, 0UL, 3UL, 100L, 5L, false)]
+    [InlineData(1UL, 2UL, 100L, 5L, 4UL, 0UL, 100L, 5L, false)]
     [InlineData(1UL, 2UL, 100L, 5L, 1UL, 2UL, 101L, 5L, false)]
     [InlineData(1UL, 2UL, 100L, 5L, 1UL, 2UL, 100L, 6L, false)]
     public void Two_fingerprints_are_the_same_file_when_size_and_time_agree_and_so_does_identity_where_both_know_it(

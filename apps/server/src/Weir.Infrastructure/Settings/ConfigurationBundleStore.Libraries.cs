@@ -33,7 +33,7 @@ public sealed partial class ConfigurationBundleStore
             .Select(row => row as WireObject ?? throw new WireTypeException($"Each row in the backup's {LibrariesTable} section must be an object."))
             .ToList();
         ConfigurationBundleIntakeUpgrade.Apply(
-            bundle[ProcessingOperatorTable] as WireObject ?? throw new WireTypeException($"The backup's {ProcessingOperatorTable} section must be an object."),
+            (WireObject)bundle[ProcessingOperatorTable],
             libraryRows);
         ValidateRestoredLibraries(libraryRows, weirHome);
         CarryPerformanceFreeSpaceToWorkflows(bundle, libraryRows);
@@ -112,7 +112,7 @@ public sealed partial class ConfigurationBundleStore
 
     /// <summary>The fields <see cref="LibraryRules"/> validates, read from a raw bundle row; everything else
     /// about the row (schedule, sorters, and so on) is restored as-is and needs no validation here.</summary>
-    private static ProcessingLibraryInput RestoreLibraryInput(WireObject row) => new()
+    internal static ProcessingLibraryInput RestoreLibraryInput(WireObject row) => new()
     {
         Name = RestoreLibraryString(row, "name") ?? string.Empty,
         MediaType = RestoreLibraryString(row, "media_type") ?? string.Empty,

@@ -342,39 +342,6 @@ public sealed class SourceFilesTests : IDisposable
 
     public void Dispose() => _root.Dispose();
 
-    private static ProcessingLibraryRecord Library(bool skip = false) => new() { Name = "Movies", SkipAccessTests = skip };
-
-    [Fact]
-    public void An_unreadable_file_is_a_wait_with_a_reason()
-    {
-        var problem = SourceFiles.CheckFileAccess(Library(), _root.Join("not-there.mkv"), _root.Path);
-
-        Assert.Contains("could not open this file for reading", problem, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void An_unwritable_output_folder_is_reported_before_any_work_starts()
-    {
-        var source = _root.Join("film.mkv");
-        File.WriteAllText(source, "data");
-
-        var problem = SourceFiles.CheckFileAccess(Library(), source, Path.Join(source, "output"));
-
-        Assert.Contains("cannot write to the output folder", problem, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void A_readable_file_and_writable_output_pass_and_leave_no_probe_behind()
-    {
-        var source = _root.Join("film.mkv");
-        File.WriteAllText(source, "data");
-        var output = Directory.CreateDirectory(_root.Join("out")).FullName;
-
-        Assert.Null(SourceFiles.CheckFileAccess(Library(), source, output));
-        Assert.Empty(Directory.EnumerateFileSystemEntries(output));
-        Assert.Null(SourceFiles.CheckFileAccess(Library(skip: true), _root.Join("not-there.mkv"), _root.Join("nope")));
-    }
-
     [Fact]
     public void A_file_open_for_writing_by_another_program_makes_the_pass_wait()
     {

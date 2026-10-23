@@ -75,4 +75,21 @@ internal static class ReplacedFile
 
         return new ReplacedFileText(found, string.Empty, default);
     }
+
+    /// <summary>
+    /// Removes the file when it still holds exactly <paramref name="answered"/>. A file that holds something else was written again since
+    /// it was read, so it is another request and is left to be heard on its own; one that is refused just now is not known to be unchanged,
+    /// so it is left too, and finding it again changes nothing. Returns whether the file was removed. A failure to remove it is thrown.
+    /// </summary>
+    internal static bool DeleteIfUnchanged(string path, string answered)
+    {
+        var now = ReadText(path);
+        if (now.State != ReplacedFileState.Read || now.Text != answered)
+        {
+            return false;
+        }
+
+        File.Delete(path);
+        return true;
+    }
 }

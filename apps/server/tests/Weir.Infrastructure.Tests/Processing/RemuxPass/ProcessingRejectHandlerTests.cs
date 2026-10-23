@@ -375,6 +375,68 @@ public sealed class ProcessingRejectHandlerTests : IDisposable
         Assert.Equal(1, await _fixture.Store.Scalar($"SELECT count(*) FROM jobs WHERE job_kind = '{IntakeRules.PassThroughJobKind}'"));
     }
 
+    [Fact]
+    public async Task A_handoff_that_named_no_callback_path_cannot_be_reported_to_and_the_original_is_handed_back()
+    {
+        var library = await LibraryAsync();
+        _folders.Source("Film/film.mkv");
+        await FileRowAsync(library, "Film/film.mkv");
+        var payload = $$$"""{"relative_media_path":"Film/film.mkv","library_id":{{{library}}},"origin":{"source_key":"deluno","handoff_id":"h1"}}""";
+
+        await Handler().HandleAsync(Context(50, payload), CancellationToken.None);
+
+        Assert.Contains("Weir could not report to the manager: the hand-off named no callback path.", await ScalarText("SELECT status_reason FROM files"), StringComparison.Ordinal);
+        Assert.Equal(1, await _fixture.Store.Scalar($"SELECT count(*) FROM jobs WHERE job_kind = '{IntakeRules.PassThroughJobKind}'"));
+    }
+
+    [Fact]
+    public async Task A_file_a_queue_manager_handed_over_is_rejected_through_its_queue()
+    {
+        var library = await LibraryAsync();
+        var source = _folders.Source("Film/film.mkv");
+        await FileRowAsync(library, "Film/film.mkv");
+        var connection = await _fixture.AddConnectionAsync("radarr", "http://10.0.0.5:7878", "k");
+        await LinkAsync(library, connection);
+        var outputPath = Path.GetFullPath(source).Replace('\\', '/');
+        _fixture.Http.Json(HttpMethod.Get, "/api/v3/queue", $$"""{"records":[{"id":55,"outputPath":"{{outputPath}}","downloadId":"dl1"}]}""");
+        _fixture.Http.Route(HttpMethod.Delete, "/api/v3/queue/55", _ => FakeManagerHttp.Response(HttpStatusCode.OK));
+        var payload = $$$"""{"relative_media_path":"Film/film.mkv","library_id":{{{library}}},"origin":{"source_key":"radarr","handoff_id":"h1","callback_path":"/unused"}}""";
+
+        await Handler().HandleAsync(Context(51, payload), CancellationToken.None);
+
+        Assert.Single(_fixture.Http.RequestsTo(HttpMethod.Delete, "/api/v3/queue/55"));
+        Assert.Equal("rejected", await ScalarText("SELECT status FROM files"));
+    }
+
+    [Fact]
+    public async Task A_file_a_queue_manager_handed_over_is_handed_back_when_no_linked_manager_can_reject_it()
+    {
+        var library = await LibraryAsync();
+        _folders.Source("Film/film.mkv");
+        await FileRowAsync(library, "Film/film.mkv");
+        var payload = $$$"""{"relative_media_path":"Film/film.mkv","library_id":{{{library}}},"origin":{"source_key":"radarr","handoff_id":"h1","callback_path":"/unused"}}""";
+
+        await Handler().HandleAsync(Context(52, payload), CancellationToken.None);
+
+        Assert.Contains("No linked media manager can take a rejection", await ScalarText("SELECT status_reason FROM files"), StringComparison.Ordinal);
+        Assert.Equal(1, await _fixture.Store.Scalar($"SELECT count(*) FROM jobs WHERE job_kind = '{IntakeRules.PassThroughJobKind}'"));
+    }
+
+    [Fact]
+    public async Task A_rejection_a_queue_manager_already_took_is_finished_without_naming_a_connection()
+    {
+        var library = await LibraryAsync();
+        _folders.Source("Film/film.mkv");
+        await FileRowAsync(library, "Film/film.mkv");
+        await _fixture.Db(async uow => { await _fixture.Ledger.RecordReceivedAsync(uow, "radarr", "h1", library, "Film/film.mkv"); return 0; });
+        await _fixture.Store.Execute("UPDATE media_manager_handoffs SET reported_status = 'rejected' WHERE handoff_id = 'h1'");
+        var payload = $$$"""{"relative_media_path":"Film/film.mkv","library_id":{{{library}}},"origin":{"source_key":"radarr","handoff_id":"h1","callback_path":"/unused"}}""";
+
+        await Handler().HandleAsync(Context(53, payload), CancellationToken.None);
+
+        Assert.Equal("rejected", await ScalarText("SELECT status FROM files"));
+    }
+
     // --- fix #532: a rejection always upserts a Files row ----------------------------------------
 
     [Fact]

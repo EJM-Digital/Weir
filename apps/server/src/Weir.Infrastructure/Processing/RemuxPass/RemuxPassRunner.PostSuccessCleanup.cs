@@ -7,14 +7,14 @@ namespace Weir.Infrastructure.Processing.RemuxPass;
 public sealed partial class RemuxPassRunner
 {
     /// <summary>Copies the source's sidecars to the output before any source cleanup can delete them.</summary>
-    private async Task MigrateSidecarsBeforeCleanupAsync(string src, string? finalOutputFile, IReadOnlyList<string> patterns, bool preserveTimestamps, WireObject output)
+    private async Task MigrateSidecarsBeforeCleanupAsync(string src, string finalOutputFile, IReadOnlyList<string> patterns, bool preserveTimestamps, WireObject output)
     {
         OutputFolderCleanup.SetDefault(output, "sidecars_migrated", new WireArray());
         OutputFolderCleanup.SetDefault(output, "sidecars_skipped", new WireArray());
         OutputFolderCleanup.SetDefault(output, "sidecar_migration_blocked", WireBool.False);
         OutputFolderCleanup.SetDefault(output, "sidecar_migration_blocked_reason", WireNull.Instance);
         OutputFolderCleanup.SetDefault(output, "original_timestamps_note", WireNull.Instance);
-        if (finalOutputFile is null || patterns.Count == 0)
+        if (patterns.Count == 0)
         {
             return;
         }
@@ -57,7 +57,7 @@ public sealed partial class RemuxPassRunner
     /// Source cleanup after a successful pass: Movies may remove the whole release folder and its empty parents; TV hands
     /// over to the season-folder cleanup.
     /// </summary>
-    private async Task HandleCleanupAfterSuccessAsync(PassContext context, WireObject output, string? finalOutputFile, CancellationToken cancellationToken)
+    private async Task HandleCleanupAfterSuccessAsync(PassContext context, WireObject output, string finalOutputFile, CancellationToken cancellationToken)
     {
         // The original download stays where it is — a torrent still seeding, or a download a media manager owns: nothing in the
         // watched folder is touched, not the file, its release or season folder, nor its sidecars, which were copied, never
@@ -105,8 +105,7 @@ public sealed partial class RemuxPassRunner
         }
 
         output.Set("source_folder_path", movieFolder);
-        var outputFile = finalOutputFile ?? Path.Join(context.OutputDirectory, RemuxPassPaths.RelativeTo(src, watched)!);
-        var check = CheckOutputFileCompleteness(outputFile, src, files: Files);
+        var check = CheckOutputFileCompleteness(finalOutputFile, src, files: Files);
         foreach (var (key, value) in check.Items)
         {
             if (key != "output_completeness_note" || value.IsTruthy)

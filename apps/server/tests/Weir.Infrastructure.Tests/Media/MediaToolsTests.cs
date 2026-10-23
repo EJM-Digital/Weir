@@ -539,4 +539,15 @@ public sealed class MediaToolsTests : IDisposable
     /// <summary>The same shape as <see cref="MatchingRemuxOutputJson"/>, but 1 second long instead of 100.</summary>
     private const string StructurallyMatchingButShortOutputJson =
         """{"format": {"duration": "1.0"}, "streams": [{"codec_type": "video"}, {"codec_type": "audio", "disposition": {"default": 1}, "tags": {"language": "eng"}}]}""";
+
+    [Fact]
+    public async Task The_warnings_ffprobe_wrote_are_returned_as_lines_and_a_probe_that_ran_out_of_time_gives_none()
+    {
+        var media = WriteFile("movie.mkv", "not-empty"u8.ToArray());
+        var answering = new ScriptedRunner(_ => new ScriptedRun { Stderr = "first warning\n\n second warning \n"u8.ToArray() });
+        var stalled = new ScriptedRunner(_ => new ScriptedRun { Timeout = ProcessTimeoutKind.Overall, ExitCode = -1, Stderr = "first warning"u8.ToArray() });
+
+        Assert.Equal(["first warning", "second warning"], await Tools(answering).ProbeWarningLinesAsync(media));
+        Assert.Empty(await Tools(stalled).ProbeWarningLinesAsync(media));
+    }
 }

@@ -248,7 +248,7 @@ public sealed class ConfigurationBundleConnections
     }
 
     /// <summary>The sealed secrets of the bundle's media manager with this row's id, or an empty object when it has none.</summary>
-    private static WireObject SecretsFor(WireObject? secrets, WireObject row)
+    internal static WireObject SecretsFor(WireObject? secrets, WireObject row)
     {
         if (secrets?.Get(SecretMediaManagers) is WireArray entries && TryReadId(row.Get("id"), out var id))
         {
@@ -303,7 +303,7 @@ public sealed class ConfigurationBundleConnections
     }
 
     /// <summary>A connection that exists here, or was just added from the bundle, as far as matching a bundle row needs it.</summary>
-    private sealed record KnownConnection(long Id, string Kind, string BaseUrl, string Name)
+    internal sealed record KnownConnection(long Id, string Kind, string BaseUrl, string Name)
     {
         public bool IsSameAs(string kind, string baseUrl, string savedName) =>
             Kind == kind &&

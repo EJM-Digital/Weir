@@ -144,7 +144,11 @@ public sealed class TrayUpdateBackupWatcherFailureTests : IDisposable
         var request = Path.Join(Home, TrayUpdateBackupWatcher.RequestFileName);
 
         await File.WriteAllTextAsync(request, text);
-        await Eventually.ThatAsync(() => !File.Exists(request));
+        await Eventually.ThatAsync(() =>
+        {
+            _store.Clock.Advance(TrayUpdateBackupWatcher.HalfWrittenWait);
+            return !File.Exists(request);
+        });
 
         Assert.False(File.Exists(Path.Join(Home, TrayUpdateBackupWatcher.ResultFileName)));
         Assert.True(_log.Logged(LogLevel.Information, "could not read"));
@@ -209,7 +213,11 @@ public sealed class TrayUpdateBackupWatcherFailureTests : IDisposable
         try
         {
             await File.WriteAllTextAsync(Path.Join(Home, TrayUpdateBackupWatcher.RequestFileName), "not a request");
-            await Eventually.ThatAsync(() => refusing.Warnings.Any(line => line.Contains("could not answer", StringComparison.Ordinal)));
+            await Eventually.ThatAsync(() =>
+            {
+                _store.Clock.Advance(TrayUpdateBackupWatcher.HalfWrittenWait);
+                return refusing.Warnings.Any(line => line.Contains("could not answer", StringComparison.Ordinal));
+            });
 
             await File.WriteAllTextAsync(Path.Join(Home, TrayUpdateBackupWatcher.RequestFileName), Request());
             await Eventually.ThatAsync(() => (string?)ResultFor(Id)?["state"] is "saved" or "failed");

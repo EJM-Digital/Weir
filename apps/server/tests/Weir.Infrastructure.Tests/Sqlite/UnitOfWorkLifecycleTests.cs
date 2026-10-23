@@ -29,6 +29,21 @@ public sealed class UnitOfWorkLifecycleTests
     }
 
     [Fact]
+    public async Task A_unit_that_only_read_and_whose_connection_was_closed_under_it_is_disposed_without_complaint()
+    {
+        using var db = new JobsTestDatabase();
+        var uow = await UnitOfWork.OpenAsync(db.Database);
+        await uow.Connection.CloseAsync();
+
+        await uow.DisposeAsync();
+
+        await using var next = await UnitOfWork.OpenAsync(db.Database);
+        await next.ExecuteAsync(InsertJob, ("@dedupe", "after"));
+        await next.CommitAsync();
+        Assert.Equal(1L, db.Count("SELECT count(*) FROM jobs"));
+    }
+
+    [Fact]
     public async Task An_exception_before_commit_rolls_back_every_write_made_in_the_unit()
     {
         using var db = new JobsTestDatabase();

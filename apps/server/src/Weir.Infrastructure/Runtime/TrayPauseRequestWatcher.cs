@@ -246,12 +246,7 @@ public sealed class TrayPauseRequestWatcher : BackgroundService
     {
         try
         {
-            // A file that is refused just now is not known to be unchanged, so it is left; it was answered, and finding it again changes nothing.
-            var now = ReplacedFile.ReadText(path);
-            if (now.State == ReplacedFileState.Read && now.Text == answered)
-            {
-                File.Delete(path);
-            }
+            ReplacedFile.DeleteIfUnchanged(path, answered);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

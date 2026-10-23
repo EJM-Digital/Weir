@@ -311,7 +311,7 @@ public sealed partial class HandoffLedgerStore
             if (liveState != row.State)
             {
                 answerState = liveState;
-                lastChanged = changedAt is { } changed && (previous is null || changed > previous) ? changedAt : now;
+                lastChanged = changedAt is { } changed && (previous is not { } earlier || changed > earlier) ? changedAt : now;
                 changes.Add(("state", answerState));
                 changes.Add(("last_changed_at", TimestampColumns.Orm(lastChanged!.Value)));
             }

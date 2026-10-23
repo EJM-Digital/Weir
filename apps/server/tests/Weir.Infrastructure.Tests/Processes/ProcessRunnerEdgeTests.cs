@@ -125,6 +125,7 @@ public sealed class ProcessRunnerEdgeTests
             await ProcessRunner.DrainAsync(running, Task.CompletedTask, Task.CompletedTask, TimeSpan.FromMilliseconds(50));
 
             Assert.False(running.HasExited);
+            Assert.Equal(-1, ProcessRunner.ExitCodeOf(running));
         }
         finally
         {

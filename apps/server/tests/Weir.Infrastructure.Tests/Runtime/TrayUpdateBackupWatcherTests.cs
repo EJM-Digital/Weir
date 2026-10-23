@@ -180,8 +180,33 @@ public sealed class TrayUpdateBackupWatcherTests : IDisposable
         await _watcher.StartAsync(CancellationToken.None);
 
         await File.WriteAllTextAsync(RequestPath, "not json");
-        await Eventually.ThatAsync(() => !File.Exists(RequestPath));
+        await Eventually.ThatAsync(() =>
+        {
+            _store.Clock.Advance(TrayUpdateBackupWatcher.HalfWrittenWait);
+            return !File.Exists(RequestPath);
+        });
 
+        Assert.False(File.Exists(ResultPath));
+    }
+
+    [Fact]
+    public async Task A_request_that_is_taken_away_while_it_is_being_looked_at_again_is_not_answered()
+    {
+        await _watcher.StartAsync(CancellationToken.None);
+        await File.WriteAllTextAsync(RequestPath, "{\"id\": ");
+
+        await Eventually.ThatAsync(() =>
+        {
+            _store.Clock.Advance(TrayHandOffWatcher.Settle);
+            return _log.Logged(Microsoft.Extensions.Logging.LogLevel.Debug, "cannot be read yet");
+        });
+        File.Delete(RequestPath);
+
+        await Eventually.ThatAsync(() =>
+        {
+            _store.Clock.Advance(TrayUpdateBackupWatcher.HalfWrittenWait);
+            return _log.Logged(Microsoft.Extensions.Logging.LogLevel.Debug, "is gone");
+        });
         Assert.False(File.Exists(ResultPath));
     }
 

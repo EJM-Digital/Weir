@@ -30,6 +30,20 @@ public sealed class ManualPlanAndTimestampEdgeTests : IDisposable
     }
 
     [Fact]
+    public async Task A_file_whose_workflow_is_gone_cannot_have_a_manual_plan()
+    {
+        await _fixture.Store.Execute("PRAGMA foreign_keys = OFF; INSERT INTO files (library_id, relative_path, status) VALUES (9999, 'Film/orphan.mkv', 'unprocessed')");
+        var fileId = await _fixture.Store.Scalar("SELECT id FROM files");
+        var tools = new MediaTools(new FakeMediaRunner(), new FixedResolver(), new ListLogger<MediaTools>(), TimeProvider.System);
+
+        var refused = await Assert.ThrowsAsync<ManualPlanEnqueueException>(
+            () => _fixture.Db(uow => ManualPlanSupport.LoadAsync(uow, _fixture.Files, _fixture.Libraries, tools, _fixture.Store.Options, fileId, CancellationToken.None)));
+
+        Assert.Equal(404, refused.StatusCode);
+        Assert.Equal("The workflow for this file no longer exists.", refused.Message);
+    }
+
+    [Fact]
     public async Task A_file_whose_workflow_has_no_watched_folder_cannot_have_a_manual_plan()
     {
         var refused = await LoadRefusedAsync(string.Empty, "Film/film.mkv");

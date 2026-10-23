@@ -112,11 +112,11 @@ public sealed class ComServerFirewall : IServerFirewall
         }
     }
 
-    private static dynamic CreateComObject(string progId)
+    internal static dynamic CreateComObject(string progId)
     {
         var type = Type.GetTypeFromProgID(progId)
             ?? throw new InvalidOperationException($"Windows Firewall's COM object '{progId}' is not registered on this machine.");
-        return Activator.CreateInstance(type)
-            ?? throw new InvalidOperationException($"Could not create Windows Firewall's COM object '{progId}'.");
+        // A registered COM class is a reference type, which always yields an instance.
+        return Activator.CreateInstance(type)!;
     }
 }

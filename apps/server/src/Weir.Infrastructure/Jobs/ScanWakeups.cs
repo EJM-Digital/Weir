@@ -49,7 +49,7 @@ public sealed class ScanWakeups(DataChangePublisher? changes = null)
     {
         DateTimeOffset? booked = _at.TryGetValue(libraryId, out var at) ? at : null;
         DateTimeOffset? periodic = _periodic.TryGetValue(libraryId, out var next) ? next : null;
-        return booked is null ? periodic : periodic is null ? booked : booked < periodic ? booked : periodic;
+        return booked is null ? periodic : periodic is null ? booked : booked.Value < periodic.Value ? booked : periodic;
     }
 
     /// <summary>The scan timer's next periodic look at <paramref name="libraryId"/> alone, ignoring any booked look

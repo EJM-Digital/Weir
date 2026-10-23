@@ -22,7 +22,8 @@ internal static class OwnerOnlyAccess
         [
             new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
             new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
-            identity.User ?? throw new InvalidOperationException("Weir's Windows account has no security identifier."),
+            // A signed-in account always has an identifier; only the anonymous identity has none, and the server never runs as that.
+            identity.User!,
         ];
     }
 

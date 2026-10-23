@@ -115,6 +115,42 @@ public sealed partial class RemuxPassHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_scope_with_no_workflow_or_a_workflow_with_no_rules_profile_is_read_with_the_shipped_rules()
+    {
+        var shipped = RuleSetConversion.ToRulesConfig(null);
+
+        var library = await LibraryAsync();
+        await EnglishOnlyRulesAsync(library);
+        var profile = await _fixture.Db(uow => Handler().LoadScopeRulesConfigAsync(uow, "movie"), commit: false);
+        Assert.Equal("eng", profile.PrimaryAudioLang);
+
+        await _fixture.Store.Execute("UPDATE libraries SET rule_set_id = NULL");
+        Assert.Equal(shipped.PrimaryAudioLang, (await _fixture.Db(uow => Handler().LoadScopeRulesConfigAsync(uow, "movie"), commit: false)).PrimaryAudioLang);
+
+        await _fixture.Store.Execute("DELETE FROM libraries");
+        Assert.Equal(shipped.PrimaryAudioLang, (await _fixture.Db(uow => Handler().LoadScopeRulesConfigAsync(uow, "movie"), commit: false)).PrimaryAudioLang);
+    }
+
+    [Fact]
+    public async Task A_file_whose_workflow_has_been_removed_has_no_hand_off_to_carry()
+    {
+        await _fixture.Store.Execute("DELETE FROM libraries");
+
+        Assert.Null(await Handler().CarriedOriginAsync(5, 9999, "Film/film.mkv", "movie", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task A_job_with_no_payload_at_all_fails_for_good_and_says_the_payload_is_missing()
+    {
+        var context = new JobWorkContext(77, RemuxPassOutcomes.JobKind, null, "test");
+
+        await Handler().HandleAsync(context, CancellationToken.None);
+
+        Assert.Equal(JobAlert.FailedForGood, context.Alert);
+        Assert.Equal(1, await _fixture.Store.Scalar("SELECT count(*) FROM activity_events WHERE detail LIKE '%missing payload_json%'"));
+    }
+
+    [Fact]
     public async Task The_progress_row_becomes_the_completed_activity_row_and_the_file_is_processed()
     {
         var library = await LibraryAsync();

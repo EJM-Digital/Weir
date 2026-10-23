@@ -358,8 +358,9 @@ public static class RemuxPassPaths
         }
 
         // Empty folders left behind are removed up to, never including, the watched folder.
-        var parent = Path.GetDirectoryName(source);
-        while (parent is not null && PathContainment.IsUnder(root, parent))
+        // A folder strictly inside the watched folder always has a parent, so the walk ends at the watched folder, never beyond it.
+        var parent = Path.GetDirectoryName(source)!;
+        while (PathContainment.IsUnder(root, parent))
         {
             try
             {
@@ -370,7 +371,7 @@ public static class RemuxPassPaths
                 break;
             }
 
-            parent = Path.GetDirectoryName(parent);
+            parent = Path.GetDirectoryName(parent)!;
         }
 
         return new RejectedFileCleanupResult(true, "Weir deleted the rejected file because this workflow's cleanup action is Delete rejected file.");

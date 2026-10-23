@@ -35,7 +35,7 @@ public sealed class RequeueStore(ProcessingJobStore jobStore, LibraryStore libra
         var (library, refusal, cleaned) = await CheckAsync(uow, row).ConfigureAwait(false);
         if (library is null || refusal is not null)
         {
-            return new RequeueResult(0, 1, refusal ?? WorkflowGoneDetail);
+            return new RequeueResult(0, 1, refusal!);
         }
 
         if (cleaned is not null)

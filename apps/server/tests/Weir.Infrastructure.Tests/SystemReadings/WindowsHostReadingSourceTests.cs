@@ -142,6 +142,54 @@ public sealed class WindowsHostReadingSourceTests
         Assert.Same(DiskSnapshot.Empty, source.ReadDisks());
     }
 
+    [WindowsTheory(OnlyWindows)]
+    [InlineData(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending", null)]
+    [InlineData(@"SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired", null)]
+    [InlineData(@"SYSTEM\CurrentControlSet\Control\Session Manager", "PendingFileRenameOperations")]
+    public void A_restart_is_pending_when_any_one_of_the_three_places_says_so(string key, string? value)
+    {
+        var machine = $@"Software\WeirTests\{Guid.NewGuid():N}";
+        try
+        {
+            using (var created = Registry.CurrentUser.CreateSubKey(machine + @"\" + key))
+            {
+                if (value is not null)
+                {
+                    created.SetValue(value, new[] { @"\??\C:\old", @"\??\C:\new" }, RegistryValueKind.MultiString);
+                }
+            }
+
+            var source = new WindowsHostReadingSource(() => Registry.CurrentUser.OpenSubKey(machine)!, null);
+
+            Assert.True(source.ReadRebootPending());
+        }
+        finally
+        {
+            Registry.CurrentUser.DeleteSubKeyTree(@"Software\WeirTests", throwOnMissingSubKey: false);
+        }
+    }
+
+    [WindowsFact(OnlyWindows)]
+    public void Only_a_fixed_drive_that_is_ready_and_has_counters_is_listed()
+    {
+        var root = _source.DriveRootOf(Path.GetTempPath())!;
+        var askedAboutReady = new List<string>();
+        var source = new WindowsHostReadingSource(
+            null,
+            () =>
+            [
+                new WindowsHostReadingSource.HostDrive(DriveType.CDRom, () => { askedAboutReady.Add("cd"); return true; }, UnusedDriveRoot()),
+                new WindowsHostReadingSource.HostDrive(DriveType.Fixed, () => { askedAboutReady.Add("not ready"); return false; }, UnusedDriveRoot()),
+                new WindowsHostReadingSource.HostDrive(DriveType.Fixed, () => true, UnusedDriveRoot()),
+                new WindowsHostReadingSource.HostDrive(DriveType.Fixed, () => true, root),
+            ]);
+
+        var disks = source.ReadDisks();
+
+        Assert.Equal([root.TrimEnd('\\', '/').ToUpperInvariant()], disks.Volumes.Keys);
+        Assert.Equal(["not ready"], askedAboutReady);
+    }
+
     [WindowsFact(OnlyWindows)]
     public void A_kernel_call_the_system_does_not_have_is_no_reading()
     {

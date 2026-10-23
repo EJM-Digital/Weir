@@ -56,6 +56,19 @@ public sealed class RemuxPassEnqueueTests : IDisposable
         Assert.Contains("no longer exists", refusal.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task A_name_for_a_scope_with_no_workflow_at_all_is_refused_both_ways()
+    {
+        await _fixture.Store.Execute("DELETE FROM libraries");
+
+        var named = await Assert.ThrowsAsync<RemuxPassEnqueueException>(() => EnqueueAsync("film.mkv", libraryId: 9999));
+        var unnamed = await Assert.ThrowsAsync<RemuxPassEnqueueException>(() => EnqueueAsync("film.mkv"));
+
+        Assert.Equal(404, named.StatusCode);
+        Assert.Equal(400, unnamed.StatusCode);
+        Assert.StartsWith("Movies has no watched folder yet", unnamed.Message, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("movie", "Movies has no watched folder yet")]
     [InlineData("tv", "TV has no watched folder yet")]

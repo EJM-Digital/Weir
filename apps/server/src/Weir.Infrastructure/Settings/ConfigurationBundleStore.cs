@@ -60,10 +60,7 @@ public sealed partial class ConfigurationBundleStore
         var suite = await ReadRowsAsync(uow, SuiteTable, "WHERE id = 1").ConfigureAwait(false);
         // The export never carries the metadata provider key, encrypted or not; import already leaves the existing
         // key alone when a bundle omits it.
-        if (suite.Count > 0 && suite[0] is WireObject suiteSettings)
-        {
-            suiteSettings.Remove("metadata_provider_key_ciphertext");
-        }
+        ((WireObject)suite[0]).Remove("metadata_provider_key_ciphertext");
 
         var arr = await ReadRowsAsync(uow, ArrTable, "WHERE id = 1").ConfigureAwait(false);
         var processingOperator = await ReadRowsAsync(uow, ProcessingOperatorTable, "WHERE id = 1").ConfigureAwait(false);
@@ -148,7 +145,7 @@ public sealed partial class ConfigurationBundleStore
     /// The secrets a backup holds, opened with the backup password, or null when it holds none. Refuses plainly, before anything is
     /// changed, when the password is missing or is not the one the backup was made with.
     /// </summary>
-    private static WireObject? OpenSecrets(WireObject bundle, string? backupPassword)
+    internal static WireObject? OpenSecrets(WireObject bundle, string? backupPassword)
     {
         if (!HasSealedSecrets(bundle))
         {
@@ -240,12 +237,12 @@ public sealed partial class ConfigurationBundleStore
 
             if (sets.Count > 0)
             {
-                if (columns.ContainsKey("updated_at") && !parameters.Any(p => p.Item1 == "$updated_at"))
+                if (!parameters.Any(p => p.Item1 == "$updated_at"))
                 {
                     sets.Add("updated_at=CURRENT_TIMESTAMP");
                 }
 
-                parameters.Add(("$__pk", loaded["id"] is WireValue id ? WireConvert.ToDatabase(id) : DBNull.Value));
+                parameters.Add(("$__pk", WireConvert.ToDatabase(loaded["id"])));
                 await uow.ExecuteAsync($"UPDATE {table} SET {string.Join(", ", sets)} WHERE id = $__pk", [.. parameters]).ConfigureAwait(false);
             }
         }

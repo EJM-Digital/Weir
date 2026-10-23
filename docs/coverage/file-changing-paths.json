@@ -161,15 +161,14 @@
     { "file": "Weir.Infrastructure/Processing/RemuxPass/RemuxPassRunner.RemuxPublish.cs", "seams": ["FileLifecycle.SafeFinalizeFile", "MediaTools.RemuxToTempFileAsync"], "paths": ["remux-pass"] },
     { "file": "Weir.Infrastructure/Processing/RemuxPass/RemuxPassRunner.UnchangedPublish.cs", "seams": ["FileLifecycle.SafeCopyToFinalAsync", "FileLifecycle.TryHardlinkToFinalAsync"], "paths": ["remux-pass"] },
     { "file": "Weir.Infrastructure/Processing/RemuxPass/SidecarMigration.cs", "calls": 2, "seams": ["FileLifecycle.SafeCopyToFinalAsync"], "paths": ["remux-pass"] },
-    { "file": "Weir.Infrastructure/Processing/RemuxPass/SourceFiles.cs", "calls": 1, "paths": ["write-probe"] },
     { "file": "Weir.Infrastructure/Processing/RemuxPass/TvSeasonFolderCleanup.cs", "calls": 1, "seams": ["OutputFolderCleanup.CascadeDeleteEmptyParents"], "paths": ["remux-pass"] },
     { "file": "Weir.Infrastructure/Runtime/AtomicFileWriter.cs", "calls": 3, "paths": ["weir-own-files"] },
     { "file": "Weir.Infrastructure/Runtime/PreUpdateBackup.cs", "calls": 5, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Runtime/ReplacedFile.cs", "calls": 1, "paths": ["weir-own-files"] },
     { "file": "Weir.Infrastructure/Runtime/RuntimeDirectories.cs", "calls": 1, "paths": ["write-probe"] },
     { "file": "Weir.Infrastructure/Runtime/StartupNotes.cs", "calls": 1, "paths": ["weir-own-files"] },
     { "file": "Weir.Infrastructure/Runtime/SystemServices.cs", "calls": 2, "paths": ["weir-own-files"] },
-    { "file": "Weir.Infrastructure/Runtime/TrayPauseRequestWatcher.cs", "calls": 1, "paths": ["weir-own-files"] },
-    { "file": "Weir.Infrastructure/Runtime/TrayUpdateBackupWatcher.cs", "calls": 2, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Runtime/TrayUpdateBackupWatcher.cs", "calls": 1, "paths": ["weir-own-files"] },
     { "file": "Weir.Infrastructure/Settings/ConfigurationBackups.cs", "calls": 2, "paths": ["weir-own-files"] }
   ]
 }

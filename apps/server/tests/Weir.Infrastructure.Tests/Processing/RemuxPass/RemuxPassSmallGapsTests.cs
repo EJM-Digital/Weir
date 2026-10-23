@@ -45,6 +45,19 @@ public sealed class RemuxPassSmallGapsTests
     }
 
     [Theory]
+    [InlineData("{\"library_id\": 4, \"relative_media_path\": \"a/film.mkv\"}", true)]
+    [InlineData("{\"library_id\": 5, \"relative_media_path\": \"a/film.mkv\"}", false)]
+    [InlineData("{\"library_id\": 4, \"relative_media_path\": \"a/other.mkv\"}", false)]
+    [InlineData("{\"relative_media_path\": \"a/film.mkv\"}", false)]
+    [InlineData("{not json", false)]
+    public void A_look_names_a_file_only_by_its_workflow_and_its_path(string payload, bool expected)
+    {
+        var job = Job(ProcessingJobStatus.Pending, Now.AddMinutes(5), payload);
+
+        Assert.Equal(expected, GoneLooks.Names(job, 4, "a/film.mkv"));
+    }
+
+    [Theory]
     [InlineData("../outside.mkv")]
     [InlineData("")]
     [InlineData("bad\0name.mkv")]

@@ -88,7 +88,7 @@ public static class PassThroughDelivery
         else
         {
             var reason = decision.Reason;
-            var lowered = reason.Length > 0 ? char.ToLowerInvariant(reason[0]) + reason[1..] : reason;
+            var lowered = char.ToLowerInvariant(reason[0]) + reason[1..];
             sentence = "Weir could not process this file and would have handed the original back unchanged, " +
                        $"but {lowered}";
         }

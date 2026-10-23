@@ -169,4 +169,11 @@ public sealed class MediaToolResolverTests : IDisposable
 
         Assert.Null(Resolver(null, null, null, _root.Join("locked")).ResolveMkvmerge());
     }
+
+    [Fact]
+    public void A_single_file_publish_has_no_assembly_file_and_looks_beside_where_it_runs_from()
+    {
+        Assert.Equal(AppContext.BaseDirectory, MediaToolResolver.PackagedDirectoryFor(string.Empty));
+        Assert.Null(MediaToolResolver.PackagedDirectoryFor("/app/Weir.Infrastructure.dll"));
+    }
 }

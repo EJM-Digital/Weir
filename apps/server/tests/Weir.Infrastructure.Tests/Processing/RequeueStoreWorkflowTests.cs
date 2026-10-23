@@ -54,6 +54,19 @@ public sealed class RequeueStoreWorkflowTests : IDisposable
     }
 
     [Fact]
+    public async Task A_file_of_a_tv_workflow_is_queued_again_as_tv()
+    {
+        var tv = await _fixture.LibraryAsync("tv", _fixture.Store.Home.Join("shows"));
+        var row = await RowAsync(ProcessingFileStatuses.ProcessingFailed, library: tv);
+
+        var result = await _fixture.Db(uow => _requeue.RequeueFileAsync(uow, row));
+
+        Assert.Equal(1, result.Requeued);
+        var queued = (await _fixture.Jobs.ListAsync()).Single(job => job.DedupeKey.Contains(":requeue:", StringComparison.Ordinal));
+        Assert.Equal("tv", ((WireString)((WireObject)WireJsonParser.Parse(queued.PayloadJson!))["media_scope"]).Value);
+    }
+
+    [Fact]
     public async Task A_file_put_back_by_hand_keeps_the_hand_off_it_came_with_so_the_manager_still_hears_the_outcome()
     {
         var row = await RowAsync(ProcessingFileStatuses.ProcessingFailed);

@@ -20,6 +20,15 @@ public sealed class JobsInspectionStoreTests
             ("@key", dedupeKey), ("@status", status), ("@updated", updatedAt));
 
     [Fact]
+    public void A_time_a_job_has_is_read_as_utc_and_one_it_has_not_is_nothing()
+    {
+        var stamp = Weir.Core.Time.Timestamp.FromUtc(new DateTime(2026, 10, 24, 1, 2, 3, DateTimeKind.Utc));
+
+        Assert.Equal(new DateTimeOffset(2026, 10, 24, 1, 2, 3, TimeSpan.Zero), JobsInspectionStore.ToOffset(stamp));
+        Assert.Null(JobsInspectionStore.ToOffset(null));
+    }
+
+    [Fact]
     public async Task A_leased_job_is_listed_ahead_of_the_limit_even_behind_a_backlog_of_newer_pending_ones()
     {
         // A library clean that is actually running must never lose its row on the Processing screen just because a

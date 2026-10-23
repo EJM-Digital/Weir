@@ -10,15 +10,23 @@ public sealed class DataFootprint
 
     private readonly string _folder;
     private readonly TimeProvider _time;
+    private readonly Func<string, long> _measure;
     private readonly Lock _gate = new();
     private Task<long>? _measurement;
     private DateTimeOffset _measuredAt;
 
     public DataFootprint(string folder, TimeProvider time)
+        : this(folder, time, Measure)
+    {
+    }
+
+    /// <summary>Test seam (<c>InternalsVisibleTo</c> to Weir.Infrastructure.Tests): lets a test hold a measurement open while another caller arrives.</summary>
+    internal DataFootprint(string folder, TimeProvider time, Func<string, long> measure)
     {
         ArgumentException.ThrowIfNullOrEmpty(folder);
         _folder = folder;
         _time = time ?? throw new ArgumentNullException(nameof(time));
+        _measure = measure;
     }
 
     /// <summary>The size of every file under the folder, as of the last minute.</summary>
@@ -31,7 +39,7 @@ public sealed class DataFootprint
             if (_measurement is null || (_measurement.IsCompleted && now - _measuredAt >= FreshFor))
             {
                 _measuredAt = now;
-                _measurement = Task.Run(() => Measure(_folder), CancellationToken.None);
+                _measurement = Task.Run(() => _measure(_folder), CancellationToken.None);
             }
 
             measurement = _measurement;

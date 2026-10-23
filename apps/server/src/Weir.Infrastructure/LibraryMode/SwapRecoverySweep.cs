@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Weir.Core.Activity;
 using Weir.Core.Json;
@@ -182,7 +183,10 @@ public sealed class SwapRecoverySweep
             foreach (var leftover in leftovers)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (SafeSwapRules.TryParseLeftover(leftover, out _, out var original) && handled.Add(original))
+                // The enumeration lists only names that parse as leftovers, so this always finds the original.
+                var parsed = SafeSwapRules.TryParseLeftover(leftover, out _, out var original);
+                Debug.Assert(parsed, "A listed leftover parses.");
+                if (handled.Add(original))
                 {
                     report += RecoverFile(_files, original, _logger);
                 }

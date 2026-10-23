@@ -78,6 +78,26 @@ public sealed class ProcessingWatchedFolderWatcherReconcileTests : IDisposable
     }
 
     [Fact]
+    public void A_library_named_more_than_once_is_handled_once_in_the_order_it_was_first_named()
+    {
+        var queue = new ConcurrentQueue<long>([3, 1, 3, 2, 1]);
+
+        Assert.Equal([3L, 1L, 2L], ProcessingWatchedFolderWatcherService.DrainAll(queue));
+        Assert.Empty(ProcessingWatchedFolderWatcherService.DrainAll(queue));
+    }
+
+    [Fact]
+    public async Task A_scan_asked_for_a_workflow_that_has_since_been_removed_queues_nothing_and_is_not_an_error()
+    {
+        const long removed = 999_999;
+
+        await _service.EnqueueScansAsync([removed], CancellationToken.None);
+
+        Assert.Equal(0, ScanJobs());
+        Assert.DoesNotContain(_log.Entries, entry => entry.Level >= LogLevel.Warning);
+    }
+
+    [Fact]
     public async Task A_workflow_switched_to_scan_only_stops_being_watched_and_says_why()
     {
         var libraryId = await StartWatchingAsync();

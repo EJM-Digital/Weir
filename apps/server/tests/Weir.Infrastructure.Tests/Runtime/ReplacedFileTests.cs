@@ -16,6 +16,20 @@ public sealed class ReplacedFileTests : IDisposable
     private string FilePath => _home.Join("replaced.json");
 
     [Fact]
+    public void A_file_that_still_holds_what_was_answered_is_removed_and_one_written_again_or_gone_is_left()
+    {
+        File.WriteAllText(FilePath, "answered");
+        Assert.True(ReplacedFile.DeleteIfUnchanged(FilePath, "answered"));
+        Assert.False(File.Exists(FilePath));
+
+        Assert.False(ReplacedFile.DeleteIfUnchanged(FilePath, "answered"));
+
+        File.WriteAllText(FilePath, "asked again");
+        Assert.False(ReplacedFile.DeleteIfUnchanged(FilePath, "answered"));
+        Assert.True(File.Exists(FilePath));
+    }
+
+    [Fact]
     public void A_file_is_read_with_the_time_it_was_written()
     {
         File.WriteAllText(FilePath, "hello");

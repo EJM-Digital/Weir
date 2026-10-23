@@ -19,7 +19,7 @@ public sealed partial class RemuxPassHandler
             return;
         }
 
-        var relativePath = result.Get("relative_media_path") is WireString rel ? rel.Value : string.Empty;
+        var relativePath = TextIn(result, "relative_media_path", string.Empty);
         try
         {
             var uow = await UnitOfWork.OpenAsync(_database).ConfigureAwait(false);

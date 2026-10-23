@@ -101,6 +101,9 @@ public sealed partial class ManagerWorkflowSync
             return true;
         }
 
+        /// <summary>What a workflow about to be made holds: no folders yet.</summary>
+        private static readonly ProcessingLibraryRecord NoWorkflowYet = new() { Name = string.Empty };
+
         /// <summary>Why the folders the manager reports cannot be given to this workflow (the editor's own folder rules), or null.</summary>
         private async Task<string?> FolderConflictAsync(ProcessingLibraryRecord? existing, string? watched, string? output)
         {
@@ -112,7 +115,8 @@ public sealed partial class ManagerWorkflowSync
             var others = await sync._libraries.OtherFoldersAsync(uow, existing?.Id).ConfigureAwait(false);
             try
             {
-                LibraryRules.ValidateFolders(watched ?? existing?.WatchedFolder, existing?.WorkFolder, output ?? existing?.OutputFolder, others, sync._options.WeirHome);
+                var current = existing ?? NoWorkflowYet;
+                LibraryRules.ValidateFolders(watched ?? current.WatchedFolder, current.WorkFolder, output ?? current.OutputFolder, others, sync._options.WeirHome);
                 return null;
             }
             catch (ProcessingLibraryException exception)

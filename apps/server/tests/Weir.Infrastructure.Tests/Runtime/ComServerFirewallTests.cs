@@ -27,6 +27,15 @@ public sealed class ComServerFirewallTests
 
     [SupportedOSPlatform("windows")]
     [WindowsFact("Windows Firewall's COM policy object exists only on Windows")]
+    public void A_firewall_object_that_is_not_registered_on_the_machine_is_named_in_the_error()
+    {
+        var error = Assert.Throws<InvalidOperationException>(() => ComServerFirewall.CreateComObject("Weir.Tests.NotRegistered"));
+
+        Assert.Contains("'Weir.Tests.NotRegistered' is not registered on this machine", error.Message, StringComparison.Ordinal);
+    }
+
+    [SupportedOSPlatform("windows")]
+    [WindowsFact("Windows Firewall's COM policy object exists only on Windows")]
     public void A_rule_for_the_server_program_is_read_as_it_is_and_one_for_another_program_or_direction_is_not()
     {
         const string Program = @"C:\Weir\WeirServer.exe";
