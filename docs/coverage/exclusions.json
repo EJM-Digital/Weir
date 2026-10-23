@@ -231,6 +231,120 @@
       "reason": "The API types are generated from the server's OpenAPI description (npm run api:types:generate, checked in CI by api:types:check); they hold types, not behaviour."
     },
     {
+      "id": "node-test-files",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/**/*.test.mjs",
+      "kind": "not-production",
+      "reason": "The script tests are the measurement, not the thing measured; they do not ship and counting them would make the figure move with the tests."
+    },
+    {
+      "id": "node-windows-scenario-drivers-windows",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/scenarios-ci/windows-*.mjs",
+      "kind": "platform-only",
+      "reason": "These drive a clean hosted Windows runner: Setup, the uninstaller, the tray, the registry and the firewall for real. Their decisions are tested in scenarios-in-ci-windows.test.mjs where they have any; the rest is runner glue.",
+      "coveredBy": "windows",
+      "provedBy": "the windows-package-smoke, windows-update-package and scenarios-windows jobs of ci-packaging.yml"
+    },
+    {
+      "id": "node-windows-scenario-drivers-tray",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/scenarios-ci/tray-*.mjs",
+      "kind": "platform-only",
+      "reason": "The tray scenarios start the installed tray on a Windows runner and click its menu; there is no tray to start anywhere else, and the unit tests have no desktop.",
+      "coveredBy": "windows",
+      "provedBy": "the windows-tray shard of the scenarios-windows job in ci-packaging.yml"
+    },
+    {
+      "id": "node-windows-scenario-drivers-files",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/scenarios-ci/files-*.mjs",
+      "kind": "platform-only",
+      "reason": "The file scenarios make real NTFS volumes, an SMB share and a full disk on a Windows runner and run the installed server against them; none of that can be made on another system.",
+      "coveredBy": "windows",
+      "provedBy": "the windows-files shard of the scenarios-windows job in ci-packaging.yml"
+    },
+    {
+      "id": "node-windows-install-hooks",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/scenarios-ci/install-hooks.mjs",
+      "kind": "platform-only",
+      "reason": "Runs Setup over an installed Weir on a Windows runner, which only that system can do.",
+      "coveredBy": "windows",
+      "provedBy": "the install-hooks scenario of the scenarios-windows job in ci-packaging.yml"
+    },
+    {
+      "id": "node-docker-smoke-drivers",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/docker-smoke/**",
+      "kind": "platform-only",
+      "reason": "These start the candidate image with Docker Compose, then read its logs, volumes and ownership; they need Docker and the image. Their decisions are tested in docker-smoke-pull.test.mjs and docker-compose-smoke.test.mjs where they have any.",
+      "coveredBy": "linux",
+      "provedBy": "the docker-smoke and docker-arm64-smoke jobs of ci-packaging.yml"
+    },
+    {
+      "id": "node-docker-compose-smoke",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/docker-compose-smoke.mjs",
+      "kind": "platform-only",
+      "reason": "The command line of the Docker smoke: it only chooses a scenario and runs it against Docker.",
+      "coveredBy": "linux",
+      "provedBy": "the docker-smoke job of ci-packaging.yml"
+    },
+    {
+      "id": "node-developer-reset-auth",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/dev-reset-auth.mjs",
+      "kind": "not-production",
+      "reason": "A helper a developer runs by hand to reset the sign-in of a local development database; CI never runs it and it ships nowhere."
+    },
+    {
+      "id": "node-developer-stop-api",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/stop-dev-api-port.mjs",
+      "kind": "not-production",
+      "reason": "A helper the developer start scripts run to free the development API port on a developer machine; CI never runs it and it ships nowhere."
+    },
+    {
+      "id": "node-developer-stop-web",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/stop-dev-web-port.mjs",
+      "kind": "not-production",
+      "reason": "A helper the developer start scripts run to free the development web port on a developer machine; CI never runs it and it ships nowhere."
+    },
+    {
+      "id": "node-web-coverage-reports",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/merge-web-coverage-reports.mjs",
+      "kind": "platform-only",
+      "reason": "The report-writing glue of merge-web-coverage.mjs: it hands the browser tests' coverage to the web app's Istanbul packages and writes their reports. The packages come from npm ci in apps/web, which the repository checks do not run. The merging itself is tested in merge-web-coverage.test.mjs with a stand-in for this file.",
+      "coveredBy": "linux",
+      "provedBy": "the coverage job of ci.yml, which installs the web app's packages, runs merge-web-coverage.mjs over the unit and browser reports and judges the web floor on what it writes"
+    },
+    {
+      "id": "node-scenario-shard-runners",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/scenarios-ci/shard-runners.mjs",
+      "kind": "platform-only",
+      "reason": "Starts the real thing for a shard: the image under test in Docker Compose, with Chromium and Deluno beside it, or Setup on a clean hosted Windows runner. Which shard runs, with what, and what the command writes and exits with are tested in scenarios-in-ci-command.test.mjs with stand-ins for both.",
+      "coveredBy": "linux",
+      "provedBy": "the scenarios-linux job of ci-packaging.yml, which runs scenarios-in-ci.mjs once per Linux shard, and the scenarios-windows job, which runs it for the Windows shards"
+    },
+    {
+      "id": "node-developer-pre-push",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/pre-push.mjs",
+      "kind": "not-production",
+      "reason": "The optional pre-push hook a developer installs on their own clone; CI never runs it and it ships nowhere."
+    },
+    {
+      "id": "node-developer-pool-stalls",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/attribute-pool-stalls.mjs",
+      "kind": "not-production",
+      "reason": "A one-off analysis a developer runs over a test log by hand to find thread pool stalls; CI never runs it and it ships nowhere."
+    },
+    {
       "id": "web-activity-remove-choice",
       "file": "apps/web/src/pages/activity/activity-remove-dialog.tsx",
       "marker": "v8 ignore",

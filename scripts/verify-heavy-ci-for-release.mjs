@@ -90,11 +90,11 @@ const runGit = (args) => execFileSync("git", args, { encoding: "utf8", maxBuffer
 
 // Every completed run of the workflow for the events, newest first, grouped by commit. Two pages of 100 per event cover the
 // commits a tag looks back over.
-function runIndex(repository, proof) {
+function runIndex(repository, proof, ask) {
   const bySha = new Map();
   for (const event of proof.events) {
     for (const page of [1, 2]) {
-      const listing = gh(["api", `repos/${repository}/actions/workflows/${proof.workflow}/runs?event=${event}&status=completed&per_page=100&page=${page}`]);
+      const listing = ask(["api", `repos/${repository}/actions/workflows/${proof.workflow}/runs?event=${event}&status=completed&per_page=100&page=${page}`]);
       for (const run of listing.workflow_runs) {
         const entry = { databaseId: run.id, event: run.event, status: run.status, conclusion: run.conclusion, url: run.html_url };
         bySha.set(run.head_sha, [...(bySha.get(run.head_sha) ?? []), entry]);
@@ -210,33 +210,37 @@ export function runGate({ name, tag, repository, sha, runsOf, jobsOf, git = runG
   return false;
 }
 
-function main() {
-  const argv = process.argv.slice(2);
+/** The gate over `argv` and `env`; returns the exit code. `ask` is how `gh` is run and `headCommit` how the commit is found when none is given (a test replaces both). */
+export function main(argv, env, { ask = gh, git = runGit, headCommit = () => execFileSync("git", ["rev-parse", "HEAD^{commit}"], { encoding: "utf8" }).trim(), log = console.log, error = console.error } = {}) {
   const option = (flag) => (argv.includes(flag) ? argv[argv.indexOf(flag) + 1] : undefined);
   const name = argv.find((arg) => PROOFS[arg]);
   if (!name) {
-    console.error(`Usage: node scripts/verify-heavy-ci-for-release.mjs <${Object.keys(PROOFS).join("|")}> [--sha <sha>]`);
-    process.exit(2);
+    error(`Usage: node scripts/verify-heavy-ci-for-release.mjs <${Object.keys(PROOFS).join("|")}> [--sha <sha>]`);
+    return 2;
   }
-  const repository = process.env.GITHUB_REPOSITORY;
-  const sha = option("--sha") || process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD^{commit}"], { encoding: "utf8" }).trim();
-  const index = runIndex(repository, PROOFS[name]);
+  const repository = env.GITHUB_REPOSITORY;
+  if (!repository) throw new Error("GITHUB_REPOSITORY must be set.");
+  const sha = option("--sha") || env.GITHUB_SHA || headCommit();
+  const index = runIndex(repository, PROOFS[name], ask);
   const passed = runGate({
     name,
-    tag: process.env.GITHUB_REF_NAME,
+    tag: env.GITHUB_REF_NAME,
     repository,
     sha,
     runsOf: (commit) => index.get(commit) ?? [],
-    jobsOf: (run) => runJobs(repository, run.databaseId),
+    jobsOf: (run) => runJobs(repository, run.databaseId, ask),
+    git,
+    log,
+    error,
   });
-  if (!passed) process.exit(1);
+  return passed ? 0 : 1;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
-    main();
+    process.exitCode = main(process.argv.slice(2), process.env);
   } catch (error) {
     console.error(`::error::${error.message}`);
-    process.exit(1);
+    process.exitCode = 1;
   }
 }

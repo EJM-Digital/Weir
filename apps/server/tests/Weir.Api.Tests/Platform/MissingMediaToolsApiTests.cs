@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using Weir.Core.Media;
+using Weir.Infrastructure.LibraryMode;
 using Weir.Infrastructure.Media;
 using static Weir.Api.Tests.Platform.ApiTestClient;
 
@@ -15,6 +16,7 @@ public sealed class MissingMediaToolsApiTests
             [("WEIR_SESSION_SECRET", Secret), ("WEIR_PROCESSING_WORKER_COUNT", "0")],
             configureServices: services => services.AddSingleton(tools));
         await TestDatabase.SeedAdminAsync(server);
+        await server.WaitForStartupRecoveryAsync();
         var client = new ApiTestClient(server);
         await client.SignInAsync();
         return (server, client);
@@ -50,6 +52,28 @@ public sealed class MissingMediaToolsApiTests
         Assert.Equal(withTools["passing"]!.GetValue<int>() - 1, withoutTools["passing"]!.GetValue<int>());
     }
 
+    [Fact]
+    public async Task System_does_not_count_the_workers_as_passing_until_start_up_recovery_has_finished()
+    {
+        var recovery = new HeldRecovery();
+        await using var server = await WeirTestServer.StartAsync(
+            [("WEIR_SESSION_SECRET", Secret), ("WEIR_PROCESSING_WORKER_COUNT", "0")],
+            configureServices: services => services.AddSingleton<ISwapJournal>(recovery));
+        await TestDatabase.SeedAdminAsync(server);
+        var client = new ApiTestClient(server);
+        await client.SignInAsync();
+        await recovery.Reached.WaitAsync(Ceiling);
+
+        var during = (await Json(await client.GetAsync("/api/v1/system/overview")))["checks"]!["passing"]!.GetValue<int>();
+        recovery.Release();
+        await server.WaitForStartupRecoveryAsync();
+        var after = (await Json(await client.GetAsync("/api/v1/system/overview")))["checks"]!["passing"]!.GetValue<int>();
+
+        Assert.Equal(after - 1, during);
+    }
+
+    private static readonly TimeSpan Ceiling = TimeSpan.FromSeconds(30);
+
     private sealed class PresentMediaTools : IMediaToolResolver
     {
         public (string Ffprobe, string Ffmpeg) Resolve() => ("ffprobe", "ffmpeg");
@@ -62,5 +86,28 @@ public sealed class MissingMediaToolsApiTests
         public (string Ffprobe, string Ffmpeg) Resolve() => throw new MediaToolException("ffmpeg is not installed.");
 
         public string? ResolveMkvmerge() => null;
+    }
+
+    /// <summary>The swap sweep's journal read, which start-up recovery makes last: it stops there until released.</summary>
+    private sealed class HeldRecovery : ISwapJournal
+    {
+        private readonly TaskCompletionSource _reached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _released = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task Reached => _reached.Task;
+
+        public void Release() => _released.TrySetResult();
+
+        public async Task<IReadOnlyList<SwapJournalEntry>> ListUnfinishedAsync(CancellationToken cancellationToken = default)
+        {
+            _reached.TrySetResult();
+            await _released.Task.WaitAsync(cancellationToken);
+            return [];
+        }
+
+        public Task<IReadOnlyList<string>> ListKeepConflictPathsAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<string>>([]);
+
+        public Task RecordAsync(SwapJournalEntry entry, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

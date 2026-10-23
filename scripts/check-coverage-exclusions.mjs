@@ -5,6 +5,7 @@
 //   node scripts/check-coverage-exclusions.mjs [--root <repository folder>]
 //
 // What counts as a way of leaving code out:
+//   - a `--test-coverage-exclude=<glob>` option on the Node scripts' coverage run in the CI workflow;
 //   - an entry in the collectors' settings: Exclude, ExcludeByAttribute and ExcludeByFile in the two coverlet run settings,
 //     the attribute and source exclusions in the out-of-process settings, and `coverage.exclude` in the web app's Vite config;
 //   - a marker in the code itself: [ExcludeFromCodeCoverage] in the server and tray sources, and a v8, istanbul or c8
@@ -30,6 +31,9 @@ export const KINDS = {
   policy: "A setting that switches a marker on; each use of the marker is listed on its own.",
 };
 
+/** The workflow whose Node scripts coverage step names the scripts it leaves out. */
+export const NODE_COVERAGE_WORKFLOW = ".github/workflows/ci.yml";
+
 export const LEGS = ["linux", "windows"];
 
 const CONFIG_FILES = [
@@ -37,6 +41,7 @@ const CONFIG_FILES = [
   "apps/tray/coverage.runsettings",
   "apps/server/coverage.out-of-process.xml",
   "apps/web/vite.config.ts",
+  NODE_COVERAGE_WORKFLOW,
 ];
 
 const CSHARP_SOURCE = /^apps\/(?:server\/src|tray\/Weir\.Tray)\/.+\.cs$/;
@@ -118,6 +123,10 @@ export function configItems(file, text) {
       [...xmlTexts(block[1], "Attribute"), ...xmlTexts(block[1], "Source")],
     );
   }
+  if (file.endsWith(".yml")) {
+    const uncommentedLines = text.split("\n").filter((line) => !line.trim().startsWith("#"));
+    return [...uncommentedLines.join("\n").matchAll(/--test-coverage-exclude=["']?([^\s"']+)/g)].map((match) => match[1]);
+  }
   const block = text.match(/coverage:\s*\{[\s\S]*?\bexclude:\s*\[([\s\S]*?)\]/);
   return block ? [...block[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]) : [];
 }
@@ -174,7 +183,7 @@ export function compare(entries, items, fileExists = () => true) {
 }
 
 function trackedFiles(root) {
-  return execFileSync("git", ["ls-files", "-z", "--", "apps"], { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 })
+  return execFileSync("git", ["ls-files", "-z", "--", "apps", NODE_COVERAGE_WORKFLOW], { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 })
     .split("\0")
     .filter(Boolean);
 }

@@ -26,7 +26,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 export const KINDS = {
   privateIp: "private IP address",
@@ -49,7 +49,7 @@ const API_KEY = /\b(?:api[_-]?key|apikey)\b["']?\s*[=:]\s*["']?(?<value>[A-Za-z0
 const HARMLESS_EMAIL_DOMAINS = /(?:^|\.)(?:example\.(?:com|org|net)|users\.noreply\.github\.com|noreply\.github\.com)$/i;
 const PLACEHOLDER_WORDS = /^(?:your|my|the|example|sample|placeholder|changeme|redacted|secret|token|apikey|api[_-]?key|xxx+|\.{3}|\*+|<.*>|\$.*|%.*|\{.*\})/i;
 
-const hashList = JSON.parse(readFileSync(path.join(root, "scripts", "public-privacy-hashes.json"), "utf8")).sha256;
+const hashList = JSON.parse(readFileSync(path.join(repositoryRoot, "scripts", "public-privacy-hashes.json"), "utf8")).sha256;
 
 export function sha256(text) {
   return createHash("sha256").update(text).digest("hex");
@@ -134,19 +134,19 @@ function walk(dir, accept, out = []) {
   return out;
 }
 
-function underAny(file, folders) {
+function underAny(root, file, folders) {
   const relative = path.relative(root, file).split(path.sep).join("/");
   return folders.some((folder) => relative === folder || relative.startsWith(`${folder}/`));
 }
 
 /** The files a visitor can read: relative paths from the repository root. */
-export function publicFiles() {
+export function publicFiles(root = repositoryRoot) {
   const files = [];
   for (const entry of readdirSync(root, { withFileTypes: true })) {
     if (entry.isFile() && /\.md$/i.test(entry.name)) files.push(path.join(root, entry.name));
   }
   const skipped = ["docs/archive", "docs/exec-plans"];
-  files.push(...walk(path.join(root, "docs"), (f) => /\.md$/i.test(f) && !underAny(f, skipped)));
+  files.push(...walk(path.join(root, "docs"), (f) => /\.md$/i.test(f) && !underAny(root, f, skipped)));
   files.push(...walk(path.join(root, "docs-site", "docs"), (f) => PUBLIC_DOC_EXTENSIONS.test(f)));
   files.push(...walk(path.join(root, "docker"), (f) => /\.md$/i.test(f)));
   files.push(...walk(path.join(root, "apps", "web", "dist"), (f) => !BINARY_EXTENSIONS.test(f)));
@@ -163,33 +163,36 @@ function scanFile(file) {
   return scanText(buffer.toString("utf8"));
 }
 
-function relative(file) {
+function relative(root, file) {
   return path.relative(root, file).split(path.sep).join("/");
 }
 
-function runCheck() {
-  const files = publicFiles();
+/** Scans the files a visitor can read under `root`; returns the exit code. */
+export function runCheck(root = repositoryRoot, out = { log: console.log, error: console.error }) {
+  const files = publicFiles(root);
   let failures = 0;
   for (const file of files) {
     for (const { kind, line } of scanFile(file)) {
       failures += 1;
-      console.error(`${relative(file)}:${line}  ${KINDS[kind]}`);
+      out.error(`${relative(root, file)}:${line}  ${KINDS[kind]}`);
     }
   }
   if (!existsSync(path.join(root, "apps", "web", "dist"))) {
-    console.log("The web bundle is not built here, so it was not checked.");
+    out.log("The web bundle is not built here, so it was not checked.");
   }
   if (failures > 0) {
-    console.error(
+    out.error(
       `\n${failures} private-looking value(s) in public files. Use a placeholder such as <host>, <nas> or <your-pc>, ` +
         "and documentation addresses (192.0.2.x, 198.51.100.x, 203.0.113.x). The match is not printed on purpose.",
     );
-    process.exit(1);
+    return 1;
   }
-  console.log(`No private values in ${files.length} public files.`);
+  out.log(`No private values in ${files.length} public files.`);
+  return 0;
 }
 
-function runAudit() {
+/** Lists every private-looking match in the files the repository tracks, by kind. */
+export function runAudit(root = repositoryRoot, out = { log: console.log }) {
   const tracked = execFileSync("git", ["ls-files", "-z"], { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 })
     .split("\0")
     .filter((file) => file && !BINARY_EXTENSIONS.test(file));
@@ -204,12 +207,12 @@ function runAudit() {
   }
   for (const kind of Object.keys(KINDS)) {
     const where = byKind.get(kind) ?? [];
-    console.log(`\n${KINDS[kind]}: ${where.length}`);
-    for (const place of where) console.log(`  ${place}`);
+    out.log(`\n${KINDS[kind]}: ${where.length}`);
+    for (const place of where) out.log(`  ${place}`);
   }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (process.argv.includes("--audit")) runAudit();
-  else runCheck();
+  else process.exitCode = runCheck();
 }

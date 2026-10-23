@@ -5,7 +5,13 @@
 //
 // Usage (a workflow step with an id): node scripts/mkvtoolnix-cache-key.mjs >> "$GITHUB_OUTPUT"
 //   -> key=mkvtoolnix-linux-<version>-<AppImage sha256>
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { readMkvtoolnixPin } from "./mkvtoolnix-pin.mjs";
 
-const { version, linux } = readMkvtoolnixPin();
-console.log(`key=mkvtoolnix-linux-${version}-${linux.sha256}`);
+/** The `key=...` line for a pin. */
+export function cacheKey({ version, linux } = readMkvtoolnixPin()) {
+  return `key=mkvtoolnix-linux-${version}-${linux.sha256}`;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) console.log(cacheKey());

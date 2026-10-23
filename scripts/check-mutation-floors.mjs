@@ -243,9 +243,9 @@ export function evaluate(floors, results) {
 
 export function renderSummary({ rows, notes, problems, floors }) {
   const lines = ["### Mutation testing", ""];
-  const runs = Object.values(floors.measuredFrom.runs);
+  const runs = [...new Set(Object.values(floors.measuredFrom.runs))];
   lines.push(
-    `Floors are in docs/coverage/mutation-floors.json, measured from CI run${runs.length === 1 ? "" : "s"} ${[...new Set(runs)].join(", ")}. ` +
+    `Floors are in docs/coverage/mutation-floors.json, measured from CI run${runs.length === 1 ? "" : "s"} ${runs.join(", ")}. ` +
       "A score below its floor fails this check; a score above it can be raised in the pull request that earned it. " +
       "The score is the share of changes to the code (a flipped condition, a dropped statement, a swapped operator) that made a test fail.",
     "",
@@ -367,24 +367,25 @@ export function parseArguments(argv) {
   return options;
 }
 
-function main() {
+/** Checks the reports (or only the floors file) named in `argv`; returns the exit code. */
+export function main(argv = process.argv.slice(2), { env = process.env, log = console.log, error = console.error } = {}) {
   let options;
   let result;
   try {
-    options = parseArguments(process.argv.slice(2));
+    options = parseArguments(argv);
     if (options.floorsOnly) {
       const { problems, notes } = checkFloorsFile(options);
-      for (const note of notes) console.log(note);
-      for (const problem of problems) console.error(`::error::${problem}`);
-      process.exit(problems.length ? 1 : 0);
+      for (const note of notes) log(note);
+      for (const problem of problems) error(`::error::${problem}`);
+      return problems.length ? 1 : 0;
     }
     result = run(options);
-  } catch (error) {
-    console.error(`::error::${error.message}`);
-    process.exit(1);
+  } catch (failure) {
+    error(`::error::${failure.message}`);
+    return 1;
   }
-  console.log(result.text);
-  console.log(result.survivorText);
+  log(result.text);
+  log(result.survivorText);
   if (options.outFolder) {
     mkdirSync(options.outFolder, { recursive: true });
     writeFileSync(path.join(options.outFolder, "survivors.md"), `${result.survivorText}\n`);
@@ -393,20 +394,21 @@ function main() {
       `${JSON.stringify(Object.fromEntries(result.targets.map((item) => [item.target, item.survivors])), null, 2)}\n`,
     );
   }
-  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${result.text}\n${result.survivorText}\n`);
+  if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, `${result.text}\n${result.survivorText}\n`);
   if (result.problems.length) {
-    for (const problem of result.problems) console.error(`::error::${problem}`);
+    for (const problem of result.problems) error(`::error::${problem}`);
     let annotated = 0;
     for (const { target, survivors } of failingSurvivors(result.rows, result.targets)) {
       for (const survivor of survivors) {
         const where = `${target}: ${survivor.file}:${survivor.line} ${survivor.mutator}, \`${survivor.original}\` to \`${survivor.replacement}\``;
-        if (annotated < ANNOTATIONS) console.error(`::error::Survived ${where}`);
-        else console.error(`Survived ${where}`);
+        if (annotated < ANNOTATIONS) error(`::error::Survived ${where}`);
+        else error(`Survived ${where}`);
         annotated += 1;
       }
     }
-    process.exit(1);
+    return 1;
   }
+  return 0;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) main();
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) process.exitCode = main();

@@ -12,6 +12,7 @@ if the riskiest code were wrong is a separate weekly measurement, in [`mutation.
 | Weir.Core, Weir.Infrastructure, Weir.Api, Weir.Host, **out of process** | dotnet-coverage, merged by ReportGenerator | every contract area and every E2E smoke shard, measured in the server process they start |
 | Tray | coverlet.collector, merged by ReportGenerator | `Weir.Tray.Tests` on Windows |
 | Web app | vitest with the v8 provider, merged with the browser run's Istanbul report by `scripts/merge-web-coverage.mjs` | the whole vitest suite and the browser (E2E) tests, merged into one figure |
+| Node scripts | node's own coverage (`node --test --experimental-test-coverage`, lcov reporter), read by `scripts/check-coverage-floors.mjs` | every `scripts/**/*.test.mjs`, in the `repo-checks` job |
 
 Two figures are kept for each: **lines** and **branches** (both sides of every `if`, `?:`, `&&`, `switch` arm and
 the like). What counts is set in `apps/server/coverage.runsettings` and `apps/tray/coverage.runsettings` (the
@@ -67,6 +68,22 @@ attached to the test run sees only the test code, never the server. They are mea
   server by hand to simulate a crash still kills it, so the part of the server that ran before the crash is not in the figure.
 - **A leg that wrote nothing fails.** A contract area or E2E shard whose tests passed but which wrote no report fails its
   upload step.
+
+### The Node scripts figure
+
+The `Node scripts - every test, measured against the floor` step of the `repo-checks` job runs every script test once more under
+node's built-in coverage and then checks the `node-scripts` floors in `floors.json`; it adds no job. Tests reach a script through
+its exported functions, and a script's command line is run as a child process, which node's coverage follows.
+
+- **Scripts no test loads count as not run.** Node reports only the files a test imported. `check-coverage-floors.mjs` walks
+  `scripts/` and adds every other script (not a test, not under `fixtures`) as a file none of whose code lines ran, so a new
+  script with no test lowers the figure instead of being missed.
+- **What is left out.** Each `--test-coverage-exclude` option on that step is listed in `exclusions.json` (file
+  `.github/workflows/ci.yml`, the glob as the marker), and the floors check leaves the scripts those globs name out of the
+  figure. They are the test files themselves, the Windows and Docker scenario drivers (they run only on those systems, in the
+  `ci-packaging.yml` jobs the entry names) and the developer helpers CI never runs.
+- **Locally.** From the repository root: copy the options of that step, or run
+  `node --test --experimental-test-coverage "--test-coverage-include=scripts/**/*.mjs" "scripts/**/*.test.mjs"` for the table node prints.
 
 ## Reading a run
 
