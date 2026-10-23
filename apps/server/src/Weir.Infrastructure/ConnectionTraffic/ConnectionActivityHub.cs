@@ -113,7 +113,7 @@ public sealed class ConnectionActivityHub
         lock (_gate)
         {
             var lane = _lanes[connection];
-            lane.Release?.Dispose();
+            lane.Release!.Dispose();
             lane.Release = null;
             if (lane.Held is not { } held)
             {

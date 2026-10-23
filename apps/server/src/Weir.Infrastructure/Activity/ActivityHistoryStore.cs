@@ -145,7 +145,7 @@ public sealed class ActivityHistoryStore
     {
         ArgumentNullException.ThrowIfNull(uow);
         var rows = await uow.QueryAsync("SELECT min(activity_events.created_at) AS min_1 FROM activity_events", reader => SqliteValues.GetDateTimeOrNull(reader, 0)).ConfigureAwait(false);
-        return rows.Count == 0 ? null : rows[0];
+        return rows[0];
     }
 
     /// <summary>The newest event id: the cheap freshness probe of the live stream.</summary>

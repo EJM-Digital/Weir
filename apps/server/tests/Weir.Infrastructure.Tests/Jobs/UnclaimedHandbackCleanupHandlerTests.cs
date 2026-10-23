@@ -134,4 +134,40 @@ public sealed class UnclaimedHandbackCleanupHandlerTests : IDisposable
         await RunAsync();
         Assert.False(File.Exists(copy));
     }
+
+    [WindowsFact("A file another program holds open can only be locked against deletion on Windows")]
+    public async Task A_copy_in_use_is_kept_for_the_next_run_and_the_event_says_so()
+    {
+        var library = await LibraryAsync();
+        var copy = await HandedBackAsync(library, "Film/film.mkv", daysAgo: 20);
+
+        await using (new FileStream(copy, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            await RunAsync();
+        }
+
+        Assert.True(File.Exists(copy));
+        Assert.Equal(0, await _store.Scalar("SELECT count(*) FROM handbacks WHERE settled_at IS NOT NULL"));
+        Assert.Equal(1, await _store.Scalar(
+            "SELECT count(*) FROM activity_events WHERE detail LIKE '%\"result\":\"warning\"%' AND detail LIKE '%It tries again next run.%'"));
+
+        await RunAsync();
+        Assert.False(File.Exists(copy));
+    }
+
+
+    [Fact]
+    public async Task The_television_run_names_television_and_queues_under_its_own_key()
+    {
+        await _store.Execute("DELETE FROM operator_settings");
+        await _handler.HandleAsync(
+            new JobWorkContext(1, PeriodicJobKinds.UnclaimedHandbackCleanup, "{\"media_scope\": \"tv\"}", "test"), CancellationToken.None);
+        await new UnclaimedHandbackCleanupEnqueuer(_jobs, "tv").EnqueueOnceAsync(CancellationToken.None);
+        await new UnclaimedHandbackCleanupEnqueuer(_jobs, "movie").EnqueueOnceAsync(CancellationToken.None);
+
+        Assert.Equal(1, await _store.Scalar("SELECT count(*) FROM activity_events WHERE title = 'Unclaimed hand-backs checked (TV): nothing to remove' AND detail LIKE '%\"window_days\":14%'"));
+        Assert.Equal(
+            "processing.unclaimed_handback_cleanup:v1:movie,processing.unclaimed_handback_cleanup:v1:tv",
+            await _store.ScalarText("SELECT group_concat(dedupe_key, ',') FROM (SELECT dedupe_key FROM jobs ORDER BY dedupe_key)"));
+    }
 }
