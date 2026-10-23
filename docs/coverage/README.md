@@ -129,7 +129,8 @@ percentage per branch condition, so a branch such as `if (OperatingSystem.IsWind
 Linux, merged to 50% whichever way round the two legs were read. OpenCover lists the visits of every branch, and ReportGenerator
 adds them up, so the same branch comes out covered. The `coverage` job therefore merges the OpenCover files and writes the
 Cobertura and JSON summary the floors read from that merge. `scripts/align-coverage-reports.mjs` makes both formats name the
-runners' checkouts and file-local types alike first. Tray and out-of-process figures come from one operating system and stay Cobertura.
+runners' checkouts and file-local types alike first, and caps each visit count, because ReportGenerator adds them in a 32-bit
+integer and the Argon2 loop's total overflowed to a negative number that read as not run. The test jobs upload only the OpenCover files. Tray and out-of-process figures come from one operating system and stay Cobertura.
 
 ## Running it locally
 

@@ -13,7 +13,11 @@
 //   * the compiler names a file-local type `<File>F<SHA-256 of the file's path>__Name`, so the same type has a
 //     different name on each runner. The hash is replaced with zeros.
 //
-// Without both, merging the Linux and Windows reports counted a fifth of the Api's lines twice.
+//   * OpenCover counts every visit of a sequence point or branch (vc="..."), and ReportGenerator adds the files up in a 32-bit
+//     integer. A loop the tests run a billion times (the Argon2 block mixing) overflowed to a negative count and read as not
+//     run. Only whether a point was visited matters, so counts are capped well below what the sum of every file can hold.
+//
+// Without the first two, merging the Linux and Windows reports counted a fifth of the Api's lines twice.
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -21,6 +25,8 @@ import { pathToFileURL } from "node:url";
 const SOURCE = /<source>([^<]*)<\/source>/g;
 // OpenCover names its files by full path, with no <source> folder.
 const FULL_PATH = /fullPath="([^"]*)"/g;
+const VISIT_COUNT = /\bvc="(\d+)"/g;
+export const VISIT_CAP = 100000;
 const FILE_LOCAL_HASH = /(&gt;F)[0-9A-Fa-f]{64}(__)/g;
 
 function slashed(value) {
@@ -47,6 +53,7 @@ export function align(text, checkout) {
     .replace(SOURCE, (_, value) => `<source>${move(value)}</source>`)
     .replace(/filename="([^"]*)"/g, (_, value) => `filename="${move(value)}"`)
     .replace(FULL_PATH, (_, value) => `fullPath="${move(value)}"`)
+    .replace(VISIT_COUNT, (whole, count) => (Number(count) > VISIT_CAP ? `vc="${VISIT_CAP}"` : whole))
     .replace(FILE_LOCAL_HASH, (_, before, after) => `${before}${"0".repeat(64)}${after}`);
 }
 

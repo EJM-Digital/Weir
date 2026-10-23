@@ -517,7 +517,7 @@ jobs:
           name: coverage-server-linux
           if-no-files-found: ignore
           retention-days: 1
-          path: apps/server/tests/*/TestResults/*/coverage.*.xml
+          path: apps/server/tests/*/TestResults/*/coverage.opencover.xml
 
       - name: Server dependency vulnerability scan
         if: needs.changes.outputs.run_server_audit == 'true'
@@ -589,7 +589,7 @@ jobs:
           name: coverage-server-windows
           if-no-files-found: ignore
           retention-days: 1
-          path: apps/server/tests/*/TestResults/*/coverage.*.xml
+          path: apps/server/tests/*/TestResults/*/coverage.opencover.xml
 
   # The production web build, once, for the E2E smoke to serve.
   web-dist:

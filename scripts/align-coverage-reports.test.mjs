@@ -8,7 +8,7 @@ import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { align, alignFolder, checkoutOf } from "./align-coverage-reports.mjs";
+import { VISIT_CAP, align, alignFolder, checkoutOf } from "./align-coverage-reports.mjs";
 
 const runners = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "coverage", "runners");
 const linux = readFileSync(path.join(runners, "linux.cobertura.xml"), "utf8");
@@ -103,6 +103,11 @@ test("after aligning, both runners' OpenCover reports name the same files and ty
   const fromWindows = align(windowsOpenCover, "/work/checkout");
   assert.equal(fromWindows, fromLinux);
   assert.match(fromLinux, /fullPath="\/work\/checkout\/apps\/server\/src\/Weir\.Infrastructure\/Files\/FileIdentity\.cs"/);
+});
+
+test("an OpenCover visit count too big to add up is capped, and small ones are left alone", () => {
+  const text = '<SequencePoint vc="2000000000" sl="1" /><BranchPoint vc="7" sl="1" /><SequencePoint uvc="2000000000" />';
+  assert.equal(align(text, "/work/checkout"), `<SequencePoint vc="${VISIT_CAP}" sl="1" /><BranchPoint vc="7" sl="1" /><SequencePoint uvc="2000000000" />`);
 });
 
 test("a folder's OpenCover reports are aligned in place as well", () => {
