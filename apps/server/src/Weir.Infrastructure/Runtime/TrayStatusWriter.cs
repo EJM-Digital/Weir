@@ -7,6 +7,7 @@ using Weir.Core.Settings;
 using Weir.Core.Time;
 using Weir.Infrastructure.Activity;
 using Weir.Infrastructure.MediaManagers;
+using Weir.Infrastructure.Scheduling;
 using Weir.Infrastructure.Settings;
 using Weir.Infrastructure.Sqlite;
 
@@ -104,17 +105,8 @@ public sealed class TrayStatusWriter : BackgroundService
         _heard?.Dispose();
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        try
-        {
-            await Task.WhenAll(ListenAsync(stoppingToken), KeepWrittenAsync(stoppingToken)).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-        {
-            // The server is stopping.
-        }
-    }
+    protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
+        StoppingWork.RunAsync(() => Task.WhenAll(ListenAsync(stoppingToken), KeepWrittenAsync(stoppingToken)), stoppingToken);
 
     /// <summary>Marks the status stale whenever data it is made of changes; the reading itself is left to the loop that throttles it.</summary>
     private async Task ListenAsync(CancellationToken stoppingToken)
