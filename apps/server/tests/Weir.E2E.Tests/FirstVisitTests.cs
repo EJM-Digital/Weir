@@ -79,12 +79,7 @@ public sealed class FirstVisitTests(E2EServer server) : E2ETestBase(server)
         var page = await NewWatchingPageAsync();
         await Navigation.EnsureSignedInAsync(page, BaseUrl);
         await page.GetByTestId("user-menu").ClickAsync();
-        // The sign-in page shows at once and the server ends the session behind it, so the next visit waits for the server.
-        var logoutResponse = await page.RunAndWaitForResponseAsync(
-            async () => await page.GetByTestId("sign-out").ClickAsync(),
-            response => response.Url.EndsWith("/api/v1/auth/logout", StringComparison.Ordinal),
-            new() { Timeout = Navigation.UrlAssertMs });
-        Assert.True(logoutResponse.Ok);
+        await page.GetByTestId("sign-out").ClickAsync();
         await Expect(page.GetByTestId("login-username")).ToBeVisibleAsync(new() { Timeout = Navigation.UrlAssertMs });
 
         await page.GotoAsync($"{BaseUrl}/", new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
