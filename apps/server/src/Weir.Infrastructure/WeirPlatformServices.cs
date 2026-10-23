@@ -11,6 +11,7 @@ using Weir.Core.Workers;
 using Weir.Infrastructure.Activity;
 using Weir.Infrastructure.Auth;
 using Weir.Infrastructure.ConnectionTraffic;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Logging;
 using Weir.Infrastructure.Notifications;
 using Weir.Infrastructure.Processing;
@@ -30,6 +31,7 @@ public static class WeirPlatformServices
         ArgumentNullException.ThrowIfNull(options);
         services.TryAddSingleton(options);
         services.TryAddSingleton(TimeProvider.System);
+        services.TryAddSingleton<IFileSystem>(PhysicalFileSystem.Instance);
         services.TryAddSingleton(MachineIdentity.Current());
         services.TryAddSingleton(sp => new SqliteDatabase(
             options.DbPath,

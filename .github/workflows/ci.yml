@@ -168,6 +168,7 @@ jobs:
               - 'apps/server/src/Weir.Infrastructure/WeirPlatformServices.cs'
               - 'apps/server/src/Weir.Infrastructure/Browse/**'
               - 'apps/server/src/Weir.Infrastructure/LibraryMode/**'
+              - 'apps/server/src/Weir.Infrastructure/IO/**'
               - 'apps/server/src/Weir.Infrastructure/Runtime/**'
               - 'apps/server/src/Weir.Infrastructure/SystemReadings/**'
               - 'apps/server/src/Weir.Infrastructure/Processing/OutputOwnership.cs'
@@ -831,7 +832,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.run_tray == 'true'
     runs-on: windows-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 

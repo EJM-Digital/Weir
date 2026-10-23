@@ -6,6 +6,7 @@ using Weir.Core.Jobs;
 using Weir.Core.Json;
 using Weir.Core.Processing;
 using Weir.Infrastructure.Activity;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Processing.RemuxPass;
 
 namespace Weir.Infrastructure.Jobs;
@@ -27,13 +28,15 @@ public sealed class WorkTempStaleSweepHandler : IJobHandler
     private readonly WeirOptions _options;
     private readonly TimeProvider _time;
     private readonly ILogger<WorkTempStaleSweepHandler> _logger;
+    private readonly IFileSystem _files;
 
-    public WorkTempStaleSweepHandler(ProcessingJobStore store, WeirOptions options, TimeProvider time, ILogger<WorkTempStaleSweepHandler> logger)
+    public WorkTempStaleSweepHandler(ProcessingJobStore store, WeirOptions options, TimeProvider time, ILogger<WorkTempStaleSweepHandler> logger, IFileSystem? files = null)
     {
         _store = store;
         _options = options;
         _time = time;
         _logger = logger;
+        _files = files ?? PhysicalFileSystem.Instance;
     }
 
     public string JobKind => PeriodicJobKinds.WorkTempStaleSweep;
@@ -64,17 +67,20 @@ public sealed class WorkTempStaleSweepHandler : IJobHandler
             .ToList();
         var cutoff = _time.GetUtcNow().UtcDateTime - TimeSpan.FromSeconds(_options.ProcessingWorkTempStaleSweepMinStaleAgeSeconds);
 
-        var removed = 0;
+        var tally = new SweepTally();
         foreach (var root in roots)
         {
-            removed += Sweep(root, cutoff, protectedNames);
+            Sweep(root, cutoff, protectedNames, tally);
         }
 
+        var removed = tally.Removed;
         var label = scope == "tv" ? "TV" : "Movies";
         var detail = new WireObject()
             .Set("job_id", context.Id)
             .Set("media_scope", scope)
             .Set("files_removed", removed)
+            .Set("files_not_removed", tally.NotRemoved)
+            .Set("folders_unreadable", tally.UnreadableFolders)
             .Set("min_stale_age_seconds", _options.ProcessingWorkTempStaleSweepMinStaleAgeSeconds)
             .Set("result", "success");
         if (trigger is not null)
@@ -82,9 +88,7 @@ public sealed class WorkTempStaleSweepHandler : IJobHandler
             detail.Set("trigger", trigger);
         }
 
-        var title = removed == 0
-            ? $"Work files checked ({label}): nothing left behind"
-            : $"Cleared {removed.ToString(CultureInfo.InvariantCulture)} left-behind work {(removed == 1 ? "file" : "files")} ({label})";
+        var title = Title(label, tally);
         await LockedWrites.RunAsync(
             _store.Database,
             uow => SqliteActivityWriter.RecordAsync(uow, new ActivityEventDraft(
@@ -92,6 +96,29 @@ public sealed class WorkTempStaleSweepHandler : IJobHandler
             _logger,
             "work file sweep completed",
             cancellationToken).ConfigureAwait(false);
+    }
+
+    private static string Title(string label, SweepTally tally)
+    {
+        var problems = new List<string>();
+        if (tally.NotRemoved > 0)
+        {
+            problems.Add($"{tally.NotRemoved.ToString(CultureInfo.InvariantCulture)} could not be removed");
+        }
+
+        if (tally.UnreadableFolders > 0)
+        {
+            problems.Add($"{tally.UnreadableFolders.ToString(CultureInfo.InvariantCulture)} work {(tally.UnreadableFolders == 1 ? "folder" : "folders")} could not be read");
+        }
+
+        var problemText = string.Join("; ", problems);
+        if (tally.Removed == 0)
+        {
+            return $"Work files checked ({label}): {(problems.Count == 0 ? "nothing left behind" : problemText)}";
+        }
+
+        var cleared = $"Cleared {tally.Removed.ToString(CultureInfo.InvariantCulture)} left-behind work {(tally.Removed == 1 ? "file" : "files")} ({label})";
+        return problems.Count == 0 ? cleared : $"{cleared}; {problemText}";
     }
 
     /// <summary>The scope's default work folder and the effective work folder of every library of that scope.</summary>
@@ -110,7 +137,7 @@ public sealed class WorkTempStaleSweepHandler : IJobHandler
         return roots;
     }
 
-    private int Sweep(string folder, DateTime cutoffUtc, IReadOnlyList<System.Text.RegularExpressions.Regex> protectedNames)
+    private void Sweep(string folder, DateTime cutoffUtc, IReadOnlyList<System.Text.RegularExpressions.Regex> protectedNames, SweepTally tally)
     {
         string root;
         try
@@ -119,26 +146,31 @@ public sealed class WorkTempStaleSweepHandler : IJobHandler
         }
         catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
         {
-            return 0;
+            return;
         }
 
-        if (!Directory.Exists(root))
+        if (!_files.DirectoryExists(root))
         {
-            return 0;
+            return;
         }
 
-        List<string> files;
+        IReadOnlyList<string> files;
         try
         {
-            files = [.. Directory.EnumerateFiles(root, "*", new EnumerationOptions { RecurseSubdirectories = false, AttributesToSkip = 0 })];
+            files = _files.ListFiles(root, new EnumerationOptions { RecurseSubdirectories = false, AttributesToSkip = 0 });
+        }
+        catch (Exception exception) when (exception is DirectoryNotFoundException)
+        {
+            // The folder went between the check and the listing: there is nothing in it to leave behind.
+            return;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning("The work file sweep could not read {Folder}: {Error}", root, exception.Message);
-            return 0;
+            tally.UnreadableFolders++;
+            return;
         }
 
-        var removed = 0;
         foreach (var path in files)
         {
             var name = Path.GetFileName(path);
@@ -149,21 +181,33 @@ public sealed class WorkTempStaleSweepHandler : IJobHandler
 
             try
             {
-                if (File.GetLastWriteTimeUtc(path) > cutoffUtc)
+                if (_files.GetLastWriteTimeUtc(path) > cutoffUtc)
                 {
                     continue;
                 }
 
-                File.Delete(path);
-                removed++;
+                _files.DeleteFile(path);
+                tally.Removed++;
                 _logger.LogInformation("The work file sweep removed left-behind temp output {Path}", path);
+            }
+            catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException)
+            {
+                // Someone else removed it first, which is what the sweep was for.
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
                 _logger.LogWarning("The work file sweep could not remove {Path}: {Error}", path, exception.Message);
+                tally.NotRemoved++;
             }
         }
+    }
 
-        return removed;
+    private sealed class SweepTally
+    {
+        public int Removed { get; set; }
+
+        public int NotRemoved { get; set; }
+
+        public int UnreadableFolders { get; set; }
     }
 }

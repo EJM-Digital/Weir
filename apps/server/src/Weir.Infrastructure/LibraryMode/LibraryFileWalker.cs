@@ -1,5 +1,6 @@
 using Weir.Core.LibraryMode;
 using Weir.Core.Processing;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Processing;
 
 namespace Weir.Infrastructure.LibraryMode;
@@ -14,9 +15,10 @@ public sealed record LibraryWalkedFile(string Path, long SizeBytes, long Modifie
 /// </summary>
 public static class LibraryFileWalker
 {
-    public static IReadOnlyList<LibraryWalkedFile> Walk(ProcessingLibraryRecord library, LibrarySettings settings)
+    public static IReadOnlyList<LibraryWalkedFile> Walk(ProcessingLibraryRecord library, LibrarySettings settings, IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(library);
+        files ??= PhysicalFileSystem.Instance;
         ArgumentNullException.ThrowIfNull(settings);
         var folders = settings.Folders;
         var extensions = WatchedFolderListing.ConfiguredExtensions(SplitCsv(library.MediaExtensionsCsv));
@@ -32,13 +34,13 @@ public static class LibraryFileWalker
 
         foreach (var folder in folders)
         {
-            if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
+            if (string.IsNullOrWhiteSpace(folder) || !files.DirectoryExists(folder))
             {
                 continue;
             }
 
-            var option = library.TopLevelOnly ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories;
-            foreach (var path in Directory.EnumerateFiles(folder, "*", option))
+            var option = new EnumerationOptions { RecurseSubdirectories = !library.TopLevelOnly, AttributesToSkip = 0, IgnoreInaccessible = false, MatchType = MatchType.Win32 };
+            foreach (var path in files.EnumerateFiles(folder, "*", option))
             {
                 if (!seen.Add(path))
                 {
@@ -69,7 +71,7 @@ public static class LibraryFileWalker
                     continue;
                 }
 
-                if (WatchedMediaFile.Stat(path) is { } file)
+                if (WatchedMediaFile.Stat(path, files) is { } file)
                 {
                     found.Add(new LibraryWalkedFile(path, file.SizeBytes, new DateTimeOffset(file.ModifiedUtc, TimeSpan.Zero).ToUnixTimeSeconds()));
                 }
