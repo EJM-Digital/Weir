@@ -1,4 +1,5 @@
 using Weir.Infrastructure.MediaManagers;
+using Weir.Infrastructure.Processing;
 
 namespace Weir.Infrastructure.Tests.MediaManagers;
 
@@ -15,6 +16,14 @@ public sealed class ConstructionGuardTests : IDisposable
         [
             _fixture.Store.Options, _fixture.Connections, _fixture.ConnectionStore, _fixture.Ledger, _fixture.Targets, _fixture.Jobs,
             _fixture.SkipMarkers, _fixture.Reporter, _fixture.Artwork, _fixture.Store.Clock, _fixture.Activity,
+        ]);
+
+    [Fact]
+    public void The_workflow_sync_cannot_be_built_without_any_of_its_parts() =>
+        ConstructorGuards.AssertEachRequiredPartIsRefused<ManagerWorkflowSync>(() =>
+        [
+            _fixture.Store.Database, _fixture.ConnectionStore, _fixture.Connections, _fixture.Http, _fixture.Libraries, new ScanSettingsChanges(),
+            _fixture.Store.Options, _fixture.Store.Clock, Microsoft.Extensions.Logging.Abstractions.NullLogger<ManagerWorkflowSync>.Instance,
         ]);
 
     [Fact]
