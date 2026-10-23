@@ -132,13 +132,18 @@ test("this PC's network addresses leave out loopback, self-assigned and IPv6 one
 
 /** A server that answers what it is sent, upper-cased. */
 async function echoServer() {
-  const server = createServer((socket) => socket.on("data", (chunk) => socket.write(String(chunk).toUpperCase())));
+  const server = createServer((socket) => {
+    // A client that goes away mid-conversation resets the connection; that ends this side without being an error.
+    socket.on("error", () => socket.destroy());
+    socket.on("data", (chunk) => socket.write(String(chunk).toUpperCase()));
+  });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   return server;
 }
 
 const connect = async (port) => {
   const socket = createConnection({ host: "127.0.0.1", port });
+  socket.on("error", () => socket.destroy());
   await new Promise((resolve) => socket.once("connect", resolve));
   return socket;
 };

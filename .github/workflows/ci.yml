@@ -449,6 +449,30 @@ jobs:
           node --test scripts/check-release-workflow-gates.test.mjs scripts/verify-ci-for-release.test.mjs scripts/verify-heavy-ci-for-release.test.mjs scripts/ci-passed.test.mjs scripts/verify-golden-path-for-release.test.mjs scripts/verify-golden-path-carry-over.test.mjs scripts/release/shipped-paths.test.mjs scripts/scenarios.test.mjs
           node --test scripts/semver.test.mjs scripts/check-release-version.test.mjs scripts/find-previous-release.test.mjs scripts/prune-release-feed.test.mjs scripts/check-release-assets-single-version.test.mjs
 
+      # Every script test, once more under node's own coverage (#1060), held to the node-scripts floor in docs/coverage/floors.json.
+      # Node reports only the scripts a test loaded; check-coverage-floors.mjs counts the others as not run. Each
+      # --test-coverage-exclude is listed in docs/coverage/exclusions.json with its reason (scripts/check-coverage-exclusions.mjs).
+      - name: Node scripts - every test, measured against the floor
+        run: |
+          mkdir -p artifacts/node-coverage
+          node --test --experimental-test-coverage "--test-coverage-include=scripts/**/*.mjs" \
+            "--test-coverage-exclude=scripts/**/*.test.mjs" \
+            "--test-coverage-exclude=scripts/scenarios-ci/windows-*.mjs" \
+            "--test-coverage-exclude=scripts/scenarios-ci/tray-*.mjs" \
+            "--test-coverage-exclude=scripts/scenarios-ci/files-*.mjs" \
+            "--test-coverage-exclude=scripts/scenarios-ci/install-hooks.mjs" \
+            "--test-coverage-exclude=scripts/docker-smoke/**" \
+            "--test-coverage-exclude=scripts/docker-compose-smoke.mjs" \
+            "--test-coverage-exclude=scripts/dev-reset-auth.mjs" \
+            "--test-coverage-exclude=scripts/stop-dev-api-port.mjs" \
+            "--test-coverage-exclude=scripts/stop-dev-web-port.mjs" \
+            "--test-coverage-exclude=scripts/pre-push.mjs" \
+            "--test-coverage-exclude=scripts/attribute-pool-stalls.mjs" \
+            --test-reporter=spec --test-reporter-destination=stdout \
+            --test-reporter=lcov --test-reporter-destination=artifacts/node-coverage/lcov.info \
+            "scripts/**/*.test.mjs"
+          node scripts/check-coverage-floors.mjs --floors docs/coverage/floors.json --node-scripts artifacts/node-coverage
+
   server-linux:
     needs: changes
     if: needs.changes.outputs.run_server_linux == 'true'
@@ -832,7 +856,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.run_tray == 'true'
     runs-on: windows-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 

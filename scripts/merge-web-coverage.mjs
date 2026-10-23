@@ -198,7 +198,7 @@ export function writeReports(merged, root, out) {
   return { lines: summary.lines, branches: summary.branches };
 }
 
-function parseArguments(argv) {
+export function parseArguments(argv) {
   const options = { root: "apps/web", inputs: [], parts: false };
   for (let index = 0; index < argv.length; index++) {
     const argument = argv[index];
@@ -221,8 +221,8 @@ function parseArguments(argv) {
   return options;
 }
 
-async function main() {
-  const { out, root, inputs, parts } = parseArguments(process.argv.slice(2));
+export async function main(argv = process.argv.slice(2), log = console.log) {
+  const { out, root, inputs, parts } = parseArguments(argv);
   const { instrumented, native } = readInputs(inputs, root);
   if (Object.keys(instrumented).length + Object.keys(native).length === 0) {
     throw new Error("The inputs held no coverage of any file under the web app.");
@@ -232,13 +232,13 @@ async function main() {
     const absolute = path.resolve(root);
     const named = Object.fromEntries(Object.entries(instrumented).map(([key, coverage]) => [path.join(absolute, key), { ...coverage, path: path.join(absolute, key) }]));
     writeFileSync(path.join(out, "coverage-final.json"), JSON.stringify(named));
-    console.log(`Merged the browser tests' coverage of ${Object.keys(instrumented).length} files into ${out}.`);
+    log(`Merged the browser tests' coverage of ${Object.keys(instrumented).length} files into ${out}.`);
     return;
   }
   const { merged, unmatched } = combine(native, await toSource(instrumented, root));
   const { lines, branches } = writeReports(merged, root, out);
-  console.log(`Merged web coverage: ${lines.pct}% of lines (${lines.covered}/${lines.total}), ${branches.pct}% of branches (${branches.covered}/${branches.total}).`);
-  console.log(`${unmatched} statements, functions and branches from the browser tests did not match one in the unit tests' report and were added.`);
+  log(`Merged web coverage: ${lines.pct}% of lines (${lines.covered}/${lines.total}), ${branches.pct}% of branches (${branches.covered}/${branches.total}).`);
+  log(`${unmatched} statements, functions and branches from the browser tests did not match one in the unit tests' report and were added.`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
