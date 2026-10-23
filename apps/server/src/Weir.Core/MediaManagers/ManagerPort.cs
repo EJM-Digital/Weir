@@ -142,7 +142,13 @@ public sealed record ManagerDescription(
     string? Detail = null,
     IReadOnlySet<string>? AdvertisedCapabilities = null,
     IReadOnlyList<ManagerDownloadClientDescriptor>? DownloadClients = null,
-    bool MayAnswerLater = false);
+    bool MayAnswerLater = false)
+{
+    private static readonly IReadOnlySet<string> NoCapabilities = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>What the manager says it can do: nothing when it did not answer, or when its kind advertises nothing.</summary>
+    public IReadOnlySet<string> Advertised => AdvertisedCapabilities ?? NoCapabilities;
+}
 
 /// <summary>A call to a manager failed.</summary>
 public class MediaManagerHttpException : Exception

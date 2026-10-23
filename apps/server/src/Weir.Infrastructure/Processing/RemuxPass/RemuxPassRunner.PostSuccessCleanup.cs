@@ -74,13 +74,12 @@ public sealed partial class RemuxPassRunner
             return;
         }
 
-        if (output.Get("sidecar_migration_blocked") is { IsTruthy: true })
+        if (output["sidecar_migration_blocked"].IsTruthy)
         {
             InitFolderCleanupFields(output);
             output.Set("source_deleted_after_success", false);
-            output.Set("source_folder_skip_reason", output.Get("sidecar_migration_blocked_reason") is { IsTruthy: true } blocked
-                ? blocked
-                : new WireString("Weir did not remove the source folder because a file set to travel with the video could not be copied."));
+            // A migration that blocks the deletion always says why (SidecarMigrationResult.BlockingReason).
+            output.Set("source_folder_skip_reason", output["sidecar_migration_blocked_reason"]);
             _logger.LogWarning("Cleanup blocked by sidecar migration: {Reason}", WireConvert.Str(output["source_folder_skip_reason"]));
             return;
         }
@@ -116,7 +115,7 @@ public sealed partial class RemuxPassRunner
             }
         }
 
-        if (check.Get("output_completeness_check") is not WireString { Value: "passed" })
+        if (WireConvert.Str(check["output_completeness_check"]) != "passed")
         {
             output.Set("source_folder_skip_reason", check["output_completeness_note"]);
             output.Set("source_deleted_after_success", false);
@@ -152,7 +151,7 @@ public sealed partial class RemuxPassRunner
         output.Set("source_folder_deleted", true);
         output.Set("source_deleted_after_success", true);
         output.Set("source_folder_skip_reason", WireNull.Instance);
-        var cascade = output.Get("cascade_folders_deleted") as WireArray ?? new WireArray();
+        var cascade = (WireArray)output["cascade_folders_deleted"];
         OutputFolderCleanup.CascadeDeleteEmptyParents(Path.GetDirectoryName(movieFolder)!, watched, cascade, _logger, Files);
         output.Set("cascade_folders_deleted", cascade);
     }

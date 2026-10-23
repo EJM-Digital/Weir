@@ -129,9 +129,12 @@ public sealed class WorkTempStaleSweepHandler : IJobHandler
         {
             scope == "tv" ? ProcessingLibraryFolders.DefaultTvWorkFolder(weirHome) : ProcessingLibraryFolders.DefaultMovieWorkFolder(weirHome),
         };
-        foreach (var library in libraries.Where(l => ProcessingMediaScopes.Normalize(l.MediaType) == scope))
+        foreach (var library in libraries)
         {
-            roots.Add(ProcessingLibraryFolders.EffectiveWorkFolder(library, weirHome));
+            if (ProcessingMediaScopes.Normalize(library.MediaType) == scope)
+            {
+                roots.Add(ProcessingLibraryFolders.EffectiveWorkFolder(library, weirHome));
+            }
         }
 
         return roots;

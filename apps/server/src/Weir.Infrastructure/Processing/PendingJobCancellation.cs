@@ -83,7 +83,7 @@ public sealed class PendingJobCancellation
             var handoff = await HandoffLedgerStore.FindAsync(uow, origin.SourceKey, handoffId).ConfigureAwait(false);
             if (handoff is not null)
             {
-                if (payload?.Get("relative_media_path") is WireString { Value.Length: > 0 } targetPath)
+                if (payload!.Get("relative_media_path") is WireString { Value.Length: > 0 } targetPath)
                 {
                     // So a later file of the same pack finishing still sees this one settled, instead of waiting on it
                     // forever; and so cancelling the pack's last unresolved file still reports the ones that delivered.

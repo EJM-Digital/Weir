@@ -1,3 +1,5 @@
+using System.Runtime.Versioning;
+using Microsoft.Extensions.Time.Testing;
 using Weir.Infrastructure.Logging;
 
 namespace Weir.Infrastructure.Tests.Logging;
@@ -194,6 +196,104 @@ public sealed class WeirLogFileTests : IDisposable
         Assert.True(file.Prune(keepDays: 3));
 
         Assert.Single(LinesOf(path));
+    }
+
+    [Fact]
+    public async Task A_log_disposed_while_it_is_being_read_waits_for_the_read_to_finish()
+    {
+        var file = Open(out _);
+        file.WriteLine("line");
+        using var reading = new ManualResetEventSlim();
+        using var finishRead = new ManualResetEventSlim();
+        var read = Task.Run(() => file.ReadLines(_ =>
+        {
+            reading.Set();
+            finishRead.Wait();
+        }));
+        reading.Wait();
+        Exception? thrown = null;
+        var disposing = new Thread(() =>
+        {
+            try
+            {
+                file.Dispose();
+            }
+            catch (Exception exception)
+            {
+                thrown = exception;
+            }
+        });
+        disposing.Start();
+
+        await Eventually.ThatAsync(() => !disposing.IsAlive || disposing.ThreadState.HasFlag(ThreadState.WaitSleepJoin));
+        var waited = disposing.IsAlive;
+        finishRead.Set();
+        disposing.Join();
+
+        Assert.True(waited);
+        Assert.Null(thrown);
+        Assert.True(await read);
+    }
+
+    [Fact]
+    public void A_log_that_cannot_be_opened_again_after_a_prune_goes_on_reading_pruning_and_closing_without_a_handle()
+    {
+        var clock = new FakeTimeProvider(DateTimeOffset.Parse("2026-10-20T00:00:00Z", System.Globalization.CultureInfo.InvariantCulture));
+        var files = new FaultingFileSystem().Before(FileCall.MoveFile, scratch => File.SetAttributes(scratch, FileAttributes.ReadOnly));
+        var path = _folder.Join("weir.log");
+        var file = new WeirLogFile(path, clock, files);
+        var recent = Line(clock.GetUtcNow(), "recent");
+        file.WriteLine(Line(clock.GetUtcNow().AddDays(-10), "old"));
+        file.WriteLine(recent);
+        try
+        {
+            if (file.Prune(keepDays: 3))
+            {
+                return; // running as a privileged user: the read-only log was opened for writing anyway
+            }
+
+            file.WriteLine("dropped: there is no handle to write it with");
+            var read = new List<string>();
+            var snapshot = _folder.Join("snapshot.log");
+            Assert.True(file.ReadLines(read.Add));
+            Assert.True(file.SnapshotTo(snapshot));
+            clock.Advance(TimeSpan.FromDays(10));
+            var secondPrune = Record.Exception(() => file.Prune(keepDays: 3));
+
+            Assert.Equal([recent], read);
+            Assert.Equal([recent], LinesOf(snapshot));
+            Assert.Null(secondPrune);
+            Assert.Null(Record.Exception(file.Dispose));
+        }
+        finally
+        {
+            File.SetAttributes(path, FileAttributes.Normal);
+            file.Dispose();
+        }
+    }
+
+    [WindowsFact("Another handle can lock a byte range against readers only on Windows")]
+    [SupportedOSPlatform("windows")]
+    public void A_snapshot_that_fails_part_way_removes_the_partial_copy()
+    {
+        using var file = Open(out var path);
+        file.WriteLine("line");
+        var snapshot = _folder.Join("snapshot.log");
+        using var holder = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete);
+        holder.Lock(0, holder.Length);
+
+        Assert.False(file.SnapshotTo(snapshot));
+        Assert.False(File.Exists(snapshot));
+    }
+
+    [Fact]
+    public void A_log_disposed_twice_is_disposed_once()
+    {
+        var file = Open(out _);
+
+        file.Dispose();
+
+        Assert.Null(Record.Exception(file.Dispose));
     }
 
     [Fact]

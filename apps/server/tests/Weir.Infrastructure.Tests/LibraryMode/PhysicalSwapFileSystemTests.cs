@@ -18,6 +18,52 @@ public sealed class PhysicalSwapFileSystemTests : IDisposable
         return path;
     }
 
+    [Fact]
+    public void A_call_into_a_libc_that_has_the_entry_point_gives_its_answer_and_one_that_lacks_it_gives_the_stand_in()
+    {
+        Assert.Equal(7, PhysicalSwapFileSystem.WhereLibcHasIt(() => 7, whenMissing: -1));
+        Assert.Equal(-1, PhysicalSwapFileSystem.WhereLibcHasIt<int>(() => throw new DllNotFoundException(), whenMissing: -1));
+        Assert.Equal(-1, PhysicalSwapFileSystem.WhereLibcHasIt<int>(() => throw new EntryPointNotFoundException(), whenMissing: -1));
+        Assert.Throws<InvalidOperationException>(() => PhysicalSwapFileSystem.WhereLibcHasIt<int>(() => throw new InvalidOperationException(), whenMissing: -1));
+    }
+
+    [Theory]
+    [InlineData(32, typeof(FileInUseException))]
+    [InlineData(33, typeof(FileInUseException))]
+    [InlineData(5, typeof(UnauthorizedAccessException))]
+    [InlineData(2, typeof(FileNotFoundException))]
+    [InlineData(3, typeof(FileNotFoundException))]
+    [InlineData(1117, typeof(IOException))]
+    public void A_windows_error_number_is_named_for_what_it_means(int error, Type expected)
+    {
+        var named = PhysicalSwapFileSystem.WindowsError(error, "'a.mkv'");
+
+        Assert.Equal(expected, named.GetType());
+        Assert.Contains("'a.mkv'", named.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_missing_file_and_any_other_statx_failure_are_told_apart()
+    {
+        Assert.Equal("a.mkv", Assert.IsType<FileNotFoundException>(PhysicalSwapFileSystem.StatxFailure(2, "a.mkv")).FileName);
+        Assert.Contains("errno 13", Assert.IsType<IOException>(PhysicalSwapFileSystem.StatxFailure(13, "a.mkv")).Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_statx_answer_gives_its_link_count_and_owner_only_when_it_carries_a_link_count()
+    {
+        var answer = new byte[256];
+        BitConverter.GetBytes(0x4u | 0x8u | 0x10u).CopyTo(answer, 0);
+        BitConverter.GetBytes(3u).CopyTo(answer, 16);
+        BitConverter.GetBytes(1000u).CopyTo(answer, 20);
+        BitConverter.GetBytes(1001u).CopyTo(answer, 24);
+        var withoutLinks = (byte[])answer.Clone();
+        BitConverter.GetBytes(0x8u | 0x10u).CopyTo(withoutLinks, 0);
+
+        Assert.Equal(new PhysicalSwapFileSystem.UnixFileStat(3, 1000, 1001), PhysicalSwapFileSystem.StatFrom(answer));
+        Assert.Null(PhysicalSwapFileSystem.StatFrom(withoutLinks));
+    }
+
     public static TheoryData<Func<Exception>, Func<Exception, Exception>, Func<string, Exception>> ExceptionShapes() => new()
     {
         { () => new FileInUseException(), inner => new FileInUseException("held", inner), message => new FileInUseException(message) },
@@ -205,5 +251,37 @@ public sealed class PhysicalSwapFileSystemTests : IDisposable
         }
 
         return null;
+    }
+
+    [Fact]
+    public void A_link_count_Windows_could_not_give_is_the_error_it_reported()
+    {
+        Assert.Equal(3, PhysicalSwapFileSystem.WindowsLinkCount(succeeded: true, links: 3, error: 0, "a.mkv"));
+        Assert.IsType<FileNotFoundException>(Assert.Throws<FileNotFoundException>(() => PhysicalSwapFileSystem.WindowsLinkCount(succeeded: false, links: 0, error: 2, "a.mkv")));
+        Assert.Throws<UnauthorizedAccessException>(() => PhysicalSwapFileSystem.WindowsLinkCount(succeeded: false, links: 0, error: 5, "a.mkv"));
+    }
+
+    [Fact]
+    public void A_link_count_statx_gave_is_that_count_and_none_is_unknown()
+    {
+        Assert.Equal(2, PhysicalSwapFileSystem.UnixLinkCount(new PhysicalSwapFileSystem.UnixFileStat(2, 1000, 1000)));
+        Assert.Null(PhysicalSwapFileSystem.UnixLinkCount(null));
+    }
+
+    [Fact]
+    public void Only_the_superuser_gives_the_copy_the_owner_of_the_original_and_a_refusal_is_an_error()
+    {
+        var asked = new List<(uint Uid, uint Gid)>();
+        var owner = new PhysicalSwapFileSystem.UnixFileStat(1, 1000, 100);
+
+        PhysicalSwapFileSystem.CopyUnixOwner(isRoot: false, () => owner, (uid, gid) => { asked.Add((uid, gid)); return 0; }, () => 0, "b.mkv");
+        PhysicalSwapFileSystem.CopyUnixOwner(isRoot: true, () => null, (uid, gid) => { asked.Add((uid, gid)); return 0; }, () => 0, "b.mkv");
+        Assert.Empty(asked);
+
+        PhysicalSwapFileSystem.CopyUnixOwner(isRoot: true, () => owner, (uid, gid) => { asked.Add((uid, gid)); return 0; }, () => 0, "b.mkv");
+        Assert.Equal([(1000u, 100u)], asked);
+
+        var refused = Assert.Throws<IOException>(() => PhysicalSwapFileSystem.CopyUnixOwner(isRoot: true, () => owner, (_, _) => -1, () => 1, "b.mkv"));
+        Assert.Equal("chown failed with errno 1 for 'b.mkv'", refused.Message);
     }
 }

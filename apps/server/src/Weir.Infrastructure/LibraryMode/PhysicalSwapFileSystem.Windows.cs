@@ -22,7 +22,7 @@ public sealed partial class PhysicalSwapFileSystem
     private const uint MoveFileWriteThrough = 0x8;
     private const uint MoveFileReplaceExisting = 0x1;
 
-    private static Exception WindowsError(int error, string subject) => error switch
+    internal static Exception WindowsError(int error, string subject) => error switch
     {
         ErrorSharingViolation or ErrorLockViolation => new FileInUseException($"{new Win32Exception(error).Message} ({subject})"),
         5 => new UnauthorizedAccessException($"{new Win32Exception(error).Message} ({subject})"),

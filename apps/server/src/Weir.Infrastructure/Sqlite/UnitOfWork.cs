@@ -160,21 +160,21 @@ public sealed class UnitOfWork : IAsyncDisposable
     public async Task<List<T>> QueryAsync<T>(string sql, Func<SqliteDataReader, T> map, params (string Name, object? Value)[] parameters)
     {
         ArgumentNullException.ThrowIfNull(map);
+        var rows = new List<T>();
         var command = Create(sql, parameters);
         await using (command.ConfigureAwait(false))
         {
             var reader = await command.ExecuteReaderAsync(_cancellationToken).ConfigureAwait(false);
             await using (reader.ConfigureAwait(false))
             {
-                var rows = new List<T>();
                 while (await reader.ReadAsync(_cancellationToken).ConfigureAwait(false))
                 {
                     rows.Add(map(reader));
                 }
-
-                return rows;
             }
         }
+
+        return rows;
     }
 
     public async Task<T?> QuerySingleAsync<T>(string sql, Func<SqliteDataReader, T> map, params (string Name, object? Value)[] parameters)

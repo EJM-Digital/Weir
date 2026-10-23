@@ -314,7 +314,7 @@ public sealed class HistoryFileRemovalService
         // A hand-off target is a saved connection, and every saved kind has a port.
         var port = _ports.PortForKind(target.Connection.Kind)!;
         var description = await port.DescribeAsync(target.Connection, cancellationToken).ConfigureAwait(false);
-        return description.Status == SignalStatus.Reported && description.AdvertisedCapabilities?.Contains(RejectSupportRules.RejectCapability) == true;
+        return description.Status == SignalStatus.Reported && description.Advertised.Contains(RejectSupportRules.RejectCapability);
     }
 
     /// <summary>

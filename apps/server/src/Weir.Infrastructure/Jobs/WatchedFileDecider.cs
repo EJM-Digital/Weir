@@ -115,8 +115,9 @@ internal sealed class WatchedFileDecider
         if (ProcessedSourceRules.IsSameCleanedFile(previous, file.SizeBytes, file.ModifiedTimeNs))
         {
             // A cleaned movie in a library that removes originals: its removal was interrupted. Finish it while the validated
-            // output is still there. Never a second pass, and the row keeps its outcome.
-            var leaveAsIs = resetStatus is null ? cleaned with { TouchRowId = previous!.Id } : cleaned with { Write = write };
+            // output is still there. Never a second pass, and the row keeps its outcome. It has the size the pass cleaned, so no
+            // reset applies and the row is only marked seen.
+            var leaveAsIs = cleaned with { TouchRowId = previous!.Id };
             return !settling.IsSettling && accessProblem is null && !_lookups.ActivePasses.Contains(rel) &&
                    await CompletedOutputAsync(rel, file.FullPath).ConfigureAwait(false)
                 ? leaveAsIs with { FinishMovieRemoval = true }
@@ -169,7 +170,9 @@ internal sealed class WatchedFileDecider
         var fingerprintDecides = _scan.KeepsOriginals && ProcessedSourceRules.HasFingerprint(current);
         if (!fingerprintDecides && await CompletedOutputAsync(rel, file.FullPath).ConfigureAwait(false))
         {
-            return decision with { FinishMovieRemoval = _scan.IsMovieScope && !_scan.KeepsOriginals };
+            // A movie whose library removes originals never gets here: with its output complete and nothing in the way, it was
+            // sent to finish its removal above, and an eligible file has nothing in the way.
+            return decision;
         }
 
         _lookups.ActivePasses.Add(rel);
@@ -198,8 +201,8 @@ internal sealed class WatchedFileDecider
         return verdict.Eligible && _lookups.HeldBackPasses.TryGetValue(rel, out var lookAgainAt)
             ? new FileStateVerdict(
                 ProcessingFileStatuses.OnHold,
-                current is { Status: ProcessingFileStatuses.OnHold, StatusReason.Length: > 0 }
-                    ? current.StatusReason
+                current is { Status: ProcessingFileStatuses.OnHold } held && held.StatusReason.Length > 0
+                    ? held.StatusReason
                     : "Weir has another look at this file booked, and leaves it alone until then.",
                 HoldUntil: lookAgainAt)
             : verdict;

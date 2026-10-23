@@ -26,14 +26,9 @@ public sealed record WatchedMediaFile(string FullPath, long SizeBytes, DateTime 
         }
     }
 
-    /// <summary>A link is described by the file it points to, and is null when that file is not there.</summary>
-    internal static WatchedMediaFile? From(FileInfo info)
-    {
-        var target = info.LinkTarget is null ? info : info.ResolveLinkTarget(returnFinalTarget: true) as FileInfo;
-        return target is { Exists: true }
-            ? new WatchedMediaFile(info.FullName, target.Length, target.LastWriteTimeUtc, target.CreationTimeUtc)
-            : null;
-    }
+    /// <summary>A file as a directory listing gave it, or null when it is not there. A link never comes here: it is described by <see cref="Stat"/>.</summary>
+    internal static WatchedMediaFile? From(FileInfo info) =>
+        info.Exists ? new WatchedMediaFile(info.FullName, info.Length, info.LastWriteTimeUtc, info.CreationTimeUtc) : null;
 }
 
 /// <summary>What a watched-folder walk found, and what it decided not to look at.</summary>
@@ -169,13 +164,14 @@ public static class WatchedFolderListing
             {
                 foreach (var entry in list(folder))
                 {
-                    if ((entry as FileInfo ?? LinkedFile(entry, files)) is { } file)
+                    // A listing holds files and folders and nothing else; a link to a file comes back as the file.
+                    if (entry is FileInfo file)
                     {
                         found.Add(file);
                     }
-                    else if (entry is DirectoryInfo subfolder && !topLevelOnly)
+                    else if (!topLevelOnly)
                     {
-                        pending.Push(subfolder);
+                        pending.Push((DirectoryInfo)entry);
                     }
                 }
             }
@@ -187,10 +183,6 @@ public static class WatchedFolderListing
 
         return found;
     }
-
-    /// <summary>A directory entry that is a symbolic link to a file counts as that file, as <see cref="File.Exists"/> treats it.</summary>
-    private static FileInfo? LinkedFile(FileSystemInfo entry, IFileSystem files) =>
-        entry.LinkTarget is not null && files.FileExists(entry.FullName) ? new FileInfo(entry.FullName) : null;
 
     /// <summary>The extensions a workflow names, lower-case with a leading dot, or null when it names none and the built-in list applies.</summary>
     internal static HashSet<string>? ConfiguredExtensions(IReadOnlyCollection<string>? mediaExtensions) =>

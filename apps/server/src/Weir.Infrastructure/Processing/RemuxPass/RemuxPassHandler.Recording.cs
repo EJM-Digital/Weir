@@ -65,35 +65,25 @@ public sealed partial class RemuxPassHandler
         }
     }
 
-    /// <summary>Applies an opt-in rejection deletion, after the rejection was recorded.</summary>
-    private async Task FinishRejectedInputCleanupAsync(WireObject result, ProcessingLibraryRecord? library, long? libraryId, string mediaScope, WireObject? origin)
+    /// <summary>
+    /// Applies an opt-in rejection deletion, after the rejection was recorded. Only a rejection the pass itself made reaches it: the
+    /// pass names the watched folder and the file it looked at in every such result, and the deletion is only ever chosen for one.
+    /// </summary>
+    private async Task FinishRejectedInputCleanupAsync(WireObject result, ProcessingLibraryRecord library, long? libraryId, string mediaScope, WireObject? origin)
     {
-        if (library is null || result.Get("rejection_kind") is not { IsTruthy: true } || result.Get("rejected_file_action") is not WireString { Value: RejectedFileActions.DeleteFile })
+        if (result.Get("rejected_file_action") is not WireString { Value: RejectedFileActions.DeleteFile })
         {
             return;
         }
 
-        if (result.Get("processing_watched_folder_resolved") is not WireString watched || result.Get("inspected_source_path") is not WireString inspected)
-        {
-            result.Set("rejected_cleanup_status", "not_deleted");
-            result.Set("rejected_cleanup_detail", "Weir did not delete the rejected file because its verified watched-folder path was unavailable.");
-        }
-        else
-        {
-            var cleanup = RemuxPassPaths.CleanupRejectedFile(watched.Value, inspected.Value, "delete_file");
-            result.Set("rejected_cleanup_status", cleanup.Deleted ? "deleted" : "not_deleted");
-            result.Set("rejected_cleanup_detail", cleanup.Deleted && WeirOnlyRejection.Applies(library, origin) ? WeirOnlyRejection.Deleted : cleanup.Detail);
-        }
-
+        var cleanup = RemuxPassPaths.CleanupRejectedFile(
+            WireConvert.Str(result["processing_watched_folder_resolved"]), WireConvert.Str(result["inspected_source_path"]), "delete_file");
+        result.Set("rejected_cleanup_status", cleanup.Deleted ? "deleted" : "not_deleted");
+        result.Set("rejected_cleanup_detail", cleanup.Deleted && WeirOnlyRejection.Applies(library, origin) ? WeirOnlyRejection.Deleted : cleanup.Detail);
         await ApplyFileOutcomeStateAsync(result, libraryId, mediaScope, origin).ConfigureAwait(false);
-        if (result.Get("relative_media_path") is not WireString rel || WireStrings.Strip(rel.Value).Length == 0)
-        {
-            return;
-        }
-
         await LockedWrites.RunAsync(
             _database,
-            uow => RemuxPassFileState.RecordFileLogAsync(uow, rel.Value, "Rejected file cleanup finished", result, _time.GetUtcNow()),
+            uow => RemuxPassFileState.RecordFileLogAsync(uow, WireConvert.Str(result["relative_media_path"]), "Rejected file cleanup finished", result, _time.GetUtcNow()),
             _logger,
             "rejected file cleanup record").ConfigureAwait(false);
     }

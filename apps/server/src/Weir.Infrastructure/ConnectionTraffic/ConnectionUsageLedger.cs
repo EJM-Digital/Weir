@@ -49,7 +49,7 @@ public sealed class ConnectionUsageLedger
         lock (_gate)
         {
             return _latest.TryGetValue(connection, out var latest)
-                ? new ConnectionUsage(latest.AnswerMilliseconds ?? storedAnswerMilliseconds, latest.UsedAt ?? storedUsedAt)
+                ? new ConnectionUsage(latest.AnswerMilliseconds ?? storedAnswerMilliseconds, latest.UsedAt)
                 : new ConnectionUsage(storedAnswerMilliseconds, storedUsedAt);
         }
     }

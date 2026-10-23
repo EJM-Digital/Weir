@@ -15,10 +15,9 @@ public sealed partial class ProcessingJobStore
     /// failed, or reclaimed after running unrenewed past its expiry), in which case the caller should
     /// stop renewing and let completion/failure fail its own lease check.
     /// </summary>
-    public Task<bool> RenewLeaseAsync(long jobId, string leaseOwner, DateTimeOffset newLeaseExpiresAt, DateTimeOffset? now = null, CancellationToken cancellationToken = default)
+    public Task<bool> RenewLeaseAsync(long jobId, string leaseOwner, DateTimeOffset newLeaseExpiresAt, DateTimeOffset when, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(leaseOwner);
-        var when = now ?? _time.GetUtcNow();
         return InTransactionAsync(
             (connection, transaction) =>
             {
@@ -70,10 +69,9 @@ public sealed partial class ProcessingJobStore
     /// <summary>
     /// After a failed attempt, requeue with backoff, or mark failed once the attempts are used.
     /// </summary>
-    public Task<bool> FailClaimedAsync(long jobId, string leaseOwner, string errorMessage, DateTimeOffset? now = null, CancellationToken cancellationToken = default)
+    public Task<bool> FailClaimedAsync(long jobId, string leaseOwner, string errorMessage, DateTimeOffset when, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(errorMessage);
-        var when = now ?? _time.GetUtcNow();
         return InTransactionAsync(
             (connection, transaction) =>
             {
@@ -120,10 +118,9 @@ public sealed partial class ProcessingJobStore
     /// For a handler that succeeded when recording its completion did not. Terminal and not claimable;
     /// <c>attempt_count</c> is unchanged.
     /// </summary>
-    public Task<bool> FailLeasedAfterCompleteFailureAsync(long jobId, string leaseOwner, string errorMessage, DateTimeOffset? now = null, CancellationToken cancellationToken = default)
+    public Task<bool> FailLeasedAfterCompleteFailureAsync(long jobId, string leaseOwner, string errorMessage, DateTimeOffset when, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(errorMessage);
-        var when = now ?? _time.GetUtcNow();
         return InTransactionAsync(
             (connection, transaction) =>
             {

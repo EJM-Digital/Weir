@@ -189,11 +189,11 @@ internal sealed class JobsTestDatabase : IDisposable
             CultureInfo.InvariantCulture);
 
     public void InsertRawJob(string dedupeKey, string jobKind, string status = ProcessingJobStatus.Pending, string? leaseOwner = null,
-        string? leaseExpiresAt = null, int attemptCount = 0, int maxAttempts = 3, string? payloadJson = null) =>
+        string? leaseExpiresAt = null, int attemptCount = 0, int maxAttempts = 3, string? payloadJson = null, string? notBefore = null) =>
         Execute(
-            "INSERT INTO jobs (dedupe_key, job_kind, status, lease_owner, lease_expires_at, attempt_count, max_attempts, payload_json) " +
-            "VALUES (@d, @k, @s, @o, @e, @a, @m, @p)",
-            ("@d", dedupeKey), ("@k", jobKind), ("@s", status), ("@o", leaseOwner), ("@e", leaseExpiresAt), ("@a", attemptCount), ("@m", maxAttempts), ("@p", payloadJson));
+            "INSERT INTO jobs (dedupe_key, job_kind, status, lease_owner, lease_expires_at, attempt_count, max_attempts, payload_json, not_before) " +
+            "VALUES (@d, @k, @s, @o, @e, @a, @m, @p, @n)",
+            ("@d", dedupeKey), ("@k", jobKind), ("@s", status), ("@o", leaseOwner), ("@e", leaseExpiresAt), ("@a", attemptCount), ("@m", maxAttempts), ("@p", payloadJson), ("@n", notBefore));
 
     public void Dispose()
     {

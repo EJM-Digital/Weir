@@ -211,14 +211,14 @@ public sealed class LibraryDiscoveryService
             // An unusable root is imported as an empty watched folder rather than a path Weir cannot see: a
             // library pointed at a folder that is not there would fail every scan, and the operator is told
             // why on the way in.
-            var usableRoot = LocalPathProblem(WatchedSource(descriptor)) is null ? WatchedSource(descriptor) ?? string.Empty : string.Empty;
+            var usableRoot = LocalPathProblem(WatchedSource(descriptor)) is null ? WatchedSource(descriptor)! : string.Empty;
 
             // A manager that processes before importing tells Weir where it expects the finished file.
             // Without this a discovered library arrived with no output folder and could not run a pass at
             // all, which made discovery a half-import (#364). Held to the same textual local-path check as
             // the watched folder, for the same reason: the manager's path is not necessarily one Weir can see.
             var usableOutput = descriptor.ProcessesBeforeImport && LocalPathProblem(descriptor.OutputPath) is null
-                ? descriptor.OutputPath ?? string.Empty
+                ? descriptor.OutputPath!
                 : string.Empty;
 
             var name = UniqueName(existingNames, descriptor.Name);

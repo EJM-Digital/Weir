@@ -13,7 +13,7 @@ public sealed partial class RemuxPassHandler
     /// Decides what happens to the file a pass rejected. Under the reject policy the manager is asked, and the download is only
     /// removed once it accepts. Otherwise the library's own rejected-file choice applies, worded for a person when no manager is involved.
     /// </summary>
-    private static void ApplyRejectedFileAction(WireObject result, ProcessingLibraryRecord library, WorkflowManagerLinks links, WireObject? origin)
+    internal static void ApplyRejectedFileAction(WireObject result, ProcessingLibraryRecord library, WorkflowManagerLinks links, WireObject? origin)
     {
         var weirOnly = WeirOnlyRejection.Applies(library, origin);
         if (weirOnly)

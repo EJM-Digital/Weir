@@ -115,7 +115,7 @@ public sealed class ProcessingJobSwapJournal : ISwapJournal
         await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
-            if (reader.IsDBNull(1) || ParseState(reader.GetString(2)) is not { } parsed)
+            if (ParseState(reader.GetString(2)) is not { } parsed)
             {
                 continue;
             }

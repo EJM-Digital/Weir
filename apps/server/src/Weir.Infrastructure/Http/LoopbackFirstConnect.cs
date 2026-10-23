@@ -29,8 +29,11 @@ public static class LoopbackFirstConnect
     }
 
     /// <summary>The loopback addresses in the order <c>localhost</c> is tried: IPv4, then IPv6 where the OS has it.</summary>
-    public static IReadOnlyList<IPAddress> LoopbackAddresses() =>
-        Socket.OSSupportsIPv6 ? [IPAddress.Loopback, IPAddress.IPv6Loopback] : [IPAddress.Loopback];
+    public static IReadOnlyList<IPAddress> LoopbackAddresses() => LoopbackAddresses(Socket.OSSupportsIPv6);
+
+    /// <summary>Test seam (<c>InternalsVisibleTo</c> to Weir.Infrastructure.Tests): the same order for an OS a test says has, or lacks, IPv6.</summary>
+    internal static IReadOnlyList<IPAddress> LoopbackAddresses(bool osSupportsIPv6) =>
+        osSupportsIPv6 ? [IPAddress.Loopback, IPAddress.IPv6Loopback] : [IPAddress.Loopback];
 
     /// <summary>
     /// Connects to the first of <paramref name="addresses"/> that answers, in order, and returns a stream that owns the

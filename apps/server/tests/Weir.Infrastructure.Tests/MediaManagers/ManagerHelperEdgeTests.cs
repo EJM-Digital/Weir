@@ -22,6 +22,19 @@ public sealed class ManagerHelperEdgeTests
     }
 
     [Fact]
+    public void A_manager_that_listed_nothing_it_can_do_advertises_nothing_and_one_that_did_advertises_what_it_listed()
+    {
+        var connection = new ManagerConnection("deluno", "Main", "http://manager.local", "k", 1);
+        var capabilities = new ManagerCapabilities(new HashSet<string> { "movie" }, false, false, "none");
+
+        var silent = new ManagerDescription(connection, SignalStatus.Unreachable, capabilities, [], []);
+        var listed = silent with { Status = SignalStatus.Reported, AdvertisedCapabilities = new HashSet<string> { "rejects" } };
+
+        Assert.Empty(silent.Advertised);
+        Assert.Equal(["rejects"], listed.Advertised);
+    }
+
+    [Fact]
     public void A_manager_path_that_is_one_of_ours_is_matched_directly()
     {
         var match = LibraryTitleMatcher.MatchLocalPath("/data/film.mkv", ["/data/other.mkv", "/data/film.mkv"], [], []);
@@ -88,6 +101,7 @@ public sealed class ManagerHelperEdgeTests
     [InlineData("not json")]
     [InlineData("{\"arr_scope\": \"movie\", \"output_path\": \"/x\"}")]
     [InlineData("{\"connection_id\": 1, \"output_path\": \"/x\"}")]
+    [InlineData("{\"connection_id\": 1, \"arr_scope\": \"movie\"}")]
     [InlineData("{\"connection_id\": 1, \"arr_scope\": \"movie\", \"output_path\": \"\"}")]
     public void A_job_payload_that_is_not_a_downloaded_scan_request_is_not_read_as_one(string? payload)
     {
@@ -104,5 +118,13 @@ public sealed class ManagerHelperEdgeTests
         Assert.False(ok);
         Assert.Equal("Add the address where this app can be reached, then test again.", detail);
         Assert.Empty(http.Requests);
+    }
+
+    [Fact]
+    public void A_downloaded_scan_request_that_names_no_file_in_a_library_is_read_with_an_empty_name()
+    {
+        var request = DownloadedScanRequest.Parse("{\"connection_id\": 1, \"arr_scope\": \"movie\", \"output_path\": \"/x\"}");
+
+        Assert.Equal(string.Empty, request!.RelativeMediaPath);
     }
 }

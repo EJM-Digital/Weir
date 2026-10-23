@@ -41,10 +41,9 @@ public sealed partial class ProcessingJobStore
     /// Puts a job this owner holds back to pending as if it had never been claimed: the attempt the claim counted is given back.
     /// Returns <see langword="false"/> when the owner no longer holds it.
     /// </summary>
-    public Task<bool> ReleaseClaimedAsync(long jobId, string leaseOwner, DateTimeOffset? now = null, CancellationToken cancellationToken = default)
+    public Task<bool> ReleaseClaimedAsync(long jobId, string leaseOwner, DateTimeOffset when, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(leaseOwner);
-        var when = now ?? _time.GetUtcNow();
         return InTransactionAsync(
             (connection, transaction) =>
             {

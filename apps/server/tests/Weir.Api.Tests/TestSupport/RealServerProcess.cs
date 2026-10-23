@@ -53,6 +53,9 @@ internal sealed class RealServerProcess : IDisposable
         return new RealServerProcess(process, host, port);
     }
 
+    /// <summary>Where the dump and report of this server are, when it missed a ceiling; empty otherwise.</summary>
+    internal string Diagnostics { get; private set; } = string.Empty;
+
     internal int ExitCode => _process.ExitCode;
 
     /// <summary>Everything the server has written to standard error, once it has exited.</summary>
@@ -72,6 +75,7 @@ internal sealed class RealServerProcess : IDisposable
         }
         catch (OperationCanceledException)
         {
+            Diagnostics = ChildDiagnostics.Capture(_process, nameof(ExitsAsync));
             return false;
         }
     }
@@ -100,6 +104,11 @@ internal sealed class RealServerProcess : IDisposable
             await Task.Delay(100, CancellationToken.None);
         }
 
+        if (!_process.HasExited)
+        {
+            Diagnostics = ChildDiagnostics.Capture(_process, nameof(BecomesReadyAsync));
+        }
+
         return false;
     }
 
@@ -111,14 +120,10 @@ internal sealed class RealServerProcess : IDisposable
         }
 
         _disposed = true;
-        try
+        var kept = ChildServerStop.StopOrKill(_process, nameof(RealServerProcess));
+        if (kept.Length > 0)
         {
-            _process.Kill(entireProcessTree: true);
-            _process.WaitForExit(10_000);
-        }
-        catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
-        {
-            // Already gone.
+            Diagnostics = kept;
         }
 
         _process.Dispose();

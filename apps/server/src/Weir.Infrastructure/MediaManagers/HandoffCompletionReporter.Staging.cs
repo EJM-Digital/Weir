@@ -163,16 +163,16 @@ public sealed partial class HandoffCompletionReporter
             return resolved.Value;
         }
 
-        return row.LibraryId is { } libraryId && await _libraries.GetAsync(uow, libraryId).ConfigureAwait(false) is { OutputFolder.Length: > 0 } library
-            ? RemuxPassPaths.Resolve(library.OutputFolder.Trim())
-            : null;
+        // The library can be deleted between the hand-off row being read and this read; it then gives no folder, as one that never had one.
+        var library = row.LibraryId is { } libraryId ? await _libraries.GetAsync(uow, libraryId).ConfigureAwait(false) : null;
+        return library?.OutputFolder is { Length: > 0 } folder ? RemuxPassPaths.Resolve(folder.Trim()) : null;
     }
 
     /// <summary>A report that ends a send Weir will not do: one the manager replaced by sending the same release again, or one for a file Weir is working on for another manager. Such a send reads as cancelled.</summary>
     private static bool IsSupersededReport(WireObject body) =>
         body.Get("failureClass") is WireString { Value: CompletionReports.SupersededFailureClass or CompletionReports.NotTakenFailureClass };
 
-    /// <summary>The ledger state a one-file report means.</summary>
+    /// <summary>The ledger state a one-file report means. The body is one <see cref="CompletionReports.BuildCompletionBody"/> wrote, which always says its status and message in words.</summary>
     private static string FileReportState(WireObject body)
     {
         if (IsSupersededReport(body))
@@ -180,12 +180,12 @@ public sealed partial class HandoffCompletionReporter
             return HandoffLedgerRules.Cancelled;
         }
 
-        if (body.Get("status") is not WireString { Value: "completed" })
+        if (WireConvert.Str(body["status"]) != "completed")
         {
             return HandoffLedgerRules.Failed;
         }
 
-        return body.Get("message") is WireString { Value: CompletionReports.PassThroughAfterFailureMessage }
+        return WireConvert.Str(body["message"]) == CompletionReports.PassThroughAfterFailureMessage
             ? HandoffLedgerRules.PassedThrough
             : HandoffLedgerRules.Completed;
     }

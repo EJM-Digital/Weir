@@ -27,15 +27,17 @@ public static class FilesystemBoundaries
             return string.Equals(Path.GetPathRoot(a), Path.GetPathRoot(b), StringComparison.OrdinalIgnoreCase);
         }
 
-        if (!OperatingSystem.IsLinux())
-        {
-            return null;
-        }
+        // Anywhere else there is no mount table to read, which comes out the same as one that cannot be read.
+        return SameMount(a, b, () => File.ReadAllText(MountInfoPath));
+    }
 
+    /// <summary>Whether two full paths are on one mount of the table <paramref name="readMountInfo"/> reads; null when it cannot be read or lists none.</summary>
+    internal static bool? SameMount(string a, string b, Func<string> readMountInfo)
+    {
         IReadOnlyList<string> mountPoints;
         try
         {
-            mountPoints = ParseMountPoints(File.ReadAllText(MountInfoPath));
+            mountPoints = ParseMountPoints(readMountInfo());
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

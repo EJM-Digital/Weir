@@ -46,4 +46,20 @@ public sealed class ToolProcessLedgerTests
 
         Assert.Equal(0, result.ExitCode);
     }
+
+    [Fact]
+    public void A_lease_given_back_twice_is_given_back_once()
+    {
+        var ledger = new ToolProcessLedger();
+        using var process = System.Diagnostics.Process.GetCurrentProcess();
+        var lease = ledger.Track(process);
+        Assert.Equal(1, ledger.Running);
+
+        lease.Dispose();
+        var timeAfterFirst = ledger.TotalProcessorTime;
+        lease.Dispose();
+
+        Assert.Equal(0, ledger.Running);
+        Assert.Equal(timeAfterFirst, ledger.TotalProcessorTime);
+    }
 }

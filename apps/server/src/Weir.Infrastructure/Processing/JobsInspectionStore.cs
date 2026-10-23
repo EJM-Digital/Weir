@@ -120,7 +120,9 @@ public sealed class JobsInspectionStore
         return new FinishedJobs(rows.Sum(row => row.Count), failed);
     }
 
-    private static DateTimeOffset? ToOffset(Timestamp? value) => value is { } v ? new DateTimeOffset(v.AsUtc, TimeSpan.Zero) : null;
+    private static DateTimeOffset? ToOffset(Timestamp? value) => value is { } v ? Utc(v) : null;
+
+    private static DateTimeOffset Utc(Timestamp value) => new(value.AsUtc, TimeSpan.Zero);
 
     // Timestamps go through the strict ISO reader in SqliteValues rather than ProcessingJobStore.ReadJob's parser: the two
     // differ on unusual stored text, and the inspection API keeps its existing output and errors.
@@ -138,6 +140,6 @@ public sealed class JobsInspectionStore
         ToOffset(SqliteValues.GetDateTimeOrNull(reader, 10)),
         (int)SqliteValues.GetInt64(reader, 11),
         (int)SqliteValues.GetInt64(reader, 12),
-        ToOffset(SqliteValues.GetDateTime(reader, 13)) ?? DateTimeOffset.MinValue,
-        ToOffset(SqliteValues.GetDateTime(reader, 14)) ?? DateTimeOffset.MinValue);
+        Utc(SqliteValues.GetDateTime(reader, 13)),
+        Utc(SqliteValues.GetDateTime(reader, 14)));
 }

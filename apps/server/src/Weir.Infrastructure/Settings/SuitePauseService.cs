@@ -110,6 +110,6 @@ public sealed class SuitePauseService
         return $"{actor} paused processing {length}. {looking}";
     }
 
-    private static string UtcText(Timestamp? at) =>
+    internal static string UtcText(Timestamp? at) =>
         at is { } value ? value.AsUtc.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) + " UTC" : "an unknown time";
 }

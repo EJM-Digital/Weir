@@ -123,7 +123,7 @@ public sealed class ProcessingJobProcessor
             job.JobKind,
             job.PayloadJson,
             leaseOwner,
-            job.AttemptCount == 0 ? 1 : job.AttemptCount,
+            job.AttemptCount,
             job.MaxAttempts == 0 ? 1 : job.MaxAttempts);
         var willRetry = WorkerFailures.RetryComing(context.AttemptCount, context.MaxAttempts);
 

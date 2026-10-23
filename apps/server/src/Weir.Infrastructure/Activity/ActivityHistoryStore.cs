@@ -152,6 +152,7 @@ public sealed class ActivityHistoryStore
     public async Task<long?> LatestIdAsync(SqliteDatabase database, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(database);
+        object value;
         var connection = await database.OpenAsync(cancellationToken).ConfigureAwait(false);
         await using (connection.ConfigureAwait(false))
         {
@@ -159,10 +160,11 @@ public sealed class ActivityHistoryStore
             await using (command.ConfigureAwait(false))
             {
                 command.CommandText = "SELECT max(activity_events.id) AS max_1 FROM activity_events";
-                var value = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
-                return value is null or DBNull ? null : Convert.ToInt64(value, CultureInfo.InvariantCulture);
+                value = (await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false))!;
             }
         }
+
+        return value is DBNull ? null : Convert.ToInt64(value, CultureInfo.InvariantCulture);
     }
 
     /// <summary>Counts one file's events and processing records.</summary>

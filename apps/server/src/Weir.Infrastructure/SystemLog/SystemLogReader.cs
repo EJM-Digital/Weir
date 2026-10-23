@@ -65,9 +65,7 @@ public sealed class SystemLogReader
                 yield break;
             }
 
-            after = order.TryDecodeCursor(page.NextCursor, out var next)
-                ? next
-                : throw new InvalidOperationException("The log gave out a cursor for its next page that it cannot read back.");
+            after = order.KeyOfGivenCursor(page.NextCursor);
         }
         while (remaining > 0);
     }

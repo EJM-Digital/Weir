@@ -34,7 +34,7 @@ internal static class CompletedMovieRemoval
                 // hold": a held file looks unfinished everywhere.
                 ? new FileStateVerdict(
                     ProcessingFileStatuses.Processed,
-                    $"The output is complete, but removing the original download is waiting: {reason ?? "The source release folder is still locked."} Weir will try again automatically.")
+                    $"The output is complete, but removing the original download is waiting: {reason} Weir will try again automatically.")
                 : folderRemoved
                     ? new FileStateVerdict(ProcessingFileStatuses.Processed, "The output was already complete. The temporary lock cleared, so Weir finished removing the source release folder.")
                     // The folder also holds other videos: only this file went, and the other files keep their own state.
@@ -45,7 +45,7 @@ internal static class CompletedMovieRemoval
             }
 
             await files.RecordFileStateAsync(
-                uow, library.Id, decision.RelativePath, verdict, file.SizeBytes, decision.Settling?.SizeChangedAt, scan.Now).ConfigureAwait(false);
+                uow, library.Id, decision.RelativePath, verdict, file.SizeBytes, decision.Settling!.SizeChangedAt, scan.Now).ConfigureAwait(false);
             await uow.CommitAsync().ConfigureAwait(false);
         }
     }

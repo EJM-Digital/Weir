@@ -49,7 +49,7 @@ public sealed partial class OutputFolderCleanup
             return null;
         }
 
-        var folder = Path.GetDirectoryName(mediaOut) ?? mediaOut;
+        var folder = Path.GetDirectoryName(mediaOut)!;
         if (!RemuxPassPaths.IsUnder(folder, outputRoot))
         {
             Skip(output, prefix, skipKey, tv

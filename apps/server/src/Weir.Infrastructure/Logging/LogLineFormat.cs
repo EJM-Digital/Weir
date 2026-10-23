@@ -80,7 +80,7 @@ public static class LogLineFormat
     {
         var local = now.ToLocalTime();
         var line = local.ToString("yyyy-MM-dd HH:mm:ss,fff", CultureInfo.InvariantCulture) + " " + LevelName(level) + " " + logger + " " + message;
-        return exception is null ? line : line + Environment.NewLine + exception;
+        return exception is null ? line : line + Environment.NewLine + exception.ToString();
     }
 
     private static void AppendString(StringBuilder builder, string? value)

@@ -92,4 +92,23 @@ public sealed class ManagerStoreEdgeTests : IDisposable
         });
         return (await _fixture.Db(uow => HandoffLedgerStore.FindAsync(uow, "deluno", "h1"), commit: false))!;
     }
+
+    [Fact]
+    public async Task A_connection_saved_with_the_downloaded_scan_on_keeps_it_on()
+    {
+        var id = await _fixture.Db(uow => _fixture.ConnectionStore.InsertAsync(uow, "sonarr", true, "http://sonarr.local", null, downloadedScanEnabled: true));
+
+        Assert.Equal(1, await _fixture.Store.Scalar($"SELECT downloaded_scan_enabled FROM media_manager_connections WHERE id = {id}"));
+    }
+
+    [Fact]
+    public async Task Usage_that_carries_only_how_long_the_manager_took_leaves_when_it_was_last_used_as_it_was()
+    {
+        var id = await _fixture.AddConnectionAsync("sonarr");
+
+        await _fixture.Db(uow => _fixture.ConnectionStore.RecordUsageAsync(uow, id, new Weir.Infrastructure.ConnectionTraffic.ConnectionUsage(42, null)));
+
+        Assert.Equal(42, await _fixture.Store.Scalar($"SELECT last_answer_ms FROM media_manager_connections WHERE id = {id}"));
+        Assert.Equal(1, await _fixture.Store.Scalar($"SELECT last_used_at IS NULL FROM media_manager_connections WHERE id = {id}"));
+    }
 }

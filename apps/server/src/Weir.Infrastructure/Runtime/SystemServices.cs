@@ -242,7 +242,7 @@ public sealed class UpdateFiles
     // has not taken up reads as under way only while there is a tray and the flag is recent.
     private WireObject StateAsShown(WireObject written, bool trayIsRunning)
     {
-        var name = (written.Get("state") as WireString)?.Value;
+        var name = WireConvert.Str(written["state"]);
         if (name is UpdateStatus.StateChecking or UpdateStatus.StateDownloading)
         {
             return trayIsRunning ? written : UpdateStatus.WithStep(written, UpdateStatus.StateIdle);
@@ -345,7 +345,7 @@ public sealed class UpdateFiles
     }
 
     /// <summary>Whether the tray has downloaded an update that is waiting to be installed.</summary>
-    public bool HasDownloadedUpdate() => ReadState().Get("downloaded")?.IsTruthy ?? false;
+    public bool HasDownloadedUpdate() => ReadState()["downloaded"].IsTruthy;
 
     /// <summary>Tell the tray whether file work is running or could start now, as of <paramref name="checkedAt"/>.</summary>
     public void WriteWorkState(bool busy, DateTimeOffset checkedAt) =>
@@ -354,7 +354,16 @@ public sealed class UpdateFiles
     private void ReplaceFile(string fileName, byte[] contents) => AtomicFileWriter.Replace(_options.WeirHome, fileName, contents);
 
     /// <summary>The install type: <c>WEIR_RUNTIME</c>, a Docker marker, a packaged Windows build, else source.</summary>
-    public static string DetectInstallType(string? runtimeVariable)
+    public static string DetectInstallType(string? runtimeVariable) =>
+        DetectInstallType(
+            runtimeVariable,
+            path => File.Exists(path) || Directory.Exists(path),
+            // Only the packaged Windows build is published as a single file.
+            string.IsNullOrEmpty(typeof(UpdateFiles).Assembly.Location),
+            OperatingSystem.IsWindows());
+
+    /// <summary>The install type given what the machine says: whether a path exists, whether Weir is a single file, and whether it runs on Windows.</summary>
+    internal static string DetectInstallType(string? runtimeVariable, Func<string, bool> pathExists, bool singleFile, bool windows)
     {
         var runtime = (runtimeVariable ?? string.Empty).Trim().ToLowerInvariant();
         if (runtime is "windows" or "docker" or "source")
@@ -362,13 +371,11 @@ public sealed class UpdateFiles
             return runtime;
         }
 
-        if (File.Exists("/.dockerenv") || Directory.Exists("/.dockerenv"))
+        if (pathExists("/.dockerenv"))
         {
             return "docker";
         }
 
-        // Only the packaged Windows build is published as a single file.
-        var singleFile = string.IsNullOrEmpty(typeof(UpdateFiles).Assembly.Location);
-        return singleFile && OperatingSystem.IsWindows() ? "windows" : "source";
+        return singleFile && windows ? "windows" : "source";
     }
 }

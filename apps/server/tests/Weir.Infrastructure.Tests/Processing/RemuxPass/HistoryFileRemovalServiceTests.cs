@@ -485,4 +485,61 @@ public sealed partial class HistoryFileRemovalServiceTests : IDisposable
         Assert.True(outcome.Done);
         Assert.Equal(0, await _fixture.Store.Scalar("SELECT count(*) FROM file_skip_markers"));
     }
+
+    [Fact]
+    public async Task A_failed_title_whose_workflow_is_gone_does_not_qualify_for_a_choice()
+    {
+        var library = await LibraryAsync();
+        var source = _folders.Source("Film/film.mkv");
+        var file = await FileRowAsync(library, "Film/film.mkv", source);
+        await _fixture.Store.Execute("DELETE FROM libraries");
+
+        var options = await _fixture.Db(uow => Service().EvaluateAsync(uow, file, CancellationToken.None));
+
+        Assert.False(options.RequiresChoice);
+    }
+
+    [Fact]
+    public async Task A_handoff_manager_that_does_not_answer_its_manifest_cannot_take_the_rejection()
+    {
+        var library = await LibraryAsync();
+        var source = _folders.Source("Film/film.mkv");
+        var file = await FileRowAsync(library, "Film/film.mkv", source);
+        var connection = await _fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
+        await LinkAsync(library, connection);
+        await GiveHandoffOriginAsync(library, "Film/film.mkv", "h5");
+        _fixture.Http.Json(HttpMethod.Get, ManifestPath, "{}", HttpStatusCode.InternalServerError);
+
+        var options = await _fixture.Db(uow => Service().EvaluateAsync(uow, file, CancellationToken.None));
+
+        Assert.False(options.DeleteHandledByManager);
+        Assert.Empty(_fixture.Http.RequestsTo(HttpMethod.Post, EventsPath));
+    }
+
+    [Fact]
+    public async Task A_title_handed_over_by_a_manager_that_is_not_saved_is_removed_by_Weir_alone()
+    {
+        var library = await LibraryAsync();
+        var source = _folders.Source("Film/film.mkv");
+        var file = await FileRowAsync(library, "Film/film.mkv", source);
+        await GiveHandoffOriginAsync(library, "Film/film.mkv", "h6");
+
+        var options = await _fixture.Db(uow => Service().EvaluateAsync(uow, file, CancellationToken.None));
+
+        Assert.False(options.DeleteHandledByManager);
+        Assert.Null(options.ManagerLabel);
+    }
+
+    [Fact]
+    public async Task Delete_refuses_a_file_whose_fingerprint_was_only_half_recorded_when_nothing_confirms_it()
+    {
+        var library = await LibraryAsync();
+        var source = _folders.Source("Film/film.mkv");
+        var file = (await FileRowAsync(library, "Film/film.mkv", source)) with { FingerprintMtimeNs = null };
+
+        var outcome = await _fixture.Db(uow => Service().DeleteAsync(uow, file, null, CancellationToken.None));
+
+        Assert.False(outcome.Done);
+        Assert.True(File.Exists(source));
+    }
 }

@@ -13,6 +13,17 @@ public sealed class ProcessingJobStoreTests : IDisposable
     public void Dispose() => _db.Dispose();
 
     [Fact]
+    public async Task A_row_whose_creation_and_update_times_cannot_be_read_reads_as_the_earliest_time()
+    {
+        await _db.Store.EnqueueOrGetAsync("blank-times", Kind);
+        _db.Execute("UPDATE jobs SET created_at = '', updated_at = ''");
+
+        var job = Assert.Single(await _db.Store.ListAsync());
+
+        Assert.Equal((DateTimeOffset.MinValue, DateTimeOffset.MinValue), (job.CreatedAt, job.UpdatedAt));
+    }
+
+    [Fact]
     public async Task Enqueue_duplicate_dedupe_key_returns_same_row()
     {
         var a = await _db.Store.EnqueueOrGetAsync("k1", Kind);

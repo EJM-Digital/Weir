@@ -38,6 +38,20 @@ public sealed class JobsInspectionStoreTests
     }
 
     [Fact]
+    public async Task A_leased_job_is_listed_with_who_holds_it_what_it_carries_and_what_went_wrong_last()
+    {
+        using var db = new JobsTestDatabase();
+        InsertJob(db, "running", ProcessingJobStatus.Leased, "2020-01-01T00:00:00Z");
+        db.Execute("UPDATE jobs SET lease_owner = 'worker-1', payload_json = '{\"a\":1}', last_error = 'earlier failure'");
+        await using var uow = await UnitOfWork.OpenAsync(db.Database);
+
+        var (rows, _) = await Store.ListAsync(uow, limit: 10, statuses: [ProcessingJobStatus.Leased]);
+
+        var row = Assert.Single(rows);
+        Assert.Equal(("worker-1", "{\"a\":1}", "earlier failure"), (row.LeaseOwner, row.PayloadJson, row.LastError));
+    }
+
+    [Fact]
     public async Task With_no_leased_job_the_newest_pending_one_still_wins_the_limit()
     {
         using var db = new JobsTestDatabase();

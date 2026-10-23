@@ -243,6 +243,71 @@ public sealed class GitHubReleaseCatalogClientTests : IDisposable
     }
 
     [Fact]
+    public async Task A_retry_after_in_seconds_is_a_wait_from_now()
+    {
+        var now = _clock.GetUtcNow();
+        FeedFails();
+        _github.Api = _ =>
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+            response.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.FromMinutes(7));
+            return response;
+        };
+
+        var failure = await Assert.ThrowsAsync<ReleaseFetchException>(() => _client.FetchLatestAsync(Running, CancellationToken.None));
+
+        Assert.Equal(now.AddMinutes(7), failure.RateLimit?.ResetsAt);
+    }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("5", "1893456000")]
+    [InlineData("0", "-5")]
+    [InlineData("0", null)]
+    public async Task A_refusal_is_a_limit_only_when_no_allowance_is_left_and_the_reset_is_a_real_time(string? remaining, string? reset)
+    {
+        FeedFails();
+        _github.Api = _ =>
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.Forbidden);
+            if (remaining is not null)
+            {
+                response.Headers.Add("X-RateLimit-Remaining", remaining);
+            }
+
+            if (reset is not null)
+            {
+                response.Headers.Add("X-RateLimit-Reset", reset);
+            }
+
+            return response;
+        };
+
+        var failure = await Assert.ThrowsAsync<ReleaseFetchException>(() => _client.FetchLatestAsync(Running, CancellationToken.None));
+
+        Assert.Equal(403, failure.StatusCode);
+        Assert.Null(failure.RateLimit);
+    }
+
+    [Fact]
+    public async Task An_allowance_header_with_no_value_is_not_a_limit()
+    {
+        FeedFails();
+        _github.Api = _ =>
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.Forbidden);
+            response.Headers.TryAddWithoutValidation("X-RateLimit-Remaining", Array.Empty<string>());
+            response.Headers.Add("X-RateLimit-Reset", "1893456000");
+            return response;
+        };
+
+        var failure = await Assert.ThrowsAsync<ReleaseFetchException>(() => _client.FetchLatestAsync(Running, CancellationToken.None));
+
+        Assert.Equal(403, failure.StatusCode);
+        Assert.Null(failure.RateLimit);
+    }
+
+    [Fact]
     public async Task A_reset_too_large_to_be_a_time_is_an_error_status_not_a_limit()
     {
         FeedFails();

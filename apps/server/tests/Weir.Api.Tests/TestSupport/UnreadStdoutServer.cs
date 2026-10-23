@@ -33,6 +33,9 @@ internal sealed class UnreadStdoutServer : IDisposable
 
     internal string Home { get; }
 
+    /// <summary>Where the dump and report of this server are, when it missed a ceiling; empty otherwise.</summary>
+    internal string Diagnostics { get; private set; } = string.Empty;
+
     /// <summary>Whether the server is running and has been seen to exit; null while it runs.</summary>
     internal int? ExitCode => _process.HasExited ? _process.ExitCode : null;
 
@@ -80,6 +83,7 @@ internal sealed class UnreadStdoutServer : IDisposable
         }
         catch (OperationCanceledException)
         {
+            Diagnostics = ChildDiagnostics.Capture(_process, nameof(ExitsAsync));
             return false;
         }
     }
@@ -107,19 +111,20 @@ internal sealed class UnreadStdoutServer : IDisposable
             await Task.Delay(100, CancellationToken.None);
         }
 
+        if (!_process.HasExited)
+        {
+            Diagnostics = ChildDiagnostics.Capture(_process, nameof(BecomesReadyAsync));
+        }
+
         return false;
     }
 
     public void Dispose()
     {
-        try
+        var kept = ChildServerStop.StopOrKill(_process, nameof(UnreadStdoutServer));
+        if (kept.Length > 0)
         {
-            _process.Kill(entireProcessTree: true);
-            _process.WaitForExit(10_000);
-        }
-        catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
-        {
-            // Already gone.
+            Diagnostics = kept;
         }
 
         _process.Dispose();

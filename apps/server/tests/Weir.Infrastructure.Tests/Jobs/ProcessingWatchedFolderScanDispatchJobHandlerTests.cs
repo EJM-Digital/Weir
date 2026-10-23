@@ -81,6 +81,36 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandlerTests
     }
 
     [Fact]
+    public async Task A_scan_of_a_workflow_with_no_watched_folder_fails_and_says_so()
+    {
+        var (store, jobs, handler) = await BuildAsync();
+        using var _ = store;
+        var libraryId = await CreateLibraryAsync(store, store.Home.Join("watch"), store.Home.Join("out"));
+        await store.Execute($"UPDATE libraries SET watched_folder = '' WHERE id = {libraryId}");
+
+        var failure = await Assert.ThrowsAsync<InvalidOperationException>(() => RunScanAsync(handler, jobs, libraryId, enqueueRemuxJobs: true));
+
+        Assert.Contains("has no watched folder set", failure.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_scan_with_no_time_zone_saved_reads_its_schedule_in_UTC()
+    {
+        var (store, jobs, handler) = await BuildAsync();
+        using var _ = store;
+        var watched = store.Home.Join("watch");
+        Directory.CreateDirectory(watched);
+        Directory.CreateDirectory(store.Home.Join("out"));
+        File.WriteAllBytes(Path.Combine(watched, "Gate Test 2001.mkv"), [1]);
+        var libraryId = await CreateLibraryAsync(store, watched, store.Home.Join("out"));
+        await store.Execute("UPDATE suite_settings SET app_timezone = ''");
+
+        await RunScanAsync(handler, jobs, libraryId, enqueueRemuxJobs: true);
+
+        Assert.Equal(1, await store.Scalar("SELECT count(*) FROM jobs WHERE job_kind = 'processing.file.remux_pass.v1'"));
+    }
+
+    [Fact]
     public async Task The_handler_enqueues_a_remux_pass_job_with_the_exact_payload_shape()
     {
         var (store, jobs, handler) = await BuildAsync();

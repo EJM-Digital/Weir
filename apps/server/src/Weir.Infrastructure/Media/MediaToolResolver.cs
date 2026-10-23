@@ -46,8 +46,10 @@ public sealed class MediaToolResolver : IMediaToolResolver
     /// The resolver for this process: a single-file publish (the Windows package and the Docker image) also looks in <c>&lt;app&gt;/bin/ffmpeg</c>, where the Windows package
     /// bundles ffmpeg and ffprobe.
     /// </summary>
-    public static MediaToolResolver ForCurrentProcess() =>
-        new(string.IsNullOrEmpty(typeof(MediaToolResolver).Assembly.Location) ? AppContext.BaseDirectory : null);
+    public static MediaToolResolver ForCurrentProcess() => new(PackagedDirectoryFor(typeof(MediaToolResolver).Assembly.Location));
+
+    /// <summary>Test seam (<c>InternalsVisibleTo</c> to Weir.Infrastructure.Tests): a single-file publish has no assembly file, so its location is empty and the app directory is where it runs from.</summary>
+    internal static string? PackagedDirectoryFor(string assemblyLocation) => string.IsNullOrEmpty(assemblyLocation) ? AppContext.BaseDirectory : null;
 
     public (string Ffprobe, string Ffmpeg) Resolve()
     {

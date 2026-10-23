@@ -32,4 +32,17 @@ public sealed class ActivityHistoryEdgeTests
         Assert.Null(await fixture.WithUnitOfWork(uow => _history.OldestCreatedAtAsync(uow)));
         Assert.Null(await _history.LatestIdAsync(fixture.Database));
     }
+
+    [Fact]
+    public async Task Updating_only_the_title_keeps_the_type_and_the_detail()
+    {
+        using var fixture = new StoreFixture();
+        var writer = new SqliteActivityWriter(fixture.Database);
+        var id = await writer.RecordAsync(new ActivityEventDraft(ActivityEventTypes.ProcessingFileProcessingProgress, "processing", "Processing movie.mkv", "{\"percent\":10}"));
+
+        await fixture.WithUnitOfWork(uow => SqliteActivityWriter.UpdateAsync(uow, id, title: "Processed movie.mkv"));
+
+        Assert.Equal(1, await fixture.Scalar(
+            $"SELECT count(*) FROM activity_events WHERE id = {id} AND title = 'Processed movie.mkv' AND detail = '{{\"percent\":10}}' AND event_type = '{ActivityEventTypes.ProcessingFileProcessingProgress}'"));
+    }
 }

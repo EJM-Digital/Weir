@@ -176,4 +176,17 @@ public sealed class FollowUpAndProgressEdgeTests : IDisposable
         Assert.True(logger.Logged(LogLevel.Warning, "could not save a progress update"));
         Assert.Equal(0, await _fixture.Store.Scalar("SELECT count(*) FROM activity_events"));
     }
+
+    [Fact]
+    public void A_progress_block_says_how_much_was_read_and_written_so_far_and_nothing_when_the_length_is_unknown()
+    {
+        var known = RemuxPassRunner.ProgressWithUpdate(
+            new WireObject(), new FfmpegProgressUpdate { Percent = 25.0, ElapsedSeconds = 4, ProcessedSeconds = 10.5, Progress = "continue", TotalSizeBytes = 180 }, 1000);
+        var unknown = RemuxPassRunner.ProgressWithUpdate(new WireObject(), new FfmpegProgressUpdate { Progress = "continue" }, 1000);
+        var withoutWritten = RemuxPassRunner.ProgressWithUpdate(new WireObject(), new FfmpegProgressUpdate { Percent = 50.0, Progress = "continue" }, 1000);
+
+        Assert.Equal((250L, 180L, 25.0), (((WireInteger)known["bytes_read"]).Value, ((WireInteger)known["bytes_written"]).Value, ((WireNumber)known["percent"]).Value));
+        Assert.Equal((WireNull.Instance, WireNull.Instance, WireNull.Instance), (unknown["percent"], unknown["bytes_read"], unknown["processed_seconds"]));
+        Assert.Equal(500L, ((WireInteger)withoutWritten["bytes_written"]).Value);
+    }
 }

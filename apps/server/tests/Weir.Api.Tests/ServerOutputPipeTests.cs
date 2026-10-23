@@ -39,7 +39,7 @@ public sealed class ServerOutputPipeTests : IDisposable
 
         var log = Path.Join(_home, "logs", "weir.log");
         var lines = ReadLog(log);
-        Assert.True(ready, $"The server did not become ready with its standard output full (exit code {server.ExitCode}); its log has {lines.Length} lines.");
+        Assert.True(ready, $"The server did not become ready with its standard output full (exit code {server.ExitCode}); its log has {lines.Length} lines. Kept for diagnosis: {server.Diagnostics}");
         Assert.Contains("listening on", string.Join(Environment.NewLine, lines), StringComparison.Ordinal);
     }
 
@@ -53,7 +53,7 @@ public sealed class ServerOutputPipeTests : IDisposable
 
         var exited = await server.ExitsAsync(Ceiling);
 
-        Assert.True(exited, "The server did not exit after refusing its settings, with standard error a full pipe");
+        Assert.True(exited, $"The server did not exit after refusing its settings, with standard error a full pipe. Kept for diagnosis: {server.Diagnostics}");
         Assert.Equal(1, server.ExitCode);
         var note = File.ReadAllText(Path.Join(_home, "startup-error.txt")).Split('\n', 2);
         Assert.Equal("Weir's settings are not valid", note[0]);

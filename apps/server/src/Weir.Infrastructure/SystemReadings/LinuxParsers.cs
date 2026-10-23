@@ -175,7 +175,7 @@ public static class LinuxParsers
     public static long? ParseBytes(string? text)
     {
         var value = text?.Trim();
-        return value is not (null or "" or Unlimited) && long.TryParse(value, CultureInfo.InvariantCulture, out var bytes) && bytes > 0
+        return !string.IsNullOrEmpty(value) && value != Unlimited && long.TryParse(value, CultureInfo.InvariantCulture, out var bytes) && bytes > 0
             ? bytes
             : null;
     }

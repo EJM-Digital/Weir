@@ -578,4 +578,20 @@ public sealed class ManagerWorkflowSyncTests
 
         Assert.Contains(await Workflows(fixture), workflow => workflow.DiscoveredLibraryKey == "lib-movies");
     }
+
+    [Fact]
+    public async Task A_changed_output_folder_updates_only_that_folder_and_says_so()
+    {
+        using var fixture = Deluno([Movies]);
+        await ConnectAsync(fixture);
+        await Sync(fixture);
+        var moved = Movies with { Output = "/data/new-ready/movies" };
+        Script(fixture, [moved], new Dictionary<string, string?> { ["lib-movies"] = "/data/completed/movie" }, []);
+
+        await Sync(fixture);
+
+        var movies = Assert.Single(await Workflows(fixture), workflow => workflow.MediaType == "movie");
+        Assert.Equal("/data/completed/movie", movies.WatchedFolder);
+        Assert.Equal("/data/new-ready/movies", movies.OutputFolder);
+    }
 }

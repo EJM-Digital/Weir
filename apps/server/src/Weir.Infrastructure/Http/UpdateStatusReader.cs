@@ -54,7 +54,7 @@ public sealed class UpdateStatusReader
         var currentVersion = WeirVersion.Resolve(_options.VersionOverride);
         // The Windows app lets its owner switch checking off, and then nothing is asked of GitHub. A Docker or source install has no
         // tray to hold that choice and keeps looking, since this page is how it learns of a release.
-        if (installType == "windows" && _files.ReadSettings().Get("check_for_updates")?.IsTruthy != true)
+        if (installType == "windows" && !_files.ReadSettings()["check_for_updates"].IsTruthy)
         {
             return UpdateStatus.Off(currentVersion, installType);
         }
@@ -109,18 +109,21 @@ public sealed class UpdateStatusReader
     /// <summary>The time zone chosen in System, for the clock time a limit lifts at; UTC when the setting cannot be read.</summary>
     private async Task<string?> TimezoneAsync(CancellationToken cancellationToken)
     {
+        string? timezone;
         try
         {
             var uow = await UnitOfWork.OpenAsync(_database, cancellationToken).ConfigureAwait(false);
             await using (uow.ConfigureAwait(false))
             {
-                return (await _suiteSettings.GetAsync(uow).ConfigureAwait(false))?.AppTimezone;
+                timezone = (await _suiteSettings.GetAsync(uow).ConfigureAwait(false))?.AppTimezone;
             }
         }
         catch (Exception exception) when (exception is SqliteException or IOException)
         {
-            return null;
+            timezone = null;
         }
+
+        return timezone;
     }
 
     private static WireObject NotPublished(string currentVersion, string installType) =>

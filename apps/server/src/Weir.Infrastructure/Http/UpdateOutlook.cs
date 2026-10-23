@@ -53,7 +53,7 @@ public sealed class UpdateOutlook
     {
         CheckWhenStale();
         var state = _files.ReadState();
-        if (state.Get("downloaded")?.IsTruthy == true)
+        if (state["downloaded"].IsTruthy)
         {
             return new UpdateOutlookSnapshot(Downloaded, TextOf(state.Get("pending_version")));
         }
@@ -68,7 +68,7 @@ public sealed class UpdateOutlook
     public async Task CheckAsync(CancellationToken cancellationToken)
     {
         var status = await _status.ReadAsync(cancellationToken).ConfigureAwait(false);
-        var outlook = new UpdateOutlookSnapshot(TextOf(status.Get("status")) ?? Checking, TextOf(status.Get("latest_version")));
+        var outlook = new UpdateOutlookSnapshot(WireConvert.Str(status["status"]), TextOf(status.Get("latest_version")));
         bool changed;
         lock (_gate)
         {

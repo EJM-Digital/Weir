@@ -86,7 +86,15 @@ public sealed class LibraryCleanPreflightRunnerTests
         Assert.Single(results);
     }
 
-    private static async Task<List<LibraryFilePreflightResult>> PreflightAsync(bool skipIfManagerWouldRedownload, int cutoffFormatScore = 60, string probeJson = FakeMediaRunner.EnglishAndJapanese, IHardlinkInspector? inspector = null)
+    [Fact]
+    public async Task A_file_the_manager_has_no_title_for_is_asked_about_by_its_file_name()
+    {
+        var results = await PreflightAsync(skipIfManagerWouldRedownload: true, managerTitle: null);
+
+        Assert.Single(results);
+    }
+
+    private static async Task<List<LibraryFilePreflightResult>> PreflightAsync(bool skipIfManagerWouldRedownload, int cutoffFormatScore = 60, string probeJson = FakeMediaRunner.EnglishAndJapanese, IHardlinkInspector? inspector = null, string? managerTitle = "Arrival")
     {
         var replies = RedownloadRiskReplies.For(cutoffFormatScore);
         var manager = new FakeManagerHttp()
@@ -94,7 +102,7 @@ public sealed class LibraryCleanPreflightRunnerTests
             .Json(HttpMethod.Get, replies.ProfilePath, replies.ProfileJson);
         var file = new LibraryScanFileEntry(
             FilmPath, 1_000_000, 1_700_000_000, LibraryFileClassification.WouldChange, Summary: null, Reason: null,
-            RemovedAudioCount: 1, RemovedSubtitleCount: 0, ManagerKind: "radarr", ManagerTitle: "Arrival",
+            RemovedAudioCount: 1, RemovedSubtitleCount: 0, ManagerKind: "radarr", ManagerTitle: managerTitle,
             ProbeJson: probeJson, ManagerConnectionId: ConnectionId, ManagerTitleId: "3",
             ManagerFileId: replies.FileId, ManagerQualityProfileId: replies.ProfileId);
 
@@ -112,6 +120,18 @@ public sealed class LibraryCleanPreflightRunnerTests
     private sealed class RefusingInspector : IHardlinkInspector
     {
         public int? LinkCount(string path) => throw new UnauthorizedAccessException();
+    }
+
+    [Theory]
+    [InlineData(0, "{}")]
+    [InlineData(1, null)]
+    [InlineData(1, "")]
+    [InlineData(1, "this is not ffprobe output")]
+    public void A_file_with_nothing_to_remove_or_nothing_readable_to_replan_removes_no_languages(int removedAudioCount, string? probeJson)
+    {
+        var file = new LibraryScanFileEntry(FilmPath, 1, 1, LibraryFileClassification.WouldChange, null, null, removedAudioCount, 0, "radarr", "Arrival", probeJson);
+
+        Assert.Empty(LibraryCleanPreflightRunner.RemovedAudioLanguages(file, EnglishOnly));
     }
 
     private sealed class SingleLinkInspector : IHardlinkInspector

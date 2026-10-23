@@ -1,11 +1,14 @@
 // The Pause and resume and deleted-file scenarios of the weir-only shard, judged against the stand-in for Weir and the container
 // (scenarios-ci/fake-world.mjs): each must pass when Weir does what it should, and fail, saying why, for each way Weir can go wrong.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { ContainerBox } from "./scenarios-ci/container-box.mjs";
 import { FakeWorld } from "./scenarios-ci/fake-world.mjs";
 import { runScenarios } from "./scenarios-ci/run.mjs";
+import { weirLayers } from "./scenarios-ci/shard-runners.mjs";
+import { SHARDS } from "./scenarios-ci/shards.mjs";
 import { SCENARIOS } from "./scenarios-ci/weir-only.mjs";
 
 async function run(id, behaviour) {
@@ -94,4 +97,14 @@ test("a file of exact bytes is written with printf's octal escapes, and a file i
   await box.writeBytes("/tmp/w/a.mkv", [1, 2, 3, 4, 5]);
   await box.remove("/tmp/w/a.mkv");
   assert.deepEqual(stack.calls, [String.raw`printf '\001\002\003\004\005' > '/tmp/w/a.mkv'`, `rm -f '/tmp/w/a.mkv'`]);
+});
+
+// --- no outside service ---------------------------------------------------------------------------------------------------
+
+test("Weir in every Linux shard looks up no posters, so no scenario depends on an outside service answering", () => {
+  for (const name of Object.keys(SHARDS)) {
+    const layers = weirLayers(SHARDS[name]);
+    const inCompose = SHARDS[name].beside ? /^ {6}WEIR_ARTWORK_GATEWAY_URL: "off"$/m.test(readFileSync("scripts/scenarios-ci/with-deluno/compose.yaml", "utf8")) : false;
+    assert.ok(inCompose || layers?.environment?.WEIR_ARTWORK_GATEWAY_URL === "off", `${name}: Weir is started with posters off`);
+  }
 });

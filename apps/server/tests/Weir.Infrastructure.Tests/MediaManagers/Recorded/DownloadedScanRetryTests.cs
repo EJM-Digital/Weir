@@ -191,4 +191,34 @@ public sealed class DownloadedScanRetryTests : IDisposable
         Assert.Equal(Now + TimeSpan.FromSeconds(45), queued.NotBefore);
         Assert.Equal(1, await ActivityAsync(AskingAgain));
     }
+
+    [Fact]
+    public async Task A_busy_app_with_no_queue_to_ask_again_from_is_given_up_on_at_once()
+    {
+        await StartRecordedAsync(BusyScanRecording.Busy());
+        var noQueue = new DownloadedScanNotifier(_fixture.Connections, _fixture.ConnectionStore, _fixture.Libraries, _replay!, NullLogger<DownloadedScanNotifier>.Instance);
+
+        await _fixture.Db(async uow =>
+        {
+            await noQueue.NotifyLibraryAsync(uow, _libraryId, MediaManagerKinds.Tv, BusyScanRecording.OutputPath, Relative, downloadId: null);
+            return 0;
+        });
+
+        Assert.Equal(1, await ActivityAsync(CouldNotAsk));
+        Assert.Empty(await QueuedAsync());
+    }
+
+    [Fact]
+    public async Task A_scan_asked_for_by_a_pass_that_names_no_file_calls_it_a_file_Weir_just_wrote()
+    {
+        await StartRecordedAsync(BusyScanRecording.Accepted);
+
+        await _fixture.Db(async uow =>
+        {
+            await _notifier!.NotifyLibraryAsync(uow, _libraryId, MediaManagerKinds.Tv, BusyScanRecording.OutputPath, relativeMediaPath: string.Empty, downloadId: null);
+            return 0;
+        });
+
+        Assert.Equal(1, await ActivityAsync("Asked % to scan for a file Weir just wrote"));
+    }
 }

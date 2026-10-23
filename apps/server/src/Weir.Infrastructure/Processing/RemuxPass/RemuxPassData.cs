@@ -26,13 +26,15 @@ public static class LockedWrites
         {
             try
             {
+                T result;
                 var uow = await UnitOfWork.OpenAsync(database, cancellationToken).ConfigureAwait(false);
                 await using (uow.ConfigureAwait(false))
                 {
-                    var result = await work(uow).ConfigureAwait(false);
+                    result = await work(uow).ConfigureAwait(false);
                     await uow.CommitAsync().ConfigureAwait(false);
-                    return result;
                 }
+
+                return result;
             }
             catch (SqliteException exception) when (IsLock(exception) && attempt < Attempts - 1)
             {

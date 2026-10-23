@@ -326,11 +326,14 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
     [LoggerMessage(Level = LogLevel.Debug, Message = "Could not set the priority of {Tool} to {Priority}; it runs at the priority it started with.")]
     private static partial void LogPriorityNotSet(ILogger logger, Exception exception, string tool, ProcessPriorityClass priority);
 
-    internal static void KillTree(Process process)
+    internal static void KillTree(Process process) => TryKill(() => process.Kill(entireProcessTree: true));
+
+    /// <summary>Runs a kill that may find its target already gone or partly out of reach, which is not an error.</summary>
+    internal static void TryKill(Action kill)
     {
         try
         {
-            process.Kill(entireProcessTree: true);
+            kill();
         }
         catch (InvalidOperationException)
         {

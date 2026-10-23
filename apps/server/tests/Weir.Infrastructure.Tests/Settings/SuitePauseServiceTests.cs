@@ -25,6 +25,13 @@ public sealed class SuitePauseServiceTests : IDisposable
     public SuitePauseServiceTests() =>
         _pause = new SuitePauseService(new SuiteSettingsStore(new AuthStore()), new ActivityStore(), _changes, _workers);
 
+    [Fact]
+    public void A_pause_with_no_end_time_says_it_does_not_know_when_it_ends()
+    {
+        Assert.Equal("an unknown time", SuitePauseService.UtcText(null));
+        Assert.Equal("2026-10-20 12:00 UTC", SuitePauseService.UtcText(Timestamp.FromUtc(new DateTime(2026, 10, 20, 12, 0, 0, DateTimeKind.Utc))));
+    }
+
     public void Dispose() => _store.Dispose();
 
     private Timestamp Now => Timestamp.UtcNow(_store.Clock);

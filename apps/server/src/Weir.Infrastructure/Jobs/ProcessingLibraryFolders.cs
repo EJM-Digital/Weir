@@ -25,10 +25,10 @@ public static class ProcessingLibraryFolders
         {
             rows.Add(new ProcessingLibraryFolderRow(
                 reader.GetInt64(0),
-                reader.IsDBNull(1) ? "movie" : reader.GetString(1),
-                reader.IsDBNull(2) ? 0 : (int)reader.GetInt64(2),
-                reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
-                reader.IsDBNull(4) ? string.Empty : reader.GetString(4)));
+                reader.GetString(1),
+                (int)reader.GetInt64(2),
+                reader.GetString(3),
+                reader.GetString(4)));
         }
 
         return rows;

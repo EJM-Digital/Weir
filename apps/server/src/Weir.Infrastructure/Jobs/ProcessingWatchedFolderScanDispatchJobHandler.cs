@@ -48,7 +48,7 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
     private readonly ConcurrentDictionary<long, byte> _foldersNotSeen = new();
 
     private readonly ScanWakeups? _wakeups;
-    private readonly ILogger<ProcessingWatchedFolderScanDispatchJobHandler>? _logger;
+    private readonly ILogger<ProcessingWatchedFolderScanDispatchJobHandler> _logger;
     private readonly DataChangePublisher? _changes;
 
     public ProcessingWatchedFolderScanDispatchJobHandler(
@@ -86,7 +86,7 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
         _files = files;
         _skipMarkers = skipMarkers;
         _wakeups = wakeups;
-        _logger = logger;
+        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<ProcessingWatchedFolderScanDispatchJobHandler>.Instance;
         _changes = changes;
     }
 
@@ -111,13 +111,11 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
             return;
         }
 
-        var candidates = await BlockingWork.RunAsync(() => WatchedFolderListing.Candidates(
-            scan.Paths.WatchedFolder,
-            scan.Rules.MediaExtensions.Count > 0 ? scan.Rules.MediaExtensions : null,
-            scan.Rules.ExcludeMarkers,
-            scan.Rules.ExcludeHidden,
-            scan.Rules.TopLevelOnly,
-            _fs)).ConfigureAwait(false);
+        var candidates = await ListCandidatesAsync(scan).ConfigureAwait(false);
+        if (candidates is null)
+        {
+            return;
+        }
 
         var reads = await UnitOfWork.OpenAsync(_database, cancellationToken).ConfigureAwait(false);
         await using (reads.ConfigureAwait(false))
@@ -151,6 +149,42 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
         _changes?.Publish(DataTopics.LibraryScan);
     }
 
+    /// <summary>
+    /// The files in the watched folder, or null when the folder went away after it was seen (a share taken off the network between
+    /// the check and the listing). That is the same state as a folder that was not there at the check, so it is said the same way
+    /// and the next scan looks again; it is not a failed job. A folder that is still there and cannot be read fails the scan.
+    /// </summary>
+    private async Task<WatchedFolderScanCandidates?> ListCandidatesAsync(WatchedFolderScan scan)
+    {
+        try
+        {
+            return await BlockingWork.RunAsync(() => WatchedFolderListing.Candidates(
+                scan.Paths.WatchedFolder,
+                scan.Rules.MediaExtensions.Count > 0 ? scan.Rules.MediaExtensions : null,
+                scan.Rules.ExcludeMarkers,
+                scan.Rules.ExcludeHidden,
+                scan.Rules.TopLevelOnly,
+                _fs)).ConfigureAwait(false);
+        }
+        catch (IOException) when (!_fs.DirectoryExists(scan.Paths.WatchedFolder))
+        {
+            WarnFolderNotSeen(scan.Library);
+            return null;
+        }
+    }
+
+    /// <summary>Said once until the folder is back; the next scan looks again.</summary>
+    private void WarnFolderNotSeen(ProcessingLibraryRecord library)
+    {
+        if (_foldersNotSeen.TryAdd(library.Id, 0))
+        {
+            _logger.LogWarning(
+                "Did not scan {Library}: Weir can't see its watched folder {Folder}. It may have been deleted or its drive disconnected. Check that the folder exists and that Weir can reach it.",
+                library.Name,
+                library.WatchedFolder.Trim());
+        }
+    }
+
     private sealed record ScanRequest(long? LibraryId, string MediaScope, string Trigger, bool EnqueueRemuxJobs);
 
     /// <summary>
@@ -175,7 +209,7 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
             if (links.HandedOffByManager)
             {
                 // However this scan was queued, it queues nothing: a Deluno-linked workflow is processed only from Deluno's hand-off.
-                _logger?.LogInformation("Did not scan {Library}: {Reason}", library.Name, links.ScanSkippedReason);
+                _logger.LogInformation("Did not scan {Library}: {Reason}", library.Name, links.ScanSkippedReason);
                 return null;
             }
 
@@ -185,27 +219,20 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
                 {
                     // Not a failed job to retry: the folder is gone (deleted, or its drive unmounted) and a retry would find the same. This
                     // is a real problem, so it is a warning in plain words, said once until the folder is back; the next scan looks again.
-                    if (_foldersNotSeen.TryAdd(library.Id, 0))
-                    {
-                        _logger?.LogWarning(
-                            "Did not scan {Library}: Weir can't see its watched folder {Folder}. It may have been deleted or its drive disconnected. Check that the folder exists and that Weir can reach it.",
-                            library.Name,
-                            saved);
-                    }
-
+                    WarnFolderNotSeen(library);
                     return null;
                 }
 
                 if (_foldersNotSeen.TryRemove(library.Id, out _))
                 {
-                    _logger?.LogInformation("The watched folder {Folder} for {Library} is back, so Weir is scanning it again.", saved, library.Name);
+                    _logger.LogInformation("The watched folder {Folder} for {Library} is back, so Weir is scanning it again.", saved, library.Name);
                 }
             }
 
             var (paths, pathError) = WatchedFolderScanOps.ResolvePathRuntimeForLibrary(library, _options.WeirHome, _fs);
             if (paths is null)
             {
-                throw new InvalidOperationException(pathError ?? "Path settings are incomplete for this scan.");
+                throw new InvalidOperationException(pathError);
             }
 
             // Manager queue signals: ask every manager linked to this library, and note who did not answer. Always the
