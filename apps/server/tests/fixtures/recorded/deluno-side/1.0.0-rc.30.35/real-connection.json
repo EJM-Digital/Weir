@@ -1,8 +1,8 @@
 {
   "app": "deluno",
-  "version": "1.0.0-rc.30.33",
+  "version": "1.0.0-rc.30.35",
   "state": "real-connection",
-  "recordedAt": "2026-10-18T07:29:14.037Z",
+  "recordedAt": "2026-10-23T14:30:17.462Z",
   "note": "Weir connected to a real Deluno, and Deluno to Weir: what Weir read of Deluno's manifest and folders, and what Deluno asked of Weir, the first time each was said.",
   "exchanges": [
     {
@@ -74,7 +74,7 @@
           },
           "libraries": [
             {
-              "id": "01a14dd7a3277ea09b4c8cf79f45b536",
+              "id": "01a16918f0747a73b2c1d580a4a121e5",
               "name": "Movies",
               "mediaType": "movies",
               "rootPath": "/media/Movies",
@@ -95,7 +95,7 @@
           ],
           "indexers": [
             {
-              "id": "01a14dd7a33f78cea0dade8e40c0a849",
+              "id": "01a16918f08c702f845f4104f4693888",
               "name": "Scenario feed",
               "protocol": "torznab",
               "mediaScope": "both",
@@ -106,7 +106,7 @@
           ],
           "downloadClients": [
             {
-              "id": "01a14dd7a26a70c3a0af6ac9fe9a1dfb",
+              "id": "01a16918efb07a76affced6a38a9ef91",
               "name": "qBittorrent on qbittorrent",
               "protocol": "qbittorrent",
               "moviesCategory": "deluno-movies",
@@ -137,7 +137,7 @@
         "body": {
           "libraries": [
             {
-              "libraryId": "01a14dd7a3277ea09b4c8cf79f45b536",
+              "libraryId": "01a16918f0747a73b2c1d580a4a121e5",
               "libraryName": "Movies",
               "mediaType": "movies",
               "downloadsPath": "/downloads/completed/Movies",
@@ -145,7 +145,7 @@
               "importWorkflow": "standard",
               "destinations": [
                 {
-                  "downloadClientId": "01a14dd7a26a70c3a0af6ac9fe9a1dfb",
+                  "downloadClientId": "01a16918efb07a76affced6a38a9ef91",
                   "downloadClientName": "qBittorrent on qbittorrent",
                   "protocol": "qbittorrent",
                   "category": "deluno-movies",
