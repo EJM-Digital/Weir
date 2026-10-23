@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Weir.Core.Jobs;
 using Weir.Core.Processing;
 using Weir.Core.Time;
+using Weir.Infrastructure.IO;
 
 namespace Weir.Infrastructure.Jobs;
 
@@ -125,7 +126,8 @@ public static class StartupRecovery
         IReadOnlyList<InterruptedJob> interrupted,
         IReadOnlyList<ProcessingLibraryFolderRow> libraries,
         string weirHome,
-        ILogger logger)
+        ILogger logger,
+        IFileSystem? fileSystem = null)
     {
         ArgumentNullException.ThrowIfNull(interrupted);
         ArgumentNullException.ThrowIfNull(logger);
@@ -147,7 +149,7 @@ public static class StartupRecovery
                     ? ProcessingLibraryFolders.DefaultTvWorkFolder(weirHome)
                     : ProcessingLibraryFolders.DefaultMovieWorkFolder(weirHome);
             var pattern = WeirTempFiles.RemuxTempNameFor(relative);
-            removed += DeleteMatching(workFolder, pattern.IsMatch, notNewerThanUtc: null, logger, job.Id);
+            removed += DeleteMatching(workFolder, pattern.IsMatch, notNewerThanUtc: null, logger, job.Id, fileSystem ?? PhysicalFileSystem.Instance);
         }
 
         return removed;
@@ -158,11 +160,11 @@ public static class StartupRecovery
     /// <paramref name="notNewerThanUtc"/>, a file written after that moment is left: it may be a failed copy someone asked
     /// Weir to keep.
     /// </summary>
-    public static int SweepWorkFolderTempFiles(IReadOnlyList<ProcessingLibraryFolderRow> libraries, string weirHome, DateTime? notNewerThanUtc, ILogger logger)
+    public static int SweepWorkFolderTempFiles(IReadOnlyList<ProcessingLibraryFolderRow> libraries, string weirHome, DateTime? notNewerThanUtc, ILogger logger, IFileSystem? fileSystem = null)
     {
         ArgumentNullException.ThrowIfNull(libraries);
         var roots = WorkRoots(libraries, weirHome);
-        return roots.Sum(root => DeleteMatching(root, WeirTempFiles.IsRemuxTempName, notNewerThanUtc, logger, jobId: null));
+        return roots.Sum(root => DeleteMatching(root, WeirTempFiles.IsRemuxTempName, notNewerThanUtc, logger, jobId: null, fileSystem ?? PhysicalFileSystem.Instance));
     }
 
     private static bool KeepsFailedWorkFiles(SqliteConnection connection, SqliteTransaction transaction) =>
@@ -174,9 +176,10 @@ public static class StartupRecovery
     /// Remove hidden <c>*.partial</c> files under every library output
     /// folder and <c>WEIR_HOME/processing-output</c>, searched recursively.
     /// </summary>
-    public static int CleanupPartialOutputFiles(IReadOnlyList<ProcessingLibraryFolderRow> libraries, string weirHome)
+    public static int CleanupPartialOutputFiles(IReadOnlyList<ProcessingLibraryFolderRow> libraries, string weirHome, IFileSystem? fileSystem = null)
     {
         ArgumentNullException.ThrowIfNull(libraries);
+        var files = fileSystem ?? PhysicalFileSystem.Instance;
         var comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
         var roots = new HashSet<string>(comparer);
         foreach (var library in libraries)
@@ -193,22 +196,22 @@ public static class StartupRecovery
         var removed = 0;
         foreach (var root in roots)
         {
-            if (!Directory.Exists(root))
+            if (!files.DirectoryExists(root))
             {
                 continue;
             }
 
-            IEnumerable<string> candidates;
+            IReadOnlyList<string> candidates;
             try
             {
-                candidates = Directory.EnumerateFiles(root, "*", new EnumerationOptions
+                candidates = files.ListFiles(root, new EnumerationOptions
                 {
                     RecurseSubdirectories = true,
                     IgnoreInaccessible = true,
                     // Hidden files are Weir's too; a link is never followed, so nothing outside the root is swept.
                     AttributesToSkip = FileAttributes.ReparsePoint,
                     ReturnSpecialDirectories = false,
-                }).ToList();
+                });
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
@@ -224,7 +227,7 @@ public static class StartupRecovery
 
                 try
                 {
-                    File.Delete(path);
+                    files.DeleteFile(path);
                     removed++;
                 }
                 catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
@@ -253,7 +256,7 @@ public static class StartupRecovery
         return roots;
     }
 
-    private static int DeleteMatching(string folder, Func<string, bool> isWeirTempName, DateTime? notNewerThanUtc, ILogger logger, long? jobId)
+    private static int DeleteMatching(string folder, Func<string, bool> isWeirTempName, DateTime? notNewerThanUtc, ILogger logger, long? jobId, IFileSystem files)
     {
         string root;
         try
@@ -265,15 +268,15 @@ public static class StartupRecovery
             return 0;
         }
 
-        if (!Directory.Exists(root))
+        if (!files.DirectoryExists(root))
         {
             return 0;
         }
 
-        List<string> files;
+        IReadOnlyList<string> inFolder;
         try
         {
-            files = [.. Directory.EnumerateFiles(root, "*", new EnumerationOptions { RecurseSubdirectories = false, AttributesToSkip = 0 })];
+            inFolder = files.ListFiles(root, new EnumerationOptions { RecurseSubdirectories = false, AttributesToSkip = 0 });
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -282,7 +285,7 @@ public static class StartupRecovery
         }
 
         var removed = 0;
-        foreach (var path in files)
+        foreach (var path in inFolder)
         {
             if (!isWeirTempName(Path.GetFileName(path)))
             {
@@ -291,12 +294,12 @@ public static class StartupRecovery
 
             try
             {
-                if (notNewerThanUtc is { } cutoff && File.GetLastWriteTimeUtc(path) > cutoff)
+                if (notNewerThanUtc is { } cutoff && files.GetLastWriteTimeUtc(path) > cutoff)
                 {
                     continue;
                 }
 
-                File.Delete(path);
+                files.DeleteFile(path);
                 removed++;
                 logger.LogInformation(
                     "Removed interrupted temp output {Path}{JobSuffix}",

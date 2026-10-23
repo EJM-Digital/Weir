@@ -7,6 +7,7 @@ using Weir.Core.Processing;
 using Weir.Core.Processing.RemuxPass;
 using Weir.Infrastructure.Activity;
 using Weir.Infrastructure.Auth;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Jobs;
 using Weir.Infrastructure.Media;
 using Weir.Infrastructure.MediaManagers;
@@ -535,7 +536,7 @@ public sealed class LeftInPlaceOriginalTests : IDisposable
         }
 
         Task<VanishedFiles.Changes> Look(string trigger) => VanishedFiles.SettleAsync(
-            _fixture.Store.Database, _libraryId, _folders.Watched, "movie", _fixture.Store.Clock.GetUtcNow(), trigger, BothHaveLooked, _ => { }, CancellationToken.None);
+            _fixture.Store.Database, _libraryId, _folders.Watched, "movie", _fixture.Store.Clock.GetUtcNow(), trigger, BothHaveLooked, _ => { }, PhysicalFileSystem.Instance, CancellationToken.None);
 
         var looks = await Task.WhenAll(Look("folder_change"), Look("scheduled"));
 
