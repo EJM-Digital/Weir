@@ -9,6 +9,7 @@ using Weir.Core.Processing;
 using Weir.Infrastructure.Activity;
 using Weir.Infrastructure.Artwork;
 using Weir.Infrastructure.ConnectionTraffic;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Jobs;
 using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Processing.RemuxPass;
@@ -71,6 +72,9 @@ public sealed partial class MediaManagerIntake
     private readonly ArtworkSubjects _artwork;
     private readonly TimeProvider _time;
     private readonly ConnectionActivityHub? _activity;
+
+    /// <summary>The file system the intake reads hand-offs from; a test substitutes one that fails.</summary>
+    internal IFileSystem FileSystem { get; init; } = PhysicalFileSystem.Instance;
 
     public MediaManagerIntake(
         WeirOptions options,
@@ -254,8 +258,9 @@ public sealed partial class MediaManagerIntake
     /// <summary>
     /// The media files a hand-off means: a file names itself; a folder means the videos inside it with samples left out.
     /// </summary>
-    public static List<string> HandoffMediaFiles(IntakeLibrary? library, string relativePath)
+    public static List<string> HandoffMediaFiles(IntakeLibrary? library, string relativePath, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         if (library is null || relativePath.Length == 0)
         {
             return [relativePath];
@@ -265,13 +270,13 @@ public sealed partial class MediaManagerIntake
         List<IReadOnlyList<string>> videos;
         try
         {
-            if (!Directory.Exists(folder))
+            if (!files.DirectoryExists(folder))
             {
                 return [relativePath];
             }
 
             videos = [];
-            foreach (var file in Directory.EnumerateFiles(folder, "*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = 0, IgnoreInaccessible = true }))
+            foreach (var file in files.EnumerateFiles(folder, "*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = 0, IgnoreInaccessible = true }))
             {
                 if (IntakeRules.IsMediaCandidateName(Path.GetFileName(file)))
                 {
@@ -325,8 +330,8 @@ public sealed partial class MediaManagerIntake
 
         var relativePath = resolved.RelativeMediaPath!;
         var targets = importEvent.SourceFiles is { Count: > 0 } && library is not null
-            ? HandoffListedFiles(library, relativePath, importEvent)
-            : HandoffMediaFiles(library, relativePath);
+            ? HandoffListedFiles(library, relativePath, importEvent, FileSystem)
+            : HandoffMediaFiles(library, relativePath, FileSystem);
         var baseKey = IntakeRules.BaseDedupeKey(importEvent, NewGuid);
         var covered = new List<string>(targets.Count);
         // #786 review of #785: a target someone chose to keep must not be reprocessed just because a manager
@@ -602,13 +607,13 @@ public sealed partial class MediaManagerIntake
         long size;
         try
         {
-            var info = new FileInfo(Path.Join(library.WatchedFolder, relativePath));
-            if (!info.Exists)
+            var path = Path.Join(library.WatchedFolder, relativePath);
+            if (!FileSystem.FileExists(path))
             {
                 return;
             }
 
-            size = info.Length;
+            size = FileSystem.GetLength(path);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {

@@ -1,6 +1,7 @@
 using Weir.Core.MediaManagers;
 using Weir.Core.Processing;
 using Weir.Core.Processing.RemuxPass;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Sqlite;
 
@@ -16,7 +17,8 @@ internal sealed record WatchedFolderScan(
     ScanAdmissionWindow Window,
     bool EnqueueRemuxJobs,
     DateTimeOffset Now,
-    WorkflowManagerLinks Links)
+    WorkflowManagerLinks Links,
+    IFileSystem Files)
 {
     /// <summary>The source stays after cleaning: the workflow says so, or a linked media manager and its download client own it.</summary>
     public bool KeepsOriginals => !Library.RemoveOriginalAfterSuccess || Links.KeepsOriginals;

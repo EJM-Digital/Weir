@@ -35,16 +35,17 @@ public static class PathContainment
     /// included), is a junction or symbolic link. A recursive delete through a link would remove files that live
     /// somewhere else, so callers refuse it. A path that cannot be inspected counts as a link.
     /// </summary>
-    public static bool HasLinkBelowRoot(string root, string path)
+    public static bool HasLinkBelowRoot(string root, string path, IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(root);
         ArgumentNullException.ThrowIfNull(path);
+        files ??= PhysicalFileSystem.Instance;
         var current = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
         while (IsUnder(root, current))
         {
             try
             {
-                if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
+                if ((files.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
                 {
                     return true;
                 }

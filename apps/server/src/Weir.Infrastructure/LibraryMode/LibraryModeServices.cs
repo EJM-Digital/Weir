@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Weir.Core.Configuration;
 using Weir.Core.Jobs;
 using Weir.Core.Library;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Library;
 using Weir.Infrastructure.Media;
 using Weir.Infrastructure.MediaManagers;
@@ -34,7 +35,7 @@ public static class LibraryModeServices
         services.TryAddSingleton<LibraryViewStore>();
 
         // The #506 safe swap: real files, the library_swaps journal, the #500 output check.
-        services.TryAddSingleton<ISwapFileSystem>(_ => PhysicalSwapFileSystem.Instance);
+        services.TryAddSingleton<ISwapFileSystem>(sp => new PhysicalSwapFileSystem(sp.GetService<IFileSystem>()));
         services.TryAddSingleton(sp => new ProcessingJobSwapJournal(sp.GetRequiredService<SqliteDatabase>()));
         services.TryAddSingleton<ISwapJournal>(sp => sp.GetRequiredService<ProcessingJobSwapJournal>());
         services.TryAddSingleton<ISwapOutputValidator, RemuxOutputSwapValidator>();

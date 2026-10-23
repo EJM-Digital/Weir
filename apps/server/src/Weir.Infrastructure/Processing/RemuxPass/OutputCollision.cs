@@ -1,5 +1,6 @@
 using System.Globalization;
 using Weir.Core.Json;
+using Weir.Infrastructure.IO;
 
 namespace Weir.Infrastructure.Processing.RemuxPass;
 
@@ -35,14 +36,15 @@ public static class OutputCollision
     /// The next free numbered name: <c>Film (2001).mkv</c> becomes <c>Film (2001) (2).mkv</c>, then <c>(3)</c>, up to <paramref name="limit"/>.
     /// Null when every one of those names is taken, so a name that is taken is never handed back as free.
     /// </summary>
-    public static string? NextFreePath(string final, int limit = 999)
+    public static string? NextFreePath(string final, int limit = 999, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         var directory = Path.GetDirectoryName(final) ?? string.Empty;
         var (stem, suffix) = StemAndSuffix(Path.GetFileName(final));
         for (var attempt = 2; attempt <= limit; attempt++)
         {
             var candidate = Path.Join(directory, $"{stem} ({attempt.ToString(CultureInfo.InvariantCulture)}){suffix}");
-            if (!Exists(candidate))
+            if (!Exists(candidate, files))
             {
                 return candidate;
             }
@@ -52,12 +54,13 @@ public static class OutputCollision
     }
 
     /// <summary>Decides, under the collision policy, whether and where the output is written when a file may already be at <paramref name="final"/>.</summary>
-    public static CollisionDecision Decide(string final, string? source = null, string? staged = null, string? policy = null)
+    public static CollisionDecision Decide(string final, string? source = null, string? staged = null, string? policy = null, IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(final);
+        files ??= PhysicalFileSystem.Instance;
         var chosen = NormalizePolicy(policy);
         var name = Path.GetFileName(final);
-        if (!Exists(final))
+        if (!Exists(final, files))
         {
             return new CollisionDecision(chosen, "write", final, false, "No file existed at the output path, so Weir wrote it there.");
         }
@@ -71,7 +74,7 @@ public static class OutputCollision
                     "alone, so Weir kept the one that was already there.");
             case KeepBoth:
             {
-                var destination = NextFreePath(final);
+                var destination = NextFreePath(final, files: files);
                 if (destination is null)
                 {
                     return new CollisionDecision(
@@ -87,8 +90,8 @@ public static class OutputCollision
 
             case ReplaceIfLarger:
             {
-                var existingSize = SizeOf(final);
-                var newSize = staged is not null ? SizeOf(staged) : null;
+                var existingSize = SizeOf(final, files);
+                var newSize = staged is not null ? SizeOf(staged, files) : null;
                 if (existingSize is null || newSize is null)
                 {
                     return new CollisionDecision(
@@ -105,8 +108,8 @@ public static class OutputCollision
 
             case ReplaceIfNewer:
             {
-                var existingTime = ModifiedOf(final);
-                var sourceTime = source is not null ? ModifiedOf(source) : null;
+                var existingTime = ModifiedOf(final, files);
+                var sourceTime = source is not null ? ModifiedOf(source, files) : null;
                 if (existingTime is null || sourceTime is null)
                 {
                     return new CollisionDecision(
@@ -128,7 +131,7 @@ public static class OutputCollision
     }
 
     /// <summary><c>Path.exists</c>: a file or a directory.</summary>
-    private static bool Exists(string path) => File.Exists(path) || Directory.Exists(path);
+    private static bool Exists(string path, IFileSystem files) => files.FileExists(path) || files.DirectoryExists(path);
 
     private static (string Stem, string Suffix) StemAndSuffix(string name)
     {
@@ -136,17 +139,17 @@ public static class OutputCollision
         return index <= 0 || index == name.Length - 1 ? (name, string.Empty) : (name[..index], name[index..]);
     }
 
-    private static long? SizeOf(string path)
+    private static long? SizeOf(string path, IFileSystem files)
     {
         try
         {
-            if (File.Exists(path))
+            if (files.FileExists(path))
             {
-                return new FileInfo(path).Length;
+                return files.GetLength(path);
             }
 
             // os.stat on a directory succeeds; its st_size is not meaningful but is a number.
-            return Directory.Exists(path) ? 0 : null;
+            return files.DirectoryExists(path) ? 0 : null;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -154,16 +157,16 @@ public static class OutputCollision
         }
     }
 
-    private static DateTime? ModifiedOf(string path)
+    private static DateTime? ModifiedOf(string path, IFileSystem files)
     {
         try
         {
-            if (File.Exists(path))
+            if (files.FileExists(path))
             {
-                return File.GetLastWriteTimeUtc(path);
+                return files.GetLastWriteTimeUtc(path);
             }
 
-            return Directory.Exists(path) ? Directory.GetLastWriteTimeUtc(path) : null;
+            return files.DirectoryExists(path) ? files.GetDirectoryLastWriteTimeUtc(path) : null;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.MediaManagers;
 
 namespace Weir.Infrastructure.Processing.RemuxPass;
@@ -19,10 +20,11 @@ public static partial class FileLifecycle
     public static double BytesToMb(long sizeBytes) => Math.Max(0.0, sizeBytes / (double)BytesPerMib);
 
     /// <summary>The path itself when it is an existing directory, else its closest existing ancestor.</summary>
-    public static string NearestExistingParent(string path)
+    public static string NearestExistingParent(string path, IFileSystem? files = null)
     {
-        var current = Directory.Exists(path) ? path : Path.GetDirectoryName(path) ?? path;
-        while (!Directory.Exists(current) && !File.Exists(current))
+        files ??= PhysicalFileSystem.Instance;
+        var current = files.DirectoryExists(path) ? path : Path.GetDirectoryName(path) ?? path;
+        while (!files.DirectoryExists(current) && !files.FileExists(current))
         {
             var parent = Path.GetDirectoryName(current);
             if (parent is null || parent == current)
@@ -38,34 +40,34 @@ public static partial class FileLifecycle
 
     /// <summary>Whether the drive holding <paramref name="targetPath"/> has at least <paramref name="requiredMb"/> free.
     /// A requirement of zero turns the check off.</summary>
-    public static DiskSpaceCheck CheckMinimumFreeDiskSpace(string targetPath, long requiredMb, Func<string, long>? freeBytes = null)
+    public static DiskSpaceCheck CheckMinimumFreeDiskSpace(string targetPath, long requiredMb, Func<string, long>? freeBytes = null, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         var required = Math.Max(0, requiredMb);
-        var checkedPath = NearestExistingParent(targetPath);
+        var checkedPath = NearestExistingParent(targetPath, files);
         if (required <= 0)
         {
             return new DiskSpaceCheck(true, checkedPath, 0.0, 0);
         }
 
-        var free = BytesToMb((freeBytes ?? AvailableFreeBytes)(checkedPath));
+        var free = BytesToMb((freeBytes ?? (path => files.GetAvailableFreeSpace(Path.GetFullPath(path))))(checkedPath));
         return new DiskSpaceCheck(free >= required, checkedPath, free, required);
     }
-
-    private static long AvailableFreeBytes(string path) => new DriveInfo(Path.GetFullPath(path)).AvailableFreeSpace;
 
     /// <summary>
     /// Creates a folder to publish into and every missing folder above it, and gives the output ownership policy to each one it made,
     /// the topmost first. A folder that was already there is left as it is.
     /// </summary>
-    public static void EnsureOutputDirectory(string directory, IOutputOwnership? ownership)
+    public static void EnsureOutputDirectory(string directory, IOutputOwnership? ownership, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         var missing = new Stack<string>();
-        for (var folder = directory; !string.IsNullOrEmpty(folder) && !Directory.Exists(folder); folder = Path.GetDirectoryName(folder))
+        for (var folder = directory; !string.IsNullOrEmpty(folder) && !files.DirectoryExists(folder); folder = Path.GetDirectoryName(folder))
         {
             missing.Push(folder);
         }
 
-        Directory.CreateDirectory(directory);
+        files.CreateDirectory(directory);
         foreach (var created in missing)
         {
             ownership?.ApplyToDirectory(created);
@@ -83,30 +85,32 @@ public static partial class FileLifecycle
         Action<long, long>? progressCallback = null,
         bool preserveMetadata = true,
         IOutputOwnership? ownership = null,
+        IFileSystem? files = null,
         CancellationToken cancellationToken = default)
     {
+        files ??= PhysicalFileSystem.Instance;
         var src = Path.GetFullPath(source);
         var directory = Path.GetDirectoryName(Path.GetFullPath(final))!;
-        EnsureOutputDirectory(directory, ownership);
+        EnsureOutputDirectory(directory, ownership, files);
 
-        var tmp = CreateTempFile(directory, "." + Path.GetFileName(final) + ".", ".partial");
+        var tmp = CreateTempFile(directory, "." + Path.GetFileName(final) + ".", ".partial", files);
         try
         {
-            await CopyContentAsync(src, tmp, progressCallback, cancellationToken).ConfigureAwait(false);
+            await CopyContentAsync(src, tmp, progressCallback, files, cancellationToken).ConfigureAwait(false);
             if (preserveMetadata)
             {
-                File.SetLastWriteTimeUtc(tmp, File.GetLastWriteTimeUtc(src));
-                File.SetLastAccessTimeUtc(tmp, File.GetLastAccessTimeUtc(src));
+                files.SetLastWriteTimeUtc(tmp, files.GetLastWriteTimeUtc(src));
+                files.SetLastAccessTimeUtc(tmp, files.GetLastAccessTimeUtc(src));
             }
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            BestEffortDelete(tmp);
+            BestEffortDelete(tmp, files);
             throw new FileLifecycleException($"Could not safely copy {src} to {final}: {exception.Message}", exception);
         }
         catch (OperationCanceledException)
         {
-            BestEffortDelete(tmp);
+            BestEffortDelete(tmp, files);
             throw;
         }
 
@@ -118,18 +122,18 @@ public static partial class FileLifecycle
             }
             catch
             {
-                BestEffortDelete(tmp);
+                BestEffortDelete(tmp, files);
                 throw;
             }
         }
 
         try
         {
-            File.Move(tmp, final, overwrite: true);
+            files.MoveFile(tmp, final, overwrite: true);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            BestEffortDelete(tmp);
+            BestEffortDelete(tmp, files);
             throw new FileLifecycleException($"Could not safely publish the validated copy at {final}: {exception.Message}", exception);
         }
 
@@ -145,14 +149,14 @@ public static partial class FileLifecycle
     /// reports no progress, and it carries over what this copy deliberately does not (Windows attributes and alternate
     /// streams, Unix permission bits), which would change what lands in the output folder.
     /// </remarks>
-    private static async Task CopyContentAsync(string source, string destination, Action<long, long>? progressCallback, CancellationToken cancellationToken)
+    private static async Task CopyContentAsync(string source, string destination, Action<long, long>? progressCallback, IFileSystem files, CancellationToken cancellationToken)
     {
-        var total = new FileInfo(source).Length;
+        var total = files.GetLength(source);
         long copied = 0;
-        var input = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.Asynchronous | FileOptions.SequentialScan);
+        var input = files.OpenFile(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.Asynchronous | FileOptions.SequentialScan);
         await using (input.ConfigureAwait(false))
         {
-            var output = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None, 1, FileOptions.Asynchronous);
+            var output = files.OpenFile(destination, FileMode.Create, FileAccess.Write, FileShare.None, 1, FileOptions.Asynchronous);
             await using (output.ConfigureAwait(false))
             {
                 var buffer = new byte[Math.Min(CopyChunkBytes, Math.Max(4096, total))];
@@ -190,17 +194,18 @@ public static partial class FileLifecycle
     /// Validates and atomically exposes a same-volume hard link. False means the link was refused and the caller should copy. A
     /// failed validation or publication removes the link and throws, and the source is never touched.
     /// </summary>
-    public static async Task<bool> TryHardlinkToFinalAsync(string source, string final, Func<string, Task>? validateStaged = null, IOutputOwnership? ownership = null)
+    public static async Task<bool> TryHardlinkToFinalAsync(string source, string final, Func<string, Task>? validateStaged = null, IOutputOwnership? ownership = null, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         var src = Path.GetFullPath(source);
         var directory = Path.GetDirectoryName(Path.GetFullPath(final))!;
-        EnsureOutputDirectory(directory, ownership);
+        EnsureOutputDirectory(directory, ownership, files);
 
-        var tmp = CreateTempFile(directory, "." + Path.GetFileName(final) + ".", ".link");
-        BestEffortDelete(tmp);
+        var tmp = CreateTempFile(directory, "." + Path.GetFileName(final) + ".", ".link", files);
+        BestEffortDelete(tmp, files);
         if (!CreateHardLink(tmp, src))
         {
-            BestEffortDelete(tmp);
+            BestEffortDelete(tmp, files);
             return false;
         }
 
@@ -212,18 +217,18 @@ public static partial class FileLifecycle
             }
             catch
             {
-                BestEffortDelete(tmp);
+                BestEffortDelete(tmp, files);
                 throw;
             }
         }
 
         try
         {
-            File.Move(tmp, final, overwrite: true);
+            files.MoveFile(tmp, final, overwrite: true);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            BestEffortDelete(tmp);
+            BestEffortDelete(tmp, files);
             throw new FileLifecycleException($"Could not safely publish the validated link at {final}: {exception.Message}", exception);
         }
 
@@ -246,17 +251,21 @@ public static partial class FileLifecycle
     /// keeps any such copy under a hidden, non-video name; the last step is a rename within one directory, which is atomic
     /// on every filesystem. Same-volume finalisation is two renames and no copy.
     /// </remarks>
-    public static void SafeFinalizeFile(string staged, string final, IOutputOwnership? ownership = null) =>
-        SafeFinalizeFile(staged, final, ownership, File.Move);
+    public static void SafeFinalizeFile(string staged, string final, IOutputOwnership? ownership = null, IFileSystem? files = null)
+    {
+        files ??= PhysicalFileSystem.Instance;
+        SafeFinalizeFile(staged, final, ownership, files.MoveFile, files);
+    }
 
-    /// <summary><see cref="SafeFinalizeFile(string, string, IOutputOwnership?)"/> with the move made swappable for tests.</summary>
-    internal static void SafeFinalizeFile(string staged, string final, IOutputOwnership? ownership, Action<string, string, bool> move)
+    /// <summary><see cref="SafeFinalizeFile(string, string, IOutputOwnership?, IFileSystem?)"/> with the move made swappable for tests.</summary>
+    internal static void SafeFinalizeFile(string staged, string final, IOutputOwnership? ownership, Action<string, string, bool> move, IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(move);
+        files ??= PhysicalFileSystem.Instance;
         var src = Path.GetFullPath(staged);
         var destination = Path.GetFullPath(final);
         var directory = Path.GetDirectoryName(destination)!;
-        EnsureOutputDirectory(directory, ownership);
+        EnsureOutputDirectory(directory, ownership, files);
 
         var tmp = CreateTempFile(directory, "." + Path.GetFileName(destination) + ".", ".partial");
         try
@@ -268,15 +277,15 @@ public static partial class FileLifecycle
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
                 // The staged file could not be moved (held open, say): copy it instead, and remove it once published.
-                File.Copy(src, tmp, overwrite: true);
+                files.CopyFile(src, tmp, overwrite: true);
             }
 
             move(tmp, destination, true);
-            BestEffortDelete(src);
+            BestEffortDelete(src, files);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            BestEffortDelete(tmp);
+            BestEffortDelete(tmp, files);
             throw new FileLifecycleException($"Could not safely finalize {src} to {destination}: {exception.Message}", exception);
         }
 
@@ -284,21 +293,22 @@ public static partial class FileLifecycle
     }
 
     /// <summary><c>tempfile.mkstemp</c>: a new file named prefix + 8 random characters + suffix, created exclusively.</summary>
-    public static string CreateTempFile(string directory, string prefix, string suffix)
+    public static string CreateTempFile(string directory, string prefix, string suffix, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         const string Characters = "abcdefghijklmnopqrstuvwxyz0123456789_";
         for (var attempt = 0; ; attempt++)
         {
             var path = Path.GetFullPath(Path.Combine(directory, prefix + RandomNumberGenerator.GetString(Characters, 8) + suffix));
             try
             {
-                using (new FileStream(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
+                using (files.OpenFile(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
                 {
                 }
 
                 return path;
             }
-            catch (IOException) when (attempt < 100 && File.Exists(path))
+            catch (IOException) when (attempt < 100 && files.FileExists(path))
             {
                 // Name taken; draw again.
             }
@@ -306,11 +316,11 @@ public static partial class FileLifecycle
     }
 
     /// <summary>Deletes a file if it can; a failure is ignored.</summary>
-    public static void BestEffortDelete(string path)
+    public static void BestEffortDelete(string path, IFileSystem? files = null)
     {
         try
         {
-            File.Delete(path);
+            (files ?? PhysicalFileSystem.Instance).DeleteFile(path);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
