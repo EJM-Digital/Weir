@@ -18,6 +18,37 @@ public sealed class PhysicalSwapFileSystemTests : IDisposable
         return path;
     }
 
+    [Fact]
+    public void A_call_into_a_libc_that_has_the_entry_point_gives_its_answer_and_one_that_lacks_it_gives_the_stand_in()
+    {
+        Assert.Equal(7, PhysicalSwapFileSystem.WhereLibcHasIt(() => 7, whenMissing: -1));
+        Assert.Equal(-1, PhysicalSwapFileSystem.WhereLibcHasIt<int>(() => throw new DllNotFoundException(), whenMissing: -1));
+        Assert.Equal(-1, PhysicalSwapFileSystem.WhereLibcHasIt<int>(() => throw new EntryPointNotFoundException(), whenMissing: -1));
+        Assert.Throws<InvalidOperationException>(() => PhysicalSwapFileSystem.WhereLibcHasIt<int>(() => throw new InvalidOperationException(), whenMissing: -1));
+    }
+
+    [Fact]
+    public void A_missing_file_and_any_other_statx_failure_are_told_apart()
+    {
+        Assert.Equal("a.mkv", Assert.IsType<FileNotFoundException>(PhysicalSwapFileSystem.StatxFailure(2, "a.mkv")).FileName);
+        Assert.Contains("errno 13", Assert.IsType<IOException>(PhysicalSwapFileSystem.StatxFailure(13, "a.mkv")).Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_statx_answer_gives_its_link_count_and_owner_only_when_it_carries_a_link_count()
+    {
+        var answer = new byte[256];
+        BitConverter.GetBytes(0x4u | 0x8u | 0x10u).CopyTo(answer, 0);
+        BitConverter.GetBytes(3u).CopyTo(answer, 16);
+        BitConverter.GetBytes(1000u).CopyTo(answer, 20);
+        BitConverter.GetBytes(1001u).CopyTo(answer, 24);
+        var withoutLinks = (byte[])answer.Clone();
+        BitConverter.GetBytes(0x8u | 0x10u).CopyTo(withoutLinks, 0);
+
+        Assert.Equal(new PhysicalSwapFileSystem.UnixFileStat(3, 1000, 1001), PhysicalSwapFileSystem.StatFrom(answer));
+        Assert.Null(PhysicalSwapFileSystem.StatFrom(withoutLinks));
+    }
+
     public static TheoryData<Func<Exception>, Func<Exception, Exception>, Func<string, Exception>> ExceptionShapes() => new()
     {
         { () => new FileInUseException(), inner => new FileInUseException("held", inner), message => new FileInUseException(message) },
