@@ -43,6 +43,35 @@ public sealed class MediaManagerConnectionServiceEdgeTests : IDisposable
     }
 
     [Fact]
+    public async Task A_connection_with_no_kind_at_all_cannot_be_saved()
+    {
+        var failure = await Assert.ThrowsAsync<MediaManagerConnectionException>(() => _fixture.Db(uow => _fixture.Connections.CreateAsync(uow, null!)));
+
+        Assert.StartsWith("Unknown media manager kind", failure.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void No_address_at_all_is_an_empty_address()
+    {
+        Assert.Equal(string.Empty, MediaManagerConnectionService.ValidateBaseUrl(null));
+    }
+
+    [Fact]
+    public async Task A_switched_off_connection_with_a_working_address_can_be_switched_on()
+    {
+        var id = await _fixture.AddConnectionAsync("sonarr", "http://manager.local", enabled: false);
+        var row = await RowAsync(id);
+
+        await _fixture.Db(async uow =>
+        {
+            await _fixture.Connections.UpdateAsync(uow, row, enabled: true);
+            return 0;
+        });
+
+        Assert.True((await RowAsync(id)).Enabled);
+    }
+
+    [Fact]
     public async Task An_address_that_will_not_work_cannot_be_saved()
     {
         var failure = await Assert.ThrowsAsync<MediaManagerConnectionException>(() => _fixture.AddConnectionAsync("sonarr", "ftp://manager.local"));
