@@ -39,6 +39,33 @@ public sealed class WorkFolderPlacementTests
     }
 
     [Fact]
+    public void Two_folders_under_one_mount_are_on_one_filesystem_and_under_two_they_are_not()
+    {
+        Assert.True(FilesystemBoundaries.SameMount("/media/a", "/media/b", () => MountInfo));
+        Assert.False(FilesystemBoundaries.SameMount("/media/a", "/data/weir/b", () => MountInfo));
+    }
+
+    [Theory]
+    [InlineData(typeof(IOException))]
+    [InlineData(typeof(UnauthorizedAccessException))]
+    public void A_mount_table_that_cannot_be_read_says_nothing(Type failure)
+    {
+        Assert.Null(FilesystemBoundaries.SameMount("/media/a", "/media/b", () => throw (Exception)Activator.CreateInstance(failure)!));
+    }
+
+    [Fact]
+    public void A_mount_table_that_lists_no_mounts_says_nothing()
+    {
+        Assert.Null(FilesystemBoundaries.SameMount("/media/a", "/media/b", () => string.Empty));
+    }
+
+    [Fact]
+    public void A_mount_line_too_short_to_name_a_mount_point_is_left_out_and_an_escape_that_is_not_octal_is_kept_as_written()
+    {
+        Assert.Equal(["/mnt/a\\089b"], FilesystemBoundaries.ParseMountPoints("short line\n22 1 8:1 / /mnt/a\\089b rw - ext4 /dev/sda1 rw\n"));
+    }
+
+    [Fact]
     public void Two_folders_in_the_same_place_are_on_the_same_filesystem()
     {
         using var temp = new TempDirectory();

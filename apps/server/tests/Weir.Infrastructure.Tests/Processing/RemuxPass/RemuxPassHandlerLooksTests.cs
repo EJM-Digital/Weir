@@ -49,6 +49,41 @@ public sealed partial class RemuxPassHandlerTests
     }
 
     [Theory]
+    [InlineData(true, "live_output_written", "/out/film.mkv", true)]
+    [InlineData(true, "live_skipped_not_required", "/out/film.mkv", true)]
+    [InlineData(false, "live_output_written", "/out/film.mkv", false)]
+    [InlineData(true, "failed_execution", "/out/film.mkv", false)]
+    [InlineData(true, "live_output_written", "", false)]
+    [InlineData(true, "live_output_written", null, false)]
+    public void Only_a_pass_that_wrote_or_confirmed_an_output_file_asks_the_manager_to_scan_it(bool ok, string outcome, string? outputFile, bool wrote)
+    {
+        var result = new WireObject().Set("ok", ok).Set("outcome", outcome);
+        if (outputFile is not null)
+        {
+            result.Set("output_file", outputFile);
+        }
+
+        Assert.Equal(wrote, RemuxPassHandler.PassWroteOutput(result, out var path));
+        Assert.Equal(wrote ? outputFile : string.Empty, path);
+    }
+
+    [Fact]
+    public void A_pass_that_did_not_say_whether_it_succeeded_wrote_nothing()
+    {
+        Assert.False(RemuxPassHandler.PassWroteOutput(new WireObject().Set("outcome", "live_output_written").Set("output_file", "/out/film.mkv"), out _));
+    }
+
+    [Theory]
+    [InlineData("hash-1", "hash-1")]
+    [InlineData("", null)]
+    public void A_download_id_is_the_one_the_hand_off_carried_if_it_carried_any(string carried, string? expected)
+    {
+        Assert.Equal(expected, RemuxPassHandler.DownloadId(new WireObject().Set("download_id", carried)));
+        Assert.Null(RemuxPassHandler.DownloadId(null));
+        Assert.Null(RemuxPassHandler.DownloadId(new WireObject()));
+    }
+
+    [Theory]
     [InlineData(null, 1)]
     [InlineData(2L, 3)]
     public async Task A_file_waiting_for_disk_space_books_its_next_look_and_counts_the_looks_so_far(long? looksSoFar, long expected)
