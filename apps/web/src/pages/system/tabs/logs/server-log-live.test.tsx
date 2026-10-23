@@ -12,7 +12,7 @@ import {
 } from "../../../../test/fake-clock";
 import { systemReplies } from "../../../../test/recorded-system";
 import type { RecordedWeir } from "../../../../test/recorded-weir";
-import { renderLogList, serveLog } from "./log-wire-support";
+import { renderLogList, serveLog } from "../../../../test/log-wire-support";
 
 const LOG_PATH = "/api/v1/system/log";
 /** The server log refreshes at most this often however many lines arrive (use-log-entries.ts). */

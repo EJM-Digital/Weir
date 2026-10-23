@@ -18,7 +18,7 @@ import {
 } from "../../../../test/stub-weir-api";
 import { CSRF_TOKEN } from "../../../../test/wire";
 import { RulesPreviewPanel } from "./rules-preview-panel";
-import { STORED } from "./profiles-test-support";
+import { STORED } from "../../../../test/profiles-test-support";
 
 // The panel here is the real one, reading from a stand-in server at `fetch` that answers with the recorded replies. The file is
 // about which file it is asked to try the rules on: the workflow chosen, and the path a person gives or browses to.

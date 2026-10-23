@@ -11,7 +11,7 @@ import {
   WORKFLOWS,
   renderActivityPage,
   stubActivityServer,
-} from "./activity-test-server";
+} from "../../test/activity-test-server";
 
 const ALPHA = processingFile({
   id: 1,

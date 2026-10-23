@@ -89,7 +89,7 @@ function passDisplay(ev: ActivityEventItem): ActivityDisplay {
     return {
       title: ev.title,
       summary: asString(parsed?.reason) ?? "Weir did not process this file",
-      detail: ev.detail ?? null,
+      detail: ev.detail as string,
       chip:
         asString(parsed?.skip_kind) === "below_minimum_size"
           ? "Under the minimum size"

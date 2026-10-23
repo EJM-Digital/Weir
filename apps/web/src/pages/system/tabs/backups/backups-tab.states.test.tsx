@@ -12,7 +12,7 @@ import {
   renderWithSettingsForm,
   SAVING,
   SETTINGS,
-} from "../../system-test-support";
+} from "../../../../test/system-test-support";
 import { BackupsTab } from "./backups-tab";
 
 const BACKUPS = "GET /api/v1/suite/configuration-backups";

@@ -16,7 +16,7 @@ import {
   renderProfiles,
   savedBody,
   serveProfiles,
-} from "./profiles-test-support";
+} from "../../../../test/profiles-test-support";
 
 // The tab here is the real one, reading from a stand-in server at `fetch` that answers as the recorded replies did. The file
 // is about what the Profiles tab shows around the rules themselves: with no profiles, who uses one, what a refused save

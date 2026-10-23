@@ -21,7 +21,7 @@ import {
   logPage,
   renderLog,
   stubEventSource,
-} from "./log-test-support";
+} from "../../../../test/log-test-support";
 
 /** How long typing must pause before the search is sent. */
 const SEARCH_PAUSE_MS = 400;

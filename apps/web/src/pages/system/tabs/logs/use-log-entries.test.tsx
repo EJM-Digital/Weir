@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SystemLogPage } from "../../../../lib/system/system-log-api";
-import { EVENT_ROW, JOB_ROW, logPage } from "./log-test-support";
+import { EVENT_ROW, JOB_ROW, logPage } from "../../../../test/log-test-support";
 import { useLogEntries } from "./use-log-entries";
 
 const mocks = vi.hoisted(() => ({

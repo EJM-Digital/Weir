@@ -56,7 +56,6 @@ export function TodayChart({ handed, now }: TodayChartProps) {
 
   const onPointerAt = (event: PointerEvent<HTMLElement>) => {
     const box = event.currentTarget.getBoundingClientRect();
-    if (box.width <= 0) return;
     setPointed(pointedAtFraction((event.clientX - box.left) / box.width, last));
   };
   const onKeyDown = (event: KeyboardEvent) => {

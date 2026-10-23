@@ -3,17 +3,17 @@ import { act, render, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { expect, vi } from "vitest";
 
-import type { MediaManagerConnection } from "../../lib/media-managers/media-managers-api";
-import type { ProcessingLibrary } from "../../lib/processing/libraries-api";
-import type { LibrarySuggestions } from "../../lib/processing/library-setup-api";
-import { processingKeys } from "../../lib/processing/query-keys";
+import type { MediaManagerConnection } from "../lib/media-managers/media-managers-api";
+import type { ProcessingLibrary } from "../lib/processing/libraries-api";
+import type { LibrarySuggestions } from "../lib/processing/library-setup-api";
+import { processingKeys } from "../lib/processing/query-keys";
 import type {
   AppSettings,
   UpdateSettingsOut,
   UpdateStatus,
-} from "../../lib/settings/types";
-import { library } from "../settings/tabs/libraries/library-test-fixtures";
-import { SetupWizardPage } from "./setup-wizard-page";
+} from "../lib/settings/types";
+import { library } from "../pages/settings/tabs/libraries/library-test-fixtures";
+import { SetupWizardPage } from "../pages/setup/setup-wizard-page";
 
 /** One request the wizard sent, with the CSRF token taken out of its body. */
 export type SentRequest = {

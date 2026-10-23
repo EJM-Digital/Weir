@@ -8,7 +8,7 @@ import {
   pendingSettings,
   renderWizard,
   WizardServer,
-} from "./wizard-test-server";
+} from "../../test/wizard-test-server";
 import { useFakeClock, useRealClock } from "../../test/fake-clock";
 
 vi.setConfig({ testTimeout: TEST_CEILING_MS });

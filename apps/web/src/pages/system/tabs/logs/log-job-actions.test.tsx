@@ -6,8 +6,8 @@ import type {
   RecordedRoutes,
   RecordedWeir,
 } from "../../../../test/recorded-weir";
-import { CSRF_TOKEN } from "../../system-test-support";
-import { renderLogList, serveLog } from "./log-wire-support";
+import { CSRF_TOKEN } from "../../../../test/system-test-support";
+import { renderLogList, serveLog } from "../../../../test/log-wire-support";
 
 const LOG_PATH = "/api/v1/system/log";
 const CANCEL_PENDING_4 = "/api/v1/processing/jobs/4/cancel-pending";

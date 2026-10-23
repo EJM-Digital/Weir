@@ -26,7 +26,7 @@ import { processingKeys } from "../../lib/processing/query-keys";
 import { settingsKeys } from "../../lib/settings/query-keys";
 import { useFakeClock, useRealClock } from "../../test/fake-clock";
 import { SetupWizardPage } from "./setup-wizard-page";
-import { CEILING, TEST_CEILING_MS } from "./wizard-test-server";
+import { CEILING, TEST_CEILING_MS } from "../../test/wizard-test-server";
 
 vi.setConfig({ testTimeout: TEST_CEILING_MS });
 

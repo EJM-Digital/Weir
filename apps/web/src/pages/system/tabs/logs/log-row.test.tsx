@@ -3,7 +3,7 @@ import { expect, it, vi } from "vitest";
 
 import { LOG_COLUMNS } from "./log-columns";
 import { LogRow } from "./log-row";
-import { EVENT_ROW } from "./log-test-support";
+import { EVENT_ROW } from "../../../../test/log-test-support";
 
 function renderRow(expanded: boolean, onToggle = vi.fn()) {
   render(

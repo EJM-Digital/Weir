@@ -3,8 +3,8 @@ import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 
-import type { RecordedReply } from "../../../../test/recorded-weir";
-import { appSettings } from "./security-replies";
+import type { RecordedReply } from "./recorded-weir";
+import { appSettings } from "../pages/system/tabs/security/security-replies";
 
 /** Every table of times asks for the time zone Weir shows them in. */
 export const APP_SETTINGS = { "GET /api/v1/suite/settings": appSettings };

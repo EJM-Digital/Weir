@@ -11,7 +11,7 @@ import {
   never,
   renderActivityPage,
   stubActivityServer,
-} from "./activity-test-server";
+} from "../../test/activity-test-server";
 
 const FINISHED = processingFile({
   id: 1,

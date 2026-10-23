@@ -72,6 +72,12 @@ describe("RequireSetupWizard", () => {
     expect(screen.getByText("The wizard")).toBeInTheDocument();
   });
 
+  it("treats a first run with no recorded state as not finished", () => {
+    renderGuard("admin", "");
+
+    expect(screen.getByText("The wizard")).toBeInTheDocument();
+  });
+
   it.each(["admin", "operator"])(
     "sends %s to the wizard while the first run is not finished",
     (role) => {
