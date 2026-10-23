@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { REPOSITORY_URL } from "../repository.mjs";
 import { ORIGIN } from "../docker-smoke/stack.mjs";
 import { WeirClient } from "../docker-smoke/weir-client.mjs";
-import { GithubRedirect } from "./github-redirect.mjs";
+import { GithubRedirect } from "./windows-github-redirect.mjs";
 import { GithubStandIn } from "./github-stand-in.mjs";
 import { runScenarios } from "./run.mjs";
 import { TrayDesktop } from "./tray-desktop.mjs";

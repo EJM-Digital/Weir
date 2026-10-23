@@ -94,12 +94,14 @@ export function formatReport(summary, { days, top = 25, truncatedAt = null } = {
   return lines.join("\n");
 }
 
+const runGh = (args) => execFileSync("gh", args, { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
+
 // Retried twice: GitHub answers an occasional 5xx, and the last failure says why.
-function ghJson(args, attempts = 3) {
+export function ghJson(args, { attempts = 3, gh = runGh } = {}) {
   try {
-    return JSON.parse(execFileSync("gh", args, { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] }));
+    return JSON.parse(gh(args));
   } catch (error) {
-    if (attempts > 1) return ghJson(args, attempts - 1);
+    if (attempts > 1) return ghJson(args, { attempts: attempts - 1, gh });
     throw new Error(`gh ${args.join(" ")} failed: ${String(error.stderr || error.message).trim()}`);
   }
 }
@@ -119,8 +121,8 @@ export function jobsOf(repository, runId, api = ghJson) {
   return api(["api", `repos/${repository}/actions/runs/${runId}/jobs?per_page=100&filter=all`]).jobs;
 }
 
-function main() {
-  const argv = process.argv.slice(2);
+/** Prints the report for `argv`; returns the exit code. `api` is how GitHub is asked (a test replaces it) and `now` the time the window is counted back from. */
+export function main(argv, { api = ghJson, now = () => Date.now(), log = console.log, error = console.error } = {}) {
   const option = (flag, fallback) => (argv.includes(flag) ? argv[argv.indexOf(flag) + 1] : fallback);
   const days = Number(option("--days", "7"));
   const top = Number(option("--top", "25"));
@@ -129,31 +131,32 @@ function main() {
   if (!Number.isInteger(days) || days < 1) throw new Error("--days must be a whole number of days, 1 or more.");
   if (!Number.isInteger(maxRuns) || maxRuns < 1) throw new Error("--max-runs must be a whole number, 1 or more.");
 
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const listed = listRuns(repository, since, maxRuns);
+  const since = new Date(now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const listed = listRuns(repository, since, maxRuns, api);
   // A run whose jobs cannot be read is left out and counted, so one bad answer does not lose the other runs.
   const unreadable = [];
   const runs = [];
   for (const run of listed) {
     try {
-      runs.push({ name: run.name, event: run.event, jobs: jobsOf(repository, run.id) });
-    } catch (error) {
+      runs.push({ name: run.name, event: run.event, jobs: jobsOf(repository, run.id, api) });
+    } catch (failure) {
       unreadable.push(run.id);
-      console.error(error.message);
+      error(failure.message);
     }
   }
   const summary = summarize(runs, { legs: argv.includes("--legs") });
-  if (argv.includes("--json")) console.log(JSON.stringify({ days, since, ...summary }, null, 2));
-  else console.log(formatReport(summary, { days, top, truncatedAt: listed.length === maxRuns ? maxRuns : null }));
-  if (unreadable.length > 0) console.error(`${unreadable.length} run(s) could not be read and are not counted: ${unreadable.join(", ")}`);
-  console.error(`(${Math.max(1, Math.ceil(listed.length / 100)) + listed.length} API requests)`);
+  if (argv.includes("--json")) log(JSON.stringify({ days, since, ...summary }, null, 2));
+  else log(formatReport(summary, { days, top, truncatedAt: listed.length === maxRuns ? maxRuns : null }));
+  if (unreadable.length > 0) error(`${unreadable.length} run(s) could not be read and are not counted: ${unreadable.join(", ")}`);
+  error(`(${Math.max(1, Math.ceil(listed.length / 100)) + listed.length} API requests)`);
+  return 0;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
-    main();
-  } catch (error) {
-    console.error(error.message);
-    process.exit(1);
+    process.exitCode = main(process.argv.slice(2));
+  } catch (failure) {
+    console.error(failure.message);
+    process.exitCode = 1;
   }
 }

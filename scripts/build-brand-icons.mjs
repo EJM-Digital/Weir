@@ -175,9 +175,10 @@ export function compareImages(a, b) {
   return { maxDifference, differingPixels };
 }
 
-function loadResvg() {
+// The renderer is a dev dependency of the web app, looked for under `root`.
+export function loadResvg(root = ROOT) {
   try {
-    return createRequire(path.join(ROOT, "apps", "web", "package.json"))("@resvg/resvg-js").Resvg;
+    return createRequire(path.join(root, "apps", "web", "package.json"))("@resvg/resvg-js").Resvg;
   } catch {
     throw new Error("@resvg/resvg-js is not installed. Run `npm ci` in apps/web first.");
   }
@@ -189,8 +190,7 @@ function renderPng(Resvg, svgFile, size) {
 }
 
 // Renders every output under outputRoot, laid out as it is in the repository.
-export function buildAll(outputRoot) {
-  const Resvg = loadResvg();
+export function buildAll(outputRoot, Resvg = loadResvg()) {
   const written = [];
   for (const { file, format, sizes } of OUTPUTS) {
     const frames = new Map(sizes.map((size) => [size, renderPng(Resvg, sourceFor(size), size)]));
@@ -209,7 +209,7 @@ function framesOf({ format }, buffer) {
 }
 
 // Compares one rendered output with the committed one; returns a line per frame and whether it is within tolerance.
-function compareOutput(output, renderedPath, committedPath, tolerance) {
+export function compareOutput(output, renderedPath, committedPath, tolerance) {
   const rendered = framesOf(output, readFileSync(renderedPath));
   const committed = framesOf(output, readFileSync(committedPath));
   const lines = [];
@@ -234,49 +234,41 @@ function compareOutput(output, renderedPath, committedPath, tolerance) {
   return { ok, lines };
 }
 
-function check(tolerance) {
+// Renders into a temp folder and compares with the committed icons under `root`; returns the exit code.
+export function check(tolerance, { Resvg = loadResvg(), root = ROOT, log = console.log, error = console.error } = {}) {
   const folder = mkdtempSync(path.join(os.tmpdir(), "weir-brand-icons-"));
   try {
-    buildAll(folder);
+    buildAll(folder, Resvg);
     let allOk = true;
     for (const output of OUTPUTS) {
-      const { ok, lines } = compareOutput(
-        output,
-        path.join(folder, output.file),
-        path.join(ROOT, output.file),
-        tolerance,
-      );
+      const { ok, lines } = compareOutput(output, path.join(folder, output.file), path.join(root, output.file), tolerance);
       allOk &&= ok;
-      console.log(`${ok ? "ok  " : "FAIL"} ${output.file}`);
-      for (const line of lines) console.log(line);
+      log(`${ok ? "ok  " : "FAIL"} ${output.file}`);
+      for (const line of lines) log(line);
     }
     if (!allOk) {
-      console.error(
-        `\nThe committed icons are not current (tolerance ${tolerance}). Run node scripts/build-brand-icons.mjs.`,
-      );
-      process.exit(1);
+      error(`\nThe committed icons are not current (tolerance ${tolerance}). Run node scripts/build-brand-icons.mjs.`);
+      return 1;
     }
-    console.log(`\nThe committed icons match a fresh render within ${tolerance} per channel.`);
+    log(`\nThe committed icons match a fresh render within ${tolerance} per channel.`);
+    return 0;
   } finally {
     rmSync(folder, { recursive: true, force: true });
   }
 }
 
-function main(args) {
+// Returns the exit code.
+export function main(args, { root = ROOT, log = console.log, error = console.error, Resvg } = {}) {
   const toleranceArg = args.find((arg) => arg.startsWith("--tolerance="));
   const tolerance = toleranceArg ? Number(toleranceArg.slice("--tolerance=".length)) : DEFAULT_TOLERANCE;
   if (!Number.isInteger(tolerance) || tolerance < 0 || tolerance > 255) {
-    console.error("--tolerance must be a whole number from 0 to 255.");
-    process.exit(2);
+    error("--tolerance must be a whole number from 0 to 255.");
+    return 2;
   }
-  if (args.includes("--check")) {
-    check(tolerance);
-    return;
-  }
-  const written = buildAll(ROOT);
-  console.log(
-    `Brand icons rendered from ${path.relative(ROOT, BRAND)}:\n${written.map((file) => `  ${file}`).join("\n")}`,
-  );
+  if (args.includes("--check")) return check(tolerance, { Resvg, root, log, error });
+  const written = buildAll(root, Resvg);
+  log(`Brand icons rendered from ${path.relative(root, path.join(root, "packaging", "brand"))}:\n${written.map((file) => `  ${file}`).join("\n")}`);
+  return 0;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main(process.argv.slice(2));
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) process.exitCode = main(process.argv.slice(2));
