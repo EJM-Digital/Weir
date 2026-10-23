@@ -61,7 +61,7 @@ public static class RemuxPassPaths
         }
 
         var full = Path.GetFullPath(text.Length == 0 ? "." : text);
-        var root = Path.GetPathRoot(full) ?? string.Empty;
+        var root = Path.GetPathRoot(full)!;
         return full.Length > root.Length ? full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) : full;
     }
 
@@ -101,7 +101,7 @@ public static class RemuxPassPaths
     private static List<string> Split(string path)
     {
         var full = Resolve(path);
-        var root = Path.GetPathRoot(full) ?? string.Empty;
+        var root = Path.GetPathRoot(full)!;
         var parts = new List<string> { root.TrimEnd('\\', '/').Length == 0 ? root : root.TrimEnd('\\', '/') };
         parts.AddRange(full[root.Length..].Split('\\', '/').Where(part => part.Length > 0));
         return parts;
@@ -119,7 +119,7 @@ public static class RemuxPassPaths
             throw new ArgumentException("The watched folder (saved settings) must be an existing directory");
         }
 
-        var rel = WireStrings.Strip(relativePath ?? string.Empty).Replace('\\', '/').TrimStart('/');
+        var rel = WireStrings.Strip(relativePath).Replace('\\', '/').TrimStart('/');
         if (rel.Length == 0)
         {
             throw new ArgumentException("relative_media_path is required");
@@ -161,13 +161,13 @@ public static class RemuxPassPaths
     public static (string WorkFolder, bool IsDefault) EffectiveWorkFolder(ProcessingLibraryRecord library, string weirHome)
     {
         ArgumentNullException.ThrowIfNull(library);
-        var raw = WireStrings.Strip(library.WorkFolder ?? string.Empty);
+        var raw = WireStrings.Strip(library.WorkFolder);
         if (raw.Length > 0)
         {
             return (raw, false);
         }
 
-        return (DefaultWorkFolder(weirHome, WireStrings.Strip(library.MediaType ?? "movie").ToLowerInvariant()), true);
+        return (DefaultWorkFolder(weirHome, WireStrings.Strip(library.MediaType).ToLowerInvariant()), true);
     }
 
     /// <summary>
@@ -180,7 +180,7 @@ public static class RemuxPassPaths
         files ??= PhysicalFileSystem.Instance;
         ArgumentNullException.ThrowIfNull(links);
         var label = WireStrings.Strip(library.Name).Length > 0 ? WireStrings.Strip(library.Name) : library.MediaType == "tv" ? "TV" : "Movies";
-        var watchedRaw = WireStrings.Strip(library.WatchedFolder ?? string.Empty);
+        var watchedRaw = WireStrings.Strip(library.WatchedFolder);
         if (watchedRaw.Length == 0)
         {
             return (null,
@@ -197,7 +197,7 @@ public static class RemuxPassPaths
 
         var (workRaw, workIsDefault) = EffectiveWorkFolder(library, weirHome);
         var work = Resolve(workRaw);
-        var outputRaw = WireStrings.Strip(library.OutputFolder ?? string.Empty);
+        var outputRaw = WireStrings.Strip(library.OutputFolder);
         if (outputRaw.Length == 0)
         {
             return (null,
@@ -237,14 +237,14 @@ public static class RemuxPassPaths
             OutputFolder = output,
             WorkFolderEffective = work,
             WorkFolderIsDefault = workIsDefault,
-            SidecarPatternsCsv = library.SidecarPatternsCsv ?? string.Empty,
+            SidecarPatternsCsv = library.SidecarPatternsCsv,
             PreserveOriginalTimestamps = library.PreserveOriginalTimestamps,
             OutputCollisionPolicy = string.IsNullOrEmpty(library.OutputCollisionPolicy) ? "replace" : library.OutputCollisionPolicy,
             FfmpegStrictness = string.IsNullOrEmpty(library.FfmpegStrictness) ? "normal" : library.FfmpegStrictness,
             RemuxWriter = RemuxWriterChoice.Normalize(library.RemuxWriter),
             RemoveOriginalAfterSuccess = library.RemoveOriginalAfterSuccess,
             ManagerLinks = links,
-            MediaExtensionsCsv = library.MediaExtensionsCsv ?? string.Empty,
+            MediaExtensionsCsv = library.MediaExtensionsCsv,
         }, null);
     }
 
@@ -266,12 +266,12 @@ public static class RemuxPassPaths
             RemoveCommentary = ruleSet.RemoveCommentary,
             // Normalized the same way as the fallback path (RuleSetConversion.ToRulesConfig) so both agree (#545).
             SubtitleMode = RuleSetConversion.NormalizeSubtitleMode(ruleSet.SubtitleMode),
-            SubtitleLangs = [.. (ruleSet.SubtitleLangsCsv ?? string.Empty).Split(',').Select(WireStrings.Strip).Where(x => x.Length > 0)],
+            SubtitleLangs = [.. ruleSet.SubtitleLangsCsv.Split(',').Select(WireStrings.Strip).Where(x => x.Length > 0)],
             PreserveForcedSubs = ruleSet.PreserveForcedSubs,
             PreserveDefaultSubs = ruleSet.PreserveDefaultSubs,
             AudioPreferenceMode = RemuxRules.NormalizeAudioPreferenceMode(ruleSet.AudioPreferenceMode),
-            AudioSortersJson = ruleSet.AudioSortersJson ?? string.Empty,
-            SubtitleSortersJson = ruleSet.SubtitleSortersJson ?? string.Empty,
+            AudioSortersJson = ruleSet.AudioSortersJson,
+            SubtitleSortersJson = ruleSet.SubtitleSortersJson,
             RemoveHearingImpairedSubs = ruleSet.RemoveHearingImpairedSubs,
             AudioKeepMode = RemuxRules.NormalizeAudioKeepMode(ruleSet.AudioKeepMode),
             SubtitleMaxPerLanguage = ruleSet.SubtitleMaxPerLanguage,

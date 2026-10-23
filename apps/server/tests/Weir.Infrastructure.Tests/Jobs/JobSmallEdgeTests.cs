@@ -8,6 +8,18 @@ namespace Weir.Infrastructure.Tests.Jobs;
 /// <summary>Small readings the job code relies on: stored times, the home folder, the do-nothing senders, and passes whose payload names no file.</summary>
 public sealed class JobSmallEdgeTests
 {
+    [Fact]
+    public void The_queue_metrics_that_go_nowhere_take_a_depth_and_an_event_and_keep_neither()
+    {
+        var exception = Record.Exception(() =>
+        {
+            NoJobQueueMetrics.Instance.RecordJobEvent("processing", "started");
+            NoJobQueueMetrics.Instance.SetQueueDepth("processing", 3);
+        });
+
+        Assert.Null(exception);
+    }
+
     [Theory]
     [InlineData("   ")]
     [InlineData("")]

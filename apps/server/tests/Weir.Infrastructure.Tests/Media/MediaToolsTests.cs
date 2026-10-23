@@ -110,6 +110,22 @@ public sealed class MediaToolsTests : IDisposable
     }
 
     [Fact]
+    public async Task A_warnings_baseline_ffprobe_cannot_be_started_for_counts_as_no_known_warnings()
+    {
+        var media = WriteFile("movie.mkv", new byte[64]);
+        var logger = new ListLogger<MediaTools>();
+        var runner = new ScriptedRunner(request => request.Argv.Contains("warning")
+            ? new ScriptedRun { Throw = new Win32Exception("The system cannot find the file specified.") }
+            : new ScriptedRun { Stdout = """{"streams":[]}"""u8.ToArray() });
+
+        var probed = await Tools(runner, logger).ProbeWithWarningsAsync(media, probeSizeMb: 100);
+
+        Assert.Equal(JsonValueKind.Array, probed.Probe.GetProperty("streams").ValueKind);
+        Assert.Empty(probed.Warnings);
+        Assert.Contains(logger.Entries, entry => entry.Level == LogLevel.Warning);
+    }
+
+    [Fact]
     public async Task A_failed_combined_probe_is_classified_from_its_error_lines_alone()
     {
         var media = WriteFile("movie.mkv", new byte[64]);

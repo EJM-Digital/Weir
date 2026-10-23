@@ -105,6 +105,35 @@ public sealed class MediaToolResolverTests : IDisposable
         Assert.Throws<MediaToolException>(() => Resolver(null, null, null, _root.Join("locked")).Resolve());
     }
 
+    [PosixFact("A file's execute permission only exists off Windows.")]
+    public void A_file_on_PATH_whose_permissions_cannot_be_read_is_not_a_tool()
+    {
+        Both(Folder("unreadable"));
+        var files = new FaultingFileSystem()
+            .Fail(FileCall.GetUnixFileMode, FaultingFileSystem.SharingViolation, onCall: 1, pathEndsWith: FfNames.Ffprobe)
+            .Fail(FileCall.GetUnixFileMode, FaultingFileSystem.Refused, onCall: 1, pathEndsWith: FfNames.Ffmpeg);
+
+        Assert.Throws<MediaToolException>(() => new MediaToolResolver(null, name => name == "PATH" ? _root.Join("unreadable") : null, files).Resolve());
+    }
+
+    [PosixFact("A file's execute permission only exists off Windows.")]
+    public void Mkvmerge_on_PATH_whose_permissions_cannot_be_read_is_not_found()
+    {
+        Tool(Folder("unreadable"), MediaToolLocations.MkvmergeToolName(Windows));
+        var files = new FaultingFileSystem().Fail(FileCall.GetUnixFileMode, FaultingFileSystem.Refused, pathEndsWith: MediaToolLocations.MkvmergeToolName(Windows));
+
+        Assert.Null(new MediaToolResolver(null, name => name == "PATH" ? _root.Join("unreadable") : null, files).ResolveMkvmerge());
+    }
+
+    [Fact]
+    public void A_folder_holding_only_ffmpeg_is_passed_over()
+    {
+        Tool(Folder("half"), FfNames.Ffmpeg);
+        var onPath = Both(Folder("onpath"));
+
+        Assert.Equal(onPath, Resolver(null, _root.Join("half"), null, _root.Join("onpath")).Resolve());
+    }
+
     [Fact]
     public void A_folder_on_PATH_that_does_not_exist_is_skipped()
     {

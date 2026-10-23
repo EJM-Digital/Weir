@@ -276,16 +276,9 @@ public class ProcessingWatchedFolderWatcherService : BackgroundService
             watcher.IncludeSubdirectories = true;
             watcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite | NotifyFilters.Size;
 
-            try
-            {
-                // Larger than the 8 KiB default, to make a genuine overflow (the Error handler below) less
-                // likely under a burst of writes; still bounded, per FileSystemWatcher's own guidance.
-                watcher.InternalBufferSize = 65536;
-            }
-            catch (ArgumentException)
-            {
-                // Some platforms refuse an oversized buffer; the default still works, just more eagerly.
-            }
+            // Larger than the 8 KiB default, to make a genuine overflow (the Error handler below) less
+            // likely under a burst of writes; still bounded, per FileSystemWatcher's own guidance.
+            watcher.InternalBufferSize = 65536;
 
             var libraryId = library.Id;
             void OnEvent(object sender, FileSystemEventArgs e)
@@ -456,15 +449,7 @@ public class ProcessingWatchedFolderWatcherService : BackgroundService
             return;
         }
 
-        try
-        {
-            watcher.EnableRaisingEvents = false;
-        }
-        catch (ObjectDisposedException)
-        {
-            return;
-        }
-
+        watcher.EnableRaisingEvents = false;
         watcher.Dispose();
     }
 

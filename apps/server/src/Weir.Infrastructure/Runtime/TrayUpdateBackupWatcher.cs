@@ -130,8 +130,9 @@ public sealed class TrayUpdateBackupWatcher : BackgroundService
         try
         {
             _written.Writer.TryWrite(true);
-            await foreach (var _ in _written.Reader.ReadAllAsync(stoppingToken).ConfigureAwait(false))
+            while (true)
             {
+                await _written.Reader.ReadAsync(stoppingToken).ConfigureAwait(false);
                 await Task.Delay(TrayHandOffWatcher.Settle, stoppingToken).ConfigureAwait(false);
                 try
                 {

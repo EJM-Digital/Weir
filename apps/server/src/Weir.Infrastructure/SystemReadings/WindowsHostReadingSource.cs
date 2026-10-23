@@ -21,7 +21,22 @@ public sealed class WindowsHostReadingSource : IHostReadingSource
     /// <summary>The first Windows 11 build; its registry still says "Windows 10" in the product name.</summary>
     private const int FirstWindows11Build = 22000;
 
-    private readonly Lazy<string?> _operatingSystem = new(ReadOperatingSystemName);
+    private readonly Func<RegistryKey> _openMachine;
+    private readonly Func<DriveInfo[]> _drives;
+    private readonly Lazy<string?> _operatingSystem;
+
+    public WindowsHostReadingSource()
+        : this(null, null)
+    {
+    }
+
+    /// <summary>The registry's machine key and the list of drives can be replaced, so a test can have either refuse.</summary>
+    internal WindowsHostReadingSource(Func<RegistryKey>? openMachine, Func<DriveInfo[]>? drives)
+    {
+        _openMachine = openMachine ?? (() => RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64));
+        _drives = drives ?? DriveInfo.GetDrives;
+        _operatingSystem = new Lazy<string?>(ReadOperatingSystemName);
+    }
 
     public CpuTimes? ReadCpuTimes() => Guarded(WindowsNative.ReadCpuTimes);
 
@@ -35,7 +50,7 @@ public sealed class WindowsHostReadingSource : IHostReadingSource
     {
         try
         {
-            using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+            using var machine = _openMachine();
             return KeyExists(machine, ServicingRebootKey)
                 || KeyExists(machine, UpdateRebootKey)
                 || HasPendingRenames(machine);
@@ -51,7 +66,7 @@ public sealed class WindowsHostReadingSource : IHostReadingSource
         var volumes = new Dictionary<string, DiskCounters>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            foreach (var drive in DriveInfo.GetDrives())
+            foreach (var drive in _drives())
             {
                 if (drive.DriveType == DriveType.Fixed && drive.IsReady
                     && WindowsNative.ReadVolumeCounters(drive.RootDirectory.FullName) is { } counters)
@@ -72,8 +87,8 @@ public sealed class WindowsHostReadingSource : IHostReadingSource
     {
         try
         {
-            var root = Path.GetPathRoot(Path.GetFullPath(path));
-            return string.IsNullOrWhiteSpace(root) ? null : root.TrimEnd('\\') + '\\';
+            // A full path on Windows always has a root: a drive, a share or a device.
+            return Path.GetPathRoot(Path.GetFullPath(path))!.TrimEnd('\\') + '\\';
         }
         catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
         {
@@ -103,7 +118,7 @@ public sealed class WindowsHostReadingSource : IHostReadingSource
     private static string KeyOf(string root) => root.TrimEnd('\\', '/').ToUpperInvariant();
 
     /// <summary>Runs a kernel call, answering null on a system where the call is not there.</summary>
-    private static T? Guarded<T>(Func<T?> read)
+    internal static T? Guarded<T>(Func<T?> read)
         where T : struct
     {
         try
@@ -125,19 +140,21 @@ public sealed class WindowsHostReadingSource : IHostReadingSource
     private static bool HasPendingRenames(RegistryKey machine)
     {
         using var key = machine.OpenSubKey(SessionManagerKey);
-        return key?.GetValue(PendingRenamesValue) is Array { Length: > 0 } or string { Length: > 0 };
+        return HasEntries(key?.GetValue(PendingRenamesValue));
     }
 
-    private static string? ReadOperatingSystemName()
+    /// <summary>Whether a registry value lists anything: a multi-string with entries, or a string that is not empty.</summary>
+    internal static bool HasEntries(object? value) => value is Array { Length: > 0 } or string { Length: > 0 };
+
+    private string? ReadOperatingSystemName()
     {
         try
         {
-            using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+            using var machine = _openMachine();
             using var key = machine.OpenSubKey(CurrentVersionKey);
-            if (key?.GetValue("ProductName") is string { Length: > 0 } product)
+            if (NameOf(key?.GetValue("ProductName"), key?.GetValue("CurrentBuildNumber")) is { } name)
             {
-                var build = int.TryParse(key.GetValue("CurrentBuildNumber") as string, CultureInfo.InvariantCulture, out var number) ? number : 0;
-                return build >= FirstWindows11Build ? product.Replace("Windows 10", "Windows 11", StringComparison.Ordinal) : product;
+                return name;
             }
         }
         catch (Exception exception) when (exception is System.Security.SecurityException or UnauthorizedAccessException or IOException)
@@ -146,5 +163,17 @@ public sealed class WindowsHostReadingSource : IHostReadingSource
         }
 
         return RuntimeInformation.OSDescription;
+    }
+
+    /// <summary>The product name the registry gives, with Windows 11 called that from its first build; null when it gives none.</summary>
+    internal static string? NameOf(object? productName, object? buildNumber)
+    {
+        if (productName is not string { Length: > 0 } product)
+        {
+            return null;
+        }
+
+        var build = int.TryParse(buildNumber as string, CultureInfo.InvariantCulture, out var number) ? number : 0;
+        return build >= FirstWindows11Build ? product.Replace("Windows 10", "Windows 11", StringComparison.Ordinal) : product;
     }
 }

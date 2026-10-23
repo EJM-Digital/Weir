@@ -161,6 +161,7 @@ public sealed class JobServicesTests : IDisposable
         var service = new PeriodicEnqueueService([enqueuer], JobHandlerRegistry.Empty, TimeProvider.System, NullLogger<PeriodicEnqueueService>.Instance);
 
         await service.StartAsync(CancellationToken.None);
+        await service.ExecuteTask!.WaitAsync(TimeSpan.FromSeconds(30));
         await service.StopAsync(CancellationToken.None);
 
         Assert.Equal(0, _db.Count("SELECT count(*) FROM jobs"));

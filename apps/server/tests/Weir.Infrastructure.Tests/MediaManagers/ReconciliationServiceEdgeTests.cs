@@ -65,6 +65,27 @@ public sealed class ReconciliationServiceEdgeTests : IDisposable
     }
 
     [Fact]
+    public async Task A_work_folder_that_cannot_be_listed_is_left_out_of_the_report_and_the_report_still_comes()
+    {
+        var work = await WorkFolderAsync();
+        using var unreadable = UnreadablePath.Create(work);
+
+        var report = await _fixture.Db(ReconciliationService.BuildReportAsync);
+
+        Assert.Equal(0, ((WireInteger)report["issue_count"]).Value);
+    }
+
+    [Fact]
+    public async Task A_work_folder_that_is_not_a_path_is_skipped_when_looking_for_leftovers()
+    {
+        await _fixture.Db(uow => uow.ExecuteAsync("UPDATE libraries SET work_folder = $w WHERE media_type = 'movie'", ("$w", "not\0a path")));
+
+        var report = await _fixture.Db(ReconciliationService.BuildReportAsync);
+
+        Assert.DoesNotContain(((WireArray)report["issues"]).Items.Cast<WireObject>(), issue => WireConvert.Str(issue["kind"]) == "partial_temp_artifact");
+    }
+
+    [Fact]
     public async Task A_leftover_that_cannot_be_deleted_says_so_and_stays()
     {
         var work = await WorkFolderAsync();

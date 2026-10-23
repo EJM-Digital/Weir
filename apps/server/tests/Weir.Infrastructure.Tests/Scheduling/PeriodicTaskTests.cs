@@ -77,6 +77,15 @@ public sealed class PeriodicTaskTests
     }
 
     [Fact]
+    public void A_task_sped_up_for_a_test_says_what_the_task_it_wraps_says_and_has_no_cooldown_when_it_has_none()
+    {
+        var sped = new SpedUpPeriodicTask(new CountingTask(runAtStart: true, interval: TimeSpan.FromSeconds(1)), 10);
+
+        Assert.Null(sped.FailureCooldown);
+        Assert.Equal("counting tick failed", sped.FailureMessage);
+    }
+
+    [Fact]
     public async Task A_failed_run_is_logged_and_retried_after_the_cooldown()
     {
         var time = new FakeTimeProvider();

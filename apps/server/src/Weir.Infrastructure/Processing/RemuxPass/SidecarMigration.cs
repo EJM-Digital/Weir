@@ -1,5 +1,6 @@
 using Weir.Core.Json;
 using Weir.Core.Text;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.MediaManagers;
 
 namespace Weir.Infrastructure.Processing.RemuxPass;
@@ -157,19 +158,20 @@ public static class SidecarMigration
     }
 
     /// <summary>The output gets the source's times. Returns a problem, or null. Never fatal.</summary>
-    public static string? ApplyOriginalTimestamps(string sourceMedia, string outputMedia)
+    public static string? ApplyOriginalTimestamps(string sourceMedia, string outputMedia, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         DateTime accessed;
         DateTime modified;
         try
         {
-            if (!File.Exists(sourceMedia))
+            if (!files.FileExists(sourceMedia))
             {
                 throw new FileNotFoundException($"{sourceMedia} could not be found");
             }
 
-            accessed = File.GetLastAccessTimeUtc(sourceMedia);
-            modified = File.GetLastWriteTimeUtc(sourceMedia);
+            accessed = files.GetLastAccessTimeUtc(sourceMedia);
+            modified = files.GetLastWriteTimeUtc(sourceMedia);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -178,13 +180,13 @@ public static class SidecarMigration
 
         try
         {
-            if (!File.Exists(outputMedia))
+            if (!files.FileExists(outputMedia))
             {
                 throw new FileNotFoundException($"{outputMedia} could not be found");
             }
 
-            File.SetLastAccessTimeUtc(outputMedia, accessed);
-            File.SetLastWriteTimeUtc(outputMedia, modified);
+            files.SetLastAccessTimeUtc(outputMedia, accessed);
+            files.SetLastWriteTimeUtc(outputMedia, modified);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

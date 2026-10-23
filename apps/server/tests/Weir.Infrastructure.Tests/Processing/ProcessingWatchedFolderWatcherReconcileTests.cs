@@ -149,6 +149,41 @@ public sealed class ProcessingWatchedFolderWatcherReconcileTests : IDisposable
     }
 
     [Fact]
+    public async Task An_error_heard_just_before_the_workflow_is_switched_off_restarts_nothing_and_queues_no_scan()
+    {
+        await StartWatchingAsync();
+        _service.Latest(_watched).RaiseError(new IOException("simulated overflow"));
+        await ConfigureAsync(input => input with { Enabled = false });
+        _changes.Record();
+
+        await TickAsync();
+
+        Assert.Single(_service.Created(_watched));
+        Assert.Equal(0, ScanJobs());
+        await _service.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task Workflow_settings_that_cannot_be_read_are_logged_and_the_watch_set_is_kept()
+    {
+        await StartWatchingAsync();
+        var watcher = _service.Latest(_watched);
+        using (var connection = _store.Database.Open())
+        {
+            using var rename = connection.CreateCommand();
+            rename.CommandText = "ALTER TABLE libraries RENAME TO libraries_unavailable";
+            rename.ExecuteNonQuery();
+        }
+
+        _changes.Record();
+        await TickAsync();
+
+        Assert.Contains(_log.Entries, entry => entry.Level == LogLevel.Error && entry.Message.Contains("could not read workflow settings", StringComparison.Ordinal));
+        Assert.True(watcher.EnableRaisingEvents);
+        await _service.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
     public async Task A_scan_that_cannot_be_queued_is_logged_and_the_watcher_is_still_restarted()
     {
         await StartWatchingAsync();

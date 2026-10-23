@@ -382,21 +382,10 @@ public sealed class LibraryScanHandler : IJobHandler
 
         foreach (var connection in connections)
         {
-            if (_connections.Ports.PortForKind(connection.Kind) is not { } port)
-            {
-                continue;
-            }
-
-            ManagerLibraryFilesSignal signal;
-            try
-            {
-                signal = await port.ListLibraryFilesAsync(connection, mediaScope, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception exception) when (exception is MediaManagerHttpException or MediaManagerUnreachableException)
-            {
-                notes.Add(ManagerDialectRules.Unreachable(connection, exception, "which titles it manages"));
-                continue;
-            }
+            // The connections are those whose kind has a port (ConnectionsForScopeAsync), and a port answers a manager that
+            // does not answer with an Unreachable signal rather than by throwing.
+            var port = _connections.Ports.PortForKind(connection.Kind)!;
+            var signal = await port.ListLibraryFilesAsync(connection, mediaScope, cancellationToken).ConfigureAwait(false);
 
             if (signal.Status == SignalStatus.Unreachable)
             {

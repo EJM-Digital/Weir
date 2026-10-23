@@ -322,14 +322,16 @@ public sealed partial class MediaManagerIntake
             throw new IntakeRefusedException(422, IntakeRules.InvalidCallbackPathDetail(importEvent.CallbackPath));
         }
 
-        var (library, resolved) = await LibraryForHandoffAsync(uow, importEvent).ConfigureAwait(false);
+        var (found, resolved) = await LibraryForHandoffAsync(uow, importEvent).ConfigureAwait(false);
         if (!resolved.Ok)
         {
             throw new IntakeRefusedException(400, resolved.Problem!);
         }
 
+        // A hand-off that resolves was matched to a workflow: a path in none, or a scope with none, is what fails to resolve.
+        var library = found!;
         var relativePath = resolved.RelativeMediaPath!;
-        var targets = importEvent.SourceFiles is { Count: > 0 } && library is not null
+        var targets = importEvent.SourceFiles is { Count: > 0 }
             ? HandoffListedFiles(library, relativePath, importEvent, FileSystem)
             : HandoffMediaFiles(library, relativePath, FileSystem);
         var baseKey = IntakeRules.BaseDedupeKey(importEvent, NewGuid);
@@ -337,16 +339,14 @@ public sealed partial class MediaManagerIntake
         // #786 review of #785: a target someone chose to keep must not be reprocessed just because a manager
         // handed it over again — the marker is scan-only otherwise, and this is the same hand-off path a folder
         // detection or a resend both use. Read once per hand-off, not per target.
-        var keptMarkers = library is not null
-            ? await _skipMarkers.ForLibraryAsync(uow, library.Id).ConfigureAwait(false)
-            : new Dictionary<string, FileSkipMarker>(StringComparer.Ordinal);
+        var keptMarkers = await _skipMarkers.ForLibraryAsync(uow, library.Id).ConfigureAwait(false);
         var kept = new List<string>();
         var repeats = new List<(string Target, CleanedEarlier Earlier)>();
         var superseded = new List<(string PayloadJson, string Target)>();
         var refused = new List<string>();
         foreach (var target in targets)
         {
-            if (library is not null && IsKept(keptMarkers, library, target))
+            if (IsKept(keptMarkers, library, target))
             {
                 // Tracked as one of this hand-off's own targets below (covered), exactly like any other file, so a
                 // folder hand-off with a mix of kept and new files still waits for all of them before it reports.
@@ -355,9 +355,13 @@ public sealed partial class MediaManagerIntake
                 continue;
             }
 
-            // The same source again (a resend, a replay) is never cleaned twice. It is covered like any other target, so
-            // it counts toward the hand-off's report, and is settled below once the hand-off is on the ledger.
-            if (library is not null && await CleanedSources.FindAsync(uow, library.Id, library.WatchedFolder, target).ConfigureAwait(false) is { } cleaned)
+            // The same source again (a resend, a replay) is never cleaned twice, whichever manager or connection sends it. It is
+            // covered like any other target, so it counts toward the hand-off's report, and is settled below once the hand-off is
+            // on the ledger. Looked at inside the write transaction, so a pass cannot finish between this look and the writes
+            // that follow it.
+            var connection = uow.Connection;
+            var transaction = await uow.WriteTransactionAsync().ConfigureAwait(false);
+            if (await CleanedSources.FindAsync(uow, library.Id, library.WatchedFolder, target).ConfigureAwait(false) is { } cleaned)
             {
                 repeats.Add((target, cleaned));
                 covered.Add(target);
@@ -366,25 +370,19 @@ public sealed partial class MediaManagerIntake
 
             var dedupeKey = IntakeRules.DedupeKeyFor(baseKey, targets, target, relativePath);
             var payload = IntakeRules.Payload(importEvent, library, relativePath, target);
-            var connection = uow.Connection;
-            var transaction = await uow.WriteTransactionAsync().ConfigureAwait(false);
 
             // Folder detection may already have queued (or started) this very file under its own random key. One file
             // gets one pass: the hand-off takes over that pass rather than adding a second one. A resend of this same
             // hand-off still lands on its own row through EnqueueOrGet below.
-            var active = library is null
-                ? null
-                : ActiveRemuxPasses.ForRelativePath(connection, transaction, target, library.MediaType, library.Id) ?? GoneLooks.WaitingPassThrough(connection, transaction, library.Id, target);
-            if (library is not null && active is not null && GoneSources.IsBack(library.WatchedFolder, target) && GoneLooks.StartIfWaiting(connection, transaction, active))
+            var active = ActiveRemuxPasses.ForRelativePath(connection, transaction, target, library.MediaType, library.Id) ?? GoneLooks.WaitingPassThrough(connection, transaction, library.Id, target);
+            if (active is not null && GoneSources.IsBack(library.WatchedFolder, target) && GoneLooks.StartIfWaiting(connection, transaction, active))
             {
                 // A file that was gone and is here again: the pass waiting out the grace has nothing left to wait for.
                 _jobs.AnnounceQueueChange(transaction, active.JobKind);
                 _jobs.WakeWorkers(active.JobKind);
             }
 
-            if (library is not null &&
-                active is not null &&
-                ProcessingJobStore.GetByDedupeKey(connection, transaction, dedupeKey) is null)
+            if (active is not null && ProcessingJobStore.GetByDedupeKey(connection, transaction, dedupeKey) is null)
             {
                 var taken = await AdoptActivePassAsync(
                     uow, connection, transaction, active, importEvent, dedupeKey, payload, target, ownerConnectionId, superseded).ConfigureAwait(false);
@@ -395,15 +393,6 @@ public sealed partial class MediaManagerIntake
                         _jobs.AnnounceQueueChange(transaction, retired.JobKind);
                     }
 
-                    covered.Add(target);
-                    continue;
-                }
-
-                // A file the pass has cleaned is a repeat for any send, from whichever manager or connection: it is answered with the output
-                // the pass wrote. Looked at again here, inside the write transaction, because the pass may have finished since the first look.
-                if (await CleanedSources.FindAsync(uow, library.Id, library.WatchedFolder, target).ConfigureAwait(false) is { } cleanedNow)
-                {
-                    repeats.Add((target, cleanedNow));
                     covered.Add(target);
                     continue;
                 }
@@ -425,7 +414,7 @@ public sealed partial class MediaManagerIntake
         if (!string.IsNullOrEmpty(importEvent.HandoffId))
         {
             var rowId = await _ledger.RecordReceivedAsync(
-                uow, importEvent.SourceKey, importEvent.HandoffId, library?.Id, relativePath, ownerConnectionId, importEvent.DownloadId).ConfigureAwait(false);
+                uow, importEvent.SourceKey, importEvent.HandoffId, library.Id, relativePath, ownerConnectionId, importEvent.DownloadId).ConfigureAwait(false);
             await _targets.AddAsync(uow, rowId, covered).ConfigureAwait(false);
 
             // #786 review of #785: answered the same way HistoryFileRemovalService's "keep" answers a live hand-off
@@ -463,14 +452,11 @@ public sealed partial class MediaManagerIntake
             }
         }
 
-        if (library is not null)
+        await SettleRepeatsAsync(uow, importEvent, library, relativePath, repeats).ConfigureAwait(false);
+        await _artwork.LinkHandoffAsync(uow, library.Id, library.MediaType, targets, importEvent.ReleaseName, importEvent.Artwork).ConfigureAwait(false);
+        foreach (var target in targets)
         {
-            await SettleRepeatsAsync(uow, importEvent, library, relativePath, repeats).ConfigureAwait(false);
-            await _artwork.LinkHandoffAsync(uow, library.Id, library.MediaType, targets, importEvent.ReleaseName, importEvent.Artwork).ConfigureAwait(false);
-            foreach (var target in targets)
-            {
-                await RecordFingerprintAsync(uow, library, target).ConfigureAwait(false);
-            }
+            await RecordFingerprintAsync(uow, library, target).ConfigureAwait(false);
         }
 
         return IntakeRules.RemuxPassJobKind;

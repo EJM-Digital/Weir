@@ -171,6 +171,23 @@ public sealed class RemuxPassHandlerDownloadedScanTests : IDisposable
     }
 
     [Fact]
+    public async Task A_scan_whose_note_cannot_be_written_never_fails_the_pass()
+    {
+        var library = await LibraryAsync();
+        await ArrConnectionAsync(library, downloadedScanEnabled: true);
+        _fixture.Http
+            .Json(HttpMethod.Get, MappingPath, "[]")
+            .Json(HttpMethod.Post, CommandPath, "{}");
+        await _fixture.Store.Execute(
+            "CREATE TRIGGER refuse_scan_note BEFORE INSERT ON activity_events WHEN NEW.event_type = 'processing.downloaded_scan_requested' BEGIN SELECT RAISE(ABORT, 'note refused'); END");
+
+        await RunPassAsync(library);
+
+        Assert.Equal("processed", await ScalarText("SELECT status FROM files"));
+        Assert.Equal(0, await _fixture.Store.Scalar("SELECT count(*) FROM activity_events WHERE event_type = 'processing.downloaded_scan_requested'"));
+    }
+
+    [Fact]
     public async Task No_manager_connection_at_all_sends_no_request_and_still_processes_the_file()
     {
         var library = await LibraryAsync();

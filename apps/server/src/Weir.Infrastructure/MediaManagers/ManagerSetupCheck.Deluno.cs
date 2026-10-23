@@ -9,11 +9,7 @@ public sealed partial class ManagerSetupCheck
 
     private async Task<DelunoManifest> ReadDelunoManifestAsync(ManagerConnection connection, string label, CancellationToken cancellationToken)
     {
-        if (_connections.Ports.PortForKind(connection.Kind) is not { } port)
-        {
-            return new DelunoManifest(null, new DelunoSetupResult(null, null, [new SetupCheckLine(SetupCheckLine.Problem, $"Weir does not know how to ask {label} what it manages.")]));
-        }
-
+        var port = _connections.Ports.PortForKind(connection.Kind)!;
         var description = await port.DescribeAsync(connection, cancellationToken).ConfigureAwait(false);
         return description.Status == SignalStatus.Reported
             ? new DelunoManifest(description, null)

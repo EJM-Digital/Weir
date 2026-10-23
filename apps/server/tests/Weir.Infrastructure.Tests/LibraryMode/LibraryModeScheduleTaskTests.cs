@@ -89,6 +89,33 @@ public sealed class LibraryModeScheduleTaskTests : IDisposable
     }
 
     [Fact]
+    public async Task A_workflow_that_is_switched_off_altogether_leaves_the_task_list_when_the_timer_next_looks()
+    {
+        var library = await LibraryAsync();
+        var tasks = new PeriodicTaskRegistry(_fixture.Store.Clock);
+        var timer = Timer(tasks);
+        await timer.RunOnceAsync(CancellationToken.None);
+        Assert.Single(tasks.Snapshot());
+
+        await _fixture.Store.Execute($"UPDATE libraries SET enabled = 0 WHERE id = {library}");
+        await timer.RunOnceAsync(CancellationToken.None);
+
+        Assert.Empty(tasks.Snapshot());
+    }
+
+    [Fact]
+    public async Task A_time_zone_setting_that_is_blank_is_read_as_UTC()
+    {
+        var library = await LibraryAsync();
+        var inUtc = await NextRunAsync(library);
+        await _fixture.Db(async uow => { await _suiteSettings.EnsureAsync(uow); return true; });
+        await _fixture.Store.Execute("UPDATE suite_settings SET app_timezone = '  '");
+
+        Assert.NotNull(inUtc);
+        Assert.Equal(inUtc, await NextRunAsync(library));
+    }
+
+    [Fact]
     public void It_is_hosted_under_its_own_name()
     {
         Assert.Equal("processing-library-mode-schedule", Timer().Name);

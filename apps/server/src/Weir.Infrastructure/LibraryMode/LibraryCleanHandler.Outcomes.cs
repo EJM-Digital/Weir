@@ -264,14 +264,11 @@ public sealed partial class LibraryCleanHandler
         return parts.Count == 0 ? "removed no audio or subtitle tracks" : "removed " + string.Join(" and ", parts);
     }
 
-    private static void TryDelete(string path)
+    private void TryDelete(string path)
     {
         try
         {
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-            }
+            _files.DeleteFile(path);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

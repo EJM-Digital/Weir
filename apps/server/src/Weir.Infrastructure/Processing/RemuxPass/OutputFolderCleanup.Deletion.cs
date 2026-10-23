@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Weir.Core.Json;
 using Weir.Core.MediaManagers;
+using Weir.Infrastructure.IO;
 using Weir.Core.Processing.RemuxPass;
 
 namespace Weir.Infrastructure.Processing.RemuxPass;
@@ -51,15 +52,16 @@ public sealed partial class OutputFolderCleanup
         output.Set(deletedKey, true);
         output.Set(skipKey, WireNull.Instance);
         var cascade = output.Get(cascadeKey) as WireArray ?? new WireArray();
-        CascadeDeleteEmptyParents(Path.GetDirectoryName(place.Folder)!, place.OutputRoot, cascade, _logger);
+        CascadeDeleteEmptyParents(Path.GetDirectoryName(place.Folder)!, place.OutputRoot, cascade, _logger, _files);
         output.Set(cascadeKey, cascade);
     }
 
     /// <summary>Removes empty parents up to, never including, <paramref name="root"/>.</summary>
-    public static void CascadeDeleteEmptyParents(string firstParent, string root, WireArray deleted, ILogger logger)
+    public static void CascadeDeleteEmptyParents(string firstParent, string root, WireArray deleted, ILogger logger, IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(deleted);
         ArgumentNullException.ThrowIfNull(logger);
+        files ??= PhysicalFileSystem.Instance;
         var resolvedRoot = RemuxPassPaths.Resolve(root);
         var current = RemuxPassPaths.Resolve(firstParent);
         while (!RemuxPassPaths.SamePath(current, resolvedRoot))
@@ -70,19 +72,19 @@ public sealed partial class OutputFolderCleanup
                 break;
             }
 
-            if (!Directory.Exists(current))
+            if (!files.DirectoryExists(current))
             {
                 break;
             }
 
             try
             {
-                if (Directory.EnumerateFileSystemEntries(current).Any())
+                if (files.EnumerateFileSystemInfos(current).Any())
                 {
                     break;
                 }
 
-                Directory.Delete(current, recursive: false);
+                files.DeleteDirectory(current, recursive: false);
                 deleted.Items.Add(new WireString(current));
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)

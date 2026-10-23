@@ -6,6 +6,7 @@ using Weir.Core.MediaManagers;
 using Weir.Core.Processing;
 using Weir.Core.Processing.RemuxPass;
 using Weir.Core.Rules;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Media;
 using Weir.Infrastructure.Processes;
 using Weir.Infrastructure.Processing;
@@ -65,7 +66,20 @@ internal sealed class FakeMediaRunner : IProcessRunner
     /// <summary>Runs on every call before it is answered, for a test that needs to see what the world looks like at that moment.</summary>
     public Action? OnCall { get; set; }
 
-    public Task<ProcessResult> RunAsync(ProcessRequest request, CancellationToken cancellationToken = default)
+    /// <summary>Like <see cref="OnCall"/>, for a test that needs to await something (a database write) at that moment.</summary>
+    public Func<Task>? OnCallAsync { get; set; }
+
+    public async Task<ProcessResult> RunAsync(ProcessRequest request, CancellationToken cancellationToken = default)
+    {
+        if (OnCallAsync is not null)
+        {
+            await OnCallAsync().ConfigureAwait(false);
+        }
+
+        return await Answer(request).ConfigureAwait(false);
+    }
+
+    private Task<ProcessResult> Answer(ProcessRequest request)
     {
         var argv = request.Argv;
         lock (Calls)
@@ -160,9 +174,16 @@ internal sealed class FakeOriginalLanguage : IOriginalLanguageLookup
 
     public List<(string Scope, long? LibraryId, string Path, HandoffOrigin? Origin)> Asked { get; } = [];
 
+    public Exception? Failure { get; set; }
+
     public Task<LookupResult> LookupAsync(string mediaScope, long? libraryId, string relativeMediaPath, HandoffOrigin? origin, CancellationToken cancellationToken)
     {
         Asked.Add((mediaScope, libraryId, relativeMediaPath, origin));
+        if (Failure is not null)
+        {
+            throw Failure;
+        }
+
         return Task.FromResult(Answer);
     }
 }
@@ -225,7 +246,7 @@ public sealed partial class RemuxPassRunnerTests : IDisposable
 
     public void Dispose() => _folders.Dispose();
 
-    private RemuxPassRunner Runner(bool? hardlink = null, Func<string, long>? freeBytes = null) =>
+    private RemuxPassRunner Runner(bool? hardlink = null, Func<string, long>? freeBytes = null, IFileSystem? files = null) =>
         new(
             new MediaTools(_media, new FixedResolver(), new ListLogger<MediaTools>(), TimeProvider.System),
             new FixedResolver(),
@@ -235,7 +256,8 @@ public sealed partial class RemuxPassRunnerTests : IDisposable
             _language,
             new RemuxPassSettings { MovieOutputCleanupMinAgeSeconds = 0, TvOutputCleanupMinAgeSeconds = 0 },
             TimeProvider.System,
-            NullLogger<RemuxPassRunner>.Instance)
+            NullLogger<RemuxPassRunner>.Instance,
+            files: files)
         {
             HardlinkFastPathSupported = hardlink ?? OperatingSystem.IsWindows(),
             FreeBytes = freeBytes,
@@ -253,7 +275,8 @@ public sealed partial class RemuxPassRunnerTests : IDisposable
         RemuxPassRunner? runner = null,
         Weir.Core.Processing.ManualPlanChoice? manualPlan = null,
         SourceFingerprint? manualPlanFingerprint = null,
-        HandoffOrigin? origin = null) =>
+        HandoffOrigin? origin = null,
+        bool withProgress = true) =>
         (runner ?? Runner()).RunAsync(new RemuxPassRequest
         {
             Runtime = runtime ?? _folders.Runtime(),
@@ -265,7 +288,7 @@ public sealed partial class RemuxPassRunnerTests : IDisposable
             RulesConfig = rules,
             MinimumFreeDiskSpaceMb = minimumFreeMb,
             CurrentJobId = 1,
-            ProgressReporter = _progress.Add,
+            ProgressReporter = withProgress ? _progress.Add : null,
             ManualPlan = manualPlan,
             ManualPlanFingerprint = manualPlanFingerprint,
             Origin = origin,

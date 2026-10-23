@@ -9,6 +9,7 @@ using Weir.Core.MediaManagers;
 using Weir.Core.Processing;
 using Weir.Core.Rules;
 using Weir.Infrastructure.Activity;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Jobs;
 using Weir.Infrastructure.Media;
 using Weir.Infrastructure.Processing;
@@ -42,6 +43,7 @@ public sealed partial class LibraryCleanHandler : IJobHandler
     private readonly DataChangePublisher _changes;
     private readonly TimeProvider _time;
     private readonly ILogger<LibraryCleanHandler> _logger;
+    private readonly IFileSystem _files;
 
     public LibraryCleanHandler(
         SqliteDatabase database,
@@ -57,7 +59,8 @@ public sealed partial class LibraryCleanHandler : IJobHandler
         LibraryStore libraries,
         DataChangePublisher changes,
         TimeProvider time,
-        ILogger<LibraryCleanHandler> logger)
+        ILogger<LibraryCleanHandler> logger,
+        IFileSystem? files = null)
     {
         _database = database ?? throw new ArgumentNullException(nameof(database));
         _tools = tools ?? throw new ArgumentNullException(nameof(tools));
@@ -73,6 +76,7 @@ public sealed partial class LibraryCleanHandler : IJobHandler
         _changes = changes ?? throw new ArgumentNullException(nameof(changes));
         _time = time ?? throw new ArgumentNullException(nameof(time));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _files = files ?? PhysicalFileSystem.Instance;
     }
 
     public string JobKind => LibraryModeJobKinds.CleanKind;
@@ -196,7 +200,7 @@ public sealed partial class LibraryCleanHandler : IJobHandler
 
         if (plan.Classification == LibraryFileClassification.CannotProcess)
         {
-            await RecordAsync(libraryId, path, trigger, LibraryActivityEventTypes.FileFailed, plan.Reason ?? "Weir cannot process this file.").ConfigureAwait(false);
+            await RecordAsync(libraryId, path, trigger, LibraryActivityEventTypes.FileFailed, plan.Reason!).ConfigureAwait(false);
             return;
         }
 
@@ -232,7 +236,7 @@ public sealed partial class LibraryCleanHandler : IJobHandler
                 writerNote = FfmpegFallbackNote(library.RemuxWriter, staged);
                 try
                 {
-                    File.Move(staged.Path, tempPath, overwrite: false);
+                    _files.MoveFile(staged.Path, tempPath, overwrite: false);
                 }
                 catch
                 {

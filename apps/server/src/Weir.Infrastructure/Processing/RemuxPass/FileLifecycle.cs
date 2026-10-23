@@ -293,9 +293,8 @@ public static partial class FileLifecycle
     }
 
     /// <summary><c>tempfile.mkstemp</c>: a new file named prefix + 8 random characters + suffix, created exclusively.</summary>
-    public static string CreateTempFile(string directory, string prefix, string suffix, IFileSystem? files = null)
+    public static string CreateTempFile(string directory, string prefix, string suffix, IFileSystem files)
     {
-        files ??= PhysicalFileSystem.Instance;
         const string Characters = "abcdefghijklmnopqrstuvwxyz0123456789_";
         for (var attempt = 0; ; attempt++)
         {
@@ -328,7 +327,10 @@ public static partial class FileLifecycle
     }
 
     /// <summary><c>os.link</c>. False when the platform or volume refuses.</summary>
-    public static bool CreateHardLink(string link, string existing)
+    public static bool CreateHardLink(string link, string existing) => CreateHardLink(link, existing, UnixLink);
+
+    /// <summary><see cref="CreateHardLink(string, string)"/> with the Unix call made by <paramref name="unixLink"/> (existing file, new link; 0 when it worked), so a system without libc can be simulated.</summary>
+    internal static bool CreateHardLink(string link, string existing, Func<string, string, int> unixLink)
     {
         if (OperatingSystem.IsWindows())
         {
@@ -337,7 +339,7 @@ public static partial class FileLifecycle
 
         try
         {
-            return UnixLink(existing, link) == 0;
+            return unixLink(existing, link) == 0;
         }
         catch (Exception exception) when (exception is DllNotFoundException or EntryPointNotFoundException)
         {

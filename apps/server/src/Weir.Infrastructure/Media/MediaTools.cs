@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Weir.Core.Media;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Processes;
 
 namespace Weir.Infrastructure.Media;
@@ -45,6 +46,9 @@ public sealed partial class MediaTools
         _logger = logger;
         _timeProvider = timeProvider;
     }
+
+    /// <summary>The file system the work file is created through; settable so a test can make the operating system refuse or race it.</summary>
+    internal IFileSystem Files { get; init; } = PhysicalFileSystem.Instance;
 
     /// <summary>How long a tool that reports progress may say nothing before it is stopped; settable so tests need not wait it out.</summary>
     internal TimeSpan SilenceLimit { get; init; } = TimeSpan.FromSeconds(ToolTimeLimits.SilenceSeconds);

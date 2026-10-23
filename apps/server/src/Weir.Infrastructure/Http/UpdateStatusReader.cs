@@ -17,9 +17,6 @@ namespace Weir.Infrastructure.Http;
 /// </summary>
 public sealed class UpdateStatusReader
 {
-    /// <summary>The version reported when the build carries none.</summary>
-    private const string UnknownVersion = "0.0.0";
-
     private readonly IReleaseCatalogClient _releases;
     private readonly WeirOptions _options;
     private readonly SqliteDatabase _database;
@@ -55,11 +52,6 @@ public sealed class UpdateStatusReader
     {
         var installType = UpdateFiles.DetectInstallType(_options.RuntimeKind);
         var currentVersion = WeirVersion.Resolve(_options.VersionOverride);
-        if (currentVersion.Length == 0)
-        {
-            currentVersion = UnknownVersion;
-        }
-
         // The Windows app lets its owner switch checking off, and then nothing is asked of GitHub. A Docker or source install has no
         // tray to hold that choice and keeps looking, since this page is how it learns of a release.
         if (installType == "windows" && _files.ReadSettings().Get("check_for_updates")?.IsTruthy != true)

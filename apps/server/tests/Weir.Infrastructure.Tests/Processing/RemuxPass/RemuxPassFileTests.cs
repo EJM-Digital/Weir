@@ -466,6 +466,16 @@ public sealed class RemuxPassPathsTests : IDisposable
         }
     }
 
+    [WindowsFact("Only Windows turns the name of a device into a path outside the folder.")]
+    public void The_name_of_a_device_is_refused_because_it_leaves_the_folder()
+    {
+        var media = Directory.CreateDirectory(_root.Join("media")).FullName;
+
+        Assert.Equal(
+            "resolved file path escapes the saved watched folder",
+            Assert.Throws<ArgumentException>(() => RemuxPassPaths.ResolveMediaFileUnderRoot(media, "NUL")).Message);
+    }
+
     [Fact]
     public void A_file_under_the_root_resolves()
     {
@@ -496,7 +506,7 @@ public sealed class RemuxPassPathsTests : IDisposable
             "The Movies workflow's work/temp folder must be an existing directory when set to a custom path.",
             RemuxPassPaths.RuntimeForLibrary(Library(watched, output, _root.Join("work-gone")), _root.Path, WorkflowManagerLinks.None).Problem);
 
-        var (runtime, problem) = RemuxPassPaths.RuntimeForLibrary(Library(watched, output), _root.Path, WorkflowManagerLinks.None);
+        var (runtime, problem) = RemuxPassPaths.RuntimeForLibrary(Library(watched, output), _root.Path, WorkflowManagerLinks.None, Weir.Infrastructure.IO.PhysicalFileSystem.Instance);
         Assert.Null(problem);
         Assert.True(runtime!.WorkFolderIsDefault);
         Assert.Equal(Path.Join(_root.Path, "processing", "processing-movie-work"), runtime.WorkFolderEffective);

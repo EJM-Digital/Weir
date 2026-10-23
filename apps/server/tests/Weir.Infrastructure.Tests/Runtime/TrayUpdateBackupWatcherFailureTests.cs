@@ -162,6 +162,64 @@ public sealed class TrayUpdateBackupWatcherFailureTests : IDisposable
         await Eventually.ThatAsync(() => (string?)ResultFor(Id)?["state"] is "saved" or "failed");
     }
 
+    /// <summary>A logger that cannot take an informational line, which is how a request can fail in a way no file explains.</summary>
+    private sealed class RefusesInformation : ILogger<TrayUpdateBackupWatcher>
+    {
+        private readonly List<string> _warnings = [];
+
+        public IReadOnlyList<string> Warnings
+        {
+            get
+            {
+                lock (_warnings)
+                {
+                    return [.. _warnings];
+                }
+            }
+        }
+
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            if (logLevel == LogLevel.Information)
+            {
+                throw new InvalidOperationException("This logger takes no informational lines.");
+            }
+
+            if (logLevel == LogLevel.Warning)
+            {
+                lock (_warnings)
+                {
+                    _warnings.Add(formatter(state, exception));
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public async Task A_request_that_fails_in_a_way_nothing_explains_is_logged_and_the_next_one_is_still_answered()
+    {
+        var refusing = new RefusesInformation();
+        using var watcher = new TrayUpdateBackupWatcher(_store.Options, _store.Database, _store.Clock, refusing);
+        await watcher.StartAsync(CancellationToken.None);
+        try
+        {
+            await File.WriteAllTextAsync(Path.Join(Home, TrayUpdateBackupWatcher.RequestFileName), "not a request");
+            await Eventually.ThatAsync(() => refusing.Warnings.Any(line => line.Contains("could not answer", StringComparison.Ordinal)));
+
+            await File.WriteAllTextAsync(Path.Join(Home, TrayUpdateBackupWatcher.RequestFileName), Request());
+            await Eventually.ThatAsync(() => (string?)ResultFor(Id)?["state"] is "saved" or "failed");
+        }
+        finally
+        {
+            await watcher.StopAsync(CancellationToken.None);
+        }
+    }
+
     [Fact]
     public async Task The_marker_names_this_process_only_until_it_is_disposed()
     {

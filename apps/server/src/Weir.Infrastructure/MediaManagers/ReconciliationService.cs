@@ -125,16 +125,8 @@ public static class ReconciliationService
 
         foreach (var root in WorkRoots(libraries))
         {
-            IEnumerable<string> entries;
-            try
-            {
-                entries = Directory.EnumerateFileSystemEntries(root, "*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint, IgnoreInaccessible = true });
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-            {
-                continue;
-            }
-
+            // The listing is lazy and skips what it may not read, so asking for it raises nothing.
+            var entries = Directory.EnumerateFileSystemEntries(root, "*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint, IgnoreInaccessible = true });
             foreach (var entry in entries)
             {
                 if (issues.Count >= ReconciliationRules.MaxIssuesPerCategory)

@@ -32,7 +32,7 @@ public sealed class QBittorrentPort : IDownloadClientPort
 
             var preferences = await client.SendAsync(
                 HttpMethod.Get, "/api/v2/app/preferences", headers: CookieHeader(cookie), cancellationToken: cancellationToken).ConfigureAwait(false);
-            return preferences.Status is >= 200 and < 300
+            return preferences.Succeeded
                 ? (true, $"Connected. Weir can reach {connection.Label}.")
                 : (false, $"Weir reached {connection.Label} but did not get the answer it expected. Check the address points at qBittorrent itself.");
         }

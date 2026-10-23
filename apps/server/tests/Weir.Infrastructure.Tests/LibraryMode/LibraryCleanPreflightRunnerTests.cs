@@ -68,7 +68,25 @@ public sealed class LibraryCleanPreflightRunnerTests
         Assert.Empty(LibraryCleanPreflightRunner.WarningMessages(results));
     }
 
-    private static async Task<List<LibraryFilePreflightResult>> PreflightAsync(bool skipIfManagerWouldRedownload, int cutoffFormatScore = 60)
+    [Fact]
+    public async Task A_file_whose_stored_probe_cannot_be_read_has_no_removed_audio_to_weigh_and_is_cleaned()
+    {
+        var results = await PreflightAsync(skipIfManagerWouldRedownload: true, probeJson: "{\"streams\": 5}");
+
+        var result = Assert.Single(results);
+        Assert.False(result.Skip);
+        Assert.False(result.RedownloadRisk);
+    }
+
+    [Fact]
+    public async Task A_file_whose_link_count_cannot_be_read_is_judged_on_what_else_is_known()
+    {
+        var results = await PreflightAsync(skipIfManagerWouldRedownload: false, inspector: new RefusingInspector());
+
+        Assert.Single(results);
+    }
+
+    private static async Task<List<LibraryFilePreflightResult>> PreflightAsync(bool skipIfManagerWouldRedownload, int cutoffFormatScore = 60, string probeJson = FakeMediaRunner.EnglishAndJapanese, IHardlinkInspector? inspector = null)
     {
         var replies = RedownloadRiskReplies.For(cutoffFormatScore);
         var manager = new FakeManagerHttp()
@@ -77,7 +95,7 @@ public sealed class LibraryCleanPreflightRunnerTests
         var file = new LibraryScanFileEntry(
             FilmPath, 1_000_000, 1_700_000_000, LibraryFileClassification.WouldChange, Summary: null, Reason: null,
             RemovedAudioCount: 1, RemovedSubtitleCount: 0, ManagerKind: "radarr", ManagerTitle: "Arrival",
-            ProbeJson: FakeMediaRunner.EnglishAndJapanese, ManagerConnectionId: ConnectionId, ManagerTitleId: "3",
+            ProbeJson: probeJson, ManagerConnectionId: ConnectionId, ManagerTitleId: "3",
             ManagerFileId: replies.FileId, ManagerQualityProfileId: replies.ProfileId);
 
         return await LibraryCleanPreflightRunner.RunAsync(
@@ -85,10 +103,15 @@ public sealed class LibraryCleanPreflightRunnerTests
             new LibrarySettings([], ScheduleEnabled: false, SkipIfManagerWouldRedownload: skipIfManagerWouldRedownload),
             EnglishOnly,
             MediaManagerKinds.Movie,
-            new SingleLinkInspector(),
+            inspector ?? new SingleLinkInspector(),
             new RedownloadRiskChecker(new ArrRedownloadRiskGateway(manager)),
             new Dictionary<long, ManagerConnection> { [ConnectionId] = Radarr },
             CancellationToken.None);
+    }
+
+    private sealed class RefusingInspector : IHardlinkInspector
+    {
+        public int? LinkCount(string path) => throw new UnauthorizedAccessException();
     }
 
     private sealed class SingleLinkInspector : IHardlinkInspector

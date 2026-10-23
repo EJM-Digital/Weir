@@ -24,7 +24,7 @@ public sealed partial class RemuxPassRunner
             long sourceSize;
             try
             {
-                sourceSize = new FileInfo(src).Length;
+                sourceSize = Files.GetLength(src);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
@@ -54,7 +54,7 @@ public sealed partial class RemuxPassRunner
             double age;
             try
             {
-                age = (_time.GetUtcNow() - new DateTimeOffset(File.GetLastWriteTimeUtc(src))).TotalSeconds;
+                age = (_time.GetUtcNow() - new DateTimeOffset(Files.GetLastWriteTimeUtc(src))).TotalSeconds;
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {

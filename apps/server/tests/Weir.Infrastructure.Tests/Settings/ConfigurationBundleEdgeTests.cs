@@ -40,6 +40,106 @@ public sealed class ConfigurationBundleEdgeTests : IDisposable
     }
 
     [Fact]
+    public async Task A_backup_with_no_workflows_and_no_rule_sets_section_empties_both()
+    {
+        var bundle = await BuildAsync();
+        bundle.Set("libraries", new WireArray());
+        bundle.Remove("rule_sets");
+
+        await ApplyAsync(bundle);
+
+        Assert.Equal(0, await _store.Scalar("SELECT count(*) FROM libraries"));
+        Assert.Equal(0, await _store.Scalar("SELECT count(*) FROM rule_sets"));
+    }
+
+    [Fact]
+    public async Task A_workflow_in_a_backup_that_leaves_out_its_choices_takes_the_usual_ones()
+    {
+        var bundle = await BuildAsync();
+        var workflows = ((WireArray)bundle["libraries"]).Items.Cast<WireObject>().ToList();
+        foreach (var workflow in workflows)
+        {
+            foreach (var choice in new[] { "rejected_file_action", "output_collision_policy", "ffmpeg_strictness", "remux_writer", "failure_policy" })
+            {
+                workflow.Remove(choice);
+            }
+        }
+
+        await ApplyAsync(bundle);
+
+        Assert.Equal(workflows.Count, await _store.Scalar("SELECT count(*) FROM libraries"));
+    }
+
+    [Fact]
+    public async Task A_backup_whose_settings_leave_out_the_optional_choices_restores_without_them()
+    {
+        var bundle = await BuildAsync();
+        var settings = (WireObject)bundle["suite_settings"];
+        foreach (var choice in new[] { "configuration_backup_enabled", "configuration_backup_interval_hours", "configuration_backup_preferred_time", "activity_retention_days" })
+        {
+            settings.Remove(choice);
+        }
+
+        await ApplyAsync(bundle);
+
+        Assert.Equal(1, await _store.Scalar("SELECT count(*) FROM suite_settings"));
+    }
+
+    [Fact]
+    public async Task A_backup_whose_settings_carry_the_optional_choices_restores_them()
+    {
+        var bundle = await BuildAsync();
+        var settings = (WireObject)bundle["suite_settings"];
+        settings.Set("configuration_backup_enabled", true).Set("configuration_backup_interval_hours", 12L).Set("configuration_backup_preferred_time", "03:30").Set("activity_retention_days", 90L);
+
+        await ApplyAsync(bundle);
+
+        Assert.Equal(12, await _store.Scalar("SELECT configuration_backup_interval_hours FROM suite_settings"));
+        Assert.Equal(90, await _store.Scalar("SELECT activity_retention_days FROM suite_settings"));
+    }
+
+    [Theory]
+    [InlineData("log_retention_days", "1000000000000000000000000000000", "Log retention")]
+    [InlineData("activity_retention_days", "-1000000000000000000000000000000", "Activity history must be kept")]
+    [InlineData("activity_retention_days", "1000000000000000000000000000000", "Activity history must be kept")]
+    [InlineData("configuration_backup_interval_hours", "-1000000000000000000000000000000", "Backup interval must be")]
+    [InlineData("configuration_backup_interval_hours", "1000000000000000000000000000000", "Backup interval must be")]
+    public async Task A_number_in_a_backup_too_big_to_be_a_number_of_days_or_hours_is_refused_in_plain_words(string setting, string digits, string expected)
+    {
+        var bundle = await BuildAsync();
+        ((WireObject)bundle["suite_settings"]).Set(setting, new WireInteger(System.Numerics.BigInteger.Parse(digits, System.Globalization.CultureInfo.InvariantCulture)));
+
+        var refused = await Assert.ThrowsAsync<WireValueException>(() => ApplyAsync(bundle));
+
+        Assert.Contains(expected, refused.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task A_yes_or_no_written_as_a_one_or_nought_with_a_point_is_read_and_anything_else_is_refused()
+    {
+        var bundle = await BuildAsync();
+        var workflow = ((WireArray)bundle["libraries"]).Items.Cast<WireObject>().First();
+        workflow.Set("enabled", new WireNumber(0.0));
+        await ApplyAsync(bundle);
+        Assert.Equal(0, await _store.Scalar("SELECT min(enabled) FROM libraries"));
+
+        workflow.Set("enabled", new WireNumber(0.5));
+        await Assert.ThrowsAsync<WireTypeException>(() => ApplyAsync(bundle));
+    }
+
+    [Fact]
+    public async Task A_workflow_in_a_backup_with_no_name_is_refused_by_its_place_in_the_backup()
+    {
+        var bundle = await BuildAsync();
+        var first = ((WireArray)bundle["libraries"]).Items.Cast<WireObject>().First();
+        first.Remove("name");
+
+        var refused = await Assert.ThrowsAsync<WireValueException>(() => ApplyAsync(bundle));
+
+        Assert.StartsWith("Workflow #1 in the backup:", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_backup_whose_performance_section_holds_no_free_space_still_restores_every_workflow()
     {
         var bundle = await BuildAsync();

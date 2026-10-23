@@ -121,6 +121,24 @@ public sealed class UnclaimedHandbackCleanupHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task Several_old_copies_are_removed_together_and_one_somebody_else_already_removed_is_counted_as_gone()
+    {
+        var library = await LibraryAsync();
+        var first = await HandedBackAsync(library, "One/one.mkv", daysAgo: 20);
+        var second = await HandedBackAsync(library, "Two/two.mkv", daysAgo: 20);
+        var vanished = await HandedBackAsync(library, "Three/three.mkv", daysAgo: 20);
+        File.Delete(vanished);
+
+        await RunAsync();
+
+        Assert.False(File.Exists(first));
+        Assert.False(File.Exists(second));
+        Assert.Equal(1, await _store.Scalar(
+            "SELECT count(*) FROM activity_events WHERE title = 'Removed 2 unclaimed hand-back copies (Movies)' AND detail LIKE '%\"already_gone\":1%'"));
+        Assert.Equal(3, await _store.Scalar("SELECT count(*) FROM handbacks WHERE settled_at IS NOT NULL"));
+    }
+
+    [Fact]
     public async Task A_person_can_change_the_window()
     {
         var library = await LibraryAsync();

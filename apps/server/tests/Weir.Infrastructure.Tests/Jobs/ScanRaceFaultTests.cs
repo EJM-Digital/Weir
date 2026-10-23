@@ -70,6 +70,28 @@ public sealed class ScanRaceFaultTests : IDisposable
     }
 
     [Fact]
+    public async Task A_source_a_pass_already_cleaned_is_not_queued_again_when_the_list_has_lost_its_row()
+    {
+        var film = Path.Combine(_watched, "Film.2024.mkv");
+        await File.WriteAllBytesAsync(film, [1, 2, 3]);
+        var copy = Path.Combine(_output, "Film.2024.mkv");
+        await File.WriteAllBytesAsync(copy, [1, 2, 3]);
+        var libraryId = await ProcessingWatchedFolderScanDispatchJobHandlerTests.CreateLibraryAsync(_store, _watched, _output);
+        var modifiedNs = (File.GetLastWriteTimeUtc(film) - DateTime.UnixEpoch).Ticks * 100;
+        await _store.Execute(
+            "INSERT INTO handbacks (library_id, relative_path, output_path, output_size, output_mtime_ns, written_at, source_size, source_mtime_ns) VALUES " +
+            $"({libraryId}, 'Film.2024.mkv', '{copy.Replace("'", "''", StringComparison.Ordinal)}', 3, 1, '2026-10-07 04:00:00.000000', 3, {modifiedNs})");
+        var handler = await HandlerAsync(PhysicalFileSystem.Instance);
+
+        await ProcessingWatchedFolderScanDispatchJobHandlerTests.RunScanAsync(handler, _jobs, libraryId, enqueueRemuxJobs: true);
+
+        Assert.Equal(0, await _store.Scalar("SELECT count(*) FROM jobs WHERE job_kind = 'processing.file.remux_pass.v1'"));
+        var recorded = await RecordedAsync(libraryId, "Film.2024.mkv");
+        Assert.Equal(ProcessingFileStatuses.Processed, recorded!.Status);
+        Assert.Equal(3, recorded.ProcessedSourceSize);
+    }
+
+    [Fact]
     public async Task A_watched_folder_that_cannot_be_read_fails_the_scan_and_changes_no_file_row_and_queues_nothing()
     {
         var film = Path.Combine(_watched, "Film.2024.mkv");

@@ -47,6 +47,22 @@ public sealed class MediaFileInspectionTests
     }
 
     [Fact]
+    public void A_file_the_system_refuses_to_measure_is_reported_without_a_size()
+    {
+        using var folder = new TempDirectory();
+        var file = folder.Join("film.mkv");
+        File.WriteAllBytes(file, [1, 2, 3, 4]);
+        var files = new FaultingFileSystem().Fail(FileCall.GetLength, FaultingFileSystem.Refused);
+
+        var state = MediaTools.InspectFile(file, files);
+
+        Assert.True(state.Exists);
+        Assert.True(state.IsFile);
+        Assert.Equal(-1, state.SizeBytes);
+        Assert.Equal(0.0, state.MtimeEpoch);
+    }
+
+    [Fact]
     public void A_path_that_cannot_be_resolved_is_kept_as_it_was_given()
     {
         var state = MediaTools.InspectFile("bad\0name.mkv");

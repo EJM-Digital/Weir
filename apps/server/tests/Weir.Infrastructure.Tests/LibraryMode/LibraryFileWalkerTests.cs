@@ -30,7 +30,7 @@ public sealed class LibraryFileWalkerTests : IDisposable
         WriteFile(".weir-originals", "Film.mkv");
         var settings = new LibrarySettings([_folder.Path], ScheduleEnabled: false, KeepOriginalAfterClean: true);
 
-        var walked = LibraryFileWalker.Walk(Library(), settings);
+        var walked = LibraryFileWalker.Walk(Library(), settings, Weir.Infrastructure.IO.PhysicalFileSystem.Instance);
 
         Assert.Single(walked);
         Assert.Equal(_folder.Join("Film.mkv"), walked[0].Path);
