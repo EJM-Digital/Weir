@@ -31,11 +31,16 @@ public sealed class WorkFolderPlacementCheck : BackgroundService
     internal WorkFolderPlacementCheck(
         SqliteDatabase database, WeirOptions options, LibraryStore libraries, ILogger<WorkFolderPlacementCheck> logger, Func<string, string, bool?> sameFilesystem)
     {
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _sameFilesystem = sameFilesystem ?? throw new ArgumentNullException(nameof(sameFilesystem));
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(sameFilesystem);
+        _database = database;
+        _options = options;
+        _libraries = libraries;
+        _logger = logger;
+        _sameFilesystem = sameFilesystem;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

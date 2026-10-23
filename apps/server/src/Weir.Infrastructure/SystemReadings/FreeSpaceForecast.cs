@@ -55,7 +55,7 @@ public sealed class FreeSpaceForecast(TimeProvider time)
         var meanY = readings.Average(reading => (double)reading.Free);
         var covariance = readings.Sum(reading => ((reading.At - origin).TotalSeconds - meanX) * (reading.Free - meanY));
         var variance = readings.Sum(reading => Math.Pow((reading.At - origin).TotalSeconds - meanX, 2));
-        var bytesPerSecond = variance > 0 ? covariance / variance : 0;
+        var bytesPerSecond = covariance / variance;
         if (bytesPerSecond >= 0)
         {
             return null;

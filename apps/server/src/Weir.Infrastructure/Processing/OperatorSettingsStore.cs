@@ -48,7 +48,8 @@ public sealed class OperatorSettingsStore
             "runner_cost_1080p, runner_cost_4k, work_temp_stale_sweep_enabled, " +
             "keep_failed_work_files, file_log_retention_days, movie_schedule_enabled, tv_schedule_enabled) " +
             "VALUES (1, 1, 4, 0, 0, 1, 1, 1, 0, 90, 1, 1)").ConfigureAwait(false);
-        return await GetAsync(uow).ConfigureAwait(false) ?? throw new InvalidOperationException("operator_settings row was not created.");
+        // The row was inserted just above, in the same transaction.
+        return (await GetAsync(uow).ConfigureAwait(false))!;
     }
 
     public async Task UpdateAsync(UnitOfWork uow, ProcessingOperatorSettingsRecord before, ProcessingOperatorSettingsRecord after)

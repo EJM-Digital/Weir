@@ -24,9 +24,12 @@ public sealed class ProposedLibraryCheck
 
     public ProposedLibraryCheck(LibraryStore libraries, LibraryFolderChainCheck folderChain, WeirOptions options)
     {
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _folderChain = folderChain ?? throw new ArgumentNullException(nameof(folderChain));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(folderChain);
+        ArgumentNullException.ThrowIfNull(options);
+        _libraries = libraries;
+        _folderChain = folderChain;
+        _options = options;
     }
 
     /// <summary>

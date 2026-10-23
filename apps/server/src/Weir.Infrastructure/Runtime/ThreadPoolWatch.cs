@@ -36,10 +36,14 @@ public sealed class ThreadPoolWatch : BackgroundService
     // A test queues the probe where it can run it by hand, and says what the pool looks like.
     internal ThreadPoolWatch(TimeProvider time, ILogger<ThreadPoolWatch> logger, Action<Action> queue, Func<ThreadPoolCounts> counts)
     {
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _queue = queue ?? throw new ArgumentNullException(nameof(queue));
-        _counts = counts ?? throw new ArgumentNullException(nameof(counts));
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(queue);
+        ArgumentNullException.ThrowIfNull(counts);
+        _time = time;
+        _logger = logger;
+        _queue = queue;
+        _counts = counts;
         _startedAt = time.GetTimestamp();
     }
 

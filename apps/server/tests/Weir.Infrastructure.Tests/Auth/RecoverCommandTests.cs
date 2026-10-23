@@ -283,6 +283,19 @@ public sealed class RecoverCommandTests
     }
 
     [Fact]
+    public async Task List_marks_an_account_that_is_switched_on_as_active()
+    {
+        using var fixture = new RecoverFixture();
+        await fixture.SeedUserAsync("user1", OldPassword);
+        var (stdout, stderr) = Writers();
+
+        var exit = await RecoverCommand.RunAsync(["--list"], fixture.Runtime, stdout, stderr, new FakePasswordPrompt(isInteractive: false));
+
+        Assert.Equal(RecoverCommand.ExitOk, exit);
+        Assert.Contains("user1  role=admin  active", stdout.ToString());
+    }
+
+    [Fact]
     public async Task List_with_no_accounts_points_at_setup()
     {
         using var fixture = new RecoverFixture();

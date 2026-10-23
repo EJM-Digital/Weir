@@ -18,9 +18,12 @@ public sealed class DriveReader
 
     public DriveReader(IHostReadingSource source, FreeSpaceForecast forecast, TimeProvider time, Func<string, long>? workFileBytes = null)
     {
-        _source = source ?? throw new ArgumentNullException(nameof(source));
-        _forecast = forecast ?? throw new ArgumentNullException(nameof(forecast));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(forecast);
+        ArgumentNullException.ThrowIfNull(time);
+        _source = source;
+        _forecast = forecast;
+        _time = time;
         _workFileBytes = workFileBytes ?? WorkFileBytes;
     }
 

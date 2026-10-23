@@ -62,14 +62,22 @@ public sealed class TrayStatusWriter : BackgroundService
         TimeProvider time,
         ILogger<TrayStatusWriter> logger)
     {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-        _folders = folders ?? throw new ArgumentNullException(nameof(folders));
-        _managers = managers ?? throw new ArgumentNullException(nameof(managers));
-        _changes = changes ?? throw new ArgumentNullException(nameof(changes));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(folders);
+        ArgumentNullException.ThrowIfNull(managers);
+        ArgumentNullException.ThrowIfNull(changes);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _options = options;
+        _database = database;
+        _settings = settings;
+        _folders = folders;
+        _managers = managers;
+        _changes = changes;
+        _time = time;
+        _logger = logger;
     }
 
     /// <summary>Listens before the server starts answering, so a change made from then on is never missed.</summary>

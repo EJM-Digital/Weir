@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { appendFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { readFileSync, watch } from "node:fs";
+import http from "node:http";
 import net from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -331,6 +332,26 @@ test("a tray handle reads the log from its mark, finds the server it started las
     assert.equal(await tray.line("pid=11", { what: "the first server", ceilingMs: 1000 }), "Bundled server host pid=11");
     assert.equal((await tray.linesHolding("Bundled")).length, 2);
   } finally {
+    await cleanup();
+  }
+});
+
+test("a server that got the process id of the one before it is still a new server", async () => {
+  const { world, trayLog, cleanup } = await logWorld();
+  const ready = http.createServer((_, answer) => answer.end(JSON.stringify({ ready: true })));
+  await new Promise((done) => ready.listen(0, "127.0.0.1", done));
+  let time = 0;
+  world.clock = { now: () => time, sleep: async (ms) => void (time += ms) };
+  try {
+    await appendFile(trayLog, stamp("Bundled server host pid=2000"));
+    const tray = new RunningTray(world, { pid: 7, exit: Promise.resolve(0) }, 0);
+    const first = await tray.serverPid();
+    await appendFile(trayLog, stamp("Bundled server host pid=3396"));
+    assert.equal(await tray.readyAfter(first, ready.address().port), 3396);
+    await appendFile(trayLog, stamp("Bundled server host pid=2000"));
+    assert.equal(await tray.readyAfter(first, ready.address().port), 2000, "the operating system gave the new server the id the first one had");
+  } finally {
+    await new Promise((done) => ready.close(done));
     await cleanup();
   }
 });

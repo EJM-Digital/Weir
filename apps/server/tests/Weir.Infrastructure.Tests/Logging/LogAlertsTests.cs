@@ -78,6 +78,24 @@ public sealed class LogAlertsTests : IDisposable
     }
 
     [Fact]
+    public async Task A_line_with_nothing_but_blanks_is_written_but_never_published()
+    {
+        using var subscription = _alerts.Subscribe();
+        var logger = _provider.CreateLogger("weir.test");
+
+        logger.LogWarning("   ");
+        logger.LogWarning("Something to read.");
+
+        Assert.Equal("Something to read.", (await NextAsync(subscription)).Message);
+    }
+
+    [Fact]
+    public void No_level_at_all_is_never_enabled()
+    {
+        Assert.False(_provider.CreateLogger("weir.test").IsEnabled(LogLevel.None));
+    }
+
+    [Fact]
     public async Task A_line_below_the_minimum_level_is_neither_written_nor_published()
     {
         using var quiet = new WeirLogFileLoggerProvider(_file, TimeProvider.System, LogLevel.Error, _alerts);

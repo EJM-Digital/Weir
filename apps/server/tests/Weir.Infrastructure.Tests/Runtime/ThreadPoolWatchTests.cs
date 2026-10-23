@@ -125,6 +125,22 @@ public sealed class ThreadPoolWatchTests
     }
 
     [Fact]
+    public void A_wait_first_seen_after_it_ended_is_said_once_in_the_past_tense()
+    {
+        var watch = Watch();
+        watch.Tick();
+        Pass(TimeSpan.FromSeconds(4));
+        PoolRunsWhatWaits();
+
+        watch.Tick();
+
+        var (level, message) = Assert.Single(_log.Messages);
+        Assert.Equal(LogLevel.Warning, level);
+        Assert.Contains("was slow to get to work for 4 s", message, StringComparison.Ordinal);
+        Assert.Contains("12 threads", message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_wait_that_began_and_ended_inside_the_limit_is_never_mentioned()
     {
         var watch = Watch();

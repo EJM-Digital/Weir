@@ -58,13 +58,20 @@ public sealed class ProcessingWatchedFolderScanDispatchScheduleTask : IPeriodicT
         _tasks = tasks;
         _wakeups = wakeups;
         _scanSettingsChanges = scanSettingsChanges;
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
-        _operatorSettings = operatorSettings ?? throw new ArgumentNullException(nameof(operatorSettings));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(jobStore);
+        ArgumentNullException.ThrowIfNull(operatorSettings);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _database = database;
+        _options = options;
+        _jobStore = jobStore;
+        _operatorSettings = operatorSettings;
+        _libraries = libraries;
+        _time = time;
+        _logger = logger;
     }
 
     public string Name => "processing-watched-folder-remux-scan-dispatch-enqueue";

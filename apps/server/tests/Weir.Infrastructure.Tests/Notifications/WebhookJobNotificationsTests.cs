@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weir.Core.Configuration;
 using Weir.Infrastructure.Http;
@@ -164,6 +165,34 @@ public sealed class WebhookJobNotificationsTests : IDisposable
     }
 
     [Fact]
+    public async Task A_delivery_the_channel_refuses_is_logged_as_a_warning()
+    {
+        var logger = new RecordingLogger<WebhookJobNotifications>();
+        var notifications = new WebhookJobNotifications(_store.Database, _dispatcher, logger);
+        _poster.Status = 500;
+        await ChannelAsync("files", "processing_job_failed");
+        var job = await JobAsync(RemuxPass, "failed");
+
+        notifications.Dispatch("processing", "failed", job, RemuxPass);
+        await PostsAsync();
+
+        Assert.Contains(logger.At(LogLevel.Warning), message => message.Contains("was not delivered", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_notifier_that_cannot_start_a_delivery_logs_it_instead_of_throwing()
+    {
+        var logger = new RecordingLogger<WebhookJobNotifications>();
+        var broken = new WebhookJobNotifications(null!, _dispatcher, logger);
+
+        broken.Dispatch("processing", "completed", 1, RemuxPass);
+        broken.Dispatch("processing", "failed", 2, FolderScan);
+        broken.DispatchFailedForGood("processing", 3, RemuxPass);
+
+        Assert.Equal(3, logger.At(LogLevel.Warning).Count);
+    }
+
+    [Fact]
     public async Task A_channel_switched_off_does_not_stop_the_others_hearing()
     {
         await ChannelAsync("on", "processing_job_failed");
@@ -214,10 +243,12 @@ public sealed class WebhookJobNotificationsTests : IDisposable
 
         public List<(string Url, string Body)> Posts => [.. _posts];
 
+        public int Status { get; set; } = 204;
+
         public Task<int> PostJsonAsync(string url, byte[] body, IReadOnlyDictionary<string, string> headers, TimeSpan timeout, CancellationToken cancellationToken)
         {
             _posts.Enqueue((url, Encoding.UTF8.GetString(body)));
-            return Task.FromResult(204);
+            return Task.FromResult(Status);
         }
     }
 }

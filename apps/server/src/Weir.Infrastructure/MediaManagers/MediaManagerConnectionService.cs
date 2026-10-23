@@ -42,10 +42,14 @@ public sealed class MediaManagerConnectionService
 
     public MediaManagerConnectionService(WeirOptions options, CredentialCipher cipher, IMediaManagerPorts ports, MediaManagerConnectionStore store)
     {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _cipher = cipher ?? throw new ArgumentNullException(nameof(cipher));
-        _ports = ports ?? throw new ArgumentNullException(nameof(ports));
-        _store = store ?? throw new ArgumentNullException(nameof(store));
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(cipher);
+        ArgumentNullException.ThrowIfNull(ports);
+        ArgumentNullException.ThrowIfNull(store);
+        _options = options;
+        _cipher = cipher;
+        _ports = ports;
+        _store = store;
     }
 
     public CredentialCipher Cipher => _cipher;

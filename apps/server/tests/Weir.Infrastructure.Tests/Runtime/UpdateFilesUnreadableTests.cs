@@ -8,7 +8,7 @@ namespace Weir.Infrastructure.Tests.Runtime;
 /// <summary>The tray's files when they hold something that is not text Weir can read, and the flags Weir leaves for the tray.</summary>
 public sealed class UpdateFilesUnreadableTests : IDisposable
 {
-    private static readonly byte[] NotUtf8 = [0xFF, 0xFE, 0xFD, 0x7B];
+    private static readonly byte[] NotUtf8 = [0x7B, 0xFF, 0xFD, 0xFC];
 
     private readonly StoreFixture _store = new(("WEIR_RUNTIME", "windows"));
 

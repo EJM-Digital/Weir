@@ -34,12 +34,18 @@ public sealed class LibraryFolderChainCheck
     internal LibraryFolderChainCheck(
         ManagerSetupCheck managerSetupCheck, DownloadClientSuggestions downloadClientSuggestions, LibraryStore libraries, WeirOptions options, FolderChainAnswers answers, IFolderProbe probe)
     {
-        _answers = answers ?? throw new ArgumentNullException(nameof(answers));
-        _managerSetupCheck = managerSetupCheck ?? throw new ArgumentNullException(nameof(managerSetupCheck));
-        _downloadClientSuggestions = downloadClientSuggestions ?? throw new ArgumentNullException(nameof(downloadClientSuggestions));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _probe = probe ?? throw new ArgumentNullException(nameof(probe));
+        ArgumentNullException.ThrowIfNull(answers);
+        ArgumentNullException.ThrowIfNull(managerSetupCheck);
+        ArgumentNullException.ThrowIfNull(downloadClientSuggestions);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(probe);
+        _answers = answers;
+        _managerSetupCheck = managerSetupCheck;
+        _downloadClientSuggestions = downloadClientSuggestions;
+        _libraries = libraries;
+        _options = options;
+        _probe = probe;
     }
 
     /// <summary>

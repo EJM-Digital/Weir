@@ -91,9 +91,12 @@ public sealed class OutputOwnership : IOutputOwnership
 
     public OutputOwnership(WeirOptions options, IOutputOwnershipTools tools, ILogger<OutputOwnership> logger)
     {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _tools = tools ?? throw new ArgumentNullException(nameof(tools));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(tools);
+        ArgumentNullException.ThrowIfNull(logger);
+        _options = options;
+        _tools = tools;
+        _logger = logger;
     }
 
     public void ApplyToFile(string path) => Apply(path, _options.OutputOwnershipFileMode);

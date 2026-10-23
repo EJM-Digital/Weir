@@ -149,7 +149,8 @@ public sealed class PeriodicTaskService : BackgroundService
         _tasks = [.. tasks.Select(task => options.PeriodicTaskSpeedUp > 1 ? new SpedUpPeriodicTask(task, options.PeriodicTaskSpeedUp) : task)];
         _time = time;
         _loggers = loggers;
-        _registry = registry ?? throw new ArgumentNullException(nameof(registry));
+        ArgumentNullException.ThrowIfNull(registry);
+        _registry = registry;
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken) =>

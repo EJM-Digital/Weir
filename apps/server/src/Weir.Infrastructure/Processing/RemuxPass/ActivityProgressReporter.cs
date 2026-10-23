@@ -63,8 +63,10 @@ public sealed class ActivityProgressReporter
         _save = save ?? SaveToActivityAsync;
         _jobId = jobId;
         _extra = extra ?? new WireObject();
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _liveProgress = liveProgress ?? throw new ArgumentNullException(nameof(liveProgress));
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(liveProgress);
+        _time = time;
+        _liveProgress = liveProgress;
     }
 
     /// <summary>The progress row, once written; the handler turns it into the completed row.</summary>

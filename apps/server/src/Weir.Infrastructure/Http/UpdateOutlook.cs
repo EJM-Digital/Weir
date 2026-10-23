@@ -38,10 +38,14 @@ public sealed class UpdateOutlook
 
     public UpdateOutlook(UpdateStatusReader status, UpdateFiles files, TimeProvider time, DataChangePublisher changes)
     {
-        _status = status ?? throw new ArgumentNullException(nameof(status));
-        _files = files ?? throw new ArgumentNullException(nameof(files));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _changes = changes ?? throw new ArgumentNullException(nameof(changes));
+        ArgumentNullException.ThrowIfNull(status);
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(changes);
+        _status = status;
+        _files = files;
+        _time = time;
+        _changes = changes;
     }
 
     /// <summary>The outlook now: an update the tray already downloaded wins over what the last check found.</summary>

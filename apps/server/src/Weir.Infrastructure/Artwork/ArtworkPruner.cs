@@ -24,10 +24,14 @@ public sealed class ArtworkPruner
 
     public ArtworkPruner(SqliteDatabase database, ArtworkPosterFiles posterFiles, TimeProvider time, ILogger<ArtworkPruner> logger)
     {
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _posterFiles = posterFiles ?? throw new ArgumentNullException(nameof(posterFiles));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(posterFiles);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _database = database;
+        _posterFiles = posterFiles;
+        _time = time;
+        _logger = logger;
     }
 
     /// <summary>One pruning pass. Returns how many poster images it removed.</summary>

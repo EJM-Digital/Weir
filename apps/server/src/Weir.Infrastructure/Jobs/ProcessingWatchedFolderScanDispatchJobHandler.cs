@@ -67,15 +67,24 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
         IFileSystem? fileSystem = null)
     {
         _fs = fileSystem ?? PhysicalFileSystem.Instance;
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
-        _managerConnections = managerConnections ?? throw new ArgumentNullException(nameof(managerConnections));
-        _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _files = files ?? throw new ArgumentNullException(nameof(files));
-        _skipMarkers = skipMarkers ?? throw new ArgumentNullException(nameof(skipMarkers));
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(jobStore);
+        ArgumentNullException.ThrowIfNull(managerConnections);
+        ArgumentNullException.ThrowIfNull(suiteSettings);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(skipMarkers);
+        _database = database;
+        _time = time;
+        _options = options;
+        _jobStore = jobStore;
+        _managerConnections = managerConnections;
+        _suiteSettings = suiteSettings;
+        _libraries = libraries;
+        _files = files;
+        _skipMarkers = skipMarkers;
         _wakeups = wakeups;
         _logger = logger;
         _changes = changes;

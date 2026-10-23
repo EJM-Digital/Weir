@@ -41,9 +41,12 @@ public sealed class ArtworkGatewayClient
         // The real service is a public address and must resolve to one. An address someone configured by hand is theirs to
         // point anywhere, a stand-in on this machine included.
         _gatewayPolicy = _baseUrl.Equals(ArtworkPosterSource.DefaultGatewayUrl, StringComparison.OrdinalIgnoreCase) ? ManagerAddressPolicy.Public : ManagerAddressPolicy.Local;
-        _handlers = handlers ?? throw new ArgumentNullException(nameof(handlers));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(handlers);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _handlers = handlers;
+        _time = time;
+        _logger = logger;
     }
 
     /// <summary>Whether a gateway is configured. With none (<c>WEIR_ARTWORK_GATEWAY_URL=off</c>) no lookup is made.</summary>

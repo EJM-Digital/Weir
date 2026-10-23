@@ -30,8 +30,11 @@ public sealed class RuntimeJobQueueMetrics : IJobQueueMetrics
 {
     private readonly RuntimeMetricsStore _metrics;
 
-    public RuntimeJobQueueMetrics(RuntimeMetricsStore metrics) =>
-        _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
+    public RuntimeJobQueueMetrics(RuntimeMetricsStore metrics)
+    {
+        ArgumentNullException.ThrowIfNull(metrics);
+        _metrics = metrics;
+    }
 
     public void RecordJobEvent(string moduleName, string jobEvent) => _metrics.RecordModuleJobEvent(moduleName, jobEvent);
 

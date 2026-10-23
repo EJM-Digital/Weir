@@ -18,6 +18,7 @@ public sealed partial class RemuxPassHandler
 
         var looks = data.Get("disk_space_looks") is WireInteger counted ? (long)counted.Value : 0;
         await BookAnotherLookAsync(
+            _jobs,
             data.Copy().Set("disk_space_looks", looks + 1),
             origin,
             $"{RemuxPassOutcomes.JobKind}:disk-space-wait:{jobId}",

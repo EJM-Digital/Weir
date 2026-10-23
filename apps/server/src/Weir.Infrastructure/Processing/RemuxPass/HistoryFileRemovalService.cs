@@ -64,13 +64,20 @@ public sealed class HistoryFileRemovalService
         IFileSystem? fileSystem = null)
     {
         _fs = fileSystem ?? PhysicalFileSystem.Instance;
-        _ports = ports ?? throw new ArgumentNullException(nameof(ports));
-        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
-        _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
-        _routes = routes ?? throw new ArgumentNullException(nameof(routes));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _files = files ?? throw new ArgumentNullException(nameof(files));
-        _skipMarkers = skipMarkers ?? throw new ArgumentNullException(nameof(skipMarkers));
+        ArgumentNullException.ThrowIfNull(ports);
+        ArgumentNullException.ThrowIfNull(connections);
+        ArgumentNullException.ThrowIfNull(reporter);
+        ArgumentNullException.ThrowIfNull(routes);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(skipMarkers);
+        _ports = ports;
+        _connections = connections;
+        _reporter = reporter;
+        _routes = routes;
+        _libraries = libraries;
+        _files = files;
+        _skipMarkers = skipMarkers;
     }
 
     /// <summary>Which manager (if any) "delete" would ask, or that Weir would delete the file itself, and whether "keep" has one to tell.</summary>

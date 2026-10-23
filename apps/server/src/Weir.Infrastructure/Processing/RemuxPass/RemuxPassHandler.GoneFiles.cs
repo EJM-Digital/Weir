@@ -64,6 +64,7 @@ public sealed partial class RemuxPassHandler
         }
 
         await BookAnotherLookAsync(
+            jobs,
             data.Copy().Set(GoneLooksKey, 1),
             origin,
             $"{RemuxPassOutcomes.JobKind}:gone-wait:{jobId}",

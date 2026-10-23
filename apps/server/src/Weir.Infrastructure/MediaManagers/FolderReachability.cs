@@ -61,13 +61,20 @@ public sealed class FolderReachability : BackgroundService
         TimeProvider time,
         ILogger<FolderReachability> logger)
     {
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _probe = probe ?? throw new ArgumentNullException(nameof(probe));
-        _changes = changes ?? throw new ArgumentNullException(nameof(changes));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(probe);
+        ArgumentNullException.ThrowIfNull(changes);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _database = database;
+        _libraries = libraries;
+        _options = options;
+        _probe = probe;
+        _changes = changes;
+        _time = time;
+        _logger = logger;
     }
 
     /// <summary>The folders Weir cannot reach, each in plain words ("The watched folder for Movies"), in workflow order.</summary>

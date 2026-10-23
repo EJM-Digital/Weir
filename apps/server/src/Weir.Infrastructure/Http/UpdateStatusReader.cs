@@ -36,12 +36,18 @@ public sealed class UpdateStatusReader
         UpdateFiles files,
         ILogger<UpdateStatusReader> logger)
     {
-        _releases = releases ?? throw new ArgumentNullException(nameof(releases));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
-        _files = files ?? throw new ArgumentNullException(nameof(files));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(releases);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(suiteSettings);
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(logger);
+        _releases = releases;
+        _options = options;
+        _database = database;
+        _suiteSettings = suiteSettings;
+        _files = files;
+        _logger = logger;
     }
 
     /// <summary>The <c>GET /suite/update-status</c> body.</summary>

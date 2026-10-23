@@ -38,8 +38,10 @@ public sealed class GitHubReleaseCatalogClient : IReleaseCatalogClient
     public GitHubReleaseCatalogClient(TimeProvider time, ILogger<GitHubReleaseCatalogClient> logger, HttpMessageHandler? handler = null, string? feedUrl = null)
     {
         _feedUrl = feedUrl ?? ReleaseCatalog.ReleasesFeedUrl;
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _time = time;
+        _logger = logger;
         _handler = handler ?? new SocketsHttpHandler
         {
             AllowAutoRedirect = true,

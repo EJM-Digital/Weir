@@ -43,10 +43,14 @@ public sealed class TrayHandOffWatcher : BackgroundService
     public TrayHandOffWatcher(WeirOptions options, DataChangePublisher changes, TimeProvider time, ILogger<TrayHandOffWatcher> logger, TimeSpan? settle = null)
     {
         _settle = settle ?? Settle;
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _changes = changes ?? throw new ArgumentNullException(nameof(changes));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(changes);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _options = options;
+        _changes = changes;
+        _time = time;
+        _logger = logger;
     }
 
     /// <summary>Starts listening before the server starts answering, so a write made from then on is never missed.</summary>

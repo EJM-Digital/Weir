@@ -59,10 +59,14 @@ public sealed class TrayUpdateBackupWatcher : BackgroundService
 
     public TrayUpdateBackupWatcher(WeirOptions options, SqliteDatabase database, TimeProvider time, ILogger<TrayUpdateBackupWatcher> logger)
     {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _options = options;
+        _database = database;
+        _time = time;
+        _logger = logger;
     }
 
     /// <summary>Starts listening before the server starts answering, so a request made from then on is never missed.</summary>
