@@ -82,3 +82,36 @@ test("a folder of reports is aligned in place, whatever depth they are at, and o
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+// An OpenCover file names its files by full path and has no <source> folder; the shape is coverlet's own.
+const openCover = (checkout, separator, hash) => {
+  const file = ["apps", "server", "src", "Weir.Infrastructure", "Files", "FileIdentity.cs"].join(separator);
+  return `<CoverageSession><Modules><Module><ModuleName>Weir.Infrastructure</ModuleName><Files>` +
+    `<File uid="1" fullPath="${checkout}${separator}${file}" /></Files><Classes><Class>` +
+    `<FullName>Weir.Infrastructure.&lt;FileIdentity&gt;F${hash}__Probe</FullName></Class></Classes></Module></Modules></CoverageSession>`;
+};
+const linuxOpenCover = openCover("/home/runner/work/Weir/Weir", "/", "A".repeat(64));
+const windowsOpenCover = openCover("D:\\a\\Weir\\Weir","\\", "B".repeat(64));
+
+test("an OpenCover report's checkout is found from its file paths", () => {
+  assert.equal(checkoutOf(linuxOpenCover), "/home/runner/work/Weir/Weir");
+  assert.equal(checkoutOf(windowsOpenCover), "D:/a/Weir/Weir");
+});
+
+test("after aligning, both runners' OpenCover reports name the same files and types", () => {
+  const fromLinux = align(linuxOpenCover, "/work/checkout");
+  const fromWindows = align(windowsOpenCover, "/work/checkout");
+  assert.equal(fromWindows, fromLinux);
+  assert.match(fromLinux, /fullPath="\/work\/checkout\/apps\/server\/src\/Weir\.Infrastructure\/Files\/FileIdentity\.cs"/);
+});
+
+test("a folder's OpenCover reports are aligned in place as well", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "weir-align-"));
+  try {
+    writeFileSync(path.join(root, "coverage.opencover.xml"), windowsOpenCover);
+    assert.equal(alignFolder(root, "/work/checkout"), 1);
+    assert.equal(readFileSync(path.join(root, "coverage.opencover.xml"), "utf8"), align(linuxOpenCover, "/work/checkout"));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
