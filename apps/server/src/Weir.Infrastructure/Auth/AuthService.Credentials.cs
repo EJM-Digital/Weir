@@ -124,9 +124,9 @@ public sealed partial class AuthService
     }
 
     /// <summary>Deletes sessions that are revoked, expired or idle past their timeout.</summary>
-    public Task<int> CleanupInactiveSessionsAsync(UnitOfWork uow, Timestamp? now = null)
+    public Task<int> CleanupInactiveSessionsAsync(UnitOfWork uow)
     {
-        var moment = now ?? Now();
+        var moment = Now();
         var idleCutoff = Timestamp.FromUtc(SessionRules.SafeSubtract(moment.AsUtc, SessionRules.Minutes(_options.SessionIdleMinutes)));
         var trustedCutoff = Timestamp.FromUtc(SessionRules.SafeSubtract(moment.AsUtc, SessionRules.Minutes(_options.SessionTrustedIdleMinutes)));
         return _users.DeleteInactiveSessionsAsync(uow, moment, idleCutoff, trustedCutoff);

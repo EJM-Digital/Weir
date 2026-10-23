@@ -339,4 +339,24 @@ public sealed class ActivityHistoryStoreTests
         Assert.Equal(1, deleted.ActivityEvents);
         Assert.Equal(1, deleted.ProcessingRecords);
     }
+
+    [Fact]
+    public async Task File_history_asked_for_without_a_library_covers_that_path_in_every_library()
+    {
+        using var fixture = new StoreFixture();
+        var first = await fixture.Scalar("INSERT INTO libraries (name, media_type) VALUES ('One', 'movie') RETURNING id");
+        var second = await fixture.Scalar("INSERT INTO libraries (name, media_type) VALUES ('Two', 'movie') RETURNING id");
+        await fixture.Execute(
+            "INSERT INTO activity_events (created_at, event_type, module, title, relative_path, library_id) VALUES " +
+            $"('2026-01-01 00:00:01', 'a.1', 'processing', 'in one library', 'Film/movie.mkv', {first}), " +
+            $"('2026-01-01 00:00:02', 'a.1', 'processing', 'in another', 'Film/movie.mkv', {second})");
+        await fixture.Execute(
+            $"INSERT INTO file_logs (relative_path, recorded_at, library_id) VALUES ('Film/movie.mkv', '2026-01-01 00:00:01', {first}), ('Film/movie.mkv', '2026-01-01 00:00:02', {second})");
+
+        var counts = await fixture.WithUnitOfWork(uow => _history.CountFileHistoryAsync(uow, libraryId: null, "Film/movie.mkv"));
+        var deleted = await fixture.WithUnitOfWork(uow => _history.DeleteFileHistoryAsync(uow, libraryId: null, "Film/movie.mkv"));
+
+        Assert.Equal((2, 2), (counts.ActivityEvents, counts.ProcessingRecords));
+        Assert.Equal((2, 2), (deleted.ActivityEvents, deleted.ProcessingRecords));
+    }
 }

@@ -23,7 +23,7 @@ public sealed partial class RemuxPassHandler
     /// with no video is: nothing is written, nothing is deleted, and the library's reject or leave choice applies with the
     /// evidence a reject needs (#471). A file that changes starts the count again.
     /// </remarks>
-    private async Task SettleUnreadableSourceAsync(long jobId, WireObject data, WireObject? origin, WireObject result, CancellationToken cancellationToken)
+    internal async Task SettleUnreadableSourceAsync(long jobId, WireObject data, WireObject? origin, WireObject result, CancellationToken cancellationToken)
     {
         if (result.Get("not_ready_kind") is not WireString { Value: RemuxPassRunner.UnreadableWait })
         {
@@ -105,7 +105,7 @@ public sealed partial class RemuxPassHandler
     }
 
     /// <summary>The size and modification time of the file this look read, as one string, or null when it cannot be read.</summary>
-    private static string? SourceFingerprint(WireString? inspectedSourcePath)
+    internal static string? SourceFingerprint(WireString? inspectedSourcePath)
     {
         if (inspectedSourcePath is not { Value.Length: > 0 } path)
         {
@@ -151,7 +151,7 @@ public sealed partial class RemuxPassHandler
             return;
         }
 
-        var seconds = result.Get("not_ready_seconds") is WireInteger remaining ? Math.Max(1, (long)remaining.Value) : 60;
+        var seconds = Math.Max(1, (long)((WireInteger)result["not_ready_seconds"]).Value);
         // A little past the moment it is old enough, so the second look does not land a fraction of a second early.
         var lookAgainAt = _time.GetUtcNow().AddSeconds(seconds + 2);
         await BookAnotherLookAsync(
