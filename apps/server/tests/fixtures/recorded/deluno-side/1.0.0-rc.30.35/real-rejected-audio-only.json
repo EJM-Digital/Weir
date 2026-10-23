@@ -1,8 +1,8 @@
 {
   "app": "deluno",
-  "version": "1.0.0-rc.30.33",
+  "version": "1.0.0-rc.30.35",
   "state": "real-rejected-audio-only",
-  "recordedAt": "2026-10-18T07:29:14.037Z",
+  "recordedAt": "2026-10-23T14:30:17.462Z",
   "note": "A release whose film has sound and no picture, handed to Weir by a real Deluno in a workflow set to reject: Weir reports it rejected and leaves the download; Deluno refuses the release. The hand-off, Deluno's questions about it, Weir's report and Deluno's reply, as the proxy between them saw it.",
   "exchanges": [
     {
@@ -10,18 +10,18 @@
         "method": "POST",
         "path": "/api/v1/intake/webhook/deluno",
         "headers": {
-          "idempotency-key": "01a14ddb49c97afeb81408daf76c0828:1792307579337",
+          "idempotency-key": "01a1691c929c73c09b2afeab36435863:1792764842652",
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "eventType": "deluno.processor-handoff",
-          "handoffId": "01a14ddb49c97afeb81408daf76c0828",
-          "libraryId": "01a14dd7a3277ea09b4c8cf79f45b536",
+          "handoffId": "01a1691c929c73c09b2afeab36435863",
+          "libraryId": "01a16918f0747a73b2c1d580a4a121e5",
           "mediaType": "movies",
           "sourcePath": "/downloads/completed/Movies/ScnReject.2020.1080p.WEB-DL.x264-WEIR",
           "releaseName": "ScnReject.2020.1080p.WEB-DL.x264-WEIR",
-          "queueItemId": "60d3950da5b5641eb378c8f9df1da8b266909dd2",
+          "queueItemId": "e0fb78d2514183f677d1c5dd086efd84759f18ec",
           "callbackPath": "/api/integrations/processors/events",
           "title": "ScnReject",
           "year": 2020,
@@ -47,7 +47,7 @@
     {
       "request": {
         "method": "GET",
-        "path": "/api/v1/intake/handoffs/deluno/01a14ddb49c97afeb81408daf76c0828",
+        "path": "/api/v1/intake/handoffs/deluno/01a1691c929c73c09b2afeab36435863",
         "headers": {
           "x-webhook-secret": "<scrubbed>"
         }
@@ -58,11 +58,11 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a14ddb49c97afeb81408daf76c0828",
+          "handoffId": "01a1691c929c73c09b2afeab36435863",
           "state": "working",
           "queuePosition": null,
           "scheduledFor": null,
-          "lastChangedUtc": "2026-10-18T07:13:59Z",
+          "lastChangedUtc": "2026-10-23T14:15:02Z",
           "outputPath": null,
           "outputFiles": null,
           "message": "Weir only processes movie and TV files that contain a video stream. This file contains no video, so it was rejected before any output was written. Weir is telling your media manager this release is bad so it can find a different one, and removes the download only once the manager accepts."
@@ -78,10 +78,10 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a14ddb49c97afeb81408daf76c0828",
+          "handoffId": "01a1691c929c73c09b2afeab36435863",
           "status": "failed",
           "processorName": "Weir",
-          "libraryId": "01a14dd7a3277ea09b4c8cf79f45b536",
+          "libraryId": "01a16918f0747a73b2c1d580a4a121e5",
           "releaseName": "ScnReject.2020.1080p.WEB-DL.x264-WEIR",
           "message": "Weir only processes movie and TV files that contain a video stream. This file contains no video, so it was rejected before any output was written.",
           "disposition": "rejected",
@@ -97,10 +97,10 @@
         },
         "body": {
           "status": "rejected",
-          "handoffId": "01a14ddb49c97afeb81408daf76c0828",
-          "activityId": "01a14ddc36bc78048f1301039fe456c1",
-          "blockedReleaseId": "f62ef9e0cf2a4cdab55632b5186958be",
-          "searchJobId": "01a14ddc36b870158256a1094d194977"
+          "handoffId": "01a1691c929c73c09b2afeab36435863",
+          "activityId": "01a1691d7f95769d84170a98b5ae2672",
+          "blockedReleaseId": "968cb850e5cf455eb7423b6dac0266d1",
+          "searchJobId": "01a1691d7f917be49496bd8c26246a81"
         }
       }
     }

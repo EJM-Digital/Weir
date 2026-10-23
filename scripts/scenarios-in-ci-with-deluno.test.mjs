@@ -22,7 +22,7 @@ const images = loadImages();
 test("Deluno, qBittorrent and the release source's runtime are pinned by digest, with a label saying what was pinned", () => {
   assert.deepEqual(problemsWithImages(images), []);
   assert.match(images.DELUNO.reference, /^ghcr\.io\/[^/]+\/deluno@sha256:[0-9a-f]{64}$/);
-  assert.match(images.DELUNO.label, /1\.0\.0-rc\.30\.33/);
+  assert.match(images.DELUNO.label, /1\.0\.0-rc\.30\.35/);
   assert.match(images.QBITTORRENT.reference, /^ghcr\.io\/linuxserver\/qbittorrent@sha256:[0-9a-f]{64}$/);
 });
 
