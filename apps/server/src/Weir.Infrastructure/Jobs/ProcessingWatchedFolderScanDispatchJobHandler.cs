@@ -111,13 +111,11 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
             return;
         }
 
-        var candidates = await BlockingWork.RunAsync(() => WatchedFolderListing.Candidates(
-            scan.Paths.WatchedFolder,
-            scan.Rules.MediaExtensions.Count > 0 ? scan.Rules.MediaExtensions : null,
-            scan.Rules.ExcludeMarkers,
-            scan.Rules.ExcludeHidden,
-            scan.Rules.TopLevelOnly,
-            _fs)).ConfigureAwait(false);
+        var candidates = await ListCandidatesAsync(scan).ConfigureAwait(false);
+        if (candidates is null)
+        {
+            return;
+        }
 
         var reads = await UnitOfWork.OpenAsync(_database, cancellationToken).ConfigureAwait(false);
         await using (reads.ConfigureAwait(false))
@@ -149,6 +147,42 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
         // A look that finds a file still held, or held for a new reason, changes no status and writes no Activity, so only this
         // tells a screen counting down to it that the answer is in.
         _changes?.Publish(DataTopics.LibraryScan);
+    }
+
+    /// <summary>
+    /// The files in the watched folder, or null when the folder went away after it was seen (a share taken off the network between
+    /// the check and the listing). That is the same state as a folder that was not there at the check, so it is said the same way
+    /// and the next scan looks again; it is not a failed job. A folder that is still there and cannot be read fails the scan.
+    /// </summary>
+    private async Task<WatchedFolderScanCandidates?> ListCandidatesAsync(WatchedFolderScan scan)
+    {
+        try
+        {
+            return await BlockingWork.RunAsync(() => WatchedFolderListing.Candidates(
+                scan.Paths.WatchedFolder,
+                scan.Rules.MediaExtensions.Count > 0 ? scan.Rules.MediaExtensions : null,
+                scan.Rules.ExcludeMarkers,
+                scan.Rules.ExcludeHidden,
+                scan.Rules.TopLevelOnly,
+                _fs)).ConfigureAwait(false);
+        }
+        catch (IOException) when (!_fs.DirectoryExists(scan.Paths.WatchedFolder))
+        {
+            WarnFolderNotSeen(scan.Library);
+            return null;
+        }
+    }
+
+    /// <summary>Said once until the folder is back; the next scan looks again.</summary>
+    private void WarnFolderNotSeen(ProcessingLibraryRecord library)
+    {
+        if (_foldersNotSeen.TryAdd(library.Id, 0))
+        {
+            _logger.LogWarning(
+                "Did not scan {Library}: Weir can't see its watched folder {Folder}. It may have been deleted or its drive disconnected. Check that the folder exists and that Weir can reach it.",
+                library.Name,
+                library.WatchedFolder.Trim());
+        }
     }
 
     private sealed record ScanRequest(long? LibraryId, string MediaScope, string Trigger, bool EnqueueRemuxJobs);
@@ -185,14 +219,7 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
                 {
                     // Not a failed job to retry: the folder is gone (deleted, or its drive unmounted) and a retry would find the same. This
                     // is a real problem, so it is a warning in plain words, said once until the folder is back; the next scan looks again.
-                    if (_foldersNotSeen.TryAdd(library.Id, 0))
-                    {
-                        _logger.LogWarning(
-                            "Did not scan {Library}: Weir can't see its watched folder {Folder}. It may have been deleted or its drive disconnected. Check that the folder exists and that Weir can reach it.",
-                            library.Name,
-                            saved);
-                    }
-
+                    WarnFolderNotSeen(library);
                     return null;
                 }
 
