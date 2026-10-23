@@ -51,6 +51,7 @@
     "node": ">=24.15"
   },
   "overrides": {
+    "dompurify": "^3.4.17",
     "image-size": "^2.0.4",
     "joi": "^18.2.9",
     "fast-uri": "^3.1.8",
