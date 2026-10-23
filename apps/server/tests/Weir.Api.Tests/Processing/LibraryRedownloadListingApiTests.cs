@@ -148,4 +148,23 @@ public sealed class LibraryRedownloadListingApiTests
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task A_removed_subtitle_track_is_listed_as_a_subtitle()
+    {
+        await using var rig = await RedownloadRig.StartAsync();
+        var (libraryId, _) = await rig.AddRadarrFilmAsync();
+        using var keepAll = await rig.Admin.PostAsync("/api/v1/processing/rule-sets", new { csrf_token = await rig.Admin.CsrfAsync(), name = "Keep subtitles", subtitle_mode = "keep_all" });
+        var ruleSetId = (await Json(keepAll))["id"]!.GetValue<long>();
+        await TestDatabase.ExecuteAsync(rig.Server, "UPDATE libraries SET rule_set_id = $rule WHERE id = $id", ("$rule", ruleSetId), ("$id", libraryId));
+        await TestDatabase.ExecuteAsync(
+            rig.Server,
+            "INSERT INTO removed_tracks (library_id, relative_path, language, track_type, codec, reason) VALUES ($library, $path, 'eng', 'subtitle', 'subrip', 'Not a language your rules keep')",
+            ("$library", libraryId), ("$path", RedownloadRig.FilmPath));
+
+        using var response = await rig.Admin.GetAsync(RedownloadRig.RedownloadsPath(libraryId));
+
+        var track = (await Json(response))["titles"]!.AsArray().Single()!["removed_tracks"]!.AsArray().Single()!;
+        Assert.Equal(("eng", "subtitle"), (track["language"]!.GetValue<string>(), track["type"]!.GetValue<string>()));
+    }
 }

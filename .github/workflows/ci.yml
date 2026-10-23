@@ -383,7 +383,7 @@ jobs:
           node --test scripts/check-event-titles.test.mjs
 
       - name: Coverage floors and report alignment
-        run: node --test scripts/check-coverage-floors.test.mjs scripts/align-coverage-reports.test.mjs
+        run: node --test scripts/check-coverage-floors.test.mjs scripts/align-coverage-reports.test.mjs scripts/merge-web-coverage.test.mjs
 
       # The mutation workflow (mutation.yml) runs weekly and judges the scores; here a pull request is held to the other
       # half of the ratchet, that a floor in docs/coverage/mutation-floors.json only goes up without its own entry.
@@ -702,12 +702,6 @@ jobs:
           dotnet restore tests/Weir.E2E.Tests --locked-mode
           dotnet build tests/Weir.E2E.Tests --no-restore
 
-      - name: Download web dist
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: weir-web-dist
-          path: apps/web/dist
-
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version-file: .node-version
@@ -718,6 +712,14 @@ jobs:
       - name: Install the web app's packages (axe-core for the accessibility check)
         working-directory: apps/web
         run: npm ci --ignore-scripts
+
+      # The web app the browser tests drive is built here, not downloaded from web-dist: it is the same build with Istanbul
+      # instrumentation (WEIR_WEB_COVERAGE, apps/web/vite.config.ts), so the tests can say which of its code they ran (docs/coverage/README.md).
+      - name: Build the web app with coverage instrumentation
+        working-directory: apps/web
+        env:
+          WEIR_WEB_COVERAGE: "1"
+        run: npx vite build
 
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
@@ -748,6 +750,7 @@ jobs:
         env:
           WEIR_E2E: "1"
           WEIR_CONTRACT_COVERAGE: "1"
+          WEIR_WEB_COVERAGE_DIR: ${{ runner.temp }}/web-coverage/tests
           SHARD: ${{ matrix.shard }}
         run: |
           filter="$(node ../../scripts/e2e-shards.mjs --shard "$SHARD")"
@@ -764,6 +767,20 @@ jobs:
           if-no-files-found: error
           retention-days: 1
           path: ${{ runner.temp }}/out-of-process/coverage.cobertura.xml
+
+      # Each test wrote what its pages ran; one file per shard is what the coverage job merges.
+      - name: Merge the web coverage this shard measured
+        if: ${{ steps.e2e.outcome == 'success' }}
+        run: node scripts/merge-web-coverage.mjs --parts --out "${{ runner.temp }}/web-coverage/shard" "${{ runner.temp }}/web-coverage/tests"
+
+      - name: Upload the web coverage this shard measured
+        if: ${{ steps.e2e.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-web-e2e-${{ matrix.shard }}
+          if-no-files-found: error
+          retention-days: 1
+          path: ${{ runner.temp }}/web-coverage/shard/coverage-final.json
 
       - name: Summarize E2E smoke results
         if: ${{ !cancelled() }}
@@ -872,6 +889,8 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
@@ -900,6 +919,14 @@ jobs:
           name: coverage-web
           path: coverage-input/coverage-web
 
+      # The web app's figure is the unit tests' and the browser tests' together, so it is judged only when both ran (run_e2e follows run_web on a pull request).
+      - name: Download the web coverage of the browser tests
+        if: needs.changes.outputs.run_web == 'true' && needs.changes.outputs.run_e2e == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: coverage-web-e2e-*
+          path: coverage-input/web-e2e
+
       # Every contract area and E2E shard uploaded the server coverage it measured; merged, they are the out-of-process figure.
       - name: Download the out-of-process server coverage
         if: needs.changes.outputs.run_coverage_out_of_process == 'true'
@@ -907,6 +934,17 @@ jobs:
         with:
           pattern: coverage-out-of-process-*
           path: coverage-input/out-of-process
+
+      # The merge script uses the web app's coverage packages.
+      - name: Install the web app's packages (coverage merge)
+        if: needs.changes.outputs.run_web == 'true' && needs.changes.outputs.run_e2e == 'true'
+        working-directory: apps/web
+        run: npm ci --ignore-scripts
+
+      # The unit tests' report and every shard's, laid over each other (scripts/merge-web-coverage.mjs).
+      - name: Merge the web coverage
+        if: needs.changes.outputs.run_web == 'true' && needs.changes.outputs.run_e2e == 'true'
+        run: node scripts/merge-web-coverage.mjs --out coverage/web coverage-input/coverage-web/coverage-final.json coverage-input/web-e2e
 
       - name: Install ReportGenerator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.11
@@ -956,7 +994,7 @@ jobs:
         env:
           SERVER: ${{ needs.changes.outputs.run_server_linux }}
           TRAY: ${{ needs.changes.outputs.run_tray }}
-          WEB: ${{ needs.changes.outputs.run_web }}
+          WEB: ${{ needs.changes.outputs.run_web == 'true' && needs.changes.outputs.run_e2e == 'true' }}
           OUT_OF_PROCESS: ${{ needs.changes.outputs.run_coverage_out_of_process }}
         run: |
           args=(--floors docs/coverage/floors.json)
@@ -964,11 +1002,7 @@ jobs:
           if [ "$SERVER" = true ]; then args+=(--server coverage/server); fi
           if [ "$TRAY" = true ]; then args+=(--tray coverage/tray); fi
           if [ "$OUT_OF_PROCESS" = true ]; then args+=(--out-of-process coverage/out-of-process); fi
-          if [ "$WEB" = true ]; then
-            mkdir -p coverage/web
-            if [ -d coverage-input/coverage-web ]; then cp -r coverage-input/coverage-web/. coverage/web/; fi
-            args+=(--web coverage/web)
-          fi
+          if [ "$WEB" = true ]; then args+=(--web coverage/web); fi
           node scripts/check-coverage-floors.mjs "${args[@]}"
 
       - name: Upload coverage reports

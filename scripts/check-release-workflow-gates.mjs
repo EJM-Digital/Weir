@@ -458,6 +458,15 @@ export function checkReleaseGates({ release, ci, ciContract, ciPackaging, mutati
     const body = requireJob(mutation, want.job, MUTATION);
     for (const step of want.steps) requireText(body, `- name: ${step}\n`, `${MUTATION} job "${want.job}"`);
   }
+  // The release judges each target on its own (scripts/verify-heavy-ci-for-release.mjs): a run can be limited to the
+  // targets named in its `targets` input, its per-target job is named for the target, and its floor check judges only
+  // the targets that ran.
+  requireText(mutationTriggers, "    inputs:\n      targets:\n", `${MUTATION} workflow_dispatch trigger`);
+  const selectJob = requireJob(mutation, "select", MUTATION);
+  requireText(selectJob, "REQUESTED: ${{ inputs.targets }}", `${MUTATION} job "select"`);
+  requireText(selectJob, "node scripts/resolve-mutation-targets.mjs", `${MUTATION} job "select"`);
+  requireText(requireJob(mutation, "mutate", MUTATION), "name: Mutate ${{ matrix.target }}\n", `${MUTATION} job "mutate"`);
+  requireText(requireJob(mutation, "check", MUTATION), '--only "$TARGETS"', `${MUTATION} job "check"`);
 
   // ci-passed judges every other ci.yml job, always runs, and knows each job's flag.
   const ciJobIds = jobIds(ci);
@@ -501,8 +510,8 @@ export const SUCCESS_MESSAGE =
   "Only publish-windows (the GitHub Release) and publish-docker (the image) can publish, each needs the shared " +
   "checks (every browser-test shard included) plus its own build's and neither waits for the other, the moving tags move last and never for a " +
   "release candidate, the Docker candidate's live E2E runs unpushed, every tag (a release candidate too) needs a " +
-  "passing golden-path status on the tagged commit with no way to skip it, so does a passing run of the Windows legs and of the " +
-  "mutation scores on that commit or one with the same code, mutation never starts on a pull request, and ci-passed judges every CI job and still carries the release's evidence.";
+  "passing golden-path status on the tagged commit with no way to skip it, so does a passing run of the Windows legs on that " +
+  "commit or one with the same shipped files, and so does each mutation target's score on that commit or one where the target's own files, tests and setup are unchanged, mutation never starts on a pull request, and ci-passed judges every CI job and still carries the release's evidence.";
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {

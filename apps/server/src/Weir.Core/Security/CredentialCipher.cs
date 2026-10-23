@@ -114,7 +114,7 @@ public sealed class CredentialCipher
     {
         _credentialsSecret = credentialsSecret;
         _sessionSecret = sessionSecret;
-        _previousCredentialsSecrets = previousCredentialsSecrets ?? [];
+        _previousCredentialsSecrets = previousCredentialsSecrets;
         _time = time;
     }
 

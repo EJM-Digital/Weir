@@ -87,8 +87,8 @@ public static partial class ManagerSetupRules
         ArgumentNullException.ThrowIfNull(mappings);
         ArgumentNullException.ThrowIfNull(clients);
         var lines = new List<SetupCheckLine>();
-        var watched = new ArrOsPath(WireStrings.Strip(watchedFolder ?? string.Empty));
-        var output = new ArrOsPath(WireStrings.Strip(outputFolder ?? string.Empty));
+        var watched = new ArrOsPath(WireStrings.Strip(watchedFolder));
+        var output = new ArrOsPath(WireStrings.Strip(outputFolder));
         var enabled = clients.Where(client => client.Enabled).ToList();
         var hosts = enabled.Select(client => WireStrings.Strip(client.Host ?? string.Empty))
             .Where(host => host.Length > 0)

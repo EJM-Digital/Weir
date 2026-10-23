@@ -103,10 +103,7 @@ public sealed record ManagerLibraryTruth(ManagerConnection Connection, string St
 public sealed record ManagerLibraryFile(string TitleId, string TitleName, string FilePath, long? FileId = null, long? QualityProfileId = null);
 
 /// <summary>Every library file one manager reports for a scope, matched to titles, or why it could not (#507).</summary>
-public sealed record ManagerLibraryFilesSignal(ManagerConnection Connection, string Status, IReadOnlyList<ManagerLibraryFile> Files, string? Detail = null)
-{
-    public bool IsReported => Status == SignalStatus.Reported;
-}
+public sealed record ManagerLibraryFilesSignal(ManagerConnection Connection, string Status, IReadOnlyList<ManagerLibraryFile> Files, string? Detail = null);
 
 /// <summary>What happened when a manager was asked to re-read a changed file (<see cref="IMediaManagerPort.FileChangedAsync"/>, #507).</summary>
 public enum ManagerNotifyOutcome

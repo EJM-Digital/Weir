@@ -190,7 +190,8 @@ public readonly record struct Timestamp(DateTime Clock, TimeSpan? Offset)
             }
         }
 
-        if (pos != text.Length || year < 1 || month is < 1 or > 12 || day < 1 || day > DateTime.DaysInMonth(Math.Max(1, year), month) ||
+        // Anything after the time of day was either read above or refused there, so the whole text has been read by now.
+        if (year < 1 || month is < 1 or > 12 || day < 1 || day > DateTime.DaysInMonth(Math.Max(1, year), month) ||
             hour > 23 || minute > 59 || second > 59)
         {
             return false;
@@ -251,7 +252,7 @@ public readonly record struct Timestamp(DateTime Clock, TimeSpan? Offset)
     private static bool Digits(string text, int start, int count, out int value)
     {
         value = 0;
-        if (start < 0 || start + count > text.Length)
+        if (start + count > text.Length)
         {
             return false;
         }

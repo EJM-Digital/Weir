@@ -18,7 +18,7 @@ public static class DownloadClientInvolvement
     public static bool SavesInto(string watchedFolder, DownloadClientFolders folders)
     {
         ArgumentNullException.ThrowIfNull(folders);
-        var watched = new ArrOsPath((watchedFolder ?? string.Empty).Trim());
+        var watched = new ArrOsPath(watchedFolder.Trim());
         if (!watched.IsRooted)
         {
             return false;

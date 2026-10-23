@@ -61,9 +61,9 @@ public static class LibraryFolderChainRules
         string watchedFolder, string workFolder, bool workFolderIsDefault, string outputFolder, IFolderProbe probe)
     {
         ArgumentNullException.ThrowIfNull(probe);
-        var watched = (watchedFolder ?? string.Empty).Trim();
-        var work = (workFolder ?? string.Empty).Trim();
-        var output = (outputFolder ?? string.Empty).Trim();
+        var watched = watchedFolder.Trim();
+        var work = workFolder.Trim();
+        var output = outputFolder.Trim();
 
         if (watched.Length == 0 || work.Length == 0 || output.Length == 0)
         {
@@ -110,9 +110,9 @@ public static class LibraryFolderChainRules
         return line.State == SetupCheckLine.Problem;
     }
 
-    private static void AddIfSet(List<FolderToReach> folders, LocalFolder folder, string? path, bool isDefault)
+    private static void AddIfSet(List<FolderToReach> folders, LocalFolder folder, string path, bool isDefault)
     {
-        var trimmed = (path ?? string.Empty).Trim();
+        var trimmed = path.Trim();
         if (trimmed.Length > 0)
         {
             folders.Add(new FolderToReach(folder, trimmed, isDefault));
@@ -202,7 +202,7 @@ public static class LibraryFolderChainRules
     {
         ArgumentNullException.ThrowIfNull(folders);
         ArgumentNullException.ThrowIfNull(probe);
-        var watched = new ArrOsPath((watchedFolder ?? string.Empty).Trim());
+        var watched = new ArrOsPath(watchedFolder.Trim());
         if (!watched.IsRooted)
         {
             return [new SetupCheckLine(SetupCheckLine.Unverified, $"Set this workflow's watched folder to check it against {clientLabel}.")];

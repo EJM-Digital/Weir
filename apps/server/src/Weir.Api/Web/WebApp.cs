@@ -119,7 +119,7 @@ public static class WebApp
             return false;
         }
 
-        var path = (request.Path.Value ?? string.Empty).ToLowerInvariant();
+        var path = request.Path.ToString().ToLowerInvariant();
         return path.StartsWith("/api", StringComparison.Ordinal) &&
             UpgradeTokens.Any(token => path.Contains(token, StringComparison.Ordinal));
     }
@@ -134,7 +134,7 @@ public static class WebApp
             return false;
         }
 
-        var path = request.Path.Value ?? string.Empty;
+        var path = request.Path.ToString();
         return !NonDocumentPrefixes.Any(prefix => path.StartsWith(prefix, StringComparison.Ordinal)) &&
             PathSuffix(path).Length == 0;
     }

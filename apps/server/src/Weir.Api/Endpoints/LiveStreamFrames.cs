@@ -26,9 +26,9 @@ public sealed class LiveStreamFrames
         // Listening before the hello goes out, so a change published while it is being written still reaches this stream.
         using var subscription = _changes.Subscribe();
         yield return HelloFrame(_boot.Id);
-        await foreach (var topic in subscription.ReadAllAsync(cancellationToken).ConfigureAwait(false))
+        while (!cancellationToken.IsCancellationRequested)
         {
-            yield return ChangedFrame(topic);
+            yield return ChangedFrame(await subscription.ReadAsync(cancellationToken).ConfigureAwait(false));
         }
     }
 

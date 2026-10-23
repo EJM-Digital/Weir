@@ -168,6 +168,9 @@ public sealed class ConnectionActivitySubscription : IDisposable
 
     public IAsyncEnumerable<ConnectionActivity> ReadAllAsync(CancellationToken cancellationToken) => _frames.Reader.ReadAllAsync(cancellationToken);
 
+    /// <summary>The next thing that happened, waiting for one. A stream reads in a loop that only cancellation ends, since a subscription is closed only by its own owner.</summary>
+    public ValueTask<ConnectionActivity> ReadAsync(CancellationToken cancellationToken) => _frames.Reader.ReadAsync(cancellationToken);
+
     internal void Offer(ConnectionActivity activity) => _frames.Writer.TryWrite(activity);
 
     public void Dispose()
