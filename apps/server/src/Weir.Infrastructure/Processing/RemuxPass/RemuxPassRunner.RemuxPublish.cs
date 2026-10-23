@@ -226,7 +226,7 @@ public sealed partial class RemuxPassRunner
     /// throughput. The tools copy tracks, so the share of the source read is its percent; ffmpeg says how much it has
     /// written, and for mkvmerge, which does not, the output is about as large as what was read.
     /// </summary>
-    private static WireObject ProgressWithUpdate(WireObject body, FfmpegProgressUpdate update, long sourceSizeBytes)
+    internal static WireObject ProgressWithUpdate(WireObject body, FfmpegProgressUpdate update, long sourceSizeBytes)
     {
         var read = update.Percent is { } percent ? (long)(sourceSizeBytes * percent / 100d) : (long?)null;
         return body
