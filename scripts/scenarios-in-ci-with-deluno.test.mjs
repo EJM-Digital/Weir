@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { imageEnvironment, imageVariable, loadImages, overrideVariable, problemsWithImages, withOverrides } from "./scenarios-ci/images.mjs";
 import { runScenarios } from "./scenarios-ci/run.mjs";
+import { shardBudgetMs } from "./scenarios-ci/shard-runners.mjs";
 import { SHARDS } from "./scenarios-ci/shards.mjs";
 import { QbittorrentApi } from "./scenarios-ci/with-deluno/qbittorrent-api.mjs";
 import { DelunoWorld, FOLDERS, newLogins, qbittorrentPasswordHash } from "./scenarios-ci/with-deluno/deluno-world.mjs";
@@ -305,4 +306,22 @@ test("the shard starts Deluno, qBittorrent and the recording proxy beside Weir, 
   assert.equal(started.environment.SCENARIO_QBITTORRENT_USERNAME, started.logins.qbittorrent.username);
   assert.equal(started.environment.SCENARIO_QBITTORRENT_PBKDF2, started.logins.qbittorrent.pbkdf2);
   for (const file of shard.beside.files) assert.ok(statSync(join(repository, file)).isFile(), relative(repository, join(repository, file)));
+});
+
+// --- the weekly record --------------------------------------------------------------------------------------------------
+
+test("the weekly record finds the newest Deluno by its releases, never by its latest tag, and keeps its shard inside the job's limit", () => {
+  const workflow = read(".github/workflows/record-deluno.yml");
+  assert.doesNotMatch(workflow, /:latest/, "Deluno's latest tag is an old stable build while it publishes release candidates");
+  assert.match(workflow, /node scripts\/newest-deluno-image\.mjs/);
+  const limit = Number(/timeout-minutes: (\d+)/.exec(workflow)[1]);
+  const budget = Number(/SCENARIO_SHARD_BUDGET_MINUTES: "(\d+)"/.exec(workflow)[1]);
+  assert.ok(budget <= limit - 5, `the shard's budget (${budget} min) leaves room inside the job's ${limit} minutes for the steps around it`);
+});
+
+test("the shard's time budget is a whole number of minutes, or none", () => {
+  assert.equal(shardBudgetMs({}), Infinity);
+  assert.equal(shardBudgetMs({ SCENARIO_SHARD_BUDGET_MINUTES: "" }), Infinity);
+  assert.equal(shardBudgetMs({ SCENARIO_SHARD_BUDGET_MINUTES: "38" }), 38 * 60_000);
+  for (const bad of ["0", "-3", "1.5", "soon"]) assert.throws(() => shardBudgetMs({ SCENARIO_SHARD_BUDGET_MINUTES: bad }), /whole number of minutes/);
 });

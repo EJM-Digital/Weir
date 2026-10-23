@@ -62,17 +62,22 @@ jobs:
           cache-from: type=gha,scope=weir-ci-amd64
           cache-to: type=gha,mode=max,scope=weir-ci-amd64,ignore-error=true
 
-      # A run only ever starts an image named by digest: the newest release is pulled here and handed to the scenarios by the digest it has.
+      # A run only ever starts an image named by digest: the newest release is looked up here and handed to the scenarios by the digest it has.
+      # Not the `latest` tag, which Deluno moves only for a stable release (scripts/newest-deluno-image.mjs).
       - name: Use the newest Deluno
         if: matrix.images == 'latest'
         run: |
           repository="$(node -e "console.log(require('./scripts/scenarios-ci/images.json').images.DELUNO.reference.split('@')[0])")"
-          docker pull "$repository:latest"
-          digest="$(docker image inspect --format '{{index .RepoDigests 0}}' "$repository:latest")"
-          echo "SCENARIO_DELUNO_IMAGE_OVERRIDE=$digest" >> "$GITHUB_ENV"
-          echo "Recording against $digest" >> "$GITHUB_STEP_SUMMARY"
+          newest="$(node scripts/newest-deluno-image.mjs "$repository")"
+          tag="${newest%% *}"
+          reference="${newest#* }"
+          echo "SCENARIO_DELUNO_IMAGE_OVERRIDE=$reference" >> "$GITHUB_ENV"
+          echo "Recording against Deluno $tag, $reference" >> "$GITHUB_STEP_SUMMARY"
 
+      # A shard that hangs ends with a verdict and its recordings 7 minutes inside the job's limit (a healthy one takes about 25), not cancelled by it.
       - name: Run the with-deluno scenarios, keeping what passed between Weir and Deluno
+        env:
+          SCENARIO_SHARD_BUDGET_MINUTES: "38"
         run: node scripts/scenarios-in-ci.mjs with-deluno --candidate weir-ci-smoke --logs "artifacts/deluno-${{ matrix.images }}"
 
       - name: The recordings
