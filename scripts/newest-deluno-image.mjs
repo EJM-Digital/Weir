@@ -39,7 +39,10 @@ export async function newestDelunoImage(repository, fetchImpl = fetch) {
   return { tag, reference: `${repository}@${digest}` };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { tag, reference } = await newestDelunoImage(process.argv[2]);
-  console.log(`${tag} ${reference}`);
+/** Prints the newest release's tag and image reference for the repository named on the command line; `newest` and `log` are what a test replaces. */
+export async function main(argv, { newest = newestDelunoImage, log = console.log } = {}) {
+  const { tag, reference } = await newest(argv[0]);
+  log(`${tag} ${reference}`);
 }
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main(process.argv.slice(2));

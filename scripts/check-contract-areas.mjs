@@ -11,7 +11,9 @@
 // Usage: node scripts/check-contract-areas.mjs
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
+
+import { rootOf } from "./repository-root.mjs";
 
 const PROJECT = "apps/server/tests/Weir.Contract.Tests";
 const ATTRIBUTE = /\[ContractArea\("([^"]+)"\)\]/g;
@@ -70,7 +72,7 @@ function sourceFiles(folder) {
 }
 
 function main() {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const root = rootOf(import.meta.url);
   const project = path.join(root, PROJECT);
   const listed = JSON.parse(readFileSync(path.join(project, "areas.json"), "utf8")).areas.map((area) => area.name);
   const used = new Map();

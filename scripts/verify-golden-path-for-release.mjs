@@ -119,9 +119,10 @@ export function findGoldenPathPass({ sha, version, listStatuses, git, maxCommits
 
 const runGit = (args) => execFileSync("git", args, { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
 
-function listStatuses(repository, sha) {
+/** The statuses of a commit, newest information included; `execute` is execFileSync, which a test replaces. */
+export function listStatuses(repository, sha, execute = execFileSync) {
   // One compact object per line, so a paginated listing needs no JSON array stitching.
-  const output = execFileSync(
+  const output = execute(
     "gh",
     [
       "api", "--paginate", `repos/${repository}/commits/${sha}/statuses?per_page=100`,
@@ -160,17 +161,19 @@ export function runGate({ tag, repository, sha, statusesOf = listStatuses, git =
   return false;
 }
 
-function main() {
-  const argv = process.argv.slice(2);
+/**
+ * The gate over `argv` and `env`; returns the exit code. The commit is --sha, else GITHUB_SHA, else the checked-out one.
+ * `gate` judges and `headCommit` finds the checked-out commit; a test replaces them.
+ */
+export function main(argv, env, { gate = runGate, headCommit = () => execFileSync("git", ["rev-parse", "HEAD^{commit}"], { encoding: "utf8" }).trim() } = {}) {
   const option = (flag) => (argv.includes(flag) ? argv[argv.indexOf(flag) + 1] : undefined);
-  const sha = option("--sha") || process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD^{commit}"], { encoding: "utf8" }).trim();
-  const passed = runGate({ tag: option("--tag") || process.env.GITHUB_REF_NAME, repository: process.env.GITHUB_REPOSITORY, sha });
-  if (!passed) process.exit(1);
+  const sha = option("--sha") || env.GITHUB_SHA || headCommit();
+  return gate({ tag: option("--tag") || env.GITHUB_REF_NAME, repository: env.GITHUB_REPOSITORY, sha }) ? 0 : 1;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
-    main();
+    process.exit(main(process.argv.slice(2), process.env));
   } catch (error) {
     console.error(`::error::${error.message}`);
     process.exit(1);

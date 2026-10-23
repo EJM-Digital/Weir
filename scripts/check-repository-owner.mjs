@@ -17,13 +17,14 @@
 // the person rather than the repository (CODEOWNERS, FUNDING.yml), and these lines wherever they are: the copyright
 // holder, a sponsorship link and a link to one of Weir's issues or pull requests, which a move leaves working.
 //
-//   node scripts/check-repository-owner.mjs [--repository owner/name]
+//   node scripts/check-repository-owner.mjs [--repository owner/name] [--root folder]   (--root: a checkout other than this one; the tests use it)
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { REPOSITORY } from "./repository.mjs";
+import { rootOf } from "./repository-root.mjs";
 
 /** Owners the repository used to have: text that cannot read a constant must not name them any more. The move adds the old owner here. */
 export const FORMER_OWNERS = ["jampat000"];
@@ -137,7 +138,7 @@ function readText(root, path) {
 function main(argv) {
   const at = argv.indexOf("--repository");
   const running = at >= 0 ? argv[at + 1] : null;
-  const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const root = rootOf(import.meta.url, argv);
   const files = repositoryFiles(root).flatMap((path) => {
     const text = readText(root, path);
     return text === null ? [] : [{ path, text }];

@@ -25,11 +25,11 @@ export class RegistryUnavailableError extends Error {
 }
 
 // Runs `npm audit --json` once. Exposed for the tests below; production callers use auditWithRetry.
-export function runNpmAuditOnce(cwd) {
-  const onWindows = process.platform === "win32";
+export function runNpmAuditOnce(cwd, { platform = process.platform, spawn = spawnSync } = {}) {
+  const onWindows = platform === "win32";
   const command = onWindows ? process.env.ComSpec : "npm";
   const args = onWindows ? ["/d", "/s", "/c", "npm audit --json"] : ["audit", "--json"];
-  const result = spawnSync(command, args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  const result = spawn(command, args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   return { status: result.status, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
 }
 
@@ -46,7 +46,7 @@ export function classifyAuditOutput({ stdout, stderr }) {
   if (parsed && typeof parsed === "object" && parsed.error) {
     const detail = `${parsed.error.summary ?? ""} ${parsed.error.detail ?? ""} ${parsed.error.code ?? ""} ${stderr}`;
     if (REGISTRY_ERROR_PATTERN.test(detail)) {
-      return { transient: true, reason: detail.trim() || "npm audit reported an error", report: null };
+      return { transient: true, reason: detail.trim(), report: null };
     }
   }
   return { transient: false, reason: null, report: parsed };
@@ -147,7 +147,7 @@ export async function main(args, { audit = () => auditWithRetry({ cwd: process.c
     .map((severity) => `${counts[severity]} ${severity}`)
     .join(", ");
   if (meetsAuditLevel(report, level)) {
-    error(`[npm-audit] Found vulnerabilities at or above "${level}": ${found || "see npm audit for detail"}.`);
+    error(`[npm-audit] Found vulnerabilities at or above "${level}": ${found}.`);
     return 1;
   }
   log(`[npm-audit] No vulnerabilities at or above "${level}"${found ? ` (${found} below threshold)` : ""}.`);
@@ -160,7 +160,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       process.exitCode = code;
     },
     (failure) => {
-      console.error(`[npm-audit] ${failure.stack || failure.message}`);
+      console.error(`[npm-audit] ${failure.stack}`);
       process.exitCode = 1;
     },
   );

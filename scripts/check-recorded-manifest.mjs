@@ -13,14 +13,17 @@
 // The recordings of a real Sonarr, Radarr and the five download clients (apps/server/tests/fixtures/recorded/<app>) have the same manifest, made by
 // `--write` when a recording run is copied in; they are checked in unchanged too.
 //
-// Usage: node scripts/check-recorded-manifest.mjs [--root <folder>] [--manifest <file>]   (with no --root: Deluno's folder and every app's)
+// Usage: node scripts/check-recorded-manifest.mjs [--root <folder>] [--manifest <file>] [--checkout <folder>]   (with no --root: Deluno's folder and every app's, of this checkout or of --checkout)
 //        node scripts/check-recorded-manifest.mjs --write [--root <folder>]              (writes the manifest of the folders of the apps, or of --root)
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
+import { rootOf } from "./repository-root.mjs";
+
+// --checkout <folder> reads the recordings of another checkout (--root names one recordings folder); the tests use it.
+const repositoryRoot = rootOf(import.meta.url, process.argv.slice(2), "--checkout");
 export const defaultRoot = join(repositoryRoot, "apps", "server", "tests", "fixtures", "recorded", "deluno-side");
 export const manifestName = "MANIFEST.sha256";
 
@@ -43,7 +46,7 @@ function* recordings(root) {
 /** The manifest this folder would need: one line per recording, sorted by name, ending with a newline. */
 export function currentManifest(root) {
   const lines = [...recordings(root)].map(({ name, path }) => ({ name, line: `${hashOf(path)}  ${name}` }));
-  lines.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  lines.sort((a, b) => (a.name < b.name ? -1 : 1));
   return lines.map((entry) => entry.line).join("\n") + "\n";
 }
 
@@ -76,7 +79,7 @@ export function problems(root, manifestPath) {
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   const args = process.argv.slice(2);
-  const option = (name, fallback) => (args.includes(name) ? resolve(args[args.indexOf(name) + 1]) : fallback);
+  const option = (name) => resolve(args[args.indexOf(name) + 1]);
   if (args.includes("--write")) {
     for (const root of args.includes("--root") ? [option("--root")] : appRoots) {
       writeFileSync(join(root, manifestName), currentManifest(root));
