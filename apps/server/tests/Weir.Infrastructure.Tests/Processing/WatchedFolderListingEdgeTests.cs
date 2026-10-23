@@ -42,6 +42,19 @@ public sealed class WatchedFolderListingEdgeTests
     }
 
     [Fact]
+    public void A_listed_file_that_has_gone_is_not_there_and_one_that_is_gives_its_size_and_times()
+    {
+        using var dir = new TempDirectory();
+        var present = dir.Join("here.mkv");
+        File.WriteAllBytes(present, [1, 2, 3]);
+
+        var file = WatchedMediaFile.From(new FileInfo(present));
+
+        Assert.Equal((present, 3L), (file!.FullPath, file.SizeBytes));
+        Assert.Null(WatchedMediaFile.From(new FileInfo(dir.Join("gone.mkv"))));
+    }
+
+    [Fact]
     public void A_file_that_is_not_on_disk_is_not_there()
     {
         using var dir = new TempDirectory();
