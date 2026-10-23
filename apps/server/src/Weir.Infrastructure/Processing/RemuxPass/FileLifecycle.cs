@@ -293,9 +293,8 @@ public static partial class FileLifecycle
     }
 
     /// <summary><c>tempfile.mkstemp</c>: a new file named prefix + 8 random characters + suffix, created exclusively.</summary>
-    public static string CreateTempFile(string directory, string prefix, string suffix, IFileSystem? files = null)
+    public static string CreateTempFile(string directory, string prefix, string suffix, IFileSystem files)
     {
-        files ??= PhysicalFileSystem.Instance;
         const string Characters = "abcdefghijklmnopqrstuvwxyz0123456789_";
         for (var attempt = 0; ; attempt++)
         {

@@ -21,7 +21,7 @@ public sealed partial class RemuxPassHandler
             WeirOnlyRejection.Present(result);
         }
 
-        var chosenDelete = string.Equals(WireStrings.Strip(library.RejectedFileAction ?? string.Empty), RejectedFileActions.DeleteFile, StringComparison.OrdinalIgnoreCase);
+        var chosenDelete = string.Equals(WireStrings.Strip(library.RejectedFileAction), RejectedFileActions.DeleteFile, StringComparison.OrdinalIgnoreCase);
         // A file Weir could not read may be a good file it cannot read yet, or a share that hiccuped: Weir cannot vouch for it, so it never destroys it.
         var unreadable = result.Get("rejection_kind") is WireString { Value: RejectionKinds.UnreadableFile };
         var deletes = chosenDelete
@@ -54,7 +54,7 @@ public sealed partial class RemuxPassHandler
         chosenDelete && links.KeepsOriginals ? $"{WeirOnlyRejection.LeftInPlace} {links.KeptOriginalReason}" : WeirOnlyRejection.LeftInPlace;
 
     private static string RejectedLeftInPlace(ProcessingLibraryRecord library, WorkflowManagerLinks links) =>
-        links.KeepsOriginals && string.Equals(WireStrings.Strip(library.RejectedFileAction ?? string.Empty), RejectedFileActions.DeleteFile, StringComparison.OrdinalIgnoreCase)
+        links.KeepsOriginals && string.Equals(WireStrings.Strip(library.RejectedFileAction), RejectedFileActions.DeleteFile, StringComparison.OrdinalIgnoreCase)
             ? $"Weir left the rejected file in place. {links.KeptOriginalReason}"
             : "Weir left the rejected file in place because this workflow's cleanup action is Leave in place.";
 

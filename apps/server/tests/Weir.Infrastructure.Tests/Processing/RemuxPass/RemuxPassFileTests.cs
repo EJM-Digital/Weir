@@ -506,7 +506,7 @@ public sealed class RemuxPassPathsTests : IDisposable
             "The Movies workflow's work/temp folder must be an existing directory when set to a custom path.",
             RemuxPassPaths.RuntimeForLibrary(Library(watched, output, _root.Join("work-gone")), _root.Path, WorkflowManagerLinks.None).Problem);
 
-        var (runtime, problem) = RemuxPassPaths.RuntimeForLibrary(Library(watched, output), _root.Path, WorkflowManagerLinks.None);
+        var (runtime, problem) = RemuxPassPaths.RuntimeForLibrary(Library(watched, output), _root.Path, WorkflowManagerLinks.None, Weir.Infrastructure.IO.PhysicalFileSystem.Instance);
         Assert.Null(problem);
         Assert.True(runtime!.WorkFolderIsDefault);
         Assert.Equal(Path.Join(_root.Path, "processing", "processing-movie-work"), runtime.WorkFolderEffective);

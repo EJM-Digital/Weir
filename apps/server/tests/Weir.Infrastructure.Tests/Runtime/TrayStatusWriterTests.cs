@@ -138,6 +138,25 @@ public sealed class TrayStatusWriterTests : IAsyncLifetime, IDisposable
     }
 
     [Fact]
+    public async Task A_server_with_no_settings_saved_yet_says_it_is_not_paused()
+    {
+        await _store.Execute("DELETE FROM suite_settings");
+
+        await StartAsync();
+        await UntilAsync(_ => true);
+
+        Assert.False(Status()!.Value.GetProperty("paused").GetBoolean());
+    }
+
+    [Fact]
+    public void A_writer_that_was_never_started_can_be_let_go()
+    {
+        var exception = Record.Exception(_writer.Dispose);
+
+        Assert.Null(exception);
+    }
+
+    [Fact]
     public async Task Pausing_and_resuming_are_written()
     {
         await StartAsync();

@@ -269,6 +269,7 @@ public sealed class StartupRecoveryTests : IDisposable
         Assert.Equal(ProcessingLibraryFolders.DefaultMovieWorkFolder(_db.Home), ProcessingLibraryFolders.EffectiveWorkFolder(row, _db.Home));
         Assert.Equal(ProcessingLibraryFolders.DefaultTvWorkFolder(_db.Home), ProcessingLibraryFolders.EffectiveWorkFolder(row with { MediaType = "TV", WorkFolder = " " }, _db.Home));
         Assert.Equal("/data/work", ProcessingLibraryFolders.EffectiveWorkFolder(row with { WorkFolder = " /data/work " }, _db.Home));
+        Assert.Equal(ProcessingLibraryFolders.DefaultMovieWorkFolder(_db.Home), ProcessingLibraryFolders.EffectiveWorkFolder(row with { MediaType = string.Empty }, _db.Home));
 
         // Paths shaped like the old default locations are taken literally, trailing separator and all,
         // exactly as any other path a person typed in would be.

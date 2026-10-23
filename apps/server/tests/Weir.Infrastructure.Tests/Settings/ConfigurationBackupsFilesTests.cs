@@ -43,6 +43,9 @@ public sealed class ConfigurationBackupsFilesTests : IDisposable
     [InlineData("other.json")]
     [InlineData("sub/suite-configuration-1.json")]
     [InlineData("../suite-configuration-1.json")]
+    [InlineData("C:suite-configuration-1.json")]
+    [InlineData("C:")]
+    [InlineData(".")]
     public async Task A_recorded_name_that_is_not_a_plain_snapshot_name_is_refused(string name)
     {
         var id = await RecordAsync(name, "2026-01-01 00:00:00.000000");

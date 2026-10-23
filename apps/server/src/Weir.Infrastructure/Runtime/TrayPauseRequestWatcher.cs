@@ -84,8 +84,9 @@ public sealed class TrayPauseRequestWatcher : BackgroundService
         {
             // A request left by a tray that asked while the server was down is looked at first.
             _written.Writer.TryWrite(true);
-            await foreach (var _ in _written.Reader.ReadAllAsync(stoppingToken).ConfigureAwait(false))
+            while (true)
             {
+                await _written.Reader.ReadAsync(stoppingToken).ConfigureAwait(false);
                 await Task.Delay(TrayHandOffWatcher.Settle, _time, stoppingToken).ConfigureAwait(false);
                 if (!await ApplyAsync(stoppingToken).ConfigureAwait(false))
                 {

@@ -118,8 +118,7 @@ internal sealed class SystemLogServerSource
     /// </summary>
     private static SystemLogRow? RowOf(ParsedLogEntry entry, long lineNumber)
     {
-        if (SuiteLogFilter.ToOut(entry) is not { } record
-            || !Timestamp.TryFromIsoFormat(entry.Timestamp.Replace(UtcMarker, UtcOffset, StringComparison.Ordinal), out var at))
+        if (!Timestamp.TryFromIsoFormat(entry.Timestamp.Replace(UtcMarker, UtcOffset, StringComparison.Ordinal), out var at))
         {
             return null;
         }
@@ -133,7 +132,7 @@ internal sealed class SystemLogServerSource
             null,
             entry.Message,
             entry.Detail,
-            record);
+            SuiteLogFilter.ToOut(entry)!);
     }
 
     private sealed record KeyedRow(SystemLogRow Row, IReadOnlyList<object?> Key);

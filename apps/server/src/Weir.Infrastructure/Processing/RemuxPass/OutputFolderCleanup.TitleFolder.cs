@@ -11,7 +11,7 @@ public sealed partial class OutputFolderCleanup
     private static TitleFolder? LocateTitleFolder(WireObject output, ProcessingPathRuntime runtime, string watchedRoot, string source, string? finalOutputFile, string skipKey, string prefix, bool tv)
     {
         var label = tv ? "TV" : "Movies";
-        var rootRaw = WireStrings.Strip(runtime.OutputFolder ?? string.Empty);
+        var rootRaw = WireStrings.Strip(runtime.OutputFolder);
         if (rootRaw.Length == 0)
         {
             Skip(output, prefix, skipKey, tv

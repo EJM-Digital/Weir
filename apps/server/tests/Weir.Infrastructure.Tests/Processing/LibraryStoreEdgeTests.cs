@@ -165,6 +165,34 @@ public sealed class LibraryStoreEdgeTests : IDisposable
     }
 
     [Fact]
+    public async Task Every_yes_or_no_of_a_rule_set_is_kept_as_it_was_saved_whichever_way_it_was_set()
+    {
+        var allOn = new LibraryRules.RuleSetInput
+        {
+            Name = "All on",
+            RemoveCommentary = true, PreserveForcedSubs = true, PreserveDefaultSubs = true, KeepOriginalLanguage = true,
+            OriginalLanguageKeepOnlyFirst = true, OriginalLanguageFirstIfNone = true, OriginalLanguageTreatEmptyAsOriginal = true,
+            RemoveImages = true, RemoveAttachments = true, RemoveTitle = true, RemoveLanguageTags = true, RemoveOtherMetadata = true,
+            RemoveHearingImpairedSubs = true, StandardizeTrackNames = true, ClearVideoTrackNames = true, RemoveChapters = true,
+        };
+        var allOff = allOn with
+        {
+            Name = "All off",
+            RemoveCommentary = false, PreserveForcedSubs = false, PreserveDefaultSubs = false, KeepOriginalLanguage = false,
+            OriginalLanguageKeepOnlyFirst = false, OriginalLanguageFirstIfNone = false, OriginalLanguageTreatEmptyAsOriginal = false,
+            RemoveImages = false, RemoveAttachments = false, RemoveTitle = false, RemoveLanguageTags = false, RemoveOtherMetadata = false,
+            RemoveHearingImpairedSubs = false, StandardizeTrackNames = false, ClearVideoTrackNames = false, RemoveChapters = false,
+        };
+
+        var on = await InWork(uow => Store.CreateRuleSetAsync(uow, allOn));
+        var off = await InWork(uow => Store.UpdateRuleSetAsync(uow, on, allOff));
+        var readBack = await InWork(uow => Store.GetRuleSetAsync(uow, off.Id));
+
+        Assert.True(on.RemoveChapters && on.RemoveCommentary && on.PreserveDefaultSubs && on.OriginalLanguageTreatEmptyAsOriginal && on.StandardizeTrackNames);
+        Assert.False(readBack!.RemoveChapters || readBack.RemoveCommentary || readBack.PreserveDefaultSubs || readBack.OriginalLanguageTreatEmptyAsOriginal || readBack.StandardizeTrackNames);
+    }
+
+    [Fact]
     public async Task A_rule_set_used_by_several_workflows_is_refused_with_how_many()
     {
         var shared = await InWork(uow => Store.CreateRuleSetAsync(uow, new LibraryRules.RuleSetInput { Name = "Shared" }));

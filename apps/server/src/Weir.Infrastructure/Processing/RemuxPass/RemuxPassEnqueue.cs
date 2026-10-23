@@ -53,7 +53,7 @@ public static class RemuxPassEnqueue
             throw new RemuxPassEnqueueException(404, "The selected workflow no longer exists. Refresh Workflows and try again.");
         }
 
-        if (library is null || WireStrings.Strip(library.WatchedFolder ?? string.Empty).Length == 0)
+        if (library is null || WireStrings.Strip(library.WatchedFolder).Length == 0)
         {
             var label = mediaScope == "tv" ? "TV" : "Movies";
             throw new RemuxPassEnqueueException(

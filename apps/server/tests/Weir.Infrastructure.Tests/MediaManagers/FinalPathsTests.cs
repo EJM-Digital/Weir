@@ -48,6 +48,7 @@ public sealed class FinalPathsTests
         var plain = Directory.CreateDirectory(temp.Join("Downloads")).FullName;
 
         Assert.Equal(plain, FinalPaths.Resolve(plain), ignoreCase: true);
+        Assert.Equal(plain, FinalPaths.Resolve(plain, Weir.Infrastructure.IO.PhysicalFileSystem.Instance), ignoreCase: true);
     }
 
     [Fact]

@@ -84,7 +84,7 @@ public sealed partial class LibraryStore
 
     public async Task<ProcessingRuleSetRecord> CreateRuleSetAsync(UnitOfWork uow, LibraryRules.RuleSetInput body)
     {
-        var label = (body.Name ?? string.Empty).Trim();
+        var label = body.Name.Trim();
         if (await GetRuleSetByNameAsync(uow, label).ConfigureAwait(false) is not null)
         {
             throw new ProcessingLibraryException($"A rule set named '{label}' already exists.");
@@ -97,7 +97,7 @@ public sealed partial class LibraryStore
 
     public async Task<ProcessingRuleSetRecord> UpdateRuleSetAsync(UnitOfWork uow, ProcessingRuleSetRecord existing, LibraryRules.RuleSetInput body)
     {
-        var label = (body.Name ?? string.Empty).Trim();
+        var label = body.Name.Trim();
         var clash = await GetRuleSetByNameAsync(uow, label).ConfigureAwait(false);
         if (clash is not null && clash.Id != existing.Id)
         {

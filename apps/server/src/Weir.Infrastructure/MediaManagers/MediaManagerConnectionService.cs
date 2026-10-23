@@ -168,7 +168,7 @@ public sealed class MediaManagerConnectionService
 
     /// <summary>Constant-time comparison of the two strings' UTF-8 bytes.</summary>
     public static bool CompareDigest(string left, string right) =>
-        CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(left ?? string.Empty), Encoding.UTF8.GetBytes(right ?? string.Empty));
+        CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(left), Encoding.UTF8.GetBytes(right));
 
     // --- which managers look after a scope ------------------------------------------------------
 

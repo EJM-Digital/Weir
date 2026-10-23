@@ -179,6 +179,17 @@ public sealed class TrayHandOffWatcherTests : IAsyncLifetime, IDisposable
     }
 
     [Fact]
+    public async Task Events_lost_to_a_full_buffer_announce_every_topic_and_a_write_without_a_name_announces_none()
+    {
+        using var heard = _changes.Subscribe();
+
+        _watcher!.Hear(null);
+        _watcher.HearOverflow();
+
+        Assert.Equal([DataTopics.Update, DataTopics.NetworkAccess], await HeardUntilAsync(heard, DataTopics.NetworkAccess));
+    }
+
+    [Fact]
     public async Task A_file_written_whole_and_renamed_into_place_is_announced_by_its_own_name()
     {
         using var heard = _changes.Subscribe();

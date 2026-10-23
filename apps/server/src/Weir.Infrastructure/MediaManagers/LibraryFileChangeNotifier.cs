@@ -89,12 +89,8 @@ public sealed class LibraryFileChangeNotifier : ILibraryFileChangeNotifier
 
         foreach (var connection in connections)
         {
-            if (_connections.Ports.PortForKind(connection.Kind) is not { } port)
-            {
-                continue;
-            }
-
-            await ProcessConnectionAsync(connection, port, scope, change, cancellationToken).ConfigureAwait(false);
+            // Every kind a connection can be saved with has a port.
+            await ProcessConnectionAsync(connection, _connections.Ports.PortForKind(connection.Kind)!, scope, change, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -181,20 +177,14 @@ public sealed class LibraryFileChangeNotifier : ILibraryFileChangeNotifier
             return AttemptOutcome.Coalesced;
         }
 
-        ManagerNotifyOutcome outcome;
         try
         {
-            outcome = await port.FileChangedAsync(connection, advertised, null, managerPath, change.Reason, cancellationToken).ConfigureAwait(false);
+            await port.FileChangedAsync(connection, advertised, null, managerPath, change.Reason, cancellationToken).ConfigureAwait(false);
         }
         catch (MediaManagerHttpException exception) when (exception.Message.Contains("HTTP 404", StringComparison.Ordinal))
         {
             // Deluno's own answer for "that path is not a file I track": this manager does not own it.
             return AttemptOutcome.NotOwned;
-        }
-
-        if (outcome == ManagerNotifyOutcome.NotSupported)
-        {
-            return AttemptOutcome.CapabilityMissing;
         }
 
         MarkNotified(externalDedupeKey);

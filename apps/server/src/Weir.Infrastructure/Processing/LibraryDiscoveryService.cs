@@ -279,7 +279,7 @@ public sealed class LibraryDiscoveryService
             }
 
             var managerRoot = WireStrings.Strip(WatchedSource(descriptor) ?? string.Empty);
-            var saved = WireStrings.Strip(row.WatchedFolder ?? string.Empty);
+            var saved = WireStrings.Strip(row.WatchedFolder);
             if (managerRoot.Length > 0 && saved.Length > 0 &&
                 LibraryDiscoveryRules.Comparable(managerRoot) != LibraryDiscoveryRules.Comparable(saved))
             {

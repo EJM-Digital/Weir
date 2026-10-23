@@ -32,6 +32,20 @@ public sealed class ManagerSetupCheckEdgeTests : IDisposable
     }
 
     [Fact]
+    public async Task A_manager_that_answers_nothing_is_not_ready_and_the_check_still_finishes()
+    {
+        var id = await _fixture.AddConnectionAsync("radarr", "http://192.0.2.43:7878");
+        var watched = _fixture.Store.Home.Join("watched");
+        var output = _fixture.Store.Home.Join("out");
+
+        var entries = await _fixture.Db(uow => Check().CheckAsync(uow, "movie", watched, output, linkedConnectionIds: null), commit: false);
+
+        var entry = Assert.Single(entries);
+        Assert.Equal(id, ((WireInteger)entry.Get("connection_id")!).Value);
+        Assert.False(((WireBool)entry.Get("ready")!).Value);
+    }
+
+    [Fact]
     public async Task A_manager_that_does_not_answer_contributes_no_download_clients()
     {
         await _fixture.AddConnectionAsync("radarr", "http://192.0.2.42:7878");

@@ -61,6 +61,19 @@ public sealed class RuntimeAndLoggingTests
         RuntimeDirectories.AssertSqliteDbLocationUsable(path);
     }
 
+    [Fact]
+    public void An_existing_database_file_another_program_holds_is_refused_as_not_writable()
+    {
+        using var temp = new TempDirectory();
+        var path = temp.Join("weir.sqlite3");
+        using var held = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+
+        var error = Assert.Throws<WeirConfigurationException>(() => RuntimeDirectories.AssertSqliteDbLocationUsable(path));
+
+        Assert.Contains("exists but is not writable", error.Message, StringComparison.Ordinal);
+        Assert.IsAssignableFrom<IOException>(error.InnerException);
+    }
+
     [Theory]
     [InlineData("debug", LogLevel.Debug)]
     [InlineData("INFO", LogLevel.Information)]

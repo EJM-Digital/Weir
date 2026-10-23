@@ -311,12 +311,8 @@ public sealed class HistoryFileRemovalService
 
     private async Task<bool> CanRejectThroughHandoffAsync(HandoffReportTarget target, CancellationToken cancellationToken)
     {
-        var port = _ports.PortForKind(target.Connection.Kind);
-        if (port is null)
-        {
-            return false;
-        }
-
+        // A hand-off target is a saved connection, and every saved kind has a port.
+        var port = _ports.PortForKind(target.Connection.Kind)!;
         var description = await port.DescribeAsync(target.Connection, cancellationToken).ConfigureAwait(false);
         return description.Status == SignalStatus.Reported && description.AdvertisedCapabilities?.Contains(RejectSupportRules.RejectCapability) == true;
     }

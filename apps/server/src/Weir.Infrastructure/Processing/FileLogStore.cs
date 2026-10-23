@@ -50,11 +50,8 @@ public sealed class FileLogStore
 
         try
         {
-            return WireJsonParser.Parse(raw) switch
-            {
-                WireObject dict => dict,
-                WireValue other => new WireObject().Set("detail", other),
-            };
+            var parsed = WireJsonParser.Parse(raw);
+            return parsed as WireObject ?? new WireObject().Set("detail", parsed);
         }
         catch (WireJsonDecodeException)
         {
@@ -116,8 +113,8 @@ public sealed class FileLogStore
         WireInteger i => i.Value.ToString(CultureInfo.InvariantCulture),
         WireNumber f => f.Value.ToString(CultureInfo.InvariantCulture),
         WireBool b => b.Value ? "True" : "False",
-        WireNull => "None",
-        _ => string.Empty,
+        // The one kind left is null: the caller writes objects and arrays as JSON.
+        _ => "None",
     };
 
     /// <summary>

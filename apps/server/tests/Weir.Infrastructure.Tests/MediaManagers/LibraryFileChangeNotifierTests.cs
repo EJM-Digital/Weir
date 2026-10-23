@@ -147,6 +147,55 @@ public sealed class LibraryFileChangeNotifierTests
     }
 
     [Fact]
+    public async Task A_manager_that_says_nothing_of_what_it_can_do_is_skipped_with_a_note()
+    {
+        using var fixture = new MediaManagerFixture();
+        await fixture.AddConnectionAsync("deluno");
+        fixture.Http.Json(HttpMethod.Get, "/api/integrations/external/manifest", """{"libraries":[]}""");
+
+        await Notifier(fixture).NotifyAsync(new LibraryFileChange("movie", "/media/f.mkv"));
+
+        Assert.Empty(fixture.Http.RequestsTo(HttpMethod.Post, "/api/integrations/external/file-changed"));
+        Assert.Equal(1, await fixture.Store.Scalar("SELECT count(*) FROM activity_events WHERE event_type = 'library.file_change_notify_skipped'"));
+    }
+
+    [Fact]
+    public async Task A_file_outside_every_library_root_the_manager_keeps_is_told_by_the_path_it_has()
+    {
+        using var fixture = new MediaManagerFixture();
+        await fixture.AddConnectionAsync("deluno");
+        fixture.Http
+            .Json(HttpMethod.Get, "/api/integrations/external/manifest", """{"capabilities":["external-file-changed"],"libraries":[{"id":"a","name":"Empty","mediaType":"movies","rootPath":""},{"id":"b","name":"Movies","mediaType":"movies","rootPath":"/movies"}]}""")
+            .Json(HttpMethod.Post, "/api/integrations/external/file-changed", """{"path":"x","coalesced":false,"titles":[]}""", HttpStatusCode.Accepted);
+        var (localFile, localRoot) = OperatingSystem.IsWindows()
+            ? (@"E:\Elsewhere\f.mkv", @"D:\Data\Movies")
+            : ("/elsewhere/f.mkv", "/data/movies");
+
+        await Notifier(fixture).NotifyAsync(new LibraryFileChange("movie", localFile, LocalLibraryRoot: localRoot));
+
+        var request = Assert.Single(fixture.Http.RequestsTo(HttpMethod.Post, "/api/integrations/external/file-changed"));
+        Assert.Equal(localFile, ((WireString)((WireObject)request.Json!)["path"]).Value);
+    }
+
+    [Fact]
+    public async Task A_change_told_long_ago_is_forgotten_when_the_next_one_is_told()
+    {
+        using var fixture = new MediaManagerFixture();
+        await fixture.AddConnectionAsync("deluno");
+        fixture.Http
+            .Json(HttpMethod.Get, "/api/integrations/external/manifest", """{"libraries":[],"capabilities":["external-file-changed"]}""")
+            .Json(HttpMethod.Post, "/api/integrations/external/file-changed", """{"path":"x","coalesced":false,"titles":[]}""", HttpStatusCode.Accepted);
+        var notifier = Notifier(fixture);
+
+        await notifier.NotifyAsync(new LibraryFileChange("movie", "/media/one.mkv"));
+        fixture.Store.Clock.Set(fixture.Store.Clock.GetUtcNow() + LibraryFileChangeRules.CoalesceWindow + TimeSpan.FromSeconds(1));
+        await notifier.NotifyAsync(new LibraryFileChange("movie", "/media/two.mkv"));
+        await notifier.NotifyAsync(new LibraryFileChange("movie", "/media/two.mkv"));
+
+        Assert.Equal(2, fixture.Http.RequestsTo(HttpMethod.Post, "/api/integrations/external/file-changed").Count);
+    }
+
+    [Fact]
     public async Task A_local_library_root_is_translated_to_the_managers_own_root_before_matching()
     {
         using var fixture = new MediaManagerFixture();

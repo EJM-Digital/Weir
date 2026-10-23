@@ -6,7 +6,7 @@ namespace Weir.Infrastructure.Tests.Jobs;
 /// <summary>What the scan dispatch handler does with a request it cannot act on: a payload that is not a request, a workflow with no watched folder, a scope with no workflow.</summary>
 public sealed class ProcessingWatchedFolderScanDispatchPayloadTests
 {
-    private static async Task<Exception> HandleAsync(string payloadJson, Func<Tests.Platform.StoreFixture, Task>? arrange = null)
+    private static async Task<Exception> HandleAsync(string? payloadJson, Func<Tests.Platform.StoreFixture, Task>? arrange = null)
     {
         var (store, _, handler) = await ProcessingWatchedFolderScanDispatchJobHandlerTests.BuildAsync();
         using var _ = store;
@@ -33,11 +33,12 @@ public sealed class ProcessingWatchedFolderScanDispatchPayloadTests
     }
 
     [Theory]
+    [InlineData(null, "Movies")]
     [InlineData("", "Movies")]
     [InlineData("   ", "Movies")]
     [InlineData("""{"media_scope":"movie"}""", "Movies")]
     [InlineData("""{"media_scope":"tv"}""", "TV")]
-    public async Task A_workflow_with_no_watched_folder_cannot_be_scanned(string payload, string label)
+    public async Task A_workflow_with_no_watched_folder_cannot_be_scanned(string? payload, string label)
     {
         var failure = await HandleAsync(payload);
 

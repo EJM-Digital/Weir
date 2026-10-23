@@ -92,8 +92,8 @@ public sealed class FolderReachability : BackgroundService
 
     public override void Dispose()
     {
-        _heard?.Dispose();
         base.Dispose();
+        _heard?.Dispose();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -152,8 +152,9 @@ public sealed class FolderReachability : BackgroundService
 
     private async Task ListenAsync(CancellationToken stoppingToken)
     {
-        await foreach (var topic in _heard!.ReadAllAsync(stoppingToken).ConfigureAwait(false))
+        while (true)
         {
+            var topic = await _heard!.ReadAsync(stoppingToken).ConfigureAwait(false);
             if (topic == DataTopics.Libraries)
             {
                 _stale.Writer.TryWrite(true);

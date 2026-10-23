@@ -176,6 +176,21 @@ public sealed class ArtworkResolverTests
     }
 
     [Fact]
+    public async Task A_poster_the_service_names_but_will_not_give_counts_as_not_found()
+    {
+        using var fixture = new ArtworkFixture();
+        fixture.ServeSearch(ArtworkFixture.SearchAnswer(PosterFile));
+        fixture.Http.Json(HttpMethod.Get, $"/artwork/w342/{PosterFile}", string.Empty, HttpStatusCode.NotFound);
+        var library = await fixture.LibraryIdAsync("movie");
+        await fixture.QueueFileAsync(library, FilmPath);
+
+        await fixture.Resolver.ResolveDueAsync(10, CancellationToken.None);
+
+        Assert.Equal(ArtworkOutcomes.Missing, await fixture.OutcomeAsync(FilmKey()));
+        Assert.Empty(await fixture.PosterUrlsForAsync(library, FilmPath));
+    }
+
+    [Fact]
     public async Task A_busy_answer_pauses_every_lookup_for_as_long_as_the_service_asked()
     {
         using var fixture = new ArtworkFixture();

@@ -72,6 +72,30 @@ public sealed class SwapRecoverySweepTests
     }
 
     [Fact]
+    public async Task A_recovered_file_stays_recovered_when_the_record_of_it_cannot_be_written()
+    {
+        var s = new SwapScenario();
+        const string elsewhere = "/other-library/Show/S01E01.mkv";
+        s.Files.Put(SafeSwapRules.BackupPath(elsewhere), "OLD");
+        await s.Journal.RecordAsync(new SwapJournalEntry(7, elsewhere, SwapJournalState.Committing));
+        s.Files.OnStep = step =>
+        {
+            if (step == "Journal(Recovered)")
+            {
+                throw new IOException("the disk said no");
+            }
+        };
+
+        var report = await s.Sweep.RunAsync([], walkFolders: false);
+
+        Assert.Equal(new SwapRecoveryReport(0, 0, 1, 0), report);
+        Assert.Equal("OLD", s.Files.Read(elsewhere));
+        Assert.Contains(
+            s.SweepLogger.Entries,
+            entry => entry.Level == LogLevel.Warning && entry.Message.StartsWith("Library swap sweep recovered a file but could not record it", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Without_a_walk_unrecorded_leftovers_are_left_alone()
     {
         var s = new SwapScenario();

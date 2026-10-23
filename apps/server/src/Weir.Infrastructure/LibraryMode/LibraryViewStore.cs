@@ -97,7 +97,8 @@ public sealed class LibraryViewStore
                     reader.GetInt64(10), reader.GetInt64(11), reader.GetInt64(12), reader.GetInt64(13), reader.GetInt64(14)),
             },
             parameters).ConfigureAwait(false);
-        return row ?? new LibraryTotals(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        // An aggregate with no GROUP BY always answers with one row, even over no files.
+        return row!;
     }
 
     /// <summary>

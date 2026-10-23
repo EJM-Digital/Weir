@@ -154,4 +154,13 @@ public sealed class OutputOwnershipTests
         var exception = Record.Exception(() => ownership.ApplyToFile("/output/movie.mkv"));
         Assert.Null(exception);
     }
+
+    [Fact]
+    public void On_Windows_there_is_no_owner_or_mode_to_set_and_asking_changes_nothing()
+    {
+        var tools = new WindowsOutputOwnershipTools();
+
+        Assert.Null(Record.Exception(() => tools.Chown("/output/movie.mkv", 1000, 1000)));
+        Assert.Null(Record.Exception(() => tools.SetMode("/output/movie.mkv", UnixFileMode.UserRead)));
+    }
 }

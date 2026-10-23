@@ -41,6 +41,15 @@ public sealed class UpdateFilesTests : IDisposable
     }
 
     [Fact]
+    public void A_state_the_tray_wrote_without_a_step_or_a_download_names_neither_and_has_no_update_waiting()
+    {
+        TrayWrites("{\"pending_version\": \"9.9.9\"}");
+
+        Assert.False(Files().HasDownloadedUpdate());
+        Assert.False(Files().ReadState().Get("tray_running")?.IsTruthy);
+    }
+
+    [Fact]
     public void A_tray_that_said_it_is_alive_lately_is_running()
     {
         Beat(TimeSpan.FromSeconds(10));
