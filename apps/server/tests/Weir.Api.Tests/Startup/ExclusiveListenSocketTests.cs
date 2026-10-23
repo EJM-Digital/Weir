@@ -58,7 +58,7 @@ public sealed class ExclusiveListenSocketTests
             return;
         }
 
-        using var socket = ExclusiveListenSocket.Create(new IPEndPoint(IPAddress.IPv6Any, 0));
+        using var socket = ExclusiveListenSocket.Create(new IPEndPoint(IPAddress.IPv6Any, 0)); // loopback-guard: bind only, never listens
 
         Assert.True(socket.DualMode);
     }

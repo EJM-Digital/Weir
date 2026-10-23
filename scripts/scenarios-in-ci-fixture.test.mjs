@@ -98,7 +98,7 @@ before(async () => {
   mkdirSync(join(work, "source"), { recursive: true });
   writeFileSync(join(work, "source", "x.mkv"), film);
   server = createFixture({ work, publicBase: "http://fixture:8765" });
-  await new Promise((resolve) => server.listen(0, resolve));
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   base = `http://localhost:${server.address().port}`;
 });
 after(() => server.close());

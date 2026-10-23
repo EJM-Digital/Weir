@@ -34,7 +34,7 @@ public abstract class FakeHttpServer : IDisposable
             var port = FreePort();
             // A listener that failed to start cannot be reused (on Linux it is disposed), so each attempt gets its own.
             var listener = new HttpListener();
-            listener.Prefixes.Add($"http://{host}:{port}/");
+            listener.Prefixes.Add($"http://{host}:{port}/"); // loopback-guard: "+" only off Windows, where there is no firewall prompt
             try
             {
                 listener.Start();

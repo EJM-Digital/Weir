@@ -42,7 +42,7 @@ const listen = (handler) =>
   new Promise((resolve) => {
     const server = http.createServer(handler);
     closing.push(server);
-    server.listen(0, () => resolve(server.address().port));
+    server.listen(0, "127.0.0.1", () => resolve(server.address().port));
   });
 after(() => closing.forEach((server) => server.close()));
 
@@ -67,13 +67,13 @@ before(async () => {
     response.end("ready");
   });
   ports = { toDeluno: await freePort(), toWeir: await freePort(), control: await freePort() };
-  proxy = await startRecorder({ deluno: `http://localhost:${delunoPort}`, weir: `http://localhost:${weirPort}`, ports });
+  proxy = await startRecorder({ deluno: `http://localhost:${delunoPort}`, weir: `http://localhost:${weirPort}`, ports, host: "127.0.0.1" });
   closing.push(...proxy.servers);
 });
 
 function freePort() {
   return new Promise((resolve) => {
-    const server = http.createServer().listen(0, () => {
+    const server = http.createServer().listen(0, "127.0.0.1", () => {
       const { port } = server.address();
       server.close(() => resolve(port));
     });
@@ -126,7 +126,7 @@ test("a refusal passes through as the refusal it is, and exchanges are listed af
 });
 
 test("an application that cannot be reached is answered 502 and recorded as such, not left hanging", async () => {
-  const dead = await startRecorder({ deluno: "http://localhost:1", weir: "http://localhost:1", ports: { toDeluno: await freePort(), toWeir: await freePort(), control: await freePort() } });
+  const dead = await startRecorder({ deluno: "http://localhost:1", weir: "http://localhost:1", ports: { toDeluno: await freePort(), toWeir: await freePort(), control: await freePort() }, host: "127.0.0.1" });
   closing.push(...dead.servers);
   const port = dead.servers[0].address().port;
   const reply = await fetch(`http://localhost:${port}/api/x`);

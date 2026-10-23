@@ -303,11 +303,19 @@ public sealed class PortChoiceTests : IDisposable
         int free;
         using (var holder = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) { ExclusiveAddressUse = true })
         {
-            holder.Bind(new IPEndPoint(IPAddress.Any, 0));
+            holder.Bind(new IPEndPoint(IPAddress.Loopback, 0));
             free = ((IPEndPoint)holder.LocalEndPoint!).Port;
         }
 
-        Assert.False(PortChoice.IsInUse(free));
+        // The shipped probe binds 0.0.0.0, which makes Windows Firewall ask whoever runs the tests, so the real listener table is
+        // read here and the exclusive bind is made on loopback.
+        Assert.False(PortChoice.IsInUse(free, () => IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners(), BindExclusivelyOnLoopback));
+    }
+
+    private static void BindExclusivelyOnLoopback(int port)
+    {
+        using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) { ExclusiveAddressUse = true };
+        socket.Bind(new IPEndPoint(IPAddress.Loopback, port));
     }
 
     [Fact]
