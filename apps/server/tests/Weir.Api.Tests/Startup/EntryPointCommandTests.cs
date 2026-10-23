@@ -90,7 +90,7 @@ public sealed class EntryPointCommandTests : IDisposable
         Set("PORT", ((IPEndPoint)holder.LocalEndpoint).Port.ToString(CultureInfo.InvariantCulture));
         SetQuiet();
 
-        var (exitCode, _) = Run("--host", "127.0.0.1");
+        var (exitCode, _) = Run();
 
         Assert.Equal(StartRefusal.PortInUseExitCode, exitCode);
         Assert.False(File.Exists(Path.Join(_home, StartupNotes.ErrorFileName)), "A port in use is not a refusal: the tray must try again.");
