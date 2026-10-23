@@ -143,6 +143,18 @@ public sealed class JobServicesTests : IDisposable
     }
 
     [Fact]
+    public async Task A_server_with_no_saved_settings_prunes_activity_after_the_default_days()
+    {
+        _db.Execute("DELETE FROM suite_settings");
+        _db.Execute("INSERT INTO activity_events (created_at, event_type, module, title) VALUES ('2025-01-01 00:00:00', 'x', 'processing', 'old'), (CURRENT_TIMESTAMP, 'x', 'processing', 'new')");
+
+        var counts = await _retention.RunTickAsync(90, DateTimeOffset.UtcNow);
+
+        Assert.Equal(1, counts.Activity);
+        Assert.Equal(1, _db.Count("SELECT count(*) FROM activity_events"));
+    }
+
+    [Fact]
     public async Task Activity_retention_of_zero_keeps_everything()
     {
         _db.Execute("UPDATE suite_settings SET activity_retention_days = 0");
