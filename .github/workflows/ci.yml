@@ -486,12 +486,14 @@ jobs:
       - name: Test Weir server
         working-directory: apps/server
         env:
+          # A child server that misses its ceiling leaves a dump and its stacks here (ChildDiagnostics); the next steps upload them.
+          WEIR_TEST_DIAGNOSTICS_DIR: ${{ github.workspace }}/artifacts/test-diagnostics
           WEIR_FFMPEG_DIR: ${{ steps.media-tools.outputs.ffmpeg-dir }}
           WEIR_MKVTOOLNIX_DIR: ${{ steps.media-tools.outputs.mkvtoolnix-dir }}
           WEIR_REQUIRE_REAL_TOOLS: "1"
         run: >-
           dotnet test Weir.slnx --no-build --filter "Category!=Stress&Category!=Contract&Category!=E2E" --logger trx
-          --collect:"XPlat Code Coverage" --settings coverage.runsettings
+          --collect:"XPlat Code Coverage" --settings coverage.runsettings --blame
 
       - name: Summarize server test results
         if: ${{ !cancelled() }}
@@ -509,6 +511,17 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
           path: apps/server/**/TestResults/*.trx
+
+      - name: Upload the dumps and stacks of child servers that hung
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: server-test-diagnostics-linux
+          if-no-files-found: ignore
+          retention-days: 7
+          path: |
+            artifacts/test-diagnostics
+            apps/server/**/TestResults/**/Sequence*.xml
 
       - name: Upload server coverage (Linux)
         if: ${{ !cancelled() }}
@@ -558,12 +571,14 @@ jobs:
       - name: Test Weir server
         working-directory: apps/server
         env:
+          # A child server that misses its ceiling leaves a dump and its stacks here (ChildDiagnostics); the next steps upload them.
+          WEIR_TEST_DIAGNOSTICS_DIR: ${{ github.workspace }}/artifacts/test-diagnostics
           WEIR_FFMPEG_DIR: ${{ steps.media-tools.outputs.ffmpeg-dir }}
           WEIR_MKVTOOLNIX_DIR: ${{ steps.media-tools.outputs.mkvtoolnix-dir }}
           WEIR_REQUIRE_REAL_TOOLS: "1"
         run: >-
           dotnet test Weir.slnx --no-build --filter "Category!=Stress&Category!=Contract&Category!=E2E" --logger trx
-          --collect:"XPlat Code Coverage" --settings coverage.runsettings
+          --collect:"XPlat Code Coverage" --settings coverage.runsettings --blame
 
       - name: Summarize server test results
         if: ${{ !cancelled() }}
@@ -581,6 +596,17 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
           path: apps/server/**/TestResults/*.trx
+
+      - name: Upload the dumps and stacks of child servers that hung
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: server-test-diagnostics-windows
+          if-no-files-found: ignore
+          retention-days: 7
+          path: |
+            artifacts/test-diagnostics
+            apps/server/**/TestResults/**/Sequence*.xml
 
       - name: Upload server coverage (Windows)
         if: ${{ !cancelled() }}
