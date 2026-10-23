@@ -270,7 +270,7 @@ export function LibraryPage(): React.ReactElement {
   const pickerInCard = pickerSlot !== null && stage >= PICKER_IN_CARD;
   const picker = (
     <LibraryPicker
-      libraries={libraries.data ?? []}
+      libraries={libraries.data}
       chosenId={chosen.id}
       onPick={pick}
       countFor={(id) => (id === chosen.id ? (totals?.files ?? null) : null)}

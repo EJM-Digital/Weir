@@ -207,6 +207,28 @@ describe("what Activity asks the server for, from its address", () => {
   });
 });
 
+describe("going back to every kind of file", () => {
+  it("takes the kind out of the address when All is chosen again", async () => {
+    stubServer();
+    renderPage("/activity?show=failed");
+    await filesLoaded();
+    const show = screen.getByRole("group", { name: "Show" });
+    expect(
+      within(show).getByRole("button", { name: /^Failed/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(within(show).getByRole("button", { name: /^All/ }));
+
+    expect(within(show).getByRole("button", { name: /^All/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(
+      within(show).getByRole("button", { name: /^Failed/ }),
+    ).toHaveAttribute("aria-pressed", "false");
+  });
+});
+
 describe("sorting Activity by a heading", () => {
   it("lists newest first and says so on the When heading until another heading is chosen", async () => {
     stubServer();

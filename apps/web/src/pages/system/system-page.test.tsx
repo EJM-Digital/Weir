@@ -551,6 +551,17 @@ describe("SystemPage", () => {
     });
   });
 
+  it("goes back to the usual time when the backup time is cleared", () => {
+    renderSettings(operatorMe, { initialEntries: ["/system?tab=backups"] });
+    const time = screen.getByLabelText("At") as HTMLInputElement;
+    fireEvent.change(time, { target: { value: "03:30" } });
+    expect(time.value).toBe("03:30");
+
+    fireEvent.change(time, { target: { value: "" } });
+
+    expect(time.value).toBe("02:00");
+  });
+
   it("hides configuration backup for viewers", () => {
     renderSettings(viewerMe);
     fireEvent.click(screen.getByRole("tab", { name: "About" }));

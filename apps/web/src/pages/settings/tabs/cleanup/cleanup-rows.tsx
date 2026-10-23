@@ -218,7 +218,7 @@ export function DaysSettingRow({
   inputLabel: string;
   /** What the unsaved warning calls this setting, as in "the days …". */
   unsavedThing: string;
-  saved: number | undefined;
+  saved: number;
   min: number;
   max: number;
   editable: boolean;
@@ -228,9 +228,9 @@ export function DaysSettingRow({
   toBody: (days: number) => ProcessingOperatorSettingsPutBody;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
-  const shown = draft ?? String(saved ?? "");
+  const shown = draft ?? String(saved);
   const value = Number.parseInt(shown, 10);
-  const dirty = saved !== undefined && draft !== null && value !== saved;
+  const dirty = draft !== null && value !== saved;
   const inRange = value >= min && value <= max;
   useUnsavedChanges(dirty ? unsavedThing : null);
   return (

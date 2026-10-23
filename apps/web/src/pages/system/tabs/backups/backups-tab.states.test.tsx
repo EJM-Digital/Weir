@@ -257,6 +257,20 @@ describe("Backups: restoring", () => {
     expect(screen.queryByTestId(RESTORE_DIALOG)).toBeNull();
   });
 
+  it.each(["null", "42", '"text"'])(
+    "says a file holding only %s is not valid JSON, and opens no dialog",
+    async (text) => {
+      renderBackups({});
+
+      await restoreFromFile(text);
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "This file is not valid JSON.",
+      );
+      expect(screen.queryByTestId(RESTORE_DIALOG)).toBeNull();
+    },
+  );
+
   it("says a JSON file that is not a Weir export is not one, and opens no dialog", async () => {
     renderBackups({});
 

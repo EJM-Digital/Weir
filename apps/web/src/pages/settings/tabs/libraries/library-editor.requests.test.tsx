@@ -204,6 +204,67 @@ describe("the Media type of a workflow", () => {
   });
 });
 
+describe("using the folders a media manager reports", () => {
+  it.each([
+    [
+      "only a watched folder",
+      { suggested_watched_folder: "/srv/movies/from-deluno" },
+      {
+        "Watched folder": "/srv/movies/from-deluno",
+        "Output folder": "/srv/movies/out",
+      },
+    ],
+    [
+      "only an output folder",
+      { suggested_output_folder: "/srv/movies/to-deluno" },
+      {
+        "Watched folder": "/srv/movies/in",
+        "Output folder": "/srv/movies/to-deluno",
+      },
+    ],
+  ])(
+    "changes just the folder it reported when it gives %s",
+    async (_, reported, expected) => {
+      server = serveWorkflows({
+        workflows: [
+          library({
+            watched_folder: "/srv/movies/in",
+            output_folder: "/srv/movies/out",
+            manager_connection_ids: [7],
+          }),
+        ],
+        connections: [{ id: 7, kind: "deluno", name: "Deluno" }],
+        extra: {
+          [managerSetupRoute]: {
+            managers: [
+              {
+                connection_id: 7,
+                kind: "deluno",
+                name: "Deluno",
+                label: "Deluno",
+                flow: "handoff",
+                ready: true,
+                mapping: null,
+                lines: [],
+                ...reported,
+              },
+            ],
+          },
+        },
+      });
+      await openEditor();
+
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Use Deluno's folders" }),
+      );
+
+      for (const [label, value] of Object.entries(expected)) {
+        expect(field(label)).toHaveValue(value);
+      }
+    },
+  );
+});
+
 describe("the folder chain", () => {
   /** What the server says about the folders it holds now: the chain it checks is always the saved one. */
   const chainOfSavedFolders = () =>

@@ -99,6 +99,16 @@ describe("adding a folder to a workflow's library", () => {
     expect(save()).toBeDisabled();
   });
 
+  it("waits for Enter: another key typed in the box adds nothing", async () => {
+    await openSetup([FILMS]);
+
+    fireEvent.change(folderInput(), { target: { value: "D:/tv" } });
+    fireEvent.keyDown(folderInput(), { key: "a" });
+
+    expect(listedFolders()).toHaveLength(1);
+    expect(save()).toBeDisabled();
+  });
+
   it("ignores a folder the library already holds, so it is listed once and there is nothing to save", async () => {
     await openSetup([FILMS]);
 

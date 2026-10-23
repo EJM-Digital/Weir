@@ -41,6 +41,19 @@ function renderTile(
 }
 
 describe("the Next tile", () => {
+  it("counts down to a thing that has no regular interval", () => {
+    const tile = renderTile([
+      {
+        ...item("scan", 42, "Look for new downloads in TV"),
+        intervalSeconds: null,
+      },
+    ]);
+
+    expect(within(tile).getByTestId("live-next-figure")).toHaveTextContent(
+      "42 s",
+    );
+  });
+
   it("counts down to the first thing, and lists what comes after as 'then' lines", () => {
     const tile = renderTile([
       item("scan", 42, "Look for new downloads in TV"),

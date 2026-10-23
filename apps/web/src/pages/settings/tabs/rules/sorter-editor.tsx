@@ -48,7 +48,7 @@ function CriterionRow({
         >
           {SORTER_FIELDS.map((field) => (
             <option key={field} value={field}>
-              {SORTER_LABELS[field] ?? field}
+              {SORTER_LABELS[field]}
             </option>
           ))}
         </select>

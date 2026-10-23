@@ -67,6 +67,37 @@ it("lays the profile out as audio, subtitles, original language and cleanup, wit
   expect(screen.getByDisplayValue(">=5.1")).toBeInTheDocument();
 });
 
+it("shows the profile before it knows which workflows use it", async () => {
+  stubEditableProfile();
+  vi.spyOn(librariesApi, "fetchProcessingLibraries").mockReturnValue(
+    new Promise(() => undefined),
+  );
+
+  render(<ProfilesTab />, { wrapper });
+
+  expect(
+    await screen.findByRole("heading", { name: "Audio" }),
+  ).toBeInTheDocument();
+});
+
+it.each([
+  ["cleared", ""],
+  ["set below zero", "-4"],
+])("keeps the subtitle cap at 0 when it is %s", async (_, typed) => {
+  stubEditableProfile();
+  render(<ProfilesTab />, { wrapper });
+  await screen.findByRole("heading", { name: "Audio" });
+  const cap = screen.getByRole("spinbutton", {
+    name: /Limit subtitles kept per language/,
+  }) as HTMLInputElement;
+  fireEvent.change(cap, { target: { value: "3" } });
+  expect(cap.value).toBe("3");
+
+  fireEvent.change(cap, { target: { value: typed } });
+
+  expect(cap.value).toBe("0");
+});
+
 it("saves every edited rule with the profile", async () => {
   stubEditableProfile();
   const update = vi

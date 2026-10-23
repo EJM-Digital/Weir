@@ -77,6 +77,27 @@ it("tells the story in plain steps", () => {
   expect(screen.getByText(/copied, not re-encoded/)).toBeInTheDocument();
 });
 
+it("gives the record's title when it has nothing to narrate", () => {
+  mount({
+    log: log({
+      entries: [
+        {
+          id: 3,
+          recorded_at: "2026-08-16T14:02:00Z",
+          outcome: "live_output_written",
+          title: "Remuxed Arrival",
+          library_name: "Films 4K",
+          detail: {},
+          story: [],
+        },
+      ],
+    }),
+  });
+
+  expect(screen.getByText("Remuxed Arrival")).toBeInTheDocument();
+  expect(screen.queryByRole("list")).not.toBeInTheDocument();
+});
+
 it("shows a rejection as a Rejected step with its reason, not as Could not finish", () => {
   mount({
     log: log({

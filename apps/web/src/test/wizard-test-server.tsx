@@ -29,6 +29,8 @@ export type WizardServerState = {
   suggestions: LibrarySuggestions;
   /** How many of the next settings saves the server refuses. */
   refuseSettingsSaves: number;
+  /** Whether the server fails every read of the workflows. */
+  refuseLibraryReads: boolean;
   /** How this Weir was installed; only the Windows app lets its owner choose whether it checks for updates. */
   installType: UpdateStatus["install_type"];
   /** The update choices the tray follows: a new install checks for nothing. */
@@ -138,6 +140,7 @@ export class WizardServer {
       managers: [],
       suggestions: { libraries: [], notes: [] },
       refuseSettingsSaves: 0,
+      refuseLibraryReads: false,
       installType: "source",
       updateSettings: {
         mode: "Auto",
@@ -232,6 +235,9 @@ export class WizardServer {
     body: Record<string, unknown> | null,
   ): Response {
     if (method === "GET" && id === undefined) {
+      if (this.state.refuseLibraryReads) {
+        return jsonReply(500, { detail: "The workflows could not be read." });
+      }
       return jsonReply(200, this.state.libraries);
     }
     if (method === "POST" && id === undefined) {

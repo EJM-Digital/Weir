@@ -130,6 +130,18 @@ describe("the list", () => {
     ).toBeInTheDocument();
   });
 
+  it("opens a row to its detail and closes it again on a second press", async () => {
+    await rendered();
+    const head = () =>
+      screen.getAllByRole("button", { name: /Sign-in finished/ })[0];
+
+    fireEvent.click(head());
+    expect(head()).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.click(head());
+    expect(head()).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("says how many entries there are and that it is live", async () => {
     await rendered();
 

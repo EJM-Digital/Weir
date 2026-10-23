@@ -1,6 +1,6 @@
 /** The file panel's track lists: what the rules would keep and remove, or your own choice while you make one. */
 import { Chip } from "../../components/panels/chip";
-import { describeTrack, positionsByKind } from "../../lib/format/track";
+import { describeTrackIn, positionsByKind } from "../../lib/format/track";
 import type { ProcessingRulesPreviewTrack } from "../../lib/processing/rules-preview-api";
 import { trackMeaning } from "../../lib/ui/track-meaning";
 
@@ -41,7 +41,7 @@ export function TrackList({
               {keeping ? "Keep" : "Remove"}
             </Chip>
             <span className="mm-drawer__track-name">
-              {describeTrack(track, positions.get(track.index) ?? 1)}
+              {describeTrackIn(track, positions)}
             </span>
             <span className="mm-drawer__track-why">
               {kept ? "" : (track.reasons[0] ?? "")}

@@ -809,6 +809,75 @@ describe("first run: connect a download client first", () => {
     });
   });
 
+  it("tests a download client by itself when the server has no result for it", async () => {
+    scenario.clients = [
+      clientConnection({
+        last_test_ok: undefined,
+        last_test_detail: undefined,
+      }),
+    ];
+    const test = vi
+      .spyOn(downloadClientsApi, "testDownloadClientConnection")
+      .mockImplementation(async () => {
+        scenario.clients = [clientConnection({})];
+        return {
+          connection_id: 8,
+          ok: true,
+          detail: "Connected.",
+          checked_at: "2026-09-29T10:00:00Z",
+        };
+      });
+    renderWizard();
+
+    choose(/A download client/);
+
+    expect(
+      await screen.findByText("✓ Connected", {}, CEILING),
+    ).toBeInTheDocument();
+    expect(test).toHaveBeenCalledTimes(1);
+  });
+
+  it("says a download client could not be tested when the test itself fails", async () => {
+    scenario.clients = [clientConnection({})];
+    vi.spyOn(
+      downloadClientsApi,
+      "testDownloadClientConnection",
+    ).mockRejectedValue(new Error("Weir could not reach the server."));
+    renderWizard();
+
+    choose(/A download client/);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Test" }, CEILING),
+    );
+
+    expect(
+      await screen.findByText("Weir could not reach the server.", {}, CEILING),
+    ).toBeInTheDocument();
+  });
+
+  it("asks before removing a download client, and keeps it when the person says to", async () => {
+    scenario.clients = [clientConnection({})];
+    const remove = vi.spyOn(
+      downloadClientsApi,
+      "deleteDownloadClientConnection",
+    );
+    renderWizard();
+
+    choose(/A download client/);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Remove" }, CEILING),
+    );
+    const dialog = await screen.findByRole("dialog", {}, CEILING);
+    expect(dialog).toHaveTextContent(/^Remove .*\?/);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Keep it" }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(remove).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Remove" })).toBeVisible();
+  });
+
   it("connects a download client with the form Settings uses", async () => {
     const create = vi
       .spyOn(downloadClientsApi, "createDownloadClientConnection")

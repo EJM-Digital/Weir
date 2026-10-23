@@ -5,17 +5,15 @@ import type { ProcessingMediaType } from "../../../../lib/processing/libraries-a
 
 function Suggestion({
   item,
-  watchedFolder,
+  suggested,
   editable,
   onUseFolder,
 }: {
   item: DownloadClientSuggestion;
-  watchedFolder: string;
+  suggested: string;
   editable: boolean;
   onUseFolder: (watched: string) => void;
 }) {
-  const suggested = item.suggested_watched_folder;
-  if (!suggested || suggested === watchedFolder.trim()) return null;
   return (
     <p className="text-sm text-mm-text2">
       {item.label}&apos;s completed-downloads folder is{" "}
@@ -50,10 +48,11 @@ export function LibraryDownloadClientSuggestions({
   onUseFolder: (watched: string) => void;
 }) {
   const clients = useDownloadClientSuggestionsQuery(mediaType);
-  const offers = (clients.data ?? []).filter(
-    (item) =>
-      item.suggested_watched_folder &&
-      item.suggested_watched_folder !== watchedFolder.trim(),
+  const offers = (clients.data ?? []).flatMap((item) =>
+    item.suggested_watched_folder &&
+    item.suggested_watched_folder !== watchedFolder.trim()
+      ? [{ item, suggested: item.suggested_watched_folder }]
+      : [],
   );
   if (offers.length === 0) return null;
   return (
@@ -65,11 +64,11 @@ export function LibraryDownloadClientSuggestions({
         className="space-y-2"
         data-testid="library-download-client-suggestions"
       >
-        {offers.map((item) => (
+        {offers.map(({ item, suggested }) => (
           <Suggestion
             key={item.connection_id}
             item={item}
-            watchedFolder={watchedFolder}
+            suggested={suggested}
             editable={editable}
             onUseFolder={onUseFolder}
           />

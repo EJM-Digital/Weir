@@ -58,6 +58,26 @@ describe("the tracks in the file panel", () => {
     expect(within(drawer).queryByText(/Audio · /)).toBeNull();
   });
 
+  it("lists a track the rules gave no reason for with its Keep or Remove and nothing beside it", async () => {
+    const preview = previewOfTwoAudioTracks();
+    api = stubLibraryServer([ARRIVAL], {
+      [LIBRARY_ROUTES.preview]: {
+        ...preview,
+        tracks: preview.tracks.map((track) => ({ ...track, reasons: [] })),
+      },
+    });
+    renderLibraryPage();
+
+    const drawer = await openFile();
+
+    expect(await within(drawer).findByText("Keep")).toBeVisible();
+    expect(within(drawer).getByText("Remove")).toBeVisible();
+    expect(drawer.querySelectorAll(".mm-drawer__track-why")).toHaveLength(2);
+    for (const why of drawer.querySelectorAll(".mm-drawer__track-why")) {
+      expect(why).toBeEmptyDOMElement();
+    }
+  });
+
   it("says Weir could not read the file just now, and lists no tracks, when the server fails", async () => {
     api = stubLibraryServer([ARRIVAL], {
       [LIBRARY_ROUTES.preview]: unexpectedProblem(),

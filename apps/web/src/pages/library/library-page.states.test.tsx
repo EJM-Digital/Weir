@@ -73,6 +73,30 @@ describe("before the Library page has its workflows", () => {
   });
 });
 
+describe("a workflow whose folders hold no files Weir reads", () => {
+  it("says it has not been scanned yet, or its folders hold nothing, and where to change them", async () => {
+    api = stubLibraryServer([]);
+
+    renderLibraryPage();
+
+    expect(await screen.findByTestId("library-empty")).toHaveTextContent(
+      "This workflow has not been scanned yet, or its folders hold nothing Weir reads. Check again, or change its folders in Library setup.",
+    );
+  });
+});
+
+describe("while the overview of the workflow is still being read", () => {
+  it("lists the files without the totals it has not heard yet", async () => {
+    api = stubLibraryServer([ARRIVAL], {
+      [LIBRARY_ROUTES.overview]: never,
+    });
+
+    renderLibraryPage();
+
+    expect(await screen.findAllByTestId("library-row")).toHaveLength(1);
+  });
+});
+
 describe("while the files of the workflow are read", () => {
   it("says it is reading the workflow until the files arrive", async () => {
     api = stubLibraryServer([ARRIVAL], { [LIBRARY_ROUTES.files]: never });

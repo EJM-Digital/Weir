@@ -92,6 +92,21 @@ describe("Setup asks whether to check for updates, on the Windows app", () => {
     expect(server.state.updateSettings.check_for_updates).toBe(false);
   });
 
+  it("saves nothing for a box that was ticked and then cleared again", async () => {
+    const server = new WizardServer({ installType: "windows" });
+    await openedWizard();
+    chooseNeither();
+    const choice = await updatesChoice();
+    fireEvent.click(choice);
+    fireEvent.click(choice);
+    expect(choice).not.toBeChecked();
+
+    finish();
+
+    await screen.findByRole("heading", { name: "What's next" }, CEILING);
+    expect(server.changesTo("PUT", UPDATE_SETTINGS)).toEqual([]);
+  });
+
   it("saves a no to an answer that was yes, when setup is opened again", async () => {
     const server = new WizardServer({
       installType: "windows",

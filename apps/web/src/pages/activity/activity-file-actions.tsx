@@ -150,11 +150,10 @@ export function ActivityFileActions({
     label: string,
     title: string,
     onClick: () => void,
-    options: {
-      variant?: "secondary" | "tertiary";
-      pending?: boolean;
-      pendingLabel?: string;
-    } = {},
+    options: { variant?: "secondary" | "tertiary" } & (
+      | { pending?: undefined; pendingLabel?: undefined }
+      | { pending: boolean; pendingLabel: string }
+    ) = {},
   ) => (
     <button
       type="button"
@@ -165,7 +164,7 @@ export function ActivityFileActions({
       disabled={anyPending}
       onClick={onClick}
     >
-      {options.pending ? (options.pendingLabel ?? label) : label}
+      {options.pending ? options.pendingLabel : label}
     </button>
   );
 
