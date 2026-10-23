@@ -124,19 +124,17 @@ public sealed partial class ProcessingJobStore
 
     private JobActionOutcome RaiseAboveWaiting(SqliteConnection connection, SqliteTransaction transaction, ProcessingJob job)
     {
-        var highest = Scalar(connection, transaction, "SELECT max(priority) FROM jobs WHERE status = @pending", ("@pending", ProcessingJobStatus.Pending));
-        var priority = (highest is null or DBNull ? 0 : Convert.ToInt64(highest, CultureInfo.InvariantCulture)) + 1;
-        if (priority != job.Priority)
-        {
-            Execute(
-                connection,
-                transaction,
-                "UPDATE jobs SET priority = @priority, updated_at = CURRENT_TIMESTAMP WHERE id = @id",
-                ("@priority", priority),
-                ("@id", job.Id));
-            AnnounceQueueChange(transaction, job.JobKind);
-        }
-
+        // The job is itself waiting, so there is a highest priority and it is at least the job's own.
+        var highest = Convert.ToInt64(
+            Scalar(connection, transaction, "SELECT max(priority) FROM jobs WHERE status = @pending", ("@pending", ProcessingJobStatus.Pending)),
+            CultureInfo.InvariantCulture);
+        Execute(
+            connection,
+            transaction,
+            "UPDATE jobs SET priority = @priority, updated_at = CURRENT_TIMESTAMP WHERE id = @id",
+            ("@priority", highest + 1),
+            ("@id", job.Id));
+        AnnounceQueueChange(transaction, job.JobKind);
         return JobActionOutcome.Ok;
     }
 }

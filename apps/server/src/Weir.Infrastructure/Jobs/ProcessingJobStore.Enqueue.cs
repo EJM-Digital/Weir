@@ -106,12 +106,12 @@ public sealed partial class ProcessingJobStore
 
         // not_before is the column a retry's backoff already uses, so a job queued to start later is claimed by
         // exactly the same rule as one that is waiting out a failure (#632).
+        // The lookup above and this insert share one write transaction, so the key cannot have been taken in between.
         var inserted = Scalar(
             connection,
             transaction,
             "INSERT INTO jobs (dedupe_key, job_kind, payload_json, status, max_attempts, runner_cost, priority, not_before) " +
-            "VALUES (@dedupe, @kind, @payload, @status, @max_attempts, @runner_cost, @priority, @not_before) " +
-            "ON CONFLICT (dedupe_key) DO NOTHING RETURNING id",
+            "VALUES (@dedupe, @kind, @payload, @status, @max_attempts, @runner_cost, @priority, @not_before) RETURNING id",
             ("@dedupe", dedupeKey),
             ("@kind", jobKind),
             ("@payload", payloadJson),
@@ -120,18 +120,14 @@ public sealed partial class ProcessingJobStore
             ("@runner_cost", Math.Max(0, runnerCost ?? RunnerCosts.ForJob(connection, transaction, jobKind, payloadJson))),
             ("@priority", priority),
             ("@not_before", notBefore is { } when ? TimestampColumns.Orm(when) : null));
-        if (inserted is not null and not DBNull)
+        RecordQueueDepth(connection, transaction);
+        AnnounceQueueChange(transaction, jobKind);
+        // A job that starts later is claimed by the poll once it is due, so it wakes nobody now.
+        if (notBefore is not { } startsAt || startsAt <= _time.GetUtcNow())
         {
-            RecordQueueDepth(connection, transaction);
-            AnnounceQueueChange(transaction, jobKind);
-            // A job that starts later is claimed by the poll once it is due, so it wakes nobody now.
-            if (notBefore is not { } startsAt || startsAt <= _time.GetUtcNow())
-            {
-                WakeWorkers(jobKind);
-            }
+            WakeWorkers(jobKind);
         }
 
-        return GetByDedupeKey(connection, transaction, dedupeKey)
-               ?? throw new InvalidOperationException("processing job dedupe race: row missing after IntegrityError");
+        return Get(connection, transaction, Convert.ToInt64(inserted, System.Globalization.CultureInfo.InvariantCulture))!;
     }
 }
