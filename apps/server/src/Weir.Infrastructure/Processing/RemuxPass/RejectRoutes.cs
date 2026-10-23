@@ -209,7 +209,7 @@ public sealed class RejectRoutes
             return new RejectRouteOutcome(false, ManagerWaitMessages.RejectNotAnswering(label), label, Transient: true);
         }
 
-        if (description.AdvertisedCapabilities is null || !description.AdvertisedCapabilities.Contains(RejectSupportRules.RejectCapability))
+        if (!description.Advertised.Contains(RejectSupportRules.RejectCapability))
         {
             return new RejectRouteOutcome(false, $"{label} does not yet say it can replace a rejected release, so Weir did not delete the download.", label);
         }

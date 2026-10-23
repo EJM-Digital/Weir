@@ -50,7 +50,7 @@ public sealed class RejectSupportEvaluator
                 continue;
             }
 
-            if (description.AdvertisedCapabilities?.Contains(RejectSupportRules.RejectCapability) == true)
+            if (description.Advertised.Contains(RejectSupportRules.RejectCapability))
             {
                 return new RejectSupportResult(
                     true,

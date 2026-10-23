@@ -22,6 +22,19 @@ public sealed class ManagerHelperEdgeTests
     }
 
     [Fact]
+    public void A_manager_that_listed_nothing_it_can_do_advertises_nothing_and_one_that_did_advertises_what_it_listed()
+    {
+        var connection = new ManagerConnection("deluno", "Main", "http://manager.local", "k", 1);
+        var capabilities = new ManagerCapabilities(new HashSet<string> { "movie" }, false, false, "none");
+
+        var silent = new ManagerDescription(connection, SignalStatus.Unreachable, capabilities, [], []);
+        var listed = silent with { Status = SignalStatus.Reported, AdvertisedCapabilities = new HashSet<string> { "rejects" } };
+
+        Assert.Empty(silent.Advertised);
+        Assert.Equal(["rejects"], listed.Advertised);
+    }
+
+    [Fact]
     public void A_manager_path_that_is_one_of_ours_is_matched_directly()
     {
         var match = LibraryTitleMatcher.MatchLocalPath("/data/film.mkv", ["/data/other.mkv", "/data/film.mkv"], [], []);

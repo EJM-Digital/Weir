@@ -57,6 +57,27 @@ public sealed class LibraryFileChangeNotifierTests
     }
 
     [Fact]
+    public async Task Two_managers_that_own_a_file_are_each_told_again_once_the_window_has_passed()
+    {
+        using var fixture = new MediaManagerFixture();
+        await fixture.AddConnectionAsync("sonarr", "http://first.local");
+        await fixture.AddConnectionAsync("sonarr", "http://second.local");
+        fixture.Http
+            .Json(HttpMethod.Get, "/api/v3/rootfolder", "[]")
+            .Json(HttpMethod.Get, "/api/v3/series", """[{"id":12,"title":"Show"}]""")
+            .Json(HttpMethod.Get, "/api/v3/episodefile", """[{"path":"/tv/Show/e01.mkv"}]""")
+            .Json(HttpMethod.Post, "/api/v3/command", """{"id":1}""", HttpStatusCode.Created);
+        var notifier = Notifier(fixture);
+
+        await notifier.NotifyAsync(new LibraryFileChange("tv", "/tv/Show/e01.mkv"));
+        await notifier.NotifyAsync(new LibraryFileChange("tv", "/tv/Show/e01.mkv"));
+        fixture.Store.Clock.Set(fixture.Store.Clock.GetUtcNow() + LibraryFileChangeRules.CoalesceWindow + TimeSpan.FromSeconds(1));
+        await notifier.NotifyAsync(new LibraryFileChange("tv", "/tv/Show/e01.mkv"));
+
+        Assert.Equal(4, fixture.Http.RequestsTo(HttpMethod.Post, "/api/v3/command").Count);
+    }
+
+    [Fact]
     public async Task A_notify_failure_is_retried_then_recorded_as_a_warning_and_the_call_still_completes()
     {
         using var fixture = new MediaManagerFixture();
