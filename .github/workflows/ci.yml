@@ -493,7 +493,7 @@ jobs:
           WEIR_REQUIRE_REAL_TOOLS: "1"
         run: >-
           dotnet test Weir.slnx --no-build --filter "Category!=Stress&Category!=Contract&Category!=E2E" --logger trx
-          --collect:"XPlat Code Coverage" --settings coverage.runsettings
+          --collect:"XPlat Code Coverage" --settings coverage.runsettings --blame
 
       - name: Summarize server test results
         if: ${{ !cancelled() }}
@@ -519,7 +519,9 @@ jobs:
           name: server-test-diagnostics-linux
           if-no-files-found: ignore
           retention-days: 7
-          path: artifacts/test-diagnostics
+          path: |
+            artifacts/test-diagnostics
+            apps/server/**/TestResults/**/Sequence*.xml
 
       - name: Upload server coverage (Linux)
         if: ${{ !cancelled() }}
@@ -576,7 +578,7 @@ jobs:
           WEIR_REQUIRE_REAL_TOOLS: "1"
         run: >-
           dotnet test Weir.slnx --no-build --filter "Category!=Stress&Category!=Contract&Category!=E2E" --logger trx
-          --collect:"XPlat Code Coverage" --settings coverage.runsettings
+          --collect:"XPlat Code Coverage" --settings coverage.runsettings --blame
 
       - name: Summarize server test results
         if: ${{ !cancelled() }}
@@ -602,7 +604,9 @@ jobs:
           name: server-test-diagnostics-windows
           if-no-files-found: ignore
           retention-days: 7
-          path: artifacts/test-diagnostics
+          path: |
+            artifacts/test-diagnostics
+            apps/server/**/TestResults/**/Sequence*.xml
 
       - name: Upload server coverage (Windows)
         if: ${{ !cancelled() }}

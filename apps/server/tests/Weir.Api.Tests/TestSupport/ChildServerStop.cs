@@ -46,6 +46,7 @@ internal static class ChildServerStop
 
             if (process.HasExited)
             {
+                NoteIfSlow(label, waited.Elapsed);
                 return string.Empty;
             }
 
@@ -58,6 +59,27 @@ internal static class ChildServerStop
         {
             // Already gone.
             return string.Empty;
+        }
+    }
+
+    // A server that takes long to stop is not a failure, but it is how a hang starts; the folder CI uploads keeps the count.
+    private static void NoteIfSlow(string label, TimeSpan took)
+    {
+        if (took < TimeSpan.FromSeconds(5))
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(ChildDiagnostics.Folder);
+            File.AppendAllText(
+                Path.Join(ChildDiagnostics.Folder, "slow-stops.txt"),
+                string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{DateTime.UtcNow:O} {label} took {took.TotalSeconds:F1} s to stop{Environment.NewLine}"));
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // Only a note.
         }
     }
 

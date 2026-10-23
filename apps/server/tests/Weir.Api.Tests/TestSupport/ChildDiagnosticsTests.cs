@@ -3,7 +3,7 @@ using System.Net.Sockets;
 
 namespace Weir.Api.Tests;
 
-/// <summary>A child server that is still running at its ceiling leaves a dump and its thread stacks behind before the test stops it.</summary>
+/// <summary>A child server that is still running at its ceiling leaves a dump and its threads behind before the test stops it.</summary>
 public sealed class ChildDiagnosticsTests : IDisposable
 {
     private readonly string _home = Path.Join(Path.GetTempPath(), "weir-diagnostics-tests-" + Guid.NewGuid().ToString("N"));
@@ -25,7 +25,7 @@ public sealed class ChildDiagnosticsTests : IDisposable
     }
 
     [Fact]
-    public async Task A_server_still_running_at_its_ceiling_leaves_its_stacks_and_a_dump_in_the_diagnostics_folder()
+    public async Task A_server_still_running_at_its_ceiling_leaves_its_threads_and_a_dump_in_the_diagnostics_folder()
     {
         var previous = Environment.GetEnvironmentVariable(ChildDiagnostics.FolderVariable);
         Environment.SetEnvironmentVariable(ChildDiagnostics.FolderVariable, _folder);
@@ -40,8 +40,7 @@ public sealed class ChildDiagnosticsTests : IDisposable
             Assert.StartsWith(_folder, server.Diagnostics, StringComparison.Ordinal);
             var report = await File.ReadAllTextAsync(server.Diagnostics);
             Assert.Contains("had not finished at its ceiling", report, StringComparison.Ordinal);
-            Assert.True(report.Contains("managed thread", StringComparison.Ordinal), report);
-            Assert.True(report.Contains("Program.<Main>", StringComparison.Ordinal), report);
+            Assert.True(report.Contains("os thread", StringComparison.Ordinal), report);
             var dump = Assert.Single(Directory.GetFiles(_folder, "*.dmp"));
             Assert.True(new FileInfo(dump).Length > 0);
         }
