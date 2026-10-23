@@ -67,14 +67,20 @@ describe("a change of state asks for a token first and sends it back", () => {
 
   it("sends the sign-out so that it outlives the page, after the caller's hook", async () => {
     const order: string[] = [];
-    const fetchSpy = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
-      if (String(url).endsWith("/auth/csrf")) {
-        order.push("csrf");
-        return Promise.resolve(new Response(JSON.stringify({ csrf_token: CSRF_TOKEN }), { status: 200 }));
-      }
-      order.push(`logout keepalive=${String(init?.keepalive)}`);
-      return Promise.resolve(new Response(null, { status: 204 }));
-    });
+    const fetchSpy = vi
+      .fn()
+      .mockImplementation((url: string, init?: RequestInit) => {
+        if (String(url).endsWith("/auth/csrf")) {
+          order.push("csrf");
+          return Promise.resolve(
+            new Response(JSON.stringify({ csrf_token: CSRF_TOKEN }), {
+              status: 200,
+            }),
+          );
+        }
+        order.push(`logout keepalive=${String(init?.keepalive)}`);
+        return Promise.resolve(new Response(null, { status: 204 }));
+      });
     vi.stubGlobal("fetch", fetchSpy);
 
     await postLogout(async () => {

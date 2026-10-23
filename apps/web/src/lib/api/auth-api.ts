@@ -102,7 +102,9 @@ export async function postLogin(
  * Signs out. The token is fetched first and `beforeSend` runs after it, so a caller can show the signed-out page only once
  * the request is certain to go out; the request is kept alive so closing the tab or opening Weir again cannot cancel it.
  */
-export async function postLogout(beforeSend?: () => Promise<void>): Promise<void> {
+export async function postLogout(
+  beforeSend?: () => Promise<void>,
+): Promise<void> {
   const csrf = await fetchCsrfToken();
   await beforeSend?.();
   const path = "/api/v1/auth/logout";
