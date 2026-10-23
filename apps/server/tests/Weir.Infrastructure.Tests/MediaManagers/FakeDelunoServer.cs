@@ -34,7 +34,7 @@ internal sealed class FakeDelunoServer : IDisposable
 
     public int Port { get; }
 
-    public string BaseUrl => $"http://localhost:{Port}";
+    public string BaseUrl => $"http://127.0.0.1:{Port}";
 
     /// <summary>The reports received so far, in the order they arrived.</summary>
     public IReadOnlyList<DelunoReport> Reports => [.. _reports];
@@ -52,7 +52,7 @@ internal sealed class FakeDelunoServer : IDisposable
     public void Start()
     {
         var listener = new HttpListener();
-        listener.Prefixes.Add($"http://localhost:{Port}/");
+        listener.Prefixes.Add($"http://127.0.0.1:{Port}/");
         listener.Start();
         _listener = listener;
         _ = ServeAsync(listener);

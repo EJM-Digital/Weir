@@ -30,12 +30,13 @@ public sealed class PortInUseTests : IDisposable
     }
 
     [Theory]
-    [InlineData("127.0.0.1", false)]
-    [InlineData("localhost", false)]
-    [InlineData("0.0.0.0", true)]
-    public async Task A_server_started_on_a_port_another_program_holds_says_so_and_exits_with_the_code_that_asks_to_be_tried_again(string host, bool heldOnEveryAddress)
+    [InlineData("127.0.0.1")]
+    [InlineData("localhost")]
+    public async Task A_server_started_on_a_port_another_program_holds_says_so_and_exits_with_the_code_that_asks_to_be_tried_again(string host)
     {
-        using var holder = heldOnEveryAddress ? new TcpListener(IPAddress.IPv6Any, 0) { Server = { DualMode = true } } : new TcpListener(IPAddress.Loopback, 0);
+        // The holder listens on loopback only: listening on every address makes Windows Firewall ask whoever runs the tests.
+        // A server on every address refusing a port held on loopback is covered below.
+        using var holder = new TcpListener(IPAddress.Loopback, 0);
         holder.Start();
 
         await AssertRefusedAsync(host, ((IPEndPoint)holder.LocalEndpoint).Port);
@@ -54,8 +55,6 @@ public sealed class PortInUseTests : IDisposable
     }
 
     [WindowsTheory("Port hijacking by a more specific bind is possible on Windows only.")]
-    [InlineData("0.0.0.0", false)]
-    [InlineData("0.0.0.0", true)]
     [InlineData("127.0.0.1", false)]
     [InlineData("127.0.0.1", true)]
     [InlineData("localhost", false)]
@@ -83,7 +82,7 @@ public sealed class PortInUseTests : IDisposable
     public async Task A_server_that_served_requests_and_was_stopped_can_be_started_again_on_the_same_port_at_once()
     {
         var port = FreePort();
-        using (var first = RealServerProcess.Start(_home, "0.0.0.0", port))
+        using (var first = RealServerProcess.Start(_home, "127.0.0.1", port))
         {
             await AssertReadyAsync(first, "The first server did not become ready");
             using var http = new HttpClient();
@@ -96,7 +95,7 @@ public sealed class PortInUseTests : IDisposable
             }
         }
 
-        using var second = RealServerProcess.Start(_home, "0.0.0.0", port);
+        using var second = RealServerProcess.Start(_home, "127.0.0.1", port);
 
         await AssertReadyAsync(second, "The second server did not become ready on the port the first had used");
     }

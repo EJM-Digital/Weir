@@ -84,7 +84,7 @@ public sealed class EntryPointCommandTests : IDisposable
     [Fact]
     public void A_start_on_the_port_the_environment_names_that_another_program_holds_exits_with_the_code_that_asks_to_be_tried_again()
     {
-        using var holder = new TcpListener(IPAddress.IPv6Any, 0) { Server = { DualMode = true } };
+        using var holder = new TcpListener(IPAddress.Loopback, 0);
         holder.Start();
         Set("WEIR_HOME", _home);
         Set("PORT", ((IPEndPoint)holder.LocalEndpoint).Port.ToString(CultureInfo.InvariantCulture));

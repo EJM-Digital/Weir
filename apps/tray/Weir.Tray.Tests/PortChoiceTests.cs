@@ -303,10 +303,11 @@ public sealed class PortChoiceTests : IDisposable
         int free;
         using (var holder = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) { ExclusiveAddressUse = true })
         {
-            holder.Bind(new IPEndPoint(IPAddress.Any, 0));
+            holder.Bind(new IPEndPoint(IPAddress.Loopback, 0));
             free = ((IPEndPoint)holder.LocalEndPoint!).Port;
         }
 
+        // The shipped probe binds 0.0.0.0 without listening, which Windows Firewall does not ask about (it asks when a program listens).
         Assert.False(PortChoice.IsInUse(free));
     }
 

@@ -73,7 +73,7 @@ function control(log) {
  * Starts the three servers. An exchange is logged once its reply is complete, so the log is in the order replies finished; each carries the
  * number it was given when its request arrived.
  */
-export async function startRecorder({ deluno, weir, ports }) {
+export async function startRecorder({ deluno, weir, ports, host }) {
   const log = [];
   let counter = 0;
   const nextSeq = () => ++counter;
@@ -82,7 +82,7 @@ export async function startRecorder({ deluno, weir, ports }) {
     [forwarder({ route: "to-weir", target: weir, log, nextSeq }), ports.toWeir],
     [control(log), ports.control],
   ];
-  await Promise.all(servers.map(([server, port]) => new Promise((resolve) => server.listen(port, resolve))));
+  await Promise.all(servers.map(([server, port]) => new Promise((resolve) => server.listen(port, host, resolve))));
   return { servers: servers.map(([server]) => server), log };
 }
 

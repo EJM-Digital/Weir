@@ -30,7 +30,7 @@ export class SabnzbdStandIn {
     });
     return new Promise((resolve, reject) => {
       this.#server.once("error", reject);
-      this.#server.listen(0, () => resolve(this.#server.address().port));
+      this.#server.listen(0, "127.0.0.1", () => resolve(this.#server.address().port));
     });
   }
 
