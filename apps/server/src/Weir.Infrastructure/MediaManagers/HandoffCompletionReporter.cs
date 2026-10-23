@@ -433,14 +433,7 @@ public sealed partial class HandoffCompletionReporter
         var body = outcome.Body;
         try
         {
-            await _ledger.RecordOutcomeAsync(
-                uow,
-                origin.SourceKey,
-                origin.HandoffId,
-                outcome.State,
-                body.Get("outputPath") is WireString output ? output.Value : null,
-                body.Get("message") is WireString message ? message.Value : null,
-                body.Get("outputFiles") is WireArray files ? [.. files.Items.OfType<WireString>().Select(file => file.Value)] : null).ConfigureAwait(false);
+            await RecordOutcomeOfAsync(uow, origin.SourceKey, origin.HandoffId, outcome.State, body).ConfigureAwait(false);
             if (report is { } sent)
             {
                 await RecordHandoffReportAsync(uow, sent.Target, body, sent.Delivery, outcome.Subject).ConfigureAwait(false);
@@ -448,7 +441,7 @@ public sealed partial class HandoffCompletionReporter
                 {
                     var waiting = IsTransientFailure(sent.Delivery);
                     var owed = waiting
-                        ? ToSendAgain(new PendingReport(origin.CallbackPath, origin.ReleaseName, origin.LibraryId, body, outcome.LibraryId, outcome.Subject, outcome.Files), sent.Delivery, _time.GetUtcNow())?.ToJson()
+                        ? ToSendAgain(new PendingReport(origin.CallbackPath, origin.ReleaseName, origin.LibraryId, body, outcome.LibraryId, outcome.Subject, outcome.Files), sent.Delivery, _time.GetUtcNow())!.ToJson()
                         : null;
                     await HandoffLedgerStore.SetPendingReportAsync(uow, origin.SourceKey, origin.HandoffId, owed).ConfigureAwait(false);
                     if (waiting && outcome.LibraryId is { } library)
