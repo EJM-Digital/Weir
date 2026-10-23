@@ -157,6 +157,54 @@ public sealed class WeirLogFileTests : IDisposable
     }
 
     [Fact]
+    public void A_prune_that_cannot_swap_the_cleaned_log_in_and_cannot_remove_its_scratch_file_still_fails_and_the_log_goes_on()
+    {
+        var files = new FaultingFileSystem()
+            .Fail(FileCall.MoveFile, FaultingFileSystem.SharingViolation)
+            .Fail(FileCall.DeleteFile, FaultingFileSystem.Refused);
+        using var file = new WeirLogFile(_folder.Join("weir.log"), TimeProvider.System, files);
+        file.WriteLine(Line(DateTimeOffset.UtcNow.AddDays(-10), "old"));
+        file.WriteLine(Line(DateTimeOffset.UtcNow, "recent"));
+
+        Assert.False(file.Prune(keepDays: 3));
+        file.WriteLine("still logging");
+
+        Assert.Equal(3, LinesOf(file.Path).Length);
+        Assert.Single(Directory.GetFiles(_folder.Path, "*.prune"));
+    }
+
+    [Fact]
+    public void A_snapshot_that_cannot_be_written_and_whose_leftover_cannot_be_removed_still_fails()
+    {
+        var files = new FaultingFileSystem().Fail(FileCall.DeleteFile, FaultingFileSystem.SharingViolation);
+        using var file = new WeirLogFile(_folder.Join("weir.log"), TimeProvider.System, files);
+        file.WriteLine("line");
+
+        Assert.False(file.SnapshotTo(_folder.Join("missing-folder", "snapshot.log")));
+        Assert.Contains(files.Calls, call => call.Call == FileCall.DeleteFile);
+    }
+
+    [Fact]
+    public void A_first_line_that_is_not_a_log_line_is_pruned_with_the_rest()
+    {
+        using var file = Open(out var path);
+        file.WriteLine("not json");
+        file.WriteLine(Line(DateTimeOffset.UtcNow, "recent"));
+
+        Assert.True(file.Prune(keepDays: 3));
+
+        Assert.Single(LinesOf(path));
+    }
+
+    [Fact]
+    public void A_log_path_with_no_folder_above_it_cannot_be_opened()
+    {
+        var root = Path.GetPathRoot(_folder.Path)!;
+
+        Assert.ThrowsAny<Exception>(() => new WeirLogFile(root, TimeProvider.System));
+    }
+
+    [Fact]
     public void A_log_with_nothing_in_it_has_nothing_to_prune()
     {
         using var file = Open(out var path);

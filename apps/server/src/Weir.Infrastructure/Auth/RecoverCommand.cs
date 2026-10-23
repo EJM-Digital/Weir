@@ -122,7 +122,7 @@ public static class RecoverCommand
             var user = await users.FindAccountForRecoveryAsync(uow, parsed.Username).ConfigureAwait(false);
             if (user is null)
             {
-                stderr.WriteLine($"No account named {WireStrings.Repr(parsed.Username ?? string.Empty)}. Use --list to see them.");
+                stderr.WriteLine($"No account named {WireStrings.Repr(parsed.Username!)}. Use --list to see them.");
                 return ExitFailed;
             }
 

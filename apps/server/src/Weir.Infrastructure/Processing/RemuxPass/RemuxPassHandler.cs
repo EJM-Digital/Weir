@@ -53,16 +53,26 @@ public sealed partial class RemuxPassHandler : IJobHandler
         LiveProgressStore? liveProgress = null,
         ScanWakeups? scanWakeups = null)
     {
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _runner = runner ?? throw new ArgumentNullException(nameof(runner));
-        _failurePolicy = failurePolicy ?? throw new ArgumentNullException(nameof(failurePolicy));
-        _operatorSettings = operatorSettings ?? throw new ArgumentNullException(nameof(operatorSettings));
-        _handback = handback ?? throw new ArgumentNullException(nameof(handback));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _downloadedScan = downloadedScan ?? throw new ArgumentNullException(nameof(downloadedScan));
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(runner);
+        ArgumentNullException.ThrowIfNull(failurePolicy);
+        ArgumentNullException.ThrowIfNull(operatorSettings);
+        ArgumentNullException.ThrowIfNull(handback);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(downloadedScan);
+        _database = database;
+        _options = options;
+        _runner = runner;
+        _failurePolicy = failurePolicy;
+        _operatorSettings = operatorSettings;
+        _handback = handback;
+        _libraries = libraries;
+        _time = time;
+        _logger = logger;
+        _downloadedScan = downloadedScan;
         _reporter = reporter;
         _jobs = jobs;
         _liveProgress = liveProgress ?? new LiveProgressStore();

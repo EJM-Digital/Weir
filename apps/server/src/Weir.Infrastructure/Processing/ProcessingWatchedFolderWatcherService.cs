@@ -77,13 +77,20 @@ public class ProcessingWatchedFolderWatcherService : BackgroundService
         ScanSettingsChanges? scanSettingsChanges = null,
         IFileSystem? files = null)
     {
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _jobStore = jobStore ?? throw new ArgumentNullException(nameof(jobStore));
-        _state = state ?? throw new ArgumentNullException(nameof(state));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(jobStore);
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _database = database;
+        _options = options;
+        _jobStore = jobStore;
+        _state = state;
+        _libraries = libraries;
+        _time = time;
+        _logger = logger;
         _scanSettingsChanges = scanSettingsChanges ?? new ScanSettingsChanges();
         _files = files ?? PhysicalFileSystem.Instance;
     }

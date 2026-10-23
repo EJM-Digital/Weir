@@ -35,9 +35,18 @@ public sealed class ExternalJsonPosterRefusalsTests : IDisposable
     [InlineData("ftp://hooks.example.com/alert")]
     [InlineData("file:///etc/passwd")]
     [InlineData("http:///alert")]
+    [InlineData("http://[not-an-address]/alert")]
     public async Task An_address_that_is_not_an_http_or_https_address_is_refused(string url)
     {
         var refused = await Assert.ThrowsAsync<ExternalEndpointException>(() => PostAsync(url));
+
+        Assert.Equal(ExternalUrlPolicy.InvalidDestination, refused.Message);
+    }
+
+    [Fact]
+    public async Task No_address_at_all_is_refused_like_an_empty_one()
+    {
+        var refused = await Assert.ThrowsAsync<ExternalEndpointException>(() => PostAsync(null!));
 
         Assert.Equal(ExternalUrlPolicy.InvalidDestination, refused.Message);
     }

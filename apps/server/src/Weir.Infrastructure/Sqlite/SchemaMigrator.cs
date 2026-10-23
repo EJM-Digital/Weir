@@ -249,13 +249,17 @@ public sealed class SchemaMigrator
     /// that genuinely left the database inconsistent.
     /// </para>
     /// </summary>
-    private static void ApplyRange(
-        SqliteConnection connection, IEnumerable<SchemaMigration> migrations, string revision, Action<int, int>? migrating = null)
+    internal static void ApplyRange(
+        SqliteConnection connection,
+        IEnumerable<SchemaMigration> migrations,
+        string revision,
+        Action<int, int>? migrating = null,
+        Func<SchemaMigration, string>? readSql = null)
     {
         Pragma(connection, "PRAGMA foreign_keys=off");
         try
         {
-            ApplyRangeCore(connection, migrations, revision, migrating);
+            ApplyRangeCore(connection, migrations, revision, migrating, readSql ?? ReadMigrationSql);
         }
         finally
         {
@@ -271,7 +275,11 @@ public sealed class SchemaMigrator
     }
 
     private static void ApplyRangeCore(
-        SqliteConnection connection, IEnumerable<SchemaMigration> migrations, string revision, Action<int, int>? migrating)
+        SqliteConnection connection,
+        IEnumerable<SchemaMigration> migrations,
+        string revision,
+        Action<int, int>? migrating,
+        Func<SchemaMigration, string> readSql)
     {
         var steps = migrations.ToList();
         using var transaction = connection.BeginTransaction();
@@ -282,7 +290,7 @@ public sealed class SchemaMigrator
             var migration = steps[step];
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
-            command.CommandText = ReadMigrationSql(migration);
+            command.CommandText = readSql(migration);
             command.ExecuteNonQuery();
         }
 

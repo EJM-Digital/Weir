@@ -34,6 +34,43 @@ public sealed class SetupCodeGateTests : IDisposable
             entry.Message);
     }
 
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("", false)]
+    [InlineData("not an address", false)]
+    [InlineData("203.0.113.9", false)]
+    [InlineData("127.0.0.1", true)]
+    [InlineData("::1", true)]
+    public void Only_a_loopback_address_is_a_loopback_caller(string? host, bool loopback) =>
+        Assert.Equal(loopback, SetupCodeGate.IsLoopback(host));
+
+    [Fact]
+    public void A_code_file_that_cannot_be_deleted_is_left_behind_without_failing_start_up()
+    {
+        var gate = Gate();
+        Directory.CreateDirectory(_home.Join("setup-code"));
+
+        gate.Clear();
+
+        Assert.True(Directory.Exists(_home.Join("setup-code")));
+    }
+
+    [Fact]
+    public void A_data_folder_that_is_really_a_file_has_no_code_file_to_delete()
+    {
+        var notAFolder = _home.Join("not-a-folder");
+        File.WriteAllText(notAFolder, "x");
+        var gate = new SetupCodeGate(WeirOptionsLoader.Load(new RuntimeEnvironment(
+            new Dictionary<string, string>(StringComparer.Ordinal) { ["WEIR_HOME"] = notAFolder },
+            OperatingSystem.IsWindows(),
+            _home.Path,
+            _home.Path)));
+
+        gate.Clear();
+
+        Assert.False(gate.HasCode);
+    }
+
     [Fact]
     public void An_install_with_an_account_says_nothing_and_leaves_no_code()
     {

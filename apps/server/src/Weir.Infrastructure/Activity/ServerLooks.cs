@@ -18,7 +18,11 @@ public sealed class ServerLooks
     private ServerLookTimes _times = new(null, null);
     private long _version;
 
-    public ServerLooks(TimeProvider time) => _time = time ?? throw new ArgumentNullException(nameof(time));
+    public ServerLooks(TimeProvider time)
+    {
+        ArgumentNullException.ThrowIfNull(time);
+        _time = time;
+    }
 
     /// <summary>The times as they stand.</summary>
     public ServerLookTimes Latest

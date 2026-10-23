@@ -19,9 +19,12 @@ public sealed partial class OutputFolderCleanup
 
     public OutputFolderCleanup(IPostSuccessCleanupData data, TimeProvider time, ILogger logger, int movieMinAgeSeconds, int tvMinAgeSeconds)
     {
-        _data = data ?? throw new ArgumentNullException(nameof(data));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _data = data;
+        _time = time;
+        _logger = logger;
         _movieMinAgeSeconds = movieMinAgeSeconds;
         _tvMinAgeSeconds = tvMinAgeSeconds;
     }

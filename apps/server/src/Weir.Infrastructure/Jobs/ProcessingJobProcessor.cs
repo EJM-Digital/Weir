@@ -48,13 +48,20 @@ public sealed class ProcessingJobProcessor
         ProcessPulse? pulse = null)
     {
         _pulse = pulse;
-        _queue = queue ?? throw new ArgumentNullException(nameof(queue));
-        _handlers = handlers ?? throw new ArgumentNullException(nameof(handlers));
-        _activity = activity ?? throw new ArgumentNullException(nameof(activity));
-        _failureRecorder = failureRecorder ?? throw new ArgumentNullException(nameof(failureRecorder));
-        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(queue);
+        ArgumentNullException.ThrowIfNull(handlers);
+        ArgumentNullException.ThrowIfNull(activity);
+        ArgumentNullException.ThrowIfNull(failureRecorder);
+        ArgumentNullException.ThrowIfNull(notifications);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _queue = queue;
+        _handlers = handlers;
+        _activity = activity;
+        _failureRecorder = failureRecorder;
+        _notifications = notifications;
+        _time = time;
+        _logger = logger;
         _tasks = tasks;
         _changes = changes;
         Kinds = ClaimableKinds.For(handlers);

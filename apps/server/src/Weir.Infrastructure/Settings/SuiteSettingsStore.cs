@@ -45,7 +45,8 @@ public sealed class SuiteSettingsStore
             "activity_retention_days, configuration_backup_enabled, configuration_backup_interval_hours, configuration_backup_preferred_time, " +
             "configuration_backup_last_run_at) VALUES (1, $wizard, 'UTC', 30, 90, 0, 24, '02:00', NULL)",
             ("$wizard", SuiteSettingsRules.DefaultSetupWizardState(users))).ConfigureAwait(false);
-        return await GetAsync(uow).ConfigureAwait(false) ?? throw new InvalidOperationException("suite_settings row was not created.");
+        // The row was inserted just above, in the same transaction.
+        return (await GetAsync(uow).ConfigureAwait(false))!;
     }
 
     /// <summary>

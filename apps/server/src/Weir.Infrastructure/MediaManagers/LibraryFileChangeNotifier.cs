@@ -57,10 +57,14 @@ public sealed class LibraryFileChangeNotifier : ILibraryFileChangeNotifier
         ILogger<LibraryFileChangeNotifier>? logger = null,
         Func<int, CancellationToken, Task>? delay = null)
     {
-        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _activity = activity ?? throw new ArgumentNullException(nameof(activity));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
+        ArgumentNullException.ThrowIfNull(connections);
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(activity);
+        ArgumentNullException.ThrowIfNull(time);
+        _connections = connections;
+        _database = database;
+        _activity = activity;
+        _time = time;
         _logger = (ILogger?)logger ?? NullLogger.Instance;
         _delay = delay ?? DefaultDelayAsync;
     }

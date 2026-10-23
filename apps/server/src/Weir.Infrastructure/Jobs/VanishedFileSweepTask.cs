@@ -34,11 +34,16 @@ public sealed partial class VanishedFileSweepTask : IPeriodicTask
     public VanishedFileSweepTask(SqliteDatabase database, WeirOptions options, LibraryStore libraries, TimeProvider time, ILogger<VanishedFileSweepTask> logger, DataChangePublisher? changes = null, ProcessingJobStore? jobs = null, IFileSystem? fileSystem = null)
     {
         _fs = fileSystem ?? PhysicalFileSystem.Instance;
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _database = database;
+        _options = options;
+        _libraries = libraries;
+        _time = time;
+        _logger = logger;
         _changes = changes;
         _jobs = jobs;
     }

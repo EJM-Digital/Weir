@@ -26,9 +26,12 @@ public sealed class LibrarySuggestions
 
     public LibrarySuggestions(ManagerSetupCheck managerSetup, DownloadClientSuggestions downloadClients, LibraryStore libraries)
     {
-        _managerSetup = managerSetup ?? throw new ArgumentNullException(nameof(managerSetup));
-        _downloadClients = downloadClients ?? throw new ArgumentNullException(nameof(downloadClients));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
+        ArgumentNullException.ThrowIfNull(managerSetup);
+        ArgumentNullException.ThrowIfNull(downloadClients);
+        ArgumentNullException.ThrowIfNull(libraries);
+        _managerSetup = managerSetup;
+        _downloadClients = downloadClients;
+        _libraries = libraries;
     }
 
     public async Task<LibrarySuggestionSet> SuggestAsync(UnitOfWork uow, CancellationToken cancellationToken = default)

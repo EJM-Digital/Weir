@@ -21,10 +21,14 @@ public sealed class MediaManagerConnectionDependents
     public MediaManagerConnectionDependents(
         MediaManagerConnectionStore connections, LibraryStore libraries, HandoffLedgerStore ledger, HandoffCompletionReporter reporter)
     {
-        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _ledger = ledger ?? throw new ArgumentNullException(nameof(ledger));
-        _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
+        ArgumentNullException.ThrowIfNull(connections);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(ledger);
+        ArgumentNullException.ThrowIfNull(reporter);
+        _connections = connections;
+        _libraries = libraries;
+        _ledger = ledger;
+        _reporter = reporter;
     }
 
     /// <summary>What stands in the way of removing <paramref name="connection"/>, as it is right now. Call it inside the write that removes the connection.</summary>

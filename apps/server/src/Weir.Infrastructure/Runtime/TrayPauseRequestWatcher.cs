@@ -48,11 +48,16 @@ public sealed class TrayPauseRequestWatcher : BackgroundService
 
     public TrayPauseRequestWatcher(WeirOptions options, SqliteDatabase database, SuitePauseService pause, TimeProvider time, ILogger<TrayPauseRequestWatcher> logger)
     {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _pause = pause ?? throw new ArgumentNullException(nameof(pause));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(pause);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _options = options;
+        _database = database;
+        _pause = pause;
+        _time = time;
+        _logger = logger;
     }
 
     /// <summary>Starts listening before the server starts answering, so a request made from then on is never missed.</summary>

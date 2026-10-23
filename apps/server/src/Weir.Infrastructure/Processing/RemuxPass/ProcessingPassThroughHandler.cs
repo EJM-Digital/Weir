@@ -44,12 +44,18 @@ public sealed class ProcessingPassThroughHandler : IJobHandler
         HandoffCompletionReporter? reporter = null,
         IOutputOwnership? ownership = null)
     {
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _handback = handback ?? throw new ArgumentNullException(nameof(handback));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(handback);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(jobs);
+        _database = database;
+        _time = time;
+        _logger = logger;
+        _handback = handback;
+        _libraries = libraries;
+        _jobs = jobs;
         _reporter = reporter;
         _ownership = ownership;
     }

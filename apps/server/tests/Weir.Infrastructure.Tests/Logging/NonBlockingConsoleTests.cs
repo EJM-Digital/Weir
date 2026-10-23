@@ -116,6 +116,17 @@ public sealed class NonBlockingConsoleTests
         Assert.Contains("WARN", stream.Text, StringComparison.Ordinal);
         Assert.True(logger.IsEnabled(LogLevel.Error));
         Assert.False(logger.IsEnabled(LogLevel.Trace));
+        Assert.False(logger.IsEnabled(LogLevel.None));
+    }
+
+    [Fact]
+    public void A_console_that_cannot_be_opened_is_the_same_to_the_caller_as_no_console_at_all()
+    {
+        using var console = new NonBlockingConsole(() => throw new IOException("no console"), () => Encoding.UTF8);
+
+        console.WriteLine("goes nowhere");
+
+        Assert.True(console.Drain(TimeSpan.FromSeconds(20)), "A line to a console that never opened was never given up on");
     }
 
     [Fact(Timeout = TestTimeoutMs)]

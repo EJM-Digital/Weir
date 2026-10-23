@@ -79,14 +79,22 @@ public sealed partial class LibraryModeScheduleTask : IPeriodicTask
         PeriodicTaskRegistry? tasks = null)
     {
         _tasks = tasks;
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
-        _scans = scans ?? throw new ArgumentNullException(nameof(scans));
-        _librarySettings = librarySettings ?? throw new ArgumentNullException(nameof(librarySettings));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _suiteSettings = suiteSettings ?? throw new ArgumentNullException(nameof(suiteSettings));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(jobs);
+        ArgumentNullException.ThrowIfNull(scans);
+        ArgumentNullException.ThrowIfNull(librarySettings);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(suiteSettings);
+        ArgumentNullException.ThrowIfNull(logger);
+        _database = database;
+        _jobs = jobs;
+        _scans = scans;
+        _librarySettings = librarySettings;
+        _libraries = libraries;
+        _time = time;
+        _suiteSettings = suiteSettings;
+        _logger = logger;
     }
 
     public string Name => "processing-library-mode-schedule";

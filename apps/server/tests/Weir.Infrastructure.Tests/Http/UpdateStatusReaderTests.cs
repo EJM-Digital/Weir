@@ -4,6 +4,7 @@ using Weir.Core.Updates;
 using Weir.Infrastructure.Http;
 using Weir.Infrastructure.Runtime;
 using Weir.Infrastructure.Settings;
+using Weir.Infrastructure.Sqlite;
 using Weir.Infrastructure.Tests.Platform;
 
 namespace Weir.Infrastructure.Tests.Http;
@@ -133,6 +134,40 @@ public sealed class UpdateStatusReaderTests : IDisposable
 
         Assert.Equal("Could not check for updates right now. Weir could not reach GitHub.", TextOf(status, "summary"));
         Assert.Contains("No such host is known.", Assert.Single(_log.At(LogLevel.Information)), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task An_answer_Weir_cannot_read_says_so()
+    {
+        _failure = new FormatException("not a release");
+
+        var status = await _reader.ReadAsync(CancellationToken.None);
+
+        Assert.Equal("Could not check for updates right now. GitHub sent an answer Weir could not read.", TextOf(status, "summary"));
+    }
+
+    [Fact]
+    public async Task A_catalog_with_no_release_yet_reads_as_nothing_published()
+    {
+        _failure = new ReleaseFetchException(404);
+
+        var status = await _reader.ReadAsync(CancellationToken.None);
+
+        Assert.Equal("not_published", TextOf(status, "status"));
+    }
+
+    [Fact]
+    public async Task A_limit_is_still_reported_in_UTC_when_the_time_zone_setting_cannot_be_read()
+    {
+        using var temp = new TempDirectory();
+        var unreadable = new SqliteDatabase(temp.Join("missing-folder", "weir.sqlite3"));
+        var reader = new UpdateStatusReader(
+            new FailingCatalog(this), _fixture.Options, unreadable, new SuiteSettingsStore(_fixture.Users), new UpdateFiles(_fixture.Options), _log);
+        _failure = new ReleaseFetchException(403, new ReleaseRateLimit(LimitLifts, null));
+
+        var status = await reader.ReadAsync(CancellationToken.None);
+
+        Assert.EndsWith("Weir will check again at 11:35 pm.", TextOf(status, "summary"), StringComparison.Ordinal);
     }
 
     private sealed class FailingCatalog(UpdateStatusReaderTests owner) : IReleaseCatalogClient

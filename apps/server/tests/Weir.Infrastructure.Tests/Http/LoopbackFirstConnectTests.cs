@@ -106,6 +106,21 @@ public sealed class LoopbackFirstConnectTests : IDisposable
     }
 
     [Fact]
+    public async Task An_address_literal_nobody_listens_on_is_a_failed_request_not_a_leaked_socket()
+    {
+        using var handler = new SocketsHttpHandler { ConnectCallback = LoopbackFirstConnect.ConnectAsync };
+        using var client = new HttpClient(handler, disposeHandler: false);
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAsync(new Uri($"http://127.0.0.1:{FreePort()}/")));
+    }
+
+    [Fact]
+    public async Task Connecting_to_no_address_at_all_is_refused()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(async () => await LoopbackFirstConnect.ConnectAsync([], Port, CancellationToken.None));
+    }
+
+    [Fact]
     public async Task A_cancelled_connect_throws_cancellation()
     {
         using var cancelled = new CancellationTokenSource();

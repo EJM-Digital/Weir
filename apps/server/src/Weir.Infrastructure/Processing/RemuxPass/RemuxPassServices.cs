@@ -29,11 +29,16 @@ public sealed class RemuxPassFailureRecorder : IUnhandledJobFailureRecorder
     public RemuxPassFailureRecorder(
         SqliteDatabase database, IFailurePolicy policy, LibraryStore libraries, TimeProvider time, ILogger<RemuxPassFailureRecorder> logger)
     {
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _policy = policy ?? throw new ArgumentNullException(nameof(policy));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(policy);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _database = database;
+        _policy = policy;
+        _libraries = libraries;
+        _time = time;
+        _logger = logger;
     }
 
     public Task<bool?> RecordAsync(UnhandledJobFailure failure, CancellationToken cancellationToken)

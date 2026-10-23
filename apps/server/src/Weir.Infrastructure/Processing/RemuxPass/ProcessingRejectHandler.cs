@@ -59,17 +59,28 @@ public sealed partial class ProcessingRejectHandler : IJobHandler
         TimeProvider time,
         ILogger<ProcessingRejectHandler> logger)
     {
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _ports = ports ?? throw new ArgumentNullException(nameof(ports));
-        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
-        _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
-        _routes = routes ?? throw new ArgumentNullException(nameof(routes));
-        _ledger = ledger ?? throw new ArgumentNullException(nameof(ledger));
-        _jobs = jobs ?? throw new ArgumentNullException(nameof(jobs));
-        _pacing = pacing ?? throw new ArgumentNullException(nameof(pacing));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(ports);
+        ArgumentNullException.ThrowIfNull(connections);
+        ArgumentNullException.ThrowIfNull(reporter);
+        ArgumentNullException.ThrowIfNull(routes);
+        ArgumentNullException.ThrowIfNull(ledger);
+        ArgumentNullException.ThrowIfNull(jobs);
+        ArgumentNullException.ThrowIfNull(pacing);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _database = database;
+        _ports = ports;
+        _connections = connections;
+        _reporter = reporter;
+        _routes = routes;
+        _ledger = ledger;
+        _jobs = jobs;
+        _pacing = pacing;
+        _libraries = libraries;
+        _time = time;
+        _logger = logger;
     }
 
     public string JobKind => IntakeRules.RejectJobKind;

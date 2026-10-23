@@ -23,11 +23,16 @@ public sealed class FolderChecksTask : IPeriodicTask
     public FolderChecksTask(
         SqliteDatabase database, LibraryStore libraries, LibraryFolderChainCheck check, ActivityStreamClients clients, ServerLooks looks)
     {
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
-        _check = check ?? throw new ArgumentNullException(nameof(check));
-        _clients = clients ?? throw new ArgumentNullException(nameof(clients));
-        _looks = looks ?? throw new ArgumentNullException(nameof(looks));
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(libraries);
+        ArgumentNullException.ThrowIfNull(check);
+        ArgumentNullException.ThrowIfNull(clients);
+        ArgumentNullException.ThrowIfNull(looks);
+        _database = database;
+        _libraries = libraries;
+        _check = check;
+        _clients = clients;
+        _looks = looks;
     }
 
     public string Name => "folder-checks";

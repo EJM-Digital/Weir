@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using Weir.Infrastructure.IO;
 
 namespace Weir.Infrastructure.Logging;
 
@@ -18,14 +19,16 @@ public sealed class WeirLogFile : IDisposable
     private readonly Lock _lock = new();
     private readonly ReaderWriterLockSlim _replacing = new();
     private readonly TimeProvider _time;
+    private readonly IFileSystem _files;
     private FileStream? _stream;
     private bool _disposed;
 
-    public WeirLogFile(string path, TimeProvider time)
+    public WeirLogFile(string path, TimeProvider time, IFileSystem? files = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
         Path = System.IO.Path.GetFullPath(path);
         _time = time;
+        _files = files ?? PhysicalFileSystem.Instance;
         var directory = System.IO.Path.GetDirectoryName(Path);
         if (!string.IsNullOrEmpty(directory))
         {
@@ -171,7 +174,7 @@ public sealed class WeirLogFile : IDisposable
                         }
 
                         rewritten.Dispose();
-                        File.Move(temporary, Path, overwrite: true);
+                        _files.MoveFile(temporary, Path, overwrite: true);
                     }
                     finally
                     {
@@ -194,7 +197,7 @@ public sealed class WeirLogFile : IDisposable
             {
                 try
                 {
-                    File.Delete(temporary);
+                    _files.DeleteFile(temporary);
                 }
                 catch (Exception cleanup) when (cleanup is IOException or UnauthorizedAccessException)
                 {
@@ -312,7 +315,7 @@ public sealed class WeirLogFile : IDisposable
             {
                 try
                 {
-                    File.Delete(destinationPath);
+                    _files.DeleteFile(destinationPath);
                 }
                 catch (Exception cleanup) when (cleanup is IOException or UnauthorizedAccessException)
                 {

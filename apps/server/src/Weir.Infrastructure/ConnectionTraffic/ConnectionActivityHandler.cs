@@ -15,8 +15,10 @@ public sealed class ConnectionActivityHandler : DelegatingHandler
     public ConnectionActivityHandler(HttpMessageHandler inner, ConnectionActivityHub hub, TimeProvider time)
         : base(inner)
     {
-        _hub = hub ?? throw new ArgumentNullException(nameof(hub));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
+        ArgumentNullException.ThrowIfNull(hub);
+        ArgumentNullException.ThrowIfNull(time);
+        _hub = hub;
+        _time = time;
     }
 
     /// <summary>

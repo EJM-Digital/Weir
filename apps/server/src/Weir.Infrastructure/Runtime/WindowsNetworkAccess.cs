@@ -29,10 +29,14 @@ public sealed class WindowsNetworkAccess : INetworkAccess
 
     public WindowsNetworkAccess(ServerListenOptions listen, LanAccessFile choice, IServerFirewall firewall, ILanAddresses addresses)
     {
-        _listen = listen ?? throw new ArgumentNullException(nameof(listen));
-        _choice = choice ?? throw new ArgumentNullException(nameof(choice));
-        _firewall = firewall ?? throw new ArgumentNullException(nameof(firewall));
-        _addresses = addresses ?? throw new ArgumentNullException(nameof(addresses));
+        ArgumentNullException.ThrowIfNull(listen);
+        ArgumentNullException.ThrowIfNull(choice);
+        ArgumentNullException.ThrowIfNull(firewall);
+        ArgumentNullException.ThrowIfNull(addresses);
+        _listen = listen;
+        _choice = choice;
+        _firewall = firewall;
+        _addresses = addresses;
     }
 
     public string? NotChangeableReason => null;

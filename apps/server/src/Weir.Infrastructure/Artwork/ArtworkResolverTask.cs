@@ -23,11 +23,16 @@ public sealed class ArtworkResolverTask : IPeriodicTask
     public ArtworkResolverTask(
         ArtworkGatewayClient gateway, ArtworkDiscovery discovery, ArtworkResolver resolver, ArtworkPruner pruner, TimeProvider time)
     {
-        _pruner = pruner ?? throw new ArgumentNullException(nameof(pruner));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
-        _discovery = discovery ?? throw new ArgumentNullException(nameof(discovery));
-        _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
+        ArgumentNullException.ThrowIfNull(pruner);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(gateway);
+        ArgumentNullException.ThrowIfNull(discovery);
+        ArgumentNullException.ThrowIfNull(resolver);
+        _pruner = pruner;
+        _time = time;
+        _gateway = gateway;
+        _discovery = discovery;
+        _resolver = resolver;
     }
 
     public string Name => "artwork-resolver";

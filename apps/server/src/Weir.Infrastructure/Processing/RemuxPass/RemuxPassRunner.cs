@@ -51,14 +51,22 @@ public sealed partial class RemuxPassRunner
         RuntimeMetricsStore? metrics = null,
         IOutputOwnership? ownership = null)
     {
-        _tools = tools ?? throw new ArgumentNullException(nameof(tools));
-        _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
-        _facts = facts ?? throw new ArgumentNullException(nameof(facts));
-        _tvSeasonCleanup = tvSeasonCleanup ?? throw new ArgumentNullException(nameof(tvSeasonCleanup));
-        _originalLanguage = originalLanguage ?? throw new ArgumentNullException(nameof(originalLanguage));
-        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(tools);
+        ArgumentNullException.ThrowIfNull(resolver);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(tvSeasonCleanup);
+        ArgumentNullException.ThrowIfNull(originalLanguage);
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _tools = tools;
+        _resolver = resolver;
+        _facts = facts;
+        _tvSeasonCleanup = tvSeasonCleanup;
+        _originalLanguage = originalLanguage;
+        _settings = settings;
+        _time = time;
+        _logger = logger;
         _metrics = metrics;
         _ownership = ownership;
         _outputCleanup = new OutputFolderCleanup(cleanupData, time, logger, settings.MovieOutputCleanupMinAgeSeconds, settings.TvOutputCleanupMinAgeSeconds);

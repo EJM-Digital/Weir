@@ -58,9 +58,12 @@ public sealed partial class HandoffLedgerStore
 
     public HandoffLedgerStore(TimeProvider time, HandoffTargetStore targets, FileStateStore files)
     {
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _targets = targets ?? throw new ArgumentNullException(nameof(targets));
-        _files = files ?? throw new ArgumentNullException(nameof(files));
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(targets);
+        ArgumentNullException.ThrowIfNull(files);
+        _time = time;
+        _targets = targets;
+        _files = files;
     }
 
     /// <summary>The ledger row for a manager's hand-off id, or null.</summary>

@@ -46,14 +46,22 @@ public sealed partial class SystemStatsSampler : BackgroundService
         int slotsBeforeSettingsRead,
         ILogger<SystemStatsSampler> logger)
     {
-        _collector = collector ?? throw new ArgumentNullException(nameof(collector));
-        _store = store ?? throw new ArgumentNullException(nameof(store));
-        _machineFacts = machineFacts ?? throw new ArgumentNullException(nameof(machineFacts));
-        _drives = drives ?? throw new ArgumentNullException(nameof(drives));
-        _work = work ?? throw new ArgumentNullException(nameof(work));
-        _clients = clients ?? throw new ArgumentNullException(nameof(clients));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(collector);
+        ArgumentNullException.ThrowIfNull(store);
+        ArgumentNullException.ThrowIfNull(machineFacts);
+        ArgumentNullException.ThrowIfNull(drives);
+        ArgumentNullException.ThrowIfNull(work);
+        ArgumentNullException.ThrowIfNull(clients);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _collector = collector;
+        _store = store;
+        _machineFacts = machineFacts;
+        _drives = drives;
+        _work = work;
+        _clients = clients;
+        _time = time;
+        _logger = logger;
         _setup = new WorkSetup([], slotsBeforeSettingsRead);
     }
 

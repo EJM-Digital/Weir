@@ -39,7 +39,8 @@ public sealed partial class AuthService : IDisposable
         _options = options;
         _time = time;
         _database = database;
-        _users = users ?? throw new ArgumentNullException(nameof(users));
+        ArgumentNullException.ThrowIfNull(users);
+        _users = users;
         _logger = loggerFactory.CreateLogger("weir.platform.auth.service");
     }
 

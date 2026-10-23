@@ -30,13 +30,20 @@ public sealed class ArtworkResolver : IDisposable
         TimeProvider time,
         ILogger<ArtworkResolver> logger)
     {
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _lookups = lookups ?? throw new ArgumentNullException(nameof(lookups));
-        _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
-        _posterFiles = posterFiles ?? throw new ArgumentNullException(nameof(posterFiles));
-        _limiter = limiter ?? throw new ArgumentNullException(nameof(limiter));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(lookups);
+        ArgumentNullException.ThrowIfNull(gateway);
+        ArgumentNullException.ThrowIfNull(posterFiles);
+        ArgumentNullException.ThrowIfNull(limiter);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
+        _database = database;
+        _lookups = lookups;
+        _gateway = gateway;
+        _posterFiles = posterFiles;
+        _limiter = limiter;
+        _time = time;
+        _logger = logger;
     }
 
     public void Dispose() => _searchGate.Dispose();

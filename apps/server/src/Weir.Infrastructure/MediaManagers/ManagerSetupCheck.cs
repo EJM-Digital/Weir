@@ -31,11 +31,16 @@ public sealed partial class ManagerSetupCheck
         IFolderProbe folders,
         ILogger<ManagerSetupCheck> logger)
     {
-        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
-        _connectionStore = connectionStore ?? throw new ArgumentNullException(nameof(connectionStore));
-        _handlers = handlers ?? throw new ArgumentNullException(nameof(handlers));
-        _folders = folders ?? throw new ArgumentNullException(nameof(folders));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(connections);
+        ArgumentNullException.ThrowIfNull(connectionStore);
+        ArgumentNullException.ThrowIfNull(handlers);
+        ArgumentNullException.ThrowIfNull(folders);
+        ArgumentNullException.ThrowIfNull(logger);
+        _connections = connections;
+        _connectionStore = connectionStore;
+        _handlers = handlers;
+        _folders = folders;
+        _logger = logger;
     }
 
     /// <summary>The plain sentence for a manager that did not answer a check; the technical reason goes to the log only.</summary>
