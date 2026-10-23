@@ -42,7 +42,7 @@ export function webUnusedExports(repo) {
     });
   } catch (err) {
     // Knip exits non-zero when it reports findings; the findings are on stdout.
-    raw = err.stdout ?? "";
+    raw = err.stdout;
     if (!raw) throw err;
   }
   // One finding per unreferenced file, export or type: a file is keyed by its path, an export or type by

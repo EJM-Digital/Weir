@@ -16,7 +16,8 @@ import { downloadPinned } from "./pinned-download.mjs";
 
 export const tools = ["ffmpeg", "ffprobe"];
 
-function unpackWithTar(archive, destination) {
+/** Extracts ffmpeg and ffprobe from a GNU tar archive (`--wildcards` is GNU's) into `destination`, flat; returns tar's exit status. */
+export function unpackWithTar(archive, destination) {
   return spawnSync("tar", ["-xJf", archive, "-C", destination, "--strip-components=2", "--wildcards", ...tools.map((tool) => `*/bin/${tool}`)], {
     stdio: "inherit",
   }).status;

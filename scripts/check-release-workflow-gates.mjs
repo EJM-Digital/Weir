@@ -46,8 +46,8 @@ const IMAGE_ONLY = [
 // Provenance needs the OIDC token and the right to record an attestation, in whichever publish job attests.
 const ATTESTATION = ["uses: actions/attest-build-provenance@", "attestations: write", "id-token: write"];
 
-export function loadWorkflows() {
-  const read = (name) => readFileSync(resolve(workflowsDir, name), "utf8").replace(/\r\n/g, "\n");
+export function loadWorkflows(folder = workflowsDir) {
+  const read = (name) => readFileSync(resolve(folder, name), "utf8").replace(/\r\n/g, "\n");
   return {
     release: read("release.yml"),
     ci: read("ci.yml"),
@@ -77,9 +77,8 @@ function requireOrder(source, markers, file) {
 }
 
 function jobIds(source) {
-  const jobsStart = source.indexOf("\njobs:\n");
-  if (jobsStart < 0) throw new Error("A workflow has no jobs: section.");
-  return [...source.slice(jobsStart).matchAll(/\n {2}([a-zA-Z0-9_-]+):\n/g)].map((match) => match[1]);
+  // Without a jobs: section the checks before each call fail (the release's workflow-level text then holds its jobs, and ci.yml's required jobs are missing).
+  return [...source.slice(source.indexOf("\njobs:\n")).matchAll(/\n {2}([a-zA-Z0-9_-]+):\n/g)].map((match) => match[1]);
 }
 
 function requireJob(source, jobName, file) {
@@ -514,8 +513,10 @@ export const SUCCESS_MESSAGE =
   "commit or one with the same shipped files, and so does each mutation target's score on that commit or one where the target's own files, tests and setup are unchanged, mutation never starts on a pull request, and ci-passed judges every CI job and still carries the release's evidence.";
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  // --workflows <folder> judges another folder's copies of the workflows; the tests use it.
+  const workflowsArgument = process.argv.indexOf("--workflows");
   try {
-    checkReleaseGates(loadWorkflows());
+    checkReleaseGates(loadWorkflows(workflowsArgument >= 0 ? process.argv[workflowsArgument + 1] : undefined));
   } catch (error) {
     console.error(`::error::${error.message}`);
     process.exit(1);

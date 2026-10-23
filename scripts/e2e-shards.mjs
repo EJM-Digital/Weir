@@ -13,7 +13,9 @@
 //   node scripts/e2e-shards.mjs --summary       the classes and test count of every shard, for the log
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
+
+import { rootOf } from "./repository-root.mjs";
 
 const PROJECT = "apps/server/tests/Weir.E2E.Tests";
 
@@ -83,7 +85,7 @@ function sourceFiles(folder) {
 }
 
 function main(argv) {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const root = rootOf(import.meta.url, argv);
   const project = path.join(root, PROJECT);
   const classes = allClasses(sourceFiles(project).map((file) => [path.relative(root, file), readFileSync(file, "utf8")]));
   if (classes.length === 0) throw new Error(`No browser test classes found under ${PROJECT}.`);

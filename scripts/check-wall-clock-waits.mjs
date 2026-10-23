@@ -20,9 +20,11 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+import { rootOf } from "./repository-root.mjs";
+
+const root = rootOf(import.meta.url);
 
 // Which files are looked at, and for what. A new test project is added here.
 const WATCHED = [

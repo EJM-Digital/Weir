@@ -9,7 +9,9 @@
 // Usage: node scripts/check-no-python.mjs
 import { execFileSync } from "node:child_process";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
+
+import { rootOf } from "./repository-root.mjs";
 
 const PYTHON_FILE = /\.(?:py|pyw|pyi|pyx)$/i;
 
@@ -18,7 +20,7 @@ export function pythonFiles(trackedFiles) {
 }
 
 function main() {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const root = rootOf(import.meta.url);
   const tracked = execFileSync("git", ["ls-files", "-z"], { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 })
     .split("\0")
     .filter(Boolean);

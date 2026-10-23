@@ -319,7 +319,7 @@ export function statisticsReport(register, inventory, t) {
   lines.push("### By severity", "", "| Severity | Rows | Reach their level | Gaps |", "| --- | ---: | ---: | ---: |");
   for (const s of SEVERITIES) lines.push(`| ${s} | ${t.bySeverity[s].rows} | ${t.bySeverity[s].proven} | ${t.bySeverity[s].gaps} |`);
   lines.push("", "### High rows by what they touch (these need `real`, except `none`, which needs `inproc`)", "", "| Touches | High rows | High gaps |", "| --- | ---: | ---: |");
-  for (const k of TOUCHES) lines.push(`| ${k} | ${t.highByTouches[k]?.rows ?? 0} | ${t.highByTouches[k]?.gaps ?? 0} |`);
+  for (const k of TOUCHES) lines.push(`| ${k} | ${t.highByTouches[k].rows} | ${t.highByTouches[k].gaps} |`);
   lines.push("", "### By best proof a row has", "", "| Best proof | Rows |", "| --- | ---: |");
   for (const l of LEVEL_NAMES) lines.push(`| ${l === "none" ? "none (a gap)" : l} | ${t.byLevel[l]} |`);
   lines.push("", `E2E proofs: **${t.e2e.proofs}**; unstubbed (can reach \`real\` for a screen behaviour) **${t.e2e.unstubbed}**; stubbed **${t.e2e.stubbed}**; not decidable statically, counted as stubbed **${t.e2e.undecided}**.`);
@@ -365,7 +365,7 @@ export function writeReport(root, file, register, inventory, t) {
 const STUB_KIND = { route: "API route", job: "job", service: "job", task: "job", setting: "setting", event: "event", webroute: "screen action", action: "screen action", tray: "tray", scenario: "install-update" };
 const STUB_AREA = { route: "api", job: "services", service: "services", task: "services", setting: "settings", event: "events", webroute: "web-routes", action: "web-routes", tray: "tray", scenario: "scenarios" };
 
-const stubFor = (item) => ({
+export const stubFor = (item) => ({
   id: `${STUB_AREA[item.kind]}.new.${item.key.split(":").slice(1).join("-").replace(/[^A-Za-z0-9]+/g, "-").toLowerCase()}`,
   area: STUB_AREA[item.kind],
   behaviour: `<one plain sentence about ${item.label ?? item.key}>`,

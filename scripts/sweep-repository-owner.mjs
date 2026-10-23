@@ -2,7 +2,7 @@
 // Moves Weir to another owner or name in one commit, once the repository has been transferred or renamed
 // (docs/archive/PLAN-ORG-MOVE.md):
 //
-//   node scripts/sweep-repository-owner.mjs --to <owner/name>
+//   node scripts/sweep-repository-owner.mjs --to <owner/name> [--root folder]   (--root: a checkout other than this one; the tests use it)
 //
 // It rewrites the places check-repository-owner.mjs lists, adds the old owner to that script's former owners, and
 // replaces the old owner in the text that cannot read a constant: documentation, the docs site, the compose file and the
@@ -10,11 +10,12 @@
 // Then run check-repository-owner.mjs: it names whatever is left.
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { PERSON_LINES, PLACES, isExcused, isText } from "./check-repository-owner.mjs";
 import { REPOSITORY } from "./repository.mjs";
+import { rootOf } from "./repository-root.mjs";
 
 const NODE_PLACE = "scripts/repository.mjs";
 const CHECK = "scripts/check-repository-owner.mjs";
@@ -79,7 +80,7 @@ function main(argv) {
     return;
   }
 
-  const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const root = rootOf(import.meta.url, argv);
   const rewrite = (path, change) => {
     const before = readFileSync(resolve(root, path), "utf8");
     const after = change(before);

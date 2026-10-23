@@ -18,9 +18,10 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { rootOf } from "./repository-root.mjs";
 import { compareSemver, parseSemver } from "./semver.mjs";
 
-const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
+const repositoryRoot = rootOf(import.meta.url);
 const recordedRoot = path.join(repositoryRoot, "apps", "server", "tests", "fixtures", "recorded");
 const buildsFile = path.join(recordedRoot, "weir-builds-recorded.json");
 const changelogFile = path.join(repositoryRoot, "CHANGELOG.md");

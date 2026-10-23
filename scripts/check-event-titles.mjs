@@ -8,7 +8,9 @@
 // Usage: node scripts/check-event-titles.mjs
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
+
+import { rootOf } from "./repository-root.mjs";
 
 const SERVER_SOURCES = [
   "apps/server/src/Weir.Core/Activity/ActivityEventTypes.cs",
@@ -32,7 +34,7 @@ export function untitled(eventTypes, titled) {
 }
 
 function main() {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const root = rootOf(import.meta.url);
   const eventTypes = SERVER_SOURCES.flatMap((file) => eventTypesIn(readFileSync(path.join(root, file), "utf8")));
   if (eventTypes.length === 0) {
     console.error("No event types were found in the server sources; this check's pattern is out of date.");
