@@ -27,6 +27,14 @@ const WINDOWS_SHARDS = {
   "windows-update": windowsUpdate,
 };
 
+/** The time a shard may take, from SCENARIO_SHARD_BUDGET_MINUTES for a job that has a limit of its own to stay inside; none when it is not set. */
+export function shardBudgetMs(env = process.env) {
+  const minutes = env.SCENARIO_SHARD_BUDGET_MINUTES;
+  if (minutes === undefined || minutes === "") return Infinity;
+  if (!/^[1-9]\d*$/.test(minutes)) throw new Error(`SCENARIO_SHARD_BUDGET_MINUTES must be a whole number of minutes, not "${minutes}".`);
+  return Number(minutes) * 60_000;
+}
+
 /** The ported scenarios of a Linux shard, run against the image in Compose; `collectFailed` says the recordings of what they showed could not be kept although they ran. */
 export async function runLinuxShard({ shard, ids, candidate, logFolder }) {
   const scratch = mkdtempSync(join(tmpdir(), "weir-scenarios-ci-"));
@@ -46,7 +54,7 @@ export async function runLinuxShard({ shard, ids, candidate, logFolder }) {
     if (account) await world.createAccount();
     if (beside) world.deluno = await beside.setUp(world, started);
     if (wantsBrowser) world.browser = browser = await Browser.launch(ORIGIN);
-    results = await runScenarios({ ids, registry: scenarios, world });
+    results = await runScenarios({ ids, registry: scenarios, world, budgetMs: shardBudgetMs() });
     if (beside?.collect) {
       const files = await beside.collect(world, logFolder);
       console.log(`Kept ${files.length} recording(s) of what passed between the applications:\n${files.join("\n")}`);
