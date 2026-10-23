@@ -18,18 +18,10 @@
 // --parts writes only coverage-final.json, still in the compiled form: what a CI shard uploads, to be merged with the others.
 // Otherwise it writes coverage-final.json, coverage-summary.json (what scripts/check-coverage-floors.mjs judges the `web`
 // floor on) and lcov.info to <folder>.
-import { createRequire } from "node:module";
+import { reporting as webReporting } from "./merge-web-coverage-reports.mjs";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-
-// The coverage libraries are the web app's packages, installed with `npm ci` in apps/web; they are loaded when a report is made, not for merging alone.
-const webRequire = createRequire(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "apps", "web", "package.json"));
-const lazy = (name) => () => webRequire(name);
-const libCoverage = lazy("istanbul-lib-coverage");
-const libReport = lazy("istanbul-lib-report");
-const libSourceMaps = lazy("istanbul-lib-source-maps");
-const reports = lazy("istanbul-reports");
+import { pathToFileURL } from "node:url";
 
 const slash = (text) => text.replace(/\\/g, "/");
 
@@ -152,22 +144,6 @@ export function readInputs(inputs, root) {
   return groups;
 }
 
-/** The instrumented build's coverage, with every position moved from the compiled code back to the source. */
-export async function toSource(instrumented, root) {
-  const absolute = path.resolve(root);
-  const map = libCoverage().createCoverageMap({});
-  for (const [key, coverage] of Object.entries(instrumented)) {
-    map.addFileCoverage({ ...coverage, path: path.join(absolute, key) });
-  }
-  const remapped = await libSourceMaps().createSourceMapStore().transformCoverage(map);
-  const sourced = {};
-  for (const file of remapped.files()) {
-    const key = relativeKey(file, root);
-    if (key !== undefined) sourced[key] = structuredClone({ ...remapped.fileCoverageFor(file).toJSON(), path: key });
-  }
-  return sourced;
-}
-
 /** Lays the sources' coverage over the native one's; returns the merged map and how many entries the native report did not have. */
 export function combine(native, sourced) {
   const merged = native;
@@ -181,21 +157,6 @@ export function combine(native, sourced) {
     }
   }
   return { merged, unmatched };
-}
-
-export function writeReports(merged, root, out) {
-  const absolute = path.resolve(root);
-  const map = libCoverage().createCoverageMap({});
-  for (const [key, coverage] of Object.entries(merged)) {
-    map.addFileCoverage({ ...coverage, path: path.join(absolute, key) });
-  }
-  mkdirSync(out, { recursive: true });
-  const context = libReport().createContext({ dir: out, coverageMap: map });
-  for (const name of ["json", "json-summary", "lcovonly"]) {
-    reports().create(name).execute(context);
-  }
-  const summary = map.getCoverageSummary();
-  return { lines: summary.lines, branches: summary.branches };
 }
 
 export function parseArguments(argv) {
@@ -221,7 +182,8 @@ export function parseArguments(argv) {
   return options;
 }
 
-export async function main(argv = process.argv.slice(2), log = console.log) {
+/** `reporting` is what needs the web app's coverage packages: moving the browser tests' coverage back to the source, and writing the reports. */
+export async function main(argv = process.argv.slice(2), log = console.log, reporting = webReporting) {
   const { out, root, inputs, parts } = parseArguments(argv);
   const { instrumented, native } = readInputs(inputs, root);
   if (Object.keys(instrumented).length + Object.keys(native).length === 0) {
@@ -235,8 +197,8 @@ export async function main(argv = process.argv.slice(2), log = console.log) {
     log(`Merged the browser tests' coverage of ${Object.keys(instrumented).length} files into ${out}.`);
     return;
   }
-  const { merged, unmatched } = combine(native, await toSource(instrumented, root));
-  const { lines, branches } = writeReports(merged, root, out);
+  const { merged, unmatched } = combine(native, await reporting.toSource(instrumented, root, relativeKey));
+  const { lines, branches } = reporting.writeReports(merged, root, out);
   log(`Merged web coverage: ${lines.pct}% of lines (${lines.covered}/${lines.total}), ${branches.pct}% of branches (${branches.covered}/${branches.total}).`);
   log(`${unmatched} statements, functions and branches from the browser tests did not match one in the unit tests' report and were added.`);
 }

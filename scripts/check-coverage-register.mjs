@@ -277,7 +277,7 @@ export function totals(register, index) {
       else e2e.undecided++;
     }
     const a = (byArea[row.area] ??= { ...blank(), high: 0, highGaps: 0, level: { none: 0, inproc: 0, real: 0 } });
-    for (const t of [a, bySeverity[row.severity], all]) {
+    for (const t of [a, bySeverity[row.severity] ?? blank(), all]) {
       t.rows++;
       if (gap) t.gaps++;
       else t.proven++;
@@ -377,8 +377,8 @@ const stubFor = (item) => ({
   covers: [item.key],
 });
 
-function openIssuesFromGh(root) {
-  const run = spawnSync("gh", ["issue", "list", "--label", "testing: coverage", "--state", "open", "--limit", "500", "--json", "number"], { cwd: root, encoding: "utf8" });
+export function openIssuesFromGh(root, spawn = spawnSync) {
+  const run = spawn("gh", ["issue", "list", "--label", "testing: coverage", "--state", "open", "--limit", "500", "--json", "number"], { cwd: root, encoding: "utf8" });
   if (run.status !== 0) throw new Error(`gh could not list the open coverage issues: ${(run.stderr || run.error?.message || "").trim()}`);
   return new Set(JSON.parse(run.stdout).map((i) => i.number));
 }
@@ -395,42 +395,42 @@ export function baseGapCount(root, ref, index) {
   }
 }
 
-async function main() {
-  const args = process.argv.slice(2);
+/** Checks the register for `args` and prints what it finds; returns the exit code. `askGh` lists the open coverage issues (a test replaces it). */
+export async function main(args = process.argv.slice(2), { env = process.env, log = console.log, error = console.error, askGh = openIssuesFromGh } = {}) {
   const valueOf = (flag) => (args.indexOf(flag) >= 0 ? args[args.indexOf(flag) + 1] : undefined);
   const root = resolve(valueOf("--root") ?? join(dirname(fileURLToPath(import.meta.url)), ".."));
   const strict = args.includes("--strict");
   const registerPath = join(root, REGISTER);
   if (!existsSync(registerPath)) {
-    console.error(`${REGISTER} is missing.`);
-    process.exit(1);
+    error(`${REGISTER} is missing.`);
+    return 1;
   }
   const register = JSON.parse(read(registerPath));
   const index = new TestIndex(root);
   const inventory = buildInventory(root);
   let openIssues = null;
   if (valueOf("--open-issues") !== undefined) openIssues = new Set(valueOf("--open-issues").split(",").filter(Boolean).map(Number));
-  else if (args.includes("--gh")) openIssues = openIssuesFromGh(root);
+  else if (args.includes("--gh")) openIssues = askGh(root);
   const baseRef = valueOf("--base");
   const baseGaps = baseRef ? baseGapCount(root, baseRef, index) : null;
   const result = evaluate({ register, inventory, index, openIssues, baseGaps });
   const t = result.totals;
 
   const reportValue = valueOf("--report");
-  if (args.includes("--report")) console.log(`wrote ${writeReport(root, reportValue && !reportValue.startsWith("--") ? reportValue : REPORT_FILE, register, inventory, t)}`);
+  if (args.includes("--report")) log(`wrote ${writeReport(root, reportValue && !reportValue.startsWith("--") ? reportValue : REPORT_FILE, register, inventory, t)}`);
 
   if (args.includes("--stubs")) {
-    console.log(JSON.stringify(result.unmapped.map(stubFor), null, 2));
-    return;
+    log(JSON.stringify(result.unmapped.map(stubFor), null, 2));
+    return 0;
   }
   if (args.includes("--json")) {
-    console.log(JSON.stringify({ rows: t.all, bySeverity: t.bySeverity, highByTouches: t.highByTouches, e2e: t.e2e, realFs: t.realFs, container: t.container, byLevel: t.byLevel, byArea: t.byArea, highGaps: t.highGaps, untracked: t.untracked.length, inventory: countsOf(inventory) }, null, 1));
-    return;
+    log(JSON.stringify({ rows: t.all, bySeverity: t.bySeverity, highByTouches: t.highByTouches, e2e: t.e2e, realFs: t.realFs, container: t.container, byLevel: t.byLevel, byArea: t.byArea, highGaps: t.highGaps, untracked: t.untracked.length, inventory: countsOf(inventory) }, null, 1));
+    return 0;
   }
   if (args.includes("--list-gaps")) {
     const order = { high: 0, medium: 1, low: 2 };
-    for (const g of [...t.gaps].sort((a, b) => order[a.severity] - order[b.severity] || a.id.localeCompare(b.id))) console.log(`${g.severity.padEnd(6)} ${g.touches.padEnd(9)} ${g.issue ? `#${g.issue}`.padEnd(6) : "-".padEnd(6)} ${g.id}  ${g.behaviour.slice(0, 100)}`);
-    return;
+    for (const g of [...t.gaps].sort((a, b) => order[a.severity] - order[b.severity] || a.id.localeCompare(b.id))) log(`${g.severity.padEnd(6)} ${g.touches.padEnd(9)} ${g.issue ? `#${g.issue}`.padEnd(6) : "-".padEnd(6)} ${g.id}  ${g.behaviour.slice(0, 100)}`);
+    return 0;
   }
 
   const shown = (list, f, n = 12) => list.slice(0, n).map(f).join("\n    ") + (list.length > n ? `\n    ... and ${list.length - n} more` : "");
@@ -459,13 +459,14 @@ async function main() {
   }
   if (strict && t.gaps.length) fail.push(`${levelLine} (--strict)`);
 
-  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, jobSummary(register, inventory, t, result.gapNotes));
-  console.log(lines.join("\n"));
+  if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, jobSummary(register, inventory, t, result.gapNotes));
+  log(lines.join("\n"));
   if (fail.length) {
-    console.error(`\nCoverage register check failed:\n  ${fail.join("\n  ")}`);
-    process.exit(1);
+    error(`\nCoverage register check failed:\n  ${fail.join("\n  ")}`);
+    return 1;
   }
-  if (t.gaps.length) console.log("  (gaps do not fail yet; node scripts/check-coverage-register.mjs --strict fails on them)");
+  if (t.gaps.length) log("  (gaps do not fail yet; node scripts/check-coverage-register.mjs --strict fails on them)");
+  return 0;
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) await main();
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) process.exitCode = await main();

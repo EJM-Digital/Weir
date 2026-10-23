@@ -148,6 +148,45 @@ test("inputs that hold nothing under the web app are an error, not an empty repo
   });
 });
 
+test("a function and a branch that only the source report knows are added, with nothing run in them yet", () => {
+  const target = file({ statements: [at(2, 2)] });
+  const source = file({ statements: [at(2, 2)], functionAt: at(20, 0, 25, 1), ifArms: [at(21, 2), at(23, 2)], counts: { f: 2, b: [1, 4] } });
+  source.branchMap[0].loc = at(20, 2, 24, 3);
+
+  assert.equal(mergeFile(target, source, EXACT), 2);
+
+  assert.deepEqual(target.f, { 0: 0, 1: 2 });
+  assert.deepEqual(target.b, { 0: [0, 0], 1: [1, 4] });
+});
+
+test("the merged map is handed to the reporting and its figures are logged", async () => {
+  await withFolder(async ({ root, put }) => {
+    put("tests/native.json", { "/work/apps/web/src/a.ts": file({ statements: [at(2, 2)], counts: { s: [1] } }) });
+    const seen = {};
+    const reporting = {
+      toSource: async (instrumentedMap, rootFolder, keyOf) => {
+        seen.instrumented = Object.keys(instrumentedMap);
+        seen.key = keyOf("/work/apps/web/src/b.ts", rootFolder);
+        return { "src/b.ts": file({ statements: [at(3, 3)] }) };
+      },
+      writeReports: (merged, rootFolder, out) => {
+        seen.merged = Object.keys(merged);
+        seen.out = out;
+        return { lines: { pct: 50, covered: 1, total: 2 }, branches: { pct: 0, covered: 0, total: 2 } };
+      },
+    };
+    const lines = [];
+
+    await main(["--out", "o", "--root", "apps/web", path.join(root, "tests")], (line) => lines.push(line), reporting);
+
+    assert.deepEqual(seen, { instrumented: [], key: "src/b.ts", merged: ["src/a.ts", "src/b.ts"], out: "o" });
+    assert.deepEqual(lines, [
+      "Merged web coverage: 50% of lines (1/2), 0% of branches (0/2).",
+      "3 statements, functions and branches from the browser tests did not match one in the unit tests' report and were added.",
+    ]);
+  });
+});
+
 test("run as a command it says what is wrong and exits 1", () => {
   const result = spawnSync(process.execPath, [fileURLToPath(new URL("./merge-web-coverage.mjs", import.meta.url))], { encoding: "utf8" });
   assert.equal(result.status, 1);
