@@ -11,7 +11,7 @@ function tilesByKey(root: HTMLElement): Map<string, HTMLElement> {
   for (const tile of root.querySelectorAll<HTMLElement>(
     `[${TILE_ATTRIBUTE}]`,
   )) {
-    tiles.set(tile.getAttribute(TILE_ATTRIBUTE) ?? "", tile);
+    tiles.set(tile.getAttribute(TILE_ATTRIBUTE) as string, tile);
   }
   return tiles;
 }

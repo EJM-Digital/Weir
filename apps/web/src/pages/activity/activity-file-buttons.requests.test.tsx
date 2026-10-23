@@ -8,7 +8,10 @@ import {
   savedFields,
   type StubbedApi,
 } from "../../test/stub-weir-api";
-import { renderActivityPage, stubActivityServer } from "./activity-test-server";
+import {
+  renderActivityPage,
+  stubActivityServer,
+} from "../../test/activity-test-server";
 
 const MOVE_TO_TOP = "POST /api/v1/processing/files/1/move-to-top";
 const WHY_HELD = "GET /api/v1/processing/files/1/why-held";

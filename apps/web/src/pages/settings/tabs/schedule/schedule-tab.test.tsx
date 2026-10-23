@@ -156,6 +156,23 @@ it("names the time zone the hours are read in, and sends changing it to System",
   ).not.toBeInTheDocument();
 });
 
+it("reads the hours in UTC when no time zone has been saved", async () => {
+  asOperator();
+  vi.spyOn(settingsApi, "useAppSettingsQuery").mockReturnValue({
+    isPending: false,
+    isError: false,
+    data: { ...SETTINGS, app_timezone: "" },
+  } as ReturnType<typeof settingsApi.useAppSettingsQuery>);
+  vi.spyOn(librariesApi, "fetchProcessingLibraries").mockResolvedValue([
+    library(),
+  ]);
+
+  render(<ScheduleTab />, { wrapper });
+
+  await screen.findAllByTestId("schedule-library-row");
+  expect(screen.getByText(/in UTC./)).toBeInTheDocument();
+});
+
 it("draws a week with no gaps as one bar, and a week with gaps as its seven days", async () => {
   asOperator();
   vi.spyOn(librariesApi, "fetchProcessingLibraries").mockResolvedValue([
@@ -260,4 +277,37 @@ it("offers Scan now for a workflow Weir scans, and says Deluno hands over the do
   expect(
     within(anime!).getByRole("button", { name: "Scan Anime now" }),
   ).toBeInTheDocument();
+});
+
+it("says a workflow is closed right now and when its hours open", async () => {
+  asOperator();
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-05T12:00:00Z"));
+  const grid = "0".repeat(52) + "1111" + "0".repeat(672 - 56);
+  vi.spyOn(librariesApi, "fetchProcessingLibraries").mockResolvedValue([
+    library({ schedule_grid: grid }),
+  ]);
+
+  try {
+    render(<ScheduleTab />, { wrapper });
+
+    const row = (await screen.findAllByTestId("schedule-library-row"))[0]!;
+    expect(within(row).getByText("Closed")).toBeInTheDocument();
+    expect(within(row).getByText(/^opens /)).toBeInTheDocument();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it("says a workflow with every hour on is open, with no time it closes", async () => {
+  asOperator();
+  vi.spyOn(librariesApi, "fetchProcessingLibraries").mockResolvedValue([
+    library({ schedule_grid: "1".repeat(672) }),
+  ]);
+
+  render(<ScheduleTab />, { wrapper });
+
+  const row = (await screen.findAllByTestId("schedule-library-row"))[0]!;
+  expect(within(row).getByText("Open")).toBeInTheDocument();
+  expect(within(row).queryByText(/^until /)).toBeNull();
 });

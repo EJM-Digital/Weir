@@ -106,6 +106,22 @@ describe("a media manager that reports several workflows", () => {
   });
 });
 
+describe("a media manager workflow Weir has no matching workflow for", () => {
+  it("starts a new workflow from it when the one it names is gone", async () => {
+    server.set(SUGGESTIONS, {
+      libraries: [suggestion({ library_id: 99 })],
+      notes: [],
+    });
+    await chooseFromAManager();
+
+    fireEvent.click(screen.getByTestId("add-workflow-continue"));
+
+    const form = await screen.findByTestId("processing-library-form");
+    expect(within(form).getByLabelText("Name")).toHaveValue("Films");
+    expect(within(form).getByText("Add workflow")).toBeInTheDocument();
+  });
+});
+
 describe("asking the media manager for its folders", () => {
   it("says Asking… and holds Continue while the answer is on its way", async () => {
     server.set(SUGGESTIONS, () => new Promise<never>(() => undefined));

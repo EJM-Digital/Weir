@@ -258,6 +258,23 @@ describe("hours drawn and not saved", () => {
     expect(server.to(updateRoute(1))).toHaveLength(0);
   });
 
+  it("close when the same workflow's Change hours is pressed again, and ask first about a week drawn", async () => {
+    await openTab();
+    await changeHours(0);
+    drawMondayNine();
+
+    const rows = await screen.findAllByTestId("schedule-library-row");
+    fireEvent.click(
+      within(rows[0]!).getByRole("button", { name: "Change hours" }),
+    );
+    expect(asks()).toHaveTextContent(
+      "You have unsaved changes to Movies's hours. Leave without saving?",
+    );
+    leave();
+
+    expect(screen.queryByTestId("schedule-library-editor")).toBeNull();
+  });
+
   it("are not asked about when the editor is closed with nothing drawn", async () => {
     await openTab();
     await changeHours(0);

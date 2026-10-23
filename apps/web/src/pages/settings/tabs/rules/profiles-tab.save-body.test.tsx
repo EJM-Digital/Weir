@@ -13,7 +13,7 @@ import {
   openProfiles,
   savedBody,
   serveProfiles,
-} from "./profiles-test-support";
+} from "../../../../test/profiles-test-support";
 
 // The page is taken down before `fetch` is given back, so nothing it still has on its way reaches the network the setup refuses.
 afterEach(() => {

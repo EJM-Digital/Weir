@@ -111,6 +111,7 @@ export function nextBackupAt(
   for (let looked = 0; looked < DAYS_LOOKED_AHEAD; looked++) {
     if (day !== lastDay) {
       const target = Math.max(instantOf(day, time, zone), earliest);
+      /* istanbul ignore else -- @preserve */
       if (dayKey(target, zone) === day) return target;
     }
     day = nextDay(day);

@@ -3,15 +3,15 @@ import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 
-import { useAppSettingsQuery } from "../../lib/settings/queries";
-import type { AppSettings } from "../../lib/settings/types";
-import { systemReplies } from "../../test/recorded-system";
-import type { RecordedRoutes } from "../../test/recorded-weir";
-import { csrfToken } from "./tabs/security/security-replies";
+import { useAppSettingsQuery } from "../lib/settings/queries";
+import type { AppSettings } from "../lib/settings/types";
+import { systemReplies } from "./recorded-system";
+import type { RecordedRoutes } from "./recorded-weir";
+import { csrfToken } from "../pages/system/tabs/security/security-replies";
 import {
   useSystemSettingsForm,
   type SystemSettingsForm,
-} from "./use-system-settings-form";
+} from "../pages/system/use-system-settings-form";
 
 /** What every System save asks first: a fresh confirmation token, then the change itself. */
 export const SAVING: RecordedRoutes = {

@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { elapse, useFakeClock, useRealClock } from "../../test/fake-clock";
+import { workflowRow } from "../../test/dashboard-fixtures";
 import {
   libraryFile,
   libraryFilesPage,
@@ -70,6 +71,50 @@ describe("before the Library page has its workflows", () => {
       "No workflow is set up yet. Add one in Setup › Workflows, then come back here and tell Weir which folders the files you already have sit in.",
     );
     expect(screen.queryByTestId("library-controls")).toBeNull();
+  });
+});
+
+describe("a workflow whose folders hold no files Weir reads", () => {
+  it("says it has not been scanned yet, or its folders hold nothing, and where to change them", async () => {
+    api = stubLibraryServer([]);
+
+    renderLibraryPage();
+
+    expect(await screen.findByTestId("library-empty")).toHaveTextContent(
+      "This workflow has not been scanned yet, or its folders hold nothing Weir reads. Check again, or change its folders in Library setup.",
+    );
+  });
+});
+
+describe("while the overview of the workflow is still being read", () => {
+  it("lists the files without the totals it has not heard yet", async () => {
+    api = stubLibraryServer([ARRIVAL], {
+      [LIBRARY_ROUTES.overview]: never,
+    });
+
+    renderLibraryPage();
+
+    expect(await screen.findAllByTestId("library-row")).toHaveLength(1);
+  });
+
+  it("lists the workflow in the picker without a count it has not heard yet", async () => {
+    api = stubLibraryServer([ARRIVAL], {
+      [LIBRARIES]: [
+        workflowRow({ id: LIBRARY_ID, name: "Movies" }),
+        workflowRow({ id: 2, name: "TV" }),
+      ],
+      [LIBRARY_ROUTES.overview]: never,
+    });
+    renderLibraryPage();
+    await screen.findAllByTestId("library-row");
+
+    fireEvent.click(
+      within(screen.getByTestId("library-picker")).getByRole("button", {
+        name: /Movies/,
+      }),
+    );
+
+    expect(screen.getByRole("option", { name: /TV/ })).toBeVisible();
   });
 });
 

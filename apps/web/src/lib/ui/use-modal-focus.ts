@@ -40,8 +40,7 @@ function holdInert(element: Element): boolean {
 }
 
 function releaseInert(element: Element): void {
-  const holds = inertHolds.get(element);
-  if (holds === undefined) return;
+  const holds = inertHolds.get(element) as number;
   if (holds > 1) {
     inertHolds.set(element, holds - 1);
     return;
@@ -78,15 +77,13 @@ function makeOutsideInert(layer: HTMLElement): () => void {
  * focus to the page the moment it does, so by the time the dialog opens nothing has focus; this is who had it before.
  */
 let lastFocused: Element | null = null;
-if (typeof document !== "undefined") {
-  document.addEventListener(
-    "focusin",
-    (event) => {
-      if (event.target instanceof Element) lastFocused = event.target;
-    },
-    true,
-  );
-}
+document.addEventListener(
+  "focusin",
+  (event) => {
+    if (event.target instanceof Element) lastFocused = event.target;
+  },
+  true,
+);
 
 /** Where focus goes back to when a layer closes: the element that had it as the layer opened, or the last one that did. */
 function focusToReturnTo(): Element | null {

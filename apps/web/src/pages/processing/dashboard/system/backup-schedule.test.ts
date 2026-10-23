@@ -84,6 +84,17 @@ describe("nextBackupAt", () => {
     ).toBe(at("2026-10-03T17:00:00Z"));
   });
 
+  it("does not run twice on the day the clocks go back, when a day after the last backup is still that day", () => {
+    // New York's clocks go back at 2am on 1 November: a backup at 00:30 that day is followed, 24 hours on, by 23:30 the same day.
+    expect(
+      nextBackupAt(
+        run({ lastRunAt: at("2026-11-01T04:30:00Z") }),
+        at("2026-11-01T05:00:00Z"),
+        "America/New_York",
+      ),
+    ).toBe(at("2026-11-02T08:00:00Z"));
+  });
+
   it("falls back to 02:00 for a preferred time it cannot read", () => {
     expect(
       nextBackupAt(

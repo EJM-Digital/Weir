@@ -118,4 +118,12 @@ describe("the add button", () => {
     expect(button).toBeDisabled();
     expect(onClick).not.toHaveBeenCalled();
   });
+
+  it("refuses to draw the slot outside the provider, saying where it belongs", () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(() => render(<PageToolbarActionsSlot />)).toThrow(
+      "The toolbar's action slot belongs inside PageToolbarActionsProvider.",
+    );
+  });
 });

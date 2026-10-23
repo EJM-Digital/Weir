@@ -9,7 +9,10 @@ import {
 } from "../../../../test/recorded-weir";
 import { ActiveSessionsSection } from "./active-sessions-section";
 import { oneSession, threeSessions, twoSessions } from "./security-replies";
-import { APP_SETTINGS, renderSecurity } from "./security-test-support";
+import {
+  APP_SETTINGS,
+  renderSecurity,
+} from "../../../../test/security-test-support";
 
 const SESSIONS = "/api/v1/auth/sessions";
 

@@ -154,3 +154,24 @@ it("toggles the focused option with Space and keeps the panel open", () => {
   expect(onChange).toHaveBeenCalledWith(["b"]);
   expect(screen.getByRole("listbox")).toBeInTheDocument();
 });
+
+it("takes a chosen option out with Enter", () => {
+  const { onChange } = renderPicker({ values: ["a", "b"] });
+  fireEvent.click(screen.getByRole("button"));
+  const options = screen.getAllByRole("option");
+
+  fireEvent.keyDown(options[0], { key: "Enter" });
+
+  expect(onChange).toHaveBeenCalledWith(["b"]);
+});
+
+it("keeps focus where it is when the mouse goes down on an option", () => {
+  renderPicker();
+  fireEvent.click(screen.getByRole("button"));
+
+  const notPrevented = fireEvent.mouseDown(
+    screen.getByRole("option", { name: "Bravo" }),
+  );
+
+  expect(notPrevented).toBe(false);
+});

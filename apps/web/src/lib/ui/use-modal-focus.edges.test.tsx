@@ -64,6 +64,21 @@ it.each([
   },
 );
 
+it.each([
+  ["Tab", false, "First"],
+  ["Shift+Tab", true, "Last"],
+])(
+  "lets %s move on by itself inside a modal layer, away from its ends",
+  (_name, shiftKey, from) => {
+    render(<ModalLayer />);
+    screen.getByRole("button", { name: from }).focus();
+
+    const allowed = fireEvent.keyDown(document, { key: "Tab", shiftKey });
+
+    expect(allowed).toBe(true);
+  },
+);
+
 it("wraps Shift+Tab from the layer itself to the last control", () => {
   render(<ModalLayer />);
   expect(screen.getByRole("dialog")).toHaveFocus();

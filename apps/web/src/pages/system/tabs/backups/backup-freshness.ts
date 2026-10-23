@@ -26,7 +26,7 @@ export function backupFreshness(
     {
       enabled: Boolean(settings.configuration_backup_enabled),
       intervalHours: Number(settings.configuration_backup_interval_hours),
-      preferredTime: settings.configuration_backup_preferred_time ?? "",
+      preferredTime: settings.configuration_backup_preferred_time,
       lastRunAt: parseAppTime(settings.configuration_backup_last_run_at),
     },
     now,

@@ -14,7 +14,7 @@ import {
   logPage,
   renderLog,
   stubEventSource,
-} from "./log-test-support";
+} from "../../../../test/log-test-support";
 
 const mocks = vi.hoisted(() => ({ fetchSystemLog: vi.fn() }));
 

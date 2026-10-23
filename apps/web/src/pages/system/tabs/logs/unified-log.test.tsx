@@ -21,7 +21,7 @@ import {
   logPage,
   renderLog,
   stubEventSource,
-} from "./log-test-support";
+} from "../../../../test/log-test-support";
 
 const mocks = vi.hoisted(() => ({
   fetchSystemLog: vi.fn(),
@@ -128,6 +128,18 @@ describe("the list", () => {
     expect(
       within(jobRow).getByText("Process a media file · attempt 3 of 3"),
     ).toBeInTheDocument();
+  });
+
+  it("opens a row to its detail and closes it again on a second press", async () => {
+    await rendered();
+    const head = () =>
+      screen.getAllByRole("button", { name: /Sign-in finished/ })[0];
+
+    fireEvent.click(head());
+    expect(head()).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.click(head());
+    expect(head()).toHaveAttribute("aria-expanded", "false");
   });
 
   it("says how many entries there are and that it is live", async () => {

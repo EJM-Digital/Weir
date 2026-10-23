@@ -94,3 +94,46 @@ it("offers nothing once the watched folder already is the client's folder", asyn
     screen.queryByTestId("library-download-client-suggestions"),
   ).not.toBeInTheDocument();
 });
+
+it("shows a person who may not edit the folder without the button to use it", async () => {
+  vi.spyOn(
+    downloadClientsApi,
+    "fetchDownloadClientSuggestions",
+  ).mockResolvedValue([sabnzbd]);
+
+  render(
+    <LibraryDownloadClientSuggestions
+      mediaType="movie"
+      watchedFolder="/media/movies"
+      editable={false}
+      onUseFolder={() => {}}
+    />,
+    { wrapper },
+  );
+
+  expect(await screen.findByText("/downloads/complete")).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Use this as the watched folder" }),
+  ).not.toBeInTheDocument();
+});
+
+it("offers nothing while the download clients are still being read", async () => {
+  const fetch = vi
+    .spyOn(downloadClientsApi, "fetchDownloadClientSuggestions")
+    .mockReturnValue(new Promise(() => undefined));
+
+  render(
+    <LibraryDownloadClientSuggestions
+      mediaType="movie"
+      watchedFolder="/media/movies"
+      editable
+      onUseFolder={() => {}}
+    />,
+    { wrapper },
+  );
+
+  await waitFor(() => expect(fetch).toHaveBeenCalled());
+  expect(
+    screen.queryByTestId("library-download-client-suggestions"),
+  ).not.toBeInTheDocument();
+});

@@ -3,11 +3,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { vi } from "vitest";
 
-import type {
-  SystemLogPage,
-  SystemLogRow,
-} from "../../../../lib/system/system-log-api";
-import { UnifiedLog } from "./unified-log";
+import type { SystemLogPage, SystemLogRow } from "../lib/system/system-log-api";
+import { UnifiedLog } from "../pages/system/tabs/logs/unified-log";
 
 /** A moment shortly after the fixture rows, so "Today" and the clock times in the tests are fixed. */
 export const NOW = new Date("2026-10-02T12:00:00Z");

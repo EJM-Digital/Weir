@@ -303,6 +303,45 @@ describe("adding a download client", () => {
     });
   });
 
+  it.each([
+    [
+      "deluge",
+      { password: "its-password" },
+      { username: "", password: "its-password", api_key: "" },
+    ],
+    [
+      "qbittorrent",
+      { username: "someone", password: "its-password" },
+      { username: "someone", password: "its-password", api_key: "" },
+    ],
+  ])(
+    "saves the login a %s client uses and leaves the rest blank",
+    async (kind, typed, expected) => {
+      vi.spyOn(api, "fetchDownloadClientConnections").mockResolvedValue([]);
+      const create = vi
+        .spyOn(api, "createDownloadClientConnection")
+        .mockResolvedValue(connection({ name: "A client" }));
+
+      render(<DownloadClientsSection />, { wrapper });
+      fireEvent.click(await screen.findByTestId("download-client-add"));
+      fireEvent.change(screen.getByTestId("download-client-kind"), {
+        target: { value: kind },
+      });
+      fireEvent.change(screen.getByTestId("download-client-base-url"), {
+        target: { value: "http://192.0.2.20:8080" },
+      });
+      for (const [field, value] of Object.entries(typed)) {
+        fireEvent.change(screen.getByTestId(`download-client-${field}`), {
+          target: { value },
+        });
+      }
+      fireEvent.click(screen.getByTestId("download-client-save"));
+
+      await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+      expect(create.mock.calls[0]?.[0]).toMatchObject({ kind, ...expected });
+    },
+  );
+
   it("says why adding a connection failed", async () => {
     vi.spyOn(api, "fetchDownloadClientConnections").mockResolvedValue([]);
     vi.spyOn(api, "createDownloadClientConnection").mockRejectedValue(

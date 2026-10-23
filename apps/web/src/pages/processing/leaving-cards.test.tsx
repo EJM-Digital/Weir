@@ -150,6 +150,16 @@ describe("advance", () => {
     expect(nextChangeAt(refreshed)).toBe(START + 1000 + LEAVING_CARD_MS);
   });
 
+  it("lets a card without an outcome go once the wait for one has run out", () => {
+    const waiting = advance(before, [], [file(1, "processing")], START + 500);
+
+    expect(nextChangeAt(waiting)).toBe(START + 500 + OUTCOME_WAIT_MS + 1);
+  });
+
+  it("has nothing to change by itself when no card is leaving", () => {
+    expect(nextChangeAt(NO_LEAVING_CARDS)).toBeNull();
+  });
+
   it("waits for a list that still has the file mid-pass, then shows it once it has moved on", () => {
     const waiting = advance(before, [], [file(1, "processing")], START + 500);
     expect(endedCards(waiting)).toHaveLength(0);

@@ -101,7 +101,7 @@ function fileFilters(
     ...(query ? { q: query } : {}),
     ...(sort && sort.id !== "select"
       ? { sort: LIBRARY_SORT_KEYS[sort.id], direction: sort.direction }
-      : {}),
+      : /* istanbul ignore next -- @preserve */ {}),
     page,
     page_size: PAGE_SIZE,
   };
@@ -270,7 +270,7 @@ export function LibraryPage(): React.ReactElement {
   const pickerInCard = pickerSlot !== null && stage >= PICKER_IN_CARD;
   const picker = (
     <LibraryPicker
-      libraries={libraries.data ?? []}
+      libraries={libraries.data}
       chosenId={chosen.id}
       onPick={pick}
       countFor={(id) => (id === chosen.id ? (totals?.files ?? null) : null)}

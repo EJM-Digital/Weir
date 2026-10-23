@@ -15,7 +15,7 @@ import {
   APP_SETTINGS,
   heldReply,
   renderSecurity,
-} from "./security-test-support";
+} from "../../../../test/security-test-support";
 import { SecurityTab } from "./security-tab";
 
 const SESSION = "/api/v1/auth/session";

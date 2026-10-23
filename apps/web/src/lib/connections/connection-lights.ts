@@ -142,5 +142,5 @@ function getSnapshot(): Snapshot {
 
 /** The light each connection's row shows now, by connection key, and the newest answer each one gave. */
 export function useConnectionActivity(): Snapshot {
-  return useSyncExternalStore(subscribe, getSnapshot, () => NOTHING);
+  return useSyncExternalStore(subscribe, getSnapshot);
 }

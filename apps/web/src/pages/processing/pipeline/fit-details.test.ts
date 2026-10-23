@@ -117,3 +117,18 @@ describe("a card that must keep its first detail line", () => {
     expect(card).not.toHaveAttribute(TIGHT_ATTRIBUTE);
   });
 });
+
+describe("a card with no detail block", () => {
+  it("is passed over, and the cards beside it are still fitted", () => {
+    const { block } = cardWithFourLines(500, 440);
+    const host = block.parentElement?.parentElement as HTMLElement;
+    const bare = document.createElement("div");
+    bare.setAttribute(CARD_ATTRIBUTE, "");
+    host.insertBefore(bare, host.firstChild);
+
+    fitDetails(host);
+
+    expect(bare.children).toHaveLength(0);
+    expect(block.style.display).toBe("");
+  });
+});

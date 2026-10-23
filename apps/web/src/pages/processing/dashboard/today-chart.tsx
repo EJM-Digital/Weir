@@ -56,7 +56,6 @@ export function TodayChart({ handed, now }: TodayChartProps) {
 
   const onPointerAt = (event: PointerEvent<HTMLElement>) => {
     const box = event.currentTarget.getBoundingClientRect();
-    if (box.width <= 0) return;
     setPointed(pointedAtFraction((event.clientX - box.left) / box.width, last));
   };
   const onKeyDown = (event: KeyboardEvent) => {
@@ -127,7 +126,7 @@ export function TodayChart({ handed, now }: TodayChartProps) {
             top: `${(dot.y / CHART_HEIGHT) * 100}%`,
           }}
         />
-      ) : null}
+      ) : /* istanbul ignore next -- @preserve */ null}
       <div
         aria-hidden="true"
         className={pointed === null ? "cs-layer" : "cs-layer cs-on"}

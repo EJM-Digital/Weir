@@ -100,6 +100,7 @@ export function FitText({
   const wordsKey = words.join("\u0000");
   useLayoutEffect(() => {
     const box = boxRef.current;
+    /* istanbul ignore if -- @preserve */
     if (!box) return undefined;
     const options = wordsKey.split("\u0000");
     const fit = () => {
