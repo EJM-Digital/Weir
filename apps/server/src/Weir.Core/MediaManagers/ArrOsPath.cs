@@ -44,8 +44,8 @@ public readonly record struct ArrOsPath(string Text)
 
     public bool IsRooted => Kind switch
     {
-        PathKind.Windows => (Text ?? string.Empty).StartsWith(@"\\", StringComparison.Ordinal) || HasDriveLetter(Text ?? string.Empty),
-        PathKind.Unix => (Text ?? string.Empty).StartsWith('/'),
+        PathKind.Windows => Text.StartsWith(@"\\", StringComparison.Ordinal) || HasDriveLetter(Text),
+        PathKind.Unix => Text.StartsWith('/'),
         _ => false,
     };
 

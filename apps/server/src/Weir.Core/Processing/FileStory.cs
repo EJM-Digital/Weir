@@ -60,7 +60,7 @@ public static class FileStory
             candidates.Add(Worked(detail));
             candidates.Add(Verified(detail));
             candidates.Add(Collision(detail));
-            candidates.Add(HandedBack(detail, ok: true, target));
+            candidates.Add(HandedBack(detail, target));
         }
         else
         {
@@ -377,13 +377,8 @@ public static class FileStory
         return new StoryStep("An output already existed", reason, action == "skip" ? StoryTone.Warn : StoryTone.Neutral);
     }
 
-    private static StoryStep? HandedBack(WireObject detail, bool ok, HandBackTarget target)
+    private static StoryStep? HandedBack(WireObject detail, HandBackTarget target)
     {
-        if (!ok)
-        {
-            return null;
-        }
-
         var destination = Text(detail.TryGetValue("output_file", out var d) ? d : null);
         if (destination.Length == 0)
         {

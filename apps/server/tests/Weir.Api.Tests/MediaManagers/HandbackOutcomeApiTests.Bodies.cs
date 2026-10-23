@@ -55,4 +55,22 @@ public sealed partial class HandbackOutcomeApiTests
         Assert.Equal(HttpStatusCode.OK, again.StatusCode);
         Assert.Equal(string.Empty, (await Json(again))["message"]!.GetValue<string>());
     }
+
+    [Fact]
+    public async Task A_refusal_after_an_import_from_a_source_with_no_product_name_says_the_media_manager_already_said_so()
+    {
+        await using var server = await StartAsync();
+        var library = await MoviesAsync(server);
+        await TestDatabase.ExecuteAsync(
+            server,
+            "INSERT INTO media_manager_handoffs (source_key, handoff_id, library_id, relative_path, state, outcome) VALUES ('native', 'n2', $l, 'Film/film.mkv', 'queued', 'imported')",
+            ("$l", library));
+
+        using var response = await new ApiTestClient(server).SendAsync(
+            HttpMethod.Post, "/api/v1/intake/handoffs/native/n2/outcome", headers: SecretHeader, content: DelunoOutcome("not-imported", null, "Not for me."));
+
+        Assert.Equal(
+            (HttpStatusCode.Conflict, "Your media manager already said it imported this file, so Weir kept that answer."),
+            (response.StatusCode, await Detail(response)));
+    }
 }

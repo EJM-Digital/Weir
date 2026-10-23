@@ -470,4 +470,38 @@ public sealed class SystemOverviewApiTests
 
         Assert.Equal(expected, SystemOverviewReader.AddressOf(new ServerListenOptions(host, port), machine));
     }
+
+    [Fact]
+    public async Task A_copy_saved_outside_the_data_folder_is_said_not_to_be_in_it()
+    {
+        var outside = Path.Join(Path.GetTempPath(), "weir-backups-" + Guid.NewGuid().ToString("N"));
+        await using var server = await WeirTestServer.StartAsync(
+            [("WEIR_SESSION_SECRET", Secret), ("WEIR_PROCESSING_WORKER_COUNT", "0"), ("WEIR_BACKUP_DIR", outside)], prepareHome: SeedDatabaseAtBaseline);
+        try
+        {
+            await TestDatabase.SeedAdminAsync(server);
+            var client = new ApiTestClient(server);
+            await client.SignInAsync();
+
+            var json = await Json(await client.GetAsync(Overview));
+
+            Assert.False(json["last_update_backup"]!["in_data_folder"]!.GetValue<bool>());
+        }
+        finally
+        {
+            Directory.Delete(outside, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task An_overview_is_read_for_a_server_whose_settings_row_has_not_been_written_yet()
+    {
+        var (server, client) = await StartAsync();
+        await using var _server = server;
+        await TestDatabase.ExecuteAsync(server, "DELETE FROM suite_settings");
+
+        using var response = await client.GetAsync(Overview);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
 }

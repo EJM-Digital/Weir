@@ -259,6 +259,6 @@ public static class LibraryFileFactsReader
     private static int? IntTag(ProbeStreamInfo? stream, string name) =>
         stream?.Get(name) is { } value && RulesJson.TryInt(value, out var number) ? (int)number : null;
 
-    private static string? StringTag(ProbeStreamInfo? stream, string name) =>
-        stream?.Get(name) is { } value && RulesJson.IsStr(value) ? value.GetString() : null;
+    private static string? StringTag(ProbeStreamInfo stream, string name) =>
+        stream.Get(name) is { } value && RulesJson.IsStr(value) ? value.GetString() : null;
 }

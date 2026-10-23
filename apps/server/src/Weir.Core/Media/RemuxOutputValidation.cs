@@ -48,7 +48,7 @@ public static partial class RemuxOutputValidation
         {
             throw Mismatch(
                 $"Planned to keep the {sourceFamily} container, but the output is {outputFamily} " +
-                $"({(outputFormatName is { Length: > 0 } name ? name : "unknown")}).");
+                $"({outputFormatName}).");
         }
 
         var expected = ExpectedLayout(plan);

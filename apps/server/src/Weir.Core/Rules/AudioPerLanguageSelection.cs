@@ -8,9 +8,9 @@ public static partial class RemuxRules
     /// <summary>Builds the kept <see cref="PlannedTrack"/> for one audio candidate, re-reading its own stream's disposition and codec name.</summary>
     private static PlannedTrack BuildPlannedAudioTrack(IReadOnlyList<ProbeStreamInfo> audio, AudioCandidate candidate, bool isDefault)
     {
-        var stream = WithIndex(audio).Where(p => p.Index == candidate.InputIndex).Select(p => p.Stream).FirstOrDefault();
-        var disposition = stream?.Disposition ?? new Dictionary<string, long>();
-        var codecName = stream is null ? string.Empty : RulesJson.StrOr(stream.Get("codec_name"), string.Empty);
+        var stream = WithIndex(audio).First(p => p.Index == candidate.InputIndex).Stream;
+        var disposition = stream.Disposition;
+        var codecName = RulesJson.StrOr(stream.Get("codec_name"), string.Empty);
 
         return new PlannedTrack
         {
