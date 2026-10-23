@@ -83,7 +83,7 @@ public static class CleanedSources
     /// file is done, or it is a row Weir has never worked on, made afresh for the hand-off or scan that found the file again.
     /// A row that says a later attempt failed, was rejected or is held is not: the file is being dealt with again.
     /// </summary>
-    private static bool RowLeavesItToTheRecord(string? rowStatus, bool workedOn) =>
+    internal static bool RowLeavesItToTheRecord(string? rowStatus, bool workedOn) =>
         rowStatus is null or ProcessingFileStatuses.Processed || (rowStatus == ProcessingFileStatuses.Unprocessed && !workedOn);
 
     /// <summary>

@@ -140,6 +140,72 @@ public sealed class GatewayOriginalLanguageLookupTests
     }
 
     [Fact]
+    public async Task A_file_with_no_readable_name_and_nothing_linked_to_it_is_declined_for_want_of_a_title()
+    {
+        using var fixture = new ArtworkFixture();
+
+        var result = await fixture.OriginalLanguages.LookupAsync("tv", await fixture.LibraryIdAsync("tv"), "!!!/S01E02.mkv", origin: null, CancellationToken.None);
+
+        Assert.Equal(LookupResult.StatusNoMatch, result.Status);
+        Assert.Empty(fixture.Http.Requests);
+    }
+
+    [Fact]
+    public async Task A_file_with_no_library_is_looked_up_by_its_name()
+    {
+        using var fixture = new ArtworkFixture();
+        fixture.ServeSearch(ArtworkFixture.SearchAnswer(PosterFile, originalLanguage: "de"));
+
+        var result = await fixture.OriginalLanguages.LookupAsync("movie", libraryId: null, FilmPath, origin: null, CancellationToken.None);
+
+        Assert.Equal("de", result.Metadata!.OriginalLanguage);
+    }
+
+    [Fact]
+    public async Task A_title_a_manager_named_only_by_its_tmdb_id_is_looked_up_by_that_id()
+    {
+        using var fixture = new ArtworkFixture();
+        fixture.ServeSearch(ArtworkFixture.SearchAnswer(PosterFile, tmdbId: 653, originalLanguage: "de"));
+        var library = await fixture.LibraryIdAsync("movie");
+        await fixture.InTransactionAsync(uow => fixture.Subjects.LinkHandoffAsync(
+            uow, library, "movie", ["!!!/x.mkv"], releaseName: null, new ArtworkHints(null, null, 653, null, null, null, null, null)));
+
+        var result = await fixture.OriginalLanguages.LookupAsync("movie", library, "!!!/x.mkv", origin: null, CancellationToken.None);
+
+        Assert.Equal("653", ArtworkFixture.QueryValue(Assert.Single(fixture.Searches()), "providerId"));
+        Assert.Equal("de", result.Metadata!.OriginalLanguage);
+    }
+
+    [Fact]
+    public async Task A_series_a_manager_named_only_by_its_tvdb_id_is_looked_up_by_that_id()
+    {
+        using var fixture = new ArtworkFixture();
+        fixture.Http.Json(HttpMethod.Get, "/metadata/tvdb/tv/78804", """{"provider":"tvdb","series":{"tvdbId":"78804","originalLanguage":"eng","posterUrl":null}}""");
+        var library = await fixture.LibraryIdAsync("tv");
+        await fixture.InTransactionAsync(uow => fixture.Subjects.LinkHandoffAsync(
+            uow, library, "tv", [EpisodeOne], releaseName: null, new ArtworkHints(null, null, null, 78804, null, 1, 1, null)));
+
+        var result = await fixture.OriginalLanguages.LookupAsync("tv", library, EpisodeOne, origin: null, CancellationToken.None);
+
+        Assert.Equal("eng", result.Metadata!.OriginalLanguage);
+    }
+
+    [Fact]
+    public async Task A_title_a_manager_gave_only_a_poster_for_cannot_be_searched_and_is_read_from_the_file_name_instead()
+    {
+        using var fixture = new ArtworkFixture();
+        fixture.ServeSearch(ArtworkFixture.SearchAnswer(PosterFile, originalLanguage: "de"));
+        var library = await fixture.LibraryIdAsync("movie");
+        await fixture.InTransactionAsync(uow => fixture.Subjects.LinkHandoffAsync(
+            uow, library, "movie", [FilmPath], releaseName: null, new ArtworkHints(null, null, null, null, null, null, null, PosterFile)));
+
+        var result = await fixture.OriginalLanguages.LookupAsync("movie", library, FilmPath, origin: null, CancellationToken.None);
+
+        Assert.Equal("nosferatu", ArtworkFixture.QueryValue(Assert.Single(fixture.Searches()), "query"));
+        Assert.Equal("de", result.Metadata!.OriginalLanguage);
+    }
+
+    [Fact]
     public async Task With_the_metadata_service_switched_off_the_lookup_declines_without_asking()
     {
         using var fixture = new ArtworkFixture();
