@@ -5,6 +5,7 @@ using Weir.Core.MediaManagers;
 using Weir.Core.Processing;
 using Weir.Core.Time;
 using Weir.Infrastructure.Activity;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.MediaManagers;
 using Weir.Infrastructure.Sqlite;
 
@@ -50,6 +51,7 @@ public sealed class HistoryFileRemovalService
     private readonly LibraryStore _libraries;
     private readonly FileStateStore _files;
     private readonly FileSkipMarkerStore _skipMarkers;
+    private readonly IFileSystem _fs;
 
     public HistoryFileRemovalService(
         IMediaManagerPorts ports,
@@ -58,8 +60,10 @@ public sealed class HistoryFileRemovalService
         RejectRoutes routes,
         LibraryStore libraries,
         FileStateStore files,
-        FileSkipMarkerStore skipMarkers)
+        FileSkipMarkerStore skipMarkers,
+        IFileSystem? fileSystem = null)
     {
+        _fs = fileSystem ?? PhysicalFileSystem.Instance;
         _ports = ports ?? throw new ArgumentNullException(nameof(ports));
         _connections = connections ?? throw new ArgumentNullException(nameof(connections));
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
@@ -86,8 +90,8 @@ public sealed class HistoryFileRemovalService
         }
 
         var library = await RemuxPassHandler.ResolveLibraryAsync(uow, _libraries, file.LibraryId, null).ConfigureAwait(false);
-        var source = library is null ? null : TryResolveSource(library, file.RelativePath);
-        if (source is null || !File.Exists(source))
+        var source = library is null ? null : TryResolveSource(library, file.RelativePath, _fs);
+        if (source is null || !_fs.FileExists(source))
         {
             return FileRemovalOptions.PlainRemove;
         }
@@ -103,7 +107,7 @@ public sealed class HistoryFileRemovalService
             // the same with nothing to confirm against.
             try
             {
-                var current = SourceFiles.Fingerprint(source);
+                var current = SourceFiles.Fingerprint(source, _fs);
                 unconfirmedSize = current.SizeBytes;
                 unconfirmedModifiedAt = FormatModifiedAt(current.ModifiedTimeNs);
             }
@@ -136,14 +140,19 @@ public sealed class HistoryFileRemovalService
         string source;
         try
         {
-            source = RemuxPassPaths.ResolveMediaFileUnderRoot(library.WatchedFolder, file.RelativePath);
+            source = RemuxPassPaths.ResolveMediaFileUnderRoot(library.WatchedFolder, file.RelativePath, _fs);
         }
         catch (ArgumentException exception)
         {
             return await FinishDeleteAsync(uow, file, new RejectRouteOutcome(false, exception.Message)).ConfigureAwait(false);
         }
 
-        if (!TryVerifyFingerprint(file, source, confirmation, out _, out var refusal))
+        if (!_fs.FileExists(source))
+        {
+            return await FinishDeleteAsync(uow, file, new RejectRouteOutcome(false, "The file is no longer in the watched folder, so there is nothing to delete.")).ConfigureAwait(false);
+        }
+
+        if (!TryVerifyFingerprint(file, source, confirmation, _fs, out _, out var refusal))
         {
             return await FinishDeleteAsync(uow, file, new RejectRouteOutcome(false, refusal)).ConfigureAwait(false);
         }
@@ -159,7 +168,7 @@ public sealed class HistoryFileRemovalService
         // A manager that cannot take the rejection (no capability, or none linked at all) never gets asked. Weir deletes the file
         // itself only when no manager is linked, since a linked manager's download belongs to it and its download client.
         var outcome = !route.DeleteHandled
-            ? SelfDelete(watchedRoot, source, links)
+            ? SelfDelete(watchedRoot, source, links, _fs)
             : route.HandoffTarget is not null
                 ? await _routes.ThroughHandoffAsync(route.HandoffTarget, route.Origin!, source, watchedRoot, DeleteReason, null, links, cancellationToken).ConfigureAwait(false)
                 : await _routes.ThroughQueueAsync(route.QueueConnections, source, cancellationToken).ConfigureAwait(false);
@@ -195,19 +204,19 @@ public sealed class HistoryFileRemovalService
         string source;
         try
         {
-            source = RemuxPassPaths.ResolveMediaFileUnderRoot(library.WatchedFolder, file.RelativePath);
+            source = RemuxPassPaths.ResolveMediaFileUnderRoot(library.WatchedFolder, file.RelativePath, _fs);
         }
         catch (ArgumentException exception)
         {
             return await FinishKeepAsync(uow, file, new RejectRouteOutcome(false, exception.Message)).ConfigureAwait(false);
         }
 
-        if (!File.Exists(source))
+        if (!_fs.FileExists(source))
         {
             return await FinishKeepAsync(uow, file, new RejectRouteOutcome(false, "The file is no longer in the watched folder, so there is nothing to keep.")).ConfigureAwait(false);
         }
 
-        if (!TryVerifyFingerprint(file, source, confirmation, out var fingerprint, out var refusal))
+        if (!TryVerifyFingerprint(file, source, confirmation, _fs, out var fingerprint, out var refusal))
         {
             return await FinishKeepAsync(uow, file, new RejectRouteOutcome(false, refusal)).ConfigureAwait(false);
         }
@@ -250,14 +259,14 @@ public sealed class HistoryFileRemovalService
     private static string DeleteRefusal(WorkflowManagerLinks links) =>
         $"{links.KeptOriginalReason} Weir did not delete the file; remove the download from your download client.";
 
-    private static RejectRouteOutcome SelfDelete(string watchedRoot, string source, WorkflowManagerLinks links)
+    private static RejectRouteOutcome SelfDelete(string watchedRoot, string source, WorkflowManagerLinks links, IFileSystem files)
     {
         if (links.KeepsOriginals)
         {
             return new RejectRouteOutcome(false, DeleteRefusal(links));
         }
 
-        var cleanup = RemuxPassPaths.CleanupRejectedFile(watchedRoot, source, "delete_file");
+        var cleanup = RemuxPassPaths.CleanupRejectedFile(watchedRoot, source, "delete_file", files);
         return cleanup.Deleted
             ? new RejectRouteOutcome(true, "Weir deleted the file itself: no linked media manager could remove it.")
             : new RejectRouteOutcome(false, cleanup.Detail);
@@ -313,7 +322,7 @@ public sealed class HistoryFileRemovalService
     /// is none to check, rather than guessing. <paramref name="refusalMessage"/> names which of the two is true, so
     /// the caller never blames "since it failed" on a file Weir never actually fingerprinted.
     /// </summary>
-    private static bool TryVerifyFingerprint(ProcessingFileRecord file, string source, FileRemovalConfirmation? confirmation, out SourceFingerprint fingerprint, out string refusalMessage)
+    private static bool TryVerifyFingerprint(ProcessingFileRecord file, string source, FileRemovalConfirmation? confirmation, IFileSystem files, out SourceFingerprint fingerprint, out string refusalMessage)
     {
         fingerprint = default;
         if (file.FingerprintSizeBytes is { } size && file.FingerprintMtimeNs is { } mtime)
@@ -321,7 +330,7 @@ public sealed class HistoryFileRemovalService
             refusalMessage = ChangedFileMessage;
             try
             {
-                fingerprint = SourceFiles.Fingerprint(source);
+                fingerprint = SourceFiles.Fingerprint(source, files);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
@@ -339,7 +348,7 @@ public sealed class HistoryFileRemovalService
 
         try
         {
-            fingerprint = SourceFiles.Fingerprint(source);
+            fingerprint = SourceFiles.Fingerprint(source, files);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -357,11 +366,11 @@ public sealed class HistoryFileRemovalService
     private static string FormatModifiedAt(long modifiedTimeNs) =>
         Timestamp.FromUtc(DateTime.UnixEpoch.AddSeconds(modifiedTimeNs / 1_000_000_000)).ToWireText();
 
-    private static string? TryResolveSource(ProcessingLibraryRecord library, string relativePath)
+    private static string? TryResolveSource(ProcessingLibraryRecord library, string relativePath, IFileSystem files)
     {
         try
         {
-            return RemuxPassPaths.ResolveMediaFileUnderRoot(library.WatchedFolder, relativePath);
+            return RemuxPassPaths.ResolveMediaFileUnderRoot(library.WatchedFolder, relativePath, files);
         }
         catch (ArgumentException)
         {

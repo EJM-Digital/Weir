@@ -26,7 +26,7 @@ internal sealed class WatchedFileDecider
         _lookups = lookups;
         _reads = reads;
         // The output folder's writability is a property of the folder, not of each file, and checking it writes a probe file.
-        _outputFolderProblem = new Lazy<string?>(() => WatchedFolderScanOps.OutputFolderProblem(scan.Paths.OutputFolder));
+        _outputFolderProblem = new Lazy<string?>(() => WatchedFolderScanOps.OutputFolderProblem(scan.Paths.OutputFolder, scan.Files));
     }
 
     /// <summary>
@@ -219,11 +219,11 @@ internal sealed class WatchedFileDecider
     }
 
     private string? AccessProblem(string filePath) =>
-        _scan.Library.SkipAccessTests ? null : WatchedFolderScanOps.SourceReadProblem(filePath) ?? _outputFolderProblem.Value;
+        _scan.Library.SkipAccessTests ? null : WatchedFolderScanOps.SourceReadProblem(filePath, _scan.Files) ?? _outputFolderProblem.Value;
 
     private Task<bool> CompletedOutputAsync(string rel, string sourcePath) =>
         WatchedFolderScanOps.CompletedRemuxOutputExistsForRelativePathAsync(
-            _reads, rel, _scan.MediaScope, _scan.Library.Id, _scan.Paths.OutputFolder, sourcePath);
+            _reads, rel, _scan.MediaScope, _scan.Library.Id, _scan.Paths.OutputFolder, sourcePath, _scan.Files);
 
     private static WatchedFileDecision Touch(string rel, ProcessingFileRecord row) => new() { RelativePath = rel, TouchRowId = row.Id };
 }

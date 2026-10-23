@@ -1,4 +1,5 @@
 using Weir.Core.MediaManagers;
+using Weir.Infrastructure.IO;
 
 namespace Weir.Infrastructure.MediaManagers;
 
@@ -10,9 +11,10 @@ public sealed partial class MediaManagerIntake
     /// the whole hand-off rather than falling back to the folder. The listed files then go through the choice a folder hand-off makes
     /// among its videos (<see cref="ChosenVideos"/>), so a listed sample or non-video is left out exactly as it would be in the folder.
     /// </summary>
-    public static List<string> HandoffListedFiles(IntakeLibrary library, string relativePath, MediaManagerImportEvent importEvent)
+    public static List<string> HandoffListedFiles(IntakeLibrary library, string relativePath, MediaManagerImportEvent importEvent, IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(library);
+        files ??= PhysicalFileSystem.Instance;
         ArgumentNullException.ThrowIfNull(importEvent);
         var resolved = HandoffSourceFiles.Resolve(importEvent.FilePath, relativePath, importEvent.SourceFiles ?? [], OperatingSystem.IsWindows());
         if (!resolved.Ok)
@@ -23,7 +25,7 @@ public sealed partial class MediaManagerIntake
         var listed = resolved.RelativePaths!;
         foreach (var target in listed)
         {
-            if (!File.Exists(Path.Join(library.WatchedFolder, target)))
+            if (!files.FileExists(Path.Join(library.WatchedFolder, target)))
             {
                 throw new IntakeRefusedException(400, HandoffSourceFiles.MissingDetail(target));
             }

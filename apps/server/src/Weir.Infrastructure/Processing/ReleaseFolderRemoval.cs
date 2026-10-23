@@ -53,8 +53,10 @@ public static partial class ReleaseFolderRemoval
     /// <param name="root">The library root the folder lies in (the watched or output folder).</param>
     /// <param name="file">The movie file whose release this is. It need not exist.</param>
     /// <param name="mediaExtensionsCsv">The library's own media extensions, added to the built-in video containers.</param>
-    public static ReleaseRemoval Remove(string root, string file, string? mediaExtensionsCsv)
+    /// <param name="files">The file system to use; the real one when omitted.</param>
+    public static ReleaseRemoval Remove(string root, string file, string? mediaExtensionsCsv, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         ArgumentNullException.ThrowIfNull(root);
         ArgumentNullException.ThrowIfNull(file);
         var folder = Path.GetDirectoryName(Path.GetFullPath(file));
@@ -63,7 +65,7 @@ public static partial class ReleaseFolderRemoval
             return new ReleaseRemoval(ReleaseRemovalKind.NothingRemoved, "The release folder is not inside the workflow's folder, so Weir did not change it.");
         }
 
-        if (PathContainment.HasLinkBelowRoot(root, folder))
+        if (PathContainment.HasLinkBelowRoot(root, folder, files))
         {
             return new ReleaseRemoval(ReleaseRemovalKind.NothingRemoved, LinkedFolderReason);
         }
@@ -71,7 +73,7 @@ public static partial class ReleaseFolderRemoval
         bool? othersPresent;
         try
         {
-            othersPresent = HoldsOtherVideos(folder, file, VideoExtensions(mediaExtensionsCsv));
+            othersPresent = HoldsOtherVideos(folder, file, VideoExtensions(mediaExtensionsCsv), files);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -80,20 +82,32 @@ public static partial class ReleaseFolderRemoval
 
         if (othersPresent != false)
         {
-            if (File.Exists(file))
+            if (files.FileExists(file))
             {
-                File.Delete(file);
+                DeleteIfStillThere(() => files.DeleteFile(file));
             }
 
             return new ReleaseRemoval(ReleaseRemovalKind.FileOnly, othersPresent is null ? UnreadableFolderReason : OtherVideosReason);
         }
 
-        if (Directory.Exists(folder))
+        if (files.DirectoryExists(folder))
         {
-            Directory.Delete(folder, recursive: true);
+            DeleteIfStillThere(() => files.DeleteDirectory(folder, recursive: true));
         }
 
         return new ReleaseRemoval(ReleaseRemovalKind.FolderRemoved, null);
+    }
+
+    /// <summary>Something that removes the file or folder first has done what was asked: only a failure that leaves it in place is an error.</summary>
+    private static void DeleteIfStillThere(Action delete)
+    {
+        try
+        {
+            delete();
+        }
+        catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException)
+        {
+        }
     }
 
     /// <summary>
@@ -101,12 +115,13 @@ public static partial class ReleaseFolderRemoval
     /// <paramref name="extensions"/>. Samples do not count, so a normal release folder with its sample and .nfo still
     /// goes as a whole. Links inside the folder are not followed. Throws when part of the folder cannot be read.
     /// </summary>
-    public static bool HoldsOtherVideos(string folder, string file, IReadOnlySet<string> extensions)
+    public static bool HoldsOtherVideos(string folder, string file, IReadOnlySet<string> extensions, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         ArgumentNullException.ThrowIfNull(folder);
         ArgumentNullException.ThrowIfNull(file);
         ArgumentNullException.ThrowIfNull(extensions);
-        if (!Directory.Exists(folder))
+        if (!files.DirectoryExists(folder))
         {
             return false;
         }
@@ -120,7 +135,7 @@ public static partial class ReleaseFolderRemoval
             IgnoreInaccessible = false,
             ReturnSpecialDirectories = false,
         };
-        foreach (var candidate in Directory.EnumerateFiles(folder, "*", options))
+        foreach (var candidate in files.EnumerateFiles(folder, "*", options))
         {
             if (string.Equals(Path.GetFullPath(candidate), self, comparison) ||
                 !extensions.Contains(Path.GetExtension(candidate).ToLowerInvariant()))
@@ -130,7 +145,7 @@ public static partial class ReleaseFolderRemoval
 
             // A clip named or filed as a sample, and small enough to be one; a full film that happens to have "sample" in
             // its title still counts.
-            if (!IsSample(Path.GetRelativePath(folder, candidate)) || new FileInfo(candidate).Length >= SampleMaxBytes)
+            if (!IsSample(Path.GetRelativePath(folder, candidate)) || files.GetLength(candidate) >= SampleMaxBytes)
             {
                 return true;
             }

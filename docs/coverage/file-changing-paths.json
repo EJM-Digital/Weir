@@ -164,7 +164,7 @@
     { "file": "Weir.Infrastructure/Processing/RemuxPass/SourceFiles.cs", "calls": 1, "paths": ["write-probe"] },
     { "file": "Weir.Infrastructure/Processing/RemuxPass/TvSeasonFolderCleanup.cs", "calls": 1, "seams": ["OutputFolderCleanup.CascadeDeleteEmptyParents"], "paths": ["remux-pass"] },
     { "file": "Weir.Infrastructure/Runtime/AtomicFileWriter.cs", "calls": 3, "paths": ["weir-own-files"] },
-    { "file": "Weir.Infrastructure/Runtime/PreUpdateBackup.cs", "calls": 7, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Runtime/PreUpdateBackup.cs", "calls": 5, "paths": ["weir-own-files"] },
     { "file": "Weir.Infrastructure/Runtime/RuntimeDirectories.cs", "calls": 1, "paths": ["write-probe"] },
     { "file": "Weir.Infrastructure/Runtime/StartupNotes.cs", "calls": 1, "paths": ["weir-own-files"] },
     { "file": "Weir.Infrastructure/Runtime/SystemServices.cs", "calls": 2, "paths": ["weir-own-files"] },

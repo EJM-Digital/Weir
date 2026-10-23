@@ -60,7 +60,7 @@ internal sealed class WatchedFolderScanRun
                 NoteHoldEnds(settled);
                 _batch.Touch(settledRow);
             }
-            else if (WatchedMediaFile.Stat(entry.FullPath) is { } file)
+            else if (WatchedMediaFile.Stat(entry.FullPath, _scan.Files) is { } file)
             {
                 // A directory entry's size and time can lag behind a file another program still has open (NTFS updates them
                 // when the writer closes it), so every file that could be queued, held or changed is read from the file
@@ -85,7 +85,7 @@ internal sealed class WatchedFolderScanRun
     {
         foreach (var removal in _removals)
         {
-            var (deleted, detail) = RemuxPassPaths.CleanupRejectedFile(_scan.Paths.WatchedFolder, removal.FilePath, removal.Action);
+            var (deleted, detail) = RemuxPassPaths.CleanupRejectedFile(_scan.Paths.WatchedFolder, removal.FilePath, removal.Action, _scan.Files);
             var uow = await UnitOfWork.OpenAsync(_database, cancellationToken).ConfigureAwait(false);
             await using (uow.ConfigureAwait(false))
             {

@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Weir.Core.Json;
 using Weir.Core.MediaManagers;
 using Weir.Core.Time;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Jobs;
 using Weir.Infrastructure.Processing.RemuxPass;
 using Weir.Infrastructure.Sqlite;
@@ -108,20 +109,20 @@ public sealed class HandbackStore
     }
 
     /// <summary>A file's size and modification time (ns since the Unix epoch, as <c>SourceFiles.Fingerprint</c> measures it).</summary>
-    public static bool TryMeasure(string path, out long size, out long mtimeNs)
+    public static bool TryMeasure(string path, out long size, out long mtimeNs, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         size = 0;
         mtimeNs = 0;
         try
         {
-            var info = new FileInfo(path);
-            if (!info.Exists)
+            if (!files.FileExists(path))
             {
                 return false;
             }
 
-            size = info.Length;
-            mtimeNs = (info.LastWriteTimeUtc - DateTime.UnixEpoch).Ticks * 100;
+            size = files.GetLength(path);
+            mtimeNs = (files.GetLastWriteTimeUtc(path) - DateTime.UnixEpoch).Ticks * 100;
             return true;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
@@ -256,7 +257,7 @@ public sealed class HandbackStore
     /// A copy that is already gone was moved by the manager, which is recorded and removes nothing. Nothing but that one
     /// file is ever removed: no folder, no sidecar, and never anything outside the output folder.
     /// </summary>
-    public static HandbackRelease Release(HandbackRow row, string manager, string? libraryFilePath = null)
+    public static HandbackRelease Release(HandbackRow row, string manager, string? libraryFilePath = null, IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(row);
         string copy;
@@ -288,24 +289,27 @@ public sealed class HandbackStore
             return new HandbackRelease(HandbackReleaseKind.Kept, HandbackRules.SameAsLibraryNote);
         }
 
-        FileInfo info;
+        files ??= PhysicalFileSystem.Instance;
         try
         {
-            info = new FileInfo(copy);
-            if (!info.Exists)
+            if (!files.FileExists(copy))
             {
-                return Directory.Exists(copy)
+                return files.DirectoryExists(copy)
                     ? new HandbackRelease(HandbackReleaseKind.Kept, HandbackRules.ChangedNote)
                     : new HandbackRelease(HandbackReleaseKind.AlreadyGone, HandbackRules.AlreadyGoneNote(manager));
             }
 
-            var mtimeNs = (info.LastWriteTimeUtc - DateTime.UnixEpoch).Ticks * 100;
-            if (info.Length != row.OutputSize || mtimeNs != row.OutputMtimeNs || info.Attributes.HasFlag(FileAttributes.ReparsePoint))
+            var mtimeNs = (files.GetLastWriteTimeUtc(copy) - DateTime.UnixEpoch).Ticks * 100;
+            if (files.GetLength(copy) != row.OutputSize || mtimeNs != row.OutputMtimeNs || files.GetAttributes(copy).HasFlag(FileAttributes.ReparsePoint))
             {
                 return new HandbackRelease(HandbackReleaseKind.Kept, HandbackRules.ChangedNote);
             }
 
-            info.Delete();
+            files.DeleteFile(copy);
+        }
+        catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException)
+        {
+            return new HandbackRelease(HandbackReleaseKind.AlreadyGone, HandbackRules.AlreadyGoneNote(manager));
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
