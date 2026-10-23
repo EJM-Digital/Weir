@@ -121,14 +121,10 @@ internal sealed class UnreadStdoutServer : IDisposable
 
     public void Dispose()
     {
-        try
+        var kept = ChildServerStop.StopOrKill(_process, nameof(UnreadStdoutServer));
+        if (kept.Length > 0)
         {
-            _process.Kill(entireProcessTree: true);
-            _process.WaitForExit(10_000);
-        }
-        catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
-        {
-            // Already gone.
+            Diagnostics = kept;
         }
 
         _process.Dispose();

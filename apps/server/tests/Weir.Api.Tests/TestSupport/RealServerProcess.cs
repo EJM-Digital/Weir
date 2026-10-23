@@ -120,14 +120,10 @@ internal sealed class RealServerProcess : IDisposable
         }
 
         _disposed = true;
-        try
+        var kept = ChildServerStop.StopOrKill(_process, nameof(RealServerProcess));
+        if (kept.Length > 0)
         {
-            _process.Kill(entireProcessTree: true);
-            _process.WaitForExit(10_000);
-        }
-        catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
-        {
-            // Already gone.
+            Diagnostics = kept;
         }
 
         _process.Dispose();

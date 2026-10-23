@@ -1,5 +1,8 @@
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.Versioning;
+using Weir.Infrastructure.Tests;
 
 namespace Weir.Api.Tests;
 
@@ -32,15 +35,29 @@ public sealed class CoverletExitMutexReproTests : IDisposable
         }
     }
 
+    // Under coverage the server flushes its hit counts behind that mutex as it exits; a server that is asked to stop finishes the flush and
+    // leaves the mutex free, where one that is killed in the middle of it would leave it abandoned. Without coverage there is no such mutex
+    // and the test has nothing to find.
+    [WindowsFact("The stop request is a named event, and the mutex is a Windows one.")]
+    [SupportedOSPlatform("windows")]
+    public async Task A_server_ended_the_way_the_tests_end_one_leaves_the_exit_mutex_free()
+    {
+        using var server = RealServerProcess.Start(_home, "127.0.0.1", FreePort());
+        Assert.True(await server.BecomesReadyAsync(TimeSpan.FromSeconds(60)));
+
+        server.Dispose();
+
+        Assert.Empty(server.Diagnostics);
+        using var mutex = new Mutex(initiallyOwned: false, HitsMutexName());
+        Assert.True(mutex.WaitOne(0), "The exit mutex is held by a server that has gone.");
+        mutex.ReleaseMutex();
+    }
+
     [ReproFact]
     [SupportedOSPlatform("windows")]
     public async Task A_server_with_a_full_error_pipe_never_exits_once_a_killed_process_has_abandoned_coverlets_exit_mutex()
     {
-        var hitsFile = typeof(Weir.Core.WeirVersion).Assembly.GetTypes()
-            .SelectMany(type => type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
-            .FirstOrDefault(field => field.Name == "HitsFilePath")
-            ?? throw new InvalidOperationException("Weir.Core is not instrumented: run this under --collect:\"XPlat Code Coverage\".");
-        var name = Path.GetFileNameWithoutExtension((string)hitsFile.GetValue(null)!) + "_Mutex";
+        var name = HitsMutexName(requireInstrumented: true);
 
         // What a process killed in the middle of its flush leaves behind: a mutex owned by a thread that ended.
         var owner = new Thread(() => _ = new Mutex(initiallyOwned: true, name));
@@ -63,6 +80,36 @@ public sealed class CoverletExitMutexReproTests : IDisposable
         var exited = await server.ExitsAsync(TimeSpan.FromSeconds(30));
 
         Assert.False(exited, "The server refused its settings and left; the abandoned mutex did not hold it.");
+    }
+
+    /// <summary>The name coverlet gives the mutex its trackers flush under: the hits file name up to its first dot, then "_Mutex".</summary>
+    private static string HitsMutexName(bool requireInstrumented = false)
+    {
+        var hitsFile = typeof(Weir.Core.WeirVersion).Assembly.GetTypes()
+            .SelectMany(type => type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+            .FirstOrDefault(field => field.Name == "HitsFilePath" && field.GetValue(null) is string);
+        if (hitsFile is null)
+        {
+            return requireInstrumented
+                ? throw new InvalidOperationException("Weir.Core is not instrumented: run this under --collect:\"XPlat Code Coverage\".")
+                : "Weir_Mutex";
+        }
+
+        return Path.GetFileNameWithoutExtension((string)hitsFile.GetValue(null)!) + "_Mutex";
+    }
+
+    private static int FreePort()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        try
+        {
+            return ((IPEndPoint)listener.LocalEndpoint).Port;
+        }
+        finally
+        {
+            listener.Stop();
+        }
     }
 
     private sealed class ReproFactAttribute : FactAttribute
