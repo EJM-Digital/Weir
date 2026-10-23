@@ -1,10 +1,10 @@
 using System.Globalization;
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Weir.Core.Processing;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Sqlite;
 
 namespace Weir.Infrastructure.Runtime;
@@ -98,6 +98,7 @@ public sealed class PreUpdateBackup
     private readonly ILogger _logger;
     private readonly Action<string>? _saving;
     private readonly Action? _working;
+    private readonly IFileSystem _files;
 
     /// <param name="backupDir">The backup folder (<c>WEIR_BACKUP_DIR</c>); copies go in its <see cref="FolderName"/> folder.</param>
     /// <param name="home">Weir's data folder, where the settings files and secrets are.</param>
@@ -107,6 +108,7 @@ public sealed class PreUpdateBackup
     /// <param name="fromVersion">The version running now, when it is known.</param>
     /// <param name="saving">Told the sentence that says a copy is being saved, just before the copy starts.</param>
     /// <param name="working">Called from SQLite while the copy is made and checked: the proof that a copy of a large database is still going.</param>
+    /// <param name="files">The file system the copies are written to; the real one unless a test substitutes it.</param>
     public PreUpdateBackup(
         string backupDir,
         string home,
@@ -115,7 +117,8 @@ public sealed class PreUpdateBackup
         ILogger logger,
         string? fromVersion = null,
         Action<string>? saving = null,
-        Action? working = null)
+        Action? working = null,
+        IFileSystem? files = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(backupDir);
         ArgumentException.ThrowIfNullOrWhiteSpace(home);
@@ -128,6 +131,7 @@ public sealed class PreUpdateBackup
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _saving = saving;
         _working = working;
+        _files = files ?? PhysicalFileSystem.Instance;
     }
 
     /// <summary>How much room the volume has, or null when that cannot be told. A test replaces it.</summary>
@@ -140,16 +144,17 @@ public sealed class PreUpdateBackup
     public static string FolderIn(string backupDir) => Path.Join(backupDir, FolderName);
 
     /// <summary>The newest copy in <paramref name="backupDir"/>, or null when none has been taken.</summary>
-    public static PreUpdateBackupFile? Latest(string backupDir)
+    public static PreUpdateBackupFile? Latest(string backupDir, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         var folder = FolderIn(backupDir);
         try
         {
-            return Parts(folder)
+            return Parts(files, folder)
                 .Where(file => file.Part.Kind == DatabaseKind)
                 .OrderByDescending(file => file.Part.TakenAt)
                 .ThenByDescending(file => file.Part.Stem, StringComparer.Ordinal)
-                .Select(file => Describe(folder, file.Part, file.Path))
+                .Select(file => Describe(files, folder, file.Part, file.Path))
                 .FirstOrDefault();
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
@@ -190,7 +195,7 @@ public sealed class PreUpdateBackup
         var revision = RevisionNumber(fromRevision);
         // The oldest copy goes first, so the folder never holds more than MaxKept, even for a moment.
         Prune(folder, MaxKept - 1);
-        var databaseBytes = new FileInfo(connection.DataSource).Length;
+        var databaseBytes = _files.GetLength(connection.DataSource);
         var needed = databaseBytes * RoomPercent / 100;
         if (FreeSpaceOf(folder) is { } free && free < needed)
         {
@@ -206,10 +211,10 @@ public sealed class PreUpdateBackup
         var database = Path.Join(folder, $"{stem}.{DatabaseKind}");
         var unfinished = Path.Join(folder, $"{stem}.{UnfinishedKind}");
         written.Add(unfinished);
-        File.Delete(unfinished);
+        _files.DeleteFile(unfinished);
         CopyDatabase(connection, unfinished);
         VerifyDatabase(unfinished, fromRevision, _working);
-        File.Move(unfinished, database);
+        _files.MoveFile(unfinished, database, overwrite: false);
         written.Remove(unfinished);
         written.Add(database);
         RestrictFile(database);
@@ -217,7 +222,7 @@ public sealed class PreUpdateBackup
         foreach (var name in SettingsFiles.Concat(SecretFiles))
         {
             var source = Path.Join(_home, name);
-            if (File.Exists(source))
+            if (_files.FileExists(source))
             {
                 var copy = Path.Join(folder, $"{stem}.{name}");
                 CreateCopy(source, copy, written);
@@ -226,7 +231,7 @@ public sealed class PreUpdateBackup
 
         var details = Path.Join(folder, $"{stem}.{DetailsKind}");
         written.Add(details);
-        File.WriteAllText(details, JsonSerializer.Serialize(new Details(_fromVersion, _version)), new UTF8Encoding(false));
+        _files.WriteAllBytes(details, JsonSerializer.SerializeToUtf8Bytes(new Details(_fromVersion, _version)));
         RestrictFile(details);
 
         _logger.LogInformation("Before updating, Weir saved a copy of its data from={From} to={To} path={Path}", fromRevision, _version, database);
@@ -236,15 +241,15 @@ public sealed class PreUpdateBackup
 
     private sealed record Details(string? FromVersion, string ToVersion);
 
-    private static void CreateCopy(string source, string copy, List<string> written)
+    private void CreateCopy(string source, string copy, List<string> written)
     {
-        if (File.Exists(copy))
+        if (_files.FileExists(copy))
         {
             throw new IOException($"{copy} already exists");
         }
 
         written.Add(copy);
-        File.Copy(source, copy);
+        _files.CopyFile(source, copy, overwrite: false);
         RestrictFile(copy);
     }
 
@@ -253,7 +258,7 @@ public sealed class PreUpdateBackup
     {
         try
         {
-            var parts = Parts(folder).ToList();
+            var parts = Parts(_files, folder).ToList();
             var kept = parts
                 .Where(file => file.Part.Kind == DatabaseKind)
                 .OrderByDescending(file => file.Part.TakenAt)
@@ -318,20 +323,20 @@ public sealed class PreUpdateBackup
         }
     }
 
-    private static void EnsureFolder(string folder)
+    private void EnsureFolder(string folder)
     {
         if (OperatingSystem.IsWindows())
         {
-            Directory.CreateDirectory(folder);
+            _files.CreateDirectory(folder);
             OwnerOnlyAccess.RestrictFolder(folder);
             return;
         }
 
-        Directory.CreateDirectory(folder, OwnerOnlyFolder);
-        File.SetUnixFileMode(folder, OwnerOnlyFolder);
+        _files.CreateDirectory(folder, OwnerOnlyFolder);
+        _files.SetUnixFileMode(folder, OwnerOnlyFolder);
     }
 
-    private static void RestrictFile(string path)
+    private void RestrictFile(string path)
     {
         if (OperatingSystem.IsWindows())
         {
@@ -339,17 +344,17 @@ public sealed class PreUpdateBackup
         }
         else
         {
-            File.SetUnixFileMode(path, OwnerOnlyFile);
+            _files.SetUnixFileMode(path, OwnerOnlyFile);
         }
     }
 
-    private static void Remove(IEnumerable<string> paths)
+    private void Remove(IEnumerable<string> paths)
     {
         foreach (var path in paths)
         {
             try
             {
-                File.Delete(path);
+                _files.DeleteFile(path);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
@@ -379,14 +384,14 @@ public sealed class PreUpdateBackup
     /// <summary>One of this class's own files: the copy it belongs to, when it was taken, and what it is.</summary>
     private sealed record Part(string Stem, string Revision, string Version, DateTimeOffset TakenAt, string Kind);
 
-    private static List<(string Path, Part Part)> Parts(string folder)
+    private static List<(string Path, Part Part)> Parts(IFileSystem files, string folder)
     {
-        if (!Directory.Exists(folder))
+        if (!files.DirectoryExists(folder))
         {
             return [];
         }
 
-        return Directory.EnumerateFiles(folder)
+        return files.ListFiles(folder, new EnumerationOptions { IgnoreInaccessible = false })
             .Select(path => (Path: path, Part: Classify(System.IO.Path.GetFileName(path))))
             .Where(file => file.Part is not null)
             .Select(file => (file.Path, file.Part!))
@@ -410,13 +415,14 @@ public sealed class PreUpdateBackup
         return new Part(match.Groups["stem"].Value, match.Groups["rev"].Value, match.Groups["version"].Value, takenAt, match.Groups["kind"].Value);
     }
 
-    private static PreUpdateBackupFile Describe(string folder, Part part, string databasePath)
+    private static PreUpdateBackupFile Describe(IFileSystem files, string folder, Part part, string databasePath)
     {
         string? from = null;
         var to = part.Version;
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllBytes(Path.Join(folder, $"{part.Stem}.{DetailsKind}")));
+            using var details = files.OpenFile(Path.Join(folder, $"{part.Stem}.{DetailsKind}"), FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var document = JsonDocument.Parse(details);
             from = Text(document.RootElement, "FromVersion");
             to = Text(document.RootElement, "ToVersion") ?? to;
         }

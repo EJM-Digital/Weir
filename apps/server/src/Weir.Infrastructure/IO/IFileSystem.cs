@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using Microsoft.Win32.SafeHandles;
 
 namespace Weir.Infrastructure.IO;
@@ -52,6 +53,14 @@ public interface IFileSystem
     SafeFileHandle OpenHandle(string path, FileMode mode, FileAccess access, FileShare share);
 
     void CreateDirectory(string path);
+
+    /// <summary>Creates the folder, and any parent it makes, with <paramref name="mode"/> (a Unix-only call).</summary>
+    [UnsupportedOSPlatform("windows")]
+    void CreateDirectory(string path, UnixFileMode mode);
+
+    /// <summary>Sets the permissions of the file or folder (a Unix-only call).</summary>
+    [UnsupportedOSPlatform("windows")]
+    void SetUnixFileMode(string path, UnixFileMode mode);
 
     void WriteAllBytes(string path, byte[] bytes);
 
@@ -108,6 +117,12 @@ public sealed class PhysicalFileSystem : IFileSystem
     public SafeFileHandle OpenHandle(string path, FileMode mode, FileAccess access, FileShare share) => File.OpenHandle(path, mode, access, share);
 
     public void CreateDirectory(string path) => Directory.CreateDirectory(path);
+
+    [UnsupportedOSPlatform("windows")]
+    public void CreateDirectory(string path, UnixFileMode mode) => Directory.CreateDirectory(path, mode);
+
+    [UnsupportedOSPlatform("windows")]
+    public void SetUnixFileMode(string path, UnixFileMode mode) => File.SetUnixFileMode(path, mode);
 
     public void WriteAllBytes(string path, byte[] bytes) => File.WriteAllBytes(path, bytes);
 

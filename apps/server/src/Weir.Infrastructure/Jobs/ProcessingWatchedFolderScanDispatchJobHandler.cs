@@ -133,7 +133,7 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
         if (_fs.DirectoryExists(scan.Paths.WatchedFolder))
         {
             await VanishedFiles.SettleAsync(
-                _database, scan.Library.Id, scan.Paths.WatchedFolder, scan.MediaScope, scan.Now, ActivityProvenance.ScanTriggerToTrigger[request.Trigger], GoneLookAgain, _jobStore.WakeWorkers, cancellationToken)
+                _database, scan.Library.Id, scan.Paths.WatchedFolder, scan.MediaScope, scan.Now, ActivityProvenance.ScanTriggerToTrigger[request.Trigger], GoneLookAgain, _jobStore.WakeWorkers, _fs, cancellationToken)
                 .ConfigureAwait(false);
         }
 

@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using Microsoft.Win32.SafeHandles;
 using Weir.Infrastructure.IO;
 
@@ -24,6 +25,7 @@ internal enum FileCall
     OpenFile,
     OpenHandle,
     CreateDirectory,
+    SetUnixFileMode,
     WriteAllBytes,
     DeleteFile,
     DeleteDirectory,
@@ -120,6 +122,12 @@ internal sealed class FaultingFileSystem : IFileSystem
 
     public void CreateDirectory(string path) => Run(FileCall.CreateDirectory, path, () => _real.CreateDirectory(path));
 
+    [UnsupportedOSPlatform("windows")]
+    public void CreateDirectory(string path, UnixFileMode mode) => Run(FileCall.CreateDirectory, path, () => _real.CreateDirectory(path, mode));
+
+    [UnsupportedOSPlatform("windows")]
+    public void SetUnixFileMode(string path, UnixFileMode mode) => Run(FileCall.SetUnixFileMode, path, () => _real.SetUnixFileMode(path, mode));
+
     public void WriteAllBytes(string path, byte[] bytes) => Run(FileCall.WriteAllBytes, path, () => _real.WriteAllBytes(path, bytes));
 
     public void DeleteFile(string path) => Run(FileCall.DeleteFile, path, () => _real.DeleteFile(path));
@@ -151,14 +159,18 @@ internal sealed class FaultingFileSystem : IFileSystem
             _calls.Add((call, path));
         }
 
+        var due = new List<Rule>();
         foreach (var rule in _rules.Where(r => r.Call == call && Matches(r, path)))
         {
             rule.Seen++;
-            if (rule.Seen != rule.OnCall)
+            if (rule.Seen == rule.OnCall)
             {
-                continue;
+                due.Add(rule);
             }
+        }
 
+        foreach (var rule in due)
+        {
             rule.Before?.Invoke(path);
             if (rule.Exception is not null)
             {

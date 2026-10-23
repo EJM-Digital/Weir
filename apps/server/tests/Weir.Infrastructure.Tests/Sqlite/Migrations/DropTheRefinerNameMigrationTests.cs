@@ -46,7 +46,6 @@ public sealed class DropTheRefinerNameMigrationTests : IDisposable
 
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
         _temp.Dispose();
     }
 

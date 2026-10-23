@@ -77,7 +77,7 @@ public sealed partial class VanishedFileSweepTask : IPeriodicTask
             }
 
             var changes = await VanishedFiles.SettleAsync(
-                _database, library.Id, runtime.WatchedFolder, ProcessingMediaScopes.Normalize(library.MediaType), now, "scheduled", GoneLookAgain, WakeForStartedLook, cancellationToken).ConfigureAwait(false);
+                _database, library.Id, runtime.WatchedFolder, ProcessingMediaScopes.Normalize(library.MediaType), now, "scheduled", GoneLookAgain, WakeForStartedLook, _fs, cancellationToken).ConfigureAwait(false);
             if (!changes.Any)
             {
                 continue;
