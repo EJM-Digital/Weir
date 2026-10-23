@@ -192,6 +192,35 @@ public sealed class ProfileEditorTests(E2EServer server) : E2ETestBase(server)
     }
 
     [E2EFact]
+    public async Task A_track_name_template_with_a_placeholder_Weir_does_not_know_is_flagged_on_its_field_until_it_is_fixed()
+    {
+        using var admin = await AdminSession.OpenAsync(BaseUrl);
+        var profile = await WeirProfiles.CreateAsync(admin, Name);
+        try
+        {
+            var page = await OpenProfileAsync(profile);
+            var naming = Workspace(page).Locator("details").Filter(new() { HasText = "Track naming and chapters" });
+            await naming.Locator("summary").ClickAsync();
+            await naming.GetByRole(AriaRole.Checkbox, new() { Name = "Standardize audio and subtitle track names" }).CheckAsync();
+            var field = naming.Locator("label").Filter(new() { HasText = "Forced tracks" });
+
+            await field.Locator("input").FillAsync("{language} {nonsense}");
+
+            await Expect(field.GetByRole(AriaRole.Alert)).ToContainTextAsync("Unknown placeholder '{nonsense}'");
+            await Expect(field.Locator("input")).ToHaveAttributeAsync("aria-invalid", "true");
+
+            await field.Locator("input").FillAsync("{language} {flags}");
+
+            await Expect(field.GetByRole(AriaRole.Alert)).ToHaveCountAsync(0);
+            await Expect(field).ToContainTextAsync("Preview: English Forced");
+        }
+        finally
+        {
+            await WeirProfiles.ClearAsync(admin, profile);
+        }
+    }
+
+    [E2EFact]
     public async Task Advanced_track_ordering_opens_and_hides_closes_on_another_profile_and_stays_open_after_a_save()
     {
         using var admin = await AdminSession.OpenAsync(BaseUrl);

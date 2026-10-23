@@ -129,9 +129,8 @@ export function LiveTrace({
         const shape = traceShape(line.samples, window, scale);
         lineRefs.current.get(line.key)?.setAttribute("d", shape.line);
         areaRefs.current.get(line.key)?.setAttribute("d", shape.area);
-        const dot = dotRefs.current.get(line.key);
+        const dot = dotRefs.current.get(line.key) as HTMLSpanElement;
         const last = shape.points.at(-1);
-        if (!dot) continue;
         dot.style.opacity = last ? "1" : "0";
         if (last) {
           dot.style.left = `${(last.x / TRACE_WIDTH) * 100}%`;
@@ -164,7 +163,6 @@ export function LiveTrace({
   const point = (event: PointerEvent<HTMLElement>) => {
     keyed.current = null;
     const box = event.currentTarget.getBoundingClientRect();
-    if (box.width <= 0) return;
     pointer.current = (event.clientX - box.left) / box.width;
     if (frameWindow.current) {
       setReadout(

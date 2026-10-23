@@ -75,6 +75,7 @@ describe("/processing", () => {
   it.each([
     ["/processing", "/"],
     ["/processing?tab=overview", "/"],
+    ["/processing?tab=no-such-tab", "/"],
     ["/processing?tab=files", "/activity"],
     ["/processing?tab=libraries", "/setup/workflows"],
     ["/processing?tab=audio-subtitles", "/setup/rules"],

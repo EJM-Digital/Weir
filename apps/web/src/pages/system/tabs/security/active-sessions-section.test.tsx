@@ -31,7 +31,7 @@ import {
   APP_SETTINGS,
   heldReply,
   renderSecurity,
-} from "./security-test-support";
+} from "../../../../test/security-test-support";
 
 const SESSIONS = "/api/v1/auth/sessions";
 const REVOKE_OTHERS = "/api/v1/auth/sessions/revoke-others";

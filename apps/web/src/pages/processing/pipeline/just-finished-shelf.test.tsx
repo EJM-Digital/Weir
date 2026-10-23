@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -58,6 +58,34 @@ const tiles = () =>
     .map((item) => within(item).getByRole("button").getAttribute("aria-label"));
 
 describe("Just finished", () => {
+  afterEach(() => {
+    Reflect.deleteProperty(document, "fonts");
+    vi.restoreAllMocks();
+  });
+
+  it("does not measure its status line again when the fonts arrive after it has gone", async () => {
+    let fontsArrive: () => void = () => undefined;
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: new Promise<void>((resolve) => (fontsArrive = resolve)) },
+    });
+    const { unmount } = render(shelf([finished(1)]));
+    unmount();
+    const measured = vi.spyOn(window, "getComputedStyle");
+
+    await act(async () => fontsArrive());
+
+    expect(measured).not.toHaveBeenCalled();
+  });
+
+  it("names a tile without a time when the time the file finished cannot be read", () => {
+    render(shelf([finished(1, { finishedAt: "not a time" })]));
+
+    const [label] = tiles();
+    expect(label).toContain("The Quiet Harbour");
+    expect(label).not.toMatch(/ago|just now/);
+  });
+
   it("says what has not finished when the work it is narrowed to has nothing", () => {
     render(shelf([finished(1)], { filter: "library" }));
 

@@ -11,7 +11,7 @@ import {
   WORKFLOWS,
   renderActivityPage,
   stubActivityServer,
-} from "./activity-test-server";
+} from "../../test/activity-test-server";
 
 const ALPHA = processingFile({
   id: 1,
@@ -204,6 +204,28 @@ describe("what Activity asks the server for, from its address", () => {
       expect(lastListRequest().get("path_contains")).toBe("alpha"),
     );
     expect(api.to(CLEANS).at(-1)!.query.get("path_contains")).toBe("alpha");
+  });
+});
+
+describe("going back to every kind of file", () => {
+  it("takes the kind out of the address when All is chosen again", async () => {
+    stubServer();
+    renderPage("/activity?show=failed");
+    await filesLoaded();
+    const show = screen.getByRole("group", { name: "Show" });
+    expect(
+      within(show).getByRole("button", { name: /^Failed/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(within(show).getByRole("button", { name: /^All/ }));
+
+    expect(within(show).getByRole("button", { name: /^All/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(
+      within(show).getByRole("button", { name: /^Failed/ }),
+    ).toHaveAttribute("aria-pressed", "false");
   });
 });
 

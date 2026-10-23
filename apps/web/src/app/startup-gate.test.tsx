@@ -176,6 +176,24 @@ describe("StartupGate while Weir is starting", () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
+  it("does not ask again when the page goes away while a question is still unanswered and the answer is a failure", async () => {
+    let fail!: (error: Error) => void;
+    const fetchStub = vi.fn(
+      () =>
+        new Promise<Response>((_, reject) => {
+          fail = reject;
+        }),
+    );
+    vi.stubGlobal("fetch", fetchStub);
+
+    const { unmount } = await renderGate();
+    unmount();
+    fail(unreachable());
+    await elapse(5 * POLL_MS);
+
+    expect(fetchStub).toHaveBeenCalledTimes(1);
+  });
+
   it("stops asking when the page goes away before Weir is ready", async () => {
     const fetchStub = serverAnswering(answersStarting);
 

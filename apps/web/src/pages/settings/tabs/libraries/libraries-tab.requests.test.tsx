@@ -287,3 +287,47 @@ describe("Unlink on a workflow imported from a media manager", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe("while the rule profiles and media managers are still being read", () => {
+  it("lists the workflows and opens the editor without waiting for them", async () => {
+    const slow = () => new Promise<never>(() => undefined);
+    server = serveWorkflows({
+      workflows: [library({ id: 1 })],
+      extra: {
+        "GET /api/v1/processing/rule-sets": slow,
+        "GET /api/v1/media-managers/connections": slow,
+      },
+    });
+    const row = await openTab();
+
+    await waitFor(() =>
+      expect(within(row).getByRole("button", { name: "Edit" })).toBeEnabled(),
+    );
+    fireEvent.click(within(row).getByRole("button", { name: "Edit" }));
+
+    expect(await screen.findByText("Edit workflow")).toBeInTheDocument();
+  });
+});
+
+describe("when the workflow being edited is removed on the server", () => {
+  it("keeps the editor open on what it was opened with", async () => {
+    server = serveWorkflows({
+      workflows: [library({ id: 1, name: "Movies" })],
+    });
+    const row = await openTab();
+    await waitFor(() =>
+      expect(within(row).getByRole("button", { name: "Edit" })).toBeEnabled(),
+    );
+    fireEvent.click(within(row).getByRole("button", { name: "Edit" }));
+    const form = await screen.findByTestId("processing-library-form");
+
+    server.workflows.splice(0);
+    await client.invalidateQueries();
+
+    await waitFor(() =>
+      expect(screen.queryByTestId("processing-library-1")).toBeNull(),
+    );
+    expect(screen.getByTestId("processing-library-form")).toBe(form);
+    expect(within(form).getByLabelText("Name")).toHaveValue("Movies");
+  });
+});

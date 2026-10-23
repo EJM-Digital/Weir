@@ -55,6 +55,8 @@ const libraries = [
     ready_after_seconds: 60,
   },
 ];
+/** Whether the workflows have been read yet; the Dashboard draws before they are. */
+const libraryRead = { loaded: true };
 const readiness = {
   worker_health: [] as { module: string; status: string; detail: string }[],
 };
@@ -120,7 +122,7 @@ vi.mock("../../lib/processing/jobs-inspection/queries", () => ({
 }));
 vi.mock("../../lib/processing/libraries-queries", () => ({
   useProcessingLibrariesQuery: () => ({
-    data: libraries,
+    data: libraryRead.loaded ? libraries : undefined,
     refetch: refetchLibraries,
   }),
 }));
@@ -264,6 +266,7 @@ describe("ProcessingPage", () => {
     readiness.worker_health = [];
     refetchFiles.mockClear();
     refetchLibraries.mockClear();
+    libraryRead.loaded = true;
     invalidations.length = 0;
     streamFilters.length = 0;
     needsProps.length = 0;
@@ -286,6 +289,15 @@ describe("ProcessingPage", () => {
 
     expect(refetchFiles).not.toHaveBeenCalled();
     expect(refetchLibraries).not.toHaveBeenCalled();
+  });
+
+  it("draws the Pipeline before the workflows have been read", () => {
+    libraryRead.loaded = false;
+    files.files = [file({ id: 1, status: "unprocessed" })];
+
+    renderLive();
+
+    expect(screen.getByTestId("processing-page")).toBeInTheDocument();
   });
 
   it("filters what the Pipeline shows from the header, which starts on Everything", () => {

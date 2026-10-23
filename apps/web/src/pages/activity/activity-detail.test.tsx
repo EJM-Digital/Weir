@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ProcessingDirectPlay } from "../../lib/processing/files-api";
@@ -11,7 +11,7 @@ import {
   never,
   renderActivityPage,
   stubActivityServer,
-} from "./activity-test-server";
+} from "../../test/activity-test-server";
 
 const FINISHED = processingFile({
   id: 1,
@@ -169,6 +169,49 @@ describe("a file Weir is working on", () => {
 });
 
 describe("the record of what Weir did to the open file", () => {
+  describe("how long the last pass took", () => {
+    const passLog = (file: typeof FINISHED) => ({
+      ...emptyLog(file),
+      entries: [
+        {
+          id: 1,
+          recorded_at: "2026-10-01T10:00:00Z",
+          outcome: "live_output_written",
+          title: "Processed",
+          library_name: "Movies",
+          detail: { outcome: "live_output_written", elapsed_seconds: 125 },
+          story: [],
+        },
+      ],
+    });
+
+    it("is added to the lead of a finished file", async () => {
+      api = stubActivityServer({
+        files: [FINISHED],
+        overrides: { [logRoute(1)]: passLog(FINISHED) },
+      });
+      renderActivityPage("/activity?file=1");
+
+      await waitFor(async () =>
+        expect(await detail()).toHaveTextContent("Took 2 min 5 s."),
+      );
+    });
+
+    it("is left out while the file is being worked on again", async () => {
+      api = stubActivityServer({
+        files: [RUNNING],
+        overrides: { [logRoute(2)]: passLog(RUNNING) },
+      });
+      renderActivityPage("/activity?file=2");
+
+      const region = await detail();
+      await waitFor(() =>
+        expect(screen.queryByText("Reading this file's record…")).toBeNull(),
+      );
+      expect(region).not.toHaveTextContent("Took");
+    });
+  });
+
   it("says it is reading the record while the server has not answered", async () => {
     api = stubActivityServer({
       files: [FINISHED],

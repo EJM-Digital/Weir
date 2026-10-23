@@ -88,6 +88,21 @@ describe("the Storage card", () => {
     expect(within(drive).queryByText(/MB\/s/)).toBeNull();
   });
 
+  it("titles a drive no workflow uses by its path alone", () => {
+    query = {
+      data: {
+        ...testStats,
+        drives: [{ ...testStats.drives[0], workflows: [] }],
+      },
+    };
+    show();
+
+    expect(screen.getByTestId("system-drive")).toHaveAttribute(
+      "title",
+      testStats.drives[0].path,
+    );
+  });
+
   it("lists every drive even when the address names a workflow that does not use it", () => {
     show("/?view=system&workflow=9");
 

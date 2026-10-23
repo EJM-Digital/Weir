@@ -207,6 +207,25 @@ describe("the Today tile", () => {
     );
   });
 
+  it("leaves a key that does not walk the chart to the browser, and keeps its place", () => {
+    const handed = handedBack(
+      [finishedAt(3), finishedAt(3), finishedAt(8)],
+      NOW,
+    );
+    summary.value = { handed, total: handed.totals.all, partial: false };
+    const tile = renderTile();
+    const chart = within(tile).getByRole("slider", {
+      name: "Files finished, five minutes to a point",
+    });
+    chart.focus();
+    const before = chart.getAttribute("aria-valuetext");
+
+    const allowed = fireEvent.keyDown(chart, { key: "a" });
+
+    expect(allowed).toBe(true);
+    expect(chart.getAttribute("aria-valuetext")).toBe(before);
+  });
+
   it("labels the 100% and 50% gridlines with whole numbers and the time span in one label", () => {
     const handed = handedBack(
       [finishedAt(3), finishedAt(3), finishedAt(8)],

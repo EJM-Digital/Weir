@@ -13,7 +13,7 @@ import {
   SAVED_SETTINGS,
   SAVING,
   SETTINGS,
-} from "../../system-test-support";
+} from "../../../../test/system-test-support";
 import { BackupsTab } from "./backups-tab";
 
 const SETTINGS_PATH = "/api/v1/suite/settings";

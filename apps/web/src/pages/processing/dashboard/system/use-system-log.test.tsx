@@ -16,8 +16,12 @@ let deliver: ((frame: SystemLogFrame) => void) | null = null;
 vi.mock("../../../../lib/settings/settings-api", () => ({
   fetchServerLogs: (filters: { level?: string }) => read(filters),
 }));
+/** The settings as read so far; none until the server has answered. */
+const settings: { data: { app_timezone: string } | undefined } = {
+  data: { app_timezone: "UTC" },
+};
 vi.mock("../../../../lib/settings/queries", () => ({
-  useAppSettingsQuery: () => ({ data: { app_timezone: "UTC" } }),
+  useAppSettingsQuery: () => settings,
 }));
 vi.mock("../../../../lib/activity/use-activity-stream-invalidation", () => ({
   subscribeSystemLog: (subscriber: (frame: SystemLogFrame) => void) => {
@@ -60,6 +64,7 @@ const YESTERDAY: Entry = {
 };
 
 beforeEach(() => {
+  settings.data = { app_timezone: "UTC" };
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(NOW);
   deliver = null;
@@ -89,6 +94,15 @@ describe("useSystemLog", () => {
       "Yesterday's failure.",
     ]);
     expect(result.current.counts).toEqual({ errors: 1, warnings: 1 });
+  });
+
+  it("still lists the log while the time zone has not been read", async () => {
+    settings.data = undefined;
+    const { result } = renderHook(() => useSystemLog(), { wrapper: wrapper() });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.lines).toHaveLength(4);
   });
 
   it("reads errors and warnings on their own, so their counts survive a log full of information", async () => {

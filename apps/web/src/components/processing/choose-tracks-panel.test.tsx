@@ -85,6 +85,14 @@ function baseProps() {
   };
 }
 
+it("shows no table of tracks before any have been read or failed to read", () => {
+  render(<ChooseTracksPanel {...baseProps()} tracks={undefined} />);
+
+  expect(screen.getByTestId("choose-tracks-panel")).toBeInTheDocument();
+  expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  expect(screen.queryByTestId("choose-tracks-submit")).not.toBeInTheDocument();
+});
+
 it("renders nothing when closed", () => {
   const { container } = render(
     <ChooseTracksPanel {...baseProps()} open={false} />,
@@ -324,6 +332,29 @@ it("lists an embedded image or attachment apart from the table, with what the sa
     "Attachment — kept: Fonts stay so styled subtitles still display.",
   ]);
   expect(screen.getAllByRole("row")).toHaveLength(1 + 4);
+});
+
+it("calls a stream of the kind other an other stream", () => {
+  const withData = tracks();
+  withData.streams.push({
+    index: 4,
+    type: "other",
+    codec: "bin_data",
+    language: null,
+    title: null,
+    channels: null,
+    default: false,
+    forced: false,
+    rule_would_keep: false,
+    rule_reason: "This pass does not act on this stream type.",
+  });
+  render(<ChooseTracksPanel {...baseProps()} tracks={withData} />);
+
+  expect(
+    screen.getByText(
+      "Other stream — removed: This pass does not act on this stream type.",
+    ),
+  ).toBeInTheDocument();
 });
 
 it("has no list of images or attachments when the file has none", () => {

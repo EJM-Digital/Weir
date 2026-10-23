@@ -26,7 +26,7 @@ import { processingKeys } from "../../lib/processing/query-keys";
 import { settingsKeys } from "../../lib/settings/query-keys";
 import { useFakeClock, useRealClock } from "../../test/fake-clock";
 import { SetupWizardPage } from "./setup-wizard-page";
-import { CEILING, TEST_CEILING_MS } from "./wizard-test-server";
+import { CEILING, TEST_CEILING_MS } from "../../test/wizard-test-server";
 
 vi.setConfig({ testTimeout: TEST_CEILING_MS });
 
@@ -517,6 +517,22 @@ describe("first run: connect Deluno first", () => {
     expect(saveSettingsMock).not.toHaveBeenCalled();
   });
 
+  it("says a workflow's folders check out when the check found no problem and had no chain to report", async () => {
+    scenario.managers = [managerConnection({})];
+    scenario.checks = {
+      ...passingCheck(),
+      movie: { problem: null, chain: null },
+    };
+    renderWizard();
+
+    choose("Deluno");
+    await foundLibraries();
+
+    expect(
+      await screen.findAllByText("✓ These folders check out.", {}, CEILING),
+    ).not.toHaveLength(0);
+  });
+
   it("lists what still needs fixing in a workflow's folder chain, without stopping Finish", async () => {
     scenario.managers = [managerConnection({})];
     scenario.checks = {
@@ -807,6 +823,75 @@ describe("first run: connect a download client first", () => {
         "Linked to a removed media manager",
       );
     });
+  });
+
+  it("tests a download client by itself when the server has no result for it", async () => {
+    scenario.clients = [
+      clientConnection({
+        last_test_ok: undefined,
+        last_test_detail: undefined,
+      }),
+    ];
+    const test = vi
+      .spyOn(downloadClientsApi, "testDownloadClientConnection")
+      .mockImplementation(async () => {
+        scenario.clients = [clientConnection({})];
+        return {
+          connection_id: 8,
+          ok: true,
+          detail: "Connected.",
+          checked_at: "2026-09-29T10:00:00Z",
+        };
+      });
+    renderWizard();
+
+    choose(/A download client/);
+
+    expect(
+      await screen.findByText("✓ Connected", {}, CEILING),
+    ).toBeInTheDocument();
+    expect(test).toHaveBeenCalledTimes(1);
+  });
+
+  it("says a download client could not be tested when the test itself fails", async () => {
+    scenario.clients = [clientConnection({})];
+    vi.spyOn(
+      downloadClientsApi,
+      "testDownloadClientConnection",
+    ).mockRejectedValue(new Error("Weir could not reach the server."));
+    renderWizard();
+
+    choose(/A download client/);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Test" }, CEILING),
+    );
+
+    expect(
+      await screen.findByText("Weir could not reach the server.", {}, CEILING),
+    ).toBeInTheDocument();
+  });
+
+  it("asks before removing a download client, and keeps it when the person says to", async () => {
+    scenario.clients = [clientConnection({})];
+    const remove = vi.spyOn(
+      downloadClientsApi,
+      "deleteDownloadClientConnection",
+    );
+    renderWizard();
+
+    choose(/A download client/);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Remove" }, CEILING),
+    );
+    const dialog = await screen.findByRole("dialog", {}, CEILING);
+    expect(dialog).toHaveTextContent(/^Remove .*\?/);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Keep it" }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(remove).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Remove" })).toBeVisible();
   });
 
   it("connects a download client with the form Settings uses", async () => {

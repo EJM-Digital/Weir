@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { describeTrack, positionsByKind } from "../../lib/format/track";
+import { describeTrackIn, positionsByKind } from "../../lib/format/track";
 import type {
   ProcessingFileTrack,
   ProcessingFileTracks,
@@ -130,7 +130,7 @@ export function useTrackChoice(tracks: ProcessingFileTracks | undefined) {
       ? track.index === defaultAudioIndex
       : track.type === "subtitle" &&
         (rows[track.index]?.keep ?? false) &&
-        (rows[track.index]?.default ?? false);
+        rows[track.index].default;
 
   // Default and forced only mean anything for audio and subtitle tracks; a video track always
   // submits false for both, whatever its own disposition on the source said.
@@ -138,8 +138,7 @@ export function useTrackChoice(tracks: ProcessingFileTracks | undefined) {
     keep: keptTracks.map((track) => ({
       index: track.index,
       default: isDefault(track),
-      forced:
-        track.type === "video" ? false : (rows[track.index]?.forced ?? false),
+      forced: track.type === "video" ? false : rows[track.index].forced,
     })),
     order,
   });
@@ -147,8 +146,7 @@ export function useTrackChoice(tracks: ProcessingFileTracks | undefined) {
   return {
     rows,
     /** "Audio 2 · Japanese · 2.0 AAC": the track in words, numbered among its own kind. */
-    labelOf: (track: ProcessingFileTrack) =>
-      describeTrack(track, positions.get(track.index) ?? 1),
+    labelOf: (track: ProcessingFileTrack) => describeTrackIn(track, positions),
     /** Whether the track is the default of its kind in what would be submitted. */
     isDefault,
     /** Whether a kept subtitle is marked default; with none, players show no subtitles until asked. */

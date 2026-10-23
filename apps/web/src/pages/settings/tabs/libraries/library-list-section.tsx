@@ -48,11 +48,15 @@ export function LibraryListSection({
   const columns = useTableColumns(WORKFLOW_COLUMNS);
   const reorder = useRowReorder({
     ids: libraries.map((library) => library.id),
-    nameOf: (id) => libraries.find((library) => library.id === id)?.name ?? "",
+    nameOf: (id) =>
+      libraries
+        .filter((library) => library.id === id)
+        .map((library) => library.name)
+        .join(""),
     onCommit: onReorder,
   });
-  const inPriorityOrder = reorder.orderedIds.flatMap(
-    (id) => libraries.find((library) => library.id === id) ?? [],
+  const inPriorityOrder = reorder.orderedIds.flatMap((id) =>
+    libraries.filter((library) => library.id === id),
   );
 
   return (

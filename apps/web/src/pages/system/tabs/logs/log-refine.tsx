@@ -39,14 +39,11 @@ function RefinePicker({
 }
 
 /** What a job status picker says when closed: any, one named, or how many. */
-function statusSummary(statuses: readonly string[]): string {
+function statusSummary(
+  statuses: readonly (typeof LOG_JOB_STATUSES)[number][],
+): string {
   if (statuses.length === 0) return "Any job status";
-  if (statuses.length === 1) {
-    return (
-      LOG_JOB_STATUSES.find((s) => s.value === statuses[0])?.label ??
-      statuses[0]
-    );
-  }
+  if (statuses.length === 1) return statuses[0].label;
   return `${statuses.length} job statuses`;
 }
 
@@ -111,7 +108,11 @@ export function LogRefine({
           <MmMultiListboxPicker
             options={LOG_JOB_STATUSES}
             values={filters.statuses}
-            summaryText={statusSummary(filters.statuses)}
+            summaryText={statusSummary(
+              LOG_JOB_STATUSES.filter((status) =>
+                filters.statuses.includes(status.value),
+              ),
+            )}
             onChange={(statuses) => onChange({ statuses })}
             ariaLabelledBy={labelId}
           />

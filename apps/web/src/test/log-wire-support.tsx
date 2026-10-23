@@ -2,14 +2,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
-import { systemReplies } from "../../../../test/recorded-system";
-import {
-  serveRecordedReplies,
-  type RecordedRoutes,
-} from "../../../../test/recorded-weir";
-import { SAVING } from "../../system-test-support";
-import { me } from "../security/security-replies";
-import { UnifiedLog } from "./unified-log";
+import { systemReplies } from "./recorded-system";
+import { serveRecordedReplies, type RecordedRoutes } from "./recorded-weir";
+import { SAVING } from "./system-test-support";
+import { me } from "../pages/system/tabs/security/security-replies";
+import { UnifiedLog } from "../pages/system/tabs/logs/unified-log";
 
 /** The log as the server answers it: who is signed in, the time zone the times are shown in, and a confirmation token for a change. */
 export function serveLog(routes: RecordedRoutes) {

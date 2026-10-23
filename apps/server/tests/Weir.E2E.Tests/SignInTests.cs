@@ -37,8 +37,8 @@ public sealed class SignInTests(E2EServer server) : E2ETestBase(server)
     /// <summary>How many successful sign-ins Weir has recorded, read by the administrator the test arranged.</summary>
     private static async Task<int> SignInsRecordedAsync(WeirClient admin)
     {
-        var recent = await admin.GetAsync($"{WeirClient.Api}/activity/recent", ("event_type", LoginSucceeded), ("limit", 100));
-        return recent.Fields["items"]!.AsArray().Count;
+        var recent = await admin.GetAsync($"{WeirClient.Api}/activity/recent", ("event_type", LoginSucceeded), ("limit", 1));
+        return recent.Fields["total"]!.GetValue<int>();
     }
 
     private async Task<IPage> OpenSignInAsync(ViewportSize? viewport = null)

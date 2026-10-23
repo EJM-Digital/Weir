@@ -9,7 +9,11 @@ import {
   vi,
 } from "vitest";
 
-import { logPage, renderLog, stubEventSource } from "./log-test-support";
+import {
+  logPage,
+  renderLog,
+  stubEventSource,
+} from "../../../../test/log-test-support";
 
 const mocks = vi.hoisted(() => ({ fetchSystemLog: vi.fn() }));
 

@@ -69,7 +69,6 @@ export function useListboxKeyboardNav<Option extends { label: string }>(
   useEffect(() => () => clearTimeout(typeaheadResetTimer.current), []);
 
   const moveActive = (index: number) => {
-    if (options.length === 0) return;
     const next = clampIndex(index, options.length - 1);
     setActiveIndex(next);
     elements.current[next]?.focus();

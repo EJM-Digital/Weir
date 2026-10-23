@@ -56,10 +56,6 @@ export function ChooseTracksPanel({
   const choice = useTrackChoice(tracks);
   if (!open) return null;
 
-  const submit = () => {
-    if (!choice.validationError) onSubmit(choice.choice());
-  };
-
   return (
     <StoryPanelShell
       eyebrow="Choose tracks by hand"
@@ -112,7 +108,7 @@ export function ChooseTracksPanel({
             <button
               type="button"
               className={mmActionButtonClass({ variant: "primary" })}
-              onClick={submit}
+              onClick={() => onSubmit(choice.choice())}
               disabled={submitting || Boolean(choice.validationError)}
               data-testid="choose-tracks-submit"
             >

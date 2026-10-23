@@ -41,7 +41,10 @@ function useFittingWords(words: readonly string[]) {
     const fit = () => {
       if (!live) return;
       const measure = canvasMeasure(fontOf(pill));
-      const text = pill.lastChild?.textContent ?? "";
+      const text = Array.from(pill.childNodes)
+        .slice(-1)
+        .map((node) => node.textContent)
+        .join("");
       if (!measure || header.clientWidth <= 0) {
         setChosen(options[0]);
         return;

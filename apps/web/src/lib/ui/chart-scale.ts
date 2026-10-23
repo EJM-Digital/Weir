@@ -48,8 +48,7 @@ export function roundScaleTop(
   if (wholeNumbers) return wholeScaleTop(measured);
   if (measured === 0) return EMPTY_SCALE_TOP;
   const decade = 10 ** Math.floor(Math.log10(measured));
-  return (
-    ROUND_STEPS.map((step) => step * decade).find((top) => top >= measured) ??
-    10 * decade
-  );
+  return ROUND_STEPS.map((step) => step * decade).find(
+    (top) => top >= measured,
+  ) as number;
 }

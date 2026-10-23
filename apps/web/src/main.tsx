@@ -23,10 +23,7 @@ preloadAboveTheFoldFonts();
 // settings are wanted by the very first screen a person sees once Weir is ready (#719).
 prefetchOnBoot();
 
-const el = document.getElementById("root");
-if (!el) {
-  throw new Error("Root element #root not found");
-}
+const el = document.getElementById("root") as HTMLElement;
 
 createRoot(el).render(
   <StrictMode>

@@ -62,10 +62,10 @@ export function ConnectionFolderChain({
     );
   }
 
-  const entries = chain.data ?? [];
-  if (entries.length === 0) {
+  if (!chain.data?.length) {
     return null;
   }
+  const entries = chain.data;
 
   return (
     <div className="mm-conn-chain" data-testid="media-manager-folder-chain">

@@ -146,6 +146,17 @@ export function describeTrack(track: DescribedTrack, position: number): string {
   return parts.filter(Boolean).join(" · ");
 }
 
+/**
+ * One track in words, placed by the counts positionsByKind made for the file it is in. A track those counts do not hold
+ * is the first of its kind.
+ */
+export function describeTrackIn(
+  track: DescribedTrack & { index: number },
+  positions: ReadonlyMap<number, number>,
+): string {
+  return describeTrack(track, positions.get(track.index) ?? 1);
+}
+
 /** Each track's 1-based position among the tracks of its own kind, keyed by its index in the file. */
 export function positionsByKind(
   tracks: readonly { index: number; type: string }[],

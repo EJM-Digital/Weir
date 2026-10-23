@@ -55,4 +55,15 @@ describe("ShelfFilter", () => {
 
     expect(shown()).toEqual(["All", "Kids", "More"]);
   });
+
+  it("puts All in More when only the chosen workflow has room, and shows every workflow from there", () => {
+    roomFor(1);
+    const onChoose = vi.fn();
+    render(<ShelfFilter choices={CHOICES} chosen={3} onChoose={onChoose} />);
+
+    expect(shown()).toEqual(["Kids", "More"]);
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "All" }));
+    expect(onChoose).toHaveBeenCalledWith(null);
+  });
 });

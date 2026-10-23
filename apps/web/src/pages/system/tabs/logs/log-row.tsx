@@ -31,7 +31,7 @@ const SOURCE_WORDS = Object.fromEntries(
 function linesOf(row: SystemLogRow): { title: string; detail: string | null } {
   if (row.event) {
     const display = eventDisplay(row.event);
-    return { title: display.title, detail: display.summary || null };
+    return { title: display.title, detail: display.summary };
   }
   return { title: row.title, detail: row.detail };
 }

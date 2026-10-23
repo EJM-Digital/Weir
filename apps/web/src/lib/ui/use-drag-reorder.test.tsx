@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+} from "@testing-library/react";
 import { useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -253,5 +259,34 @@ describe("dragging an item with the pointer", () => {
 
     document.removeEventListener("click", pressed);
     expect(pressed).not.toHaveBeenCalled();
+  });
+});
+
+describe("an item that is not on screen", () => {
+  it("is left out of the slide when the order changes around it", () => {
+    const slideHome = vi.fn();
+    const onScreen = document.createElement("li");
+    const present = new Map<number, HTMLElement[]>([
+      [1, [onScreen]],
+      [2, [onScreen]],
+    ]);
+    const { result, rerender } = renderHook(
+      ({ ids }: { ids: number[] }) =>
+        useDragReorder<number>({
+          axis: "y",
+          ids,
+          elementsOf: (id) => present.get(id) ?? [],
+          threshold: 0,
+          onDrop: slideHome,
+        }),
+      { initialProps: { ids: [1, 2, 3] } },
+    );
+
+    act(() => result.current.slide());
+    present.delete(2);
+    rerender({ ids: [3, 2, 1] });
+
+    expect(slideHome).not.toHaveBeenCalled();
+    expect(result.current.order).toEqual([3, 2, 1]);
   });
 });

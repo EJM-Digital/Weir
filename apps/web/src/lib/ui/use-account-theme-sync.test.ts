@@ -21,6 +21,7 @@ it("keeps a local choice and adopts it onto an account with no preference, savin
     { initialProps: { theme: null as "dark" | "light" | null | undefined } },
   );
   // A second /auth/me answer while the save is still in flight must not adopt again.
+  rerender({ theme: undefined });
   rerender({ theme: null });
 
   expect(readStoredAppTheme()).toBe("dark");

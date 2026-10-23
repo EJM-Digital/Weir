@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SystemLogPage } from "../../../../lib/system/system-log-api";
-import { EVENT_ROW, JOB_ROW, logPage } from "./log-test-support";
+import { EVENT_ROW, JOB_ROW, logPage } from "../../../../test/log-test-support";
 import { useLogEntries } from "./use-log-entries";
 
 const mocks = vi.hoisted(() => ({
@@ -95,6 +95,30 @@ describe("reading the newest page again", () => {
     });
 
     expect(result.current.rows).toHaveLength(2);
+  });
+});
+
+describe("the log before its first page has been read", () => {
+  it("has no arrivals to show yet", () => {
+    mocks.fetchSystemLog.mockReturnValue(new Promise(() => undefined));
+    const { result } = open();
+
+    act(() => result.current.showArrived());
+
+    expect(result.current.rows).toEqual([]);
+    expect(result.current.loading).toBe(true);
+  });
+
+  it("stays empty when it is read again and the reading fails", async () => {
+    mocks.fetchSystemLog.mockRejectedValue(new Error("down"));
+    const { result } = open();
+    await waitFor(() => expect(result.current.error).not.toBeNull());
+
+    await act(async () => {
+      await result.current.reload();
+    });
+
+    expect(result.current.rows).toEqual([]);
   });
 });
 

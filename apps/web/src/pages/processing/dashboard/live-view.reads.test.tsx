@@ -15,6 +15,7 @@ import {
   type StubbedApi,
 } from "../../../test/stub-weir-api";
 import { held } from "../../../test/held";
+import type { Filter } from "../processing-filter";
 import { LiveView } from "./live-view";
 
 /**
@@ -28,7 +29,11 @@ const ACTIVITY = "GET /api/v1/activity/recent";
 
 let api: StubbedApi;
 
-function show(world: LiveWorld, replies: Record<string, unknown> = {}) {
+function show(
+  world: LiveWorld,
+  replies: Record<string, unknown> = {},
+  filter: Filter = "all",
+) {
   api = stubWeirApi({ ...liveViewRoutes(world), ...replies });
   render(
     <QueryClientProvider
@@ -38,7 +43,7 @@ function show(world: LiveWorld, replies: Record<string, unknown> = {}) {
     >
       <MemoryRouter initialEntries={["/"]}>
         <LiveView
-          filter="all"
+          filter={filter}
           workflowId={null}
           layout={{ sideBySide: true, band: "across" }}
         />
@@ -63,6 +68,39 @@ describe("the Live view while it waits for the files", () => {
     expect(await screen.findByText("Loading the Dashboard")).toBeVisible();
     expect(screen.queryByRole("region", { name: "Today" })).toBeNull();
     files.resolve(jsonAnswer({ files: [], total: 0 }));
+  });
+});
+
+describe("the Live view while the workflows, the pause and the files-at-once setting are still being read", () => {
+  it("draws the Dashboard from the files alone", async () => {
+    const slow = () => new Promise<never>(() => undefined);
+    show(quietWorld(), {
+      "GET /api/v1/processing/libraries": slow,
+      "GET /api/v1/pause": slow,
+      "GET /api/v1/processing/files-at-once": slow,
+    });
+
+    expect(await region("Today")).toBeVisible();
+    expect(screen.queryByText("Loading the Dashboard")).toBeNull();
+  });
+});
+
+describe.each([
+  ["download", "new downloads"],
+  ["library", "library cleaning"],
+] as const)("the Live view narrowed to %s work", (filter, name) => {
+  it(`draws the Today figures for ${name} alone`, async () => {
+    show(quietWorld(), {}, filter);
+
+    expect(await region("Today")).toBeVisible();
+    expect(screen.getByTestId("live-done-today")).toHaveTextContent("0");
+  });
+
+  it(`does not wait for the totals of new downloads to draw the figures for ${name}`, async () => {
+    const slow = () => new Promise<never>(() => undefined);
+    show(quietWorld(), { [STATS]: slow }, filter);
+
+    expect(await region("Today")).toBeVisible();
   });
 });
 

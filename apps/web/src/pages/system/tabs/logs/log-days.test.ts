@@ -56,6 +56,10 @@ describe("dayHeading", () => {
     expect(dayHeading("2026-10-01", now, "UTC")).toBe("Yesterday");
   });
 
+  it("falls back to the key itself for a day it cannot name", () => {
+    expect(dayHeading("", now, "UTC")).toBe("");
+  });
+
   it("names any other day by its weekday and date", () => {
     expect(dayHeading("2026-09-25", now, "UTC")).toMatch(/Friday/);
     expect(dayHeading("2026-09-25", now, "UTC")).toMatch(/25/);
