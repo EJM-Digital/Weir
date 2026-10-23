@@ -35,6 +35,13 @@ export function shardBudgetMs(env = process.env) {
   return Number(minutes) * 60_000;
 }
 
+/**
+ * What is laid over the shipped compose file for the Weir of a shard. Posters come from a service on the internet; no scenario looks at one, and
+ * a lookup that cannot connect is a warning the scenarios rightly reject, so a shard that does not bring a compose file of its own turns them off.
+ * (The shard with Deluno turns them off in its own file.)
+ */
+export const weirLayers = (shard) => (shard.beside ? null : { environment: { WEIR_ARTWORK_GATEWAY_URL: "off" } });
+
 /** The ported scenarios of a Linux shard, run against the image in Compose; `collectFailed` says the recordings of what they showed could not be kept although they ran. */
 export async function runLinuxShard({ shard, ids, candidate, logFolder }) {
   const scratch = mkdtempSync(join(tmpdir(), "weir-scenarios-ci-"));
@@ -48,7 +55,7 @@ export async function runLinuxShard({ shard, ids, candidate, logFolder }) {
   stack.removeEverything();
   try {
     for (const image of started?.pull ?? []) stack.pull(image);
-    stack.up(candidate, "never", null, beside ? { files: beside.files, environment: started.environment, services: beside.services } : undefined);
+    stack.up(candidate, "never", weirLayers(SHARDS[shard]), beside ? { files: beside.files, environment: started.environment, services: beside.services } : undefined);
     stack.waitHealthy();
     const world = { weir: client, box: new ContainerBox(stack), runId: randomBytes(3).toString("hex"), createAccount: () => createFirstAccount({ client, stack }) };
     if (account) await world.createAccount();
