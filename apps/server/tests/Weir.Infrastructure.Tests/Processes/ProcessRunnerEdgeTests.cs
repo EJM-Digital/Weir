@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Weir.Infrastructure.Processes;
@@ -21,25 +22,53 @@ public sealed class ProcessRunnerEdgeTests
         return process;
     }
 
-    [Fact]
-    public async Task A_priority_that_cannot_be_set_is_logged_and_the_tool_keeps_running_at_its_own()
+    // The system's own refusal of a priority on an exited process is not repeatable (Windows accepts it about one time in eight), so
+    // the refusals are handed in rather than waited for.
+    public static TheoryData<Exception> Refusals => new()
+    {
+        new InvalidOperationException("Cannot process request because the process has exited."),
+        new Win32Exception(5, "Access is denied."),
+    };
+
+    [Theory]
+    [MemberData(nameof(Refusals))]
+    public void A_priority_that_cannot_be_set_is_logged_and_the_tool_keeps_running_at_its_own(Exception refusal)
     {
         var logger = new CapturingLogger<ProcessRunner>();
-        using var ended = await StartAndKillAsync();
+        using var process = new Process();
 
-        new ProcessRunner(logger).SetPriority(ended, ProcessPriorityClass.BelowNormal, "the stand-in");
+        new ProcessRunner(logger).SetPriority(process, ProcessPriorityClass.BelowNormal, "the stand-in", (_, _) => throw refusal);
 
         Assert.True(logger.Logged(LogLevel.Debug, "Could not set the priority of the stand-in"));
     }
 
     [Fact]
-    public async Task A_priority_that_cannot_be_set_is_not_an_error_when_nothing_is_listening()
+    public void A_priority_that_cannot_be_set_is_not_an_error_when_nothing_is_listening()
     {
-        using var ended = await StartAndKillAsync();
+        using var process = new Process();
 
-        new ProcessRunner().SetPriority(ended, ProcessPriorityClass.Normal, "the stand-in");
+        var thrown = Record.Exception(() => new ProcessRunner().SetPriority(process, ProcessPriorityClass.Normal, "the stand-in", (_, _) => throw new Win32Exception(5)));
 
-        Assert.True(ended.HasExited);
+        Assert.Null(thrown);
+    }
+
+    [Fact]
+    public void A_priority_that_is_set_is_not_logged_and_reaches_the_process()
+    {
+        var logger = new CapturingLogger<ProcessRunner>();
+        using var running = StartHolding();
+        try
+        {
+            new ProcessRunner(logger).SetPriority(running, ProcessPriorityClass.BelowNormal, "the stand-in");
+
+            Assert.Equal(ProcessPriorityClass.BelowNormal, running.PriorityClass);
+            Assert.False(logger.Logged(LogLevel.Debug, "Could not set the priority"));
+        }
+        finally
+        {
+            running.Kill(entireProcessTree: true);
+            running.WaitForExit();
+        }
     }
 
     [Fact]
