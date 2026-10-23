@@ -257,7 +257,7 @@ internal sealed class ProcessingRulesPreviewEndpointHandlers
             ProcessingRuleSetRecord previewRow;
             try
             {
-                var label = (ruleSetInput.Name ?? string.Empty).Trim();
+                var label = ruleSetInput.Name.Trim();
                 previewRow = LibraryRules.ApplyRuleSetFields(new ProcessingRuleSetRecord { Name = label.Length > 0 ? label : "Preview" }, ruleSetInput);
             }
             catch (ProcessingLibraryException exception)

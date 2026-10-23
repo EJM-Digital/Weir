@@ -87,12 +87,12 @@ public static partial class ManagerSetupRules
 
         var lines = new List<SetupCheckLine>(choice.Lines);
         var downloads = WireStrings.Strip(library.DownloadsPath ?? string.Empty);
-        var watched = WireStrings.Strip(watchedFolder ?? string.Empty);
+        var watched = WireStrings.Strip(watchedFolder);
         lines.Add(DownloadsLine(managerLabel, library.Name, downloads, watched, probe));
         lines.AddRange(DownloadClientLines(managerLabel, mediaScope, downloadClients ?? []));
 
         var processed = WireStrings.Strip(library.OutputPath ?? string.Empty);
-        var output = WireStrings.Strip(outputFolder ?? string.Empty);
+        var output = WireStrings.Strip(outputFolder);
         if (processed.Length > 0)
         {
             lines.Add(OutputLine(managerLabel, processed, output, probe));

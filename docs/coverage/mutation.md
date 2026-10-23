@@ -68,9 +68,10 @@ a new target is added there, to `mutation-floors.json` and as a config in the `m
 
 Weekly (Sunday, 02:41 UTC), on demand (Actions, Mutation, Run workflow, or `gh workflow run mutation.yml --ref <branch>`) and
 before a release tag, and never on a pull request: a target takes tens of minutes to hours on a Windows runner, because
-Stryker first runs the whole test project once to learn which tests cover which line. Every run mutates every target and
-holds each score to its floor. The release will not publish unless a run passed on the tagged commit or on an earlier one
-with the same shipped files, tests and mutation setup ([`../ci-cost.md`](../ci-cost.md)). To try
+Stryker first runs the whole test project once to learn which tests cover which line. The weekly run mutates every target;
+a run by hand can name targets (`-f targets=a,b`, or `-f targets=changed:<sha>`). Each run holds the scores of the targets
+it ran to their floors. The release will not publish unless every target has a passing run on the tagged commit or on an
+earlier one where that target's own mutated files, tests and mutation setup are unchanged ([`../ci-cost.md`](../ci-cost.md)). To try
 one target by hand, run it from its test project:
 
 ```

@@ -48,7 +48,7 @@ public sealed class CompressedStaticAssetsMiddleware
         if (!(HttpMethods.IsGet(request.Method) || HttpMethods.IsHead(request.Method)) ||
             request.Headers.ContainsKey(HeaderNames.Range) ||
             _webDist.Root is not { } root ||
-            AssetPath(root, request.Path.Value ?? string.Empty) is not { } path)
+            AssetPath(root, request.Path.ToString()) is not { } path)
         {
             await _next(context).ConfigureAwait(false);
             return;
@@ -120,8 +120,8 @@ public sealed class CompressedStaticAssetsMiddleware
 
         var assetsRoot = Path.GetFullPath(Path.Join(root, "assets"));
         var candidate = Path.GetFullPath(Path.Join([root, .. parts]));
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        if (!candidate.StartsWith(assetsRoot + Path.DirectorySeparatorChar, comparison))
+        // Both paths are built from the same root and the request path starts with "assets" exactly, so a match is an exact one on any system.
+        if (!candidate.StartsWith(assetsRoot + Path.DirectorySeparatorChar, StringComparison.Ordinal))
         {
             return null;
         }

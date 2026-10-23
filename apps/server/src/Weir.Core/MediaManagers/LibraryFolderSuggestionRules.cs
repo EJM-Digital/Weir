@@ -44,7 +44,7 @@ public static class LibraryFolderSuggestionRules
     /// </summary>
     public static string? DefaultOutputFolder(string watchedFolder, string mediaScope)
     {
-        var watched = new ArrOsPath((watchedFolder ?? string.Empty).Trim());
+        var watched = new ArrOsPath(watchedFolder.Trim());
         if (!watched.IsRooted)
         {
             return null;

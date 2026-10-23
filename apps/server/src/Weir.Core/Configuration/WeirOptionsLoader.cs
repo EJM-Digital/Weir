@@ -381,7 +381,7 @@ public static class WeirOptionsLoader
             return string.Empty;
         }
 
-        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https") || uri.Host.Length == 0)
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
         {
             throw new WeirConfigurationException("WEIR_ARTWORK_GATEWAY_URL must be an http or https address, or off.");
         }
@@ -398,7 +398,7 @@ public static class WeirOptionsLoader
             return null;
         }
 
-        return Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" && uri.Host.Length > 0
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https"
             ? value
             : throw new WeirConfigurationException(ReleasesFeedNotAnAddressMessage);
     }

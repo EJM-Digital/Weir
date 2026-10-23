@@ -62,4 +62,38 @@ public sealed class ExclusiveListenSocketTests
 
         Assert.True(socket.DualMode);
     }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Exclusive_binding_is_switched_on_for_windows_and_left_alone_for_anything_else(bool isWindows)
+    {
+        var options = new SocketTransportOptions();
+        var before = options.CreateBoundListenSocket;
+
+        ExclusiveListenSocket.Configure(options, isWindows);
+
+        Assert.Equal(!isWindows, ReferenceEquals(before, options.CreateBoundListenSocket));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void The_environment_is_read_with_the_case_rules_of_the_operating_system(bool isWindows)
+    {
+        var name = "WEIR_EDGE_TEST_" + Guid.NewGuid().ToString("N");
+        Environment.SetEnvironmentVariable(name, "yes");
+        try
+        {
+            var runtime = WeirServer.CurrentRuntime(isWindows);
+
+            Assert.Equal(isWindows, runtime.IsWindows);
+            Assert.Equal(isWindows, runtime.Variables.ContainsKey(name.ToLowerInvariant()));
+            Assert.Equal("yes", runtime.Variables[name]);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(name, null);
+        }
+    }
 }

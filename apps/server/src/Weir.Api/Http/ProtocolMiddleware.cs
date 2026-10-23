@@ -322,7 +322,7 @@ public sealed class XRequestedWithMiddleware
         ArgumentNullException.ThrowIfNull(context);
         var request = context.Request;
         if (Mutating.Contains(request.Method) &&
-            (request.Path.Value ?? string.Empty).StartsWith("/api/", StringComparison.OrdinalIgnoreCase) &&
+            string.Concat(request.Path.Value).StartsWith("/api/", StringComparison.OrdinalIgnoreCase) &&
             request.Headers.ContainsKey("Origin"))
         {
             var xrw = (request.Headers["X-Requested-With"].FirstOrDefault() ?? string.Empty).Trim();

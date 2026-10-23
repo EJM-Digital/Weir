@@ -91,8 +91,13 @@ public static partial class RemuxRules
             defaultAudioOutputIndex = defaultIndex;
 
             var keptIndices = keptAudioTracks.Select(t => t.InputIndex).ToHashSet();
-            foreach (var c in candidates.Where(c => !keptIndices.Contains(c.InputIndex)).OrderBy(c => c.InputIndex))
+            foreach (var c in candidates.OrderBy(static c => c.InputIndex).ToList())
             {
+                if (keptIndices.Contains(c.InputIndex))
+                {
+                    continue;
+                }
+
                 removedAudio.Add($"{DescribeCandidate(c)}: removed (not selected for its language slot)");
                 removedTrackRecords.Add(new RemovedTrackRecord
                 {
@@ -119,8 +124,13 @@ public static partial class RemuxRules
 
             // Retention: one winner; every other audio stream is removed.
             var winnerIndex = winner.InputIndex;
-            foreach (var c in candidates.Where(c => c.InputIndex != winnerIndex))
+            foreach (var c in candidates)
             {
+                if (c.InputIndex == winnerIndex)
+                {
+                    continue;
+                }
+
                 removedAudio.Add($"{DescribeCandidate(c)}: removed (not selected — {DescribeCandidate(winner)} kept)");
                 removedTrackRecords.Add(new RemovedTrackRecord
                 {

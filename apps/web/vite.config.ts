@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import istanbul from "vite-plugin-istanbul";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -29,27 +30,24 @@ const devPorts = JSON.parse(
 ) as DevPortsFile;
 const dev = devPorts.development;
 
-type CoverageFloorsFile = {
-  floors: { web: { line: number; branch: number } };
-};
-
 /**
- * The web app's line and branch floors, from the file CI's coverage check reads for every project. Only the tests
- * read it: the production builds (the Docker image's, the Windows package's) are made without docs/.
+ * The build the browser tests (apps/server/tests/Weir.E2E.Tests) measure: every source file the unit coverage counts
+ * is instrumented (the same files as `test.coverage` below), so the page reports what ran in `window.__coverage__`. Opt-in with WEIR_WEB_COVERAGE=1; a normal
+ * build carries none of it (docs/coverage/README.md).
  */
-function webCoverageThresholds(mode: string) {
-  if (mode !== "test") {
-    return undefined;
-  }
-  const floors = (
-    JSON.parse(
-      readFileSync(
-        path.join(__dirname, "..", "..", "docs", "coverage", "floors.json"),
-        "utf-8",
-      ),
-    ) as CoverageFloorsFile
-  ).floors.web;
-  return { lines: floors.line, branches: floors.branch };
+function browserCoverage() {
+  return istanbul({
+    include: "src/**/*",
+    exclude: [
+      "src/**/*.test.{ts,tsx}",
+      "src/test/**",
+      "src/**/*.d.ts",
+      "src/lib/api/generated/**",
+    ],
+    extension: [".ts", ".tsx"],
+    requireEnv: false,
+    forceBuildInstrument: true,
+  });
 }
 
 /** Local-only unless someone deliberately opts into exposing the dev server on the network. */
@@ -109,7 +107,11 @@ export default defineConfig(({ mode }) => {
   };
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      ...(process.env.WEIR_WEB_COVERAGE === "1" ? [browserCoverage()] : []),
+    ],
     build: {
       // Source maps are opt-in for local diagnostics. Production artifacts do not expose
       // source paths or ship multi-megabyte maps by default.
@@ -160,10 +162,8 @@ export default defineConfig(({ mode }) => {
           "src/**/*.d.ts",
           "src/lib/api/generated/**",
         ],
-        reporter: ["lcov", "json-summary", "text-summary"],
+        reporter: ["lcov", "json", "json-summary", "text-summary"],
         reportsDirectory: "./coverage",
-        // docs/coverage/floors.json; a run below either figure fails.
-        thresholds: webCoverageThresholds(mode),
       },
     },
   };

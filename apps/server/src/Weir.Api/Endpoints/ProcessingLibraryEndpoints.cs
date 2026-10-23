@@ -119,7 +119,7 @@ internal sealed class ProcessingLibraryEndpointHandlers
         var connectionIds = new List<long>();
         foreach (var raw in request.Context.Request.Query["connection_ids"])
         {
-            if (raw is not null && long.TryParse(raw, out var id))
+            if (long.TryParse(raw, out var id))
             {
                 connectionIds.Add(id);
             }

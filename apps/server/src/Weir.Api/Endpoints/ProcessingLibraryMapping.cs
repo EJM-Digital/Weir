@@ -27,7 +27,7 @@ internal static class ProcessingLibraryMapping
         MediaManagerConnectionStore connections,
         OperatorSettingsStore operatorSettings,
         SuiteSettingsStore suiteSettings,
-        ScanWakeups? looks = null)
+        ScanWakeups looks)
     {
         var managerIds = await libraries.ManagerConnectionIdsAsync(uow, row.Id).ConfigureAwait(false);
         var activeJobs = await libraries.ActiveJobCountAsync(uow, row).ConfigureAwait(false);
@@ -138,7 +138,7 @@ internal static class ProcessingLibraryMapping
             .Set("folders_synced_from_connection_id", foldersSyncedFrom)
             .Set("active_job_count", activeJobs)
             // When Weir next looks at the watched folder, so Processing can count an arriving file down to it.
-            .Set("next_look_at", !handedOff && looks?.NextLookFor(row.Id) is { } next ? Timestamp.FromDateTimeOffset(next).ToWireText() : null)
+            .Set("next_look_at", !handedOff && looks.NextLookFor(row.Id) is { } next ? Timestamp.FromDateTimeOffset(next).ToWireText() : null)
             // Whether the periodic scan-dispatch timer runs for this library right now, and when it next will (#747).
             .Set("periodic_scan", periodicScan.State)
             .Set("next_scan_at", periodicScan.NextScanAt is { } nextScan ? Timestamp.FromDateTimeOffset(nextScan).ToWireText() : null)
@@ -154,7 +154,7 @@ internal static class ProcessingLibraryMapping
     /// <summary>Resolves <see cref="PeriodicScanStatus"/> for one library from the same switches and schedule window
     /// the periodic scan-dispatch scheduler and the worker's upkeep admission read.</summary>
     private static async Task<PeriodicScanStatus> PeriodicScanStatusAsync(
-        ApiRequest request, UnitOfWork uow, ProcessingLibraryRecord row, ProcessingOperatorSettingsRecord operatorSettings, SuiteSettingsStore suiteSettingsStore, ScanWakeups? looks)
+        ApiRequest request, UnitOfWork uow, ProcessingLibraryRecord row, ProcessingOperatorSettingsRecord operatorSettings, SuiteSettingsStore suiteSettingsStore, ScanWakeups looks)
     {
         var suite = await suiteSettingsStore.EnsureAsync(uow).ConfigureAwait(false);
         var timezoneName = string.IsNullOrWhiteSpace(suite.AppTimezone) ? "UTC" : suite.AppTimezone.Trim();
@@ -166,7 +166,7 @@ internal static class ProcessingLibraryMapping
             operatorSettings.TvScheduleEnabled,
             timezoneName,
             now,
-            looks?.NextPeriodicFor(row.Id));
+            looks.NextPeriodicFor(row.Id));
     }
 
     /// <summary>

@@ -271,8 +271,8 @@ internal sealed class MediaManagerIntakeEndpointHandlers
     }
 
     /// <summary>The manager's name as the Activity page says it: Sonarr, Radarr, Deluno.</summary>
-    private static string ManagerName(string sourceKey) =>
-        ImportEvents.DialectForSource(sourceKey) is { Key: not "native" } dialect ? dialect.DisplayName : "Your media manager";
+    private static string ManagerName(string key) =>
+        key == "native" ? "Your media manager" : ImportEvents.Dialects[key].DisplayName;
 
     /// <summary>
     /// <c>POST /intake/handoffs/{source_key}/{handoff_id}/outcome</c> (#652, agreed with Deluno): the manager

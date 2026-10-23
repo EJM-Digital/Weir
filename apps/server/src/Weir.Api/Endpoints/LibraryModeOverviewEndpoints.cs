@@ -67,7 +67,7 @@ internal sealed class LibraryModeOverviewEndpointHandlers
         .Set("value", row.Value)
         .Set("files", row.Files)
         .Set("size_bytes", row.SizeBytes)
-        .Set("share", totalFiles > 0 ? Math.Round((double)row.Files / totalFiles, 4) : 0.0);
+        .Set("share", Math.Round((double)row.Files / Math.Max(totalFiles, 1), 4));
 
     private static WireObject ProblemGroupOut(LibraryProblemGroup group) => new WireObject()
         .Set("kind", LibraryProblems.Name(group.Kind))

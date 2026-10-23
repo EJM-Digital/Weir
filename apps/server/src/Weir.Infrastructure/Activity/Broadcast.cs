@@ -82,6 +82,9 @@ public sealed class BroadcastSubscription<T> : IDisposable
 
     public IAsyncEnumerable<T> ReadAllAsync(CancellationToken cancellationToken) => _items.Reader.ReadAllAsync(cancellationToken);
 
+    /// <summary>The next item, waiting for one. A stream reads in a loop that only cancellation ends, since a subscription is closed only by its own owner.</summary>
+    public ValueTask<T> ReadAsync(CancellationToken cancellationToken) => _items.Reader.ReadAsync(cancellationToken);
+
     internal void Offer(T item) => _items.Writer.TryWrite(item);
 
     public void Dispose()

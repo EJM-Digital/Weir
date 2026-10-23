@@ -71,12 +71,29 @@ public static class WorkflowSyncFolders
     private static string Unify(IReadOnlyList<string> folders)
     {
         var distinct = new List<string>();
-        foreach (var folder in folders.Where(folder => !distinct.Any(seen => new ArrOsPath(seen).SameFolder(new ArrOsPath(folder)))))
+        foreach (var folder in folders)
         {
-            distinct.Add(folder);
+            if (!IsAmong(distinct, folder))
+            {
+                distinct.Add(folder);
+            }
         }
 
         return distinct.Count == 1 ? distinct[0] : CommonParent(distinct) ?? distinct[0];
+    }
+
+    private static bool IsAmong(List<string> folders, string folder)
+    {
+        var wanted = new ArrOsPath(folder);
+        foreach (var seen in folders)
+        {
+            if (new ArrOsPath(seen).SameFolder(wanted))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string? CommonParent(IReadOnlyList<string> folders)

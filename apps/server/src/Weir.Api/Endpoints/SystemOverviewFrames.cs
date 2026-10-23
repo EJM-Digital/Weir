@@ -49,8 +49,9 @@ internal sealed class SystemOverviewFrames : IDisposable
             yield return current;
         }
 
-        await foreach (var frame in changes.ReadAllAsync(cancellationToken).ConfigureAwait(false))
+        while (!cancellationToken.IsCancellationRequested)
         {
+            var frame = await changes.ReadAsync(cancellationToken).ConfigureAwait(false);
             if (frame != sent)
             {
                 sent = frame;
@@ -97,6 +98,9 @@ internal sealed class SystemOverviewFrames : IDisposable
         }
     }
 
+    /// <summary>Held for as long as a reading is under way; whoever holds it queues every other reading behind them.</summary>
+    internal SemaphoreSlim ReadingInProgress => _refreshing;
+
     public void Dispose() => _refreshing.Dispose();
 
     /// <summary>The <c>system.overview</c> SSE frame: the overview as <c>GET /system/overview</c> answers it.</summary>
@@ -118,11 +122,14 @@ internal sealed class SystemOverviewFrames : IDisposable
     {
         try
         {
+            WireObject overview;
             var uow = await UnitOfWork.OpenAsync(_database, cancellationToken).ConfigureAwait(false);
             await using (uow.ConfigureAwait(false))
             {
-                return await _overview.ReadAsync(uow, _services, cancellationToken).ConfigureAwait(false);
+                overview = await _overview.ReadAsync(uow, _services, cancellationToken).ConfigureAwait(false);
             }
+
+            return overview;
         }
 #pragma warning disable CA1031 // A read that fails must not end the live stream; the next look tries again.
         catch (Exception exception) when (exception is not OperationCanceledException)

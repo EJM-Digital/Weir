@@ -94,6 +94,5 @@ internal static class RequestRoute
     public static string LabelFor(HttpContext context, RouteTable routes) =>
         context.GetEndpoint()?.Metadata.GetMetadata<RouteLabel>()?.Label
         ?? routes.FirstPathMatch(context.Request.Path)?.Label
-        ?? context.Request.Path.Value
-        ?? string.Empty;
+        ?? string.Concat(context.Request.Path.Value);
 }
