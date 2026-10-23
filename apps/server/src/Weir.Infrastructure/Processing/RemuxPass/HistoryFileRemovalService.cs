@@ -147,6 +147,11 @@ public sealed class HistoryFileRemovalService
             return await FinishDeleteAsync(uow, file, new RejectRouteOutcome(false, exception.Message)).ConfigureAwait(false);
         }
 
+        if (!_fs.FileExists(source))
+        {
+            return await FinishDeleteAsync(uow, file, new RejectRouteOutcome(false, "The file is no longer in the watched folder, so there is nothing to delete.")).ConfigureAwait(false);
+        }
+
         if (!TryVerifyFingerprint(file, source, confirmation, _fs, out _, out var refusal))
         {
             return await FinishDeleteAsync(uow, file, new RejectRouteOutcome(false, refusal)).ConfigureAwait(false);

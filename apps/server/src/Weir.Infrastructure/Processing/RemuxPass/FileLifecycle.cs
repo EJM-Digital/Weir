@@ -267,7 +267,7 @@ public static partial class FileLifecycle
         var directory = Path.GetDirectoryName(destination)!;
         EnsureOutputDirectory(directory, ownership, files);
 
-        var tmp = CreateTempFile(directory, "." + Path.GetFileName(destination) + ".", ".partial");
+        var tmp = CreateTempFile(directory, "." + Path.GetFileName(destination) + ".", ".partial", files);
         try
         {
             try

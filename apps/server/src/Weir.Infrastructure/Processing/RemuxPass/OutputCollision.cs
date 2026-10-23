@@ -62,7 +62,7 @@ public static class OutputCollision
         var name = Path.GetFileName(final);
         if (!Exists(final, files))
         {
-            return new CollisionDecision(chosen, "write", final, false, "No file existed at the output path, so Weir wrote it there.");
+            return NothingThere(final, chosen);
         }
 
         switch (chosen)
@@ -94,6 +94,11 @@ public static class OutputCollision
                 var newSize = staged is not null ? SizeOf(staged, files) : null;
                 if (existingSize is null || newSize is null)
                 {
+                    if (!Exists(final, files))
+                    {
+                        return NothingThere(final);
+                    }
+
                     return new CollisionDecision(
                         chosen, "skip", final, false,
                         $"Weir could not compare the new output with the existing {name}, so it kept the " +
@@ -112,6 +117,11 @@ public static class OutputCollision
                 var sourceTime = source is not null ? ModifiedOf(source, files) : null;
                 if (existingTime is null || sourceTime is null)
                 {
+                    if (!Exists(final, files))
+                    {
+                        return NothingThere(final);
+                    }
+
                     return new CollisionDecision(
                         chosen, "skip", final, false,
                         $"Weir could not compare timestamps with the existing {name}, so it kept the " +
@@ -129,6 +139,10 @@ public static class OutputCollision
                     $"An existing output at {name} was replaced, which is this workflow's collision policy.");
         }
     }
+
+    /// <summary>An output that was there a moment ago and has since been removed is no collision: the new one is written.</summary>
+    private static CollisionDecision NothingThere(string final, string? policy = null) =>
+        new(NormalizePolicy(policy), "write", final, false, "No file existed at the output path, so Weir wrote it there.");
 
     /// <summary><c>Path.exists</c>: a file or a directory.</summary>
     private static bool Exists(string path, IFileSystem files) => files.FileExists(path) || files.DirectoryExists(path);

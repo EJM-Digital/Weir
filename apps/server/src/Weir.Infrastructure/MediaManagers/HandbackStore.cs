@@ -307,6 +307,10 @@ public sealed class HandbackStore
 
             files.DeleteFile(copy);
         }
+        catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException)
+        {
+            return new HandbackRelease(HandbackReleaseKind.AlreadyGone, HandbackRules.AlreadyGoneNote(manager));
+        }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             return new HandbackRelease(HandbackReleaseKind.InUse, HandbackRules.InUseNote(exception.Message.TrimEnd('.')));

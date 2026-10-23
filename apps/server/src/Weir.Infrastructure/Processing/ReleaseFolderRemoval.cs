@@ -84,7 +84,7 @@ public static partial class ReleaseFolderRemoval
         {
             if (files.FileExists(file))
             {
-                files.DeleteFile(file);
+                DeleteIfStillThere(() => files.DeleteFile(file));
             }
 
             return new ReleaseRemoval(ReleaseRemovalKind.FileOnly, othersPresent is null ? UnreadableFolderReason : OtherVideosReason);
@@ -92,10 +92,22 @@ public static partial class ReleaseFolderRemoval
 
         if (files.DirectoryExists(folder))
         {
-            files.DeleteDirectory(folder, recursive: true);
+            DeleteIfStillThere(() => files.DeleteDirectory(folder, recursive: true));
         }
 
         return new ReleaseRemoval(ReleaseRemovalKind.FolderRemoved, null);
+    }
+
+    /// <summary>Something that removes the file or folder first has done what was asked: only a failure that leaves it in place is an error.</summary>
+    private static void DeleteIfStillThere(Action delete)
+    {
+        try
+        {
+            delete();
+        }
+        catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException)
+        {
+        }
     }
 
     /// <summary>
