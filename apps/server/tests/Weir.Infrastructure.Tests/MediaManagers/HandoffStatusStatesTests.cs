@@ -328,4 +328,53 @@ public sealed class HandoffStatusStatesTests : IDisposable
         Assert.False(HandoffLedgerStore.HandedBackFile(none));
         Assert.Throws<ArgumentNullException>(() => HandoffLedgerStore.HandedBackFile(null!));
     }
+
+    private async Task InsertFilesAsync(params (string Name, string Status, string Reason)[] files)
+    {
+        await _fixture.Store.Execute("DELETE FROM media_manager_handoff_targets");
+        await _fixture.Store.Execute("DELETE FROM jobs");
+        await _fixture.Store.Execute($"DELETE FROM files WHERE library_id = {_libraryId}");
+        foreach (var (name, status, reason) in files)
+        {
+            await _fixture.Store.Execute(
+                "INSERT INTO files (library_id, relative_path, status, status_reason) VALUES " +
+                $"({_libraryId}, '{Folder}/{name}', '{status}', '{reason}')");
+        }
+    }
+
+    [Fact]
+    public async Task The_reason_a_hand_off_gives_is_the_first_file_that_has_one_and_only_a_file_still_waiting_replaces_it()
+    {
+        await ReceiveAsync();
+        await InsertFilesAsync(("a.mkv", "unprocessed", "First wait."), ("b.mkv", "processed", "Cleaned."), ("c.mkv", "out_of_schedule", "Later wait."));
+
+        var status = await StatusAsync();
+
+        Assert.Equal(HandoffLedgerRules.Queued, status.State);
+        Assert.Equal("Later wait.", status.Message);
+    }
+
+    [Fact]
+    public async Task A_file_that_is_done_does_not_replace_the_reason_given_by_a_file_still_waiting()
+    {
+        await ReceiveAsync();
+        await InsertFilesAsync(("a.mkv", "unprocessed", "Still waiting."), ("b.mkv", "processed", "Cleaned."));
+
+        var status = await StatusAsync();
+
+        Assert.Equal("Still waiting.", status.Message);
+    }
+
+    [Fact]
+    public async Task A_hand_off_whose_files_have_no_readable_time_is_dated_by_the_moment_it_was_asked_about()
+    {
+        await ReceiveAsync();
+        await InsertFilesAsync(("a.mkv", "processed", string.Empty));
+        await _fixture.Store.Execute("UPDATE files SET updated_at = ''");
+
+        var status = await StatusAsync();
+
+        Assert.Equal(HandoffLedgerRules.Completed, status.State);
+        Assert.Equal(_fixture.Store.Clock.GetUtcNow(), status.LastChangedAt);
+    }
 }

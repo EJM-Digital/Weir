@@ -225,10 +225,12 @@ public sealed class LeaseRenewalTests : IDisposable
         }
     }
 
-    [Fact]
-    public async Task A_job_whose_lease_ran_out_while_the_computer_slept_is_told_as_information_and_left_for_recovery()
+    [Theory]
+    [InlineData("{\"relative_media_path\":\"Heat (1995)/Heat.mkv\"}", "Heat.mkv")]
+    [InlineData("{\"relative_media_path\":\"\"}", "a background job")]
+    public async Task A_job_whose_lease_ran_out_while_the_computer_slept_is_told_as_information_and_left_for_recovery(string payload, string work)
     {
-        await _db.Store.EnqueueOrGetAsync("slept", Kind, payloadJson: "{\"relative_media_path\":\"Heat (1995)/Heat.mkv\"}", maxAttempts: 3);
+        await _db.Store.EnqueueOrGetAsync("slept", Kind, payloadJson: payload, maxAttempts: 3);
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var handler = new UntilCancelledHandler(Kind, started);
         using var heartbeatWaiting = new SemaphoreSlim(0);
@@ -248,7 +250,7 @@ public sealed class LeaseRenewalTests : IDisposable
         Assert.Equal(JobProcessOutcome.Processed, await runTask.WaitAsync(TimeSpan.FromSeconds(5)));
         Assert.Empty(log.Said(LogLevel.Warning));
         Assert.Equal(
-            $"{AsleepWhile} Heat.mkv; the job was stopped and will be picked up again. job_id=1",
+            $"{AsleepWhile} {work}; the job was stopped and will be picked up again. job_id=1",
             Assert.Single(log.Said(LogLevel.Information)));
         Assert.Equal(ProcessingJobStatus.Leased, (await _db.Store.GetAsync(1))!.Status);
     }

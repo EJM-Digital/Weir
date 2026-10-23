@@ -50,6 +50,16 @@ public sealed class UpdateOutlookTests : IDisposable
     }
 
     [Fact]
+    public async Task A_release_with_no_readable_version_reads_as_unavailable_and_names_no_version()
+    {
+        _catalog.Answers(Release(string.Empty));
+
+        await _outlook.CheckAsync(CancellationToken.None);
+
+        Assert.Equal(new UpdateOutlookSnapshot("unavailable", null), _outlook.Current());
+    }
+
+    [Fact]
     public async Task A_newer_release_reads_as_an_update_available()
     {
         _catalog.Answers(Release("3.3.0"));

@@ -290,6 +290,24 @@ public sealed class GitHubReleaseCatalogClientTests : IDisposable
     }
 
     [Fact]
+    public async Task An_allowance_header_with_no_value_is_not_a_limit()
+    {
+        FeedFails();
+        _github.Api = _ =>
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.Forbidden);
+            response.Headers.TryAddWithoutValidation("X-RateLimit-Remaining", Array.Empty<string>());
+            response.Headers.Add("X-RateLimit-Reset", "1893456000");
+            return response;
+        };
+
+        var failure = await Assert.ThrowsAsync<ReleaseFetchException>(() => _client.FetchLatestAsync(Running, CancellationToken.None));
+
+        Assert.Equal(403, failure.StatusCode);
+        Assert.Null(failure.RateLimit);
+    }
+
+    [Fact]
     public async Task A_reset_too_large_to_be_a_time_is_an_error_status_not_a_limit()
     {
         FeedFails();

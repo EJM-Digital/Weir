@@ -5,7 +5,7 @@ namespace Weir.Contract.Tests.MediaManagers.Recorded;
 
 /// <summary>
 /// The workflow sync against what Deluno itself recorded: its answer to "where do downloads land" (rc.30.32, from Deluno's server code) and
-/// the manifest a real Deluno answered in Compose (rc.30.35). A workflow is set up from the first, follows it when Deluno puts a library's
+/// the manifest a real Deluno answered in Compose (rc.30.33). A workflow is set up from the first, follows it when Deluno puts a library's
 /// folders somewhere else, and is reported and left alone when the manifest stops naming its library. The manifest's libraries for the
 /// first are listed by the test, as the first recording holds only the destinations.
 /// </summary>

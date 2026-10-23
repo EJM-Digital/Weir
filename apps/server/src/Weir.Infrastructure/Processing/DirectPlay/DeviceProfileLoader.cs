@@ -59,8 +59,8 @@ public static class DeviceProfileLoader
 
     private static List<DeviceProfile> LoadShipped()
     {
-        using var stream = typeof(DeviceProfileLoader).Assembly.GetManifestResourceStream(EmbeddedResourceName)
-            ?? throw new InvalidOperationException($"Embedded resource {EmbeddedResourceName} was not found.");
+        // The project embeds this file, so the build fails before the resource can be missing.
+        using var stream = typeof(DeviceProfileLoader).Assembly.GetManifestResourceStream(EmbeddedResourceName)!;
         using var reader = new StreamReader(stream);
         return ParseDocument(reader.ReadToEnd());
     }

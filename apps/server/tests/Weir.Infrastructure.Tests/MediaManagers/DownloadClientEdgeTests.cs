@@ -74,4 +74,16 @@ public sealed class DownloadClientEdgeTests : IDisposable
         Assert.Empty(suggestions);
         Assert.Empty(_fixture.Http.Requests);
     }
+
+    [Fact]
+    public async Task A_saved_connection_with_no_address_is_left_out_of_the_suggestions()
+    {
+        var id = await _fixture.AddConnectionAsync(DownloadClientKinds.Sabnzbd, apiKey: "k");
+        await _fixture.Store.Execute($"UPDATE download_client_connections SET base_url = '' WHERE id = {id}");
+
+        var suggestions = await _fixture.Db(uow => _fixture.Suggestions.SuggestAsync(uow), commit: false);
+
+        Assert.Empty(suggestions);
+        Assert.Empty(_fixture.Http.Requests);
+    }
 }

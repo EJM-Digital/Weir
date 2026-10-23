@@ -159,4 +159,19 @@ public sealed class PeriodicTaskRegistryTests
 
         throw new InvalidOperationException("The listener ended.");
     }
+
+    [Fact]
+    public void A_task_whose_interval_appears_or_goes_is_planned_again_with_the_new_one()
+    {
+        _registry.Plan("scan-1", "Scan Movies", Noon, null);
+        _registry.Plan("scan-1", "Scan Movies", Noon, TimeSpan.FromMinutes(5));
+        Assert.Equal(TimeSpan.FromMinutes(5), Assert.Single(_registry.Snapshot()).Interval);
+
+        _registry.Plan("scan-1", "Scan Movies", Noon, TimeSpan.FromMinutes(10));
+        Assert.Equal(TimeSpan.FromMinutes(10), Assert.Single(_registry.Snapshot()).Interval);
+
+        _registry.Plan("scan-1", "Scan Movies", Noon, null);
+        _registry.Plan("scan-1", "Scan Movies", Noon, null);
+        Assert.Null(Assert.Single(_registry.Snapshot()).Interval);
+    }
 }

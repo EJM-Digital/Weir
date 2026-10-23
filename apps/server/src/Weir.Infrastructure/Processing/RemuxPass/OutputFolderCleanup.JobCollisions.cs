@@ -102,7 +102,7 @@ public sealed partial class OutputFolderCleanup
                 continue;
             }
 
-            if (Path.GetDirectoryName(expected) is { } jobSeason && RemuxPassPaths.SamePath(jobSeason, seasonFolder))
+            if (RemuxPassPaths.SamePath(Path.GetDirectoryName(expected)!, seasonFolder))
             {
                 return true;
             }

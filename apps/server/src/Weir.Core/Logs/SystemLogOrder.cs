@@ -135,6 +135,10 @@ public sealed class SystemLogOrder
     public bool TryDecodeCursor(string? text, out IReadOnlyList<object?> key) =>
         KeysetCursor.TryDecode(text, SystemLogSorts.NameOf(Sort), Direction, Shape, out key) && HasReadableValues(key);
 
+    /// <summary>The key of a cursor this log gave out under this order, which it can always read back; one that is not such a cursor is an error.</summary>
+    public IReadOnlyList<object?> KeyOfGivenCursor(string cursor) =>
+        TryDecodeCursor(cursor, out var key) ? key : throw new InvalidOperationException("The log gave out a cursor for its next page that it cannot read back.");
+
     private bool HasReadableValues(IReadOnlyList<object?> key)
     {
         for (var index = 0; index < Parts.Count; index++)

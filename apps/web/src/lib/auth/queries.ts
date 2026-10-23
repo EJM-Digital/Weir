@@ -118,17 +118,14 @@ export function useLoginMutation() {
 export function useLogoutMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () =>
-      postLogout(async () => {
-        // Show the sign-in page only once the logout request is about to go out, so it cannot be left unsent.
-        await qc.cancelQueries({ queryKey: authKeys.me });
-        await qc.cancelQueries({ queryKey: authKeys.session });
-        qc.setQueryData(authKeys.me, null);
-        qc.setQueryData(authKeys.session, null);
-      }),
-    onMutate: () => {
+    mutationFn: postLogout,
+    onMutate: async () => {
       clearSignOutFailed();
       startSigningOut();
+      await qc.cancelQueries({ queryKey: authKeys.me });
+      await qc.cancelQueries({ queryKey: authKeys.session });
+      qc.setQueryData(authKeys.me, null);
+      qc.setQueryData(authKeys.session, null);
     },
     onSuccess: clearSignedIn,
     onError: markSignOutFailed,

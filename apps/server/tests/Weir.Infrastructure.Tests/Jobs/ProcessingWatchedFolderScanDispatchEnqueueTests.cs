@@ -244,4 +244,34 @@ public sealed class ProcessingWatchedFolderScanDispatchEnqueueTests
         Assert.False(inserted);
         Assert.Equal("missing_output_for_live_remux", skip);
     }
+
+    [Fact]
+    public async Task A_person_who_scans_is_told_nothing_when_there_is_no_workflow_to_check()
+    {
+        using var db = new JobsTestDatabase();
+
+        await using var uow = await UnitOfWork.OpenAsync(db.Database);
+
+        Assert.Null(await ProcessingWatchedFolderScanDispatchEnqueue.MissingWatchedFolderMessageAsync(uow, Libraries, ProcessingMediaScopes.Movie, libraryId: null));
+        Assert.Null(await ProcessingWatchedFolderScanDispatchEnqueue.MissingWatchedFolderMessageAsync(uow, Libraries, ProcessingMediaScopes.Movie, libraryId: 9999));
+    }
+
+    [Fact]
+    public async Task A_person_who_scans_is_told_where_the_watched_folder_is_missing_and_nothing_when_it_is_there_or_unsaved()
+    {
+        using var dir = new TempDirectory();
+        using var db = new JobsTestDatabase();
+        var present = dir.Join("present");
+        Directory.CreateDirectory(present);
+        var presentId = await CreateLibraryAsync(db, "Present", ProcessingMediaScopes.Movie, present);
+        var unsavedId = await CreateLibraryAsync(db, "Unsaved", ProcessingMediaScopes.Movie);
+        var missing = dir.Join("missing");
+        var missingId = await CreateLibraryAsync(db, "Missing", ProcessingMediaScopes.Movie, missing);
+
+        await using var uow = await UnitOfWork.OpenAsync(db.Database);
+
+        Assert.Null(await ProcessingWatchedFolderScanDispatchEnqueue.MissingWatchedFolderMessageAsync(uow, Libraries, ProcessingMediaScopes.Movie, presentId));
+        Assert.Null(await ProcessingWatchedFolderScanDispatchEnqueue.MissingWatchedFolderMessageAsync(uow, Libraries, ProcessingMediaScopes.Movie, unsavedId));
+        Assert.StartsWith($"Weir can't see the watched folder {missing} for Missing.", await ProcessingWatchedFolderScanDispatchEnqueue.MissingWatchedFolderMessageAsync(uow, Libraries, ProcessingMediaScopes.Movie, missingId));
+    }
 }

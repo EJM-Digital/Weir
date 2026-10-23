@@ -44,10 +44,11 @@ public sealed class WeirLogFileLoggerProvider : ILoggerProvider
             var now = provider._time.GetUtcNow();
             var message = formatter(state, exception);
             provider._file.WriteLine(LogLineFormat.JsonLine(now, logLevel, category, message, exception, LogContext.RequestId, LogContext.JobId));
-            if (provider._alerts is { } alerts && logLevel >= LogLevel.Information && message.Trim() is { Length: > 0 } alertText)
+            if (provider._alerts is { } alerts && logLevel >= LogLevel.Information)
             {
+                var alertText = message.Trim();
                 var levelName = LogLineFormat.LevelName(logLevel);
-                if (!SuiteLogFilter.IsLowValueNoise(levelName, category))
+                if (alertText.Length > 0 && !SuiteLogFilter.IsLowValueNoise(levelName, category))
                 {
                     alerts.Publish(new LogAlert(now, levelName, alertText));
                 }

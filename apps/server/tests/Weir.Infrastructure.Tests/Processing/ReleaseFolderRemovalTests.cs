@@ -203,4 +203,44 @@ public sealed class ReleaseFolderRemovalTests : IDisposable
 
         Assert.True(extensions.SetEquals([.. Weir.Core.Rules.RemuxRules.MediaExtensions, ".m2ts", ".ogv"]));
     }
+
+    [Fact]
+    public void A_removal_that_took_nothing_is_not_a_removed_file()
+    {
+        Assert.False(new ReleaseRemoval(ReleaseRemovalKind.NothingRemoved, "Left.").FileRemoved);
+        Assert.True(new ReleaseRemoval(ReleaseRemovalKind.FileOnly, null).FileRemoved);
+        Assert.True(new ReleaseRemoval(ReleaseRemovalKind.FolderRemoved, null).FileRemoved);
+    }
+
+    [Fact]
+    public void A_file_at_the_top_of_a_drive_has_no_release_folder_to_remove()
+    {
+        var top = Path.GetPathRoot(Path.GetFullPath(_dir.Join("x")))!;
+
+        var removal = ReleaseFolderRemoval.Remove(Root, top, null);
+
+        Assert.Equal(ReleaseRemovalKind.NothingRemoved, removal.Kind);
+    }
+
+    [Fact]
+    public void A_film_already_gone_from_a_folder_that_holds_another_video_removes_nothing_and_says_it_kept_the_other()
+    {
+        var other = Write(Path.Join("Pack", "Two.mkv"));
+        var gone = Path.Join(Root, "Pack", "One.mkv");
+
+        var removal = ReleaseFolderRemoval.Remove(Root, gone, null);
+
+        Assert.Equal(ReleaseRemovalKind.FileOnly, removal.Kind);
+        Assert.True(File.Exists(other));
+    }
+
+    [Fact]
+    public void A_release_folder_already_gone_is_a_removed_folder_with_nothing_to_delete()
+    {
+        var gone = Path.Join(Root, "Pack", "One.mkv");
+
+        var removal = ReleaseFolderRemoval.Remove(Root, gone, null);
+
+        Assert.Equal(ReleaseRemovalKind.FolderRemoved, removal.Kind);
+    }
 }

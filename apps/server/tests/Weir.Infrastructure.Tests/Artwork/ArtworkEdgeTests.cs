@@ -229,6 +229,40 @@ public sealed class ArtworkEdgeTests
     }
 
     [Fact]
+    public async Task A_title_that_is_no_longer_stored_is_still_asked_about_as_the_caller_read_it()
+    {
+        using var fixture = new ArtworkFixture();
+        fixture.ServeSearch(ArtworkFixture.SearchAnswer(PosterFile, originalLanguage: "de"));
+
+        await fixture.Resolver.SearchNowAsync(Lookup("nosferatu"), CancellationToken.None);
+
+        Assert.Equal("nosferatu", ArtworkFixture.QueryValue(Assert.Single(fixture.Searches()), "query"));
+    }
+
+    [Fact]
+    public async Task A_hand_off_names_each_file_by_the_best_the_manager_said_and_leaves_a_file_with_nothing_to_look_up_unlinked()
+    {
+        using var fixture = new ArtworkFixture();
+        var library = await fixture.LibraryIdAsync("movie");
+        const string Unreadable = "!!!/!!!.mkv";
+        await fixture.InTransactionAsync(async uow =>
+        {
+            await fixture.Subjects.LinkHandoffAsync(uow, library, "movie", ["Nosferatu (1922)/Nosferatu.1922.mkv"], null, new ArtworkHints(null, null, null, null, null, null, null, null));
+            await fixture.Subjects.LinkHandoffAsync(uow, library, "movie", ["!!!/titled.mkv"], null, new ArtworkHints("Metropolis", 1927, null, null, null, null, null, null));
+            await fixture.Subjects.LinkHandoffAsync(uow, library, "movie", ["!!!/identified.mkv"], null, new ArtworkHints(null, null, 62, null, null, null, null, PosterFile));
+            await fixture.Subjects.LinkHandoffAsync(uow, library, "movie", [Unreadable], null, new ArtworkHints(null, null, null, null, null, null, null, PosterFile));
+        });
+        await fixture.InTransactionAsync(uow => fixture.Subjects.LinkHandoffAsync(uow, library, "movie", ["!!!/???.mkv"], null, new ArtworkHints(null, null, null, null, null, null, null, null)));
+
+        var keys = await fixture.Store.ScalarText("SELECT group_concat(relative_path || '=' || ifnull(lookup_key, ''), ';') FROM (SELECT * FROM artwork_files ORDER BY relative_path)");
+
+        Assert.Equal(
+            $"!!!/!!!.mkv={ArtworkKeys.ForPosterRef(PosterFile)};!!!/???.mkv=;!!!/identified.mkv={ArtworkKeys.ForTmdbId("movie", 62)};!!!/titled.mkv={ArtworkKeys.ForTitle("movie", new ArtworkTitle("metropolis", 1927))};"
+            + $"Nosferatu (1922)/Nosferatu.1922.mkv={ArtworkKeys.ForTitle("movie", new ArtworkTitle("nosferatu", 1922))}",
+            keys);
+    }
+
+    [Fact]
     public void A_poster_id_that_is_not_one_names_no_file()
     {
         using var fixture = new ArtworkFixture();

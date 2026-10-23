@@ -242,7 +242,7 @@ public sealed class UpdateFiles
     // has not taken up reads as under way only while there is a tray and the flag is recent.
     private WireObject StateAsShown(WireObject written, bool trayIsRunning)
     {
-        var name = (written.Get("state") as WireString)?.Value;
+        var name = WireConvert.Str(written["state"]);
         if (name is UpdateStatus.StateChecking or UpdateStatus.StateDownloading)
         {
             return trayIsRunning ? written : UpdateStatus.WithStep(written, UpdateStatus.StateIdle);
@@ -345,7 +345,7 @@ public sealed class UpdateFiles
     }
 
     /// <summary>Whether the tray has downloaded an update that is waiting to be installed.</summary>
-    public bool HasDownloadedUpdate() => ReadState().Get("downloaded")?.IsTruthy ?? false;
+    public bool HasDownloadedUpdate() => ReadState()["downloaded"].IsTruthy;
 
     /// <summary>Tell the tray whether file work is running or could start now, as of <paramref name="checkedAt"/>.</summary>
     public void WriteWorkState(bool busy, DateTimeOffset checkedAt) =>

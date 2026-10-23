@@ -509,4 +509,35 @@ public sealed class ProcessingJobProcessorTests : IDisposable
             return Task.FromResult(willRetry);
         }
     }
+
+    [Theory]
+    [InlineData("not json", "")]
+    [InlineData("{}", "")]
+    [InlineData("{\"library_id\": \"abc\"}", "")]
+    [InlineData("{\"library_id\": true}", ",\"library_id\":true")]
+    public async Task An_unrecorded_handler_failure_names_a_workflow_only_when_the_payload_gives_one(string payload, string libraryPart)
+    {
+        await _db.Store.EnqueueOrGetAsync("c", "processing.test.crash.v1", payload, maxAttempts: 1);
+        var processor = _db.Processor([new DelegateHandler("processing.test.crash.v1", _ => throw new InvalidOperationException("x"))], new RecordingFailureRecorder(willRetry: null));
+
+        await processor.ProcessOneAsync("w", now: T0);
+
+        Assert.Equal(
+            "{\"job_id\":1,\"job_kind\":\"processing.test.crash.v1\",\"failure_class\":\"unknown\"," +
+            "\"message\":\"Weir job failed: The job hit an unexpected error. This job is marked failed so it does not look successful.\"," +
+            "\"next_action\":\"Review this job and use Start again after fixing the cause.\",\"retry_scheduled\":false,\"result\":\"failed\"" + libraryPart + "}",
+            Assert.Single(_db.ActivityEvents()).Detail);
+    }
+
+    [Fact]
+    public async Task A_job_row_with_no_attempt_limit_runs_as_a_job_with_one_attempt()
+    {
+        _db.InsertRawJob("raw", "processing.test.ok.v1", maxAttempts: 0);
+        JobWorkContext? seen = null;
+        var processor = _db.Processor([new DelegateHandler("processing.test.ok.v1", context => seen = context)]);
+
+        await processor.ProcessOneAsync("w", 3600, T0);
+
+        Assert.Equal((1, 1), (seen!.AttemptCount, seen.MaxAttempts));
+    }
 }

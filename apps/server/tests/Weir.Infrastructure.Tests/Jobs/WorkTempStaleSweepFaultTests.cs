@@ -93,4 +93,31 @@ public sealed class WorkTempStaleSweepFaultTests : IDisposable
         Assert.Contains(_logger.At(LogLevel.Warning), message => message.Contains("could not read", StringComparison.Ordinal));
         Assert.Equal("Work files checked (Movies): 1 work folder could not be read", await _store.ScalarText(TitleSql));
     }
+
+    [Fact]
+    public async Task Several_files_cleared_are_counted_in_the_plural()
+    {
+        var first = StaleFile(StaleName);
+        var second = StaleFile(OtherStaleName);
+
+        await RunAsync(new FaultingFileSystem());
+
+        Assert.False(System.IO.File.Exists(first));
+        Assert.False(System.IO.File.Exists(second));
+        Assert.Equal("Cleared 2 left-behind work files (Movies)", await _store.ScalarText(TitleSql));
+    }
+
+    [Fact]
+    public async Task Several_work_folders_that_cannot_be_listed_are_counted_in_the_plural_and_another_scopes_folder_is_not_one_of_them()
+    {
+        Directory.CreateDirectory(Path.Join(_store.Home.Path, "own-work"));
+        await _store.Execute(
+            "INSERT INTO libraries (name, media_type, work_folder) VALUES " +
+            $"('Own films', 'movie', '{Path.Join(_store.Home.Path, "own-work").Replace("'", "''", StringComparison.Ordinal)}'), " +
+            $"('Own series', 'tv', '{Path.Join(_store.Home.Path, "series-work").Replace("'", "''", StringComparison.Ordinal)}')");
+
+        await RunAsync(new FaultingFileSystem().Fail(FileCall.ListFiles, FaultingFileSystem.Refused).Fail(FileCall.ListFiles, FaultingFileSystem.Refused, onCall: 2));
+
+        Assert.Equal("Work files checked (Movies): 2 work folders could not be read", await _store.ScalarText(TitleSql));
+    }
 }

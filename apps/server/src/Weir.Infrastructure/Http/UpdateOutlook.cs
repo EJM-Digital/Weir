@@ -53,7 +53,7 @@ public sealed class UpdateOutlook
     {
         CheckWhenStale();
         var state = _files.ReadState();
-        if (state.Get("downloaded")?.IsTruthy == true)
+        if (state["downloaded"].IsTruthy)
         {
             return new UpdateOutlookSnapshot(Downloaded, TextOf(state.Get("pending_version")));
         }

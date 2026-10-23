@@ -28,7 +28,7 @@ public sealed class ArtworkSubjects
         ArgumentNullException.ThrowIfNull(file);
         var scope = ScopeOf(file.MediaScope);
         var title = ArtworkTitleReader.Read(scope, file.Path, file.KnownTitle);
-        var key = title is null ? null : await QueueAsync(uow, scope, title, hints: null, priority).ConfigureAwait(false);
+        var key = title is null ? null : await QueueTitleAsync(uow, scope, title, priority).ConfigureAwait(false);
         await _files.LinkAsync(uow, file.LibraryId, file.Path, key).ConfigureAwait(false);
     }
 
@@ -69,11 +69,11 @@ public sealed class ArtworkSubjects
     }
 
     /// <summary>The lookup key the title is queued under, or null when there is nothing to look a poster up by.</summary>
-    private async Task<string?> QueueAsync(UnitOfWork uow, string scope, ArtworkTitle? title, ArtworkHints? hints, int priority)
+    private async Task<string?> QueueAsync(UnitOfWork uow, string scope, ArtworkTitle? title, ArtworkHints hints, int priority)
     {
-        var key = hints?.TmdbId is { } tmdbId ? ArtworkKeys.ForTmdbId(scope, tmdbId)
+        var key = hints.TmdbId is { } tmdbId ? ArtworkKeys.ForTmdbId(scope, tmdbId)
             : title is not null ? ArtworkKeys.ForTitle(scope, title)
-            : hints?.PosterRef is { } posterFile ? ArtworkKeys.ForPosterRef(posterFile)
+            : hints.PosterRef is { } posterFile ? ArtworkKeys.ForPosterRef(posterFile)
             : null;
         if (key is null)
         {
@@ -81,7 +81,7 @@ public sealed class ArtworkSubjects
         }
 
         await _lookups.EnqueueAsync(uow, new ArtworkLookupRequest(
-            key, scope, title?.Title ?? string.Empty, title?.Year, hints?.TmdbId, hints?.TvdbId, hints?.ImdbId, hints?.PosterRef, priority)).ConfigureAwait(false);
+            key, scope, title?.Title ?? string.Empty, title?.Year, hints.TmdbId, hints.TvdbId, hints.ImdbId, hints.PosterRef, priority)).ConfigureAwait(false);
         return key;
     }
 

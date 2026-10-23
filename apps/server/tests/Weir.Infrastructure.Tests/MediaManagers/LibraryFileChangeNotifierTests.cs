@@ -135,8 +135,8 @@ public sealed class LibraryFileChangeNotifierTests
     {
         using var fixture = new MediaManagerFixture();
         await fixture.AddConnectionAsync("deluno");
-        // The manifest is the real Deluno's own (fixtures/recorded/deluno-side, rc.30.35); its answer to the notification was never recorded.
-        var manifest = RecordedDelunoReply.Of("1.0.0-rc.30.35", "real-connection", "/api/integrations/external/manifest");
+        // The manifest is the real Deluno's own (fixtures/recorded/deluno-side, rc.30.33); its answer to the notification was never recorded.
+        var manifest = RecordedDelunoReply.Of("1.0.0-rc.30.33", "real-connection", "/api/integrations/external/manifest");
         fixture.Http
             .Route(HttpMethod.Get, "/api/integrations/external/manifest", _ => FakeManagerHttp.Response((HttpStatusCode)manifest.Status, manifest.Body))
             .Json(HttpMethod.Post, "/api/integrations/external/file-changed", """{"path":"/media/Movies/Solaris (1972)/f.mkv","coalesced":false,"titles":[]}""", HttpStatusCode.Accepted);

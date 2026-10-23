@@ -252,4 +252,36 @@ public sealed class PhysicalSwapFileSystemTests : IDisposable
 
         return null;
     }
+
+    [Fact]
+    public void A_link_count_Windows_could_not_give_is_the_error_it_reported()
+    {
+        Assert.Equal(3, PhysicalSwapFileSystem.WindowsLinkCount(succeeded: true, links: 3, error: 0, "a.mkv"));
+        Assert.IsType<FileNotFoundException>(Assert.Throws<FileNotFoundException>(() => PhysicalSwapFileSystem.WindowsLinkCount(succeeded: false, links: 0, error: 2, "a.mkv")));
+        Assert.Throws<UnauthorizedAccessException>(() => PhysicalSwapFileSystem.WindowsLinkCount(succeeded: false, links: 0, error: 5, "a.mkv"));
+    }
+
+    [Fact]
+    public void A_link_count_statx_gave_is_that_count_and_none_is_unknown()
+    {
+        Assert.Equal(2, PhysicalSwapFileSystem.UnixLinkCount(new PhysicalSwapFileSystem.UnixFileStat(2, 1000, 1000)));
+        Assert.Null(PhysicalSwapFileSystem.UnixLinkCount(null));
+    }
+
+    [Fact]
+    public void Only_the_superuser_gives_the_copy_the_owner_of_the_original_and_a_refusal_is_an_error()
+    {
+        var asked = new List<(uint Uid, uint Gid)>();
+        var owner = new PhysicalSwapFileSystem.UnixFileStat(1, 1000, 100);
+
+        PhysicalSwapFileSystem.CopyUnixOwner(isRoot: false, () => owner, (uid, gid) => { asked.Add((uid, gid)); return 0; }, () => 0, "b.mkv");
+        PhysicalSwapFileSystem.CopyUnixOwner(isRoot: true, () => null, (uid, gid) => { asked.Add((uid, gid)); return 0; }, () => 0, "b.mkv");
+        Assert.Empty(asked);
+
+        PhysicalSwapFileSystem.CopyUnixOwner(isRoot: true, () => owner, (uid, gid) => { asked.Add((uid, gid)); return 0; }, () => 0, "b.mkv");
+        Assert.Equal([(1000u, 100u)], asked);
+
+        var refused = Assert.Throws<IOException>(() => PhysicalSwapFileSystem.CopyUnixOwner(isRoot: true, () => owner, (_, _) => -1, () => 1, "b.mkv"));
+        Assert.Equal("chown failed with errno 1 for 'b.mkv'", refused.Message);
+    }
 }

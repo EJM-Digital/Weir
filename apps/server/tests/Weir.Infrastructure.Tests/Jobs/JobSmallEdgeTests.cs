@@ -80,4 +80,15 @@ public sealed class JobSmallEdgeTests
 
         Assert.Equal(new Dictionary<string, DateTimeOffset> { ["Film.mkv"] = now.AddDays(1) }, held);
     }
+
+    [Theory]
+    [InlineData("2026-01-15 10:00:00", "2026-01-15T10:00:00+00:00")]
+    [InlineData("2026-01-15 10:00:00.250", "2026-01-15T10:00:00.250+00:00")]
+    [InlineData("2026-01-15 10:00:00Z", "2026-01-15T10:00:00+00:00")]
+    [InlineData("2026-01-15 21:00:00+11:00", "2026-01-15T10:00:00+00:00")]
+    [InlineData("2026-01-15 05:00:00-05:00", "2026-01-15T10:00:00+00:00")]
+    public void A_stored_time_is_read_as_the_instant_it_names_and_a_bare_one_is_utc(string stored, string expected)
+    {
+        Assert.Equal(DateTimeOffset.Parse(expected, System.Globalization.CultureInfo.InvariantCulture), TimestampColumns.Parse(stored));
+    }
 }

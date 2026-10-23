@@ -1,5 +1,6 @@
 using System.Net;
 using Weir.Core.Artwork;
+using Weir.Core.MediaManagers;
 using Weir.Core.Rules;
 using Weir.Infrastructure.Artwork;
 using Weir.Infrastructure.Tests.MediaManagers;
@@ -203,6 +204,51 @@ public sealed class GatewayOriginalLanguageLookupTests
 
         Assert.Equal("nosferatu", ArtworkFixture.QueryValue(Assert.Single(fixture.Searches()), "query"));
         Assert.Equal("de", result.Metadata!.OriginalLanguage);
+    }
+
+    [Fact]
+    public async Task A_title_whose_file_name_says_nothing_is_read_from_the_release_name_the_manager_gave()
+    {
+        using var fixture = new ArtworkFixture();
+        fixture.ServeSearch(ArtworkFixture.SearchAnswer(PosterFile, originalLanguage: "de"));
+        var origin = new HandoffOrigin("deluno", HandoffId: null, CallbackPath: null, ReleaseName: "Nosferatu.1922.1080p.BluRay-GRP");
+
+        var result = await fixture.OriginalLanguages.LookupAsync("movie", await fixture.LibraryIdAsync("movie"), "!!!/x.mkv", origin, CancellationToken.None);
+
+        Assert.Equal("nosferatu", ArtworkFixture.QueryValue(Assert.Single(fixture.Searches()), "query"));
+        Assert.Equal("de", result.Metadata!.OriginalLanguage);
+    }
+
+    [Fact]
+    public async Task A_title_known_only_by_a_poster_with_a_file_name_that_says_nothing_is_declined_for_want_of_a_title()
+    {
+        using var fixture = new ArtworkFixture();
+        var library = await fixture.LibraryIdAsync("movie");
+        await fixture.InTransactionAsync(uow => fixture.Subjects.LinkHandoffAsync(
+            uow, library, "movie", ["!!!/!!!.mkv"], releaseName: null, new ArtworkHints(null, null, null, null, null, null, null, PosterFile)));
+
+        var result = await fixture.OriginalLanguages.LookupAsync("movie", library, "!!!/!!!.mkv", origin: null, CancellationToken.None);
+
+        Assert.Equal(LookupResult.StatusNoMatch, result.Status);
+        Assert.Empty(fixture.Http.Requests);
+    }
+
+    [Fact]
+    public async Task A_title_removed_while_it_was_being_asked_about_is_answered_as_it_was_read()
+    {
+        using var fixture = new ArtworkFixture();
+        fixture.Http.Route(HttpMethod.Get, "/metadata/search", _ =>
+        {
+            using var connection = fixture.Store.Database.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "DELETE FROM artwork_lookups";
+            command.ExecuteNonQuery();
+            return FakeManagerHttp.Response(HttpStatusCode.OK, ArtworkFixture.SearchAnswer(PosterFile, originalLanguage: "de"));
+        });
+
+        var result = await fixture.OriginalLanguages.LookupAsync("movie", await fixture.LibraryIdAsync("movie"), FilmPath, origin: null, CancellationToken.None);
+
+        Assert.Equal(LookupResult.StatusUnreachable, result.Status);
     }
 
     [Fact]

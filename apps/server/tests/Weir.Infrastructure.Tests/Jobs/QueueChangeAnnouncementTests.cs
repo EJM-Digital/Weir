@@ -154,4 +154,16 @@ public sealed class QueueChangeAnnouncementTests : IDisposable
 
         Assert.Empty(await _published.TakeAsync());
     }
+
+    [Fact]
+    public async Task A_transaction_no_unit_of_work_began_announces_nothing()
+    {
+        using var connection = _db.Database.Open();
+        using var transaction = connection.BeginTransaction();
+
+        _store.AnnounceQueueChange(transaction, FilePass);
+        transaction.Commit();
+
+        Assert.Empty(await _published.TakeAsync());
+    }
 }

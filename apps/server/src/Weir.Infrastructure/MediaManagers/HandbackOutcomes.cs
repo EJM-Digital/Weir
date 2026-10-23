@@ -94,7 +94,7 @@ public sealed class HandbackOutcomes
         }
 
         var released = copy.ReleasedAt is not null;
-        return copy.Outcome == HandbackRules.Imported && speaker.IsSameCallerAs(copy.OutcomeSpeaker)
+        return speaker.IsSameCallerAs(copy.OutcomeSpeaker)
             ? new ManagerImportResult(true, released, copy.ReleaseNote ?? string.Empty, copy.RelativePath, copy.LibraryId)
             : new ManagerImportResult(true, false, HandbackRules.StandingNote(released), copy.RelativePath, copy.LibraryId);
     }
@@ -252,13 +252,14 @@ public sealed class HandbackOutcomes
     /// </summary>
     private async Task<HandbackRow?> MatchAsync(UnitOfWork uow, MediaManagerImportEvent importEvent)
     {
-        if (!string.IsNullOrWhiteSpace(importEvent.SourcePath) && HandbackRules.FileName(importEvent.SourcePath) is { Length: > 0 } name)
+        var name = string.IsNullOrWhiteSpace(importEvent.SourcePath) ? string.Empty : HandbackRules.FileName(importEvent.SourcePath);
+        if (name.Length > 0)
         {
             var rows = await _handback.WithFileNameAsync(uow, name).ConfigureAwait(false);
-            var exact = rows.Where(row => HandbackRules.SameManagerPath(importEvent.SourcePath, row.OutputPath)).ToList();
+            var exact = rows.Where(row => HandbackRules.SameManagerPath(importEvent.SourcePath!, row.OutputPath)).ToList();
             var candidates = exact.Count > 0
                 ? exact
-                : [.. rows.Where(row => HandbackRules.ManagerPathEndsWith(importEvent.SourcePath, HandbackStore.RelativeParts(row)))];
+                : [.. rows.Where(row => HandbackRules.ManagerPathEndsWith(importEvent.SourcePath!, HandbackStore.RelativeParts(row)))];
             if (Choose(candidates, importEvent.MediaScope) is { } bySource)
             {
                 return bySource;

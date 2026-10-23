@@ -164,7 +164,7 @@ public static class WorkAdmissionReader
     {
         null or DBNull => false,
         long number => number != 0,
-        string text => text.Trim() is not ("" or "0"),
+        string text => text.AsSpan().Trim() is not ("" or "0"),
         _ => Convert.ToInt64(value, CultureInfo.InvariantCulture) != 0,
     };
 

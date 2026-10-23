@@ -51,6 +51,8 @@ public sealed class ScanWakeupsTests
         Assert.Equal(t0.AddMinutes(5), looks.NextLookFor(3));
         looks.Request(3, t0.AddSeconds(40));
         Assert.Equal(t0.AddSeconds(40), looks.NextLookFor(3));
+        looks.RecordNextPeriodic(3, t0.AddSeconds(10));
+        Assert.Equal(t0.AddSeconds(10), looks.NextLookFor(3));
         looks.ForgetPeriodic(3);
         Assert.Equal(t0.AddSeconds(40), looks.NextLookFor(3));
     }
@@ -221,5 +223,28 @@ public sealed class ScanWakeupsTests
         command.CommandText = "SELECT status FROM files WHERE relative_path = $p";
         command.Parameters.AddWithValue("$p", relative);
         return await command.ExecuteScalarAsync() as string;
+    }
+
+    [Fact]
+    public async Task A_scan_over_several_failed_files_books_the_next_look_for_the_earliest_retry()
+    {
+        using var store = new StoreFixture(("WEIR_CREDENTIALS_SECRET", "wakeup-tests-earliest-secret"));
+        var wakeups = new ScanWakeups();
+        var setup = await ScanSetupAsync(store, wakeups, readyAfterSeconds: 0);
+        var now = store.Clock.GetUtcNow();
+        // Walked in path order: the second retry is later than the first, and the third is earlier than both.
+        foreach (var (name, hours) in new[] { ("A.mkv", 2), ("B.mkv", 3), ("C.mkv", 1) })
+        {
+            File.WriteAllBytes(Path.Combine(setup.WatchedFolder, name), [1]);
+            await store.Execute(
+                "INSERT INTO files (library_id, relative_path, status, size_bytes, failure_class, failure_attempts, next_retry_at) " +
+                $"VALUES ({setup.LibraryId}, '{name}', 'processing_failed', 1, 'execution', 1, '{TimestampColumns.Orm(now.AddHours(hours))}')");
+        }
+
+        await setup.ScanAsync();
+
+        var booked = wakeups.BookedFor(setup.LibraryId);
+        Assert.NotNull(booked);
+        Assert.InRange((booked.Value - now.AddHours(1)).TotalSeconds, 0.5, 1.5);
     }
 }

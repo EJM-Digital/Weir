@@ -135,7 +135,7 @@ public sealed class PeriodicEnqueueService : BackgroundService
                 _clock.Record(enqueuer.Name, enqueuer.JobKind, due, interval);
                 AnnounceCleanup(enqueuer.JobKind);
                 var untilDue = due - _time.GetUtcNow();
-                wait = untilDue >= _recheck ? _recheck : untilDue > TimeSpan.Zero ? untilDue : TimeSpan.Zero;
+                wait = TimeSpan.FromTicks(Math.Max(0, Math.Min(untilDue.Ticks, _recheck.Ticks)));
             }
 
             _onIterationComplete?.Invoke();

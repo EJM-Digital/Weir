@@ -349,4 +349,19 @@ public sealed class JobsStartupRecoveryServiceTests : IDisposable
             _released.Set();
         }
     }
+
+    [Fact]
+    public async Task Workflows_that_cannot_be_read_at_start_are_a_warning_for_each_check_and_recovery_goes_on()
+    {
+        _db.AddLibrary(name: "Movies");
+        _db.Execute("ALTER TABLE libraries RENAME COLUMN minimum_free_disk_space_mb TO unreadable_column");
+        var service = Service(_swap.Sweep);
+
+        await StartAndWaitAsync(service);
+
+        Assert.True(_log.Logged(LogLevel.Warning, "Could not give every workflow a profile; this is tried again at the next start."));
+        Assert.True(_log.Logged(LogLevel.Warning, "Could not check existing workflows against the folder rules; this is tried again at the next start."));
+        Assert.NotNull(service.LastReport);
+        Assert.DoesNotContain(_log.Messages, message => message.Level == LogLevel.Critical);
+    }
 }

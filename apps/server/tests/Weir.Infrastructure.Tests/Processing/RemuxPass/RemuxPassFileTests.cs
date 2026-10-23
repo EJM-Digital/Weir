@@ -324,6 +324,15 @@ public sealed class SidecarMigrationTests : IDisposable
         var result = await SidecarMigration.MigrateAsync(_source, _output, [".srt"], preserveTimestamps: true);
         Assert.Equal(old, File.GetLastWriteTimeUtc(Assert.Single(result.Migrated).Destination));
     }
+
+    [Fact]
+    public void A_folder_that_looks_like_a_sidecar_is_not_one_and_a_result_with_no_failures_has_no_blocking_reason()
+    {
+        Directory.CreateDirectory(Beside("Film.2001.1080p.BluRay.srt"));
+
+        Assert.Empty(SidecarMigration.FindSidecars(_source, [".srt"]));
+        Assert.Equal(string.Empty, new SidecarMigrationResult().BlockingReason);
+    }
 }
 
 /// <summary>Source file access and open-writer checks used for settling, plus the pass's read guard.</summary>

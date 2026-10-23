@@ -106,4 +106,14 @@ public sealed class HandoffListedFilesTests : IDisposable
 
         Assert.Equal(HandoffSourceFiles.NoVideoDetail, refusal.Message);
     }
+
+    [Fact]
+    public void A_hand_off_that_lists_nothing_is_refused_because_it_names_no_file_of_the_folder()
+    {
+        var hand_off = Event() with { SourceFiles = null };
+
+        var refusal = Assert.Throws<IntakeRefusedException>(() => MediaManagerIntake.HandoffListedFiles(_library, Release, hand_off));
+
+        Assert.Equal(400, refusal.StatusCode);
+    }
 }

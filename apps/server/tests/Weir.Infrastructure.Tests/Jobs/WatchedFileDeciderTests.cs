@@ -86,4 +86,127 @@ public sealed class WatchedFileDeciderTests : IDisposable
         Assert.Equal(["Film/film.mkv"], await _world.QueuedPathsAsync());
         Assert.Equal(ProcessingFileStatuses.Processed, (await _world.RowAsync(library, Film))!.Status);
     }
+
+    private const string BookedReason = "Weir has another look at this file booked, and leaves it alone until then.";
+
+    /// <summary>A film a pass cleaned and recorded the fingerprint of, with the completion record and the output the interrupted removal waits on.</summary>
+    private async Task<string> CleanedFilmAsync(long library, string relativePath, int bytes)
+    {
+        var path = _world.Write(relativePath, bytes);
+        await _world.Store.Execute(
+            "INSERT INTO files (library_id, relative_path, status, status_reason, size_bytes, last_seen_at, processed_source_size, processed_source_mtime_ns) " +
+            $"VALUES ({library}, '{relativePath}', 'processed', 'Seen before.', {bytes}, CURRENT_TIMESTAMP, {bytes}, {ModifiedNs(path).ToString(CultureInfo.InvariantCulture)})");
+        await WriteOutputAndCompletionAsync(library, relativePath, path);
+        return path;
+    }
+
+    private async Task WriteOutputAndCompletionAsync(long library, string relativePath, string source)
+    {
+        var output = Path.Join(_world.Output, relativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(output)!);
+        File.WriteAllBytes(output, [1]);
+        await ProcessingWatchedFolderScanDispatchJobHandlerTests.WriteCompletedPassEventAsync(_world.Store, library, relativePath, "movie", source, output);
+    }
+
+    [Fact]
+    public async Task An_interrupted_movie_removal_takes_only_the_file_when_the_release_folder_holds_another_video()
+    {
+        var library = await _world.WorkflowAsync(settings => settings with { RemoveOriginalAfterSuccess = true });
+        var path = await CleanedFilmAsync(library, Film, 10);
+        var other = _world.Write("Film/extra.mkv", 12);
+
+        await _world.ScanAsync(library);
+
+        Assert.False(File.Exists(path));
+        Assert.True(File.Exists(other));
+        var row = (await _world.RowAsync(library, Film))!;
+        Assert.Equal(ProcessingFileStatuses.Processed, row.Status);
+        Assert.StartsWith("The output was already complete.", row.StatusReason, StringComparison.Ordinal);
+        Assert.DoesNotContain("release folder", row.StatusReason, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_replaced_movie_whose_output_is_already_complete_has_its_old_failure_cleared_while_its_removal_is_finished()
+    {
+        var library = await _world.WorkflowAsync(settings => settings with { RemoveOriginalAfterSuccess = true });
+        await SeenAsync(library, ProcessingFileStatuses.ProcessingFailed, 10);
+        var path = _world.Write(Film, 11);
+        await WriteOutputAndCompletionAsync(library, Film, path);
+
+        await _world.ScanAsync(library);
+
+        Assert.False(File.Exists(path));
+        var row = (await _world.RowAsync(library, Film))!;
+        Assert.Equal(ProcessingFileStatuses.Processed, row.Status);
+        Assert.Equal(0, row.FailureAttempts);
+        Assert.Empty(await _world.QueuedPathsAsync());
+    }
+
+    [Fact]
+    public async Task An_interrupted_movie_removal_waits_while_the_file_is_still_settling()
+    {
+        var library = await _world.WorkflowAsync(settings => settings with { RemoveOriginalAfterSuccess = true, ReadyAfterSeconds = 3600 });
+        var path = await CleanedFilmAsync(library, Film, 10);
+
+        await _world.ScanAsync(library);
+
+        Assert.True(File.Exists(path));
+        Assert.Equal(ProcessingFileStatuses.Processed, (await _world.RowAsync(library, Film))!.Status);
+    }
+
+    [Fact]
+    public async Task An_interrupted_movie_removal_waits_while_the_file_cannot_be_opened()
+    {
+        var library = await _world.WorkflowAsync(settings => settings with { RemoveOriginalAfterSuccess = true, SkipAccessTests = false });
+        var path = await CleanedFilmAsync(library, Film, 10);
+        using var held = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None);
+
+        await _world.ScanAsync(library);
+
+        Assert.True(File.Exists(path));
+        Assert.Equal(ProcessingFileStatuses.Processed, (await _world.RowAsync(library, Film))!.Status);
+    }
+
+    [Fact]
+    public async Task A_cleaned_movie_with_no_completed_output_on_record_is_not_removed()
+    {
+        var library = await _world.WorkflowAsync(settings => settings with { RemoveOriginalAfterSuccess = true });
+        var path = _world.Write(Film, 10);
+        await SeenAsync(library, ProcessingFileStatuses.Processed, 10);
+        await _world.Store.Execute($"UPDATE files SET processed_source_size = 10, processed_source_mtime_ns = {ModifiedNs(path).ToString(CultureInfo.InvariantCulture)}");
+
+        await _world.ScanAsync(library);
+
+        Assert.True(File.Exists(path));
+        Assert.Equal(ProcessingFileStatuses.Processed, (await _world.RowAsync(library, Film))!.Status);
+    }
+
+    [Fact]
+    public async Task A_waiting_file_with_a_pass_booked_for_later_goes_on_hold_for_the_booked_look()
+    {
+        var library = await _world.WorkflowAsync();
+        _world.Write(Film, 10);
+        await SeenAsync(library, ProcessingFileStatuses.Unprocessed, 10);
+        await BookedJobAsync(library, InADay());
+
+        await _world.ScanAsync(library);
+
+        var row = (await _world.RowAsync(library, Film))!;
+        Assert.Equal((ProcessingFileStatuses.OnHold, BookedReason), (row.Status, row.StatusReason));
+    }
+
+    [Fact]
+    public async Task A_file_on_hold_with_no_reason_given_goes_on_hold_for_the_booked_look()
+    {
+        var library = await _world.WorkflowAsync();
+        _world.Write(Film, 10);
+        await SeenAsync(library, ProcessingFileStatuses.OnHold, 10);
+        await _world.Store.Execute("UPDATE files SET status_reason = ''");
+        await BookedJobAsync(library, InADay());
+
+        await _world.ScanAsync(library);
+
+        var row = (await _world.RowAsync(library, Film))!;
+        Assert.Equal((ProcessingFileStatuses.OnHold, BookedReason), (row.Status, row.StatusReason));
+    }
 }

@@ -160,4 +160,17 @@ public sealed class SystemLogRulesTests
         type.GetFields(BindingFlags.Public | BindingFlags.Static)
             .Where(field => field is { IsLiteral: true } && field.FieldType == typeof(string))
             .Select(field => (string)field.GetRawConstantValue()!);
+
+    [Fact]
+    public void A_log_with_no_conditions_has_no_where_clause()
+    {
+        Assert.Equal(string.Empty, new SystemLogConditions().WhereText);
+        Assert.Equal(" WHERE a = 1 AND b = 2", new SystemLogConditions(["a = 1", "b = 2"]).WhereText);
+    }
+
+    [Fact]
+    public void A_job_kind_with_no_name_reads_as_itself()
+    {
+        Assert.Equal(string.Empty, SystemLogRules.JobKindLabel(string.Empty));
+    }
 }

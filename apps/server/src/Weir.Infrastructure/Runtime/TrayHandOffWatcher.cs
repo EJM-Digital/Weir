@@ -37,13 +37,11 @@ public sealed class TrayHandOffWatcher : BackgroundService
     private readonly DataChangePublisher _changes;
     private readonly TimeProvider _time;
     private readonly ILogger<TrayHandOffWatcher> _logger;
-    private readonly TimeSpan _settle;
     private readonly Channel<string> _written = Channel.CreateUnbounded<string>(new UnboundedChannelOptions { SingleReader = true });
     private FileSystemWatcher? _watcher;
 
-    public TrayHandOffWatcher(WeirOptions options, DataChangePublisher changes, TimeProvider time, ILogger<TrayHandOffWatcher> logger, TimeSpan? settle = null)
+    public TrayHandOffWatcher(WeirOptions options, DataChangePublisher changes, TimeProvider time, ILogger<TrayHandOffWatcher> logger)
     {
-        _settle = settle ?? Settle;
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(changes);
         ArgumentNullException.ThrowIfNull(time);
@@ -138,7 +136,7 @@ public sealed class TrayHandOffWatcher : BackgroundService
         bool written;
         do
         {
-            await Task.Delay(_settle, _time, stoppingToken).ConfigureAwait(false);
+            await Task.Delay(Settle, _time, stoppingToken).ConfigureAwait(false);
             written = false;
             while (_written.Reader.TryRead(out var next))
             {

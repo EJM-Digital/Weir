@@ -87,6 +87,7 @@ public sealed class OverviewStatsStoreTests : IDisposable
         await RecordAsync("""{"outcome":"live_skipped_not_required","output_copied_without_remux":true}""");
         await RecordAsync("""{"outcome":"live_skipped_not_required","output_copied_without_remux":false}""");
         await RecordAsync("""{"outcome":"live_skipped_not_required"}""");
+        await RecordAsync("""{"outcome":"live_skipped_not_required","output_copied_without_remux":"yes"}""");
 
         var stats = await BuildAsync();
 
