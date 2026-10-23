@@ -112,6 +112,17 @@ public sealed class AlertsTableTests(E2EServer server) : E2ETestBase(server)
 
     private static string ToTitleCase(string text) => text.Length == 0 ? text : string.Concat(text[..1].ToUpperInvariant(), text[1..].ToLowerInvariant());
 
+    [E2EFact]
+    public async Task Adding_an_alert_asks_for_the_address_to_send_to()
+    {
+        var page = await NewPageAsync();
+        await OpenAsync(page);
+
+        await page.GetByRole(AriaRole.Button, new() { Name = "Add alert", Exact = true }).ClickAsync();
+
+        await Expect(page.GetByRole(AriaRole.Textbox, new() { Name = "Webhook URL" })).ToBeVisibleAsync();
+    }
+
     private static ILocator RowOf(IPage page, string label) => page.GetByRole(AriaRole.Row).Filter(new() { Has = page.GetByRole(AriaRole.Rowheader, new() { Name = label }) });
 
     private async Task OpenAsync(IPage page)

@@ -252,13 +252,6 @@
       "reason": "The Files table always has a sort (its default is Title, and a stored sort that is not a sortable column is dropped on reading) and the Select column cannot be sorted, so the sort is always a real column; the other arm only satisfies the type."
     },
     {
-      "id": "web-dashboard-finished-files-read",
-      "file": "apps/web/src/pages/processing/dashboard/live-view.tsx",
-      "marker": "v8 ignore",
-      "kind": "unreachable",
-      "reason": "A finished file's tile can be opened only on a page that has passed its loading and error states, so the files have been read; the empty fallback only satisfies the type of data that is undefined until then."
-    },
-    {
       "id": "web-today-chart-point",
       "file": "apps/web/src/pages/processing/dashboard/today-chart.tsx",
       "marker": "v8 ignore",
@@ -278,20 +271,6 @@
       "marker": "v8 ignore",
       "kind": "unreachable",
       "reason": "The tab row offers only the area's own tabs, so the tab asked for is always found; the check only narrows the type of the lookup."
-    },
-    {
-      "id": "web-workflow-order-name",
-      "file": "apps/web/src/pages/settings/tabs/libraries/library-list-section.tsx",
-      "marker": "v8 ignore",
-      "kind": "unreachable",
-      "reason": "The order being edited holds the ids of the workflows listed, so the name is always found; the empty fallback only satisfies the type of the lookup."
-    },
-    {
-      "id": "web-workflow-order-row",
-      "file": "apps/web/src/pages/settings/tabs/libraries/library-list-section.tsx",
-      "marker": "v8 ignore",
-      "kind": "unreachable",
-      "reason": "The order being edited holds the ids of the workflows listed, so each id finds its workflow; the empty fallback only satisfies the type of the lookup."
     },
     {
       "id": "web-profile-draft-open",
@@ -327,13 +306,6 @@
       "marker": "v8 ignore",
       "kind": "unreachable",
       "reason": "The board's body is rendered whenever the board is, and has been attached by the time the layout effect runs; the check only narrows the ref's type."
-    },
-    {
-      "id": "web-pause-pill-text",
-      "file": "apps/web/src/components/shell/pause-pill.tsx",
-      "marker": "v8 ignore",
-      "kind": "unreachable",
-      "reason": "The pill always holds its wording as its last child, so there is text to measure; the empty fallback only satisfies the type of textContent."
     },
     {
       "id": "web-pipeline-card-details",

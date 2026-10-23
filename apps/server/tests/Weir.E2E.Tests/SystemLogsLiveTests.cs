@@ -14,22 +14,28 @@ public sealed class SystemLogsLiveTests(E2EServer server) : E2ETestBase(server)
     public async Task A_job_queued_through_the_api_appears_in_the_open_log_without_a_reload()
     {
         const string marker = "live-marker-clip";
+        // The job is run when a worker is free, which on the shared server depends on what every other test has left running and
+        // set, so this one has a server of its own: the log is the subject here, not the queue it follows.
+        await using var own = await E2EServer.StartOwnAsync();
+        var baseUrl = own.BaseUrl.GetLeftPart(UriPartial.Authority);
         var folders = Directory.CreateTempSubdirectory("weir_e2e_live_logs_");
         try
         {
             var watched = Directory.CreateDirectory(Path.Join(folders.FullName, "watched")).FullName;
             var output = Directory.CreateDirectory(Path.Join(folders.FullName, "output")).FullName;
             var page = await NewPageAsync();
-            await Navigation.EnsureSignedInAsync(page, BaseUrl);
-            await WeirApi.SetMovieFoldersAsync(page.Context, BaseUrl, watched, output);
+            await Navigation.EnsureSignedInAsync(page, baseUrl);
+            await WeirApi.SetMovieFoldersAsync(page.Context, baseUrl, watched, output);
             await Navigation.OpenLogsAsync(page, "Jobs");
             await page.EvaluateAsync("() => { window.__weirNotReloaded = true; }");
-            var row = page.GetByText($"Finished for {marker}.mkv", new() { Exact = true });
+            var queued = page.GetByText($"Queued for {marker}.mkv", new() { Exact = true });
+            var finished = page.GetByText($"Finished for {marker}.mkv", new() { Exact = true });
             await Expect(page.GetByText(marker).First).ToHaveCountAsync(0);
 
-            await WeirApi.EnqueueFileAsync(page.Context, BaseUrl, $"{marker}.mkv");
+            await WeirApi.EnqueueFileAsync(page.Context, baseUrl, $"{marker}.mkv");
 
-            await Expect(row).ToBeVisibleAsync(new() { Timeout = 10_000 });
+            await Expect(queued).ToBeVisibleAsync(new() { Timeout = Navigation.UrlAssertMs });
+            await Expect(finished).ToBeVisibleAsync(new() { Timeout = Navigation.SubmitSettleMs });
             Assert.True(await page.EvaluateAsync<bool>("() => window.__weirNotReloaded === true"), "The page was reloaded.");
         }
         finally

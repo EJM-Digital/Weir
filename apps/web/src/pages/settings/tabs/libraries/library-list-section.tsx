@@ -49,14 +49,14 @@ export function LibraryListSection({
   const reorder = useRowReorder({
     ids: libraries.map((library) => library.id),
     nameOf: (id) =>
-      libraries.find((library) => library.id === id)?.name ??
-      /* istanbul ignore next -- @preserve */ "",
+      libraries
+        .filter((library) => library.id === id)
+        .map((library) => library.name)
+        .join(""),
     onCommit: onReorder,
   });
-  const inPriorityOrder = reorder.orderedIds.flatMap(
-    (id) =>
-      libraries.find((library) => library.id === id) ??
-      /* istanbul ignore next -- @preserve */ [],
+  const inPriorityOrder = reorder.orderedIds.flatMap((id) =>
+    libraries.filter((library) => library.id === id),
   );
 
   return (
