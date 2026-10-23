@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Makes coverlet Cobertura files written on different runners name the same things the same way (#976).
+// Makes coverlet coverage files (Cobertura and OpenCover) written on different runners name the same things the same way (#976).
 //
 //   node scripts/align-coverage-reports.mjs <folder> <checkout>
 //
@@ -13,21 +13,29 @@
 //   * the compiler names a file-local type `<File>F<SHA-256 of the file's path>__Name`, so the same type has a
 //     different name on each runner. The hash is replaced with zeros.
 //
-// Without both, merging the Linux and Windows reports counted a fifth of the Api's lines twice.
+//   * OpenCover counts every visit of a sequence point or branch (vc="..."), and ReportGenerator adds the files up in a 32-bit
+//     integer. A loop the tests run a billion times (the Argon2 block mixing) overflowed to a negative count and read as not
+//     run. Only whether a point was visited matters, so counts are capped well below what the sum of every file can hold.
+//
+// Without the first two, merging the Linux and Windows reports counted a fifth of the Api's lines twice.
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const SOURCE = /<source>([^<]*)<\/source>/g;
+// OpenCover names its files by full path, with no <source> folder.
+const FULL_PATH = /fullPath="([^"]*)"/g;
+const VISIT_COUNT = /\bvc="(\d+)"/g;
+export const VISIT_CAP = 100000;
 const FILE_LOCAL_HASH = /(&gt;F)[0-9A-Fa-f]{64}(__)/g;
 
 function slashed(value) {
   return value.replace(/\\/g, "/");
 }
 
-/** The checkout a report was written in: the part of its first source folder before `/apps/`, or undefined. */
+/** The checkout a report was written in: the part of its first source folder (or file path) before `/apps/`, or undefined. */
 export function checkoutOf(text) {
-  const first = [...text.matchAll(SOURCE)][0];
+  const first = [...text.matchAll(SOURCE)][0] ?? [...text.matchAll(FULL_PATH)][0];
   if (!first) return undefined;
   const folder = slashed(first[1]);
   const at = folder.indexOf("/apps/");
@@ -44,20 +52,24 @@ export function align(text, checkout) {
   return text
     .replace(SOURCE, (_, value) => `<source>${move(value)}</source>`)
     .replace(/filename="([^"]*)"/g, (_, value) => `filename="${move(value)}"`)
+    .replace(FULL_PATH, (_, value) => `fullPath="${move(value)}"`)
+    .replace(VISIT_COUNT, (whole, count) => (Number(count) > VISIT_CAP ? `vc="${VISIT_CAP}"` : whole))
     .replace(FILE_LOCAL_HASH, (_, before, after) => `${before}${"0".repeat(64)}${after}`);
 }
+
+const COVERAGE_FILES = new Set(["coverage.cobertura.xml", "coverage.opencover.xml"]);
 
 export function coberturaFiles(folder) {
   const found = [];
   for (const entry of readdirSync(folder, { withFileTypes: true })) {
     const full = path.join(folder, entry.name);
     if (entry.isDirectory()) found.push(...coberturaFiles(full));
-    else if (entry.name === "coverage.cobertura.xml") found.push(full);
+    else if (COVERAGE_FILES.has(entry.name)) found.push(full);
   }
   return found;
 }
 
-/** Aligns every coverage.cobertura.xml under a folder in place; returns how many files it looked at. */
+/** Aligns every coverage.cobertura.xml and coverage.opencover.xml under a folder in place; returns how many files it looked at. */
 export function alignFolder(folder, checkout) {
   const files = coberturaFiles(folder);
   for (const file of files) {
