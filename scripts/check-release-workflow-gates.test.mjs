@@ -307,3 +307,12 @@ test("the mutation workflow is never triggered by a pull request and keeps the s
   assert.throws(() => checkReleaseGates({ ...real, mutation: targeted }), /triggered by a pull request/);
   assert.throws(() => checkReleaseGates({ ...real, mutation: real.mutation.replace("- name: Mutation scores against the floors\n", "- name: Something else\n") }), /Mutation scores against the floors/);
 });
+
+test("the mutation workflow can run chosen targets, names each target's job and judges only the targets that ran", () => {
+  const without = (from, to) => checkReleaseGates({ ...real, mutation: replaceOnce(real.mutation, from, to) });
+  assert.throws(() => without("    inputs:\n      targets:\n", "    inputs:\n      other:\n"), /workflow_dispatch trigger/);
+  assert.throws(() => without("REQUESTED: ${{ inputs.targets }}", "REQUESTED: all"), /REQUESTED/);
+  assert.throws(() => without("node scripts/resolve-mutation-targets.mjs", "node scripts/select-mutation-targets.mjs --all"), /resolve-mutation-targets/);
+  assert.throws(() => without("name: Mutate ${{ matrix.target }}\n", "name: Mutate\n"), /Mutate/);
+  assert.throws(() => without('--only "$TARGETS"', ""), /--only/);
+});

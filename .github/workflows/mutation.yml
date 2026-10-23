@@ -8,20 +8,28 @@
 # in docs/coverage/mutation-floors.json and lists the survivors on its summary page.
 #
 # A target takes tens of minutes to hours on a Windows runner, so this workflow never runs on a pull request (a rule
-# scripts/check-workflow-hygiene.mjs holds). It runs every target weekly, by hand, and before a release: the release asks
-# for a passing run on the tagged commit or an earlier one that mutated the same code and tests
-# (scripts/verify-heavy-ci-for-release.mjs, docs/ci-cost.md). Run it by hand on a branch with
-# `gh workflow run mutation.yml --ref <branch>` after raising a score, and the floors are checked whenever it runs.
+# scripts/check-workflow-hygiene.mjs holds). It runs every target weekly, and by hand for the targets asked for: the release
+# asks, for each target, for a passing run on the tagged commit or an earlier one where that target's own files, tests and
+# setup are unchanged (scripts/verify-heavy-ci-for-release.mjs, docs/ci-cost.md), so a release runs only the targets that
+# changed. By hand, `gh workflow run mutation.yml --ref <ref> -f targets=<ids>` runs the listed targets (ids are in
+# .github/mutation-targets.json), and `-f targets=changed:<sha>` runs the ones whose files, tests or setup differ from <sha>.
+# The floors of the targets that ran are checked whenever it runs.
 name: Mutation
 
 on:
   schedule:
     - cron: "41 2 * * 0"
   workflow_dispatch:
+    inputs:
+      targets:
+        description: "Which targets to mutate: all, a comma-separated list of ids (see .github/mutation-targets.json), or changed:<sha> for the targets whose files, tests or setup differ from that commit"
+        required: false
+        default: all
+        type: string
 
 # A run that has started is never cancelled: it is the proof a release is waiting for.
 concurrency:
-  group: mutation-${{ github.ref }}
+  group: mutation-${{ github.ref }}-${{ inputs.targets }}
   cancel-in-progress: false
 
 permissions:
@@ -32,7 +40,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
 
 jobs:
-  # The targets to run: all of them.
+  # The targets to run: all of them on the weekly run, else the ones asked for.
   select:
     name: Select the targets
     runs-on: ubuntu-latest
@@ -43,13 +51,17 @@ jobs:
       any: ${{ steps.select.outputs.any }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version-file: .node-version
 
       - id: select
-        run: node scripts/select-mutation-targets.mjs --all
+        env:
+          REQUESTED: ${{ inputs.targets }}
+        run: node scripts/resolve-mutation-targets.mjs
 
   mutate:
     name: Mutate ${{ matrix.target }}
@@ -149,8 +161,11 @@ jobs:
           pattern: mutation-*
           path: mutation-reports
 
+      # Only the targets that ran have a report; the others are not judged by this run.
       - name: Mutation scores against the floors
-        run: node scripts/check-mutation-floors.mjs --floors docs/coverage/mutation-floors.json --reports mutation-reports --out mutation-survivors
+        env:
+          TARGETS: ${{ needs.select.outputs.targets }}
+        run: node scripts/check-mutation-floors.mjs --floors docs/coverage/mutation-floors.json --reports mutation-reports --only "$TARGETS" --out mutation-survivors
 
       - name: Upload the survivors
         if: ${{ !cancelled() }}

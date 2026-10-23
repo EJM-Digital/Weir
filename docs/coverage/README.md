@@ -11,7 +11,7 @@ if the riskiest code were wrong is a separate weekly measurement, in [`mutation.
 | Weir.Core, Weir.Infrastructure, Weir.Api, Weir.Host | coverlet.collector, merged by ReportGenerator | `Weir.Core.Tests`, `Weir.Infrastructure.Tests` and `Weir.Api.Tests` on Linux and on Windows, merged into one report |
 | Weir.Core, Weir.Infrastructure, Weir.Api, Weir.Host, **out of process** | dotnet-coverage, merged by ReportGenerator | every contract area and every E2E smoke shard, measured in the server process they start |
 | Tray | coverlet.collector, merged by ReportGenerator | `Weir.Tray.Tests` on Windows |
-| Web app | vitest with the v8 provider | the whole vitest suite |
+| Web app | vitest with the v8 provider, merged with the browser run's Istanbul report by `scripts/merge-web-coverage.mjs` | the whole vitest suite and the browser (E2E) tests, merged into one figure |
 
 Two figures are kept for each: **lines** and **branches** (both sides of every `if`, `?:`, `&&`, `switch` arm and
 the like). What counts is set in `apps/server/coverage.runsettings` and `apps/tray/coverage.runsettings` (the
@@ -20,6 +20,34 @@ and in `apps/web/vite.config.ts` (every file under `src`, tested or not, except 
 generated API types).
 
 The numbers are exact counts, not a sample: a line either ran in some test or it did not.
+
+### The web figure counts the browser tests
+
+Some of the web app's code only runs in a real browser: layout and measurement guards, canvas drawing, `ResizeObserver`,
+loading states and the like. jsdom, which vitest runs in, has no layout, so no unit test can reach those branches, but the
+Playwright tests in `apps/server/tests/Weir.E2E.Tests` run them every time. The web figure is therefore the two runs laid
+over each other, so a line or branch counts once either run has run it.
+
+- **The instrumented build.** `WEIR_WEB_COVERAGE=1 npx vite build` (in `apps/web`) adds Istanbul instrumentation with
+  `vite-plugin-istanbul` to the files vitest counts. Without the variable the build is the same as ever: the Docker image,
+  the Windows package and the `web-dist` job's build carry none of it. Each E2E shard builds the app this way instead of
+  downloading `web-dist`'s, so it is no extra job.
+- **Collecting it.** With `WEIR_WEB_COVERAGE_DIR` set, the E2E harness (`Harness/WebCoverage.cs`) takes `window.__coverage__`
+  from every page: when a page is left (its `pagehide`) and, for the pages still open, when the test ends. Each test writes
+  `<Class.Method>.json`. Each shard merges its tests' files into one (`merge-web-coverage.mjs --parts`), uploads it as
+  `coverage-web-e2e-<shard>`, and the `coverage` job merges those with vitest's `coverage-final.json`.
+- **Merging.** The instrumented build reports positions in the compiled code; the merge script moves them back to the source
+  with the report's own source map. vitest's v8 report and Istanbul's do not agree on where a statement or branch ends, so
+  two entries are the same thing when they start at the same place (and, for a branch, are the same kind with the same
+  number of arms). An entry that only one report has is kept, so a difference between the two tools can lower the figure but
+  never raise it.
+- **When it is judged.** The browser tests run on pull requests, not on pushes to main, so the `web` floor is judged on the
+  merged figure in a pull request only. vitest no longer holds the web floor itself (`npm run test:coverage` prints the unit
+  figure alone), because the floor is the merged one.
+- **Locally.** Build with `WEIR_WEB_COVERAGE=1 npx vite build`, run the E2E classes with `WEIR_E2E=1` and
+  `WEIR_WEB_COVERAGE_DIR=<folder>`, run `npm run test:coverage`, then
+  `node scripts/merge-web-coverage.mjs --out artifacts/coverage/web apps/web/coverage/coverage-final.json <folder>`
+  (`npm ci` in `apps/web` first). Rebuild `apps/web/dist` normally afterwards.
 
 ### The out-of-process figure
 
@@ -100,8 +128,10 @@ npm run test:coverage
 
 # The check, against what you just measured
 cd ../..
-node scripts/check-coverage-floors.mjs --floors docs/coverage/floors.json --server artifacts/coverage/server --out-of-process artifacts/coverage/out-of-process-report --web apps/web/coverage
+node scripts/check-coverage-floors.mjs --floors docs/coverage/floors.json --server artifacts/coverage/server --out-of-process artifacts/coverage/out-of-process-report --web artifacts/coverage/web
 ```
+
+The `--web` folder is the merged web report, not vitest's alone: see "The web figure counts the browser tests" above for how to make it.
 
 A local figure can differ from CI's: CI's server figure merges Linux and Windows, and tests that need FFmpeg or
 mkvmerge run only where those tools are installed.

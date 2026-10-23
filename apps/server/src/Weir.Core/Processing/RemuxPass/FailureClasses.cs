@@ -36,7 +36,7 @@ public static class ProcessingFailureClasses
     /// <summary>Whether the library retries this class; guardrail and unknown never are.</summary>
     public static bool IsRetryable(string failureClass, bool retryPreflightFailures, bool retryExecutionFailures)
     {
-        var value = WireStrings.Strip(failureClass ?? string.Empty).ToLowerInvariant();
+        var value = WireStrings.Strip(failureClass).ToLowerInvariant();
         return value switch
         {
             Preflight => retryPreflightFailures,
@@ -72,7 +72,7 @@ public static class RetryPolicy
     public static RetryDecision DecideRetry(ProcessingLibraryRecord library, string failureClass, long attemptsMade, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(library);
-        var value = WireStrings.Strip(failureClass ?? string.Empty).ToLowerInvariant();
+        var value = WireStrings.Strip(failureClass).ToLowerInvariant();
         if (!ProcessingFailureClasses.IsRetryable(value, library.RetryPreflightFailures, library.RetryExecutionFailures))
         {
             return new RetryDecision(false, null, NotRetryableReason(value, library));

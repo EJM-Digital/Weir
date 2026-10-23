@@ -52,7 +52,7 @@ internal sealed record RedownloadAnswer(
 
     /// <summary>The Library's note on a title whose file is gone and whose search did not go through.</summary>
     public string WaitingNote() =>
-        $"{Connection?.Label} deleted the file, but no search for a new copy went through. Use Download again to search once more.";
+        $"{Connection?.Label ?? "The media manager"} deleted the file, but no search for a new copy went through. Use Download again to search once more.";
 
     /// <summary>The Activity entry: who asked, which manager, what was deleted, whether a search was sent, and how it ended.</summary>
     public ActivityEventDraft ActivityEvent()

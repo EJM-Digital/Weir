@@ -17,8 +17,6 @@ public static class WeirVersion
 
     private static string ReadBuildVersion()
     {
-        var informational = typeof(WeirVersion).Assembly
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-        return string.IsNullOrWhiteSpace(informational) ? "0.0.0" : informational;
+        return typeof(WeirVersion).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion;
     }
 }

@@ -22,7 +22,7 @@ public static partial class Diagnostics
     }
 
     /// <summary>The severity for a result: failed is an error, warning or retrying a warning, anything else info.</summary>
-    public static string SeverityForResult(string result) => (result ?? string.Empty).ToLowerInvariant() switch
+    public static string SeverityForResult(string result) => result.ToLowerInvariant() switch
     {
         "failed" => "error",
         "warning" or "retrying" => "warning",

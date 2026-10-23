@@ -47,9 +47,9 @@ public static class WeirOpenApiDocument
         foreach (var path in paths.Select(entry => entry.Key).ToList())
         {
             var operations = paths[path]!.AsObject();
-            foreach (var method in operations.Select(entry => entry.Key).ToList())
+            foreach (var method in operations.Select(entry => entry.Key).Where(OperationKeys.Contains).ToList())
             {
-                if (OperationKeys.Contains(method) && !implemented.Contains((method.ToUpperInvariant(), path)))
+                if (!implemented.Contains((method.ToUpperInvariant(), path)))
                 {
                     operations.Remove(method);
                 }

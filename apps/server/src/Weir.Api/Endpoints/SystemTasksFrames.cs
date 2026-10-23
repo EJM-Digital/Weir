@@ -18,8 +18,9 @@ public sealed class SystemTasksFrames
     public async IAsyncEnumerable<string> ForAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         using var subscription = _tasks.SubscribeToChanges();
-        await foreach (var _ in subscription.ReadAllAsync(cancellationToken).ConfigureAwait(false))
+        while (!cancellationToken.IsCancellationRequested)
         {
+            await subscription.ReadAsync(cancellationToken).ConfigureAwait(false);
             yield return Frame(_tasks.Snapshot());
         }
     }

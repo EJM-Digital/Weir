@@ -67,8 +67,8 @@ public static partial class ManagerSetupRules
     private static DelunoSetupResult EvaluateDelunoDestinations(
         string managerLabel, string watchedFolder, string outputFolder, DelunoLibraryChoice choice, DelunoLibraryDestinations library, IFolderProbe? probe)
     {
-        var watched = WireStrings.Strip(watchedFolder ?? string.Empty);
-        var output = WireStrings.Strip(outputFolder ?? string.Empty);
+        var watched = WireStrings.Strip(watchedFolder);
+        var output = WireStrings.Strip(outputFolder);
         var downloads = MapFolder(library, library.DownloadsPath);
         var processed = MapFolder(library, library.ProcessorOutputPath);
 

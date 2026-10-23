@@ -15,10 +15,13 @@ namespace Weir.Host;
 internal static class ExclusiveListenSocket
 {
     /// <summary>Makes Kestrel's socket transport bind exclusively, on Windows.</summary>
-    internal static void Configure(SocketTransportOptions options)
+    internal static void Configure(SocketTransportOptions options) => Configure(options, OperatingSystem.IsWindows());
+
+    /// <summary><see cref="Configure(SocketTransportOptions)"/> for a stated operating system, so both ways are exercised on any host.</summary>
+    internal static void Configure(SocketTransportOptions options, bool isWindows)
     {
         ArgumentNullException.ThrowIfNull(options);
-        if (OperatingSystem.IsWindows())
+        if (isWindows)
         {
             options.CreateBoundListenSocket = Create;
         }
