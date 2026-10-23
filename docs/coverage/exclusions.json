@@ -303,6 +303,15 @@
       "reason": "A helper the developer start scripts run to free the development web port on a developer machine; CI never runs it and it ships nowhere."
     },
     {
+      "id": "node-web-coverage-reports",
+      "file": ".github/workflows/ci.yml",
+      "marker": "scripts/merge-web-coverage-reports.mjs",
+      "kind": "platform-only",
+      "reason": "The report-writing glue of merge-web-coverage.mjs: it hands the browser tests' coverage to the web app's Istanbul packages and writes their reports. The packages come from npm ci in apps/web, which the repository checks do not run. The merging itself is tested in merge-web-coverage.test.mjs with a stand-in for this file.",
+      "coveredBy": "linux",
+      "provedBy": "the coverage job of ci.yml, which installs the web app's packages, runs merge-web-coverage.mjs over the unit and browser reports and judges the web floor on what it writes"
+    },
+    {
       "id": "node-developer-pre-push",
       "file": ".github/workflows/ci.yml",
       "marker": "scripts/pre-push.mjs",

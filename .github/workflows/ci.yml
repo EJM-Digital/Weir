@@ -313,7 +313,6 @@ jobs:
       - name: Workflow permissions, timeouts and tests that must fail the job
         run: |
           node scripts/check-workflow-hygiene.mjs
-          node --test scripts/check-workflow-hygiene.test.mjs
 
       - name: Dockerfile node major matches .node-version
         run: node scripts/check-node-docker-version.mjs
@@ -321,17 +320,14 @@ jobs:
       - name: No test starts a system console program
         run: |
           node scripts/check-test-console-programs.mjs
-          node --test scripts/check-test-console-programs.test.mjs
 
       - name: No test waits for the wall clock
         run: |
           node scripts/check-wall-clock-waits.mjs
-          node --test scripts/check-wall-clock-waits.test.mjs
 
       - name: No Python in the repository
         run: |
           node scripts/check-no-python.mjs
-          node --test scripts/check-no-python.test.mjs
 
       # A fork runs its own copy of this workflow under its own name, so only the project's own repository is held to it.
       - name: The repository's owner and name are written once per language
@@ -339,51 +335,39 @@ jobs:
           RUNNING_REPOSITORY: ${{ github.event.repository.fork == false && github.repository || '' }}
         run: |
           node scripts/check-repository-owner.mjs ${RUNNING_REPOSITORY:+--repository "$RUNNING_REPOSITORY"}
-          node --test scripts/check-repository-owner.test.mjs scripts/sweep-repository-owner.test.mjs
 
       - name: Nothing private in the README, the docs and the release notes
         run: |
           node scripts/check-public-privacy.mjs
-          node --test scripts/check-public-privacy.test.mjs
 
       - name: Contract areas match their test classes
         run: |
           node scripts/check-contract-areas.mjs
-          node --test scripts/check-contract-areas.test.mjs
 
       # A Windows-only server file outside the `windows` path filter would change without the Windows legs running (docs/ci-cost.md).
       - name: The windows path filter matches the Windows-only server files
         run: |
           node scripts/check-windows-paths.mjs
-          node --test scripts/check-windows-paths.test.mjs
 
       - name: The recordings of Deluno, Sonarr and Radarr match the manifests they were checked in with
         run: |
           node scripts/check-recorded-manifest.mjs
-          node --test scripts/check-recorded-manifest.test.mjs
 
       - name: The recordings of Weir are of a recent build
         run: |
           node scripts/check-recorded-freshness.mjs
-          node --test scripts/check-recorded-freshness.test.mjs
 
       - name: Every recording is replayed or explained, and the drift check compares what it should
         run: |
           node scripts/check-recorded-replays.mjs
-          node --test scripts/check-recorded-replays.test.mjs scripts/compare-arr-recordings.test.mjs scripts/compare-deluno-recordings.test.mjs
 
       - name: The release fixtures are whole, and no more than one release behind
         run: |
           node scripts/check-release-fixtures.mjs
-          node --test scripts/check-release-fixtures.test.mjs scripts/make-release-fixtures.test.mjs
 
       - name: Every server event type has a title
         run: |
           node scripts/check-event-titles.mjs
-          node --test scripts/check-event-titles.test.mjs
-
-      - name: Coverage floors and report alignment
-        run: node --test scripts/check-coverage-floors.test.mjs scripts/align-coverage-reports.test.mjs scripts/merge-web-coverage.test.mjs
 
       # The mutation workflow (mutation.yml) runs weekly and judges the scores; here a pull request is held to the other
       # half of the ratchet, that a floor in docs/coverage/mutation-floors.json only goes up without its own entry.
@@ -391,7 +375,6 @@ jobs:
         env:
           BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
         run: |
-          node --test scripts/check-mutation-floors.test.mjs
           args=(--floors docs/coverage/mutation-floors.json --floors-only)
           if [ -n "$BEFORE" ] && git fetch --no-tags --depth=1 origin "$BEFORE" && git show FETCH_HEAD:docs/coverage/mutation-floors.json > base-mutation-floors.json; then
             args+=(--base-floors base-mutation-floors.json)
@@ -404,11 +387,7 @@ jobs:
       # Everything the coverage figures leave out is listed in docs/coverage/exclusions.json with a kind and a reason (#1060).
       - name: Coverage exclusions each have a reason
         run: |
-          node --test scripts/check-coverage-exclusions.test.mjs
           node scripts/check-coverage-exclusions.mjs
-
-      - name: The real media tools - pins, installers and the check that every real-tool test ran
-        run: node --test scripts/ffmpeg-pin.test.mjs scripts/pinned-download.test.mjs scripts/mkvtoolnix-pin.test.mjs scripts/install-mkvtoolnix-linux.test.mjs scripts/summarize-test-results.test.mjs scripts/check-real-tool-tests.test.mjs scripts/check-contract-real-tool-tests.test.mjs
 
       # The register is read against the code, against the open coverage issues, and against the register as it was before this change:
       # on a pull request the base commit's, on a push to main the previous commit's. The gaps may not go up from that count
@@ -418,7 +397,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
         run: |
-          node --test scripts/check-coverage-register.test.mjs
           args=(--gh --report)
           if [ -n "$BEFORE" ] && git fetch --no-tags --depth=1 origin "$BEFORE"; then
             args+=(--base FETCH_HEAD)
@@ -436,19 +414,11 @@ jobs:
           retention-days: 7
           path: artifacts/coverage-register.md
 
-      - name: Docker entrypoint refuses bad settings, keeps the secrets and the server's umask
-        run: node --test scripts/docker-entrypoint.test.mjs
-
-      - name: Scenarios in CI - their homes, the film, the logs and the scenarios against a stand-in
-        run: node --test scripts/scenarios-in-ci.test.mjs scripts/scenarios-in-ci-windows.test.mjs scripts/scenarios-in-ci-fixture.test.mjs scripts/scenarios-in-ci-with-deluno.test.mjs scripts/scenarios-in-ci-film-handoff.test.mjs scripts/scenarios-in-ci-deluno-outcomes.test.mjs scripts/scenarios-in-ci-recorder.test.mjs scripts/docker-compose-smoke.test.mjs scripts/docker-smoke-pull.test.mjs
-
       - name: Release and CI gate rules
         run: |
           node scripts/check-release-workflow-gates.mjs
-          node --test scripts/check-release-workflow-gates.test.mjs scripts/verify-ci-for-release.test.mjs scripts/verify-heavy-ci-for-release.test.mjs scripts/ci-passed.test.mjs scripts/verify-golden-path-for-release.test.mjs scripts/verify-golden-path-carry-over.test.mjs scripts/release/shipped-paths.test.mjs scripts/scenarios.test.mjs
-          node --test scripts/semver.test.mjs scripts/check-release-version.test.mjs scripts/find-previous-release.test.mjs scripts/prune-release-feed.test.mjs scripts/check-release-assets-single-version.test.mjs
 
-      # Every script test, once more under node's own coverage (#1060), held to the node-scripts floor in docs/coverage/floors.json.
+      # Every script test, run once, under node's own coverage (#1060), held to the node-scripts floor in docs/coverage/floors.json.
       # Node reports only the scripts a test loaded; check-coverage-floors.mjs counts the others as not run. Each
       # --test-coverage-exclude is listed in docs/coverage/exclusions.json with its reason (scripts/check-coverage-exclusions.mjs).
       - name: Node scripts - every test, measured against the floor
@@ -465,6 +435,7 @@ jobs:
             "--test-coverage-exclude=scripts/dev-reset-auth.mjs" \
             "--test-coverage-exclude=scripts/stop-dev-api-port.mjs" \
             "--test-coverage-exclude=scripts/stop-dev-web-port.mjs" \
+            "--test-coverage-exclude=scripts/merge-web-coverage-reports.mjs" \
             "--test-coverage-exclude=scripts/pre-push.mjs" \
             "--test-coverage-exclude=scripts/attribute-pool-stalls.mjs" \
             --test-reporter=spec --test-reporter-destination=stdout \
