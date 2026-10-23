@@ -39,7 +39,7 @@ public static class OutputCollision
     public static string? NextFreePath(string final, int limit = 999, IFileSystem? files = null)
     {
         files ??= PhysicalFileSystem.Instance;
-        var directory = Path.GetDirectoryName(final) ?? string.Empty;
+        var directory = Path.GetDirectoryName(final)!;
         var (stem, suffix) = StemAndSuffix(Path.GetFileName(final));
         for (var attempt = 2; attempt <= limit; attempt++)
         {
@@ -106,7 +106,7 @@ public static class OutputCollision
                 }
 
                 var sizes = $"({newSize.Value.ToString(CultureInfo.InvariantCulture)} bytes against {existingSize.Value.ToString(CultureInfo.InvariantCulture)})";
-                return newSize > existingSize
+                return newSize.Value > existingSize.Value
                     ? new CollisionDecision(chosen, "write", final, true, $"The new output is larger than the existing {name} {sizes}, so Weir replaced it.")
                     : new CollisionDecision(chosen, "skip", final, false, $"The new output is not larger than the existing {name} {sizes}, so Weir kept the existing one.");
             }
@@ -128,7 +128,7 @@ public static class OutputCollision
                         "existing one rather than replacing a file it could not date.");
                 }
 
-                return sourceTime > existingTime
+                return sourceTime.Value > existingTime.Value
                     ? new CollisionDecision(chosen, "write", final, true, $"The source is newer than the existing output at {name}, so Weir replaced it.")
                     : new CollisionDecision(chosen, "skip", final, false, $"The source is not newer than the existing output at {name}, so Weir kept the existing one.");
             }

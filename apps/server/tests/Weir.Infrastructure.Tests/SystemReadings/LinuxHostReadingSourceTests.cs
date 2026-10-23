@@ -122,4 +122,35 @@ public sealed class LinuxHostReadingSourceTests
 
         Assert.Null(Over(files).ReadRebootPending());
     }
+
+    [Fact]
+    public void A_cpu_limit_with_no_readable_use_falls_back_to_the_host()
+    {
+        var files = new FakeProcSource()
+            .With("/proc/stat", "cpu  100 0 100 700 100 0 0 0 0 0\n")
+            .With("/sys/fs/cgroup/cpu.max", "200000 100000\n")
+            .With("/sys/fs/cgroup/cpu.stat", "nothing useful\n");
+
+        Assert.Equal(new CpuTimes(800, 1000), Over(files).ReadCpuTimes());
+    }
+
+    [Fact]
+    public void A_memory_limit_with_no_readable_holding_falls_back_to_the_host()
+    {
+        var files = new FakeProcSource()
+            .With("/proc/meminfo", "MemTotal: 1000 kB\nMemAvailable: 250 kB\n")
+            .With("/sys/fs/cgroup/memory.max", "1000000\n")
+            .With("/sys/fs/cgroup/memory.current", "unreadable\n");
+
+        Assert.Equal(new MemoryReading(1000 * 1024, 250 * 1024), Over(files).ReadMemory());
+    }
+
+    [Fact]
+    public void A_path_no_mount_holds_has_no_drive_root_and_no_volume()
+    {
+        var source = Over(new FakeProcSource().With("/proc/self/mountinfo", string.Empty));
+
+        Assert.Null(source.DriveRootOf("/media/movies"));
+        Assert.Null(source.VolumeKeyOf("/media"));
+    }
 }

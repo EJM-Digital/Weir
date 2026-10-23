@@ -15,11 +15,8 @@ public static class RuntimeDirectories
         Directory.CreateDirectory(options.BackupDir);
         Directory.CreateDirectory(options.LogDir);
         Directory.CreateDirectory(options.TempDir);
-        var parent = Path.GetDirectoryName(options.DbPath);
-        if (!string.IsNullOrEmpty(parent))
-        {
-            Directory.CreateDirectory(parent);
-        }
+        // Every path in the options is absolute, so the database always has a folder.
+        Directory.CreateDirectory(Path.GetDirectoryName(options.DbPath)!);
     }
 
     /// <summary>
@@ -40,7 +37,8 @@ public static class RuntimeDirectories
 
         // Special files (FIFOs, sockets) have no portable file-type check in .NET, so such a path
         // fails below as "not writable" or at open.
-        var parent = Path.GetDirectoryName(resolved) ?? resolved;
+        // A drive root is a directory and was refused above, so the path has a folder.
+        var parent = Path.GetDirectoryName(resolved)!;
         try
         {
             var probe = Path.Join(parent, $"tmp{Guid.NewGuid():N}");

@@ -1,8 +1,8 @@
 {
   "app": "deluno",
-  "version": "1.0.0-rc.30.35",
+  "version": "1.0.0-rc.30.33",
   "state": "real-tv-episode",
-  "recordedAt": "2026-10-23T14:30:17.462Z",
+  "recordedAt": "2026-10-18T07:29:14.037Z",
   "note": "One episode of a show in a qBittorrent release folder, handed to Weir by a real Deluno and cleaned in Weir's TV workflow: the hand-off, Deluno's questions about it, Weir's report and the outcome, as the proxy between them saw it.",
   "exchanges": [
     {
@@ -10,18 +10,18 @@
         "method": "POST",
         "path": "/api/v1/intake/webhook/deluno",
         "headers": {
-          "idempotency-key": "01a1691f55017755941b841d579da2ce:1792765023489",
+          "idempotency-key": "01a14dde0bfe78869b898c752446fdf1:1792307760126",
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "eventType": "deluno.processor-handoff",
-          "handoffId": "01a1691f55017755941b841d579da2ce",
-          "libraryId": "01a1691e7169784d9b5bdef3cf1e8de1",
+          "handoffId": "01a14dde0bfe78869b898c752446fdf1",
+          "libraryId": "01a14ddd29db7bd6a3cb7ee074b4cad4",
           "mediaType": "tv",
           "sourcePath": "/downloads/completed/TV/ScnShow.S01E01.1080p.WEB-DL.x264-WEIR",
           "releaseName": "ScnShow.S01E01.1080p.WEB-DL.x264-WEIR",
-          "queueItemId": "78b59d4c0bf951a03a086e97a1077939fbee7f76",
+          "queueItemId": "6d1231e220f737dc3516d99cd94b48463dc23cf1",
           "callbackPath": "/api/integrations/processors/events",
           "title": "ScnShow",
           "year": 2020,
@@ -53,10 +53,10 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a1691f55017755941b841d579da2ce",
+          "handoffId": "01a14dde0bfe78869b898c752446fdf1",
           "status": "completed",
           "processorName": "Weir",
-          "libraryId": "01a1691e7169784d9b5bdef3cf1e8de1",
+          "libraryId": "01a14ddd29db7bd6a3cb7ee074b4cad4",
           "releaseName": "ScnShow.S01E01.1080p.WEB-DL.x264-WEIR",
           "outputPath": "/weir/Ready/TV/ScnShow.S01E01.1080p.WEB-DL.x264-WEIR/ScnShow.S01E01.1080p.WEB-DL.x264-WEIR.mkv",
           "message": "Removed 2 audio tracks and 2 subtitle tracks.",
@@ -72,23 +72,23 @@
         },
         "body": {
           "status": "completed",
-          "handoffId": "01a1691f55017755941b841d579da2ce",
-          "activityId": "01a1691f94ce7710815c5903baccc84e",
-          "importJobId": "01a1691f94d074299a90f309a705f704"
+          "handoffId": "01a14dde0bfe78869b898c752446fdf1",
+          "activityId": "01a14dde4b8d72a1b7e42af38b44791c",
+          "importJobId": "01a14dde4b8f7ef392f90d37b3ac1488"
         }
       }
     },
     {
       "request": {
         "method": "POST",
-        "path": "/api/v1/intake/handoffs/deluno/01a1691f55017755941b841d579da2ce/outcome",
+        "path": "/api/v1/intake/handoffs/deluno/01a14dde0bfe78869b898c752446fdf1/outcome",
         "headers": {
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "outcome": "not-imported",
-          "occurredUtc": "2026-10-23T14:18:54.4605077+00:00",
+          "occurredUtc": "2026-10-18T07:17:50.0113258+00:00",
           "importedPath": null,
           "reason": "The TV filename could not be matched to a catalogued episode. Deluno left it unmatched instead of inventing an episode identity."
         }
@@ -99,7 +99,7 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a1691f55017755941b841d579da2ce",
+          "handoffId": "01a14dde0bfe78869b898c752446fdf1",
           "outcome": "not-imported",
           "released": false,
           "message": "Weir recorded that the file will not be imported, and kept its copy."

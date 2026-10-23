@@ -102,16 +102,26 @@ internal static partial class WindowsNative
         out ulong totalFreeBytes);
 
     /// <summary>Processor time of the whole machine since boot, in 100 ns ticks. Kernel time includes idle, so the total is kernel plus user.</summary>
-    public static CpuTimes? ReadCpuTimes() =>
-        GetSystemTimes(out var idle, out var kernel, out var user) ? new CpuTimes(idle.Value, kernel.Value + user.Value) : null;
+    public static CpuTimes? ReadCpuTimes()
+    {
+        var succeeded = GetSystemTimes(out var idle, out var kernel, out var user);
+        return CpuTimesFrom(succeeded, idle.Value, kernel.Value, user.Value);
+    }
+
+    /// <summary>Test seam (<c>InternalsVisibleTo</c> to Weir.Infrastructure.Tests): what Windows' answer means, so a refusal can be run on any system.</summary>
+    internal static CpuTimes? CpuTimesFrom(bool succeeded, ulong idle, ulong kernel, ulong user) =>
+        succeeded ? new CpuTimes(idle, kernel + user) : null;
 
     public static MemoryReading? ReadMemory()
     {
         var status = new MemoryStatusEx { Length = (uint)Marshal.SizeOf<MemoryStatusEx>() };
-        return GlobalMemoryStatusEx(ref status)
-            ? new MemoryReading((long)status.TotalPhysical, (long)status.AvailablePhysical)
-            : null;
+        var succeeded = GlobalMemoryStatusEx(ref status);
+        return MemoryFrom(succeeded, status.TotalPhysical, status.AvailablePhysical);
     }
+
+    /// <summary>Test seam: what Windows' answer about memory means.</summary>
+    internal static MemoryReading? MemoryFrom(bool succeeded, ulong total, ulong available) =>
+        succeeded ? new MemoryReading((long)total, (long)available) : null;
 
     /// <summary>
     /// Size and free space under <paramref name="path"/>, which may be a UNC share. Free space is what the calling user
@@ -144,11 +154,14 @@ internal static partial class WindowsNative
                 continue;
             }
 
-            return DeviceIoControl(handle, IoctlDiskPerformance, IntPtr.Zero, 0, out var performance, (uint)Marshal.SizeOf<DiskPerformance>(), out _, IntPtr.Zero)
-                ? new DiskCounters(performance.BytesRead, performance.BytesWritten, performance.IdleTime, performance.QueryTime)
-                : null;
+            var succeeded = DeviceIoControl(handle, IoctlDiskPerformance, IntPtr.Zero, 0, out var performance, (uint)Marshal.SizeOf<DiskPerformance>(), out _, IntPtr.Zero);
+            return CountersFrom(succeeded, performance.BytesRead, performance.BytesWritten, performance.IdleTime, performance.QueryTime);
         }
 
         return null;
     }
+
+    /// <summary>Test seam: what Windows' answer about a volume's load means.</summary>
+    internal static DiskCounters? CountersFrom(bool succeeded, long bytesRead, long bytesWritten, long idleTime, long queryTime) =>
+        succeeded ? new DiskCounters(bytesRead, bytesWritten, idleTime, queryTime) : null;
 }

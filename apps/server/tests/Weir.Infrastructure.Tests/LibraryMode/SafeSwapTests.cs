@@ -834,4 +834,30 @@ public sealed class SafeSwapTests
     {
         Assert.Equal(same, SafeSwap.SameFile(new SourceFingerprint(device1, inode1, size1, mtime1), new SourceFingerprint(device2, inode2, size2, mtime2)));
     }
+
+    [Fact]
+    public async Task A_file_outside_every_library_folder_keeps_its_original_in_an_originals_folder_beside_it()
+    {
+        var s = new SwapScenario();
+        var keep = new KeepOriginalOptions(["/somewhere-else"], null);
+
+        var result = await s.RunAsync(new SwapOptions(KeepOriginal: keep));
+
+        Assert.Equal(SwapOutcome.Committed, result.Outcome);
+        Assert.Equal(OriginalsPathPlanner.DestinationPath(SafeSwap.DirectoryOf(Original), null, Original), result.KeptOriginalPath);
+    }
+
+    [Theory]
+    [InlineData(1UL, 2UL, 100L, 5L, 1UL, 2UL, 100L, 5L, true)]
+    [InlineData(1UL, 2UL, 100L, 5L, 1UL, 3UL, 100L, 5L, false)]
+    [InlineData(1UL, 2UL, 100L, 5L, 9UL, 2UL, 100L, 5L, false)]
+    [InlineData(0UL, 0UL, 100L, 5L, 1UL, 2UL, 100L, 5L, true)]
+    [InlineData(1UL, 2UL, 100L, 5L, 0UL, 0UL, 100L, 5L, true)]
+    [InlineData(1UL, 2UL, 100L, 5L, 1UL, 2UL, 101L, 5L, false)]
+    [InlineData(1UL, 2UL, 100L, 5L, 1UL, 2UL, 100L, 6L, false)]
+    public void Two_fingerprints_are_the_same_file_when_size_and_time_agree_and_so_does_identity_where_both_know_it(
+        ulong device, ulong inode, long size, long time, ulong otherDevice, ulong otherInode, long otherSize, long otherTime, bool same)
+    {
+        Assert.Equal(same, SafeSwap.SameFile(new(device, inode, size, time), new(otherDevice, otherInode, otherSize, otherTime)));
+    }
 }

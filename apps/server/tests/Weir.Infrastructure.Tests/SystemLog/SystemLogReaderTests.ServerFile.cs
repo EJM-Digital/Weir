@@ -44,4 +44,16 @@ public sealed partial class SystemLogReaderTests
 
         Assert.True(log.Logged(LogLevel.Warning, "could not be opened"));
     }
+
+    [Fact]
+    public async Task A_server_log_that_was_never_written_adds_nothing_to_the_list()
+    {
+        await AddEvent(minutesAgo: 30, "auth.login_succeeded", "Signed in", result: "success");
+        var reader = new SystemLogReader(new WeirLogFile(_store.Home.Join("never", "weir.log"), new Microsoft.Extensions.Time.Testing.FakeTimeProvider(Noon)), new CapturingLogger<SystemLogReader>());
+        File.Delete(_store.Home.Join("never", "weir.log"));
+
+        var page = await _store.WithUnitOfWork(uow => reader.ReadAsync(uow, new SystemLogFilter(), SystemLogOrder.Newest, null, 50), commit: false);
+
+        Assert.Equal("Signed in", Assert.Single(page.Rows).Title);
+    }
 }

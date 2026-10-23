@@ -138,6 +138,13 @@ public sealed class LoopbackFirstConnectTests : IDisposable
         Assert.All(addresses.Skip(1), address => Assert.Equal(IPAddress.IPv6Loopback, address));
     }
 
+    [Fact]
+    public void Localhost_is_tried_on_ipv4_alone_where_the_system_has_no_ipv6()
+    {
+        Assert.Equal([IPAddress.Loopback], LoopbackFirstConnect.LoopbackAddresses(osSupportsIPv6: false));
+        Assert.Equal([IPAddress.Loopback, IPAddress.IPv6Loopback], LoopbackFirstConnect.LoopbackAddresses(osSupportsIPv6: true));
+    }
+
     [Theory]
     [InlineData("localhost", true)]
     [InlineData("LOCALHOST", true)]

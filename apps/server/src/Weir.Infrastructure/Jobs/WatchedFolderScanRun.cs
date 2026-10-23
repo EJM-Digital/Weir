@@ -98,9 +98,9 @@ internal sealed class WatchedFolderScanRun
 
     private void NoteHoldEnds(WatchedFileDecision decision)
     {
-        if (decision.HoldEnds is { } holdEnds && (EarliestHoldEnds is null || holdEnds < EarliestHoldEnds))
+        if (decision.HoldEnds is { } holdEnds)
         {
-            EarliestHoldEnds = holdEnds;
+            EarliestHoldEnds = EarliestHoldEnds is { } earliest && earliest <= holdEnds ? earliest : holdEnds;
         }
     }
 

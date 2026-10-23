@@ -546,4 +546,35 @@ public sealed partial class HeldFileReturnTests : IDisposable
         await AssertHandedBackAndToldAsync("second");
         await AssertSupersededAsync("first");
     }
+
+    [Fact]
+    public async Task A_sweep_that_has_no_queue_to_wake_still_starts_the_pass_of_a_file_that_comes_back()
+    {
+        await SetUpAsync(releaseFolder: false);
+        await HandOffAsync("first");
+        await RunPassWhileGoneAsync();
+
+        Advance(TimeSpan.FromMinutes(2));
+        BringBack();
+        await new VanishedFileSweepTask(_fixture.Store.Database, _fixture.Store.Options, _fixture.Libraries, _fixture.Store.Clock, NullLogger<VanishedFileSweepTask>.Instance)
+        {
+            GoneLookAgain = _ => Task.CompletedTask,
+        }.RunOnceAsync(CancellationToken.None);
+        await DrainAsync();
+
+        await AssertCleanedAndToldAsync("first");
+    }
+
+    [Fact]
+    public async Task A_resend_takes_over_a_pass_whose_first_hand_off_has_left_no_ledger_row()
+    {
+        await SetUpAsync(releaseFolder: false);
+        await HandOffAsync("first");
+        await _fixture.Store.Execute("DELETE FROM media_manager_handoffs");
+
+        await HandOffAsync("second");
+        await DrainAsync();
+
+        await AssertCleanedAndToldAsync("second");
+    }
 }

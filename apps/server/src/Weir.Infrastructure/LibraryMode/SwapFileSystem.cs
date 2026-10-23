@@ -154,13 +154,19 @@ public sealed partial class PhysicalSwapFileSystem : ISwapFileSystem
         if (OperatingSystem.IsWindows())
         {
             using var handle = OpenWindowsHandle(path, FileReadAttributes);
-            return GetFileInformationByHandle(handle, out var information)
-                ? (int)information.NumberOfLinks
-                : throw WindowsError(Marshal.GetLastPInvokeError(), $"'{path}'");
+            var succeeded = GetFileInformationByHandle(handle, out var information);
+            return WindowsLinkCount(succeeded, information.NumberOfLinks, Marshal.GetLastPInvokeError(), path);
         }
 
-        return UnixStat(path) is { } stat ? (int)stat.Links : null;
+        return UnixLinkCount(UnixStat(path));
     }
+
+    /// <summary>Test seam (<c>InternalsVisibleTo</c> to Weir.Infrastructure.Tests): what Windows' answer about a file's links means, so the refusal runs on any system.</summary>
+    internal static int WindowsLinkCount(bool succeeded, uint links, int error, string path) =>
+        succeeded ? (int)links : throw WindowsError(error, $"'{path}'");
+
+    /// <summary>Test seam: the links <c>statx</c> reported, or unknown where it reported nothing.</summary>
+    internal static int? UnixLinkCount(UnixFileStat? stat) => stat is { } found ? (int)found.Links : null;
 
     public bool IsReadOnly(string path) =>
         OperatingSystem.IsWindows() && _files.GetAttributes(path).HasFlag(FileAttributes.ReadOnly);
@@ -236,13 +242,22 @@ public sealed partial class PhysicalSwapFileSystem : ISwapFileSystem
         }
 
         var mode = File.GetUnixFileMode(source);
-        if (UnixIsRoot() && UnixStat(source) is { } stat && UnixChown(destination, stat.Uid, stat.Gid) != 0)
-        {
-            throw new IOException($"chown failed with errno {Marshal.GetLastPInvokeError()} for '{destination}'");
-        }
+        CopyUnixOwner(UnixIsRoot(), () => UnixStat(source), (uid, gid) => UnixChown(destination, uid, gid), Marshal.GetLastPInvokeError, destination);
 
         // After chown, which clears set-user-ID and set-group-ID bits.
         File.SetUnixFileMode(destination, mode);
+    }
+
+    /// <summary>
+    /// Test seam: gives the destination the owner of the source, which only the superuser may do. Nothing is asked of
+    /// the file system, and nothing changed, for anyone else or where the source's owner cannot be read.
+    /// </summary>
+    internal static void CopyUnixOwner(bool isRoot, Func<UnixFileStat?> sourceOwner, Func<uint, uint, int> chown, Func<int> lastError, string destination)
+    {
+        if (isRoot && sourceOwner() is { } stat && chown(stat.Uid, stat.Gid) != 0)
+        {
+            throw new IOException($"chown failed with errno {lastError()} for '{destination}'");
+        }
     }
 
     public void Move(string source, string destination)

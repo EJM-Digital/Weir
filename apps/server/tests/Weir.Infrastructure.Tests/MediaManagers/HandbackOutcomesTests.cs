@@ -398,4 +398,85 @@ public sealed class HandbackOutcomesTests : IDisposable
         });
         return (await _fixture.Db(uow => HandoffLedgerStore.FindAsync(uow, "deluno", handoffId)))!;
     }
+
+    [Fact]
+    public async Task The_same_manager_telling_Weir_again_after_the_note_on_the_copy_was_lost_is_given_no_note()
+    {
+        await HandedBackAsync();
+        await ImportAsync(Import(sourcePath: CopyPath), Signed);
+        await _fixture.Store.Execute($"UPDATE handbacks SET release_note = NULL WHERE library_id = {_libraryId}");
+
+        var again = await ImportAsync(Import(sourcePath: CopyPath), Signed);
+
+        Assert.True(again.Matched);
+        Assert.True(again.Released);
+        Assert.Equal(string.Empty, again.Message);
+    }
+
+    [Fact]
+    public async Task A_managers_word_on_a_hand_off_that_belongs_to_no_workflow_is_recorded_and_touches_no_copy()
+    {
+        await HandedBackAsync();
+        var handoff = await HandoffAsync("h1", "d1");
+
+        var answer = await _fixture.Db(uow => _outcomes.RecordHandoffOutcomeAsync(
+            uow, handoff with { LibraryId = null }, "Deluno", HandbackRules.Imported, DateTimeOffset.UtcNow, "/library/Film (2024).mkv", null));
+
+        Assert.False(answer.Released);
+        Assert.True(File.Exists(CopyPath));
+        Assert.Null((await CopyAsync())!.Outcome);
+    }
+
+    [Fact]
+    public async Task A_refusal_with_nobody_on_record_as_having_said_it_is_taken_back_by_the_hand_off_that_asks()
+    {
+        await HandedBackAsync();
+        var handoff = await HandoffAsync("h1", "d1");
+        await _fixture.Store.Execute($"UPDATE handbacks SET outcome = '{HandbackRules.NotImported}', outcome_by = 'Deluno' WHERE library_id = {_libraryId}");
+
+        var answer = await _fixture.Db(uow => _outcomes.RecordHandoffOutcomeAsync(
+            uow, handoff, "Deluno", HandbackRules.Imported, DateTimeOffset.UtcNow, "/library/Film (2024).mkv", null));
+
+        Assert.True(answer.Released);
+        Assert.False(File.Exists(CopyPath));
+    }
+
+    [Fact]
+    public async Task An_import_after_a_refusal_with_nobody_on_record_as_having_said_it_is_told_as_imported_after_all()
+    {
+        await HandedBackAsync();
+        await _fixture.Store.Execute($"UPDATE handbacks SET outcome = '{HandbackRules.NotImported}', outcome_by = 'Radarr' WHERE library_id = {_libraryId}");
+
+        var result = await ImportAsync(Import(sourcePath: CopyPath), Signed);
+
+        Assert.True(result.Released);
+        Assert.Equal("Radarr imported Film (2024).mkv after all", await ActivityAsync("title"));
+    }
+
+    [Fact]
+    public async Task A_copy_the_cleanup_job_kept_and_wrote_no_note_for_is_answered_with_the_unrecorded_note()
+    {
+        await HandedBackAsync();
+        var handoff = await HandoffAsync("h1", "d1");
+        await _fixture.Store.Execute($"UPDATE handbacks SET settled_at = '2026-01-01 00:00:00', released_at = NULL, release_note = NULL WHERE library_id = {_libraryId}");
+
+        var answer = await _fixture.Db(uow => _outcomes.RecordHandoffOutcomeAsync(
+            uow, handoff, "Deluno", HandbackRules.Imported, DateTimeOffset.UtcNow, "/library/Film (2024).mkv", null));
+
+        Assert.False(answer.Released);
+        Assert.True(File.Exists(CopyPath));
+        Assert.Contains(HandbackRules.UnrecordedNote, answer.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_copy_in_a_workflow_with_no_watched_folder_is_released_by_the_output_folder_alone()
+    {
+        await HandedBackAsync();
+        var row = (await CopyAsync())! with { WatchedFolder = " " };
+
+        var release = HandbackStore.Release(row, "Radarr");
+
+        Assert.True(release.Removed);
+        Assert.False(File.Exists(CopyPath));
+    }
 }

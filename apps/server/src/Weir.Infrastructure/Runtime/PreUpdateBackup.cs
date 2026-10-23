@@ -313,8 +313,8 @@ public sealed class PreUpdateBackup
         try
         {
             var full = Path.GetFullPath(folder);
-            var volume = OperatingSystem.IsWindows() ? Path.GetPathRoot(full) : full;
-            return volume is null ? null : new DriveInfo(volume).AvailableFreeSpace;
+            var volume = OperatingSystem.IsWindows() ? Path.GetPathRoot(full)! : full;
+            return new DriveInfo(volume).AvailableFreeSpace;
         }
         catch (Exception exception) when (exception is ArgumentException or IOException or UnauthorizedAccessException or NotSupportedException)
         {

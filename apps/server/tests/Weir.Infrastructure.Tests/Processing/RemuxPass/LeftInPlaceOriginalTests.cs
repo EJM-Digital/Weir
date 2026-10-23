@@ -975,4 +975,17 @@ public sealed class LeftInPlaceOriginalTests : IDisposable
 
         Assert.Equal(1, await RemuxJobsAsync());
     }
+
+    [Fact]
+    public async Task A_waiting_row_with_no_readable_time_is_left_as_it_is_and_not_held_as_gone()
+    {
+        await SetUpAsync("movie");
+        await InsertRowAsync("Gone/blank.mkv", ProcessingFileStatuses.Unprocessed, lastSeenMinutesAgo: 1);
+        await _fixture.Store.Execute("UPDATE files SET last_seen_at = '', updated_at = '', created_at = '' WHERE relative_path = 'Gone/blank.mkv'");
+
+        await Sweep().RunOnceAsync(CancellationToken.None);
+
+        Assert.Equal("unprocessed", await StatusAsync("Gone/blank.mkv"));
+        Assert.Equal(0, await LeftActivityAsync());
+    }
 }

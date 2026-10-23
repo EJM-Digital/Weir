@@ -202,4 +202,23 @@ public sealed class ActivityProgressReporterTests
 
         Assert.Empty(_liveProgress.Snapshot());
     }
+
+    [Fact]
+    public void A_report_that_names_no_usable_file_is_titled_for_this_file()
+    {
+        Assert.Equal("this file", ActivityProgressReporter.FileName(null));
+        Assert.Equal("this file", ActivityProgressReporter.FileName(WireNull.Instance));
+        Assert.Equal("this file", ActivityProgressReporter.FileName(WireValue.Of("/")));
+        Assert.Equal("Film.mkv", ActivityProgressReporter.FileName(WireValue.Of("Film/Film.mkv")));
+    }
+
+    [Fact]
+    public async Task A_report_from_a_pass_that_names_no_file_is_saved_and_not_shown_live()
+    {
+        var reporter = new ActivityProgressReporter(body => _saved.Writer.WriteAsync(body).AsTask(), jobId: 7, new WireObject(), _time, _liveProgress);
+
+        reporter.Report(Writing(10));
+
+        Assert.Equal(10, Percent(await _saved.Reader.ReadAsync()));
+    }
 }

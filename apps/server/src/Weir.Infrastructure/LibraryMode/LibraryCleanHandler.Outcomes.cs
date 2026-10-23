@@ -30,12 +30,12 @@ public sealed partial class LibraryCleanHandler
         // #509 step 1: record what this clean removed for good, keyed the same way library mode identifies the
         // file everywhere else (library id + this path). A future rule change can then ask #509's diff whether
         // any of it would now be kept. Best-effort: a store failure here must never undo an already-committed swap.
-        if (plan.Plan is { RemovedTrackRecords.Count: > 0 } committedPlan)
+        if (plan.Plan!.RemovedTrackRecords.Count > 0)
         {
             try
             {
                 var key = new RemovedTrackFileKey(library.Id, path);
-                await _removedTrackStore.RecordAsync(key, committedPlan.RemovedTrackRecords, cancellationToken).ConfigureAwait(false);
+                await _removedTrackStore.RecordAsync(key, plan.Plan.RemovedTrackRecords, cancellationToken).ConfigureAwait(false);
             }
 #pragma warning disable CA1031 // Best-effort, like the notify step below: recording removed tracks must never fail a committed clean.
             catch (Exception exception)

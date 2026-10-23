@@ -247,7 +247,7 @@ public sealed class ActivityProgressReporter
     };
 
     /// <summary><c>Path(str(relative_media_path or "")).name or "this file"</c>.</summary>
-    private static string FileName(WireValue? value)
+    internal static string FileName(WireValue? value)
     {
         var text = value is { IsTruthy: true } ? WireConvert.Str(value) : string.Empty;
         var name = MediaPathNames.Name(text, OperatingSystem.IsWindows());

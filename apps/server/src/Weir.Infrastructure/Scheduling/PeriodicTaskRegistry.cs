@@ -162,7 +162,7 @@ public sealed class PeriodicTaskRegistry
 
         public string? LastError { get; set; }
 
-        public DateTimeOffset? NextRunAt { get; set; }
+        public DateTimeOffset NextRunAt { get; set; }
 
         public TimeSpan? Interval { get; set; }
 

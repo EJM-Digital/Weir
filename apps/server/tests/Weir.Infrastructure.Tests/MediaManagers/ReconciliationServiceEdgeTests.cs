@@ -124,4 +124,28 @@ public sealed class ReconciliationServiceEdgeTests : IDisposable
         Assert.Equal("configured_folder_missing", ((WireString)issue["kind"]).Value);
         Assert.Contains("watched folder is configured but is not currently reachable", ((WireString)issue["message"]).Value, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task A_folder_inside_the_work_folder_and_a_file_that_is_not_a_leftover_are_not_reported()
+    {
+        var work = await WorkFolderAsync();
+        Directory.CreateDirectory(Path.Join(work, "Film.2024"));
+        await File.WriteAllTextAsync(Path.Join(work, "notes.txt"), "x");
+
+        var report = await _fixture.Db(ReconciliationService.BuildReportAsync);
+
+        Assert.Equal(0, ((WireInteger)report["issue_count"]).Value);
+    }
+
+    [Fact]
+    public async Task A_folder_set_to_a_path_that_is_a_file_is_reachable_as_far_as_the_report_can_tell()
+    {
+        var file = _fixture.Store.Home.Join("not-a-folder.txt");
+        await File.WriteAllTextAsync(file, "x");
+        await _fixture.Db(uow => uow.ExecuteAsync("UPDATE libraries SET watched_folder = $file WHERE media_type = 'movie'", ("$file", file)));
+
+        var report = await _fixture.Db(ReconciliationService.BuildReportAsync);
+
+        Assert.DoesNotContain(((WireArray)report["issues"]).Items.Cast<WireObject>(), issue => WireConvert.Str(issue["kind"]) == "configured_folder_missing");
+    }
 }

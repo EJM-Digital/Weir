@@ -51,7 +51,7 @@ public sealed partial class OutputFolderCleanup
 
         output.Set(deletedKey, true);
         output.Set(skipKey, WireNull.Instance);
-        var cascade = output.Get(cascadeKey) as WireArray ?? new WireArray();
+        var cascade = (WireArray)output[cascadeKey];
         CascadeDeleteEmptyParents(Path.GetDirectoryName(place.Folder)!, place.OutputRoot, cascade, _logger, _files);
         output.Set(cascadeKey, cascade);
     }

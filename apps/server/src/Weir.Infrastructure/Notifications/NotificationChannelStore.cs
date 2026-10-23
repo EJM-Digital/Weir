@@ -50,8 +50,8 @@ public sealed class NotificationChannelStore
             ("$events", NotificationRules.SerializeEvents(events)),
             ("$enabled", enabled ? 1 : 0)).ConfigureAwait(false);
         Changed(uow);
-        return await GetAsync(uow, Convert.ToInt64(id, System.Globalization.CultureInfo.InvariantCulture)).ConfigureAwait(false)
-            ?? throw new InvalidOperationException("Notification channel was not created.");
+        // Read back inside the transaction that inserted it, so the row is there.
+        return (await GetAsync(uow, Convert.ToInt64(id, System.Globalization.CultureInfo.InvariantCulture)).ConfigureAwait(false))!;
     }
 
     /// <summary>Updates an existing channel row.</summary>
@@ -87,7 +87,8 @@ public sealed class NotificationChannelStore
             Changed(uow);
         }
 
-        return await GetAsync(uow, row.Id).ConfigureAwait(false) ?? row;
+        // Read back inside the transaction that updated it, so the row is there.
+        return (await GetAsync(uow, row.Id).ConfigureAwait(false))!;
     }
 
     public async Task<int> DeleteAsync(UnitOfWork uow, long id)

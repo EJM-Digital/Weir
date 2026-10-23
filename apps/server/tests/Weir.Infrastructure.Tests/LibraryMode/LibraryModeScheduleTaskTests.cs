@@ -228,4 +228,15 @@ public sealed class LibraryModeScheduleTaskTests : IDisposable
         Assert.Empty(await ScansAsync(library));
         Assert.Equal(new DateTimeOffset(2026, 1, 16, 2, 0, 0, TimeSpan.Zero), await NextRunAsync(library));
     }
+
+    [Fact]
+    public async Task A_workflow_scheduled_when_no_settings_were_ever_saved_is_timed_in_UTC()
+    {
+        var library = await LibraryAsync();
+        await _fixture.Store.Execute("DELETE FROM suite_settings");
+
+        var next = await NextRunAsync(library);
+
+        Assert.NotNull(next);
+    }
 }

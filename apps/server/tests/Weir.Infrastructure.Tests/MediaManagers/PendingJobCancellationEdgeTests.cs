@@ -16,6 +16,7 @@ public sealed class PendingJobCancellationEdgeTests : IDisposable
     [InlineData("{\"relative_media_path\":\"a.mkv\"}")]
     [InlineData("{\"relative_media_path\":\"a.mkv\",\"library_id\":0}")]
     [InlineData("{\"relative_media_path\":\"\",\"library_id\":1}")]
+    [InlineData("{\"relative_media_path\":5,\"library_id\":1}")]
     public async Task A_queued_pass_that_names_no_known_file_is_cancelled_and_no_file_changes(string payload)
     {
         await _fixture.Store.Execute("INSERT INTO libraries (id, name, media_type, watched_folder, display_order) VALUES (41, 'Films', 'movie', '/in', 41)");
@@ -59,5 +60,23 @@ public sealed class PendingJobCancellationEdgeTests : IDisposable
 
         Assert.Equal(JobActionOutcome.Ok, result.Outcome);
         Assert.Equal("cancelled", await _fixture.Store.ScalarText("SELECT status FROM jobs WHERE id = " + job.Id));
+    }
+
+    [Fact]
+    public async Task A_queued_pass_whose_creation_time_is_unreadable_still_settles_its_hand_off()
+    {
+        await _fixture.Store.Execute("INSERT INTO libraries (id, name, media_type, watched_folder, display_order) VALUES (41, 'Films', 'movie', '/in', 41)");
+        await _fixture.Db(async uow =>
+        {
+            await _fixture.Ledger.RecordReceivedAsync(uow, "deluno", "h1", 41, "a.mkv");
+            return 0;
+        });
+        var job = await _fixture.Jobs.EnqueueOrGetAsync(
+            "cancel-handoff", "processing.file.remux_pass.v1", "{\"origin\":{\"source_key\":\"deluno\",\"handoff_id\":\"h1\"},\"relative_media_path\":\"a.mkv\"}");
+        await _fixture.Store.Execute($"UPDATE jobs SET created_at = '' WHERE id = {job.Id}");
+
+        var result = await _fixture.Db(uow => _fixture.Cancellation.CancelAsync(uow, job.Id));
+
+        Assert.Equal(JobActionOutcome.Ok, result.Outcome);
     }
 }

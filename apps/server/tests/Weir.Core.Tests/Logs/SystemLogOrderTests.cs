@@ -174,4 +174,14 @@ public sealed class SystemLogOrderTests
         "Something happened",
         null,
         new WireObject());
+
+    [Fact]
+    public void A_cursor_the_log_gave_out_gives_its_key_back_and_any_other_text_is_an_error()
+    {
+        var order = new SystemLogOrder(SystemLogSort.Level, SortDirection.Descending);
+        var key = order.KeyOf(Row(SystemLogSource.Event, 1, 5), SystemLogOrder.NoWorkflowNames);
+
+        Assert.Equal(key, order.KeyOfGivenCursor(order.EncodeCursor(key)));
+        Assert.Throws<InvalidOperationException>(() => order.KeyOfGivenCursor("not a cursor"));
+    }
 }
