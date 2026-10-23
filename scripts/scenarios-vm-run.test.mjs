@@ -177,7 +177,7 @@ function psFileAsync(lines, { onLine } = {}) {
 // shaped as the setup reads them, and the manifest is the recorded shape.
 const recordedLibrary = () => {
   const recorded = JSON.parse(
-    readFileSync(join(repoRoot, "apps", "server", "tests", "fixtures", "recorded", "deluno-side", "1.0.0-rc.30.33", "real-connection.json"), "utf8"),
+    readFileSync(join(repoRoot, "apps", "server", "tests", "fixtures", "recorded", "deluno-side", "1.0.0-rc.30.35", "real-connection.json"), "utf8"),
   );
   return { ...recorded.exchanges.find((exchange) => exchange.request.path === "/api/integrations/external/manifest").reply.body.libraries[0], processorConnectionId: null };
 };
@@ -255,7 +255,7 @@ test("a Deluno with no library that refines before import is set up through its 
         "GET /api/integrations/processors/connections",
         "POST /api/integrations/processors/connections",
         "GET /api/libraries",
-        "PUT /api/libraries/01a14dd7a3277ea09b4c8cf79f45b536/workflow",
+        "PUT /api/libraries/01a16918f0747a73b2c1d580a4a121e5/workflow",
         "GET /api/integrations/external/manifest",
       ],
     );
@@ -284,7 +284,7 @@ test("a Deluno with no library that refines before import is set up through its 
     assert.match(stdout[0], /^summary: added Weir to Deluno as a processor, with a webhook secret made in Weir; set Deluno's library 'Movies' to refine before import, with 'Weir on test-machine' as its processor, failure mode block and its cleaned films handed back to /);
     assert.equal(stdout[1], "again: True", "done once per run");
     const evidence = readFileSync(join(folder, "evidence.txt"), "utf8");
-    assert.match(evidence, /Deluno PUT \/api\/libraries\/01a14dd7a3277ea09b4c8cf79f45b536\/workflow -> 200/, "the record shows the call that set the library up");
+    assert.match(evidence, /Deluno PUT \/api\/libraries\/01a16918f0747a73b2c1d580a4a121e5\/workflow -> 200/, "the record shows the call that set the library up");
     assert.doesNotMatch(evidence, /whsec-0123456789abcdef|deluno_SetupKey/, "neither the key nor the webhook secret is written down");
   } finally {
     deluno.close();

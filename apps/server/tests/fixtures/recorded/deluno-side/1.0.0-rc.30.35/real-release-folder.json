@@ -1,32 +1,32 @@
 {
   "app": "deluno",
-  "version": "1.0.0-rc.30.33",
-  "state": "real-release-with-extra",
-  "recordedAt": "2026-10-18T07:29:14.037Z",
-  "note": "A qBittorrent release folder holding a film and an extra under Weir's minimum size, handed to Weir by a real Deluno: sourceFiles names only the film, and the extra stays in the download. The hand-off, Deluno's questions about it, Weir's report and the outcome, as the proxy between them saw it.",
+  "version": "1.0.0-rc.30.35",
+  "state": "real-release-folder",
+  "recordedAt": "2026-10-23T14:30:17.462Z",
+  "note": "A film in a qBittorrent release folder (the film and an .nfo), handed to Weir by a real Deluno and cleaned: the hand-off, what Deluno asked about it, Weir's report that it was cleaned and the outcome Deluno told Weir, as the proxy between them saw it.",
   "exchanges": [
     {
       "request": {
         "method": "POST",
         "path": "/api/v1/intake/webhook/deluno",
         "headers": {
-          "idempotency-key": "01a14dd972fa74b3ae0948c31d6dc521:1792307458810",
+          "idempotency-key": "01a16919cff879cd8567f3ab3dbfa1d8:1792764661752",
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "eventType": "deluno.processor-handoff",
-          "handoffId": "01a14dd972fa74b3ae0948c31d6dc521",
-          "libraryId": "01a14dd7a3277ea09b4c8cf79f45b536",
+          "handoffId": "01a16919cff879cd8567f3ab3dbfa1d8",
+          "libraryId": "01a16918f0747a73b2c1d580a4a121e5",
           "mediaType": "movies",
-          "sourcePath": "/downloads/completed/Movies/ScnExtra.2020.1080p.WEB-DL.x264-WEIR",
-          "releaseName": "ScnExtra.2020.1080p.WEB-DL.x264-WEIR",
-          "queueItemId": "98a9bee8e7497eb50d82c1c811a1fff131898153",
+          "sourcePath": "/downloads/completed/Movies/ScnFilm.2020.1080p.WEB-DL.x264-WEIR",
+          "releaseName": "ScnFilm.2020.1080p.WEB-DL.x264-WEIR",
+          "queueItemId": "32dcfe01225e7bbdd94387ab016d0d659237b689",
           "callbackPath": "/api/integrations/processors/events",
-          "title": "ScnExtra",
+          "title": "ScnFilm",
           "year": 2020,
           "sourceFiles": [
-            "/downloads/completed/Movies/ScnExtra.2020.1080p.WEB-DL.x264-WEIR/ScnExtra.2020.1080p.WEB-DL.x264-WEIR.mkv"
+            "/downloads/completed/Movies/ScnFilm.2020.1080p.WEB-DL.x264-WEIR/ScnFilm.2020.1080p.WEB-DL.x264-WEIR.mkv"
           ]
         }
       },
@@ -53,15 +53,15 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a14dd972fa74b3ae0948c31d6dc521",
+          "handoffId": "01a16919cff879cd8567f3ab3dbfa1d8",
           "status": "completed",
           "processorName": "Weir",
-          "libraryId": "01a14dd7a3277ea09b4c8cf79f45b536",
-          "releaseName": "ScnExtra.2020.1080p.WEB-DL.x264-WEIR",
-          "outputPath": "/weir/Ready/Movies/ScnExtra.2020.1080p.WEB-DL.x264-WEIR/ScnExtra.2020.1080p.WEB-DL.x264-WEIR.mkv",
+          "libraryId": "01a16918f0747a73b2c1d580a4a121e5",
+          "releaseName": "ScnFilm.2020.1080p.WEB-DL.x264-WEIR",
+          "outputPath": "/weir/Ready/Movies/ScnFilm.2020.1080p.WEB-DL.x264-WEIR/ScnFilm.2020.1080p.WEB-DL.x264-WEIR.mkv",
           "message": "Removed 2 audio tracks and 2 subtitle tracks.",
           "outputFiles": [
-            "/weir/Ready/Movies/ScnExtra.2020.1080p.WEB-DL.x264-WEIR/ScnExtra.2020.1080p.WEB-DL.x264-WEIR.mkv"
+            "/weir/Ready/Movies/ScnFilm.2020.1080p.WEB-DL.x264-WEIR/ScnFilm.2020.1080p.WEB-DL.x264-WEIR.mkv"
           ]
         }
       },
@@ -72,24 +72,24 @@
         },
         "body": {
           "status": "completed",
-          "handoffId": "01a14dd972fa74b3ae0948c31d6dc521",
-          "activityId": "01a14dda00a477ee8eef8e8351141b54",
-          "importJobId": "01a14dda00a67e18b7e188c82ca55f33"
+          "handoffId": "01a16919cff879cd8567f3ab3dbfa1d8",
+          "activityId": "01a1691a249978be879fff4cb24fbfda",
+          "importJobId": "01a1691a24a476c3a508a2f935df39df"
         }
       }
     },
     {
       "request": {
         "method": "POST",
-        "path": "/api/v1/intake/handoffs/deluno/01a14dd972fa74b3ae0948c31d6dc521/outcome",
+        "path": "/api/v1/intake/handoffs/deluno/01a16919cff879cd8567f3ab3dbfa1d8/outcome",
         "headers": {
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "outcome": "imported",
-          "occurredUtc": "2026-10-18T07:11:37.2623013+00:00",
-          "importedPath": "/media/Movies/ScnExtra (2020)/ScnExtra.2020.1080p.WEB-DL.x264-WEIR.mkv",
+          "occurredUtc": "2026-10-23T14:11:25.8096565+00:00",
+          "importedPath": "/media/Movies/ScnFilm (2020)/ScnFilm.2020.1080p.WEB-DL.x264-WEIR.mkv",
           "reason": null
         }
       },
@@ -99,7 +99,7 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a14dd972fa74b3ae0948c31d6dc521",
+          "handoffId": "01a16919cff879cd8567f3ab3dbfa1d8",
           "outcome": "imported",
           "released": false,
           "message": "Weir recorded that Deluno imported the file. Deluno moved Weir's copy into its library, so there was nothing for Weir to remove."
