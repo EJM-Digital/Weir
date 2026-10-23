@@ -191,6 +191,22 @@ public sealed class ConnectionUsageTests
     }
 
     [Fact]
+    public async Task The_flush_task_saves_a_download_clients_usage_to_the_download_client()
+    {
+        using var fixture = new DownloadClientFixture();
+        var usage = new ConnectionUsageLedger();
+        var id = await fixture.AddConnectionAsync("qbittorrent");
+        usage.Record(new ConnectionActivity(new ConnectionRef(ConnectionKind.DownloadClient, id), ConnectionPhase.Answered, ConnectionDirection.Outbound, Noon, 52));
+        var flush = new ConnectionUsageFlushTask(fixture.Store.Database, usage, new MediaManagerConnectionStore(), fixture.ConnectionStore);
+
+        await flush.RunOnceAsync(CancellationToken.None);
+
+        var stored = await fixture.Db(uow => new DownloadClientConnectionStore().GetAsync(uow, id));
+        Assert.Equal(52, stored!.LastAnswerMs);
+        Assert.Empty(usage.TakeUnsaved());
+    }
+
+    [Fact]
     public async Task A_connection_never_used_lists_both_values_as_null()
     {
         using var fixture = new MediaManagerFixture();

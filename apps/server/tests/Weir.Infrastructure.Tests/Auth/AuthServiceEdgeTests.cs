@@ -147,6 +147,17 @@ public sealed class AuthServiceEdgeTests
     }
 
     [Fact]
+    public async Task A_session_whose_account_is_gone_is_rejected()
+    {
+        using var fixture = new StoreFixture();
+        var user = await SeedAsync(fixture);
+        var (_, token) = await fixture.WithUnitOfWork(uow => fixture.Auth.CreateSessionAsync(uow, user, false, "Browser"));
+        await fixture.Execute("PRAGMA foreign_keys = OFF; DELETE FROM users");
+
+        Assert.Null(await fixture.WithUnitOfWork(uow => fixture.Auth.LoadValidSessionAsync(uow, token)));
+    }
+
+    [Fact]
     public async Task A_session_seen_long_ago_is_touched_inside_the_transaction_the_request_already_holds()
     {
         using var fixture = new StoreFixture(("WEIR_SESSION_IDLE_MINUTES", "720"));

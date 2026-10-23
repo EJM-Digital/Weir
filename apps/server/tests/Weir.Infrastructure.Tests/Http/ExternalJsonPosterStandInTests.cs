@@ -81,6 +81,19 @@ public sealed class ExternalJsonPosterStandInTests : IDisposable
     }
 
     [Theory]
+    [InlineData("http://hooks.example.com", "/")]
+    [InlineData("http://hooks.example.com:8443/alerts", "/alerts")]
+    [InlineData("http://hooks.example.com:0/alerts", "/alerts")]
+    public async Task An_address_with_no_path_posts_to_the_root_and_one_with_a_port_posts_to_that_port(string url, string rawUrl)
+    {
+        var (status, served) = await PostAsync(url, _port);
+        await served.WaitAsync(Timeout);
+
+        Assert.Equal(204, status);
+        Assert.Equal(rawUrl, _request!.RawUrl);
+    }
+
+    [Theory]
     [InlineData(400)]
     [InlineData(404)]
     [InlineData(500)]

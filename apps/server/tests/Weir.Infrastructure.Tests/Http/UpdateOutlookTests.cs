@@ -29,6 +29,26 @@ public sealed class UpdateOutlookTests : IDisposable
     private void TrayHasDownloaded(string version) =>
         File.WriteAllText(Path.Join(_fixture.Home.Path, UpdateFiles.StateFileName), $"{{\"downloaded\": true, \"version\": \"{version}\"}}");
 
+    [Theory]
+    [InlineData("{\"downloaded\": true, \"version\": \"\"}", "downloaded", null)]
+    [InlineData("{\"downloaded\": true, \"version\": \"3.3.0\"}", "downloaded", "3.3.0")]
+    public void An_update_the_tray_downloaded_wins_over_what_the_last_check_found(string state, string status, string? version)
+    {
+        File.WriteAllText(Path.Join(_fixture.Home.Path, UpdateFiles.StateFileName), state);
+
+        Assert.Equal(new UpdateOutlookSnapshot(status, version), _outlook.Current());
+    }
+
+    [Theory]
+    [InlineData("{\"downloaded\": false}")]
+    [InlineData("{}")]
+    public void A_state_that_says_nothing_was_downloaded_leaves_the_last_check_to_answer(string state)
+    {
+        File.WriteAllText(Path.Join(_fixture.Home.Path, UpdateFiles.StateFileName), state);
+
+        Assert.NotEqual("downloaded", _outlook.Current().Status);
+    }
+
     [Fact]
     public async Task A_newer_release_reads_as_an_update_available()
     {

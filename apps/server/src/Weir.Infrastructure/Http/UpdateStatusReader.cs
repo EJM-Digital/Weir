@@ -54,7 +54,7 @@ public sealed class UpdateStatusReader
         var currentVersion = WeirVersion.Resolve(_options.VersionOverride);
         // The Windows app lets its owner switch checking off, and then nothing is asked of GitHub. A Docker or source install has no
         // tray to hold that choice and keeps looking, since this page is how it learns of a release.
-        if (installType == "windows" && _files.ReadSettings().Get("check_for_updates")?.IsTruthy != true)
+        if (installType == "windows" && !_files.ReadSettings()["check_for_updates"].IsTruthy)
         {
             return UpdateStatus.Off(currentVersion, installType);
         }

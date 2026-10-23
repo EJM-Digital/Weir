@@ -144,9 +144,9 @@ public sealed class GitHubReleaseCatalogClient : IReleaseCatalogClient
         return wait is { } until ? now + (until < LeastWait ? LeastWait : until > MostWait ? MostWait : until) : null;
     }
 
-    /// <summary>How long <c>Retry-After</c> asks to wait; a date in it is measured from GitHub's own clock, as sent in <c>Date</c>.</summary>
+    /// <summary>How long <c>Retry-After</c> asks to wait: a header holds either a number of seconds or a date, and a date is measured from GitHub's own clock, as sent in <c>Date</c>.</summary>
     private static TimeSpan? RetryAfterWait(HttpResponseMessage response, DateTimeOffset theirNow) =>
-        response.Headers.RetryAfter is { } after ? after.Delta ?? (after.Date - theirNow) : null;
+        response.Headers.RetryAfter is { } after ? after.Delta ?? (after.Date!.Value - theirNow) : null;
 
     /// <summary>How long until <c>X-RateLimit-Reset</c> once no allowance is left; null for a missing or impossible value.</summary>
     private static TimeSpan? ResetWait(HttpResponseMessage response, DateTimeOffset theirNow) =>
