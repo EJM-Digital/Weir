@@ -156,6 +156,37 @@ public sealed class WeirLogFileTests : IDisposable
         }
     }
 
+    [Fact]
+    public void A_log_with_nothing_in_it_has_nothing_to_prune()
+    {
+        using var file = Open(out var path);
+
+        Assert.True(file.Prune(keepDays: 3));
+
+        Assert.Equal(0, new FileInfo(path).Length);
+    }
+
+    [Fact]
+    public void A_bounded_read_stops_at_the_length_it_was_given_and_supports_nothing_else()
+    {
+        using var source = new MemoryStream("0123456789"u8.ToArray());
+        using var bounded = new WeirLogFile.BoundedReadStream(source, 4);
+        var buffer = new byte[10];
+
+        Assert.Equal((true, false, false), (bounded.CanRead, bounded.CanSeek, bounded.CanWrite));
+        Assert.Equal(3, bounded.Read(buffer, 0, 3));
+        Assert.Equal(1, bounded.Read(buffer, 3, 7));
+        Assert.Equal(0, bounded.Read(buffer, 4, 6));
+        Assert.Equal("0123", System.Text.Encoding.ASCII.GetString(buffer, 0, 4));
+        bounded.Flush();
+        Assert.Throws<NotSupportedException>(() => bounded.Length);
+        Assert.Throws<NotSupportedException>(() => bounded.Position);
+        Assert.Throws<NotSupportedException>(() => bounded.Position = 1);
+        Assert.Throws<NotSupportedException>(() => bounded.Seek(0, SeekOrigin.Begin));
+        Assert.Throws<NotSupportedException>(() => bounded.SetLength(1));
+        Assert.Throws<NotSupportedException>(() => bounded.Write(buffer, 0, 1));
+    }
+
     [Theory]
     [InlineData("{\"timestamp\":\"2026-10-20T10:00:00Z\"}", true, "2026-10-20T10:00:00+00:00")]
     [InlineData("{\"timestamp\":\"2026-10-20T10:00:00+02:00\"}", true, "2026-10-20T10:00:00+02:00")]

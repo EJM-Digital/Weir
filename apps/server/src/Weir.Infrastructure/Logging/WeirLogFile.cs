@@ -373,7 +373,7 @@ public sealed class WeirLogFile : IDisposable
     /// The first <c>length</c> bytes of a file others keep appending to: what had been written, as whole lines, when the read
     /// began. A line still being appended is never read in half.
     /// </summary>
-    private sealed class BoundedReadStream(Stream inner, long length) : Stream
+    internal sealed class BoundedReadStream(Stream inner, long length) : Stream
     {
         private long _remaining = length;
 

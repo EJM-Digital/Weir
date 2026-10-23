@@ -129,7 +129,7 @@ public sealed partial class LibraryStore
         var count = 0;
         foreach (var raw in payloads)
         {
-            if (string.IsNullOrWhiteSpace(raw))
+            if (raw is null)
             {
                 continue;
             }
