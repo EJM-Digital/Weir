@@ -65,6 +65,47 @@ public sealed class ArrManagerRedownloadTests
     }
 
     [Fact]
+    public async Task A_movie_file_the_manager_lists_without_a_size_is_still_deleted_and_no_size_is_reported()
+    {
+        var http = new FakeManagerHttp()
+            .Json(HttpMethod.Get, "/api/v3/movie/7", """{"id":7,"movieFile":{"id":42,"path":"/movies/Film/film.mkv"}}""")
+            .Route(HttpMethod.Delete, "/api/v3/moviefile/42", _ => FakeManagerHttp.Response(HttpStatusCode.OK))
+            .Route(HttpMethod.Post, "/api/v3/command", _ => FakeManagerHttp.Response(HttpStatusCode.Created, """{"id":1}"""));
+
+        var result = await new ArrManagerRedownload(http).RequestRedownloadAsync(Connection("radarr"), MediaManagerKinds.Movie, "7", "/movies/Film/film.mkv");
+
+        Assert.True(result.DeletedExistingFile);
+        Assert.Null(result.ExistingFileSizeBytes);
+    }
+
+    [Fact]
+    public async Task A_movie_file_the_manager_lists_without_an_id_is_never_deleted()
+    {
+        var http = new FakeManagerHttp()
+            .Json(HttpMethod.Get, "/api/v3/movie/7", """{"id":7,"movieFile":{"size":10,"path":"/movies/Film/film.mkv"}}""")
+            .Route(HttpMethod.Post, "/api/v3/command", _ => FakeManagerHttp.Response(HttpStatusCode.Created, """{"id":1}"""));
+
+        var result = await new ArrManagerRedownload(http).RequestRedownloadAsync(Connection("radarr"), MediaManagerKinds.Movie, "7", "/movies/Film/film.mkv");
+
+        Assert.False(result.DeletedExistingFile);
+        Assert.Empty(http.RequestsTo(HttpMethod.Delete, "/api/v3/moviefile"));
+    }
+
+    [Fact]
+    public async Task An_episode_file_the_manager_lists_with_neither_an_id_nor_a_size_is_searched_for_but_never_deleted()
+    {
+        var http = new FakeManagerHttp()
+            .Json(HttpMethod.Get, "/api/v3/episodefile", """[{"path":"/tv/Show/S01E01.mkv"}]""")
+            .Route(HttpMethod.Post, "/api/v3/command", _ => FakeManagerHttp.Response(HttpStatusCode.Created, """{"id":3}"""));
+
+        var result = await new ArrManagerRedownload(http).RequestRedownloadAsync(Connection("sonarr"), MediaManagerKinds.Tv, "3", "/tv/Show/S01E01.mkv");
+
+        Assert.Equal(RedownloadOutcome.Requested, result.Outcome);
+        Assert.False(result.DeletedExistingFile);
+        Assert.Null(result.ExistingFileSizeBytes);
+    }
+
+    [Fact]
     public async Task A_series_episode_file_matched_by_path_is_deleted_then_the_whole_series_is_searched()
     {
         var http = new FakeManagerHttp()
