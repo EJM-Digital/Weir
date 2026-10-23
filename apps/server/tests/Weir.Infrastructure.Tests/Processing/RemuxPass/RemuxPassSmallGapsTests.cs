@@ -2,6 +2,7 @@ using Microsoft.Extensions.Time.Testing;
 using Weir.Core.Jobs;
 using Weir.Core.Json;
 using Weir.Core.MediaManagers;
+using Weir.Core.Processing;
 using Weir.Infrastructure.Processing.RemuxPass;
 
 namespace Weir.Infrastructure.Tests.Processing.RemuxPass;
@@ -61,6 +62,30 @@ public sealed class RemuxPassSmallGapsTests
         var plan = new WireObject().Set("keep", new WireArray([new WireInteger(3)]));
 
         Assert.Null(ManualPlanJson.FromPyJson(plan));
+    }
+
+    [Fact]
+    public void A_manual_plan_that_marks_nothing_default_or_forced_and_gives_no_order_keeps_the_tracks_in_file_order()
+    {
+        var plan = new WireObject().Set("keep", new WireArray([new WireObject().Set("index", 1), new WireObject().Set("index", 2).Set("default", false).Set("forced", false)]));
+
+        var choice = ManualPlanJson.FromPyJson(plan)!;
+
+        Assert.Equal([new ManualKeepEntry(1, false, false), new ManualKeepEntry(2, false, false)], choice.Keep);
+        Assert.Empty(choice.Order);
+    }
+
+    [Fact]
+    public void A_manual_plan_keeps_what_it_marks_default_and_forced_and_the_order_it_gives_without_anything_that_is_not_a_number()
+    {
+        var plan = new WireObject()
+            .Set("keep", new WireArray([new WireObject().Set("index", 3).Set("default", true).Set("forced", true)]))
+            .Set("order", new WireArray([new WireInteger(3), new WireString("x"), new WireInteger(1)]));
+
+        var choice = ManualPlanJson.FromPyJson(plan)!;
+
+        Assert.Equal([new ManualKeepEntry(3, true, true)], choice.Keep);
+        Assert.Equal([3, 1], choice.Order);
     }
 
     [Fact]
