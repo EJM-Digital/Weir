@@ -60,7 +60,7 @@ public sealed class DataFootprint
     }
 
     /// <summary>A file that was deleted or locked since it was listed counts for nothing.</summary>
-    private static long LengthOrZero(FileInfo file)
+    internal static long LengthOrZero(FileInfo file)
     {
         try
         {

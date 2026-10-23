@@ -132,27 +132,8 @@ public sealed partial class OutputFolderCleanup
         }
 
         var minAge = Math.Max(0, _tvMinAgeSeconds);
-        double? newest = null;
-        foreach (var episode in episodes)
-        {
-            try
-            {
-                var modified = Seconds(File.GetLastWriteTimeUtc(episode));
-                newest = newest is null ? modified : Math.Max(newest.Value, modified);
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-            {
-            }
-        }
-
-        if (newest is null)
-        {
-            Skip(output, Prefix, "tv_output_season_folder_skip_reason",
-                "Weir could not read timestamps for direct-child episode files in this season output folder, so nothing was removed for safety.");
-            return;
-        }
-
-        var age = Now() - newest.Value;
+        var newest = episodes.Max(episode => Seconds(File.GetLastWriteTimeUtc(episode)));
+        var age = Now() - newest;
         output.Set("tv_output_age_seconds", (long)Math.Max(0.0, age));
         if (age < minAge)
         {

@@ -29,14 +29,8 @@ public sealed partial class OutputFolderCleanup
         {
             foreach (var file in Directory.EnumerateFiles(root, "*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = 0, IgnoreInaccessible = true }))
             {
-                try
-                {
-                    var modified = Seconds(File.GetLastWriteTimeUtc(file));
-                    newest = newest is null ? modified : Math.Max(newest.Value, modified);
-                }
-                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-                {
-                }
+                var modified = Seconds(File.GetLastWriteTimeUtc(file));
+                newest = newest is null ? modified : Math.Max(newest.Value, modified);
             }
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)

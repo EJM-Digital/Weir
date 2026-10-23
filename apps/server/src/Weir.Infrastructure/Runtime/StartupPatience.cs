@@ -43,8 +43,7 @@ public static class StartupPatience
     {
         try
         {
-            var file = new FileInfo(path);
-            return file.Exists ? file.Length : 0;
+            return new FileInfo(path).Length;
         }
         catch (IOException)
         {
