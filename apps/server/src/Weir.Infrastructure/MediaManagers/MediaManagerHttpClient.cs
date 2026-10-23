@@ -269,15 +269,8 @@ public sealed class MediaManagerHttpClient
                     throw new MediaManagerRedirectedException();
                 }
 
-                byte[] raw;
-                try
-                {
-                    raw = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception exception) when (IsTransportFailure(exception, cancellationToken))
-                {
-                    throw Unreachable(exception);
-                }
+                // SendAsync has already read the whole body, so a connection that breaks mid-answer fails there.
+                var raw = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
 
                 if (status is < 200 or >= 300)
                 {

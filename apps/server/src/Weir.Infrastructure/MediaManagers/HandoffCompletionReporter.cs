@@ -362,7 +362,7 @@ public sealed partial class HandoffCompletionReporter
             case HandoffTargetProgress.Untracked:
                 return await ReportUntrackedFileAsync(uow, origin, result, relative, libraryId, cancellationToken).ConfigureAwait(false);
             default:
-                return await ClaimAndDeliverAsync(uow, origin, finish, result, libraryId, viaCancellation: false, deliverNow, cancellationToken).ConfigureAwait(false);
+                return await ClaimAndDeliverAsync(uow, origin, finish, result, libraryId, deliverNow, cancellationToken).ConfigureAwait(false);
         }
     }
 

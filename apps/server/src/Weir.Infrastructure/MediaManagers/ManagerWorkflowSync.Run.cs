@@ -145,16 +145,9 @@ public sealed partial class ManagerWorkflowSync
                 uow, existing, LibraryDiscoveryService.UniqueName(others, library.Name), connectionId, library.Key, watched, output);
         }
 
-        private void Replace(ProcessingLibraryRecord workflow)
-        {
-            var index = _workflows.FindIndex(existing => existing.Id == workflow.Id);
-            if (index < 0)
-            {
-                return;
-            }
-
-            _workflows[index] = workflow;
-        }
+        /// <summary>Puts a workflow just written in place of its earlier self; every workflow written here is already in the list.</summary>
+        private void Replace(ProcessingLibraryRecord workflow) =>
+            _workflows[_workflows.FindIndex(existing => existing.Id == workflow.Id)] = workflow;
 
         private async Task ReportChangeAsync(WorkflowSyncAction action, ProcessingLibraryRecord workflow, string? watched, string? output)
         {

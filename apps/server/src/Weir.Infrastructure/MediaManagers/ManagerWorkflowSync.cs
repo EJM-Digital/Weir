@@ -121,9 +121,9 @@ public sealed partial class ManagerWorkflowSync : IDisposable
         await _running.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            foreach (var connection in await SyncingConnectionsAsync(cancellationToken).ConfigureAwait(false))
+            foreach (var (connectionId, connection) in await SyncingConnectionsAsync(cancellationToken).ConfigureAwait(false))
             {
-                await SyncConnectionAsync(connection, trigger, cancellationToken).ConfigureAwait(false);
+                await SyncConnectionAsync(connectionId, connection, trigger, cancellationToken).ConfigureAwait(false);
             }
         }
         finally
@@ -132,21 +132,27 @@ public sealed partial class ManagerWorkflowSync : IDisposable
         }
     }
 
-    private async Task<List<ManagerConnection>> SyncingConnectionsAsync(CancellationToken cancellationToken)
+    private async Task<List<(long Id, ManagerConnection Connection)>> SyncingConnectionsAsync(CancellationToken cancellationToken)
     {
         var uow = await UnitOfWork.OpenAsync(_database, cancellationToken).ConfigureAwait(false);
         await using (uow.ConfigureAwait(false))
         {
-            return [.. (await _connectionStore.ListEnabledAsync(uow).ConfigureAwait(false))
-                .Where(row => WorkflowSyncRules.ReportsFolders(row.Kind))
-                .Select(_connections.ConnectionFromRow)
-                .OfType<ManagerConnection>()];
+            var syncing = new List<(long Id, ManagerConnection Connection)>();
+            foreach (var row in (await _connectionStore.ListEnabledAsync(uow).ConfigureAwait(false)).Where(row => WorkflowSyncRules.ReportsFolders(row.Kind)))
+            {
+                if (_connections.ConnectionFromRow(row) is { } connection)
+                {
+                    syncing.Add((row.Id, connection));
+                }
+            }
+
+            return syncing;
         }
     }
 
-    private async Task SyncConnectionAsync(ManagerConnection connection, string trigger, CancellationToken cancellationToken)
+    private async Task SyncConnectionAsync(long connectionId, ManagerConnection connection, string trigger, CancellationToken cancellationToken)
     {
-        if (connection.ConnectionId is not { } connectionId || _connections.Ports.PortForKind(connection.Kind) is not { } port)
+        if (_connections.Ports.PortForKind(connection.Kind) is not { } port)
         {
             return;
         }

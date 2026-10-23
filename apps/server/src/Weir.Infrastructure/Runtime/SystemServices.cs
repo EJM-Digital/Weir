@@ -186,12 +186,6 @@ public sealed class UpdateFiles
 
         var text = reading.Text;
 
-        if (text.StartsWith('﻿'))
-        {
-            warn?.Invoke(path);
-            return UpdateStatus.UnreadableUpdateSettings;
-        }
-
         var parsed = UpdateStatus.ParseUpdateSettings(text);
         if (parsed is null)
         {

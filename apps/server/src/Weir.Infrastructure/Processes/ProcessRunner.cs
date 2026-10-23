@@ -249,14 +249,14 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
         catch (OperationCanceledException) when (linked.IsCancellationRequested)
         {
             KillTree(process);
-            await DrainAsync(process, stdoutTask, stderrTask).ConfigureAwait(false);
+            await DrainAsync(process, stdoutTask, stderrTask, DrainAfterKill).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
             timedOut = overall.Token.IsCancellationRequested ? ProcessTimeoutKind.Overall
                 : lateExit.Token.IsCancellationRequested ? ProcessTimeoutKind.NotExitedAfterFinish
                 : ProcessTimeoutKind.Idle;
         }
 
-        await DrainAsync(process, stdoutTask, stderrTask).ConfigureAwait(false);
+        await DrainAsync(process, stdoutTask, stderrTask, DrainAfterKill).ConfigureAwait(false);
         if (callbackError is not null)
         {
             System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(callbackError).Throw();
@@ -271,18 +271,18 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
         };
     }
 
-    private static async Task DrainAsync(Process process, Task stdoutTask, Task stderrTask)
+    internal static async Task DrainAsync(Process process, Task stdoutTask, Task stderrTask, TimeSpan limit)
     {
         try
         {
-            await Task.WhenAll(stdoutTask, stderrTask).WaitAsync(DrainAfterKill).ConfigureAwait(false);
+            await Task.WhenAll(stdoutTask, stderrTask).WaitAsync(limit).ConfigureAwait(false);
         }
         catch (TimeoutException)
         {
             // A grandchild outside the tree kept a pipe open; what was read is what there is.
         }
 
-        using var exit = new CancellationTokenSource(DrainAfterKill);
+        using var exit = new CancellationTokenSource(limit);
         try
         {
             await process.WaitForExitAsync(exit.Token).ConfigureAwait(false);
@@ -298,11 +298,19 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
     /// the child's main thread, which the threads a tool starts afterwards inherit. Normal is set as well, because a child
     /// otherwise inherits the priority of this process, which can itself run below normal.
     /// </summary>
-    private void SetPriority(Process process, ProcessPriorityClass priority, string tool)
+    internal void SetPriority(Process process, ProcessPriorityClass priority, string tool) =>
+        SetPriority(process, priority, tool, static (target, wanted) => target.PriorityClass = wanted);
+
+    /// <summary>
+    /// The same with the operating system's call passed in. Whether it refuses an exited process is up to the system and the
+    /// <see cref="Process"/> object's view of the exit, which race: Windows accepts the call on a dead process some of the time. A
+    /// test that needs the refusal passes one that throws.
+    /// </summary>
+    internal void SetPriority(Process process, ProcessPriorityClass priority, string tool, Action<Process, ProcessPriorityClass> apply)
     {
         try
         {
-            process.PriorityClass = priority;
+            apply(process, priority);
         }
         catch (Exception exception) when (exception is InvalidOperationException or Win32Exception)
         {
@@ -318,7 +326,7 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
     [LoggerMessage(Level = LogLevel.Debug, Message = "Could not set the priority of {Tool} to {Priority}; it runs at the priority it started with.")]
     private static partial void LogPriorityNotSet(ILogger logger, Exception exception, string tool, ProcessPriorityClass priority);
 
-    private static void KillTree(Process process)
+    internal static void KillTree(Process process)
     {
         try
         {
@@ -347,7 +355,7 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
     private static Task PumpAsync(Stream stream, OutputSink sink, UniversalNewlineSplitter? lines, Action onOutput) =>
         BlockingWork.RunAsync(() => Pump(stream, sink, lines, onOutput));
 
-    private static void Pump(Stream stream, OutputSink sink, UniversalNewlineSplitter? lines, Action onOutput)
+    internal static void Pump(Stream stream, OutputSink sink, UniversalNewlineSplitter? lines, Action onOutput)
     {
         var buffer = new byte[16 * 1024];
         while (true)
@@ -422,7 +430,7 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
     }
 
     /// <summary>Keeps everything, the tail, or nothing.</summary>
-    private sealed class OutputSink(ProcessOutput mode, int tailBytes)
+    internal sealed class OutputSink(ProcessOutput mode, int tailBytes)
     {
         private ArrayBufferWriter<byte> _buffer = new();
 

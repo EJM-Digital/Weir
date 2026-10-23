@@ -20,7 +20,7 @@ public static class WorkAdmissionReader
             if (reader.Read())
             {
                 suite = new SuitePauseSettings(
-                    reader.IsDBNull(0) ? null : reader.GetString(0),
+                    reader.GetString(0),
                     Bool(reader.GetValue(1)),
                     TimestampColumns.Parse(reader.GetValue(2)) is { } until ? Timestamp.FromUtc(until.UtcDateTime) : null,
                     Bool(reader.GetValue(3)));
@@ -74,11 +74,11 @@ public static class WorkAdmissionReader
                     reader.GetInt64(0),
                     Bool(reader.GetValue(1)),
                     Bool(reader.GetValue(2)),
-                    reader.IsDBNull(3) ? null : reader.GetString(3),
+                    reader.GetString(3),
                     Bool(reader.GetValue(4)),
-                    reader.IsDBNull(5) ? null : reader.GetString(5),
-                    reader.IsDBNull(6) ? null : reader.GetString(6),
-                    reader.IsDBNull(7) ? null : reader.GetString(7),
+                    reader.GetString(5),
+                    reader.GetString(6),
+                    reader.GetString(7),
                     Long(reader.GetValue(8))));
             }
         }
@@ -153,7 +153,7 @@ public static class WorkAdmissionReader
         {
             while (reader.Read())
             {
-                libraries.Add(new FilesAtOnceLibrary(reader.GetInt64(0), reader.IsDBNull(1) ? string.Empty : reader.GetString(1), Bool(reader.GetValue(2)), Long(reader.GetValue(3))));
+                libraries.Add(new FilesAtOnceLibrary(reader.GetInt64(0), reader.GetString(1), Bool(reader.GetValue(2)), Long(reader.GetValue(3))));
             }
         }
 
