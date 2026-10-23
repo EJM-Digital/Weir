@@ -17,7 +17,7 @@ real number; the order of the gaps changes slowly.
 | Server: Weir.Host | 89.2% | 79.1% | 51 | 15 |
 | Tray | 75.2% | 74.1% | 1,209 | 406 |
 | Web app | 98.3% | 92.7% | 193 | 678 |
-| Node scripts | not measured | not measured | | |
+| Node scripts | 89.5% | 89.7% | 1,366 | 432 |
 
 The Weir.Core row is from before the first step. The server rows merge the Linux and Windows unit legs (`Weir.Core.Tests`, `Weir.Infrastructure.Tests`,
 `Weir.Api.Tests`); the tray row is `Weir.Tray.Tests` on Windows; the web row is the whole vitest suite, and from the browser-coverage pull request the web figure also counts the browser (E2E) tests, merged with it (`README.md`, "The web figure counts the browser tests"). The out-of-process figure
@@ -63,9 +63,14 @@ Biggest uncovered area first. Each step is one or a few pull requests, each rais
    raised the web floors to 98.2% lines and 92.6% branches. The second covered the Health, Backups and System cards' models and hooks, the library
    manager setup, the row-reorder keyboard moves, the Activity run and outcome words, the Processing words and model, the API client and its error words, and raised the web
    floors to 98.5% lines and 94.4% branches.
-7. **Node scripts** (`scripts/*.mjs`, 118 files, 59 with a test file) are not measured yet. The first step is to measure them
-   (`node --test --experimental-test-coverage`), add a `scripts` row to `floors.json` and the check, and list what cannot run in CI
-   (a script that needs Docker or a published release) in the exclusions file.
+7. **Node scripts** (`scripts/**/*.mjs`). The first step measured them (`node --test --experimental-test-coverage`, in the
+   `repo-checks` job), added the `node-scripts` row to `floors.json` and the floors check, and listed what only a Windows runner or
+   Docker can run in the exclusions file. Counting the scripts no test loads, the figure was 82.2% of lines and 88.2% of branches;
+   covering the check scripts (agent docs, dead code, action pins, the Dockerfile's node major, NuGet advisories, public privacy,
+   the release gate, the TRX and Playwright summaries, the release fixtures, the web coverage merge and the audit retry) brought it
+   to 89.5% and 89.7%, and the floors are set 0.5 below that. What is left is the brand icon build, the coverage inventory and test
+   index, the register and mutation-floor checks, the heavy-CI release gate, the scenario runner and its Deluno world, and the
+   repository-owner sweep.
 
 Each step ends with that project's floor raised to the figure the run printed, and a bug found by a new test is fixed in the same
 pull request with its failing test first. The first step, done with this plan, covered Weir.Core's pure files and found three bugs

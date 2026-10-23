@@ -10,37 +10,50 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { readFfmpegPin } from "./ffmpeg-pin.mjs";
 import { downloadPinned } from "./pinned-download.mjs";
 
-const tools = ["ffmpeg", "ffprobe"];
+export const tools = ["ffmpeg", "ffprobe"];
 
-const destination = process.argv[2];
-if (!destination) {
-  console.error("Usage: node scripts/install-ffmpeg-linux.mjs <folder>");
-  process.exit(2);
+function unpackWithTar(archive, destination) {
+  return spawnSync("tar", ["-xJf", archive, "-C", destination, "--strip-components=2", "--wildcards", ...tools.map((tool) => `*/bin/${tool}`)], {
+    stdio: "inherit",
+  }).status;
 }
 
-if (tools.every((tool) => existsSync(path.join(destination, tool)))) {
-  console.log(`ffmpeg and ffprobe are already in ${destination}.`);
-  process.exit(0);
+/**
+ * Puts the pinned ffmpeg and ffprobe into `destination` unless both are there already.
+ * `download` fetches and checks the archive, `unpack` extracts it and returns the exit status; they are what a test replaces.
+ */
+export async function installFfmpeg(destination, { pin = readFfmpegPin(), download = downloadPinned, unpack = unpackWithTar, log = console.log } = {}) {
+  if (tools.every((tool) => existsSync(path.join(destination, tool)))) {
+    log(`ffmpeg and ffprobe are already in ${destination}.`);
+    return;
+  }
+  const { linux } = pin;
+  const scratch = mkdtempSync(path.join(tmpdir(), "weir-ffmpeg-"));
+  try {
+    const archive = path.join(scratch, linux.name);
+    log(`Downloading ${linux.url}`);
+    await download({ url: linux.url, fileName: linux.name, file: archive, sha256: linux.sha256 });
+
+    mkdirSync(destination, { recursive: true });
+    if (unpack(archive, destination) !== 0) throw new Error(`Unpacking ${linux.name} failed.`);
+    log(`Installed ${tools.join(" and ")} into ${destination}.`);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 }
 
-const { linux } = readFfmpegPin();
-const scratch = mkdtempSync(path.join(tmpdir(), "weir-ffmpeg-"));
-try {
-  const archive = path.join(scratch, linux.name);
-  console.log(`Downloading ${linux.url}`);
-  await downloadPinned({ url: linux.url, fileName: linux.name, file: archive, sha256: linux.sha256 });
-
-  mkdirSync(destination, { recursive: true });
-  const unpacked = spawnSync(
-    "tar",
-    ["-xJf", archive, "-C", destination, "--strip-components=2", "--wildcards", ...tools.map((tool) => `*/bin/${tool}`)],
-    { stdio: "inherit" },
-  );
-  if (unpacked.status !== 0) throw new Error(`Unpacking ${linux.name} failed.`);
-  console.log(`Installed ${tools.join(" and ")} into ${destination}.`);
-} finally {
-  rmSync(scratch, { recursive: true, force: true });
+async function main() {
+  const destination = process.argv[2];
+  if (!destination) {
+    console.error("Usage: node scripts/install-ffmpeg-linux.mjs <folder>");
+    process.exitCode = 2;
+    return;
+  }
+  await installFfmpeg(destination);
 }
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) await main();

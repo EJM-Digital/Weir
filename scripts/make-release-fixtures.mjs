@@ -214,14 +214,19 @@ function session(executable, scratch) {
   return { raw, bundle };
 }
 
-/** One release: pulls it, runs the session against it, scrubs and writes its fixtures. */
-export function makeFixtures(version) {
+/**
+ * One release: pulls it, runs the session against it, scrubs and writes its fixtures.
+ * `fetch` and `runSession` are the docker and dotnet steps, and `folders` where the fixtures are written; a test replaces them.
+ */
+export function makeFixtures(
+  version,
+  { fetch = fetchRelease, runSession = session, values = privateValues(), folders = { databases: databasesFolder, backups: backupsFolder, manifest: manifestFile } } = {},
+) {
   const scratch = mkdtempSync(path.join(os.tmpdir(), "weir-fixture-"));
   try {
-    const { executable, digest } = fetchRelease(version, scratch);
-    const { raw, bundle } = session(executable, scratch);
+    const { executable, digest } = fetch(version, scratch);
+    const { raw, bundle } = runSession(executable, scratch);
 
-    const values = privateValues();
     scrubDatabase(raw, values);
     const survivors = findLeftovers(raw, values);
     if (survivors.length > 0) throw new Error(`The database of ${version} still holds something private after scrubbing: ${survivors.join('; ')}.`);
@@ -229,14 +234,14 @@ export function makeFixtures(version) {
     if (leftovers(scrubbedBundle, values).length > 0) throw new Error(`The backup of ${version} still holds a private value after scrubbing.`);
 
     const description = describeDatabase(raw);
-    mkdirSync(databasesFolder, { recursive: true });
+    mkdirSync(folders.databases, { recursive: true });
     const compressed = gzipSync(readFileSync(raw), { level: 9 });
-    writeFileSync(path.join(databasesFolder, `${version}.db.gz`), compressed);
-    const folder = path.join(backupsFolder, version);
+    writeFileSync(path.join(folders.databases, `${version}.db.gz`), compressed);
+    const folder = path.join(folders.backups, version);
     mkdirSync(folder, { recursive: true });
     writeFileSync(path.join(folder, "configuration-bundle.json"), scrubbedBundle);
 
-    const manifest = existsSync(manifestFile) ? JSON.parse(readFileSync(manifestFile, "utf8")) : { databases: [] };
+    const manifest = existsSync(folders.manifest) ? JSON.parse(readFileSync(folders.manifest, "utf8")) : { databases: [] };
     const entry = {
       version,
       image_digest: digest,
@@ -245,18 +250,21 @@ export function makeFixtures(version) {
       rows: description.rows,
     };
     manifest.databases = [...manifest.databases.filter((existing) => existing.version !== version), entry];
-    writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+    writeFileSync(folders.manifest, `${JSON.stringify(manifest, null, 2)}\n`);
     console.log(`${version}: schema ${description.revision}, ${compressed.length} bytes, ${Object.keys(description.rows).length} tables with rows`);
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
-  const versions = process.argv.slice(2);
+/** Makes the fixtures of each version named; returns the exit code (2 when no version, or one that is not a version, was given). */
+export function main(versions, { make = makeFixtures, error = console.error } = {}) {
   if (versions.length === 0 || versions.some((version) => !/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(version))) {
-    console.error("Usage: node scripts/make-release-fixtures.mjs <release version> [<release version> ...]   (for example 1.0.0-rc.18)");
-    process.exit(2);
+    error("Usage: node scripts/make-release-fixtures.mjs <release version> [<release version> ...]   (for example 1.0.0-rc.18)");
+    return 2;
   }
-  for (const version of versions) makeFixtures(version);
+  for (const version of versions) make(version);
+  return 0;
 }
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) process.exitCode = main(process.argv.slice(2));

@@ -6,41 +6,38 @@
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const NODE_VERSION_FILE = path.join(REPO, ".node-version");
-const DOCKERFILE = path.join(REPO, "Dockerfile");
 const DOCKERFILE_NODE_IMAGE = /^FROM\s+node:(\d+)[^\s]*/m;
 
-function nodeVersionFileMajor() {
-  const raw = readFileSync(NODE_VERSION_FILE, "utf8").trim();
-  const major = raw.match(/^v?(\d+)/)?.[1];
-  if (!major) {
-    console.error(`.node-version does not start with a version number: "${raw}"`);
-    process.exit(1);
+/** The check over the repository at `repo`: whether the two agree, and the line to print either way. */
+export function checkNodeDockerVersion(repo) {
+  const raw = readFileSync(path.join(repo, ".node-version"), "utf8").trim();
+  const expected = raw.match(/^v?(\d+)/)?.[1];
+  if (!expected) {
+    return { ok: false, message: `.node-version does not start with a version number: "${raw}"` };
   }
-  return major;
-}
-
-function dockerfileNodeMajor() {
-  const text = readFileSync(DOCKERFILE, "utf8");
-  const match = text.match(DOCKERFILE_NODE_IMAGE);
-  if (!match) {
-    console.error("Dockerfile has no `FROM node:<major>...` line to check.");
-    process.exit(1);
+  const image = readFileSync(path.join(repo, "Dockerfile"), "utf8").match(DOCKERFILE_NODE_IMAGE);
+  if (!image) {
+    return { ok: false, message: "Dockerfile has no `FROM node:<major>...` line to check." };
   }
-  return match[1];
+  const actual = image[1];
+  if (expected !== actual) {
+    return {
+      ok: false,
+      message:
+        `Dockerfile's node image is major ${actual}, but .node-version pins ${expected}. ` +
+        "Update the Dockerfile's FROM line (and its digest) to match .node-version, or vice versa.",
+    };
+  }
+  return { ok: true, message: `Dockerfile's node image (major ${actual}) matches .node-version.` };
 }
 
-const expected = nodeVersionFileMajor();
-const actual = dockerfileNodeMajor();
-
-if (expected !== actual) {
-  console.error(
-    `Dockerfile's node image is major ${actual}, but .node-version pins ${expected}. ` +
-      "Update the Dockerfile's FROM line (and its digest) to match .node-version, or vice versa.",
-  );
-  process.exit(1);
+/** Prints the result for the repository at `repo`; returns the exit code. */
+export function main(repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."), out = { log: console.log, error: console.error }) {
+  const { ok, message } = checkNodeDockerVersion(repo);
+  (ok ? out.log : out.error)(message);
+  return ok ? 0 : 1;
 }
-console.log(`Dockerfile's node image (major ${actual}) matches .node-version.`);
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) process.exitCode = main();

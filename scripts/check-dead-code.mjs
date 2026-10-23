@@ -22,16 +22,10 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const WEB = path.join(REPO, "apps", "web");
-const ALLOWLIST = path.join(REPO, "scripts", "dead-code-allowlist.json");
-
-const allow = JSON.parse(readFileSync(ALLOWLIST, "utf8"));
-const allowedWeb = new Set(Object.keys(allow.webExports ?? {}));
-
-function webUnusedExports() {
+export function webUnusedExports(repo) {
+  const WEB = path.join(repo, "apps", "web");
   // Knip's own JS entry, run with this node. Avoids `npx` (a shell on Windows, which node refuses
   // to spawn without one) and the .bin/*.cmd shim entirely. What counts as an entry point, a
   // reference or generated code is apps/web/knip.json.
@@ -85,7 +79,8 @@ function webUnusedExports() {
 // Hence no allowlist. A finding here is a defect, not a judgement call: either the rule was never
 // written or the name is a typo. Measured over the repo's history this has found 26 occurrences
 // and zero false positives, so an escape hatch would only ever be used to wave a real bug through.
-function phantomClassNames() {
+export function phantomClassNames(repo) {
+  const WEB = path.join(repo, "apps", "web");
   const SRC = path.join(WEB, "src");
 
   const files = [];
@@ -110,7 +105,7 @@ function phantomClassNames() {
   for (const file of files.filter((f) => f.endsWith(".tsx"))) {
     // Tests render fixtures and assert on markup; a class name there is not a styling claim.
     if (file.endsWith(".test.tsx")) continue;
-    const rel = path.relative(REPO, file).split(path.sep).join("/");
+    const rel = path.relative(repo, file).split(path.sep).join("/");
     readFileSync(file, "utf8")
       .split(/\r?\n/)
       .forEach((line, i) => {
@@ -127,49 +122,55 @@ function phantomClassNames() {
   return { findings, literals, styled: styled.size };
 }
 
-function report(label, findings, allowed, reasons) {
+export function report(label, findings, allowed, reasons, log = console.error) {
   const unexpected = findings.filter((f) => !allowed.has(f));
   const stale = [...allowed].filter((a) => !findings.includes(a));
   if (unexpected.length) {
-    console.error(`[dead-code] ${label}: ${unexpected.length} unreferenced item(s) not on the allowlist:`);
-    for (const f of unexpected) console.error(`  ${f}`);
-    console.error(`  Remove them, wire them to a real consumer, or add them to scripts/dead-code-allowlist.json`);
-    console.error(`  with a reason if they are deliberately kept.`);
+    log(`[dead-code] ${label}: ${unexpected.length} unreferenced item(s) not on the allowlist:`);
+    for (const f of unexpected) log(`  ${f}`);
+    log(`  Remove them, wire them to a real consumer, or add them to scripts/dead-code-allowlist.json`);
+    log(`  with a reason if they are deliberately kept.`);
   }
   if (stale.length) {
-    console.error(`[dead-code] ${label}: allowlist entries that are no longer dead (remove them):`);
-    for (const f of stale) console.error(`  ${f}  — ${reasons[f]}`);
+    log(`[dead-code] ${label}: allowlist entries that are no longer dead (remove them):`);
+    for (const f of stale) log(`  ${f}  — ${reasons[f]}`);
   }
   return unexpected.length + stale.length;
 }
 
-let failures = 0;
+/** Runs both halves of the guard over the repository at `repo`; returns the exit code. */
+export function main(repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."), out = { log: console.log, error: console.error }) {
+  const allow = JSON.parse(readFileSync(path.join(repo, "scripts", "dead-code-allowlist.json"), "utf8"));
+  const allowedWeb = new Set(Object.keys(allow.webExports ?? {}));
+  let failures = 0;
 
-const phantom = phantomClassNames();
-if (phantom.findings.length) {
-  console.error(
-    `[dead-code] phantom classes: ${phantom.findings.length} mm-* class name(s) that no stylesheet styles:`,
-  );
-  for (const f of phantom.findings) console.error(`  ${f.at}  ${f.token}`);
-  console.error(`  Each one is markup claiming a style that does not exist. Write the rule in`);
-  console.error(`  apps/web/src/styles/, or drop the class name. There is no allowlist for these.`);
-  failures += phantom.findings.length;
-} else {
-  console.log(
-    `[dead-code] phantom classes: 0 of ${phantom.literals} literal mm-* use(s) unstyled, ` +
-      `against ${phantom.styled} styled name(s).`,
-  );
+  const phantom = phantomClassNames(repo);
+  if (phantom.findings.length) {
+    out.error(`[dead-code] phantom classes: ${phantom.findings.length} mm-* class name(s) that no stylesheet styles:`);
+    for (const f of phantom.findings) out.error(`  ${f.at}  ${f.token}`);
+    out.error(`  Each one is markup claiming a style that does not exist. Write the rule in`);
+    out.error(`  apps/web/src/styles/, or drop the class name. There is no allowlist for these.`);
+    failures += phantom.findings.length;
+  } else {
+    out.log(
+      `[dead-code] phantom classes: 0 of ${phantom.literals} literal mm-* use(s) unstyled, ` +
+        `against ${phantom.styled} styled name(s).`,
+    );
+  }
+
+  const web = webUnusedExports(repo);
+  if (web.skipped) {
+    out.log(`[dead-code] web skipped: ${web.skipped}`);
+  } else {
+    failures += report("web exports", web.findings, allowedWeb, allow.webExports, out.error);
+    out.log(`[dead-code] web exports: ${web.findings.length} unreferenced, ${allowedWeb.size} allowlisted`);
+  }
+
+  if (failures) {
+    return 1;
+  }
+  out.log("[dead-code] No unexpected dead code.");
+  return 0;
 }
 
-const web = webUnusedExports();
-if (web.skipped) {
-  console.log(`[dead-code] web skipped: ${web.skipped}`);
-} else {
-  failures += report("web exports", web.findings, allowedWeb, allow.webExports);
-  console.log(`[dead-code] web exports: ${web.findings.length} unreferenced, ${allowedWeb.size} allowlisted`);
-}
-
-if (failures) {
-  process.exit(1);
-}
-console.log("[dead-code] No unexpected dead code.");
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) process.exitCode = main();

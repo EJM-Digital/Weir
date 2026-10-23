@@ -68,36 +68,39 @@ export function gh(args) {
   return JSON.parse(execFileSync("gh", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
 }
 
-export function runJobs(repository, runId) {
-  return gh(["run", "view", String(runId), "--repo", repository, "--json", "jobs"]).jobs;
+export function runJobs(repository, runId, ask = gh) {
+  return ask(["run", "view", String(runId), "--repo", repository, "--json", "jobs"]).jobs;
 }
 
 function describe(run) {
   return `run ${run.databaseId} (${run.event}, ${run.status}${run.conclusion ? `/${run.conclusion}` : ""}, ${run.url})`;
 }
 
-function main() {
-  const argv = process.argv.slice(2);
+/**
+ * The release gate over `argv` and `env`; returns the exit code. `ask` is how `gh` is run (a test replaces it) and `headCommit` how
+ * the commit is found when none is given.
+ */
+export function main(argv, env, { ask = gh, headCommit = () => execFileSync("git", ["rev-parse", "HEAD^{commit}"], { encoding: "utf8" }).trim(), log = console.log, error = console.error } = {}) {
   const option = (flag) => (argv.includes(flag) ? argv[argv.indexOf(flag) + 1] : undefined);
-  const repository = process.env.GITHUB_REPOSITORY;
+  const repository = env.GITHUB_REPOSITORY;
   if (!repository) throw new Error("GITHUB_REPOSITORY must be set.");
 
   const runId = option("--run-id");
   if (runId) {
-    const run = gh(["run", "view", runId, "--repo", repository, "--json", "databaseId,event,status,conclusion,headSha,url"]);
-    const problems = evaluateRun(run, runJobs(repository, runId));
-    console.log(`${describe(run)} for ${run.headSha}:`);
-    for (const problem of problems) console.log(`  - ${problem}`);
-    console.log(problems.length ? "Would NOT satisfy the release gate." : "Would satisfy the release gate.");
-    process.exit(problems.length ? 1 : 0);
+    const run = ask(["run", "view", runId, "--repo", repository, "--json", "databaseId,event,status,conclusion,headSha,url"]);
+    const problems = evaluateRun(run, runJobs(repository, runId, ask));
+    log(`${describe(run)} for ${run.headSha}:`);
+    for (const problem of problems) log(`  - ${problem}`);
+    log(problems.length ? "Would NOT satisfy the release gate." : "Would satisfy the release gate.");
+    return problems.length ? 1 : 0;
   }
 
-  const sha = option("--sha") || process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD^{commit}"], { encoding: "utf8" }).trim();
+  const sha = option("--sha") || env.GITHUB_SHA || headCommit();
   if (!/^[0-9a-f]{40}$/.test(sha)) throw new Error(`Not a full commit SHA: ${sha}`);
-  const tag = process.env.GITHUB_REF_NAME || "<tag>";
-  console.log(`Release gate: ${CI_WORKFLOW} must already have passed on ${sha}.`);
+  const tag = env.GITHUB_REF_NAME || "<tag>";
+  log(`Release gate: ${CI_WORKFLOW} must already have passed on ${sha}.`);
 
-  const runs = gh([
+  const runs = ask([
     "run", "list", "--repo", repository, "--workflow", CI_WORKFLOW, "--commit", sha, "--limit", "50",
     "--json", "databaseId,event,status,conclusion,headSha,url",
   ]).filter((run) => run.headSha === sha);
@@ -107,38 +110,38 @@ function main() {
   const verdicts = [];
   for (const run of considered.filter((candidate) => candidate.status === "completed")) {
     // A run that did not succeed is refused without asking for its jobs.
-    const problems = run.conclusion === "success" ? evaluateRun(run, runJobs(repository, run.databaseId)) : evaluateRun(run, [], []);
+    const problems = run.conclusion === "success" ? evaluateRun(run, runJobs(repository, run.databaseId, ask)) : evaluateRun(run, [], []);
     if (problems.length === 0) {
-      console.log(`PASS: ${describe(run)} passed ci-passed on ${sha}.`);
-      return;
+      log(`PASS: ${describe(run)} passed ci-passed on ${sha}.`);
+      return 0;
     }
     verdicts.push({ run, problems });
   }
 
-  console.error(`::error::No ${CI_WORKFLOW} run proves ${sha}. The release will not publish.`);
+  error(`::error::No ${CI_WORKFLOW} run proves ${sha}. The release will not publish.`);
   const pending = considered.filter((run) => run.status !== "completed");
   if (pending.length) {
-    console.error(`CI is still running on this commit: ${pending.map(describe).join("; ")}`);
-    console.error("Tags are made after CI is green. Wait for it to finish, then re-run this release.");
+    error(`CI is still running on this commit: ${pending.map(describe).join("; ")}`);
+    error("Tags are made after CI is green. Wait for it to finish, then re-run this release.");
   }
   if (considered.length === 0) {
-    console.error(`No push or workflow_dispatch run of ${CI_WORKFLOW} exists for this commit${ignored ? ` (${ignored} pull_request run(s) ignored)` : ""}.`);
+    error(`No push or workflow_dispatch run of ${CI_WORKFLOW} exists for this commit${ignored ? ` (${ignored} pull_request run(s) ignored)` : ""}.`);
   }
   for (const { run, problems } of verdicts) {
-    console.error(`${describe(run)} does not qualify:`);
-    for (const problem of problems) console.error(`  - ${problem}`);
+    error(`${describe(run)} does not qualify:`);
+    for (const problem of problems) error(`  - ${problem}`);
   }
-  console.error("To prove this commit, run the full CI on the tag (a manual run skips nothing), wait for it to pass,");
-  console.error("then re-run this release:");
-  console.error(`  gh workflow run ${CI_WORKFLOW} --repo ${repository} --ref ${tag}`);
-  process.exit(1);
+  error("To prove this commit, run the full CI on the tag (a manual run skips nothing), wait for it to pass,");
+  error("then re-run this release:");
+  error(`  gh workflow run ${CI_WORKFLOW} --repo ${repository} --ref ${tag}`);
+  return 1;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
-    main();
-  } catch (error) {
-    console.error(`::error::${error.message}`);
-    process.exit(1);
+    process.exitCode = main(process.argv.slice(2), process.env);
+  } catch (failure) {
+    console.error(`::error::${failure.message}`);
+    process.exitCode = 1;
   }
 }
