@@ -73,6 +73,28 @@ public sealed class ProcessingWatchedFolderScanDispatchScheduleForgetTests : IDi
     }
 
     [Fact]
+    public async Task A_timer_with_no_wake_up_book_or_task_list_goes_on_when_a_workflow_it_scheduled_is_switched_off()
+    {
+        var bare = new ProcessingWatchedFolderScanDispatchScheduleTask(
+            _store.Database, _store.Options, new ProcessingJobStore(_store.Database, _store.Clock), OperatorSettings, Libraries, _store.Clock, _log,
+            scanSettingsChanges: _changes);
+        _libraryId = await ProcessingWatchedFolderScanDispatchScheduleTaskTests.CreateLibraryAsync(_store, _watched, _output, scanIntervalSeconds: 600);
+        await bare.RunOnceAsync(CancellationToken.None);
+        await using (var uow = await UnitOfWork.OpenAsync(_store.Database))
+        {
+            var library = await Libraries.GetAsync(uow, _libraryId) ?? throw new InvalidOperationException();
+            await Libraries.UpdateAsync(uow, library, new ProcessingLibraryInput { Name = library.Name, MediaType = library.MediaType, WatchedFolder = _watched, OutputFolder = _output, Enabled = false });
+            await uow.CommitAsync();
+        }
+
+        _changes.Record();
+        _store.Clock.Advance(TimeSpan.FromSeconds(1));
+        await bare.RunOnceAsync(CancellationToken.None);
+
+        Assert.DoesNotContain(_log.Entries, entry => entry.Level == LogLevel.Error);
+    }
+
+    [Fact]
     public async Task A_scope_whose_periodic_scans_are_switched_off_is_dropped_from_the_wake_up_book()
     {
         await ScheduleAsync();

@@ -39,7 +39,7 @@ public sealed partial class SafeSwap
         return !identityKnown || (current.Device == recorded.Device && current.Inode == recorded.Inode);
     }
 
-    private static string DirectoryOf(string path)
+    internal static string DirectoryOf(string path)
     {
         var directory = Path.GetDirectoryName(path);
         return string.IsNullOrEmpty(directory) ? "." : directory;

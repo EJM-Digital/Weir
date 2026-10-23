@@ -48,7 +48,7 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
     private readonly ConcurrentDictionary<long, byte> _foldersNotSeen = new();
 
     private readonly ScanWakeups? _wakeups;
-    private readonly ILogger<ProcessingWatchedFolderScanDispatchJobHandler>? _logger;
+    private readonly ILogger<ProcessingWatchedFolderScanDispatchJobHandler> _logger;
     private readonly DataChangePublisher? _changes;
 
     public ProcessingWatchedFolderScanDispatchJobHandler(
@@ -86,7 +86,7 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
         _files = files;
         _skipMarkers = skipMarkers;
         _wakeups = wakeups;
-        _logger = logger;
+        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<ProcessingWatchedFolderScanDispatchJobHandler>.Instance;
         _changes = changes;
     }
 
@@ -175,7 +175,7 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
             if (links.HandedOffByManager)
             {
                 // However this scan was queued, it queues nothing: a Deluno-linked workflow is processed only from Deluno's hand-off.
-                _logger?.LogInformation("Did not scan {Library}: {Reason}", library.Name, links.ScanSkippedReason);
+                _logger.LogInformation("Did not scan {Library}: {Reason}", library.Name, links.ScanSkippedReason);
                 return null;
             }
 
@@ -187,7 +187,7 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
                     // is a real problem, so it is a warning in plain words, said once until the folder is back; the next scan looks again.
                     if (_foldersNotSeen.TryAdd(library.Id, 0))
                     {
-                        _logger?.LogWarning(
+                        _logger.LogWarning(
                             "Did not scan {Library}: Weir can't see its watched folder {Folder}. It may have been deleted or its drive disconnected. Check that the folder exists and that Weir can reach it.",
                             library.Name,
                             saved);
@@ -198,14 +198,14 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
 
                 if (_foldersNotSeen.TryRemove(library.Id, out _))
                 {
-                    _logger?.LogInformation("The watched folder {Folder} for {Library} is back, so Weir is scanning it again.", saved, library.Name);
+                    _logger.LogInformation("The watched folder {Folder} for {Library} is back, so Weir is scanning it again.", saved, library.Name);
                 }
             }
 
             var (paths, pathError) = WatchedFolderScanOps.ResolvePathRuntimeForLibrary(library, _options.WeirHome, _fs);
             if (paths is null)
             {
-                throw new InvalidOperationException(pathError ?? "Path settings are incomplete for this scan.");
+                throw new InvalidOperationException(pathError);
             }
 
             // Manager queue signals: ask every manager linked to this library, and note who did not answer. Always the
