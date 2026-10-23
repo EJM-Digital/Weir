@@ -40,7 +40,17 @@
       "file": "apps/server/coverage.runsettings",
       "marker": "ExcludeFromCodeCoverageAttribute",
       "kind": "policy",
-      "reason": "Honours [ExcludeFromCodeCoverage] in the code. There are none today, and a new one fails the exclusions check until it is listed here with its own kind and reason."
+      "reason": "Honours [ExcludeFromCodeCoverage] in the code. Each use is listed below with its own kind and reason; a new one fails the exclusions check until it is listed here."
+    },
+    {
+      "id": "server-firewall-policy-read",
+      "file": "apps/server/src/Weir.Infrastructure/Runtime/ComServerFirewall.cs",
+      "marker": "ExcludeFromCodeCoverage",
+      "count": 1,
+      "kind": "platform-only",
+      "coveredBy": "windows",
+      "provedBy": "scripts/scenarios-ci/tray-network-access.mjs (network-access-from-weir), which makes Windows Firewall's rule for the installed server through System > About and reads the answer Weir gives about it",
+      "reason": "Read opens Windows Firewall's own policy object (HNetCfg.FwPolicy2) and walks every rule on the machine; a unit test has no firewall rule for the server program to find, and must not add one to the machine it runs on. What Weir makes of the rules is run in NetworkAccessDecision tests, how one rule is read in ComServerFirewallTests with a stand-in rule, and what Weir says when the policy object cannot be reached in the same class."
     },
     {
       "id": "server-obj-folder",

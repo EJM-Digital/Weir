@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
 using Weir.Core.LibraryMode;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Processing.RemuxPass;
 
 namespace Weir.Infrastructure.LibraryMode;
@@ -135,11 +136,18 @@ public interface ISwapFileSystem
 /// </remarks>
 public sealed partial class PhysicalSwapFileSystem : ISwapFileSystem
 {
+    private readonly IFileSystem _files;
+
+    public PhysicalSwapFileSystem(IFileSystem? files = null)
+    {
+        _files = files ?? PhysicalFileSystem.Instance;
+    }
+
     public static PhysicalSwapFileSystem Instance { get; } = new();
 
-    public bool FileExists(string path) => File.Exists(path);
+    public bool FileExists(string path) => _files.FileExists(path);
 
-    public SourceFingerprint Fingerprint(string path) => SourceFiles.Fingerprint(path);
+    public SourceFingerprint Fingerprint(string path) => SourceFiles.Fingerprint(path, _files);
 
     public int? LinkCount(string path)
     {
@@ -155,7 +163,7 @@ public sealed partial class PhysicalSwapFileSystem : ISwapFileSystem
     }
 
     public bool IsReadOnly(string path) =>
-        OperatingSystem.IsWindows() && File.GetAttributes(path).HasFlag(FileAttributes.ReadOnly);
+        OperatingSystem.IsWindows() && _files.GetAttributes(path).HasFlag(FileAttributes.ReadOnly);
 
     public long? AvailableFreeBytes(string directory)
     {
@@ -166,7 +174,7 @@ public sealed partial class PhysicalSwapFileSystem : ISwapFileSystem
                 return GetDiskFreeSpaceExW(directory, out var available, out _, out _) ? (long)Math.Min(available, long.MaxValue) : null;
             }
 
-            return new DriveInfo(directory).AvailableFreeSpace;
+            return _files.GetAvailableFreeSpace(directory);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
         {
@@ -179,14 +187,14 @@ public sealed partial class PhysicalSwapFileSystem : ISwapFileSystem
         var probe = Path.Join(directory, $".weir-write-test-{Environment.ProcessId}-{Guid.NewGuid():N}");
         try
         {
-            using var stream = new FileStream(probe, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1);
+            using var stream = _files.OpenFile(probe, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1);
             stream.WriteByte(0);
         }
         finally
         {
             try
             {
-                File.Delete(probe);
+                _files.DeleteFile(probe);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
@@ -257,7 +265,7 @@ public sealed partial class PhysicalSwapFileSystem : ISwapFileSystem
 
         try
         {
-            File.Move(source, destination, overwrite: false);
+            _files.MoveFile(source, destination, overwrite: false);
         }
         catch (IOException exception) when (exception is not FileInUseException && exception.HResult is Ebusy or Etxtbsy)
         {
@@ -273,7 +281,7 @@ public sealed partial class PhysicalSwapFileSystem : ISwapFileSystem
     {
         try
         {
-            File.Delete(path);
+            _files.DeleteFile(path);
         }
         catch (IOException exception) when (exception is not FileInUseException && IsInUseError(exception))
         {
@@ -281,11 +289,11 @@ public sealed partial class PhysicalSwapFileSystem : ISwapFileSystem
         }
     }
 
-    public void EnsureDirectory(string directory) => Directory.CreateDirectory(directory);
+    public void EnsureDirectory(string directory) => _files.CreateDirectory(directory);
 
     public string ContentHash(string path)
     {
-        using var stream = File.OpenRead(path);
+        using var stream = _files.OpenFile(path, FileMode.Open, FileAccess.Read, FileShare.Read);
         return Convert.ToHexString(SHA256.HashData(stream));
     }
 
@@ -293,7 +301,7 @@ public sealed partial class PhysicalSwapFileSystem : ISwapFileSystem
     {
         try
         {
-            using var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1);
+            using var stream = _files.OpenFile(path, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1);
             return true;
         }
         catch (IOException)
@@ -322,7 +330,7 @@ public sealed partial class PhysicalSwapFileSystem : ISwapFileSystem
 
         try
         {
-            File.Move(source, destination, overwrite: true);
+            _files.MoveFile(source, destination, overwrite: true);
         }
         catch (IOException exception) when (exception is not FileInUseException && exception.HResult is Ebusy or Etxtbsy)
         {
@@ -334,7 +342,7 @@ public sealed partial class PhysicalSwapFileSystem : ISwapFileSystem
         }
     }
 
-    public void CopyOverReservation(string source, string destination) => File.Copy(source, destination, overwrite: true);
+    public void CopyOverReservation(string source, string destination) => _files.CopyFile(source, destination, overwrite: true);
 
     public IEnumerable<string> EnumerateLeftovers(string folder)
     {
@@ -347,7 +355,7 @@ public sealed partial class PhysicalSwapFileSystem : ISwapFileSystem
             // Never follow a link out of the library, and never skip a hidden leftover.
             AttributesToSkip = FileAttributes.ReparsePoint,
         };
-        return Directory.EnumerateFiles(folder, "*.weir-*", options)
+        return _files.EnumerateFiles(folder, "*.weir-*", options)
             .Where(path => SafeSwapRules.TryParseLeftover(path, out _, out _));
     }
 

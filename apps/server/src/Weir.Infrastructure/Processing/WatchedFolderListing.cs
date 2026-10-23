@@ -1,4 +1,5 @@
 using Weir.Core.Rules;
+using Weir.Infrastructure.IO;
 
 namespace Weir.Infrastructure.Processing;
 
@@ -9,11 +10,15 @@ public sealed record WatchedMediaFile(string FullPath, long SizeBytes, DateTime 
     public long ModifiedTimeNs => (ModifiedUtc - DateTime.UnixEpoch).Ticks * 100;
 
     /// <summary>The file as it is on disk now, or null when it is gone or cannot be read.</summary>
-    public static WatchedMediaFile? Stat(string path)
+    public static WatchedMediaFile? Stat(string path, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         try
         {
-            return From(new FileInfo(path));
+            var target = files.GetLinkTarget(path, isDirectory: false) is null ? path : files.ResolveLinkTarget(path, isDirectory: false, returnFinalTarget: true);
+            return target is not null && files.FileExists(target)
+                ? new WatchedMediaFile(Path.GetFullPath(path), files.GetLength(target), files.GetLastWriteTimeUtc(target), files.GetCreationTimeUtc(target))
+                : null;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
@@ -67,9 +72,12 @@ public static class WatchedFolderListing
 
     /// <summary>Whether the path is an existing file with a media extension (the allowlist itself is
     /// <see cref="RemuxRules.MediaExtensions"/>).</summary>
-    public static bool IsProcessingMediaCandidate(string path)
+    public static bool IsProcessingMediaCandidate(string path) => IsProcessingMediaCandidate(path, PhysicalFileSystem.Instance);
+
+    /// <inheritdoc cref="IsProcessingMediaCandidate(string)"/>
+    public static bool IsProcessingMediaCandidate(string path, IFileSystem files)
     {
-        return File.Exists(path) && IsMediaExtension(Path.GetExtension(path).ToLowerInvariant());
+        return files.FileExists(path) && IsMediaExtension(Path.GetExtension(path).ToLowerInvariant());
     }
 
     /// <summary>Whether the path looks like a download client's in-progress artifact: a hash-named file, or a
@@ -104,14 +112,15 @@ public static class WatchedFolderListing
         IReadOnlyCollection<string>? mediaExtensions,
         IReadOnlyCollection<string>? excludeMarkers,
         bool excludeHidden,
-        bool topLevelOnly)
+        bool topLevelOnly,
+        IFileSystem? files = null)
     {
         var root = Path.GetFullPath(watchedRoot);
         var found = new List<WatchedMediaFile>();
         var rejected = 0;
         var rejectedSuffixes = new SortedSet<string>(StringComparer.Ordinal);
         var configuredExtensions = ConfiguredExtensions(mediaExtensions);
-        foreach (var info in Walk(root, topLevelOnly).OrderBy(file => file.FullName, StringComparer.Ordinal))
+        foreach (var info in Walk(root, topLevelOnly, files: files).OrderBy(file => file.FullName, StringComparer.Ordinal))
         {
             var p = info.FullName;
             var relative = Path.GetRelativePath(root, p);
@@ -133,7 +142,7 @@ public static class WatchedFolderListing
                 continue;
             }
 
-            if ((info.Attributes.HasFlag(FileAttributes.ReparsePoint) ? WatchedMediaFile.Stat(p) : WatchedMediaFile.From(info)) is { } file)
+            if ((info.Attributes.HasFlag(FileAttributes.ReparsePoint) ? WatchedMediaFile.Stat(p, files) : WatchedMediaFile.From(info)) is { } file)
             {
                 found.Add(file);
             }
@@ -148,9 +157,10 @@ public static class WatchedFolderListing
     /// A folder Weir may not read still fails the scan, which is a real problem. <paramref name="list"/> is the test seam that
     /// reads one folder.
     /// </summary>
-    internal static List<FileInfo> Walk(string root, bool topLevelOnly, Func<DirectoryInfo, IEnumerable<FileSystemInfo>>? list = null)
+    internal static List<FileInfo> Walk(string root, bool topLevelOnly, Func<DirectoryInfo, IEnumerable<FileSystemInfo>>? list = null, IFileSystem? files = null)
     {
-        list ??= folder => folder.EnumerateFileSystemInfos();
+        files ??= PhysicalFileSystem.Instance;
+        list ??= folder => files.EnumerateFileSystemInfos(folder.FullName);
         var found = new List<FileInfo>();
         var pending = new Stack<DirectoryInfo>([new DirectoryInfo(root)]);
         while (pending.TryPop(out var folder))
@@ -159,7 +169,7 @@ public static class WatchedFolderListing
             {
                 foreach (var entry in list(folder))
                 {
-                    if ((entry as FileInfo ?? LinkedFile(entry)) is { } file)
+                    if ((entry as FileInfo ?? LinkedFile(entry, files)) is { } file)
                     {
                         found.Add(file);
                     }
@@ -179,8 +189,8 @@ public static class WatchedFolderListing
     }
 
     /// <summary>A directory entry that is a symbolic link to a file counts as that file, as <see cref="File.Exists"/> treats it.</summary>
-    private static FileInfo? LinkedFile(FileSystemInfo entry) =>
-        entry.LinkTarget is not null && File.Exists(entry.FullName) ? new FileInfo(entry.FullName) : null;
+    private static FileInfo? LinkedFile(FileSystemInfo entry, IFileSystem files) =>
+        entry.LinkTarget is not null && files.FileExists(entry.FullName) ? new FileInfo(entry.FullName) : null;
 
     /// <summary>The extensions a workflow names, lower-case with a leading dot, or null when it names none and the built-in list applies.</summary>
     internal static HashSet<string>? ConfiguredExtensions(IReadOnlyCollection<string>? mediaExtensions) =>

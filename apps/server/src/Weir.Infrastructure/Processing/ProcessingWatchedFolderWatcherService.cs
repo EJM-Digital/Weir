@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Weir.Core.Configuration;
 using Weir.Core.Processing;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Jobs;
 using Weir.Infrastructure.Sqlite;
 
@@ -63,6 +64,7 @@ public class ProcessingWatchedFolderWatcherService : BackgroundService
     private readonly TimeProvider _time;
     private readonly ILogger<ProcessingWatchedFolderWatcherService> _logger;
     private readonly ScanSettingsChanges _scanSettingsChanges;
+    private readonly IFileSystem _files;
 
     public ProcessingWatchedFolderWatcherService(
         SqliteDatabase database,
@@ -72,7 +74,8 @@ public class ProcessingWatchedFolderWatcherService : BackgroundService
         LibraryStore libraries,
         TimeProvider time,
         ILogger<ProcessingWatchedFolderWatcherService> logger,
-        ScanSettingsChanges? scanSettingsChanges = null)
+        ScanSettingsChanges? scanSettingsChanges = null,
+        IFileSystem? files = null)
     {
         _database = database ?? throw new ArgumentNullException(nameof(database));
         _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -82,6 +85,7 @@ public class ProcessingWatchedFolderWatcherService : BackgroundService
         _time = time ?? throw new ArgumentNullException(nameof(time));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _scanSettingsChanges = scanSettingsChanges ?? new ScanSettingsChanges();
+        _files = files ?? PhysicalFileSystem.Instance;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -256,7 +260,7 @@ public class ProcessingWatchedFolderWatcherService : BackgroundService
     {
         try
         {
-            if (!Directory.Exists(folder))
+            if (!_files.DirectoryExists(folder))
             {
                 throw new DirectoryNotFoundException($"{folder} is not a folder Weir can see");
             }
@@ -281,7 +285,7 @@ public class ProcessingWatchedFolderWatcherService : BackgroundService
             {
                 // A directory event is always accompanied by the file event that matters. A delete is not work appearing, but the
                 // scan it brings is what finds a file that left before Weir started on it, and says so.
-                if (Directory.Exists(e.FullPath))
+                if (_files.DirectoryExists(e.FullPath))
                 {
                     return;
                 }
@@ -345,7 +349,7 @@ public class ProcessingWatchedFolderWatcherService : BackgroundService
     /// </summary>
     private bool LogWatcherError(long libraryId, string library, string folder, Exception? error)
     {
-        if (!Directory.Exists(folder))
+        if (!_files.DirectoryExists(folder))
         {
             // No scan can help: the restart records that Weir can no longer watch it.
             _logger.LogWarning(

@@ -1,3 +1,5 @@
+using Weir.Infrastructure.IO;
+
 namespace Weir.Infrastructure.MediaManagers;
 
 /// <summary>
@@ -16,8 +18,9 @@ public static class FinalPaths
     /// qualified, does not exist here, or a link on the way is broken or unreadable. It reads only link targets and never
     /// creates or changes anything.
     /// </summary>
-    public static string? Resolve(string path)
+    public static string? Resolve(string path, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         if (string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path))
         {
             return null;
@@ -32,25 +35,25 @@ public static class FinalPaths
             while (pending.Count > 0)
             {
                 var candidate = Path.Join(resolved, pending.Pop());
-                FileSystemInfo entry = Directory.Exists(candidate) ? new DirectoryInfo(candidate) : new FileInfo(candidate);
-                if (!entry.Exists)
+                var isDirectory = files.DirectoryExists(candidate);
+                if (!isDirectory && !files.FileExists(candidate))
                 {
                     return null;
                 }
 
-                if (entry.LinkTarget is null)
+                if (files.GetLinkTarget(candidate, isDirectory) is null)
                 {
                     resolved = candidate;
                     continue;
                 }
 
-                if (++linksFollowed > MaxLinksFollowed || entry.ResolveLinkTarget(returnFinalTarget: false) is not { } target)
+                if (++linksFollowed > MaxLinksFollowed || files.ResolveLinkTarget(candidate, isDirectory, returnFinalTarget: false) is not { } target)
                 {
                     return null;
                 }
 
-                resolved = Path.GetPathRoot(target.FullName) ?? string.Empty;
-                foreach (var part in PartsBelowRoot(target.FullName).Reverse())
+                resolved = Path.GetPathRoot(target) ?? string.Empty;
+                foreach (var part in PartsBelowRoot(target).Reverse())
                 {
                     pending.Push(part);
                 }
