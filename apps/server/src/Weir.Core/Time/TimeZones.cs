@@ -8,7 +8,7 @@ public interface ITimeZoneResolver
     bool TryFind(string name, out TimeZoneInfo zone);
 }
 
-/// <summary>The resolver every server component uses: <see cref="TimeZones.TryFind"/>.</summary>
+/// <summary>The resolver every server component uses: <see cref="TimeZones.TryFind(string?, out TimeZoneInfo)"/>.</summary>
 public sealed class IanaTimeZoneResolver : ITimeZoneResolver
 {
     public bool TryFind(string name, out TimeZoneInfo zone) => TimeZones.TryFind(name, out zone);
@@ -25,7 +25,14 @@ public sealed class IanaTimeZoneResolver : ITimeZoneResolver
 public static class TimeZones
 {
     /// <summary>The zone for an exact IANA name; false for an unknown or malformed name.</summary>
-    public static bool TryFind(string? name, out TimeZoneInfo zone)
+    public static bool TryFind(string? name, out TimeZoneInfo zone) =>
+        TryFind(name, static (string id, out TimeZoneInfo found) => TZConvert.TryGetTimeZoneInfo(id, out found!), out zone);
+
+    /// <summary>Reads a zone from the system's time zone data; false when the data does not have it.</summary>
+    internal delegate bool ZoneLookup(string name, out TimeZoneInfo zone);
+
+    /// <summary><see cref="TryFind(string?, out TimeZoneInfo)"/> with the system's data passed in, which a host without a zone's data stands in for.</summary>
+    internal static bool TryFind(string? name, ZoneLookup lookup, out TimeZoneInfo zone)
     {
         zone = TimeZoneInfo.Utc;
         if (string.IsNullOrEmpty(name) || name.Contains('\0', StringComparison.Ordinal) || !TZConvert.KnownIanaTimeZoneNames.Contains(name))
@@ -33,7 +40,7 @@ public static class TimeZones
             return false;
         }
 
-        if (TZConvert.TryGetTimeZoneInfo(name, out var found))
+        if (lookup(name, out var found))
         {
             zone = found;
             return true;

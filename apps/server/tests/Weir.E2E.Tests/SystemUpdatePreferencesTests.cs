@@ -111,6 +111,7 @@ public sealed class SystemUpdatePreferencesTests(E2EServer server) : E2ETestBase
         var toggled = Sent(await requests.OnlyChangeSinceAsync(mark, "the startup check"));
         Assert.Equal(!wasOn, (bool)toggled["check_on_startup"]!);
         Assert.Equal("DownloadOnly", (string?)toggled["mode"]);
+        await Expect(Saved(page)).ToBeVisibleAsync();
         Assert.Equal(!wasOn, (bool)(await system.ReadAsync(UpdateSettings))["check_on_startup"]!);
 
         await Expect(Every(page).Locator("option")).ToHaveTextAsync(["15 minutes", "30 minutes", "1 hour", "2 hours", "6 hours", "12 hours", "24 hours"]);

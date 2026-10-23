@@ -261,4 +261,14 @@ public sealed class NetworkAccessEndpointTests
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.StartsWith("Set by Docker's port mapping", await Detail(response), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void A_copy_of_weir_that_does_not_manage_its_exposure_and_gives_no_reason_has_an_empty_summary()
+    {
+        var status = Status(NetworkAccessState.NotApplicable, scope: null);
+
+        var wire = NetworkAccessStatusWire.From(status, "MEDIA-PC", notChangeableReason: null);
+
+        Assert.Equal(string.Empty, Assert.IsType<WireString>(wire["summary"]).Value);
+    }
 }

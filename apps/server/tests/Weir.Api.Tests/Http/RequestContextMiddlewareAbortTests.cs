@@ -89,6 +89,22 @@ public sealed class RequestContextMiddlewareAbortTests
         Assert.Single(logger.Entries, entry => entry.Level == LogLevel.Error && entry.Message.Contains("Unhandled request failure", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task A_fault_that_is_not_the_connection_going_away_is_still_a_failure_when_the_client_has_left()
+    {
+        var logger = new CapturingLoggerFactory();
+        using var aborted = new CancellationTokenSource();
+        var middleware = NewMiddleware(logger, async _ =>
+        {
+            await aborted.CancelAsync();
+            throw new InvalidOperationException("The database refused the write.");
+        });
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => middleware.InvokeAsync(NewContext(aborted.Token)));
+
+        Assert.Single(logger.Entries, entry => entry.Level == LogLevel.Error && entry.Message.Contains("Unhandled request failure", StringComparison.Ordinal));
+    }
+
     private static DefaultHttpContext NewContext(CancellationToken requestAborted)
     {
         var context = new DefaultHttpContext { RequestAborted = requestAborted };

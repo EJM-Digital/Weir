@@ -5,15 +5,14 @@ namespace Weir.Infrastructure.Tests.Activity;
 /// <summary>The feed every open stream listens to: each subscriber hears what is published after it joined, and a slow one never holds up the rest.</summary>
 public sealed class BroadcastTests
 {
+    /// <summary>Reads what is already waiting. Nothing here waits on a clock: a published item is there to read at once.</summary>
     private static async Task<T> NextAsync<T>(BroadcastSubscription<T> subscription)
     {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        await foreach (var item in subscription.ReadAllAsync(timeout.Token))
-        {
-            return item;
-        }
-
-        throw new InvalidOperationException("The subscription ended.");
+        await using var items = subscription.ReadAllAsync(CancellationToken.None).GetAsyncEnumerator();
+        var next = items.MoveNextAsync();
+        Assert.True(next.IsCompletedSuccessfully, "The published item was not waiting to be read.");
+        Assert.True(await next, "The subscription ended.");
+        return items.Current;
     }
 
     [Fact]
@@ -62,8 +61,10 @@ public sealed class BroadcastTests
 
         feed.Publish("after");
 
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        Assert.Empty(await leaver.ReadAllAsync(timeout.Token).ToListAsync(timeout.Token));
+        var rest = leaver.ReadAllAsync(CancellationToken.None).ToListAsync();
+
+        Assert.True(rest.IsCompletedSuccessfully, "The stream of a subscriber that left did not end at once.");
+        Assert.Empty(await rest);
     }
 
     [Fact]

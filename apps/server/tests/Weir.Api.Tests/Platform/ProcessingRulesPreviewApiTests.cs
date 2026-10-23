@@ -356,4 +356,29 @@ public sealed class ProcessingRulesPreviewApiTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
+
+    [Theory]
+    [InlineData("tv", "   ")]
+    [InlineData("movie", "   ")]
+    public async Task A_workflow_of_either_kind_previews_unsaved_rules_whose_name_is_blank(string mediaType, string name)
+    {
+        var (server, runner) = await StartAsync();
+        await using var _ = server;
+        runner.ProbeJson = TwoAudioTracksProbe;
+        await TestDatabase.SeedAdminAsync(server);
+        var client = new ApiTestClient(server);
+        await client.SignInAsync();
+        var (watched, output) = MakeLibraryFolders();
+        using var created = await client.PostAsync(
+            "/api/v1/processing/libraries",
+            new { csrf_token = await client.CsrfAsync(), name = "Preview " + mediaType, media_type = mediaType, watched_folder = watched, output_folder = output });
+        var libraryId = (await ApiTestClient.Json(created))!["id"]!.GetValue<long>();
+        await File.WriteAllBytesAsync(Path.Join(watched, "episode.mkv"), new byte[16]);
+
+        using var preview = await client.PostAsync(
+            $"/api/v1/processing/libraries/{libraryId}/preview",
+            new { csrf_token = await client.CsrfAsync(), relative_path = "episode.mkv", rules = new { name, primary_audio_lang = "eng" } });
+
+        Assert.Equal(HttpStatusCode.OK, preview.StatusCode);
+    }
 }

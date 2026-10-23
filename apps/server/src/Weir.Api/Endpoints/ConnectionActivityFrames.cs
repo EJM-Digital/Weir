@@ -20,9 +20,9 @@ public sealed class ConnectionActivityFrames
     public async IAsyncEnumerable<string> ForAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         using var subscription = _hub.Subscribe();
-        await foreach (var activity in subscription.ReadAllAsync(cancellationToken).ConfigureAwait(false))
+        while (!cancellationToken.IsCancellationRequested)
         {
-            yield return Frame(activity);
+            yield return Frame(await subscription.ReadAsync(cancellationToken).ConfigureAwait(false));
         }
     }
 

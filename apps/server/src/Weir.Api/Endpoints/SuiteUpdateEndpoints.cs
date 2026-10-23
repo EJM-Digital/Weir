@@ -77,7 +77,7 @@ internal sealed class SuiteUpdateEndpointHandlers
         return ApiRoutes.Ok(_files.WriteSettings(mode, checkOnStartup, interval, checkForUpdates));
     }
 
-    private static bool CheckingIsOn(WireObject settings) => settings.Get("check_for_updates")?.IsTruthy ?? false;
+    private static bool CheckingIsOn(WireObject settings) => WireConvert.Truthy(settings.Get("check_for_updates"));
 
     public async Task<ApiResult> GetUpdateStateAsync(ApiRequest request)
     {
@@ -100,12 +100,12 @@ internal sealed class SuiteUpdateEndpointHandlers
         await RequireConfirmedAdminAsync(request).ConfigureAwait(false);
         RequireTray();
         var state = _files.ReadState();
-        if (state.Get("downloaded")?.IsTruthy ?? false)
+        if (WireConvert.Truthy(state.Get("downloaded")))
         {
             throw new ApiException(StatusCodes.Status409Conflict, "An update is already downloaded. Restart Weir to apply it.");
         }
 
-        var current = (state.Get("state") as WireString)?.Value;
+        var current = WireConvert.Str(state["state"]);
         if (current == step)
         {
             return ApiRoutes.Ok(state);
@@ -127,7 +127,7 @@ internal sealed class SuiteUpdateEndpointHandlers
         await RequireConfirmedAdminAsync(request).ConfigureAwait(false);
         RequireTray();
         var state = _files.ReadState();
-        if (!(state.Get("downloaded")?.IsTruthy ?? false))
+        if (!WireConvert.Truthy(state.Get("downloaded")))
         {
             throw new ApiException(StatusCodes.Status409Conflict, "No downloaded update is pending.");
         }

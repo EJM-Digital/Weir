@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Weir.Infrastructure.Tests\TestSupport\OsFacts.cs" Link="TestSupport\OsFacts.cs" />
+    <Compile Include="..\Weir.Infrastructure.Tests\TestSupport\UnreadablePath.cs" Link="TestSupport\UnreadablePath.cs" />
     <Compile Include="..\Weir.Infrastructure.Tests\TestSupport\CheapPasswordHash.cs" Link="TestSupport\CheapPasswordHash.cs" />
     <Compile Include="..\Weir.Infrastructure.Tests\TestSupport\MigratedDatabaseTemplate.cs" Link="TestSupport\MigratedDatabaseTemplate.cs" />
   </ItemGroup>

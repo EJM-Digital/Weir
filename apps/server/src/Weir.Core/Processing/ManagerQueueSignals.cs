@@ -54,7 +54,7 @@ public static class QueueRowMapping
     /// <summary>Resolve a dialect from a media-scope string, accepting the common spellings.</summary>
     public static QueueDialect DialectForScope(string scope)
     {
-        var key = WireStrings.Strip(scope ?? string.Empty).ToLowerInvariant();
+        var key = WireStrings.Strip(scope).ToLowerInvariant();
         if (DialectsByScope.TryGetValue(key, out var dialect))
         {
             return dialect;

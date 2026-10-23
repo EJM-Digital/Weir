@@ -44,5 +44,5 @@ public static partial class RemuxRules
         return CodecRankLookup.TryGetValue(c, out var rank) ? rank : CodecUnknownRank;
     }
 
-    private static bool IsLosslessAudio(string? codecName) => LosslessCodecs.Contains(RulesJson.Lower(WireStrings.Strip(codecName ?? string.Empty)));
+    private static bool IsLosslessAudio(string codecName) => LosslessCodecs.Contains(RulesJson.Lower(WireStrings.Strip(codecName)));
 }

@@ -6,7 +6,7 @@ namespace Weir.Core.Rules;
 /// <summary>Detects a regional/script variant from a track's name: marker matching, base-language classification and the table walk.</summary>
 public static partial class LanguageVariants
 {
-    private static bool IsCjk(char c) => (c >= '⺀' && c <= '鿿') || (c >= '豈' && c <= '﫿');
+    internal static bool IsCjk(char c) => (c >= '⺀' && c <= '鿿') || (c >= '豈' && c <= '﫿');
 
     private static bool ContainsCjk(string s) => s.Any(IsCjk);
 
@@ -59,11 +59,6 @@ public static partial class LanguageVariants
     /// <summary>A whole-token, case-insensitive substring match: neither side of the match may sit against a letter or digit.</summary>
     private static bool ContainsWholeToken(string haystack, string needle)
     {
-        if (needle.Length == 0)
-        {
-            return false;
-        }
-
         var idx = 0;
         while (true)
         {

@@ -64,7 +64,7 @@ internal sealed record SystemLogQuery(SystemLogFilter Filter, SystemLogOrder Ord
         var values = new List<string>();
         foreach (var raw in request.Context.Request.Query[name])
         {
-            foreach (var part in (raw ?? string.Empty).Split(ListSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            foreach (var part in string.Concat(raw).Split(ListSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
                 if (FieldRules.TryLiteral(new WireString(part), ["query", name], allowed, issues, out var value) && !values.Contains(value))
                 {
@@ -92,12 +92,12 @@ internal sealed record SystemLogQuery(SystemLogFilter Filter, SystemLogOrder Ord
 
     private static DateTimeOffset? When(ApiRequest request, string name, ValidationIssues issues)
     {
-        if (request.Query(name) is not { Length: > 0 } raw || !FieldRules.TryDateTime(new WireString(raw), ["query", name], issues, out var value) || value is not { } moment)
+        if (request.Query(name) is not { Length: > 0 } raw || !FieldRules.TryDateTime(new WireString(raw), ["query", name], issues, out var value))
         {
             return null;
         }
 
-        return new DateTimeOffset(moment.AsUtc, TimeSpan.Zero);
+        return new DateTimeOffset(value.GetValueOrDefault().AsUtc, TimeSpan.Zero);
     }
 
     private static int ReadLimit(ApiRequest request, ValidationIssues issues) =>

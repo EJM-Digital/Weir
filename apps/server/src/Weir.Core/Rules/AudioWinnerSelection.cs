@@ -43,11 +43,6 @@ public static partial class RemuxRules
 
     private static AudioCandidate? PickFromHint(List<AudioCandidate> pool, IReadOnlyList<int> hint)
     {
-        if (hint.Count == 0)
-        {
-            return null;
-        }
-
         var byIndex = new Dictionary<int, AudioCandidate>();
         foreach (var candidate in pool)
         {
@@ -68,22 +63,15 @@ public static partial class RemuxRules
     /// <summary><c>min(pool, key=...)</c>: the first candidate with the smallest key.</summary>
     private static AudioCandidate PickBest(List<AudioCandidate> pool, List<string> preferredList, bool useFallbackPenalty, IReadOnlyList<TrackSorter> sorters)
     {
-        AudioCandidate? best = null;
-        List<long>? bestKey = null;
-        foreach (var c in pool)
-        {
-            int? penalty = useFallbackPenalty
-                ? (c.LangLabel.Length > 0 && preferredList.Any(p => LanguageVariants.Matches(p, c.LangLabel, c.Variant.Identifier)) ? 0 : 1)
-                : null;
-            var key = QualitySortKey(c, penalty, sorters);
-            if (bestKey is null || SortKeyComparer.Instance.Compare(key, bestKey) < 0)
-            {
-                best = c;
-                bestKey = key;
-            }
-        }
+        int? PenaltyFor(AudioCandidate c) => useFallbackPenalty
+            ? (c.LangLabel.Length > 0 && preferredList.Any(p => LanguageVariants.Matches(p, c.LangLabel, c.Variant.Identifier)) ? 0 : 1)
+            : null;
 
-        return best ?? throw new InvalidOperationException("min() arg is an empty sequence");
+        // Aggregate keeps the earlier candidate on a tie and throws, as min() does, on an empty pool.
+        return pool
+            .Select(c => (Candidate: c, Key: QualitySortKey(c, PenaltyFor(c), sorters)))
+            .Aggregate((best, next) => SortKeyComparer.Instance.Compare(next.Key, best.Key) < 0 ? next : best)
+            .Candidate;
     }
 
     private static AudioCandidate? SelectAudioWinner(ProcessingRulesConfig config, List<AudioCandidate> candidates, List<string> notes)

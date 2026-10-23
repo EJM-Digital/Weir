@@ -114,7 +114,7 @@ public static partial class LibraryRules
             }
 
             var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            if (!string.IsNullOrEmpty(userProfile) && PathsEqual(fullPath, MediaToolLocations.Normalize(userProfile, windows), windows))
+            if (PathsEqual(fullPath, MediaToolLocations.Normalize(userProfile, windows), windows))
             {
                 throw new ProcessingLibraryException($"Weir can't use your whole user profile folder as a {label} folder. Choose a folder inside it.");
             }
@@ -159,11 +159,14 @@ public static partial class LibraryRules
     }
 
     /// <summary>The Windows directory and both Program Files folders, normalized; empty (non-Windows host) entries are skipped.</summary>
-    private static IEnumerable<string> WindowsReservedRoots()
+    private static IEnumerable<string> WindowsReservedRoots() => WindowsReservedRoots(Environment.GetFolderPath);
+
+    /// <summary><see cref="WindowsReservedRoots()"/> with the system's folders passed in, so a host that has them and one that has not are both exercised on any host.</summary>
+    internal static IEnumerable<string> WindowsReservedRoots(Func<Environment.SpecialFolder, string> folderPath)
     {
         foreach (var folder in new[] { Environment.SpecialFolder.Windows, Environment.SpecialFolder.ProgramFiles, Environment.SpecialFolder.ProgramFilesX86 })
         {
-            var path = Environment.GetFolderPath(folder);
+            var path = folderPath(folder);
             if (!string.IsNullOrEmpty(path))
             {
                 yield return MediaToolLocations.Normalize(path, windows: true);

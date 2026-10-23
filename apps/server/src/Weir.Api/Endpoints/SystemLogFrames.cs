@@ -19,9 +19,9 @@ public sealed class SystemLogFrames
     public async IAsyncEnumerable<string> ForAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         using var subscription = _alerts.Subscribe();
-        await foreach (var alert in subscription.ReadAllAsync(cancellationToken).ConfigureAwait(false))
+        while (!cancellationToken.IsCancellationRequested)
         {
-            yield return Frame(alert);
+            yield return Frame(await subscription.ReadAsync(cancellationToken).ConfigureAwait(false));
         }
     }
 
