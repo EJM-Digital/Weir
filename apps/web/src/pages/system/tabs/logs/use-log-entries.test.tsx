@@ -98,6 +98,30 @@ describe("reading the newest page again", () => {
   });
 });
 
+describe("the log before its first page has been read", () => {
+  it("has no arrivals to show yet", () => {
+    mocks.fetchSystemLog.mockReturnValue(new Promise(() => undefined));
+    const { result } = open();
+
+    act(() => result.current.showArrived());
+
+    expect(result.current.rows).toEqual([]);
+    expect(result.current.loading).toBe(true);
+  });
+
+  it("stays empty when it is read again and the reading fails", async () => {
+    mocks.fetchSystemLog.mockRejectedValue(new Error("down"));
+    const { result } = open();
+    await waitFor(() => expect(result.current.error).not.toBeNull());
+
+    await act(async () => {
+      await result.current.reload();
+    });
+
+    expect(result.current.rows).toEqual([]);
+  });
+});
+
 describe("the log following the stream", () => {
   it("stops waiting to read the log again once the screen is gone", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });

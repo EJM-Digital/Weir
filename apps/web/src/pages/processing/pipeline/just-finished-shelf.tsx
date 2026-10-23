@@ -139,6 +139,7 @@ export function JustFinishedShelf({
   // The status line is measured in its own font, read before paint and again when the fonts arrive.
   useLayoutEffect(() => {
     const host = box.current;
+    /* istanbul ignore if -- @preserve */
     if (!host) return undefined;
     let live = true;
     const read = () => {

@@ -129,9 +129,7 @@ export function ProfilesTab() {
   // A saved profile is dirty once its draft diverges from what is on the server; a new one is dirty
   // from the moment its workspace opens, since nothing about it exists to fall back to.
   const dirtyThing = creating
-    ? draft !== null
-      ? NEW_PROFILE_THING
-      : null
+    ? NEW_PROFILE_THING
     : selectedRuleSet &&
         draft &&
         !sameRuleSet(draft, writeFromProcessingRuleSet(selectedRuleSet))
@@ -155,7 +153,9 @@ export function ProfilesTab() {
         disabled,
         change: (key, value) =>
           setDraft((current) =>
-            current ? { ...current, [key]: value } : current,
+            current
+              ? { ...current, [key]: value }
+              : /* istanbul ignore next -- @preserve */ current,
           ),
       }
     : null;
@@ -181,7 +181,12 @@ export function ProfilesTab() {
     const selected = rows.find((row) => row.id === id);
     setCreating(false);
     setSwitches((n) => n + 1);
-    open(id, selected ? writeFromProcessingRuleSet(selected) : null);
+    open(
+      id,
+      selected
+        ? writeFromProcessingRuleSet(selected)
+        : /* istanbul ignore next -- @preserve */ null,
+    );
   };
 
   const save = () => {

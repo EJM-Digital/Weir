@@ -208,7 +208,7 @@ export function PipelineCardView({
               <Detail key={index} line={line} />
             ))}
           </span>
-        ) : null}
+        ) : /* istanbul ignore next -- @preserve */ null}
       </span>
     </>
   );

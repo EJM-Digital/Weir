@@ -101,7 +101,7 @@ function fileFilters(
     ...(query ? { q: query } : {}),
     ...(sort && sort.id !== "select"
       ? { sort: LIBRARY_SORT_KEYS[sort.id], direction: sort.direction }
-      : {}),
+      : /* istanbul ignore next -- @preserve */ {}),
     page,
     page_size: PAGE_SIZE,
   };

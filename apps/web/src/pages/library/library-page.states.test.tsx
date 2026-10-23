@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { elapse, useFakeClock, useRealClock } from "../../test/fake-clock";
+import { workflowRow } from "../../test/dashboard-fixtures";
 import {
   libraryFile,
   libraryFilesPage,
@@ -94,6 +95,26 @@ describe("while the overview of the workflow is still being read", () => {
     renderLibraryPage();
 
     expect(await screen.findAllByTestId("library-row")).toHaveLength(1);
+  });
+
+  it("lists the workflow in the picker without a count it has not heard yet", async () => {
+    api = stubLibraryServer([ARRIVAL], {
+      [LIBRARIES]: [
+        workflowRow({ id: LIBRARY_ID, name: "Movies" }),
+        workflowRow({ id: 2, name: "TV" }),
+      ],
+      [LIBRARY_ROUTES.overview]: never,
+    });
+    renderLibraryPage();
+    await screen.findAllByTestId("library-row");
+
+    fireEvent.click(
+      within(screen.getByTestId("library-picker")).getByRole("button", {
+        name: /Movies/,
+      }),
+    );
+
+    expect(screen.getByRole("option", { name: /TV/ })).toBeVisible();
   });
 });
 

@@ -517,6 +517,22 @@ describe("first run: connect Deluno first", () => {
     expect(saveSettingsMock).not.toHaveBeenCalled();
   });
 
+  it("says a workflow's folders check out when the check found no problem and had no chain to report", async () => {
+    scenario.managers = [managerConnection({})];
+    scenario.checks = {
+      ...passingCheck(),
+      movie: { problem: null, chain: null },
+    };
+    renderWizard();
+
+    choose("Deluno");
+    await foundLibraries();
+
+    expect(
+      await screen.findAllByText("✓ These folders check out.", {}, CEILING),
+    ).not.toHaveLength(0);
+  });
+
   it("lists what still needs fixing in a workflow's folder chain, without stopping Finish", async () => {
     scenario.managers = [managerConnection({})];
     scenario.checks = {

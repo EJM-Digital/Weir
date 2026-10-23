@@ -1,11 +1,18 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import { ApiHttpError } from "../../../../lib/api/client";
 import * as authQueries from "../../../../lib/auth/queries";
 import * as librariesApi from "../../../../lib/processing/libraries-api";
+import { processingKeys } from "../../../../lib/processing/query-keys";
 import * as ruleSetsApi from "../../../../lib/processing/rule-sets-api";
 import { ProfilesTab } from "./profiles-tab";
 import { featureFilms as ruleSet } from "./rule-set-fixtures";
@@ -303,4 +310,31 @@ it("falls back to a plain sentence when the removal fails without a reason", asy
   expect(await screen.findByRole("status")).toHaveTextContent(
     "That profile could not be removed.",
   );
+});
+
+it("removes nothing when a workflow starts using the profile while the confirmation is open", async () => {
+  removalOfAnUnusedProfile();
+  const removed = vi.spyOn(ruleSetsApi, "deleteProcessingRuleSet");
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+
+  render(<ProfilesTab />, {
+    wrapper: ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    ),
+  });
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Remove profile" }),
+  );
+  vi.spyOn(ruleSetsApi, "fetchProcessingRuleSets").mockResolvedValue([
+    { ...ruleSet, used_by_library_count: 1 },
+  ]);
+  await act(() =>
+    client.invalidateQueries({ queryKey: processingKeys.ruleSets }),
+  );
+  await screen.findByText(/removal is locked/);
+  fireEvent.click(screen.getByTestId("remove-rule-set-dialog-confirm"));
+
+  expect(removed).not.toHaveBeenCalled();
 });

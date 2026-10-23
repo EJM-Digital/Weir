@@ -421,6 +421,14 @@ describe("the filters only some rows have", () => {
     ).toHaveAttribute("aria-selected", "true");
   });
 
+  it("say how many job statuses a link asked for when it asked for several", async () => {
+    await rendered("/system?tab=logs&status=failed,pending");
+
+    expect(
+      within(screen.getByTestId("logs-job-status")).getByRole("button"),
+    ).toHaveTextContent("2 job statuses");
+  });
+
   it("show their count on Refine and stay open while any is set", async () => {
     await rendered("/system?tab=logs&trigger=manual");
 

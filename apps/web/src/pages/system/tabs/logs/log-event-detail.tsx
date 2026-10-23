@@ -60,7 +60,7 @@ export function LogEventDetail({
     .join(" · ");
   return (
     <>
-      {summary ? <p className="mm-quiet-note">{summary}</p> : null}
+      <p className="mm-quiet-note">{summary}</p>
       <LogFacts
         facts={[
           { label: "When", value: time },

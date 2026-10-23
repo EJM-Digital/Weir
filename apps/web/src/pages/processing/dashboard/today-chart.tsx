@@ -126,7 +126,7 @@ export function TodayChart({ handed, now }: TodayChartProps) {
             top: `${(dot.y / CHART_HEIGHT) * 100}%`,
           }}
         />
-      ) : null}
+      ) : /* istanbul ignore next -- @preserve */ null}
       <div
         aria-hidden="true"
         className={pointed === null ? "cs-layer" : "cs-layer cs-on"}

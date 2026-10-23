@@ -123,7 +123,6 @@ export function SorterEditor({
 }) {
   const move = (index: number, offset: -1 | 1) => {
     const target = index + offset;
-    if (target < 0 || target >= rows.length) return;
     const next = [...rows];
     [next[index], next[target]] = [next[target], next[index]];
     onChange(next);

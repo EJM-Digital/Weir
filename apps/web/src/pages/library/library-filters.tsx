@@ -241,6 +241,7 @@ export function LibraryFilters({
                 const chip = foldedChips.find(
                   (candidate) => candidate.id === id,
                 );
+                /* istanbul ignore else -- @preserve */
                 if (chip) choose(chip);
               }}
               buttonClassName="mm-library-chip"

@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { fitRows, useFittingRows } from "./fit-rows";
@@ -107,5 +107,11 @@ describe("the hook", () => {
 
     // jsdom lays nothing out, so everything ends where the tile does: all of them fit.
     expect(container.querySelector("output")?.textContent).toBe("2");
+  });
+
+  it("says every row fits while no tile has been given the host", () => {
+    const { result } = renderHook(() => useFittingRows());
+
+    expect(result.current[1]).toBe(Number.MAX_SAFE_INTEGER);
   });
 });
