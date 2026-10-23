@@ -21,12 +21,8 @@ public sealed partial class RemuxPassRunner
     private WireObject? WaitIfOutputDriveIsShort(RemuxPassRequest request, string src, string inspected, string scope)
     {
         var runtime = request.Runtime;
-        var relative = RemuxPassPaths.RelativeTo(src, RemuxPassPaths.Resolve(runtime.WatchedFolder));
-        if (relative is null)
-        {
-            return null;
-        }
-
+        // The source was resolved under the watched folder by ResolveMediaFileUnderRoot, which refuses a path outside it.
+        var relative = RemuxPassPaths.RelativeTo(src, RemuxPassPaths.Resolve(runtime.WatchedFolder))!;
         var target = Path.Join(RemuxPassPaths.Resolve(runtime.OutputFolder), relative);
         var disk = FileLifecycle.CheckMinimumFreeDiskSpace(target, request.MinimumFreeDiskSpaceMb, FreeBytes);
         return disk.Ok ? null : WaitForDiskSpace(disk, OutputDrive, request.RelativeMediaPath, inspected, scope, new WireObject());

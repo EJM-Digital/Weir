@@ -9,12 +9,12 @@ public sealed partial class RemuxPassRunner
 {
     /// <summary>Throws when the source's fingerprint changed during the pass, so a staged output is never published from
     /// a source that moved underneath it.</summary>
-    private static void AssertSourceUnchanged(string path, SourceFingerprint expected)
+    private void AssertSourceUnchanged(string path, SourceFingerprint expected)
     {
         SourceFingerprint current;
         try
         {
-            current = SourceFiles.Fingerprint(path);
+            current = SourceFiles.Fingerprint(path, Files);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -36,12 +36,12 @@ public sealed partial class RemuxPassRunner
     /// writer (mkvmerge, ffmpeg, the cover-art ffmpeg fallback, an unchanged copy) and every cleanup choice, kept original or
     /// removed, leaves the same two figures for Activity and the overview totals.
     /// </summary>
-    private static void RecordSizes(WireObject output, PassContext context, string outputFile)
+    private void RecordSizes(WireObject output, PassContext context, string outputFile)
     {
         long written;
         try
         {
-            written = new FileInfo(outputFile).Length;
+            written = Files.GetLength(outputFile);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

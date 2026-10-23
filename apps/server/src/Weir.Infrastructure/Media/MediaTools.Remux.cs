@@ -206,7 +206,7 @@ public sealed partial class MediaTools
     }
 
     /// <summary>A new file named prefix + 8 random characters + suffix, created exclusively so no other writer shares it.</summary>
-    private static string CreateTempFile(string directory, string prefix, string suffix)
+    private string CreateTempFile(string directory, string prefix, string suffix)
     {
         const string Characters = "abcdefghijklmnopqrstuvwxyz0123456789_";
         for (var attempt = 0; ; attempt++)
@@ -215,13 +215,13 @@ public sealed partial class MediaTools
             var path = Path.GetFullPath(Path.Combine(directory, name));
             try
             {
-                using (new FileStream(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
+                using (Files.OpenFile(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
                 {
                 }
 
                 return path;
             }
-            catch (IOException) when (attempt < 100 && File.Exists(path))
+            catch (IOException) when (attempt < 100 && Files.FileExists(path))
             {
                 // Name taken; draw again.
             }

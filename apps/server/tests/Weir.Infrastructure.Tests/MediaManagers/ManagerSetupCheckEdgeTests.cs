@@ -32,6 +32,17 @@ public sealed class ManagerSetupCheckEdgeTests : IDisposable
     }
 
     [Fact]
+    public async Task A_manager_that_does_not_answer_contributes_no_download_clients()
+    {
+        await _fixture.AddConnectionAsync("radarr", "http://192.0.2.42:7878");
+
+        var clients = await _fixture.Db(uow => Check().DownloadClientsUsedAsync(uow, "movie", linkedConnectionIds: null, CancellationToken.None), commit: false);
+
+        Assert.Empty(clients);
+        Assert.NotEmpty(_fixture.Http.Requests);
+    }
+
+    [Fact]
     public async Task A_manager_with_no_key_saved_gets_no_folder_suggestion_and_the_reason()
     {
         var id = await _fixture.AddConnectionAsync("sonarr", "http://192.0.2.41:8989", apiKey: null);

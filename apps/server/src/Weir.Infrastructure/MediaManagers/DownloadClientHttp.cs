@@ -10,6 +10,9 @@ namespace Weir.Infrastructure.MediaManagers;
 /// <summary>One HTTP answer from a download client. Kept low-level: each dialect decides what its own status codes and body mean.</summary>
 public sealed record DownloadClientHttpResponse(int Status, byte[] Body, IReadOnlyDictionary<string, string> Headers)
 {
+    /// <summary>Whether the client answered with a 2xx status.</summary>
+    public bool Succeeded => Status is >= 200 and < 300;
+
     public string BodyText => Body.Length == 0 ? string.Empty : new UTF8Encoding(false, false).GetString(Body);
 
     /// <summary>The body parsed as JSON, or null for an empty body or one that is not valid JSON.</summary>
@@ -124,16 +127,8 @@ public sealed class DownloadClientHttpClient
 
             using (response)
             {
-                byte[] raw;
-                try
-                {
-                    raw = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception exception) when (MediaManagerHttpClient.IsTransportFailure(exception, cancellationToken))
-                {
-                    throw Unreachable(exception);
-                }
-
+                // SendAsync has read the whole body already (a failure while it was read surfaced there), so this is a copy.
+                var raw = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
                 var responseHeaders = response.Headers.Concat(response.Content.Headers)
                     .ToDictionary(pair => pair.Key, pair => string.Join(", ", pair.Value), StringComparer.OrdinalIgnoreCase);
                 return new DownloadClientHttpResponse((int)response.StatusCode, raw, responseHeaders);

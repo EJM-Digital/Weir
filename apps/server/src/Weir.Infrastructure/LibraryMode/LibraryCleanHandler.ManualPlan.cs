@@ -20,7 +20,7 @@ public sealed partial class LibraryCleanHandler
     /// Turns one person's track choice into a plan for this file. Their choice names track indices in the file they
     /// were looking at, so a file that has changed since is refused: nothing here could tell which track is which now.
     /// </summary>
-    private static ChosenPlan PlanFromChoice(ProbeResult probe, ManualPlanChoice choice, WireValue? expectedSize, string path)
+    private ChosenPlan PlanFromChoice(ProbeResult probe, ManualPlanChoice choice, WireValue? expectedSize, string path)
     {
         if (expectedSize is WireInteger expected && CurrentSize(path) != (long)expected.Value)
         {
@@ -54,12 +54,11 @@ public sealed partial class LibraryCleanHandler
     }
 
     /// <summary>The file's size now, or -1 when Weir cannot read it — which never matches a size someone chose against.</summary>
-    private static long CurrentSize(string path)
+    private long CurrentSize(string path)
     {
         try
         {
-            var info = new FileInfo(path);
-            return info.Exists ? info.Length : -1;
+            return _files.FileExists(path) ? _files.GetLength(path) : -1;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {

@@ -30,7 +30,7 @@ public sealed class NzbgetPort : IDownloadClientPort
                 return (false, $"Weir reached {connection.Label}, but the username or password was refused. Check them and save again.");
             }
 
-            return response.Status is >= 200 and < 300 && response.Json() is WireObject { } dict && dict.Get("result") is WireArray
+            return response.Succeeded && response.Json() is WireObject dict && dict.Get("result") is WireArray
                 ? (true, $"Connected. Weir can reach {connection.Label}.")
                 : (false, $"Weir reached {connection.Label} but did not get the answer it expected. Check the address points at NZBGet itself.");
         }
@@ -46,7 +46,7 @@ public sealed class NzbgetPort : IDownloadClientPort
         try
         {
             var response = await CallConfigAsync(connection, cancellationToken).ConfigureAwait(false);
-            return response.Status is >= 200 and < 300 ? NzbgetRules.ParseConfig(response.Json()) : DownloadClientFolders.Empty;
+            return response.Succeeded ? NzbgetRules.ParseConfig(response.Json()) : DownloadClientFolders.Empty;
         }
         catch (DownloadClientUnreachableException)
         {

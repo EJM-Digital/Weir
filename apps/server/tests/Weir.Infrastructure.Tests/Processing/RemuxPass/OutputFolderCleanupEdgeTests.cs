@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weir.Core.Json;
 using Weir.Core.MediaManagers;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Processing.RemuxPass;
 
@@ -15,15 +16,15 @@ public sealed class OutputFolderCleanupEdgeTests : IDisposable
 
     public void Dispose() => _folders.Dispose();
 
-    private OutputFolderCleanup Cleanup() => new(_data, TimeProvider.System, NullLogger.Instance, 0, 0);
+    private OutputFolderCleanup Cleanup(IFileSystem? files = null) => new(_data, TimeProvider.System, NullLogger.Instance, 0, 0, files);
 
     private static ManagerLibraryTruth Reported(params string[] paths) =>
         new(new ManagerConnection("radarr", "Main", "http://x", "k"), SignalStatus.Reported, paths);
 
-    private async Task<WireObject> RunMovie(string? finalOutputFile)
+    private async Task<WireObject> RunMovie(string? finalOutputFile, IFileSystem? files = null)
     {
         var output = new WireObject();
-        await Cleanup().RunMovieAsync(output, _folders.Runtime(), _folders.Watched, _folders.Source("Title/m.mkv"), finalOutputFile, "Title/m.mkv", 1, "movie", null, CancellationToken.None);
+        await Cleanup(files).RunMovieAsync(output, _folders.Runtime(), _folders.Watched, _folders.Source("Title/m.mkv"), finalOutputFile, "Title/m.mkv", 1, "movie", null, CancellationToken.None);
         return output;
     }
 
@@ -71,6 +72,56 @@ public sealed class OutputFolderCleanupEdgeTests : IDisposable
 
         Assert.Equal(ReleaseFolderRemoval.LinkedFolderReason, WireConvert.Str(output["movie_output_folder_skip_reason"]));
         Assert.True(File.Exists(file));
+    }
+
+    private string AgedMovieOutput()
+    {
+        var final = _folders.Out(Path.Join("Title", "m.mkv"));
+        Directory.CreateDirectory(Path.GetDirectoryName(final)!);
+        File.WriteAllText(final, "x");
+        File.SetLastWriteTimeUtc(final, DateTime.UtcNow.AddDays(-3));
+        _data.Truth.Add(Reported(_folders.Out(Path.Join("ManagerLibrary", "m.mkv"))));
+        return final;
+    }
+
+    [Fact]
+    public async Task A_movie_folder_the_system_will_not_describe_is_kept_as_if_it_were_behind_a_link()
+    {
+        var final = AgedMovieOutput();
+        var files = new FaultingFileSystem().Fail(FileCall.GetAttributes, FaultingFileSystem.SharingViolation);
+
+        var output = await RunMovie(final, files);
+
+        Assert.Equal(ReleaseFolderRemoval.LinkedFolderReason, WireConvert.Str(output["movie_output_folder_skip_reason"]));
+        Assert.True(File.Exists(final));
+    }
+
+    [Fact]
+    public async Task A_movie_folder_whose_other_files_cannot_be_listed_is_kept_as_if_it_held_other_videos()
+    {
+        var final = AgedMovieOutput();
+        var files = new FaultingFileSystem().Fail(FileCall.EnumerateFiles, FaultingFileSystem.Refused);
+
+        var output = await RunMovie(final, files);
+
+        Assert.Equal(ReleaseFolderRemoval.OtherVideosFolderKeptReason, WireConvert.Str(output["movie_output_folder_skip_reason"]));
+        Assert.True(File.Exists(final));
+    }
+
+    [Fact]
+    public void The_cascade_stops_and_says_so_when_the_system_refuses_to_remove_an_empty_parent()
+    {
+        var root = _folders.Out("lib");
+        var empty = Directory.CreateDirectory(Path.Join(root, "a", "b")).FullName;
+        var logger = new CapturingLogger<OutputFolderCleanup>();
+        var deleted = new WireArray();
+        var files = new FaultingFileSystem().Fail(FileCall.DeleteDirectory, FaultingFileSystem.Refused);
+
+        OutputFolderCleanup.CascadeDeleteEmptyParents(empty, root, deleted, logger, files);
+
+        Assert.Empty(deleted.Items);
+        Assert.True(Directory.Exists(empty));
+        Assert.True(logger.Logged(LogLevel.Warning, "could not remove an empty parent folder"));
     }
 
     [Fact]

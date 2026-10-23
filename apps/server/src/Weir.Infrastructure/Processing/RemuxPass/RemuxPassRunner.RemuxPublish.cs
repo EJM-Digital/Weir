@@ -183,7 +183,7 @@ public sealed partial class RemuxPassRunner
             "ffprobe of the written file was used for validation only).");
         try
         {
-            var saved = new FileInfo(src).Length - new FileInfo(final).Length;
+            var saved = Files.GetLength(src) - Files.GetLength(final);
             if (saved > 0)
             {
                 _metrics?.RecordModuleSavings("processing", saved);

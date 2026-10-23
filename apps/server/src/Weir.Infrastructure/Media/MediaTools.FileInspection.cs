@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Weir.Infrastructure.IO;
 
 namespace Weir.Infrastructure.Media;
 
@@ -9,25 +10,27 @@ internal readonly record struct MediaFileState(string ResolvedPath, bool Exists,
 public sealed partial class MediaTools
 {
     /// <summary>What <see cref="FfprobeJsonAsync"/> reads about the file before probing it.</summary>
-    internal static MediaFileState InspectFile(string path)
+    internal static MediaFileState InspectFile(string path) => InspectFile(path, PhysicalFileSystem.Instance);
+
+    /// <summary><see cref="InspectFile(string)"/> reading the file through <paramref name="files"/>.</summary>
+    internal static MediaFileState InspectFile(string path, IFileSystem files)
     {
         var resolvedPath = ResolvePath(path);
-        var exists = File.Exists(path) || Directory.Exists(path);
-        var isFile = File.Exists(path);
+        var exists = files.FileExists(path) || files.DirectoryExists(path);
+        var isFile = files.FileExists(path);
         long size;
         double mtime;
         try
         {
             if (isFile)
             {
-                var info = new FileInfo(path);
-                size = info.Length;
-                mtime = (info.LastWriteTimeUtc - DateTime.UnixEpoch).TotalSeconds;
+                size = files.GetLength(path);
+                mtime = (files.GetLastWriteTimeUtc(path) - DateTime.UnixEpoch).TotalSeconds;
             }
             else if (exists)
             {
                 size = 0;
-                mtime = (Directory.GetLastWriteTimeUtc(path) - DateTime.UnixEpoch).TotalSeconds;
+                mtime = (files.GetDirectoryLastWriteTimeUtc(path) - DateTime.UnixEpoch).TotalSeconds;
             }
             else
             {

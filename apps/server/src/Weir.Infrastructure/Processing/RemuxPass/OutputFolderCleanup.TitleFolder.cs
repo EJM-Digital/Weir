@@ -73,9 +73,9 @@ public sealed partial class OutputFolderCleanup
     /// Why an output folder the manager has finished with still stays: it sits behind a link, or (for a movie) it also
     /// holds other films' outputs, as a collection pack's folder does. Null when it can go.
     /// </summary>
-    private static string? FolderKeptReason(string scope, TitleFolder place)
+    private string? FolderKeptReason(string scope, TitleFolder place)
     {
-        if (PathContainment.HasLinkBelowRoot(place.OutputRoot, place.Folder))
+        if (PathContainment.HasLinkBelowRoot(place.OutputRoot, place.Folder, _files))
         {
             return ReleaseFolderRemoval.LinkedFolderReason;
         }
@@ -87,7 +87,7 @@ public sealed partial class OutputFolderCleanup
 
         try
         {
-            return ReleaseFolderRemoval.HoldsOtherVideos(place.Folder, place.MediaOutputFile, ReleaseFolderRemoval.VideoExtensions(null))
+            return ReleaseFolderRemoval.HoldsOtherVideos(place.Folder, place.MediaOutputFile, ReleaseFolderRemoval.VideoExtensions(null), _files)
                 ? ReleaseFolderRemoval.OtherVideosFolderKeptReason
                 : null;
         }

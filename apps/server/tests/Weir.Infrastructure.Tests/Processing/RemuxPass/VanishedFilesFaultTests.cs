@@ -1,4 +1,7 @@
 using System.Globalization;
+using Weir.Core.Json;
+using Weir.Core.Processing;
+using Weir.Core.Processing.RemuxPass;
 using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Jobs;
 using Weir.Infrastructure.Tests.MediaManagers;
@@ -88,6 +91,64 @@ public sealed class VanishedFilesFaultTests : IDisposable
             _folders.Source(Gone);
             return Task.CompletedTask;
         });
+
+        Assert.False(changes.Any);
+        Assert.Equal(1, await RowsAsync());
+        Assert.Equal(0, await LeftActivityAsync());
+    }
+
+    private async Task QueuePassAsync()
+    {
+        var payload = new WireObject().Set("relative_media_path", Gone).Set("library_id", _libraryId).Set("media_scope", "movie").Set("trigger", "manual");
+        await _fixture.Jobs.EnqueueOrGetAsync("pass-queued", RemuxPassOutcomes.JobKind, WireJsonWriter.Dumps(payload, WireJsonFormat.Compact));
+    }
+
+    [Fact]
+    public async Task A_pass_queued_between_the_two_looks_keeps_a_gone_file_from_being_forgotten()
+    {
+        await SeedAsync(lastSeenMinutesAgo: 60);
+
+        var changes = await LookAsync(new FaultingFileSystem(), _ => QueuePassAsync());
+
+        Assert.False(changes.Any);
+        Assert.Equal(1, await RowsAsync());
+        Assert.Equal(0, await LeftActivityAsync());
+    }
+
+    [Fact]
+    public async Task A_pass_queued_between_the_two_looks_keeps_a_gone_file_from_being_held()
+    {
+        await SeedAsync(lastSeenMinutesAgo: 1);
+
+        var changes = await LookAsync(new FaultingFileSystem(), _ => QueuePassAsync());
+
+        Assert.False(changes.Any);
+        Assert.Equal(1, await RowsAsync());
+        Assert.Equal(0, await LeftActivityAsync());
+    }
+
+    [Fact]
+    public async Task A_pass_queued_between_the_two_looks_keeps_a_returned_file_from_being_released()
+    {
+        await SeedAsync(lastSeenMinutesAgo: 1);
+        await _fixture.Store.Execute(
+            $"UPDATE files SET status = '{ProcessingFileStatuses.OnHold}', status_reason = '{GoneSourceText.HeldReason}' WHERE relative_path = '{Gone}'");
+        _folders.Source(Gone);
+
+        var changes = await LookAsync(new FaultingFileSystem(), _ => QueuePassAsync());
+
+        Assert.False(changes.Any);
+        Assert.Equal(1, await _fixture.Store.Scalar($"SELECT count(*) FROM files WHERE relative_path = '{Gone}' AND status = '{ProcessingFileStatuses.OnHold}'"));
+    }
+
+    [Fact]
+    public async Task A_row_that_is_seen_again_between_the_two_looks_is_not_forgotten()
+    {
+        await SeedAsync(lastSeenMinutesAgo: 60);
+
+        var changes = await LookAsync(
+            new FaultingFileSystem(),
+            _ => _fixture.Store.Execute($"UPDATE files SET last_seen_at = '2000-01-01 00:00:00.000000' WHERE relative_path = '{Gone}'"));
 
         Assert.False(changes.Any);
         Assert.Equal(1, await RowsAsync());

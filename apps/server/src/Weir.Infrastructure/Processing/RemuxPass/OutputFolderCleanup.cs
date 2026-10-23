@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Weir.Core.Json;
 using Weir.Core.MediaManagers;
+using Weir.Infrastructure.IO;
 
 namespace Weir.Infrastructure.Processing.RemuxPass;
 
@@ -16,8 +17,9 @@ public sealed partial class OutputFolderCleanup
     private readonly ILogger _logger;
     private readonly int _movieMinAgeSeconds;
     private readonly int _tvMinAgeSeconds;
+    private readonly IFileSystem _files;
 
-    public OutputFolderCleanup(IPostSuccessCleanupData data, TimeProvider time, ILogger logger, int movieMinAgeSeconds, int tvMinAgeSeconds)
+    public OutputFolderCleanup(IPostSuccessCleanupData data, TimeProvider time, ILogger logger, int movieMinAgeSeconds, int tvMinAgeSeconds, IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(data);
         ArgumentNullException.ThrowIfNull(time);
@@ -27,6 +29,7 @@ public sealed partial class OutputFolderCleanup
         _logger = logger;
         _movieMinAgeSeconds = movieMinAgeSeconds;
         _tvMinAgeSeconds = tvMinAgeSeconds;
+        _files = files ?? PhysicalFileSystem.Instance;
     }
 
     /// <summary>A stable posix path for comparing job payloads.</summary>

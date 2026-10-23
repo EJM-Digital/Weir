@@ -34,6 +34,32 @@ public sealed class MediaToolsRemuxEdgeTests : IDisposable
         Assert.False(File.Exists(writer.Destination));
     }
 
+    [Fact]
+    public async Task A_staged_name_another_writer_took_first_is_left_alone_and_another_name_is_drawn()
+    {
+        var taken = string.Empty;
+        var files = new FaultingFileSystem()
+            .Before(
+                FileCall.OpenFile,
+                path =>
+                {
+                    taken = path;
+                    File.WriteAllText(path, "someone else's");
+                },
+                pathEndsWith: ".mkv")
+            .Fail(FileCall.OpenFile, _ => new IOException("The file exists."), pathEndsWith: ".mkv");
+        var writer = new FailingWriter();
+        var tools = new MediaTools(new ScriptedRunner(_ => new ScriptedRun()), new FixedResolver(), _log, TimeProvider.System, path => new MediaFileState(path, true, true, 100, 0)) { Files = files };
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => tools.RemuxToTempFileAsync(_folder.Join("Film.mkv"), _folder.Join("work"), Plan, JsonDocument.Parse("{}").RootElement, [], writer: writer));
+
+        Assert.NotEqual(string.Empty, taken);
+        Assert.NotEqual(taken, writer.Destination);
+        Assert.Equal("someone else's", File.ReadAllText(taken));
+        Assert.False(File.Exists(writer.Destination));
+    }
+
     [WindowsFact("A read-only file refuses to be deleted by name only on Windows")]
     public async Task A_staged_file_that_cannot_be_removed_after_a_cancelled_write_is_logged_and_the_cancellation_is_still_what_is_raised()
     {
