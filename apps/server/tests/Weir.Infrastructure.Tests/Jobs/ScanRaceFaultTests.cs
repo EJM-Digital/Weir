@@ -111,4 +111,20 @@ public sealed class ScanRaceFaultTests : IDisposable
         Assert.Equal(passesBefore, await _store.Scalar("SELECT count(*) FROM jobs WHERE job_kind = 'processing.file.remux_pass.v1'"));
         Assert.Equal(0, await _store.Scalar("SELECT count(*) FROM files WHERE status NOT IN ('unprocessed', 'queued', 'processing')"));
     }
+
+    [Fact]
+    public async Task A_watched_folder_that_goes_away_after_it_was_seen_is_not_a_failed_scan_and_changes_nothing()
+    {
+        await File.WriteAllBytesAsync(Path.Combine(_watched, "Film.2024.mkv"), [1]);
+        var libraryId = await ProcessingWatchedFolderScanDispatchJobHandlerTests.CreateLibraryAsync(_store, _watched, _output);
+        var shareGone = new FaultingFileSystem()
+            .Before(FileCall.EnumerateFileSystemInfos, _ => Directory.Delete(_watched, recursive: true))
+            .Fail(FileCall.EnumerateFileSystemInfos, path => new IOException($"The network name cannot be found. : '{path}'.", unchecked((int)0x80070043)));
+        var handler = await HandlerAsync(shareGone);
+
+        await ProcessingWatchedFolderScanDispatchJobHandlerTests.RunScanAsync(handler, _jobs, libraryId, enqueueRemuxJobs: true);
+
+        Assert.Equal(0, await _store.Scalar("SELECT count(*) FROM files"));
+        Assert.Equal(0, await _store.Scalar("SELECT count(*) FROM jobs WHERE job_kind = 'processing.file.remux_pass.v1'"));
+    }
 }
