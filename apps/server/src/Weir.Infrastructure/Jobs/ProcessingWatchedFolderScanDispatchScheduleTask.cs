@@ -92,15 +92,8 @@ public sealed class ProcessingWatchedFolderScanDispatchScheduleTask : IPeriodicT
     {
         if (!_options.ProcessingWatchedFolderRemuxScanDispatchScheduleEnabled)
         {
-            // #533: the global kill switch is off. Clear every due time, so turning it back on starts
-            // clean rather than firing a catch-up for every library that missed its window meanwhile.
-            foreach (var id in _nextRunByLibrary.Keys)
-            {
-                _wakeups?.ForgetPeriodic(id);
-                _tasks?.Remove(ScheduledJobTasks.ScanKey(id));
-            }
-
-            _nextRunByLibrary.Clear();
+            // #533: the global kill switch is off. It is fixed for the life of the process, so nothing was ever scheduled and
+            // there is no due time to clear.
             return;
         }
 
