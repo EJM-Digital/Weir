@@ -81,6 +81,19 @@ public sealed class TrayPauseRequestWatcherTests : IDisposable
         Assert.Equal(["Processing paused: The tray paused processing until you resume it. Weir keeps looking for new files and starts nothing."], await EntriesAsync());
     }
 
+    [WindowsFact("Only Windows refuses to delete a file another program holds open without sharing delete.")]
+    public async Task A_request_the_server_cannot_remove_stays_answered_and_the_failure_is_logged()
+    {
+        await File.WriteAllTextAsync(RequestPath, Request(paused: true));
+        using var held = new FileStream(RequestPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+        await _watcher.StartAsync(CancellationToken.None);
+        await UntilAsync(() => _log.Logged(LogLevel.Warning, "could not remove the tray's pause request"));
+
+        Assert.True((await CurrentAsync()).Paused);
+        Assert.True(File.Exists(RequestPath));
+    }
+
     [Fact]
     public async Task A_resume_asked_for_by_the_tray_is_recorded()
     {

@@ -58,6 +58,14 @@ public sealed class RuntimeWordsEdgeTests
         Assert.Equal(Unexpected, PreUpdateBackupFailure.Describe(new IOException("odd", 12345), "/data/backups"));
     }
 
+    [Theory]
+    [InlineData(1L, "1 MB")]
+    [InlineData(1024L * 1024 * 1023, "1023 MB")]
+    [InlineData(1024L * 1024 * 1024, "1 GB")]
+    [InlineData(1536L * 1024 * 1024, "1.5 GB")]
+    public void A_size_is_worded_in_megabytes_below_a_gigabyte_and_in_gigabytes_above(long bytes, string words) =>
+        Assert.Equal(words, PreUpdateBackupFailure.SizeText(bytes));
+
     [WindowsFact("Only Windows has network shares named by a server and a share.")]
     public void A_full_network_share_is_named_as_the_share()
     {

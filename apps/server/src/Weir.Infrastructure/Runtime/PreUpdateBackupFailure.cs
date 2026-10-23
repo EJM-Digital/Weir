@@ -143,16 +143,9 @@ internal static class PreUpdateBackupFailure
     {
         if (OperatingSystem.IsWindows())
         {
-            var root = Path.GetPathRoot(Path.GetFullPath(folder));
-            if (root is { Length: >= 2 } && root[1] == ':')
-            {
-                return $"drive {root[..2]}";
-            }
-
-            if (!string.IsNullOrEmpty(root))
-            {
-                return $"the share {root.TrimEnd('\\')}";
-            }
+            // A full path on Windows always has a root: a drive ("C:\") or a share ("\\server\share").
+            var root = Path.GetPathRoot(Path.GetFullPath(folder))!;
+            return root[1] == ':' ? $"drive {root[..2]}" : $"the share {root.TrimEnd('\\')}";
         }
 
         return $"the disk that holds {folder}";

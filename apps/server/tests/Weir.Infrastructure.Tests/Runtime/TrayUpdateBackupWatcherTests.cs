@@ -70,6 +70,20 @@ public sealed class TrayUpdateBackupWatcherTests : IDisposable
         return result!;
     }
 
+    [WindowsFact("Only Windows refuses to delete a file another program holds open without sharing delete.")]
+    public async Task A_request_the_server_cannot_remove_stays_answered_and_the_failure_is_logged()
+    {
+        await File.WriteAllTextAsync(RequestPath, Request());
+        using var held = new FileStream(RequestPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        await _watcher.StartAsync(CancellationToken.None);
+
+        var result = await FinalResultAsync();
+        await Eventually.ThatAsync(() => _log.Logged(Microsoft.Extensions.Logging.LogLevel.Warning, "could not remove the tray's update backup request"));
+
+        Assert.Equal("saved", (string?)result["state"]);
+        Assert.True(File.Exists(RequestPath));
+    }
+
     [Fact]
     public async Task A_request_has_a_copy_saved_while_the_server_runs_and_is_answered_and_taken_away()
     {
