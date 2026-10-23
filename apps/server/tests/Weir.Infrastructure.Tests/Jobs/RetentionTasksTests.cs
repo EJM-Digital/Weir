@@ -150,4 +150,21 @@ public sealed class RetentionTasksTests : IDisposable
 
         Assert.Equal(1, HistoryRows());
     }
+
+    [Fact]
+    public async Task A_run_that_clears_several_records_says_how_many_in_the_plural()
+    {
+        _db.Execute("UPDATE operator_settings SET file_log_retention_days = 10");
+        GoneFilesHistory("one.mkv");
+        GoneFilesHistory("two.mkv");
+        var logger = new RecordingLogger<FileLogRetentionTask>();
+
+        var task = new FileLogRetentionTask(_db.Database, new OperatorSettingsStore(), new FileLogStore(), _db.Clock, logger);
+
+        await task.RunOnceAsync(CancellationToken.None);
+        _db.Clock.Advance(TimeSpan.FromDays(11));
+        await task.RunOnceAsync(CancellationToken.None);
+
+        Assert.Equal(["Removed 2 processing records past their retention window."], logger.At(Microsoft.Extensions.Logging.LogLevel.Information));
+    }
 }

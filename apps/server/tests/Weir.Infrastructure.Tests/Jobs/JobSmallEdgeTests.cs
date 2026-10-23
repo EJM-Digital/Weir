@@ -1,0 +1,50 @@
+using Weir.Core.Processing.RemuxPass;
+using Weir.Infrastructure.Jobs;
+using Weir.Infrastructure.Processing;
+using Weir.Infrastructure.Sqlite;
+
+namespace Weir.Infrastructure.Tests.Jobs;
+
+/// <summary>Small readings the job code relies on: stored times, the home folder, the do-nothing senders, and passes whose payload names no file.</summary>
+public sealed class JobSmallEdgeTests
+{
+    [Theory]
+    [InlineData("   ")]
+    [InlineData("")]
+    public void A_stored_time_with_nothing_in_it_is_no_time(string stored)
+    {
+        Assert.Null(TimestampColumns.Parse(stored));
+    }
+
+    [Theory]
+    [InlineData("~")]
+    [InlineData("~/films")]
+    [InlineData("~\\films")]
+    public void A_path_starting_with_a_tilde_is_the_users_home(string path)
+    {
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        var expanded = ProcessingLibraryFolders.ExpandForFilesystem(path);
+
+        Assert.StartsWith(Path.GetFullPath(home), expanded, StringComparison.Ordinal);
+        Assert.Equal(path.Length > 1, expanded.EndsWith("films", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_pending_pass_whose_payload_names_no_file_is_not_counted_against_any_file()
+    {
+        using var db = new JobsTestDatabase();
+        db.InsertRawJob("no-payload", RemuxPassOutcomes.JobKind);
+        db.InsertRawJob("empty-object", RemuxPassOutcomes.JobKind, payloadJson: "{}");
+        db.InsertRawJob("a-list", RemuxPassOutcomes.JobKind, payloadJson: "[1,2]");
+        db.InsertRawJob("json5", RemuxPassOutcomes.JobKind, payloadJson: "{relative_media_path: 'Odd.mkv', library_id: 1,}");
+        db.InsertRawJob("no-library", RemuxPassOutcomes.JobKind, payloadJson: "{\"relative_media_path\":\"Loose.mkv\"}");
+        db.InsertRawJob("a-film", RemuxPassOutcomes.JobKind, payloadJson: "{\"relative_media_path\":\" Film.mkv \",\"library_id\":1}");
+        db.InsertRawJob("a-show", RemuxPassOutcomes.JobKind, payloadJson: "{\"relative_media_path\":\"Show.mkv\",\"media_scope\":\"tv\",\"library_id\":1}");
+
+        await using var uow = await UnitOfWork.OpenAsync(db.Database);
+
+        Assert.Equal(["Film.mkv"], await ActiveRemuxPasses.PathsAsync(uow, "movie", 1));
+        Assert.Equal(["Show.mkv"], await ActiveRemuxPasses.PathsAsync(uow, "tv", 1));
+    }
+}
