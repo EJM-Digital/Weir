@@ -18,11 +18,8 @@ public static class WatchedFolderScanOps
     public static string RelativePosixPathUnderWatched(string watchedRoot, string filePath) =>
         Path.GetRelativePath(Path.GetFullPath(watchedRoot), Path.GetFullPath(filePath)).Replace('\\', '/');
 
-    private static bool ExistingCompletedOutputPathIsSafe(string path)
-    {
-        var info = new FileInfo(path);
-        return info.Exists && info.Length > 0;
-    }
+    private static bool ExistingCompletedOutputPathIsSafe(string path, IFileSystem files) =>
+        files.FileExists(path) && files.GetLength(path) > 0;
 
     private static string? ExpectedOutputFileForRelativePath(string outputRoot, string relativePosix)
     {
@@ -46,9 +43,11 @@ public static class WatchedFolderScanOps
         string mediaScope,
         long? libraryId,
         string? outputRoot,
-        string? sourcePath)
+        string? sourcePath,
+        IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(uow);
+        files ??= PhysicalFileSystem.Instance;
         var wantScope = ProcessingMediaScopes.Normalize(mediaScope);
         // relative_path is indexed and holds the detail's own path as the activity writer stored it (#708). The unary plus keeps
         // SQLite from choosing an index on module or event type instead, which would read every completion Weir ever recorded.
@@ -108,7 +107,7 @@ public static class WatchedFolderScanOps
                 continue;
             }
 
-            if (sourcePath is not null && !CompletedEventMatchesCurrentSource(dict, sourcePath))
+            if (sourcePath is not null && !CompletedEventMatchesCurrentSource(dict, sourcePath, files))
             {
                 continue;
             }
@@ -118,7 +117,7 @@ public static class WatchedFolderScanOps
                 continue;
             }
 
-            if (ExistingCompletedOutputPathIsSafe(outputStr.Value))
+            if (ExistingCompletedOutputPathIsSafe(outputStr.Value, files))
             {
                 return true;
             }
@@ -130,7 +129,7 @@ public static class WatchedFolderScanOps
         if (outputRoot is not null && sourcePath is null)
         {
             var expected = ExpectedOutputFileForRelativePath(outputRoot, relativePosix);
-            if (expected is not null && ExistingCompletedOutputPathIsSafe(expected))
+            if (expected is not null && ExistingCompletedOutputPathIsSafe(expected, files))
             {
                 return true;
             }
@@ -139,10 +138,9 @@ public static class WatchedFolderScanOps
         return false;
     }
 
-    private static bool CompletedEventMatchesCurrentSource(WireObject data, string sourcePath)
+    private static bool CompletedEventMatchesCurrentSource(WireObject data, string sourcePath, IFileSystem files)
     {
-        var stat = new FileInfo(sourcePath);
-        if (!stat.Exists)
+        if (!files.FileExists(sourcePath))
         {
             return false;
         }
@@ -154,7 +152,7 @@ public static class WatchedFolderScanOps
             try
             {
                 var samePath = string.Equals(Path.GetFullPath(inspected.Value), Path.GetFullPath(sourcePath), StringComparison.OrdinalIgnoreCase);
-                return samePath && recordedSize.Value == stat.Length;
+                return samePath && recordedSize.Value == files.GetLength(sourcePath);
             }
             catch (ArgumentException)
             {
@@ -224,11 +222,11 @@ public static class WatchedFolderScanOps
     /// Win32 <c>CreateFileW(FILE_SHARE_READ|FILE_SHARE_DELETE)</c> probe on Windows). There is no POSIX <c>flock</c> check: it
     /// is advisory and does not catch a writer that never calls <c>flock</c> itself.
     /// </summary>
-    public static string? SourceReadProblem(string filePath)
+    public static string? SourceReadProblem(string filePath, IFileSystem? files = null)
     {
         try
         {
-            using var handle = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
+            using var handle = (files ?? PhysicalFileSystem.Instance).OpenFile(filePath, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
             var buffer = new byte[1];
             _ = handle.Read(buffer, 0, 1);
             return null;
@@ -246,9 +244,10 @@ public static class WatchedFolderScanOps
     /// Resolves one library's folders, or says why they
     /// cannot be used. Reads <c>libraries</c> directly (ADR-0014); no environment path fallback.
     /// </summary>
-    public static (ProcessingScanPathRuntime? Runtime, string? Error) ResolvePathRuntimeForLibrary(ProcessingLibraryRecord library, string weirHome)
+    public static (ProcessingScanPathRuntime? Runtime, string? Error) ResolvePathRuntimeForLibrary(ProcessingLibraryRecord library, string weirHome, IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(library);
+        files ??= PhysicalFileSystem.Instance;
         var label = library.Name.Trim().Length > 0 ? library.Name.Trim() : (library.MediaType == ProcessingMediaScopes.Tv ? "TV" : "Movies");
 
         var watchedRaw = library.WatchedFolder.Trim();
@@ -258,7 +257,7 @@ public static class WatchedFolderScanOps
         }
 
         var watchedPath = ProcessingLibraryFolders.ExpandForFilesystem(watchedRaw);
-        if (!Directory.Exists(watchedPath))
+        if (!files.DirectoryExists(watchedPath))
         {
             return (null, $"The {label} workflow's watched folder must be an existing directory.");
         }
@@ -276,7 +275,7 @@ public static class WatchedFolderScanOps
         }
 
         var outputPath = ProcessingLibraryFolders.ExpandForFilesystem(outRaw);
-        if (!Directory.Exists(outputPath))
+        if (!files.DirectoryExists(outputPath))
         {
             return (null, $"The {label} workflow's output folder must be an existing directory.");
         }
@@ -287,7 +286,7 @@ public static class WatchedFolderScanOps
             return (null, separationError);
         }
 
-        if (!workIsDefault && !Directory.Exists(workPath))
+        if (!workIsDefault && !files.DirectoryExists(workPath))
         {
             return (null, $"The {label} workflow's work/temp folder must be an existing directory when set to a custom path.");
         }
@@ -332,13 +331,14 @@ public static class WatchedFolderScanOps
     /// Why the output folder does not accept a write, or null when it does. It writes and removes a probe file, so a scan
     /// asks once for the whole folder rather than once per file.
     /// </summary>
-    public static string? OutputFolderProblem(string outputFolder)
+    public static string? OutputFolderProblem(string outputFolder, IFileSystem? files = null)
     {
+        files ??= PhysicalFileSystem.Instance;
         var probe = Path.Combine(outputFolder, $".weir-write-test-{Environment.ProcessId}");
         try
         {
-            Directory.CreateDirectory(outputFolder);
-            File.WriteAllBytes(probe, [0]);
+            files.CreateDirectory(outputFolder);
+            files.WriteAllBytes(probe, [0]);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -348,7 +348,7 @@ public static class WatchedFolderScanOps
         {
             try
             {
-                File.Delete(probe);
+                files.DeleteFile(probe);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {

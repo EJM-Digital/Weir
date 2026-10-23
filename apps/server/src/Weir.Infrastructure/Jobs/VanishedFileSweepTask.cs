@@ -3,6 +3,7 @@ using Weir.Core.Configuration;
 using Weir.Core.Jobs;
 using Weir.Core.Processing;
 using Weir.Infrastructure.Activity;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Processing.RemuxPass;
 using Weir.Infrastructure.Scheduling;
@@ -24,13 +25,15 @@ public sealed partial class VanishedFileSweepTask : IPeriodicTask
     private readonly SqliteDatabase _database;
     private readonly WeirOptions _options;
     private readonly LibraryStore _libraries;
+    private readonly IFileSystem _fs;
     private readonly TimeProvider _time;
     private readonly ILogger<VanishedFileSweepTask> _logger;
     private readonly DataChangePublisher? _changes;
     private readonly ProcessingJobStore? _jobs;
 
-    public VanishedFileSweepTask(SqliteDatabase database, WeirOptions options, LibraryStore libraries, TimeProvider time, ILogger<VanishedFileSweepTask> logger, DataChangePublisher? changes = null, ProcessingJobStore? jobs = null)
+    public VanishedFileSweepTask(SqliteDatabase database, WeirOptions options, LibraryStore libraries, TimeProvider time, ILogger<VanishedFileSweepTask> logger, DataChangePublisher? changes = null, ProcessingJobStore? jobs = null, IFileSystem? fileSystem = null)
     {
+        _fs = fileSystem ?? PhysicalFileSystem.Instance;
         _database = database ?? throw new ArgumentNullException(nameof(database));
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _libraries = libraries ?? throw new ArgumentNullException(nameof(libraries));
@@ -67,14 +70,14 @@ public sealed partial class VanishedFileSweepTask : IPeriodicTask
 
         foreach (var library in libraries)
         {
-            var (runtime, _) = WatchedFolderScanOps.ResolvePathRuntimeForLibrary(library, _options.WeirHome);
-            if (runtime is null || !Directory.Exists(runtime.WatchedFolder))
+            var (runtime, _) = WatchedFolderScanOps.ResolvePathRuntimeForLibrary(library, _options.WeirHome, _fs);
+            if (runtime is null || !_fs.DirectoryExists(runtime.WatchedFolder))
             {
                 continue;
             }
 
             var changes = await VanishedFiles.SettleAsync(
-                _database, library.Id, runtime.WatchedFolder, ProcessingMediaScopes.Normalize(library.MediaType), now, "scheduled", GoneLookAgain, WakeForStartedLook, cancellationToken).ConfigureAwait(false);
+                _database, library.Id, runtime.WatchedFolder, ProcessingMediaScopes.Normalize(library.MediaType), now, "scheduled", GoneLookAgain, WakeForStartedLook, _fs, cancellationToken).ConfigureAwait(false);
             if (!changes.Any)
             {
                 continue;
