@@ -124,7 +124,7 @@ public static class RemuxPassVisibility
 
         if (Truthy(payload.Get(RejectionResultKeys.WithoutManager)))
         {
-            return payload.Get(RejectionResultKeys.Summary) is WireString { Value.Length: > 0 } summary
+            return payload.Get(RejectionResultKeys.Summary) is WireString summary && summary.Value.Length > 0
                 ? $"Rejected {name}: {summary.Value}"
                 : $"Rejected {name}";
         }
@@ -215,7 +215,7 @@ public static class RemuxPassVisibility
         WireStrings.Slice(WireJsonWriter.Dumps(ClipForActivity(payload), WireJsonFormat.Compact), maxChars);
 
     /// <summary>True when the value is present and not null, false, zero or empty.</summary>
-    public static bool Truthy(WireValue? value) => value is not null && value.IsTruthy;
+    public static bool Truthy(WireValue? value) => WireConvert.Truthy(value);
 
     /// <summary>The length of a list, string or object value; 0 for anything else, including a missing key.</summary>
     private static long ListLength(WireValue? value) => value switch

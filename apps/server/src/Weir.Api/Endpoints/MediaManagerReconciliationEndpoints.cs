@@ -58,8 +58,8 @@ public static class MediaManagerReconciliationEndpoints
             throw new ApiException(StatusCodes.Status400BadRequest, exception.Message);
         }
 
-        var applied = result.Get("applied") is { IsTruthy: true };
-        var message = result.Get("message") is { } text ? WireConvert.Str(text) : string.Empty;
+        var applied = result["applied"].IsTruthy;
+        var message = WireConvert.Str(result["message"]);
         await SqliteActivityWriter.RecordAsync(uow, new ActivityEventDraft(
             ActivityEventTypes.SystemReconciliationRepair,
             "system",

@@ -24,8 +24,9 @@ public sealed class SystemChecksFrames
             yield return Frame(_looks.Latest);
         }
 
-        await foreach (var _ in subscription.ReadAllAsync(cancellationToken).ConfigureAwait(false))
+        while (!cancellationToken.IsCancellationRequested)
         {
+            await subscription.ReadAsync(cancellationToken).ConfigureAwait(false);
             yield return Frame(_looks.Latest);
         }
     }

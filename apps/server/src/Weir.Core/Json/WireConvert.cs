@@ -73,6 +73,9 @@ public static class WireConvert
         };
     }
 
+    /// <summary>True when the value is present and not null, false, zero or empty.</summary>
+    public static bool Truthy(WireValue? value) => value is not null && value.IsTruthy;
+
     /// <summary>A float's display form: shortest round-trip digits, and <c>nan</c>, <c>inf</c>, <c>-inf</c>.</summary>
     public static string FloatRepr(double value) =>
         double.IsNaN(value) ? "nan" : double.IsInfinity(value) ? (value > 0 ? "inf" : "-inf") : WireJsonWriter.FloatRepr(value);

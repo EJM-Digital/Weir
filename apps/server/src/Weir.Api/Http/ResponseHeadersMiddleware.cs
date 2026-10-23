@@ -193,7 +193,7 @@ public sealed class SecurityHeadersMiddleware
         headers.Remove("Server");
 
         // API responses can include filesystem paths, credentials metadata and operator settings.
-        var path = context.Request.Path.Value ?? string.Empty;
+        var path = string.Concat(context.Request.Path.Value);
         if (path.StartsWith("/api/v1", StringComparison.Ordinal) || NoStoreExactPaths.Contains(path))
         {
             SetDefault(headers, "Cache-Control", "no-store, private");

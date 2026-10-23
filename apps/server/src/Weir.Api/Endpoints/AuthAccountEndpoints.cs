@@ -126,15 +126,7 @@ internal sealed class AuthAccountEndpointHandlers
         }
 
         var uow = await request.DbAsync().ConfigureAwait(false);
-        try
-        {
-            await request.Auth.SetAppThemeAsync(uow, user.User.Id, theme).ConfigureAwait(false);
-        }
-        catch (WireValueException exception)
-        {
-            throw new ApiException(StatusCodes.Status400BadRequest, exception.Message);
-        }
-
+        await request.Auth.SetAppThemeAsync(uow, user.User.Id, theme).ConfigureAwait(false);
         return ApiRoutes.Ok(new WireObject().Set("message", "Theme saved.").Set("app_theme", theme));
     }
 }

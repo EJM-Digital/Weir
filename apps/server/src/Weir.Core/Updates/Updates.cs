@@ -199,13 +199,16 @@ public static class UpdateStatus
             .Set("in_app_upgrade_supported", installType == "windows")
             .Set("in_app_upgrade_summary", (string?)null);
 
+    private static bool IsNewer(string currentVersion, string releaseVersion) =>
+        SemanticVersion.TryParse(currentVersion, out var current)
+        && SemanticVersion.TryParse(releaseVersion, out var latest)
+        && latest > current;
+
     /// <summary>The update status once a release was fetched.</summary>
     public static WireObject FromRelease(string currentVersion, string installType, GitHubReleaseRecord release)
     {
         ArgumentNullException.ThrowIfNull(release);
-        var updateAvailable = SemanticVersion.TryParse(currentVersion, out var current)
-            && SemanticVersion.TryParse(release.Version, out var latest)
-            && latest > current;
+        var updateAvailable = IsNewer(currentVersion, release.Version);
         string status;
         string summary;
         if (release.Version.Length == 0)
@@ -247,7 +250,7 @@ public static class UpdateStatus
     public static WireObject RateLimited(string currentVersion, string installType, GitHubReleaseRecord? lastKnown, DateTimeOffset retryAt, string summary)
     {
         var known = lastKnown is null ? Unavailable(currentVersion, installType, RateLimitedStatus, summary) : FromRelease(currentVersion, installType, lastKnown);
-        var updateKnown = known.Get("status") is WireString { Value: "update_available" };
+        var updateKnown = lastKnown is not null && IsNewer(currentVersion, lastKnown.Version);
         return known
             .Set("status", RateLimitedStatus)
             .Set("summary", summary)
@@ -389,7 +392,7 @@ public static class UpdateStatus
 
             var downloaded = (dict.Get("downloaded") ?? WireBool.False).IsTruthy;
             var state = dict.Get("state") is WireString named && ActiveOrFailedStates.Contains(named.Value, StringComparer.Ordinal) ? named.Value : StateIdle;
-            var failure = state == StateFailed && dict.Get("failure") is WireString { Value.Length: > 0 } reason ? reason.Value : null;
+            var failure = state == StateFailed && dict.Get("failure") is WireString reason && reason.Value.Length > 0 ? reason.Value : null;
             return StateOut(downloaded, pending, downloaded ? StateDownloaded : state, failure, LastCheckedAt(dict));
         }
         catch (WireJsonDecodeException)
@@ -406,7 +409,7 @@ public static class UpdateStatus
     public static WireObject WithStep(WireObject state, string step)
     {
         ArgumentNullException.ThrowIfNull(state);
-        return StateOut(false, state.Get("pending_version") is WireString { Value.Length: > 0 } version ? version.Value : null, step, null, (state.Get("last_checked_at") as WireString)?.Value);
+        return StateOut(false, state.Get("pending_version") is WireString version && version.Value.Length > 0 ? version.Value : null, step, null, (state.Get("last_checked_at") as WireString)?.Value);
     }
 
     // When the tray last looked, in the form the rest of the API uses; left out when the tray has not looked or wrote a time that cannot be read.

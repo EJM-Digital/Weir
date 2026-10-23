@@ -101,7 +101,11 @@ public static class HandbackRules
     /// output folder through a remote path mapping Weir cannot read. The copy's whole path below the output folder (its
     /// folders and its name) must end the manager's path, so a file of the same name in another folder is not it.
     /// </summary>
-    public static bool ManagerPathEndsWith(string managerPath, IReadOnlyList<string> relativeParts)
+    public static bool ManagerPathEndsWith(string managerPath, IReadOnlyList<string> relativeParts) =>
+        ManagerPathEndsWith(managerPath, relativeParts, OperatingSystem.IsWindows());
+
+    /// <summary><see cref="ManagerPathEndsWith(string, IReadOnlyList{string})"/> for a stated host operating system, so both ways are exercised on any host.</summary>
+    internal static bool ManagerPathEndsWith(string managerPath, IReadOnlyList<string> relativeParts, bool hostIsWindows)
     {
         ArgumentNullException.ThrowIfNull(relativeParts);
         var parts = Parts(managerPath);
@@ -110,7 +114,7 @@ public static class HandbackRules
             return false;
         }
 
-        var comparison = Comparison(managerPath);
+        var comparison = Comparison(managerPath, hostIsWindows);
         var offset = parts.Count - relativeParts.Count;
         for (var index = 0; index < relativeParts.Count; index++)
         {
@@ -133,22 +137,26 @@ public static class HandbackRules
 
         var a = Parts(left);
         var b = Parts(right);
-        var comparison = Comparison(left);
+        var comparison = Comparison(left, OperatingSystem.IsWindows());
         return a.Count == b.Count && a.Zip(b).All(pair => string.Equals(pair.First, pair.Second, comparison));
     }
 
     /// <summary>The last part of a path, in either style.</summary>
-    public static string FileName(string path) => Parts(path) is { Count: > 0 } parts ? parts[^1] : string.Empty;
+    public static string FileName(string path)
+    {
+        var parts = Parts(path);
+        return parts.Count > 0 ? parts[^1] : string.Empty;
+    }
 
     private static List<string> Parts(string path) =>
-        [.. (path ?? string.Empty).Trim().Split('/', '\\').Where(part => part.Length > 0 && part != ".")];
+        [.. path.Trim().Split('/', '\\').Where(part => part.Length > 0 && part != ".")];
 
     /// <summary>A Windows-style path (a drive letter or a backslash) ignores case, as Windows does; any other does not.</summary>
-    private static StringComparison Comparison(string path)
+    private static StringComparison Comparison(string path, bool hostIsWindows)
     {
-        var text = (path ?? string.Empty).Trim();
+        var text = path.Trim();
         var windows = text.Contains('\\', StringComparison.Ordinal) || (text.Length >= 2 && text[1] == ':' && char.IsLetter(text[0]));
-        return windows || OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        return windows || hostIsWindows ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
     }
 
     // --- words ----------------------------------------------------------------------------------------------------------

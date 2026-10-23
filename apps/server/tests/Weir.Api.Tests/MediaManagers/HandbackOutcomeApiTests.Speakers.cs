@@ -271,4 +271,19 @@ public sealed partial class HandbackOutcomeApiTests
         Assert.Equal((true, "Weir recorded that Deluno imported the file and released its copy."), imported);
         Assert.False(File.Exists(copy));
     }
+
+    [Fact]
+    public async Task A_generic_import_of_a_file_Weir_never_handed_back_is_heard_and_changes_nothing()
+    {
+        await using var server = await StartAsync();
+        await TestDatabase.SeedAdminAsync(server);
+
+        using var response = await new ApiTestClient(server).PostAsync(
+            "/api/v1/intake/webhook/native",
+            new { @event = "imported", filePath = "/media/films/Film (2024)/Film (2024).mkv", mediaScope = "movie" },
+            SecretHeader);
+
+        var answer = await Json(response);
+        Assert.Equal(("ignored", "imported"), (answer["status"]!.GetValue<string>(), answer["event"]!.GetValue<string>()));
+    }
 }

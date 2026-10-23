@@ -17,6 +17,7 @@ public abstract class E2ETestBase(E2EServer server) : IAsyncLifetime
 
     private readonly List<IBrowserContext> _contexts = [];
     private readonly List<string> _browserLog = [];
+    private readonly List<string> _coverageReports = [];
     private IBrowser? _browser;
 
     protected E2EServer Server { get; } = server;
@@ -38,6 +39,7 @@ public abstract class E2ETestBase(E2EServer server) : IAsyncLifetime
 
         try
         {
+            await WriteCoverageAsync();
             await WriteEvidenceAsync();
         }
         finally
@@ -64,6 +66,7 @@ public abstract class E2ETestBase(E2EServer server) : IAsyncLifetime
     {
         var context = await _browser!.NewContextAsync(new BrowserNewContextOptions { ViewportSize = viewport, ExtraHTTPHeaders = headers, ColorScheme = colorScheme });
         context.Page += (_, page) => Watch(page);
+        await WebCoverage.AttachAsync(context, _coverageReports);
         await context.Tracing.StartAsync(new TracingStartOptions { Screenshots = true, Snapshots = true });
         _contexts.Add(context);
         return context;
@@ -100,6 +103,14 @@ public abstract class E2ETestBase(E2EServer server) : IAsyncLifetime
         lock (_browserLog)
         {
             _browserLog.Add(line);
+        }
+    }
+
+    private async Task WriteCoverageAsync()
+    {
+        if (FailureArtifacts.CurrentTest is { } test)
+        {
+            await WebCoverage.WriteAsync(test, _contexts, _coverageReports);
         }
     }
 

@@ -225,8 +225,7 @@ public static class LibraryFolderRules
     private static string LastSegment(string path)
     {
         var trimmedPath = path.TrimEnd('\\', '/');
-        var lastSeparator = trimmedPath.LastIndexOfAny(['\\', '/']);
-        return lastSeparator < 0 ? trimmedPath : trimmedPath[(lastSeparator + 1)..];
+        return trimmedPath[(trimmedPath.LastIndexOfAny(['\\', '/']) + 1)..];
     }
 
     /// <summary>The checks a single library-folder-shaped path must pass: Weir's general folder rules, plus no overlap

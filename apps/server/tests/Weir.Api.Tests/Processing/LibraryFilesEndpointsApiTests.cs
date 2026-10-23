@@ -161,4 +161,47 @@ public sealed class LibraryFilesEndpointsApiTests
         Assert.Equal(Weir.Core.Media.ToolFailureText.UnusableTrackData, body["detail"]!.GetValue<string>());
         Assert.Equal(0, await CleanJobsAsync(server));
     }
+
+    [Theory]
+    [InlineData("classification=would_change&manager=radarr&q=film")]
+    [InlineData("classification=&manager=&q=")]
+    [InlineData("manager=%20")]
+    public async Task The_table_narrows_by_a_classification_manager_or_search_only_when_it_is_given_one(string query)
+    {
+        var (server, client, libraryId) = await StartAsync();
+        await using var _ = server;
+        await SeedFileAsync(server, libraryId, "/lib/film.mkv", "would_change", FilmProbe);
+
+        using var response = await client.GetAsync(FilesPath(libraryId, query));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_path_named_twice_is_cleaned_once()
+    {
+        var (server, client, libraryId) = await StartAsync();
+        await using var _ = server;
+        await SeedFileAsync(server, libraryId, "/lib/film.mkv", "would_change", FilmProbe);
+
+        var (status, body) = await CleanAsync(client, libraryId, new { paths = new[] { "/lib/film.mkv", "/lib/film.mkv" }, confirm_final_removal = true });
+
+        Assert.Equal(HttpStatusCode.OK, status);
+        Assert.Equal(1, body["queued"]!.GetValue<int>());
+        Assert.Equal(1, await CleanJobsAsync(server));
+    }
+
+    [Fact]
+    public async Task A_track_choice_made_against_a_file_of_a_known_size_is_queued_with_that_size()
+    {
+        var (server, client, libraryId) = await StartAsync();
+        await using var _ = server;
+        await SeedFileAsync(server, libraryId, "/lib/film.mkv", "matches", FilmProbe, sizeBytes: 2_000_000);
+
+        var (status, body) = await CleanAsync(
+            client, libraryId, new { paths = new[] { "/lib/film.mkv" }, confirm_final_removal = true, manual_plan = JapaneseOnlyChoice(), expected_size_bytes = 2_000_000 });
+
+        Assert.Equal(HttpStatusCode.OK, status);
+        Assert.Equal(1, body["queued"]!.GetValue<int>());
+    }
 }
