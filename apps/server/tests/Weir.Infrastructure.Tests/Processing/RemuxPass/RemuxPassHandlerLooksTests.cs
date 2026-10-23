@@ -48,6 +48,35 @@ public sealed partial class RemuxPassHandlerTests
         Assert.True(((WireBool)result["retry_scheduled"]).Value);
     }
 
+    [Theory]
+    [InlineData(null, 1)]
+    [InlineData(2L, 3)]
+    public async Task A_file_waiting_for_disk_space_books_its_next_look_and_counts_the_looks_so_far(long? looksSoFar, long expected)
+    {
+        var data = new WireObject();
+        if (looksSoFar is { } counted)
+        {
+            data.Set("disk_space_looks", counted);
+        }
+
+        var result = new WireObject().Set("not_ready_kind", RemuxPassRunner.DiskSpaceWait);
+
+        await Handler().DeferUntilDiskSpaceAsync(9, data, null, result, CancellationToken.None);
+
+        var next = Assert.Single(await _fixture.Jobs.ListAsync());
+        Assert.Equal(expected, ((WireInteger)((WireObject)WireJsonParser.Parse(next.PayloadJson!))["disk_space_looks"]).Value);
+        Assert.True(((WireBool)result["retry_scheduled"]).Value);
+    }
+
+    [Fact]
+    public async Task A_hand_off_that_cannot_be_looked_up_leaves_the_pass_with_none()
+    {
+        await _fixture.Store.Execute("ALTER TABLE jobs RENAME TO jobs_unavailable");
+
+        Assert.Null(await Handler().CarriedOriginAsync(1, null, "Movie/file.mkv", "movie", CancellationToken.None));
+        Assert.Null(await Handler().AdoptedOriginAsync(1, CancellationToken.None));
+    }
+
     [WindowsFact("A file held open without delete sharing cannot be deleted only on Windows")]
     public async Task A_rejected_file_that_is_locked_is_kept_and_the_rejection_says_why()
     {

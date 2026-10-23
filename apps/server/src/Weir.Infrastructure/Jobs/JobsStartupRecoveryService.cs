@@ -175,19 +175,22 @@ public sealed class JobsStartupRecoveryService : IHostedService
 
     private async Task<IReadOnlyList<string>> LibraryFoldersForSweepAsync(CancellationToken cancellationToken)
     {
+        IReadOnlyList<string> folders;
         try
         {
             var uow = await UnitOfWork.OpenAsync(_store.Database, cancellationToken).ConfigureAwait(false);
             await using (uow.ConfigureAwait(false))
             {
-                return await _librarySettings.AllFoldersAsync(uow).ConfigureAwait(false);
+                folders = await _librarySettings.AllFoldersAsync(uow).ConfigureAwait(false);
             }
         }
         catch (Exception exception) when (exception is SqliteException or InvalidOperationException)
         {
             _logger.LogWarning(exception, "Could not read library folders for the startup sweep; it will only look at paths recorded on job rows.");
-            return [];
+            folders = [];
         }
+
+        return folders;
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

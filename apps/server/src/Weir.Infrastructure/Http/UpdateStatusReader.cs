@@ -109,18 +109,21 @@ public sealed class UpdateStatusReader
     /// <summary>The time zone chosen in System, for the clock time a limit lifts at; UTC when the setting cannot be read.</summary>
     private async Task<string?> TimezoneAsync(CancellationToken cancellationToken)
     {
+        string? timezone;
         try
         {
             var uow = await UnitOfWork.OpenAsync(_database, cancellationToken).ConfigureAwait(false);
             await using (uow.ConfigureAwait(false))
             {
-                return (await _suiteSettings.GetAsync(uow).ConfigureAwait(false))?.AppTimezone;
+                timezone = (await _suiteSettings.GetAsync(uow).ConfigureAwait(false))?.AppTimezone;
             }
         }
         catch (Exception exception) when (exception is SqliteException or IOException)
         {
-            return null;
+            timezone = null;
         }
+
+        return timezone;
     }
 
     private static WireObject NotPublished(string currentVersion, string installType) =>

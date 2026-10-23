@@ -134,6 +134,23 @@ public sealed class ActivityHistoryStoreTests
     }
 
     [Fact]
+    public async Task The_latest_poll_tells_nobody_when_there_is_no_activity_yet()
+    {
+        using var fixture = new StoreFixture();
+        var notifier = new ActivityLatestNotifier();
+        var poll = new ActivityLatestPollTask(fixture.Database, notifier, _history);
+        var clock = new FakeTimeProvider();
+        var waiting = notifier.WaitForChangeAsync(notifier.Snapshot().Version, TimeSpan.FromSeconds(5), clock);
+
+        await poll.RunOnceAsync(CancellationToken.None);
+
+        Assert.False(waiting.IsCompleted);
+        Assert.Null(await _history.LatestIdAsync(fixture.Database));
+        clock.Advance(TimeSpan.FromSeconds(5));
+        Assert.Null(await waiting);
+    }
+
+    [Fact]
     public async Task The_latest_poll_checks_nothing_while_no_stream_is_open()
     {
         using var fixture = new StoreFixture();

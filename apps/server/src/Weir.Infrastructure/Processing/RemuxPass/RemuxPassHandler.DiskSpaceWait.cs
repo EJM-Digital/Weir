@@ -9,7 +9,7 @@ public sealed partial class RemuxPassHandler
     /// A file that could not start because a drive is short of the space to keep free is looked at again later and stays
     /// waiting until then, never recorded as done. Booked before the file's state is written, so its hold ends when the look is due.
     /// </summary>
-    private async Task DeferUntilDiskSpaceAsync(long jobId, WireObject data, WireObject? origin, WireObject result, CancellationToken cancellationToken)
+    internal async Task DeferUntilDiskSpaceAsync(long jobId, WireObject data, WireObject? origin, WireObject result, CancellationToken cancellationToken)
     {
         if (_jobs is null || result.Get("not_ready_kind") is not WireString { Value: RemuxPassRunner.DiskSpaceWait })
         {
