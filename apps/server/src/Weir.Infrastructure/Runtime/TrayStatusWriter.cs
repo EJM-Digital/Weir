@@ -99,8 +99,9 @@ public sealed class TrayStatusWriter : BackgroundService
 
     public override void Dispose()
     {
-        _heard?.Dispose();
+        // Stopping first: the listener reads in a loop that only cancellation ends, so its subscription is not closed under it.
         base.Dispose();
+        _heard?.Dispose();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -118,8 +119,9 @@ public sealed class TrayStatusWriter : BackgroundService
     /// <summary>Marks the status stale whenever data it is made of changes; the reading itself is left to the loop that throttles it.</summary>
     private async Task ListenAsync(CancellationToken stoppingToken)
     {
-        await foreach (var topic in _heard!.ReadAllAsync(stoppingToken).ConfigureAwait(false))
+        while (true)
         {
+            var topic = await _heard!.ReadAsync(stoppingToken).ConfigureAwait(false);
             if (Topics.Contains(topic))
             {
                 _stale.Writer.TryWrite(true);
@@ -132,8 +134,9 @@ public sealed class TrayStatusWriter : BackgroundService
     {
         await FirstFolderLookAsync(stoppingToken).ConfigureAwait(false);
         await ReadWriteAndRetryAsync(stoppingToken).ConfigureAwait(false);
-        await foreach (var _ in _stale.Reader.ReadAllAsync(stoppingToken).ConfigureAwait(false))
+        while (true)
         {
+            await _stale.Reader.ReadAsync(stoppingToken).ConfigureAwait(false);
             await Task.Delay(Settle, _time, stoppingToken).ConfigureAwait(false);
             await ReadWriteAndRetryAsync(stoppingToken).ConfigureAwait(false);
         }

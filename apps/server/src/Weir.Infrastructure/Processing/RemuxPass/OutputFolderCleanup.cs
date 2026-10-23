@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Weir.Core.Json;
 using Weir.Core.MediaManagers;
+using Weir.Infrastructure.IO;
 
 namespace Weir.Infrastructure.Processing.RemuxPass;
 
@@ -16,8 +17,9 @@ public sealed partial class OutputFolderCleanup
     private readonly ILogger _logger;
     private readonly int _movieMinAgeSeconds;
     private readonly int _tvMinAgeSeconds;
+    private readonly IFileSystem _files;
 
-    public OutputFolderCleanup(IPostSuccessCleanupData data, TimeProvider time, ILogger logger, int movieMinAgeSeconds, int tvMinAgeSeconds)
+    public OutputFolderCleanup(IPostSuccessCleanupData data, TimeProvider time, ILogger logger, int movieMinAgeSeconds, int tvMinAgeSeconds, IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(data);
         ArgumentNullException.ThrowIfNull(time);
@@ -27,18 +29,15 @@ public sealed partial class OutputFolderCleanup
         _logger = logger;
         _movieMinAgeSeconds = movieMinAgeSeconds;
         _tvMinAgeSeconds = tvMinAgeSeconds;
+        _files = files ?? PhysicalFileSystem.Instance;
     }
 
     /// <summary>A stable posix path for comparing job payloads.</summary>
     public static string NormalizeRelativeForMatch(string rel)
     {
-        var parts = WireStrings.Strip(rel ?? string.Empty).Replace('\\', '/').Split('/').Where(part => part is not ("." or "")).ToList();
-        if (rel is not null && WireStrings.Strip(rel).Replace('\\', '/').StartsWith('/'))
-        {
-            return "/" + string.Join('/', parts);
-        }
-
-        return string.Join('/', parts);
+        var posix = WireStrings.Strip(rel).Replace('\\', '/');
+        var joined = string.Join('/', posix.Split('/').Where(part => part is not ("." or "")));
+        return posix.StartsWith('/') ? "/" + joined : joined;
     }
 
     /// <summary>Deletes the movie's output folder after a successful pass when every cleanup gate allows it.</summary>

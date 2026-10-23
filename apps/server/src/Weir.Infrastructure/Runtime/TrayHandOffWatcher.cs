@@ -97,8 +97,7 @@ public sealed class TrayHandOffWatcher : BackgroundService
             watcher.Deleted += (_, change) => Hear(change.Name);
             watcher.Renamed += (_, change) => Hear(change.Name);
 
-            // Events lost to a full buffer could have been any of the files, so every topic is announced.
-            watcher.Error += (_, _) => _written.Writer.TryWrite(string.Empty);
+            watcher.Error += (_, _) => HearOverflow();
             watcher.EnableRaisingEvents = true;
             return watcher;
         }
@@ -118,12 +117,15 @@ public sealed class TrayHandOffWatcher : BackgroundService
         }
     }
 
+    /// <summary>Takes note that events were lost: any of the files could have been written, so every topic is announced. A test may call it directly.</summary>
+    internal void HearOverflow() => _written.Writer.TryWrite(string.Empty);
+
     private async Task AnnounceAsync(CancellationToken stoppingToken)
     {
         var heard = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        await foreach (var first in _written.Reader.ReadAllAsync(stoppingToken).ConfigureAwait(false))
+        while (true)
         {
-            heard.Add(first);
+            heard.Add(await _written.Reader.ReadAsync(stoppingToken).ConfigureAwait(false));
             await SettleAsync(heard, stoppingToken).ConfigureAwait(false);
 
             foreach (var topic in TopicsFor(heard))

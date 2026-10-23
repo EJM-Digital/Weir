@@ -241,4 +241,31 @@ public sealed class TrayPauseRequestWatcherTests : IDisposable
         await UntilTheRequestIsTakenAwayAsync();
         Assert.True((await CurrentAsync()).Paused);
     }
+
+    [WindowsFact("Only Windows refuses a read of a file another program holds without sharing it.")]
+    public async Task A_request_that_is_refused_on_the_second_look_is_looked_at_again_and_not_lost()
+    {
+        await _watcher.StartAsync(CancellationToken.None);
+        await File.WriteAllTextAsync(RequestPath, "{\"paused\": tr");
+        await Eventually.ThatAsync(() =>
+        {
+            var waiting = _log.Logged(LogLevel.Debug, "cannot be read yet");
+            if (!waiting)
+            {
+                _store.Clock.Advance(TrayHandOffWatcher.Settle);
+            }
+
+            return waiting;
+        });
+
+        using (new FileStream(RequestPath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            await UntilAsync(() => _log.Logged(LogLevel.Debug, "refused for a moment"));
+            Assert.False((await CurrentAsync()).Paused);
+        }
+
+        await File.WriteAllTextAsync(RequestPath, Request(paused: true));
+        await UntilTheRequestIsTakenAwayAsync();
+        Assert.True((await CurrentAsync()).Paused);
+    }
 }

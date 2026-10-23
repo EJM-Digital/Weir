@@ -9,6 +9,7 @@ using Weir.Core.MediaManagers;
 using Weir.Core.Processing;
 using Weir.Core.Processing.RemuxPass;
 using Weir.Infrastructure.Activity;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Jobs;
 using Weir.Infrastructure.LibraryMode;
 using Weir.Infrastructure.Media;
@@ -44,12 +45,12 @@ public sealed partial class LibraryCleanHandlerTests : IDisposable
     }
 
     private LibraryCleanHandler Handler(
-        IHardlinkInspector? hardlinks = null, ILibraryFileChangeNotifier? notifier = null, IRemovedTrackStore? removedTracks = null, ILogger<LibraryCleanHandler>? logger = null) =>
-        (LibraryCleanHandler)Activator.CreateInstance(typeof(LibraryCleanHandler), HandlerArguments(hardlinks, notifier, removedTracks, logger))!;
+        IHardlinkInspector? hardlinks = null, ILibraryFileChangeNotifier? notifier = null, IRemovedTrackStore? removedTracks = null, ILogger<LibraryCleanHandler>? logger = null, IFileSystem? files = null) =>
+        (LibraryCleanHandler)Activator.CreateInstance(typeof(LibraryCleanHandler), HandlerArguments(hardlinks, notifier, removedTracks, logger, files))!;
 
     /// <summary>What the handler is built from, in the order of its constructor.</summary>
-    private object[] HandlerArguments(
-        IHardlinkInspector? hardlinks = null, ILibraryFileChangeNotifier? notifier = null, IRemovedTrackStore? removedTracks = null, ILogger<LibraryCleanHandler>? logger = null)
+    private object?[] HandlerArguments(
+        IHardlinkInspector? hardlinks = null, ILibraryFileChangeNotifier? notifier = null, IRemovedTrackStore? removedTracks = null, ILogger<LibraryCleanHandler>? logger = null, IFileSystem? files = null)
     {
         var tools = new MediaTools(_media, new FixedResolver(), new ListLogger<MediaTools>(), TimeProvider.System);
         var swap = new SafeSwap(
@@ -66,7 +67,7 @@ public sealed partial class LibraryCleanHandlerTests : IDisposable
         return
         [
             _fixture.Store.Database, tools, swap, notifier, hardlinks ?? PhysicalHardlinkInspector.Instance, removedTracks,
-            _librarySettings, _fileMarks, _scans, _fixture.Jobs, _libraries, _fixture.Changes, _fixture.Store.Clock, logger ?? NullLogger<LibraryCleanHandler>.Instance,
+            _librarySettings, _fileMarks, _scans, _fixture.Jobs, _libraries, _fixture.Changes, _fixture.Store.Clock, logger ?? NullLogger<LibraryCleanHandler>.Instance, files,
         ];
     }
 

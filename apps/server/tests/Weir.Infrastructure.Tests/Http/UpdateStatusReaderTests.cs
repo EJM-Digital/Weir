@@ -73,6 +73,17 @@ public sealed class UpdateStatusReaderTests : IDisposable
     }
 
     [Fact]
+    public async Task A_limit_names_the_time_in_UTC_when_no_time_zone_was_ever_chosen()
+    {
+        await _fixture.Execute("DELETE FROM suite_settings");
+        _failure = new ReleaseFetchException(429, new ReleaseRateLimit(LimitLifts, null));
+
+        var status = await _reader.ReadAsync(CancellationToken.None);
+
+        Assert.EndsWith("Weir will check again at 11:35 pm.", TextOf(status, "summary"), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_limit_is_logged_at_information_with_when_it_lifts_and_a_repeat_only_at_debug()
     {
         _failure = new ReleaseFetchException(403, new ReleaseRateLimit(LimitLifts, null));
@@ -168,6 +179,29 @@ public sealed class UpdateStatusReaderTests : IDisposable
         var status = await reader.ReadAsync(CancellationToken.None);
 
         Assert.EndsWith("Weir will check again at 11:35 pm.", TextOf(status, "summary"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_catalog_that_answers_with_no_release_reads_as_nothing_published()
+    {
+        var reader = new UpdateStatusReader(new NoReleaseCatalog(), _fixture.Options, _fixture.Database, new SuiteSettingsStore(_fixture.Users), new UpdateFiles(_fixture.Options), _log);
+
+        var status = await reader.ReadAsync(CancellationToken.None);
+
+        Assert.Equal("not_published", TextOf(status, "status"));
+        Assert.Equal("3.2.16", TextOf(status, "current_version"));
+    }
+
+    [Fact]
+    public void A_build_without_a_version_override_still_carries_a_version()
+    {
+        Assert.False(string.IsNullOrWhiteSpace(Weir.Core.WeirVersion.Resolve(null)));
+        Assert.False(string.IsNullOrWhiteSpace(Weir.Core.WeirVersion.Resolve("  ")));
+    }
+
+    private sealed class NoReleaseCatalog : IReleaseCatalogClient
+    {
+        public Task<GitHubReleaseRecord?> FetchLatestAsync(string currentVersion, CancellationToken cancellationToken) => Task.FromResult<GitHubReleaseRecord?>(null);
     }
 
     private sealed class FailingCatalog(UpdateStatusReaderTests owner) : IReleaseCatalogClient

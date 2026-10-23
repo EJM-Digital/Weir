@@ -15,6 +15,17 @@ public sealed class PathContainmentLinkTests
         Assert.False(PathContainment.HasLinkBelowRoot(root, Path.Join(root, "missing", "deeper", "file.mkv")));
     }
 
+    [Fact]
+    public void A_path_the_system_refuses_to_describe_counts_as_a_link()
+    {
+        using var folder = new TempDirectory();
+        var root = folder.Join("root");
+        Directory.CreateDirectory(root);
+        var files = new FaultingFileSystem().Fail(FileCall.GetAttributes, FaultingFileSystem.SharingViolation);
+
+        Assert.True(PathContainment.HasLinkBelowRoot(root, Path.Join(root, "file.mkv"), files));
+    }
+
     [PosixFact("Only permission bits hide a folder's contents on a path the process can still name; Windows denies a listing, not a lookup.")]
     public void A_path_inside_a_folder_that_cannot_be_opened_counts_as_a_link()
     {

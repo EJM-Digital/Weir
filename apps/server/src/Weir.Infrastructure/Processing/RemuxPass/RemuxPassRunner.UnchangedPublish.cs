@@ -203,7 +203,7 @@ public sealed partial class RemuxPassRunner
         // same-volume no-change file into metadata work. Elsewhere locks are advisory, so the independent copy stays.
         if (HardlinkFastPathSupported && await FileLifecycle.TryHardlinkToFinalAsync(src, final, ValidateStaged, _ownership).ConfigureAwait(false))
         {
-            var size = new FileInfo(src).Length;
+            var size = Files.GetLength(src);
             progress(size, size);
             return (replacedExisting, "validated_hardlink");
         }
@@ -218,7 +218,7 @@ public sealed partial class RemuxPassRunner
     /// </summary>
     private async Task<string> DetachHardlinkedOutputIfSourceRemainsAsync(PassContext context, string final, string method, Action<long, long> progress)
     {
-        if (method != "validated_hardlink" || !File.Exists(context.Source))
+        if (method != "validated_hardlink" || !Files.FileExists(context.Source))
         {
             return method;
         }

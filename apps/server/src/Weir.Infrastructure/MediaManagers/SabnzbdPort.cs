@@ -41,7 +41,7 @@ public sealed class SabnzbdPort : IDownloadClientPort
             var client = new DownloadClientHttpClient(connection.BaseUrl, _handlers, connection: connection.Reference);
             var misc = await client.SendAsync(HttpMethod.Get, "/api", MiscParameters(connection), cancellationToken: cancellationToken).ConfigureAwait(false);
             var categories = await client.SendAsync(HttpMethod.Get, "/api", CategoriesParameters(connection), cancellationToken: cancellationToken).ConfigureAwait(false);
-            if (misc.Status is < 200 or >= 300 || categories.Status is < 200 or >= 300)
+            if (!misc.Succeeded || !categories.Succeeded)
             {
                 return DownloadClientFolders.Empty;
             }
@@ -69,7 +69,7 @@ public sealed class SabnzbdPort : IDownloadClientPort
 
     private static (bool Ok, string Detail) Classify(DownloadClientHttpResponse response, DownloadClientConnection connection)
     {
-        if (response.Status is >= 200 and < 300 && response.Json() is WireObject dict && dict.Get("config") is WireObject)
+        if (response.Succeeded && response.Json() is WireObject dict && dict.Get("config") is WireObject)
         {
             return (true, $"Connected. Weir can reach {connection.Label}.");
         }

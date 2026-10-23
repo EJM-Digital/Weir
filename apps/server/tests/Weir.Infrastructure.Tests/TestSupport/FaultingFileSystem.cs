@@ -26,6 +26,7 @@ internal enum FileCall
     OpenHandle,
     CreateDirectory,
     SetUnixFileMode,
+    GetUnixFileMode,
     WriteAllBytes,
     DeleteFile,
     DeleteDirectory,
@@ -127,6 +128,9 @@ internal sealed class FaultingFileSystem : IFileSystem
 
     [UnsupportedOSPlatform("windows")]
     public void SetUnixFileMode(string path, UnixFileMode mode) => Run(FileCall.SetUnixFileMode, path, () => _real.SetUnixFileMode(path, mode));
+
+    [UnsupportedOSPlatform("windows")]
+    public UnixFileMode GetUnixFileMode(string path) => Run(FileCall.GetUnixFileMode, path, () => _real.GetUnixFileMode(path));
 
     public void WriteAllBytes(string path, byte[] bytes) => Run(FileCall.WriteAllBytes, path, () => _real.WriteAllBytes(path, bytes));
 

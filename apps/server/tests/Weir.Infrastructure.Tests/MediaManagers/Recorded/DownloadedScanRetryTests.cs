@@ -161,6 +161,22 @@ public sealed class DownloadedScanRetryTests : IDisposable
         Assert.Equal(0, await ActivityAsync(Asked));
     }
 
+    [Theory]
+    [InlineData("radarr")]
+    [InlineData("deluno")]
+    public async Task A_connection_that_became_another_kind_of_manager_while_the_ask_waited_is_not_asked_again(string kind)
+    {
+        var handler = await StartRecordedAsync(BusyScanRecording.Busy(), BusyScanRecording.Accepted);
+        await AskAsPassAsync();
+        await _fixture.Store.Execute($"UPDATE media_manager_connections SET kind = '{kind}' WHERE id = {_connectionId}");
+
+        _fixture.Store.Clock.Advance(TimeSpan.FromSeconds(15));
+        await RunDueJobAsync(handler);
+
+        Assert.Single(ScansAsked());
+        Assert.Equal(0, await ActivityAsync(Asked));
+    }
+
     [Fact]
     public async Task An_app_that_says_too_many_requests_with_a_Retry_After_is_asked_again_after_that_long_when_it_is_longer_than_the_wait()
     {

@@ -78,6 +78,21 @@ public sealed class WorkFolderPlacementTests
         Assert.DoesNotContain(logger.Entries, entry => entry.Level == LogLevel.Information);
     }
 
+    [Fact]
+    public async Task Workflows_that_cannot_be_read_are_left_unchecked_and_the_server_starts_all_the_same()
+    {
+        using var store = new StoreFixture(("WEIR_CREDENTIALS_SECRET", "work-folder-placement-3"));
+        await store.Execute("ALTER TABLE libraries RENAME TO libraries_unreadable");
+        var logger = new ListLogger<WorkFolderPlacementCheck>();
+        var check = new WorkFolderPlacementCheck(store.Database, store.Options, Libraries, logger, (_, _) => false);
+
+        await check.StartAsync(CancellationToken.None);
+        await check.ExecuteTask!;
+
+        Assert.Contains(logger.Entries, entry => entry.Level == LogLevel.Debug && entry.Message.Contains("could not read the workflows", StringComparison.Ordinal));
+        Assert.DoesNotContain(logger.Entries, entry => entry.Level == LogLevel.Information);
+    }
+
     private static async Task MoviesLibraryAsync(StoreFixture store, string output)
     {
         await using var uow = await UnitOfWork.OpenAsync(store.Database);

@@ -29,7 +29,7 @@ public static class FinalPaths
         try
         {
             var full = Path.GetFullPath(path);
-            var resolved = Path.GetPathRoot(full) ?? string.Empty;
+            var resolved = Path.GetPathRoot(full)!;
             var pending = new Stack<string>(PartsBelowRoot(full).Reverse());
             var linksFollowed = 0;
             while (pending.Count > 0)
@@ -52,7 +52,7 @@ public static class FinalPaths
                     return null;
                 }
 
-                resolved = Path.GetPathRoot(target) ?? string.Empty;
+                resolved = Path.GetPathRoot(target)!;
                 foreach (var part in PartsBelowRoot(target).Reverse())
                 {
                     pending.Push(part);
@@ -68,5 +68,5 @@ public static class FinalPaths
     }
 
     private static string[] PartsBelowRoot(string fullPath) =>
-        fullPath[(Path.GetPathRoot(fullPath)?.Length ?? 0)..].Split(Separators, StringSplitOptions.RemoveEmptyEntries);
+        fullPath[Path.GetPathRoot(fullPath)!.Length..].Split(Separators, StringSplitOptions.RemoveEmptyEntries);
 }

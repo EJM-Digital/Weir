@@ -225,6 +225,54 @@ public sealed class HandoffStatusStatesTests : IDisposable
         Assert.Equal(HandoffLedgerRules.Queued, status.State);
     }
 
+    [Theory]
+    [InlineData("NULL")]
+    [InlineData("'{\"relative_media_path\":\"\"}'")]
+    public async Task A_job_whose_payload_is_missing_or_names_no_file_is_still_a_job_for_the_hand_off(string payload)
+    {
+        await ReceiveAsync();
+        await _fixture.Store.Execute($"UPDATE jobs SET payload_json = {payload}");
+
+        var status = await StatusAsync();
+
+        Assert.Equal(HandoffLedgerRules.Queued, status.State);
+    }
+
+    [Fact]
+    public async Task A_change_of_state_is_dated_by_the_work_that_changed_it_unless_the_hand_off_was_already_changed_later()
+    {
+        await ReceiveAsync();
+        _fixture.Store.Clock.Advance(TimeSpan.FromHours(1));
+        await _fixture.Store.Execute("UPDATE jobs SET status = 'leased', updated_at = '2026-01-15 10:00:00'");
+        await _fixture.Store.Execute("UPDATE files SET updated_at = '2026-01-15 10:00:00'");
+
+        var fresh = await _fixture.Db(uow => _fixture.Ledger.CurrentStatusAsync(uow, _row with { LastChangedAt = At(9) }));
+        var neverChanged = await _fixture.Db(uow => _fixture.Ledger.CurrentStatusAsync(uow, _row with { LastChangedAt = null }));
+        var later = await _fixture.Db(uow => _fixture.Ledger.CurrentStatusAsync(uow, _row with { LastChangedAt = At(10, 30) }));
+
+        Assert.Equal(At(10), fresh.LastChangedAt);
+        Assert.Equal(At(10), neverChanged.LastChangedAt);
+        Assert.Equal(_fixture.Store.Clock.GetUtcNow(), later.LastChangedAt);
+    }
+
+    [Fact]
+    public async Task Newer_work_on_a_hand_off_whose_state_has_not_changed_moves_its_date_and_older_work_does_not()
+    {
+        await ReceiveAsync();
+        await _fixture.Store.Execute("UPDATE jobs SET updated_at = '2026-01-15 10:00:00'");
+        await _fixture.Store.Execute("UPDATE files SET updated_at = '2026-01-15 10:00:00'");
+        _fixture.Store.Clock.Advance(TimeSpan.FromHours(1));
+
+        var newer = await _fixture.Db(uow => _fixture.Ledger.CurrentStatusAsync(uow, _row with { LastChangedAt = At(9) }));
+        var older = await _fixture.Db(uow => _fixture.Ledger.CurrentStatusAsync(uow, _row with { LastChangedAt = At(10, 30) }));
+        var unknown = await _fixture.Db(uow => _fixture.Ledger.CurrentStatusAsync(uow, _row with { LastChangedAt = null }));
+
+        Assert.Equal(_row.State, newer.State);
+        Assert.Equal(At(10), newer.LastChangedAt);
+        Assert.Equal(At(10, 30), older.LastChangedAt);
+        Assert.Equal(_fixture.Store.Clock.GetUtcNow(), unknown.LastChangedAt);
+    }
+
     [Fact]
     public async Task A_job_whose_payload_is_not_an_object_is_refused_loudly_rather_than_guessed_at()
     {

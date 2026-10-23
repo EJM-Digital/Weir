@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Weir.Core.Json;
+using Weir.Infrastructure.IO;
 
 namespace Weir.Infrastructure.Processing.RemuxPass;
 
@@ -28,7 +29,7 @@ public sealed partial class RemuxPassRunner
             _logger.LogWarning("Sidecar migration: {Reason}", result.BlockingReason);
         }
 
-        if (preserveTimestamps && SidecarMigration.ApplyOriginalTimestamps(src, finalOutputFile) is { } problem)
+        if (preserveTimestamps && SidecarMigration.ApplyOriginalTimestamps(src, finalOutputFile, Files) is { } problem)
         {
             // Never fatal: the output is correct either way.
             output.Set("original_timestamps_note", problem);
@@ -106,7 +107,7 @@ public sealed partial class RemuxPassRunner
 
         output.Set("source_folder_path", movieFolder);
         var outputFile = finalOutputFile ?? Path.Join(context.OutputDirectory, RemuxPassPaths.RelativeTo(src, watched)!);
-        var check = CheckOutputFileCompleteness(outputFile, src);
+        var check = CheckOutputFileCompleteness(outputFile, src, files: Files);
         foreach (var (key, value) in check.Items)
         {
             if (key != "output_completeness_note" || value.IsTruthy)
@@ -152,14 +153,15 @@ public sealed partial class RemuxPassRunner
         output.Set("source_deleted_after_success", true);
         output.Set("source_folder_skip_reason", WireNull.Instance);
         var cascade = output.Get("cascade_folders_deleted") as WireArray ?? new WireArray();
-        OutputFolderCleanup.CascadeDeleteEmptyParents(Path.GetDirectoryName(movieFolder)!, watched, cascade, _logger);
+        OutputFolderCleanup.CascadeDeleteEmptyParents(Path.GetDirectoryName(movieFolder)!, watched, cascade, _logger, Files);
         output.Set("cascade_folders_deleted", cascade);
     }
 
     /// <summary>Checks the output exists, is not empty and is not under 1% of the source.</summary>
-    public static WireObject CheckOutputFileCompleteness(string outputFile, string sourceFile, bool tv = false)
+    public static WireObject CheckOutputFileCompleteness(string outputFile, string sourceFile, bool tv = false, IFileSystem? files = null)
     {
-        if (!File.Exists(outputFile))
+        files ??= PhysicalFileSystem.Instance;
+        if (!files.FileExists(outputFile))
         {
             return Completeness("failed", null, null, "The output file is missing at the expected path.");
         }
@@ -168,8 +170,8 @@ public sealed partial class RemuxPassRunner
         long srcSize;
         try
         {
-            outSize = new FileInfo(outputFile).Length;
-            srcSize = new FileInfo(sourceFile).Length;
+            outSize = files.GetLength(outputFile);
+            srcSize = files.GetLength(sourceFile);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

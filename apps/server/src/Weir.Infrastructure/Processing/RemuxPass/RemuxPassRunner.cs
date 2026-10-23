@@ -6,6 +6,7 @@ using Weir.Core.Metrics;
 using Weir.Core.Processing;
 using Weir.Core.Processing.RemuxPass;
 using Weir.Core.Rules;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Media;
 
 namespace Weir.Infrastructure.Processing.RemuxPass;
@@ -38,6 +39,9 @@ public sealed partial class RemuxPassRunner
     private readonly ILogger _logger;
     private readonly IOutputOwnership? _ownership;
 
+    /// <summary>The file system the source and output are read through, so a file that vanishes or is refused mid-pass can be simulated.</summary>
+    private IFileSystem Files { get; }
+
     public RemuxPassRunner(
         MediaTools tools,
         IMediaToolResolver resolver,
@@ -49,7 +53,8 @@ public sealed partial class RemuxPassRunner
         TimeProvider time,
         ILogger<RemuxPassRunner> logger,
         RuntimeMetricsStore? metrics = null,
-        IOutputOwnership? ownership = null)
+        IOutputOwnership? ownership = null,
+        IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(tools);
         ArgumentNullException.ThrowIfNull(resolver);
@@ -69,7 +74,8 @@ public sealed partial class RemuxPassRunner
         _logger = logger;
         _metrics = metrics;
         _ownership = ownership;
-        _outputCleanup = new OutputFolderCleanup(cleanupData, time, logger, settings.MovieOutputCleanupMinAgeSeconds, settings.TvOutputCleanupMinAgeSeconds);
+        Files = files ?? PhysicalFileSystem.Instance;
+        _outputCleanup = new OutputFolderCleanup(cleanupData, time, logger, settings.MovieOutputCleanupMinAgeSeconds, settings.TvOutputCleanupMinAgeSeconds, Files);
     }
 
     /// <summary>Test seam: whether the Windows hard-link fast path is used.</summary>
@@ -92,15 +98,15 @@ public sealed partial class RemuxPassRunner
             source = null;
         }
 
-        if (source is null || !File.Exists(source))
+        if (source is null || !Files.FileExists(source))
         {
             return await RunInnerAsync(request, new SourceFingerprint(0, 0, 0, 0), cancellationToken).ConfigureAwait(false);
         }
 
-        var (guard, problem) = SourceFiles.AcquireReadGuard(source);
+        var (guard, problem) = SourceFiles.AcquireReadGuard(source, Files);
         if (guard is null)
         {
-            return SourceNotReady(request.RelativeMediaPath, problem ?? "Weir is waiting until no other program is writing this file.", source);
+            return SourceNotReady(request.RelativeMediaPath, problem!, source);
         }
 
         using (guard)
@@ -108,7 +114,7 @@ public sealed partial class RemuxPassRunner
             SourceFingerprint fingerprint;
             try
             {
-                fingerprint = SourceFiles.Fingerprint(source);
+                fingerprint = SourceFiles.Fingerprint(source, Files);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {

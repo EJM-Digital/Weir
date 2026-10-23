@@ -120,6 +120,18 @@ public sealed class NonBlockingConsoleTests
     }
 
     [Fact]
+    public void A_line_written_after_the_console_was_let_go_is_dropped_and_counted_not_raised()
+    {
+        using var stream = new RecordingStream();
+        var console = new NonBlockingConsole(stream, Encoding.UTF8);
+        console.Dispose();
+
+        console.WriteLine("too late");
+
+        Assert.Equal(1, console.Dropped);
+    }
+
+    [Fact]
     public void A_console_that_cannot_be_opened_is_the_same_to_the_caller_as_no_console_at_all()
     {
         using var console = new NonBlockingConsole(() => throw new IOException("no console"), () => Encoding.UTF8);

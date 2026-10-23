@@ -1,4 +1,5 @@
 using Weir.Core.Media;
+using Weir.Infrastructure.IO;
 
 namespace Weir.Infrastructure.Media;
 
@@ -28,14 +29,17 @@ public sealed class MediaToolResolver : IMediaToolResolver
     private readonly string? _packagedAppDirectory;
     private readonly Func<string, string?> _getEnvironmentVariable;
     private readonly bool _windows;
+    private readonly IFileSystem _files;
 
     /// <param name="packagedAppDirectory">The packaged app's directory, or null when not running packaged.</param>
     /// <param name="getEnvironmentVariable">Environment lookup; <see cref="Environment.GetEnvironmentVariable(string)"/> when null.</param>
-    public MediaToolResolver(string? packagedAppDirectory = null, Func<string, string?>? getEnvironmentVariable = null)
+    /// <param name="files">The file system the tools are looked for in; the real one when null.</param>
+    public MediaToolResolver(string? packagedAppDirectory = null, Func<string, string?>? getEnvironmentVariable = null, IFileSystem? files = null)
     {
         _packagedAppDirectory = packagedAppDirectory;
         _getEnvironmentVariable = getEnvironmentVariable ?? Environment.GetEnvironmentVariable;
         _windows = OperatingSystem.IsWindows();
+        _files = files ?? PhysicalFileSystem.Instance;
     }
 
     /// <summary>
@@ -58,7 +62,7 @@ public sealed class MediaToolResolver : IMediaToolResolver
         {
             var ffprobe = MediaToolLocations.Join(_windows, directory, ffprobeName);
             var ffmpeg = MediaToolLocations.Join(_windows, directory, ffmpegName);
-            if (File.Exists(ffprobe) && File.Exists(ffmpeg))
+            if (_files.FileExists(ffprobe) && _files.FileExists(ffmpeg))
             {
                 return (ffprobe, ffmpeg);
             }
@@ -92,7 +96,7 @@ public sealed class MediaToolResolver : IMediaToolResolver
         foreach (var directory in directories)
         {
             var candidate = MediaToolLocations.Join(_windows, directory, name);
-            if (File.Exists(candidate))
+            if (_files.FileExists(candidate))
             {
                 return candidate;
             }
@@ -104,19 +108,19 @@ public sealed class MediaToolResolver : IMediaToolResolver
     /// <summary>A PATH candidate counts when it exists, is not a directory, and (off Windows) is executable.</summary>
     private bool IsExecutableFile(string candidate)
     {
-        if (!File.Exists(candidate))
+        if (!_files.FileExists(candidate))
         {
             return false;
         }
 
-        if (_windows || OperatingSystem.IsWindows())
+        if (OperatingSystem.IsWindows())
         {
             return true;
         }
 
         try
         {
-            var mode = File.GetUnixFileMode(candidate);
+            var mode = _files.GetUnixFileMode(candidate);
             return (mode & (UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute)) != 0;
         }
         catch (IOException)

@@ -62,6 +62,10 @@ public interface IFileSystem
     [UnsupportedOSPlatform("windows")]
     void SetUnixFileMode(string path, UnixFileMode mode);
 
+    /// <summary>The permissions of the file or folder (a Unix-only call).</summary>
+    [UnsupportedOSPlatform("windows")]
+    UnixFileMode GetUnixFileMode(string path);
+
     void WriteAllBytes(string path, byte[] bytes);
 
     void DeleteFile(string path);
@@ -123,6 +127,9 @@ public sealed class PhysicalFileSystem : IFileSystem
 
     [UnsupportedOSPlatform("windows")]
     public void SetUnixFileMode(string path, UnixFileMode mode) => File.SetUnixFileMode(path, mode);
+
+    [UnsupportedOSPlatform("windows")]
+    public UnixFileMode GetUnixFileMode(string path) => File.GetUnixFileMode(path);
 
     public void WriteAllBytes(string path, byte[] bytes) => File.WriteAllBytes(path, bytes);
 

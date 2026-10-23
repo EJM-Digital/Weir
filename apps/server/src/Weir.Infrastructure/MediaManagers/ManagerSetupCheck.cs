@@ -227,11 +227,8 @@ public sealed partial class ManagerSetupCheck
     /// <summary>The root folders the manager imports into, through its port; none when it cannot say.</summary>
     private async Task<IReadOnlyList<string>> RootFoldersAsync(ManagerConnection connection, CancellationToken cancellationToken)
     {
-        if (_connections.Ports.PortForKind(connection.Kind) is not { } port)
-        {
-            return [];
-        }
-
+        // Only Sonarr, Radarr and Deluno connections are checked, and every kind Weir knows has a port.
+        var port = _connections.Ports.PortForKind(connection.Kind)!;
         var description = await port.DescribeAsync(connection, cancellationToken).ConfigureAwait(false);
         return description.Status == SignalStatus.Reported ? description.LibraryRoots : [];
     }
@@ -239,11 +236,7 @@ public sealed partial class ManagerSetupCheck
     /// <summary>Queued downloads' <c>outputPath</c>s, through the manager port's own queue read; none when the queue cannot be read.</summary>
     private async Task<IReadOnlyList<string>> QueueOutputPathsAsync(ManagerConnection connection, CancellationToken cancellationToken)
     {
-        if (_connections.Ports.PortForKind(connection.Kind) is not { } port)
-        {
-            return [];
-        }
-
+        var port = _connections.Ports.PortForKind(connection.Kind)!;
         var signal = await port.QueueRowsAsync(connection, cancellationToken).ConfigureAwait(false);
         return signal.IsReported
             ? [.. signal.Rows.Select(row => ManagerValues.FirstText(row.Payload, "outputPath")).OfType<string>()]

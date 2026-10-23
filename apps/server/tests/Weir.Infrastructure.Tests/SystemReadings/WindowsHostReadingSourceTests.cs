@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using Microsoft.Win32;
 using Weir.Infrastructure.SystemReadings;
 
 namespace Weir.Infrastructure.Tests.SystemReadings;
@@ -108,5 +110,96 @@ public sealed class WindowsHostReadingSourceTests
         Assert.NotNull(space);
         Assert.Equal(new DriveInfo(root).TotalSize, space.Value.Total);
         Assert.InRange(space.Value.Free, 0, space.Value.Total);
+    }
+
+    /// <summary>A drive letter no drive on this machine has.</summary>
+    private static string UnusedDriveRoot() =>
+        char.ToString(Enumerable.Range('D', 23).Select(letter => (char)letter).First(letter => !Directory.Exists(letter + @":\"))) + @":\";
+
+    [WindowsFact(OnlyWindows)]
+    public void A_registry_that_refuses_leaves_a_restart_unknown_and_the_system_named_by_the_framework()
+    {
+        var source = new WindowsHostReadingSource(() => throw new UnauthorizedAccessException(), null);
+
+        Assert.Null(source.ReadRebootPending());
+        Assert.Equal(RuntimeInformation.OSDescription, source.ReadOperatingSystem());
+    }
+
+    [WindowsFact(OnlyWindows)]
+    public void A_registry_without_the_keys_means_no_restart_is_pending_and_the_framework_names_the_system()
+    {
+        var source = new WindowsHostReadingSource(() => RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, RegistryView.Registry64), null);
+
+        Assert.False(source.ReadRebootPending());
+        Assert.Equal(RuntimeInformation.OSDescription, source.ReadOperatingSystem());
+    }
+
+    [WindowsFact(OnlyWindows)]
+    public void A_list_of_drives_that_cannot_be_read_is_no_counters_at_all()
+    {
+        var source = new WindowsHostReadingSource(null, () => throw new IOException("The list is not there."));
+
+        Assert.Same(DiskSnapshot.Empty, source.ReadDisks());
+    }
+
+    [WindowsFact(OnlyWindows)]
+    public void A_kernel_call_the_system_does_not_have_is_no_reading()
+    {
+        Assert.Null(WindowsHostReadingSource.Guarded<int>(() => throw new DllNotFoundException()));
+        Assert.Null(WindowsHostReadingSource.Guarded<int>(() => throw new EntryPointNotFoundException()));
+        Assert.Equal(7, WindowsHostReadingSource.Guarded<int>(() => 7));
+    }
+
+    [Theory]
+    [InlineData("Windows 10 Pro", "19045", "Windows 10 Pro")]
+    [InlineData("Windows 10 Pro", "22000", "Windows 11 Pro")]
+    [InlineData("Windows 10 Pro", "26300", "Windows 11 Pro")]
+    [InlineData("Windows 10 Pro", "not a number", "Windows 10 Pro")]
+    [InlineData("Windows 10 Pro", null, "Windows 10 Pro")]
+    [InlineData("Windows Server 2025 Datacenter", "26100", "Windows Server 2025 Datacenter")]
+    [InlineData("", "26100", null)]
+    [InlineData(null, "26100", null)]
+    public void The_product_name_is_the_registrys_with_Windows_11_called_that_from_its_first_build(string? product, string? build, string? expected)
+    {
+        Assert.Equal(expected, WindowsHostReadingSource.NameOf(product, build));
+    }
+
+    [Fact]
+    public void A_registry_value_that_is_not_a_text_names_no_product()
+    {
+        Assert.Null(WindowsHostReadingSource.NameOf(7, "26100"));
+    }
+
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("", false)]
+    [InlineData("a rename", true)]
+    [InlineData(7, false)]
+    public void A_registry_value_lists_something_when_it_is_a_text_or_a_list_with_entries(object? value, bool expected)
+    {
+        Assert.Equal(expected, WindowsHostReadingSource.HasEntries(value));
+    }
+
+    [Fact]
+    public void A_list_of_renames_with_entries_is_pending_and_an_empty_list_is_not()
+    {
+        Assert.True(WindowsHostReadingSource.HasEntries(new[] { @"\??\C:\a", string.Empty }));
+        Assert.False(WindowsHostReadingSource.HasEntries(Array.Empty<string>()));
+    }
+
+    [WindowsFact(OnlyWindows)]
+    public void A_drive_that_is_not_a_fixed_disk_or_not_a_drive_has_no_volume_key()
+    {
+        Assert.Null(_source.VolumeKeyOf(UnusedDriveRoot()));
+        Assert.Null(_source.VolumeKeyOf(@"1:\"));
+    }
+
+    [WindowsFact(OnlyWindows)]
+    public void Counters_and_space_are_not_asked_of_something_that_is_not_a_drive_or_is_not_there()
+    {
+        Assert.Null(WindowsNative.ReadVolumeCounters(string.Empty));
+        Assert.Null(WindowsNative.ReadVolumeCounters(@"\\nas\media\"));
+        Assert.Null(WindowsNative.ReadVolumeCounters(UnusedDriveRoot()));
+        Assert.Null(WindowsNative.ReadSpace(UnusedDriveRoot()));
     }
 }

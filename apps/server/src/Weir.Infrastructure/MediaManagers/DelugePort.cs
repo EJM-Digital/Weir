@@ -70,7 +70,7 @@ public sealed class DelugePort : IDownloadClientPort
     private static async Task<(bool Ok, string? Cookie)> LoginAsync(DownloadClientHttpClient client, DownloadClientConnection connection, CancellationToken cancellationToken)
     {
         var response = await CallAsync(client, "auth.login", null, 1, cancellationToken, new WireArray([WireValue.Of(connection.Password ?? string.Empty)])).ConfigureAwait(false);
-        var ok = response.Status is >= 200 and < 300 && response.Json() is WireObject dict && dict.Get("result") is WireBool { Value: true };
+        var ok = response.Succeeded && response.Json() is WireObject dict && dict.Get("result") is WireBool { Value: true };
         return (ok, ok ? SessionCookie.Leading(response.Headers.GetValueOrDefault("Set-Cookie")) : null);
     }
 

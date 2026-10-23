@@ -11,6 +11,17 @@ public sealed class ManagerHelperEdgeTests
     private static ManagerLibraryDescriptor Library(string? root) => new("key", "Movies", "movie", root);
 
     [Fact]
+    public void Two_paths_are_equal_when_they_name_the_same_file_whatever_the_separator_and_nothing_equals_nothing()
+    {
+        Assert.True(LibraryTitleMatcher.PathsEqual(@"\data\film.mkv", "/data/film.mkv"));
+        Assert.True(LibraryTitleMatcher.PathsEqual("/data/film/", "/data/film"));
+        Assert.False(LibraryTitleMatcher.PathsEqual(null, null));
+        Assert.False(LibraryTitleMatcher.PathsEqual("/data/film.mkv", null));
+        Assert.False(LibraryTitleMatcher.PathsEqual(null, "/data/film.mkv"));
+        Assert.False(LibraryTitleMatcher.PathsEqual("/", "/"));
+    }
+
+    [Fact]
     public void A_manager_path_that_is_one_of_ours_is_matched_directly()
     {
         var match = LibraryTitleMatcher.MatchLocalPath("/data/film.mkv", ["/data/other.mkv", "/data/film.mkv"], [], []);

@@ -47,6 +47,47 @@ public sealed class RemuxPassFileStateEdgeTests : IDisposable
     }
 
     [Fact]
+    public async Task The_reason_of_a_file_with_no_row_is_none_and_that_of_one_with_a_row_is_its_own()
+    {
+        _db.Execute("UPDATE files SET status_reason = 'Waiting for Deluno.' WHERE id = 10");
+        string? missing = null;
+        string? present = null;
+
+        await InAsync(async uow =>
+        {
+            missing = await RemuxPassFileState.StatusReasonAsync(uow, 1, "Other/other.mkv");
+            present = await RemuxPassFileState.StatusReasonAsync(uow, 1, Path);
+        });
+
+        Assert.Null(missing);
+        Assert.Equal("Waiting for Deluno.", present);
+    }
+
+    [Fact]
+    public async Task The_source_a_pass_cleaned_is_remembered_by_its_size_and_time_and_forgotten_when_there_is_no_size()
+    {
+        await InAsync(uow => RemuxPassFileState.RecordProcessedSourceAsync(uow, 1, Path, 5_000, 123));
+        Assert.Equal("5000|123", Text("SELECT processed_source_size || '|' || processed_source_mtime_ns FROM files WHERE id = 10"));
+
+        await InAsync(uow => RemuxPassFileState.RecordProcessedSourceAsync(uow, 1, Path, null, 123));
+        Assert.Equal(string.Empty, Text("SELECT coalesce(processed_source_size, '') || coalesce(processed_source_mtime_ns, '') FROM files WHERE id = 10"));
+    }
+
+    [Theory]
+    [InlineData("Film.2001.1080p.BluRay.en.srt", "Film.2001.1080p.BluRay.mkv", "Film (2001).mkv", "Film (2001).en.srt")]
+    [InlineData("Film.srt", "Film.2001.1080p.BluRay.mkv", "Film (2001).mkv", "Film (2001)")]
+    [InlineData(".hidden.srt", ".hidden", "Out.mkv", "Out.srt")]
+    [InlineData("Film.en.srt", "Film.", "Out.", "Out.en.srt")]
+    public void A_sidecar_keeps_the_part_of_its_name_after_the_stem_of_the_video_it_travels_with(string sidecar, string source, string output, string expected)
+    {
+        var sidecarPath = System.IO.Path.Join("in", sidecar);
+        var sourcePath = System.IO.Path.Join("in", source);
+        var outputPath = System.IO.Path.Join("out", output);
+
+        Assert.Equal(System.IO.Path.Join("out", expected), SidecarMigration.DestinationFor(sidecarPath, sourcePath, outputPath));
+    }
+
+    [Fact]
     public async Task A_note_is_added_after_the_reason_the_file_already_has()
     {
         _db.Execute("UPDATE files SET status_reason = 'Waiting for Deluno.' WHERE id = 10");

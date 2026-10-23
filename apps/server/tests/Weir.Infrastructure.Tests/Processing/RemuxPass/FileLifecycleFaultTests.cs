@@ -274,6 +274,20 @@ public sealed class FileLifecycleFaultTests : IDisposable
         Assert.Equal([Path.Join(_out, "a"), Path.Join(_out, "a", "b")], ownership.Directories);
     }
 
+    [PosixFact("Only a system that is not Windows asks libc for a link.")]
+    public void A_link_is_made_when_libc_says_it_was()
+    {
+        Assert.True(FileLifecycle.CreateHardLink(_dir.Join("link.mkv"), _dir.Join("film.mkv"), (_, _) => 0));
+        Assert.False(FileLifecycle.CreateHardLink(_dir.Join("link.mkv"), _dir.Join("film.mkv"), (_, _) => -1));
+    }
+
+    [PosixFact("Only a system that is not Windows asks libc for a link.")]
+    public void A_system_with_no_libc_to_ask_cannot_link()
+    {
+        Assert.False(FileLifecycle.CreateHardLink(_dir.Join("link.mkv"), _dir.Join("film.mkv"), (_, _) => throw new DllNotFoundException("libc")));
+        Assert.False(FileLifecycle.CreateHardLink(_dir.Join("link.mkv"), _dir.Join("film.mkv"), (_, _) => throw new EntryPointNotFoundException("link")));
+    }
+
     private sealed class RecordingOwnership : IOutputOwnership
     {
         public List<string> Directories { get; } = [];

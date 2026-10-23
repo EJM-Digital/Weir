@@ -34,7 +34,7 @@ public sealed class TransmissionPort : IDownloadClientPort
                 return (false, $"Weir reached {connection.Label}, but the username or password was refused. Check them and save again.");
             }
 
-            return response.Status is >= 200 and < 300 && response.Json() is WireObject dict && dict.Get("result") is WireString { Value: "success" }
+            return response.Succeeded && response.Json() is WireObject dict && dict.Get("result") is WireString { Value: "success" }
                 ? (true, $"Connected. Weir can reach {connection.Label}.")
                 : (false, $"Weir reached {connection.Label} but did not get the answer it expected. Check the address points at Transmission itself.");
         }
@@ -50,7 +50,7 @@ public sealed class TransmissionPort : IDownloadClientPort
         try
         {
             var response = await CallSessionGetAsync(connection, cancellationToken).ConfigureAwait(false);
-            return response.Status is >= 200 and < 300 ? TransmissionRules.Parse(response.Json()) : DownloadClientFolders.Empty;
+            return response.Succeeded ? TransmissionRules.Parse(response.Json()) : DownloadClientFolders.Empty;
         }
         catch (DownloadClientUnreachableException)
         {
