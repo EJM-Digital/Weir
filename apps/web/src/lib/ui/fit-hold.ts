@@ -34,7 +34,7 @@ export function useHoldFit(active: boolean): void {
 
 /** Whether a popover is open, so the fit must wait. */
 export function useFitHeld(): boolean {
-  return useSyncExternalStore(subscribe, isFitHeld, () => false);
+  return useSyncExternalStore(subscribe, isFitHeld);
 }
 
 /** Calls `onRelease` whenever the last hold lets go. */

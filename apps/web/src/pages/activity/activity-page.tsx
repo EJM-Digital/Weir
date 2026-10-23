@@ -149,7 +149,8 @@ export function ActivityPage() {
   const files = useFileHistoryQuery({
     ...query,
     limit: FILES_LIMIT,
-    ...(sort ? { sort: sort.id, direction: sort.direction } : {}),
+    sort: sort?.id,
+    direction: sort?.direction,
   });
   const attention = useActivityAttention(
     libraryId ?? null,
@@ -296,7 +297,7 @@ export function ActivityPage() {
         <LoadError thing="your file activity" error={files.error} />
       ) : !needsYou && files.isLoading ? (
         <PanelLoading label="Reading activity…" />
-      ) : shown.length === 0 ? (
+      ) : selected === null ? (
         <Panel
           title="Files"
           count="0 shown"
@@ -323,21 +324,21 @@ export function ActivityPage() {
             <ActivityList
               entries={shown}
               columns={fileColumns}
-              selectedKey={selected?.key ?? null}
+              selectedKey={selected.key}
               now={now}
               onPick={pickEntry}
             />
           </Panel>
-          {selected?.kind === "download" ? (
+          {selected.kind === "download" ? (
             <ActivityDetail
               file={selected.file}
               now={now}
               editable={editable}
               onRemoved={setRemovedNotice}
             />
-          ) : selected?.kind === "library_clean" ? (
+          ) : (
             <ActivityCleanDetail clean={selected.clean} />
-          ) : null}
+          )}
         </div>
       )}
 

@@ -12,7 +12,7 @@ import {
   finishChangingPassword,
   markSignedIn,
 } from "../../../../lib/auth/signed-in-before";
-import { LoginPage } from "../../../../pages/auth/login-page";
+import { LoginPage } from "../../../auth/login-page";
 import {
   serveRecordedReplies,
   type RecordedWeir,
@@ -26,7 +26,7 @@ import {
   passwordChanged,
   passwordWrongCurrent,
 } from "./security-replies";
-import { renderSecurity } from "./security-test-support";
+import { renderSecurity } from "../../../../test/security-test-support";
 
 const ME = "/api/v1/auth/me";
 const CSRF = "/api/v1/auth/csrf";

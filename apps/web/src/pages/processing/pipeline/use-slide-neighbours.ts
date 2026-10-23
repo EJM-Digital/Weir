@@ -12,17 +12,20 @@ const SLIDE_EASING = "cubic-bezier(.2, .8, .2, 1)";
 /** A tile that moved less than this has not moved. */
 const MOVED_PX = 1;
 
+function tilesOf(host: HTMLElement) {
+  return host.querySelectorAll<HTMLElement>(`[${TILE_KEY_ATTRIBUTE}]`);
+}
+
+function keyOf(tile: HTMLElement): string {
+  return tile.getAttribute(TILE_KEY_ATTRIBUTE) as string;
+}
+
 /** Where each tile of the row is, from the row's left edge. */
 function leftsOf(host: HTMLElement): Map<string, number> {
   const rowLeft = host.getBoundingClientRect().left;
   const lefts = new Map<string, number>();
-  for (const tile of host.querySelectorAll<HTMLElement>(
-    `[${TILE_KEY_ATTRIBUTE}]`,
-  )) {
-    lefts.set(
-      tile.getAttribute(TILE_KEY_ATTRIBUTE) ?? "",
-      tile.getBoundingClientRect().left - rowLeft,
-    );
+  for (const tile of tilesOf(host)) {
+    lefts.set(keyOf(tile), tile.getBoundingClientRect().left - rowLeft);
   }
   return lefts;
 }
@@ -30,13 +33,10 @@ function leftsOf(host: HTMLElement): Map<string, number> {
 /** Slides each tile that was somewhere else in `before` from there to where it is now. */
 function slideFrom(host: HTMLElement, before: ReadonlyMap<string, number>) {
   if (!host.isConnected) return;
-  const now = leftsOf(host);
-  for (const tile of host.querySelectorAll<HTMLElement>(
-    `[${TILE_KEY_ATTRIBUTE}]`,
-  )) {
-    const key = tile.getAttribute(TILE_KEY_ATTRIBUTE) ?? "";
-    const was = before.get(key);
-    const left = now.get(key) ?? 0;
+  const rowLeft = host.getBoundingClientRect().left;
+  for (const tile of tilesOf(host)) {
+    const was = before.get(keyOf(tile));
+    const left = tile.getBoundingClientRect().left - rowLeft;
     if (
       was !== undefined &&
       Math.abs(was - left) > MOVED_PX &&

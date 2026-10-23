@@ -23,7 +23,7 @@ import {
   logPage,
   renderLog,
   stubEventSource,
-} from "./log-test-support";
+} from "../../../../test/log-test-support";
 
 const mocks = vi.hoisted(() => ({
   fetchSystemLog: vi.fn(),
@@ -35,6 +35,7 @@ const mocks = vi.hoisted(() => ({
   postRecover: vi.fn(),
   saveBlobAs: vi.fn(),
   role: { current: "operator" as string },
+  paused: { current: false },
 }));
 
 vi.mock("../../../../lib/system/system-log-api", async (importOriginal) => ({
@@ -90,10 +91,15 @@ vi.mock("../../../../lib/pause/pause-queries", () => ({
   usePauseQuery: () => ({ data: { paused: false } }),
 }));
 
+vi.mock("../../../../lib/live/use-live-updates-paused", () => ({
+  useLiveUpdatesPaused: () => mocks.paused.current,
+}));
+
 beforeAll(stubEventSource);
 
 beforeEach(() => {
   mocks.role.current = "operator";
+  mocks.paused.current = false;
   mocks.fetchSystemLog.mockReset();
   mocks.fetchSystemLog.mockResolvedValue(
     logPage([EVENT_ROW, SERVER_ROW, JOB_ROW]),
@@ -383,4 +389,22 @@ describe("when the log cannot be read", () => {
       screen.queryByText("Nothing has been logged yet."),
     ).not.toBeInTheDocument();
   });
+});
+
+describe("the live dot", () => {
+  it.each([
+    [false, "done"],
+    [true, "attention"],
+  ])(
+    "with live updates paused: %s, the dot means %s",
+    async (paused, meaning) => {
+      mocks.paused.current = paused;
+      await rendered();
+
+      const dot = screen
+        .getByTestId("log-summary")
+        .querySelector(".mm-log-live");
+      expect(dot).toHaveAttribute("data-status", meaning);
+    },
+  );
 });

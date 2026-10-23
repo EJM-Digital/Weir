@@ -52,6 +52,27 @@ function renderList() {
   );
 }
 
+it("says a file being worked on is being worked on until a percentage is known", () => {
+  render(
+    <WithWorkflows>
+      <ListWithColumns
+        entries={[
+          downloadEntry({
+            ...download,
+            status: "processing",
+            progress_percent: null,
+          }),
+        ]}
+        selectedKey={null}
+        now={NOW}
+        onPick={vi.fn()}
+      />
+    </WithWorkflows>,
+  );
+
+  expect(screen.getByText("Working on it")).toBeInTheDocument();
+});
+
 it("says a cleaned copy no media manager has taken yet is waiting for it, and once imported, who imported it", () => {
   const copy = {
     output_path: "/hand-back/a.mkv",

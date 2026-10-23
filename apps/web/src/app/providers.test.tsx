@@ -33,6 +33,19 @@ describe("a 401 from the server", () => {
     expect(window.location.search).toBe("");
   });
 
+  it.each(["/login", "/setup"])(
+    "leaves the address alone on %s, where the person already is",
+    async (path) => {
+      markSignedIn();
+      window.history.replaceState(null, "", path);
+
+      await answered401();
+
+      expect(window.location.pathname).toBe(path);
+      expect(window.location.search).toBe("");
+    },
+  );
+
   it("tells a browser that did have one that its session expired", async () => {
     markSignedIn();
 

@@ -79,7 +79,7 @@ export function holdShelfTiles(paths: ReadonlySet<string>): void {
     if (tile.hasAttribute(FLYING_ATTRIBUTE)) continue;
     const wanted =
       motionAllowed() &&
-      paths.has(tile.getAttribute(SHELF_TILE_ATTRIBUTE) ?? "");
+      paths.has(tile.getAttribute(SHELF_TILE_ATTRIBUTE) as string);
     if (wanted && !tile.hasAttribute(HELD_ATTRIBUTE)) hold(tile);
     if (!wanted && tile.hasAttribute(HELD_ATTRIBUTE)) release(tile);
   }

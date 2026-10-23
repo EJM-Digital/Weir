@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_SUBTITLE_SORTERS,
+  SORTER_FIELDS,
+  SORTER_LABELS,
   csvValues,
   defaultAudioSortersFor,
   dumpSorters,
@@ -42,4 +44,12 @@ it("never ranks by the default flag when quality wins across languages", () => {
 
 it("reads a comma list as lower-case codes", () => {
   expect(csvValues("eng, JPN ,,")).toEqual(["eng", "jpn"]);
+});
+
+describe("SORTER_LABELS", () => {
+  it("has words for every criterion the server ranks by", () => {
+    for (const field of SORTER_FIELDS) {
+      expect(SORTER_LABELS[field]).toBeTruthy();
+    }
+  });
 });

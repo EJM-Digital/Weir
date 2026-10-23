@@ -21,7 +21,7 @@ import {
   logPage,
   renderLog,
   stubEventSource,
-} from "./log-test-support";
+} from "../../../../test/log-test-support";
 
 /** How long typing must pause before the search is sent. */
 const SEARCH_PAUSE_MS = 400;
@@ -245,6 +245,16 @@ describe("the filters", () => {
     expect(screen.getByTestId("location")).toHaveTextContent("workflow=1");
   });
 
+  it("go back to every workflow", async () => {
+    await rendered("/system?tab=logs&workflow=1");
+
+    fireEvent.click(screen.getByTestId("logs-workflow-picker"));
+    fireEvent.click(screen.getByRole("option", { name: "All workflows" }));
+
+    await waitFor(() => expect(lastRequest().workflow).toBeUndefined());
+    expect(screen.getByTestId("location")).not.toHaveTextContent("workflow=");
+  });
+
   it("narrow to a time counted back from when it was chosen", async () => {
     await rendered();
     vi.useFakeTimers({ toFake: ["Date"] });
@@ -397,6 +407,26 @@ describe("the filters only some rows have", () => {
     expect(
       screen.getByRole("button", { name: "Refine · 5" }),
     ).toBeInTheDocument();
+  });
+
+  it("keep an event type a link asked for even when no row on the page has it", async () => {
+    await rendered("/system?tab=logs&event_type=sync.library_scanned");
+
+    fireEvent.click(
+      within(screen.getByTestId("logs-event-type")).getByRole("button"),
+    );
+
+    expect(
+      screen.getByRole("option", { name: "library scanned" }),
+    ).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("say how many job statuses a link asked for when it asked for several", async () => {
+    await rendered("/system?tab=logs&status=failed,pending");
+
+    expect(
+      within(screen.getByTestId("logs-job-status")).getByRole("button"),
+    ).toHaveTextContent("2 job statuses");
   });
 
   it("show their count on Refine and stay open while any is set", async () => {

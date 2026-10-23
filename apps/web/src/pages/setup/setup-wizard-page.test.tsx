@@ -140,6 +140,16 @@ describe("SetupWizardPage", () => {
     expect(screen.queryByText("Set up Weir")).not.toBeInTheDocument();
   });
 
+  it("leaves a viewer who opens the wizard after setup was finished alone, with neither the notice nor the wizard", () => {
+    const { container } = renderWizard("completed", "viewer");
+
+    expect(
+      screen.queryByRole("heading", { name: "Weir isn't set up yet" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Set up Weir")).not.toBeInTheDocument();
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it("asks how downloads reach Weir first, and will not finish without an answer", async () => {
     renderWizard();
 

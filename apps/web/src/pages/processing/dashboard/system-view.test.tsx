@@ -14,7 +14,7 @@ let libraries: {
   isPending: boolean;
   isError: boolean;
   error?: unknown;
-  data: unknown[];
+  data: unknown[] | undefined;
 };
 let health: HealthState;
 let overviewChecks: { passing: number; total: number } | undefined;
@@ -126,7 +126,7 @@ describe("the System view's cards", () => {
   });
 
   it("waits for the workflows before it shows anything", () => {
-    libraries = { isPending: true, isError: false, data: [] };
+    libraries = { isPending: true, isError: false, data: undefined };
     render(<SystemView layout={beside} />);
 
     expect(screen.queryByText("computer")).toBeNull();

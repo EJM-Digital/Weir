@@ -17,7 +17,7 @@ import {
   never,
   renderActivityPage,
   stubActivityServer,
-} from "./activity-test-server";
+} from "../../test/activity-test-server";
 
 const REMOVE_OPTIONS = "GET /api/v1/processing/files/1/remove-options";
 const FORGET = "DELETE /api/v1/processing/files/1";

@@ -9,7 +9,7 @@ import {
   type RecordedRoutes,
   type RecordedWeir,
 } from "../../../../test/recorded-weir";
-import { CSRF_TOKEN, SAVING } from "../../system-test-support";
+import { CSRF_TOKEN, SAVING } from "../../../../test/system-test-support";
 import { LogClearEvents } from "./log-clear-events";
 
 const PREVIEW = "GET /api/v1/suite/operational-history/preview";

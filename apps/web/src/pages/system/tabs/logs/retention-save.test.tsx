@@ -16,7 +16,7 @@ import {
   renderWithSettingsForm,
   SAVED_SETTINGS,
   SAVING,
-} from "../../system-test-support";
+} from "../../../../test/system-test-support";
 import { useSystemSettingsForm } from "../../use-system-settings-form";
 import { RetentionSection } from "./retention-section";
 import { useFileActivityRetention } from "./use-file-activity-retention";

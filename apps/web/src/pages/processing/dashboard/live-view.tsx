@@ -149,7 +149,7 @@ export function LiveView({ filter, workflowId, layout }: LiveViewProps) {
   );
   const openFinished = useCallback(
     (item: FinishedFile) => {
-      const match = (files.data?.files ?? []).find(
+      const match = files.data?.files.find(
         (f) =>
           f.relative_path === item.relativePath &&
           (item.libraryId == null || f.library_id === item.libraryId),

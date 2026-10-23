@@ -3,14 +3,11 @@ import { render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { expect } from "vitest";
 
-import type { ProcessingRuleSet } from "../../../../lib/processing/rule-sets-api";
-import { recordedBody, recordedResponse } from "../../../../test/recorded";
-import {
-  jsonAnswer,
-  type StubbedRequest,
-} from "../../../../test/stub-weir-api";
-import { CSRF_TOKEN, stubWire } from "../../../../test/wire";
-import { ProfilesTab } from "./profiles-tab";
+import type { ProcessingRuleSet } from "../lib/processing/rule-sets-api";
+import { recordedBody, recordedResponse } from "./recorded";
+import { jsonAnswer, type StubbedRequest } from "./stub-weir-api";
+import { CSRF_TOKEN, stubWire } from "./wire";
+import { ProfilesTab } from "../pages/settings/tabs/rules/profiles-tab";
 
 const RULE_SETS = "/api/v1/processing/rule-sets";
 

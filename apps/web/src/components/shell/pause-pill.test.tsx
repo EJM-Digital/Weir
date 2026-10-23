@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { PauseState } from "../../lib/pause/pause-api";
+import { canvasMeasure } from "../../lib/ui/measure-text";
 import { PausePill } from "./pause-pill";
 
 const SIX_PX_A_CHARACTER = 6;
@@ -14,7 +15,9 @@ vi.mock("../../lib/ui/mm-format-date", async (importActual) => ({
 }));
 vi.mock("../../lib/ui/measure-text", async (importActual) => ({
   ...(await importActual<typeof import("../../lib/ui/measure-text")>()),
-  canvasMeasure: () => (text: string) => text.length * SIX_PX_A_CHARACTER,
+  canvasMeasure: vi.fn(
+    () => (text: string) => text.length * SIX_PX_A_CHARACTER,
+  ),
 }));
 
 const timed: PauseState = {
@@ -47,7 +50,10 @@ function inHeaderOf(width: number, wrap: "nowrap" | "wrap" = "nowrap") {
   );
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  Reflect.deleteProperty(document, "fonts");
+});
 
 describe("the pause pill's words", () => {
   it("says the fullest wording where the header has room for it", () => {
@@ -88,5 +94,36 @@ describe("the pause pill's words", () => {
       "title",
       timed.reason,
     );
+  });
+});
+
+describe("the pause pill as its pause changes", () => {
+  it("takes the fullest words of the new pause when the old pause had an end and the new one has none", () => {
+    const { rerender } = inHeaderOf(1200);
+
+    rerender(
+      <header className="mm-header" style={{ flexWrap: "nowrap" }}>
+        <PausePill pause={{ ...timed, paused_until: null }} />
+      </header>,
+    );
+
+    expect(screen.getByTestId("pause-badge")).toHaveTextContent(
+      "Paused · until you resume",
+    );
+  });
+
+  it("is not measured again by fonts that arrive after it has gone", async () => {
+    let fontsArrive: () => void = () => undefined;
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: new Promise<void>((resolve) => (fontsArrive = resolve)) },
+    });
+    const { unmount } = inHeaderOf(1200);
+    vi.mocked(canvasMeasure).mockClear();
+
+    unmount();
+    await act(async () => fontsArrive());
+
+    expect(canvasMeasure).not.toHaveBeenCalled();
   });
 });

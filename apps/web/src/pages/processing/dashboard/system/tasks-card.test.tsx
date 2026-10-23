@@ -141,6 +141,16 @@ describe("the Scheduled tasks card", () => {
     expect(within(card).queryByTestId("system-more")).toBeNull();
   });
 
+  it("says nothing of tasks, neither that there are none nor that they failed, while they are still being read", () => {
+    query.data = undefined;
+    query.isSuccess = false;
+    const card = renderCard();
+
+    expect(card).not.toHaveTextContent("No scheduled tasks yet.");
+    expect(card).not.toHaveTextContent("could not read its scheduled tasks");
+    expect(within(card).queryByTestId("system-task")).toBeNull();
+  });
+
   it("says Weir could not read the tasks when the read failed", () => {
     query.isError = true;
     query.isSuccess = false;

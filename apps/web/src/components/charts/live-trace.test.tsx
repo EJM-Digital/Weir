@@ -142,6 +142,33 @@ describe("LiveTrace", () => {
     expect(lastPoint().y).toBeCloseTo(yOf(40), 1);
   });
 
+  it("does not glide the head while the window is being resized", () => {
+    const { rerender } = render(<Trace lines={series(10, 20, 30)} />);
+    rerender(<Trace lines={series(10, 20, 30, 40)} />);
+    document.body.classList.add(RESIZING_CLASS);
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(lastPoint().y).toBeCloseTo(yOf(30), 1);
+  });
+
+  it("shows no dot for a series with no samples while another has some", () => {
+    render(
+      <Trace
+        lines={[
+          { key: "read", label: "read", colour: "red", samples: samples(1, 2) },
+          { key: "write", label: "write", colour: "blue", samples: [] },
+        ]}
+      />,
+    );
+
+    const dots = document.querySelectorAll<HTMLElement>(".mm-trace__dot");
+    expect(dots[0].style.opacity).toBe("1");
+    expect(dots[1].style.opacity).toBe("0");
+  });
+
   it("draws one line for each series", () => {
     render(
       <Trace
@@ -201,6 +228,45 @@ describe("LiveTrace's readout", () => {
     );
 
     expect(screen.getByText("t22 · 30%")).toBeInTheDocument();
+  });
+
+  it("reads out the new value under a pointer that stays still while a sample arrives", () => {
+    const { rerender } = render(<Trace lines={series(10, 20, 30, 40, 50)} />);
+    fireEvent.pointerMove(
+      screen.getByRole("slider", { name: "CPU, last 10 minutes" }),
+      { clientX: 100 },
+    );
+    expect(screen.getByText("t24 · 50%")).toBeInTheDocument();
+
+    rerender(<Trace lines={series(10, 20, 30, 40, 50, 60)} />);
+    act(() => {
+      vi.advanceTimersByTime(1200);
+    });
+
+    expect(screen.queryByText("t24 · 50%")).toBeNull();
+  });
+
+  it("says nothing while the pointer is over a trace with no samples", () => {
+    render(<Trace lines={series()} />);
+
+    fireEvent.pointerMove(
+      screen.getByRole("slider", { name: "CPU, last 10 minutes" }),
+      { clientX: 50 },
+    );
+
+    expect(screen.queryByText(/^t\d+ · /)).toBeNull();
+  });
+
+  it("keeps the value picked with the keyboard when the pointer leaves", () => {
+    render(<Trace lines={series(10, 20, 30)} />);
+    const slider = screen.getByRole("slider", {
+      name: "CPU, last 10 minutes",
+    });
+
+    fireEvent.keyDown(slider, { key: "ArrowLeft" });
+    fireEvent.pointerLeave(slider);
+
+    expect(slider.querySelector(".mm-trace__read")).not.toBeNull();
   });
 
   it("goes when the pointer leaves", () => {

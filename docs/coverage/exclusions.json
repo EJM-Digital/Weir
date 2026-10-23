@@ -343,6 +343,90 @@
       "marker": "scripts/attribute-pool-stalls.mjs",
       "kind": "not-production",
       "reason": "A one-off analysis a developer runs over a test log by hand to find thread pool stalls; CI never runs it and it ships nowhere."
+    },
+    {
+      "id": "web-activity-remove-choice",
+      "file": "apps/web/src/pages/activity/activity-remove-dialog.tsx",
+      "marker": "v8 ignore",
+      "kind": "unreachable",
+      "reason": "The Remove button is disabled until a choice is made, so its click handler never runs with no choice; the check only narrows the choice's type for onConfirm."
+    },
+    {
+      "id": "web-library-chip-found",
+      "file": "apps/web/src/pages/library/library-filters.tsx",
+      "marker": "v8 ignore",
+      "kind": "unreachable",
+      "reason": "The More menu is built from the folded chips and hands back the id of one of them, so the chip is always found; the check only narrows the type of the lookup."
+    },
+    {
+      "id": "web-library-sort-column",
+      "file": "apps/web/src/pages/library/library-page.tsx",
+      "marker": "v8 ignore",
+      "kind": "unreachable",
+      "reason": "The Files table always has a sort (its default is Title, and a stored sort that is not a sortable column is dropped on reading) and the Select column cannot be sorted, so the sort is always a real column; the other arm only satisfies the type."
+    },
+    {
+      "id": "web-today-chart-point",
+      "file": "apps/web/src/pages/processing/dashboard/today-chart.tsx",
+      "marker": "v8 ignore",
+      "kind": "unreachable",
+      "reason": "The chart is always given its 24 five-minute buckets (handedBackSince), so the point being shown exists; the empty arm only satisfies the type of an array lookup."
+    },
+    {
+      "id": "web-backup-schedule-day",
+      "file": "apps/web/src/pages/processing/dashboard/system/backup-schedule.ts",
+      "marker": "v8 ignore",
+      "kind": "unreachable",
+      "reason": "The loop reaches a day only as the first day with a run time on it or the day after the last backup, and the interval is at least a day, so the time chosen on it never falls on another calendar day; only a clock time that a time-zone change moves to the neighbouring day could, and the check stays so the answer is never a time on the wrong day."
+    },
+    {
+      "id": "web-setup-tab-found",
+      "file": "apps/web/src/pages/settings/setup-area-layout.tsx",
+      "marker": "v8 ignore",
+      "kind": "unreachable",
+      "reason": "The tab row offers only the area's own tabs, so the tab asked for is always found; the check only narrows the type of the lookup."
+    },
+    {
+      "id": "web-profile-draft-open",
+      "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.tsx",
+      "marker": "v8 ignore",
+      "kind": "unreachable",
+      "reason": "The edit binding exists only while a draft is open, and the draft is emptied only by closing the workspace, which removes the binding, so an update never sees an empty draft; the check narrows the type."
+    },
+    {
+      "id": "web-profile-chosen-listed",
+      "file": "apps/web/src/pages/settings/tabs/rules/profiles-tab.tsx",
+      "marker": "v8 ignore",
+      "kind": "unreachable",
+      "reason": "The profile picker offers the profiles that were read, so the id chosen is always one of them; the empty arm only satisfies the type of the lookup."
+    },
+    {
+      "id": "web-fit-text-box",
+      "file": "apps/web/src/lib/ui/fit-text.tsx",
+      "marker": "v8 ignore",
+      "kind": "unreachable",
+      "reason": "The box is the element this component renders and has been attached by the time its layout effect runs; the check only narrows the ref's type."
+    },
+    {
+      "id": "web-shelf-status-host",
+      "file": "apps/web/src/pages/processing/pipeline/just-finished-shelf.tsx",
+      "marker": "v8 ignore",
+      "kind": "unreachable",
+      "reason": "The tile list is rendered whenever the shelf is, and has been attached by the time the layout effect runs; the check only narrows the ref's type."
+    },
+    {
+      "id": "web-pipeline-board-host",
+      "file": "apps/web/src/pages/processing/pipeline/pipeline-board.tsx",
+      "marker": "v8 ignore",
+      "kind": "unreachable",
+      "reason": "The board's body is rendered whenever the board is, and has been attached by the time the layout effect runs; the check only narrows the ref's type."
+    },
+    {
+      "id": "web-pipeline-card-details",
+      "file": "apps/web/src/pages/processing/pipeline/pipeline-card.tsx",
+      "marker": "v8 ignore",
+      "kind": "unreachable",
+      "reason": "Every card's words end in the line naming where the file came from, so a card always has detail lines; the check only keeps an empty block from being drawn."
     }
   ]
 }

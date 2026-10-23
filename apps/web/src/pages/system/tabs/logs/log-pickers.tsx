@@ -34,14 +34,11 @@ function categorySummary(chosen: readonly SystemLogCategory[]): string {
 }
 
 /** What the closed level picker says: nothing chosen is every level, one is named, several are counted. */
-function levelSummary(chosen: readonly string[]): string {
+function levelSummary(
+  chosen: readonly (typeof LOG_LEVEL_CHOICES)[number][],
+): string {
   if (chosen.length === 0) return "All levels";
-  if (chosen.length === 1) {
-    return (
-      LOG_LEVEL_CHOICES.find((choice) => choice.value === chosen[0])?.label ??
-      chosen[0]
-    );
-  }
+  if (chosen.length === 1) return chosen[0].label;
   return `${chosen.length} levels`;
 }
 
@@ -120,7 +117,11 @@ export function LogPickers({
           data-testid="logs-level-picker"
           options={levelOptions}
           values={chosenLevels}
-          summaryText={levelSummary(chosenLevels)}
+          summaryText={levelSummary(
+            LOG_LEVEL_CHOICES.filter((choice) =>
+              chosenLevels.includes(choice.value),
+            ),
+          )}
           onChange={(next) => onChange({ levels: levelsForChoices(next) })}
           ariaLabelledBy={levelLabel}
         />

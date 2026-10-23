@@ -2,19 +2,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
-import type { ProcessingFile } from "../../lib/processing/files-api";
-import type { LibraryClean } from "../../lib/processing/library-cleans-api";
-import {
-  filesPage,
-  readyServer,
-  workflowRow,
-} from "../../test/dashboard-fixtures";
+import type { ProcessingFile } from "../lib/processing/files-api";
+import type { LibraryClean } from "../lib/processing/library-cleans-api";
+import { filesPage, readyServer, workflowRow } from "./dashboard-fixtures";
 import {
   stubWeirApi,
   type StubbedApi,
   type StubbedRequest,
-} from "../../test/stub-weir-api";
-import { ActivityPage } from "./activity-page";
+} from "./stub-weir-api";
+import { ActivityPage } from "../pages/activity/activity-page";
 
 export const FILES = "GET /api/v1/processing/files";
 export const CLEANS = "GET /api/v1/processing/library-cleans";

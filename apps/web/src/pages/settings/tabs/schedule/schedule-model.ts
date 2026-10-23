@@ -117,7 +117,7 @@ type ScheduleFields = Pick<
  */
 export function effectiveGrid(library: ScheduleFields): string {
   if (!library.schedule_enabled) return "";
-  const grid = (library.schedule_grid ?? "").trim();
+  const grid = library.schedule_grid.trim();
   if (grid.length > 0) return usable(grid) ? grid : "";
   if (!library.schedule_hours_limited) return "";
   return gridFromDaysAndTimes(

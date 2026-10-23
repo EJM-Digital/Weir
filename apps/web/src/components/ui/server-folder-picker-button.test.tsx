@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 
 import { fetchServerDirectories } from "../../lib/system/directory-browser-api";
@@ -74,4 +74,22 @@ it("falls back to the drive list when the saved folder cannot be opened", async 
     ),
   ).toBeInTheDocument();
   expect(fetchDirectories).toHaveBeenLastCalledWith(null);
+});
+
+it("lets go of a folder list that arrives after the dialog has been closed", async () => {
+  let arrive: (listing: typeof DRIVES) => void = () => undefined;
+  fetchDirectories.mockReturnValue(
+    new Promise((resolve) => {
+      arrive = resolve;
+    }),
+  );
+  render(
+    <ServerFolderPickerButton title="Choose" value="" onSelect={vi.fn()} />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Browse" }));
+  fireEvent.keyDown(document, { key: "Escape" });
+
+  await act(async () => arrive(DRIVES));
+
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });

@@ -159,6 +159,20 @@ describe("the Health card", () => {
     expect(rows[2]).toHaveAttribute("data-status", "done");
   });
 
+  it("does not say when a check was made if it has not been made yet", () => {
+    checks.checks = [
+      item("radarr", "connections", "broken", {
+        title: RADARR,
+        checkedAt: null,
+      }),
+    ];
+    const { card } = renderCard();
+
+    const [row] = within(card).getAllByTestId("system-check");
+    expect(row).toHaveTextContent(RADARR);
+    expect(row).not.toHaveTextContent(/checked|live/);
+  });
+
   it("counts each area on the ribbon and lists all of an area's checks when it is picked", () => {
     const { card } = renderCard();
     const ribbon = within(card).getByRole("group", { name: "Health areas" });
@@ -282,6 +296,30 @@ describe("the Health card", () => {
 
     expect(card).toHaveClass("mm-sy-card--flash");
     expect(card).toHaveTextContent(RADARR);
+  });
+
+  describe.each([
+    ["scrolls to the card smoothly", false, "smooth"],
+    ["jumps to the card for a person who prefers less motion", true, "auto"],
+  ])("when 'N need you' sends you to it, it %s", (_, reduced, behavior) => {
+    it("scrolls the card into view", () => {
+      const scrollIntoView = vi.fn();
+      Element.prototype.scrollIntoView = scrollIntoView;
+      vi.stubGlobal("matchMedia", () => ({ matches: reduced }));
+      try {
+        const { rerender } = renderCard(0);
+
+        rerender(<Card jump={1} />);
+
+        expect(scrollIntoView).toHaveBeenCalledWith({
+          block: "nearest",
+          behavior,
+        });
+      } finally {
+        delete (Element.prototype as Partial<Element>).scrollIntoView;
+        vi.unstubAllGlobals();
+      }
+    });
   });
 
   it("sweeps a sheen over the areas when the checks are read again, and not each time the server says it looked", () => {

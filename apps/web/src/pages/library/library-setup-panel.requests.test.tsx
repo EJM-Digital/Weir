@@ -20,6 +20,7 @@ import {
   type StubbedApi,
   type StubbedRequest,
 } from "../../test/stub-weir-api";
+import { held } from "../../test/held";
 import { LibrarySetupPanel } from "./library-setup-panel";
 
 const SETTINGS_PATH = "/api/v1/processing/libraries/3/library-settings";
@@ -196,6 +197,25 @@ describe("the folders", () => {
     expect(api.to(PUT_SETTINGS)[0]!.body).toMatchObject({
       library_folders: [],
     });
+  });
+});
+
+describe("while a save is on its way", () => {
+  it("says Saving… and holds the button until the server answers", async () => {
+    const answer = held<Response>();
+    serve({});
+    api.set(PUT_SETTINGS, () => answer.promise);
+    await openPanel();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Remove D:\\Media\\Movies" }),
+    );
+
+    fireEvent.click(save());
+
+    const saving = await screen.findByRole("button", { name: "Saving…" });
+    expect(saving).toBeDisabled();
+    answer.resolve(jsonAnswer({ ...stored, library_folders: [] }));
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
 });
 

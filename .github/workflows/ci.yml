@@ -517,7 +517,7 @@ jobs:
           name: coverage-server-linux
           if-no-files-found: ignore
           retention-days: 1
-          path: apps/server/tests/*/TestResults/*/coverage.cobertura.xml
+          path: apps/server/tests/*/TestResults/*/coverage.opencover.xml
 
       - name: Server dependency vulnerability scan
         if: needs.changes.outputs.run_server_audit == 'true'
@@ -589,7 +589,7 @@ jobs:
           name: coverage-server-windows
           if-no-files-found: ignore
           retention-days: 1
-          path: apps/server/tests/*/TestResults/*/coverage.cobertura.xml
+          path: apps/server/tests/*/TestResults/*/coverage.opencover.xml
 
   # The production web build, once, for the E2E smoke to serve.
   web-dist:
@@ -951,11 +951,14 @@ jobs:
       - name: Make the runners' coverage files name the same things
         run: node scripts/align-coverage-reports.mjs coverage-input "$GITHUB_WORKSPACE"
 
-      # One report per project. The logging code the compiler generates under obj/ is left out.
+      # One report per project. The logging code the compiler generates under obj/ is left out. The server's two legs are merged
+      # from their OpenCover files: coverlet's Cobertura keeps only a percentage per branch, so a branch the Windows leg takes one
+      # way and the Linux leg the other (if (OperatingSystem.IsWindows())) never added up, where OpenCover lists each branch's hits
+      # and ReportGenerator unions them (docs/coverage/README.md). The report the floors read is still Cobertura.
       - name: Merge the server coverage
         if: needs.changes.outputs.run_server_linux == 'true'
         run: >-
-          reportgenerator "-reports:coverage-input/coverage-server-*/**/coverage.cobertura.xml"
+          reportgenerator "-reports:coverage-input/coverage-server-*/**/coverage.opencover.xml"
           "-targetdir:coverage/server" "-reporttypes:Html;Cobertura;JsonSummary"
           "-filefilters:-*/obj/*;-*\obj\*" "-title:Weir server"
 

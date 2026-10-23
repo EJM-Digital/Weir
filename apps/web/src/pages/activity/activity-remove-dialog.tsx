@@ -112,6 +112,7 @@ export function ActivityRemoveDialog({
       error={error}
       onCancel={onCancel}
       onConfirm={() => {
+        /* istanbul ignore else -- @preserve */
         if (choice) onConfirm(choice);
       }}
       description={

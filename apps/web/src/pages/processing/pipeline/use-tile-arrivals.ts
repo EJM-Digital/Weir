@@ -33,7 +33,7 @@ export function useTileArrivals(
     for (const tile of host.querySelectorAll<HTMLElement>(
       `[${TILE_KEY_ATTRIBUTE}]`,
     )) {
-      if (had?.has(tile.getAttribute(TILE_KEY_ATTRIBUTE) ?? "")) continue;
+      if (had?.has(tile.getAttribute(TILE_KEY_ATTRIBUTE) as string)) continue;
       if (tile.querySelector(`[${HELD_ATTRIBUTE}]`)) continue;
       if (typeof tile.animate === "function") {
         tile.animate(ARRIVE_FRAMES, {

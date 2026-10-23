@@ -11,6 +11,9 @@ import {
 import { useCloseOnOutsideAndEscape } from "../../lib/ui/use-close-on-outside";
 import { NavIconChevronDown } from "./nav-icons";
 
+/** What each entry of the menu is, for finding them. */
+const MENU_ITEM = "[role=menuitem]";
+
 type MoreMenuProps<Id extends string> = {
   /** Names the menu for a screen reader. */
   menuLabel: string;
@@ -67,13 +70,8 @@ export function MoreMenu<Id extends string>({
   const close = useCallback(() => setOpen(false), []);
   useCloseOnOutsideAndEscape(open, close, containerRef);
 
-  const menuItems = () =>
-    Array.from(
-      menuRef.current?.querySelectorAll<HTMLElement>("[role=menuitem]") ?? [],
-    );
-
   useEffect(() => {
-    if (open) menuItems()[0]?.focus();
+    if (open) menuRef.current?.querySelector<HTMLElement>(MENU_ITEM)?.focus();
   }, [open]);
 
   const closeAndReturn = () => {
@@ -91,7 +89,9 @@ export function MoreMenu<Id extends string>({
       setOpen(false);
       return;
     }
-    const all = menuItems();
+    const all = Array.from(
+      event.currentTarget.querySelectorAll<HTMLElement>(MENU_ITEM),
+    );
     const next = entryAfterKey(
       event.key,
       all.indexOf(document.activeElement as HTMLElement),

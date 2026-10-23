@@ -1,4 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  onlineManager,
+} from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -40,6 +44,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  onlineManager.setOnline(true);
   useRealClock();
   vi.restoreAllMocks();
 });
@@ -236,4 +241,29 @@ it("says when it could not check just now", async () => {
       /Weir could not check this workflow's folder chain just now/,
     ),
   ).toBeInTheDocument();
+});
+
+it("shows no result while the browser is offline and the check cannot be sent", async () => {
+  const fetchChain = vi
+    .spyOn(chainApi, "fetchLibraryFolderChain")
+    .mockResolvedValue(chain());
+  onlineManager.setOnline(false);
+  const client = new QueryClient();
+
+  render(
+    <QueryClientProvider client={client}>
+      <LibraryFolderChain
+        libraryId={12}
+        watchedFolder="/media/in"
+        workFolder=""
+        outputFolder="/media/out"
+        mediaType="movie"
+      />
+    </QueryClientProvider>,
+  );
+  await settleFolderChecks();
+
+  expect(screen.getByTestId("library-folder-chain")).toBeEmptyDOMElement();
+  expect(fetchChain).not.toHaveBeenCalled();
+  client.clear();
 });

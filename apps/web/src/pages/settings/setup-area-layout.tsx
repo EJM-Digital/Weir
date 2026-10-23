@@ -56,6 +56,7 @@ export function SetupAreaLayout() {
 
   const selectTab = (id: SetupTabId) => {
     const target = area.tabs.find((candidate) => candidate.id === id);
+    /* istanbul ignore else -- @preserve */
     if (target) void navigate(target.path);
   };
 

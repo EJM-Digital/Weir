@@ -32,7 +32,10 @@ import {
   usernameUnchanged,
   usernameWrongPassword,
 } from "./security-replies";
-import { heldReply, renderSecurity } from "./security-test-support";
+import {
+  heldReply,
+  renderSecurity,
+} from "../../../../test/security-test-support";
 
 const CSRF = "/api/v1/auth/csrf";
 const ME = "/api/v1/auth/me";

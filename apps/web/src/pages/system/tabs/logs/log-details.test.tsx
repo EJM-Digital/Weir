@@ -11,7 +11,7 @@ import {
   JOB_ROW,
   PENDING_JOB_ROW,
   SERVER_ROW,
-} from "./log-test-support";
+} from "../../../../test/log-test-support";
 
 const pause = vi.hoisted(() => ({ paused: false }));
 

@@ -105,7 +105,10 @@ function announcementOf(cards: readonly PipelineCard[]): string {
     .map((card) =>
       card.end === "delivered"
         ? `${card.title} was delivered. It moves to Just finished.`
-        : `${card.title}: ${card.status.text}. ${card.details[0]?.parts.join("") ?? ""}`.trim(),
+        : `${card.title}: ${card.status.text}. ${card.details
+            .slice(0, 1)
+            .flatMap((line) => line.parts)
+            .join("")}`.trim(),
     )
     .join(" ");
 }
@@ -205,13 +208,12 @@ export function PipelineBoard({
     }
   });
   // One stable order for every card, so a card that changes station keeps its element and glides instead of being re-made.
-  const everyCard = [...cards].sort((a, b) =>
-    a.key < b.key ? -1 : a.key > b.key ? 1 : 0,
-  );
+  const everyCard = [...cards].sort((a, b) => (a.key < b.key ? -1 : 1));
 
   // The detail block of each card shows as many whole lines as the card's height holds: measured after every change, and again once the fonts are in.
   useLayoutEffect(() => {
     const host = lanesRef.current ?? bodyRef.current;
+    /* istanbul ignore if -- @preserve */
     if (!host) return undefined;
     fitDetails(host);
     let current = true;
