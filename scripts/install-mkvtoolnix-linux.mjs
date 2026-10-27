@@ -30,38 +30,48 @@ export function placeMkvmerge(extractedAppImage, destination) {
   chmodSync(launcherPath, 0o755);
 }
 
-async function main() {
-  const destination = process.argv[2];
-  if (!destination) {
-    console.error("Usage: node scripts/install-mkvtoolnix-linux.mjs <folder>");
-    process.exit(2);
-  }
+/** Runs the AppImage's own extractor into `scratch/squashfs-root` (no FUSE needed) and returns its exit status; `spawn` is spawnSync, which a test replaces. */
+export function extractWithAppImage(appImage, scratch, spawn = spawnSync) {
+  return spawn(appImage, ["--appimage-extract"], { cwd: scratch, stdio: ["ignore", "ignore", "inherit"] }).status;
+}
 
+/**
+ * Puts the pinned mkvmerge into `destination` unless it is there already. `download` fetches and checks the AppImage and
+ * `extract` unpacks it into `scratch/squashfs-root` and returns the exit status; they are what a test replaces.
+ */
+export async function installMkvmerge(destination, { pin = readMkvtoolnixPin(), download = downloadPinned, extract = extractWithAppImage, log = console.log } = {}) {
   if (existsSync(path.join(destination, "mkvmerge"))) {
-    console.log(`mkvmerge is already in ${destination}.`);
+    log(`mkvmerge is already in ${destination}.`);
     return;
   }
 
   // Node gives each address 250 ms to connect before it tries the next. A connection to MKVToolNix's server from a
   // far-away network takes longer than that, and then every attempt fails.
   setDefaultAutoSelectFamilyAttemptTimeout(10_000);
-  const { linux } = readMkvtoolnixPin();
+  const { linux } = pin;
   const scratch = mkdtempSync(path.join(tmpdir(), "weir-mkvtoolnix-"));
   try {
     const appImage = path.join(scratch, linux.name);
-    console.log(`Downloading ${linux.url}`);
-    await downloadPinned({ url: linux.url, fileName: linux.name, file: appImage, sha256: linux.sha256 });
+    log(`Downloading ${linux.url}`);
+    await download({ url: linux.url, fileName: linux.name, file: appImage, sha256: linux.sha256 });
     chmodSync(appImage, 0o755);
 
-    const extracted = spawnSync(appImage, ["--appimage-extract"], { cwd: scratch, stdio: ["ignore", "ignore", "inherit"] });
-    if (extracted.status !== 0) throw new Error(`Unpacking ${linux.name} failed.`);
+    if (extract(appImage, scratch) !== 0) throw new Error(`Unpacking ${linux.name} failed.`);
     placeMkvmerge(path.join(scratch, "squashfs-root"), destination);
-    console.log(`Installed mkvmerge into ${destination}.`);
+    log(`Installed mkvmerge into ${destination}.`);
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
-  await main();
+async function main() {
+  const destination = process.argv[2];
+  if (!destination) {
+    console.error("Usage: node scripts/install-mkvtoolnix-linux.mjs <folder>");
+    process.exitCode = 2;
+    return;
+  }
+  await installMkvmerge(destination);
 }
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) await main();

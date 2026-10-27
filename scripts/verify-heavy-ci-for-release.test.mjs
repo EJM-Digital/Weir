@@ -234,6 +234,23 @@ test("the gate passes and says which commit was reused", () => {
   assert.match(lines.join("\n"), /earlier commit .*same shipped files|only tests, scripts, docs or CI files changed/);
 });
 
+test("a run that did not succeed is named by how it ended, and its jobs are not asked for", () => {
+  const results = findTargetProofs({
+    proof: PROOFS.mutation, sha: TAG, root: repositoryRoot, targets: targets.slice(0, 1),
+    runsOf: (commit) => (commit === TAG ? [run({ event: "schedule", conclusion: "failure", databaseId: 4 })] : []),
+    jobsOf: () => assert.fail("a failed run's jobs are not listed"), git: fakeGit(),
+  });
+  assert.equal(results[0].ok, false);
+  assert.match(results[0].problems.join("\n"), /run 4 .* does not qualify: concluded failure/);
+});
+
+test("the gate reads the targets from the checkout when it is not given them", () => {
+  const lines = [];
+  const passed = runGate({ name: "mutation", tag: "v1.2.3", repository: "o/r", sha: TAG, root: repositoryRoot, runsOf: () => [], jobsOf: () => [], git: fakeGit(), log: () => {}, error: (line) => lines.push(line) });
+  assert.equal(passed, false);
+  assert.match(lines.join("\n"), new RegExp(`-f targets=${names.join(",")}$`, "m"));
+});
+
 test("an unknown proof is refused", () => {
   assert.throws(() => runGate({ name: "nope", repository: "o/r", sha: TAG }), /Unknown proof/);
 });

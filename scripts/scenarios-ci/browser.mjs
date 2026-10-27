@@ -7,7 +7,7 @@ const LANDING_PAGES = ["setup-username", "login-username"];
 const LANDING_CEILING_MS = 30_000;
 
 /** What the page shows right now: the test ids on it and its text. */
-const SNAPSHOT = () => ({
+export const SNAPSHOT = () => ({
   testIds: [...new Set([...document.querySelectorAll("[data-testid]")].map((element) => element.getAttribute("data-testid")))],
   text: document.body.innerText,
 });
@@ -24,8 +24,9 @@ export class Browser {
     this.#clock = clock;
   }
 
-  static async launch(origin) {
-    const { chromium } = await import("playwright-core");
+  /** Starts Chromium; `load` brings in Playwright (a test replaces it, so no browser is needed). */
+  static async launch(origin, load = () => import("playwright-core")) {
+    const { chromium } = await load();
     return new Browser(await chromium.launch(), origin);
   }
 

@@ -60,44 +60,45 @@ export function judge(folder, advisories, exceptions, today) {
   return problems;
 }
 
-function main(folders) {
-  const root = join(fileURLToPath(import.meta.url), "..", "..");
-  const exceptions = JSON.parse(
-    readFileSync(join(root, "scripts", "npm-audit-exceptions.json"), "utf8"),
-  ).exceptions;
-  const today = new Date().toISOString().slice(0, 10);
+/** npm's JSON report for the production dependencies in `cwd`; `execute` runs the command (a test replaces it). */
+export function npmAudit(cwd, execute = execSync) {
+  try {
+    return execute("npm audit --omit=dev --json", { cwd, encoding: "utf8" });
+  } catch (error) {
+    // npm audit exits non-zero when it finds anything; the report is still on stdout.
+    return error.stdout;
+  }
+}
+
+/**
+ * The audit over `folders`; returns the exit code. `audit` takes a folder's path and returns npm's JSON, and
+ * `exceptions`, `today` and `log` are what the exceptions file says, the date and where lines go; a test replaces them.
+ */
+export function main(
+  folders,
+  {
+    root = join(fileURLToPath(import.meta.url), "..", ".."),
+    audit = npmAudit,
+    exceptions = JSON.parse(readFileSync(join(root, "scripts", "npm-audit-exceptions.json"), "utf8")).exceptions,
+    today = new Date().toISOString().slice(0, 10),
+    log = console.log,
+  } = {},
+) {
   let failed = false;
   for (const folder of folders) {
-    let output;
-    try {
-      output = execSync("npm audit --omit=dev --json", {
-        cwd: join(root, folder),
-        encoding: "utf8",
-      });
-    } catch (error) {
-      // npm audit exits non-zero when it finds anything; the report is still on stdout.
-      output = error.stdout;
-    }
-    const problems = judge(
-      folder,
-      blockingAdvisories(JSON.parse(output)),
-      exceptions,
-      today,
-    );
-    const excused = exceptions
-      .filter((e) => e.folder === folder)
-      .map((e) => e.advisory);
-    console.log(
+    const problems = judge(folder, blockingAdvisories(JSON.parse(audit(join(root, folder)))), exceptions, today);
+    const excused = exceptions.filter((e) => e.folder === folder).map((e) => e.advisory);
+    log(
       `${folder}: ${problems.length === 0 ? "nothing blocking" : `${problems.length} blocking`}${excused.length ? ` (excused: ${excused.join(", ")})` : ""}`,
     );
     for (const problem of problems) {
-      console.log(`  ${problem}`);
+      log(`  ${problem}`);
     }
     failed ||= problems.length > 0;
   }
-  process.exitCode = failed ? 1 : 0;
+  return failed ? 1 : 0;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  main(process.argv.slice(2));
+  process.exitCode = main(process.argv.slice(2));
 }

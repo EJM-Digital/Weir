@@ -15,8 +15,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const FAILING = new Set(["high", "critical"]);
 
-function dotnetList(target) {
-  return execFileSync("dotnet", ["list", target, "package", "--vulnerable", "--include-transitive", "--format", "json"], {
+/** The JSON report of `dotnet list package --vulnerable` for a target; `execute` is execFileSync, which a test replaces (the real one asks NuGet). */
+export function dotnetList(target, execute = execFileSync) {
+  return execute("dotnet", ["list", target, "package", "--vulnerable", "--include-transitive", "--format", "json"], {
     cwd: REPO,
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
@@ -74,14 +75,13 @@ export function scan(targets, { list = dotnetList, repo = REPO, out = { log: con
   return 0;
 }
 
-function main() {
-  const targets = process.argv.slice(2);
+/** The scan over the command line's targets; returns the exit code. `scanTargets` is `scan`, which a test replaces. */
+export function main(targets, { scanTargets = scan, error = console.error } = {}) {
   if (targets.length === 0) {
-    console.error("usage: node scripts/check-dotnet-vulnerabilities.mjs <solution-or-project> [...]");
-    process.exitCode = 2;
-    return;
+    error("usage: node scripts/check-dotnet-vulnerabilities.mjs <solution-or-project> [...]");
+    return 2;
   }
-  process.exitCode = scan(targets);
+  return scanTargets(targets);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) main();
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) process.exitCode = main(process.argv.slice(2));

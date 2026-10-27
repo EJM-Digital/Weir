@@ -19,7 +19,9 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
+import { rootOf } from "./repository-root.mjs";
+
+const repositoryRoot = rootOf(import.meta.url);
 const recordings = path.join(repositoryRoot, "apps", "server", "tests", "fixtures", "recorded", "deluno-side");
 const allowList = path.join(repositoryRoot, "apps", "server", "tests", "fixtures", "recorded", "deluno-side-no-weir-behaviour.json");
 const awaitingList = path.join(repositoryRoot, "apps", "server", "tests", "fixtures", "recorded", "deluno-side-awaiting-replay.json");

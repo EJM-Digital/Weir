@@ -177,25 +177,30 @@ const run = (program, args, options = {}) => execFileSync(program, args, { stdio
 /** The image a release published. */
 export const imageOf = releaseImage;
 
-/** Pulls the release's image and copies its program out: the program's path, and the image's digest. */
-function fetchRelease(version, scratch) {
+/**
+ * Pulls the release's image and copies its program out: the program's path, and the image's digest.
+ * `execute` runs a program with execFileSync's arguments; a test replaces it.
+ */
+export function fetchRelease(version, scratch, execute = execFileSync) {
   const image = imageOf(version);
-  run("docker", ["pull", "--quiet", "--platform", "linux/amd64", image]);
-  const digest = execFileSync("docker", ["inspect", "--format", "{{index .RepoDigests 0}}", image], { encoding: "utf8" }).trim().split("@")[1];
+  const docker = (args, options = {}) => execute("docker", args, options);
+  docker(["pull", "--quiet", "--platform", "linux/amd64", image], { stdio: "inherit" });
+  const digest = docker(["inspect", "--format", "{{index .RepoDigests 0}}", image], { encoding: "utf8" }).trim().split("@")[1];
   if (!/^sha256:[0-9a-f]{64}$/.test(digest ?? "")) throw new Error(`Docker gave no digest for ${image}.`);
-  const container = execFileSync("docker", ["create", "--platform", "linux/amd64", image], { encoding: "utf8" }).trim();
+  const container = docker(["create", "--platform", "linux/amd64", image], { encoding: "utf8" }).trim();
   try {
     const program = path.join(scratch, "release");
-    run("docker", ["cp", `${container}:/opt/weir/.`, program]);
+    docker(["cp", `${container}:/opt/weir/.`, program], { stdio: "inherit" });
     const executable = path.join(program, "Weir");
     if (!existsSync(executable)) throw new Error(`${image} holds no /opt/weir/Weir.`);
     return { executable, digest };
   } finally {
-    execFileSync("docker", ["rm", "--force", container], { stdio: "ignore" });
+    docker(["rm", "--force", container], { stdio: "ignore" });
   }
 }
 
-function session(executable, scratch) {
+/** Runs the contract suite's release-fixture session against the release's program; `execute` runs dotnet (a test replaces it). */
+export function session(executable, scratch, execute = run) {
   const raw = path.join(scratch, "session", "weir.sqlite3");
   const bundle = path.join(scratch, "session", "configuration-bundle.json");
   const env = {
@@ -205,7 +210,7 @@ function session(executable, scratch) {
     WEIR_FIXTURE_DATABASE_OUT: raw,
     WEIR_FIXTURE_BACKUP_OUT: bundle,
   };
-  run(
+  execute(
     "dotnet",
     ["test", path.join(repositoryRoot, "apps", "server", "tests", "Weir.Contract.Tests"), "-m:4", "--filter", "FullyQualifiedName~ReleaseFixtureSession"],
     { env },

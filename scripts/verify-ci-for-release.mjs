@@ -64,8 +64,9 @@ export function evaluateRun(run, jobs, evidence = REQUIRED_EVIDENCE, events = AC
   return problems;
 }
 
-export function gh(args) {
-  return JSON.parse(execFileSync("gh", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
+/** Runs the GitHub CLI and parses its JSON answer; `execute` is execFileSync, which a test replaces. */
+export function gh(args, execute = execFileSync) {
+  return JSON.parse(execute("gh", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
 }
 
 export function runJobs(repository, runId, ask = gh) {

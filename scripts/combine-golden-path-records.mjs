@@ -197,8 +197,9 @@ export function run(argv, { git, setStatus, read = (path) => readFileSync(path, 
 
 const runGit = (args) => execFileSync("git", args, { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
 
-function setStatusWithGh({ repository, sha, description, target }) {
-  execFileSync(
+/** Sets the golden-path status on `sha` through the GitHub CLI; `execute` is execFileSync, which a test replaces. */
+export function setStatusWithGh({ repository, sha, description, target }, execute = execFileSync) {
+  execute(
     "gh",
     ["api", `repos/${repository}/statuses/${sha}`, "-f", "state=success", "-f", `context=${GOLDEN_PATH_CONTEXT}`, "-f", `description=${description.slice(0, 140)}`, "-f", `target_url=${target}`],
     { stdio: ["ignore", "ignore", "inherit"] },

@@ -83,15 +83,17 @@ function readRelease(tag, gh) {
   }
 }
 
-function runGh(args) {
-  return execFileSync("gh", args, {
+/** Runs the GitHub CLI and returns its standard output; `execute` is execFileSync, which a test replaces. */
+export function runGh(args, execute = execFileSync) {
+  return execute("gh", args, {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   });
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const [tag, notesFile, prerelease, ...paths] = process.argv.slice(2);
+/** Publishes the release the command line names (tag, notes file, prerelease, files); `gh` and `log` are what a test replaces. */
+export function main(argv, { gh = runGh, log = console.log } = {}) {
+  const [tag, notesFile, prerelease, ...paths] = argv;
   const files = paths.map((path) => ({
     path,
     name: basename(path),
@@ -102,7 +104,11 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     notesFile,
     prerelease: prerelease === "true",
     files,
-    gh: runGh,
+    gh,
   });
-  console.log(`Published ${tag} with ${files.length} files.`);
+  log(`Published ${tag} with ${files.length} files.`);
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main(process.argv.slice(2));
 }

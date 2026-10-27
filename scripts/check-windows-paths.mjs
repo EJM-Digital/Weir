@@ -16,8 +16,9 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
+import { rootOf } from "./repository-root.mjs";
 import { patternToRegExp } from "./select-mutation-targets.mjs";
 
 const SOURCE_FOLDERS = ["apps/server/src/", "apps/server/tools/"];
@@ -54,7 +55,7 @@ export function unmatchedWindowsFiles(files, read, patterns) {
 }
 
 function main() {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const root = rootOf(import.meta.url);
   const patterns = windowsFilter(readFileSync(path.join(root, ".github", "workflows", "ci.yml"), "utf8"));
   const files = execFileSync("git", ["ls-files", ...SOURCE_FOLDERS], { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 })
     .split("\n").map((line) => line.trim()).filter(Boolean);
