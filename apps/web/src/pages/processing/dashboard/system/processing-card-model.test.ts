@@ -112,6 +112,13 @@ describe("the speed column", () => {
     ).toEqual(["idle · 14 done", "idle"]);
   });
 
+  it("reads a speed out in times real time", () => {
+    const speed = processingColumns(stats(), recent)[1];
+
+    expect(speed.readout(35.4)).toBe("35×");
+    expect(speed.readout(0.8)).toBe("0.8×");
+  });
+
   it("draws the speeds the history holds, an idle second as zero", () => {
     expect(
       processingColumns(stats(), undefined)[1].lines[0].samples.map(

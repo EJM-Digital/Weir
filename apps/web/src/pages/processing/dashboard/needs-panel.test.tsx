@@ -551,6 +551,20 @@ describe("asking a workflow to look again at a held or skipped file", () => {
     );
   });
 
+  it("says, as an alert, when the workflow could not be checked", () => {
+    needFiles.files = [held];
+    checkAgain.mutate = vi.fn((_vars: unknown, handlers: RequeueHandlers) =>
+      handlers.onError(new TypeError("boom")),
+    );
+    renderPanel();
+
+    fireEvent.click(screen.getByRole("button", { name: "Check again" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Couldn't check that workflow.",
+    );
+  });
+
   it("shows that it is checking while the workflow looks again", () => {
     needFiles.files = [held];
     checkAgain.isPending = true;

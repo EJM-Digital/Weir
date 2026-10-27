@@ -60,6 +60,13 @@ describe("startOfDayAt", () => {
       Date.UTC(2026, 9, 2, 4, 0),
     );
   });
+
+  it("is the browser's own midnight for a zone it does not know", () => {
+    const here = new Date(NOON_UTC);
+    expect(startOfDayAt(NOON_UTC, "Not/AZone")).toBe(
+      new Date(here.getFullYear(), here.getMonth(), here.getDate()).getTime(),
+    );
+  });
 });
 
 describe("dayKeyAt", () => {

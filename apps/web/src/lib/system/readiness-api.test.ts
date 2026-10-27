@@ -53,6 +53,17 @@ describe("fetchSystemReadiness", () => {
     });
   });
 
+  it("does not take a 503 whose body is not JSON for a readiness reading", async () => {
+    serveRecordedReplies({
+      [READINESS]: { status: 503, body: "<html>Service Unavailable</html>" },
+    });
+
+    await expect(fetchSystemReadiness()).rejects.toMatchObject({
+      name: "ApiHttpError",
+      status: 503,
+    });
+  });
+
   it("throws on a reply that is signed out or a server failure", async () => {
     serveRecordedReplies({ [READINESS]: systemReplies.previewSignedOut });
     await expect(fetchSystemReadiness()).rejects.toBeInstanceOf(ApiHttpError);

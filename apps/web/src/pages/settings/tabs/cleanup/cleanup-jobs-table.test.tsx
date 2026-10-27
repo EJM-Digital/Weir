@@ -121,6 +121,19 @@ describe("the cleanup jobs table", () => {
     expect(rows()[0]).toBe("Cleaned copies nobody picked up");
   });
 
+  it("sorts by the name of the job", () => {
+    render(<Jobs />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Job" }));
+
+    expect(rows()).toEqual([
+      "Cleaned copies nobody picked up",
+      "Leftover work files",
+      "A setting of the leftover files job",
+      "A setting of no job",
+    ]);
+  });
+
   it("keeps the job column first and offers no Run now heading to a reader who cannot run a job", () => {
     render(<Jobs editable={false} />);
 
