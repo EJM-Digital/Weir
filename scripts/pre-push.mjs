@@ -39,6 +39,12 @@ step("nothing private in public files");
 if (!run(process.execPath, [path.join(repoRoot, "scripts", "check-public-privacy.mjs")])) fail("a private-looking value is in a public file");
 step("contract areas");
 if (!run(process.execPath, [path.join(repoRoot, "scripts", "check-contract-areas.mjs")])) fail("the contract area list is out of step");
+step("no silent reverts");
+if (!quiet("git", ["rev-parse", "--verify", "--quiet", "origin/main"])) {
+  skip("no silent reverts", "git fetch origin");
+} else if (!run(process.execPath, [path.join(repoRoot, "scripts", "check-no-silent-reverts.mjs"), "--base", "origin/main", "--head", "HEAD"])) {
+  fail("this branch puts files back to a version main replaced", "merge origin/main in and keep main's version of each file, or write 'Reverts #<number>' in a commit message for a deliberate revert");
+}
 step("event titles");
 if (!run(process.execPath, [path.join(repoRoot, "scripts", "check-event-titles.mjs")])) fail("a server event type has no title", "add it to apps/web/src/lib/activity/event-labels.ts");
 
