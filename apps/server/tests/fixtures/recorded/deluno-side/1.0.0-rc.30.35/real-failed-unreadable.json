@@ -1,8 +1,8 @@
 {
   "app": "deluno",
-  "version": "1.0.0-rc.30.33",
+  "version": "1.0.0-rc.30.35",
   "state": "real-failed-unreadable",
-  "recordedAt": "2026-10-27T20:36:39.339Z",
+  "recordedAt": "2026-10-27T21:31:30.487Z",
   "note": "A release whose film is a file of zero bytes, handed to Weir by a real Deluno: Weir cannot read it and reports it failed. The hand-off, Deluno's questions about it, Weir's report and Deluno's reply, as the proxy between them saw it.",
   "exchanges": [
     {
@@ -10,14 +10,14 @@
         "method": "POST",
         "path": "/api/v1/intake/webhook/deluno",
         "headers": {
-          "idempotency-key": "01a17f0572d074e6852e13810b6ae784:1793132425936",
+          "idempotency-key": "01a17f36c0b875d199f8d07e342a0cd3:1793135657144",
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "eventType": "deluno.processor-handoff",
-          "handoffId": "01a17f0572d074e6852e13810b6ae784",
-          "libraryId": "01a17f02bccc732b97a87b112b300bf0",
+          "handoffId": "01a17f36c0b875d199f8d07e342a0cd3",
+          "libraryId": "01a17f3407ce7f4e86138051bb7a1d13",
           "mediaType": "movies",
           "sourcePath": "/downloads/completed/Movies/ScnFail.2020.1080p.WEB-DL.x264-WEIR",
           "releaseName": "ScnFail.2020.1080p.WEB-DL.x264-WEIR",
@@ -53,10 +53,10 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a17f0572d074e6852e13810b6ae784",
+          "handoffId": "01a17f36c0b875d199f8d07e342a0cd3",
           "status": "failed",
           "processorName": "Weir",
-          "libraryId": "01a17f02bccc732b97a87b112b300bf0",
+          "libraryId": "01a17f3407ce7f4e86138051bb7a1d13",
           "releaseName": "ScnFail.2020.1080p.WEB-DL.x264-WEIR",
           "message": "Weir can't read this file yet. It may still be arriving, so Weir will look again later.",
           "disposition": "held",
@@ -71,8 +71,8 @@
         },
         "body": {
           "status": "failed",
-          "handoffId": "01a17f0572d074e6852e13810b6ae784",
-          "activityId": "01a17f0624027c7b85a09c36de342bcc",
+          "handoffId": "01a17f36c0b875d199f8d07e342a0cd3",
+          "activityId": "01a17f3799ec7973b521cfa0463840a4",
           "importJobId": null
         }
       }
