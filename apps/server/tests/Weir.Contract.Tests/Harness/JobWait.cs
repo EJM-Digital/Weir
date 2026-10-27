@@ -23,6 +23,20 @@ public sealed class JobWait(TimeProvider clock, Action? polled = null)
     }
 
     /// <summary>
+    /// Polls until no job is in a status <paramref name="busy"/> names. Each poll judges one reading of the jobs: Weir queues work on its
+    /// own timer (the first scan of a new workflow), so a job can appear between two reads, and that is more work to wait for, not jobs
+    /// that ended without a result. Jobs that wait for a worker are held to <see cref="UnclaimedCeiling"/> as in <see cref="UntilAsync{T}"/>.
+    /// </summary>
+    public async Task UntilNoneAsync(Func<Task<IReadOnlyList<string>>> jobStatuses, Func<string, bool> busy, string what)
+    {
+        IReadOnlyList<string> reading = [];
+        await UntilAsync(
+            async () => reading = await jobStatuses(),
+            () => Task.FromResult(reading.Any(busy) ? null : "quiet"),
+            what).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Polls until <paramref name="result"/> returns a value. <paramref name="jobStatuses"/> says what state the jobs that produce
     /// it are in (<c>pending</c>, <c>leased</c> while a worker has one, or an ended status); <paramref name="what"/> finishes the
     /// sentence "waiting for ...".
