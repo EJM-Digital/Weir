@@ -19,6 +19,7 @@ public sealed class KeptFilesLiveTests(E2EServer server) : E2ETestBase(server)
         await File.WriteAllBytesAsync(Path.Join(watched, "Harbour Lights 2024.mkv"), [1, 2, 3, 4, 5]);
         var page = await NewPageAsync();
         await Navigation.EnsureSignedInAsync(page, BaseUrl);
+        await WeirApi.SetPausedAsync(page.Context, BaseUrl, paused: true);
         var id = await WeirWorkflowApi.CreateAsync(page.Context, BaseUrl, "E2E kept films", watched, output);
         try
         {
@@ -35,6 +36,7 @@ public sealed class KeptFilesLiveTests(E2EServer server) : E2ETestBase(server)
         finally
         {
             await WeirWorkflowApi.DeleteAsync(page.Context, BaseUrl, id);
+            await WeirApi.SetPausedAsync(page.Context, BaseUrl, paused: false);
         }
     }
 }

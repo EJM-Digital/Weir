@@ -119,7 +119,9 @@ public static class E2EDatabase
 
     /// <summary>
     /// A file of the workflow that failed to process, as the remove dialog finds one: the row a failed pass leaves, with no
-    /// fingerprint recorded. Returns its id. The file itself must be in the workflow's watched folder.
+    /// fingerprint recorded. Returns its id. The file itself must be in the workflow's watched folder, and Weir registers a file it finds there
+    /// in its own time, so the row may already be there: it is taken over rather than refused as a duplicate. A test that needs the server to leave
+    /// the row alone pauses processing first.
     /// </summary>
     public static long InsertFailedFile(string databasePath, long libraryId, string relativePath, long sizeBytes)
     {
@@ -129,7 +131,9 @@ public static class E2EDatabase
             SeedSql.Scalar(
                 connection,
                 "INSERT INTO files (library_id, relative_path, status, status_reason, size_bytes, last_seen_at) " +
-                "VALUES ($library, $path, 'processing_failed', 'Weir could not read the audio track.', $size, CURRENT_TIMESTAMP) RETURNING id",
+                "VALUES ($library, $path, 'processing_failed', 'Weir could not read the audio track.', $size, CURRENT_TIMESTAMP) " +
+                "ON CONFLICT (library_id, relative_path) DO UPDATE SET status = excluded.status, status_reason = excluded.status_reason, " +
+                "size_bytes = excluded.size_bytes, last_seen_at = excluded.last_seen_at RETURNING id",
                 ("$library", libraryId),
                 ("$path", relativePath),
                 ("$size", sizeBytes)),
