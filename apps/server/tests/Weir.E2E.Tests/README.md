@@ -49,6 +49,7 @@ deletes its own, and each run has a folder of its own, so a failure that does no
 | `context-N-page-M.png` | The page as it was when the test ended. |
 | `browser.log` | The console, page errors, failed requests, responses of 400 and over and every navigation, with times. |
 | `server.log` | The last 2,000 lines the server wrote. |
+| `sockets.txt` | The machine's TCP sockets when the test ended: counts by state, the processes holding most, and (Windows) whether the TCP/IP driver logged running out of ephemeral ports. `net::ERR_NO_BUFFER_SPACE` in `browser.log` means the machine ran out, which is never a fact about the test that met it. |
 
 CI uploads the folder as `e2e-failure-evidence`. A failed test fails the job and nothing runs it again: an intermittent test is a bug to
 root-cause from the trace, never one to run twice.
