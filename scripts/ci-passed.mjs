@@ -13,6 +13,8 @@ import { resolve } from "node:path";
 
 export const GATES = {
   "repo-checks": null,
+  // Reads main's history, so it is a job of its own with a full clone (scripts/check-no-silent-reverts.mjs).
+  "no-silent-reverts": null,
   "server-linux": "run_server_linux",
   "server-windows": "run_server_windows",
   "web-dist": "run_web",

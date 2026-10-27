@@ -445,6 +445,34 @@ jobs:
             "scripts/**/*.test.mjs"
           node scripts/check-coverage-floors.mjs --floors docs/coverage/floors.json --node-scripts artifacts/node-coverage
 
+  # A change may not set files back to a version an earlier merged change replaced unless it says it reverts that change
+  # (scripts/check-no-silent-reverts.mjs). It reads the history of main, so it fetches all of it; a pull request is judged
+  # from where its head left the base, a push to main by the commit against its parent.
+  no-silent-reverts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+
+      - name: No merged change is silently undone
+        env:
+          EVENT: ${{ github.event_name }}
+          PULL_REQUEST_BASE: ${{ github.event.pull_request.base.sha }}
+          PULL_REQUEST_HEAD: ${{ github.event.pull_request.head.sha }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            node scripts/check-no-silent-reverts.mjs --base "$PULL_REQUEST_BASE" --head "$PULL_REQUEST_HEAD"
+          else
+            node scripts/check-no-silent-reverts.mjs --base "$COMMIT^" --head "$COMMIT"
+          fi
+
   server-linux:
     needs: changes
     if: needs.changes.outputs.run_server_linux == 'true'
@@ -1065,7 +1093,7 @@ jobs:
 
   # The verdict. `always()` so it reports even when a job it needs failed or was skipped.
   ci-passed:
-    needs: [changes, repo-checks, server-linux, server-windows, web-dist, web, e2e-smoke, contract, contract-windows, tray, coverage, packaging, packaging-windows]
+    needs: [changes, repo-checks, server-linux, server-windows, web-dist, web, e2e-smoke, contract, contract-windows, tray, coverage, packaging, packaging-windows, no-silent-reverts]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
