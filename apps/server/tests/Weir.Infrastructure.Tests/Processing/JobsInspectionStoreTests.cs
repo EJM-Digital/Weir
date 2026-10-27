@@ -52,6 +52,21 @@ public sealed class JobsInspectionStoreTests
     }
 
     [Fact]
+    public async Task A_job_is_listed_with_when_its_lease_ends_and_the_earliest_it_may_run()
+    {
+        using var db = new JobsTestDatabase();
+        InsertJob(db, "waiting", ProcessingJobStatus.Leased, "2020-01-01T00:00:00Z");
+        db.Execute("UPDATE jobs SET lease_expires_at = '2020-01-01T00:05:00Z', not_before = '2020-01-01T00:01:00Z'");
+        await using var uow = await UnitOfWork.OpenAsync(db.Database);
+
+        var (rows, _) = await Store.ListAsync(uow, limit: 10, statuses: [ProcessingJobStatus.Leased]);
+
+        var row = Assert.Single(rows);
+        Assert.Equal(new DateTimeOffset(2020, 1, 1, 0, 5, 0, TimeSpan.Zero), row.LeaseExpiresAt);
+        Assert.Equal(new DateTimeOffset(2020, 1, 1, 0, 1, 0, TimeSpan.Zero), row.NotBefore);
+    }
+
+    [Fact]
     public async Task With_no_leased_job_the_newest_pending_one_still_wins_the_limit()
     {
         using var db = new JobsTestDatabase();

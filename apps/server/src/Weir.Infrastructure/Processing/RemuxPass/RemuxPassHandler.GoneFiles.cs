@@ -7,12 +7,18 @@ public sealed partial class RemuxPassHandler
 {
     private const string GoneLooksKey = GoneLooks.Key;
 
+    /// <summary>The outcome a pass reported, when it is a word.</summary>
+    internal static string? OutcomeOf(WireObject result) => result.Get("outcome") is WireString word ? word.Value : null;
+
+    /// <summary>How many looks at a gone file have been made so far, when the record says.</summary>
+    internal static long? GoneLooksIn(WireObject record) => record.Get(GoneLooksKey) is WireInteger looks ? (long)looks.Value : null;
+
     /// <summary>
     /// A pass that failed because its file was not there is looked at again after a few seconds, the way a hand-off is told a share
     /// that dropped for a moment is not a deleted download. A file that is back is processed normally; one that is still gone settles
     /// as nothing to do, and is held (<see cref="LookAgainForGoneFileAsync"/>) before Weir forgets it.
     /// </summary>
-    private async Task<WireObject> SettleVanishedAsync(RemuxPassRequest request, WireObject result, CancellationToken cancellationToken)
+    internal async Task<WireObject> SettleVanishedAsync(RemuxPassRequest request, WireObject result, CancellationToken cancellationToken)
     {
         var watchedFolder = request.Runtime.WatchedFolder;
         if (result.Get("ok") is not WireBool { Value: false } || !GoneSources.HasLeft(watchedFolder, request.RelativeMediaPath))
@@ -39,14 +45,14 @@ public sealed partial class RemuxPassHandler
     /// second, and not by a look at a file that was already held as gone when the pass claimed it, which something else recorded.
     /// The manager that handed the file over is still told at the final look.
     /// </summary>
-    private static bool AddsGoneEntry(WireObject result, bool listedWhenClaimed)
+    internal static bool AddsGoneEntry(WireObject result, bool listedWhenClaimed)
     {
-        if (result.Get("outcome") is not WireString { Value: RemuxPassOutcomes.SourceGone })
+        if (OutcomeOf(result) != RemuxPassOutcomes.SourceGone)
         {
             return true;
         }
 
-        return !listedWhenClaimed && !(result.Get(GoneLooksKey) is WireInteger { Value: var looks } && looks > 0);
+        return !listedWhenClaimed && GoneLooksIn(result) is not > 0;
     }
 
     /// <summary>
@@ -55,10 +61,10 @@ public sealed partial class RemuxPassHandler
     /// (<see cref="GoneSources.LookAgainAfter"/>). That look finds the file back, and processes it, or still gone, and forgets it and
     /// tells the manager that handed it over. The first look is not final, so nothing is reported yet.
     /// </summary>
-    private async Task LookAgainForGoneFileAsync(
+    internal async Task LookAgainForGoneFileAsync(
         long jobId, WireObject data, WireObject? origin, WireObject result, (string WatchedFolder, string RelativePath, string MediaScope, long? LibraryId) file, CancellationToken cancellationToken)
     {
-        if (_jobs is not { } jobs || result.Get("outcome") is not WireString { Value: RemuxPassOutcomes.SourceGone } || result.Get(GoneLooksKey) is not WireInteger { Value: var looks } || looks != 0)
+        if (_jobs is not { } jobs || OutcomeOf(result) != RemuxPassOutcomes.SourceGone || GoneLooksIn(result) is not 0)
         {
             return;
         }

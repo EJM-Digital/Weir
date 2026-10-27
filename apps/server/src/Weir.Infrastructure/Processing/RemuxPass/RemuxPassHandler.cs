@@ -243,9 +243,9 @@ public sealed partial class RemuxPassHandler : IJobHandler
             payloadJson = WireJsonWriter.Dumps(data.Copy().Set("origin", adopted), WireJsonFormat.Compact);
         }
 
-        if (result.Get("outcome") is WireString { Value: RemuxPassOutcomes.SourceGone })
+        if (OutcomeOf(result) == RemuxPassOutcomes.SourceGone)
         {
-            result.Set(GoneLooksKey, data.Get(GoneLooksKey) is WireInteger looked ? (long)looked.Value : 0);
+            result.Set(GoneLooksKey, GoneLooksIn(data) ?? 0);
             _logger.LogInformation("{Path} is no longer in the watched folder, so there is nothing to do.", rel);
         }
 

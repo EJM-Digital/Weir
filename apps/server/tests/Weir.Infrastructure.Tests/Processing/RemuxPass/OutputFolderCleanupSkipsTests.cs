@@ -147,6 +147,21 @@ public sealed class OutputFolderCleanupSkipsTests : IDisposable
     }
 
     [Fact]
+    public async Task A_cleanup_with_no_job_of_its_own_is_held_back_by_any_pass_for_the_same_movie_or_season()
+    {
+        var movie = OldFile(MovieRelative);
+        var episode = OldFile(TvRelative);
+        _data.ActiveJobs.Add(new ActiveRemuxJob(7, """{"relative_media_path":"Title/m.mkv"}"""));
+        _data.ActiveJobs.Add(new ActiveRemuxJob(8, """{"relative_media_path":"Show/S01/ep2.mkv","media_scope":"tv"}"""));
+
+        var movieReason = await MovieSkipReasonAsync(_folders.Runtime(), _folders.Source(MovieRelative), movie, currentJob: null);
+        var tvReason = await TvSkipReasonAsync(_folders.Runtime(), _folders.Source(TvRelative), episode, currentJob: null);
+
+        Assert.StartsWith(AnotherMoviePass, movieReason, StringComparison.Ordinal);
+        Assert.StartsWith(AnotherTvPass, tvReason, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_record_that_cannot_be_read_does_not_hide_a_later_pass_for_the_same_file()
     {
         var final = OldFile(MovieRelative);

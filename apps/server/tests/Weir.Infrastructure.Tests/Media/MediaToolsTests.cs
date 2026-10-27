@@ -30,6 +30,19 @@ public sealed class MediaToolsTests : IDisposable
     private static MediaTools Tools(IProcessRunner runner, ListLogger<MediaTools>? logger = null, TimeProvider? time = null) =>
         new(runner, new FixedResolver(), logger ?? new ListLogger<MediaTools>(), time ?? TimeProvider.System);
 
+    [Theory]
+    [InlineData(ProcessTimeoutKind.Overall, 0)]
+    [InlineData(ProcessTimeoutKind.None, 1)]
+    public async Task Warnings_ffprobe_did_not_get_to_report_in_time_read_as_none(ProcessTimeoutKind timeout, int expected)
+    {
+        var media = WriteFile("movie.mkv", "not-empty"u8.ToArray());
+        var runner = new ScriptedRunner(_ => new ScriptedRun { Timeout = timeout, Stderr = "Invalid NAL unit size\n"u8.ToArray() });
+
+        var warnings = await Tools(runner).ProbeWarningLinesAsync(media);
+
+        Assert.Equal(expected, warnings.Count);
+    }
+
     // --- ffprobe log levels ----------------------------------------------------------------
 
     [Fact]

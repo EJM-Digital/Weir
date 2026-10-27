@@ -255,7 +255,8 @@ public sealed class HistoryFileRemovalService
         var report = new RejectDeliveryReport(target, body, delivery);
         if (!delivery.Accepted)
         {
-            var status = delivery.Status.StartsWith("failed: ", StringComparison.Ordinal) ? delivery.Status["failed: ".Length..] : delivery.Status;
+            // A report that was not accepted always says "failed: " first (HandoffCompletionReporter), as RejectRoutes relies on too.
+            var status = delivery.Status["failed: ".Length..];
             return new RejectRouteOutcome(false, $"{label} did not accept that this file will not be imported ({status}), so Weir did not keep it.", label, null, report);
         }
 

@@ -319,7 +319,7 @@ public sealed class SchemaMigrator
         transaction.Commit();
     }
 
-    internal static string? ReadRecordedRevision(SqliteConnection connection)
+    internal static string ReadRecordedRevision(SqliteConnection connection)
     {
         var ledger = FindLedger(connection);
         var revisions = new List<string>();

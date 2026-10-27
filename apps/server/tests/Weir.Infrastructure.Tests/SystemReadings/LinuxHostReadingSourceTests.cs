@@ -153,4 +153,19 @@ public sealed class LinuxHostReadingSourceTests
         Assert.Null(source.DriveRootOf("/media/movies"));
         Assert.Null(source.VolumeKeyOf("/media"));
     }
+
+    [Fact]
+    public void A_file_or_a_folder_is_there_and_nothing_else_is()
+    {
+        using var folder = new TempDirectory();
+        var file = folder.Join("present.txt");
+        File.WriteAllText(file, "x");
+        var source = new ProcSource();
+
+        Assert.True(source.Exists(file));
+        Assert.True(source.Exists(folder.Path));
+        Assert.False(source.Exists(folder.Join("absent")));
+        Assert.Equal("x", source.ReadAllText(file));
+        Assert.Null(source.ReadAllText(folder.Join("absent")));
+    }
 }

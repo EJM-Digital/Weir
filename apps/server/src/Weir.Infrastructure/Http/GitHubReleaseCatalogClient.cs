@@ -157,7 +157,7 @@ public sealed class GitHubReleaseCatalogClient : IReleaseCatalogClient
             : null;
 
     private static string? HeaderOf(HttpResponseMessage response, string name) =>
-        response.Headers.TryGetValues(name, out var values) ? values.FirstOrDefault()?.Trim() : null;
+        response.Headers.TryGetValues(name, out var values) ? values.First().Trim() : null;
 
     private (IReadOnlyList<GitHubReleaseRecord>? Releases, (int Status, DateTimeOffset ResetsAt)? Limit) Known()
     {

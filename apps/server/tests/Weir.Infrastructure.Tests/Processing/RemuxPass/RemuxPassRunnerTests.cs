@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weir.Core.Json;
+using Weir.Core.Metrics;
 using Weir.Core.Media;
 using Weir.Core.MediaManagers;
 using Weir.Core.Processing;
@@ -246,7 +247,7 @@ public sealed partial class RemuxPassRunnerTests : IDisposable
 
     public void Dispose() => _folders.Dispose();
 
-    private RemuxPassRunner Runner(bool? hardlink = null, Func<string, long>? freeBytes = null, IFileSystem? files = null) =>
+    private RemuxPassRunner Runner(bool? hardlink = null, Func<string, long>? freeBytes = null, IFileSystem? files = null, RuntimeMetricsStore? metrics = null) =>
         new(
             new MediaTools(_media, new FixedResolver(), new ListLogger<MediaTools>(), TimeProvider.System),
             new FixedResolver(),
@@ -257,7 +258,8 @@ public sealed partial class RemuxPassRunnerTests : IDisposable
             new RemuxPassSettings { MovieOutputCleanupMinAgeSeconds = 0, TvOutputCleanupMinAgeSeconds = 0 },
             TimeProvider.System,
             NullLogger<RemuxPassRunner>.Instance,
-            files: files)
+            files: files,
+            metrics: metrics)
         {
             HardlinkFastPathSupported = hardlink ?? OperatingSystem.IsWindows(),
             FreeBytes = freeBytes,

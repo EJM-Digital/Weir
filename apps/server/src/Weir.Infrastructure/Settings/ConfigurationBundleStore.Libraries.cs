@@ -33,7 +33,8 @@ public sealed partial class ConfigurationBundleStore
             .Select(row => row as WireObject ?? throw new WireTypeException($"Each row in the backup's {LibrariesTable} section must be an object."))
             .ToList();
         ConfigurationBundleIntakeUpgrade.Apply(
-            bundle[ProcessingOperatorTable] as WireObject ?? throw new WireTypeException($"The backup's {ProcessingOperatorTable} section must be an object."),
+            // ApplySingletonAsync has already refused a section that is not an object.
+            (WireObject)bundle[ProcessingOperatorTable],
             libraryRows);
         ValidateRestoredLibraries(libraryRows, weirHome);
         CarryPerformanceFreeSpaceToWorkflows(bundle, libraryRows);

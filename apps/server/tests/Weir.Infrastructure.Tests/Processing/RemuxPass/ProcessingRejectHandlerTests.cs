@@ -375,6 +375,72 @@ public sealed class ProcessingRejectHandlerTests : IDisposable
         Assert.Equal(1, await _fixture.Store.Scalar($"SELECT count(*) FROM jobs WHERE job_kind = '{IntakeRules.PassThroughJobKind}'"));
     }
 
+    // --- a hand-off the manager's own queue answers for, or that Weir has no record of ----------------
+
+    [Fact]
+    public async Task A_rejection_for_a_hand_off_weir_has_no_record_of_says_it_could_not_report_and_hands_the_original_back()
+    {
+        var library = await LibraryAsync();
+        _folders.Source("Film/film.mkv");
+        await FileRowAsync(library, "Film/film.mkv");
+        var payload = $$$"""{"relative_media_path":"Film/film.mkv","library_id":{{{library}}},"origin":{"source_key":"deluno","handoff_id":"never-seen","callback_path":"{{{EventsPath}}}"}}""";
+
+        await Handler().HandleAsync(Context(51, payload), CancellationToken.None);
+
+        Assert.Contains("Weir could not report to the manager:", await ScalarText("SELECT status_reason FROM files"), StringComparison.Ordinal);
+        Assert.Equal(1, await _fixture.Store.Scalar($"SELECT count(*) FROM jobs WHERE job_kind = '{IntakeRules.PassThroughJobKind}'"));
+    }
+
+    [Fact]
+    public async Task A_rejection_from_a_hand_off_by_a_queue_manager_is_removed_through_that_queue()
+    {
+        var library = await LibraryAsync();
+        var source = _folders.Source("Film/film.mkv");
+        await FileRowAsync(library, "Film/film.mkv");
+        var connection = await _fixture.AddConnectionAsync("radarr", "http://10.0.0.5:7878", "k");
+        await LinkAsync(library, connection);
+        var outputPath = Path.GetFullPath(source).Replace('\\', '/');
+        _fixture.Http.Json(HttpMethod.Get, "/api/v3/queue", $$"""{"records":[{"id":55,"outputPath":"{{outputPath}}","downloadId":"dl1"}]}""");
+        _fixture.Http.Route(HttpMethod.Delete, "/api/v3/queue/55", _ => FakeManagerHttp.Response(HttpStatusCode.OK));
+        var payload = $$$"""{"relative_media_path":"Film/film.mkv","library_id":{{{library}}},"origin":{"source_key":"radarr","handoff_id":"r1"}}""";
+
+        await Handler().HandleAsync(Context(52, payload), CancellationToken.None);
+
+        Assert.Single(_fixture.Http.RequestsTo(HttpMethod.Delete, "/api/v3/queue/55"));
+        Assert.Equal("rejected", await ScalarText("SELECT status FROM files"));
+    }
+
+    [Fact]
+    public async Task A_rejection_from_a_hand_off_by_a_queue_manager_nothing_is_linked_to_hands_the_original_back()
+    {
+        var library = await LibraryAsync();
+        _folders.Source("Film/film.mkv");
+        await FileRowAsync(library, "Film/film.mkv");
+        var payload = $$$"""{"relative_media_path":"Film/film.mkv","library_id":{{{library}}},"origin":{"source_key":"radarr","handoff_id":"r1"}}""";
+
+        await Handler().HandleAsync(Context(53, payload), CancellationToken.None);
+
+        Assert.Contains("No linked media manager can take a rejection", await ScalarText("SELECT status_reason FROM files"), StringComparison.Ordinal);
+        Assert.Equal(1, await _fixture.Store.Scalar($"SELECT count(*) FROM jobs WHERE job_kind = '{IntakeRules.PassThroughJobKind}'"));
+    }
+
+    [Fact]
+    public async Task A_rejection_a_queue_manager_already_took_is_finished_without_naming_a_manager_that_cannot_be_found()
+    {
+        var library = await LibraryAsync();
+        var source = _folders.Source("Film/film.mkv");
+        await FileRowAsync(library, "Film/film.mkv");
+        await _fixture.Db(async uow => { await _fixture.Ledger.RecordReceivedAsync(uow, "radarr", "r1", library, "Film/film.mkv"); return 0; });
+        await _fixture.Store.Execute("UPDATE media_manager_handoffs SET reported_status = 'rejected' WHERE handoff_id = 'r1'");
+        var payload = $$$"""{"relative_media_path":"Film/film.mkv","library_id":{{{library}}},"origin":{"source_key":"radarr","handoff_id":"r1"}}""";
+
+        await Handler().HandleAsync(Context(54, payload), CancellationToken.None);
+
+        Assert.False(File.Exists(source), "a workflow no manager is linked to has its rejected download removed here");
+        Assert.Equal("rejected", await ScalarText("SELECT status FROM files"));
+        Assert.Contains("The media manager", await ScalarText("SELECT detail FROM activity_events WHERE event_type = 'processing.file_rejected'"), StringComparison.Ordinal);
+    }
+
     // --- fix #532: a rejection always upserts a Files row ----------------------------------------
 
     [Fact]

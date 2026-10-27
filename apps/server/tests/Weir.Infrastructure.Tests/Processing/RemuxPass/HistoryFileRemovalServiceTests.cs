@@ -306,6 +306,26 @@ public sealed partial class HistoryFileRemovalServiceTests : IDisposable
         Assert.Equal(1, await _fixture.Store.Scalar("SELECT count(*) FROM files"));
     }
 
+    [Fact]
+    public async Task A_handoff_manager_that_cannot_be_reached_for_the_keep_report_is_named_without_the_word_failed()
+    {
+        var library = await LibraryAsync();
+        var source = _folders.Source("Film/film.mkv");
+        var file = await FileRowAsync(library, "Film/film.mkv", source);
+        var connection = await _fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
+        await LinkAsync(library, connection);
+        await GiveHandoffOriginAsync(library, "Film/film.mkv", "h5");
+        _fixture.Http.Json(HttpMethod.Get, ManifestPath, """{"capabilities":["processor-reject-regrab"],"libraries":[]}""");
+        _fixture.Http.Throw(HttpMethod.Post, EventsPath, new HttpRequestException("no route to host"));
+
+        var outcome = await _fixture.Db(uow => Service().KeepAsync(uow, file, null, CancellationToken.None));
+
+        Assert.False(outcome.Done);
+        Assert.True(outcome.Message.Contains("(could not reach ", StringComparison.Ordinal), outcome.Message);
+        Assert.EndsWith("), so Weir did not keep it.", outcome.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("failed: ", outcome.Message, StringComparison.Ordinal);
+    }
+
     // --- a different release lands at the same path (#786 review of #785) ---------------------------------
 
     [Fact]
