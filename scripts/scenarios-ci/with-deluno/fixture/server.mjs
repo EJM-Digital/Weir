@@ -101,7 +101,7 @@ export function createFixture({ work, publicBase }) {
   function makeRelease(response, body) {
     const { source, title, year, zeros = false, extras = [], episodes = [] } = JSON.parse(body);
     if (!/^[A-Za-z0-9]+$/.test(title ?? "") || !Number.isInteger(year)) return reply(response, 400, "text/plain", "title must be letters and digits, and year a number");
-    if (!Array.isArray(episodes) || !episodes.every((episode) => Number.isInteger(episode) && episode >= 1 && episode <= 99)) return reply(response, 400, "each episode is a number from 1 to 99");
+    if (!Array.isArray(episodes) || !episodes.every((episode) => Number.isInteger(episode) && episode >= 1 && episode <= 99)) return reply(response, 400, "text/plain", "each episode is a number from 1 to 99");
     if (!Array.isArray(extras) || !extras.every(validExtra)) return reply(response, 400, "text/plain", "each extra needs a plain relative path and a size between 1 byte and 50 MB");
     const film = path.resolve(source ?? "");
     if (!inside(work, film) || !fs.existsSync(film)) return reply(response, 400, "text/plain", `no film at ${source}`);
@@ -151,7 +151,13 @@ export function createFixture({ work, publicBase }) {
   });
 }
 
+/** What the container gives the release source: its port, where the films are, its public address, and the address to listen on (`FIXTURE_HOST`; every address when it is not set). */
+export function settingsFrom(env) {
+  const port = Number(env.FIXTURE_PORT ?? 8765);
+  return { port, host: env.FIXTURE_HOST, work: env.FIXTURE_WORK ?? "/work", publicBase: env.FIXTURE_PUBLIC_BASE ?? `http://fixture:${port}` };
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const port = Number(process.env.FIXTURE_PORT ?? 8765);
-  createFixture({ work: process.env.FIXTURE_WORK ?? "/work", publicBase: process.env.FIXTURE_PUBLIC_BASE ?? `http://fixture:${port}` }).listen(port, () => console.log(`fixture listening on ${port}`));
+  const { port, host, work, publicBase } = settingsFrom(process.env);
+  createFixture({ work, publicBase }).listen(port, host, () => console.log(`fixture listening on ${port}`));
 }
