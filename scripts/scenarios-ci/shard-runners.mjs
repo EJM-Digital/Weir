@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 import { randomBytes } from "node:crypto";
 
 import { createFirstAccount } from "../docker-smoke/smoke-data.mjs";
-import { ORIGIN, Stack } from "../docker-smoke/stack.mjs";
+import { ORIGIN, Stack } from "../docker-smoke/docker-stack.mjs";
 import { WeirClient } from "../docker-smoke/weir-client.mjs";
 import { Browser } from "./browser.mjs";
 import { ContainerBox } from "./container-box.mjs";

@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { REPOSITORY_URL } from "../repository.mjs";
-import { ORIGIN } from "../docker-smoke/stack.mjs";
+import { ORIGIN } from "../docker-smoke/docker-stack.mjs";
 import { WeirClient } from "../docker-smoke/weir-client.mjs";
 import { GithubRedirect } from "./windows-github-redirect.mjs";
 import { GithubStandIn } from "./github-stand-in.mjs";
