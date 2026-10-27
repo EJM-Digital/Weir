@@ -71,6 +71,44 @@ public sealed class JobWaitTests
         Assert.Equal("Weir's jobs ended (completed) but the clean of Film.mkv never appeared.", failure.Message);
     }
 
+    [Fact]
+    public async Task Waiting_for_no_busy_job_judges_one_reading_of_the_jobs_not_two_per_poll()
+    {
+        // Weir queues work on its own timer (the first scan of a new workflow), so a job can appear between two reads. Reading the jobs
+        // once to see whether they have ended and again to see whether any is left would call that "ended but never appeared".
+        var readings = new Queue<string[]>([["completed"], ["completed", "pending"]]);
+        var reads = 0;
+
+        await new JobWait().UntilNoneAsync(
+            () =>
+            {
+                reads++;
+                return Task.FromResult<IReadOnlyList<string>>(readings.Dequeue());
+            },
+            status => status is "pending" or "leased",
+            "every job to end");
+
+        Assert.Equal(1, reads);
+    }
+
+    [Fact]
+    public async Task Waiting_for_no_busy_job_goes_on_while_a_job_is_pending_or_held()
+    {
+        var readings = new Queue<string[]>([["leased", "completed"], ["pending", "completed"], ["completed", "completed"]]);
+        var reads = 0;
+
+        await new JobWait().UntilNoneAsync(
+            () =>
+            {
+                reads++;
+                return Task.FromResult<IReadOnlyList<string>>(readings.Dequeue());
+            },
+            status => status is "pending" or "leased",
+            "every job to end");
+
+        Assert.Equal(3, reads);
+    }
+
     /// <summary>Counts the polls a wait has made, so a test moves its clock between polls instead of sleeping.</summary>
     private sealed class Polls
     {

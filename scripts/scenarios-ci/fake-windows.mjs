@@ -215,8 +215,8 @@ export class FakeWindows {
 
   /** Whether the tray, as its update choices stand, installs a newer release by itself: it checks, and its mode is Auto. */
   #installsItsOwnUpdates() {
-    const settings = JSON.parse(this.#files.get("update-settings.json") ?? "{}");
-    return (settings.mode ?? "Auto") === "Auto" && settings.checkForUpdates !== false;
+    const settings = JSON.parse(this.#files.get("update-settings.json"));
+    return settings.mode === "Auto" && settings.checkForUpdates !== false;
   }
 
   /** A server stopped while a job is held by a worker owes that job a second run, and says so when it starts again. */
