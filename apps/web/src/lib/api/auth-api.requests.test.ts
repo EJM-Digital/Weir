@@ -65,6 +65,32 @@ describe("a change of state asks for a token first and sends it back", () => {
     expect(request.headers["x-csrf-token"]).toBe(CSRF_TOKEN);
   });
 
+  it("sends the sign-out so that it outlives the page, after the caller's hook", async () => {
+    const order: string[] = [];
+    const fetchSpy = vi
+      .fn()
+      .mockImplementation((url: string, init?: RequestInit) => {
+        if (String(url).endsWith("/auth/csrf")) {
+          order.push("csrf");
+          return Promise.resolve(
+            new Response(JSON.stringify({ csrf_token: CSRF_TOKEN }), {
+              status: 200,
+            }),
+          );
+        }
+        order.push(`logout keepalive=${String(init?.keepalive)}`);
+        return Promise.resolve(new Response(null, { status: 204 }));
+      });
+    vi.stubGlobal("fetch", fetchSpy);
+
+    await postLogout(async () => {
+      order.push("before send");
+    });
+
+    expect(order).toEqual(["csrf", "before send", "logout keepalive=true"]);
+    vi.unstubAllGlobals();
+  });
+
   it("creates the first account with the token in the body, and the setup code only when there is one", async () => {
     const api = stubWire({ "POST /api/v1/auth/bootstrap": { user } });
 

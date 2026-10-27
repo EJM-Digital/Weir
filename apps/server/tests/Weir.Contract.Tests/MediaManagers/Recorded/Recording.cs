@@ -35,7 +35,7 @@ internal sealed class Recording
     /// The Deluno version whose talk with Weir was recorded in Compose by the scenario shard (<c>scripts/scenarios-ci/with-deluno</c>), with a
     /// recording proxy between the real Deluno and the real Weir: every state in it is named <c>real-*</c>.
     /// </summary>
-    public const string DelunoSideRealStackVersion = "1.0.0-rc.30.33";
+    public const string DelunoSideRealStackVersion = "1.0.0-rc.30.35";
 
     /// <summary>The Weir build whose replies Deluno recorded in the newer session; a state it holds is read from there, any other from <see cref="Version"/>.</summary>
     public const string NewerVersion = "1.0.0-rc.19+3460f96";
