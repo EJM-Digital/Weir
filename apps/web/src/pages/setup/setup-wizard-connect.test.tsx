@@ -632,7 +632,11 @@ describe("first run: connect Deluno first", () => {
     await foundLibraries();
 
     expect(
-      await screen.findByText(/saves finished movies somewhere Weir is not/, {}, CEILING),
+      await screen.findByText(
+        /saves finished movies somewhere Weir is not/,
+        {},
+        CEILING,
+      ),
     ).toBeInTheDocument();
   });
 

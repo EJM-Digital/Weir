@@ -13,7 +13,9 @@ afterEach(() => vi.restoreAllMocks());
 describe("useNetworkAccessMutation", () => {
   it("sends the choice and shows the answer under the network-access key at once", async () => {
     const answer = { state: "this_pc_only" } as unknown as NetworkAccessStatus;
-    const put = vi.spyOn(settingsApi, "putNetworkAccess").mockResolvedValue(answer);
+    const put = vi
+      .spyOn(settingsApi, "putNetworkAccess")
+      .mockResolvedValue(answer);
     const client = new QueryClient({
       defaultOptions: { mutations: { retry: false } },
     });

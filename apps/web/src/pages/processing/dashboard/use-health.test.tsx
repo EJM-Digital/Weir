@@ -163,9 +163,13 @@ describe("useHealth", () => {
     const asked = vi.mocked(fetchLibraryFolderChain).mock.calls.length;
 
     await result.current.workflows[0].recheck();
-    expect(vi.mocked(fetchLibraryFolderChain).mock.calls.length).toBe(asked + 1);
+    expect(vi.mocked(fetchLibraryFolderChain).mock.calls.length).toBe(
+      asked + 1,
+    );
 
     await result.current.recheckFolders();
-    expect(vi.mocked(fetchLibraryFolderChain).mock.calls.length).toBe(asked + 2);
+    expect(vi.mocked(fetchLibraryFolderChain).mock.calls.length).toBe(
+      asked + 2,
+    );
   });
 });
