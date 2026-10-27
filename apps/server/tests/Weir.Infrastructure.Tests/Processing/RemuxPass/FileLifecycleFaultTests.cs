@@ -124,6 +124,46 @@ public sealed class FileLifecycleFaultTests : IDisposable
     }
 
     [Fact]
+    public async Task A_hard_link_for_an_output_with_no_owner_to_give_is_published_as_it_is()
+    {
+        var source = Staged();
+
+        var linked = await FileLifecycle.TryHardlinkToFinalAsync(source, Final);
+
+        Assert.True(linked);
+        Assert.Equal("new output", File.ReadAllText(Final));
+        AssertNoPartialsLeft();
+    }
+
+    [Fact]
+    public async Task A_hard_link_for_an_output_with_an_owner_to_give_has_it_applied_to_the_published_file()
+    {
+        var ownership = new RecordingOwnership();
+
+        var linked = await FileLifecycle.TryHardlinkToFinalAsync(Staged(), Final, ownership: ownership);
+
+        Assert.True(linked);
+        Assert.Equal([Path.GetFullPath(Final)], ownership.Files);
+    }
+
+    [Fact]
+    public void A_drive_that_is_not_there_is_its_own_nearest_existing_parent_and_every_folder_above_a_new_output_is_made()
+    {
+        var root = Path.GetPathRoot(_dir.Path)!;
+        var chain = new List<string>();
+        for (var folder = (string?)_out; folder is not null; folder = Path.GetDirectoryName(folder))
+        {
+            chain.Add(folder);
+        }
+
+        var files = new FaultingFileSystem().Hide([.. chain]);
+
+        Assert.Equal(root, FileLifecycle.NearestExistingParent(root, files));
+        FileLifecycle.EnsureOutputDirectory(Path.Join(_out, "a", "b"), ownership: null, files);
+        Assert.True(Directory.Exists(Path.Join(_out, "a", "b")));
+    }
+
+    [Fact]
     public async Task A_hard_link_to_a_source_that_is_gone_is_declined_and_nothing_is_left_behind()
     {
         var existing = Existing();
@@ -294,8 +334,8 @@ public sealed class FileLifecycleFaultTests : IDisposable
 
         public void ApplyToDirectory(string path) => Directories.Add(path);
 
-        public void ApplyToFile(string path)
-        {
-        }
+        public List<string> Files { get; } = [];
+
+        public void ApplyToFile(string path) => Files.Add(path);
     }
 }

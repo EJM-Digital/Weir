@@ -134,6 +134,47 @@ public sealed class WindowsHostReadingSourceTests
         Assert.Equal(RuntimeInformation.OSDescription, source.ReadOperatingSystem());
     }
 
+    [WindowsTheory(OnlyWindows)]
+    [InlineData(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending", null, true)]
+    [InlineData(@"SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired", null, true)]
+    [InlineData(@"SYSTEM\CurrentControlSet\Control\Session Manager", "PendingFileRenameOperations", true)]
+    [InlineData(@"SYSTEM\CurrentControlSet\Control\Session Manager", "SomethingElse", false)]
+    public void A_restart_is_pending_when_any_of_the_three_places_windows_records_one_says_so(string key, string? value, bool pending)
+    {
+        var root = @"Software\WeirTests\" + Guid.NewGuid().ToString("N");
+        try
+        {
+            using (var made = Registry.CurrentUser.CreateSubKey(root + @"\" + key))
+            {
+                if (value is not null)
+                {
+                    made.SetValue(value, new[] { "move this" });
+                }
+            }
+
+            var source = new WindowsHostReadingSource(() => Registry.CurrentUser.OpenSubKey(root)!, null);
+
+            Assert.Equal(pending, source.ReadRebootPending());
+        }
+        finally
+        {
+            Registry.CurrentUser.DeleteSubKeyTree(@"Software\WeirTests", throwOnMissingSubKey: false);
+        }
+    }
+
+    [WindowsFact(OnlyWindows)]
+    public void Only_a_fixed_drive_whose_counters_can_be_read_is_listed()
+    {
+        var fixedDrive = new DriveInfo(TempRoot);
+        var absent = new DriveInfo(UnusedDriveRoot());
+
+        var listed = new WindowsHostReadingSource(null, () => [fixedDrive, absent], _ => new DiskCounters(1, 2, 3, 4)).ReadDisks();
+        var refused = new WindowsHostReadingSource(null, () => [fixedDrive, absent], _ => null).ReadDisks();
+
+        Assert.Single(listed.Volumes);
+        Assert.Empty(refused.Volumes);
+    }
+
     [WindowsFact(OnlyWindows)]
     public void A_list_of_drives_that_cannot_be_read_is_no_counters_at_all()
     {

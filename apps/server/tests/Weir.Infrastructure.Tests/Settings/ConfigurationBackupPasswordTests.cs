@@ -172,6 +172,23 @@ public sealed class ConfigurationBackupPasswordTests : IDisposable
         Assert.Equal(0, await _target.Scalar("SELECT count(*) FROM download_client_connections"));
     }
 
+    [Fact]
+    public async Task Locked_secrets_that_open_to_something_other_than_secrets_refuse_plainly_and_change_nothing()
+    {
+        await SeedConnectionsAsync();
+        await SetPasswordAsync(BackupPassword);
+        var (_, text) = await BackUpAsync();
+        var salt = BackupSecretsSeal.NewSalt();
+        var bundle = (WireObject)WireJsonParser.Parse(text);
+        bundle.Set(BackupSecretsSeal.SectionName, BackupSecretsSeal.Seal("[1, 2]", BackupSecretsSeal.DeriveKey(BackupPassword, salt), salt));
+        await _target.Execute("UPDATE suite_settings SET log_retention_days = 11");
+
+        var error = await Assert.ThrowsAsync<WireValueException>(() => RestoreAsync(WireJsonWriter.Dumps(bundle, WireJsonFormat.Compact), BackupPassword));
+
+        Assert.Equal("This backup's locked secrets are not in a form this version of Weir can read.", error.Message);
+        Assert.Equal(11, await _target.Scalar("SELECT log_retention_days FROM suite_settings"));
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

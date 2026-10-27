@@ -42,7 +42,7 @@ public sealed partial class RemuxPassHandlerTests : IDisposable
         _fixture.Dispose();
     }
 
-    private RemuxPassHandler Handler(IFailurePolicy? policy = null, Func<string, long>? freeBytes = null, ScanWakeups? wakeups = null, bool queuesLooks = true, bool reportsBack = true, Func<Task>? beforeReport = null)
+    private RemuxPassHandler Handler(IFailurePolicy? policy = null, Func<string, long>? freeBytes = null, ScanWakeups? wakeups = null, bool queuesLooks = true, bool reportsBack = true, Func<Task>? beforeReport = null, Func<CancellationToken, Task>? goneLookAgain = null)
     {
         var data = new SqliteRemuxPassData(_fixture.Store.Database, _fixture.Connections, NullLogger<SqliteRemuxPassData>.Instance);
         var runner = new RemuxPassRunner(
@@ -74,6 +74,7 @@ public sealed partial class RemuxPassHandlerTests : IDisposable
             jobs: queuesLooks ? _fixture.Jobs : null)
         {
             BeforeReport = beforeReport,
+            GoneLookAgain = goneLookAgain,
         };
     }
 
@@ -104,7 +105,7 @@ public sealed partial class RemuxPassHandlerTests : IDisposable
         return job.Id;
     }
 
-    private static JobWorkContext Context(long id, string payload) => new(id, RemuxPassOutcomes.JobKind, payload, "test");
+    private static JobWorkContext Context(long id, string? payload) => new(id, RemuxPassOutcomes.JobKind, payload, "test");
 
     private async Task<string> ScalarText(string sql)
     {
@@ -662,12 +663,13 @@ public sealed partial class RemuxPassHandlerTests : IDisposable
     }
 
     [Theory]
+    [InlineData(null, "missing payload_json")]
     [InlineData("", "missing payload_json")]
     [InlineData("{nope", "invalid json: ")]
     [InlineData("[1]", "payload must be a JSON object")]
     [InlineData("""{"media_scope":"movie"}""", "relative_media_path is required")]
     [InlineData("""{"relative_media_path":"a.mkv","dry_run":false}""", "legacy Weir dry_run")]
-    public async Task A_payload_that_cannot_run_is_recorded_as_a_failed_check(string payload, string reason)
+    public async Task A_payload_that_cannot_run_is_recorded_as_a_failed_check(string? payload, string reason)
     {
         await LibraryAsync();
 

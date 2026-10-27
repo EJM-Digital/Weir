@@ -72,7 +72,7 @@ public static partial class SourceFiles
     /// <summary>
     /// Checks the source opens for reading and the output folder accepts a write. Null when both hold.
     /// </summary>
-    public static string? CheckFileAccess(ProcessingLibraryRecord library, string filePath, string? outputFolder, IFileSystem? files = null)
+    public static string? CheckFileAccess(ProcessingLibraryRecord library, string filePath, string outputFolder, IFileSystem? files = null)
     {
         ArgumentNullException.ThrowIfNull(library);
         files ??= PhysicalFileSystem.Instance;
@@ -97,23 +97,20 @@ public static partial class SourceFiles
             return writer;
         }
 
-        if (outputFolder is not null)
+        var probe = Path.Join(outputFolder, $".weir-write-test-{Environment.ProcessId}");
+        try
         {
-            var probe = Path.Join(outputFolder, $".weir-write-test-{Environment.ProcessId}");
-            try
-            {
-                files.CreateDirectory(outputFolder);
-                files.WriteAllBytes(probe, "0"u8.ToArray());
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-            {
-                return $"Weir cannot write to the output folder ({outputFolder}), so it did not start work that " +
-                       $"would have nowhere to go. The system reported: {exception.Message}.";
-            }
-            finally
-            {
-                FileLifecycle.BestEffortDelete(probe, files);
-            }
+            files.CreateDirectory(outputFolder);
+            files.WriteAllBytes(probe, "0"u8.ToArray());
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return $"Weir cannot write to the output folder ({outputFolder}), so it did not start work that " +
+                   $"would have nowhere to go. The system reported: {exception.Message}.";
+        }
+        finally
+        {
+            FileLifecycle.BestEffortDelete(probe, files);
         }
 
         return null;
