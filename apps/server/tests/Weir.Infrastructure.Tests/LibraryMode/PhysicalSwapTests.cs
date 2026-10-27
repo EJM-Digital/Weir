@@ -180,6 +180,23 @@ public sealed class PhysicalSwapTests : IDisposable
     }
 
     [Fact]
+    public async Task A_cleaned_copy_that_fails_validation_is_discarded_and_the_real_original_kept()
+    {
+        _validator.Answer = SwapValidation.Fail("the output is 40 minutes shorter than the source");
+        var copyBesideOriginalWhenChecked = false;
+        _validator.During = () => copyBesideOriginalWhenChecked = File.Exists(Temp) && Path.GetDirectoryName(Temp) == Path.GetDirectoryName(_original);
+
+        var result = await RunAsync();
+
+        Assert.True(copyBesideOriginalWhenChecked, "the copy is written as <name>.weir-tmp<ext> beside the original before it is checked");
+        Assert.Equal(SwapOutcome.ValidationFailed, result.Outcome);
+        Assert.Equal([Temp], _validator.Checked);
+        Assert.Equal([Path.Join("Movie (2020)", "Movie (2020).mkv")], FilesInLibrary());
+        Assert.Equal("original content", await File.ReadAllTextAsync(_original));
+        Assert.False(SwapRow().Committed);
+    }
+
+    [Fact]
     public async Task A_real_change_to_the_original_replaces_nothing()
     {
         var result = await RunAsync(_ => File.AppendAllText(_original, " and more"));

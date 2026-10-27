@@ -38,7 +38,7 @@ import { previousRelease } from "./docker-smoke/previous-image.mjs";
 import { recoverResetsPassword } from "./docker-smoke/recover.mjs";
 import { restartKeepsData, upgradeKeepsData } from "./docker-smoke/scenarios.mjs";
 import { run } from "./docker-smoke/shell.mjs";
-import { ORIGIN, Stack } from "./docker-smoke/stack.mjs";
+import { ORIGIN, Stack } from "./docker-smoke/docker-stack.mjs";
 import { WeirClient } from "./docker-smoke/weir-client.mjs";
 import { REPOSITORY } from "./repository.mjs";
 
