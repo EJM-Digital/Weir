@@ -203,7 +203,7 @@ public sealed partial class ConfigurationBundleStore
         return column.Kind switch
         {
             ColumnKind.Boolean => WireValue.Of(WireConvert.FromDatabase(value).IsTruthy),
-            ColumnKind.DateTime => Timestamp.TryFromIsoFormat(Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty, out var parsed)
+            ColumnKind.DateTime => Timestamp.TryFromIsoFormat(Convert.ToString(value, CultureInfo.InvariantCulture)!, out var parsed)
                 ? new WireTimestampValue(parsed)
                 : throw new FormatException("Invalid isoformat string in the database."),
             _ => WireConvert.FromDatabase(value),

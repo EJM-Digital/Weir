@@ -12,7 +12,7 @@ public sealed partial class RemuxPassHandler
     /// every enabled, opted-in Sonarr/Radarr connection linked to that library to run its Downloaded Scan over it.
     /// Best effort; never throws, and does nothing for a pass that did not itself write or confirm an output file.
     /// </summary>
-    private async Task DownloadedScanAsync(WireObject result, string mediaScope, WireObject? origin)
+    internal async Task DownloadedScanAsync(WireObject result, string mediaScope, WireObject? origin)
     {
         if (!PassWroteOutput(result, out var outputPath) || result.Get("library_id") is not WireInteger libraryValue)
         {

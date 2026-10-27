@@ -223,9 +223,12 @@ public sealed class LibraryFileChangeNotifier : ILibraryFileChangeNotifier
     {
         var now = _time.GetUtcNow();
         _recentlyNotified[key] = now;
-        foreach (var stale in _recentlyNotified.Where(entry => now - entry.Value >= LibraryFileChangeRules.CoalesceWindow).Select(entry => entry.Key).ToArray())
+        foreach (var (earlier, notifiedAt) in _recentlyNotified.ToArray())
         {
-            _recentlyNotified.TryRemove(stale, out _);
+            if (now - notifiedAt >= LibraryFileChangeRules.CoalesceWindow)
+            {
+                _recentlyNotified.TryRemove(earlier, out _);
+            }
         }
     }
 

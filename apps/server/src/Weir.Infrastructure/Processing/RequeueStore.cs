@@ -32,11 +32,14 @@ public sealed class RequeueStore(ProcessingJobStore jobStore, LibraryStore libra
     /// </summary>
     public async Task<RequeueResult> RequeueFileAsync(UnitOfWork uow, ProcessingFileRecord row)
     {
-        var (library, refusal, cleaned) = await CheckAsync(uow, row).ConfigureAwait(false);
-        if (library is null || refusal is not null)
+        var (found, refusal, cleaned) = await CheckAsync(uow, row).ConfigureAwait(false);
+        if (refusal is not null)
         {
-            return new RequeueResult(0, 1, refusal ?? WorkflowGoneDetail);
+            return new RequeueResult(0, 1, refusal);
         }
+
+        // CheckAsync refuses a file whose workflow is gone, so a file that is not refused has one.
+        var library = found!;
 
         if (cleaned is not null)
         {

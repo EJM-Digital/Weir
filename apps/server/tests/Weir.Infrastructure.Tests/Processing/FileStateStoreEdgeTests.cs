@@ -58,6 +58,58 @@ public sealed class FileStateStoreEdgeTests : IDisposable
     }
 
     [Fact]
+    public async Task A_scan_write_with_neither_a_state_nor_a_reset_only_notes_the_file_was_seen()
+    {
+        var id = InsertFile(ProcessingFileStatuses.Processed);
+        _db.Execute("UPDATE files SET last_seen_at = '2020-01-01 00:00:00.000000'");
+        await using var uow = await UnitOfWork.OpenAsync(_db.Database);
+
+        var applied = await Store.RecordScannedStateAsync(uow, _library, Write(id, ProcessingFileStatuses.Processed, null), Seen);
+        await uow.CommitAsync();
+
+        Assert.True(applied);
+        Assert.Equal(ProcessingFileStatuses.Processed, _db.Scalar("SELECT status FROM files"));
+        Assert.Equal("2026-04-10 12:00:00.000000", _db.Scalar("SELECT last_seen_at FROM files"));
+        Assert.Equal(2L, _db.Count("SELECT failure_attempts FROM files"));
+    }
+
+    [Theory]
+    [InlineData(true, null, 0L)]
+    [InlineData(false, 42L, 42L)]
+    public async Task A_file_first_recorded_has_the_size_given_or_none_and_is_stamped_as_tried_only_when_it_was_tried(bool isAttempt, long? size, long stored)
+    {
+        await using (var uow = await UnitOfWork.OpenAsync(_db.Database))
+        {
+            await Store.RecordFileStateAsync(
+                uow, _library, "new.mkv", new FileStateVerdict(ProcessingFileStatuses.Unprocessed, "new"), size, null, Seen, isAttempt);
+            await uow.CommitAsync();
+        }
+
+        Assert.Equal(stored, _db.Count("SELECT size_bytes FROM files"));
+        Assert.Equal(isAttempt, _db.Scalar("SELECT last_attempt_at FROM files") is string);
+    }
+
+    [Fact]
+    public async Task A_file_measured_at_a_bit_depth_is_listed_with_it()
+    {
+        InsertFile(ProcessingFileStatuses.Processed);
+        _db.Execute("UPDATE files SET video_bit_depth = 10");
+        await using var uow = await UnitOfWork.OpenAsync(_db.Database);
+
+        Assert.Equal(10L, Assert.Single(await Store.ListAsync(uow, new ProcessingFileListFilter())).VideoBitDepth);
+    }
+
+    [Fact]
+    public async Task A_list_of_no_ids_lists_no_files_and_a_list_of_some_lists_only_those()
+    {
+        var id = InsertFile(ProcessingFileStatuses.Processed);
+        await using var uow = await UnitOfWork.OpenAsync(_db.Database);
+
+        Assert.Empty(await Store.ListAsync(uow, new ProcessingFileListFilter { Ids = [] }));
+        Assert.Equal(id, Assert.Single(await Store.ListAsync(uow, new ProcessingFileListFilter { Ids = [id] })).Id);
+    }
+
+    [Fact]
     public async Task A_recorded_attempt_stamps_when_the_file_was_last_tried_and_a_status_that_means_a_try_does_too()
     {
         InsertFile(ProcessingFileStatuses.Unprocessed);

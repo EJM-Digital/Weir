@@ -56,7 +56,7 @@ public sealed class HandbackOutcomes
             return new ManagerImportResult(false, false, "Weir did not hand this file back, so there is nothing for it to record.");
         }
 
-        if (!HandbackRules.Hears(row.Outcome, row.SettledAt is not null, row.OutcomeSpeaker, speaker, HandbackRules.Imported, sameHandoff: false))
+        if (!HandbackRules.Hears(row.Outcome, row.SettledAt is not null, row.OutcomeSpeaker, speaker, HandbackRules.Imported))
         {
             return LeftAlone(row, manager, speaker);
         }
@@ -137,9 +137,7 @@ public sealed class HandbackOutcomes
                 }
 
                 named.Add(copy.RelativePath);
-                // This hand-off's own refusal is its to take back, as long as it is still the word on the copy.
-                var sameHandoff = supersedes && (copy.OutcomeSpeaker is null || copy.OutcomeSpeaker.IsSameCallerAs(speaker));
-                if (!HandbackRules.Hears(copy.Outcome, copy.SettledAt is not null, copy.OutcomeSpeaker, speaker, outcome, sameHandoff))
+                if (!HandbackRules.Hears(copy.Outcome, copy.SettledAt is not null, copy.OutcomeSpeaker, speaker, outcome))
                 {
                     // Another word stands on this copy, and it is not this one's to change. The reply says what the copy says,
                     // never the note that word left on it.

@@ -90,6 +90,25 @@ public sealed class ScanWhilePausedTests
     }
 
     [Fact]
+    public async Task A_scan_through_a_pause_that_ends_at_a_set_time_records_the_file_as_waiting()
+    {
+        var (store, jobs, handler) = await ProcessingWatchedFolderScanDispatchJobHandlerTests.BuildAsync();
+        using var _ = store;
+        var watched = store.Home.Join("watch");
+        var output = store.Home.Join("out");
+        Directory.CreateDirectory(watched);
+        Directory.CreateDirectory(output);
+        await File.WriteAllBytesAsync(Path.Combine(watched, "Film.2024.mkv"), "a new download"u8.ToArray());
+        var libraryId = await ProcessingWatchedFolderScanDispatchJobHandlerTests.CreateLibraryAsync(store, watched, output);
+        await store.Execute("UPDATE suite_settings SET processing_paused = 1, processing_paused_until = '2099-01-01T00:00:00', scan_while_paused = 1 WHERE id = 1");
+
+        await ProcessingWatchedFolderScanDispatchJobHandlerTests.RunScanAsync(handler, jobs, libraryId, enqueueRemuxJobs: true);
+
+        Assert.Equal(ProcessingFileStatuses.OutOfSchedule, (await RowAsync(store, libraryId, "Film.2024.mkv"))!.Status);
+        Assert.Equal(0, await store.Scalar(RemuxJobs));
+    }
+
+    [Fact]
     public async Task A_file_waiting_through_a_pause_that_is_deleted_is_held_as_gone_once_the_scan_sees_it()
     {
         var (store, jobs, handler) = await ProcessingWatchedFolderScanDispatchJobHandlerTests.BuildAsync();

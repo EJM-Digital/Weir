@@ -213,7 +213,8 @@ public sealed class ProcessingWatchedFolderScanDispatchJobHandler : IJobHandler
                 return null;
             }
 
-            if (library.WatchedFolder.Trim() is { Length: > 0 } saved)
+            var saved = library.WatchedFolder.Trim();
+            if (saved.Length > 0)
             {
                 if (!_fs.DirectoryExists(ProcessingLibraryFolders.ExpandForFilesystem(saved)))
                 {

@@ -27,6 +27,32 @@ public sealed class TrayUpdateBackupWatcherTests : IDisposable
 
     private string ResultPath => Path.Join(_store.Options.WeirHome, TrayUpdateBackupWatcher.ResultFileName);
 
+    [Fact]
+    public async Task A_request_that_was_half_written_and_has_gone_when_looked_at_again_is_nothing_to_answer()
+    {
+        await File.WriteAllTextAsync(RequestPath, "{");
+
+        var answering = _watcher.AnswerAsync(CancellationToken.None);
+        File.Delete(RequestPath);
+
+        Assert.True(await answering);
+    }
+
+    [Fact]
+    public async Task A_request_is_taken_away_only_while_it_still_says_what_was_answered()
+    {
+        await File.WriteAllTextAsync(RequestPath, "answered");
+
+        _watcher.DeleteIfUnchanged(RequestPath, "something else");
+        Assert.True(File.Exists(RequestPath));
+
+        _watcher.DeleteIfUnchanged(RequestPath, "answered");
+        Assert.False(File.Exists(RequestPath));
+
+        _watcher.DeleteIfUnchanged(RequestPath, "answered");
+        Assert.False(File.Exists(RequestPath));
+    }
+
     public void Dispose()
     {
         _watcher.StopAsync(CancellationToken.None).GetAwaiter().GetResult();

@@ -80,9 +80,9 @@ public sealed partial class RemuxPassHandler
                         return;
                     }
 
-                    if (result.Get("outcome") is WireString { Value: RemuxPassOutcomes.SourceGone })
+                    if (OutcomeOf(result) == RemuxPassOutcomes.SourceGone)
                     {
-                        if (result.Get(GoneLooksKey) is WireInteger { Value: var looks } && looks > 0)
+                        if (GoneLooksIn(result) is > 0)
                         {
                             await RemuxPassFileState.ForgetGoneAsync(uow, library.Id, rel).ConfigureAwait(false);
                         }
@@ -173,7 +173,7 @@ public sealed partial class RemuxPassHandler
     private static async Task RecordGuardrailSkipAsync(UnitOfWork uow, ProcessingLibraryRecord library, string relativePath, WireObject result, WireObject updates, DateTimeOffset now)
     {
         var reason = WireStrings.Slice(CollapseWhitespace(TextOr(result.Get("reason"), "Weir skipped this file.")), 1200);
-        var skipKind = result.Get("skip_kind") is WireString { Value.Length: > 0 } kind ? kind.Value : null;
+        var skipKind = SkipKindOf(result);
         if (await RemuxPassFileState.MarkFileStatusAsync(uow, library.Id, relativePath, ProcessingFileStatuses.Skipped, reason, now, skipKind).ConfigureAwait(false))
         {
             await RemuxPassFileState.ClearFailureFieldsAsync(uow, library.Id, relativePath).ConfigureAwait(false);
@@ -207,8 +207,11 @@ public sealed partial class RemuxPassHandler
         await RecordAsync(payload).ConfigureAwait(false);
     }
 
+    /// <summary>Why the rules left the file alone, when the pass said in a word.</summary>
+    internal static string? SkipKindOf(WireObject result) => result.Get("skip_kind") is WireString kind && kind.Value.Length > 0 ? kind.Value : null;
+
     /// <summary><c>str(value or fallback)</c>.</summary>
-    private static string TextOr(WireValue? value, string fallback) => value is { IsTruthy: true } ? WireConvert.Str(value) : fallback;
+    internal static string TextOr(WireValue? value, string fallback) => value is { IsTruthy: true } ? WireConvert.Str(value) : fallback;
 
     /// <summary><c>" ".join(text.split())</c>.</summary>
     private static string CollapseWhitespace(string text) =>

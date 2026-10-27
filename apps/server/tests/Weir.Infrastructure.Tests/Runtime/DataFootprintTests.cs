@@ -39,6 +39,27 @@ public sealed class DataFootprintTests : IDisposable
     }
 
     [Fact]
+    public async Task A_caller_that_arrives_while_the_folder_is_being_walked_shares_that_walk_even_after_a_minute()
+    {
+        var walks = 0;
+        using var release = new ManualResetEventSlim();
+        var footprint = new DataFootprint(_home.Path, _time, _ =>
+        {
+            Interlocked.Increment(ref walks);
+            release.Wait();
+            return 77;
+        });
+
+        var first = footprint.BytesAsync(CancellationToken.None);
+        _time.Advance(TimeSpan.FromMinutes(5));
+        var second = footprint.BytesAsync(CancellationToken.None);
+        release.Set();
+
+        Assert.Equal(new long[] { 77, 77 }, await Task.WhenAll(first, second));
+        Assert.Equal(1, walks);
+    }
+
+    [Fact]
     public async Task The_answer_is_kept_for_a_minute_and_then_measured_again()
     {
         Write("data/weir.sqlite3", 100);

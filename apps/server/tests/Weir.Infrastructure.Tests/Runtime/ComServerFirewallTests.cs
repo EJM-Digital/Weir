@@ -15,6 +15,15 @@ public sealed class ComServerFirewallTests
     }
 
     [SupportedOSPlatform("windows")]
+    [WindowsFact("Windows Firewall's COM policy object exists only on Windows")]
+    public void A_policy_object_that_is_not_registered_is_said_to_be_missing_in_plain_words()
+    {
+        var thrown = Assert.Throws<InvalidOperationException>(() => ComServerFirewall.CreateComObject("Weir.NoSuchPolicy"));
+
+        Assert.Contains("'Weir.NoSuchPolicy' is not registered on this machine", thrown.Message, StringComparison.Ordinal);
+    }
+
+    [SupportedOSPlatform("windows")]
     [WindowsTheory("Windows Firewall's COM policy object exists only on Windows")]
     [InlineData(typeof(System.Runtime.InteropServices.COMException))]
     [InlineData(typeof(InvalidOperationException))]
