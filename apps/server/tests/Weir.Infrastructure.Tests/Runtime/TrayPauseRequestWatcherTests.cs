@@ -31,21 +31,6 @@ public sealed class TrayPauseRequestWatcherTests : IDisposable
 
     private string RequestPath => Path.Join(_store.Options.WeirHome, TrayPauseRequestWatcher.FileName);
 
-    [Fact]
-    public async Task A_request_is_taken_away_only_while_it_still_says_what_was_answered()
-    {
-        await File.WriteAllTextAsync(RequestPath, "answered");
-
-        _watcher.DeleteIfUnchanged(RequestPath, "something else");
-        Assert.True(File.Exists(RequestPath));
-
-        _watcher.DeleteIfUnchanged(RequestPath, "answered");
-        Assert.False(File.Exists(RequestPath));
-
-        _watcher.DeleteIfUnchanged(RequestPath, "answered");
-        Assert.False(File.Exists(RequestPath));
-    }
-
     public void Dispose()
     {
         _watcher.StopAsync(CancellationToken.None).GetAwaiter().GetResult();
@@ -81,6 +66,21 @@ public sealed class TrayPauseRequestWatcherTests : IDisposable
     {
         await File.WriteAllTextAsync(RequestPath, contents);
         await UntilTheRequestIsTakenAwayAsync();
+    }
+
+    [Fact]
+    public async Task A_request_is_taken_away_only_while_it_still_says_what_was_answered()
+    {
+        await File.WriteAllTextAsync(RequestPath, "answered");
+
+        _watcher.DeleteIfUnchanged(RequestPath, "something else");
+        Assert.True(File.Exists(RequestPath));
+
+        _watcher.DeleteIfUnchanged(RequestPath, "answered");
+        Assert.False(File.Exists(RequestPath));
+
+        _watcher.DeleteIfUnchanged(RequestPath, "answered");
+        Assert.False(File.Exists(RequestPath));
     }
 
     [Fact]
