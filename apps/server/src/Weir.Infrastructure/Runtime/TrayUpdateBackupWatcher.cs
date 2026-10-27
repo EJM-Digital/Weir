@@ -182,7 +182,7 @@ public sealed class TrayUpdateBackupWatcher : BackgroundService
     private sealed record Request(string Id, DateTimeOffset RequestedAt, string TargetVersion);
 
     /// <summary>Answers the request in the file. False when the file was refused and is to be looked at again.</summary>
-    private async Task<bool> AnswerAsync(CancellationToken stoppingToken)
+    internal async Task<bool> AnswerAsync(CancellationToken stoppingToken)
     {
         var path = Path.Join(_options.WeirHome, RequestFileName);
         var reading = ReplacedFile.ReadText(path);
@@ -256,8 +256,7 @@ public sealed class TrayUpdateBackupWatcher : BackgroundService
     private PreUpdateBackupFile Save(string targetVersion)
     {
         using var connection = _database.Open();
-        var revision = SchemaMigrator.ReadRecordedRevision(connection)
-            ?? throw new InvalidOperationException("The database records no schema revision.");
+        var revision = SchemaMigrator.ReadRecordedRevision(connection);
         var backup = new PreUpdateBackup(
             _options.BackupDir, _options.WeirHome, targetVersion, _time, _logger, fromVersion: WeirVersion.Resolve(_options.VersionOverride));
         return backup.Save(connection, revision);
@@ -330,7 +329,7 @@ public sealed class TrayUpdateBackupWatcher : BackgroundService
         return state != ReplacedFileState.Busy;
     }
 
-    private void DeleteIfUnchanged(string path, string answered)
+    internal void DeleteIfUnchanged(string path, string answered)
     {
         try
         {

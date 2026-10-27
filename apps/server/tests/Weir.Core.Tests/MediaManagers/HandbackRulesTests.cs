@@ -95,33 +95,32 @@ public sealed class HandbackRulesTests
 
     [Theory]
     // Nobody has spoken for the copy.
-    [InlineData(null, false, "nas", "nas", HandbackRules.Imported, false, true)]
-    [InlineData(null, false, "nas", "unsigned", HandbackRules.Imported, false, true)]
-    // A refusal is lifted by any signed import, and replaced by a refusal of the same connection, the same hand-off, or one it
+    [InlineData(null, false, "nas", "nas", HandbackRules.Imported, true)]
+    [InlineData(null, false, "nas", "unsigned", HandbackRules.Imported, true)]
+    // A refusal is lifted by any signed import, and replaced by a refusal of the same connection, or one it
     // cannot tell apart from it.
-    [InlineData(HandbackRules.NotImported, true, "nas", "nas", HandbackRules.NotImported, false, true)]
-    [InlineData(HandbackRules.NotImported, true, "nas", "upstairs", HandbackRules.NotImported, false, false)]
-    [InlineData(HandbackRules.NotImported, true, "nas", "upstairs", HandbackRules.Imported, false, true)]
-    [InlineData(HandbackRules.NotImported, true, "nas", "radarr", HandbackRules.Imported, false, true)]
-    [InlineData(HandbackRules.NotImported, true, "nas", "unsigned", HandbackRules.Imported, false, false)]
-    [InlineData(HandbackRules.NotImported, true, "nas", "unknown", HandbackRules.NotImported, false, false)]
-    [InlineData(HandbackRules.NotImported, true, "nas", "unknown", HandbackRules.NotImported, true, true)]
-    [InlineData(HandbackRules.NotImported, true, "unknown", "nas", HandbackRules.NotImported, false, true)]
-    [InlineData(HandbackRules.NotImported, true, "unknown", "radarr", HandbackRules.NotImported, false, false)]
+    [InlineData(HandbackRules.NotImported, true, "nas", "nas", HandbackRules.NotImported, true)]
+    [InlineData(HandbackRules.NotImported, true, "nas", "upstairs", HandbackRules.NotImported, false)]
+    [InlineData(HandbackRules.NotImported, true, "nas", "upstairs", HandbackRules.Imported, true)]
+    [InlineData(HandbackRules.NotImported, true, "nas", "radarr", HandbackRules.Imported, true)]
+    [InlineData(HandbackRules.NotImported, true, "nas", "unsigned", HandbackRules.Imported, false)]
+    [InlineData(HandbackRules.NotImported, true, "nas", "unknown", HandbackRules.NotImported, false)]
+    [InlineData(HandbackRules.NotImported, true, "unknown", "nas", HandbackRules.NotImported, true)]
+    [InlineData(HandbackRules.NotImported, true, "unknown", "radarr", HandbackRules.NotImported, false)]
     // An import is never replaced by a refusal; one that settled the copy is final, and one that could not remove the copy may be
     // retried by another signed import.
-    [InlineData(HandbackRules.Imported, true, "nas", "nas", HandbackRules.Imported, false, false)]
-    [InlineData(HandbackRules.Imported, true, "nas", "upstairs", HandbackRules.Imported, false, false)]
-    [InlineData(HandbackRules.Imported, false, "nas", "upstairs", HandbackRules.Imported, false, true)]
-    [InlineData(HandbackRules.Imported, false, "nas", "nas", HandbackRules.NotImported, true, false)]
-    [InlineData(HandbackRules.Imported, false, "nas", "upstairs", HandbackRules.NotImported, false, false)]
-    [InlineData(HandbackRules.Imported, false, "nas", "unsigned", HandbackRules.Imported, false, false)]
+    [InlineData(HandbackRules.Imported, true, "nas", "nas", HandbackRules.Imported, false)]
+    [InlineData(HandbackRules.Imported, true, "nas", "upstairs", HandbackRules.Imported, false)]
+    [InlineData(HandbackRules.Imported, false, "nas", "upstairs", HandbackRules.Imported, true)]
+    [InlineData(HandbackRules.Imported, false, "nas", "nas", HandbackRules.NotImported, false)]
+    [InlineData(HandbackRules.Imported, false, "nas", "upstairs", HandbackRules.NotImported, false)]
+    [InlineData(HandbackRules.Imported, false, "nas", "unsigned", HandbackRules.Imported, false)]
     // What an unsigned message recorded is replaced by any signed word, and by no unsigned one.
-    [InlineData(HandbackRules.Imported, true, "unsigned", "radarr", HandbackRules.Imported, false, true)]
-    [InlineData(HandbackRules.Imported, true, "unsigned", "radarr", HandbackRules.NotImported, false, true)]
-    [InlineData(HandbackRules.Imported, true, "unsigned", "unsigned", HandbackRules.Imported, false, false)]
+    [InlineData(HandbackRules.Imported, true, "unsigned", "radarr", HandbackRules.Imported, true)]
+    [InlineData(HandbackRules.Imported, true, "unsigned", "radarr", HandbackRules.NotImported, true)]
+    [InlineData(HandbackRules.Imported, true, "unsigned", "unsigned", HandbackRules.Imported, false)]
     public void A_copy_takes_a_word_only_from_the_speaker_whose_it_is_to_change(
-        string? copyOutcome, bool settled, string copySpeaker, string speaker, string outcome, bool sameHandoff, bool heard)
+        string? copyOutcome, bool settled, string copySpeaker, string speaker, string outcome, bool heard)
     {
         ManagerSpeaker Named(string name) => name switch
         {
@@ -132,7 +131,7 @@ public sealed class HandbackRulesTests
             _ => RadarrUnsigned,
         };
 
-        Assert.Equal(heard, HandbackRules.Hears(copyOutcome, settled, copyOutcome is null ? null : Named(copySpeaker), Named(speaker), outcome, sameHandoff));
+        Assert.Equal(heard, HandbackRules.Hears(copyOutcome, settled, copyOutcome is null ? null : Named(copySpeaker), Named(speaker), outcome));
     }
 
     [Fact]

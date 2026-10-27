@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { watch } from "node:fs";
 import net from "node:net";
 
-import { ORIGIN } from "../docker-smoke/stack.mjs";
+import { ORIGIN } from "../docker-smoke/docker-stack.mjs";
 import { WeirClient } from "../docker-smoke/weir-client.mjs";
 import { httpServer } from "./windows-shard.mjs";
 import { ensureSignedIn, installBuildUnderTest, PORT, START_CEILING_MS, startInstalledWeir, wait } from "./windows-install.mjs";

@@ -389,7 +389,7 @@ public class ProcessingWatchedFolderWatcherService : BackgroundService
         return true;
     }
 
-    private async Task EnqueueScansAsync(IReadOnlyList<long> libraryIds, CancellationToken cancellationToken)
+    internal async Task EnqueueScansAsync(IReadOnlyList<long> libraryIds, CancellationToken cancellationToken)
     {
         try
         {
@@ -428,7 +428,7 @@ public class ProcessingWatchedFolderWatcherService : BackgroundService
 
     private static bool HasWatchedFolder(ProcessingLibraryRecord row) => !string.IsNullOrWhiteSpace(row.WatchedFolder);
 
-    private static List<long> DrainAll(ConcurrentQueue<long> queue)
+    internal static List<long> DrainAll(ConcurrentQueue<long> queue)
     {
         var seen = new List<long>();
         while (queue.TryDequeue(out var id))

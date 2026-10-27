@@ -144,6 +144,20 @@ public sealed class RemuxPassFileStateEdgeTests : IDisposable
     }
 
     [Fact]
+    public async Task A_record_with_no_outcome_is_kept_with_none_whether_it_is_short_or_too_long()
+    {
+        var tooLong = new WireObject().Set("library_id", 1L).Set("log", new string('x', FileLogStore.MaxDetailChars + 10));
+        var short_ = new WireObject().Set("library_id", 1L).Set("outcome", string.Empty);
+
+        await InAsync(uow => RemuxPassFileState.RecordFileLogAsync(uow, Path, "Pass finished", tooLong, Now));
+        await InAsync(uow => RemuxPassFileState.RecordFileLogAsync(uow, Path, "Pass finished", short_, Now));
+        await InAsync(uow => RemuxPassFileState.RecordFileLogAsync(uow, Path, "Pass finished", new WireObject(), Now));
+
+        Assert.Equal("3|0", Text("SELECT count(*) || '|' || count(NULLIF(outcome, '')) FROM file_logs"));
+        Assert.Contains("\"outcome\":null", Text("SELECT detail_json FROM file_logs ORDER BY id LIMIT 1")!, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_failure_of_a_path_outside_the_watched_folder_is_still_recorded_with_no_size_and_no_fingerprint()
     {
         var library = await LibraryAsync(1);

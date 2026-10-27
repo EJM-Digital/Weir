@@ -50,7 +50,7 @@ public sealed partial class RemuxPassHandler
     }
 
     /// <summary>The file stays; when the workflow asked for it to be deleted, a linked manager is why it was not.</summary>
-    private static string WeirOnlyLeftInPlace(bool chosenDelete, WorkflowManagerLinks links) =>
+    internal static string WeirOnlyLeftInPlace(bool chosenDelete, WorkflowManagerLinks links) =>
         chosenDelete && links.KeepsOriginals ? $"{WeirOnlyRejection.LeftInPlace} {links.KeptOriginalReason}" : WeirOnlyRejection.LeftInPlace;
 
     private static string RejectedLeftInPlace(ProcessingLibraryRecord library, WorkflowManagerLinks links) =>

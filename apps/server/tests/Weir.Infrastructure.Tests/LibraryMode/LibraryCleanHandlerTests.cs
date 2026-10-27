@@ -45,16 +45,16 @@ public sealed partial class LibraryCleanHandlerTests : IDisposable
     }
 
     private LibraryCleanHandler Handler(
-        IHardlinkInspector? hardlinks = null, ILibraryFileChangeNotifier? notifier = null, IRemovedTrackStore? removedTracks = null, ILogger<LibraryCleanHandler>? logger = null, IFileSystem? files = null) =>
-        (LibraryCleanHandler)Activator.CreateInstance(typeof(LibraryCleanHandler), HandlerArguments(hardlinks, notifier, removedTracks, logger, files))!;
+        IHardlinkInspector? hardlinks = null, ILibraryFileChangeNotifier? notifier = null, IRemovedTrackStore? removedTracks = null, ILogger<LibraryCleanHandler>? logger = null, IFileSystem? files = null, ISwapFileSystem? swapFiles = null) =>
+        (LibraryCleanHandler)Activator.CreateInstance(typeof(LibraryCleanHandler), HandlerArguments(hardlinks, notifier, removedTracks, logger, files, swapFiles))!;
 
     /// <summary>What the handler is built from, in the order of its constructor.</summary>
     private object?[] HandlerArguments(
-        IHardlinkInspector? hardlinks = null, ILibraryFileChangeNotifier? notifier = null, IRemovedTrackStore? removedTracks = null, ILogger<LibraryCleanHandler>? logger = null, IFileSystem? files = null)
+        IHardlinkInspector? hardlinks = null, ILibraryFileChangeNotifier? notifier = null, IRemovedTrackStore? removedTracks = null, ILogger<LibraryCleanHandler>? logger = null, IFileSystem? files = null, ISwapFileSystem? swapFiles = null)
     {
         var tools = new MediaTools(_media, new FixedResolver(), new ListLogger<MediaTools>(), TimeProvider.System);
         var swap = new SafeSwap(
-            PhysicalSwapFileSystem.Instance,
+            swapFiles ?? PhysicalSwapFileSystem.Instance,
             new ProcessingJobSwapJournal(_fixture.Store.Database),
             new RemuxOutputSwapValidator(tools),
             NullLogger<SafeSwap>.Instance);

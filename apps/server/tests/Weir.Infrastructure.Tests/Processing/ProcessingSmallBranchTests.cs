@@ -41,4 +41,16 @@ public sealed class ProcessingSmallBranchTests
 
         Assert.Equal(["/mnt/a\\!bcd"], FilesystemBoundaries.ParseMountPoints(MountInfo));
     }
+
+    [Theory]
+    [InlineData(null, false, true)]
+    [InlineData(null, true, true)]
+    [InlineData(ProcessingFileStatuses.Processed, true, true)]
+    [InlineData(ProcessingFileStatuses.Unprocessed, false, true)]
+    [InlineData(ProcessingFileStatuses.Unprocessed, true, false)]
+    [InlineData(ProcessingFileStatuses.ProcessingFailed, false, false)]
+    public void A_file_row_leaves_it_to_the_record_when_it_is_done_or_was_never_worked_on(string? status, bool workedOn, bool leaves)
+    {
+        Assert.Equal(leaves, CleanedSources.RowLeavesItToTheRecord(status, workedOn));
+    }
 }

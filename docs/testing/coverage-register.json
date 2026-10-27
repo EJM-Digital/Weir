@@ -11659,7 +11659,7 @@
           "name": "Ffmpeg_compatibility_chosen_for_the_workflow_reaches_the_executed_ffmpeg"
         },
         {
-          "type": "real-fs",
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "The_workflows_ffmpeg_compatibility_applies_when_cleaning_a_library_file"
         }
@@ -11692,12 +11692,12 @@
           "name": "WriterChoiceTests"
         },
         {
-          "type": "real-fs",
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "A_workflow_that_prefers_mkvmerge_says_so_when_ffmpeg_had_to_write_the_file"
         },
         {
-          "type": "real-fs",
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "A_workflow_set_to_ffmpeg_cleans_with_ffmpeg_and_has_nothing_to_explain"
         },
@@ -11823,7 +11823,7 @@
           "name": "WorkflowFreeSpaceApiTests"
         },
         {
-          "type": "real-fs",
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "LibraryCleanHandlerTests"
         },
@@ -12680,7 +12680,7 @@
           "name": "LibraryOriginalsSettingsApiTests"
         },
         {
-          "type": "real-fs",
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "Keeping_the_original_puts_it_in_dot_weir_originals_and_still_cleans_the_file"
         },
@@ -12761,7 +12761,7 @@
           "name": "LibraryModeRulesTests"
         },
         {
-          "type": "real-fs",
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "LibraryCleanHandlerTests"
         }
@@ -15281,7 +15281,7 @@
         },
         {
           "type": "container-smoke",
-          "file": "scripts/docker-compose-smoke.mjs",
+          "file": "scripts/docker-smoke/docker-stack.mjs",
           "name": "*"
         }
       ],
@@ -15306,7 +15306,7 @@
         },
         {
           "type": "container-smoke",
-          "file": "scripts/docker-compose-smoke.mjs",
+          "file": "scripts/docker-smoke/docker-stack.mjs",
           "name": "*"
         },
         {
@@ -48069,7 +48069,7 @@
           "name": "ServerEnvironmentTests"
         },
         {
-          "type": "real-fs",
+          "type": "xunit",
           "file": "apps/tray/Weir.Tray.Tests/SecretFileTests.cs",
           "name": "SecretFileTests"
         },
@@ -52566,7 +52566,7 @@
       "proofs": [
         {
           "type": "container-smoke",
-          "file": "scripts/docker-compose-smoke.mjs",
+          "file": "scripts/docker-smoke/docker-stack.mjs",
           "name": "*"
         },
         {
@@ -52591,7 +52591,7 @@
       "proofs": [
         {
           "type": "container-smoke",
-          "file": "scripts/docker-compose-smoke.mjs",
+          "file": "scripts/docker-smoke/docker-stack.mjs",
           "name": "*"
         },
         {
@@ -52621,7 +52621,7 @@
         },
         {
           "type": "container-smoke",
-          "file": "scripts/docker-compose-smoke.mjs",
+          "file": "scripts/docker-smoke/docker-stack.mjs",
           "name": "*"
         },
         {
@@ -52646,7 +52646,7 @@
       "proofs": [
         {
           "type": "container-smoke",
-          "file": "scripts/docker-compose-smoke.mjs",
+          "file": "scripts/docker-smoke/docker-stack.mjs",
           "name": "*"
         },
         {
@@ -52671,7 +52671,7 @@
       "proofs": [
         {
           "type": "container-smoke",
-          "file": "scripts/docker-compose-smoke.mjs",
+          "file": "scripts/docker-smoke/docker-stack.mjs",
           "name": "*"
         }
       ],
@@ -52837,7 +52837,7 @@
           "name": "SetupCodeApiTests"
         },
         {
-          "type": "real-fs",
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Auth/SetupCodeGateTests.cs",
           "name": "SetupCodeGateTests"
         },
@@ -52898,7 +52898,7 @@
       "proofs": [
         {
           "type": "container-smoke",
-          "file": "scripts/docker-compose-smoke.mjs",
+          "file": "scripts/docker-smoke/docker-stack.mjs",
           "name": "*"
         },
         {
@@ -53972,7 +53972,7 @@
           "name": "A_writer_that_writes_nothing_fails_without_touching_the_original"
         },
         {
-          "type": "real-fs",
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "A_cleaned_copy_that_fails_the_staged_output_check_is_never_swapped_in"
         },
@@ -53980,6 +53980,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Core.Tests/LibraryMode/SafeSwapRulesTests.cs",
           "name": "Temp_and_backup_names_sit_beside_the_original_and_keep_its_extension"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/PhysicalSwapTests.cs",
+          "name": "A_cleaned_copy_that_fails_validation_is_discarded_and_the_real_original_kept"
         }
       ],
       "audit": {
@@ -54057,7 +54062,7 @@
           "name": "A_real_file_is_replaced_in_place_with_a_new_mtime_and_the_job_row_records_it"
         },
         {
-          "type": "real-fs",
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "An_end_to_end_clean_replaces_the_file_in_place_and_leaves_no_leftovers"
         }
@@ -54232,7 +54237,7 @@
           "name": "PhysicalSwapTests"
         },
         {
-          "type": "real-fs",
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "LibraryCleanHandlerTests"
         }
@@ -54688,9 +54693,14 @@
           "name": "ProcessingPassThroughHandlerTests"
         },
         {
-          "type": "real-fs",
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/LibraryMode/LibraryCleanHandlerTests.cs",
           "name": "LibraryCleanHandlerTests"
+        },
+        {
+          "type": "real-fs",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Processing/RemuxPass/ProcessingPassThroughHandlerTests.cs",
+          "name": "A_hand_back_waits_for_room_when_the_workflow_keeps_more_free_than_the_drive_has"
         }
       ],
       "audit": {
@@ -54724,7 +54734,7 @@
         },
         {
           "type": "container-smoke",
-          "file": "scripts/docker-compose-smoke.mjs",
+          "file": "scripts/docker-smoke/docker-stack.mjs",
           "name": "*"
         }
       ],
@@ -55327,7 +55337,7 @@
           "name": "Pausing_and_resuming_are_in_activity_with_who_did_it"
         },
         {
-          "type": "real-fs",
+          "type": "xunit",
           "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/SuitePauseServiceTests.cs",
           "name": "SuitePauseServiceTests"
         },

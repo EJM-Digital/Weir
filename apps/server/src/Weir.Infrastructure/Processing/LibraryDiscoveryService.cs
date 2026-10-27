@@ -199,7 +199,7 @@ public sealed class LibraryDiscoveryService
         }
 
         var existingLibraries = await _libraries.ListAsync(uow).ConfigureAwait(false);
-        var order = existingLibraries.Count == 0 ? 0 : existingLibraries.Max(row => row.DisplayOrder);
+        var order = existingLibraries.Select(row => row.DisplayOrder).DefaultIfEmpty(0).Max();
         var existingNames = existingLibraries.Select(row => row.Name).ToHashSet(StringComparer.Ordinal);
 
         var created = new List<ProcessingLibraryRecord>();

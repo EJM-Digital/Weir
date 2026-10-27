@@ -56,11 +56,11 @@ public static class HandbackRules
     /// <item>an import is never replaced by a "will not import", and one that settled the copy is final (an import not yet
     /// settled, because Weir could not remove the copy, may be retried by another import);</item>
     /// <item>a "will not import" is replaced by any signed import, since only the manager that refused can ever lift it
-    /// otherwise and the copy would be kept for good, and by the same connection's next refusal (the same hand-off's, or one of
+    /// otherwise and the copy would be kept for good, and by the same connection's next refusal (or one of
     /// a connection Weir cannot tell apart from it), never by another connection's refusal.</item>
     /// </list>
     /// </summary>
-    public static bool Hears(string? copyOutcome, bool copySettled, ManagerSpeaker? copySpeaker, ManagerSpeaker speaker, string outcome, bool sameHandoff)
+    public static bool Hears(string? copyOutcome, bool copySettled, ManagerSpeaker? copySpeaker, ManagerSpeaker speaker, string outcome)
     {
         ArgumentNullException.ThrowIfNull(speaker);
         if (copyOutcome is null)
@@ -80,7 +80,7 @@ public static class HandbackRules
 
         return copyOutcome == Imported
             ? outcome == Imported && !copySettled
-            : outcome == Imported || sameHandoff || speaker.IsSameConnectionAs(copySpeaker);
+            : outcome == Imported || speaker.IsSameConnectionAs(copySpeaker);
     }
 
     /// <summary>How long an unclaimed copy waits before the Cleanup job may remove it, unless a person changes it.</summary>
