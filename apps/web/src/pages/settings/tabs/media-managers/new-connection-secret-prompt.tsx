@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 import { errorMessage } from "../../../../lib/api/error-message";
 import type { MediaManagerConnection } from "../../../../lib/media-managers/media-managers-api";
 import { useGenerateMediaManagerWebhookSecret } from "../../../../lib/media-managers/queries";
@@ -22,7 +20,9 @@ export function NewConnectionSecretPrompt({
   onDismiss: () => void;
 }) {
   const secret = useGenerateMediaManagerWebhookSecret();
-  const [revealed, setRevealed] = useState<string | null>(null);
+  // Read from the request itself, not from a callback of mutate(): a callback is dropped if the request
+  // finishes before the prompt has finished subscribing to it, and the secret would never be shown.
+  const revealed = secret.data?.webhook_secret ?? null;
 
   if (revealed) {
     return (
@@ -66,11 +66,7 @@ export function NewConnectionSecretPrompt({
           data-testid="media-manager-new-secret-create"
           className={mmActionButtonClass({ variant: "primary" })}
           disabled={secret.isPending}
-          onClick={() =>
-            secret.mutate(connection.id, {
-              onSuccess: (data) => setRevealed(data.webhook_secret),
-            })
-          }
+          onClick={() => secret.mutate(connection.id)}
         >
           {secret.isPending ? "Creating…" : "Create a secret"}
         </button>
