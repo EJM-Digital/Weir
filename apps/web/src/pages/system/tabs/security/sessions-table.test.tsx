@@ -39,13 +39,13 @@ const SESSIONS = [
   session("c", "", "2026-10-02T00:00:00Z"),
 ];
 
-function Sessions() {
+function Sessions({ sessions = SESSIONS }: { sessions?: ActiveSession[] }) {
   const columns = useTableColumns(SESSION_COLUMNS);
   return (
     <>
       <ColumnsMenu table={columns} />
       <SessionsTable
-        sessions={SESSIONS}
+        sessions={sessions}
         columns={columns}
         revoking={false}
         onRevoke={vi.fn()}
@@ -84,6 +84,27 @@ describe("the active sessions table", () => {
       "Browser session",
       "Firefox on Linux",
     ]);
+  });
+
+  it("sorts by when a browser's sign-in runs out, soonest first", () => {
+    render(
+      <Sessions
+        sessions={[
+          {
+            ...session("a", "Firefox on Linux", "2026-10-01T00:00:00Z"),
+            absolute_expires_at: "2026-12-01T00:00:00Z",
+          },
+          {
+            ...session("b", "Chrome on Windows", "2026-10-03T00:00:00Z"),
+            absolute_expires_at: "2026-11-01T00:00:00Z",
+          },
+        ]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Expires" }));
+
+    expect(browsers()).toEqual(["Chrome on Windows", "Firefox on Linux"]);
   });
 
   it("sorts a browser with no name by the name it is shown under", () => {

@@ -116,5 +116,6 @@ export function nextBackupAt(
     }
     day = nextDay(day);
   }
+  /* istanbul ignore next -- @preserve */
   return earliest;
 }

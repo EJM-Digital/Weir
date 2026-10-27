@@ -72,3 +72,16 @@ it("does not prefetch settings while /auth/me is still in flight", async () => {
     );
   });
 });
+
+it("leaves settings alone, and raises nothing, when /auth/me cannot be read", async () => {
+  vi.mocked(fetchMe).mockRejectedValue(new Error("offline"));
+  const spy = vi.spyOn(queryClient, "prefetchQuery");
+  const { prefetchOnBoot } = await import("./prefetch-on-boot");
+
+  prefetchOnBoot();
+
+  await waitFor(() => {
+    expect(queryClient.getQueryState(authKeys.me)?.status).toBe("error");
+  });
+  expect(spy).not.toHaveBeenCalled();
+});

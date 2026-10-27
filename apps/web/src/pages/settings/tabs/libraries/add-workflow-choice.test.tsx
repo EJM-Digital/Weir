@@ -153,6 +153,19 @@ describe("asking the media manager for its folders", () => {
   });
 });
 
+describe("changing the choice back to local folders", () => {
+  it("opens an empty editor on Continue without asking the media manager anything", async () => {
+    await chooseFromAManager();
+
+    fireEvent.click(screen.getByRole("radio", { name: /Local folders/ }));
+    fireEvent.click(screen.getByTestId("add-workflow-continue"));
+
+    const form = await screen.findByTestId("processing-library-form");
+    expect(within(form).getByLabelText("Name")).toHaveValue("");
+    expect(server.to(SUGGESTIONS)).toHaveLength(0);
+  });
+});
+
 describe("Cancel on the choice", () => {
   it("closes it without opening an editor or saving anything", async () => {
     render(<LibrariesTab />, { wrapper: workflowTabWrapper(client) });

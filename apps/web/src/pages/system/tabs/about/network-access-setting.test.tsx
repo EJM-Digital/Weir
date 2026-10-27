@@ -183,6 +183,21 @@ describe("NetworkAccessSetting", () => {
     );
   });
 
+  it("closes the question once the choice has been saved", () => {
+    setup(status());
+
+    render(<NetworkAccessSetting editable />);
+    fireEvent.click(option("Devices on my network"));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    act(() => {
+      mutate.mock.calls[0][1]?.onSuccess?.();
+    });
+
+    expect(
+      screen.queryByTestId("network-access-confirm"),
+    ).not.toBeInTheDocument();
+  });
+
   it("leaves things as they are when the person cancels the question", () => {
     setup(status());
 

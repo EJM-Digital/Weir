@@ -6,6 +6,7 @@ import {
   parseAppTime,
   useAppClockFormatter,
   useAppClockSecondsFormatter,
+  useAppDateFormatter,
 } from "./mm-format-date";
 
 const settings = { timezone: "UTC" };
@@ -62,6 +63,34 @@ describe("useAppClockFormatter", () => {
 
   it("falls back to the browser's clock for a timezone it does not know", () => {
     expect(clockIn("Not/AZone")).toMatch(/\d:\d\d/);
+  });
+});
+
+describe("useAppDateFormatter", () => {
+  const formatIn = (timezone: string, iso: string | null) => {
+    settings.timezone = timezone;
+    return renderHook(() => useAppDateFormatter()).result.current(iso);
+  };
+
+  it("writes the date and time in the timezone chosen in Settings", () => {
+    expect(formatIn("UTC", "2026-08-22T10:00:00")).toMatch(/10:00\sam$/);
+    expect(formatIn("Australia/Brisbane", "2026-08-22T10:00:00")).toMatch(
+      /8:00\spm$/,
+    );
+  });
+
+  it("shows a dash for no timestamp", () => {
+    expect(formatIn("UTC", null)).toBe("—");
+  });
+
+  it("shows what the server sent when the timestamp cannot be read", () => {
+    expect(formatIn("UTC", "not a date")).toBe("not a date");
+  });
+
+  it("shows what the server sent when the timezone is not one the browser knows", () => {
+    expect(formatIn("Not/AZone", "2026-08-22T10:00:00")).toBe(
+      "2026-08-22T10:00:00",
+    );
   });
 });
 

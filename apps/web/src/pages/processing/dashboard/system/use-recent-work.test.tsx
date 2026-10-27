@@ -58,4 +58,33 @@ describe("the work finished in the last ten minutes", () => {
 
     expect(result.current).toEqual({ done: 5, savedBytes: 0 });
   });
+
+  it("adds up the space the finished passes saved and leaves out an entry that finished nothing", () => {
+    const pass = (id: number, detail: Record<string, unknown>) => ({
+      id,
+      created_at: "2026-10-09T09:58:00",
+      event_type: PASSES,
+      module: "processing",
+      title: "",
+      library_id: 1,
+      relative_path: "Film (2024)/film.mkv",
+      detail: JSON.stringify(detail),
+    });
+    answers[PASSES] = {
+      items: [
+        pass(1, {
+          outcome: "live_output_written",
+          source_size_bytes: 3000,
+          output_size_bytes: 1000,
+        }),
+        pass(2, { outcome: "waiting_for_file" }),
+      ],
+      total: 2,
+    };
+    answers[CLEANS] = { items: [], total: 0 };
+
+    const { result } = renderHook(() => useRecentWork(NOW));
+
+    expect(result.current).toEqual({ done: 2, savedBytes: 2000 });
+  });
 });

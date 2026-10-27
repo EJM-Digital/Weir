@@ -309,7 +309,7 @@ describe("a source with nothing connected yet", () => {
     }
   });
 
-  it("offers to create a secret once the new manager has been added and answers its test", async () => {
+  it("offers to create a secret once the new manager has been added and answers its test, and Not now puts the offer away", async () => {
     let connections: MediaManagerConnection[] = [];
     const created = {
       ...refusedDeluno,
@@ -349,6 +349,12 @@ describe("a source with nothing connected yet", () => {
     ).toBeVisible();
     expect(api.to(`POST ${MANAGERS}`)).toHaveLength(1);
     expect(api.to(`POST ${MANAGERS}/1/test`)).toHaveLength(1);
+
+    fireEvent.click(screen.getByTestId("media-manager-new-secret-dismiss"));
+
+    expect(
+      screen.queryByTestId("media-manager-new-secret-prompt"),
+    ).not.toBeInTheDocument();
   });
 });
 

@@ -411,6 +411,12 @@ describe("first run: connect Deluno first", () => {
         target: { value: "F:\\Ready\\Movies" },
       },
     );
+    fireEvent.change(
+      found.getByRole("textbox", { name: "Movies watched folder" }),
+      {
+        target: { value: "F:\\Done\\Movies" },
+      },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Finish setup" }));
 
     await waitFor(
@@ -419,7 +425,10 @@ describe("first run: connect Deluno first", () => {
     );
     expect(updateLibrary).toHaveBeenCalledWith(
       1,
-      expect.objectContaining({ output_folder: "F:\\Ready\\Movies" }),
+      expect.objectContaining({
+        output_folder: "F:\\Ready\\Movies",
+        watched_folder: "F:\\Done\\Movies",
+      }),
     );
     expect(createLibrary).not.toHaveBeenCalled();
   });
@@ -455,6 +464,23 @@ describe("first run: connect Deluno first", () => {
     expect(saveSettingsMock).toHaveBeenCalledWith(
       expect.objectContaining({ setup_wizard_state: "completed" }),
     );
+  });
+
+  it("goes to typing the folders from Pick the folders yourself when Deluno gives none", async () => {
+    scenario.managers = [managerConnection({})];
+    scenario.suggestions = { libraries: [], notes: [] };
+    renderWizard();
+
+    choose("Deluno");
+    const found = await foundLibraries();
+    fireEvent.click(
+      found.getByRole("button", { name: "Pick the folders yourself" }),
+    );
+
+    expect(screen.queryByTestId("setup-wizard-found")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Movies watched folder" }),
+    ).toHaveValue("");
   });
 
   it("says plainly when Deluno cannot be reached, and lets the person go to typing the folders", async () => {
@@ -569,6 +595,45 @@ describe("first run: connect Deluno first", () => {
       () => expect(updateLibrary).toHaveBeenCalledTimes(2),
       CEILING,
     );
+  });
+
+  it("lists what a download client's folder check found beside the workflow it belongs to", async () => {
+    scenario.managers = [managerConnection({})];
+    scenario.checks = {
+      ...passingCheck(),
+      movie: {
+        problem: null,
+        chain: {
+          library_id: 0,
+          local: { ready: true, lines: [] },
+          managers: [],
+          download_clients: [
+            {
+              connection_id: 7,
+              kind: "qbittorrent",
+              name: "qBittorrent",
+              label: "qBittorrent",
+              ready: false,
+              lines: [
+                {
+                  state: "problem",
+                  text: "qBittorrent saves finished movies somewhere Weir is not watching.",
+                },
+              ],
+            },
+          ],
+          ready: false,
+        },
+      },
+    };
+    renderWizard();
+
+    choose("Deluno");
+    await foundLibraries();
+
+    expect(
+      await screen.findByText(/saves finished movies somewhere Weir is not/, {}, CEILING),
+    ).toBeInTheDocument();
   });
 
   it("shows a line Weir could not verify as not verified, not as fine and not as a problem", async () => {

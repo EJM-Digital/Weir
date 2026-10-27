@@ -17,11 +17,13 @@ vi.mock(
     fetchLibraryFolderChain: vi.fn(),
   }),
 );
+let managerRows: { id: number }[] = [];
+let clientRows: { id: number }[] = [];
 vi.mock("../../../lib/media-managers/queries", () => ({
-  useMediaManagerConnectionsQuery: () => ({ data: [] }),
+  useMediaManagerConnectionsQuery: () => ({ data: managerRows }),
 }));
 vi.mock("../../../lib/download-clients/queries", () => ({
-  useDownloadClientConnectionsQuery: () => ({ data: [] }),
+  useDownloadClientConnectionsQuery: () => ({ data: clientRows }),
 }));
 let looks: {
   foldersCheckedAt: number | null;
@@ -111,5 +113,59 @@ describe("useHealth", () => {
 
     expect(chains).toHaveLength(1);
     expect(chains[0].observers[0].options.refetchInterval).toBeFalsy();
+  });
+
+  it("narrows the connections to the ones a workflow is linked to and the download clients its chain names", async () => {
+    vi.mocked(fetchLibraryFolderChain).mockResolvedValue({
+      ...answer,
+      download_clients: [{ connection_id: 31, ready: true, lines: [] }],
+    } as unknown as typeof answer);
+    managerRows = [{ id: 11 }, { id: 12 }];
+    clientRows = [{ id: 31 }, { id: 32 }];
+    const client = new QueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const linked = { ...movies, manager_connection_ids: [12] };
+    const { result } = renderHook(() => useHealth([linked], 2), { wrapper });
+    await waitFor(() =>
+      expect(result.current.workflows[0].chain).toBeDefined(),
+    );
+
+    expect(result.current.managers).toEqual([{ id: 12 }]);
+    expect(result.current.downloadClients).toEqual([{ id: 31 }]);
+    managerRows = [];
+    clientRows = [];
+  });
+
+  it("keeps no connection for a workflow whose chain has not answered", () => {
+    vi.mocked(fetchLibraryFolderChain).mockReturnValue(new Promise(() => {}));
+    managerRows = [{ id: 11 }];
+    clientRows = [{ id: 31 }];
+    const client = new QueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(() => useHealth([movies], 2), { wrapper });
+
+    expect(result.current.managers).toEqual([]);
+    expect(result.current.downloadClients).toEqual([]);
+    managerRows = [];
+    clientRows = [];
+  });
+
+  it("reads one workflow's chain again, and every chain again, when asked", async () => {
+    vi.mocked(fetchLibraryFolderChain).mockResolvedValue(answer);
+    const { result } = renderHealth();
+    await waitFor(() =>
+      expect(result.current.workflows[0].chain).toBeDefined(),
+    );
+    const asked = vi.mocked(fetchLibraryFolderChain).mock.calls.length;
+
+    await result.current.workflows[0].recheck();
+    expect(vi.mocked(fetchLibraryFolderChain).mock.calls.length).toBe(asked + 1);
+
+    await result.current.recheckFolders();
+    expect(vi.mocked(fetchLibraryFolderChain).mock.calls.length).toBe(asked + 2);
   });
 });
