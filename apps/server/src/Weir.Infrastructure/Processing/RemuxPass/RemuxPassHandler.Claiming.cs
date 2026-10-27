@@ -100,7 +100,7 @@ public sealed partial class RemuxPassHandler
             : (null, null);
 
     /// <summary>The seeded library's rule set for the scope, or the shipped defaults.</summary>
-    private async Task<ProcessingRulesConfig> LoadScopeRulesConfigAsync(UnitOfWork uow, string mediaScope)
+    internal async Task<ProcessingRulesConfig> LoadScopeRulesConfigAsync(UnitOfWork uow, string mediaScope)
     {
         var seeded = await _libraries.SeededForScopeAsync(uow, mediaScope).ConfigureAwait(false);
         var ruleSet = seeded?.RuleSetId is { } id ? await _libraries.GetRuleSetAsync(uow, id).ConfigureAwait(false) : null;

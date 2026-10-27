@@ -166,7 +166,7 @@ public sealed class MediaManagerRemainingEdgeTests
     {
         var speaker = new ManagerSpeaker("deluno", 1, true);
 
-        Assert.True(HandbackRules.Hears(HandbackRules.NotImported, true, null, speaker, HandbackRules.Imported, false));
+        Assert.True(HandbackRules.Hears(HandbackRules.NotImported, true, null, speaker, HandbackRules.Imported));
     }
 
     [Fact]

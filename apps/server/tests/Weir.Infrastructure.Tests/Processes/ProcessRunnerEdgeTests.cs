@@ -22,6 +22,23 @@ public sealed class ProcessRunnerEdgeTests
         return process;
     }
 
+    [Fact]
+    public async Task A_tool_still_running_has_no_exit_code_and_one_that_ended_has_its_own()
+    {
+        using var running = StartHolding();
+        try
+        {
+            Assert.Equal(-1, ProcessRunner.ExitCodeOf(running));
+        }
+        finally
+        {
+            running.Kill(entireProcessTree: true);
+            await running.WaitForExitAsync();
+        }
+
+        Assert.Equal(running.ExitCode, ProcessRunner.ExitCodeOf(running));
+    }
+
     // The system's own refusal of a priority on an exited process is not repeatable (Windows accepts it about one time in eight), so
     // the refusals are handed in rather than waited for.
     public static TheoryData<Exception> Refusals => new()

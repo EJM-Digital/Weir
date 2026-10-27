@@ -145,7 +145,7 @@ public sealed class TrayPauseRequestWatcher : BackgroundService
     }
 
     /// <summary>Answers the request in the file. False when the file was refused (the tray is renaming one into place) and is to be looked at again.</summary>
-    private async Task<bool> AnswerAsync(CancellationToken stoppingToken)
+    internal async Task<bool> AnswerAsync(CancellationToken stoppingToken)
     {
         var path = Path.Join(_options.WeirHome, FileName);
         var reading = ReplacedFile.ReadText(path);
@@ -242,7 +242,7 @@ public sealed class TrayPauseRequestWatcher : BackgroundService
         return state != ReplacedFileState.Busy;
     }
 
-    private void DeleteIfUnchanged(string path, string answered)
+    internal void DeleteIfUnchanged(string path, string answered)
     {
         try
         {

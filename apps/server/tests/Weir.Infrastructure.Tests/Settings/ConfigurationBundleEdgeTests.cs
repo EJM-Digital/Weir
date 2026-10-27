@@ -28,6 +28,58 @@ public sealed class ConfigurationBundleEdgeTests : IDisposable
     });
 
     [Fact]
+    public async Task A_stored_time_that_cannot_be_read_stops_the_export()
+    {
+        await _store.Execute("UPDATE operator_settings SET updated_at = 'not a time'");
+
+        var thrown = await Assert.ThrowsAsync<FormatException>(BuildAsync);
+
+        Assert.Equal("Invalid isoformat string in the database.", thrown.Message);
+    }
+
+    [Fact]
+    public async Task A_backup_workflow_that_names_no_media_type_or_folders_is_refused_by_the_checks_a_new_workflow_gets()
+    {
+        var bundle = await BuildAsync();
+        var row = ((WireArray)bundle["libraries"]).Items.OfType<WireObject>().First();
+        foreach (var key in new[] { "media_type", "watched_folder", "work_folder", "output_folder" })
+        {
+            row.Remove(key);
+        }
+
+        await Assert.ThrowsAsync<WireValueException>(() => ApplyAsync(bundle));
+    }
+
+    [Fact]
+    public async Task A_backup_workflow_from_before_its_newer_settings_existed_restores_with_their_defaults()
+    {
+        var bundle = await BuildAsync();
+        foreach (var row in ((WireArray)bundle["libraries"]).Items.OfType<WireObject>())
+        {
+            foreach (var key in new[] { "rejected_file_action", "output_collision_policy", "ffmpeg_strictness", "remux_writer", "failure_policy" })
+            {
+                row.Remove(key);
+            }
+        }
+
+        Assert.True(await ApplyAsync(bundle));
+    }
+
+    [Fact]
+    public async Task A_backup_that_changes_a_setting_and_the_time_it_was_saved_restores_both()
+    {
+        var bundle = await BuildAsync();
+        var settings = (WireObject)bundle["operator_settings"];
+        settings.Set("minimum_free_disk_space_mb", 7);
+        settings.Set("updated_at", "2001-02-03T04:05:06+00:00");
+
+        await ApplyAsync(bundle);
+
+        Assert.Equal(7, await _store.Scalar("SELECT minimum_free_disk_space_mb FROM operator_settings"));
+        Assert.StartsWith("2001-02-03", await _store.ScalarText("SELECT updated_at FROM operator_settings"), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_backup_with_no_workflows_section_leaves_the_workflows_as_they_are()
     {
         var bundle = await BuildAsync();

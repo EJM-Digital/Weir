@@ -822,6 +822,22 @@ public sealed class SafeSwapTests
         Assert.True(s.Files.Has(destination));
     }
 
+    [Fact]
+    public async Task A_folder_walk_puts_each_original_right_once_however_many_leftovers_it_has_and_ignores_a_name_that_is_not_one()
+    {
+        var s = new SwapScenario();
+        s.Files.Put(Original, "NEW");
+        s.Files.Put(Backup, "OLD");
+        s.Files.Put(Temp, "HALF");
+        s.Files.AlsoListed.Add("/lib/Movie (2020)/Movie (2020).nfo");
+
+        var walk = await s.Sweep.RunAsync([SwapScenario.Library], walkFolders: true);
+
+        Assert.Equal(0, walk.Problems);
+        Assert.Equal([Original], s.Files.Paths);
+        Assert.Equal("NEW", s.Files.Read(Original));
+    }
+
     [Theory]
     [InlineData(7ul, 100ul, 3L, 5L, 7ul, 100ul, 3L, 5L, true)]
     [InlineData(7ul, 100ul, 3L, 5L, 7ul, 101ul, 3L, 5L, false)]
@@ -855,6 +871,9 @@ public sealed class SafeSwapTests
     [InlineData(1UL, 2UL, 100L, 5L, 0UL, 0UL, 100L, 5L, true)]
     [InlineData(1UL, 2UL, 100L, 5L, 1UL, 2UL, 101L, 5L, false)]
     [InlineData(1UL, 2UL, 100L, 5L, 1UL, 2UL, 100L, 6L, false)]
+    [InlineData(0UL, 5UL, 100L, 5L, 0UL, 5UL, 100L, 5L, true)]
+    [InlineData(0UL, 5UL, 100L, 5L, 0UL, 6UL, 100L, 5L, false)]
+    [InlineData(1UL, 0UL, 100L, 5L, 1UL, 0UL, 100L, 5L, true)]
     public void Two_fingerprints_are_the_same_file_when_size_and_time_agree_and_so_does_identity_where_both_know_it(
         ulong device, ulong inode, long size, long time, ulong otherDevice, ulong otherInode, long otherSize, long otherTime, bool same)
     {

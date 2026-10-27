@@ -43,6 +43,7 @@ internal sealed class FaultingFileSystem : IFileSystem
 {
     private readonly PhysicalFileSystem _real = PhysicalFileSystem.Instance;
     private readonly List<Rule> _rules = [];
+    private readonly HashSet<string> _hidden = new(StringComparer.Ordinal);
     private readonly List<(FileCall Call, string Path)> _calls = [];
 
     public IReadOnlyList<(FileCall Call, string Path)> Calls
@@ -72,6 +73,13 @@ internal sealed class FaultingFileSystem : IFileSystem
         return this;
     }
 
+    /// <summary>Makes each of <paramref name="paths"/> read as neither a file nor a folder, as a drive that is not there would.</summary>
+    public FaultingFileSystem Hide(params string[] paths)
+    {
+        _hidden.UnionWith(paths);
+        return this;
+    }
+
     /// <summary>Runs <paramref name="before"/> (for example removing the file) just before the <paramref name="onCall"/>th call of this kind.</summary>
     public FaultingFileSystem Before(FileCall call, Action<string> before, int onCall = 1, string? pathEndsWith = null)
     {
@@ -79,9 +87,9 @@ internal sealed class FaultingFileSystem : IFileSystem
         return this;
     }
 
-    public bool FileExists(string path) => Run(FileCall.FileExists, path, () => _real.FileExists(path));
+    public bool FileExists(string path) => Run(FileCall.FileExists, path, () => !_hidden.Contains(path) && _real.FileExists(path));
 
-    public bool DirectoryExists(string path) => Run(FileCall.DirectoryExists, path, () => _real.DirectoryExists(path));
+    public bool DirectoryExists(string path) => Run(FileCall.DirectoryExists, path, () => !_hidden.Contains(path) && _real.DirectoryExists(path));
 
     public IReadOnlyList<string> ListFiles(string path, EnumerationOptions options) => Run(FileCall.ListFiles, path, () => _real.ListFiles(path, options));
 

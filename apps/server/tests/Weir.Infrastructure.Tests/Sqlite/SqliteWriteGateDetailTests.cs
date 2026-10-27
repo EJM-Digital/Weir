@@ -1,3 +1,4 @@
+using System.Data;
 using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
@@ -157,6 +158,58 @@ public sealed class SqliteWriteGateDetailTests : IDisposable
             Assert.Contains(
                 logger.Entries,
                 entry => entry.Level == LogLevel.Warning && entry.Message.Contains("handed out still inside a transaction; Weir rolled it back before using the connection.", StringComparison.Ordinal));
+        }
+        finally
+        {
+            database.ClearPool();
+        }
+    }
+
+    [Fact]
+    public async Task A_connection_still_in_a_transaction_whose_rollback_is_refused_is_closed_and_a_clean_one_handed_out_instead()
+    {
+        var database = new SqliteDatabase(DatabaseFile);
+        try
+        {
+            var left = await database.OpenAsync();
+            Run(left, "CREATE TABLE notes (text TEXT)");
+            Run(left, "BEGIN IMMEDIATE");
+            Run(left, "INSERT INTO notes VALUES ('never committed')");
+            raw.sqlite3_set_authorizer(
+                left.Handle,
+                (object _, int action, string param0, string _, string _, string _) =>
+                    action == raw.SQLITE_TRANSACTION && param0 == "ROLLBACK" ? raw.SQLITE_DENY : raw.SQLITE_OK,
+                null);
+            await left.DisposeAsync();
+
+            var next = await database.OpenAsync();
+            await using (next.ConfigureAwait(false))
+            {
+                Assert.Equal(1, raw.sqlite3_get_autocommit(next.Handle));
+                using var count = next.CreateCommand();
+                count.CommandText = "SELECT COUNT(*) FROM notes";
+                Assert.Equal(0L, count.ExecuteScalar());
+            }
+        }
+        finally
+        {
+            database.ClearPool();
+        }
+    }
+
+    [Fact]
+    public async Task A_unit_of_work_whose_connection_was_closed_under_it_is_disposed_without_trouble()
+    {
+        var database = new SqliteDatabase(DatabaseFile);
+        try
+        {
+            var unit = await UnitOfWork.OpenAsync(database);
+            unit.Connection.Close();
+
+            await unit.DisposeAsync();
+
+            await using var next = await UnitOfWork.OpenAsync(database);
+            Assert.Equal(ConnectionState.Open, next.Connection.State);
         }
         finally
         {

@@ -357,9 +357,10 @@ public static class RemuxPassPaths
             return new RejectedFileCleanupResult(false, $"Weir could not delete the rejected file because it is locked or unavailable ({exception.Message}).");
         }
 
-        // Empty folders left behind are removed up to, never including, the watched folder.
-        var parent = Path.GetDirectoryName(source);
-        while (parent is not null && PathContainment.IsUnder(root, parent))
+        // Empty folders left behind are removed up to, never including, the watched folder. Only a filesystem root has no parent
+        // folder, and nothing is under a root, so a folder the loop sees always has one.
+        var parent = Path.GetDirectoryName(source)!;
+        while (PathContainment.IsUnder(root, parent))
         {
             try
             {
@@ -370,7 +371,7 @@ public static class RemuxPassPaths
                 break;
             }
 
-            parent = Path.GetDirectoryName(parent);
+            parent = Path.GetDirectoryName(parent)!;
         }
 
         return new RejectedFileCleanupResult(true, "Weir deleted the rejected file because this workflow's cleanup action is Delete rejected file.");
