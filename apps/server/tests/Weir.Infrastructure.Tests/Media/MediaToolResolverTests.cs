@@ -156,6 +156,14 @@ public sealed class MediaToolResolverTests : IDisposable
         Assert.Equal(onPath, Resolver(null, null, _root.Join("empty"), path).ResolveMkvmerge());
     }
 
+    [Theory]
+    [InlineData("", true)]
+    [InlineData("/app/Weir.Infrastructure.dll", false)]
+    public void A_single_file_publish_runs_from_the_app_folder_and_one_with_an_assembly_file_has_no_packaged_folder(string assemblyLocation, bool packaged)
+    {
+        Assert.Equal(packaged ? AppContext.BaseDirectory : null, MediaToolResolver.PackagedDirectoryFor(assemblyLocation));
+    }
+
     [Fact]
     public void Mkvmerge_nowhere_is_nothing_rather_than_a_failure()
     {

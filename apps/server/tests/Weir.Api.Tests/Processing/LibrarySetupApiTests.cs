@@ -205,6 +205,20 @@ public sealed class LibrarySetupApiTests
     }
 
     [Fact]
+    public async Task A_download_folder_directly_under_the_root_is_offered_with_no_output_folder_to_go_with_it()
+    {
+        var (server, client, manager) = await StartAsync();
+        await using var _server = server;
+        await ConnectDownloadClientAsync(client, "sabnzbd", "http://192.0.2.40:8080");
+        manager.Json(HttpMethod.Get, "/api", """{"config":{"misc":{"complete_dir":"/"},"categories":[{"name":"movies","dir":"movies"}]}}""");
+
+        var movies = LibraryFor(await SuggestedAsync(client), "movie");
+
+        Assert.Equal("/movies", movies["watched_folder"]!.GetValue<string>());
+        Assert.Equal(string.Empty, movies["output_folder"]!.GetValue<string>());
+    }
+
+    [Fact]
     public async Task A_download_client_offers_the_folder_of_the_category_named_for_each_media_type()
     {
         var (server, client, manager) = await StartAsync();

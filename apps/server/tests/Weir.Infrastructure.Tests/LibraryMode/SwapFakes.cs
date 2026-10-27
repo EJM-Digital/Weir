@@ -82,6 +82,10 @@ internal sealed class FakeSwapFileSystem : ISwapFileSystem
     /// caught by its content before the source is deleted. Resets itself after firing once.</summary>
     public bool CorruptNextCopy { get; set; }
 
+    /// <summary>Paths <see cref="EnumerateLeftovers"/> reports besides the swap leftovers it finds, as a file system that
+    /// lists a name which is not one would.</summary>
+    public List<string> AlsoListed { get; } = [];
+
     public bool Crashed => _dead;
 
     public IEnumerable<string> Paths => _files.Keys.Order(StringComparer.Ordinal);
@@ -314,6 +318,7 @@ internal sealed class FakeSwapFileSystem : ISwapFileSystem
         return _files.Keys
             .Where(path => path.StartsWith(prefix, StringComparison.Ordinal) && SafeSwapRules.TryParseLeftover(path, out _, out _))
             .Order(StringComparer.Ordinal)
+            .Concat(AlsoListed)
             .ToList();
     }
 

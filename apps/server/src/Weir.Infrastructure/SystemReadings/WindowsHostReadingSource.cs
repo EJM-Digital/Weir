@@ -23,6 +23,7 @@ public sealed class WindowsHostReadingSource : IHostReadingSource
 
     private readonly Func<RegistryKey> _openMachine;
     private readonly Func<DriveInfo[]> _drives;
+    private readonly Func<string, DiskCounters?> _readCounters;
     private readonly Lazy<string?> _operatingSystem;
 
     public WindowsHostReadingSource()
@@ -30,11 +31,12 @@ public sealed class WindowsHostReadingSource : IHostReadingSource
     {
     }
 
-    /// <summary>The registry's machine key and the list of drives can be replaced, so a test can have either refuse.</summary>
-    internal WindowsHostReadingSource(Func<RegistryKey>? openMachine, Func<DriveInfo[]>? drives)
+    /// <summary>The registry's machine key, the list of drives and the kernel's disk counters can be replaced, so a test can have any of them refuse.</summary>
+    internal WindowsHostReadingSource(Func<RegistryKey>? openMachine, Func<DriveInfo[]>? drives, Func<string, DiskCounters?>? readCounters = null)
     {
         _openMachine = openMachine ?? (() => RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64));
         _drives = drives ?? DriveInfo.GetDrives;
+        _readCounters = readCounters ?? WindowsNative.ReadVolumeCounters;
         _operatingSystem = new Lazy<string?>(ReadOperatingSystemName);
     }
 
@@ -68,8 +70,7 @@ public sealed class WindowsHostReadingSource : IHostReadingSource
         {
             foreach (var drive in _drives())
             {
-                if (drive.DriveType == DriveType.Fixed && drive.IsReady
-                    && WindowsNative.ReadVolumeCounters(drive.RootDirectory.FullName) is { } counters)
+                if (drive.DriveType == DriveType.Fixed && _readCounters(drive.RootDirectory.FullName) is { } counters)
                 {
                     volumes[KeyOf(drive.RootDirectory.FullName)] = counters;
                 }

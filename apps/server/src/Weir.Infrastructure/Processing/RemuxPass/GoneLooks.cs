@@ -132,7 +132,7 @@ internal static class GoneLooks
         return any;
     }
 
-    private static bool Names(ProcessingJob job, long libraryId, string relativePath)
+    internal static bool Names(ProcessingJob job, long libraryId, string relativePath)
     {
         var payload = FollowUpJobPayload.Parse(job.PayloadJson);
         return FollowUpJobPayload.LibraryId(payload) == libraryId && FollowUpJobPayload.RelativeMediaPath(payload) == relativePath;

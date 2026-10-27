@@ -112,7 +112,9 @@ public sealed partial class ManagerWorkflowSync
             var others = await sync._libraries.OtherFoldersAsync(uow, existing?.Id).ConfigureAwait(false);
             try
             {
-                LibraryRules.ValidateFolders(watched ?? existing?.WatchedFolder, existing?.WorkFolder, output ?? existing?.OutputFolder, others, sync._options.WeirHome);
+                // A workflow about to be made has no folders yet, which is how an empty one reads.
+                var current = existing ?? new ProcessingLibraryRecord { Name = string.Empty };
+                LibraryRules.ValidateFolders(watched ?? current.WatchedFolder, current.WorkFolder, output ?? current.OutputFolder, others, sync._options.WeirHome);
                 return null;
             }
             catch (ProcessingLibraryException exception)
