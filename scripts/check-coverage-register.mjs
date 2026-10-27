@@ -437,7 +437,7 @@ export async function main(args = process.argv.slice(2), { env = process.env, lo
   const fail = [];
   const lines = [`Coverage register: ${register.rows.length} rows, ${inventory.length} inventory items (${Object.entries(countsOf(inventory)).map(([k, n]) => `${n} ${k}`).join(", ")}).`];
   if (result.shape.length) fail.push(`(6) the register is malformed (${result.shape.length}):\n    ${shown(result.shape, (x) => x)}`);
-  if (result.unmapped.length) fail.push(`(1) ${result.unmapped.length} item(s) in the code have no row. Add a row naming the key in "covers" (node scripts/check-coverage-register.mjs --stubs prints stubs):\n    ${shown(result.unmapped, (i) => `${i.key}  (${i.file ?? ""}${i.line ? `:${i.line}` : ""})`)}`);
+  if (result.unmapped.length) fail.push(`(1) ${result.unmapped.length} item(s) in the code have no row. Add a row naming the key in "covers" (node scripts/check-coverage-register.mjs --stubs prints stubs):\n    ${shown(result.unmapped, (i) => `${i.key}  (${i.file}${i.line ? `:${i.line}` : ""})`)}`);
   else lines.push("  OK  every item in the code has a row");
   if (result.stale.length) fail.push(`(2) ${result.stale.length} row(s) cover something the code no longer has (remove the key, or the row):\n    ${shown(result.stale, (s) => `${s.row} -> ${s.key}`)}`);
   if (result.missing.length) fail.push(`(3) ${result.missing.length} proof(s) name a file or test that does not exist, or claim a type they do not have (fix the proof; the row is then a gap and needs an issue):\n    ${shown(result.missing, (m) => `${m.row}: ${m.why}`)}`);

@@ -39,7 +39,7 @@ public sealed class ServerOutputPipeTests : IDisposable
 
         var log = Path.Join(_home, "logs", "weir.log");
         var lines = ReadLog(log);
-        Assert.True(ready, $"The server did not become ready with its standard output full (exit code {server.ExitCode}); its log has {lines.Length} lines. Kept for diagnosis: {server.Diagnostics}");
+        Assert.True(ready, $"The server did not become ready with its standard output full (exit code {server.ExitCode}); its log has {lines.Length} lines. Its home holds {HomeListing()}. Kept for diagnosis: {server.Diagnostics}");
         Assert.Contains("listening on", string.Join(Environment.NewLine, lines), StringComparison.Ordinal);
     }
 
@@ -53,7 +53,7 @@ public sealed class ServerOutputPipeTests : IDisposable
 
         var exited = await server.ExitsAsync(Ceiling);
 
-        Assert.True(exited, $"The server did not exit after refusing its settings, with standard error a full pipe. Kept for diagnosis: {server.Diagnostics}");
+        Assert.True(exited, $"The server did not exit after refusing its settings, with standard error a full pipe. Its home holds {HomeListing()}. Kept for diagnosis: {server.Diagnostics}");
         Assert.Equal(1, server.ExitCode);
         var note = File.ReadAllText(Path.Join(_home, "startup-error.txt")).Split('\n', 2);
         Assert.Equal("Weir's settings are not valid", note[0]);
@@ -69,6 +69,21 @@ public sealed class ServerOutputPipeTests : IDisposable
         ["WEIR_ARTWORK_GATEWAY_URL"] = "off",
         ["WEIR_MEDIA_MANAGER_WORKFLOW_SYNC_ENABLED"] = "0",
     };
+
+    // Which side of Main a stuck server is on: the progress file appears once Main runs, startup-error.txt once it refuses.
+    private string HomeListing()
+    {
+        if (!Directory.Exists(_home))
+        {
+            return "nothing (the folder was never made)";
+        }
+
+        var files = Directory.EnumerateFiles(_home, "*", SearchOption.AllDirectories)
+            .Select(path => $"{Path.GetRelativePath(_home, path)} ({new FileInfo(path).Length} bytes)")
+            .Order(StringComparer.Ordinal)
+            .ToList();
+        return files.Count == 0 ? "no files" : string.Join(", ", files);
+    }
 
     // The server keeps the log open while it runs.
     private static string[] ReadLog(string path)

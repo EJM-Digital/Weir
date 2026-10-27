@@ -325,3 +325,41 @@ test("the shard's time budget is a whole number of minutes, or none", () => {
   assert.equal(shardBudgetMs({ SCENARIO_SHARD_BUDGET_MINUTES: "38" }), 38 * 60_000);
   for (const bad of ["0", "-3", "1.5", "soon"]) assert.throws(() => shardBudgetMs({ SCENARIO_SHARD_BUDGET_MINUTES: bad }), /whole number of minutes/);
 });
+
+// --- the last branches --------------------------------------------------------------------------------------------------
+
+test("the setup waits for an application that is not up yet: a refused connection and an answer that is not 200 each mean not yet", async () => {
+  standIns();
+  const answering = globalThis.fetch;
+  let healthAsks = 0;
+  globalThis.fetch = async (url, options) => {
+    if (new URL(url).pathname === "/health" && healthAsks++ === 0) throw new TypeError("fetch failed");
+    if (new URL(url).pathname === "/health" && healthAsks === 2) return new Response("starting", { status: 503 });
+    return answering(url, options);
+  };
+  await DelunoWorld.setUp({ weir: {}, logins: LOGINS, clock: instantClock });
+  assert.ok(healthAsks >= 4, `Deluno's health was asked ${healthAsks} times`);
+});
+
+test("the shard sets the applications up with the logins it started with, and collects the recordings the scenarios kept", async () => {
+  standIns();
+  const { beside } = SHARDS["with-deluno"];
+  assert.ok((await beside.setUp({ weir: {}, clock: instantClock }, { logins: LOGINS })) instanceof DelunoWorld);
+  const asked = [];
+  const written = await beside.collect({ deluno: { writeRecordings: async (to) => (asked.push(to), ["a.json"]) } }, "out");
+  assert.deepEqual(asked, [join("out", "recordings")]);
+  assert.deepEqual(written, ["a.json"]);
+});
+
+test("qBittorrent answering a call with plain text instead of JSON is read as the text", async () => {
+  globalThis.fetch = async () => new Response("Ok.", { status: 200, headers: { "Set-Cookie": "SID=abc; path=/" } });
+  const api = await QbittorrentApi.signIn("http://q", { username: "u", password: "p" });
+  assert.equal(await api.createCategory("c", "/p"), "Ok.");
+});
+
+test("a workflow Weir shows with no list of managers is not linked to Deluno", async () => {
+  const { manager_connection_ids: _unused, ...unlisted } = linkedWorkflow;
+  const [result] = await run(worldWith({ workflows: [unlisted] }).world);
+  assert.equal(result.status, "failed");
+  assert.match(result.detail, /'Movies' is linked to Deluno/);
+});

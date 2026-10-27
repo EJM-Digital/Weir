@@ -13,7 +13,7 @@ This **Weir** repository contains **`apps/server`** (the C# / .NET 10 server: HT
 
 ## One-time setup (after cloning)
 
-Activate the pre-push hook so the no-Python and contract-area checks, prettier, the dead-code guard and the OpenAPI types drift check run locally before every push:
+Activate the pre-push hook so the no-Python, no-silent-revert and contract-area checks, prettier, the dead-code guard and the OpenAPI types drift check run locally before every push:
 
 ```powershell
 git config core.hooksPath .githooks

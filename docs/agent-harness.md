@@ -52,6 +52,7 @@ Weir should be easy for coding agents to inspect, modify, validate, and repair w
 | Contract suite | `dotnet test apps/server/tests/Weir.Contract.Tests --filter "Area=<area>"` ([README](../apps/server/tests/Weir.Contract.Tests/README.md)) |
 | E2E | `WEIR_E2E=1 dotnet test apps/server/tests/Weir.E2E.Tests` (see [`local-development.md`](local-development.md)) |
 | No Python | `node scripts/check-no-python.mjs` |
+| No silent reverts of merged changes | `node scripts/check-no-silent-reverts.mjs --base origin/main --head HEAD` (a deliberate revert says `Reverts #<number>`) |
 | No test waits for the wall clock | `node scripts/check-wall-clock-waits.mjs` |
 | Nothing private in public files | `node scripts/check-public-privacy.mjs` |
 | Windows and Docker smoke | [`smoke-checklists.md`](smoke-checklists.md) |

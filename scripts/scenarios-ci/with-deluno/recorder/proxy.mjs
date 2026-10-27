@@ -22,6 +22,9 @@ function readBody(stream) {
   });
 }
 
+/** What the proxy answers when the application it forwards to cannot be reached: the error's code, or its message when it has none. */
+export const couldNotReach = (route, error) => `The recording proxy could not reach ${route === "to-deluno" ? "Deluno" : "Weir"}: ${error.code ?? error.message}`;
+
 /** Forwards to one upstream and writes every exchange to `log`. */
 function forwarder({ route, target, log, nextSeq }) {
   const upstream = new URL(target);
@@ -41,7 +44,7 @@ function forwarder({ route, target, log, nextSeq }) {
       log.push(exchangeOf({ ...seen, status: reply.statusCode, reply: reply.headers, replyBody }));
     });
     forwarded.on("error", (error) => {
-      const text = Buffer.from(`The recording proxy could not reach ${route === "to-deluno" ? "Deluno" : "Weir"}: ${error.code ?? error.message}`);
+      const text = Buffer.from(couldNotReach(route, error));
       response.writeHead(502, { "content-type": "text/plain", "content-length": String(text.length) });
       response.end(text);
       log.push(exchangeOf({ ...seen, status: 502, reply: { "content-type": "text/plain" }, replyBody: text }));
@@ -86,8 +89,18 @@ export async function startRecorder({ deluno, weir, ports, host }) {
   return { servers: servers.map(([server]) => server), log };
 }
 
+/** What the container gives the proxy: the ports, the two applications, and the address to listen on (`RECORDER_HOST`; every address when it is not set). */
+export function settingsFrom(env) {
+  return {
+    ports: { toDeluno: Number(env.RECORDER_TO_DELUNO_PORT ?? 8081), toWeir: Number(env.RECORDER_TO_WEIR_PORT ?? 8082), control: Number(env.RECORDER_CONTROL_PORT ?? 8083) },
+    deluno: env.RECORDER_DELUNO ?? "http://deluno:8080",
+    weir: env.RECORDER_WEIR ?? "http://weir:9347",
+    host: env.RECORDER_HOST,
+  };
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const ports = { toDeluno: Number(process.env.RECORDER_TO_DELUNO_PORT ?? 8081), toWeir: Number(process.env.RECORDER_TO_WEIR_PORT ?? 8082), control: Number(process.env.RECORDER_CONTROL_PORT ?? 8083) };
-  await startRecorder({ deluno: process.env.RECORDER_DELUNO ?? "http://deluno:8080", weir: process.env.RECORDER_WEIR ?? "http://weir:9347", ports });
-  console.log(`recording proxy: Deluno at :${ports.toDeluno}, Weir at :${ports.toWeir}, control at :${ports.control}`);
+  const settings = settingsFrom(process.env);
+  await startRecorder(settings);
+  console.log(`recording proxy: Deluno at :${settings.ports.toDeluno}, Weir at :${settings.ports.toWeir}, control at :${settings.ports.control}`);
 }

@@ -102,17 +102,11 @@ internal sealed partial class Scenario
     /// it ends, and a job a worker still holds when the server stops is queued again when the server starts.
     /// </summary>
     public async Task WaitForNoJobInFlightAsync() =>
-        await new JobWait().UntilAsync(
-            JobStatusesAsync,
-            async () => (await JobStatusesAsync()).Any(status => status is "pending" or "leased") ? null : "idle",
-            "every job to end");
+        await new JobWait().UntilNoneAsync(JobStatusesAsync, status => status is "pending" or "leased", "every job to end");
 
     /// <summary>Returns once no worker holds a job, whatever else is waiting for its turn (see <see cref="WaitForNoJobInFlightAsync"/>).</summary>
     public async Task WaitForNoJobHeldAsync() =>
-        await new JobWait().UntilAsync(
-            JobStatusesAsync,
-            async () => (await JobStatusesAsync()).Contains("leased") ? null : "idle",
-            "every job a worker holds to end");
+        await new JobWait().UntilNoneAsync(JobStatusesAsync, status => status is "leased", "every job a worker holds to end");
 
     /// <summary>The job's inspection row once it has left <c>pending</c> and <c>leased</c>, for as long as a worker has it (see <see cref="JobWait"/>).</summary>
     public async Task<JsonObject> WaitForJobFinishedAsync(int jobId) =>

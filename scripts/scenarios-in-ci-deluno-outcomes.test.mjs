@@ -30,6 +30,7 @@ function stack(wrong = {}) {
   let paused = false;
   let torrentAsks = 0;
   let logReads = 0;
+  let fileReads = 0;
   const handoff = {
     id: "h1",
     releaseName: RELEASE,
@@ -68,7 +69,7 @@ function stack(wrong = {}) {
         return { items: type ? activity.filter((item) => item.event_type === type) : activity };
       }
       if (path.startsWith("/processing/files?limit=1&")) return { status_counts: { processing_failed: 0, rejected: 0, ...wrong.counts }, files: [] };
-      if (path.startsWith("/processing/files")) return { files: wrong.noFile ? extraRows : [row, ...extraRows] };
+      if (path.startsWith("/processing/files")) return { files: fileReads++ < (wrong.filesLag ?? 0) ? [] : wrong.noFile ? extraRows : [row, ...extraRows] };
       throw new Error(`The stand-in has no route ${path}`);
     },
   };
@@ -87,7 +88,7 @@ function stack(wrong = {}) {
     must: async (method, path) => {
       calls.push(`deluno ${method} ${path}`);
       if (path.startsWith("/api/integrations/processors/handoffs")) return wrong.handoffs ?? [handoff];
-      if (path === "/api/blocked-releases") return wrong.noBlocklist ? [] : [{ id: "b1", releaseName: RELEASE }];
+      if (path === "/api/blocked-releases") return wrong.noBlocklist ? [] : (wrong.blocked ?? [{ id: "b1", releaseName: RELEASE }]);
       throw new Error(`The stand-in has no Deluno route ${path}`);
     },
   };
@@ -99,7 +100,7 @@ function stack(wrong = {}) {
     sendSeries: async (made) => void calls.push(`sendSeries ${made.release}`),
     handoffOf: async () => ({ ...handoff }),
     keepConversation: (made, recording) => void kept.push(`${recording.state} ${made.id}`),
-    qbittorrent: { torrent: async () => (wrong.torrentGone && ++torrentAsks > 1 ? undefined : { progress: 1, amount_left: 0, size: 56_000_000 }) },
+    qbittorrent: { torrent: async () => (wrong.torrentGone && ++torrentAsks > (wrong.torrentGone === true ? 1 : wrong.torrentGone) ? undefined : { progress: 1, amount_left: 0, size: 56_000_000 }) },
     exchanges,
     deluno: delunoApi,
   };
@@ -356,4 +357,74 @@ test("a workflow is saved with the settings the save takes and none of the bookk
   assert.equal(saved.failure_policy, "reject");
   assert.equal(saved.name, "v-name");
   assert.equal("id" in saved, false);
+});
+
+// --- the last branches: answers that come late or leave a word out ---------------------------------------------------------
+
+test("a hand-off Deluno closed with nothing owed, and one it is still retrying, are not compared with a file of Weir's", async () => {
+  const closed = { id: "h2", releaseName: "Closed.Film.2018", mediaType: "movies", status: "completed", outputPath: "", outcome: { outcome: "not-imported", delivery: "given-up", attempts: 0, processorSaid: "no file was handed back, so there was nothing to tell it" } };
+  const retrying = { id: "h3", releaseName: "Retry.Film.2017", mediaType: "movies", status: "completed", outputPath: "/weir/Ready/Movies/Retry.Film.2017", outcome: { outcome: "imported", delivery: "queued", attempts: 1 } };
+  const { result } = await good("deluno-outcomes", { handoffs: [stack().handoff, closed, retrying] });
+  assert.equal(result.status, "passed", result.detail);
+  assert.match(result.detail, /1 closed with nothing owed/);
+});
+
+test("a file of Weir's that carries no answer from Deluno is named as having none", async () => {
+  const other = { id: "h2", releaseName: "Other.Film.2019", mediaType: "movies", status: "completed", outputPath: "/weir/Ready/Movies/Other.Film.2019", outcome: { outcome: "imported", delivery: "delivered", attempts: 1 } };
+  const otherRow = { id: 5, library_id: 3, relative_path: "Other.Film.2019/Other.Film.2019.mkv", status: "processed", handback: { output_path: "/weir/Ready/Movies/Other.Film.2019/Other.Film.2019.mkv" } };
+  const { result } = await good("deluno-outcomes", { handoffs: [stack().handoff, other], extraRows: [otherRow] });
+  assert.equal(result.status, "failed");
+  assert.match(result.detail, /Deluno says imported and Weir says nothing/);
+});
+
+test("a release with an extra that Weir shows as skipped is left alone, and says so", async () => {
+  const { result } = await good("deluno-release-with-extra", { extraRows: [{ id: 9, library_id: 3, relative_path: `${RELEASE}/Extras/Featurette.mkv`, status: "skipped" }] });
+  assert.equal(result.status, "passed", result.detail);
+  assert.match(result.detail, /left it alone as skipped/);
+});
+
+test("a send again passes with a failure already in Activity, and fails saying there was no time when Deluno gave none", async () => {
+  const { result } = await good("deluno-resend", { activity: [{ result: "completed", title: "Cleaned" }, { result: "failed", title: "Earlier failure" }] });
+  assert.equal(result.status, "passed", result.detail);
+  const untimed = await good("deluno-resend", { sendAgain: { status: 200, json: { outcome: { outcome: "imported", delivery: "delivered", attempts: 1 } }, text: "" } });
+  assert.match(untimed.result.detail, /attempt 1 at no time/);
+});
+
+test("Stop waiting that Deluno refuses without a message is reported with what Deluno said instead", async () => {
+  const { result } = await good("deluno-stop-waiting", stopStack({ stopRefused: { status: 500, json: {}, text: "the server fell over" } }));
+  assert.match(result.detail, /Deluno stopped waiting \(answered 500: the server fell over\)/);
+});
+
+test("a download deleted while Weir holds it is found past a hand-off that carried no body", async () => {
+  const bodyless = { request: { method: "POST", path: "/api/v1/intake/webhook/deluno" }, reply: { status: 200 } };
+  const handedOver = { request: { method: "POST", body: { handoffId: "h1", releaseName: RELEASE } }, reply: { status: 200 } };
+  const { result } = await good("deluno-deleted-before-cleaning", goneStack({ toWeir: [bodyless, handedOver] }));
+  assert.equal(result.status, "passed", result.detail);
+});
+
+test("a release Weir cannot read is reported without a failure class or disposition, and says none was given", async () => {
+  const { result } = await good("deluno-failed-release", failedStack({ reports: [failedReport({ failureClass: undefined, disposition: undefined })] }));
+  assert.equal(result.status, "passed", result.detail);
+  assert.match(result.detail, /failure class none, disposition none/);
+});
+
+test("a workflow Weir will not save is named, with what was asked and what Weir answered", async () => {
+  const { result } = await good("deluno-rejected-release", rejectedStack({ saveRefused: true }));
+  assert.equal(result.status, "failed");
+  assert.match(result.detail, /Weir would not save 'Movies' with \{"failure_policy":"reject"\} \(answered 400: no\)/);
+});
+
+test("a rejection is waited for while Weir's rows, Activity, Deluno's blocklist and qBittorrent are still catching up", async () => {
+  const other = { event_type: "processing.file_rejected", title: "Some.Other.Film.2019.mkv was rejected", detail: "Deluno will remove the download; Weir left it in place." };
+  const named = { event_type: "processing.file_rejected", title: `${RELEASE}.mkv was rejected. Deluno will remove the download; Weir left it in place.` };
+  const { result } = await good("deluno-rejected-release", rejectedStack({ filesLag: 1, torrentGone: 3, blocked: [{ releaseName: RELEASE }], activity: [other, named] }));
+  assert.equal(result.status, "passed", result.detail);
+  assert.match(result.detail, new RegExp(`Weir's Activity says "${RELEASE}\\.mkv was rejected\\. Deluno will remove`));
+  assert.match(result.detail, /refused the release \(on its blocklist\)/);
+});
+
+test("a rejection that Activity names by the film's title alone is found", async () => {
+  const byTitle = { event_type: "processing.file_rejected", title: "A film was rejected", detail: "Scna1b2c3Film: Deluno will remove the download; Weir left it in place." };
+  const { result } = await good("deluno-rejected-release", rejectedStack({ activity: [byTitle] }));
+  assert.equal(result.status, "passed", result.detail);
 });
