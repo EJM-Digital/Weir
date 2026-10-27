@@ -97,14 +97,10 @@ export function normaliseExchange(exchange) {
 
 function firstDifference(a, b, where) {
   if (JSON.stringify(a) === JSON.stringify(b)) return null;
-  if (a && b && typeof a === "object" && typeof b === "object" && Array.isArray(a) === Array.isArray(b)) {
-    const keys = Array.isArray(a) ? [...Array(Math.max(a.length, b.length)).keys()] : [...new Set([...Object.keys(a), ...Object.keys(b)])].sort();
-    for (const key of keys) {
-      const inner = firstDifference(a[key], b[key], `${where}.${key}`);
-      if (inner) return inner;
-    }
-  }
-  return `${where}: ${JSON.stringify(a)?.slice(0, 120)} became ${JSON.stringify(b)?.slice(0, 120)}`;
+  const sameKind = a && b && typeof a === "object" && typeof b === "object" && Array.isArray(a) === Array.isArray(b);
+  const keys = !sameKind ? [] : Array.isArray(a) ? [...Array(Math.max(a.length, b.length)).keys()] : [...new Set([...Object.keys(a), ...Object.keys(b)])].sort();
+  const inner = keys.map((key) => firstDifference(a[key], b[key], `${where}.${key}`)).find(Boolean);
+  return inner ?? `${where}: ${JSON.stringify(a)?.slice(0, 120)} became ${JSON.stringify(b)?.slice(0, 120)}`;
 }
 
 function versionFolders(appFolder) {
@@ -119,12 +115,7 @@ function onlyVersionFolder(appFolder) {
 
 /** Orders version names part by part, so 5.10.0 comes after 5.2.4. */
 function byVersion(left, right) {
-  const [a, b] = [left, right].map((name) => name.split(".").map(Number));
-  for (let part = 0; part < Math.max(a.length, b.length); part++) {
-    const difference = (a[part] ?? 0) - (b[part] ?? 0);
-    if (difference !== 0) return difference;
-  }
-  return 0;
+  return left.localeCompare(right, "en", { numeric: true });
 }
 
 /**

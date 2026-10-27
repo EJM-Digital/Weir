@@ -17,7 +17,9 @@
 // Usage: node scripts/check-workflow-hygiene.mjs
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
+
+import { rootOf } from "./repository-root.mjs";
 
 // A step runs tests when its name or its command says so: `dotnet test`, `npm run test`, `node --test`, vitest, Playwright.
 const TEST_STEP = /\b(?:tests?|vitest|playwright|e2e)\b/i;
@@ -143,7 +145,7 @@ function findTolerantTestSteps(relative, lines) {
 }
 
 function main() {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const root = rootOf(import.meta.url);
   const workflowDir = path.join(root, ".github", "workflows");
   const failures = readdirSync(workflowDir)
     .filter((file) => /\.ya?ml$/i.test(file))

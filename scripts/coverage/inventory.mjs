@@ -348,7 +348,7 @@ function enclosingTag(text, at) {
     const c = text[i];
     if (c === "}") depth++;
     else if (c === "{") depth = Math.max(0, depth - 1);
-    else if (c === "<" && depth === 0 && /[A-Za-z]/.test(text[i + 1] ?? "")) return /^<([A-Za-z][\w.]*)/.exec(text.slice(i))?.[1] ?? null;
+    else if (c === "<" && depth === 0 && /[A-Za-z]/.test(text.charAt(i + 1))) return /^<([A-Za-z][\w.]*)/.exec(text.slice(i))[1];
   }
   return null;
 }
@@ -428,7 +428,7 @@ function main() {
   if (args.includes("--json")) {
     console.log(JSON.stringify(inventory, null, 1));
   } else if (args.includes("--list")) {
-    for (const item of inventory) console.log(`${item.kind.padEnd(9)} ${item.key}${item.file ? `   (${item.file}${item.line ? `:${item.line}` : ""})` : ""}`);
+    for (const item of inventory) console.log(`${item.kind.padEnd(9)} ${item.key}   (${item.file}${item.line ? `:${item.line}` : ""})`);
   } else {
     for (const [kind, n] of Object.entries(countsOf(inventory))) console.log(`${kind.padEnd(9)} ${n}`);
   }

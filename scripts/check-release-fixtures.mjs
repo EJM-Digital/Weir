@@ -11,11 +11,12 @@
 // Usage: node scripts/check-release-fixtures.mjs
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
+import { rootOf } from "./repository-root.mjs";
 import { compareSemver, parseSemver } from "./semver.mjs";
 
-const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
+const repositoryRoot = rootOf(import.meta.url);
 
 /** The versions of the CHANGELOG lines that link a release, newest first. A line for a release that was never published has no such link. */
 export function publishedVersions(changelog) {

@@ -13,7 +13,9 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
+
+import { rootOf } from "./repository-root.mjs";
 
 // Test projects are named *.Tests or live under a tests folder; the two stand-in projects are test-only too.
 const TEST_SOURCE_PATH = /^apps\/(?:.*\/)?(?:tests|[^/]+\.Tests|Weir\.TestChild|Weir\.Tray\.StandInServer)\/.+\.cs$/;
@@ -48,7 +50,7 @@ export function findConsoleStandIns(source) {
 }
 
 function main() {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const root = rootOf(import.meta.url);
   const files = execFileSync("git", ["ls-files", "apps"], { cwd: root, encoding: "utf8" })
     .split(/\r?\n/)
     .filter(isTestSource);

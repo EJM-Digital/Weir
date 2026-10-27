@@ -7,18 +7,18 @@ import { join, relative } from "node:path";
 
 const SKIP_DIRS = new Set(["bin", "obj", "node_modules", ".git", "TestResults", "dist", "playwright-report", "test-results"]);
 
-export function walk(dir, accept, out = []) {
+export function walk(dir, accept, out = [], stat = statSync) {
   if (!existsSync(dir)) return out;
   for (const entry of readdirSync(dir)) {
     if (SKIP_DIRS.has(entry)) continue;
     const full = join(dir, entry);
     let info;
     try {
-      info = statSync(full);
+      info = stat(full);
     } catch {
       continue;
     }
-    if (info.isDirectory()) walk(full, accept, out);
+    if (info.isDirectory()) walk(full, accept, out, stat);
     else if (accept(full)) out.push(full);
   }
   return out;
@@ -27,13 +27,10 @@ export function walk(dir, accept, out = []) {
 export const slash = (p) => p.split("\\").join("/");
 export const read = (file) => readFileSync(file, "utf8").replace(/^\uFEFF/, "");
 
-const E2E_TESTS = "apps/server/tests/Weir.E2E.Tests/";
-const CONTRACT_TESTS = "apps/server/tests/Weir.Contract.Tests/";
 /** A scenario proof: a golden-VM script, or a module of the scenarios that run in CI (scripts/scenarios-ci/), where each scenario is a quoted key of the module's registry. */
 export const SCENARIO_FILE = /^scripts\/scenarios\/.+\.ps1$|^scripts\/scenarios-ci\/[a-z]+(?:-[a-z]+)*\.mjs$/;
 /** The Windows package smokes: the package itself and the recovery command. */
 export const PACKAGE_SMOKE_FILE = /^scripts\/smoke-windows-[a-z]+\.ps1$/;
-const LIVE_AUDIT = "apps/server/tools/Weir.LiveAudit/";
 /** A packaging script that starts the shipped container (and, below, the workflows whose steps do). */
 const CONTAINER_SCRIPT = /(?:^|\/)scripts\/(?:[^/]*\/)*[^/]*(?:docker|compose|container)[^/]*\.(?:mjs|ps1|sh)$/;
 export const CONTAINER_SMOKE_FILE = /^(?:\.github\/workflows\/[^/]+\.ya?ml|scripts\/(?:[^/]*\/)*[^/]*(?:docker|compose|container)[^/]*\.(?:mjs|ps1|sh))$/;
@@ -156,12 +153,12 @@ export class TestIndex {
   realFs(file, name) {
     const f = this.files.get(file);
     if (!f || !REAL_FS_FILE.test(file)) return { real: false, why: "not a C# test of the server or the tray" };
-    const header = f.header ?? "";
+    const header = f.header;
     let scope;
-    const body = name && name !== "*" ? f.bodies?.get(name) : undefined;
+    const body = name && name !== "*" ? f.bodies.get(name) : undefined;
     if (body !== undefined) scope = [[name, body]];
     else {
-      const all = [...(f.bodies ?? [])];
+      const all = [...f.bodies];
       if (!name || name === "*" || f.names.has(name)) scope = all;
       else {
         const q = squash(name);
@@ -187,11 +184,11 @@ export class TestIndex {
     const f = this.files.get(file);
     if (!f || !file.endsWith(".cs")) return { stubbed: true, decided: false };
     // A whole file or a class is stubbed when any of its text intercepts requests, and decided either way.
-    if (!name || name === "*" || (f.names.has(name) && !f.bodies?.has(name))) return { stubbed: STUB_MARKER.test(f.text), decided: true };
-    let body = f.bodies?.get(name);
+    if (!name || name === "*" || (f.names.has(name) && !f.bodies.has(name))) return { stubbed: STUB_MARKER.test(f.text), decided: true };
+    let body = f.bodies.get(name);
     if (body === undefined) {
       const q = squash(name);
-      for (const [title, text] of f.bodies ?? []) {
+      for (const [title, text] of f.bodies) {
         if (squash(title).startsWith(q)) {
           body = text;
           break;
@@ -199,7 +196,7 @@ export class TestIndex {
       }
     }
     if (body === undefined) return { stubbed: true, decided: false };
-    return { stubbed: STUB_MARKER.test(body) || STUB_MARKER.test(f.header ?? ""), decided: true };
+    return { stubbed: STUB_MARKER.test(body) || STUB_MARKER.test(f.header), decided: true };
   }
 
   /**
@@ -210,12 +207,12 @@ export class TestIndex {
   replaysRecording(file, name) {
     const f = this.files.get(file);
     if (!f || !file.endsWith(".cs")) return false;
-    if (RECORDING.test(f.header ?? "")) return true;
+    if (RECORDING.test(f.header)) return true;
     if (!name || name === "*") return RECORDING.test(f.text);
-    const body = f.bodies?.get(name);
+    const body = f.bodies.get(name);
     if (body !== undefined) return RECORDING.test(body);
     const q = squash(name);
-    for (const [n, text] of f.bodies ?? []) if (squash(n).startsWith(q) && RECORDING.test(text)) return true;
+    for (const [n, text] of f.bodies) if (squash(n).startsWith(q) && RECORDING.test(text)) return true;
     return false;
   }
 }
@@ -231,21 +228,4 @@ function csBodies(file, text) {
   const bodies = new Map();
   for (let i = 0; i < starts.length; i++) bodies.set(starts[i].name, text.slice(starts[i].at, i + 1 < starts.length ? starts[i + 1].at : text.length));
   return { header: text.slice(0, starts[0].at), bodies };
-}
-
-/**
- * The kind of proof a file is: xunit (the server's and the tray's unit, integration and API tests), contract (the contract suite),
- * e2e (Playwright for .NET against the real host), vitest, node (the repository scripts' tests), scenario (a golden-VM scenario),
- * recording-replay (a test that replays Deluno's recorded real reply), real-fs (a test the check verifies runs on a real temp folder or
- * SQLite file with no fake), package-smoke (the Windows package smokes and the live audit).
- */
-export function proofTypeOf(file, index, name) {
-  if (PACKAGE_SMOKE_FILE.test(file) || file.startsWith(LIVE_AUDIT)) return "package-smoke";
-  if (SCENARIO_FILE.test(file)) return "scenario";
-  if (file.startsWith(E2E_TESTS)) return "e2e";
-  if (/\.test\.tsx?$/.test(file)) return "vitest";
-  if (/\.test\.mjs$/.test(file)) return "node";
-  if (file.startsWith(CONTRACT_TESTS) && index && index.replaysRecording(file, name)) return "recording-replay";
-  if (index && index.realFs(file, name).real) return "real-fs";
-  return file.startsWith(CONTRACT_TESTS) ? "contract" : "xunit";
 }
