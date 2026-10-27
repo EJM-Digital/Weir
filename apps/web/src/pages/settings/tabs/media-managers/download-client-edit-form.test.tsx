@@ -211,6 +211,29 @@ describe("the sign-in details of a download client that uses a name and password
     ]);
   });
 
+  it("asks a client that signs in with a password alone for just that, and sends it trimmed", async () => {
+    const delugePath = `/api/v1/download-clients/connections/${deluge.id}`;
+    const weir = serve(sabnzbdKeyReplaced, delugePath);
+    const onClose = openForm(deluge);
+
+    expect(
+      screen.queryByTestId("download-client-edit-username"),
+    ).not.toBeInTheDocument();
+    fireEvent.change(screen.getByTestId("download-client-edit-password"), {
+      target: { value: " deluge-secret " },
+    });
+    fireEvent.click(screen.getByTestId("download-client-edit-save"));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(weir.sent("PUT", delugePath).map((r) => r.body)).toEqual([
+      {
+        base_url: deluge.base_url,
+        password: "deluge-secret",
+        csrf_token: CSRF,
+      },
+    ]);
+  });
+
   it("sends only the address when just the address changed", async () => {
     const weir = serve(sabnzbdKeyReplaced, QBITTORRENT_PATH);
     const onClose = openForm(qbittorrent);

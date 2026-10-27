@@ -124,6 +124,50 @@ describe("choosing the tracks and going back to the rules", () => {
     ).toBeVisible();
   });
 
+  it("counts a subtitle track in and out of the choice as its box is ticked", async () => {
+    const preview = previewOfTwoAudioTracks();
+    api = stubLibraryServer([ARRIVAL], {
+      [LIBRARY_ROUTES.preview]: {
+        ...preview,
+        tracks: [
+          ...preview.tracks,
+          {
+            index: 3,
+            type: "subtitle",
+            codec: "subrip",
+            language: "English",
+            channels: null,
+            action: "keep",
+            reasons: ["Your first choice language"],
+            default: false,
+            forced: false,
+            title: "",
+          },
+        ],
+      },
+    });
+    renderLibraryPage();
+    const drawer = await openFile();
+    fireEvent.click(
+      await within(drawer).findByRole("button", { name: "Choose tracks" }),
+    );
+    expect(
+      within(drawer).getByText(/Keeping 2 of 3 tracks; 1 would come out/),
+    ).toBeVisible();
+
+    fireEvent.click(trackBoxes(drawer)[2]);
+
+    expect(
+      within(drawer).getByText(/Keeping 1 of 3 tracks; 2 would come out/),
+    ).toBeVisible();
+
+    fireEvent.click(trackBoxes(drawer)[2]);
+
+    expect(
+      within(drawer).getByText(/Keeping 2 of 3 tracks; 1 would come out/),
+    ).toBeVisible();
+  });
+
   it("starts the track choice again when another file is opened", async () => {
     api = stubLibraryServer([ARRIVAL, HEAT]);
     renderLibraryPage();

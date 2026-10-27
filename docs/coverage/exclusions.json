@@ -380,6 +380,13 @@
       "reason": "The loop reaches a day only as the first day with a run time on it or the day after the last backup, and the interval is at least a day, so the time chosen on it never falls on another calendar day; only a clock time that a time-zone change moves to the neighbouring day could, and the check stays so the answer is never a time on the wrong day."
     },
     {
+      "id": "web-backup-schedule-fallback",
+      "file": "apps/web/src/pages/processing/dashboard/system/backup-schedule.ts",
+      "marker": "v8 ignore",
+      "kind": "unreachable",
+      "reason": "The loop returns on the first day it looks at, or on the second when the first is the day of the last backup, so the three days it is allowed are never used up; the earliest time is returned after the loop only so the function always answers."
+    },
+    {
       "id": "web-setup-tab-found",
       "file": "apps/web/src/pages/settings/setup-area-layout.tsx",
       "marker": "v8 ignore",

@@ -1,8 +1,11 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { readLastLibrary, saveLastLibrary } from "./last-library";
 
-afterEach(() => localStorage.clear());
+afterEach(() => {
+  vi.restoreAllMocks();
+  localStorage.clear();
+});
 
 describe("the last library picked", () => {
   it("is nothing until a library has been picked", () => {
@@ -12,6 +15,13 @@ describe("the last library picked", () => {
   it("comes back as the id that was saved", () => {
     saveLastLibrary(4);
     expect(readLastLibrary()).toBe(4);
+  });
+
+  it("is nothing when the browser will not say", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new DOMException("blocked", "SecurityError");
+    });
+    expect(readLastLibrary()).toBeNull();
   });
 
   it("ignores a stored value that is not a library id", () => {
