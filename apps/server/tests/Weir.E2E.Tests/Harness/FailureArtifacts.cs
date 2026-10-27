@@ -30,6 +30,7 @@ public static class FailureArtifacts
         var folder = FolderOf(testKey);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "error.txt"), error);
+        File.WriteAllText(Path.Combine(folder, "sockets.txt"), SocketEvidence.Describe());
     }
 
     /// <summary>Deletes the test's folder, which has nothing to show.</summary>
