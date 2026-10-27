@@ -73,9 +73,10 @@ describe("useAppDateFormatter", () => {
   };
 
   it("writes the date and time in the timezone chosen in Settings", () => {
-    expect(formatIn("UTC", "2026-08-22T10:00:00")).toMatch(/10:00\sam$/);
+    // Unlike the clock formatters, this one keeps the browser's own wording (AM or am, 12 or 24 hour), so only the hour is asserted.
+    expect(formatIn("UTC", "2026-08-22T10:00:00")).toMatch(/\b10:00/);
     expect(formatIn("Australia/Brisbane", "2026-08-22T10:00:00")).toMatch(
-      /8:00\spm$/,
+      /\b(8:00|20:00)/,
     );
   });
 
