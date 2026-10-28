@@ -7,18 +7,18 @@
 // <folder> holds one subfolder per CI run (scripts/fetch-coverage-runs.mjs writes it), each with the run's two server
 // coverage artifacts, `coverage-server-linux` and `coverage-server-windows`, as the `coverage` job in ci.yml downloads them.
 // Each run is merged the way that job merges it: the reports are aligned (scripts/align-coverage-reports.mjs) and a line or branch
-// counts as reached when any report of either system reached it, which is what ReportGenerator's union does. Then the runs are
-// laid side by side, and every line and branch that is reached in some runs and not in others is listed.
+// counts as reached when any report of either system reached it, which is what ReportGenerator's union does.
 //
-// A run that lacks either system's reports is left out and named: with one system missing, a branch only the other system
-// reaches (`if (OperatingSystem.IsWindows())`) would look like a flip. A point is compared only across the runs that list it, so a
-// change to the code between two runs does not count.
+// Runs are compared only with runs that tested identical server code. Each run folder carries a run.json with the tree id of
+// apps/server at the commit the run tested (the fetch writes it), and the runs with the same id form a group. Within a group, every
+// line and branch reached in some runs and not in others is listed. A run that is the only one of its code is left alone and named,
+// because a difference between different code is a change, not a flip.
 //
-// This reads CI runs of different branches side by side, so while a floor is still being raised, a run of a branch that adds tests
-// differs from one that does not; with the server floors at 100% (docs/coverage/floors.json) every difference is a run that missed
-// something, which is what this is for.
+// A run that lacks either system's reports, or its run.json, is left out and named: with one system missing, a branch only the
+// other system reaches (`if (OperatingSystem.IsWindows())`) would look like a flip. A point is compared only across the runs of its
+// group that list it.
 //
-// Exit 0: nothing flips, or fewer than two runs could be compared. Exit 1: something flips. Exit 2: the folder is missing or cannot be read.
+// Exit 0: nothing flips, or no two runs tested the same code. Exit 1: something flips. Exit 2: the folder is missing or cannot be read.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -92,42 +92,81 @@ export function readRun(runFolder) {
   return { points, missing };
 }
 
+/** The file a fetched run carries, naming the commit it tested and the tree id of apps/server at that commit. */
+export const RUN_RECORD = "run.json";
+
+/** The code id a run's record holds, or undefined when there is no usable record. */
+export function treeOfRun(runFolder) {
+  const file = path.join(runFolder, RUN_RECORD);
+  if (!existsSync(file)) return undefined;
+  try {
+    return JSON.parse(readFileSync(file, "utf8")).tree || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 // Every key it orders is different, so there is no tie to settle.
 const byOrder = (a, b) => (a < b ? -1 : 1);
 
 /** Orders points by file, method, then line, lines before branches, offset and path (numbers padded so they sort as numbers). */
 const orderKey = (point) => [point.file, point.method, ...[point.line, point.branch ? 1 : 0, point.offset, point.path].map((value) => String(value ?? 0).padStart(9, "0"))].join("\t");
 
-/** Compares every run under `folder`: which were compared, which were left out and why, and the points reached in some of them and not others. */
+/**
+ * Compares the runs under `folder`, only against runs that tested the same server code (the same tree id in their record).
+ * Returns the groups compared (tree, runs, flips: the points reached in some of the group's runs and not others), the runs left
+ * alone because no other run tested their code, and the runs left out and why.
+ */
 export function compareRuns(folder) {
   const names = readdirSync(folder, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
   // Run ids are the same length, so sorting them as text puts the oldest first.
   names.sort(byOrder);
-  const compared = [];
   const left = [];
-  const tally = new Map();
+  const alone = [];
+  const byTree = new Map();
+  const trees = new Map(names.map((run) => [run, treeOfRun(path.join(folder, run))]));
+  const sharing = (tree) => [...trees.values()].filter((other) => other === tree).length;
   for (const run of names) {
-    const { points, missing } = readRun(path.join(folder, run));
-    if (missing.length > 0) {
-      left.push({ run, missing });
+    const tree = trees.get(run);
+    if (tree === undefined) {
+      left.push({ run, reason: `no record of its code (${RUN_RECORD})` });
       continue;
     }
-    compared.push(run);
+    // The only run of its code needs no reading.
+    if (sharing(tree) === 1) {
+      alone.push({ run, tree });
+      continue;
+    }
+    const { points, missing } = readRun(path.join(folder, run));
+    if (missing.length > 0) {
+      left.push({ run, reason: `no ${missing.join(" or ")} report` });
+      continue;
+    }
+    const group = byTree.get(tree) ?? { tree, runs: [], tally: new Map() };
+    byTree.set(tree, group);
+    group.runs.push(run);
     for (const [key, point] of points) {
-      const entry = tally.get(key) ?? { ...point, present: 0, hit: 0, missed: [] };
+      const entry = group.tally.get(key) ?? { ...point, present: 0, hit: 0, missed: [] };
       entry.present += 1;
       if (point.visited) entry.hit += 1;
       else entry.missed.push(run);
-      tally.set(key, entry);
+      group.tally.set(key, entry);
     }
   }
-  const flips = [...tally.values()]
-    .filter((entry) => entry.hit > 0 && entry.missed.length > 0)
-    .sort((a, b) => byOrder(orderKey(a), orderKey(b)));
-  return { compared, left, flips };
+  const groups = [];
+  for (const { tree, runs, tally } of byTree.values()) {
+    if (runs.length < 2) {
+      alone.push({ run: runs[0], tree });
+      continue;
+    }
+    const flips = [...tally.values()].filter((entry) => entry.hit > 0 && entry.missed.length > 0).sort((a, b) => byOrder(orderKey(a), orderKey(b)));
+    groups.push({ tree, runs, flips });
+  }
+  return { groups, alone, left };
 }
 
 const SHOWN_RUNS = 5;
+const shortTree = (tree) => tree.slice(0, 12);
 
 function describe(point) {
   const where = point.branch ? `branch at line ${point.line} (offset ${point.offset}, path ${point.path})` : `line ${point.line}`;
@@ -136,25 +175,40 @@ function describe(point) {
   return `${where}: reached in ${point.hit} of ${point.present} runs, not in ${shown}${more}`;
 }
 
+/** What was left alone and left out, for the end of every message. */
+function notes({ alone, left }) {
+  const out = [];
+  if (alone.length > 0) out.push(`Left alone, because no other run tested the same server code: ${alone.map(({ run, tree }) => `${run} (code ${shortTree(tree)})`).join(", ")}.`);
+  if (left.length > 0) out.push(`Left out: ${left.map(({ run, reason }) => `${run} (${reason})`).join(", ")}.`);
+  return out;
+}
+
+const groupsOf = (groups) => groups.map(({ tree, runs }) => `${shortTree(tree)} (${runs.length} runs)`).join(", ");
+
 /** The message for a result of `compareRuns` that has flips. */
-export function formatFlips({ compared, left, flips }) {
-  const spots = new Set(flips.map((point) => `${point.file}\t${point.method}`)).size;
+export function formatFlips(result) {
+  const flipping = result.groups.filter((group) => group.flips.length > 0);
+  const total = flipping.reduce((sum, group) => sum + group.flips.length, 0);
+  const spots = flipping.reduce((sum, group) => sum + new Set(group.flips.map((point) => `${point.file}\t${point.method}`)).size, 0);
   const out = [
-    `Coverage is not steady: ${flips.length} line(s) and branch(es) in ${spots} place(s) in the server were reached in some CI runs and not in others (${compared.length} runs compared).`,
+    `Coverage is not steady: ${total} line(s) and branch(es) in ${spots} place(s) in the server were reached in some CI runs and not in others that tested the same server code (compared within ${result.groups.length} group(s) of runs: ${groupsOf(result.groups)}).`,
   ];
-  let file;
-  let method;
-  for (const point of flips) {
-    if (point.file !== file) {
-      file = point.file;
-      method = undefined;
-      out.push("", file);
+  for (const group of flipping) {
+    out.push("", `Server code ${shortTree(group.tree)}, ${group.runs.length} runs (${group.runs.join(", ")})`);
+    let file;
+    let method;
+    for (const point of group.flips) {
+      if (point.file !== file) {
+        file = point.file;
+        method = undefined;
+        out.push("", file);
+      }
+      if (point.method !== method) {
+        method = point.method;
+        out.push(`  ${method}`);
+      }
+      out.push(`    ${describe(point)}`);
     }
-    if (point.method !== method) {
-      method = point.method;
-      out.push(`  ${method}`);
-    }
-    out.push(`    ${describe(point)}`);
   }
   out.push(
     "",
@@ -162,12 +216,9 @@ export function formatFlips({ compared, left, flips }) {
     "Write a test that reaches each one every time: make the test produce both outcomes on purpose (hand the code its input in the pieces you choose, hold a race open with a signal) rather than waiting, and add no delay.",
     "The runs named above are the ones that missed it; their test logs show which tests ran.",
   );
-  if (left.length > 0) out.push("", leftOut(left));
+  const rest = notes(result);
+  if (rest.length > 0) out.push("", ...rest);
   return out.join("\n");
-}
-
-function leftOut(left) {
-  return `Left out, because a system's coverage is missing from the run: ${left.map(({ run, missing }) => `${run} (no ${missing.join(" or ")} report)`).join(", ")}.`;
 }
 
 /** Prints the verdict for `argv` (the folder of runs); returns the exit code. */
@@ -182,16 +233,13 @@ export function main(argv, { log = console.log, error = console.error } = {}) {
     return 2;
   }
   const result = compareRuns(folder);
-  if (result.flips.length > 0) {
+  if (result.groups.some((group) => group.flips.length > 0)) {
     log(formatFlips(result));
     return 1;
   }
-  const left = result.left.length > 0 ? ` ${leftOut(result.left)}` : "";
-  if (result.compared.length < 2) {
-    log(`Nothing to compare: ${result.compared.length} run(s) have both the Linux and the Windows server coverage, and two are needed.${left}`);
-    return 0;
-  }
-  log(`Coverage is steady: no line or branch in the server was reached in only some of ${result.compared.length} runs.${left}`);
+  const rest = notes(result).map((line) => ` ${line}`).join("");
+  if (result.groups.length === 0) log(`Nothing to compare: no two runs tested the same server code.${rest}`);
+  else log(`Coverage is steady: no line or branch in the server was reached in only some of the runs that tested the same server code (${groupsOf(result.groups)}).${rest}`);
   return 0;
 }
 

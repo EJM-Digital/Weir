@@ -140,17 +140,21 @@ red with no change to the code. One run cannot show this, so a daily workflow (`
 the last runs side by side:
 
 - `scripts/fetch-coverage-runs.mjs` downloads the `coverage-server-linux` and `coverage-server-windows` artifacts of the newest
-  completed `ci.yml` runs, a folder per run. A run that failed is used only when its `server-linux` and `server-windows` jobs
+  completed `ci.yml` runs, a folder per run, with a `run.json` that names the commit the run tested and the tree id of `apps/server`
+  at it (`git rev-parse <sha>:apps/server`, fetching the commit when needed). A run that failed is used only when its `server-linux` and `server-windows` jobs
   passed, because a test that failed leaves code unreached for a reason that is not a flip.
 - `scripts/check-coverage-flips.mjs` merges each run the way the `coverage` job does (the same alignment, a point reached when either
-  system reached it), then lists every line and branch of the server that is reached in some runs and not in others, with the runs
-  that missed it. A run without both systems is left out and named. It exits 1 when anything is listed.
+  system reached it), then groups the runs by that tree id, so only runs that tested identical server code are compared with each other. In
+  each group of two or more it lists every line and branch of the server that is reached in some runs and not in others, with the
+  runs that missed it. A run that is the only one of its code is left alone, and a run without both systems or without its
+  `run.json` is left out; both are named. It exits 1 when anything is listed.
 - On exit 1 the workflow opens the issue "Coverage: branches reached only on some runs", or replaces the body of the open one, and
   the run fails. The fix is a test that reaches each place every time (give the code its input in the pieces you choose, hold a race
   open with a signal), never a delay.
 
 How many runs: CI keeps the artifacts for one day, so there are at most the runs of that day to read (31 on 28 October 2026, the
-busiest day measured), and the default is 30. The two places that flipped in those runs were missed by 1 or 2 of the 19 to 24 runs
+busiest day measured), and the default is 30. Only runs of identical server code are compared, so a day with several pull requests
+in flight leaves some runs alone; the more often the same code is tested (a rerun, a branch and its merge), the more the check sees. The two places that flipped in those runs were missed by 1 or 2 of the 19 to 24 runs
 that listed them, about 5 in 100; a point missed that often is caught by the newest 10 runs 4 times in 10 and by the newest 30
 about 8 times in 10, and the schedule looks again each day. Locally:
 
@@ -158,9 +162,6 @@ about 8 times in 10, and the schedule looks again each day. Locally:
 node scripts/fetch-coverage-runs.mjs coverage-runs --runs 30   # use an empty folder: whatever is in it is compared
 node scripts/check-coverage-flips.mjs coverage-runs
 ```
-
-The check compares runs of different branches. A run of a branch that was still adding tests differs from one that was not, and
-that shows as a flip, so the list is meant for the time the server floors are at 100%; before that, read it by run.
 
 ## Running it locally
 

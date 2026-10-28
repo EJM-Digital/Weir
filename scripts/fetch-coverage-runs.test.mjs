@@ -2,13 +2,13 @@
 // Which CI runs the flip check downloads, with GitHub and the download replaced by stand-ins.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { pause, pickRuns, runsWithArtifact, main, serverJobsPassed } from "./fetch-coverage-runs.mjs";
+import { pause, pickRuns, runsWithArtifact, main, serverJobsPassed, treeOf } from "./fetch-coverage-runs.mjs";
 
 const REPO = "owner/name";
 const temporary = mkdtempSync(path.join(tmpdir(), "weir-fetch-"));
@@ -37,7 +37,7 @@ function github({ held, runs, jobs = {} }) {
 }
 
 const both = (...runs) => ({ "coverage-server-linux": runs.map((run) => artifact(run)), "coverage-server-windows": runs.map((run) => artifact(run)) });
-const finished = (id, conclusion = "success") => ({ id, conclusion });
+const finished = (id, conclusion = "success") => ({ id, conclusion, head_sha: `sha${id}` });
 const passed = (...names) => names.map((name) => ({ name, conclusion: "success" }));
 
 test("a run is held when its artifact has not expired", () => {
@@ -64,11 +64,11 @@ test("the newest runs with both artifacts are picked, failed ones only when the 
     jobs: { 8: passed("server-linux", "server-windows"), 7: passed("server-linux") },
   });
   // 10 holds no artifact, 7's Windows server job did not pass, 6 has no Windows artifact.
-  assert.deepEqual(pickRuns(REPO, 3, api), [9, 8, 5]);
+  assert.deepEqual(pickRuns(REPO, 3, api), [{ id: 9, sha: "sha9" }, { id: 8, sha: "sha8" }, { id: 5, sha: "sha5" }]);
   assert.equal(asked.filter((route) => /\/jobs/.test(route)).length, 2);
   // Asked for fewer, it stops reading runs at the count.
   const again = github({ held: both(9, 8), runs: [finished(9), finished(8)] });
-  assert.deepEqual(pickRuns(REPO, 1, again.api), [9]);
+  assert.deepEqual(pickRuns(REPO, 1, again.api), [{ id: 9, sha: "sha9" }]);
 });
 
 test("a listing of more than a page is read page by page, up to five pages", () => {
@@ -86,6 +86,8 @@ test("a listing of more than a page is read page by page, up to five pages", () 
 test("the runs are downloaded one artifact at a time into the folder, pausing between runs, and what is there is not downloaded again", async () => {
   const folder = path.join(temporary, "runs");
   mkdirSync(path.join(folder, "9", "coverage-server-linux"), { recursive: true });
+  // Run 9 was fetched before and has its record already; run 8 gets one.
+  writeFileSync(path.join(folder, "9", "run.json"), "kept");
   const { api } = github({ held: both(9, 8), runs: [finished(9), finished(8)] });
   const downloads = [];
   const waits = [];
@@ -96,6 +98,7 @@ test("the runs are downloaded one artifact at a time into the folder, pausing be
       downloads.push([repository, run, name, path.relative(folder, target).replace(/\\/g, "/")]);
     },
     wait: (milliseconds) => waits.push(milliseconds),
+    tree: (sha) => `tree-of-${sha}`,
     log: (line) => lines.push(line),
   });
   assert.equal(code, 0);
@@ -105,7 +108,29 @@ test("the runs are downloaded one artifact at a time into the folder, pausing be
     [REPO, 8, "coverage-server-windows", "8/coverage-server-windows"],
   ]);
   assert.equal(waits.length, 2);
+  assert.equal(readFileSync(path.join(folder, "9", "run.json"), "utf8"), "kept");
+  assert.deepEqual(JSON.parse(readFileSync(path.join(folder, "8", "run.json"), "utf8")), { sha: "sha8", tree: "tree-of-sha8" });
   assert.deepEqual(lines, [`2 run(s) of ci.yml have both server coverage artifacts and are in ${folder} (3 artifact(s) downloaded).`]);
+});
+
+test("the tree id of apps/server is read from the commit, fetching the commit when this checkout lacks it", () => {
+  const asked = [];
+  const has = (args) => {
+    asked.push(args[0]);
+    return "tree1";
+  };
+  assert.equal(treeOf("abc", has), "tree1");
+  assert.deepEqual(asked, ["rev-parse"]);
+
+  const calls = [];
+  const lacks = (args) => {
+    calls.push(args.join(" "));
+    if (args[0] === "rev-parse" && calls.length === 1) throw new Error("unknown revision");
+    return "tree2";
+  };
+  assert.equal(treeOf("abc", lacks), "tree2");
+  assert.deepEqual(calls, ["rev-parse abc:apps/server", "fetch --no-tags --depth=1 origin abc", "rev-parse abc:apps/server"]);
+  assert.throws(() => treeOf("abc", () => { throw new Error("no such commit"); }), /no such commit/);
 });
 
 test("with no run to download the folder is still made, so the check can say there is nothing to compare", async () => {

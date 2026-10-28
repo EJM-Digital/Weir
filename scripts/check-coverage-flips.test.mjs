@@ -9,7 +9,7 @@ import path from "node:path";
 import { after, test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { addPoints, compareRuns, formatFlips, main, readRun, sourceOf } from "./check-coverage-flips.mjs";
+import { addPoints, compareRuns, formatFlips, main, readRun, sourceOf, treeOfRun } from "./check-coverage-flips.mjs";
 
 const script = fileURLToPath(new URL("./check-coverage-flips.mjs", import.meta.url));
 const temporary = mkdtempSync(path.join(tmpdir(), "weir-flips-"));
@@ -47,10 +47,17 @@ function leave(run, artifact, text, project = "Weir.Core.Tests") {
   writeFileSync(path.join(folder, "coverage.opencover.xml"), text);
 }
 
+/** The record the fetch leaves in a run's folder: the commit it tested and the tree id of apps/server there. */
+const record = (dir, tree) => writeFileSync(path.join(dir, "run.json"), JSON.stringify({ sha: "c0ffee", tree }));
+
+const TREE = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const OTHER_TREE = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+
 /** One run with both systems' reports, each made from the same `methods` with the Windows one's paths written as Windows writes them. */
-function run(folder, id, methods, { linux = methods, windows = methods } = {}) {
+function run(folder, id, methods, { linux = methods, windows = methods, tree = TREE } = {}) {
   const dir = path.join(folder, String(id));
   mkdirSync(dir, { recursive: true });
+  record(dir, tree);
   leave(dir, "coverage-server-linux", report({ 1: `${LINUX}/${SOURCE}` }, linux));
   leave(dir, "coverage-server-windows", report({ 1: `${WINDOWS}\\${SOURCE.replace(/\//g, "\\")}` }, windows));
   return dir;
@@ -98,11 +105,10 @@ test("runs that reach the same places are steady, whether the branches are reach
   const other = [method("System.Void Thing::Split()", { branches: [0, 1] })];
   for (const id of ["40000000001", "40000000002", "40000000003"]) run(folder, id, steady.concat(split), { linux: steady.concat(split), windows: steady.concat(other) });
   const result = compareRuns(folder);
-  assert.deepEqual(result.compared, ["40000000001", "40000000002", "40000000003"]);
-  assert.deepEqual(result.flips, []);
+  assert.deepEqual(result.groups.map(({ tree, runs, flips }) => [tree, runs, flips]), [[TREE, ["40000000001", "40000000002", "40000000003"], []]]);
   const lines = [];
   assert.equal(main([folder], { log: (line) => lines.push(line), error: assert.fail }), 0);
-  assert.deepEqual(lines, ["Coverage is steady: no line or branch in the server was reached in only some of 3 runs."]);
+  assert.deepEqual(lines, ["Coverage is steady: no line or branch in the server was reached in only some of the runs that tested the same server code (aaaaaaaaaaaa (3 runs))."]);
 });
 
 test("a branch and a line reached in some runs and not others are listed with how many runs reached them and which did not", () => {
@@ -114,7 +120,8 @@ test("a branch and a line reached in some runs and not others are listed with ho
   const lines = [];
   assert.equal(main([folder], { log: (line) => lines.push(line), error: assert.fail }), 1);
   const text = lines.join("\n");
-  assert.match(text, /^Coverage is not steady: 2 line\(s\) and branch\(es\) in 1 place\(s\) in the server were reached in some CI runs and not in others \(3 runs compared\)\.$/m);
+  assert.match(text, /^Coverage is not steady: 2 line\(s\) and branch\(es\) in 1 place\(s\) in the server were reached in some CI runs and not in others that tested the same server code \(compared within 1 group\(s\) of runs: aaaaaaaaaaaa \(3 runs\)\)\.$/m);
+  assert.match(text, /^Server code aaaaaaaaaaaa, 3 runs \(40000000001, 40000000002, 40000000003\)$/m);
   assert.match(text, new RegExp(`^${SOURCE.replace(/\./g, "\\.")}$`, "m"));
   assert.match(text, /^ {2}System\.Void Thing::Flaky\(\)$/m);
   assert.match(text, /^ {4}line 41: reached in 2 of 3 runs, not in 40000000002$/m);
@@ -122,7 +129,7 @@ test("a branch and a line reached in some runs and not others are listed with ho
   assert.doesNotMatch(text, /Steady/);
   assert.match(text, /^What to do: .*test reaches only when timing/m);
   assert.match(text, /Write a test that reaches each one every time/);
-  assert.doesNotMatch(text, /Left out/);
+  assert.doesNotMatch(text, /Left out|Left alone/);
 });
 
 test("only the first runs that missed a point are named, flips are grouped by file and method, and a point is compared only across the runs that list it", () => {
@@ -132,6 +139,7 @@ test("only the first runs that missed a point are named, flips are grouped by fi
   for (let index = 1; index <= 8; index += 1) {
     const dir = path.join(folder, String(40000000000 + index));
     mkdirSync(dir);
+    record(dir, TREE);
     const missedOften = method("System.Void Thing::Often()", { branches: [index === 8 ? 1 : 0, 1] });
     const hereOnly = index === 1 ? [method("System.Void Thing::OnlyHere()", { lineVisits: 1 })] : [];
     const neverReached = method("System.Void Thing::Never()", { line: 3, lineVisits: 0 });
@@ -165,40 +173,73 @@ test("a run without one system's reports is left out and named, and the others a
   // This one's Windows leg did not run: the Windows-only line would look like a flip if it were compared.
   const dir = path.join(folder, "40000000003");
   mkdirSync(dir);
+  record(dir, TREE);
   leave(dir, "coverage-server-linux", report({ 1: `${LINUX}/${SOURCE}` }, flaky(false)));
   // This one's Linux folder is there and holds nothing.
   const empty = path.join(folder, "40000000004");
   mkdirSync(path.join(empty, "coverage-server-linux"), { recursive: true });
+  record(empty, TREE);
   leave(empty, "coverage-server-windows", report({ 1: `${WINDOWS}\\${SOURCE.replace(/\//g, "\\")}` }, flaky(true)));
   // And a file that is not a run.
   writeFileSync(path.join(folder, "notes.txt"), "not a run");
 
   const result = compareRuns(folder);
-  assert.deepEqual(result.compared, ["40000000001", "40000000002"]);
+  assert.deepEqual(result.groups.map((group) => group.runs), [["40000000001", "40000000002"]]);
   assert.deepEqual(result.left, [
-    { run: "40000000003", missing: ["Windows"] },
-    { run: "40000000004", missing: ["Linux"] },
+    { run: "40000000003", reason: "no Windows report" },
+    { run: "40000000004", reason: "no Linux report" },
   ]);
   const text = formatFlips(result);
-  assert.match(text, /\(2 runs compared\)/);
-  assert.match(text, /^Left out, because a system's coverage is missing from the run: 40000000003 \(no Windows report\), 40000000004 \(no Linux report\)\.$/m);
+  assert.match(text, /\(compared within 1 group\(s\) of runs: aaaaaaaaaaaa \(2 runs\)\)/);
+  assert.match(text, /^Left out: 40000000003 \(no Windows report\), 40000000004 \(no Linux report\)\.$/m);
 });
 
-test("a run with no reports at all is left out, and when fewer than two runs remain there is nothing to compare", () => {
+test("a run with no reports at all is left out, and when fewer than two runs of the same code remain there is nothing to compare", () => {
   const folder = newFolder();
   run(folder, "40000000001", steady);
   mkdirSync(path.join(folder, "40000000002"));
+  record(path.join(folder, "40000000002"), TREE);
   const lines = [];
   assert.equal(main([folder], { log: (line) => lines.push(line), error: assert.fail }), 0);
   assert.deepEqual(lines, [
-    "Nothing to compare: 1 run(s) have both the Linux and the Windows server coverage, and two are needed. Left out, because a system's coverage is missing from the run: 40000000002 (no Linux or Windows report).",
+    "Nothing to compare: no two runs tested the same server code. Left alone, because no other run tested the same server code: 40000000001 (code aaaaaaaaaaaa). Left out: 40000000002 (no Linux or Windows report).",
   ]);
   assert.deepEqual(readRun(path.join(folder, "40000000002")).missing, ["Linux", "Windows"]);
 
   const none = newFolder();
   const noRuns = [];
   assert.equal(main([none], { log: (line) => noRuns.push(line), error: assert.fail }), 0);
-  assert.match(noRuns[0], /^Nothing to compare: 0 run\(s\)/);
+  assert.match(noRuns[0], /^Nothing to compare: no two runs tested the same server code\.$/);
+});
+
+test("runs are compared only with runs of the same server code, and the only run of its code is left alone", () => {
+  const folder = newFolder();
+  const flaky = (reached) => [method("System.Void Thing::Flaky()", { lineVisits: reached ? 1 : 0 })];
+  // Two runs of one code that differ, two runs of another that agree, and a run of a third code that differs from both (a change, not a flip).
+  run(folder, "40000000001", flaky(true));
+  run(folder, "40000000002", flaky(false));
+  run(folder, "40000000003", steady, { tree: OTHER_TREE });
+  run(folder, "40000000004", steady, { tree: OTHER_TREE });
+  run(folder, "40000000005", flaky(false), { tree: "cccccccccccccccccccccccccccccccccccccccc" });
+  // A run with no record, one with a record that is not JSON, and one whose record names no tree.
+  run(folder, "40000000006", steady);
+  rmSync(path.join(folder, "40000000006", "run.json"));
+  run(folder, "40000000007", steady);
+  writeFileSync(path.join(folder, "40000000007", "run.json"), "{");
+  run(folder, "40000000008", steady);
+  writeFileSync(path.join(folder, "40000000008", "run.json"), "{}");
+
+  const result = compareRuns(folder);
+  assert.deepEqual(result.groups.map(({ tree, runs, flips }) => [tree, runs, flips.length]), [[TREE, ["40000000001", "40000000002"], 1], [OTHER_TREE, ["40000000003", "40000000004"], 0]]);
+  assert.deepEqual(result.alone, [{ run: "40000000005", tree: "cccccccccccccccccccccccccccccccccccccccc" }]);
+  assert.deepEqual(result.left.map(({ run }) => run), ["40000000006", "40000000007", "40000000008"]);
+  const text = formatFlips(result);
+  assert.match(text, /compared within 2 group\(s\) of runs: aaaaaaaaaaaa \(2 runs\), bbbbbbbbbbbb \(2 runs\)/);
+  assert.doesNotMatch(text, /Server code bbbbbbbbbbbb/);
+  assert.match(text, /^Left alone, because no other run tested the same server code: 40000000005 \(code cccccccccccc\)\.$/m);
+  assert.match(text, /^Left out: 40000000006 \(no record of its code \(run\.json\)\), /m);
+  assert.equal(treeOfRun(path.join(folder, "40000000001")), TREE);
+  assert.equal(treeOfRun(path.join(folder, "40000000006")), undefined);
 });
 
 test("steady runs say so beside the runs they left out", () => {
@@ -206,9 +247,10 @@ test("steady runs say so beside the runs they left out", () => {
   run(folder, "40000000001", steady);
   run(folder, "40000000002", steady);
   mkdirSync(path.join(folder, "40000000003"));
+  record(path.join(folder, "40000000003"), TREE);
   const lines = [];
   assert.equal(main([folder], { log: (line) => lines.push(line), error: assert.fail }), 0);
-  assert.equal(lines[0], "Coverage is steady: no line or branch in the server was reached in only some of 2 runs. Left out, because a system's coverage is missing from the run: 40000000003 (no Linux or Windows report).");
+  assert.equal(lines[0], "Coverage is steady: no line or branch in the server was reached in only some of the runs that tested the same server code (aaaaaaaaaaaa (2 runs)). Left out: 40000000003 (no Linux or Windows report).");
 });
 
 test("a folder that is missing, or none given, is told what to do", () => {
