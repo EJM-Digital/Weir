@@ -172,8 +172,7 @@ export async function iconSays(world, wanted = () => true, what = "the icon of W
 }
 
 /** The hover text of the icon, once it is there. */
-export const iconText = (world, { startingOnly = false } = {}) =>
-  iconSays(world, (text) => !startingOnly || text.endsWith("Starting..."), startingOnly ? "the icon to say Weir is starting" : "the icon of Weir in the notification area");
+export const iconText = (world) => iconSays(world);
 
 /** Waits for a browser to be started on this address, and returns it: { pid, name, commandLine }. */
 export async function browserOn(world, port, path = "/") {

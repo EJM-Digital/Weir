@@ -40,6 +40,7 @@ sealed class TrayController : IDisposable
 
     private TrayStatusWatcher? _statusWatcher;
     private bool _opened;
+    private string? _hoverTextShown;
     private bool _watching;
     private readonly BalloonPresenter _balloons;
     private readonly TrayIconClicks _iconClicks;
@@ -315,7 +316,7 @@ sealed class TrayController : IDisposable
         _blink.Follow(state.Dot);
         _shell.SetBlinking(_blink.Active);
         ShowIcon(state);
-        _shell.ShowHoverText(state.HoverText);
+        ShowHoverText(state.HoverText);
         _shell.ShowMenu(TrayMenu.Describe(new TrayMenuInputs(
             state,
             _updates.MenuState(),
@@ -323,6 +324,18 @@ sealed class TrayController : IDisposable
             _portChange.MovingTo,
             _startup.IsEnabled,
             AppVersion.Current)));
+    }
+
+    // The hover text is logged each time it changes, so what the icon said, and in what order, is on record: the states between a restart
+    // and the server answering last too briefly to be seen by looking.
+    private void ShowHoverText(string text)
+    {
+        if (text != _hoverTextShown)
+        {
+            _hoverTextShown = text;
+            TrayLog.Write($"Icon says: {text}");
+        }
+        _shell.ShowHoverText(text);
     }
 
     // Only the icon: the blink swaps between icons already made, and leaves the hover text and the menu alone.
