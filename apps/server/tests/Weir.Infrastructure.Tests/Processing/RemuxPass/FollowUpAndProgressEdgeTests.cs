@@ -175,6 +175,23 @@ public sealed class FollowUpAndProgressEdgeTests : IDisposable
         Assert.Equal("Waiting to process Film.mkv", await _fixture.Store.ScalarText("SELECT title FROM activity_events"));
     }
 
+    [Theory]
+    [InlineData("finishing", "Finishing Film.mkv")]
+    [InlineData("finished", "Film.mkv finished processing")]
+    [InlineData("failed", "Film.mkv could not be processed")]
+    public async Task The_progress_row_is_titled_for_how_the_pass_ended_up(string status, string title)
+    {
+        var reporter = new ActivityProgressReporter(_fixture.Store.Database, 8, new WireObject().Set("relative_media_path", "Film/Film.mkv"), NullLogger.Instance, TimeProvider.System, new LiveProgressStore());
+
+        foreach (var stage in new[] { "processing", status })
+        {
+            reporter.Report(new WireObject().Set("status", stage));
+            await reporter.FlushAsync();
+        }
+
+        Assert.Equal(title, await _fixture.Store.ScalarText("SELECT title FROM activity_events"));
+    }
+
     [Fact]
     public async Task A_progress_save_the_database_refuses_is_logged_and_the_pass_carries_on()
     {

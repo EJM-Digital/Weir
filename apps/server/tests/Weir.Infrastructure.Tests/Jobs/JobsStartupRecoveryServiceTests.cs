@@ -265,6 +265,35 @@ public sealed class JobsStartupRecoveryServiceTests : IDisposable
         await lane.StopAsync(CancellationToken.None);
     }
 
+    [Fact]
+    public async Task The_upkeep_lane_stopped_while_the_sweep_is_still_running_ends_without_claiming_anything()
+    {
+        await AddLibraryFoldersAsync("/lib");
+        await _db.Store.EnqueueOrGetAsync("queued", Weir.Core.LibraryMode.LibraryModeJobKinds.ScanKind);
+        using var held = HoldTheSweep();
+        var service = Service(_swap.Sweep);
+        var registry = new JobHandlerRegistry([new DelegateHandler(Weir.Core.LibraryMode.LibraryModeJobKinds.ScanKind, _ => throw new InvalidOperationException("claimed before recovery ended"))]);
+        var lane = new UpkeepWorkerService(
+            new ProcessingJobProcessor(_db.Store, registry, new SqliteActivityWriter(_db.Database), new NoUnhandledJobFailureRecorder(), new NoJobNotifications(), TimeProvider.System, NullLogger<ProcessingJobProcessor>.Instance),
+            new WorkerHeartbeats(TimeProvider.System),
+            new WorkerLoopTimings { IdleSleep = TimeSpan.FromMilliseconds(50), TickErrorBackoff = TimeSpan.FromMilliseconds(50), LeaseSeconds = 3600 },
+            TimeProvider.System,
+            NullLogger<UpkeepWorkerService>.Instance,
+            registry,
+            service);
+
+        await Task.Run(() => service.StartAsync(CancellationToken.None)).WaitAsync(TimeSpan.FromSeconds(15));
+        await lane.StartAsync(CancellationToken.None);
+        await held.RunningAsync();
+
+        await lane.StopAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(15));
+
+        Assert.True(lane.ExecuteTask!.IsCompletedSuccessfully);
+        Assert.Equal("pending", (string?)_db.Scalar("SELECT status FROM jobs WHERE dedupe_key = 'queued'"));
+        held.Release();
+        await service.RecoveryCompleted.WaitAsync(TimeSpan.FromSeconds(15));
+    }
+
     private HeldSweep HoldTheSweep() => new(_swap.Files);
 
     private JobsStartupRecoveryService Service(SwapRecoverySweep? sweep) =>
