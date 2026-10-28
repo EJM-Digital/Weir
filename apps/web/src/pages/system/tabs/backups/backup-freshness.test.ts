@@ -50,3 +50,38 @@ describe("backupFreshness", () => {
     ).toBe("overdue");
   });
 });
+
+describe("backupFreshness on a daily schedule", () => {
+  const daily = {
+    configuration_backup_interval_hours: 24,
+    configuration_backup_preferred_time: "02:00",
+  };
+
+  it.each([
+    ["before today's backup time", "2026-10-28T00:02:46Z"],
+    ["just after it", "2026-10-28T02:30:00Z"],
+    ["more than an hour after it", "2026-10-28T12:00:00Z"],
+  ])("is overdue when the last backup is years old, %s", (_when, at) => {
+    expect(
+      backupFreshness(
+        settings({
+          ...daily,
+          configuration_backup_last_run_at: "2020-01-01T00:00:00Z",
+        }),
+        Date.parse(at),
+      ),
+    ).toBe("overdue");
+  });
+
+  it("is up to date before today's backup time when yesterday's ran", () => {
+    expect(
+      backupFreshness(
+        settings({
+          ...daily,
+          configuration_backup_last_run_at: "2026-10-27T02:00:30Z",
+        }),
+        Date.parse("2026-10-28T00:02:46Z"),
+      ),
+    ).toBe("up_to_date");
+  });
+});
