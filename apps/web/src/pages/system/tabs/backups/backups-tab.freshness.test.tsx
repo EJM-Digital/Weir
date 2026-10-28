@@ -36,11 +36,17 @@ function renderBackups(lastRunAt: string) {
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
 describe("Backups: whether the schedule is being kept", () => {
-  it("says Overdue beside the last backup when the next one is long past due", async () => {
+  it("says Overdue beside the last backup when the next one is long past due, even before today's backup time", async () => {
+    // Only the date is faked, at the minute CI first failed: 02:00 was still two hours away.
+    vi.useFakeTimers({
+      toFake: ["Date"],
+      now: Date.parse("2026-10-28T00:02:46Z"),
+    });
     renderBackups("2020-01-01T00:00:00Z");
 
     expect(await screen.findByText("Overdue")).toBeVisible();

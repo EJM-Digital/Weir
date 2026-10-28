@@ -22,14 +22,18 @@ export function backupFreshness(
   settings: AppSettings,
   now: number,
 ): BackupFreshness | null {
+  const lastRunAt = parseAppTime(settings.configuration_backup_last_run_at);
+  // The backup due after the last one, wherever the clock is: asked as of the last run, so a slot long gone stays long
+  // gone. Asked as of now, it would be moved on to today's time and a schedule missed for years would look on time
+  // until that time passed.
   const next = nextBackupAt(
     {
       enabled: Boolean(settings.configuration_backup_enabled),
       intervalHours: Number(settings.configuration_backup_interval_hours),
       preferredTime: settings.configuration_backup_preferred_time,
-      lastRunAt: parseAppTime(settings.configuration_backup_last_run_at),
+      lastRunAt,
     },
-    now,
+    lastRunAt ?? now,
     settings.app_timezone || undefined,
   );
   if (next === null) return null;
