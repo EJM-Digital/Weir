@@ -95,7 +95,7 @@ public sealed class RequestContextMiddleware
         context.RequestAborted.IsCancellationRequested && exception is OperationCanceledException or IOException or BadHttpRequestException;
 
     private void LogClientLeft(string requestId, HttpContext context) =>
-        _logger.LogDebug(
+        _logger.LogInformation(
             "Request abandoned by the client request_id={RequestId} method={Method} route={Route}",
             requestId,
             HttpLogSanitizer.Sanitize(context.Request.Method),

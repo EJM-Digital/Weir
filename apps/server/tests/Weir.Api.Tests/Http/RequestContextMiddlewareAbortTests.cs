@@ -36,7 +36,7 @@ public sealed class RequestContextMiddlewareAbortTests
         await middleware.InvokeAsync(context);
 
         Assert.DoesNotContain(logger.Entries, entry => entry.Level >= LogLevel.Warning);
-        Assert.Single(logger.Entries, entry => entry.Level == LogLevel.Debug);
+        Assert.Single(logger.Entries, entry => entry.Level == LogLevel.Information);
     }
 
     [Fact]

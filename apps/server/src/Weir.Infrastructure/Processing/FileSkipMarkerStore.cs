@@ -28,12 +28,14 @@ public sealed class FileSkipMarkerStore
         _changes = changes;
     }
 
-    public Task<Dictionary<string, FileSkipMarker>> ForLibraryAsync(UnitOfWork uow, long libraryId) =>
-        uow.QueryAsync(
-                "SELECT relative_path, size_bytes, mtime_ns FROM file_skip_markers WHERE library_id = @lib",
-                reader => (Path: reader.GetString(0), Marker: new FileSkipMarker(reader.GetInt64(1), reader.GetInt64(2))),
-                ("@lib", libraryId))
-            .ContinueWith(t => t.Result.ToDictionary(row => row.Path, row => row.Marker, StringComparer.Ordinal), TaskScheduler.Default);
+    public async Task<Dictionary<string, FileSkipMarker>> ForLibraryAsync(UnitOfWork uow, long libraryId)
+    {
+        var rows = await uow.QueryAsync(
+            "SELECT relative_path, size_bytes, mtime_ns FROM file_skip_markers WHERE library_id = @lib",
+            reader => (Path: reader.GetString(0), Marker: new FileSkipMarker(reader.GetInt64(1), reader.GetInt64(2))),
+            ("@lib", libraryId)).ConfigureAwait(false);
+        return rows.ToDictionary(row => row.Path, row => row.Marker, StringComparer.Ordinal);
+    }
 
     /// <summary>Every kept file, newest first, with the library name a person recognises rather than its id alone.</summary>
     public Task<List<KeptFileRow>> ListAsync(UnitOfWork uow) =>

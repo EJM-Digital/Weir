@@ -102,6 +102,7 @@ public sealed class SocketsManagerHttpHandlerFactory : IManagerHttpHandlerFactor
         var transport = new SocketsHttpHandler
         {
             UseCookies = false,
+            UseProxy = false,
             AllowAutoRedirect = followRedirects,
             MaxAutomaticRedirections = followRedirects ? 10 : 1,
             PooledConnectionLifetime = TimeSpan.FromMinutes(2),
