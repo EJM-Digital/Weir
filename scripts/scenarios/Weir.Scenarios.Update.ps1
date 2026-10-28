@@ -79,6 +79,8 @@ function Scenario_update_over_installed_weir {
     Assert-That (@($activityBefore | Where-Object event_type -eq 'processing.file_remux_pass_completed').Count -ge 1) "Weir $oldVersion recorded the film it cleaned in Activity ($($activityBefore.Count) entries in all)"
 
     # 2. The build under test, installed over the running Weir.
+    # The previous release goes on logging until the install stops it; the logs are judged from the moment the build under test began.
+    Use-BuildUnderTestLogWindow
     $update = Invoke-WeirSetup -Path $script:Ctx.SetupPath
     Assert-That ($update.ExitCode -eq 0) "the build under test's Setup --silent over the running Weir exited 0 (it exited $($update.ExitCode))"
     Wait-Until -What 'Weir to be running the build under test again without being started by hand' -TimeoutSeconds 240 -IntervalMilliseconds 1000 -Probe {
