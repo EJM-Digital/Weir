@@ -53,6 +53,7 @@ public sealed class UpkeepWorkerService : BackgroundService
         try
         {
             // Startup recovery (#718) must finish looking at a library's folders before a scan can touch them.
+            WaitingForRecovery?.Invoke();
             await _recovery.RecoveryCompleted.WaitAsync(stoppingToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -66,6 +67,9 @@ public sealed class UpkeepWorkerService : BackgroundService
             .ToArray();
         await Task.WhenAll(slots).ConfigureAwait(false);
     }
+
+    /// <summary>Test seam: called once the lane has started and is about to wait for startup recovery to finish.</summary>
+    internal Action? WaitingForRecovery { get; init; }
 
     /// <summary>Test seam: called each time a slot has started waiting for work, with its wake taken and its poll timer running.</summary>
     internal Action? IdleWaiting { get; init; }
