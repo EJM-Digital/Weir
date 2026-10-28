@@ -38,7 +38,12 @@ const newStart = entry("INFO", "Weir 1.0.0-rc.21+e59bbed is starting process=759
 const otherCommit = entry("INFO", "Weir 1.0.0-rc.21+0000000 is starting process=7000 home=C:\\ProgramData\\Weir", "2026-10-28T08:03:30.000000Z");
 const afterStart = entry("WARNING", "Weir could not reach the metadata service for posters (timed out).", "2026-10-28T08:05:00.000000Z");
 const trayHead = "[2026-10-28 08:01:00] Weir started";
-const trayPid = "[2026-10-28 08:04:19] Bundled server host pid=7592";
+// What the tray log holds for an update: the install's line for the build, the new tray's first line, then its line for the build's server.
+const trayInstalled = "[2026-10-28 08:04:00] Velopack: after install v1.0.0-rc.21";
+const trayStarted = "[2026-10-28 08:04:10] Starting tray host. installRoot=C:\\Weir\\current\\ runtimeHome=C:\\ProgramData\\Weir";
+const trayServer = "[2026-10-28 08:04:19] Bundled server host pid=7592";
+const trayNewWarning = "[2026-10-28 08:04:12] Could not start the tray icon";
+const trayPid = [trayInstalled, trayStarted, trayServer].join("\n");
 const trayEarly = "[2026-10-28 08:03:00] Could not reach the old server";
 const trayLate = "[2026-10-28 08:05:00] Could not reach the server";
 const pageRow = (id, at, title) => `[pscustomobject]@{ source = 'server'; id = '${id}'; at = '${at}'; title = '${title}' }`;
@@ -73,6 +78,10 @@ test("an update is judged from the build under test's own start line: the previo
     variable("afterStart", afterStart),
     variable("trayHead", trayHead),
     variable("trayPid", trayPid),
+    variable("trayInstalled", trayInstalled),
+    variable("trayStarted", trayStarted),
+    variable("trayServer", trayServer),
+    variable("trayNewWarning", trayNewWarning),
     variable("trayEarly", trayEarly),
     variable("trayLate", trayLate),
     // The previous release running, the watch begun, and the scenario saying it replaces that Weir.
@@ -94,6 +103,16 @@ test("an update is judged from the build under test's own start line: the previo
     "Show 'tray-previous' { Complete-LogWatch }",
     "Begin; Add-Content -LiteralPath $server -Value $newStart; Add-Content -LiteralPath $tray -Value $trayPid, $trayLate",
     "Show 'tray-build' { Complete-LogWatch }",
+    // Trouble the NEW tray writes before it starts the server is the build's, and fails.
+    "Begin; Add-Content -LiteralPath $server -Value $newStart; Add-Content -LiteralPath $tray -Value $trayInstalled, $trayStarted, $trayNewWarning, $trayServer",
+    "Show 'new-tray-before-server' { Complete-LogWatch }",
+    // The new tray's own start, or the install, or its line for the server, missing from the tray log.
+    "Begin; Add-Content -LiteralPath $server -Value $newStart; Add-Content -LiteralPath $tray -Value $trayInstalled, $trayServer",
+    "Show 'no-tray-start' { Complete-LogWatch }",
+    "Begin; Add-Content -LiteralPath $server -Value $newStart; Add-Content -LiteralPath $tray -Value $trayStarted, $trayServer",
+    "Show 'no-install-line' { Complete-LogWatch }",
+    "Begin; Add-Content -LiteralPath $server -Value $newStart; Add-Content -LiteralPath $tray -Value $trayInstalled, $trayStarted",
+    "Show 'no-server-line' { Complete-LogWatch }",
     // System > Logs: a row written before the build began is the previous release's; one written from its first second on is judged.
     `Begin -Page; Add-Content -LiteralPath $server -Value $stall, $newStart; Add-Content -LiteralPath $tray -Value $trayPid; $script:Rows = @(${pageRow("server:1", "2026-10-28T08:02:44.569219Z", "slow to get to work")})`,
     "Show 'page-previous' { Complete-LogWatch }",
@@ -111,13 +130,17 @@ test("an update is judged from the build under test's own start line: the previo
   );
   assert.match(lines[1], /^build-warning: FAILED the server log file gained no unexpected warning or error \(found 1: WARNING Weir could not reach the metadata service for posters \(timed out\)\.\)$/);
   assert.match(lines[2], /^no-start: FAILED the server log has no line saying that Weir 1\.0\.0-rc\.21 \(e59bbed\) began .*since the scenario installed it over the running Weir/);
-  assert.match(lines[3], /^no-tray-line: FAILED the tray log has no line saying that it started process 7592, the server of the build under test/);
+  assert.match(lines[3], /^no-tray-line: FAILED the tray log has no line saying that the build under test was installed/);
   assert.match(lines[4], /^tray-previous: PASSED .*tray log: \[2026-10-28 08:03:00\] Could not reach the old server/);
   assert.match(lines[5], /^tray-build: FAILED the tray log gained no line reporting trouble \(found 1: \[2026-10-28 08:05:00\] Could not reach the server\)$/);
-  assert.match(lines[6], /^page-previous: PASSED .*System > Logs: slow to get to work/);
-  assert.match(lines[7], /^page-build: FAILED System > Logs gained no unexpected warning or error \(found 1: poster lookup timed out\)$/);
-  assert.match(lines[8], /^replaced-nothing: FAILED the server log file gained no unexpected warning or error \(found 1: WARNING Weir's server has been slow/);
-  assert.match(lines[9], /^no-watch: FAILED The build under test was named as replacing the running Weir with no log watch running/);
+  assert.match(lines[6], /^new-tray-before-server: FAILED the tray log gained no line reporting trouble \(found 1: \[2026-10-28 08:04:12\] Could not start the tray icon\)$/);
+  assert.match(lines[7], /^no-tray-start: FAILED the tray log has no line saying that the tray of the build under test started \('Starting tray host\.'\)/);
+  assert.match(lines[8], /^no-install-line: FAILED the tray log has no line saying that the build under test was installed \('Velopack: after install v1\.0\.0-rc\.21'\)/);
+  assert.match(lines[9], /^no-server-line: FAILED the tray log has no line saying that the tray of the build under test started process 7592/);
+  assert.match(lines[10], /^page-previous: PASSED .*System > Logs: slow to get to work/);
+  assert.match(lines[11], /^page-build: FAILED System > Logs gained no unexpected warning or error \(found 1: poster lookup timed out\)$/);
+  assert.match(lines[12], /^replaced-nothing: FAILED the server log file gained no unexpected warning or error \(found 1: WARNING Weir's server has been slow/);
+  assert.match(lines[13], /^no-watch: FAILED The build under test was named as replacing the running Weir with no log watch running/);
 });
 
 test("every scenario that installs the build under test over, or after stopping, a running Weir says so before it installs", () => {

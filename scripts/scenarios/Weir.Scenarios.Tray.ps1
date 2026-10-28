@@ -191,7 +191,7 @@ function Start-LogWatch {
 # update is its own. So such a scenario says so (Use-BuildUnderTestLogWindow, before it installs), and the watch then judges the
 # server log, the tray log and System > Logs only from the moment the build under test began. That moment is the build's own line in
 # the server log, "Weir <version>+<sha> is starting process=<pid>" (the first of them since the scenario said so), and not a time worked
-# out from the clock. The tray log is judged from the line where the tray says it started that process ("Bundled server host
+# out from the clock. The tray log is judged from the new tray process's own first line ("Starting tray host.", after the install's "Velopack: after install v<version>"), and the line where that tray says it started the build's server ("Bundled server host
 # pid=<pid>"). What the previous release logged meanwhile is told in the scenario's record as information. Everything the build under
 # test logs is judged exactly as it is in a scenario that replaces nothing.
 
@@ -216,7 +216,9 @@ function Get-BuildUnderTestStarts {
 function Use-BuildUnderTestLogWindow {
     $watch = $script:Ctx.LogWatch
     if ($null -eq $watch) { throw 'The build under test was named as replacing the running Weir with no log watch running: Start-LogWatch was not called when the scenario began.' }
-    $watch.Build = [pscustomobject]@{ StartsBefore = @(Get-BuildUnderTestStarts).Count }
+    $trayText = Get-TrayLogText
+    $trayLinesBefore = if ($trayText.Trim().Length -gt 0) { @($trayText.TrimEnd("`r", "`n") -split "`r?`n").Count } else { 0 }
+    $watch.Build = [pscustomobject]@{ StartsBefore = @(Get-BuildUnderTestStarts).Count; TrayLinesBefore = $trayLinesBefore }
 }
 
 # Where the build under test began in the logs, as { Version; ProcessId; At; ServerLine; TrayIndex }. Throws when the server log has no
@@ -228,11 +230,21 @@ function Get-BuildUnderTestStart {
         throw "the server log has no line saying that Weir $($script:Ctx.Version) ($($script:Ctx.ShortSha)) began ('Weir <version>+<sha> is starting process=<pid>') since the scenario installed it over the running Weir, so the logs cannot be judged from the moment the build under test began ($((Get-WeirPaths).ServerLog))"
     }
     $start = $starts[0]
+    # The tray log is judged from the new tray process's own first line ("Starting tray host."), found after the install's line for the
+    # build ("Velopack: after install v<version>"); the tray's line for the build's server process must follow it. Only lines written
+    # since the scenario said it replaces the running Weir count.
     $trayLines = @((Get-TrayLogText) -split "`r?`n")
+    $versionBase = [regex]::Escape($script:Ctx.Version.Split('+')[0])
+    $installed = -1
+    for ($i = $Window.TrayLinesBefore; $i -lt $trayLines.Count -and $installed -lt 0; $i++) { if ($trayLines[$i] -match "Velopack: after install v$versionBase\s*$") { $installed = $i } }
     $trayIndex = -1
-    for ($i = 0; $i -lt $trayLines.Count; $i++) { if ($trayLines[$i] -match "Bundled server host pid=$($start.ProcessId)\b") { $trayIndex = $i } }
-    if ($trayIndex -lt 0 -and -not $script:Ctx.Rehearsal) {
-        throw "the tray log has no line saying that it started process $($start.ProcessId), the server of the build under test ('Bundled server host pid=$($start.ProcessId)'), so the tray log cannot be judged from the moment the build under test began ($((Get-WeirPaths).TrayLog))"
+    for ($i = $installed + 1; $installed -ge 0 -and $i -lt $trayLines.Count -and $trayIndex -lt 0; $i++) { if ($trayLines[$i] -match 'Starting tray host\.') { $trayIndex = $i } }
+    $serverLine = -1
+    for ($i = $trayIndex; $trayIndex -ge 0 -and $i -lt $trayLines.Count -and $serverLine -lt 0; $i++) { if ($trayLines[$i] -match "Bundled server host pid=$($start.ProcessId)\b") { $serverLine = $i } }
+    if (-not $script:Ctx.Rehearsal) {
+        if ($installed -lt 0) { throw "the tray log has no line saying that the build under test was installed ('Velopack: after install v$($script:Ctx.Version)') since the scenario installed it, so the tray log cannot be judged from the moment the build under test's tray began ($((Get-WeirPaths).TrayLog))" }
+        if ($trayIndex -lt 0) { throw "the tray log has no line saying that the tray of the build under test started ('Starting tray host.') after its install, so the tray log cannot be judged from the moment that tray began ($((Get-WeirPaths).TrayLog))" }
+        if ($serverLine -lt 0) { throw "the tray log has no line saying that the tray of the build under test started process $($start.ProcessId), the server of the build ('Bundled server host pid=$($start.ProcessId)') after it began ($((Get-WeirPaths).TrayLog))" }
     }
     [pscustomobject]@{ Version = $start.Version; ProcessId = $start.ProcessId; At = $start.At; ServerLine = $start.Line; TrayIndex = $trayIndex }
 }
