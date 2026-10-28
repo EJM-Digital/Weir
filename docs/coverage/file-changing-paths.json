@@ -114,7 +114,7 @@
     },
     {
       "id": "weir-own-files",
-      "what": "Weir's own logs, settings backups, update backups, status files, poster pictures, swap journal and sign-in code file.",
+      "what": "Weir's own logs, settings backups, update backups, status files, poster pictures, swap journal, sign-in code file and the snapshots of its threads it saves when it is slow to get to work.",
       "entry": "various",
       "gate": "exempt",
       "because": "None of them is a media file; they live in Weir's own folders."
@@ -167,6 +167,7 @@
     { "file": "Weir.Infrastructure/Runtime/PreUpdateBackup.cs", "calls": 5, "paths": ["weir-own-files"] },
     { "file": "Weir.Infrastructure/Runtime/RuntimeDirectories.cs", "calls": 1, "paths": ["write-probe"] },
     { "file": "Weir.Infrastructure/Runtime/StartupNotes.cs", "calls": 1, "paths": ["weir-own-files"] },
+    { "file": "Weir.Infrastructure/Runtime/StallDumpCapture.cs", "calls": 2, "paths": ["weir-own-files"] },
     { "file": "Weir.Infrastructure/Runtime/SystemServices.cs", "calls": 2, "paths": ["weir-own-files"] },
     { "file": "Weir.Infrastructure/Runtime/TrayPauseRequestWatcher.cs", "calls": 1, "paths": ["weir-own-files"] },
     { "file": "Weir.Infrastructure/Runtime/TrayUpdateBackupWatcher.cs", "calls": 2, "paths": ["weir-own-files"] },

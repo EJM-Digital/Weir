@@ -468,6 +468,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Data.Sqlite": "[10.0.12, )",
+          "Microsoft.Diagnostics.NETCore.Client": "[0.2.553101, )",
           "Weir.Core": "[0.0.1-dev, )"
         }
       },

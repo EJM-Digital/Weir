@@ -11,6 +11,8 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
+    <!-- Saves the stacks of every thread when the server is slow to get to work (StallDumpCapture); no tool is installed beside Weir. -->
+    <PackageReference Include="Microsoft.Diagnostics.NETCore.Client" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Migrations\*.sql" LogicalName="Weir.Infrastructure.Migrations.%(Filename)%(Extension)" />

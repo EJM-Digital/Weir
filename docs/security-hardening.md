@@ -33,6 +33,16 @@ This checklist defines the current practical hardening baseline for Weir.
   wherever it is kept, even when `WEIR_BACKUP_DIR` is outside the data folder: folder `700` and files `600` on Linux and in
   Docker, and on Windows an explicit access list (SYSTEM, Administrators and the account Weir runs as, nothing
   inherited) on the folder and on every file.
+- When the server is slow to get to work (the log's "slow to get to work" warning), it saves a triage dump of itself to
+  `logs/diagnostics/stall-<time>-pid<id>.dmp`, at most twice a run (the second only 30 minutes or more after the first),
+  keeping the newest three files, none larger than 256 MB (a real one is a few hundred KB to a few MB). It holds the stack of every thread and
+  a little of what they refer to, so it can contain file names, addresses and the text of a request being read, and
+  possibly a credential that was on a stack at that moment. It sits in the data folder, under the same owner-only protection as the logs and
+  the database, and is not part of the configuration bundle or any backup. Treat it like the database: share it only with
+  whoever supports the install, and delete it after. It is read with `dotnet-dump analyze <file> -c "clrstack -all"`. Saving needs the
+  runtime's own diagnostics channel (a named pipe on Windows, a socket in the temp folder on Linux); with
+  `DOTNET_EnableDiagnostics=0`, or where the container blocks `ptrace` for its own process, the save fails and the log says
+  so in one warning.
 - Real `.env` files must never be committed.
 - Runtime SQLite databases must never be committed.
 - Logs, backups, media paths, API keys, provider tokens, and session secrets must never be committed.

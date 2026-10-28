@@ -47,6 +47,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Data.Sqlite": "[10.0.12, )",
+          "Microsoft.Diagnostics.NETCore.Client": "[0.2.553101, )",
           "Weir.Core": "[0.0.1-dev, )"
         }
       },
@@ -60,6 +61,12 @@
           "SQLitePCLRaw.bundle_e_sqlite3": "2.1.12",
           "SQLitePCLRaw.core": "2.1.12"
         }
+      },
+      "Microsoft.Diagnostics.NETCore.Client": {
+        "type": "CentralTransitive",
+        "requested": "[0.2.553101, )",
+        "resolved": "0.2.553101",
+        "contentHash": "PdMsB4we2OtMzhaAAch286Gix4H/mAWYOn5WnzImt6kqTyyS+bPQszfaw32+4uAY+VrdtBU5bcTH5LK8gBAiNg=="
       },
       "TimeZoneConverter": {
         "type": "CentralTransitive",
