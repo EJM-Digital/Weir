@@ -40,6 +40,7 @@ function Install-BuildUnderTest {
     if ($answering) {
         # Another version is running: the build under test goes over it, the way an update does.
         Add-Evidence "Weir $answering is running, not the build under test: installing the build under test over it"
+        Use-BuildUnderTestLogWindow
         $update = Invoke-WeirSetup -Path $script:Ctx.SetupPath
         Assert-That ($update.ExitCode -eq 0) "Setup --silent of the build under test over the running Weir exited 0 (it exited $($update.ExitCode))"
         Wait-Until -What 'Weir to be running the build under test again' -TimeoutSeconds 240 -IntervalMilliseconds 1000 -Probe {
@@ -53,6 +54,7 @@ function Install-BuildUnderTest {
             $installed = $installedVersion -and (Test-VersionUnderTest -Reported $installedVersion @expected)
         }
         if (-not $installed) {
+            Use-BuildUnderTestLogWindow
             Stop-InstalledWeir
             $setup = Invoke-WeirSetup -Path $script:Ctx.SetupPath
             Assert-That ($setup.ExitCode -eq 0) "Setup --silent of the build under test exited 0 (it exited $($setup.ExitCode))"

@@ -55,6 +55,7 @@ function Get-TestIds {
 function Scenario_fresh_install {
     $paths = Get-WeirPaths
     # Setup is judged on a machine with no Weir running; on one that has been used (a rerun) the running Weir is stopped first.
+    Use-BuildUnderTestLogWindow
     Stop-InstalledWeir
     $setup = Invoke-WeirSetup -Path $script:Ctx.SetupPath
     Assert-That ($setup.ExitCode -eq 0) "Setup --silent exited 0 (it exited $($setup.ExitCode))"
