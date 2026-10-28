@@ -1,6 +1,8 @@
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
-import type * as Preset from '@docusaurus/preset-classic';
+import type {Options as DocsOptions} from '@docusaurus/plugin-content-docs';
+import type {Options as ThemeOptions} from '@docusaurus/theme-classic';
+import type {UserThemeConfig} from '@docusaurus/theme-common';
 
 const config: Config = {
   title: 'Weir',
@@ -31,23 +33,26 @@ const config: Config = {
     },
   },
 
-  themes: ['@docusaurus/theme-mermaid'],
+  // The parts of Docusaurus's classic preset the site uses, named one by one: the preset also brings plugin-svgr, which turns
+  // SVG files imported into React code into components. The site imports none, and plugin-svgr carries deepmerge, which has an
+  // advisory with no fixed release (GHSA-gcqx-w48m-w2h4). The sitemap is made for the published build only, as the preset did.
+  themes: [
+    ['@docusaurus/theme-classic', {customCss: './src/css/custom.css'} satisfies ThemeOptions],
+    '@docusaurus/theme-mermaid',
+  ],
 
-  presets: [
+  plugins: [
+    '@docusaurus/plugin-css-cascade-layers',
     [
-      'classic',
+      '@docusaurus/plugin-content-docs',
       {
-        docs: {
-          sidebarPath: './sidebars.ts',
-          editUrl:
-            'https://github.com/EJM-Digital/Weir/tree/main/docs-site/',
-        },
-        blog: false,
-        theme: {
-          customCss: './src/css/custom.css',
-        },
-      } satisfies Preset.Options,
+        sidebarPath: './sidebars.ts',
+        editUrl:
+          'https://github.com/EJM-Digital/Weir/tree/main/docs-site/',
+      } satisfies DocsOptions,
     ],
+    '@docusaurus/plugin-content-pages',
+    ...(process.env.NODE_ENV === 'production' ? ['@docusaurus/plugin-sitemap'] : []),
   ],
 
   themeConfig: {
@@ -125,7 +130,7 @@ const config: Config = {
       darkTheme: prismThemes.dracula,
       additionalLanguages: ['bash', 'powershell', 'python', 'docker', 'yaml', 'toml', 'ini'],
     },
-  } satisfies Preset.ThemeConfig,
+  } satisfies UserThemeConfig,
 };
 
 export default config;
