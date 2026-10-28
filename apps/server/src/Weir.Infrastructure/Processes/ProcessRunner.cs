@@ -183,10 +183,16 @@ public sealed partial class ProcessRunner(ILogger<ProcessRunner>? logger = null,
         }
 
         using var process = new Process { StartInfo = startInfo };
-        process.Start();
-        using var toolUse = tools?.Track(process);
-        request.OnStarted?.Invoke(process.Id);
-        SetPriority(process, request.Priority, request.Argv[0]);
+        // Starting a tool waits for the operating system, longest for a program run for the first time (a virus scanner reads it
+        // first), so it is done on a thread of its own: the first films handed over start several tools at once, and starts
+        // that held the pool's threads left every request waiting behind them.
+        using var toolUse = await BlockingWork.RunAsync(() =>
+        {
+            process.Start();
+            request.OnStarted?.Invoke(process.Id);
+            SetPriority(process, request.Priority, request.Argv[0]);
+            return tools?.Track(process);
+        }).ConfigureAwait(false);
         if (request.Stdin == ProcessInput.Null)
         {
             process.StandardInput.Close();

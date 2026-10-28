@@ -264,9 +264,11 @@ public sealed partial class FileStateStore
     }
 
     /// <summary>Every library's name, keyed by id (for the Files list's <c>library_name</c> field).</summary>
-    public Task<Dictionary<long, string>> LibraryNamesAsync(UnitOfWork uow) =>
-        uow.QueryAsync("SELECT id, name FROM libraries", reader => (Id: reader.GetInt64(0), Name: reader.GetString(1)))
-           .ContinueWith(t => t.Result.ToDictionary(x => x.Id, x => x.Name), TaskScheduler.Default);
+    public async Task<Dictionary<long, string>> LibraryNamesAsync(UnitOfWork uow)
+    {
+        var rows = await uow.QueryAsync("SELECT id, name FROM libraries", reader => (Id: reader.GetInt64(0), Name: reader.GetString(1))).ConfigureAwait(false);
+        return rows.ToDictionary(x => x.Id, x => x.Name);
+    }
 
     private static ProcessingFileRecord Read(SqliteDataReader reader) => new()
     {

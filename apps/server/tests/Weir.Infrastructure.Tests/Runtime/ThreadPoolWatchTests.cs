@@ -172,6 +172,63 @@ public sealed class ThreadPoolWatchTests
     }
 
     [Fact]
+    public async Task A_stall_saves_what_the_threads_are_doing_once_however_long_it_goes_on_and_again_when_it_comes_back_after_the_cool_down()
+    {
+        using var logs = new TempDirectory();
+        var writer = new CountingWriter();
+        var capture = new StallDumpCapture(logs.Path, writer, _time, _log);
+        var watch = new ThreadPoolWatch(_time, _log, _waiting.Add, () => _counts, capture);
+
+        // One stall that goes on for a minute: said at its start and again at 30 s, and saved once.
+        watch.Tick();
+        Pass(ThreadPoolStallTracker.LateAfter);
+        watch.Tick();
+        await capture.Last;
+        Pass(ThreadPoolStallTracker.RepeatEvery);
+        watch.Tick();
+        await capture.Last;
+        Assert.Equal(1, writer.Calls);
+
+        // It ends, and a new one begins after the cool-down.
+        PoolRunsWhatWaits();
+        Pass(StallDumpCapture.CoolDown);
+        watch.Tick();
+        PoolRunsWhatWaits();
+        Pass(TimeSpan.FromSeconds(1));
+        watch.Tick();
+        Pass(ThreadPoolStallTracker.LateAfter);
+        watch.Tick();
+        await capture.Last;
+
+        Assert.Equal(2, writer.Calls);
+    }
+
+    [Fact]
+    public void A_watch_without_a_capture_only_says_so_in_the_log()
+    {
+        var watch = Watch();
+        watch.Tick();
+        Pass(ThreadPoolStallTracker.LateAfter);
+
+        watch.Tick();
+
+        Assert.Single(_log.Messages, message => message.Level == LogLevel.Warning);
+    }
+
+    private sealed class CountingWriter : IStackDumpWriter
+    {
+        private int _calls;
+
+        public int Calls => Volatile.Read(ref _calls);
+
+        public void Write(string path)
+        {
+            Interlocked.Increment(ref _calls);
+            File.WriteAllBytes(path, [1]);
+        }
+    }
+
+    [Fact]
     public async Task The_loop_looks_from_a_thread_of_its_own_not_one_from_the_pool_it_is_watching()
     {
         var queuedFrom = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);

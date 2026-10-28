@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Hosting;
+using Weir.Core.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Weir.Infrastructure.Runtime;
@@ -26,15 +27,21 @@ public sealed class ThreadPoolWatch : BackgroundService
     private readonly Func<ThreadPoolCounts> _counts;
     private readonly ThreadPoolStallTracker _tracker = new();
     private readonly long _startedAt;
+    private readonly StallDumpCapture? _capture;
     private Probe? _probe;
 
-    public ThreadPoolWatch(TimeProvider time, ILogger<ThreadPoolWatch> logger)
-        : this(time, logger, work => ThreadPool.UnsafeQueueUserWorkItem(_ => work(), null), CurrentCounts)
+    public ThreadPoolWatch(TimeProvider time, ILogger<ThreadPoolWatch> logger, WeirOptions options)
+        : this(
+            time,
+            logger,
+            work => ThreadPool.UnsafeQueueUserWorkItem(_ => work(), null),
+            CurrentCounts,
+            new StallDumpCapture(options.LogDir, new DiagnosticsClientDumpWriter(Environment.ProcessId), time, logger))
     {
     }
 
     // A test queues the probe where it can run it by hand, and says what the pool looks like.
-    internal ThreadPoolWatch(TimeProvider time, ILogger<ThreadPoolWatch> logger, Action<Action> queue, Func<ThreadPoolCounts> counts)
+    internal ThreadPoolWatch(TimeProvider time, ILogger<ThreadPoolWatch> logger, Action<Action> queue, Func<ThreadPoolCounts> counts, StallDumpCapture? capture = null)
     {
         ArgumentNullException.ThrowIfNull(time);
         ArgumentNullException.ThrowIfNull(logger);
@@ -44,6 +51,7 @@ public sealed class ThreadPoolWatch : BackgroundService
         _logger = logger;
         _queue = queue;
         _counts = counts;
+        _capture = capture;
         _startedAt = time.GetTimestamp();
     }
 
@@ -92,6 +100,7 @@ public sealed class ThreadPoolWatch : BackgroundService
                     counts.MinThreads,
                     counts.Pending,
                     counts.Processors);
+                _capture?.Request();
                 break;
             case StallEvent.Continues:
                 _logger.LogWarning(
