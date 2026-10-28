@@ -43,12 +43,16 @@ jobs:
       - name: Download the recent runs' server coverage
         run: node scripts/fetch-coverage-runs.mjs coverage-runs
 
-      # Exit 0: nothing flips. Exit 1: something does, and flips.txt says what. Anything else is the check itself failing.
+      # Only flips in the server code that is on main now count: older code has changed since, so a flip in it is fixed or gone.
+      # The check prints those for information. Exit 0: nothing flips in the current code. Exit 1: something does, and flips.txt
+      # says what. Anything else is the check itself failing.
       - name: Compare the runs
         id: compare
         run: |
           set +e
-          node scripts/check-coverage-flips.mjs coverage-runs > flips.txt
+          git fetch --no-tags --depth=1 origin main
+          tree=$(git rev-parse FETCH_HEAD:apps/server) || exit 1
+          node scripts/check-coverage-flips.mjs coverage-runs --current-tree "$tree" > flips.txt
           code=$?
           cat flips.txt
           echo "code=$code" >> "$GITHUB_OUTPUT"

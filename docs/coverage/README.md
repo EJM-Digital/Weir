@@ -147,7 +147,9 @@ the last runs side by side:
   system reached it), then groups the runs by that tree id, so only runs that tested identical server code are compared with each other. In
   each group of two or more it lists every line and branch of the server that is reached in some runs and not in others, with the
   runs that missed it. A run that is the only one of its code is left alone, and a run without both systems or without its
-  `run.json` is left out; both are named. It exits 1 when anything is listed.
+  `run.json` is left out; both are named. With `--current-tree <id>` (the workflow passes the tree id of `apps/server` on main) only flips in runs of that code
+  fail the check; the flips of any other group are printed as "in code no longer on main, for information", because that code has
+  changed since and the flip is fixed or gone. It exits 1 when a flip is in the code that counts.
 - On exit 1 the workflow opens the issue "Coverage: branches reached only on some runs", or replaces the body of the open one, and
   the run fails. The fix is a test that reaches each place every time (give the code its input in the pieces you choose, hold a race
   open with a signal), never a delay.

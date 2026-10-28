@@ -202,7 +202,7 @@ test("a run with no reports at all is left out, and when fewer than two runs of 
   const lines = [];
   assert.equal(main([folder], { log: (line) => lines.push(line), error: assert.fail }), 0);
   assert.deepEqual(lines, [
-    "Nothing to compare: no two runs tested the same server code. Left alone, because no other run tested the same server code: 40000000001 (code aaaaaaaaaaaa). Left out: 40000000002 (no Linux or Windows report).",
+    "Nothing to compare: no two runs tested the same server code.\n\nLeft alone, because no other run tested the same server code: 40000000001 (code aaaaaaaaaaaa).\nLeft out: 40000000002 (no Linux or Windows report).",
   ]);
   assert.deepEqual(readRun(path.join(folder, "40000000002")).missing, ["Linux", "Windows"]);
 
@@ -242,6 +242,44 @@ test("runs are compared only with runs of the same server code, and the only run
   assert.equal(treeOfRun(path.join(folder, "40000000006")), undefined);
 });
 
+test("only flips in the server code now on main fail the check; the flips of older code are printed for information", () => {
+  const folder = newFolder();
+  const flaky = (reached) => [method("System.Void Thing::Flaky()", { lineVisits: reached ? 1 : 0 })];
+  run(folder, "40000000001", flaky(true), { tree: OTHER_TREE });
+  run(folder, "40000000002", flaky(false), { tree: OTHER_TREE });
+  run(folder, "40000000003", steady);
+  run(folder, "40000000004", steady);
+
+  // The code on main steady, the older code flipping: exit 0, the older flip shown.
+  const lines = [];
+  assert.equal(main([folder, "--current-tree", TREE], { log: (line) => lines.push(line), error: assert.fail }), 0);
+  assert.match(lines[0], /^Coverage is steady: .*\(aaaaaaaaaaaa \(2 runs\)\)\.$/m);
+  assert.match(lines[0], /^In code no longer on main, for information \(this does not fail the check\):$/m);
+  assert.match(lines[0], /^Server code bbbbbbbbbbbb, 2 runs \(40000000001, 40000000002\)$/m);
+  assert.match(lines[0], /line 10: reached in 1 of 2 runs, not in 40000000002$/m);
+
+  // The older code on main: it fails, and the code that is steady is not listed.
+  const failing = [];
+  assert.equal(main(["--current-tree", OTHER_TREE, folder], { log: (line) => failing.push(line), error: assert.fail }), 1);
+  assert.match(failing[0], /^Coverage is not steady: 1 line\(s\) and branch\(es\) in 1 place\(s\)/);
+  assert.doesNotMatch(failing[0], /for information/);
+
+  // Both flip: the one on main fails and the other is for information.
+  run(folder, "40000000005", flaky(true));
+  run(folder, "40000000006", flaky(false));
+  const both = [];
+  assert.equal(main([folder, "--current-tree", TREE], { log: (line) => both.push(line), error: assert.fail }), 1);
+  assert.match(both[0], /^Coverage is not steady: 1 line\(s\) and branch\(es\) in 1 place\(s\)/);
+  assert.match(both[0], /^Server code aaaaaaaaaaaa, 4 runs/m);
+  assert.match(both[0], /for information/);
+  assert.match(both[0], /^Server code bbbbbbbbbbbb, 2 runs/m);
+
+  // No run tested the code on main twice.
+  const none = [];
+  assert.equal(main([folder, "--current-tree", "dddddddddddddddddddddddddddddddddddddddd"], { log: (line) => none.push(line), error: assert.fail }), 0);
+  assert.match(none[0], /^Nothing to compare: no two runs tested the server code now on main\.$/m);
+});
+
 test("steady runs say so beside the runs they left out", () => {
   const folder = newFolder();
   run(folder, "40000000001", steady);
@@ -250,14 +288,16 @@ test("steady runs say so beside the runs they left out", () => {
   record(path.join(folder, "40000000003"), TREE);
   const lines = [];
   assert.equal(main([folder], { log: (line) => lines.push(line), error: assert.fail }), 0);
-  assert.equal(lines[0], "Coverage is steady: no line or branch in the server was reached in only some of the runs that tested the same server code (aaaaaaaaaaaa (2 runs)). Left out: 40000000003 (no Linux or Windows report).");
+  assert.equal(lines[0], "Coverage is steady: no line or branch in the server was reached in only some of the runs that tested the same server code (aaaaaaaaaaaa (2 runs)).\n\nLeft out: 40000000003 (no Linux or Windows report).");
 });
 
 test("a folder that is missing, or none given, is told what to do", () => {
   const errors = [];
   assert.equal(main([], { log: assert.fail, error: (line) => errors.push(line) }), 2);
   assert.equal(main([path.join(temporary, "nowhere")], { log: assert.fail, error: (line) => errors.push(line) }), 2);
-  assert.equal(errors[0], "Usage: check-coverage-flips.mjs <folder of runs>");
+  assert.equal(errors[0], "Usage: check-coverage-flips.mjs <folder of runs> [--current-tree <tree id of apps/server on main>]");
+  assert.equal(main(["somewhere", "--current-tree"], { log: assert.fail, error: (line) => errors.push(line) }), 2);
+  assert.equal(errors[2], errors[0]);
   assert.match(errors[1], /nowhere\. Download the runs first: node scripts\/fetch-coverage-runs\.mjs /);
 });
 

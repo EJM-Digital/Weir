@@ -2,7 +2,7 @@
 // Finds the places in the server's code that CI runs reached in some runs and not in others, so a coverage floor that turns red
 // with no change to the code is caught the day a test starts depending on timing, not at release.
 //
-//   node scripts/check-coverage-flips.mjs <folder>
+//   node scripts/check-coverage-flips.mjs <folder> [--current-tree <tree id of apps/server on main>]
 //
 // <folder> holds one subfolder per CI run (scripts/fetch-coverage-runs.mjs writes it), each with the run's two server
 // coverage artifacts, `coverage-server-linux` and `coverage-server-windows`, as the `coverage` job in ci.yml downloads them.
@@ -18,7 +18,11 @@
 // other system reaches (`if (OperatingSystem.IsWindows())`) would look like a flip. A point is compared only across the runs of its
 // group that list it.
 //
-// Exit 0: nothing flips, or no two runs tested the same code. Exit 1: something flips. Exit 2: the folder is missing or cannot be read.
+// With --current-tree, only flips in runs of that code fail the check: the workflow passes the tree id of apps/server on main, because
+// a flip in code that has since changed is already fixed or gone. The flips of any other group are printed as "in code no longer on
+// main, for information". The check stays offline: the id is given, not looked up.
+//
+// Exit 0: nothing flips in the code that counts, or no two runs tested it. Exit 1: something flips. Exit 2: the folder is missing or cannot be read.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -185,47 +189,80 @@ function notes({ alone, left }) {
 
 const groupsOf = (groups) => groups.map(({ tree, runs }) => `${shortTree(tree)} (${runs.length} runs)`).join(", ");
 
-/** The message for a result of `compareRuns` that has flips. */
-export function formatFlips(result) {
+/** The groups with flips, split into those in the code that counts (`current`, or every group when none is given) and the rest. */
+function judged(result, current) {
   const flipping = result.groups.filter((group) => group.flips.length > 0);
-  const total = flipping.reduce((sum, group) => sum + group.flips.length, 0);
-  const spots = flipping.reduce((sum, group) => sum + new Set(group.flips.map((point) => `${point.file}\t${point.method}`)).size, 0);
+  const counts = (group) => current === undefined || group.tree === current;
+  return { failing: flipping.filter(counts), information: flipping.filter((group) => !counts(group)), judging: result.groups.filter(counts) };
+}
+
+/** The listing of one group's flips: its code and runs, then the places by file and method. */
+function groupLines(group) {
+  const out = ["", `Server code ${shortTree(group.tree)}, ${group.runs.length} runs (${group.runs.join(", ")})`];
+  let file;
+  let method;
+  for (const point of group.flips) {
+    if (point.file !== file) {
+      file = point.file;
+      method = undefined;
+      out.push("", file);
+    }
+    if (point.method !== method) {
+      method = point.method;
+      out.push(`  ${method}`);
+    }
+    out.push(`    ${describe(point)}`);
+  }
+  return out;
+}
+
+/** The flips of code no longer on main, which are shown and do not fail the check. */
+function informationLines(information) {
+  if (information.length === 0) return [];
+  return ["", "In code no longer on main, for information (this does not fail the check):", ...information.flatMap(groupLines)];
+}
+
+/** The message for a result of `compareRuns`; only flips in the code `current` names (every group's, when none is given) are what the check fails for. */
+export function formatFlips(result, current) {
+  const { failing, information } = judged(result, current);
+  const total = failing.reduce((sum, group) => sum + group.flips.length, 0);
+  const spots = failing.reduce((sum, group) => sum + new Set(group.flips.map((point) => `${point.file}\t${point.method}`)).size, 0);
   const out = [
     `Coverage is not steady: ${total} line(s) and branch(es) in ${spots} place(s) in the server were reached in some CI runs and not in others that tested the same server code (compared within ${result.groups.length} group(s) of runs: ${groupsOf(result.groups)}).`,
-  ];
-  for (const group of flipping) {
-    out.push("", `Server code ${shortTree(group.tree)}, ${group.runs.length} runs (${group.runs.join(", ")})`);
-    let file;
-    let method;
-    for (const point of group.flips) {
-      if (point.file !== file) {
-        file = point.file;
-        method = undefined;
-        out.push("", file);
-      }
-      if (point.method !== method) {
-        method = point.method;
-        out.push(`  ${method}`);
-      }
-      out.push(`    ${describe(point)}`);
-    }
-  }
-  out.push(
+    ...failing.flatMap(groupLines),
     "",
     "What to do: each of these is code that a test reaches only when timing, or the way data arrives in pieces, goes one way, so the coverage check can turn red with no change to the code.",
     "Write a test that reaches each one every time: make the test produce both outcomes on purpose (hand the code its input in the pieces you choose, hold a race open with a signal) rather than waiting, and add no delay.",
     "The runs named above are the ones that missed it; their test logs show which tests ran.",
-  );
+    ...informationLines(information),
+  ];
   const rest = notes(result);
   if (rest.length > 0) out.push("", ...rest);
   return out.join("\n");
 }
 
-/** Prints the verdict for `argv` (the folder of runs); returns the exit code. */
+/** The message when nothing in the code that counts flips. */
+function formatSteady(result, current) {
+  const { information, judging } = judged(result, current);
+  const out = [
+    judging.length === 0
+      ? `Nothing to compare: no two runs tested ${current === undefined ? "the same server code" : "the server code now on main"}.`
+      : `Coverage is steady: no line or branch in the server was reached in only some of the runs that tested the same server code (${groupsOf(judging)}).`,
+    ...informationLines(information),
+  ];
+  const rest = notes(result);
+  if (rest.length > 0) out.push("", ...rest);
+  return out.join("\n");
+}
+
+/** Prints the verdict for `argv` (the folder of runs, and `--current-tree <id>`); returns the exit code. */
 export function main(argv, { log = console.log, error = console.error } = {}) {
-  const [folder] = argv;
-  if (!folder) {
-    error("Usage: check-coverage-flips.mjs <folder of runs>");
+  const option = argv.indexOf("--current-tree");
+  const current = option < 0 ? undefined : argv[option + 1];
+  const valueAt = option < 0 ? -1 : option + 1;
+  const [folder] = argv.filter((argument, index) => !argument.startsWith("--") && index !== valueAt);
+  if (!folder || (option >= 0 && !current)) {
+    error("Usage: check-coverage-flips.mjs <folder of runs> [--current-tree <tree id of apps/server on main>]");
     return 2;
   }
   if (!existsSync(folder)) {
@@ -233,13 +270,11 @@ export function main(argv, { log = console.log, error = console.error } = {}) {
     return 2;
   }
   const result = compareRuns(folder);
-  if (result.groups.some((group) => group.flips.length > 0)) {
-    log(formatFlips(result));
+  if (judged(result, current).failing.length > 0) {
+    log(formatFlips(result, current));
     return 1;
   }
-  const rest = notes(result).map((line) => ` ${line}`).join("");
-  if (result.groups.length === 0) log(`Nothing to compare: no two runs tested the same server code.${rest}`);
-  else log(`Coverage is steady: no line or branch in the server was reached in only some of the runs that tested the same server code (${groupsOf(result.groups)}).${rest}`);
+  log(formatSteady(result, current));
   return 0;
 }
 
