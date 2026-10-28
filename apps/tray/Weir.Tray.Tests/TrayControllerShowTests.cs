@@ -43,6 +43,22 @@ public sealed class TrayControllerShowTests : IDisposable
     }
 
     [Fact]
+    public void Each_change_of_the_hover_text_is_logged_once_and_in_order()
+    {
+        var rig = Rig();
+        rig.Controller.Begin();
+        Run(rig);
+
+        rig.Controller.ShowServerStatus(Reading(Well, DateTime.UtcNow));
+        rig.Controller.Render();
+        rig.Server.SetPhase(ServerPhase.Starting);
+        rig.Controller.Render();
+
+        var said = LogFile.ReadAllLines(Path.Combine(rig.Home, "tray-host.log")).Where(line => line.Contains("Icon says: ", StringComparison.Ordinal)).Select(line => line[(line.IndexOf("Icon says: ", StringComparison.Ordinal) + 11)..]).ToList();
+        Assert.Equal(["Weir - Starting...", new TrayState(ServerPhase.Running, Well, null, 9347).HoverText, "Weir - Starting..."], said);
+    }
+
+    [Fact]
     public void A_running_server_that_has_not_yet_said_how_it_is_still_blinks()
     {
         var rig = Rig();

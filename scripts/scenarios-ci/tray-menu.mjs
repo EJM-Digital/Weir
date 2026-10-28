@@ -11,6 +11,8 @@ import { ensureSignedIn, wait } from "./windows-install.mjs";
 import { linesWith } from "./tray-log.mjs";
 
 const UPDATE_CEILING_MS = 180_000;
+/** The tray logs this, then the hover text, each time the text of its icon changes. */
+const ICON_SAYS = "Icon says: ";
 const sameFolder = (a, b) => a.replaceAll("/", "\\").replace(/\\+$/, "").toLowerCase() === b.replaceAll("/", "\\").replace(/\\+$/, "").toLowerCase();
 
 /** The version the menu's version line shows: without the build metadata after a plus sign. */
@@ -169,12 +171,18 @@ export async function trayMenu(world) {
     const mark = await tray.lineCount();
     await choose(world, tray, menu.restart);
     await tray.line("Restart Weir chosen.", { what: "the tray to log the restart" });
-    await iconText(world, { startingOnly: true });
     const newPid = await tray.readyAfter(oldPid);
     const stopping = (await tray.log()).slice(mark);
     assert.ok(stopping.some((line) => line.startsWith(`Bundled server host pid=${oldPid} stopped cleanly in`)), "the old server was asked to stop and stopped by itself");
     assert.ok(!stopping.some((line) => line.includes("killing it")), "no server was killed");
     await statusIs(world, tray, status.running(PORT), "the menu to say Weir is running again");
+    // Starting lasts only from the old server stopping to the new one answering, which a quick restart makes too short to be seen by looking, so
+    // the proof is the tray's record of what the icon said (one line for each change); the icon itself is checked once it has settled.
+    const said = (await tray.log()).slice(mark).filter((line) => line.startsWith(ICON_SAYS)).map((line) => line.slice(ICON_SAYS.length));
+    const startedAt = said.indexOf("Weir - Starting...");
+    assert.ok(startedAt >= 0, `the icon never said Weir was starting after the restart (it said: ${said.join(" | ") || "nothing"})`);
+    assert.ok(said.slice(startedAt + 1).includes(status.running(PORT)), `the icon did not say Weir was running again after it said starting (it said: ${said.join(" | ")})`);
+    assert.equal(await iconText(world), status.running(PORT), "the icon says Weir is running again");
     facts.push(`Restart Weir stopped server ${oldPid} cleanly, started ${newPid} on the same port, and the icon said Starting meanwhile`);
 
     // Quit: the server is stopped by its own stop request, the tray ends, and the icon goes.
