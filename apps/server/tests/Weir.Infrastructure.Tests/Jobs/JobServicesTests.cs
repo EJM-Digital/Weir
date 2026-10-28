@@ -336,6 +336,27 @@ public sealed class JobServicesTests : IDisposable
     }
 
     [Fact]
+    public async Task A_switch_that_cannot_be_read_leaves_the_family_off_and_the_loop_running()
+    {
+        var time = new FakeTimeProvider();
+        var recheck = TimeSpan.FromMilliseconds(50);
+        var registry = new JobHandlerRegistry([new DelegateHandler("processing.unreadable.v1", _ => { })]);
+        var logger = new CapturingLogger<PeriodicEnqueueService>();
+        var iterationComplete = new SemaphoreSlim(0);
+        var service = new PeriodicEnqueueService(
+            [new UnreadableSwitchEnqueuer()], registry, time, logger, new PeriodicEnqueueClock(), recheck, () => iterationComplete.Release());
+
+        await service.StartAsync(CancellationToken.None);
+        await WaitForIterationAsync(iterationComplete);
+        time.Advance(recheck);
+        await WaitForIterationAsync(iterationComplete);
+        await service.StopAsync(CancellationToken.None);
+
+        Assert.True(logger.Logged(LogLevel.Error, "Could not read whether unreadable is enabled; leaving it off."));
+        Assert.Equal(0, _db.Count("SELECT count(*) FROM jobs"));
+    }
+
+    [Fact]
     public async Task The_activity_writer_fills_the_classified_columns()
     {
         var writer = new SqliteActivityWriter(_db.Database);
@@ -373,6 +394,19 @@ public sealed class JobServicesTests : IDisposable
         // Never started, so RecoveryCompleted reads as already done and this slot never waits on it.
         var recovery = new JobsStartupRecoveryService(_db.Store, options, new LibrarySettingsStore(), new LibraryStore(), TimeProvider.System, NullLogger<JobsStartupRecoveryService>.Instance);
         return new ProcessingWorkerService(processor, _db.Store, heartbeats, options, timings, TimeProvider.System, logger ?? NullLogger<ProcessingWorkerService>.Instance, registry, recovery);
+    }
+
+    private sealed class UnreadableSwitchEnqueuer : IPeriodicEnqueuer
+    {
+        public string Name => "unreadable";
+
+        public string JobKind => "processing.unreadable.v1";
+
+        public TimeSpan Interval => TimeSpan.FromHours(1);
+
+        public Task<bool> IsEnabledAsync(CancellationToken cancellationToken) => throw new InvalidOperationException("the settings table is unreadable");
+
+        public Task EnqueueOnceAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class FlakyEnqueuer : IPeriodicEnqueuer
