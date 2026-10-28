@@ -21,7 +21,7 @@ test("a throttled pull is asked again after each wait until it succeeds", () => 
 
 test("a throttle that outlasts the waits fails with the registry's words", () => {
   const { run, calls } = sequence(THROTTLE);
-  assert.throws(() => pullImage("img@sha256:a", { run, wait: () => {}, waitsMs: [1, 2] }), /docker pull img@sha256:a exited 1\ntoomanyrequests/);
+  assert.throws(() => pullImage("img@sha256:a", { run, wait: () => {}, waitsMs: [1, 2], log: () => {} }), /docker pull img@sha256:a exited 1 after 3 attempts\ntoomanyrequests/);
   assert.equal(calls.length, 3);
 });
 
@@ -29,4 +29,17 @@ test("a failure that is not a throttle is not retried", () => {
   const { run, calls } = sequence({ status: 1, output: "manifest unknown" });
   assert.throws(() => pullImage("img@sha256:a", { run, wait: () => assert.fail("waited"), waitsMs: [1] }), /manifest unknown/);
   assert.equal(calls.length, 1);
+});
+
+test("every throttled attempt is logged with the registry's words, and the failure says how many attempts were made", () => {
+  const { run } = sequence(THROTTLE);
+  const logged = [];
+  assert.throws(
+    () => pullImage("img@sha256:a", { run, wait: () => {}, waitsMs: [1, 2], log: (line) => logged.push(line) }),
+    /docker pull img@sha256:a exited 1 after 3 attempts\ntoomanyrequests/,
+  );
+  assert.deepEqual(logged, [
+    "docker pull img@sha256:a was throttled (attempt 1 of 3), asking again in 1 ms: toomanyrequests: retry-after: 801.086µs, allowed: 44000/minute",
+    "docker pull img@sha256:a was throttled (attempt 2 of 3), asking again in 2 ms: toomanyrequests: retry-after: 801.086µs, allowed: 44000/minute",
+  ]);
 });

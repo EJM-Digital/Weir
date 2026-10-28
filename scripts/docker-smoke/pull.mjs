@@ -10,15 +10,18 @@ const sleepSync = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),
 /**
  * Pulls `image`. Only a throttle is retried, up to `waitsMs.length` more times; any other failure, and a throttle that outlasts the waits,
  * throws with the registry's own words.
- * @param {{run?: typeof runForStatus, wait?: (ms: number) => void, waitsMs?: number[]}} [seams] Injected by the tests.
+ * Each throttled attempt is logged, so a pull that gives up shows every refusal and how long it waited between them.
+ * @param {{run?: typeof runForStatus, wait?: (ms: number) => void, waitsMs?: number[], log?: (line: string) => void}} [seams] Injected by the tests.
  */
-export function pullImage(image, { run = runForStatus, wait = sleepSync, waitsMs = THROTTLE_WAITS_MS } = {}) {
+export function pullImage(image, { run = runForStatus, wait = sleepSync, waitsMs = THROTTLE_WAITS_MS, log = console.log } = {}) {
+  const attempts = waitsMs.length + 1;
   for (let attempt = 0; ; attempt += 1) {
     const result = run(`docker pull ${image}`);
     if (result.status === 0) return result.output;
     if (!THROTTLED.test(result.output) || attempt >= waitsMs.length) {
-      throw new Error(`docker pull ${image} exited ${result.status}\n${result.output}`);
+      throw new Error(`docker pull ${image} exited ${result.status}${attempt > 0 ? ` after ${attempt + 1} attempts` : ""}\n${result.output}`);
     }
+    log(`docker pull ${image} was throttled (attempt ${attempt + 1} of ${attempts}), asking again in ${waitsMs[attempt]} ms: ${result.output.trim()}`);
     wait(waitsMs[attempt]);
   }
 }

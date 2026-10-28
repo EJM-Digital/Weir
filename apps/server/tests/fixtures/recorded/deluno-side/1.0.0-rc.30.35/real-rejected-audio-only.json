@@ -1,8 +1,8 @@
 {
   "app": "deluno",
-  "version": "1.0.0-rc.30.33",
+  "version": "1.0.0-rc.30.35",
   "state": "real-rejected-audio-only",
-  "recordedAt": "2026-10-18T07:29:14.037Z",
+  "recordedAt": "2026-10-27T21:31:30.487Z",
   "note": "A release whose film has sound and no picture, handed to Weir by a real Deluno in a workflow set to reject: Weir reports it rejected and leaves the download; Deluno refuses the release. The hand-off, Deluno's questions about it, Weir's report and Deluno's reply, as the proxy between them saw it.",
   "exchanges": [
     {
@@ -10,18 +10,18 @@
         "method": "POST",
         "path": "/api/v1/intake/webhook/deluno",
         "headers": {
-          "idempotency-key": "01a14ddb49c97afeb81408daf76c0828:1792307579337",
+          "idempotency-key": "01a17f38968e7dad8e4ceb7c9256b485:1793135777422",
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "eventType": "deluno.processor-handoff",
-          "handoffId": "01a14ddb49c97afeb81408daf76c0828",
-          "libraryId": "01a14dd7a3277ea09b4c8cf79f45b536",
+          "handoffId": "01a17f38968e7dad8e4ceb7c9256b485",
+          "libraryId": "01a17f3407ce7f4e86138051bb7a1d13",
           "mediaType": "movies",
           "sourcePath": "/downloads/completed/Movies/ScnReject.2020.1080p.WEB-DL.x264-WEIR",
           "releaseName": "ScnReject.2020.1080p.WEB-DL.x264-WEIR",
-          "queueItemId": "60d3950da5b5641eb378c8f9df1da8b266909dd2",
+          "queueItemId": "c52999973ecf2f56253edef94de379f5587ef5fe",
           "callbackPath": "/api/integrations/processors/events",
           "title": "ScnReject",
           "year": 2020,
@@ -46,31 +46,6 @@
     },
     {
       "request": {
-        "method": "GET",
-        "path": "/api/v1/intake/handoffs/deluno/01a14ddb49c97afeb81408daf76c0828",
-        "headers": {
-          "x-webhook-secret": "<scrubbed>"
-        }
-      },
-      "reply": {
-        "status": 200,
-        "headers": {
-          "content-type": "application/json"
-        },
-        "body": {
-          "handoffId": "01a14ddb49c97afeb81408daf76c0828",
-          "state": "working",
-          "queuePosition": null,
-          "scheduledFor": null,
-          "lastChangedUtc": "2026-10-18T07:13:59Z",
-          "outputPath": null,
-          "outputFiles": null,
-          "message": "Weir only processes movie and TV files that contain a video stream. This file contains no video, so it was rejected before any output was written. Weir is telling your media manager this release is bad so it can find a different one, and removes the download only once the manager accepts."
-        }
-      }
-    },
-    {
-      "request": {
         "method": "POST",
         "path": "/api/integrations/processors/events",
         "headers": {
@@ -78,10 +53,10 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a14ddb49c97afeb81408daf76c0828",
+          "handoffId": "01a17f38968e7dad8e4ceb7c9256b485",
           "status": "failed",
           "processorName": "Weir",
-          "libraryId": "01a14dd7a3277ea09b4c8cf79f45b536",
+          "libraryId": "01a17f3407ce7f4e86138051bb7a1d13",
           "releaseName": "ScnReject.2020.1080p.WEB-DL.x264-WEIR",
           "message": "Weir only processes movie and TV files that contain a video stream. This file contains no video, so it was rejected before any output was written.",
           "disposition": "rejected",
@@ -97,10 +72,10 @@
         },
         "body": {
           "status": "rejected",
-          "handoffId": "01a14ddb49c97afeb81408daf76c0828",
-          "activityId": "01a14ddc36bc78048f1301039fe456c1",
-          "blockedReleaseId": "f62ef9e0cf2a4cdab55632b5186958be",
-          "searchJobId": "01a14ddc36b870158256a1094d194977"
+          "handoffId": "01a17f38968e7dad8e4ceb7c9256b485",
+          "activityId": "01a17f38991a74a1821836e9242f1c0f",
+          "blockedReleaseId": "6d61b24aaef347eea9110ae4916eb87f",
+          "searchJobId": "01a17f3899167b3cb4fa9f1d2666fe69"
         }
       }
     }

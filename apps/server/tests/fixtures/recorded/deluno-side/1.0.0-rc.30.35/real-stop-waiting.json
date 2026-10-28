@@ -1,8 +1,8 @@
 {
   "app": "deluno",
-  "version": "1.0.0-rc.30.33",
+  "version": "1.0.0-rc.30.35",
   "state": "real-stop-waiting",
-  "recordedAt": "2026-10-18T07:29:14.037Z",
+  "recordedAt": "2026-10-27T21:31:30.487Z",
   "note": "A release handed to Weir by a real Deluno while Weir was paused, and then dropped by a person pressing Stop waiting in Deluno: Deluno's questions while it waited, its request that Weir drop the hand-off and Weir's answer, as the proxy between them saw it.",
   "exchanges": [
     {
@@ -10,18 +10,18 @@
         "method": "POST",
         "path": "/api/v1/intake/webhook/deluno",
         "headers": {
-          "idempotency-key": "01a14ddd209e7d9abe0c159343a158e6:1792307699870",
+          "idempotency-key": "01a17f3981fe7eb79c6285586fe4792d:1793135837693",
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "eventType": "deluno.processor-handoff",
-          "handoffId": "01a14ddd209e7d9abe0c159343a158e6",
-          "libraryId": "01a14dd7a3277ea09b4c8cf79f45b536",
+          "handoffId": "01a17f3981fe7eb79c6285586fe4792d",
+          "libraryId": "01a17f3407ce7f4e86138051bb7a1d13",
           "mediaType": "movies",
           "sourcePath": "/downloads/completed/Movies/ScnStop.2020.1080p.WEB-DL.x264-WEIR",
           "releaseName": "ScnStop.2020.1080p.WEB-DL.x264-WEIR",
-          "queueItemId": "e702db2f03fbccedfb5415525aa793383606019a",
+          "queueItemId": "35ed72b5fe1533f9b993ecab0f9114647080dc45",
           "callbackPath": "/api/integrations/processors/events",
           "title": "ScnStop",
           "year": 2020,
@@ -47,7 +47,7 @@
     {
       "request": {
         "method": "DELETE",
-        "path": "/api/v1/intake/handoffs/deluno/01a14ddd209e7d9abe0c159343a158e6",
+        "path": "/api/v1/intake/handoffs/deluno/01a17f3981fe7eb79c6285586fe4792d",
         "headers": {
           "x-webhook-secret": "<scrubbed>"
         }

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Weir.Infrastructure.Processes;
 
@@ -120,6 +121,45 @@ public sealed class ProcessRunnerEdgeTests
 
         Assert.Equal([1, 2, 3], sink.ToArray());
         Assert.Equal(1, reads);
+    }
+
+    // Which side of the limit a tail ends on depends on how the pipe happened to chunk the child's output, so the sink is driven directly.
+    // With a limit of 4 the sink trims when it holds more than 8 bytes, so each case below ends on a different side of those two numbers.
+    [Theory]
+    [InlineData("abc", "abc")]
+    [InlineData("abcd", "abcd")]
+    [InlineData("abcdef", "cdef")]
+    [InlineData("abcdefgh", "efgh")]
+    [InlineData("abcdefghi", "fghi")]
+    [InlineData("abcdefghijk", "hijk")]
+    public void A_tail_keeps_only_the_last_bytes_on_either_side_of_its_limit(string written, string expected)
+    {
+        var sink = new ProcessRunner.OutputSink(ProcessOutput.Tail, 4);
+
+        sink.Write(Encoding.UTF8.GetBytes(written));
+
+        Assert.Equal(expected, Encoding.UTF8.GetString(sink.ToArray()));
+    }
+
+    [Fact]
+    public void A_tail_written_in_pieces_keeps_the_last_bytes_across_a_trim()
+    {
+        var sink = new ProcessRunner.OutputSink(ProcessOutput.Tail, 4);
+
+        sink.Write("abcdefghi"u8);
+        sink.Write("jk"u8);
+
+        Assert.Equal("hijk", Encoding.UTF8.GetString(sink.ToArray()));
+    }
+
+    [Fact]
+    public void Discarded_output_is_not_kept()
+    {
+        var sink = new ProcessRunner.OutputSink(ProcessOutput.Discard, 4);
+
+        sink.Write("abc"u8);
+
+        Assert.Empty(sink.ToArray());
     }
 
     [Fact]

@@ -100,7 +100,7 @@ or test-only CI files is the same build and does not need the run again. All of 
   `golden-path` job and by the pre-tag check above. A shipped file that changed and changed back is not a difference.
 - The pass was run for the version being tagged: its status description ends in `<version>+<short sha>`, as
   `Invoke-WeirScenarios.ps1` writes it, and the version must be the tag's. Weir takes its version from the tag when it
-  builds, so a pass run as `1.0.0-rc.18` does not cover a `1.0.0-rc.20` build. A change to
+  builds, so a pass run as `1.0.0-rc.18` does not cover a `1.0.0-rc.21` build. A change to
   `apps/server/Directory.Build.props`, where the version placeholder and every build rule live, is a shipped change too.
 
 What ships is what the Windows installer and the Docker image are built from:
@@ -154,10 +154,10 @@ hand-off made earlier is counted, not judged; with none made later the run makes
 ```powershell
 # 1. Right after Deluno's suite installed Weir with its picker, before it sends any film (leave the Weir login file first):
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.20 -CommitSha <the 40-character SHA that will be tagged> -Phases Update
+  -Version 1.0.0-rc.21 -CommitSha <the 40-character SHA that will be tagged> -Phases Update
 # 2. After Deluno's suite has made its hand-offs (leave the Deluno key file and the Weir login file again):
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.20 -CommitSha <the same SHA> -Phases WithDeluno,Fresh
+  -Version 1.0.0-rc.21 -CommitSha <the same SHA> -Phases WithDeluno,Fresh
 ```
 
 Both invocations write into the same `artifacts/weir-scenarios-<version>-<short sha>/` folder (a full run has no time in its folder name, so its invocations merge), and the record merges every
@@ -221,7 +221,7 @@ account to read System > Logs with, so it is judged on the two log files, and th
 
 ```powershell
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.20 -CommitSha <the 40-character SHA> -Scenarios process-again
+  -Version 1.0.0-rc.21 -CommitSha <the 40-character SHA> -Scenarios process-again
 ```
 
 A Fresh scenario restores the clean checkpoint, then makes what it needs itself (`Initialize-FreshScenario`): it installs the build under test when
@@ -243,7 +243,7 @@ unless `fresh-install` is among the chosen scenarios, because nothing else would
 
 ```powershell
 ./scripts/scenarios/Invoke-WeirScenarios.ps1 -RigHost <host> -InstallerPath .\weir-build\Weir-win-Setup.exe `
-  -Version 1.0.0-rc.20 -CommitSha <the 40-character SHA> -Scenarios process-again -NoRestore
+  -Version 1.0.0-rc.21 -CommitSha <the 40-character SHA> -Scenarios process-again -NoRestore
 ```
 
 **Combining a full run with the re-runs of what it failed (the owner, 17 Oct 2026).** A full run that fails only on harness or
@@ -318,7 +318,7 @@ ticked list.
 ```bash
 gh api repos/EJM-Digital/Weir/statuses/<full sha> \
   -f state=success -f context=golden-path \
-  -f description="Weir scenarios passed: 13 of 13, 1.0.0-rc.20+abc1234" \
+  -f description="Weir scenarios passed: 13 of 13, 1.0.0-rc.21+abc1234" \
   -f target_url="https://github.com/EJM-Digital/Weir/issues/<n>#issuecomment-<id>"
 ```
 
