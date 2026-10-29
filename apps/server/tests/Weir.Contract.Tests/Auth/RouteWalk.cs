@@ -62,6 +62,7 @@ internal static partial class RouteWalk
         ["PUT /api/v1/processing/rule-sets/{rule_set_id}"] = () => new() { ["name"] = "Rules" },
         ["PUT /api/v1/suite/configuration-bundle"] = () => new() { ["bundle"] = new JsonObject() },
         ["PUT /api/v1/suite/backup-password"] = () => new() { ["password"] = "route walk password", ["confirm_password"] = "route walk password" },
+        ["PUT /api/v1/suite/home-network-sign-in"] = () => new() { ["enabled"] = false, ["current_password"] = "route walk password" },
         ["PUT /api/v1/suite/network-access"] = () => new() { ["scope"] = "this_pc_only" },
         ["PUT /api/v1/suite/notification-channels/{channel_id}"] = () => new() { ["label"] = "Alerts", ["provider"] = "webhook", ["url"] = "http://localhost:9/alerts" },
         ["PUT /api/v1/suite/settings"] = () => new() { ["app_timezone"] = "UTC", ["log_retention_days"] = 30 },

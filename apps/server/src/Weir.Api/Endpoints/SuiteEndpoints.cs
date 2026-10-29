@@ -14,6 +14,7 @@ public static class SuiteEndpoints
         endpoints.MapSuiteDiagnosticsEndpoints();
         endpoints.MapSuiteUpdateEndpoints();
         endpoints.MapSuiteNetworkAccessEndpoints();
+        endpoints.MapSuiteHomeNetworkSignInEndpoints();
         endpoints.MapSuiteOperationalHistoryEndpoints();
         endpoints.MapSuitePauseEndpoints();
         return endpoints;

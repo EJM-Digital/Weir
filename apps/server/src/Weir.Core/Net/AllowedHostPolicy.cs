@@ -8,6 +8,9 @@ namespace Weir.Core.Net;
 /// </summary>
 public static class AllowedHostPolicy
 {
+    /// <summary>Weir's host check has no off switch: <c>WEIR_ALLOWED_HOSTS</c> only adds names to what it answers.</summary>
+    public const bool Enforced = true;
+
     /// <summary>
     /// Suffixes for names a home or small-office network typically resolves only for itself, so a
     /// public DNS rebind cannot produce them.

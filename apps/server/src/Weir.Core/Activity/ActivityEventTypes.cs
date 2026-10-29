@@ -20,6 +20,9 @@ public static class ActivityEventTypes
     /// <summary>An admin chose who can reach Weir over the network, from System › About.</summary>
     public const string SystemNetworkAccessChanged = "system.network_access.changed";
 
+    /// <summary>An admin turned skipping sign-in for devices on the home network on or off.</summary>
+    public const string SystemHomeNetworkSignInChanged = "system.home_network_sign_in.changed";
+
     /// <summary>Processing was paused, or its pause changed; the entry says until when, by whom, and whether Weir keeps looking for files.</summary>
     public const string SystemProcessingPaused = "system.processing_paused";
 

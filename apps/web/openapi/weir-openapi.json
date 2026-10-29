@@ -1733,6 +1733,94 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "HomeNetworkSignInOut": {
+        "additionalProperties": false,
+        "description": "Skip sign-in for devices on the home network. Off unless the owner turns it on.",
+        "properties": {
+          "allow_list": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allow List"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "extra_networks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "title": "Extra Networks"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set when the choice is on and Allowed Hosts is off.",
+            "title": "Warning"
+          }
+        },
+        "required": [
+          "enabled",
+          "extra_networks",
+          "allow_list",
+          "warning"
+        ],
+        "title": "HomeNetworkSignInOut",
+        "type": "object"
+      },
+      "HomeNetworkSignInPutIn": {
+        "additionalProperties": false,
+        "description": "Body for PUT /suite/home-network-sign-in: the choice, the owner's own networks and the allow list that narrows who skips. The current password is required even of a visitor who skipped sign-in.",
+        "properties": {
+          "allow_list": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [],
+            "title": "Allow List"
+          },
+          "csrf_token": {
+            "minLength": 1,
+            "title": "Csrf Token",
+            "type": "string"
+          },
+          "current_password": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Current Password",
+            "type": "string"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "extra_networks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [],
+            "title": "Extra Networks"
+          }
+        },
+        "required": [
+          "csrf_token",
+          "current_password",
+          "enabled"
+        ],
+        "title": "HomeNetworkSignInPutIn",
+        "type": "object"
+      },
       "InternalServerError": {
         "description": "The answer to a failure Weir did not foresee. It says nothing of the failure itself; the details are in Weir's log.",
         "properties": {
@@ -19394,6 +19482,77 @@
           }
         },
         "summary": "Put Configuration Bundle",
+        "tags": [
+          "suite"
+        ]
+      }
+    },
+    "/api/v1/suite/home-network-sign-in": {
+      "get": {
+        "description": "Whether devices on the home network skip sign-in, the networks the owner added and the allow list that narrows who skips (System › Security).",
+        "operationId": "get_home_network_sign_in_api_v1_suite_home_network_sign_in_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeNetworkSignInOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "summary": "Get Home Network Sign In",
+        "tags": [
+          "suite"
+        ]
+      },
+      "put": {
+        "description": "Admin only. Turns skipping sign-in for devices on the home network on or off and saves its networks. It asks for the current password even of a visitor who skipped sign-in. An Activity line is written only when the choice changes.",
+        "operationId": "put_home_network_sign_in_api_v1_suite_home_network_sign_in_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HomeNetworkSignInPutIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeNetworkSignInOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
+          }
+        },
+        "summary": "Put Home Network Sign In",
         "tags": [
           "suite"
         ]

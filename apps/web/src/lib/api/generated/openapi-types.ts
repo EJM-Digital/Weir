@@ -2057,6 +2057,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/suite/home-network-sign-in": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Home Network Sign In
+     * @description Whether devices on the home network skip sign-in, the networks the owner added and the allow list that narrows who skips (System › Security).
+     */
+    get: operations["get_home_network_sign_in_api_v1_suite_home_network_sign_in_get"];
+    /**
+     * Put Home Network Sign In
+     * @description Admin only. Turns skipping sign-in for devices on the home network on or off and saves its networks. It asks for the current password even of a visitor who skipped sign-in. An Activity line is written only when the choice changes.
+     */
+    put: operations["put_home_network_sign_in_api_v1_suite_home_network_sign_in_put"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/suite/logs": {
     parameters: {
       query?: never;
@@ -3368,6 +3392,45 @@ export interface components {
        * @description Application liveness indicator.
        */
       status: string;
+    };
+    /**
+     * HomeNetworkSignInOut
+     * @description Skip sign-in for devices on the home network. Off unless the owner turns it on.
+     */
+    HomeNetworkSignInOut: {
+      /** Allow List */
+      allow_list: string[];
+      /** Enabled */
+      enabled: boolean;
+      /** Extra Networks */
+      extra_networks: string[];
+      /**
+       * Warning
+       * @description Set when the choice is on and Allowed Hosts is off.
+       */
+      warning: string | null;
+    };
+    /**
+     * HomeNetworkSignInPutIn
+     * @description Body for PUT /suite/home-network-sign-in: the choice, the owner's own networks and the allow list that narrows who skips. The current password is required even of a visitor who skipped sign-in.
+     */
+    HomeNetworkSignInPutIn: {
+      /**
+       * Allow List
+       * @default []
+       */
+      allow_list: string[];
+      /** Csrf Token */
+      csrf_token: string;
+      /** Current Password */
+      current_password: string;
+      /** Enabled */
+      enabled: boolean;
+      /**
+       * Extra Networks
+       * @default []
+       */
+      extra_networks: string[];
     };
     /**
      * InternalServerError
@@ -12928,6 +12991,62 @@ export interface operations {
           "application/json": {
             [key: string]: unknown;
           };
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
+    };
+  };
+  get_home_network_sign_in_api_v1_suite_home_network_sign_in_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HomeNetworkSignInOut"];
+        };
+      };
+      500: components["responses"]["InternalServerError"];
+    };
+  };
+  put_home_network_sign_in_api_v1_suite_home_network_sign_in_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["HomeNetworkSignInPutIn"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HomeNetworkSignInOut"];
         };
       };
       /** @description Validation Error */

@@ -123,6 +123,8 @@
     { "method": "GET", "path": "/api/v1/suite/configuration-bundle", "access": "admin" },
     { "method": "PUT", "path": "/api/v1/suite/configuration-bundle", "access": "admin" },
     { "method": "POST", "path": "/api/v1/suite/download-update", "access": "admin" },
+    { "method": "GET", "path": "/api/v1/suite/home-network-sign-in", "access": "signed-in" },
+    { "method": "PUT", "path": "/api/v1/suite/home-network-sign-in", "access": "admin" },
     { "method": "GET", "path": "/api/v1/suite/logs", "access": "signed-in" },
     { "method": "GET", "path": "/api/v1/suite/logs/download", "access": "admin" },
     { "method": "GET", "path": "/api/v1/suite/metrics", "access": "signed-in" },
