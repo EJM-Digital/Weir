@@ -1,0 +1,33 @@
+# The Docker image installs Ubuntu's pending updates (apt-get upgrade) on top of a base image pinned by
+# digest. Docker's build cache keys that layer on the command text alone, so a cached layer keeps
+# yesterday's packages after Ubuntu publishes a fix, and the Trivy gate then fails on a CVE the image
+# would no longer have if built fresh (libbrotli1, 29 Oct 2026). This reads when Ubuntu's noble-security
+# and noble-updates indexes last changed and hands that out as one stamp. Passed as the Dockerfile's
+# UBUNTU_ARCHIVE_STAMP build argument, it re-runs the upgrade exactly when the archive has moved and
+# keeps the cache otherwise.
+name: Ubuntu archive stamp
+description: When Ubuntu noble's security and update indexes last changed, for the Docker upgrade layer's cache key.
+
+outputs:
+  stamp:
+    description: The two Last-Modified times, joined.
+    value: ${{ steps.stamp.outputs.stamp }}
+
+runs:
+  using: composite
+  steps:
+    - id: stamp
+      shell: bash
+      run: |
+        modified() {
+          curl --fail --silent --show-error --head --retry 3 --max-time 30 "$1" \
+            | tr -d '\r' | sed -n 's/^[Ll]ast-[Mm]odified: //p'
+        }
+        security="$(modified http://security.ubuntu.com/ubuntu/dists/noble-security/InRelease)"
+        updates="$(modified http://archive.ubuntu.com/ubuntu/dists/noble-updates/InRelease)"
+        if [ -z "$security" ] || [ -z "$updates" ]; then
+          echo "::error::Could not read when Ubuntu's noble-security and noble-updates indexes last changed."
+          exit 1
+        fi
+        echo "stamp=$security / $updates" >> "$GITHUB_OUTPUT"
+        echo "Ubuntu archive: security $security, updates $updates"
