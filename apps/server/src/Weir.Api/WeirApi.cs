@@ -54,6 +54,8 @@ public static class WeirApi
         services.AddSingleton<AuthAccountEndpointHandlers>();
         services.AddSingleton<AuthSessionEndpointHandlers>();
         services.AddSingleton<AuthSessionLifecycleEndpointHandlers>();
+        services.AddSingleton<AuthRecoveryCodesEndpointHandlers>();
+        services.AddSingleton<AuthRecoveryEndpointHandlers>();
         services.AddSingleton<ActivityEndpointHandlers>();
         services.AddSingleton<SystemStatsEndpointHandlers>();
         services.AddSingleton<NotificationEndpointHandlers>();

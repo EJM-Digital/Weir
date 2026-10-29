@@ -3,8 +3,13 @@ import {
   fetchBootstrapStatus,
   fetchCurrentSession,
   fetchActiveSessions,
+  fetchRecoveryCodes,
   postChangePassword,
   postChangeUsername,
+  postConfirmRecoveryCodes,
+  postNewRecoveryCodes,
+  postRecoveryCode,
+  postRecoveryPassword,
   postSetTheme,
   fetchMe,
   postBootstrap,
@@ -14,6 +19,7 @@ import {
   postRevokeSession,
 } from "../api/auth-api";
 import type { UserPublic } from "../api/types";
+import { bringBackRecoveryPrompt } from "./recovery-prompt";
 import { clearLoginSucceeded, markLoginSucceeded } from "./session-kept";
 import {
   clearSignedIn,
@@ -104,12 +110,14 @@ export function useLoginMutation() {
       markLoginSucceeded();
       markSignedIn();
       finishChangingPassword();
+      bringBackRecoveryPrompt();
       // Anonymous /me is cached as `null` (401). Hydrate from the login response — do not invalidate
       // /me here: an immediate refetch can run before the session cookie is visible to fetch(), get
       // 401, and overwrite this cache back to null (E2E/CI flake).
       qc.setQueryData(authKeys.me, data.user);
       void qc.invalidateQueries({ queryKey: authKeys.bootstrap });
       void qc.invalidateQueries({ queryKey: authKeys.session });
+      void qc.invalidateQueries({ queryKey: authKeys.recoveryCodes });
       void qc.invalidateQueries({ queryKey: activityKeys.recent });
     },
   });
@@ -222,5 +230,58 @@ export function useChangePasswordMutation() {
       qc.setQueryData(authKeys.me, null);
       qc.setQueryData(authKeys.session, null);
     },
+  });
+}
+
+/** How many recovery codes are left and whether the set was saved. Off until a signed-in screen asks. */
+export function useRecoveryCodesQuery(enabled = true) {
+  return useQuery({
+    queryKey: authKeys.recoveryCodes,
+    queryFn: fetchRecoveryCodes,
+    retry: false,
+    enabled,
+  });
+}
+
+/** Makes a new set after the current password; the codes come back once and are kept nowhere. */
+export function useNewRecoveryCodesMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: postNewRecoveryCodes,
+    onSuccess: (data) => {
+      qc.setQueryData(authKeys.recoveryCodes, {
+        remaining: data.remaining,
+        confirmed: data.confirmed,
+      });
+    },
+  });
+}
+
+export function useConfirmRecoveryCodesMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: postConfirmRecoveryCodes,
+    onSuccess: (data) => {
+      qc.setQueryData(authKeys.recoveryCodes, {
+        remaining: data.remaining,
+        confirmed: data.confirmed,
+      });
+    },
+  });
+}
+
+export function useRecoveryCodeMutation() {
+  return useMutation({ mutationFn: postRecoveryCode });
+}
+
+export function useRecoveryPasswordMutation() {
+  return useMutation({
+    mutationFn: ({
+      recoveryToken,
+      newPassword,
+    }: {
+      recoveryToken: string;
+      newPassword: string;
+    }) => postRecoveryPassword(recoveryToken, newPassword),
   });
 }

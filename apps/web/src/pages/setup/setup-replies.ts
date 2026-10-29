@@ -20,11 +20,6 @@ export const noOneSignedIn: RecordedReply = {
   body: '{"detail":"Not authenticated."}',
 };
 
-export const accountCreated: RecordedReply = {
-  status: 200,
-  body: '{"message":"Account created. You are signed in.","username":"recorded-admin","user":{"id":1,"username":"recorded-admin","role":"admin","app_theme":null}}',
-};
-
 export const accountRefused: RecordedReply = {
   status: 403,
   body: '{"detail":"Bootstrap is not available: an admin user already exists."}',

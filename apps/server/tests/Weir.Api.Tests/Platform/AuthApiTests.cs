@@ -249,17 +249,6 @@ public sealed class AuthApiTests
     }
 
     [Fact]
-    public async Task Bootstrap_answers_409_for_a_username_that_already_exists()
-    {
-        await using var server = await StartServerAsync();
-        await TestDatabase.SeedUserAsync(server, "taken", "irrelevant-password-here", "viewer");
-        var client = new ApiTestClient(server);
-        using var response = await client.PostAsync("/api/v1/auth/bootstrap", new { username = "TAKEN", password = "valid-pass-bootstrap-8", csrf_token = await client.CsrfAsync() });
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        Assert.Equal("Username already exists.", await Detail(response));
-    }
-
-    [Fact]
     public async Task Login_is_rate_limited_with_retry_after()
     {
         await using var server = await StartServerAsync(("WEIR_AUTH_LOGIN_RATE_MAX_ATTEMPTS", "3"), ("WEIR_AUTH_LOGIN_RATE_WINDOW_SECONDS", "120"));

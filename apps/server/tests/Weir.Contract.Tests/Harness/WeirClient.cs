@@ -198,6 +198,10 @@ public sealed class WeirClient : IDisposable
         {
             var created = await BootstrapAsync(username, password);
             Assert.True(created.Status == HttpStatusCode.OK, created.ToString());
+
+            // The owner who set this account up saved the recovery codes it showed; nothing here is about them.
+            var saved = await PostWithCsrfAsync($"{Api}/auth/recovery-codes/confirm");
+            Assert.True(saved.Status == HttpStatusCode.OK, saved.ToString());
         }
 
         await LoginAsync(username, password);

@@ -138,6 +138,7 @@ public sealed class SchemaMigrator
         new(49, "0084_connection_ids_are_never_reused", "Weir.Infrastructure.Migrations.0049_connection_ids_are_never_reused.sql"),
         new(50, "0085_backup_password", "Weir.Infrastructure.Migrations.0050_backup_password.sql"),
         new(51, "0086_home_network_sign_in", "Weir.Infrastructure.Migrations.0051_home_network_sign_in.sql"),
+        new(52, "0087_recovery_codes", "Weir.Infrastructure.Migrations.0052_recovery_codes.sql"),
     ];
 
     /// <summary>The first migration's revision: the oldest schema this build can start from.</summary>

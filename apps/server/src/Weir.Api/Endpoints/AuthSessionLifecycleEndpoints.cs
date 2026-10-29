@@ -266,15 +266,11 @@ internal sealed class AuthSessionLifecycleEndpointHandlers
             logger.LogWarning("auth event: bootstrap failed (weak password)");
             throw new ApiException(StatusCodes.Status400BadRequest, exception.Message);
         }
-        catch (SqliteException exception) when (SqliteValues.IsIntegrityError(exception))
-        {
-            logger.LogWarning("auth event: bootstrap failed (username conflict)");
-            throw new ApiException(StatusCodes.Status409Conflict, "Username already exists.");
-        }
 
         logger.LogInformation("auth event: bootstrap succeeded (user_id={UserId})", user.Id);
         await _activity.RecordAsync(uow, ActivityEventTypes.AuthBootstrapSucceeded, "auth", "Initial admin created", user.Username).ConfigureAwait(false);
         setupCodes.Clear();
+        var recoveryCodes = await request.Auth.MakeRecoveryCodesAsync(uow, user.Id).ConfigureAwait(false);
         var suite = await _suiteSettings.EnsureAsync(uow).ConfigureAwait(false);
         await _suiteSettings.UpdateAsync(uow, suite, suite with { SetupWizardState = "pending" }).ConfigureAwait(false);
 
@@ -288,7 +284,8 @@ internal sealed class AuthSessionLifecycleEndpointHandlers
             new WireObject()
                 .Set("message", "Account created. You are signed in.")
                 .Set("username", user.Username)
-                .Set("user", AuthService.UserPublic(user)),
+                .Set("user", AuthService.UserPublic(user))
+                .Set("recovery_codes", new WireArray(recoveryCodes.Select(code => (WireValue)new WireString(code)))),
             session,
             rawToken);
     }

@@ -55,6 +55,7 @@ public sealed class CreateAccountTests(E2EServer server) : E2ETestBase(server)
         Assert.Equal(Navigation.BootstrapPassword, sent.GetProperty("password").GetString());
         Assert.False(string.IsNullOrEmpty(sent.GetProperty("csrf_token").GetString()));
         Assert.False(sent.TryGetProperty("setup_code", out _), "A code was sent from the device Weir runs on.");
+        await SetupWizard.SaveRecoveryCodesAsync(page);
         await Expect(page).ToHaveURLAsync(new Regex(".*/setup-wizard"), new() { Timeout = Navigation.SubmitSettleMs });
         await Expect(SetupWizard.Heading(page)).ToBeVisibleAsync();
         await using var me = await page.Context.APIRequest.GetAsync($"{BaseUrl}/api/v1/auth/me");
@@ -138,28 +139,6 @@ public sealed class CreateAccountTests(E2EServer server) : E2ETestBase(server)
     }
 
     [E2EFact]
-    public async Task A_name_that_is_taken_is_refused_with_409_and_a_new_name_then_creates_the_account()
-    {
-        E2EDatabase.InsertViewerNamed(Server.DatabasePath, "taken");
-        var page = await OpenSetupAsync();
-        await FillAsync(page, "taken", StrongPassword, StrongPassword);
-
-        var refused = await page.RunAndWaitForResponseAsync(
-            async () => await page.GetByTestId("setup-submit").ClickAsync(),
-            response => response.Url.EndsWith(BootstrapPath, StringComparison.Ordinal),
-            new() { Timeout = Navigation.SubmitSettleMs });
-
-        Assert.Equal(409, refused.Status);
-        await Expect(SetupWizard.Alert(page.GetByTestId("setup-form"))).ToHaveTextAsync("Username already exists.");
-        Assert.True(await AccountCreationOpenAsync(page.Context));
-
-        await page.GetByTestId("setup-username").FillAsync("not-taken");
-        await Expect(SetupWizard.Alert(page)).ToHaveCountAsync(0);
-        await page.GetByTestId("setup-submit").ClickAsync();
-        await Expect(SetupWizard.Heading(page)).ToBeVisibleAsync(new() { Timeout = Navigation.SubmitSettleMs });
-    }
-
-    [E2EFact]
     public async Task Each_password_box_shows_and_hides_its_text_and_hides_again_once_it_is_emptied()
     {
         var page = await OpenSetupAsync();
@@ -218,6 +197,7 @@ public sealed class CreateAccountTests(E2EServer server) : E2ETestBase(server)
         await page.Keyboard.TypeAsync(Navigation.BootstrapPassword);
         await page.Keyboard.PressAsync("Enter");
 
+        await SetupWizard.SaveRecoveryCodesAsync(page);
         await Expect(SetupWizard.Heading(page)).ToBeVisibleAsync(new() { Timeout = Navigation.SubmitSettleMs });
     }
 }

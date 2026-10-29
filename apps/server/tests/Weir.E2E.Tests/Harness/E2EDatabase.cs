@@ -13,7 +13,8 @@ public static class E2EDatabase
     private const int BusyTimeoutSeconds = 30;
 
     /// <summary>
-    /// Resets all per-test state so each test starts at the setup page. Users, sessions, suite settings and the home network sign-in are
+    /// Resets all per-test state so each test starts at the setup page. Users, their recovery codes, sessions, suite settings and the home
+    /// network sign-in are
     /// cleared. The migration-seeded Processing libraries have their folders cleared rather than being deleted,
     /// because they are the only path store and a scope with no library at all has nowhere to resolve to.
     /// </summary>
@@ -23,6 +24,7 @@ public static class E2EDatabase
         using var transaction = connection.BeginTransaction();
         SeedSql.Execute(connection, "UPDATE libraries SET watched_folder = '', work_folder = '', output_folder = ''");
         SeedSql.Execute(connection, "DELETE FROM user_sessions");
+        SeedSql.Execute(connection, "DELETE FROM recovery_codes");
         SeedSql.Execute(connection, "DELETE FROM users");
         SeedSql.Execute(connection, "DELETE FROM suite_settings");
         SeedSql.Execute(connection, "DELETE FROM home_network_sign_in");
@@ -64,17 +66,11 @@ public static class E2EDatabase
         transaction.Commit();
     }
 
-    /// <summary>
-    /// A read-only viewer of this name, added while the server runs and no administrator exists yet: no screen makes one, so a test of
-    /// a name that is taken seeds the row, as an operator's second process would.
-    /// </summary>
-    public static void InsertViewerNamed(string databasePath, string username)
+    /// <summary>The read-only viewer <see cref="SeededAccounts.ViewerUsername"/>, added while the server runs, as an operator's second process would.</summary>
+    public static void InsertViewer(string databasePath)
     {
-        AddUser(databasePath, username, SeededAccounts.ViewerPasswordHash, "viewer");
+        AddUser(databasePath, SeededAccounts.ViewerUsername, SeededAccounts.ViewerPasswordHash, "viewer");
     }
-
-    /// <summary>The read-only viewer <see cref="SeededAccounts.ViewerUsername"/>, added while the server runs and no administrator exists yet.</summary>
-    public static void InsertViewer(string databasePath) => InsertViewerNamed(databasePath, SeededAccounts.ViewerUsername);
 
     /// <summary>Ends every signed-in session while keeping the accounts, as an expiry does: the next request from a browser is unauthenticated.</summary>
     public static void EndAllSessions(string databasePath)

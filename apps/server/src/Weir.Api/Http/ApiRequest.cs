@@ -79,7 +79,7 @@ public sealed class RouteTable
     }
 }
 
-/// <summary>Per-process abuse controls: the sign-in and bootstrap rate limiters.</summary>
+/// <summary>Per-process abuse controls: the sign-in, bootstrap and recovery-code rate limiters.</summary>
 public sealed class AuthRateLimiters
 {
     private int _forwardedWarned;
@@ -91,11 +91,19 @@ public sealed class AuthRateLimiters
         Login = new SlidingWindowLimiter(options.AuthLoginRateMaxAttempts, options.AuthLoginRateWindowSeconds, time);
         Bootstrap = new SlidingWindowLimiter(options.BootstrapRateMaxAttempts, options.BootstrapRateWindowSeconds, time);
         LoginUsernameBackoff = new UsernameLoginBackoff(time);
+        RecoveryAttempts = new SlidingWindowLimiter(options.AuthLoginRateMaxAttempts, options.AuthLoginRateWindowSeconds, time);
+        WrongRecoveryCodes = new UsernameLoginBackoff(time);
     }
 
     public SlidingWindowLimiter Login { get; }
 
     public SlidingWindowLimiter Bootstrap { get; }
+
+    /// <summary>Recovery-code attempts per source address, limited like sign-in.</summary>
+    public SlidingWindowLimiter RecoveryAttempts { get; }
+
+    /// <summary>Wrong recovery codes from anywhere, backed off like a guessed account: the one account has one set of codes.</summary>
+    public UsernameLoginBackoff WrongRecoveryCodes { get; }
 
     /// <summary>Per-account backoff on top of <see cref="Login"/>'s per-IP limit.</summary>
     public UsernameLoginBackoff LoginUsernameBackoff { get; }

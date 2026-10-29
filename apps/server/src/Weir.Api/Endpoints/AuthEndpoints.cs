@@ -14,6 +14,8 @@ public static class AuthEndpoints
         endpoints.MapAuthSessionLifecycleEndpoints();
         endpoints.MapAuthSessionEndpoints();
         endpoints.MapAuthAccountEndpoints();
+        endpoints.MapAuthRecoveryCodesEndpoints();
+        endpoints.MapAuthRecoveryEndpoints();
         return endpoints;
     }
 

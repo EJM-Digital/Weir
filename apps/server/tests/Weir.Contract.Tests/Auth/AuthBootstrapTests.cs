@@ -7,8 +7,8 @@ namespace Weir.Contract.Tests.Auth;
 
 /// <summary>Bootstrap: creating the first admin, and every way a bootstrap is refused.</summary>
 [ContractArea("auth")]
-public sealed class AuthBootstrapTests(ServerFixture fixture, AuthBootstrapTests.NoAdminServerFixture noAdmin)
-    : AliceTestBase(fixture), IClassFixture<ServerFixture>, IClassFixture<AuthBootstrapTests.NoAdminServerFixture>
+public sealed class AuthBootstrapTests(ServerFixture fixture, AuthBootstrapTests.NoAccountServerFixture noAccount)
+    : AliceTestBase(fixture), IClassFixture<ServerFixture>, IClassFixture<AuthBootstrapTests.NoAccountServerFixture>
 {
     private const string Api = WeirClient.Api;
 
@@ -58,20 +58,9 @@ public sealed class AuthBootstrapTests(ServerFixture fixture, AuthBootstrapTests
     }
 
     [Fact]
-    public async Task Bootstrap_username_conflict_returns_409()
-    {
-        var session = NewSession(noAdmin.Server);
-        Assert.True((bool)(await session.GetAsync($"{Api}/auth/bootstrap/status")).Fields["bootstrap_allowed"]!);
-
-        var response = await session.BootstrapAsync("taken", "valid-pass-bootstrap-8");
-
-        Assert.Equal(HttpStatusCode.Conflict, response.Status);
-    }
-
-    [Fact]
     public async Task Bootstrap_rejects_short_password()
     {
-        var session = NewSession(noAdmin.Server);
+        var session = NewSession(noAccount.Server);
         Assert.True((bool)(await session.GetAsync($"{Api}/auth/bootstrap/status")).Fields["bootstrap_allowed"]!);
 
         var response = await session.BootstrapAsync("owner1", "short");
@@ -89,7 +78,7 @@ public sealed class AuthBootstrapTests(ServerFixture fixture, AuthBootstrapTests
     [Fact]
     public async Task Bootstrap_rejects_common_password()
     {
-        var session = NewSession(noAdmin.Server);
+        var session = NewSession(noAccount.Server);
 
         var response = await session.BootstrapAsync("owner1", "password1234");
 
@@ -107,16 +96,14 @@ public sealed class AuthBootstrapTests(ServerFixture fixture, AuthBootstrapTests
         Assert.Equal(HttpStatusCode.Forbidden, response.Status);
     }
 
-    /// <summary>No admin, one viewer called <c>taken</c>. Bootstrap tests here must fail, so nothing changes.</summary>
-    public sealed class NoAdminServerFixture : IAsyncLifetime
+    /// <summary>No account at all. Bootstrap tests here must fail, so nothing changes and setup stays open.</summary>
+    public sealed class NoAccountServerFixture : IAsyncLifetime
     {
         public WeirServer Server { get; private set; } = null!;
 
         public async Task InitializeAsync()
         {
             Server = await WeirServer.StartNewAsync();
-            await using var database = await Server.StopForDatabaseAsync();
-            SeedSql.InsertUser(database.Connection, "taken", UnusedPasswordHash, "viewer");
         }
 
         public async Task DisposeAsync() => await Server.DisposeAsync();

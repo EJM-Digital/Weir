@@ -171,6 +171,8 @@ The [Docker guide](docs/install-docker.md) goes further, and [docker/README.md](
 
 The first time you open Weir it asks you to create your account. This is the admin account. If your browser is on another machine than Weir, Weir also asks for a **setup code**. On Windows it is in the file `C:\ProgramData\Weir\setup-code`. On Docker, run `docker logs weir` and look for the line that starts "Weir has no account yet". The code stops working once an account exists.
 
+Weir then shows ten **recovery codes**, once, and waits until you tick that you have saved them. They are the only way back in if you forget your password: the sign-in page has **Forgot your username or password?**, which takes a code. If you lose the password and every code, the only way forward is a fresh install with a new data folder.
+
 Then a short setup wizard asks how your downloads reach Weir:
 
 - **Deluno.** Enter its address and API key. Weir tests the connection and sets up a workflow for each Deluno library that is set to refine before import. You do not type any folders. See [Working with Deluno](#working-with-deluno).

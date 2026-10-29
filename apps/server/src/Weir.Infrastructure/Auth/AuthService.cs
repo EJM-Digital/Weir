@@ -27,6 +27,7 @@ public sealed partial class AuthService : IDisposable
     private readonly TimeProvider _time;
     private readonly SqliteDatabase _database;
     private readonly AuthStore _users;
+    private readonly RecoveryCodeStore _recovery;
     private readonly ILogger _logger;
 
     /// <summary>
@@ -36,7 +37,7 @@ public sealed partial class AuthService : IDisposable
     /// </summary>
     private readonly SemaphoreSlim _argon2Concurrency = new(Math.Max(1, Environment.ProcessorCount));
 
-    public AuthService(WeirOptions options, TimeProvider time, SqliteDatabase database, AuthStore users, ILoggerFactory loggerFactory)
+    public AuthService(WeirOptions options, TimeProvider time, SqliteDatabase database, AuthStore users, RecoveryCodeStore recovery, ILoggerFactory loggerFactory)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
         _options = options;
@@ -44,6 +45,8 @@ public sealed partial class AuthService : IDisposable
         _database = database;
         ArgumentNullException.ThrowIfNull(users);
         _users = users;
+        ArgumentNullException.ThrowIfNull(recovery);
+        _recovery = recovery;
         _logger = loggerFactory.CreateLogger("weir.platform.auth.service");
     }
 

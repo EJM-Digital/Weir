@@ -4,7 +4,11 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchMe } from "../api/auth-api";
-import { useLogoutMutation } from "./queries";
+import { useLoginMutation, useLogoutMutation } from "./queries";
+import {
+  putRecoveryPromptAside,
+  recoveryPromptPutAside,
+} from "./recovery-prompt";
 import { useSignOutFailed } from "./sign-out-failed";
 import {
   clearSignedIn,
@@ -136,5 +140,46 @@ describe("signing out on purpose", () => {
       await result.current.logout.mutateAsync().catch(() => undefined);
     });
     await waitFor(() => expect(result.current.failed).toBe(false));
+  });
+});
+
+describe("signing in after the recovery-codes prompt was put aside", () => {
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={new QueryClient()}>
+      {children}
+    </QueryClientProvider>
+  );
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.sessionStorage.clear();
+    clearSignedIn();
+  });
+
+  it("brings the prompt back for the new sign-in", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockImplementation((url: string) =>
+          Promise.resolve(
+            String(url).endsWith("/auth/csrf")
+              ? json({ csrf_token: "t" })
+              : json({ user: { id: 1, username: "alice", role: "admin" } }),
+          ),
+        ),
+    );
+    putRecoveryPromptAside();
+    const { result } = renderHook(() => useLoginMutation(), { wrapper });
+
+    await act(() =>
+      result.current.mutateAsync({
+        username: "alice",
+        password: "a-password",
+        trustedDevice: false,
+      }),
+    );
+
+    expect(recoveryPromptPutAside()).toBe(false);
   });
 });

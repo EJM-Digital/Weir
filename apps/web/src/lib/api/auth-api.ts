@@ -5,8 +5,13 @@ import type {
   ActiveSession,
   BootstrapResult,
   BootstrapStatus,
+  ConfirmedRecoveryCodes,
   CurrentSession,
+  NewRecoveryCodes,
+  RecoveryCodesStatus,
+  RecoveryPasswordResult,
   SessionAction,
+  SpentRecoveryCode,
   UserPublic,
 } from "./types";
 
@@ -193,4 +198,72 @@ export async function postChangeUsername(
   });
   await requireOk(path, r, "Could not change the username");
   return readJson(r);
+}
+
+export async function fetchRecoveryCodes(): Promise<RecoveryCodesStatus> {
+  const path = "/api/v1/auth/recovery-codes";
+  const r = await apiFetch(path);
+  await requireOk(path, r, "Could not load your recovery codes");
+  return readJson<RecoveryCodesStatus>(r);
+}
+
+/** Makes a new set after the current password. The codes are in the answer and nowhere else. */
+export async function postNewRecoveryCodes(
+  currentPassword: string,
+): Promise<NewRecoveryCodes> {
+  const csrf_token = await fetchCsrfToken();
+  const path = "/api/v1/auth/recovery-codes";
+  const r = await apiFetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ csrf_token, current_password: currentPassword }),
+  });
+  await requireOk(path, r, "Could not make recovery codes");
+  return readJson<NewRecoveryCodes>(r);
+}
+
+export async function postConfirmRecoveryCodes(): Promise<ConfirmedRecoveryCodes> {
+  const csrf_token = await fetchCsrfToken();
+  const path = "/api/v1/auth/recovery-codes/confirm";
+  const r = await apiFetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ csrf_token }),
+  });
+  await requireOk(path, r, "Could not save that the codes were saved");
+  return readJson<ConfirmedRecoveryCodes>(r);
+}
+
+/** Spends a recovery code: the answer names the account and carries the token for choosing a new password. */
+export async function postRecoveryCode(
+  code: string,
+): Promise<SpentRecoveryCode> {
+  const csrf_token = await fetchCsrfToken();
+  const path = "/api/v1/auth/recovery/code";
+  const r = await apiFetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ csrf_token, code }),
+  });
+  await requireOk(path, r, "Could not use that recovery code");
+  return readJson<SpentRecoveryCode>(r);
+}
+
+export async function postRecoveryPassword(
+  recoveryToken: string,
+  newPassword: string,
+): Promise<RecoveryPasswordResult> {
+  const csrf_token = await fetchCsrfToken();
+  const path = "/api/v1/auth/recovery/password";
+  const r = await apiFetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      csrf_token,
+      recovery_token: recoveryToken,
+      new_password: newPassword,
+    }),
+  });
+  await requireOk(path, r, "Could not set the new password");
+  return readJson<RecoveryPasswordResult>(r);
 }

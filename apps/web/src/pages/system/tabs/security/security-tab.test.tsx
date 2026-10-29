@@ -11,6 +11,7 @@ import {
   securityOverview,
   notAuthenticated,
 } from "./security-replies";
+import { recoveryCodesSaved } from "../../../../test/recovery-replies";
 import {
   APP_SETTINGS,
   HOME_NETWORK_OFF,
@@ -22,6 +23,7 @@ import { SecurityTab } from "./security-tab";
 const SESSION = "/api/v1/auth/session";
 const SESSIONS = "/api/v1/auth/sessions";
 const OVERVIEW = "/api/v1/suite/security-overview";
+const RECOVERY = "/api/v1/auth/recovery-codes";
 
 let weir: RecordedWeir | undefined;
 
@@ -46,6 +48,7 @@ describe("Security: how this browser is signed in", () => {
       [`GET ${SESSION}`]: held.answer,
       [`GET ${SESSIONS}`]: oneSession,
       [`GET ${OVERVIEW}`]: securityOverview,
+      [`GET ${RECOVERY}`]: recoveryCodesSaved,
     });
     renderSecurity(<SecurityTab />);
 
@@ -91,6 +94,7 @@ describe("Security: how sign-in is protected", () => {
       [`GET ${SESSION}`]: currentSession,
       [`GET ${SESSIONS}`]: oneSession,
       [`GET ${OVERVIEW}`]: held.answer,
+      [`GET ${RECOVERY}`]: recoveryCodesSaved,
     });
     renderSecurity(<SecurityTab />);
 
@@ -115,6 +119,7 @@ describe("Security: how sign-in is protected", () => {
       [`GET ${SESSION}`]: currentSession,
       [`GET ${SESSIONS}`]: oneSession,
       [`GET ${OVERVIEW}`]: notAuthenticated,
+      [`GET ${RECOVERY}`]: recoveryCodesSaved,
     });
     renderSecurity(<SecurityTab />);
 

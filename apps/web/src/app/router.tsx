@@ -32,6 +32,12 @@ const router = createBrowserRouter(
           }),
         },
         {
+          path: "/recover",
+          lazy: async () => ({
+            Component: (await import("../pages/auth/recover-page")).RecoverPage,
+          }),
+        },
+        {
           path: "/setup",
           lazy: async () => ({
             Component: (await import("../pages/setup/setup-page")).SetupPage,

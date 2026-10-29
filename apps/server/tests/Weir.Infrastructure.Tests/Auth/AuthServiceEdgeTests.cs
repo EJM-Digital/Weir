@@ -207,7 +207,7 @@ public sealed class AuthServiceEdgeTests
 
         Assert.Equal(0, await fixture.WithUnitOfWork(uow => users.RevokeSessionAsync(uow, "no-such-session", fixture.Auth.Now())));
         Assert.Equal(0, await fixture.WithUnitOfWork(uow => users.RevokeActiveSessionsForUserAsync(uow, user.Id, fixture.Auth.Now())));
-        using var auth = new AuthService(fixture.Options, fixture.Clock, fixture.Database, users, NullLoggerFactory.Instance);
+        using var auth = new AuthService(fixture.Options, fixture.Clock, fixture.Database, users, new RecoveryCodeStore(), NullLoggerFactory.Instance);
         await fixture.WithUnitOfWork(uow => auth.CreateSessionAsync(uow, user, false, "Browser"));
 
         var heard = stream.ReadAsync(CancellationToken.None);
