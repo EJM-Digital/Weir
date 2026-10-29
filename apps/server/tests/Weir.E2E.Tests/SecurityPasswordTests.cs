@@ -53,7 +53,7 @@ public sealed partial class SecurityPasswordTests(E2EServer server) : E2ETestBas
         await FillAsync(page, Navigation.BootstrapPassword, NewPassword, string.Empty);
         await SecurityTab.PasswordForm(page).GetByRole(AriaRole.Button, new() { Name = "Change password", Exact = true }).ClickAsync();
 
-        await Expect(SecurityTab.PasswordForm(page).GetByRole(AriaRole.Alert)).ToHaveTextAsync("Fill in all three password fields.");
+        await Expect(SecurityTab.PasswordForm(page).GetByRole(AriaRole.Alert)).ToHaveTextAsync("Fill in both new password fields.");
         Assert.Empty(sent);
     }
 

@@ -78,7 +78,7 @@ public sealed class SecurityUsernameTests(E2EServer server) : E2ETestBase(server
         await Fill(page, "   ", Navigation.BootstrapPassword);
         await form.GetByRole(AriaRole.Button, new() { Name = "Change username", Exact = true }).ClickAsync();
 
-        await Expect(form.GetByRole(AriaRole.Alert)).ToHaveTextAsync("Enter the new username and your current password.");
+        await Expect(form.GetByRole(AriaRole.Alert)).ToHaveTextAsync("Enter the new username.");
         Assert.Empty(sent);
     }
 
