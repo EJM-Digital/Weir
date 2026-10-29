@@ -68,7 +68,7 @@ public sealed partial class SecurityPasswordTests(E2EServer server) : E2ETestBas
 
         (string Current, string Next, string Said)[] refusals =
         [
-            ("not-the-current-password", NewPassword, "Current password is incorrect."),
+            ("not-the-current-password", NewPassword, "Current password is not correct."),
             (Navigation.BootstrapPassword, Navigation.BootstrapPassword, "New password must be different from the current password."),
             (Navigation.BootstrapPassword, "short1!", "New password must be at least 8 characters."),
             (Navigation.BootstrapPassword, "password123", "Password is too common. Choose a stronger password."),

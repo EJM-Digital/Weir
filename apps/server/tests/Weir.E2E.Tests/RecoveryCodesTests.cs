@@ -75,8 +75,9 @@ public sealed partial class RecoveryCodesTests(E2EServer server) : E2ETestBase(s
         await page.GetByTestId("recover-confirm-password").FillAsync(NewPassword);
         await page.GetByTestId("recover-password-submit").ClickAsync();
 
-        await Expect(page).ToHaveURLAsync(LoginAfterChange(), new() { Timeout = Navigation.SubmitSettleMs });
-        await Expect(page.GetByText("Password changed. Sign in with your new password.")).ToBeVisibleAsync();
+        await Expect(page.GetByText("Your password is changed.")).ToBeVisibleAsync(new() { Timeout = Navigation.SubmitSettleMs });
+        await page.GetByRole(AriaRole.Button, new() { Name = "Go to sign in", Exact = true }).ClickAsync();
+        await Expect(page.GetByTestId("login-username")).ToBeVisibleAsync(new() { Timeout = Navigation.UrlAssertMs });
         await page.GetByTestId("login-username").FillAsync(Navigation.BootstrapUser);
         await page.GetByTestId("login-password").FillAsync(Navigation.BootstrapPassword);
         await page.GetByTestId("login-submit").ClickAsync();
@@ -87,7 +88,7 @@ public sealed partial class RecoveryCodesTests(E2EServer server) : E2ETestBase(s
 
         // The code is spent: the same one gets nobody back in again, and nine are left.
         await page.GotoAsync($"{BaseUrl}/system?tab=security", new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
-        await Expect(page.GetByTestId("recovery-left")).ToHaveTextAsync("9 recovery codes left", new() { Timeout = Navigation.UrlAssertMs });
+        await Expect(page.GetByTestId("recovery-left")).ToHaveTextAsync("9 of 10 recovery codes left.", new() { Timeout = Navigation.UrlAssertMs });
     }
 
     [GeneratedRegex(@"^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){3}$")]
@@ -95,7 +96,4 @@ public sealed partial class RecoveryCodesTests(E2EServer server) : E2ETestBase(s
 
     [GeneratedRegex(".*/recover$")]
     private static partial Regex RecoverUrl();
-
-    [GeneratedRegex(".*/login\\?password=changed$")]
-    private static partial Regex LoginAfterChange();
 }

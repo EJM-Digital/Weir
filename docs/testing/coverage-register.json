@@ -552,12 +552,12 @@
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryApiTests.cs",
-          "name": "Attempts_are_limited_per_address_like_sign_in_and_the_refusal_says_when_to_come_back"
+          "name": "Five_tries_from_one_address_in_ten_minutes_are_allowed_and_the_sixth_waits_even_with_a_good_code"
         },
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryApiTests.cs",
-          "name": "Wrong_codes_from_anywhere_back_off_the_whole_install_and_even_a_good_code_waits"
+          "name": "Five_tries_from_all_addresses_together_are_allowed_and_a_sixth_from_a_new_address_waits"
         },
         {
           "type": "xunit",
@@ -58873,7 +58873,7 @@
         {
           "type": "vitest",
           "file": "apps/web/src/pages/auth/recover-page.test.tsx",
-          "name": "sets the password with the token the code gave, then opens sign-in with the password-changed notice"
+          "name": "sets the password with the token the code gave, says the password is changed, and Go to sign in opens sign-in"
         },
         {
           "type": "e2e",
@@ -59186,7 +59186,7 @@
         {
           "type": "vitest",
           "file": "apps/web/src/pages/auth/recover-page.test.tsx",
-          "name": "sets the password with the token the code gave, then opens sign-in with the password-changed notice"
+          "name": "sets the password with the token the code gave, says the password is changed, and Go to sign in opens sign-in"
         },
         {
           "type": "vitest",
@@ -59231,6 +59231,103 @@
       }
     },
     {
+      "id": "web-routes.components-auth-password-dialog.password-dialog-field",
+      "area": "web-routes",
+      "behaviour": "The control password-dialog-field in components/auth/password-dialog.tsx is the current password box",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/password-dialog.test.tsx",
+          "name": "asks for the current password and hands it over on Confirm"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/components/auth/password-dialog.tsx#password-dialog-field"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.components-auth-password-dialog.password-dialog-cancel",
+      "area": "web-routes",
+      "behaviour": "The control password-dialog-cancel in components/auth/password-dialog.tsx closes the dialog and changes nothing",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/password-dialog.test.tsx",
+          "name": "cancels, and is held still while a request is out"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/components/auth/password-dialog.tsx#password-dialog-cancel"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.components-auth-password-dialog.password-dialog-confirm",
+      "area": "web-routes",
+      "behaviour": "The control password-dialog-confirm in components/auth/password-dialog.tsx hands the password over, or says it is missing",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/password-dialog.test.tsx",
+          "name": "asks for the current password and hands it over on Confirm"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/password-dialog.test.tsx",
+          "name": "sends nothing for an empty box and says what is missing, before any reason the server gave"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/components/auth/password-dialog.tsx#password-dialog-confirm"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-auth-recover-password-step.recover-sign-in",
+      "area": "web-routes",
+      "behaviour": "The control recover-sign-in in pages/auth/recover-password-step.tsx opens sign-in once the password is changed",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "sets the password with the token the code gave, says the password is changed, and Go to sign in opens sign-in"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/auth/recover-password-step.tsx#recover-sign-in"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
       "id": "web-routes.pages-system-tabs-security-recovery-codes-section.recovery-make",
       "area": "web-routes",
       "behaviour": "The control recovery-make in System › Security makes a new set of recovery codes after the current password",
@@ -59242,7 +59339,7 @@
         {
           "type": "vitest",
           "file": "apps/web/src/pages/system/tabs/security/recovery-codes-section.test.tsx",
-          "name": "makes a new set with the current password, shows it once, and counts it as unsaved until the person says so"
+          "name": "makes new codes with the current password asked for in a dialog, shows them once, and counts them as unsaved until the person says so"
         },
         {
           "type": "vitest",
@@ -59885,7 +59982,7 @@
     {
       "id": "events.auth.auth-sign-in-recovered",
       "area": "events",
-      "behaviour": "Weir records \"Sign-in recovered with a recovery code\" in Activity (auth.sign_in_recovered)",
+      "behaviour": "Weir records \"Password reset with a recovery code. Every signed-in session was ended.\" in Activity (auth.sign_in_recovered)",
       "kind": "event",
       "severity": "low",
       "touches": "none",

@@ -77,7 +77,7 @@ export const confirmationExpired: RecordedReply = {
 
 export const passwordWrongCurrent: RecordedReply = {
   status: 400,
-  body: '{"detail":"Current password is incorrect."}',
+  body: '{"detail":"Current password is not correct."}',
 };
 
 export const passwordUnchanged: RecordedReply = {
@@ -112,7 +112,7 @@ export const passwordChanged: RecordedReply = {
 
 export const usernameWrongPassword: RecordedReply = {
   status: 400,
-  body: '{"detail":"Current password is incorrect."}',
+  body: '{"detail":"Current password is not correct."}',
 };
 
 export const usernameUnchanged: RecordedReply = {
@@ -147,7 +147,7 @@ export const homeNetworkOn: RecordedReply = {
 
 export const homeNetworkWrongPassword: RecordedReply = {
   status: 400,
-  body: '{"detail":"Current password is incorrect."}',
+  body: '{"detail":"Current password is not correct."}',
 };
 
 export const homeNetworkBadEntry: RecordedReply = {

@@ -145,7 +145,7 @@ public sealed class AuthAndSettingsStoreTests
         async Task<string> Error(Func<UnitOfWork, Task> work) =>
             (await Assert.ThrowsAsync<WireValueException>(() => fixture.WithUnitOfWork(async uow => { await work(uow); return 0; }))).Message;
 
-        Assert.Equal("Current password is incorrect.", await Error(uow => fixture.Auth.ChangeUsernameAsync(uow, id, "wrong", "user1")));
+        Assert.Equal("Current password is not correct.", await Error(uow => fixture.Auth.ChangeUsernameAsync(uow, id, "wrong", "user1")));
         Assert.Equal("Username is required.", await Error(uow => fixture.Auth.ChangeUsernameAsync(uow, id, Password, "  ")));
         Assert.Equal("New username must be different from the current username.", await Error(uow => fixture.Auth.ChangeUsernameAsync(uow, id, Password, "alice")));
         Assert.Equal("That username is already taken.", await Error(uow => fixture.Auth.ChangeUsernameAsync(uow, id, Password, "BOB")));

@@ -210,7 +210,7 @@ public sealed class SecurityCardsTests(E2EServer server) : E2ETestBase(server)
 
         await form.GetByRole(AriaRole.Button, new() { Name = "Change password", Exact = true }).ClickAsync();
 
-        await Expect(form.GetByRole(AriaRole.Alert)).ToHaveTextAsync("Current password is incorrect.", new() { Timeout = SecurityTab.ServerAnswerMs });
+        await Expect(form.GetByRole(AriaRole.Alert)).ToHaveTextAsync("Current password is not correct.", new() { Timeout = SecurityTab.ServerAnswerMs });
         await Expect(form.GetByPlaceholder("Enter new password", new() { Exact = true })).ToHaveAttributeAsync("type", "password");
         await Expect(form.GetByRole(AriaRole.Button, new() { Name = "Show new password", Exact = true })).ToBeVisibleAsync();
 

@@ -74,7 +74,7 @@ describe("the recovery codes, shown once", () => {
       [],
     );
 
-    fireEvent.click(screen.getByLabelText("I've saved these codes"));
+    fireEvent.click(screen.getByLabelText("I have saved these codes"));
     expect(next).toBeEnabled();
     fireEvent.click(next);
 
@@ -90,7 +90,7 @@ describe("the recovery codes, shown once", () => {
 
   it("can be unticked again, which stops it continuing", () => {
     renderCodes(recoveryCodesConfirmed);
-    const check = screen.getByLabelText("I've saved these codes");
+    const check = screen.getByLabelText("I have saved these codes");
 
     fireEvent.click(check);
     fireEvent.click(check);
@@ -103,13 +103,13 @@ describe("the recovery codes, shown once", () => {
     const onSaved = renderCodes(
       () => new Promise<RecordedReply>((resolve) => (answer = resolve)),
     );
-    fireEvent.click(screen.getByLabelText("I've saved these codes"));
+    fireEvent.click(screen.getByLabelText("I have saved these codes"));
 
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     const busy = await screen.findByRole("button", { name: "Saving…" });
     expect(busy).toBeDisabled();
-    expect(screen.getByLabelText("I've saved these codes")).toBeDisabled();
+    expect(screen.getByLabelText("I have saved these codes")).toBeDisabled();
     answer(recoveryCodesConfirmed);
     await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
     expect(
@@ -122,7 +122,7 @@ describe("the recovery codes, shown once", () => {
       { status: 500, body: '{"detail":"Something went wrong inside Weir."}' },
       recoveryCodesConfirmed,
     ]);
-    fireEvent.click(screen.getByLabelText("I've saved these codes"));
+    fireEvent.click(screen.getByLabelText("I have saved these codes"));
 
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 

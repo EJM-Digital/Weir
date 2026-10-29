@@ -1,4 +1,5 @@
-import { plural } from "../ui/mm-plural";
+/** How many codes a set holds. */
+const SET_SIZE = 10;
 
 /**
  * Every sentence the recovery-code screens say: first-run setup, the prompt after sign-in, System › Security and
@@ -16,8 +17,9 @@ export const RECOVERY_TEXT = {
   downloadHeader: "Weir recovery codes",
   downloadNote:
     "Each code works once. Keep this file somewhere safe and private.",
-  savedCheck: "I've saved these codes",
+  savedCheck: "I have saved these codes",
   continue: "Continue",
+  done: "Done",
   continueBusy: "Saving…",
 
   setupHeading: "Save your recovery codes",
@@ -39,33 +41,34 @@ export const RECOVERY_TEXT = {
   settingsNotSaved: "Codes were made but never marked as saved.",
   settingsNudge:
     "Make a set now, so a forgotten password can be fixed. Weir keeps asking until there is one.",
-  settingsMakeHeading: "Make a new set",
+  settingsMakeHeading: "Make new codes",
   settingsMakeHelp:
     "A new set voids every code you have now. It needs your current password, and shows the new codes once.",
-  settingsMake: "Make a new set",
-  settingsMaking: "Making…",
-  settingsPasswordLabel: "Current password",
-  settingsPasswordPlaceholder: "Confirm it is you",
-  settingsPasswordMissing: "Enter your current password.",
+  settingsMake: "Make recovery codes",
+  settingsMakeNew: "Make new codes",
   loadThing: "your recovery codes",
   makeFailed: "Could not make recovery codes.",
   confirmFailed: "Could not save that the codes were saved. Try again.",
 
   forgotLink: "Forgot your username or password?",
-  recoverTitle: "Get back in",
+  recoverTitle: "Get back into Weir",
   recoverLead:
     "Enter one of your recovery codes. Weir shows your username, then lets you choose a new password.",
   recoverCodeLabel: "Recovery code",
   recoverCodeHint:
     "Each code works once, and it is used up as soon as Weir accepts it, even if you stop before choosing a password.",
-  recoverCodeSubmit: "Use this code",
+  recoverCodeSubmit: "Check code",
   recoverCodeBusy: "Checking…",
-  recoverCodeFailed: "That recovery code could not be used.",
+  recoverCodeFailed: "That did not work. Check it and try again.",
+  recoverTooManyTries: "Too many tries. Wait 10 minutes and try again.",
   recoverCodeMissing: "Enter a recovery code.",
   recoverUsernameLead: "Your username is",
+  recoverDone: "Your password is changed.",
+  recoverFooter:
+    "If you have lost both your password and your recovery codes, the only way forward is a fresh install.",
   recoverEndedSessions:
     "Everyone who was signed in has been signed out. Choose a new password to sign in again.",
-  recoverPasswordLabel: "New password (min. 8 characters)",
+  recoverPasswordLabel: "New password",
   recoverConfirmLabel: "Confirm new password",
   recoverMismatch: "Passwords do not match.",
   recoverTooShort: "Password must be at least 8 characters.",
@@ -73,9 +76,8 @@ export const RECOVERY_TEXT = {
   recoverPasswordBusy: "Saving…",
   recoverPasswordFailed: "Could not set the new password.",
   recoverStartAgain: "Use another recovery code",
-  recoverBack: "Back to sign in",
+  recoverBack: "Go to sign in",
 
-  /** "9 recovery codes left", counted the way every other count in Weir is. */
-  codesLeft: (count: number) =>
-    `${plural(count, "recovery code", "recovery codes")} left`,
+  /** "9 of 10 recovery codes left." */
+  codesLeft: (count: number) => `${count} of ${SET_SIZE} recovery codes left.`,
 } as const;

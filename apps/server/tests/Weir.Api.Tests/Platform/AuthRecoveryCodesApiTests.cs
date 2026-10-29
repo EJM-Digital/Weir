@@ -58,7 +58,7 @@ public sealed class AuthRecoveryCodesApiTests
         using var extra = await client.PostAsync(Codes, new { current_password = AdminPassword, csrf_token = await client.CsrfAsync(), unexpected = 1 });
 
         Assert.Equal(HttpStatusCode.BadRequest, wrong.StatusCode);
-        Assert.Equal("Current password is incorrect.", await Detail(wrong));
+        Assert.Equal("Current password is not correct.", await Detail(wrong));
         Assert.Equal(HttpStatusCode.BadRequest, badToken.StatusCode);
         Assert.Equal("Your confirmation token expired. Refresh the page and try again.", await Detail(badToken));
         Assert.Equal(HttpStatusCode.UnprocessableEntity, extra.StatusCode);

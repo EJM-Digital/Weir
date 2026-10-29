@@ -14,8 +14,8 @@ describe("whether an account needs recovery codes", () => {
 
 describe("the words for how many codes are left", () => {
   it("counts them the way every other count in Weir is", () => {
-    expect(RECOVERY_TEXT.codesLeft(10)).toBe("10 recovery codes left");
-    expect(RECOVERY_TEXT.codesLeft(1)).toBe("1 recovery code left");
-    expect(RECOVERY_TEXT.codesLeft(0)).toBe("0 recovery codes left");
+    expect(RECOVERY_TEXT.codesLeft(10)).toBe("10 of 10 recovery codes left.");
+    expect(RECOVERY_TEXT.codesLeft(1)).toBe("1 of 10 recovery codes left.");
+    expect(RECOVERY_TEXT.codesLeft(0)).toBe("0 of 10 recovery codes left.");
   });
 });

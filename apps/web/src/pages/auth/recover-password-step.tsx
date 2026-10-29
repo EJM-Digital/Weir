@@ -10,8 +10,8 @@ import { RECOVERY_TEXT } from "../../lib/auth/recovery-text";
 const MIN_PASSWORD_LENGTH = 8;
 
 /**
- * The second step of getting back in: the username the code belongs to, and a new password entered twice. The sign-in page then
- * says the password was changed.
+ * The second step of getting back in: the username the code belongs to, and a new password entered twice. Once it is set, this says so
+ * and points to sign-in.
  */
 export function RecoverPasswordStep({
   spent,
@@ -38,14 +38,29 @@ export function RecoverPasswordStep({
       setProblem(RECOVERY_TEXT.recoverMismatch);
       return;
     }
-    setPassword.mutate(
-      { recoveryToken: spent.recovery_token, newPassword: password },
-      {
-        onSuccess: () =>
-          void navigate("/login?password=changed", { replace: true }),
-      },
-    );
+    setPassword.mutate({
+      recoveryToken: spent.recovery_token,
+      newPassword: password,
+    });
   };
+
+  if (setPassword.isSuccess) {
+    return (
+      <div data-testid="recover-done">
+        <p className="mm-auth-banner" data-status="done" role="status">
+          {RECOVERY_TEXT.recoverDone}
+        </p>
+        <button
+          type="button"
+          className="mm-auth-submit"
+          data-testid="recover-sign-in"
+          onClick={() => void navigate("/login")}
+        >
+          {RECOVERY_TEXT.recoverBack}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form

@@ -10,6 +10,11 @@ public static class RecoveryCodeRules
 {
     public const int SetSize = 10;
 
+    /// <summary>Tries a minute-by-minute window allows: from one address, and from all addresses together.</summary>
+    public const int MaxTries = 5;
+
+    public const int TryWindowSeconds = 10 * 60;
+
     private const string Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private const int GroupLength = 5;
     private const int GroupCount = 4;

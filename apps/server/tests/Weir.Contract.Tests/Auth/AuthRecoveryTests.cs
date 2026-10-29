@@ -86,8 +86,8 @@ public sealed class AuthRecoveryTests
             recovered = SeedSql.Rows(database.Connection, "SELECT title, detail FROM activity_events WHERE event_type = 'auth.sign_in_recovered' ORDER BY id");
         }
 
-        Assert.Equal(["alice. 9 recovery codes left.", "alice. 8 recovery codes left."], recovered.Select(row => (string)row["detail"]!));
-        Assert.All(recovered, row => Assert.Equal("Sign-in recovered with a recovery code", (string)row["title"]!));
+        Assert.Equal(["alice. 9 of 10 recovery codes left.", "alice. 8 of 10 recovery codes left."], recovered.Select(row => (string)row["detail"]!));
+        Assert.All(recovered, row => Assert.Equal("Password reset with a recovery code. Every signed-in session was ended.", (string)row["title"]!));
         var log = server.LogText();
         Assert.All(codes, code => Assert.DoesNotContain(code[6..], log, StringComparison.Ordinal));
     }

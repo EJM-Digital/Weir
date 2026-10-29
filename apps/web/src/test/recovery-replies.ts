@@ -83,7 +83,7 @@ export const newRecoveryCodesList = [
 
 export const currentPasswordWrong: RecordedReply = {
   status: 400,
-  body: '{"detail":"Current password is incorrect."}',
+  body: '{"detail":"Current password is not correct."}',
 };
 
 export const codeAccepted: RecordedReply = {
@@ -93,18 +93,18 @@ export const codeAccepted: RecordedReply = {
 
 export const codeRefused: RecordedReply = {
   status: 400,
-  body: '{"detail":"That recovery code isn\'t right, or it has been used already. Check it and try again."}',
+  body: '{"detail":"That did not work. Check it and try again."}',
 };
 
 export const codeTriesLimited: RecordedReply = {
   status: 429,
-  body: '{"detail":"Too many recovery attempts from this address. Try again later."}',
-  headers: { "Retry-After": "60" },
+  body: '{"detail":"Too many tries. Wait 10 minutes and try again."}',
+  headers: { "Retry-After": "600" },
 };
 
 export const passwordSet: RecordedReply = {
   status: 200,
-  body: '{"message":"Password changed. Sign in with your new password.","username":"recorded-admin"}',
+  body: '{"message":"Your password is changed.","username":"recorded-admin"}',
 };
 
 export const passwordTooCommon: RecordedReply = {

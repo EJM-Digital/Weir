@@ -28,8 +28,8 @@ public static class AuthRecoveryEndpoints
 /// <summary>Handlers for <see cref="AuthRecoveryEndpoints"/>, constructor-injected with the stores they need.</summary>
 internal sealed class AuthRecoveryEndpointHandlers
 {
-    /// <summary>The one name wrong codes are counted under: the account has one set of codes, whoever is guessing.</summary>
-    private const string WrongCodesKey = "recovery codes";
+    /// <summary>The one key every address is counted under for the limit on all of them together.</summary>
+    private const string AllAddresses = "all addresses";
 
     private readonly ActivityStore _activity;
     private readonly AuthRateLimiters _limiters;
@@ -56,21 +56,12 @@ internal sealed class AuthRecoveryEndpointHandlers
         model.Finish(ExtraFields.Forbid);
         issues.ThrowIfAny();
 
-        if (!_limiters.RecoveryAttempts.Allow(request.RateLimitKey()))
+        if (!_limiters.RecoveryAttempts.Allow(request.RateLimitKey()) || !_limiters.RecoveryAttemptsOverall.Allow(AllAddresses))
         {
             throw new ApiException(
                 StatusCodes.Status429TooManyRequests,
-                RecoveryCodeMessages.TooManyFromThisAddress,
-                new Dictionary<string, string> { ["Retry-After"] = Math.Max(1, request.Options.AuthLoginRateWindowSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture) });
-        }
-
-        var wait = _limiters.WrongRecoveryCodes.TimeUntilAllowed(WrongCodesKey);
-        if (wait > TimeSpan.Zero)
-        {
-            throw new ApiException(
-                StatusCodes.Status429TooManyRequests,
-                RecoveryCodeMessages.TooManyWrongCodes,
-                new Dictionary<string, string> { ["Retry-After"] = Math.Max(1, (long)Math.Ceiling(wait.TotalSeconds)).ToString(System.Globalization.CultureInfo.InvariantCulture) });
+                RecoveryCodeMessages.TooManyTries,
+                new Dictionary<string, string> { ["Retry-After"] = RecoveryCodeRules.TryWindowSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture) });
         }
 
         var secret = request.RequireSessionSecret();
@@ -86,19 +77,18 @@ internal sealed class AuthRecoveryEndpointHandlers
         if (recovered is null)
         {
             logger.LogWarning("auth event: recovery code refused");
-            _limiters.WrongRecoveryCodes.RecordFailure(WrongCodesKey);
             throw new ApiException(StatusCodes.Status400BadRequest, RecoveryCodeMessages.CodeNotRight);
         }
 
         var user = recovered.User;
         logger.LogInformation("auth event: sign-in recovered with a recovery code (user_id={UserId}, codes_left={CodesLeft})", user.Id, recovered.CodesLeft);
         await _activity.RecordAsync(
-            uow, ActivityEventTypes.AuthSignInRecovered, "auth", RecoveryCodeMessages.ActivityTitle,
+            uow, ActivityEventTypes.AuthSignInRecovered, "auth", RecoveryCodeMessages.Reset,
             RecoveryCodeMessages.ActivityDetail(user.Username, recovered.CodesLeft)).ConfigureAwait(false);
         _alerts.DispatchSecurityAlert(
             request.Database,
             RecoveryCodeMessages.AlertTitle,
-            RecoveryCodeMessages.AlertDetail(user.Username, recovered.CodesLeft),
+            RecoveryCodeMessages.Reset,
             (message, exception) => logger.LogWarning(exception, "{Message}", message));
         return new JsonApiResult(
             StatusCodes.Status200OK,

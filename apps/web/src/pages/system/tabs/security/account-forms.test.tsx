@@ -104,7 +104,20 @@ describe("Change password", () => {
     press("Change password");
 
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Fill in all three password fields.",
+      "Fill in both new password fields.",
+    );
+    expect(weir.requests).toEqual([]);
+  });
+
+  it("asks for the current password first, in the words every password gate uses", () => {
+    weir = serveRecordedReplies({});
+    renderSecurity(<ChangePasswordForm />);
+
+    fillPasswords("", "new-pass-one-1", "new-pass-one-1");
+    press("Change password");
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Enter your current password to make this change.",
     );
     expect(weir.requests).toEqual([]);
   });
@@ -156,7 +169,7 @@ describe("Change password", () => {
     [
       "the current password is wrong",
       passwordWrongCurrent,
-      "Current password is incorrect.",
+      "Current password is not correct.",
     ],
     [
       "the new password is the current one",
@@ -273,16 +286,22 @@ describe("Change password", () => {
 });
 
 describe("Change username", () => {
-  it("asks for both fields and sends nothing when one is empty", () => {
+  it("asks for the new name, and for the password in the words every password gate uses, and sends nothing", () => {
     weir = serveRecordedReplies({});
     renderSecurity(<ChangeUsernameForm />);
 
     type("Enter a new username", "   ");
     type("Confirm it is you", "current-pass-1");
     press("Change username");
-
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Enter the new username and your current password.",
+      "Enter the new username.",
+    );
+
+    type("Enter a new username", "bob");
+    type("Confirm it is you", "");
+    press("Change username");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Enter your current password to make this change.",
     );
     expect(weir.requests).toEqual([]);
   });
@@ -332,7 +351,7 @@ describe("Change username", () => {
     [
       "the password is wrong",
       usernameWrongPassword,
-      "Current password is incorrect.",
+      "Current password is not correct.",
     ],
     [
       "the name is the one the account already has",

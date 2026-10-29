@@ -92,9 +92,9 @@ file and no other way in.
 
 ### Recovery codes
 
-- **Setup shows ten codes, once.** Each works once. Setup does not finish until you tick **I've saved these codes**;
+- **Setup shows ten codes, once.** Each works once. Setup does not finish until you tick **I have saved these codes**;
   **Copy** and **Download as text** are there to help.
-- **System › Security › Recovery codes** shows how many are left. **Make a new set** asks for your current password,
+- **System › Security › Recovery codes** shows how many are left. **Make new codes** (or **Make recovery codes**, when there are none) asks for your current password,
   voids every code you had and shows the new ones once.
 - **An account made before recovery codes existed has none.** After you update, signing in asks you to make a set, and
   System › Security keeps saying so until there is one.
@@ -104,19 +104,19 @@ Keep the codes somewhere safe and private, away from the computer that runs Weir
 
 ### If you forgot your username or password
 
-1. On the sign-in page, choose **Forgot your username or password?**.
-2. Enter one of your recovery codes. Weir shows your username.
+1. On the sign-in page, choose **Forgot your username or password?**. The page is called **Get back into Weir**.
+2. Enter one of your recovery codes and choose **Check code**. Weir shows your username.
 3. Choose a new password, typed twice. It must meet the same rules as any password.
-4. Sign in with it.
+4. Choose **Go to sign in** and sign in with it.
 
 The code is used up as soon as Weir accepts it, even if you stop before choosing a password. Each recovery:
 
 - signs out every browser that was signed in;
 - leaves API keys working, so a media manager such as Deluno keeps sending files;
-- writes "Sign-in recovered with a recovery code" to Activity, with the number of codes left;
+- writes "Password reset with a recovery code. Every signed-in session was ended." to Activity, with the number of codes left;
 - sends an alert to every notification channel you have switched on (Setup › Connections › Alerts).
 
-Wrong codes are limited like sign-in attempts: per address, and for all addresses together.
+Tries are limited: five in ten minutes from one address, and five in ten minutes from all addresses together. After that, Weir says to wait 10 minutes.
 
 ### If the password and every recovery code are lost
 

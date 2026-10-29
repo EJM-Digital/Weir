@@ -959,12 +959,12 @@ describe("SystemPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Change password" }));
     expect(
-      screen.getByText("Fill in all three password fields."),
+      screen.getByText("Enter your current password to make this change."),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Change username" }));
     expect(
-      screen.getByText("Enter the new username and your current password."),
-    ).toBeInTheDocument();
+      screen.getAllByText("Enter your current password to make this change."),
+    ).toHaveLength(2);
   });
 
   it("puts the account's two forms in one card, with each password's eye inside its field", () => {

@@ -3,9 +3,17 @@ import { Link } from "react-router-dom";
 
 import { AuthBrandStack } from "../../components/brand/auth-brand-stack";
 import { errorMessage } from "../../lib/api/error-message";
+import { ApiHttpError } from "../../lib/api/client";
 import { useRecoveryCodeMutation } from "../../lib/auth/queries";
 import { RECOVERY_TEXT } from "../../lib/auth/recovery-text";
 import { RecoverPasswordStep } from "./recover-password-step";
+
+/** What to say about a code that was not taken: the lockout in the words for it, anything else as the server put it. */
+function triesText(error: unknown): string {
+  return error instanceof ApiHttpError && error.status === 429
+    ? RECOVERY_TEXT.recoverTooManyTries
+    : errorMessage(error, RECOVERY_TEXT.recoverCodeFailed);
+}
 
 /**
  * Getting back in with a recovery code, from the sign-in page: the code first, which shows the username, then a new password
@@ -71,10 +79,7 @@ export function RecoverPage() {
               ) : null}
               {spendCode.isError ? (
                 <p className="mm-auth-banner" data-status="broken" role="alert">
-                  {errorMessage(
-                    spendCode.error,
-                    RECOVERY_TEXT.recoverCodeFailed,
-                  )}
+                  {triesText(spendCode.error)}
                 </p>
               ) : null}
               <button
@@ -89,9 +94,12 @@ export function RecoverPage() {
               </button>
             </form>
           )}
-          <p className="mm-auth-footer-link">
-            <Link to="/login">{RECOVERY_TEXT.recoverBack}</Link>
-          </p>
+          <p className="mm-auth-hint">{RECOVERY_TEXT.recoverFooter}</p>
+          {spendCode.data ? null : (
+            <p className="mm-auth-footer-link">
+              <Link to="/login">{RECOVERY_TEXT.recoverBack}</Link>
+            </p>
+          )}
         </div>
       </div>
     </main>

@@ -25,9 +25,12 @@ function codesFile(codes: readonly string[]): string {
 export function SaveRecoveryCodes({
   codes,
   onSaved,
+  finishLabel = RECOVERY_TEXT.continue,
 }: {
   codes: readonly string[];
   onSaved: () => void;
+  /** What the button that ends the screen says: Continue in setup, Done in System. */
+  finishLabel?: string;
 }) {
   const checkId = useId();
   const confirm = useConfirmRecoveryCodesMutation();
@@ -91,9 +94,7 @@ export function SaveRecoveryCodes({
         disabled={!saved || confirm.isPending}
         onClick={done}
       >
-        {confirm.isPending
-          ? RECOVERY_TEXT.continueBusy
-          : RECOVERY_TEXT.continue}
+        {confirm.isPending ? RECOVERY_TEXT.continueBusy : finishLabel}
       </button>
     </div>
   );

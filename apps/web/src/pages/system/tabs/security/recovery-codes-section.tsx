@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { PasswordDialog } from "../../../../components/auth/password-dialog";
 import { SaveRecoveryCodes } from "../../../../components/auth/save-recovery-codes";
 import { Chip } from "../../../../components/panels/chip";
 import { Panel } from "../../../../components/panels/panel";
@@ -12,32 +13,30 @@ import {
 import { needsRecoveryCodes } from "../../../../lib/auth/recovery-status";
 import { RECOVERY_TEXT } from "../../../../lib/auth/recovery-text";
 import { mmActionButtonClass } from "../../../../lib/ui/mm-control-roles";
-import { RevealablePasswordField } from "./security-field";
 
 /**
- * System › Security: how many recovery codes are left, a nudge until there is a saved set, and a new set that needs the current
- * password. A new set voids every code before it, and its codes are shown here once.
+ * System › Security: how many recovery codes are left, a nudge until there is a saved set, and new codes that need the current
+ * password, asked for in a dialog. New codes void every code before them, and are shown here once.
  */
 export function RecoveryCodesSection() {
   const status = useRecoveryCodesQuery();
   const makeSet = useNewRecoveryCodesMutation();
-  const [password, setPassword] = useState("");
-  // Bumped on each submit, so the password field remounts with its text hidden again.
-  const [attempt, setAttempt] = useState(0);
-  const [missing, setMissing] = useState(false);
+  const [asking, setAsking] = useState(false);
   const [shown, setShown] = useState<readonly string[] | null>(null);
-  const busy = makeSet.isPending;
+  const hasSet = status.data !== undefined && status.data.remaining > 0;
 
-  const submit = () => {
-    setMissing(password === "");
-    if (password === "") return;
+  const confirm = (password: string) => {
     makeSet.mutate(password, {
       onSuccess: (made) => {
-        setPassword("");
+        setAsking(false);
         setShown(made.codes);
       },
-      onSettled: () => setAttempt((n) => n + 1),
     });
+  };
+
+  const cancel = () => {
+    makeSet.reset();
+    setAsking(false);
   };
 
   return (
@@ -48,7 +47,11 @@ export function RecoveryCodesSection() {
       dataTestId="suite-security-recovery"
     >
       {shown ? (
-        <SaveRecoveryCodes codes={shown} onSaved={() => setShown(null)} />
+        <SaveRecoveryCodes
+          codes={shown}
+          onSaved={() => setShown(null)}
+          finishLabel={RECOVERY_TEXT.done}
+        />
       ) : (
         <div className="mm-account-form">
           <p className="mm-account-form__help">{RECOVERY_TEXT.settingsHelp}</p>
@@ -64,47 +67,32 @@ export function RecoveryCodesSection() {
           <p className="mm-account-form__help">
             {RECOVERY_TEXT.settingsMakeHelp}
           </p>
-          <RevealablePasswordField
-            key={attempt}
-            label={RECOVERY_TEXT.settingsPasswordLabel}
-            revealLabel="current password"
-            placeholder={RECOVERY_TEXT.settingsPasswordPlaceholder}
-            autoComplete="current-password"
-            value={password}
-            onChange={setPassword}
-            disabled={busy}
-          />
-          {makeSet.isError ? (
-            <p
-              className="mm-status-text text-sm"
-              data-status="broken"
-              role="alert"
-            >
-              {errorMessage(makeSet.error, RECOVERY_TEXT.makeFailed)}
-            </p>
-          ) : null}
-          {missing ? (
-            <p
-              className="mm-status-text text-sm"
-              data-status="broken"
-              role="alert"
-            >
-              {RECOVERY_TEXT.settingsPasswordMissing}
-            </p>
-          ) : null}
           <div className="mm-account-form__action">
             <button
               type="button"
               data-testid="recovery-make"
               className={`${mmActionButtonClass({ variant: "secondary" })} mm-sys-btn`}
-              disabled={busy}
-              onClick={submit}
+              onClick={() => setAsking(true)}
             >
-              {busy ? RECOVERY_TEXT.settingsMaking : RECOVERY_TEXT.settingsMake}
+              {hasSet
+                ? RECOVERY_TEXT.settingsMakeNew
+                : RECOVERY_TEXT.settingsMake}
             </button>
           </div>
         </div>
       )}
+      {asking ? (
+        <PasswordDialog
+          busy={makeSet.isPending}
+          error={
+            makeSet.isError
+              ? errorMessage(makeSet.error, RECOVERY_TEXT.makeFailed)
+              : null
+          }
+          onConfirm={confirm}
+          onCancel={cancel}
+        />
+      ) : null}
     </Panel>
   );
 }

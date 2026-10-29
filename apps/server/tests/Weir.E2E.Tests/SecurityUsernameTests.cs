@@ -93,7 +93,7 @@ public sealed class SecurityUsernameTests(E2EServer server) : E2ETestBase(server
 
         (string Name, string Password, string Said)[] refusals =
         [
-            (NewName, "not-the-current-password", "Current password is incorrect."),
+            (NewName, "not-the-current-password", "Current password is not correct."),
             (Navigation.BootstrapUser, Navigation.BootstrapPassword, "New username must be different from the current username."),
         ];
         foreach (var (name, password, said) in refusals)

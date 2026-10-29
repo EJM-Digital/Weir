@@ -49,16 +49,16 @@ public sealed class AuthRecoveryApiTests
         using var chosen = await ChoosePasswordAsync(forgotten, body["recovery_token"]!.GetValue<string>(), NewPassword);
 
         Assert.Equal(HttpStatusCode.OK, chosen.StatusCode);
-        Assert.Equal("Password changed. Sign in with your new password.", (await Json(chosen))["message"]!.GetValue<string>());
+        Assert.Equal("Your password is changed.", (await Json(chosen))["message"]!.GetValue<string>());
         using var old = await forgotten.LoginAsync();
         Assert.Equal(HttpStatusCode.Unauthorized, old.StatusCode);
         using var fresh = await forgotten.LoginAsync(password: NewPassword);
         Assert.Equal(HttpStatusCode.OK, fresh.StatusCode);
         Assert.Equal(
-            "alice. 9 recovery codes left.",
+            "alice. 9 of 10 recovery codes left.",
             await TestDatabase.ScalarStringAsync(server, "SELECT detail FROM activity_events WHERE event_type = 'auth.sign_in_recovered'"));
         Assert.Equal(
-            "Sign-in recovered with a recovery code",
+            "Password reset with a recovery code. Every signed-in session was ended.",
             await TestDatabase.ScalarStringAsync(server, "SELECT title FROM activity_events WHERE event_type = 'auth.sign_in_recovered'"));
         Assert.Equal(1, await TestDatabase.ScalarAsync(server, "SELECT count(*) FROM activity_events WHERE event_type = 'auth.password_changed'"));
     }
@@ -76,7 +76,7 @@ public sealed class AuthRecoveryApiTests
 
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, again.StatusCode);
-        Assert.Equal("That recovery code isn't right, or it has been used already. Check it and try again.", await Detail(again));
+        Assert.Equal("That did not work. Check it and try again.", await Detail(again));
         Assert.Equal(9, await TestDatabase.ScalarAsync(server, "SELECT count(*) FROM recovery_codes WHERE used_at IS NULL"));
         using var oldPassword = await browser.LoginAsync();
         Assert.Equal(HttpStatusCode.OK, oldPassword.StatusCode);
@@ -142,41 +142,42 @@ public sealed class AuthRecoveryApiTests
     }
 
     [Fact]
-    public async Task Attempts_are_limited_per_address_like_sign_in_and_the_refusal_says_when_to_come_back()
+    public async Task Five_tries_from_one_address_in_ten_minutes_are_allowed_and_the_sixth_waits_even_with_a_good_code()
     {
-        await using var server = await StartAsync(variables: [("WEIR_AUTH_LOGIN_RATE_MAX_ATTEMPTS", "2"), ("WEIR_AUTH_LOGIN_RATE_WINDOW_SECONDS", "120")]);
+        await using var server = await StartAsync();
         await TestDatabase.SeedAdminAsync(server);
         var codes = await SeedCodesAsync(server);
         var browser = new ApiTestClient(server);
-
-        using var first = await SpendAsync(browser, "AAAAA-AAAAA-AAAAA-AAAAA");
-        using var second = await SpendAsync(browser, "AAAAA-AAAAA-AAAAA-AAAAA");
-        using var third = await SpendAsync(browser, codes[0]);
-
-        Assert.Equal([HttpStatusCode.BadRequest, HttpStatusCode.BadRequest, HttpStatusCode.TooManyRequests], [first.StatusCode, second.StatusCode, third.StatusCode]);
-        Assert.Equal("Too many recovery attempts from this address. Try again later.", await Detail(third));
-        Assert.Equal("120", Header(third, "Retry-After"));
-        Assert.Equal(10, await TestDatabase.ScalarAsync(server, "SELECT count(*) FROM recovery_codes WHERE used_at IS NULL"));
-    }
-
-    [Fact]
-    public async Task Wrong_codes_from_anywhere_back_off_the_whole_install_and_even_a_good_code_waits()
-    {
-        await using var server = await StartAsync(variables: [("WEIR_AUTH_LOGIN_RATE_MAX_ATTEMPTS", "100")]);
-        await TestDatabase.SeedAdminAsync(server);
-        var codes = await SeedCodesAsync(server);
-        var browser = new ApiTestClient(server);
-        for (var i = 0; i < Weir.Core.Auth.UsernameLoginBackoff.FreeAttempts + 1; i++)
+        for (var i = 0; i < 5; i++)
         {
             using var wrong = await SpendAsync(browser, "AAAAA-AAAAA-AAAAA-AAAAA");
             Assert.Equal(HttpStatusCode.BadRequest, wrong.StatusCode);
         }
 
-        using var waiting = await SpendAsync(new ApiTestClient(server), codes[0]);
+        using var sixth = await SpendAsync(browser, codes[0]);
 
-        Assert.Equal(HttpStatusCode.TooManyRequests, waiting.StatusCode);
-        Assert.Equal("Too many wrong recovery codes. Wait a few minutes, then try again.", await Detail(waiting));
-        Assert.True(int.Parse(Header(waiting, "Retry-After"), System.Globalization.CultureInfo.InvariantCulture) >= 1);
+        Assert.Equal(HttpStatusCode.TooManyRequests, sixth.StatusCode);
+        Assert.Equal("Too many tries. Wait 10 minutes and try again.", await Detail(sixth));
+        Assert.Equal("600", Header(sixth, "Retry-After"));
+        Assert.Equal(10, await TestDatabase.ScalarAsync(server, "SELECT count(*) FROM recovery_codes WHERE used_at IS NULL"));
+    }
+
+    [Fact]
+    public async Task Five_tries_from_all_addresses_together_are_allowed_and_a_sixth_from_a_new_address_waits()
+    {
+        await using var server = await StartAsync(variables: [("WEIR_TRUSTED_PROXY_IPS", "127.0.0.1,::1")]);
+        await TestDatabase.SeedAdminAsync(server);
+        var codes = await SeedCodesAsync(server);
+        for (var i = 0; i < 5; i++)
+        {
+            using var wrong = await SpendAsync(new ApiTestClient(server), "AAAAA-AAAAA-AAAAA-AAAAA", fromAddress: "203.0.113." + (10 + i));
+            Assert.Equal(HttpStatusCode.BadRequest, wrong.StatusCode);
+        }
+
+        using var sixth = await SpendAsync(new ApiTestClient(server), codes[0], fromAddress: "203.0.113.99");
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, sixth.StatusCode);
+        Assert.Equal("Too many tries. Wait 10 minutes and try again.", await Detail(sixth));
         Assert.Equal(10, await TestDatabase.ScalarAsync(server, "SELECT count(*) FROM recovery_codes WHERE used_at IS NULL"));
     }
 
@@ -269,8 +270,8 @@ public sealed class AuthRecoveryApiTests
         var post = Assert.Single(alerts.Posts);
         Assert.Equal("https://hooks.example.com/chat", post.Url);
         Assert.Contains("\"event\": \"auth_sign_in_recovered\"", post.Body, StringComparison.Ordinal);
-        Assert.Contains("Sign-in recovered with a recovery code", post.Body, StringComparison.Ordinal);
-        Assert.Contains("9 recovery codes left", post.Body, StringComparison.Ordinal);
+        Assert.Contains("\"title\": \"Weir password reset\"", post.Body, StringComparison.Ordinal);
+        Assert.Contains("Password reset with a recovery code. Every signed-in session was ended.", post.Body, StringComparison.Ordinal);
         Assert.DoesNotContain(codes[0][6..], post.Body, StringComparison.Ordinal);
     }
 

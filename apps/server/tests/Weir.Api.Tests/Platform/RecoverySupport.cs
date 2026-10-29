@@ -30,8 +30,11 @@ internal static class RecoverySupport
         return set;
     }
 
-    public static async Task<HttpResponseMessage> SpendAsync(ApiTestClient client, string code) =>
-        await client.PostAsync("/api/v1/auth/recovery/code", new { code, csrf_token = await client.CsrfAsync() });
+    public static async Task<HttpResponseMessage> SpendAsync(ApiTestClient client, string code, string? fromAddress = null) =>
+        await client.PostAsync(
+            "/api/v1/auth/recovery/code",
+            new { code, csrf_token = await client.CsrfAsync() },
+            fromAddress is null ? null : new Dictionary<string, string> { ["X-Forwarded-For"] = fromAddress });
 
     public static async Task<HttpResponseMessage> ChoosePasswordAsync(ApiTestClient client, string token, string password) =>
         await client.PostAsync("/api/v1/auth/recovery/password", new { recovery_token = token, new_password = password, csrf_token = await client.CsrfAsync() });

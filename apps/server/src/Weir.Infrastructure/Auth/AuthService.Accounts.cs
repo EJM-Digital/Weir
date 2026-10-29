@@ -19,7 +19,7 @@ public sealed partial class AuthService
 
         if (!await VerifyPasswordAsync(currentPassword, user.PasswordHash).ConfigureAwait(false))
         {
-            throw new WireValueException("Current password is incorrect.");
+            throw new WireValueException("Current password is not correct.");
         }
 
         var candidate = (newUsername ?? string.Empty).Trim();
@@ -54,7 +54,7 @@ public sealed partial class AuthService
 
         if (!await VerifyPasswordAsync(currentPassword, user.PasswordHash).ConfigureAwait(false))
         {
-            throw new WireValueException("Current password is incorrect.");
+            throw new WireValueException("Current password is not correct.");
         }
 
         if (currentPassword == newPassword)

@@ -12,11 +12,9 @@ This checklist defines the current practical hardening baseline for Weir.
   are saved. System › Security shows how many are left and makes a new set (it needs the current password and voids
   every old code). An account made before recovery codes existed has none, and Weir asks for a set after sign-in.
 - Recovery codes are stored only as Argon2id hashes (the same `PasswordHasher` as passwords), never logged, and never
-  returned after they are first shown. A wrong code is rate-limited per address like sign-in, and wrong codes from any
-  address back off together.
+  returned after they are first shown. Tries are limited to five in ten minutes per address and five in ten minutes from all addresses together.
 - A recovery code is spent as soon as it is accepted, even if the new password is never chosen. Every recovery deletes
-  every session, leaves API keys and webhook secrets working, writes the Activity line "Sign-in recovered with a recovery
-  code" with the number of codes left, and alerts every notification channel that is switched on.
+  every session, leaves API keys and webhook secrets working, writes the Activity line "Password reset with a recovery code. Every signed-in session was ended." with the number of codes left, and alerts every notification channel that is switched on.
 - If the password and every recovery code are lost there is no way back in: the only way forward is a fresh install with
   a new data folder.
 - Bootstrap from a non-loopback peer needs the one-time setup code Weir logs and writes to

@@ -93,14 +93,22 @@ describe("getting back in with a recovery code", () => {
   it("asks for a code and says it is used up as soon as it is accepted", () => {
     renderRecover(codeAccepted);
 
-    expect(screen.getByRole("heading", { name: "Get back in" })).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Get back into Weir" }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        "If you have lost both your password and your recovery codes, the only way forward is a fresh install.",
+      ),
+    ).toBeVisible();
     expect(screen.getByLabelText("Recovery code")).toHaveFocus();
     expect(
       screen.getByText(/used up as soon as Weir accepts it, even if you stop/),
     ).toBeVisible();
-    expect(
-      screen.getByRole("link", { name: "Back to sign in" }),
-    ).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: "Go to sign in" })).toHaveAttribute(
+      "href",
+      "/login",
+    );
   });
 
   it("sends the code as typed, trimmed, with a fresh token, and shows the username it belongs to", async () => {
@@ -149,7 +157,7 @@ describe("getting back in with a recovery code", () => {
     await spendCode("AAAAA-AAAAA-AAAAA-AAAAA");
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "That recovery code isn't right, or it has been used already. Check it and try again.",
+      "That did not work. Check it and try again.",
     );
     expect(screen.getByTestId("recover-code-submit")).toBeEnabled();
     fireEvent.click(screen.getByTestId("recover-code-submit"));
@@ -162,7 +170,7 @@ describe("getting back in with a recovery code", () => {
     await spendCode();
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Too many attempts. Wait a few minutes, then try again.",
+      "Too many tries. Wait 10 minutes and try again.",
     );
   });
 
@@ -191,14 +199,16 @@ describe("choosing the new password after a code", () => {
     await screen.findByTestId("recover-username");
   }
 
-  it("sets the password with the token the code gave, then opens sign-in with the password-changed notice", async () => {
+  it("sets the password with the token the code gave, says the password is changed, and Go to sign in opens sign-in", async () => {
     await toPasswordStep();
 
     typePasswords("a-brand-new-password", "a-brand-new-password");
 
-    expect(await screen.findByTestId("sign-in")).toHaveTextContent(
-      "/login?password=changed",
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Your password is changed.",
     );
+    fireEvent.click(screen.getByRole("button", { name: "Go to sign in" }));
+    expect(screen.getByTestId("sign-in")).toHaveTextContent("/login");
     expect(weir?.sent("POST", "/api/v1/auth/recovery/password")).toEqual([
       expect.objectContaining({
         body: {
@@ -242,7 +252,7 @@ describe("choosing the new password after a code", () => {
     );
     expect(screen.getByTestId("recover-password-submit")).toBeEnabled();
     typePasswords("a-brand-new-password", "a-brand-new-password");
-    expect(await screen.findByTestId("sign-in")).toBeVisible();
+    expect(await screen.findByTestId("recover-done")).toBeVisible();
   });
 
   it("clears an earlier reason of its own when the next try is sent", async () => {
@@ -252,7 +262,7 @@ describe("choosing the new password after a code", () => {
 
     typePasswords("a-brand-new-password", "a-brand-new-password");
 
-    expect(await screen.findByTestId("sign-in")).toBeVisible();
+    expect(await screen.findByTestId("recover-done")).toBeVisible();
   });
 
   it("says it is saving while Weir answers and cannot be pressed twice", async () => {
@@ -266,7 +276,7 @@ describe("choosing the new password after a code", () => {
     const busy = await screen.findByRole("button", { name: "Saving…" });
     expect(busy).toBeDisabled();
     answer(passwordSet);
-    await screen.findByTestId("sign-in");
+    await screen.findByTestId("recover-done");
     expect(weir?.sent("POST", "/api/v1/auth/recovery/password")).toHaveLength(
       1,
     );

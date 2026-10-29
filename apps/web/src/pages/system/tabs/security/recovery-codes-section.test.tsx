@@ -50,11 +50,17 @@ function serve(
 
 const panel = () => screen.getByTestId("suite-security-recovery");
 
-function makeNewSet(password = "the-current-password") {
-  fireEvent.change(within(panel()).getByLabelText("Current password"), {
+function openDialog() {
+  fireEvent.click(screen.getByTestId("recovery-make"));
+  return screen.getByRole("dialog", { name: "Enter your password" });
+}
+
+function makeNewCodes(password = "the-current-password") {
+  const dialog = openDialog();
+  fireEvent.change(within(dialog).getByLabelText("Current password"), {
     target: { value: password },
   });
-  fireEvent.click(screen.getByTestId("recovery-make"));
+  fireEvent.click(within(dialog).getByRole("button", { name: "Confirm" }));
 }
 
 describe("System › Security: recovery codes", () => {
@@ -62,7 +68,7 @@ describe("System › Security: recovery codes", () => {
     serve(recoveryCodesSaved);
 
     expect(await screen.findByTestId("recovery-left")).toHaveTextContent(
-      "10 recovery codes left",
+      "10 of 10 recovery codes left.",
     );
     expect(screen.queryByTestId("recovery-nudge")).toBeNull();
     expect(panel()).toHaveTextContent("fresh install with a new data folder");
@@ -72,7 +78,7 @@ describe("System › Security: recovery codes", () => {
     serve(recoveryCodesOneLeft);
 
     expect(await screen.findByTestId("recovery-left")).toHaveTextContent(
-      "1 recovery code left",
+      "1 of 10 recovery codes left.",
     );
   });
 
@@ -104,11 +110,11 @@ describe("System › Security: recovery codes", () => {
     );
   });
 
-  it("makes a new set with the current password, shows it once, and counts it as unsaved until the person says so", async () => {
+  it("makes new codes with the current password asked for in a dialog, shows them once, and counts them as unsaved until the person says so", async () => {
     const server = serve([recoveryCodesSaved, recoveryCodesNotSaved]);
     await screen.findByTestId("recovery-left");
 
-    makeNewSet();
+    makeNewCodes();
 
     expect(await screen.findByTestId("recovery-codes")).toBeVisible();
     expect(
@@ -123,19 +129,21 @@ describe("System › Security: recovery codes", () => {
       }),
     ]);
     expect(screen.queryByTestId("recovery-make")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("goes back to the count once the new set is marked as saved", async () => {
     const server = serve(recoveryCodesSaved);
     await screen.findByTestId("recovery-left");
-    makeNewSet();
+    makeNewCodes();
     await screen.findByTestId("recovery-codes");
 
     fireEvent.click(screen.getByTestId("recovery-codes-saved"));
+    expect(screen.getByRole("button", { name: "Done" })).toBeVisible();
     fireEvent.click(screen.getByTestId("recovery-codes-continue"));
 
     expect(await screen.findByTestId("recovery-left")).toHaveTextContent(
-      "10 recovery codes left",
+      "10 of 10 recovery codes left.",
     );
     expect(
       server.sent("POST", "/api/v1/auth/recovery-codes/confirm"),
@@ -143,15 +151,27 @@ describe("System › Security: recovery codes", () => {
     expect(screen.queryByTestId("recovery-codes")).toBeNull();
   });
 
-  it("asks for the password before sending anything", async () => {
+  it("asks for the password before sending anything, in the words every password gate uses", async () => {
     const server = serve(recoveryCodesSaved);
     await screen.findByTestId("recovery-left");
+    const dialog = openDialog();
 
-    fireEvent.click(screen.getByTestId("recovery-make"));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Confirm" }));
 
-    expect(within(panel()).getByRole("alert")).toHaveTextContent(
-      "Enter your current password.",
+    expect(within(dialog).getByRole("alert")).toHaveTextContent(
+      "Enter your current password to make this change.",
     );
+    expect(server.sent("POST", "/api/v1/auth/recovery-codes")).toEqual([]);
+  });
+
+  it("closes the dialog on Cancel and sends nothing", async () => {
+    const server = serve(recoveryCodesSaved);
+    await screen.findByTestId("recovery-left");
+    const dialog = openDialog();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(server.sent("POST", "/api/v1/auth/recovery-codes")).toEqual([]);
   });
 
@@ -159,16 +179,17 @@ describe("System › Security: recovery codes", () => {
     serve(recoveryCodesSaved, currentPasswordWrong);
     await screen.findByTestId("recovery-left");
 
-    makeNewSet("not-it");
+    makeNewCodes("not-it");
 
     expect(await within(panel()).findByRole("alert")).toHaveTextContent(
-      "Current password is incorrect.",
+      "Current password is not correct.",
     );
+    expect(screen.getByRole("dialog")).toBeVisible();
     expect(screen.queryByTestId("recovery-codes")).toBeNull();
     expect(screen.getByTestId("recovery-left")).toBeVisible();
   });
 
-  it("says Making while Weir works and cannot be pressed twice", async () => {
+  it("keeps the dialog busy while Weir works and cannot be confirmed twice", async () => {
     let answer: (reply: RecordedReply) => void = () => {};
     const server = serve(
       recoveryCodesSaved,
@@ -176,12 +197,25 @@ describe("System › Security: recovery codes", () => {
     );
     await screen.findByTestId("recovery-left");
 
-    makeNewSet();
+    makeNewCodes();
 
-    const busy = await screen.findByRole("button", { name: "Making…" });
-    expect(busy).toBeDisabled();
+    const confirm = await screen.findByRole("button", { name: "Confirm" });
+    expect(confirm).toBeDisabled();
     answer(newRecoveryCodes);
     await screen.findByTestId("recovery-codes");
     expect(server.sent("POST", "/api/v1/auth/recovery-codes")).toHaveLength(1);
+  });
+
+  it("offers Make recovery codes when there are none, and Make new codes when there are", async () => {
+    serve(recoveryCodesNone);
+    expect(await screen.findByTestId("recovery-make")).toHaveTextContent(
+      "Make recovery codes",
+    );
+    cleanup();
+    serve(recoveryCodesSaved);
+    await screen.findByTestId("recovery-left");
+    expect(screen.getByTestId("recovery-make")).toHaveTextContent(
+      "Make new codes",
+    );
   });
 });

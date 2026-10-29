@@ -138,7 +138,7 @@ describe("Changing the password ends this sign-in", () => {
     changePassword();
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Current password is incorrect.",
+      "Current password is not correct.",
     );
     expect(screen.getByTestId("where")).toHaveTextContent("/");
     expect(screen.getByTestId("where")).not.toHaveTextContent("/login");

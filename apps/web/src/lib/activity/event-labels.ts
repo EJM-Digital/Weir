@@ -12,7 +12,7 @@ export const EVENT_LABELS: Record<string, string> = {
   "auth.password_changed": "Password changed",
   "auth.username_changed": "Username changed",
   "auth.sessions_revoked": "Sessions signed out",
-  "auth.sign_in_recovered": "Sign-in recovered",
+  "auth.sign_in_recovered": "Password reset with a recovery code",
   "system.reconciliation.repair": "System repair finished",
   "system.network_access.changed": "Network access changed",
   "system.home_network_sign_in.changed":
