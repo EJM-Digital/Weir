@@ -436,9 +436,29 @@ jobs:
 
   # The linux/amd64 image, built and audited without credentials. Its layers go to this run's GitHub
   # Actions cache (not a registry), so publish-docker rebuilds from them instead of from scratch.
+  # One reading of when Ubuntu's archive last changed, shared by both candidates and the published image, so the
+  # images that are scanned and the one that is pushed install the same packages.
+  ubuntu-archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      stamp: ${{ steps.ubuntu-stamp.outputs.stamp }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Read when Ubuntu's archive last changed
+        id: ubuntu-stamp
+        uses: ./.github/actions/ubuntu-archive-stamp
+
   docker-candidate:
+    needs: [ubuntu-archive]
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    # publish-docker builds with the same stamp; it reads it from here, its own gate.
+    outputs:
+      ubuntu-stamp: ${{ needs.ubuntu-archive.outputs.stamp }}
     permissions:
       contents: read
     env:
@@ -496,7 +516,9 @@ jobs:
           load: true
           platforms: linux/amd64
           push: false
-          build-args: WEIR_VERSION=${{ steps.version.outputs.plain }}
+          build-args: |
+            WEIR_VERSION=${{ steps.version.outputs.plain }}
+            UBUNTU_ARCHIVE_STAMP=${{ needs.ubuntu-archive.outputs.stamp }}
           tags: weir-release-candidate:${{ steps.version.outputs.plain }}
           cache-from: type=gha,scope=weir-release-amd64
           cache-to: type=gha,mode=max,scope=weir-release-amd64,ignore-error=true
@@ -578,6 +600,7 @@ jobs:
   # The arm64 variant of the same candidate must build, start under QEMU and create the first account before anything is pushed.
   # Separate from the amd64 job so its minutes under QEMU overlap everything else instead of following it.
   docker-arm64:
+    needs: [ubuntu-archive]
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -609,7 +632,9 @@ jobs:
           platforms: linux/arm64
           load: true
           push: false
-          build-args: WEIR_VERSION=${{ steps.version.outputs.plain }}
+          build-args: |
+            WEIR_VERSION=${{ steps.version.outputs.plain }}
+            UBUNTU_ARCHIVE_STAMP=${{ needs.ubuntu-archive.outputs.stamp }}
           tags: weir-release-candidate:${{ steps.version.outputs.plain }}-arm64
           cache-from: type=gha,scope=weir-release-arm64
           cache-to: type=gha,mode=max,scope=weir-release-arm64,ignore-error=true
@@ -754,7 +779,9 @@ jobs:
           push: true
           provenance: mode=max
           sbom: true
-          build-args: WEIR_VERSION=${{ steps.version.outputs.plain }}
+          build-args: |
+            WEIR_VERSION=${{ steps.version.outputs.plain }}
+            UBUNTU_ARCHIVE_STAMP=${{ needs.docker-candidate.outputs.ubuntu-stamp }}
           cache-from: |
             type=gha,scope=weir-release-amd64
             type=gha,scope=weir-release-arm64

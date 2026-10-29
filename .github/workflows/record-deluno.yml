@@ -51,6 +51,10 @@ jobs:
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
       # The same image and cache as the scenario shards of CI.
+      - name: Read when Ubuntu's archive last changed
+        id: ubuntu-stamp
+        uses: ./.github/actions/ubuntu-archive-stamp
+
       - name: Build Weir Docker image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
@@ -61,6 +65,7 @@ jobs:
           tags: weir-ci-smoke
           cache-from: type=gha,scope=weir-ci-amd64
           cache-to: type=gha,mode=max,scope=weir-ci-amd64,ignore-error=true
+          build-args: UBUNTU_ARCHIVE_STAMP=${{ steps.ubuntu-stamp.outputs.stamp }}
 
       # A run only ever starts an image named by digest: the newest release is looked up here and handed to the scenarios by the digest it has.
       # Not the `latest` tag, which Deluno moves only for a stable release (scripts/newest-deluno-image.mjs).
