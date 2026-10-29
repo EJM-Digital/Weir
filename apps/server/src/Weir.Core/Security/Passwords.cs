@@ -27,12 +27,30 @@ public static class PasswordHasher
     public const int HashLength = 32;
     public const int SaltLength = 16;
 
+    /// <summary>The cost of hashing a secret that is already random (a recovery code): 100 bits cannot be guessed faster by a slower hash.</summary>
+    public const int RandomSecretTimeCost = 1;
+
+    public const int RandomSecretMemoryCostKib = 8_192;
+
     private const string DummyPasswordPlain = "weir-login-padding-password";
 
     private static readonly Lazy<string> Dummy = new(() => Hash(DummyPasswordPlain), LazyThreadSafetyMode.ExecutionAndPublication);
 
     /// <summary>The hash a failed lookup verifies against so a missing user costs the same time.</summary>
     public static string DummyPasswordHash => Dummy.Value;
+
+    private static readonly Lazy<string> DummyRandomSecret = new(() => HashRandomSecret(DummyPasswordPlain), LazyThreadSafetyMode.ExecutionAndPublication);
+
+    /// <summary>The hash a code that names no row is verified against, so a missing code costs the same time as a wrong one.</summary>
+    public static string DummyRandomSecretHash => DummyRandomSecret.Value;
+
+    /// <summary>Hashes a long random secret, such as a recovery code, at <see cref="RandomSecretTimeCost"/> and <see cref="RandomSecretMemoryCostKib"/>. Never for a password a person chose.</summary>
+    public static string HashRandomSecret(string secret)
+    {
+        ArgumentNullException.ThrowIfNull(secret);
+        var salt = RandomNumberGenerator.GetBytes(SaltLength);
+        return HashWithSalt(secret, salt, Argon2Type.Argon2id, Argon2.Version13, RandomSecretTimeCost, RandomSecretMemoryCostKib, Parallelism, HashLength);
+    }
 
     public static string Hash(string plain)
     {

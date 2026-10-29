@@ -237,7 +237,7 @@ export class FakeWindows {
     );
     this.#put(join("logs", "weir.log"), `${this.#files.get(join("logs", "weir.log")) ?? ""}${this.#behaviour.serverLogLine ?? "Weir started"}\n`);
     this.#updateWaiting = this.#installsItsOwnUpdates();
-    this.#db ??= { account: null, settings: { app_timezone: "UTC", log_retention_days: 30 }, libraries: [], activity: [], logs: [], paused: false };
+    this.#db ??= { account: null, settings: { app_timezone: "UTC", log_retention_days: 30 }, libraries: [], logs: [], paused: false };
     if (this.#behaviour.warnsWhenStarted) this.#db.logs.push({ source: "server", id: this.#db.logs.length + 1, at: this.#now, title: this.#behaviour.warnsWhenStarted });
     if (this.#interrupted) this.#db.logs.push({ source: "server", id: this.#db.logs.length + 1, at: this.#now, title: "Weir startup recovered interrupted work recovered_jobs={'processing_requeued': 1}" });
     this.#interrupted = false;
@@ -328,20 +328,12 @@ class FakeBrowser {
     return this.#cookie && this.#world.sessions.has(this.#cookie) && this.#world.db.account ? this.#world.db.account.username : null;
   }
 
-  async activeSessions() {
-    return [...this.#world.sessions].map((id) => ({ id }));
-  }
-
   async suiteSettings() {
     return { ...this.#world.db.settings };
   }
 
   async saveSuiteSettings(fields) {
     Object.assign(this.#world.db.settings, fields);
-  }
-
-  async activity(eventType) {
-    return this.#world.db.activity.filter((item) => item.event_type === eventType);
   }
 
   async createLibrary(fields) {

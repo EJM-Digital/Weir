@@ -27,18 +27,20 @@ public static class SeededAccounts
     /// <summary>An operator, who signs in with <see cref="ViewerPassword"/>: the hash is the same.</summary>
     public const string OperatorUsername = "carol";
 
-    /// <summary>Adds the viewer to a stopped database when it has none.</summary>
+    /// <summary>Adds the viewer to a stopped database when it has none, and the admin before it: setup closes once any account exists, so a viewer alone leaves the admin no way in.</summary>
     public static void EnsureViewer(SqliteConnection connection)
     {
+        EnsureAdmin(connection);
         if (!UserExists(connection, ViewerUsername))
         {
             SeedSql.InsertUser(connection, ViewerUsername, ViewerPasswordHash, "viewer");
         }
     }
 
-    /// <summary>Adds the operator to a stopped database when it has none.</summary>
+    /// <summary>Adds the operator to a stopped database when it has none, and the admin before it, for the reason <see cref="EnsureViewer"/> gives.</summary>
     public static void EnsureOperator(SqliteConnection connection)
     {
+        EnsureAdmin(connection);
         if (!UserExists(connection, OperatorUsername))
         {
             SeedSql.InsertUser(connection, OperatorUsername, ViewerPasswordHash, "operator");

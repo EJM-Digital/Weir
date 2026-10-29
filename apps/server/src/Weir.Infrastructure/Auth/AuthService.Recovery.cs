@@ -17,7 +17,7 @@ public sealed partial class AuthService
     public async Task<IReadOnlyList<string>> MakeRecoveryCodesAsync(UnitOfWork uow, long userId)
     {
         var codes = RecoveryCodeRules.NewSet();
-        var hashes = await Task.WhenAll(codes.Select(HashPasswordAsync)).ConfigureAwait(false);
+        var hashes = await Task.WhenAll(codes.Select(code => HashAsync(code, PasswordHasher.HashRandomSecret))).ConfigureAwait(false);
         var rows = codes.Select((code, index) => (code[..5], hashes[index])).ToList();
         await _recovery.ReplaceSetAsync(uow, userId, rows, Now()).ConfigureAwait(false);
         return codes;
@@ -42,7 +42,7 @@ public sealed partial class AuthService
 
         if (row is null)
         {
-            await VerifyPasswordAsync(code, PasswordHasher.DummyPasswordHash).ConfigureAwait(false);
+            await VerifyPasswordAsync(code, PasswordHasher.DummyRandomSecretHash).ConfigureAwait(false);
             return null;
         }
 
@@ -93,17 +93,17 @@ public sealed partial class AuthService
             throw new WireValueException(problem);
         }
 
-        await _users.UpdatePasswordHashAsync(uow, user.Id, await HashPasswordAsync(newPassword).ConfigureAwait(false)).ConfigureAwait(false);
+        await _users.UpdatePasswordHashAsync(uow, user.Id, await HashAsync(newPassword, PasswordHasher.Hash).ConfigureAwait(false)).ConfigureAwait(false);
         return user.Username;
     }
 
     /// <summary>Hashes inside <see cref="_argon2Concurrency"/>, off the request's thread, so a set of codes is made in parallel without a burst of memory.</summary>
-    private async Task<string> HashPasswordAsync(string plain)
+    private async Task<string> HashAsync(string plain, Func<string, string> hash)
     {
         await _argon2Concurrency.WaitAsync().ConfigureAwait(false);
         try
         {
-            return await Task.Run(() => PasswordHasher.Hash(plain)).ConfigureAwait(false);
+            return await Task.Run(() => hash(plain)).ConfigureAwait(false);
         }
         finally
         {
