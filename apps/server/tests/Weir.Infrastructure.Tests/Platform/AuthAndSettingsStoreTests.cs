@@ -150,7 +150,7 @@ public sealed class AuthAndSettingsStoreTests
         Assert.Equal("New username must be different from the current username.", await Error(uow => fixture.Auth.ChangeUsernameAsync(uow, id, Password, "alice")));
         Assert.Equal("That username is already taken.", await Error(uow => fixture.Auth.ChangeUsernameAsync(uow, id, Password, "BOB")));
         Assert.Equal("Alice", await fixture.WithUnitOfWork(uow => fixture.Auth.ChangeUsernameAsync(uow, id, Password, "Alice")));
-        Assert.Equal("Current password is incorrect.", await Error(uow => fixture.Auth.ChangePasswordAsync(uow, id, "wrong", "another-strong-password")));
+        Assert.Equal("Current password is not correct.", await Error(uow => fixture.Auth.ChangePasswordAsync(uow, id, "wrong", "another-strong-password")));
         Assert.Equal("New password must be different from the current password.", await Error(uow => fixture.Auth.ChangePasswordAsync(uow, id, Password, Password)));
         Assert.Equal("Password must use a wider mix of characters.", await Error(uow => fixture.Auth.ChangePasswordAsync(uow, id, Password, "aaaaaaaaaa")));
     }
