@@ -28,7 +28,9 @@ public sealed partial class AuthShellTests(E2EServer server) : E2ETestBase(serve
 
         // A new install asks how downloads reach Weir before it shows any folder.
         await Expect(page.GetByText("How do your downloads reach Weir?")).ToBeVisibleAsync();
-        await Expect(page.GetByRole(AriaRole.Radio)).ToHaveCountAsync(4);
+        // The four ways downloads arrive, and Yes and No for skipping sign-in on the home network, which starts unanswered.
+        await Expect(page.GetByRole(AriaRole.Radio)).ToHaveCountAsync(6);
+        await Expect(page.GetByRole(AriaRole.Radio, new() { Checked = true })).ToHaveCountAsync(0);
         await Expect(page.GetByRole(AriaRole.Textbox, new() { Name = "Movies watched folder" })).ToHaveCountAsync(0);
         await page.GetByRole(AriaRole.Radio, new() { NameRegex = Neither() }).CheckAsync();
         await Expect(page.GetByRole(AriaRole.Textbox, new() { Name = "Movies watched folder" })).ToBeVisibleAsync();

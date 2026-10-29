@@ -127,6 +127,9 @@ public sealed class ApiRequest : IAsyncDisposable
         LoggerFactory = context.RequestServices.GetRequiredService<ILoggerFactory>();
     }
 
+    /// <summary>What Weir says when the current password it asked for is wrong.</summary>
+    public const string CurrentPasswordWrong = "Current password is incorrect.";
+
     public HttpContext Context { get; }
 
     public WeirOptions Options { get; }
@@ -211,6 +214,15 @@ public sealed class ApiRequest : IAsyncDisposable
     /// <summary>The client address after trusted forwarded headers were applied.</summary>
     public string? ClientHost => DefaultClientHost(Context);
 
+    /// <summary>
+    /// The address of the socket that really connected, before forwarded headers were applied; <see langword="null"/> where the
+    /// request did not pass the first middleware, which names no client.
+    /// </summary>
+    private string? ConnectionPeer => Context.Items[ResponseMarkers.ConnectionPeer] as string;
+
+    /// <summary>The <c>X-Forwarded-For</c> header as the caller sent it, before forwarded headers were applied.</summary>
+    private string? ForwardedFor => Context.Items[ResponseMarkers.ForwardedFor] as string;
+
     public static string? DefaultClientHost(HttpContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -233,6 +245,7 @@ public sealed class ApiRequest : IAsyncDisposable
         {
             var uow = await DbAsync().ConfigureAwait(false);
             _user = await Auth.LoadValidSessionAsync(uow, RawSessionToken).ConfigureAwait(false)
+                ?? await Context.RequestServices.GetRequiredService<HomeNetworkSignIn>().IdentifyAsync(uow, ConnectionPeer, ForwardedFor).ConfigureAwait(false)
                 ?? throw new ApiException(StatusCodes.Status401Unauthorized, "Not authenticated.");
             if (!UserRoles.Valid.Contains(_user.User.Role))
             {
@@ -247,6 +260,34 @@ public sealed class ApiRequest : IAsyncDisposable
         }
 
         return _user;
+    }
+
+    /// <summary>
+    /// Asks for the current password of the signed-in account, even of a visitor who skipped sign-in, so a change that must not be
+    /// made by whoever is at the keyboard needs the person who knows it. A wrong password counts against the account as a wrong
+    /// sign-in does, so this cannot be used to try passwords without limit. Call it after <see cref="RequireUserAsync"/>.
+    /// </summary>
+    public async Task RequireCurrentPasswordAsync(string password)
+    {
+        ArgumentNullException.ThrowIfNull(password);
+        var user = _user?.User ?? throw new InvalidOperationException("The current password is asked for after RequireUserAsync.");
+        var backoff = Context.RequestServices.GetRequiredService<AuthRateLimiters>().LoginUsernameBackoff;
+        var wait = backoff.TimeUntilAllowed(user.Username);
+        if (wait > TimeSpan.Zero)
+        {
+            throw new ApiException(
+                StatusCodes.Status429TooManyRequests,
+                "Too many wrong passwords for this account. Wait a few minutes, then try again.",
+                new Dictionary<string, string> { ["Retry-After"] = Math.Max(1, (long)Math.Ceiling(wait.TotalSeconds)).ToString(System.Globalization.CultureInfo.InvariantCulture) });
+        }
+
+        if (!await Auth.VerifyPasswordAsync(password, user.PasswordHash).ConfigureAwait(false))
+        {
+            backoff.RecordFailure(user.Username);
+            throw new ApiException(StatusCodes.Status400BadRequest, CurrentPasswordWrong);
+        }
+
+        backoff.RecordSuccess(user.Username);
     }
 
     /// <summary>The session secret, or a 503 when it is not configured.</summary>
@@ -298,9 +339,12 @@ public sealed class ApiRequest : IAsyncDisposable
         throw new ApiException(StatusCodes.Status403Forbidden, "Missing Origin or Referer for browser POST.");
     }
 
-    /// <summary>Verifies a CSRF token against this request's session cookie.</summary>
+    /// <summary>
+    /// Verifies a CSRF token against this request's session cookie. A visitor who skipped sign-in has no session to bind it to,
+    /// so theirs is the token anyone is given before signing in.
+    /// </summary>
     public bool VerifyCsrf(string secret, string? token, bool allowAnonymous) =>
-        CsrfTokens.Verify(secret, token, RawSessionToken, allowAnonymous, Time);
+        CsrfTokens.Verify(secret, token, RawSessionToken, allowAnonymous || _user is { ByHomeNetwork: true }, Time);
 
     /// <summary>The standard settings-route check: origin, secret, then a session-bound token.</summary>
     public void RequireConfirmationToken(string? token, string detail = "Your confirmation token expired. Refresh the page and try again.")

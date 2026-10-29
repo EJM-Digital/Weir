@@ -1,3 +1,4 @@
+using Weir.Core.Net;
 using Weir.Core.Notifications;
 using Weir.Core.Processing;
 using Weir.Core.Time;
@@ -186,6 +187,14 @@ public sealed class SetupDataChangeTests : IDisposable
         Assert.Equal([DataTopics.Settings], await HeardAsync(uow => _operator.UpdateAsync(uow, operatorSettings, operatorSettings with { KeepFailedWorkFiles = !operatorSettings.KeepFailedWorkFiles })));
         Assert.Empty(await HeardAsync(uow => _suite.UpdateAsync(uow, suite, suite)));
         Assert.Empty(await HeardAsync(uow => _operator.UpdateAsync(uow, operatorSettings, operatorSettings)));
+    }
+
+    [Fact]
+    public async Task Saving_the_home_network_sign_in_publishes_the_settings()
+    {
+        var store = new HomeNetworkSignInStore(_changes);
+
+        Assert.Equal([DataTopics.Settings], await HeardAsync(uow => store.SaveAsync(uow, new HomeNetworkSettings(true, [], []))));
     }
 
     [Fact]

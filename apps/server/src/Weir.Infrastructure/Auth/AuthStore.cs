@@ -30,6 +30,13 @@ public sealed class AuthStore
     public Task<UserRecord?> GetUserAsync(UnitOfWork uow, long id) =>
         Checked(uow).QuerySingleAsync($"SELECT {UserColumns} FROM users WHERE users.id = $id", ReadUser, ("$id", id));
 
+    /// <summary>The account Weir signs in as: its first active admin, which is the only account there is.</summary>
+    public Task<UserRecord?> FindActiveAdminAsync(UnitOfWork uow) =>
+        Checked(uow).QuerySingleAsync(
+            $"SELECT {UserColumns} FROM users WHERE users.role = $role AND users.is_active IS 1 ORDER BY users.id LIMIT 1 OFFSET 0",
+            ReadUser,
+            ("$role", UserRoles.Admin));
+
     /// <summary>The first user whose lower-cased username equals <paramref name="folded"/>.</summary>
     public Task<UserRecord?> FindUserByLowerUsernameAsync(UnitOfWork uow, string folded) =>
         Checked(uow).QuerySingleAsync(

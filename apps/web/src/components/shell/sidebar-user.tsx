@@ -8,6 +8,8 @@ type SidebarUserProps = {
   username: string | undefined;
   version: string | undefined;
   signingOut: boolean;
+  /** False for a device that skipped sign-in: there is no sign-in to end. */
+  canSignOut: boolean;
   onSignOut: () => void;
   onNavigate: () => void;
 };
@@ -31,6 +33,7 @@ export function SidebarUser({
   username,
   version,
   signingOut,
+  canSignOut,
   onSignOut,
   onNavigate,
 }: SidebarUserProps) {
@@ -77,16 +80,18 @@ export function SidebarUser({
           >
             Change password
           </Link>
-          <button
-            type="button"
-            className="mm-sidebar-user__item mm-sidebar-user__item--danger"
-            data-testid="sign-out"
-            disabled={signingOut}
-            onClick={onSignOut}
-          >
-            <NavIconSignOut />
-            {signingOut ? "Signing out…" : "Sign out"}
-          </button>
+          {canSignOut ? (
+            <button
+              type="button"
+              className="mm-sidebar-user__item mm-sidebar-user__item--danger"
+              data-testid="sign-out"
+              disabled={signingOut}
+              onClick={onSignOut}
+            >
+              <NavIconSignOut />
+              {signingOut ? "Signing out…" : "Sign out"}
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>

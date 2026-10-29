@@ -7,8 +7,11 @@ using Weir.Infrastructure.Sqlite;
 
 namespace Weir.Infrastructure.Auth;
 
-/// <summary>A signed-in request: its session row (as held in memory) and its user.</summary>
-public sealed record SignedInSession(UserSessionRecord Session, UserRecord User);
+/// <summary>
+/// A signed-in request: its session row (as held in memory) and its user. <paramref name="ByHomeNetwork"/> marks a request that
+/// skipped sign-in because it came from the home network, whose session row exists only for this request.
+/// </summary>
+public sealed record SignedInSession(UserSessionRecord Session, UserRecord User, bool ByHomeNetwork = false);
 
 /// <summary>
 /// Credentials, first-admin bootstrap, server-side sessions and logout. Split by concern across several files

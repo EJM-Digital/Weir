@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { connectionRequestCases } from "../../test/wire/connections.cases";
+import { homeNetworkRequestCases } from "../../test/wire/home-network.cases";
 import { activityRequestCases } from "../../test/wire/files.cases";
 import { workflowRequestCases } from "../../test/wire/libraries.cases";
 import { ruleRequestCases } from "../../test/wire/rule-sets.cases";
@@ -68,6 +69,7 @@ const covered = new Set(
     ...workflowRequestCases,
     ...ruleRequestCases,
     ...connectionRequestCases,
+    ...homeNetworkRequestCases,
   ].map((testCase) => testCase.fn.name),
 );
 

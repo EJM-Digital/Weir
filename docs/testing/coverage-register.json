@@ -59421,6 +59421,44 @@
       }
     },
     {
+      "id": "events.system.system-home-network-sign-in-changed",
+      "area": "events",
+      "behaviour": "Weir records \"Local network sign-in setting changed\" in Activity (system.home_network_sign_in.changed), only when the value changes",
+      "kind": "event",
+      "severity": "low",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "Activity_is_written_only_when_the_value_changes"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "A_failed_save_writes_no_activity"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Net/HomeNetworkTests.cs",
+          "name": "The_activity_words_follow_the_value"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Activity/ActivityClassifierTests.cs",
+          "name": "Person_started_events_are_manual_and_results_fall_back_to_the_event_type"
+        }
+      ],
+      "covers": [
+        "event:system.home_network_sign_in.changed"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
       "id": "events.system.system-processing-paused",
       "area": "events",
       "behaviour": "Weir records \"Processing paused\" in Activity (system.processing_paused)",
@@ -62098,6 +62136,312 @@
       }
     },
     {
+      "id": "api.suite.get-suite-home-network-sign-in",
+      "area": "api",
+      "behaviour": "GET /api/v1/suite/home-network-sign-in",
+      "kind": "API route",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "It_is_off_until_the_owner_turns_it_on_and_a_local_device_signs_in_like_any_other"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "The_saved_choice_is_read_back_with_trimmed_unique_entries"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "Only_an_admin_can_change_the_setting"
+        }
+      ],
+      "covers": [
+        "route:GET /api/v1/suite/home-network-sign-in"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "api.suite.put-suite-home-network-sign-in",
+      "area": "api",
+      "behaviour": "PUT /api/v1/suite/home-network-sign-in",
+      "kind": "API route",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "Changing_the_setting_needs_the_current_password_even_from_a_skipped_visitor"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "Too_many_wrong_passwords_lock_the_account_out_of_the_change_and_it_stays_as_it_was"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "A_bad_entry_is_refused_in_the_exact_words_and_nothing_is_saved"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "Only_an_admin_can_change_the_setting"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "The_save_is_refused_without_a_confirmation_token_and_to_an_anonymous_caller"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "The_current_password_is_asked_for_only_after_someone_is_signed_in"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/HomeNetworkSignInTests.cs",
+          "name": "What_is_saved_is_read_back_and_a_later_save_replaces_it"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Sqlite/Migrations/HomeNetworkSignInMigrationTests.cs",
+          "name": "The_table_is_limited_to_one_row_that_starts_off_with_no_networks"
+        }
+      ],
+      "covers": [
+        "route:PUT /api/v1/suite/home-network-sign-in"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "system.security.a-device-on-the-home-network-skips-sign-in-only-when-the-owner-turned-it-on",
+      "area": "api",
+      "behaviour": "With the choice on, a request whose real socket peer is a loopback, private, link-local or unique-local address (or one of the owner's own networks, narrowed by the allow list) is the account's own identity for that request alone: no cookie, no session row. Off, which is the default, every device signs in. A real session is used first",
+      "kind": "state",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Net/HomeNetworkTests.cs",
+          "name": "Every_listed_range_counts_as_local"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Net/HomeNetworkTests.cs",
+          "name": "An_allow_list_narrows_the_local_addresses_that_skip"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Net/HomeNetworkTests.cs",
+          "name": "An_owner_added_network_skips_only_when_the_allow_list_also_lets_it"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "It_is_off_until_the_owner_turns_it_on_and_a_local_device_signs_in_like_any_other"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "A_local_device_is_the_accounts_own_identity_for_that_request_with_no_cookie_and_no_session"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "Turning_it_off_again_makes_every_device_sign_in_again"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "A_real_session_is_used_before_the_home_network_is_asked"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "The_allow_list_narrows_which_local_devices_skip_and_never_widens_to_a_public_one"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "A_network_the_owner_adds_counts_as_local"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "It_signs_nobody_in_when_the_account_is_missing_or_switched_off"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/HomeNetworkSignInTests.cs",
+          "name": "A_local_client_is_the_accounts_own_identity_for_that_request_and_nothing_is_stored"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/HomeNetworkSignInTests.cs",
+          "name": "Nobody_is_let_in_while_it_is_off_or_for_a_client_that_is_not_local"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/HomeNetworkSignInTests.cs",
+          "name": "Nobody_is_let_in_when_there_is_no_active_admin_to_be"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/HomeNetworkSignInTests.cs",
+          "name": "With_it_on_a_browser_that_never_signed_in_loads_the_app_and_with_it_off_it_must_sign_in"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "system.security.a-public-address-is-never-skipped-and-a-forwarded-header-counts-only-from-a-trusted-proxy",
+      "area": "api",
+      "behaviour": "A public address is never skipped. X-Forwarded-For is ignored from a peer that is not in WEIR_TRUSTED_PROXY_IPS, and from a trusted proxy it is walked from the right to the first hop that is not a trusted proxy; a missing header, a hop that is not an address or a chain of proxies names no client",
+      "kind": "state",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Net/HomeNetworkTests.cs",
+          "name": "A_public_or_shared_address_never_counts_as_local"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Net/HomeNetworkTests.cs",
+          "name": "A_peer_that_is_not_a_trusted_proxy_cannot_hand_over_a_local_address_in_the_header"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Net/HomeNetworkTests.cs",
+          "name": "The_header_is_walked_from_the_right_and_stops_at_the_first_hop_that_is_not_a_trusted_proxy"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Net/HomeNetworkTests.cs",
+          "name": "A_forged_left_hand_hop_never_beats_the_hop_the_trusted_proxy_added"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Net/HomeNetworkTests.cs",
+          "name": "A_trusted_proxy_that_does_not_name_a_usable_client_leaves_the_client_unknown"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "A_public_address_is_never_skipped"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "A_header_from_a_peer_that_is_not_a_trusted_proxy_is_ignored_whatever_it_claims"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "A_header_from_a_peer_that_is_not_a_trusted_proxy_is_ignored_while_another_peer_is_trusted"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "A_trusted_proxy_names_the_client_by_the_header_walked_from_the_right"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Settings/HomeNetworkSignInTests.cs",
+          "name": "A_trusted_proxy_is_read_from_the_configured_list_and_a_bad_entry_in_it_trusts_nothing"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "system.security.the-current-password-is-still-asked-for-by-a-skipped-visitor",
+      "area": "api",
+      "behaviour": "Changing the password or the username, and changing the home network sign-in or its networks, ask for the current password even of a visitor who skipped sign-in; a wrong one changes nothing and counts against the account like a wrong sign-in",
+      "kind": "state",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "Changing_the_setting_needs_the_current_password_even_from_a_skipped_visitor"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "Changing_the_password_or_the_username_needs_the_current_password_even_from_a_skipped_visitor"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "Too_many_wrong_passwords_lock_the_account_out_of_the_change_and_it_stays_as_it_was"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "The_account_forms_are_locked_out_with_the_setting_after_too_many_wrong_passwords_even_for_the_right_one"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "system.security.the-home-network-sign-in-is-checked-with-the-systems-checks",
+      "area": "api",
+      "behaviour": "The overview counts skipping sign-in on the home network among the checks it ran, and it passes unless it is on with Allowed Hosts off",
+      "kind": "state",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "The_system_checks_count_it_as_passing"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Net/HomeNetworkTests.cs",
+          "name": "The_allowed_hosts_warning_is_raised_only_when_the_skip_is_on_and_allowed_hosts_is_off"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Core.Tests/Net/HomeNetworkTests.cs",
+          "name": "The_warning_reads_exactly_as_the_owner_asked"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
       "id": "system.backups.secrets-in-a-backup-are-locked-with-the-backup-password",
       "area": "api",
       "behaviour": "With a backup password set, a backup holds the connections' API keys, webhook secrets, download-client passwords and alert addresses only locked with a key made from it (Argon2id, AES-GCM); with none set, a backup holds no secret. The password is never stored, returned or logged",
@@ -62320,6 +62664,196 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/SystemBackupPasswordTests.cs",
           "name": "SystemBackupPasswordTests"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-system.security.skip-sign-in-for-devices-on-your-home-network",
+      "area": "web-system",
+      "behaviour": "Security card: says in the owner's words what the choice does, starts off, asks for the current password only once something changed, sends the choice with its networks and allow list, refuses a bad entry on the spot, shows the server's words for a wrong password or entry, says the save in the owner's words, and shows the Allowed Hosts warning",
+      "kind": "screen action",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/home-network-section.test.tsx",
+          "name": "says in the owner's words what it does, off until it is turned on"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/home-network-section.test.tsx",
+          "name": "asks for the password only once something changed, and sends it with the choice"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/home-network-section.test.tsx",
+          "name": "says every device signs in again after it is turned off"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/home-network-section.test.tsx",
+          "name": "keeps the owner's own networks and the allow list, each added and removed one at a time"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/home-network-section.test.tsx",
+          "name": "refuses a bad entry on the spot, in the exact words, and adds nothing"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/home-network-section.test.tsx",
+          "name": "shows the server's words when the password is wrong, and keeps what was typed"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/home-network-section.test.tsx",
+          "name": "shows the server's words when it refuses an entry"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/home-network-section.test.tsx",
+          "name": "warns when it is on and Allowed Hosts is off, in the owner's words"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/home-network-section.test.tsx",
+          "name": "shows no warning while it is off"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/home-network-section.test.tsx",
+          "name": "says so when the setting cannot be read"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/HomeNetworkSignInTests.cs",
+          "name": "With_it_on_a_browser_that_never_signed_in_loads_the_app_and_with_it_off_it_must_sign_in"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/HomeNetworkSignInTests.cs",
+          "name": "A_wrong_password_leaves_it_off_and_says_so"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-shell.first-run-setup-wizard.skip-sign-in-for-devices-on-your-home-network-starts-unanswered",
+      "area": "web-shell",
+      "behaviour": "Setup asks \"Skip sign-in for devices on your home network?\" with Yes and No, starting unanswered; unanswered or No leaves it off and asks for nothing; a Yes asks for the password and saves with setup; a reopened setup starts from what is saved",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-home-network.test.tsx",
+          "name": "asks the question with Yes and No, and starts unanswered"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-home-network.test.tsx",
+          "name": "finishes with the question unanswered, and leaves the setting off"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-home-network.test.tsx",
+          "name": "finishes on No without asking for the password, since nothing changes"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-home-network.test.tsx",
+          "name": "will not finish on Yes until the password is typed, then saves the answer with it"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-home-network.test.tsx",
+          "name": "does not finish setup when the server refuses the password"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-home-network.test.tsx",
+          "name": "starts from what is saved when setup is opened again, and asks nothing if the answer stands"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-wizard-home-network.test.tsx",
+          "name": "asks for the password when setup is opened again and the answer is changed to No"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-dashboard.system-view-health-card.skip-sign-in-for-local-devices-check",
+      "area": "web-dashboard",
+      "behaviour": "Health lists \"Skip sign-in for local devices\": it reads On or Off in the owner's words, and raises the Allowed Hosts warning as a problem with the fix \"Open Security and turn on Allowed Hosts, or turn this off.\"",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/system/health-checks.test.ts",
+          "name": "says it is off, and passes"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/system/health-checks.test.ts",
+          "name": "says it is on, and passes"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/system/health-checks.test.ts",
+          "name": "raises the warning as a problem, with the fix, when it is on and Allowed Hosts is off"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/processing/dashboard/system/health-checks.test.ts",
+          "name": "has no row before the server has said"
+        }
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-shell.user-menu.a-device-that-skipped-sign-in-has-no-sign-out",
+      "area": "web-shell",
+      "behaviour": "The user menu offers no Sign out to a device that skipped sign-in, since there is no sign-in to end",
+      "kind": "screen action",
+      "severity": "low",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/shell/sidebar-user.test.tsx",
+          "name": "offers no Sign out to a device that skipped sign-in, since there is none to end"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/layouts/app-shell.test.tsx",
+          "name": "offers no Sign out to a device that skipped sign-in, since it never signed in"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/HomeNetworkSignInTests.cs",
+          "name": "With_it_on_a_browser_that_never_signed_in_loads_the_app_and_with_it_off_it_must_sign_in"
         }
       ],
       "audit": {

@@ -21,6 +21,7 @@ import {
 import { SetupNeedsAdmin } from "./setup-needs-admin";
 import { useSuggestedLibraries } from "./use-suggested-libraries";
 import { useWizardConnections } from "./use-wizard-connections";
+import { useWizardHomeNetwork } from "./use-wizard-home-network";
 import { useWizardUpdates } from "./use-wizard-updates";
 import {
   firstLibraryOfType,
@@ -31,6 +32,7 @@ import {
   type WizardDraft,
 } from "./use-wizard-save";
 import { WizardDownloadsSection } from "./wizard-downloads-section";
+import { WizardHomeNetworkSection } from "./wizard-home-network-section";
 import { WizardUpdatesSection } from "./wizard-updates-section";
 import { isConnectedSource, type DownloadSource } from "./wizard-source";
 
@@ -87,7 +89,9 @@ function finishBlocker(
   source: DownloadSource | null,
   answeringConnections: number,
   found: ReturnType<typeof useSuggestedLibraries>,
+  homeNetworkBlocker: string | null,
 ): string | null {
+  if (homeNetworkBlocker) return homeNetworkBlocker;
   if (source === null) {
     return "Choose how your downloads reach Weir first. “Neither” lets you pick the folders yourself.";
   }
@@ -119,10 +123,16 @@ function WizardForm({
   );
   const found = useSuggestedLibraries(connections.answering);
   const updates = useWizardUpdates();
+  const homeNetwork = useWizardHomeNetwork(
+    wizardStateOf(settings) === "pending",
+  );
   const { finish, skip, pending } = useWizardSave({
     settings,
     libraries,
-    saveUpdates: updates.saveAnswer,
+    saveUpdates: async () => {
+      await updates.saveAnswer();
+      await homeNetwork.saveAnswer();
+    },
     onMessage: setStatusMessage,
     onFinished: () => setFinished(true),
   });
@@ -141,7 +151,12 @@ function WizardForm({
     source === "neither"
       ? { kind: "typed" }
       : { kind: "offered", plan: found.plan };
-  const blocker = finishBlocker(source, connections.answering.length, found);
+  const blocker = finishBlocker(
+    source,
+    connections.answering.length,
+    found,
+    homeNetwork.blocker,
+  );
   const connectedInSetup =
     isConnectedSource(source) && connections.answering.length > 0;
 
@@ -214,6 +229,17 @@ function WizardForm({
                 }
               />
             </WizardSection>
+
+            {homeNetwork.asked ? (
+              <WizardHomeNetworkSection
+                answer={homeNetwork.answer}
+                onAnswer={homeNetwork.choose}
+                needsPassword={homeNetwork.needsPassword}
+                password={homeNetwork.password}
+                onPassword={homeNetwork.setPassword}
+                disabled={pending}
+              />
+            ) : null}
 
             {updates.asked ? (
               <WizardUpdatesSection

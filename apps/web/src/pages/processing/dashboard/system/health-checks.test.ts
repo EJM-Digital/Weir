@@ -351,6 +351,7 @@ describe("weirChecks", () => {
     const [check] = weirChecks({
       stoppedWorkers: ["The cleanup worker stopped."],
       updateVersion: null,
+      homeNetwork: null,
       checkedAt: NOW,
     });
     expect(check).toMatchObject({
@@ -363,6 +364,7 @@ describe("weirChecks", () => {
     const checks = weirChecks({
       stoppedWorkers: [],
       updateVersion: "3.3.0",
+      homeNetwork: null,
       checkedAt: NOW,
     });
     expect(checks.map((check) => [check.meaning, check.fact])).toEqual([
@@ -374,5 +376,59 @@ describe("weirChecks", () => {
 
   it("has no checks before readiness has answered", () => {
     expect(weirChecks(null)).toEqual([]);
+  });
+
+  describe("skipping sign-in on the home network", () => {
+    const facts = (
+      homeNetwork: { enabled: boolean; warning: string | null } | null,
+    ) =>
+      weirChecks({
+        stoppedWorkers: [],
+        updateVersion: null,
+        homeNetwork,
+        checkedAt: NOW,
+      }).filter((check) => check.id === "weir:home-network-sign-in");
+
+    it("says it is off, and passes", () => {
+      expect(facts({ enabled: false, warning: null })).toMatchObject([
+        {
+          title: "Skip sign-in for local devices",
+          meaning: "done",
+          words:
+            "Off. Every device signs in, including ones on your local network.",
+          why: "Off. Every device signs in, including ones on your local network.",
+          fix: null,
+        },
+      ]);
+    });
+
+    it("says it is on, and passes", () => {
+      expect(facts({ enabled: true, warning: null })).toMatchObject([
+        {
+          meaning: "done",
+          words: "On. Devices on your local network skip sign-in.",
+        },
+      ]);
+    });
+
+    it("raises the warning as a problem, with the fix, when it is on and Allowed Hosts is off", () => {
+      const warning =
+        "Allowed Hosts (above) is off. Weir currently answers on any address, so any device that can reach a local address here skips sign-in too. Turn on Allowed Hosts as well for this to only apply on your own network.";
+
+      expect(facts({ enabled: true, warning })).toMatchObject([
+        {
+          meaning: "attention",
+          why: warning,
+          fix: {
+            to: "/system?tab=security",
+            note: "Open Security and turn on Allowed Hosts, or turn this off.",
+          },
+        },
+      ]);
+    });
+
+    it("has no row before the server has said", () => {
+      expect(facts(null)).toEqual([]);
+    });
   });
 });

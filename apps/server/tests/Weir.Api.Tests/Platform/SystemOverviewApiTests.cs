@@ -133,9 +133,9 @@ public sealed class SystemOverviewApiTests
 
         var checks = (await Json(await client.GetAsync(Overview)))["checks"]!;
 
-        // The database, the workers, the folder watcher and the media tools, and no connections yet.
-        Assert.Equal(4, checks["total"]!.GetValue<int>());
-        Assert.InRange(checks["passing"]!.GetValue<int>(), 1, 4);
+        // The database, the workers, the folder watcher, the media tools and skipping sign-in on the home network, and no connections yet.
+        Assert.Equal(5, checks["total"]!.GetValue<int>());
+        Assert.InRange(checks["passing"]!.GetValue<int>(), 1, 5);
     }
 
     [Fact]

@@ -156,8 +156,15 @@ internal sealed partial class LiveAudit
                 page.GetByText("How do your downloads reach Weir?"),
                 "setup wizard asks how downloads reach Weir first");
             Require(
-                await page.GetByRole(AriaRole.Radio).CountAsync() == 4,
+                await page.Locator("input[name='setup-wizard-source']").CountAsync() == 4,
                 "setup wizard does not offer Deluno, Sonarr / Radarr, a download client and Neither");
+            await VisibleAsync(
+                page.GetByText("Skip sign-in for devices on your home network?"),
+                "setup wizard asks whether devices on the home network skip sign-in");
+            Require(
+                await page.Locator("input[name='setup-wizard-home-network']").CountAsync() == 2
+                && await page.Locator("input[name='setup-wizard-home-network']:checked").CountAsync() == 0,
+                "setup wizard does not offer Yes and No for skipping sign-in, unanswered");
             await ClickAsync(
                 page.GetByRole(AriaRole.Radio, new PageGetByRoleOptions { Name = "Neither" }),
                 "choose to pick the folders yourself in the setup wizard");

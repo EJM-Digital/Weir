@@ -4,10 +4,18 @@ import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 
 import type { RecordedReply } from "./recorded-weir";
-import { appSettings } from "../pages/system/tabs/security/security-replies";
+import {
+  appSettings,
+  homeNetworkOff,
+} from "../pages/system/tabs/security/security-replies";
 
 /** Every table of times asks for the time zone Weir shows them in. */
 export const APP_SETTINGS = { "GET /api/v1/suite/settings": appSettings };
+
+/** Skipping sign-in on the home network is off, which is what the Security tab asks about first. */
+export const HOME_NETWORK_OFF = {
+  "GET /api/v1/suite/home-network-sign-in": homeNetworkOff,
+};
 
 /** A client that asks again on every mount and never retries, so a test sees exactly the requests the page makes. */
 export function testClient(): QueryClient {

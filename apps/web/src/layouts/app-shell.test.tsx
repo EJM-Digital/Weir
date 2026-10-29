@@ -17,6 +17,7 @@ vi.mock("../lib/live/use-live-sync", () => ({
 }));
 
 const logoutMutate = vi.fn();
+const session = { id: "eaa2d170-0a7a-4499-84d0-97a4f35174c3" };
 const scrollToMock = vi.fn();
 
 vi.mock("../lib/auth/queries", () => ({
@@ -27,6 +28,7 @@ vi.mock("../lib/auth/queries", () => ({
   // The header carries the pause control, which needs to know whether the signed-in person may
   // change it, and the side menu names them.
   useMeQuery: () => ({ data: { role: "operator", username: "ann.lee" } }),
+  useCurrentSessionQuery: () => ({ data: { session_id: session.id } }),
   useSetThemeMutation: () => ({ mutate: vi.fn(), isError: false }),
 }));
 
@@ -91,6 +93,7 @@ const primaryNav = () => screen.getByRole("navigation", { name: "Primary" });
 describe("AppShell", () => {
   beforeEach(() => {
     logoutMutate.mockReset();
+    session.id = "eaa2d170-0a7a-4499-84d0-97a4f35174c3";
     scrollToMock.mockReset();
     window.scrollTo = scrollToMock;
     counts.working = 0;
@@ -304,6 +307,16 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByTestId("sign-out"));
 
     expect(logoutMutate).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers no Sign out to a device that skipped sign-in, since it never signed in", () => {
+    session.id = "home-network";
+    renderShell("/");
+
+    fireEvent.click(screen.getByTestId("user-menu"));
+
+    expect(screen.getByText("Version 2.1.2")).toBeInTheDocument();
+    expect(screen.queryByTestId("sign-out")).not.toBeInTheDocument();
   });
 
   it("closes the user menu on Escape", () => {

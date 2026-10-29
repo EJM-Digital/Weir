@@ -13,7 +13,7 @@ public static class E2EDatabase
     private const int BusyTimeoutSeconds = 30;
 
     /// <summary>
-    /// Resets all per-test state so each test starts at the setup page. Users, sessions and suite settings are
+    /// Resets all per-test state so each test starts at the setup page. Users, sessions, suite settings and the home network sign-in are
     /// cleared. The migration-seeded Processing libraries have their folders cleared rather than being deleted,
     /// because they are the only path store and a scope with no library at all has nowhere to resolve to.
     /// </summary>
@@ -25,6 +25,7 @@ public static class E2EDatabase
         SeedSql.Execute(connection, "DELETE FROM user_sessions");
         SeedSql.Execute(connection, "DELETE FROM users");
         SeedSql.Execute(connection, "DELETE FROM suite_settings");
+        SeedSql.Execute(connection, "DELETE FROM home_network_sign_in");
         SeedSql.Execute(
             connection,
             "UPDATE operator_settings SET work_temp_stale_sweep_enabled = 1, work_temp_stale_sweep_interval_seconds = NULL, " +

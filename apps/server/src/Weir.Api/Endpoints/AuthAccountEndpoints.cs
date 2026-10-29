@@ -54,6 +54,7 @@ internal sealed class AuthAccountEndpointHandlers
             throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.ConfirmationExpired);
         }
 
+        await request.RequireCurrentPasswordAsync(currentPassword).ConfigureAwait(false);
         var uow = await request.DbAsync().ConfigureAwait(false);
         string changed;
         try
@@ -91,6 +92,7 @@ internal sealed class AuthAccountEndpointHandlers
             throw new ApiException(StatusCodes.Status400BadRequest, AuthEndpoints.ConfirmationExpired);
         }
 
+        await request.RequireCurrentPasswordAsync(currentPassword).ConfigureAwait(false);
         var uow = await request.DbAsync().ConfigureAwait(false);
         try
         {

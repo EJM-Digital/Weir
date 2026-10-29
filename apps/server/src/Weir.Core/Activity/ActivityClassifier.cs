@@ -30,7 +30,7 @@ public static class ActivityClassifier
         "success", "skipped", "warning", "retrying", "running", "failed",
     };
 
-    private static readonly string[] PersonStartedPrefixes = ["auth.", "system.reconciliation.", "system.network_access."];
+    private static readonly string[] PersonStartedPrefixes = ["auth.", "system.reconciliation.", "system.network_access.", "system.home_network_sign_in."];
 
     // Read from the event type only when the producer did not say. Ordered: the first match wins,
     // so "fell_back" is a warning even though the event also completed.

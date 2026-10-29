@@ -81,7 +81,9 @@ public sealed class SetupWizardTests(E2EServer server) : E2ETestBase(server)
         var page = await NewPageAsync();
         var requests = RequestLog.Watch(page);
         await SetupWizard.CreateAccountAsync(page, weir.BaseUrl.GetLeftPart(UriPartial.Authority));
-        await Expect(page.GetByRole(AriaRole.Radio)).ToHaveCountAsync(4);
+        // The four ways downloads arrive, and Yes and No for skipping sign-in on the home network, which starts unanswered.
+        await Expect(page.GetByRole(AriaRole.Radio)).ToHaveCountAsync(6);
+        await Expect(page.GetByRole(AriaRole.Radio, new() { Checked = true })).ToHaveCountAsync(0);
         await Expect(CheckForUpdates(page)).ToHaveCountAsync(0);
         await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Updates", Exact = true })).ToHaveCountAsync(0);
         var mark = requests.Mark();
@@ -100,7 +102,9 @@ public sealed class SetupWizardTests(E2EServer server) : E2ETestBase(server)
         var page = await OpenWizardAsync();
         var requests = RequestLog.Watch(page);
         await Expect(SetupWizard.FinishButton(page)).ToHaveTextAsync(SetupWizard.FinishLabel);
-        await Expect(page.GetByRole(AriaRole.Radio)).ToHaveCountAsync(4);
+        // The four ways downloads arrive, and Yes and No for skipping sign-in on the home network, which starts unanswered.
+        await Expect(page.GetByRole(AriaRole.Radio)).ToHaveCountAsync(6);
+        await Expect(page.GetByRole(AriaRole.Radio, new() { Checked = true })).ToHaveCountAsync(0);
         await Expect(SetupWizard.Folder(page, "Movies watched folder")).ToHaveCountAsync(0);
         await Axe.AssertNoViolationsAsync(page, "The wizard before an answer");
 

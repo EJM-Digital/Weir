@@ -22,6 +22,9 @@ internal static class ResponseMarkers
     /// <summary>The address the connection really came from, before forwarded headers are applied.</summary>
     public const string ConnectionPeer = "weir.connection_peer";
 
+    /// <summary>The <c>X-Forwarded-For</c> header as the caller sent it: applying forwarded headers removes what it used.</summary>
+    public const string ForwardedFor = "weir.forwarded_for";
+
     public static bool IsServerError(HttpContext context) => context.Items.ContainsKey(ServerError);
 }
 
@@ -85,6 +88,7 @@ public static class TrustedForwardedHeaders
         app.Use((context, next) =>
         {
             context.Items[ResponseMarkers.ConnectionPeer] = ApiRequest.DefaultClientHost(context);
+            context.Items[ResponseMarkers.ForwardedFor] = context.Request.Headers["X-Forwarded-For"].ToString();
             return next(context);
         });
 
