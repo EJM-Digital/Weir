@@ -115,7 +115,11 @@ FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble@sha256:099f6f87ed745377dd2
 # The base image is pinned by digest, so its own packages only move when that pin does. Installing the
 # distribution's pending security updates here keeps a fixed CVE in a base package (OpenSSL, libc) out of
 # the image between pin bumps; the release and pull-request scans fail on any HIGH/CRITICAL with a fix.
-RUN apt-get update \
+# CI passes when Ubuntu's archive last changed (.github/actions/ubuntu-archive-stamp), so a cached copy of
+# this layer is reused only while there is nothing newer to install.
+ARG UBUNTU_ARCHIVE_STAMP=unset
+RUN echo "Ubuntu archive: ${UBUNTU_ARCHIVE_STAMP}" \
+  && apt-get update \
   && apt-get upgrade -y --no-install-recommends \
   && apt-get install -y --no-install-recommends \
     ca-certificates \

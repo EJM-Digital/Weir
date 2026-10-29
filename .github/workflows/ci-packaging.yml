@@ -81,6 +81,10 @@ jobs:
 
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
+      - name: Read when Ubuntu's archive last changed
+        id: ubuntu-stamp
+        uses: ./.github/actions/ubuntu-archive-stamp
+
       - name: Build Weir Docker image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
@@ -91,6 +95,7 @@ jobs:
           tags: weir-ci-smoke
           cache-from: type=gha,scope=weir-ci-amd64
           cache-to: type=gha,mode=max,scope=weir-ci-amd64,ignore-error=true
+          build-args: UBUNTU_ARCHIVE_STAMP=${{ steps.ubuntu-stamp.outputs.stamp }}
 
       # The same gate the release applies, run here so a fixable HIGH/CRITICAL in the image stops a pull
       # request instead of a tagged release.
@@ -204,6 +209,10 @@ jobs:
 
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
+      - name: Read when Ubuntu's archive last changed
+        id: ubuntu-stamp
+        uses: ./.github/actions/ubuntu-archive-stamp
+
       # The same image and cache as the Docker smoke above: the build is a cache hit when both run on one commit.
       - name: Build Weir Docker image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
@@ -215,6 +224,7 @@ jobs:
           tags: weir-ci-smoke
           cache-from: type=gha,scope=weir-ci-amd64
           cache-to: type=gha,mode=max,scope=weir-ci-amd64,ignore-error=true
+          build-args: UBUNTU_ARCHIVE_STAMP=${{ steps.ubuntu-stamp.outputs.stamp }}
 
       # Only the shard that drives a browser needs one: the driver is pinned and locked in scripts/scenarios-ci, and Chromium is the one it was built for.
       - name: Install the browser
@@ -256,6 +266,10 @@ jobs:
 
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
+      - name: Read when Ubuntu's archive last changed
+        id: ubuntu-stamp
+        uses: ./.github/actions/ubuntu-archive-stamp
+
       - name: Build Weir Docker image (linux/arm64)
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
@@ -267,6 +281,7 @@ jobs:
           tags: weir-ci-smoke:arm64
           cache-from: type=gha,scope=weir-ci-arm64
           cache-to: type=gha,mode=max,scope=weir-ci-arm64,ignore-error=true
+          build-args: UBUNTU_ARCHIVE_STAMP=${{ steps.ubuntu-stamp.outputs.stamp }}
 
       - name: Start the arm64 image under QEMU
         run: node scripts/docker-compose-smoke.mjs arm64 --candidate weir-ci-smoke:arm64
