@@ -36,7 +36,7 @@ describe("isAddressOrSubnet", () => {
 
   it("says what is wrong in the owner's words", () => {
     expect(notAnAddressWords("banana")).toBe(
-      "'banana' is not a valid address or subnet. Use an IP address (192.168.1.20) or a CIDR range (192.168.1.0/28).",
+      "'banana' is not a valid address or subnet. Use an IP address or a CIDR range such as 192.168.1.0/28.",
     );
   });
 });

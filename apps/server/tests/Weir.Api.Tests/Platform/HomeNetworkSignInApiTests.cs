@@ -288,7 +288,7 @@ public sealed class HomeNetworkSignInApiTests
         using var badNetwork = await SaveAsync(owner, enabled: true, extra: ["192.168.1.0/99"]);
         using var badAllow = await SaveAsync(owner, enabled: true, allow: ["10.0.0.1", "banana"]);
 
-        const string Tail = " is not a valid address or subnet. Use an IP address (192.168.1.20) or a CIDR range (192.168.1.0/28).";
+        const string Tail = " is not a valid address or subnet. Use an IP address or a CIDR range such as 192.168.1.0/28.";
         Assert.Equal((HttpStatusCode.BadRequest, "'192.168.1.0/99'" + Tail), (badNetwork.StatusCode, await Detail(badNetwork)));
         Assert.Equal((HttpStatusCode.BadRequest, "'banana'" + Tail), (badAllow.StatusCode, await Detail(badAllow)));
         Assert.False((await Json(await owner.GetAsync(Path)))["enabled"]!.GetValue<bool>());

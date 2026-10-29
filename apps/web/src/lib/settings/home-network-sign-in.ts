@@ -97,5 +97,5 @@ export function isAddressOrSubnet(entry: string): boolean {
 
 /** What Weir says about an entry that is neither. */
 export function notAnAddressWords(entry: string): string {
-  return `'${entry}' is not a valid address or subnet. Use an IP address (192.168.1.20) or a CIDR range (192.168.1.0/28).`;
+  return `'${entry}' is not a valid address or subnet. Use an IP address or a CIDR range such as 192.168.1.0/28.`;
 }

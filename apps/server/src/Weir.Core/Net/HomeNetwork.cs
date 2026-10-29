@@ -140,7 +140,7 @@ public static class HomeNetworkWords
         $"Skip sign-in for devices on the local network turned {(enabled ? "on" : "off")}.";
 
     public static string InvalidEntries(IEnumerable<string> entries) =>
-        $"'{string.Join("', '", entries)}' is not a valid address or subnet. Use an IP address (192.168.1.20) or a CIDR range (192.168.1.0/28).";
+        $"'{string.Join("', '", entries)}' is not a valid address or subnet. Use an IP address or a CIDR range such as 192.168.1.0/28.";
 
     /// <summary>The warning to show beside the setting, or <see langword="null"/> when there is nothing to warn about.</summary>
     public static string? Warning(HomeNetworkSettings settings, bool allowedHostsOn)

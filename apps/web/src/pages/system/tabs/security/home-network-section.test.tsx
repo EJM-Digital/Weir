@@ -204,7 +204,7 @@ describe("Security: skip sign-in for devices on your home network", () => {
     );
 
     expect(await within(card()).findByRole("alert")).toHaveTextContent(
-      "'banana' is not a valid address or subnet. Use an IP address (192.168.1.20) or a CIDR range (192.168.1.0/28).",
+      "'banana' is not a valid address or subnet. Use an IP address or a CIDR range such as 192.168.1.0/28.",
     );
     expect(
       within(card()).queryByText("banana", { selector: "span" }),
