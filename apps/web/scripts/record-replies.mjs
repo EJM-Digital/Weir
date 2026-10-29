@@ -594,6 +594,32 @@ async function record() {
     "DELETE /api/v1/processing/files/1 (try again)",
   );
   await write("DELETE", `/api/v1/processing/files/${fileId}`);
+
+  // Skipping sign-in on the home network: off until it is turned on, and a refusal for a wrong password and for a bad entry.
+  await read("/api/v1/suite/home-network-sign-in");
+  const homeNetwork = (current_password, extra_networks) => ({
+    enabled: true,
+    extra_networks,
+    allow_list: [],
+    current_password,
+  });
+  await write(
+    "PUT",
+    "/api/v1/suite/home-network-sign-in",
+    homeNetwork("not the password", []),
+    "PUT /api/v1/suite/home-network-sign-in (wrong password)",
+  );
+  await write(
+    "PUT",
+    "/api/v1/suite/home-network-sign-in",
+    homeNetwork(password, ["banana"]),
+    "PUT /api/v1/suite/home-network-sign-in (bad entry)",
+  );
+  await write(
+    "PUT",
+    "/api/v1/suite/home-network-sign-in",
+    homeNetwork(password, ["100.64.0.0/10"]),
+  );
   await stream.stop();
 }
 

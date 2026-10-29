@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { useConnections } from "../../../../lib/connections/use-connections";
+import { useHomeNetworkSignInQuery } from "../../../../lib/settings/home-network-sign-in";
 import type { ProcessingLibrary } from "../../../../lib/processing/libraries-api";
 import {
   useAppSettingsQuery,
@@ -70,6 +71,7 @@ export function useHealthChecks(
   const backupList = useConfigurationBackupsQuery(true);
   const readiness = useSystemReadinessQuery();
   const update = useUpdateStatusQuery();
+  const homeNetwork = useHomeNetworkSignInQuery();
   const overview = useSystemOverviewQuery();
   const looks = useServerLooks();
   const now = useNow(NOW_TICK_MS);
@@ -101,6 +103,12 @@ export function useHealthChecks(
         update.data?.status === "update_available"
           ? (update.data.latest_version ?? null)
           : null,
+      homeNetwork: homeNetwork.data
+        ? {
+            enabled: homeNetwork.data.enabled,
+            warning: homeNetwork.data.warning ?? null,
+          }
+        : null,
       checkedAt: newestTime(
         readiness.dataUpdatedAt || null,
         looks.readinessCheckedAt,
@@ -111,6 +119,7 @@ export function useHealthChecks(
     readiness.dataUpdatedAt,
     looks.readinessCheckedAt,
     update.data,
+    homeNetwork.data,
   ]);
 
   const checks = useMemo(
@@ -168,7 +177,11 @@ export function useHealthChecks(
         await Promise.all([settings.refetch(), backupList.refetch()]);
         return;
       case "weir":
-        await Promise.all([readiness.refetch(), update.refetch()]);
+        await Promise.all([
+          readiness.refetch(),
+          update.refetch(),
+          homeNetwork.refetch(),
+        ]);
         return;
     }
   };

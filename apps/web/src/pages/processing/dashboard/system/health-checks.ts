@@ -9,6 +9,7 @@ import {
 } from "../../../../lib/connections/connection-model";
 import { formatBytes } from "../../../../lib/format/bytes";
 import type { SystemDrive } from "../../../../lib/system/system-stats-types";
+import { HOME_NETWORK_WORDS } from "../../../../lib/settings/home-network-sign-in";
 import { plural } from "../../../../lib/ui/mm-plural";
 import type { StatusMeaning } from "../../../../lib/ui/status-meaning";
 import type { ToolRow } from "../health-model";
@@ -19,6 +20,7 @@ import {
   ABOUT_PATH,
   BACKUPS_PATH,
   MANAGERS_PATH,
+  SECURITY_PATH,
   workflowPath,
 } from "./system-paths";
 
@@ -337,11 +339,40 @@ export type WeirFacts = {
   stoppedWorkers: readonly string[];
   /** The newer version waiting, when there is one. */
   updateVersion: string | null;
+  /** Whether devices on the home network skip sign-in, and the warning that comes with it; null until the server has said. */
+  homeNetwork: { enabled: boolean; warning: string | null } | null;
   /** When the server last checked whether Weir is ready and its workers are running. */
   checkedAt: number | null;
 };
 
-/** Weir's own background workers, and a newer version when one is out. */
+function homeNetworkChecks(
+  homeNetwork: WeirFacts["homeNetwork"],
+  base: Pick<HealthCheck, "area" | "checkedAt" | "again" | "workflowId">,
+): HealthCheck[] {
+  if (homeNetwork === null) return [];
+  const shared = {
+    ...base,
+    id: "weir:home-network-sign-in",
+    title: HOME_NETWORK_WORDS.checkName,
+  };
+  if (homeNetwork.enabled && homeNetwork.warning !== null) {
+    return [
+      {
+        ...shared,
+        meaning: "attention",
+        why: homeNetwork.warning,
+        words: problemWords(homeNetwork.warning),
+        fix: link(SECURITY_PATH, HOME_NETWORK_WORDS.checkFix),
+      },
+    ];
+  }
+  const words = homeNetwork.enabled
+    ? HOME_NETWORK_WORDS.checkOn
+    : HOME_NETWORK_WORDS.checkOff;
+  return [{ ...shared, meaning: "done", why: words, words, fix: null }];
+}
+
+/** Weir's own background workers, whether devices on the home network skip sign-in, and a newer version when one is out. */
 export function weirChecks(weir: WeirFacts | null): HealthCheck[] {
   if (weir === null) return [];
   const base = {
@@ -370,9 +401,10 @@ export function weirChecks(weir: WeirFacts | null): HealthCheck[] {
           words: "All running",
           fix: null,
         };
-  if (weir.updateVersion === null) return [workers];
+  const checks = [workers, ...homeNetworkChecks(weir.homeNetwork, base)];
+  if (weir.updateVersion === null) return checks;
   return [
-    workers,
+    ...checks,
     {
       ...base,
       id: "weir:update",

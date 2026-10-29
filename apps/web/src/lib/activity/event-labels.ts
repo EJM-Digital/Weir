@@ -14,6 +14,8 @@ export const EVENT_LABELS: Record<string, string> = {
   "auth.sessions_revoked": "Sessions signed out",
   "system.reconciliation.repair": "System repair finished",
   "system.network_access.changed": "Network access changed",
+  "system.home_network_sign_in.changed":
+    "Local network sign-in setting changed",
   "system.processing_paused": "Processing paused",
   "system.processing_resumed": "Processing resumed",
   "processing.supplied_payload_evaluation_completed":

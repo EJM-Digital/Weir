@@ -123,6 +123,7 @@ describe("LIVE_TOPIC_QUERIES", () => {
     expect(LIVE_TOPIC_QUERIES.settings).toEqual([
       settingsKeys.app,
       settingsKeys.notificationChannels,
+      settingsKeys.homeNetworkSignIn,
       processingKeys.operatorSettings,
       processingKeys.runtimeSettings,
       processingKeys.filesAtOnce,

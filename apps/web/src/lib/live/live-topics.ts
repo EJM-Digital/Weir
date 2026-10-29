@@ -51,6 +51,7 @@ export const LIVE_TOPIC_QUERIES: Readonly<
   settings: [
     settingsKeys.app,
     settingsKeys.notificationChannels,
+    settingsKeys.homeNetworkSignIn,
     processingKeys.operatorSettings,
     processingKeys.runtimeSettings,
     processingKeys.filesAtOnce,

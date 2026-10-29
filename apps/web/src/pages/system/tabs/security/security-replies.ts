@@ -135,6 +135,26 @@ export const appSettings: RecordedReply = {
   body: '{"setup_wizard_state":"pending","app_timezone":"UTC","log_retention_days":30,"activity_retention_days":90,"configuration_backup_enabled":false,"configuration_backup_interval_hours":24,"configuration_backup_preferred_time":"02:00","configuration_backup_last_run_at":null,"updated_at":"2026-10-15T03:26:11"}',
 };
 
+export const homeNetworkOff: RecordedReply = {
+  status: 200,
+  body: '{"enabled":false,"extra_networks":[],"allow_list":[],"warning":null}',
+};
+
+export const homeNetworkOn: RecordedReply = {
+  status: 200,
+  body: '{"enabled":true,"extra_networks":["100.64.0.0/10"],"allow_list":[],"warning":null}',
+};
+
+export const homeNetworkWrongPassword: RecordedReply = {
+  status: 400,
+  body: '{"detail":"Current password is incorrect."}',
+};
+
+export const homeNetworkBadEntry: RecordedReply = {
+  status: 400,
+  body: '{"detail":"\'banana\' is not a valid address or subnet. Use an IP address (192.168.1.20) or a CIDR range (192.168.1.0/28)."}',
+};
+
 export const bootstrapStatusAfterSetup: RecordedReply = {
   status: 200,
   body: '{"bootstrap_allowed":false,"reason":"admin_already_exists","requires_setup_code":false}',

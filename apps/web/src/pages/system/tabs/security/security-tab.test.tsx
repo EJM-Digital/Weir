@@ -13,6 +13,7 @@ import {
 } from "./security-replies";
 import {
   APP_SETTINGS,
+  HOME_NETWORK_OFF,
   heldReply,
   renderSecurity,
 } from "../../../../test/security-test-support";
@@ -41,6 +42,7 @@ describe("Security: how this browser is signed in", () => {
     const held = heldReply(currentSession);
     weir = serveRecordedReplies({
       ...APP_SETTINGS,
+      ...HOME_NETWORK_OFF,
       [`GET ${SESSION}`]: held.answer,
       [`GET ${SESSIONS}`]: oneSession,
       [`GET ${OVERVIEW}`]: securityOverview,
@@ -85,6 +87,7 @@ describe("Security: how sign-in is protected", () => {
     const held = heldReply(securityOverview);
     weir = serveRecordedReplies({
       ...APP_SETTINGS,
+      ...HOME_NETWORK_OFF,
       [`GET ${SESSION}`]: currentSession,
       [`GET ${SESSIONS}`]: oneSession,
       [`GET ${OVERVIEW}`]: held.answer,
@@ -108,6 +111,7 @@ describe("Security: how sign-in is protected", () => {
   it("says the sign-in has ended when the server refuses the overview, not that nothing is protected", async () => {
     weir = serveRecordedReplies({
       ...APP_SETTINGS,
+      ...HOME_NETWORK_OFF,
       [`GET ${SESSION}`]: currentSession,
       [`GET ${SESSIONS}`]: oneSession,
       [`GET ${OVERVIEW}`]: notAuthenticated,

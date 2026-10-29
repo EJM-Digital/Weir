@@ -1,7 +1,12 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useLogoutMutation, useMeQuery } from "../../lib/auth/queries";
+import {
+  useCurrentSessionQuery,
+  useLogoutMutation,
+  useMeQuery,
+} from "../../lib/auth/queries";
+import { HOME_NETWORK_SESSION_ID } from "../../lib/settings/home-network-sign-in";
 import { useSystemReadinessQuery } from "../../lib/system/readiness-queries";
 import { useMediaQuery } from "../../lib/ui/use-media-query";
 import { useModalFocus } from "../../lib/ui/use-modal-focus";
@@ -40,6 +45,7 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const navigate = useNavigate();
   const me = useMeQuery();
+  const session = useCurrentSessionQuery();
   const logout = useLogoutMutation();
   const readiness = useSystemReadinessQuery();
   const working = useWorkingCount();
@@ -95,6 +101,7 @@ export function AppSidebar({
           username={me.data?.username}
           version={readiness.data?.version}
           signingOut={logout.isPending}
+          canSignOut={session.data?.session_id !== HOME_NETWORK_SESSION_ID}
           onSignOut={signOut}
           onNavigate={onCloseDrawer}
         />

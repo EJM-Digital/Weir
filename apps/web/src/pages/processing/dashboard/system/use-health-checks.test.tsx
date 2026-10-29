@@ -49,6 +49,10 @@ const queries = {
     data: undefined as
       { checks: { passing: number; total: number } } | undefined,
   },
+  homeNetwork: {
+    data: undefined as { enabled: boolean; warning: string | null } | undefined,
+    refetch: refetch(),
+  },
 };
 let entries: ConnectionEntry[] = [];
 let drives: SystemDrive[] = [];
@@ -72,6 +76,15 @@ vi.mock("../../../../lib/settings/queries", () => ({
   useConfigurationBackupsQuery: () => queries.backups,
   useUpdateStatusQuery: () => queries.update,
 }));
+vi.mock(
+  "../../../../lib/settings/home-network-sign-in",
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import("../../../../lib/settings/home-network-sign-in")
+    >()),
+    useHomeNetworkSignInQuery: () => queries.homeNetwork,
+  }),
+);
 vi.mock("../../../../lib/system/readiness-queries", () => ({
   useSystemReadinessQuery: () => queries.readiness,
 }));
@@ -149,6 +162,7 @@ beforeEach(() => {
   queries.backups.data = undefined;
   queries.readiness.data = undefined;
   queries.update.data = undefined;
+  queries.homeNetwork.data = undefined;
   queries.overview.data = undefined;
   queries.tools.dataUpdatedAt = NOW;
   queries.settings.dataUpdatedAt = NOW;
@@ -162,6 +176,7 @@ beforeEach(() => {
     queries.backups.refetch,
     queries.readiness.refetch,
     queries.update.refetch,
+    queries.homeNetwork.refetch,
   ]) {
     mock.mockClear();
   }
@@ -227,6 +242,48 @@ describe("useHealthChecks", () => {
       ["weir:workers", "broken"],
       ["weir:update", "todo"],
     ]);
+  });
+
+  it("lists skipping sign-in on the home network among Weir's checks once the server has said", () => {
+    queries.readiness.data = { worker_health: [] };
+    const { result: before } = renderChecks();
+    queries.homeNetwork.data = { enabled: true, warning: null };
+    const { result } = renderChecks();
+
+    const ids = (checks: HealthCheck[]) =>
+      checks.filter((check) => check.area === "weir").map((check) => check.id);
+    expect(ids(before.current.checks)).toEqual(["weir:workers"]);
+    expect(ids(result.current.checks)).toEqual([
+      "weir:workers",
+      "weir:home-network-sign-in",
+    ]);
+    expect(
+      result.current.checks.find(
+        (check) => check.id === "weir:home-network-sign-in",
+      ),
+    ).toMatchObject({
+      title: "Skip sign-in for local devices",
+      meaning: "done",
+      words: "On. Devices on your local network skip sign-in.",
+    });
+  });
+
+  it("raises the server's warning as a problem when it is on and Allowed Hosts is off", () => {
+    queries.readiness.data = { worker_health: [] };
+    queries.homeNetwork.data = {
+      enabled: true,
+      warning: "Allowed Hosts (above) is off. More.",
+    };
+    const { result } = renderChecks();
+
+    expect(
+      result.current.checks.find(
+        (check) => check.id === "weir:home-network-sign-in",
+      ),
+    ).toMatchObject({
+      meaning: "attention",
+      why: "Allowed Hosts (above) is off. More.",
+    });
   });
 
   it("says Weir was checked when the server last looked, not when this page last read", () => {
@@ -307,6 +364,7 @@ describe("useHealthChecks", () => {
     expect(queries.backups.refetch).toHaveBeenCalled();
     expect(queries.readiness.refetch).toHaveBeenCalled();
     expect(queries.update.refetch).toHaveBeenCalled();
+    expect(queries.homeNetwork.refetch).toHaveBeenCalled();
     expect(queries.tools.refetch).toHaveBeenCalled();
   });
 

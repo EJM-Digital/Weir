@@ -27,6 +27,7 @@ describe("SidebarUser", () => {
           username="admin"
           version="3.2.16"
           signingOut={false}
+          canSignOut
           onSignOut={vi.fn()}
           onNavigate={vi.fn()}
         />
@@ -44,6 +45,7 @@ describe("SidebarUser", () => {
           username="admin"
           version="3.2.16"
           signingOut
+          canSignOut
           onSignOut={onSignOut}
           onNavigate={vi.fn()}
         />
@@ -56,5 +58,24 @@ describe("SidebarUser", () => {
     expect(button).toBeDisabled();
     fireEvent.click(button);
     expect(onSignOut).not.toHaveBeenCalled();
+  });
+
+  it("offers no Sign out to a device that skipped sign-in, since there is none to end", () => {
+    render(
+      <MemoryRouter>
+        <SidebarUser
+          username="admin"
+          version="3.2.16"
+          signingOut={false}
+          canSignOut={false}
+          onSignOut={vi.fn()}
+          onNavigate={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByTestId("user-menu"));
+
+    expect(screen.queryByTestId("sign-out")).toBeNull();
+    expect(screen.getByText("Change password")).toBeInTheDocument();
   });
 });
