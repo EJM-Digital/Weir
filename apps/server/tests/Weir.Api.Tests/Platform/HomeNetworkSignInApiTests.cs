@@ -382,6 +382,20 @@ public sealed class HomeNetworkSignInApiTests
     }
 
     [Fact]
+    public async Task A_new_password_the_server_refuses_is_refused_in_its_words_after_the_current_password_is_checked()
+    {
+        var (server, owner) = await StartAsync();
+        await using var _ = server;
+        var csrf = await owner.CsrfAsync();
+
+        var same = await owner.PostAsync("/api/v1/auth/change-password", new { csrf_token = csrf, current_password = AdminPassword, new_password = AdminPassword });
+        var weak = await owner.PostAsync("/api/v1/auth/change-password", new { csrf_token = csrf, current_password = AdminPassword, new_password = "aaaaaaaaaa" });
+
+        Assert.Equal((HttpStatusCode.BadRequest, "New password must be different from the current password."), (same.StatusCode, await Detail(same)));
+        Assert.Equal((HttpStatusCode.BadRequest, "Password must use a wider mix of characters."), (weak.StatusCode, await Detail(weak)));
+    }
+
+    [Fact]
     public async Task Only_an_admin_can_change_the_setting()
     {
         var (server, owner) = await StartAsync();
