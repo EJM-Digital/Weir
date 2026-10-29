@@ -133,6 +133,10 @@ internal sealed partial class LiveAudit
             }
 
             await ClickAsync(page.GetByTestId("setup-submit"), "first-time setup submit");
+            // Setup waits on the recovery codes until they are marked as saved.
+            await VisibleAsync(page.GetByTestId("setup-codes"), "recovery codes shown after bootstrap");
+            await page.GetByTestId("recovery-codes-saved").CheckAsync();
+            await ClickAsync(page.GetByTestId("recovery-codes-continue"), "recovery codes saved");
             // Bootstrap signs the new admin in directly (#704): the browser briefly lands on "/" before
             // RequireSetupWizard's own client-side redirect to the wizard settles, so a visible element - the
             // wizard or the already-signed-in shell, whichever this install ends up on - is what to wait for, not
