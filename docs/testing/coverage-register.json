@@ -62399,6 +62399,11 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
           "name": "Too_many_wrong_passwords_lock_the_account_out_of_the_change_and_it_stays_as_it_was"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/HomeNetworkSignInApiTests.cs",
+          "name": "The_account_forms_are_locked_out_with_the_setting_after_too_many_wrong_passwords_even_for_the_right_one"
         }
       ],
       "audit": {

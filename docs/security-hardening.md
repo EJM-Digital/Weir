@@ -47,7 +47,8 @@ turns it on, which is how every install behaved before it existed.
   before signing in, since there is no session to bind it to.
 - **The current password is still asked for**, even of a skipped visitor: changing the password or the username, changing this
   choice or its networks, and (when they exist) creating or revoking API keys and making a new set of recovery codes. The
-  one gate for it is `ApiRequest.RequireCurrentPasswordAsync`, which counts a wrong password against the account like a wrong
+  one gate for it is `ApiRequest.RequireCurrentPasswordAsync` (used by the password and username forms and by this setting),
+  which counts a wrong password against the account like a wrong
   sign-in (`UsernameLoginBackoff`), so it cannot be used to guess without limit. A route that needs it reads
   `current_password` from its body, calls `RequireUserAsync` and then this.
 - **Where it is kept.** The `home_network_sign_in` table (one row, migration 0051), read and written by

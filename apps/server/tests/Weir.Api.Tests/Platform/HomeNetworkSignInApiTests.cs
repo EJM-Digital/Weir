@@ -360,6 +360,28 @@ public sealed class HomeNetworkSignInApiTests
     }
 
     [Fact]
+    public async Task The_account_forms_are_locked_out_with_the_setting_after_too_many_wrong_passwords_even_for_the_right_one()
+    {
+        var (server, owner) = await StartAsync();
+        await using var _ = server;
+        await TurnOnAsync(owner);
+        var csrf = await AnonymousCsrfAsync(server, AtHome);
+        var backoff = server.Services.GetRequiredService<AuthRateLimiters>().LoginUsernameBackoff;
+        for (var failure = 0; failure < 12; failure++)
+        {
+            backoff.RecordFailure("alice");
+        }
+
+        var username = await FromAsync(server, AtHome, "POST", "/api/v1/auth/change-username", json: new { csrf_token = csrf, current_password = AdminPassword, new_username = "mallory" });
+        var password = await FromAsync(server, AtHome, "POST", "/api/v1/auth/change-password", json: new { csrf_token = csrf, current_password = AdminPassword, new_password = "a-brand-new-password-1" });
+
+        Assert.Equal((429, 429), (username.Status, password.Status));
+        backoff.RecordSuccess("alice");
+        using var signedIn = await new ApiTestClient(server).LoginAsync();
+        Assert.Equal(HttpStatusCode.OK, signedIn.StatusCode);
+    }
+
+    [Fact]
     public async Task Only_an_admin_can_change_the_setting()
     {
         var (server, owner) = await StartAsync();
