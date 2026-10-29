@@ -19,8 +19,50 @@ This checklist defines the current practical hardening baseline for Weir.
 - Existing users must persist across restarts and upgrades.
 - Requests are only answered for a `Host` Weir recognises (see
   [Reverse Proxy: Host header allow-list](https://github.com/EJM-Digital/Weir/blob/main/docs-site/docs/deployment/reverse-proxy.md)) — set `WEIR_ALLOWED_HOSTS` for a reverse-proxy domain.
+- Skipping sign-in for devices on the home network is off until the owner turns it on; see
+  [Skip sign-in on the home network](#skip-sign-in-on-the-home-network).
 - Install-level routes (configuration bundle, backups, updates, the directory browser, media
   manager and notification channel credentials, history reset) require the admin role.
+
+## Skip sign-in on the home network
+
+An opt-in choice on System › Security, and a question in first-run setup that starts unanswered. It is **off** until the owner
+turns it on, which is how every install behaved before it existed.
+
+- **What counts as local.** `127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `::1/128`,
+  `fc00::/7` and `fe80::/10`; an IPv4-mapped IPv6 address counts as the IPv4 address. The owner can add networks of their own
+  (a CIDR range or a bare address), and an optional allow list narrows who skips: empty, every local address does; otherwise
+  the address must also be on it. A public address is never skipped by the built-in ranges, whatever the allow list says. An
+  entry that is not an address or a range is refused with a 400 whose detail begins `'…' is not a valid address or subnet.`
+  and goes on to show an address and a range as examples (`HomeNetworkWords.InvalidEntries`).
+- **Which address is judged.** The real socket peer, captured before forwarded headers are applied
+  (`ResponseMarkers.ConnectionPeer`, with the `X-Forwarded-For` header as it arrived in `ResponseMarkers.ForwardedFor`).
+  `X-Forwarded-For` counts only from a peer inside `WEIR_TRUSTED_PROXY_IPS`; the header is then walked from the right, one
+  trusted proxy at a time, to the first hop that is not one. A proxy that sends no header, a hop that is not an address, or a
+  chain of nothing but proxies names no client, and no client means no skip. `HomeNetwork.ClientOf` is the one place this
+  is decided, built on `NetRange` and `ClientRateLimitKey.InNetworks`.
+- **What a skipped visitor is.** The account's own identity (its first active admin) for that request only. No session row,
+  cookie or token is made (`SignedInSession.ByHomeNetwork`, shown as the session `home-network`), a real session cookie is
+  used first when there is one, and there is nobody to be while no account exists. Its CSRF token is the one anyone is given
+  before signing in, since there is no session to bind it to.
+- **The current password is still asked for**, even of a skipped visitor: changing the password or the username, changing this
+  choice or its networks, and (when they exist) creating or revoking API keys and making a new set of recovery codes. The
+  one gate for it is `ApiRequest.RequireCurrentPasswordAsync`, which counts a wrong password against the account like a wrong
+  sign-in (`UsernameLoginBackoff`), so it cannot be used to guess without limit. A route that needs it reads
+  `current_password` from its body, calls `RequireUserAsync` and then this.
+- **Where it is kept.** The `home_network_sign_in` table (one row, migration 0051), read and written by
+  `HomeNetworkSignInStore` through `GET` and `PUT /api/v1/suite/home-network-sign-in` (the `PUT` is admin only). It is not part of
+  a configuration backup, so restoring a backup cannot turn it on.
+- **What it writes down.** One Activity line, "Local network sign-in setting changed" ("Skip sign-in for devices on the local
+  network turned on." or "…turned off."), only when the value changes; a change to only the networks writes none. System's
+  health checks list "Skip sign-in for local devices", which reads "On. Devices on your local network skip sign-in." or "Off.
+  Every device signs in, including ones on your local network.".
+- **The Allowed Hosts warning.** With the choice on and Allowed Hosts off, Security and the health check say: "Allowed Hosts
+  (above) is off. Weir currently answers on any address, so any device that can reach a local address here skips sign-in too.
+  Turn on Allowed Hosts as well for this to only apply on your own network." Weir's Host check has no off switch
+  (`AllowedHostPolicy.Enforced`), so the warning is carried by `HomeNetworkWords.Warning` and cannot be raised today.
+- **Behind a reverse proxy.** Without `WEIR_TRUSTED_PROXY_IPS`, a proxy on the same machine connects from a local address, so
+  everything it forwards looks local. Set `WEIR_TRUSTED_PROXY_IPS` to the proxy before turning this on.
 
 ## Secrets and private data
 

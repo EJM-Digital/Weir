@@ -17,6 +17,27 @@ Weir's security posture and hardening baseline.
 - Optional extra hardening: set `WEIR_CORS_ORIGINS` to the address you reach Weir at, and browser posts from any other origin are refused
 - Secure cookies enabled when deployed behind HTTPS
 
+## Skip sign-in for devices on your home network
+
+By default every device signs in. If you would rather not type your password on your own network, turn on **Skip sign-in for
+devices on your home network** in System › Security (or answer Yes when setup asks). It is off until you do.
+
+With it on, a device Weir can prove is on your local network is already signed in, with no password. Weir counts these as
+local: private network addresses (`10.x`, `172.16`-`172.31.x`, `192.168.x`), this machine (loopback), link-local addresses and
+IPv6 private (ULA) addresses. You can add networks of your own, and an optional allow list narrows it to chosen addresses, still
+only if they are also local. A device on a public address is never let in this way.
+
+- **Not behind a reverse proxy from outside.** Weir judges the address the connection really came from. It reads
+  `X-Forwarded-For` only from a proxy listed in `WEIR_TRUSTED_PROXY_IPS`. If you reach Weir through a reverse proxy on the same
+  machine, set that first, or every visitor the proxy forwards will look local.
+- **Nothing is left behind.** A device that skips sign-in is treated as signed in for that one request: no session is made, no
+  cookie is set, and there is no Sign out.
+- **The password is still asked for** when you change your password or username, change this choice or its networks, and for the
+  other changes that must not be made by anyone who happens to be at the keyboard.
+- **Activity** records "Local network sign-in setting changed" when you turn it on or off, and System's health checks show its state.
+
+It is a choice about signing in, not a way to recover an account.
+
 ## Secrets management
 
 | Secret | Purpose |
