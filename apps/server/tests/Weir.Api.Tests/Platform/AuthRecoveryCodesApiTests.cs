@@ -66,7 +66,7 @@ public sealed class AuthRecoveryCodesApiTests
     }
 
     [Fact]
-    public async Task A_wrong_password_for_a_new_set_counts_as_a_wrong_sign_in_and_is_limited_like_one()
+    public async Task A_wrong_password_for_a_new_set_counts_against_the_account_and_is_limited()
     {
         await using var server = await StartAsync(variables: [("WEIR_AUTH_LOGIN_RATE_MAX_ATTEMPTS", "100")]);
         var client = await SignedInAsync(server);
@@ -79,25 +79,8 @@ public sealed class AuthRecoveryCodesApiTests
         using var waiting = await NewSetAsync(client);
 
         Assert.Equal(HttpStatusCode.TooManyRequests, waiting.StatusCode);
-        Assert.Equal("Too many sign-in attempts for this account. Wait a few minutes, then try again.", await Detail(waiting));
+        Assert.Equal("Too many wrong passwords for this account. Wait a few minutes, then try again.", await Detail(waiting));
         Assert.Equal(0, await TestDatabase.ScalarAsync(server, "SELECT count(*) FROM recovery_codes"));
-    }
-
-    [Fact]
-    public async Task Making_a_new_set_is_limited_per_address_like_sign_in()
-    {
-        await using var server = await StartAsync(variables: [("WEIR_AUTH_LOGIN_RATE_MAX_ATTEMPTS", "3"), ("WEIR_AUTH_LOGIN_RATE_WINDOW_SECONDS", "120")]);
-        await TestDatabase.SeedAdminAsync(server);
-        var client = new ApiTestClient(server);
-        using var signIn = await client.LoginAsync();
-        Assert.Equal(HttpStatusCode.OK, signIn.StatusCode);
-
-        using var first = await NewSetAsync(client, "not-the-password");
-        using var second = await NewSetAsync(client, "not-the-password");
-        using var third = await NewSetAsync(client, "not-the-password");
-
-        Assert.Equal([HttpStatusCode.BadRequest, HttpStatusCode.BadRequest, HttpStatusCode.TooManyRequests], [first.StatusCode, second.StatusCode, third.StatusCode]);
-        Assert.Equal("120", Header(third, "Retry-After"));
     }
 
     [Fact]

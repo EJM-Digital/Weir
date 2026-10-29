@@ -481,12 +481,7 @@
         {
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryCodesApiTests.cs",
-          "name": "A_wrong_password_for_a_new_set_counts_as_a_wrong_sign_in_and_is_limited_like_one"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryCodesApiTests.cs",
-          "name": "Making_a_new_set_is_limited_per_address_like_sign_in"
+          "name": "A_wrong_password_for_a_new_set_counts_against_the_account_and_is_limited"
         }
       ],
       "covers": [

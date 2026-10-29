@@ -49,6 +49,12 @@ public sealed partial class RecoveryCodesTests(E2EServer server) : E2ETestBase(s
         await page.GetByTestId("recovery-codes-saved").CheckAsync();
         await continueButton.ClickAsync();
         await Expect(SetupWizard.Heading(page)).ToBeVisibleAsync(new() { Timeout = Navigation.SubmitSettleMs });
+
+        // The wizard that follows the codes asks whether devices on the home network may skip sign-in: it starts unanswered, and No is kept.
+        var homeNetwork = page.GetByRole(AriaRole.Radio, new() { Name = "Skip sign-in for devices on your home network? No", Exact = true });
+        await Expect(page.GetByRole(AriaRole.Radio, new() { Name = "Skip sign-in for devices on your home network? Yes", Exact = true })).Not.ToBeCheckedAsync();
+        await homeNetwork.CheckAsync();
+        await Expect(homeNetwork).ToBeCheckedAsync();
         await SetupWizard.Skip(page).ClickAsync();
         await Expect(page.GetByTestId("shell-ready")).ToBeVisibleAsync(new() { Timeout = Navigation.SubmitSettleMs });
         await Expect(page.GetByTestId("recovery-prompt")).ToHaveCountAsync(0);
