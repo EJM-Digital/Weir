@@ -187,4 +187,4 @@ published server instead (a `Weir.dll` or an executable).
 | "Cannot reach the API" | Check `GET /health` on port 18788 and look at the server output for startup errors |
 | SQLite or migration errors at startup | Read the server output; check `WEIR_HOME` / `WEIR_DB_PATH` point at a writable folder |
 | Port already in use | `npm run dev` stops its *own* previous dev API/web processes first (`.dev-api.pid`, `dev:stop-web`); it never kills an unrelated process on that port — including an installed Weir, whose port can coincide with the dev one. Free it yourself, or see `scripts/dev-ports.json` for defaults |
-| Forgot the dev admin password | Run `.\scripts\dev-reset-auth.ps1 --yes` (see above) |
+| Forgot the dev admin password | Start with a fresh `WEIR_HOME` (see above) |
