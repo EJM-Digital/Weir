@@ -231,7 +231,7 @@ public sealed class JobServicesTests : IDisposable
     public async Task A_family_switched_on_while_weir_runs_starts_without_a_restart()
     {
         _db.Execute("UPDATE operator_settings SET work_temp_stale_sweep_enabled = 0");
-        var time = new FakeTimeProvider();
+        using var time = new LoopWatchingTime();
         var recheck = TimeSpan.FromMilliseconds(50);
         var registry = new JobHandlerRegistry([new DelegateHandler(PeriodicJobKinds.WorkTempStaleSweep, _ => { })]);
         var clock = new PeriodicEnqueueClock();
@@ -241,16 +241,13 @@ public sealed class JobServicesTests : IDisposable
             [sweep], registry, time, NullLogger<PeriodicEnqueueService>.Instance, clock, recheck, () => iterationComplete.Release());
 
         await service.StartAsync(CancellationToken.None);
-        // The loop's first pass, before any Advance below, so a later Advance always lands on the delay it set up
-        // from that pass rather than racing its own startup.
         await WaitForIterationAsync(iterationComplete);
 
-        // Force several recheck ticks while switched off. Waiting on the completion signal instead of a fixed
-        // real sleep proves each Advance was actually acted on before the next one, on whatever thread-pool
-        // schedule the machine running the test happens to give it.
+        // Force several recheck ticks while switched off. Each Advance waits until the loop has set up the wait it moves
+        // on, and each pass signal is awaited before the next, so no tick is lost whatever schedule the machine gives the loop.
         for (var i = 0; i < 5; i++)
         {
-            time.Advance(recheck);
+            await time.AdvanceOnceTheLoopWaitsAsync(recheck);
             await WaitForIterationAsync(iterationComplete);
         }
 
@@ -258,7 +255,7 @@ public sealed class JobServicesTests : IDisposable
         Assert.Null(clock.NextRunFor([PeriodicJobKinds.WorkTempStaleSweep]));
 
         _db.Execute("UPDATE operator_settings SET work_temp_stale_sweep_enabled = 1");
-        time.Advance(recheck);
+        await time.AdvanceOnceTheLoopWaitsAsync(recheck);
         await WaitForIterationAsync(iterationComplete);
 
         Assert.Equal(1, _db.Count("SELECT count(*) FROM jobs"));
@@ -273,7 +270,7 @@ public sealed class JobServicesTests : IDisposable
     [Fact]
     public async Task A_cleanup_family_is_listed_with_its_next_run_while_switched_on_and_leaves_the_list_when_switched_off()
     {
-        var time = new FakeTimeProvider();
+        using var time = new LoopWatchingTime();
         var recheck = TimeSpan.FromMilliseconds(50);
         var registry = new JobHandlerRegistry([new DelegateHandler(PeriodicJobKinds.WorkTempStaleSweep, _ => { })]);
         var tasks = new PeriodicTaskRegistry(time);
@@ -291,11 +288,77 @@ public sealed class JobServicesTests : IDisposable
             (listed.Key, listed.Label, listed.NextRunAt, listed.Interval));
 
         _db.Execute("UPDATE operator_settings SET work_temp_stale_sweep_enabled = 0");
-        time.Advance(recheck);
+        await time.AdvanceOnceTheLoopWaitsAsync(recheck);
         await WaitForIterationAsync(iterationComplete);
         await service.StopAsync(CancellationToken.None);
 
         Assert.Empty(tasks.Snapshot());
+    }
+
+    [Fact]
+    public async Task A_clock_advanced_while_the_loop_is_still_on_its_way_to_waiting_is_not_lost()
+    {
+        using var time = new LoopWatchingTime();
+        var registry = new JobHandlerRegistry([new DelegateHandler(PeriodicJobKinds.WorkTempStaleSweep, _ => { })]);
+        var sweep = new WorkTempStaleSweepEnqueuer(_db.Store, "movie", TimeSpan.FromHours(1), killSwitch: false);
+        var iterationComplete = new SemaphoreSlim(0);
+        using var holdTheLoop = new ManualResetEventSlim(false);
+        var recheck = TimeSpan.FromMilliseconds(50);
+        var service = new PeriodicEnqueueService(
+            [sweep], registry, time, NullLogger<PeriodicEnqueueService>.Instance, new PeriodicEnqueueClock(), recheck,
+            () =>
+            {
+                iterationComplete.Release();
+                holdTheLoop.Wait();
+            });
+
+        await service.StartAsync(CancellationToken.None);
+        await WaitForIterationAsync(iterationComplete);
+
+        // The loop has said its pass is done but has not yet set up its wait. The clock is advanced only once it has.
+        var advanced = time.AdvanceOnceTheLoopWaitsAsync(recheck);
+        Assert.False(advanced.IsCompleted);
+        holdTheLoop.Set();
+        await advanced;
+        await WaitForIterationAsync(iterationComplete);
+        await service.StopAsync(CancellationToken.None);
+    }
+
+    /// <summary>
+    /// The loop says its pass is done (the signal the tests wait on) a moment before it sets up its wait, so a clock advanced
+    /// straight after the signal can move time before anything is waiting and the wake-up is lost. This lets a test advance
+    /// only once the loop's next wait exists.
+    /// </summary>
+    private sealed class LoopWatchingTime : TimeProvider, IDisposable
+    {
+        private readonly FakeTimeProvider _inner = new();
+        private readonly SemaphoreSlim _waits = new(0);
+
+        public void Dispose() => _waits.Dispose();
+
+        public override DateTimeOffset GetUtcNow() => _inner.GetUtcNow();
+
+        public override long GetTimestamp() => _inner.GetTimestamp();
+
+        public override long TimestampFrequency => _inner.TimestampFrequency;
+
+        public override TimeZoneInfo LocalTimeZone => _inner.LocalTimeZone;
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            var timer = _inner.CreateTimer(callback, state, dueTime, period);
+            _waits.Release();
+            return timer;
+        }
+
+        /// <summary>Waits for the loop to start its next wait, then moves the clock on by <paramref name="by"/>.</summary>
+        public async Task AdvanceOnceTheLoopWaitsAsync(TimeSpan by)
+        {
+            Assert.True(
+                await _waits.WaitAsync(TimeSpan.FromSeconds(10)),
+                "The periodic loop did not start waiting in time.");
+            _inner.Advance(by);
+        }
     }
 
     /// <summary>
@@ -338,7 +401,7 @@ public sealed class JobServicesTests : IDisposable
     [Fact]
     public async Task A_switch_that_cannot_be_read_leaves_the_family_off_and_the_loop_running()
     {
-        var time = new FakeTimeProvider();
+        using var time = new LoopWatchingTime();
         var recheck = TimeSpan.FromMilliseconds(50);
         var registry = new JobHandlerRegistry([new DelegateHandler("processing.unreadable.v1", _ => { })]);
         var logger = new CapturingLogger<PeriodicEnqueueService>();
@@ -348,7 +411,7 @@ public sealed class JobServicesTests : IDisposable
 
         await service.StartAsync(CancellationToken.None);
         await WaitForIterationAsync(iterationComplete);
-        time.Advance(recheck);
+        await time.AdvanceOnceTheLoopWaitsAsync(recheck);
         await WaitForIterationAsync(iterationComplete);
         await service.StopAsync(CancellationToken.None);
 
