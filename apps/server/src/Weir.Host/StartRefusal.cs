@@ -24,10 +24,9 @@ internal static class StartRefusal
     internal static readonly TimeSpan Courtesy = TimeSpan.FromSeconds(2);
 
     /// <summary>
-    /// Reports <paramref name="exception"/> and returns the exit code for it. <paramref name="leaveNote"/> is false for a command that is
-    /// not starting the server (<c>recover</c>): its refusal says nothing about why the server did not start.
+    /// Reports <paramref name="exception"/> and returns the exit code for it.
     /// </summary>
-    internal static int Report(Exception exception, RuntimeEnvironment runtime, NonBlockingConsole error, bool leaveNote = true)
+    internal static int Report(Exception exception, RuntimeEnvironment runtime, NonBlockingConsole error)
     {
         ArgumentNullException.ThrowIfNull(exception);
         ArgumentNullException.ThrowIfNull(runtime);
@@ -38,7 +37,7 @@ internal static class StartRefusal
             DatabaseSchemaMismatchException => "Weir can't use its database",
             _ => null,
         };
-        if (headline is not null && leaveNote)
+        if (headline is not null)
         {
             WriteNote(runtime, headline, exception.Message);
         }

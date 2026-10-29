@@ -1,5 +1,5 @@
 // The scenarios of the windows-install shard, run on a clean GitHub-hosted Windows runner against the Setup this commit built: a fresh
-// install (ported from the VM's fresh-install), the recovery command of the installed server (recover-locked-out-account), and what the VM
+// install (ported from the VM's fresh-install), and what the VM
 // suite never covered, an uninstall that leaves the data alone (uninstall-keeps-the-data). Each makes what it needs: Weir installed, running
 // and signed in to, and reads nothing an earlier scenario left except the account the run holds.
 import assert from "node:assert/strict";
@@ -217,92 +217,6 @@ async function freshInstall(world) {
   );
 }
 
-// --- recover-locked-out-account ---------------------------------------------------------------------------------------------------
-
-function expectRecoverSaid(reset, { username, ended }) {
-  assert.ok(reset.stdout.includes(`Password reset for '${username}'.`), "recover does not say the password was reset");
-  assert.ok(reset.stdout.includes("The account is active and has the admin role."), "recover does not say the account is an active admin");
-  const words = ended === 1 ? "1 signed-in session was ended" : `${ended} signed-in sessions were ended`;
-  assert.ok(new RegExp(`^${words}\\W+sign in again with the new password\\.\\s*$`, "m").test(reset.stdout), `recover does not say ${words}`);
-  assert.ok(reset.stderr.includes("--password stays in your shell history"), "recover does not warn that --password stays in the shell history");
-  return words;
-}
-
-/** The installed command, run as a person's console runs it with nothing set; what it printed is kept with the record. */
-async function runRecover(world, name, args) {
-  const result = await world.machine.recover(args);
-  await world.record(`recover-${name}.txt`, `exit code: ${result.exitCode}\n--- stdout ---\n${result.stdout}\n--- stderr ---\n${result.stderr}\n`);
-  return result;
-}
-
-/** recover-locked-out-account: the installed WeirServer.exe recover finds Weir's data folder by itself and resets the only password. */
-async function recoverLockedOutAccount(world) {
-  await ensureWeir(world);
-  const { machine, weir } = world;
-  const { username, password: forgotten } = world.account;
-  const recovered = `Rc-${randomBytes(16).toString("hex")}-Aa1`;
-
-  const settings = await weir.suiteSettings();
-  const original = settings.log_retention_days;
-  const retention = original === 17 ? 18 : 17;
-  await weir.saveSuiteSettings({ app_timezone: settings.app_timezone, log_retention_days: retention });
-  const other = world.browser();
-  await other.login(username, forgotten);
-  const ended = (await weir.activeSessions()).length;
-  assert.ok(ended >= 2, `two browsers are signed in before the reset (${ended} sessions)`);
-
-  let words;
-  try {
-    await machine.stopWeir();
-
-    const help = await runRecover(world, "help", ["--help"]);
-    assert.equal(help.exitCode, 0, `recover --help exited ${help.exitCode}`);
-    for (const wanted of ["usage: Weir recover", "--username USERNAME", "--password PASSWORD", "--list"]) {
-      assert.ok(help.stdout.includes(wanted), `recover --help does not mention ${wanted}`);
-    }
-
-    const list = await runRecover(world, "list", ["--list"]);
-    assert.equal(list.exitCode, 0, `recover --list exited ${list.exitCode}: ${list.stderr}`);
-    assert.ok(
-      list.stdout.includes(`Accounts in ${machine.paths.database}:`),
-      `with nothing set, the command did not find the data folder the installed server uses (${machine.paths.database}): ${list.stdout}`,
-    );
-    assert.ok(new RegExp(`^\\s+${username}\\s+role=admin\\s+active\\s*$`, "m").test(list.stdout), `recover --list does not show ${username} as an active admin`);
-
-    const reset = await runRecover(world, "recover", ["--username", username, "--password", recovered]);
-    assert.equal(reset.exitCode, 0, `recover exited ${reset.exitCode}: ${reset.stderr}`);
-    words = expectRecoverSaid(reset, { username, ended });
-  } finally {
-    // Whatever happened, the next scenario finds Weir running.
-    if ((await machine.processes()).every((process) => process.name !== "Weir.exe")) await startInstalledWeir(world);
-  }
-
-  for (const earlier of [weir, other]) {
-    assert.equal(await earlier.signedInAs(), null, "a session from before the reset is still accepted");
-  }
-  // Weir writes a warning, and Activity a line, for a sign-in it refuses; this one is refused on purpose.
-  for (const title of ["auth event: login failed", "Sign-in failed"]) {
-    world.logWatch.expect(title, { why: "the forgotten password is tried once, to see that it is refused" });
-  }
-  const withForgotten = await world.browser().loginStatus(username, forgotten);
-  assert.equal(withForgotten, 401, `the forgotten password was answered ${withForgotten}, not refused`);
-
-  world.account = { username, password: recovered };
-  weir.forgetSession();
-  await weir.login(username, recovered);
-  assert.equal(await weir.signedInAs(), username, `the new password does not sign in as ${username}`);
-  const kept = await weir.suiteSettings();
-  assert.equal(kept.log_retention_days, retention, `the saved setting changed: log_retention_days is ${kept.log_retention_days}, not ${retention}`);
-  const said = (await weir.activity("auth.password_changed")).filter((item) => item.title === "Password recovered from the server");
-  assert.equal(said.length, 1, `Activity holds ${said.length} entries titled "Password recovered from the server", not 1`);
-
-  await weir.saveSuiteSettings({ app_timezone: settings.app_timezone, log_retention_days: original });
-  return (
-    `WeirServer.exe recover, run from the install with nothing set, found ${machine.paths.database}, listed ${username}, reset the password and said ${words}; ` +
-    `the forgotten password is refused (401), the new one signs in, ${ended} earlier sessions are ended, the saved setting is kept and Activity says the password was recovered from the server.`
-  );
-}
-
 // --- uninstall-keeps-the-data -----------------------------------------------------------------------------------------------------------
 
 /** What an uninstall did to the data folder, in words: a file gone, a file that is new, or one whose bytes changed. The tray's own log may grow. */
@@ -434,6 +348,5 @@ async function uninstallKeepsTheData(world) {
 /** The scenarios of the windows-install shard, by id. */
 export const SCENARIOS = {
   "fresh-install": freshInstall,
-  "recover-locked-out-account": recoverLockedOutAccount,
   "uninstall-keeps-the-data": uninstallKeepsTheData,
 };

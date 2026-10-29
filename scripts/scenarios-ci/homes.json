@@ -279,20 +279,6 @@
       ]
     },
     {
-      "id": "recover-locked-out-account",
-      "home": "windows",
-      "shard": "windows-install",
-      "state": "ported",
-      "why": "Runs the installed WeirServer.exe recover as a person's console does; the Docker form of the command is already proved by the Docker smoke.",
-      "passedInCi": [
-        {
-          "run": 39030203414,
-          "commit": "85b9cdc46e2b9d233c081d1dd3e3dd30139a8f4a",
-          "ref": "coverage/windows-install-shard"
-        }
-      ]
-    },
-    {
       "id": "uninstall-keeps-the-data",
       "catalogue": false,
       "home": "windows",

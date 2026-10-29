@@ -312,7 +312,7 @@ public sealed class ActivityApiTests
     [Fact]
     public async Task An_event_written_outside_the_apps_own_connection_still_reaches_the_stream_and_the_list()
     {
-        // A raw insert on its own connection, like `weir recover` or a restored backup: nobody calls
+        // A raw insert on its own connection, like a restored backup: nobody calls
         // ActivityNotifications.Track for it, so only the shared poll (ActivityLatestPollTask), not a commit
         // signal, tells the open stream about it.
         await using var server = await SeededServerAsync();

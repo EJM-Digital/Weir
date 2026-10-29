@@ -1,29 +1,9 @@
 using Weir.Core;
 using Weir.Core.Configuration;
 using Weir.Host;
-using Weir.Infrastructure.Auth;
 using Weir.Infrastructure.Logging;
 using Weir.Infrastructure.Runtime;
 using Weir.Infrastructure.Sqlite;
-
-if (args.Length > 0 && string.Equals(args[0], "recover", StringComparison.Ordinal))
-{
-    // Local console access only: no HTTP route runs this. Reaching the server's own shell (and so
-    // its database under WEIR_HOME) is the recovery factor — see RecoverCommand and #454/#553.
-    try
-    {
-        return await RecoverCommand.RunAsync(
-            args[1..],
-            WeirServer.CurrentRuntime(),
-            Console.Out,
-            Console.Error,
-            new ConsoleRecoverPasswordPrompt()).ConfigureAwait(false);
-    }
-    catch (WeirConfigurationException exception)
-    {
-        return StartRefusal.Report(exception, WeirServer.CurrentRuntime(), NonBlockingConsole.ForStandardError(), leaveNote: false);
-    }
-}
 
 if (args.Contains("--version"))
 {

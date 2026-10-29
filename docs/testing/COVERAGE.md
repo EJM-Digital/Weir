@@ -42,7 +42,7 @@ Row ids from the audit are in `audit.id` (`R-032`, `JOB-025`, `WEB-447`, `TRAY-0
 | `recording-replay` | A contract test that replays one of Deluno's recordings (`apps/server/tests/fixtures/recorded`). | real |
 | `real-fs` | A C# test in `apps/server/tests` (not the E2E project) or `apps/tray/Weir.Tray.Tests` that runs Weir's real code on a real temp folder or a real SQLite file, with no fake. The check verifies it from the test's text (below). | real for a `disk` or `install` row that is not `vm`, otherwise inproc |
 | `container-smoke` | A step of a packaging workflow (`.github/workflows`, named by its `- name:`) or a container script in `scripts` (a name containing `docker`, `compose` or `container`, named `"*"`) that starts the shipped container image on a real volume. The check verifies it from the step's text. | real for a `disk` or `install` row that is not `vm`, otherwise inproc |
-| `package-smoke` | `scripts/smoke-windows-package.ps1`, `scripts/smoke-windows-recover.ps1` or the live audit (`apps/server/tools/Weir.LiveAudit`), run by the packaging jobs. | inproc |
+| `package-smoke` | `scripts/smoke-windows-package.ps1` or the live audit (`apps/server/tools/Weir.LiveAudit`), run by the packaging jobs. | inproc |
 
 A proof's `name` is a test, a test group or a class in `file` (for a scenario, its id); `"*"` means the whole file. An e2e test intercepts requests
 when its body, or the part of its file before its first test, calls `RouteAsync`, `FulfillAsync` or `RouteFromHARAsync`; what cannot be decided

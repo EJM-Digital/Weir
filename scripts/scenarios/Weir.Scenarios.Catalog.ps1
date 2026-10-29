@@ -97,10 +97,4 @@ $ScenarioCatalog = @(
         Does = 'Starts the installed Weir and signs in (creating the account when it offers to), then presses Check for updates and Download update the way System > About does (their requests to Weir), with the real tray running.'
         Passes = 'Weir offers the buttons only while the tray is alive; each request leaves its flag file, the tray takes it, and the update state comes to rest with an answer (nothing newer, an update found, or a plain failure message) rather than staying on checking or downloading.'
     }
-    [pscustomobject]@{
-        Id = 'recover-locked-out-account'; Phase = 'Fresh'; Required = $true
-        Title = 'Recovering a locked-out account'
-        Does = 'Starts the installed Weir and signs in (creating the account when it offers to), saves a setting, signs in a second browser, stops Weir, and runs the installed WeirServer.exe recover as a person''s console does, with no variable set: its help, its account list, then a reset of the account''s password. Starts Weir again.'
-        Passes = 'The command finds the data folder the installed server uses, lists the account as an active admin, resets the password and says how many signed-in sessions it ended; afterwards both earlier sessions are refused, the forgotten password is refused, the new password signs in, the saved setting is as it was and Activity says the password was recovered from the server.'
-    }
 )

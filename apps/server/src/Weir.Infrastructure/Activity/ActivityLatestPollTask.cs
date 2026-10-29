@@ -7,7 +7,7 @@ namespace Weir.Infrastructure.Activity;
 /// <summary>
 /// <c>activity-latest-poll</c>: a safety net for the live Activity stream (#734). A write this process makes
 /// itself tells <see cref="ActivityLatestNotifier"/> the instant its transaction commits, so the common case
-/// needs no polling. A write this process never sees commit — <c>weir recover</c>'s own connection, a restored
+/// needs no polling. A write this process never sees commit — a restored
 /// backup, or any other direct edit of the database file — would otherwise sit unseen by every open stream
 /// until a client reloads. One shared poll, not one per open stream, catches that within a few seconds, and
 /// only while a stream is actually open to hear it (#720): idle, this task does not touch the database.

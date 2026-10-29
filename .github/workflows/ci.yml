@@ -134,7 +134,6 @@ jobs:
               - 'apps/server/src/Weir.Host/**'
               - 'apps/server/tools/Weir.LiveAudit/**'
               - 'scripts/smoke-windows-package.ps1'
-              - 'scripts/smoke-windows-recover.ps1'
               - 'scripts/wait-for-health.mjs'
               - 'scripts/docker-compose-smoke.mjs'
               - 'scripts/docker-smoke/**'
@@ -149,8 +148,6 @@ jobs:
               - 'scripts/install-ffmpeg-linux.mjs'
               - 'apps/server/src/Weir.Infrastructure/Migrations/**'
               - 'apps/server/src/Weir.Infrastructure/Sqlite/**'
-              # The recovery command the package smokes run (PLAT-20).
-              - 'apps/server/src/Weir.Infrastructure/Auth/Recover*'
               - '.github/workflows/ci-packaging.yml'
             # What a Windows leg tests that a Linux one cannot: the tray, the server code that is Windows-only (the *.Windows.cs
             # files, the firewall, the Velopack updater, the Win32 calls) or branches on the platform for file locking and
@@ -176,12 +173,10 @@ jobs:
               - 'apps/server/src/Weir.Infrastructure/Processing/RemuxPass/SourceFiles.cs'
               - 'apps/server/src/Weir.Infrastructure/Migrations/**'
               - 'apps/server/src/Weir.Infrastructure/Sqlite/**'
-              - 'apps/server/src/Weir.Infrastructure/Auth/Recover*'
               - 'apps/server/tests/Weir.Contract.Tests/**'
               - 'apps/server/tools/Weir.LiveAudit/**'
               - 'packaging/windows/**'
               - 'scripts/smoke-windows-package.ps1'
-              - 'scripts/smoke-windows-recover.ps1'
               - 'scripts/install-media-tools-windows.ps1'
               - 'scripts/wait-for-health.mjs'
               - 'scripts/scenarios-in-ci.mjs'

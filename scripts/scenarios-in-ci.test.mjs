@@ -26,7 +26,7 @@ const catalog = catalogIds(read("scripts/scenarios/Weir.Scenarios.Catalog.ps1"))
 // --- where each scenario runs -------------------------------------------------------------------------------------------
 
 test("every scenario of the VM catalogue has a home, and nothing else has", () => {
-  assert.equal(catalog.length, 14);
+  assert.equal(catalog.length, 13);
   assert.deepEqual(problemsWithHomes(homes, catalog), []);
 });
 

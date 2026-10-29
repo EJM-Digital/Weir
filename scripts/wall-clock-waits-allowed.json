@@ -74,12 +74,6 @@
       "reason": "The tries between requests and checks in the smoke's own wait loops (server ready, job complete, listen addresses, log line, folder removal, hook processes gone): each ends the moment its condition holds and gives up at a named hang guard."
     },
     {
-      "file": "scripts/smoke-windows-recover.ps1",
-      "kind": "sleep",
-      "count": 1,
-      "reason": "Retry between two /ready requests while the server starts; ends at the first answer and gives up at 60 seconds."
-    },
-    {
       "file": "scripts/verify-docker-remote.ps1",
       "kind": "sleep",
       "count": 1,
