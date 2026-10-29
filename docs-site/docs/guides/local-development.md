@@ -141,15 +141,7 @@ The default SQLite file is `{WEIR_HOME}/data/weir.sqlite3` unless `WEIR_DB_PATH`
 
 ## Forgot the dev admin password
 
-```powershell
-.\scripts\dev-reset-auth.ps1 --list   # show the accounts, change nothing
-.\scripts\dev-reset-auth.ps1 --yes    # delete every user and session
-```
-
-This clears users and sessions so `/setup` works again (it runs `node scripts/dev-reset-auth.mjs`
-after loading `.env`). It uses `WEIR_HOME` from your environment or `.env`; if you rely on
-`dev-backend.ps1`'s `.local-dev-home` default, set `$env:WEIR_HOME` to that folder first. Stop
-the server first, or restart it afterwards.
+Forgot the dev admin password? There is no reset: Weir has no way in but the password and the recovery codes. Point `WEIR_HOME` at a new folder (or delete `.local-dev-home`) to start with a fresh account.
 
 ## Contract and E2E tests (optional)
 

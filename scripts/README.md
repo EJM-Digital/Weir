@@ -95,9 +95,8 @@ work, not rewritten for its own sake. Scripts are named in kebab-case.
 | `attribute-pool-stalls.mjs` | Lays the thread pool stalls an infrastructure test run reported (`WEIR_POOL_SAMPLE`, see `apps/server/README.md`) beside the tests that were running at the time, from the run's trx file, so the tests that hold pool threads can be found and fixed. |
 | `stop-dev-api-port.mjs` | Stops the dev API that this worktree's `npm run dev` started, and nothing else. |
 | `stop-dev-web-port.mjs` | Stops the dev Vite server that this worktree's `npm run dev` started, and nothing else. |
-| `dev-reset-auth.mjs` | Clears a development database's users and sessions so `/setup` works again. |
 | `dev-ports.json` | The development and production ports every launcher and the Vite config read. |
-| `dev.ps1`, `dev-backend.ps1`, `dev-web.ps1`, `weir-env.ps1`, `dev-reset-auth.ps1`, `verify-local.ps1` | PowerShell dev launchers and checks. `npm run dev` in `apps/web` always starts the API and Vite together and cannot run the server alone; this trio stays for the API-only case (`verify-local.ps1`, manual API testing) and for two separate windows with separate logs. See `docs/local-development.md`. |
+| `dev.ps1`, `dev-backend.ps1`, `dev-web.ps1`, `weir-env.ps1`, `verify-local.ps1` | PowerShell dev launchers and checks. `npm run dev` in `apps/web` always starts the API and Vite together and cannot run the server alone; this trio stays for the API-only case (`verify-local.ps1`, manual API testing) and for two separate windows with separate logs. See `docs/local-development.md`. |
 
 ## Windows packaging and live audits
 

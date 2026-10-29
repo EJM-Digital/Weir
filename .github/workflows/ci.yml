@@ -428,7 +428,6 @@ jobs:
             "--test-coverage-exclude=scripts/scenarios-ci/install-hooks.mjs" \
             "--test-coverage-exclude=scripts/docker-smoke/**" \
             "--test-coverage-exclude=scripts/docker-compose-smoke.mjs" \
-            "--test-coverage-exclude=scripts/dev-reset-auth.mjs" \
             "--test-coverage-exclude=scripts/stop-dev-api-port.mjs" \
             "--test-coverage-exclude=scripts/stop-dev-web-port.mjs" \
             "--test-coverage-exclude=scripts/merge-web-coverage-reports.mjs" \
