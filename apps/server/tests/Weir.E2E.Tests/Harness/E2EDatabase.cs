@@ -13,8 +13,8 @@ public static class E2EDatabase
     private const int BusyTimeoutSeconds = 30;
 
     /// <summary>
-    /// Resets all per-test state so each test starts at the setup page. Users, their recovery codes, sessions, suite settings and the home
-    /// network sign-in are
+    /// Resets all per-test state so each test starts at the setup page. Users, their recovery codes, sessions, configuration backups, suite
+    /// settings and the home network sign-in are
     /// cleared. The migration-seeded Processing libraries have their folders cleared rather than being deleted,
     /// because they are the only path store and a scope with no library at all has nowhere to resolve to.
     /// </summary>
@@ -33,7 +33,25 @@ public static class E2EDatabase
             "UPDATE operator_settings SET work_temp_stale_sweep_enabled = 1, work_temp_stale_sweep_interval_seconds = NULL, " +
             "unclaimed_handback_cleanup_enabled = 0, unclaimed_handback_window_days = 14, unclaimed_handback_cleanup_interval_seconds = NULL, " +
             "keep_failed_work_files = 0, runner_budget_enabled = 0 WHERE id = 1");
+        SeedSql.Execute(connection, "DELETE FROM suite_configuration_backup");
         transaction.Commit();
+        ClearBackupFiles(databasePath);
+    }
+
+    /// <summary>
+    /// The configuration backups an earlier test made (a scheduled one lands whenever its tick runs) are forgotten with the rows that list them,
+    /// so a test that expects none sees none. The files are in <c>backups/suite-configuration</c> beside the data folder.
+    /// </summary>
+    private static void ClearBackupFiles(string databasePath)
+    {
+        var folder = Path.Join(Path.GetDirectoryName(Path.GetDirectoryName(databasePath)), "backups", "suite-configuration");
+        if (Directory.Exists(folder))
+        {
+            foreach (var file in Directory.GetFiles(folder))
+            {
+                File.Delete(file);
+            }
+        }
     }
 
     /// <summary>Gives the account this role (admin, operator or viewer), as an administrator elsewhere would: Weir has one account, so no screen makes the others.</summary>

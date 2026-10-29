@@ -30,7 +30,7 @@ public sealed class SuiteSettingsStore
         return uow.QuerySingleAsync($"SELECT {Columns} FROM suite_settings WHERE suite_settings.id = 1", Read);
     }
 
-    /// <summary>The row, created with its defaults first when it does not exist yet.</summary>
+    /// <summary>The row, created with its defaults first when it does not exist yet. Askers at the same moment make it once.</summary>
     public async Task<SuiteSettingsRecord> EnsureAsync(UnitOfWork uow)
     {
         var row = await GetAsync(uow).ConfigureAwait(false);
@@ -41,11 +41,11 @@ public sealed class SuiteSettingsStore
 
         var users = await _users.CountUsersAsync(uow).ConfigureAwait(false);
         await uow.ExecuteAsync(
-            "INSERT INTO suite_settings (id, setup_wizard_state, app_timezone, log_retention_days, " +
+            "INSERT OR IGNORE INTO suite_settings (id, setup_wizard_state, app_timezone, log_retention_days, " +
             "activity_retention_days, configuration_backup_enabled, configuration_backup_interval_hours, configuration_backup_preferred_time, " +
             "configuration_backup_last_run_at) VALUES (1, $wizard, 'UTC', 30, 90, 0, 24, '02:00', NULL)",
             ("$wizard", SuiteSettingsRules.DefaultSetupWizardState(users))).ConfigureAwait(false);
-        // The row was inserted just above, in the same transaction.
+        // The row is there now: inserted just above, or by another asker that got in first.
         return (await GetAsync(uow).ConfigureAwait(false))!;
     }
 
