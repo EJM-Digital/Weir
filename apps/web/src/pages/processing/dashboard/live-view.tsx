@@ -36,9 +36,13 @@ import { buildPipelineCards } from "../pipeline/pipeline-cards";
 import { stackedBoardBudget } from "../pipeline/pipeline-layout";
 import { TODAY_DAYS, shownBy, type Filter } from "../processing-filter";
 import { prettyName } from "../processing-model";
-import { FILES_QUERY, useLanes } from "../use-processing-lanes";
+import { useLanes } from "../use-processing-lanes";
 import { useFinishedFiles } from "../use-finished-files";
-import { ACTIVE_JOBS_LIMIT, WORKING_FILES_QUERY } from "../working-count";
+import {
+  ACTIVE_JOBS_LIMIT,
+  FILES_QUERY,
+  WORKING_FILES_QUERY,
+} from "../working-count";
 import { leavingInWorkflow } from "../workflow-scope";
 import { ActivityStream } from "./activity-stream";
 import { LOW_COLUMNS, type PageLayout } from "./dashboard-layout";
@@ -102,7 +106,7 @@ export function LiveView({ filter, workflowId, layout }: LiveViewProps) {
   });
   const now = useNow(TICK_MS);
   const board = useLanes(workflowId);
-  const { files, libraries, lanes, scoped } = board;
+  const { files, libraries, lanes, scoped, queuedMore } = board;
   const filesAtOnce = useProcessingFilesAtOnceQuery();
   const today = useTodayFigures(workflowId, filter, now).figures;
   const pause = usePauseQuery();
@@ -229,6 +233,7 @@ export function LiveView({ filter, workflowId, layout }: LiveViewProps) {
         >
           <PipelineBoard
             lanes={scoped}
+            queuedMore={queuedMore}
             leaving={leavingInWorkflow(leaving, workflowId)}
             filter={filter}
             now={now}

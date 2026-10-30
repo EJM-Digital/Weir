@@ -4,24 +4,32 @@ import { useLiveProgress } from "../../lib/activity/use-activity-stream-invalida
 import { useProcessingFilesQuery } from "../../lib/processing/files-queries";
 import { useProcessingJobsInspectionQuery } from "../../lib/processing/jobs-inspection/queries";
 import { useProcessingLibrariesQuery } from "../../lib/processing/libraries-queries";
-import { mergeLiveProgress } from "../../lib/processing/live-progress-merge";
 import { parseAppTime } from "../../lib/ui/mm-format-date";
 import {
+  boardFiles,
   buildLanes,
   libraryCleanWorkflowId,
-  mergeWorkingFiles,
+  queuedBeyondPage,
 } from "./processing-model";
-import { ACTIVE_JOBS_LIMIT, WORKING_FILES_QUERY } from "./working-count";
-
-export const FILES_QUERY = { limit: 200 } as const;
+import {
+  ACTIVE_JOBS_LIMIT,
+  FILES_QUERY,
+  WORKING_FILES_QUERY,
+} from "./working-count";
 
 /**
  * The lanes' files, grouped by where each one is, with what each library knows about its next look.
  * `lanes` holds every workflow's files, which the cards leaving the board are tracked against; `scoped` holds
- * only the chosen workflow's (all of them when none is chosen), which is what the page shows.
+ * only the chosen workflow's (all of them when none is chosen), which is what the page shows. `queuedMore` is how many
+ * queued files that scope holds beyond the cards drawn for them, since the page of files stops at its limit.
  */
 export function useLanes(workflowId: number | null = null) {
   const files = useProcessingFilesQuery(FILES_QUERY);
+  const scopedFiles = useProcessingFilesQuery(
+    workflowId === null
+      ? FILES_QUERY
+      : { ...FILES_QUERY, library_id: workflowId },
+  );
   const workingFiles = useProcessingFilesQuery(WORKING_FILES_QUERY);
   const libraries = useProcessingLibrariesQuery();
   const activeJobs = useProcessingJobsInspectionQuery(
@@ -41,11 +49,9 @@ export function useLanes(workflowId: number | null = null) {
         });
       }
     }
-    const allFiles = mergeLiveProgress(
-      mergeWorkingFiles(
-        files.data?.files ?? [],
-        workingFiles.data?.files ?? [],
-      ),
+    const allFiles = boardFiles(
+      files.data?.files ?? [],
+      workingFiles.data?.files ?? [],
       liveProgress,
     );
     const jobs = activeJobs.data?.jobs ?? [];
@@ -68,5 +74,15 @@ export function useLanes(workflowId: number | null = null) {
     liveProgress,
     workflowId,
   ]);
-  return { files, libraries, lanes: built.lanes, scoped: built.scoped };
+  const queuedMore = queuedBeyondPage(
+    scopedFiles.data?.status_counts ?? {},
+    built.scoped,
+  );
+  return {
+    files,
+    libraries,
+    lanes: built.lanes,
+    scoped: built.scoped,
+    queuedMore,
+  };
 }

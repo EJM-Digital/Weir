@@ -6,9 +6,14 @@ import type { ProcessingJobInspectionRow } from "../../lib/processing/jobs-inspe
 import { aCleanJob, aFile, aWriting } from "./pipeline/pipeline-fixtures";
 import { useLanes } from "./use-processing-lanes";
 
-const state: { files: ProcessingFile[]; jobs: ProcessingJobInspectionRow[] } = {
+const state: {
+  files: ProcessingFile[];
+  jobs: ProcessingJobInspectionRow[];
+  counts: Record<string, number>;
+} = {
   files: [],
   jobs: [],
+  counts: {},
 };
 
 vi.mock("../../lib/activity/use-activity-stream-invalidation", () => ({
@@ -16,7 +21,7 @@ vi.mock("../../lib/activity/use-activity-stream-invalidation", () => ({
 }));
 vi.mock("../../lib/processing/files-queries", () => ({
   useProcessingFilesQuery: () => ({
-    data: { files: state.files, status_counts: {} },
+    data: { files: state.files, status_counts: state.counts },
   }),
 }));
 vi.mock("../../lib/processing/jobs-inspection/queries", () => ({
@@ -71,5 +76,19 @@ describe("useLanes", () => {
       "file-1",
     ]);
     expect(result.current.lanes.working).toHaveLength(3);
+  });
+});
+
+describe("the queued files beyond the page", () => {
+  it("is how many the server counts as queued less the queued cards drawn", () => {
+    state.counts = { unprocessed: 300, out_of_schedule: 20 };
+    const { result } = renderHook(() => useLanes(null));
+    expect(result.current.queuedMore).toBe(319);
+  });
+
+  it("is nothing when every queued file has a card", () => {
+    state.counts = { unprocessed: 1 };
+    const { result } = renderHook(() => useLanes(null));
+    expect(result.current.queuedMore).toBe(0);
   });
 });

@@ -1,11 +1,13 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { LiveProgressEntry } from "../../lib/activity/use-activity-stream-invalidation";
 import type { ProcessingFile } from "../../lib/processing/files-api";
 import type { ProcessingJobInspectionRow } from "../../lib/processing/jobs-inspection/types";
 import { processingKeys } from "../../lib/processing/query-keys";
 import { LIBRARY_CLEAN_JOB_KIND, countWorking } from "./processing-model";
 import {
   ACTIVE_JOBS_LIMIT,
+  FILES_QUERY,
   WORKING_FILES_QUERY,
   useWorkingCount,
 } from "./working-count";
@@ -15,8 +17,10 @@ const lists = {
   jobs: [] as ProcessingJobInspectionRow[],
 };
 const followStream = vi.fn();
+let live: Record<string, LiveProgressEntry> = {};
 
 vi.mock("../../lib/activity/use-activity-stream-invalidation", () => ({
+  useLiveProgress: () => live,
   useActivityStreamInvalidations: (keys: unknown, options: unknown) =>
     followStream(keys, options),
 }));
@@ -55,6 +59,21 @@ function libraryClean(
   } as ProcessingJobInspectionRow;
 }
 
+function entry(status: string): LiveProgressEntry {
+  return {
+    relativePath: "",
+    status,
+    stage: null,
+    percent: null,
+    etaSeconds: null,
+    message: null,
+    speed: null,
+    elapsedSeconds: null,
+    removedAudio: [],
+    removedSubtitles: [],
+  };
+}
+
 describe("the count of working files", () => {
   it("counts the files a pass is writing and leaves out ones held back", () => {
     const files = [
@@ -87,6 +106,25 @@ describe("useWorkingCount", () => {
     lists.files = [file(1, "processing"), file(2, "on_hold")];
     lists.jobs = [libraryClean(10, "leased")];
     followStream.mockReset();
+    live = {};
+  });
+
+  it("leaves out a file the live stream says is on its final checks, as the board does", () => {
+    live = { "Show.S01E01.mkv": entry("finishing") };
+
+    const { result } = renderHook(() => useWorkingCount());
+
+    expect(result.current).toBe(1);
+  });
+
+  it("counts a waiting file the live stream says a pass has started on, as the board does", () => {
+    lists.files = [file(3, "unprocessed")];
+    lists.jobs = [];
+    live = { "Show.S01E03.mkv": entry("processing") };
+
+    const { result } = renderHook(() => useWorkingCount());
+
+    expect(result.current).toBe(1);
   });
 
   it("gives what the Working lane counts from the lane's own lists", () => {
@@ -100,6 +138,7 @@ describe("useWorkingCount", () => {
 
     expect(followStream).toHaveBeenCalledWith(
       [
+        processingKeys.fileList(FILES_QUERY),
         processingKeys.fileList(WORKING_FILES_QUERY),
         processingKeys.jobsInspectionList("active", ACTIVE_JOBS_LIMIT),
       ],
