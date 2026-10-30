@@ -116,6 +116,8 @@ function announcementOf(cards: readonly PipelineCard[]): string {
 export type PipelineBoardProps = {
   /** The lanes before any filter: the board applies the filter itself. */
   lanes: Lanes;
+  /** Queued files the lanes hold no card for, because the list they come from stops at its limit. */
+  queuedMore?: number;
   /** The cards of files that have just ended, before any filter. */
   leaving: readonly LeavingCard[];
   filter: Filter;
@@ -135,6 +137,7 @@ export type PipelineBoardProps = {
 
 export function PipelineBoard({
   lanes,
+  queuedMore = 0,
   leaving,
   filter,
   now,
@@ -185,8 +188,11 @@ export function PipelineBoard({
 
   const grouped = groupByStage(cards);
   const live = cards.filter((card) => card.end === null);
+  // Queued files past the first page of files have no card; they are counted, not drawn, and only where downloads show.
+  const uncarded = (stage: PipelineStage) =>
+    stage === "queued" && filter !== "library" ? queuedMore : 0;
   const countAt = (stage: PipelineStage) =>
-    live.filter((card) => card.stage === stage).length;
+    live.filter((card) => card.stage === stage).length + uncarded(stage);
   const places = new Map<string, CardPlace>();
   const more: { stage: PipelineStage; left: number; titles: string }[] = [];
   PIPELINE_STAGES.forEach((stage, column) => {
@@ -247,7 +253,10 @@ export function PipelineBoard({
   return (
     <Panel
       title="Pipeline"
-      count={pipelineCount(live.length, allDoneBy(lanes, filter, now))}
+      count={pipelineCount(
+        live.length + uncarded("queued"),
+        allDoneBy(lanes, filter, now),
+      )}
     >
       <div ref={boardRef} className="mm-pipe" data-testid="pipeline-board">
         <div

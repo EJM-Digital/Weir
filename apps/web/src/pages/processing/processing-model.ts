@@ -4,8 +4,10 @@
  * the running pass's own progress from `GET /api/v1/processing/files`, library cleans from the job queue.
  */
 import { formatBytes } from "../../lib/format/bytes";
+import type { LiveProgressEntry } from "../../lib/activity/use-activity-stream-invalidation";
 import type { ProcessingFile } from "../../lib/processing/files-api";
 import type { ProcessingJobInspectionRow } from "../../lib/processing/jobs-inspection/types";
+import { mergeLiveProgress } from "../../lib/processing/live-progress-merge";
 import { baseName } from "../../lib/format/path";
 import { parseAppTime } from "../../lib/ui/mm-format-date";
 import { stepForStage, type FlowStepId } from "./stage-flow-model";
@@ -364,10 +366,39 @@ function byKey(a: { key: string }, b: { key: string }): number {
   return a.key.localeCompare(b.key, undefined, { numeric: true });
 }
 
+/**
+ * The files the board draws from: the general page with the Working lane's own fetch folded in, then the freshest live
+ * progress laid over them. The sidebar's count and the Pipeline both start here, so neither can hold a file the other
+ * has already moved on.
+ */
+export function boardFiles(
+  files: ProcessingFile[],
+  workingFiles: ProcessingFile[],
+  live: Readonly<Record<string, LiveProgressEntry>>,
+): ProcessingFile[] {
+  return mergeLiveProgress(mergeWorkingFiles(files, workingFiles), live);
+}
+
 /** How many cards the Working lane holds for these files and jobs, before the page's own filter. */
 export function countWorking(
   files: ProcessingFile[],
   libraryJobs: ProcessingJobInspectionRow[],
 ): number {
   return buildLanes(files, libraryJobs, new Map(), new Map()).working.length;
+}
+
+/**
+ * How many files the server counts as queued that the lanes hold no card for, because the page of files they were built
+ * from stops at its limit. `statusCounts` is the server's count over every file.
+ */
+export function queuedBeyondPage(
+  statusCounts: Readonly<Record<string, number>>,
+  lanes: Lanes,
+): number {
+  const counted =
+    (statusCounts.unprocessed ?? 0) + (statusCounts.out_of_schedule ?? 0);
+  const drawn = lanes.waiting.filter(
+    (item) => item.source === "download",
+  ).length;
+  return Math.max(0, counted - drawn);
 }

@@ -272,6 +272,34 @@ describe("the cards", () => {
       expect(card).toHaveAttribute("aria-hidden", "true");
   });
 
+  it("counts the queued files beyond the cards it has, and draws no more cards or words for them", () => {
+    render(
+      board(lanesOf([aFile(1, "unprocessed"), aFile(2, "unprocessed")]), {
+        queuedMore: 248,
+      }),
+    );
+
+    expect(
+      screen.getByRole("group", { name: "Queued: 250" }),
+    ).toBeInTheDocument();
+    expect(progressLine()).toHaveTextContent("250 in progress");
+    expect(screen.queryByText(/more →/)).toBeNull();
+  });
+
+  it("leaves out queued files it has no card for when only library cleaning is shown", () => {
+    render(
+      board(lanesOf([], [aCleanJob(9, "leased")]), {
+        filter: "library",
+        queuedMore: 40,
+      }),
+    );
+
+    expect(
+      screen.getByRole("group", { name: "Queued: 0" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/more →/)).toBeNull();
+  });
+
   it("says nothing about more when a station fits in its three rows", () => {
     render(board(lanesOf([1, 2, 3].map((id) => aFile(id, "unprocessed")))));
 
