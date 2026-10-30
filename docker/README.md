@@ -8,7 +8,7 @@ Weir publishes an all-in-one container image with:
 
 Images are published for `linux/amd64` and `linux/arm64`:
 
-- `ghcr.io/ejm-digital/weir:X.Y.Z` (the Git tag is `vX.Y.Z`; the image tag has no `v`), for example `1.0.0-rc.21`
+- `ghcr.io/ejm-digital/weir:X.Y.Z` (the Git tag is `vX.Y.Z`; the image tag has no `v`), for example `1.0.0-rc.22`
 - `ghcr.io/ejm-digital/weir:X.Y` and `ghcr.io/ejm-digital/weir:latest`, which follow stable releases only. A release candidate is published under its version tag alone, so these arrive with 1.0.0.
 
 This page is the full reference — every variable Weir reads, plus the recipes for common setups.
@@ -22,7 +22,7 @@ Make a folder, save this as `compose.yaml` inside it:
 ```yaml
 services:
   weir:
-    image: ghcr.io/ejm-digital/weir:1.0.0-rc.21
+    image: ghcr.io/ejm-digital/weir:1.0.0-rc.22
     container_name: weir
     ports:
       - "9347:9347"
@@ -68,7 +68,7 @@ people want:
 ```yaml
 services:
   weir:
-    image: ghcr.io/ejm-digital/weir:1.0.0-rc.21
+    image: ghcr.io/ejm-digital/weir:1.0.0-rc.22
     container_name: weir
     ports:
       - "9347:9347"
@@ -95,7 +95,7 @@ When one app tells another where a file is, that path has to mean the same thing
 ```yaml
 services:
   weir:
-    image: ghcr.io/ejm-digital/weir:1.0.0-rc.21
+    image: ghcr.io/ejm-digital/weir:1.0.0-rc.22
     container_name: weir
     ports:
       - "9347:9347"
@@ -160,7 +160,7 @@ docker run --rm \
   -e PORT=9400 \
   -p 9400:9400 \
   -v weir-data:/data/weir \
-  ghcr.io/ejm-digital/weir:1.0.0-rc.21
+  ghcr.io/ejm-digital/weir:1.0.0-rc.22
 ```
 
 With `network_mode: host` there is no `-p` mapping, so `PORT` is how you move Weir off 9347.
@@ -168,11 +168,11 @@ With `network_mode: host` there is no `-p` mapping, so `PORT` is how you move We
 ## `docker run` instead of Compose
 
 ```bash
-docker pull ghcr.io/ejm-digital/weir:1.0.0-rc.21
+docker pull ghcr.io/ejm-digital/weir:1.0.0-rc.22
 docker run --rm \
   -p 9347:9347 \
   -v weir-data:/data/weir \
-  ghcr.io/ejm-digital/weir:1.0.0-rc.21
+  ghcr.io/ejm-digital/weir:1.0.0-rc.22
 ```
 
 If you want to override defaults with an env file instead of inline `environment:` entries, copy
