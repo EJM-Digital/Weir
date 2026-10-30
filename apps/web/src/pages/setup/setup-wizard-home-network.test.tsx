@@ -197,7 +197,7 @@ describe("Setup: skip sign-in for devices on your home network", () => {
     finish();
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Current password is incorrect.",
+      "Current password is not correct.",
     );
     expect(saveSettingsMock).not.toHaveBeenCalled();
   });

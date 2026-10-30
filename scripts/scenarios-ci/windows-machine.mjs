@@ -1,6 +1,6 @@
 // The Windows PC under test, as the Windows scenarios ask about it: Setup and the uninstaller run for real, the tray and the server started
-// and stopped, the files, access lists and registry entries read. Every change it makes (installing, uninstalling, stopping Weir, running
-// the recovery command against the machine's own data folder) is meant for a clean GitHub-hosted runner and is refused anywhere else.
+// and stopped, the files, access lists and registry entries read. Every change it makes (installing, uninstalling, stopping Weir) is meant for a
+// clean GitHub-hosted runner and is refused anywhere else.
 import { execFile, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
@@ -12,7 +12,6 @@ import { pollUntil } from "../docker-smoke/poll.mjs";
 const POWERSHELL = "powershell.exe";
 // Hang guards: each ends the moment the thing it waits for has happened.
 const SETUP_CEILING_MS = 600_000;
-const RECOVER_CEILING_MS = 120_000;
 const STOP_CEILING_MS = 60_000;
 const RUN_CEILING_MS = 120_000;
 
@@ -411,33 +410,6 @@ public static class ProcessEnvironment {
   /** Runs `WeirServer.exe --version` and returns what it prints. */
   async serverVersion() {
     return (await run(this.paths.serverExe, ["--version"], { env: consoleEnvironment(this.#env) })).trim();
-  }
-
-  /**
-   * Runs the installed `WeirServer.exe recover` as a person's console does: stdin closed so nothing can be prompted, none of the variables
-   * the tray gives the server, and no data folder named, so the command must find the one the installed Weir uses. Never throws on the exit code.
-   */
-  recover(args) {
-    return new Promise((resolve, reject) => {
-      const child = spawn(this.paths.serverExe, ["recover", ...args], { stdio: ["pipe", "pipe", "pipe"], windowsHide: true, env: consoleEnvironment(this.#env) });
-      child.stdin.end();
-      let stdout = "";
-      let stderr = "";
-      child.stdout.on("data", (chunk) => (stdout += chunk));
-      child.stderr.on("data", (chunk) => (stderr += chunk));
-      const timer = setTimeout(() => {
-        child.kill();
-        reject(new Error(`WeirServer.exe recover did not finish within ${RECOVER_CEILING_MS / 1000} s.`));
-      }, RECOVER_CEILING_MS);
-      child.on("error", (error) => {
-        clearTimeout(timer);
-        reject(error);
-      });
-      child.on("close", (exitCode) => {
-        clearTimeout(timer);
-        resolve({ exitCode, stdout, stderr });
-      });
-    });
   }
 
   /** Where the tray keeps a secret of the runtime home, by file name. */

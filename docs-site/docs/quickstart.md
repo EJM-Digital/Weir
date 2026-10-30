@@ -66,6 +66,9 @@ the line starting "Weir has no account yet"), or open the `setup-code` file in t
 you mounted (`./weir-data/setup-code` in the compose recipe above). The Windows installer opens
 your browser on the same PC, so it never asks for this.
 
+Weir then shows ten **recovery codes**, once. Save them (Copy or Download as text) and tick that you have.
+They are the only way back in if you forget your password; see [Security](guides/security#locked-out).
+
 ## 3. Follow the setup wizard
 
 The setup wizard has three parts:

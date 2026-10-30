@@ -15,6 +15,7 @@ public static class ActivityEventTypes
     public const string AuthPasswordChanged = "auth.password_changed";
     public const string AuthUsernameChanged = "auth.username_changed";
     public const string AuthSessionsRevoked = "auth.sessions_revoked";
+    public const string AuthSignInRecovered = "auth.sign_in_recovered";
     public const string SystemReconciliationRepair = "system.reconciliation.repair";
 
     /// <summary>An admin chose who can reach Weir over the network, from System › About.</summary>

@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
+import { RecoveryCodesPrompt } from "../components/auth/recovery-codes-prompt";
 import { MainLandmark } from "../components/shared/page-loading";
 import { AppSidebar } from "../components/shell/app-sidebar";
 import { SignOutFailedBanner } from "../components/shell/sign-out-failed-banner";
@@ -55,6 +56,7 @@ export function AppShell() {
           />
           <LiveConnectionBanner />
           <SignOutFailedBanner />
+          <RecoveryCodesPrompt />
           <main className="mm-main" id="mm-main-content" tabIndex={-1}>
             <div className="mm-main-inner">
               <MainLandmark>

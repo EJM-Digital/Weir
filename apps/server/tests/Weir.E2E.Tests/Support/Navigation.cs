@@ -26,12 +26,13 @@ public static partial class Navigation
     {
         await page.GotoAsync($"{baseUrl.TrimEnd('/')}/", new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
         var setup = page.GetByTestId("setup-username");
+        var recoveryCodes = page.GetByTestId("setup-codes");
         var login = page.GetByTestId("login-username");
         var wizardSkip = page.GetByTestId("setup-wizard-skip");
         var shell = page.GetByTestId("shell-ready");
         for (var screen = 0; screen < MaxScreens; screen++)
         {
-            await Expect(setup.Or(login).Or(wizardSkip).Or(shell).First).ToBeVisibleAsync(new() { Timeout = UrlAssertMs });
+            await Expect(setup.Or(recoveryCodes).Or(login).Or(wizardSkip).Or(shell).First).ToBeVisibleAsync(new() { Timeout = UrlAssertMs });
             if (await shell.IsVisibleAsync())
             {
                 return;
@@ -44,6 +45,11 @@ public static partial class Navigation
                 await page.GetByTestId("setup-confirm-password").FillAsync(BootstrapPassword);
                 await page.GetByTestId("setup-submit").ClickAsync();
                 await Expect(setup).ToBeHiddenAsync(new() { Timeout = SubmitSettleMs });
+            }
+            else if (await recoveryCodes.IsVisibleAsync())
+            {
+                await SetupWizard.SaveRecoveryCodesAsync(page);
+                await Expect(recoveryCodes).ToBeHiddenAsync(new() { Timeout = SubmitSettleMs });
             }
             else if (await login.IsVisibleAsync())
             {

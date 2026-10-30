@@ -407,6 +407,226 @@
       }
     },
     {
+      "id": "api.auth.get-auth-recovery-codes",
+      "area": "api",
+      "behaviour": "GET /api/v1/auth/recovery-codes",
+      "kind": "API route",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryCodesApiTests.cs",
+          "name": "An_account_that_has_no_codes_says_so"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryCodesApiTests.cs",
+          "name": "Every_recovery_code_route_needs_a_signed_in_user"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryCodesApiTests.cs",
+          "name": "Saying_the_set_was_saved_is_remembered_until_a_newer_set_is_made"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteAccessTests.cs",
+          "name": "RouteAccessTests"
+        }
+      ],
+      "covers": [
+        "route:GET /api/v1/auth/recovery-codes"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "api.auth.post-auth-recovery-codes",
+      "area": "api",
+      "behaviour": "POST /api/v1/auth/recovery-codes",
+      "kind": "API route",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryCodesApiTests.cs",
+          "name": "A_new_set_needs_the_current_password_and_the_confirmation_token"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryCodesApiTests.cs",
+          "name": "A_new_set_is_shown_once_kept_only_as_hashes_and_voids_the_set_before_it"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Infrastructure.Tests/Auth/AuthServiceRecoveryTests.cs",
+          "name": "A_new_set_is_ten_codes_kept_only_as_hashes_and_a_newer_set_voids_the_older"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthRecoveryTests.cs",
+          "name": "A_new_set_voids_the_old_codes_and_wrong_codes_are_limited_like_sign_in"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryCodesApiTests.cs",
+          "name": "A_wrong_password_for_a_new_set_counts_against_the_account_and_is_limited"
+        }
+      ],
+      "covers": [
+        "route:POST /api/v1/auth/recovery-codes"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "api.auth.post-auth-recovery-codes-confirm",
+      "area": "api",
+      "behaviour": "POST /api/v1/auth/recovery-codes/confirm",
+      "kind": "API route",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryCodesApiTests.cs",
+          "name": "Saying_the_set_was_saved_is_remembered_until_a_newer_set_is_made"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryCodesApiTests.cs",
+          "name": "Every_recovery_code_route_needs_a_signed_in_user"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
+        }
+      ],
+      "covers": [
+        "route:POST /api/v1/auth/recovery-codes/confirm"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "api.auth.post-auth-recovery-code",
+      "area": "api",
+      "behaviour": "POST /api/v1/auth/recovery/code",
+      "kind": "API route",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryApiTests.cs",
+          "name": "A_code_shows_the_username_ends_every_session_and_the_new_password_signs_in"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryApiTests.cs",
+          "name": "The_code_is_spent_even_when_the_new_password_is_never_chosen"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryApiTests.cs",
+          "name": "A_wrong_code_is_refused_and_neither_it_nor_a_good_one_is_ever_logged"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryApiTests.cs",
+          "name": "Five_tries_from_one_address_in_ten_minutes_are_allowed_and_the_sixth_waits_even_with_a_good_code"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryApiTests.cs",
+          "name": "Five_tries_from_all_addresses_together_are_allowed_and_a_sixth_from_a_new_address_waits"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryApiTests.cs",
+          "name": "Every_alert_that_is_set_up_hears_of_the_recovery_and_is_not_told_the_code"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthRecoveryTests.cs",
+          "name": "A_recovery_ends_every_session_and_leaves_the_media_managers_key_working"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
+        }
+      ],
+      "covers": [
+        "route:POST /api/v1/auth/recovery/code"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "api.auth.post-auth-recovery-password",
+      "area": "api",
+      "behaviour": "POST /api/v1/auth/recovery/password",
+      "kind": "API route",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryApiTests.cs",
+          "name": "A_password_that_is_too_weak_is_refused_and_the_same_token_takes_a_better_one"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryApiTests.cs",
+          "name": "A_token_that_is_not_ours_or_was_used_already_is_refused"
+        },
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryApiTests.cs",
+          "name": "A_recovery_clears_the_wait_a_forgotten_password_had_built_up"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthRecoveryTests.cs",
+          "name": "Setup_shows_ten_codes_and_one_of_them_gets_the_owner_back_in_with_a_new_password"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/RouteCheckOrderTests.cs",
+          "name": "RouteCheckOrderTests"
+        }
+      ],
+      "covers": [
+        "route:POST /api/v1/auth/recovery/password"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
       "id": "api.auth.post-auth-theme",
       "area": "api",
       "behaviour": "POST /api/v1/auth/theme",
@@ -13985,11 +14205,6 @@
           "name": "StartupSettingWarningsTests"
         },
         {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/Auth/RecoverCommandTests.cs",
-          "name": "RecoverCommandTests"
-        },
-        {
           "type": "scenario",
           "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
           "name": "first-visit-account"
@@ -18645,11 +18860,6 @@
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
           "name": "A_blank_name_and_passwords_that_differ_are_refused_before_anything_is_sent_and_typing_clears_the_reason"
-        },
-        {
-          "type": "e2e",
-          "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
-          "name": "A_name_that_is_taken_is_refused_with_409_and_a_new_name_then_creates_the_account"
         }
       ],
       "needs": {
@@ -18713,22 +18923,12 @@
         {
           "type": "contract",
           "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthBootstrapTests.cs",
-          "name": "Bootstrap_username_conflict_returns_409"
-        },
-        {
-          "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthBootstrapTests.cs",
           "name": "Bootstrap_rejects_common_password"
         },
         {
           "type": "e2e",
           "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
           "name": "The_server_refuses_a_weak_password_in_its_own_words_and_the_form_keeps_what_was_typed"
-        },
-        {
-          "type": "e2e",
-          "file": "apps/server/tests/Weir.E2E.Tests/CreateAccountTests.cs",
-          "name": "A_name_that_is_taken_is_refused_with_409_and_a_new_name_then_creates_the_account"
         },
         {
           "type": "e2e",
@@ -52888,59 +53088,6 @@
       }
     },
     {
-      "id": "platform.platform.account-recovery-weirserver-exe-recover-for-a-user-locked",
-      "area": "platform",
-      "behaviour": "Account recovery: `WeirServer.exe recover` for a user locked out (lists accounts, resets the password, revokes sessions, records an Activity event)",
-      "kind": "install-update",
-      "severity": "high",
-      "touches": "install",
-      "required": "real",
-      "proofs": [
-        {
-          "type": "container-smoke",
-          "file": "scripts/docker-smoke/docker-stack.mjs",
-          "name": "*"
-        },
-        {
-          "type": "package-smoke",
-          "file": "scripts/smoke-windows-recover.ps1",
-          "name": "*"
-        },
-        {
-          "type": "scenario",
-          "file": "scripts/scenarios/Weir.Scenarios.Catalog.ps1",
-          "name": "recover-locked-out-account"
-        },
-        {
-          "type": "node",
-          "file": "scripts/recover-output.test.mjs",
-          "name": "*"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Infrastructure.Tests/Auth/RecoverCommandTests.cs",
-          "name": "RecoverCommandTests"
-        },
-        {
-          "type": "contract",
-          "file": "apps/server/tests/Weir.Contract.Tests/Auth/BootstrapInactiveAdminTests.cs",
-          "name": "Recovering_from_an_inactive_admin_leaves_exactly_one"
-        },
-        {
-          "type": "scenario",
-          "file": "scripts/scenarios-ci/windows-install.mjs",
-          "name": "recover-locked-out-account"
-        }
-      ],
-      "covers": [
-        "scenario:recover-locked-out-account"
-      ],
-      "audit": {
-        "id": "PLAT-20",
-        "verdict": "Covered"
-      }
-    },
-    {
       "id": "platform.platform.backup-and-restore-configuration-backups-manual-and-scheduled-newest",
       "area": "platform",
       "behaviour": "Backup and restore: configuration backups (manual and scheduled, newest five kept), export/download, restore with validation of every row, restore into another install",
@@ -58678,7 +58825,12 @@
         {
           "type": "vitest",
           "file": "apps/web/src/pages/setup/setup-page-requests.test.tsx",
-          "name": "creates the account with the trimmed username and a fresh secure token, then opens the app"
+          "name": "creates the account with the trimmed username and a fresh secure token, then shows the recovery codes before anything else"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/setup/setup-page-requests.test.tsx",
+          "name": "waits on the codes until they are saved, however setup is read again meanwhile, then opens the app"
         },
         {
           "type": "vitest",
@@ -58698,6 +58850,510 @@
       ],
       "covers": [
         "action:apps/web/src/pages/setup/setup-page.tsx#setup-submit"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-shell.recover-page.get-back-in-with-a-recovery-code",
+      "area": "web-shell",
+      "behaviour": "/recover: a recovery code shows the username, then a new password entered twice sets it",
+      "kind": "screen action",
+      "severity": "high",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "sends the code as typed, trimmed, with a fresh token, and shows the username it belongs to"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "sets the password with the token the code gave, says the password is changed, and Go to sign in opens sign-in"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RecoveryCodesTests.cs",
+          "name": "RecoveryCodesTests"
+        }
+      ],
+      "covers": [
+        "web:/recover"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.components-auth-recovery-codes-prompt.recovery-prompt-later",
+      "area": "web-routes",
+      "behaviour": "The control recovery-prompt-later in components/auth/recovery-codes-prompt.tsx puts the prompt aside until the next sign-in",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/recovery-codes-prompt.test.tsx",
+          "name": "puts itself aside for this sign-in on Not now, and stays gone"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/components/auth/recovery-codes-prompt.tsx#recovery-prompt-later"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.components-auth-recovery-codes-prompt.recovery-prompt-make",
+      "area": "web-routes",
+      "behaviour": "The control recovery-prompt-make in components/auth/recovery-codes-prompt.tsx takes the person to System › Security to make the set",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/recovery-codes-prompt.test.tsx",
+          "name": "takes the person to System › Security to make the set, and is put aside on the way"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/components/auth/recovery-codes-prompt.tsx#recovery-prompt-make"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.components-auth-save-recovery-codes.recovery-codes-download",
+      "area": "web-routes",
+      "behaviour": "The control recovery-codes-download in components/auth/save-recovery-codes.tsx downloads the codes as a text file",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/save-recovery-codes.test.tsx",
+          "name": "downloads the codes as a text file with a short note and one code to a line"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RecoveryCodesTests.cs",
+          "name": "RecoveryCodesTests"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/components/auth/save-recovery-codes.tsx#recovery-codes-download"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.components-auth-save-recovery-codes.recovery-codes-saved",
+      "area": "web-routes",
+      "behaviour": "The control recovery-codes-saved in components/auth/save-recovery-codes.tsx says the codes are saved, which lets setup continue",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/save-recovery-codes.test.tsx",
+          "name": "does not continue until the person says they saved them, then tells Weir and carries on"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/save-recovery-codes.test.tsx",
+          "name": "can be unticked again, which stops it continuing"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RecoveryCodesTests.cs",
+          "name": "RecoveryCodesTests"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/components/auth/save-recovery-codes.tsx#recovery-codes-saved"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.components-auth-save-recovery-codes.recovery-codes-continue",
+      "area": "web-routes",
+      "behaviour": "The control recovery-codes-continue in components/auth/save-recovery-codes.tsx tells Weir the codes are saved and carries on",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/save-recovery-codes.test.tsx",
+          "name": "does not continue until the person says they saved them, then tells Weir and carries on"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/save-recovery-codes.test.tsx",
+          "name": "says it is saving while Weir answers and cannot be pressed twice"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/save-recovery-codes.test.tsx",
+          "name": "stays on the codes and says why when Weir cannot be told, and tries again"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RecoveryCodesTests.cs",
+          "name": "RecoveryCodesTests"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/components/auth/save-recovery-codes.tsx#recovery-codes-continue"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-auth-login-page.login-forgot",
+      "area": "web-routes",
+      "behaviour": "The control login-forgot in pages/auth/login-page.tsx opens the recovery page",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/login-page.test.tsx",
+          "name": "offers a way back in for a forgotten username or password"
+        },
+        {
+          "type": "e2e",
+          "file": "apps/server/tests/Weir.E2E.Tests/RecoveryCodesTests.cs",
+          "name": "RecoveryCodesTests"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/auth/login-page.tsx#login-forgot"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-auth-recover-page.recover-code-form",
+      "area": "web-routes",
+      "behaviour": "The control recover-code-form in pages/auth/recover-page.tsx takes a recovery code",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "sends the code as typed, trimmed, with a fresh token, and shows the username it belongs to"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "sends nothing for an empty code and says so"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/auth/recover-page.tsx#recover-code-form"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-auth-recover-page.recover-code",
+      "area": "web-routes",
+      "behaviour": "The control recover-code in pages/auth/recover-page.tsx is the recovery code box",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "sends the code as typed, trimmed, with a fresh token, and shows the username it belongs to"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/auth/recover-page.tsx#recover-code"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-auth-recover-page.recover-code-submit",
+      "area": "web-routes",
+      "behaviour": "The control recover-code-submit in pages/auth/recover-page.tsx uses the code and says why when it is refused",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "shows Weir's own reason when the code is refused, and takes another"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "says when too many tries have been made"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "says it is checking while Weir answers and cannot be pressed twice"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/auth/recover-page.tsx#recover-code-submit"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-auth-recover-password-step.recover-password-form",
+      "area": "web-routes",
+      "behaviour": "The control recover-password-form in pages/auth/recover-password-step.tsx takes the new password twice",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "sends nothing when the password is shorter than eight characters"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "sends nothing when the two passwords differ"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/auth/recover-password-step.tsx#recover-password-form"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-auth-recover-password-step.recover-password-submit",
+      "area": "web-routes",
+      "behaviour": "The control recover-password-submit in pages/auth/recover-password-step.tsx sets the new password",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "sets the password with the token the code gave, says the password is changed, and Go to sign in opens sign-in"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "shows Weir's own reason for a password it refuses, keeps the form, and takes a better one"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "clears an earlier reason of its own when the next try is sent"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/auth/recover-password-step.tsx#recover-password-submit"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-auth-recover-password-step.recover-start-again",
+      "area": "web-routes",
+      "behaviour": "The control recover-start-again in pages/auth/recover-password-step.tsx goes back to asking for a recovery code",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "goes back to asking for a code when the person wants to use another"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/auth/recover-password-step.tsx#recover-start-again"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.components-auth-password-dialog.password-dialog-field",
+      "area": "web-routes",
+      "behaviour": "The control password-dialog-field in components/auth/password-dialog.tsx is the current password box",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/password-dialog.test.tsx",
+          "name": "asks for the current password and hands it over on Confirm"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/components/auth/password-dialog.tsx#password-dialog-field"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.components-auth-password-dialog.password-dialog-cancel",
+      "area": "web-routes",
+      "behaviour": "The control password-dialog-cancel in components/auth/password-dialog.tsx closes the dialog and changes nothing",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/password-dialog.test.tsx",
+          "name": "cancels, and is held still while a request is out"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/components/auth/password-dialog.tsx#password-dialog-cancel"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.components-auth-password-dialog.password-dialog-confirm",
+      "area": "web-routes",
+      "behaviour": "The control password-dialog-confirm in components/auth/password-dialog.tsx hands the password over, or says it is missing",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/password-dialog.test.tsx",
+          "name": "asks for the current password and hands it over on Confirm"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/components/auth/password-dialog.test.tsx",
+          "name": "sends nothing for an empty box and says what is missing, before any reason the server gave"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/components/auth/password-dialog.tsx#password-dialog-confirm"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-auth-recover-password-step.recover-sign-in",
+      "area": "web-routes",
+      "behaviour": "The control recover-sign-in in pages/auth/recover-password-step.tsx opens sign-in once the password is changed",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/auth/recover-page.test.tsx",
+          "name": "sets the password with the token the code gave, says the password is changed, and Go to sign in opens sign-in"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/auth/recover-password-step.tsx#recover-sign-in"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "web-routes.pages-system-tabs-security-recovery-codes-section.recovery-make",
+      "area": "web-routes",
+      "behaviour": "The control recovery-make in System › Security makes a new set of recovery codes after the current password",
+      "kind": "screen action",
+      "severity": "medium",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/recovery-codes-section.test.tsx",
+          "name": "makes new codes with the current password asked for in a dialog, shows them once, and counts them as unsaved until the person says so"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/recovery-codes-section.test.tsx",
+          "name": "asks for the password before sending anything"
+        },
+        {
+          "type": "vitest",
+          "file": "apps/web/src/pages/system/tabs/security/recovery-codes-section.test.tsx",
+          "name": "shows Weir's own reason for a wrong password and keeps the old codes"
+        }
+      ],
+      "covers": [
+        "action:apps/web/src/pages/system/tabs/security/recovery-codes-section.tsx#recovery-make"
       ],
       "audit": {
         "id": "inventory",
@@ -59317,6 +59973,34 @@
       ],
       "covers": [
         "event:auth.password_changed"
+      ],
+      "audit": {
+        "id": "inventory",
+        "verdict": "Covered"
+      }
+    },
+    {
+      "id": "events.auth.auth-sign-in-recovered",
+      "area": "events",
+      "behaviour": "Weir records \"Password reset with a recovery code. Every signed-in session was ended.\" in Activity (auth.sign_in_recovered)",
+      "kind": "event",
+      "severity": "low",
+      "touches": "none",
+      "required": "inproc",
+      "proofs": [
+        {
+          "type": "xunit",
+          "file": "apps/server/tests/Weir.Api.Tests/Platform/AuthRecoveryApiTests.cs",
+          "name": "A_code_shows_the_username_ends_every_session_and_the_new_password_signs_in"
+        },
+        {
+          "type": "contract",
+          "file": "apps/server/tests/Weir.Contract.Tests/Auth/AuthRecoveryTests.cs",
+          "name": "A_recovery_is_written_to_activity_with_the_codes_left_and_no_code_is_in_the_log"
+        }
+      ],
+      "covers": [
+        "event:auth.sign_in_recovered"
       ],
       "audit": {
         "id": "inventory",
@@ -60413,11 +61097,6 @@
           "type": "xunit",
           "file": "apps/server/tests/Weir.Api.Tests/StartRefusalTests.cs",
           "name": "A_settings_error_is_printed_and_left_as_a_note_with_a_headline_of_its_own"
-        },
-        {
-          "type": "xunit",
-          "file": "apps/server/tests/Weir.Api.Tests/StartRefusalTests.cs",
-          "name": "A_command_that_is_not_starting_the_server_leaves_no_note"
         },
         {
           "type": "xunit",

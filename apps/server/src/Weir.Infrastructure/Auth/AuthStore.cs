@@ -6,7 +6,7 @@ using Weir.Infrastructure.Sqlite;
 
 namespace Weir.Infrastructure.Auth;
 
-/// <summary>The <c>users</c> and <c>user_sessions</c> tables and the queries sign-in, sessions and recovery run on them.</summary>
+/// <summary>The <c>users</c> and <c>user_sessions</c> tables and the queries sign-in and sessions run on them.</summary>
 public sealed class AuthStore
 {
     private const string UserColumns = "id, username, password_hash, role, is_active, app_theme";
@@ -21,9 +21,6 @@ public sealed class AuthStore
     {
         _changes = changes;
     }
-
-    public Task<long> CountActiveAdminsAsync(UnitOfWork uow) =>
-        Checked(uow).CountAsync("SELECT count(*) FROM users WHERE users.role = $role AND users.is_active IS 1", ("$role", UserRoles.Admin));
 
     public Task<long> CountUsersAsync(UnitOfWork uow) => Checked(uow).CountAsync("SELECT count(*) FROM users");
 
@@ -43,9 +40,6 @@ public sealed class AuthStore
             $"SELECT {UserColumns} FROM users WHERE lower(users.username) = $folded LIMIT 1 OFFSET 0",
             ReadUser,
             ("$folded", folded));
-
-    public Task<int> DeleteAdminsAsync(UnitOfWork uow) =>
-        Checked(uow).ExecuteAsync("DELETE FROM users WHERE users.role = $role", ("$role", UserRoles.Admin));
 
     /// <summary>Insert a user; <see cref="SqliteException"/> with a constraint code on a username clash.</summary>
     public async Task<long> InsertUserAsync(UnitOfWork uow, string username, string passwordHash, string role, bool isActive)
@@ -82,28 +76,6 @@ public sealed class AuthStore
             "UPDATE users SET app_theme=$theme, updated_at=CURRENT_TIMESTAMP WHERE users.id = $id",
             ("$theme", appTheme),
             ("$id", userId));
-
-    /// <summary>Every account, alphabetically.</summary>
-    public Task<List<UserRecord>> ListUsersByUsernameAsync(UnitOfWork uow) =>
-        Checked(uow).QueryAsync($"SELECT {UserColumns} FROM users ORDER BY users.username", ReadUser);
-
-    /// <summary>
-    /// The account to recover: the named account (case-insensitive), or — when no username is given — the
-    /// very first account by id (only meaningful when exactly one exists, the caller's job to check).
-    /// </summary>
-    public Task<UserRecord?> FindAccountForRecoveryAsync(UnitOfWork uow, string? username)
-    {
-        if (string.IsNullOrEmpty(username))
-        {
-            return Checked(uow).QuerySingleAsync($"SELECT {UserColumns} FROM users ORDER BY users.id LIMIT 1 OFFSET 0", ReadUser);
-        }
-
-        var folded = username.Trim().ToLowerInvariant();
-        return Checked(uow).QuerySingleAsync(
-            $"SELECT {UserColumns} FROM users WHERE lower(users.username) = $folded ORDER BY users.id LIMIT 1 OFFSET 0",
-            ReadUser,
-            ("$folded", folded));
-    }
 
     public Task<UserSessionRecord?> FindSessionByTokenHashAsync(UnitOfWork uow, string tokenHash) =>
         Checked(uow).QuerySingleAsync(
@@ -169,6 +141,18 @@ public sealed class AuthStore
         }
 
         return revoked;
+    }
+
+    /// <summary>Deletes every session of the user, signed in or ended: nobody stays signed in.</summary>
+    public async Task<int> DeleteSessionsForUserAsync(UnitOfWork uow, long userId)
+    {
+        var deleted = await Checked(uow).ExecuteAsync("DELETE FROM user_sessions WHERE user_sessions.user_id = $user", ("$user", userId)).ConfigureAwait(false);
+        if (deleted > 0)
+        {
+            SessionsChanged(uow);
+        }
+
+        return deleted;
     }
 
     public Task<long> CountActiveSessionsAsync(UnitOfWork uow, long userId, Timestamp now) =>

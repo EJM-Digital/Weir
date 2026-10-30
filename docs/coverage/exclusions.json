@@ -292,13 +292,6 @@
       "provedBy": "the docker-smoke job of ci-packaging.yml"
     },
     {
-      "id": "node-developer-reset-auth",
-      "file": ".github/workflows/ci.yml",
-      "marker": "scripts/dev-reset-auth.mjs",
-      "kind": "not-production",
-      "reason": "A helper a developer runs by hand to reset the sign-in of a local development database; CI never runs it and it ships nowhere."
-    },
-    {
       "id": "node-developer-stop-api",
       "file": ".github/workflows/ci.yml",
       "marker": "scripts/stop-dev-api-port.mjs",

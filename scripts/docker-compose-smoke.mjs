@@ -7,10 +7,6 @@
 //   upgrade      PLAT-16: the same on the previous release's image, then `down` and the build under test on the same volume. It opens the
 //                database, migrates it when the build's schema is newer, and leaves a copy of the old database in backups/pre-update.
 //                A release with a predecessor whose image cannot be pulled fails; only the first release has nothing to upgrade from.
-//   recover      PLAT-20: create the first account, a workflow and a saved setting; run the recovery command the way the Docker page tells a
-//                locked-out person to (`docker exec -u weir -e WEIR_HOME=/data/weir weir /opt/weir/Weir recover`). The password is reset, the
-//                forgotten one is refused, the new one signs in (also after a restart), the earlier session is ended, the workflow and setting
-//                are kept, and what the command printed is kept in the logs folder.
 //   entrypoint   The four below, one after the other, each on a stack of its own.
 //   identity     SET-E39, PLAT-15: WEIR_PUID and WEIR_PGID remap the weir account; the server runs as it; the data volume and the two
 //                generated secrets belong to it; the secrets are the same after a restart and a new container.
@@ -35,7 +31,6 @@ import { headRevision } from "./docker-smoke/database.mjs";
 import { refusesBadSettings, remapsAndKeepsSecrets, takesOverTheDataFolder } from "./docker-smoke/identity-scenarios.mjs";
 import { deliversIntoMediaFolder } from "./docker-smoke/media-folder-scenario.mjs";
 import { previousRelease } from "./docker-smoke/previous-image.mjs";
-import { recoverResetsPassword } from "./docker-smoke/recover.mjs";
 import { restartKeepsData, upgradeKeepsData } from "./docker-smoke/scenarios.mjs";
 import { run } from "./docker-smoke/shell.mjs";
 import { ORIGIN, Stack } from "./docker-smoke/docker-stack.mjs";
@@ -44,7 +39,7 @@ import { REPOSITORY } from "./repository.mjs";
 
 const SCHEMA_MIGRATOR = "apps/server/src/Weir.Infrastructure/Sqlite/SchemaMigrator.cs";
 const ENTRYPOINT_SCENARIOS = ["identity", "data-folder", "refusals", "media"];
-const SCENARIOS = ["restart", "upgrade", "recover", "entrypoint", ...ENTRYPOINT_SCENARIOS, "arm64"];
+const SCENARIOS = ["restart", "upgrade", "entrypoint", ...ENTRYPOINT_SCENARIOS, "arm64"];
 
 function publishedReleaseTags() {
   const repository = process.env.GITHUB_REPOSITORY || REPOSITORY;
@@ -83,10 +78,6 @@ async function runScenario(scenario, { candidate, releasing, previous, logs }) {
         return "The account, workflow and setting survived a restart and a down and up of the shipped compose.yaml.";
       case "upgrade":
         return await upgrade(world, { releasing, previous, scratch });
-      case "recover": {
-        const recovered = await recoverResetsPassword({ ...world, recording: join(logs, "recover", "printed") });
-        return `The documented recover command reset the password in the running container: the forgotten one is refused, the new one signs in (also after a restart), ${recovered.sessionsEnded} earlier session(s) ended, the workflow and setting kept.`;
-      }
       case "identity":
         await remapsAndKeepsSecrets(world);
         return "WEIR_PUID and WEIR_PGID remapped the account, the volume and both secrets belong to it, and the secrets outlived a restart and a new container.";

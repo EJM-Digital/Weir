@@ -1,6 +1,6 @@
 // A stand-in for a clean Windows runner and the Weir installed on it, small enough to read, for testing what the windows-install scenarios
-// decide: it installs and uninstalls, makes the tray's secrets, answers the routes the scenarios use, runs the recovery command the way the
-// real one behaves, and can be told to go wrong in the ways the scenarios must catch. The real ones are the runner and the Setup, in CI.
+// decide: it installs and uninstalls, makes the tray's secrets, answers the routes the scenarios use, and can be told to go wrong in the ways the
+// scenarios must catch. The real ones are the runner and the Setup, in CI.
 import { createHash, createHmac } from "node:crypto";
 import { join, relative, sep } from "node:path";
 
@@ -40,9 +40,6 @@ function signCsrf(secret) {
  * @param {boolean} [behaviour.uninstallLeavesRunning]
  * @param {boolean} [behaviour.reinstallReplacesSecrets]
  * @param {boolean} [behaviour.reinstallForgetsAccount]
- * @param {boolean} [behaviour.recoverLooksElsewhere] The recovery command opens some other data folder.
- * @param {boolean} [behaviour.recoverChangesNothing] It says it reset the password and did not.
- * @param {boolean} [behaviour.recoverKeepsSessions]
  * @param {string} [behaviour.warnsWhenStarted] A warning the server logs when it starts.
  * @param {number} [behaviour.jobsInFlight] How many times the job list is read, after each start, before the job Weir starts with ends.
  * @param {boolean} [behaviour.jobNeverEnds] The job Weir starts with does not end.
@@ -192,7 +189,6 @@ export class FakeWindows {
     runEntry: async () => null,
     trayMark: async () => this.#mark,
     serverVersion: async () => this.#behaviour.reportedVersion ?? this.#version,
-    recover: async (args) => this.#recover(args),
     secretPath: (name) => join(this.#home, name),
     ensureFolders: async () => undefined,
     exists: async (path) => path === this.paths.trayExe || path === this.paths.serverExe ? this.#installed : this.#files.has(this.#rel(path)),
@@ -241,7 +237,7 @@ export class FakeWindows {
     );
     this.#put(join("logs", "weir.log"), `${this.#files.get(join("logs", "weir.log")) ?? ""}${this.#behaviour.serverLogLine ?? "Weir started"}\n`);
     this.#updateWaiting = this.#installsItsOwnUpdates();
-    this.#db ??= { account: null, settings: { app_timezone: "UTC", log_retention_days: 30 }, libraries: [], activity: [], logs: [], paused: false };
+    this.#db ??= { account: null, settings: { app_timezone: "UTC", log_retention_days: 30 }, libraries: [], logs: [], paused: false };
     if (this.#behaviour.warnsWhenStarted) this.#db.logs.push({ source: "server", id: this.#db.logs.length + 1, at: this.#now, title: this.#behaviour.warnsWhenStarted });
     if (this.#interrupted) this.#db.logs.push({ source: "server", id: this.#db.logs.length + 1, at: this.#now, title: "Weir startup recovered interrupted work recovered_jobs={'processing_requeued': 1}" });
     this.#interrupted = false;
@@ -266,20 +262,6 @@ export class FakeWindows {
   setPaused(paused) {
     this.#db.paused = paused;
     this.calls.push(paused ? "pause" : "resume");
-  }
-
-  #recover(args) {
-    const done = (exitCode, stdout = "", stderr = "") => ({ exitCode, stdout, stderr });
-    if (args.includes("--help")) return done(0, "usage: Weir recover [--username USERNAME] [--password PASSWORD] [--list]\n  --username USERNAME\n  --password PASSWORD\n  --list\n");
-    const database = this.#behaviour.recoverLooksElsewhere ? join("C:", "Users", "runneradmin", "Weir", "data", "weir.sqlite3") : this.paths.database;
-    if (args.includes("--list")) return done(0, `Accounts in ${database}:\n  ${this.#db.account.username}  role=admin  active\n`);
-    const ended = this.#sessions.size;
-    const password = args[args.indexOf("--password") + 1];
-    if (!this.#behaviour.recoverChangesNothing) this.#db.account.password = password;
-    if (!this.#behaviour.recoverKeepsSessions) this.#sessions.clear();
-    this.#db.activity.push({ event_type: "auth.password_changed", title: "Password recovered from the server" });
-    const words = ended === 1 ? "1 signed-in session was ended" : `${ended} signed-in sessions were ended`;
-    return done(0, `Password reset for '${this.#db.account.username}'.\nThe account is active and has the admin role.\n${words}; sign in again with the new password.\n`, "--password stays in your shell history.\n");
   }
 
   // --- the server's side of the routes ------------------------------------------------------------------------------------------------
@@ -346,20 +328,12 @@ class FakeBrowser {
     return this.#cookie && this.#world.sessions.has(this.#cookie) && this.#world.db.account ? this.#world.db.account.username : null;
   }
 
-  async activeSessions() {
-    return [...this.#world.sessions].map((id) => ({ id }));
-  }
-
   async suiteSettings() {
     return { ...this.#world.db.settings };
   }
 
   async saveSuiteSettings(fields) {
     Object.assign(this.#world.db.settings, fields);
-  }
-
-  async activity(eventType) {
-    return this.#world.db.activity.filter((item) => item.event_type === eventType);
   }
 
   async createLibrary(fields) {

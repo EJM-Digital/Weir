@@ -426,6 +426,13 @@
             "title": "Message",
             "type": "string"
           },
+          "recovery_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recovery Codes",
+            "type": "array"
+          },
           "user": {
             "$ref": "#/components/schemas/UserPublic"
           },
@@ -437,7 +444,8 @@
         "required": [
           "message",
           "username",
-          "user"
+          "user",
+          "recovery_codes"
         ],
         "title": "BootstrapOut",
         "type": "object"
@@ -9770,6 +9778,206 @@
         "title": "ProcessingWhyHeldOut",
         "type": "object"
       },
+      "RecoveryCodeIn": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "csrf_token": {
+            "minLength": 1,
+            "title": "Csrf Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "csrf_token"
+        ],
+        "title": "RecoveryCodeIn",
+        "type": "object"
+      },
+      "RecoveryCodeOut": {
+        "properties": {
+          "codes_left": {
+            "title": "Codes Left",
+            "type": "integer"
+          },
+          "recovery_token": {
+            "title": "Recovery Token",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "recovery_token",
+          "codes_left"
+        ],
+        "title": "RecoveryCodeOut",
+        "type": "object"
+      },
+      "RecoveryCodesConfirmIn": {
+        "additionalProperties": false,
+        "properties": {
+          "csrf_token": {
+            "minLength": 1,
+            "title": "Csrf Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "csrf_token"
+        ],
+        "title": "RecoveryCodesConfirmIn",
+        "type": "object"
+      },
+      "RecoveryCodesConfirmOut": {
+        "properties": {
+          "confirmed": {
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "remaining": {
+            "title": "Remaining",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "remaining",
+          "confirmed",
+          "message"
+        ],
+        "title": "RecoveryCodesConfirmOut",
+        "type": "object"
+      },
+      "RecoveryCodesNewSetIn": {
+        "additionalProperties": false,
+        "properties": {
+          "csrf_token": {
+            "minLength": 1,
+            "title": "Csrf Token",
+            "type": "string"
+          },
+          "current_password": {
+            "minLength": 1,
+            "title": "Current Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "current_password",
+          "csrf_token"
+        ],
+        "title": "RecoveryCodesNewSetIn",
+        "type": "object"
+      },
+      "RecoveryCodesNewSetOut": {
+        "properties": {
+          "codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Codes",
+            "type": "array"
+          },
+          "confirmed": {
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "remaining": {
+            "title": "Remaining",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "message",
+          "codes",
+          "remaining",
+          "confirmed"
+        ],
+        "title": "RecoveryCodesNewSetOut",
+        "type": "object"
+      },
+      "RecoveryCodesStatusOut": {
+        "properties": {
+          "confirmed": {
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "remaining": {
+            "title": "Remaining",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "remaining",
+          "confirmed"
+        ],
+        "title": "RecoveryCodesStatusOut",
+        "type": "object"
+      },
+      "RecoveryPasswordIn": {
+        "additionalProperties": false,
+        "properties": {
+          "csrf_token": {
+            "minLength": 1,
+            "title": "Csrf Token",
+            "type": "string"
+          },
+          "new_password": {
+            "maxLength": 512,
+            "minLength": 8,
+            "title": "New Password",
+            "type": "string"
+          },
+          "recovery_token": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Recovery Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recovery_token",
+          "new_password",
+          "csrf_token"
+        ],
+        "title": "RecoveryPasswordIn",
+        "type": "object"
+      },
+      "RecoveryPasswordOut": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message",
+          "username"
+        ],
+        "title": "RecoveryPasswordOut",
+        "type": "object"
+      },
       "RejectSupportOut": {
         "description": "Whether the ``reject`` failure policy can be chosen for a set of linked managers.",
         "properties": {
@@ -13739,6 +13947,221 @@
           }
         },
         "summary": "Get Me",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/recovery-codes": {
+      "get": {
+        "description": "How many recovery codes the signed-in account has left, and whether the set was saved.",
+        "operationId": "get_recovery_codes_api_v1_auth_recovery_codes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryCodesStatusOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "summary": "Get Recovery Codes",
+        "tags": [
+          "auth"
+        ]
+      },
+      "post": {
+        "description": "Make a new set of ten recovery codes after the current password. The old codes stop working and the new ones are shown once.",
+        "operationId": "post_recovery_codes_api_v1_auth_recovery_codes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecoveryCodesNewSetIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryCodesNewSetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
+          }
+        },
+        "summary": "Post Recovery Codes",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/recovery-codes/confirm": {
+      "post": {
+        "description": "Say that the codes shown were saved.",
+        "operationId": "post_recovery_codes_confirm_api_v1_auth_recovery_codes_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecoveryCodesConfirmIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryCodesConfirmOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
+          }
+        },
+        "summary": "Post Recovery Codes Confirm",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/recovery/code": {
+      "post": {
+        "description": "Spend a recovery code from the sign-in page: ends every session, records it in Activity, tells the alerts that are set up and returns the username and a token for choosing a new password. Rate limited per address and overall.",
+        "operationId": "post_recovery_code_api_v1_auth_recovery_code_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecoveryCodeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryCodeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
+          }
+        },
+        "summary": "Post Recovery Code",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/recovery/password": {
+      "post": {
+        "description": "Set the new password for the account a spent recovery code opened.",
+        "operationId": "post_recovery_password_api_v1_auth_recovery_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecoveryPasswordIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryPasswordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DatabaseBusy"
+          }
+        },
+        "summary": "Post Recovery Password",
         "tags": [
           "auth"
         ]

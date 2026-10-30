@@ -1,7 +1,7 @@
 // node --test scripts/scenarios-vm-run.test.mjs
 // What the golden-VM scenario suite got wrong on its first run of 1.0.0-rc.19, each pinned with the shape it was found in: the update scenario
 // began before Deluno's picker had finished installing Weir, the Deluno scenarios skipped for want of a library and a hand-off that nothing had
-// set up (the run now sets them up through Deluno's API), and the recover scenario's deliberate refused sign-in was taken for trouble by the log
+// set up (the run now sets them up through Deluno's API), and a deliberate refused sign-in was taken for trouble by the log
 // watch. Windows PowerShell exists on Windows only, so elsewhere these tests are skipped.
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
@@ -496,12 +496,6 @@ test("a sign-in a scenario makes on purpose is named for that scenario alone: th
   assert.match(lines[2], /^next-scenario: FAILED the server log file gained no unexpected warning or error \(found 1: WARNING auth event: login failed\)$/);
   assert.match(lines[3], /^something-else: FAILED the server log file gained no unexpected warning or error \(found 1: ERROR something else broke\)$/);
   assert.match(lines[4], /^no-watch: FAILED A log row was named as caused on purpose with no log watch running/);
-  const recover = readFileSync(join(scenarios, "Weir.Scenarios.Recover.ps1"), "utf8");
-  assert.match(
-    recover,
-    /Add-ExpectedLogRow -Pattern 'auth event: login failed'[^\n]*\n\s*\$withForgotten = Invoke-Weir/,
-    "the recover scenario names the refused sign-in before it makes it",
-  );
 });
 
 test("the Logs page excuses the Activity entry a deliberate refused sign-in leaves, by the title the page gives it, for that scenario alone", { skip }, () => {

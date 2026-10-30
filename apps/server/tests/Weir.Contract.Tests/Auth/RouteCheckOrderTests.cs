@@ -38,6 +38,8 @@ public sealed class RouteCheckOrderTests(RouteAccessFixture fixture) : IClassFix
         ["POST /api/v1/auth/login"] = "Signing in is anonymous by design; the sign-in limits and the token come with the request.",
         ["POST /api/v1/auth/bootstrap"] = "Creating the first account is anonymous by design, and refused once an account exists.",
         ["POST /api/v1/auth/logout"] = "Ending a session needs no sign-in.",
+        ["POST /api/v1/auth/recovery/code"] = "A person who forgot the password has no session; the code is the proof, behind the recovery rate limits.",
+        ["POST /api/v1/auth/recovery/password"] = "Follows a spent recovery code; the signed token it gave is the proof.",
         ["POST /api/v1/intake/webhook/{source_key}"] = "A media manager proves itself with its webhook secret, which is checked with the body.",
         ["POST /api/v1/intake/handoffs/{source_key}/{handoff_id}/outcome"] = "A media manager proves itself with its webhook secret, which is checked with the body.",
         ["DELETE /api/v1/intake/handoffs/{source_key}/{handoff_id}"] = "A media manager proves itself with its webhook secret; the route reads no body.",

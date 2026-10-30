@@ -29,7 +29,7 @@ export const read = (file) => readFileSync(file, "utf8").replace(/^\uFEFF/, "");
 
 /** A scenario proof: a golden-VM script, or a module of the scenarios that run in CI (scripts/scenarios-ci/), where each scenario is a quoted key of the module's registry. */
 export const SCENARIO_FILE = /^scripts\/scenarios\/.+\.ps1$|^scripts\/scenarios-ci\/[a-z]+(?:-[a-z]+)*\.mjs$/;
-/** The Windows package smokes: the package itself and the recovery command. */
+/** The Windows package smoke: the packaged server and installer. */
 export const PACKAGE_SMOKE_FILE = /^scripts\/smoke-windows-[a-z]+\.ps1$/;
 /** A packaging script that starts the shipped container (and, below, the workflows whose steps do). */
 const CONTAINER_SCRIPT = /(?:^|\/)scripts\/(?:[^/]*\/)*[^/]*(?:docker|compose|container)[^/]*\.(?:mjs|ps1|sh)$/;

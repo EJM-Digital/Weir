@@ -248,3 +248,61 @@
 .mm-entry-detail {
   font-family: var(--mm-font-mono);
 }
+
+/* Recovery codes, shown once (components/auth/save-recovery-codes.tsx): on the first-run screen, in the prompt after sign-in and in
+   System › Security. */
+.mm-recovery {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.mm-recovery__warning {
+  margin: 0;
+  font-size: var(--mm-type-body);
+  line-height: 1.5;
+  color: var(--mm-text2);
+}
+
+.mm-recovery__codes {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 16px;
+  margin: 0;
+  padding: 12px 14px;
+  list-style: none;
+  background: var(--mm-input-bg);
+  border: 1px solid var(--mm-panel-border);
+  border-radius: var(--mm-radius-field);
+  font-family: var(--mm-font-mono);
+  font-size: var(--mm-type-body);
+  color: var(--mm-text);
+}
+
+@media (max-width: 420px) {
+  .mm-recovery__codes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.mm-recovery__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.mm-recovery__check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--mm-type-body);
+  color: var(--mm-text);
+}
+
+.mm-recovery__check input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--mm-accent);
+}

@@ -199,7 +199,7 @@ public sealed class ExternalJsonPoster : IExternalJsonPoster
 }
 
 /// <summary>Delivers notifications to Discord and webhook channels.</summary>
-public sealed class NotificationDispatcher
+public sealed partial class NotificationDispatcher
 {
     private static readonly TimeSpan DispatchTimeout = TimeSpan.FromSeconds(10);
     private readonly IExternalJsonPoster _poster;
@@ -312,23 +312,29 @@ public sealed class NotificationDispatcher
                 return;
             }
 
-            foreach (var channel in channels)
+            await DeliverAsync(channels, title, detail, jobEvent, module, jobId, jobKind, warn).ConfigureAwait(false);
+        }));
+    }
+
+    private async Task DeliverAsync(
+        IEnumerable<NotificationChannelRecord> channels, string title, string detail, string jobEvent, string module, long jobId, string jobKind, Action<string, Exception?> warn)
+    {
+        foreach (var channel in channels)
+        {
+            try
             {
-                try
+                var status = await PostOneAsync(channel, title, detail, jobEvent, module, jobId, jobKind, CancellationToken.None).ConfigureAwait(false);
+                if (status >= 400)
                 {
-                    var status = await PostOneAsync(channel, title, detail, jobEvent, module, jobId, jobKind, CancellationToken.None).ConfigureAwait(false);
-                    if (status >= 400)
-                    {
-                        warn($"The alert \"{channel.Label}\" was not delivered, and Weir will not send it again. {ExternalUrlPolicy.DestinationRefused(status)}", null);
-                    }
-                }
-                catch (Exception exception) when (exception is ExternalEndpointException or HttpRequestException or IOException or OperationCanceledException)
-                {
-                    var message = exception is ExternalEndpointException ? exception.Message : ExternalUrlPolicy.GenericDeliveryError;
-                    warn($"The alert \"{channel.Label}\" was not delivered, and Weir will not send it again. {message}", null);
+                    warn($"The alert \"{channel.Label}\" was not delivered, and Weir will not send it again. {ExternalUrlPolicy.DestinationRefused(status)}", null);
                 }
             }
-        }));
+            catch (Exception exception) when (exception is ExternalEndpointException or HttpRequestException or IOException or OperationCanceledException)
+            {
+                var message = exception is ExternalEndpointException ? exception.Message : ExternalUrlPolicy.GenericDeliveryError;
+                warn($"The alert \"{channel.Label}\" was not delivered, and Weir will not send it again. {message}", null);
+            }
+        }
     }
 
     /// <summary>

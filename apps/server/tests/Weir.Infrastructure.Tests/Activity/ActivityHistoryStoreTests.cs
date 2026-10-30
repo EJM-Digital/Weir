@@ -93,8 +93,8 @@ public sealed class ActivityHistoryStoreTests
     [Fact]
     public async Task The_latest_poll_notifies_of_a_row_written_on_a_connection_the_notifier_never_saw_commit()
     {
-        // A raw insert with no unit of work and no ActivityNotifications.Track call, like `weir recover`'s
-        // own connection or a restored backup: only the poll, not a commit signal, can tell the notifier.
+        // A raw insert with no unit of work and no ActivityNotifications.Track call, like a restored backup:
+        // only the poll, not a commit signal, can tell the notifier.
         // The poll only checks while a stream is open, so this needs one waiting.
         //
         // The wait uses a clock that never advances on its own instead of TimeProvider.System: a real timeout

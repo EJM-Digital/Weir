@@ -30,7 +30,16 @@ vi.mock("../lib/auth/queries", () => ({
   useMeQuery: () => ({ data: { role: "operator", username: "ann.lee" } }),
   useCurrentSessionQuery: () => ({ data: { session_id: session.id } }),
   useSetThemeMutation: () => ({ mutate: vi.fn(), isError: false }),
+  useRecoveryCodesQuery: () => ({ data: recoveryCodes.status }),
 }));
+
+// The prompt for recovery codes sits in the shell; a set that was saved asks for nothing.
+const recoveryCodes = {
+  status: { remaining: 10, confirmed: true } as {
+    remaining: number;
+    confirmed: boolean;
+  },
+};
 
 const pauseState = {
   paused: false,
@@ -101,6 +110,7 @@ describe("AppShell", () => {
     pauseState.paused = false;
     pauseState.reason = "";
     readiness.isError = false;
+    recoveryCodes.status = { remaining: 10, confirmed: true };
   });
 
   it("opens on the Dashboard; there is no Home, Processing or History entry", () => {
@@ -265,6 +275,19 @@ describe("AppShell", () => {
     expect(toggle).toHaveAttribute("aria-label", "Expand navigation");
     fireEvent.click(toggle);
     expect(sidebar).not.toHaveClass("mm-sidebar--collapsed");
+  });
+
+  it("asks for recovery codes while the account has no saved set, and not once it has one", () => {
+    recoveryCodes.status = { remaining: 0, confirmed: false };
+    const { unmount } = renderShell("/");
+    expect(
+      screen.getByRole("dialog", { name: "Make your recovery codes" }),
+    ).toBeInTheDocument();
+    unmount();
+
+    recoveryCodes.status = { remaining: 10, confirmed: true };
+    renderShell("/");
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("names Weir after the machine in the browser tab and the sidebar", () => {

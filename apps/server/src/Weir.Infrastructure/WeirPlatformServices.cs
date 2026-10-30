@@ -59,6 +59,7 @@ public static class WeirPlatformServices
         // Auth, Activity, Notifications and Suite settings: instance stores over UnitOfWork, stateless
         // themselves, so one shared instance serves every request.
         services.TryAddSingleton<AuthStore>();
+        services.TryAddSingleton<RecoveryCodeStore>();
         services.TryAddSingleton<ActivityHistoryStore>();
         services.TryAddSingleton<ActivityStore>();
         services.TryAddSingleton<OperationalHistoryStore>();

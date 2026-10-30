@@ -224,7 +224,7 @@ describe("Security: skip sign-in for devices on your home network", () => {
     save();
 
     expect(await within(card()).findByRole("alert")).toHaveTextContent(
-      "Current password is incorrect.",
+      "Current password is not correct.",
     );
     expect(switchControl()).toBeChecked();
   });

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { errorMessage } from "../../../../lib/api/error-message";
 import type { ProcessingRuleSetWrite } from "../../../../lib/processing/rule-sets-api";
@@ -38,6 +38,10 @@ export function useRulesPreview({
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  // The last request sent, and a change that came while one was running: the server runs one preview at a time and answers a
+  // second with 409, which would wipe the result of the first.
+  const sent = useRef<ProcessingRulesPreviewRequest | null>(null);
+  const waiting = useRef<ProcessingRulesPreviewRequest | null>(null);
 
   const path =
     target.mode === "library"
@@ -55,6 +59,8 @@ export function useRulesPreview({
 
   const run = useCallback(
     (next: ProcessingRulesPreviewRequest) => {
+      sent.current = next;
+      waiting.current = null;
       setError(null);
       mutate(next, {
         onSuccess: (data) => setResult(data),
@@ -69,9 +75,20 @@ export function useRulesPreview({
 
   useEffect(() => {
     if (!request) return undefined;
-    const timer = setTimeout(() => run(request), RERUN_DEBOUNCE_MS);
+    const timer = setTimeout(() => {
+      if (request === sent.current) return;
+      if (isPending) {
+        waiting.current = request;
+        return;
+      }
+      run(request);
+    }, RERUN_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [request, run]);
+  }, [request, run, isPending]);
+
+  useEffect(() => {
+    if (!isPending && waiting.current) run(waiting.current);
+  }, [isPending, run]);
 
   return {
     result,

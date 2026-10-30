@@ -74,6 +74,7 @@ public sealed class SetupCodeTests(E2EServer server) : E2ETestBase(server)
             request => request.Method == "POST" && request.Url.EndsWith(BootstrapPath, StringComparison.Ordinal));
 
         Assert.Equal(code.ToLowerInvariant(), JsonDocument.Parse(created.PostData!).RootElement.GetProperty("setup_code").GetString());
+        await SetupWizard.SaveRecoveryCodesAsync(page);
         await Expect(SetupWizard.Heading(page)).ToBeVisibleAsync(new() { Timeout = Navigation.SubmitSettleMs });
         Assert.False(await AccountCreationOpenAsync(page.Context, weir));
         Assert.False(File.Exists(CodeFile(weir)), "The setup code file was left behind after the account was made.");
@@ -95,6 +96,7 @@ public sealed class SetupCodeTests(E2EServer server) : E2ETestBase(server)
         await page.GetByTestId("setup-confirm-password").FillAsync(Navigation.BootstrapPassword);
         await page.GetByTestId("setup-submit").ClickAsync();
 
+        await SetupWizard.SaveRecoveryCodesAsync(page);
         await Expect(SetupWizard.Heading(page)).ToBeVisibleAsync(new() { Timeout = Navigation.SubmitSettleMs });
         Assert.False(File.Exists(CodeFile(weir)));
     }

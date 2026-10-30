@@ -64,7 +64,7 @@ $env:WEIR_HOME = "$PWD\.local-dev-home"
 dotnet run --project apps/server/src/Weir.Host -- --host 127.0.0.1 --port 18788
 ```
 
-Forgot the local admin password? **`.\scripts\dev-reset-auth.ps1 --list`** shows the accounts and **`--yes`** clears users and sessions so **`/setup`** works again.
+Forgot the dev admin password? There is no reset: Weir has no way in but the password and the recovery codes. Point `WEIR_HOME` at a new folder (or delete `.local-dev-home`) to start with a fresh account.
 
 ## Web app
 

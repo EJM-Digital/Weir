@@ -29,7 +29,7 @@ The product requires **secure-by-default** web authentication: **server-side ses
 - Any historical Jinja/SQLite spike (outside this repository) is **not** the reference implementation for the final Weir auth stack.
 - New auth code must live under **`apps/backend/src/weir/platform/`** (or a dedicated submodule) when implemented, and must satisfy this ADR.
 
-  > **Update:** since [ADR-0017](ADR-0017-backend-on-dotnet.md) the auth code is in the .NET server: rules and rate limiting in `Weir.Core/Auth`, Argon2id and CSRF tokens in `Weir.Core/Security`, the `users` and `user_sessions` stores and the offline password recovery command in `Weir.Infrastructure/Auth`, and the `/api/v1/auth/` routes in `Weir.Api/Endpoints/AuthEndpoints.cs`. The decisions above are unchanged. CSRF tokens keep the itsdangerous-compatible signed format, so the routes below behave as they did.
+  > **Update:** since [ADR-0017](ADR-0017-backend-on-dotnet.md) the auth code is in the .NET server: rules and rate limiting in `Weir.Core/Auth`, Argon2id and CSRF tokens in `Weir.Core/Security`, the `users`, `user_sessions` and `recovery_codes` stores in `Weir.Infrastructure/Auth` (recovery codes are the only way back in when the password is lost; there is no console command), and the `/api/v1/auth/` routes in `Weir.Api/Endpoints/AuthEndpoints.cs`. The decisions above are unchanged. CSRF tokens keep the itsdangerous-compatible signed format, so the routes below behave as they did.
 
 ## Current implementation snapshot
 

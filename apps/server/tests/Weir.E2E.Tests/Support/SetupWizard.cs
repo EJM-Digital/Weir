@@ -10,7 +10,7 @@ public static partial class SetupWizard
     public const string FinishLabel = "Finish setup";
     public const string SaveLabel = "Save changes";
 
-    /// <summary>On a fresh install, creates the account on the first-run page and waits for the wizard that follows it.</summary>
+    /// <summary>On a fresh install, creates the account on the first-run page, saves its recovery codes and waits for the wizard that follows.</summary>
     public static async Task CreateAccountAsync(IPage page, string baseUrl)
     {
         await page.GotoAsync($"{baseUrl}/setup", new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
@@ -18,7 +18,16 @@ public static partial class SetupWizard
         await page.GetByTestId("setup-password").FillAsync(Navigation.BootstrapPassword);
         await page.GetByTestId("setup-confirm-password").FillAsync(Navigation.BootstrapPassword);
         await page.GetByTestId("setup-submit").ClickAsync();
+        await SaveRecoveryCodesAsync(page);
         await Expect(Heading(page)).ToBeVisibleAsync(new() { Timeout = Navigation.SubmitSettleMs });
+    }
+
+    /// <summary>On the screen that shows the recovery codes once: says they are saved, and carries on to the wizard.</summary>
+    public static async Task SaveRecoveryCodesAsync(IPage page)
+    {
+        await Expect(page.GetByTestId("setup-codes")).ToBeVisibleAsync(new() { Timeout = Navigation.SubmitSettleMs });
+        await page.GetByTestId("recovery-codes-saved").CheckAsync();
+        await page.GetByTestId("recovery-codes-continue").ClickAsync();
     }
 
     public static ILocator Heading(IPage page) => page.GetByRole(AriaRole.Heading, new() { Name = "Set up Weir", Exact = true });

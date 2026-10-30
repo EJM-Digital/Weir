@@ -49,6 +49,14 @@ describe("LoginPage", () => {
     ).toBeVisible();
   });
 
+  it("offers a way back in for a forgotten username or password", () => {
+    render(wrap(<LoginPage />));
+
+    expect(
+      screen.getByRole("link", { name: "Forgot your username or password?" }),
+    ).toHaveAttribute("href", "/recover");
+  });
+
   it("offers trust this device, off by default", () => {
     render(wrap(<LoginPage />));
 

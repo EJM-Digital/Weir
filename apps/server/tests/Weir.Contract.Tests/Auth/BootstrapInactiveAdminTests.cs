@@ -4,7 +4,7 @@ using static Weir.Contract.Tests.Auth.AuthSupport;
 
 namespace Weir.Contract.Tests.Auth;
 
-/// <summary>A deactivated sole admin must not brick the install (#456): sign-in rejects it, so bootstrap reopens.</summary>
+/// <summary>Setup is open only while no account exists at all: a deactivated admin does not reopen it.</summary>
 [ContractArea("auth")]
 public sealed class BootstrapInactiveAdminTests
 {
@@ -21,38 +21,34 @@ public sealed class BootstrapInactiveAdminTests
     }
 
     [Fact]
-    public async Task Inactive_sole_admin_reopens_bootstrap()
+    public async Task Inactive_sole_admin_keeps_bootstrap_closed()
     {
         await using var server = await SeededServerAsync(active: false);
         using var session = server.CreateClient();
 
         Assert.Equal(HttpStatusCode.Unauthorized, (await session.AttemptLoginAsync()).Status);
-        Assert.True((bool)(await session.GetAsync($"{Api}/auth/bootstrap/status")).Fields["bootstrap_allowed"]!);
+        Assert.False((bool)(await session.GetAsync($"{Api}/auth/bootstrap/status")).Fields["bootstrap_allowed"]!);
     }
 
-    /// <summary>The install must come back with one usable admin, never two rows.</summary>
+    /// <summary>Setup cannot be used to replace an account: it is refused and the account is untouched.</summary>
     [Fact]
-    public async Task Recovering_from_an_inactive_admin_leaves_exactly_one()
+    public async Task Setup_is_refused_when_an_inactive_account_exists_and_leaves_it_alone()
     {
         await using var server = await SeededServerAsync(active: false);
         using var session = server.CreateClient();
 
-        var created = await session.BootstrapAsync("alice-again", "recovered-password-strong");
+        var refused = await session.BootstrapAsync("alice-again", "recovered-password-strong");
 
-        AssertStatus(HttpStatusCode.OK, created);
-        Assert.False((bool)(await session.GetAsync($"{Api}/auth/bootstrap/status")).Fields["bootstrap_allowed"]!);
-        Assert.Equal(HttpStatusCode.OK, (await session.AttemptLoginAsync("alice-again", "recovered-password-strong")).Status);
-
-        List<Dictionary<string, object?>> admins;
+        AssertStatus(HttpStatusCode.Forbidden, refused);
+        List<Dictionary<string, object?>> users;
         await using (var database = await server.StopForDatabaseAsync(restart: false))
         {
-            admins = SeedSql.Rows(database.Connection, "SELECT username, is_active FROM users WHERE role = 'admin'");
+            users = SeedSql.Rows(database.Connection, "SELECT username, is_active FROM users");
         }
 
-        var admin = Assert.Single(admins);
-        Assert.Equal("alice-again", admin["username"]);
-        Assert.Equal(1L, Convert.ToInt64(admin["is_active"], System.Globalization.CultureInfo.InvariantCulture));
-        Assert.Equal(2, admin.Count);
+        var user = Assert.Single(users);
+        Assert.Equal(WeirClient.AdminUsername, user["username"]);
+        Assert.Equal(0L, Convert.ToInt64(user["is_active"], System.Globalization.CultureInfo.InvariantCulture));
     }
 
     private static async Task<WeirServer> SeededServerAsync(bool active)

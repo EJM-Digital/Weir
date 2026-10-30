@@ -22,7 +22,8 @@ public sealed partial class AuthShellTests(E2EServer server) : E2ETestBase(serve
         await page.GetByTestId("setup-confirm-password").FillAsync(Navigation.BootstrapPassword);
         await page.GetByTestId("setup-submit").ClickAsync();
 
-        // Bootstrap signs the new admin in directly (#704): no separate sign-in screen follows.
+        // Bootstrap signs the new admin in directly (#704): no separate sign-in screen follows, only the recovery codes to save.
+        await SetupWizard.SaveRecoveryCodesAsync(page);
         await Expect(page).ToHaveURLAsync(SetupWizardUrl());
         await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Set up Weir" })).ToBeVisibleAsync();
 

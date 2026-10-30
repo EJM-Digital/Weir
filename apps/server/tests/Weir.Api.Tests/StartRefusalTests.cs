@@ -65,16 +65,6 @@ public sealed class StartRefusalTests : IDisposable
     }
 
     [Fact]
-    public void A_command_that_is_not_starting_the_server_leaves_no_note()
-    {
-        using var console = new NonBlockingConsole(_error, Encoding.UTF8);
-
-        StartRefusal.Report(new WeirConfigurationException("WEIR_PORT must be a number."), Runtime(), console, leaveNote: false);
-
-        Assert.False(File.Exists(NotePath));
-    }
-
-    [Fact]
     public void A_data_folder_that_cannot_be_written_never_stops_the_refusal()
     {
         using var console = new NonBlockingConsole(_error, Encoding.UTF8);

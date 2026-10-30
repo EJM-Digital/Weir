@@ -10,6 +10,7 @@ import {
   useMeQuery,
 } from "../../lib/auth/queries";
 import { errorMessage } from "../../lib/api/error-message";
+import { RECOVERY_TEXT } from "../../lib/auth/recovery-text";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -193,6 +194,12 @@ export function LoginPage() {
               {login.isPending ? "Signing in…" : "Sign in"}
             </button>
           </form>
+
+          <p className="mm-auth-footer-link">
+            <Link to="/recover" data-testid="login-forgot">
+              {RECOVERY_TEXT.forgotLink}
+            </Link>
+          </p>
         </div>
       </div>
     </main>

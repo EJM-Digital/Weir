@@ -51,15 +51,6 @@ test("a worker that takes a job just after the job list is first read empty hold
   assert.equal(stand.jobsInFlight().length, 1);
 });
 
-test("a password recovery that ends one signed-in session says so in the singular", async () => {
-  const stand = new FakeWindows();
-  stand.machine.startTray(9347);
-  await stand.browser().bootstrap("owner", "a-password");
-  const done = await stand.machine.recover(["--username", "owner", "--password", "new-password"]);
-  assert.equal(done.exitCode, 0);
-  assert.match(done.stdout, /1 signed-in session was ended;/);
-});
-
 // --- Weir and the container -----------------------------------------------------------------------------------------------------------
 
 test("the stand-in for Weir refuses a file it does not have, a route it does not answer and a call it does not take", async () => {

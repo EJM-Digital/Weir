@@ -5,6 +5,7 @@ import {
   useChangePasswordMutation,
   useChangeUsernameMutation,
 } from "../../../../lib/auth/queries";
+import { PASSWORD_GATE_TEXT } from "../../../../lib/auth/password-gate-text";
 import { mmActionButtonClass } from "../../../../lib/ui/mm-control-roles";
 import { RevealablePasswordField, SecurityField } from "./security-field";
 
@@ -43,8 +44,12 @@ export function ChangeUsernameForm() {
 
   const submit = () => {
     setMissing(null);
-    if (newUsername.trim() === "" || password === "") {
-      setMissing("Enter the new username and your current password.");
+    if (password === "") {
+      setMissing(PASSWORD_GATE_TEXT.missing);
+      return;
+    }
+    if (newUsername.trim() === "") {
+      setMissing("Enter the new username.");
       return;
     }
     changeUsername.mutate(
@@ -132,12 +137,12 @@ export function ChangePasswordForm() {
 
   const submit = () => {
     setValidationError(null);
-    if (
-      fields.current.trim() === "" ||
-      fields.next.trim() === "" ||
-      fields.confirm.trim() === ""
-    ) {
-      setValidationError("Fill in all three password fields.");
+    if (fields.current.trim() === "") {
+      setValidationError(PASSWORD_GATE_TEXT.missing);
+      return;
+    }
+    if (fields.next.trim() === "" || fields.confirm.trim() === "") {
+      setValidationError("Fill in both new password fields.");
       return;
     }
     if (fields.next !== fields.confirm) {

@@ -348,15 +348,6 @@ public sealed class UnitOfWork : IAsyncDisposable
 /// <summary>Reading and writing column values in the storage formats existing Weir databases hold.</summary>
 public static class SqliteValues
 {
-    /// <summary>SQLite's constraint violation result code (<c>SQLITE_CONSTRAINT</c>).</summary>
-    public const int SqliteConstraint = 19;
-
-    public static bool IsIntegrityError(SqliteException exception)
-    {
-        ArgumentNullException.ThrowIfNull(exception);
-        return exception.SqliteErrorCode == SqliteConstraint;
-    }
-
     public static object ToSqlite(Timestamp value) => value.ToSqlite();
 
     public static object ToSqlite(Timestamp? value) => value is { } v ? v.ToSqlite() : DBNull.Value;

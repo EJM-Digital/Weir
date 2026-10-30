@@ -141,15 +141,7 @@ The default SQLite file is `{WEIR_HOME}/data/weir.sqlite3` unless `WEIR_DB_PATH`
 
 ## Forgot the dev admin password
 
-```powershell
-.\scripts\dev-reset-auth.ps1 --list   # show the accounts, change nothing
-.\scripts\dev-reset-auth.ps1 --yes    # delete every user and session
-```
-
-This clears users and sessions so `/setup` works again (it runs `node scripts/dev-reset-auth.mjs`
-after loading `.env`). It uses `WEIR_HOME` from your environment or `.env`; if you rely on
-`dev-backend.ps1`'s `.local-dev-home` default, set `$env:WEIR_HOME` to that folder first. Stop
-the server first, or restart it afterwards.
+Forgot the dev admin password? There is no reset: Weir has no way in but the password and the recovery codes. Point `WEIR_HOME` at a new folder (or delete `.local-dev-home`) to start with a fresh account.
 
 ## Contract and E2E tests (optional)
 
@@ -195,4 +187,4 @@ published server instead (a `Weir.dll` or an executable).
 | "Cannot reach the API" | Check `GET /health` on port 18788 and look at the server output for startup errors |
 | SQLite or migration errors at startup | Read the server output; check `WEIR_HOME` / `WEIR_DB_PATH` point at a writable folder |
 | Port already in use | `npm run dev` stops its *own* previous dev API/web processes first (`.dev-api.pid`, `dev:stop-web`); it never kills an unrelated process on that port — including an installed Weir, whose port can coincide with the dev one. Free it yourself, or see `scripts/dev-ports.json` for defaults |
-| Forgot the dev admin password | Run `.\scripts\dev-reset-auth.ps1 --yes` (see above) |
+| Forgot the dev admin password | Start with a fresh `WEIR_HOME` (see above) |

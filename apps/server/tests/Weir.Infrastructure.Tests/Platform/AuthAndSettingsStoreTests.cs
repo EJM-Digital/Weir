@@ -1,8 +1,8 @@
 using System.Text;
-using Microsoft.Data.Sqlite;
 using Weir.Core.Auth;
 using Weir.Core.Json;
 using Weir.Core.Time;
+using Weir.Infrastructure.Auth;
 using Weir.Infrastructure.Logging;
 using Weir.Infrastructure.Runtime;
 using Weir.Infrastructure.Settings;
@@ -118,18 +118,21 @@ public sealed class AuthAndSettingsStoreTests
     }
 
     [Fact]
-    public async Task An_inactive_sole_admin_reopens_bootstrap_and_recovery_leaves_exactly_one_admin()
+    public async Task Setup_is_allowed_only_while_no_account_exists_and_an_inactive_account_still_closes_it()
     {
         using var fixture = new StoreFixture();
+        Assert.True(await fixture.WithUnitOfWork(fixture.Auth.BootstrapAllowedAsync));
         await fixture.WithUnitOfWork(uow => fixture.Users.InsertUserAsync(uow, "alice", "argon2-placeholder", "admin", true));
         Assert.False(await fixture.WithUnitOfWork(fixture.Auth.BootstrapAllowedAsync));
         await fixture.Execute("UPDATE users SET is_active = 0");
-        Assert.True(await fixture.WithUnitOfWork(fixture.Auth.BootstrapAllowedAsync));
-
-        var created = await fixture.WithUnitOfWork(uow => fixture.Auth.CreateInitialAdminAsync(uow, "alice-again", "recovered-password-strong"));
-        Assert.True(created.IsActive);
-        Assert.Equal(1, await fixture.Scalar("SELECT count(*) FROM users WHERE role = 'admin'"));
         Assert.False(await fixture.WithUnitOfWork(fixture.Auth.BootstrapAllowedAsync));
+
+        var refused = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => fixture.WithUnitOfWork(uow => fixture.Auth.CreateInitialAdminAsync(uow, "alice-again", "recovered-password-strong")));
+
+        Assert.Equal(AuthService.BootstrapNotAllowedMessage, refused.Message);
+        Assert.Equal(1, await fixture.Scalar("SELECT count(*) FROM users"));
+        Assert.Equal(1, await fixture.Scalar("SELECT count(*) FROM users WHERE username = 'alice' AND is_active = 0"));
     }
 
     [Fact]
@@ -142,12 +145,12 @@ public sealed class AuthAndSettingsStoreTests
         async Task<string> Error(Func<UnitOfWork, Task> work) =>
             (await Assert.ThrowsAsync<WireValueException>(() => fixture.WithUnitOfWork(async uow => { await work(uow); return 0; }))).Message;
 
-        Assert.Equal("Current password is incorrect.", await Error(uow => fixture.Auth.ChangeUsernameAsync(uow, id, "wrong", "user1")));
+        Assert.Equal("Current password is not correct.", await Error(uow => fixture.Auth.ChangeUsernameAsync(uow, id, "wrong", "user1")));
         Assert.Equal("Username is required.", await Error(uow => fixture.Auth.ChangeUsernameAsync(uow, id, Password, "  ")));
         Assert.Equal("New username must be different from the current username.", await Error(uow => fixture.Auth.ChangeUsernameAsync(uow, id, Password, "alice")));
         Assert.Equal("That username is already taken.", await Error(uow => fixture.Auth.ChangeUsernameAsync(uow, id, Password, "BOB")));
         Assert.Equal("Alice", await fixture.WithUnitOfWork(uow => fixture.Auth.ChangeUsernameAsync(uow, id, Password, "Alice")));
-        Assert.Equal("Current password is incorrect.", await Error(uow => fixture.Auth.ChangePasswordAsync(uow, id, "wrong", "another-strong-password")));
+        Assert.Equal("Current password is not correct.", await Error(uow => fixture.Auth.ChangePasswordAsync(uow, id, "wrong", "another-strong-password")));
         Assert.Equal("New password must be different from the current password.", await Error(uow => fixture.Auth.ChangePasswordAsync(uow, id, Password, Password)));
         Assert.Equal("Password must use a wider mix of characters.", await Error(uow => fixture.Auth.ChangePasswordAsync(uow, id, Password, "aaaaaaaaaa")));
     }
@@ -273,15 +276,6 @@ public sealed class AuthAndSettingsStoreTests
         Assert.True(zones.TryFind("Europe/London", out _));
         Assert.True(zones.TryFind("UTC", out _));
         Assert.False(zones.TryFind("Not/A_Real_Zone", out _));
-    }
-
-    [Fact]
-    public async Task Sqlite_constraint_errors_are_recognised()
-    {
-        using var fixture = new StoreFixture();
-        await fixture.WithUnitOfWork(uow => fixture.Users.InsertUserAsync(uow, "alice", "x", "admin", true));
-        var error = await Assert.ThrowsAsync<SqliteException>(() => fixture.WithUnitOfWork(uow => fixture.Users.InsertUserAsync(uow, "ALICE", "x", "admin", true)));
-        Assert.True(SqliteValues.IsIntegrityError(error));
     }
 
     [Fact]

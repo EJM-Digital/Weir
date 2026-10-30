@@ -314,7 +314,7 @@ public sealed class HomeNetworkSignInApiTests
         var missing = await FromAsync(server, AtHome, "PUT", Path, json: Body(null));
         var right = await FromAsync(server, AtHome, "PUT", Path, json: Body(AdminPassword));
 
-        Assert.Equal((400, "Current password is incorrect."), (wrong.Status, wrong.Detail));
+        Assert.Equal((400, "Current password is not correct."), (wrong.Status, wrong.Detail));
         Assert.Equal(422, missing.Status);
         Assert.Equal(200, right.Status);
         Assert.False(right.Json["enabled"]!.GetValue<bool>());
@@ -354,7 +354,7 @@ public sealed class HomeNetworkSignInApiTests
         var password = await FromAsync(server, AtHome, "POST", "/api/v1/auth/change-password", json: new { csrf_token = csrf, current_password = "not-the-password", new_password = "a-brand-new-password-1" });
         var username = await FromAsync(server, AtHome, "POST", "/api/v1/auth/change-username", json: new { csrf_token = csrf, current_password = "not-the-password", new_username = "mallory" });
 
-        Assert.Equal((400, "Current password is incorrect.", 400, "Current password is incorrect."), (password.Status, password.Detail, username.Status, username.Detail));
+        Assert.Equal((400, "Current password is not correct.", 400, "Current password is not correct."), (password.Status, password.Detail, username.Status, username.Detail));
         using var signedIn = await owner.LoginAsync();
         Assert.Equal(HttpStatusCode.OK, signedIn.StatusCode);
     }

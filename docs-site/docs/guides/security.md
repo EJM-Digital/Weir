@@ -9,7 +9,8 @@ Weir's security posture and hardening baseline.
 
 ## Authentication
 
-- First-run bootstrap is only available when no admin user exists
+- First-run bootstrap is only available while no account exists at all
+- The username and password are the way in; ten single-use recovery codes are the only backup (see [Locked out](#locked-out))
 - Passwords must be at least 8 characters (enforced frontend and backend)
 - Login and bootstrap routes are rate-limited
 - Session cookies are HTTP-only
@@ -85,43 +86,42 @@ The docs build runs an image-format preflight and rejects ICNS, JXL, HEIC, and H
 
 ## Locked out
 
-Weir has one operator account. There is no second admin to let you back in, and no email
-reset — the app stores no email address and has no outbound mail path, only webhooks. Recovery is
-therefore proof that you can reach the server, which is already the trust boundary: the session
-signing key and the database both live under `WEIR_HOME`.
+Weir has one account, the admin made at first-run setup. The username and password are the way in, and recovery
+codes are the only backup. There is no email reset (the app stores no email address), no console command, no reset
+file and no other way in.
 
-### If you forgot your password
+### Recovery codes
 
-Run the recovery command where Weir is installed. It sets a new password, re-activates the
-account, and signs out every existing session. This works only from the server's own console —
-it is not reachable over HTTP — because reaching the server's shell is the proof of identity
-recovery relies on.
+- **Setup shows ten codes, once.** Each works once. Setup does not finish until you tick **I have saved these codes**;
+  **Copy** and **Download as text** are there to help.
+- **System › Security › Recovery codes** shows how many are left. **Make new codes** (or **Make recovery codes**, when there are none) asks for your current password,
+  voids every code you had and shows the new ones once.
+- **An account made before recovery codes existed has none.** After you update, signing in asks you to make a set, and
+  System › Security keeps saying so until there is one.
+- Weir stores only a hash of each code, as it does for your password, and never writes a code to its log.
 
-In Docker:
+Keep the codes somewhere safe and private, away from the computer that runs Weir.
 
-```bash
-docker exec -it -u weir -e WEIR_HOME=/data/weir weir /opt/weir/Weir recover
-```
+### If you forgot your username or password
 
-`-u weir` runs it as the same user as the server, so the database keeps the right owner, and
-`WEIR_HOME` points it at the data volume. If you gave the container a different `WEIR_HOME`, use
-that path instead.
+1. On the sign-in page, choose **Forgot your username or password?**. The page is called **Get back into Weir**.
+2. Enter one of your recovery codes and choose **Check code**. Weir shows your username.
+3. Choose a new password, typed twice. It must meet the same rules as any password.
+4. Choose **Go to sign in** and sign in with it.
 
-On a Windows install, run the server executable, not the tray app:
+The code is used up as soon as Weir accepts it, even if you stop before choosing a password. Each recovery:
 
-```powershell
-& "$env:LocalAppData\Weir\current\server\WeirServer.exe" recover
-```
+- signs out every browser that was signed in;
+- leaves API keys working, so a media manager such as Deluno keeps sending files;
+- writes "Password reset with a recovery code. Every signed-in session was ended." to Activity, with the number of codes left;
+- sends an alert to every notification channel you have switched on (Setup › Connections › Alerts).
 
-From Command Prompt, that is `"%LocalAppData%\Weir\current\server\WeirServer.exe" recover`.
-Building from source, use `dotnet run --project apps/server/src/Weir.Host -- recover`.
+Tries are limited: five in ten minutes from one address, and five in ten minutes from all addresses together. After that, Weir says to wait 10 minutes.
 
-If the command says there is no Weir database, it was pointed at a folder Weir has never used: set `WEIR_HOME`
-to the folder Weir keeps its data in and run it again. It makes no database there.
+### If the password and every recovery code are lost
 
-You will be prompted for the new password (typed without being echoed to the screen), which
-keeps it out of your shell history. For scripted use, pass `--password`. To see the accounts
-without changing anything, use `--list`.
+There is no way back in. Weir has no reset command, no reset file and no email link, by design. The only way forward is a
+fresh install with a new data folder.
 
 ### If you signed in but are sent straight back to the login page
 
@@ -132,35 +132,3 @@ The default is `auto`, which marks the cookie HTTPS-only only when a request act
 over HTTPS, so this should not occur unless the setting has been forced. Check for
 `WEIR_SESSION_COOKIE_SECURE=true` in your environment and remove it, or set it to `auto`,
 then restart.
-
-### Clearing the account
-
-The recovery command above still needs Weir's own process to run, so it is no help when Weir
-itself will not start. As a last resort, with Weir stopped, you can clear the accounts directly
-and use first-run setup again. Everything else — workflows, connections and settings — lives in
-other tables and survives.
-
-The database is at `$WEIR_HOME/data/weir.sqlite3` — `/data/weir/data/weir.sqlite3` inside
-Docker, and `C:\ProgramData\Weir\data\weir.sqlite3` on a default Windows install.
-
-1. **Stop Weir.** For Docker, stop the container (`docker compose stop weir`). On Windows,
-   choose **Quit** from the tray icon.
-2. **Clear the accounts from the host.** The Docker image contains only the Weir server — there
-   is no Python or `sqlite3` inside it — so do this on the host, against the data folder you
-   mounted at `/data/weir`. (For a named volume, `docker volume inspect weir-data` shows where
-   it lives on the host.) Use either:
-   - `sqlite3`, if it is installed on the host:
-
-     ```bash
-     sqlite3 <data folder>/data/weir.sqlite3 "DELETE FROM user_sessions; DELETE FROM users;"
-     ```
-
-   - or, from a clone of the Weir repository with Node.js 24 installed, the reset script with
-     `WEIR_HOME` pointed at the data folder:
-
-     ```bash
-     WEIR_HOME=<data folder> node scripts/dev-reset-auth.mjs --yes --force
-     ```
-
-     On Windows (PowerShell): `$env:WEIR_HOME = "C:\ProgramData\Weir"; node scripts/dev-reset-auth.mjs --yes --force`
-3. **Start Weir again** and open `/setup` to create the account again.

@@ -79,7 +79,7 @@ public sealed class RouteTable
     }
 }
 
-/// <summary>Per-process abuse controls: the sign-in and bootstrap rate limiters.</summary>
+/// <summary>Per-process abuse controls: the sign-in, bootstrap and recovery-code rate limiters.</summary>
 public sealed class AuthRateLimiters
 {
     private int _forwardedWarned;
@@ -91,11 +91,19 @@ public sealed class AuthRateLimiters
         Login = new SlidingWindowLimiter(options.AuthLoginRateMaxAttempts, options.AuthLoginRateWindowSeconds, time);
         Bootstrap = new SlidingWindowLimiter(options.BootstrapRateMaxAttempts, options.BootstrapRateWindowSeconds, time);
         LoginUsernameBackoff = new UsernameLoginBackoff(time);
+        RecoveryAttempts = new SlidingWindowLimiter(RecoveryCodeRules.MaxTries, RecoveryCodeRules.TryWindowSeconds, time);
+        RecoveryAttemptsOverall = new SlidingWindowLimiter(RecoveryCodeRules.MaxTries, RecoveryCodeRules.TryWindowSeconds, time);
     }
 
     public SlidingWindowLimiter Login { get; }
 
     public SlidingWindowLimiter Bootstrap { get; }
+
+    /// <summary>Recovery-code tries per source address: five in ten minutes.</summary>
+    public SlidingWindowLimiter RecoveryAttempts { get; }
+
+    /// <summary>Recovery-code tries from every address together, the same five in ten minutes: the account has one set of codes.</summary>
+    public SlidingWindowLimiter RecoveryAttemptsOverall { get; }
 
     /// <summary>Per-account backoff on top of <see cref="Login"/>'s per-IP limit.</summary>
     public UsernameLoginBackoff LoginUsernameBackoff { get; }
@@ -128,7 +136,7 @@ public sealed class ApiRequest : IAsyncDisposable
     }
 
     /// <summary>What Weir says when the current password it asked for is wrong.</summary>
-    public const string CurrentPasswordWrong = "Current password is incorrect.";
+    public const string CurrentPasswordWrong = "Current password is not correct.";
 
     public HttpContext Context { get; }
 

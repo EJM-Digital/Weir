@@ -32,7 +32,7 @@ A pull request runs the Windows legs when it changes a file in the `windows` fil
 - Windows-only server code: the `*.Windows.cs` files, the firewall and network-access code (`Runtime`), the host readings
   (`SystemReadings`), the Velopack updater (`Weir.Core/Updates`), the swap file system (`LibraryMode`), the directory browser,
   and the three files that handle output ownership and source files by hand;
-- the host the installer packs (`Weir.Host`), and the database migrations and recovery command a Windows upgrade carries
+- the host the installer packs (`Weir.Host`), and the database migrations a Windows upgrade carries
   across;
 - the installer packaging (`packaging/windows`), the smoke scripts, and the scenario scripts (`scripts/scenarios-ci`,
   `scripts/scenarios`, `scripts/scenarios-in-ci.mjs`);

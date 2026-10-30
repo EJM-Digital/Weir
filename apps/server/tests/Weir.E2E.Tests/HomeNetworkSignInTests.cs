@@ -81,7 +81,7 @@ public sealed class HomeNetworkSignInTests(E2EServer server) : E2ETestBase(serve
 
         await card.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }).ClickAsync();
 
-        await Expect(card.GetByRole(AriaRole.Alert)).ToHaveTextAsync("Current password is incorrect.", new() { Timeout = Navigation.SubmitSettleMs });
+        await Expect(card.GetByRole(AriaRole.Alert)).ToHaveTextAsync("Current password is not correct.", new() { Timeout = Navigation.SubmitSettleMs });
         var another = await OpenAnotherBrowserAsync();
         await Expect(another.GetByTestId("login-username")).ToBeVisibleAsync(new() { Timeout = Navigation.UrlAssertMs });
     }

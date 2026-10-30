@@ -2075,7 +2075,7 @@
   "PUT /api/v1/suite/home-network-sign-in (wrong password)": {
     "status": 400,
     "body": {
-      "detail": "Current password is incorrect."
+      "detail": "Current password is not correct."
     }
   },
   "PUT /api/v1/suite/home-network-sign-in (bad entry)": {

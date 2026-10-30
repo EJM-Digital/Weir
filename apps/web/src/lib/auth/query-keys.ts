@@ -4,4 +4,5 @@ export const authKeys = {
   session: ["auth", "session"] as const,
   sessions: ["auth", "sessions"] as const,
   bootstrap: ["auth", "bootstrap-status"] as const,
+  recoveryCodes: ["auth", "recovery-codes"] as const,
 };

@@ -4,7 +4,19 @@ This checklist defines the current practical hardening baseline for Weir.
 
 ## Authentication and setup
 
-- First-run bootstrap is only available when no admin user exists.
+- First-run bootstrap is only available while no account exists at all; a deactivated account still closes it, and
+  bootstrap never replaces or removes an account.
+- The username and password are the way in and recovery codes are the only backup. Weir has exactly one account, and
+  there is no console command, reset file, email reset or other way in.
+- First-run bootstrap makes 10 single-use recovery codes and shows them once; setup waits until the owner confirms they
+  are saved. System › Security shows how many are left and makes a new set (it needs the current password and voids
+  every old code). An account made before recovery codes existed has none, and Weir asks for a set after sign-in.
+- Recovery codes are stored only as Argon2id hashes (`PasswordHasher`, at a smaller cost than a password, because a code is 100 random bits that no slower hash makes easier to guess), never logged, and never
+  returned after they are first shown. Tries are limited to five in ten minutes per address and five in ten minutes from all addresses together.
+- A recovery code is spent as soon as it is accepted, even if the new password is never chosen. Every recovery deletes
+  every session, leaves API keys and webhook secrets working, writes the Activity line "Password reset with a recovery code. Every signed-in session was ended." with the number of codes left, and alerts every notification channel that is switched on.
+- If the password and every recovery code are lost there is no way back in: the only way forward is a fresh install with
+  a new data folder.
 - Bootstrap from a non-loopback peer needs the one-time setup code Weir logs and writes to
   `WEIR_HOME/setup-code` at start-up; a loopback peer (the tray's `127.0.0.1`) does not.
 - Passwords shorter than 8 characters must be blocked by both frontend and backend validation.

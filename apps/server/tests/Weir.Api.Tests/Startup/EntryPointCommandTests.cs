@@ -10,7 +10,7 @@ using Weir.Infrastructure.Tests;
 namespace Weir.Api.Tests.Startup;
 
 /// <summary>
-/// The server program run in this process, as its command line and environment ask: <c>recover</c>, <c>--healthcheck</c>, and a start that is
+/// The server program run in this process, as its command line and environment ask: <c>--healthcheck</c> and a start that is
 /// refused. The program reads the process environment, so these run one at a time and put every variable back.
 /// </summary>
 [Collection(ProcessEnvironment.CollectionName)]
@@ -39,27 +39,14 @@ public sealed class EntryPointCommandTests : IDisposable
     }
 
     [Fact]
-    public void Asking_recover_for_its_help_prints_it_and_ends_without_opening_a_database()
+    public void The_word_recover_is_no_command_so_it_is_taken_for_a_start_and_a_setting_that_is_not_valid_refuses_it()
     {
         Set("WEIR_HOME", _home);
 
-        var (exitCode, output) = Run("recover", "--help");
-
-        Assert.Equal(0, exitCode);
-        Assert.Contains("recover", output, StringComparison.Ordinal);
-        Assert.False(Directory.Exists(Path.Join(_home, "data")));
-    }
-
-    [Fact]
-    public void Recover_run_with_a_setting_that_is_not_valid_says_so_and_leaves_no_note_about_the_start()
-    {
-        Set("WEIR_HOME", _home);
-        Set("WEIR_CORS_ORIGINS", "*");
-
-        var (exitCode, _) = Run("recover", "--list");
+        var (exitCode, _) = Run("recover", "--port", "not-a-port");
 
         Assert.Equal(1, exitCode);
-        Assert.False(File.Exists(Path.Join(_home, StartupNotes.ErrorFileName)), "recover says nothing about why the server did not start.");
+        Assert.True(File.Exists(Path.Join(_home, StartupNotes.ErrorFileName)), "A start that is refused leaves the note the tray reads; a command would not.");
     }
 
     [Fact]

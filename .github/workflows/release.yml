@@ -230,9 +230,6 @@ jobs:
       - name: Smoke test packaged Windows server
         run: powershell -ExecutionPolicy Bypass -File scripts/smoke-windows-package.ps1 -ExpectedVersion "${{ steps.version.outputs.plain }}"
 
-      - name: Recover a locked-out account with the packaged WeirServer.exe
-        run: powershell -ExecutionPolicy Bypass -File scripts/smoke-windows-recover.ps1
-
       # Licence compliance: the exact corresponding source for the bundled LGPL FFmpeg and GPL
       # MKVToolNix binaries, hash-verified against the pins in
       # packaging/windows/build-velopack-vendored-media-tools.ps1, placed alongside the Windows
@@ -584,10 +581,6 @@ jobs:
       - name: Compose entrypoint maps the user, keeps the secrets and owns the folders of the release candidate
         if: ${{ !cancelled() }}
         run: node scripts/docker-compose-smoke.mjs entrypoint --candidate "weir-release-candidate:${{ steps.version.outputs.plain }}"
-
-      - name: Compose recover resets a forgotten password on the release candidate
-        if: ${{ !cancelled() }}
-        run: node scripts/docker-compose-smoke.mjs recover --candidate "weir-release-candidate:${{ steps.version.outputs.plain }}"
 
       - name: Upload Docker compose smoke logs
         if: ${{ !cancelled() }}

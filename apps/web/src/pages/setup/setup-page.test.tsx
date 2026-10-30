@@ -104,7 +104,7 @@ describe("SetupPage", () => {
     );
   });
 
-  it("submits bootstrap when username and password meet the requirements, then signs straight in", async () => {
+  it("submits bootstrap when username and password meet the requirements", async () => {
     mutateAsyncMock.mockResolvedValue({
       message: "ok",
       username: "admin",
@@ -124,12 +124,11 @@ describe("SetupPage", () => {
     });
     fireEvent.submit(screen.getByTestId("setup-form"));
 
-    expect(mutateAsyncMock).toHaveBeenCalledWith({
-      username: "admin",
-      password: "password-strong",
-    });
     await waitFor(() => {
-      expect(navigateMock).toHaveBeenCalledWith("/", { replace: true });
+      expect(mutateAsyncMock).toHaveBeenCalledWith({
+        username: "admin",
+        password: "password-strong",
+      });
     });
   });
 
@@ -163,13 +162,12 @@ describe("SetupPage", () => {
     });
     fireEvent.submit(screen.getByTestId("setup-form"));
 
-    expect(mutateAsyncMock).toHaveBeenCalledWith({
-      username: "admin",
-      password: "password-strong",
-      setupCode: "ABCD-1234",
-    });
     await waitFor(() => {
-      expect(navigateMock).toHaveBeenCalledWith("/", { replace: true });
+      expect(mutateAsyncMock).toHaveBeenCalledWith({
+        username: "admin",
+        password: "password-strong",
+        setupCode: "ABCD-1234",
+      });
     });
   });
 

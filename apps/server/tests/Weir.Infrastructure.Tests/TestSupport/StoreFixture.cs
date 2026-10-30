@@ -30,7 +30,7 @@ internal sealed class StoreFixture : IDisposable
         new SchemaMigrator(Database).EnsureAtHead();
         Clock = new FakeTimeProvider(new DateTimeOffset(2026, 1, 15, 10, 0, 0, TimeSpan.Zero));
         Users = new AuthStore();
-        Auth = new AuthService(Options, Clock, Database, Users, NullLoggerFactory.Instance);
+        Auth = new AuthService(Options, Clock, Database, Users, new RecoveryCodeStore(), NullLoggerFactory.Instance);
     }
 
     public TempDirectory Home { get; }

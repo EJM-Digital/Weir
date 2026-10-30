@@ -19,7 +19,7 @@ public sealed partial class AuthService
 
         if (!await VerifyPasswordAsync(currentPassword, user.PasswordHash).ConfigureAwait(false))
         {
-            throw new WireValueException("Current password is incorrect.");
+            throw new WireValueException("Current password is not correct.");
         }
 
         var candidate = (newUsername ?? string.Empty).Trim();
@@ -54,7 +54,7 @@ public sealed partial class AuthService
 
         if (!await VerifyPasswordAsync(currentPassword, user.PasswordHash).ConfigureAwait(false))
         {
-            throw new WireValueException("Current password is incorrect.");
+            throw new WireValueException("Current password is not correct.");
         }
 
         if (currentPassword == newPassword)
@@ -83,14 +83,11 @@ public sealed partial class AuthService
         await _users.UpdateAppThemeAsync(uow, user.Id, theme).ConfigureAwait(false);
     }
 
-    /// <summary>Bootstrap is allowed while no usable (active) admin exists.</summary>
+    /// <summary>Setup is allowed only while no account exists at all, active or not.</summary>
     public async Task<bool> BootstrapAllowedAsync(UnitOfWork uow) =>
-        await _users.CountActiveAdminsAsync(uow).ConfigureAwait(false) == 0;
+        await _users.CountUsersAsync(uow).ConfigureAwait(false) == 0;
 
-    /// <summary>
-    /// Creates the first admin: validate the password, clear any inactive admin rows and insert the
-    /// admin. A username clash surfaces as a <see cref="Microsoft.Data.Sqlite.SqliteException"/> constraint error.
-    /// </summary>
+    /// <summary>Creates the first admin: validates the password and inserts the admin. Refused while any account exists.</summary>
     public async Task<UserRecord> CreateInitialAdminAsync(UnitOfWork uow, string username, string password)
     {
         if (!await BootstrapAllowedAsync(uow).ConfigureAwait(false))
@@ -103,7 +100,6 @@ public sealed partial class AuthService
             throw new WireValueException(problem);
         }
 
-        await _users.DeleteAdminsAsync(uow).ConfigureAwait(false);
         var trimmed = username.Trim();
         var hash = PasswordHasher.Hash(password);
         var id = await _users.InsertUserAsync(uow, trimmed, hash, UserRoles.Admin, isActive: true).ConfigureAwait(false);

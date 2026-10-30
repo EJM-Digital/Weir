@@ -10,6 +10,7 @@ import {
   useMeQuery,
 } from "../../lib/auth/queries";
 import { errorMessage } from "../../lib/api/error-message";
+import { SetupCodesStep } from "./setup-codes-step";
 
 export function SetupPage() {
   const navigate = useNavigate();
@@ -21,6 +22,16 @@ export function SetupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [setupCode, setSetupCode] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  // The account exists and is signed in; setup waits here until the recovery codes are saved, whatever the reads below now say.
+  if (bootstrap.isSuccess) {
+    return (
+      <SetupCodesStep
+        codes={bootstrap.data.recovery_codes}
+        onSaved={() => void navigate("/", { replace: true })}
+      />
+    );
+  }
 
   if (me.isPending || boot.isPending) {
     return <PageLoading label="Checking setup..." />;
@@ -80,9 +91,6 @@ export function SetupPage() {
         password,
         setupCode: setupCode.trim() || undefined,
       });
-      // Bootstrap signs the new admin in as part of creating the account (#704), so the next
-      // stop is the app itself: `RequireSetupWizard` sends a fresh account straight to the wizard.
-      void navigate("/", { replace: true });
     } catch {
       /* surfaced below */
     }
@@ -97,7 +105,8 @@ export function SetupPage() {
           <h1 className="mm-auth-title">Create your account</h1>
           <p className="mm-auth-lead">
             Choose the username and password you&apos;ll use to sign in. Weir
-            will sign you in right away and then run the first-run setup wizard.
+            will sign you in right away, show you your recovery codes, and then
+            run the first-run setup wizard.
           </p>
 
           <form

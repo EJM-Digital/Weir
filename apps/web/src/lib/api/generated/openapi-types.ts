@@ -279,6 +279,90 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/auth/recovery-codes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Recovery Codes
+     * @description How many recovery codes the signed-in account has left, and whether the set was saved.
+     */
+    get: operations["get_recovery_codes_api_v1_auth_recovery_codes_get"];
+    put?: never;
+    /**
+     * Post Recovery Codes
+     * @description Make a new set of ten recovery codes after the current password. The old codes stop working and the new ones are shown once.
+     */
+    post: operations["post_recovery_codes_api_v1_auth_recovery_codes_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/recovery-codes/confirm": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Post Recovery Codes Confirm
+     * @description Say that the codes shown were saved.
+     */
+    post: operations["post_recovery_codes_confirm_api_v1_auth_recovery_codes_confirm_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/recovery/code": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Post Recovery Code
+     * @description Spend a recovery code from the sign-in page: ends every session, records it in Activity, tells the alerts that are set up and returns the username and a token for choosing a new password. Rate limited per address and overall.
+     */
+    post: operations["post_recovery_code_api_v1_auth_recovery_code_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/recovery/password": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Post Recovery Password
+     * @description Set the new password for the account a spent recovery code opened.
+     */
+    post: operations["post_recovery_password_api_v1_auth_recovery_password_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/auth/session": {
     parameters: {
       query?: never;
@@ -2765,6 +2849,8 @@ export interface components {
     BootstrapOut: {
       /** Message */
       message: string;
+      /** Recovery Codes */
+      recovery_codes: string[];
       user: components["schemas"]["UserPublic"];
       /** Username */
       username: string;
@@ -7402,6 +7488,77 @@ export interface components {
        */
       verdict: "proceed" | "wait_upstream" | "not_held" | "no_upstream_signal";
     };
+    /** RecoveryCodeIn */
+    RecoveryCodeIn: {
+      /** Code */
+      code: string;
+      /** Csrf Token */
+      csrf_token: string;
+    };
+    /** RecoveryCodeOut */
+    RecoveryCodeOut: {
+      /** Codes Left */
+      codes_left: number;
+      /** Recovery Token */
+      recovery_token: string;
+      /** Username */
+      username: string;
+    };
+    /** RecoveryCodesConfirmIn */
+    RecoveryCodesConfirmIn: {
+      /** Csrf Token */
+      csrf_token: string;
+    };
+    /** RecoveryCodesConfirmOut */
+    RecoveryCodesConfirmOut: {
+      /** Confirmed */
+      confirmed: boolean;
+      /** Message */
+      message: string;
+      /** Remaining */
+      remaining: number;
+    };
+    /** RecoveryCodesNewSetIn */
+    RecoveryCodesNewSetIn: {
+      /** Csrf Token */
+      csrf_token: string;
+      /** Current Password */
+      current_password: string;
+    };
+    /** RecoveryCodesNewSetOut */
+    RecoveryCodesNewSetOut: {
+      /** Codes */
+      codes: string[];
+      /** Confirmed */
+      confirmed: boolean;
+      /** Message */
+      message: string;
+      /** Remaining */
+      remaining: number;
+    };
+    /** RecoveryCodesStatusOut */
+    RecoveryCodesStatusOut: {
+      /** Confirmed */
+      confirmed: boolean;
+      /** Remaining */
+      remaining: number;
+    };
+    /** RecoveryPasswordIn */
+    RecoveryPasswordIn: {
+      /** Csrf Token */
+      csrf_token: string;
+      /** New Password */
+      new_password: string;
+      /** Recovery Token */
+      recovery_token: string;
+    };
+    /** RecoveryPasswordOut */
+    RecoveryPasswordOut: {
+      /** Message */
+      message: string;
+      /** Username */
+      username: string;
+    };
     /**
      * RejectSupportOut
      * @description Whether the ``reject`` failure policy can be chosen for a set of linked managers.
@@ -9389,6 +9546,167 @@ export interface operations {
         };
       };
       500: components["responses"]["InternalServerError"];
+    };
+  };
+  get_recovery_codes_api_v1_auth_recovery_codes_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecoveryCodesStatusOut"];
+        };
+      };
+      500: components["responses"]["InternalServerError"];
+    };
+  };
+  post_recovery_codes_api_v1_auth_recovery_codes_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RecoveryCodesNewSetIn"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecoveryCodesNewSetOut"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
+    };
+  };
+  post_recovery_codes_confirm_api_v1_auth_recovery_codes_confirm_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RecoveryCodesConfirmIn"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecoveryCodesConfirmOut"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
+    };
+  };
+  post_recovery_code_api_v1_auth_recovery_code_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RecoveryCodeIn"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecoveryCodeOut"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
+    };
+  };
+  post_recovery_password_api_v1_auth_recovery_password_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RecoveryPasswordIn"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecoveryPasswordOut"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      500: components["responses"]["InternalServerError"];
+      503: components["responses"]["DatabaseBusy"];
     };
   };
   get_current_session_api_v1_auth_session_get: {

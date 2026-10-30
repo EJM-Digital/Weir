@@ -91,7 +91,7 @@ test("the workflow runs the Windows shards that have a ported scenario, against 
 });
 
 test("the shard is its scenarios in order, the one written for CI last", () => {
-  assert.deepEqual(scenariosOfShard(homes, "windows-install").map((scenario) => scenario.id), ["fresh-install", "recover-locked-out-account", "uninstall-keeps-the-data"]);
+  assert.deepEqual(scenariosOfShard(homes, "windows-install").map((scenario) => scenario.id), ["fresh-install", "uninstall-keeps-the-data"]);
 });
 
 // --- the CSRF signature -------------------------------------------------------------------------------------------------------------
@@ -123,17 +123,15 @@ test("a data folder is as it was when nothing is gone, new or changed, and the t
 
 // --- the scenarios, healthy -----------------------------------------------------------------------------------------------------------
 
-test("on a clean machine the three scenarios pass in order, and the logs gained nothing", async () => {
+test("on a clean machine the two scenarios pass in order, and the logs gained nothing", async () => {
   const results = await run();
   assert.deepEqual(results.map((result) => [result.id, result.status]), [
     ["fresh-install", "passed"],
-    ["recover-locked-out-account", "passed"],
     ["uninstall-keeps-the-data", "passed"],
   ]);
   assert.equal(exitCode(results), 0);
   assert.match(results[0].detail, /session\.secret and credentials\.secret are 32\+ characters/);
-  assert.match(results[1].detail, /found .*weir\.sqlite3.*reset the password and said 2 signed-in sessions were ended/);
-  assert.match(results[2].detail, /Uninstalled twice/);
+  assert.match(results[1].detail, /Uninstalled twice/);
 });
 
 test("each scenario runs alone: it installs, starts and signs in to what it needs", async () => {
@@ -143,28 +141,19 @@ test("each scenario runs alone: it installs, starts and signs in to what it need
   }
 });
 
-test("the recovery command's output is kept with the record, and not the password it was given", async () => {
-  const stand = new FakeWindows();
-  const [result] = await runScenarios({ ids: ["recover-locked-out-account"], registry: SCENARIOS, world: { ...stand.world(), watchLogs } });
-  assert.equal(result.status, "passed", result.detail);
-  assert.deepEqual([...stand.recordings.keys()], ["recover-help.txt", "recover-list.txt", "recover-recover.txt"]);
-  assert.match(stand.recordings.get("recover-recover.txt"), /Password reset for 'scenario-admin'/);
-  assert.doesNotMatch([...stand.recordings.values()].join("\n"), /Rc-/);
-});
-
 // --- the build under test stays the build under test --------------------------------------------------------------------------------
 
 test("a newer release in the feed does not replace the build under test, because a new install starts with update checking off", async () => {
   const stand = new FakeWindows({ feedHasNewerRelease: true });
   const results = await runScenarios({ ids: Object.keys(SCENARIOS), registry: SCENARIOS, world: { ...stand.world(), watchLogs } });
-  assert.deepEqual(results.map((result) => result.status), ["passed", "passed", "passed"], results.map((result) => result.detail).join(" | "));
+  assert.deepEqual(results.map((result) => result.status), ["passed", "passed"], results.map((result) => result.detail).join(" | "));
   assert.match(await stand.machine.readText(stand.paths.trayLog), /This is a new install, so update checking starts off/);
 });
 
 test("a Weir that installs the newest release when it next starts fails the scenario that restarts it", async () => {
   const stand = new FakeWindows({ feedHasNewerRelease: true, newInstallChecksForUpdates: true });
   stand.machine.keepUpdatesFromInstalling = async () => undefined;
-  const [result] = await runScenarios({ ids: ["recover-locked-out-account"], registry: SCENARIOS, world: { ...stand.world(), watchLogs } });
+  const [result] = await runScenarios({ ids: ["uninstall-keeps-the-data"], registry: SCENARIOS, world: { ...stand.world(), watchLogs } });
   assert.equal(result.status, "failed");
   assert.match(result.detail, /reports 1\.0\.0-rc\.18, not the build under test \(3\.4\.0\)/);
 });
@@ -199,35 +188,6 @@ test("a server that was not started with the session secret, or that complains a
 test("a warning the logs gained while the scenario ran fails it, although it did everything else", async () => {
   assert.match(await failureOf("fresh-install", { warnsWhenStarted: "Could not open the update feed" }), /gained 1 unexpected warning or error \(Could not open the update feed\)/);
   assert.match(await failureOf("uninstall-keeps-the-data", { warnsWhenStarted: "Could not open the update feed" }), /gained .*Could not open the update feed/);
-});
-
-test("the refused sign-in of the recovery scenario is the one warning it may cause, and a second warning fails it", async () => {
-  const healthy = await only("recover-locked-out-account");
-  assert.equal(healthy.status, "passed", healthy.detail);
-  assert.match(healthy.detail, /The logs gained no unexpected warning or error\./);
-  const stand = new FakeWindows({ warnsWhenStarted: "Could not open the update feed" });
-  const [result] = await runScenarios({ ids: ["recover-locked-out-account"], registry: SCENARIOS, world: { ...stand.world(), watchLogs } });
-  assert.match(result.detail, /gained 2 unexpected warning or error \(Could not open the update feed \| Could not open the update feed\)/);
-});
-
-// --- recover-locked-out-account, broken ----------------------------------------------------------------------------------------------
-
-test("a recovery command that does not find the data folder the installed server uses does not pass", async () => {
-  assert.match(await failureOf("recover-locked-out-account", { recoverLooksElsewhere: true }), /did not find the data folder the installed server uses/);
-});
-
-test("a recovery command that says it reset the password and did not does not pass", async () => {
-  assert.match(await failureOf("recover-locked-out-account", { recoverChangesNothing: true }), /the forgotten password was answered 200, not refused/);
-});
-
-test("a recovery that leaves an earlier session signed in does not pass", async () => {
-  assert.match(await failureOf("recover-locked-out-account", { recoverKeepsSessions: true }), /a session from before the reset is still accepted/);
-});
-
-test("Weir is running again after a recovery that failed, so the next scenario finds it", async () => {
-  const stand = new FakeWindows({ recoverLooksElsewhere: true });
-  const results = await runScenarios({ ids: ["recover-locked-out-account", "uninstall-keeps-the-data"], registry: SCENARIOS, world: { ...stand.world(), watchLogs } });
-  assert.deepEqual(results.map((result) => result.status), ["failed", "passed"], results.map((result) => result.detail).join(" | "));
 });
 
 // --- uninstall-keeps-the-data, broken -------------------------------------------------------------------------------------------------
@@ -270,6 +230,6 @@ test("a reinstall that replaces a secret, or that does not find the account, doe
 
 test("every scenario of the shard runs, whatever the one before it found", async () => {
   const results = await run({ secretLength: 20 });
-  assert.deepEqual(results.map((result) => result.status), ["failed", "passed", "passed"]);
+  assert.deepEqual(results.map((result) => result.status), ["failed", "passed"]);
   assert.equal(exitCode(results), 1);
 });
