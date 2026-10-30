@@ -200,8 +200,11 @@ public sealed class WeirClient : IDisposable
             Assert.True(created.Status == HttpStatusCode.OK, created.ToString());
 
             // The owner who set this account up saved the recovery codes it showed; nothing here is about them.
+            // A published release under test (WEIR_CONTRACT_SERVER, as the release fixtures are made) from before recovery codes has no such route.
             var saved = await PostWithCsrfAsync($"{Api}/auth/recovery-codes/confirm");
-            Assert.True(saved.Status == HttpStatusCode.OK, saved.ToString());
+            var releaseWithoutCodes = saved.Status == HttpStatusCode.NotFound
+                && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(ServerBinary.OverrideVariable));
+            Assert.True(saved.Status == HttpStatusCode.OK || releaseWithoutCodes, saved.ToString());
         }
 
         await LoginAsync(username, password);
