@@ -68,4 +68,22 @@ describe("the router before anyone is signed in", () => {
     expect(window.location.pathname).toBe("/login");
     expect(api.unmatched).toEqual([]);
   });
+
+  it("opens the recovery page for a signed-out visitor without sending them to sign in", async () => {
+    const api = stubWeirApi({
+      "GET /api/v1/auth/me": signedOut,
+      "GET /api/v1/auth/bootstrap/status": {
+        bootstrap_allowed: false,
+        reason: "admin_already_exists",
+        requires_setup_code: false,
+      },
+    });
+
+    goTo("/recover");
+    openApp();
+
+    expect(await screen.findByTestId("recover-code")).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/recover");
+    expect(api.unmatched).toEqual([]);
+  });
 });
