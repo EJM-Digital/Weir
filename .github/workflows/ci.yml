@@ -1,6 +1,7 @@
 # Weir CI: the server on Linux and Windows, the web app, the E2E smoke, the contract suite (ci-contract.yml), the
 # tray, the coverage check, and the Docker and Windows package smokes (ci-packaging.yml). Triggers: push to main,
-# pull_request, workflow_dispatch, and a nightly schedule that runs only the Windows legs.
+# pull_request, workflow_dispatch, and a nightly schedule that runs only the Windows legs, and only when main has had a
+# commit in the last 24 hours (otherwise every job skips).
 #
 # The Windows legs of the contract suite (contract-windows) and the Windows package smoke and scenario shards
 # (packaging-windows) cost twice what a Linux job does, so docs/ci-cost.md sets when they run: on a push to main, on the
@@ -30,7 +31,7 @@ on:
     branches: ["main"]
   pull_request:
   schedule:
-  # Every day, 16:17 UTC (03:17 Sydney, AEDT). Off the top of the hour. GitHub may start a scheduled run late on busy days.
+  # Every day, 16:17 UTC (03:17 Sydney, AEDT), a no-op when main has had no commit in 24 hours. Off the top of the hour. GitHub may start a scheduled run late on busy days.
     - cron: "17 16 * * *"
   workflow_dispatch:
     inputs:
@@ -79,10 +80,26 @@ jobs:
       run_packaging: ${{ steps.flags.outputs.run_packaging }}
       run_packaging_windows: ${{ steps.flags.outputs.run_packaging_windows }}
       run_arm64: ${{ steps.flags.outputs.run_arm64 }}
+      idle: ${{ steps.idle.outputs.idle }}
       contract_areas: ${{ steps.areas.outputs.areas }}
       e2e_shards: ${{ steps.e2e_shards.outputs.shards }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # The nightly run has nothing to test when main has had no commit in the last 24 hours: the last push to main already
+      # ran this same tree. Then every flag below is false and every job skips (scripts/ci-passed.mjs reads `idle`).
+      - name: Has main changed in the last day
+        id: idle
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          idle=false
+          if [ "$EVENT" = schedule ]; then
+            newest=$(git log -1 --format=%ct HEAD)
+            if [ $(( $(date +%s) - newest )) -gt 86400 ]; then idle=true; fi
+          fi
+          echo "idle=$idle" >> "$GITHUB_OUTPUT"
+          if [ "$idle" = true ]; then echo "No commit on main in the last 24 hours: the nightly run skips every job."; fi
 
       # One contract leg per area in the contract project's areas.json, so a new area gets its leg without editing this file.
       - name: Contract areas
@@ -229,6 +246,7 @@ jobs:
       - name: Which jobs are due
         id: flags
         env:
+          IDLE: ${{ steps.idle.outputs.idle }}
           EVENT: ${{ github.event_name }}
           SERVER: ${{ steps.filter.outputs.server }}
           WEB: ${{ steps.filter.outputs.web }}
@@ -242,6 +260,12 @@ jobs:
           WORKFLOWS: ${{ steps.filter.outputs.workflows }}
         run: |
           set -euo pipefail
+          if [ "$IDLE" = true ]; then
+            for flag in server_linux server_windows server_audit web web_audit e2e contract contract_windows tray coverage coverage_out_of_process packaging packaging_windows arm64; do
+              echo "run_$flag=false"
+            done | tee -a "$GITHUB_OUTPUT"
+            exit 0
+          fi
           either() { for value in "$@"; do if [ "$value" = true ]; then echo true; return; fi; done; echo false; }
           both() { for value in "$@"; do if [ "$value" != true ]; then echo false; return; fi; done; echo true; }
           manual=$([ "$EVENT" = workflow_dispatch ] && echo true || echo false)
@@ -288,6 +312,8 @@ jobs:
 
   # Cheap checks on the repository itself, on every change.
   repo-checks:
+    needs: changes
+    if: needs.changes.outputs.idle != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # issues: read lets the coverage register check ask which coverage issues are open.
@@ -444,6 +470,8 @@ jobs:
   # (scripts/check-no-silent-reverts.mjs). It reads the history of main, so it fetches all of it; a pull request is judged
   # from where its head left the base, a push to main by the commit against its parent.
   no-silent-reverts:
+    needs: changes
+    if: needs.changes.outputs.idle != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -504,7 +532,7 @@ jobs:
         timeout-minutes: 10
 
       # Category=Stress (the SQLite pool-race test) runs several seconds of wall clock across 8 threads and
-      # would starve every other test running alongside it here; ci-stress.yml runs it nightly instead.
+      # would starve every other test running alongside it here; ci-stress.yml runs it weekly (and on a pull request that touches the pool) instead.
       # Category=Contract and Category=E2E start a real server (and a browser): the contract and e2e-smoke jobs run them.
       - name: Test Weir server
         working-directory: apps/server
@@ -590,7 +618,7 @@ jobs:
         uses: ./.github/actions/setup-real-media-tools
         timeout-minutes: 10
 
-      # See server-linux's own "Test Weir server" step: ci-stress.yml runs Category=Stress nightly instead.
+      # See server-linux's own "Test Weir server" step: ci-stress.yml runs Category=Stress weekly (and on a pull request that touches the pool) instead.
       - name: Test Weir server
         working-directory: apps/server
         env:

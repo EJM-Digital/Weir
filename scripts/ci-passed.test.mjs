@@ -70,3 +70,12 @@ test("a Windows leg that was due and failed fails the verdict, and one that ran 
   const unasked = verdict(needs({ due: { run_contract_windows: false }, results: { "contract-windows": "success" } }));
   assert.match(unasked.join("\n"), /contract-windows ended success; it was not due/);
 });
+
+test("an idle nightly run passes only when every job, even the always-run ones, was skipped", () => {
+  const idle = needs({ due: Object.fromEntries([...new Set(Object.values(GATES).filter(Boolean))].map((flag) => [flag, false])) });
+  idle.changes.outputs.idle = "true";
+  for (const job of Object.keys(GATES)) idle[job].result = "skipped";
+  assert.deepEqual(verdict(idle), []);
+  idle["repo-checks"].result = "success";
+  assert.match(verdict(idle).join("\n"), /repo-checks ended success; it was not due/);
+});

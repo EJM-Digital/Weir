@@ -36,8 +36,8 @@ metadata site and plays no part in anything Weir reads.
 
 ## Running it
 
-On a CI runner: `.github/workflows/record-arr.yml` (run it by hand, or wait for Monday). It uploads the recordings as an artifact.
-Weekly it also records against the newest release of each app and fails when the replies differ from the checked-in ones
+On a CI runner: `.github/workflows/record-arr.yml` (it runs when `compose.yaml` changes, or run it by hand). It uploads the recordings as an artifact.
+It also compares against the checked-in replies, and by hand (`images: latest`, `compare: true`) against the newest release of each app, and fails when the replies differ from the checked-in ones
 (`scripts/compare-arr-recordings.mjs`).
 
 By hand, with Docker, FFmpeg and the .NET SDK:

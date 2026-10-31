@@ -17,8 +17,11 @@ its change cannot affect.
 | Windows package smoke, update package and scenario shards (`packaging-windows`) | only with a Windows path | when the package or app changed | yes | yes | must have passed |
 | Contract suite, Linux legs, E2E shards, Docker smokes, Linux scenario shards, web, server on Linux | by their own path filters in `ci.yml` | as today | no | yes | `ci-passed` on the tagged commit |
 
-"Nightly" is the 03:17 UTC run of `ci.yml`; it runs only the two Windows jobs above, so it costs those and a few Linux
-minutes. "By hand" is Actions, then CI or Mutation, then Run workflow; a manual CI run skips nothing.
+"Nightly" is the 16:17 UTC (03:17 Sydney) run of `ci.yml`; it runs only the two Windows jobs above, so it costs those and a few Linux
+minutes. It runs only when `main` has had a commit in the last 24 hours: the `changes` job checks the newest commit's time first and,
+when it is older, sets every flag false (and `idle` true), so every job skips and `ci-passed` passes on an all-skipped run
+(`scripts/ci-passed.mjs`). Such a run never counts as release proof, because its "The Windows legs ran and passed" step is skipped, and
+a quiet `main` was already proved by the push that made its newest commit. "By hand" is Actions, then CI or Mutation, then Run workflow; a manual CI run skips nothing.
 
 A regression in Windows code is caught on `main` within the hour, because the push to `main` runs the Windows legs, and
 it is always caught before a tag.
@@ -45,6 +48,25 @@ or its folder to the `windows` filter.
 
 Not changed by this policy: the server unit tests on Windows (`server-windows`) and the tray tests (`tray`) keep the path
 filters they had.
+
+## The scheduled workflows
+
+Times are Sydney (AEDT, UTC+11), all off the top of the hour. "Peak jobs" is the most jobs the workflow runs at once.
+
+| Workflow | When | Other triggers | Peak jobs |
+| --- | --- | --- | --- |
+| `ci.yml` (Windows legs only) | daily 03:17, only if `main` had a commit in the last 24 h | push, pull request, by hand | 2 Windows sets |
+| `coverage-flips.yml` | daily 05:17 (UTC 18:17), only if `ci.yml` had a non-nightly run in the last 24 h | by hand | 1 Linux |
+| `record-deluno.yml` | Sunday 20:07 | by hand | 1 |
+| `audit.yml` | Sunday 20:29 | by hand | 2 Linux |
+| `codeql.yml` | Sunday 20:37 | push, pull request | 3 |
+| `ci-stress.yml` | Sunday 21:43 | pull request touching the SQLite pool or its stress test, by hand | 1 Windows |
+| `mutation.yml` | Sunday 22:17 | by hand (never pull request) | 12 |
+| `record-arr.yml`, `record-clients.yml` | no schedule | pull request and push to `main` that change a recorder `compose.yaml`, by hand | 1 and 6 Linux |
+
+The recorders have no schedule: the images they record are pinned by digest in the compose files, so nothing changes until a
+compose file does. The newest releases of Sonarr, Radarr and the download clients are still compared by hand (`images: latest`,
+`compare: true`).
 
 ## How a release gets the proof
 

@@ -5,6 +5,10 @@
 #
 # When it finds something it opens one issue, "Coverage: branches reached only on some runs", or updates the one that is open
 # with the current list, and fails the run so the schedule shows red until the tests are fixed.
+#
+# It runs only on days CI ran: the `due` job counts the ci.yml runs of the last 24 hours, and the comparison job is skipped when
+# there are none (nothing new to read). The nightly schedule run does not count: it runs only the Windows legs, or nothing at all
+# when main is idle, and leaves no server coverage.
 name: Coverage flips
 
 on:
@@ -21,8 +25,36 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  due:
+    name: Did CI run in the last day
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      ran: ${{ steps.recent.outputs.ran }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Count the ci.yml runs that are not the nightly schedule
+        id: recent
+        run: |
+          since=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          count=$(gh api "repos/$GH_REPO/actions/workflows/ci.yml/runs?created=%3E%3D$since&status=completed&per_page=100" --jq '[.workflow_runs[] | select(.event != "schedule")] | length')
+          echo "ci.yml runs since $since, the nightly schedule aside: $count"
+          if [ "$count" -gt 0 ]; then
+            echo "ran=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ran=false" >> "$GITHUB_OUTPUT"
+            echo "CI did not run in the last day, so there is nothing new to compare."
+          fi
+
   flips:
     name: Branches reached only on some runs
+    needs: due
+    if: needs.due.outputs.ran == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:

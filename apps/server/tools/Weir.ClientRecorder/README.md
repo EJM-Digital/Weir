@@ -31,8 +31,8 @@ A secret is written as `<scrubbed>`: the passwords and API keys the session used
 
 ## Running it
 
-On a CI runner: `.github/workflows/record-clients.yml` (run it by hand, or wait for Monday). It runs one job per client and uploads the
-recordings as an artifact. Weekly it also records against the newest release of each client and fails when the replies differ from the
+On a CI runner: `.github/workflows/record-clients.yml` (it runs when a compose file changes, or run it by hand). It runs one job per client and uploads the
+recordings as an artifact. It also compares against the checked-in replies, and by hand (`images: latest`, `compare: true`) against the newest release of each client, and fails when the replies differ from the
 checked-in ones (`scripts/compare-arr-recordings.mjs --apps <client>`).
 
 By hand, with Docker and the .NET SDK (qBittorrent prints its temporary password in the container's log; read it from there):
