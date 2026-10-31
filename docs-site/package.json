@@ -58,7 +58,9 @@
   "overrides": {
     "dompurify": "^3.4.17",
     "image-size": "^2.0.4",
-    "joi": "^18.2.9",
+    "joi": "^18.3.1",
+    "follow-redirects": "^1.16.2",
+    "minimatch": "^11.0.3",
     "fast-uri": "^3.1.8",
     "qs": "^6.17.0",
     "serialize-javascript": "^7.0.5",
