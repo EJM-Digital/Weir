@@ -26,8 +26,8 @@ on:
         type: boolean
         default: false
   schedule:
-    # Mondays, 06:17 UTC.
-    - cron: "17 6 * * 1"
+  # Sundays, 08:53 UTC (Sunday 19:53 Sydney, AEDT). Off the top of the hour. GitHub may start a scheduled run late on busy days.
+    - cron: "53 8 * * 0"
 
 permissions:
   contents: read

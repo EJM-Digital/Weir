@@ -9,8 +9,8 @@ name: Coverage flips
 
 on:
   schedule:
-    # Every day, 20:17 UTC (07:17 AEDT), after the night's runs and inside the day CI keeps their coverage.
-    - cron: "17 20 * * *"
+  # Every day, 18:17 UTC (05:17 Sydney, AEDT), after the night's runs and inside the day CI keeps their coverage.
+    - cron: "17 18 * * *"
   workflow_dispatch:
 
 permissions:

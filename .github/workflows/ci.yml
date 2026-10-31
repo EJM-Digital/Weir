@@ -30,7 +30,8 @@ on:
     branches: ["main"]
   pull_request:
   schedule:
-    - cron: "17 3 * * *"
+  # Every day, 16:17 UTC (03:17 Sydney, AEDT). Off the top of the hour. GitHub may start a scheduled run late on busy days.
+    - cron: "17 16 * * *"
   workflow_dispatch:
     inputs:
       version:

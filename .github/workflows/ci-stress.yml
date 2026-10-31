@@ -5,7 +5,8 @@ name: Stress
 
 on:
   schedule:
-    - cron: "17 3 * * *"
+  # Every day, 16:47 UTC (03:47 Sydney, AEDT). Off the top of the hour. GitHub may start a scheduled run late on busy days.
+    - cron: "47 16 * * *"
   workflow_dispatch:
 
 permissions:
