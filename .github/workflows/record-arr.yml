@@ -6,9 +6,10 @@
 # ones, run this by hand and copy the artifact's sonarr/ and radarr/ folders to apps/server/tests/fixtures/recorded/ unchanged, then
 # regenerate each MANIFEST.sha256 with `node scripts/check-recorded-manifest.mjs --write`.
 #
-# Weekly it is also the drift check: it records against the pinned images and against the newest releases, and fails when either set of
-# replies differs from the checked-in ones once times, ids and sizes are set aside (scripts/compare-arr-recordings.mjs). A failure on the
-# pinned images means the recording is not repeatable; a failure on the newest releases means Sonarr or Radarr has changed what it says.
+# When the compose file changes (a pull request or a push to main) it is also the drift check: it records against the pinned images and
+# fails when the replies differ from the checked-in ones once times, ids and sizes are set aside (scripts/compare-arr-recordings.mjs),
+# which means the recording is not repeatable. By hand, images: latest with compare: true does the same against the newest releases; a
+# failure there means Sonarr or Radarr has changed what it says.
 name: Record Sonarr and Radarr
 
 on:
@@ -23,9 +24,15 @@ on:
         description: "Also fail when the replies differ from the checked-in ones."
         type: boolean
         default: false
-  schedule:
-    # Mondays, 05:41 UTC.
-    - cron: "41 5 * * 1"
+  # Not on a schedule: the pinned images only change in the compose file, so a change to it (on a pull request, and again on main)
+  # is what records and compares. The newest releases are compared by hand (images: latest, compare: true).
+  pull_request:
+    paths:
+      - apps/server/tools/Weir.ArrRecorder/compose.yaml
+  push:
+    branches: [main]
+    paths:
+      - apps/server/tools/Weir.ArrRecorder/compose.yaml
 
 permissions:
   contents: read
@@ -42,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        images: ${{ fromJSON(github.event_name == 'schedule' && '["pinned","latest"]' || format('["{0}"]', inputs.images || 'pinned')) }}
+        images: ${{ fromJSON(format('["{0}"]', inputs.images || 'pinned')) }}
     env:
       RECORDER_WORK: ${{ github.workspace }}/arr-work
       RECORDER_OUT_DIR: ${{ github.workspace }}/arr-recorded
@@ -112,5 +119,5 @@ jobs:
           if-no-files-found: error
 
       - name: Compare with the checked-in replies
-        if: (github.event_name == 'schedule' || inputs.compare) && (success() || failure())
+        if: (github.event_name != 'workflow_dispatch' || inputs.compare) && (success() || failure())
         run: node scripts/compare-arr-recordings.mjs "$RECORDER_OUT_DIR"

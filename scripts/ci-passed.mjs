@@ -5,6 +5,9 @@
 // `changes` decides which jobs are due and publishes one run_* flag per job; GATES below maps each job to its
 // flag (null: the job always runs). A due job must end `success`. A job that was not due must end `skipped`:
 // anything else means the flags and the job conditions disagree, which is a bug in ci.yml to fix, not a pass.
+// A scheduled run on a day main had no commit (`changes` publishes idle=true) has nothing to test, so every job, the ones that
+// always run included, must end `skipped`; that run passes but never counts as the release's proof (its "The Windows legs ran and
+// passed" step is skipped, and the release reads only push and manual runs of the verdict).
 // `changes` itself must succeed, because without it no flag can be trusted.
 //
 // Usage (in ci.yml): NEEDS='${{ toJSON(needs) }}' node scripts/ci-passed.mjs
@@ -53,7 +56,7 @@ export function verdict(needs) {
       problems.push(`changes published no usable ${flag} (got ${JSON.stringify(flags[flag])}).`);
       continue;
     }
-    const due = flag === null || flags[flag] === "true";
+    const due = flags.idle === "true" ? false : flag === null || flags[flag] === "true";
     const expected = due ? "success" : "skipped";
     if (result !== expected) {
       problems.push(`${job} ended ${result}; it ${due ? "was due, so it must pass" : "was not due, so it must be skipped"}.`);
@@ -66,7 +69,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const needs = JSON.parse(process.env.NEEDS || "{}");
   const problems = verdict(needs);
   for (const [job, flag] of Object.entries(GATES)) {
-    const due = flag === null ? "always" : needs.changes?.outputs?.[flag] === "true" ? "due" : "not due";
+    const due = needs.changes?.outputs?.idle === "true" ? "idle" : flag === null ? "always" : needs.changes?.outputs?.[flag] === "true" ? "due" : "not due";
     console.log(`${job.padEnd(22)} ${due.padEnd(8)} ${needs[job]?.result ?? "missing"}`);
   }
   if (problems.length) {

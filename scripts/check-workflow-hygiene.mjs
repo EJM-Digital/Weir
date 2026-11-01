@@ -10,7 +10,8 @@
 //     (an intermittent test is a bug to root-cause, not one to run twice); and
 //   * nothing that costs a lot runs on every pull request (docs/ci-cost.md): a workflow triggered by pull_request runs no
 //     mutation testing, and each of its Windows jobs (a Windows runner, a Windows scenario shard, or a job named for
-//     Windows) carries the path filter, a job-level `if:` on a `needs.changes.outputs.run_*` flag.
+//     Windows) carries the path filter, a job-level `if:` on a `needs.changes.outputs.run_*` flag, unless the workflow's own
+//     `pull_request:` trigger lists `paths:`, which keeps the whole workflow off a pull request that touches none of them.
 //
 // A job with no timeout runs for six hours before GitHub stops it, and a Windows runner bills at twice the rate.
 //
@@ -83,7 +84,12 @@ function findUnfilteredHeavyJobs(relative, lines) {
   const onAt = lines.findIndex((line) => /^on:/.test(line));
   const triggers = [];
   for (let i = onAt + 1; onAt >= 0 && i < lines.length && !/^\S/.test(lines[i]); i += 1) triggers.push(lines[i].split("#")[0]);
-  if (!triggers.some((line) => /^ {2}pull_request(?:_target)?:/.test(line))) return failures;
+  const pullRequestAt = triggers.findIndex((line) => /^ {2}pull_request(?:_target)?:/.test(line));
+  if (pullRequestAt < 0) return failures;
+  // The trigger's own block: the lines under it that are indented deeper than the trigger itself.
+  let blockEnd = pullRequestAt + 1;
+  while (blockEnd < triggers.length && /^ {3,}\S/.test(triggers[blockEnd])) blockEnd += 1;
+  const triggerPathFiltered = triggers.slice(pullRequestAt + 1, blockEnd).some((line) => /^ {4}paths:\s*$/.test(line));
 
   const code = lines.map((line) => line.split("#")[0]);
   if (code.some((line) => /\bstryker\b/i.test(line))) {
@@ -96,7 +102,7 @@ function findUnfilteredHeavyJobs(relative, lines) {
     if (!job) return;
     const body = job.lines.join("\n");
     const windows = /windows/i.test(job.id) || /^ {4}runs-on:.*windows/im.test(body) || WINDOWS_SHARD.test(body);
-    if (windows && !PATH_FILTERED.test(body)) {
+    if (windows && !triggerPathFiltered && !PATH_FILTERED.test(body)) {
       failures.push(`${relative}: job "${job.id}" runs on Windows and the workflow is triggered by a pull request, but the job has no path filter. Give it \`if: needs.changes.outputs.run_<name> == 'true'\` (docs/ci-cost.md).`);
     }
   };

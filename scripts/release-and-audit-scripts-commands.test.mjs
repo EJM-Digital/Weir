@@ -50,6 +50,12 @@ test("ci-passed, run as a command, prints each job's verdict and exits 0 when al
   assert.equal(failed.status, 1);
   assert.match(failed.stderr, /^::error::web ended failure; it was due, so it must pass\./);
 
+  const idleNeeds = needsFor(Object.fromEntries(Object.keys(GATES).map((job) => [job, "skipped"])));
+  idleNeeds.changes.outputs = { ...Object.fromEntries(Object.keys(idleNeeds.changes.outputs).map((flag) => [flag, "false"])), idle: "true" };
+  const idle = run(idleNeeds);
+  assert.equal(idle.status, 0, idle.stderr);
+  assert.match(idle.stdout, /repo-checks\s+idle\s+skipped\n/);
+
   const nothing = run();
   assert.equal(nothing.status, 1);
   assert.match(nothing.stdout, /repo-checks\s+always\s+missing\n/);
