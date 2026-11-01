@@ -343,6 +343,32 @@ test("a shard that has used its time budget names the scenarios it did not start
   assert.equal(exitCode(results), 1);
 });
 
+test("a scenario stopped by the shard's time budget ends the budget, whatever the wall clock reads", async (t) => {
+  const world = new FakeWorld().asWorld();
+  const realNow = Date.now;
+  const frozen = realNow();
+  Date.now = () => frozen;
+  t.after(() => {
+    Date.now = realNow;
+  });
+  const registry = { slow: async () => new Promise((resolveSlow) => setTimeout(() => resolveSlow("late"), 5_000)), next: async () => "ran" };
+  const results = await runScenarios({ ids: ["slow", "next"], registry, world, budgetMs: 50 });
+  assert.deepEqual(results.map((result) => result.status), ["failed", "failed"]);
+  assert.match(results[1].detail, /next was not started: the shard's time budget had ended/);
+});
+
+test("a scenario that fails on its own inside the shard's time budget leaves the rest of the budget to the next", async () => {
+  const world = new FakeWorld().asWorld();
+  const registry = {
+    broken: async () => {
+      throw new Error("broken went wrong");
+    },
+    next: async () => "ran",
+  };
+  const results = await runScenarios({ ids: ["broken", "next"], registry, world, budgetMs: 60_000 });
+  assert.deepEqual(results.map((result) => result.status), ["failed", "passed"]);
+});
+
 test("a shard inside its budget runs everything as before", async () => {
   const registry = { one: async () => "one", two: async () => "two" };
   const results = await runScenarios({ ids: ["one", "two"], registry, world: new FakeWorld().asWorld(), budgetMs: 60_000 });
