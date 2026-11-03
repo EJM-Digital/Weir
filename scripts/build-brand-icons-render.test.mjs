@@ -116,7 +116,7 @@ test("the renderer is the web app's package, and its absence says how to install
   });
 });
 
-test("every icon is rendered at its sizes, the 16px frame from the small tile, and written where the repository keeps it", () => {
+test("every icon is rendered at its sizes, the favicons' 16px frame from the small tile and the tray icon's from the full tile, and written where the repository keeps it", () => {
   withFolder((root) => {
     const { Resvg, asked } = standIn();
 
@@ -129,8 +129,17 @@ test("every icon is rendered at its sizes, the 16px frame from the small tile, a
     assert.equal(decodePng(readFileSync(path.join(root, OUTPUTS[1].file))).width, 180);
     const smallTile = readFileSync(APP_ICON_SMALL, "utf8");
     const bigTile = readFileSync(APP_ICON, "utf8");
-    assert.ok(asked.filter(({ size }) => size === 16).every(({ svg }) => svg === smallTile));
-    assert.ok(asked.filter(({ size }) => size > 16).every(({ svg }) => svg === bigTile));
+    let next = 0;
+    for (const { sizes, smallFrames } of OUTPUTS) {
+      for (const [index, size] of sizes.entries()) {
+        const expected = smallFrames && size === 16 ? smallTile : bigTile;
+        assert.equal(asked[next + index].size, size);
+        assert.equal(asked[next + index].svg, expected);
+      }
+      next += sizes.length;
+    }
+    const tray = OUTPUTS.find(({ file }) => file.endsWith("weir-tray-icon.ico"));
+    assert.ok(tray.sizes.includes(16));
   });
 });
 

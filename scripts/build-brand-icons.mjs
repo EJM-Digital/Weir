@@ -12,8 +12,9 @@
 //
 // Rendering needs @resvg/resvg-js, a dev dependency of apps/web: run `npm ci` there first.
 //
-// Two optical sizes: the 16px frame of every .ico comes from weir-app-icon-small.svg (two streams), every larger
-// frame from weir-app-icon.svg (three streams). At 16px a band is sub-pixel and three streams fuse into a smear.
+// Two optical sizes: the 16px frame of the favicon .ico files comes from weir-app-icon-small.svg (two streams), every
+// larger frame from weir-app-icon.svg (three streams). At 16px a band is sub-pixel and three streams fuse into a
+// smear. The tray icon is the owner's exception: three streams at every size, 16px included.
 // See packaging/brand/README.md.
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -27,19 +28,20 @@ const BRAND = path.join(ROOT, "packaging", "brand");
 export const APP_ICON = path.join(BRAND, "weir-app-icon.svg");
 export const APP_ICON_SMALL = path.join(BRAND, "weir-app-icon-small.svg");
 
-// Frames at or below this size render from the small tile.
+// Frames at or below this size render from the small tile, for outputs that use it.
 export const SMALL_ICON_MAX = 16;
 
 const FAVICON_SIZES = [16, 24, 32, 48, 64, 256];
 const TRAY_SIZES = [16, 20, 24, 32, 40, 48, 64, 128, 256];
 const TOUCH_ICON_SIZE = 180;
 
-// Every raster icon: its path under the repository root and the frame sizes it holds.
+// Every raster icon: its path under the repository root, the frame sizes it holds, and whether its smallest frames
+// use the two-stream tile (smallFrames).
 export const OUTPUTS = [
-  { file: "apps/web/public/favicon.ico", format: "ico", sizes: FAVICON_SIZES },
-  { file: "apps/web/public/apple-touch-icon.png", format: "png", sizes: [TOUCH_ICON_SIZE] },
-  { file: "packaging/windows/assets/weir-tray-icon.ico", format: "ico", sizes: TRAY_SIZES },
-  { file: "docs-site/static/img/favicon.ico", format: "ico", sizes: FAVICON_SIZES },
+  { file: "apps/web/public/favicon.ico", format: "ico", sizes: FAVICON_SIZES, smallFrames: true },
+  { file: "apps/web/public/apple-touch-icon.png", format: "png", sizes: [TOUCH_ICON_SIZE], smallFrames: false },
+  { file: "packaging/windows/assets/weir-tray-icon.ico", format: "ico", sizes: TRAY_SIZES, smallFrames: false },
+  { file: "docs-site/static/img/favicon.ico", format: "ico", sizes: FAVICON_SIZES, smallFrames: true },
 ];
 
 // A different rasteriser moves anti-aliased edge pixels by up to about 90 of 255; a changed mark moves solid ones by more.
@@ -48,8 +50,8 @@ const ICO_HEADER_BYTES = 6;
 const ICO_ENTRY_BYTES = 16;
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
-export function sourceFor(size) {
-  return size <= SMALL_ICON_MAX ? APP_ICON_SMALL : APP_ICON;
+export function sourceFor(size, smallFrames = true) {
+  return smallFrames && size <= SMALL_ICON_MAX ? APP_ICON_SMALL : APP_ICON;
 }
 
 // frames: Map of pixel size -> PNG bytes. A size of 256 is stored as 0, as the format requires.
@@ -192,8 +194,8 @@ function renderPng(Resvg, svgFile, size) {
 // Renders every output under outputRoot, laid out as it is in the repository.
 export function buildAll(outputRoot, Resvg = loadResvg()) {
   const written = [];
-  for (const { file, format, sizes } of OUTPUTS) {
-    const frames = new Map(sizes.map((size) => [size, renderPng(Resvg, sourceFor(size), size)]));
+  for (const { file, format, sizes, smallFrames } of OUTPUTS) {
+    const frames = new Map(sizes.map((size) => [size, renderPng(Resvg, sourceFor(size, smallFrames), size)]));
     const target = path.join(outputRoot, file);
     mkdirSync(path.dirname(target), { recursive: true });
     writeFileSync(target, format === "ico" ? packIco(frames) : frames.get(sizes[0]));
