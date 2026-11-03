@@ -46,19 +46,24 @@ public sealed partial class ProcessingJobStore
         return InTransactionAsync(
             (connection, transaction) =>
             {
-                if (GetByDedupeKey(connection, transaction, dedupeKey) is { } last && ProcessingJobStatus.Terminal.Contains(last.Status))
-                {
-                    Execute(
-                        connection,
-                        transaction,
-                        "UPDATE jobs SET dedupe_key = @dedupe WHERE id = @id",
-                        ("@dedupe", JobQueueRules.TombstoneFinishedDedupeKey(last.DedupeKey, last.Id)),
-                        ("@id", last.Id));
-                }
-
+                GiveUpFinishedKey(connection, transaction, dedupeKey);
                 return EnqueueOrGet(connection, transaction, dedupeKey, jobKind, payloadJson, JobQueueRules.DefaultMaxAttempts, runnerCost: null, priority: 0);
             },
             cancellationToken);
+    }
+
+    /// <summary>A finished job under <paramref name="dedupeKey"/> gives the key up, keeping its row as history, so the next enqueue under it queues a new job.</summary>
+    internal static void GiveUpFinishedKey(SqliteConnection connection, SqliteTransaction transaction, string dedupeKey)
+    {
+        if (GetByDedupeKey(connection, transaction, dedupeKey) is { } last && ProcessingJobStatus.Terminal.Contains(last.Status))
+        {
+            Execute(
+                connection,
+                transaction,
+                "UPDATE jobs SET dedupe_key = @dedupe WHERE id = @id",
+                ("@dedupe", JobQueueRules.TombstoneFinishedDedupeKey(last.DedupeKey, last.Id)),
+                ("@id", last.Id));
+        }
     }
 
     /// <summary>
