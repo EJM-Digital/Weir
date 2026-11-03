@@ -76,10 +76,21 @@ test("a 256px frame is stored as 0 and the entry says 32 bits, one plane", () =>
   assert.equal(parseIco(packed)[0].size, 256);
 });
 
-test("only the 16px frame comes from the small tile", () => {
+test("only the 16px frame comes from the small tile, and only where an output uses it", () => {
   assert.equal(SMALL_ICON_MAX, 16);
   assert.equal(sourceFor(16), APP_ICON_SMALL);
   for (const size of [24, 32, 48, 64, 128, 180, 256]) assert.equal(sourceFor(size), APP_ICON);
+  assert.equal(sourceFor(16, false), APP_ICON);
+});
+
+test("the favicons use the small 16px tile and the tray icon does not", () => {
+  const uses = Object.fromEntries(OUTPUTS.map(({ file, smallFrames }) => [file, smallFrames]));
+  assert.deepEqual(uses, {
+    "apps/web/public/favicon.ico": true,
+    "apps/web/public/apple-touch-icon.png": false,
+    "packaging/windows/assets/weir-tray-icon.ico": false,
+    "docs-site/static/img/favicon.ico": true,
+  });
 });
 
 test("every output is a known set of sizes, each .ico opens with its 16px frame", () => {
