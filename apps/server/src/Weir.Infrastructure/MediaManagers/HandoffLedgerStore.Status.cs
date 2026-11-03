@@ -182,6 +182,17 @@ public sealed partial class HandoffLedgerStore
 
             foreach (var job in jobs)
             {
+                // A pass-through or reject reports to the manager before its job ends. Once the hand-off has been recorded as ended since
+                // the job was taken, that job has already said how it ended: it is not work still to come, and a manager that has just been
+                // told must not be answered "working" (nor the ledger turned back) for the moments the job takes to close.
+                if (job.Status == ProcessingJobStatus.Leased &&
+                    job.JobKind is IntakeRules.PassThroughJobKind or IntakeRules.RejectJobKind &&
+                    HandoffLedgerRules.TerminalStates.Contains(row.State) &&
+                    row.LastChangedAt is { } endedAt && endedAt >= job.UpdatedAt)
+                {
+                    continue;
+                }
+
                 stamps.Add(job.UpdatedAt);
                 if (PayloadRelativePath(job.PayloadJson) is { } busyPath)
                 {
