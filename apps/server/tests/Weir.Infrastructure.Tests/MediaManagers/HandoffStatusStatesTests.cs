@@ -124,6 +124,39 @@ public sealed class HandoffStatusStatesTests : IDisposable
     }
 
     [Fact]
+    public async Task A_pass_through_still_holding_its_job_after_it_reported_the_hand_off_does_not_turn_it_back_to_working()
+    {
+        // The pass-through reports to the manager, and its job only ends after that: in between the report is out and the ledger
+        // already says the hand-off ended, so the manager asking now must hear the same.
+        await ReceiveAsync();
+        await RemoveTheQueuedPassAsync();
+        await AddJobAsync(PassThrough, "leased");
+        await _fixture.Store.Execute("UPDATE files SET status = 'passed_through'");
+        _fixture.Store.Clock.Advance(TimeSpan.FromHours(1));
+        await _fixture.Db(async uow => { await _fixture.Ledger.RecordOutcomeAsync(uow, "deluno", "release", HandoffLedgerRules.PassedThrough, "/out/film.mkv", "Handed back.", ["/out/film.mkv"]); return 0; });
+        _row = (await _fixture.Db(uow => HandoffLedgerStore.FindAsync(uow, "deluno", "release")))!;
+
+        var status = await StatusAsync();
+
+        Assert.Equal(HandoffLedgerRules.PassedThrough, status.State);
+        Assert.Equal(HandoffLedgerRules.PassedThrough, (await _fixture.Db(uow => HandoffLedgerStore.FindAsync(uow, "deluno", "release")))!.State);
+    }
+
+    [Fact]
+    public async Task A_pass_through_that_took_its_job_after_the_hand_off_ended_is_working_again()
+    {
+        await ReceiveAsync();
+        await RemoveTheQueuedPassAsync();
+        await _fixture.Store.Execute("UPDATE files SET status = 'passed_through'");
+        await _fixture.Db(async uow => { await _fixture.Ledger.RecordOutcomeAsync(uow, "deluno", "release", HandoffLedgerRules.PassedThrough, "/out/film.mkv", "Handed back.", ["/out/film.mkv"]); return 0; });
+        _row = (await _fixture.Db(uow => HandoffLedgerStore.FindAsync(uow, "deluno", "release")))!;
+        _fixture.Store.Clock.Advance(TimeSpan.FromHours(1));
+        await AddJobAsync(PassThrough, "leased", createdAt: "2099-01-01 00:00:00");
+
+        Assert.Equal(HandoffLedgerRules.Working, (await StatusAsync()).State);
+    }
+
+    [Fact]
     public async Task A_pass_through_that_ran_out_of_attempts_is_failed_with_the_reason_it_recorded()
     {
         await ReceiveAsync();
