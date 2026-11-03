@@ -369,6 +369,9 @@ public sealed partial class MediaManagerIntake
             }
 
             var dedupeKey = IntakeRules.DedupeKeyFor(baseKey, targets, target, relativePath);
+            // A send of a hand-off whose pass has already finished is a new send: it gets a pass of its own, not the finished one's answer
+            // (which is never given again), so the hand-off the ledger has just started over is not left queued.
+            ProcessingJobStore.GiveUpFinishedKey(connection, transaction, dedupeKey);
             var payload = IntakeRules.Payload(importEvent, library, relativePath, target);
 
             // Folder detection may already have queued (or started) this very file under its own random key. One file
