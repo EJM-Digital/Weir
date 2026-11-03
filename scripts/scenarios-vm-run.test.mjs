@@ -561,3 +561,31 @@ test("the Logs page excuses the Activity entry a deliberate refused sign-in leav
   assert.match(lines[3], /^another-entry: FAILED System > Logs gained no unexpected warning or error \(found 1: Sign-in failed again\)$/);
   assert.match(lines[4], /^file-title: FAILED the server log file gained no unexpected warning or error \(found 1: WARNING Sign-in failed\)$/);
 });
+
+// --- a way into Deluno that could not be made -----------------------------------------------------------------------------------------
+
+// The rc.23 round on 4648d26: the Deluno in the VM offered setup and then refused it with a 400. The first Deluno scenario failed with that
+// 400, and every later one stopped on "Cannot bind argument to parameter 'Reason' because it is an empty string", saying nothing.
+test("a way into Deluno that fails part way fails the first scenario with Deluno's answer, and every later one says why it did not run", { skip }, async () => {
+  const server = createServer((request, response) => {
+    response.writeHead(request.method === "GET" && request.url === "/api/auth/bootstrap-status" ? 200 : 400, { "content-type": "application/json" });
+    response.end(JSON.stringify(request.method === "GET" ? { requiresSetup: true } : { title: "Setup is already complete." }));
+  });
+  await new Promise((resolveListening) => server.listen(0, "localhost", resolveListening));
+  try {
+    const { status, stdout, stderr } = await psFileAsync([
+      "$ErrorActionPreference = 'Stop'",
+      ...dotSource("Lib", "Context", "Deluno"),
+      `$script:Ctx.DelunoUrl = 'http://localhost:${server.address().port}'`,
+      `$script:Ctx.DelunoKeyFile = '${join(mkdtempSync(join(tmpdir(), "weir-scenarios-nokey-")), "none.txt")}'`,
+      `$script:EvidenceFile = '${join(mkdtempSync(join(tmpdir(), "weir-scenarios-evidence-")), "evidence.txt")}'`,
+      "try { Test-DelunoPreconditions | Out-Null; 'first: went ahead' } catch { 'first: FAILED ' + $_.Exception.Message }",
+      "foreach ($n in 'second', 'third') { $r = Test-DelunoPreconditions; $n + ': ' + $r.NotApplicable + ' ' + $r.Detail }",
+    ]).done;
+    assert.equal(status, 0, stderr + stdout.join("\n"));
+    assert.match(stdout[0], /^first: FAILED .*400/);
+    for (const line of stdout.slice(1)) assert.match(line, /^(second|third): True Setting up a way into Deluno at http:\/\/localhost:\d+ failed .*400/);
+  } finally {
+    server.close();
+  }
+});
