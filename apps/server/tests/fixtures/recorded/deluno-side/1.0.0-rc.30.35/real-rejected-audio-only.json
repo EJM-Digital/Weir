@@ -2,7 +2,7 @@
   "app": "deluno",
   "version": "1.0.0-rc.30.35",
   "state": "real-rejected-audio-only",
-  "recordedAt": "2026-10-27T21:31:30.487Z",
+  "recordedAt": "2026-11-03T04:24:05.709Z",
   "note": "A release whose film has sound and no picture, handed to Weir by a real Deluno in a workflow set to reject: Weir reports it rejected and leaves the download; Deluno refuses the release. The hand-off, Deluno's questions about it, Weir's report and Deluno's reply, as the proxy between them saw it.",
   "exchanges": [
     {
@@ -10,18 +10,18 @@
         "method": "POST",
         "path": "/api/v1/intake/webhook/deluno",
         "headers": {
-          "idempotency-key": "01a17f38968e7dad8e4ceb7c9256b485:1793135777422",
+          "idempotency-key": "01a19f978e8f7ce59f029367ee12219e:1793678872207",
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "eventType": "deluno.processor-handoff",
-          "handoffId": "01a17f38968e7dad8e4ceb7c9256b485",
-          "libraryId": "01a17f3407ce7f4e86138051bb7a1d13",
+          "handoffId": "01a19f978e8f7ce59f029367ee12219e",
+          "libraryId": "01a19f93e9207a1fad6bcba1c0f56332",
           "mediaType": "movies",
           "sourcePath": "/downloads/completed/Movies/ScnReject.2020.1080p.WEB-DL.x264-WEIR",
           "releaseName": "ScnReject.2020.1080p.WEB-DL.x264-WEIR",
-          "queueItemId": "c52999973ecf2f56253edef94de379f5587ef5fe",
+          "queueItemId": "d2234c4429c65f84730d76a2c11d783628b215db",
           "callbackPath": "/api/integrations/processors/events",
           "title": "ScnReject",
           "year": 2020,
@@ -46,6 +46,31 @@
     },
     {
       "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/01a19f978e8f7ce59f029367ee12219e",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a19f978e8f7ce59f029367ee12219e",
+          "state": "working",
+          "queuePosition": null,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-11-03T04:08:52Z",
+          "outputPath": null,
+          "outputFiles": null,
+          "message": "Weir only processes movie and TV files that contain a video stream. This file contains no video, so it was rejected before any output was written. Weir is telling your media manager this release is bad so it can find a different one, and removes the download only once the manager accepts."
+        }
+      }
+    },
+    {
+      "request": {
         "method": "POST",
         "path": "/api/integrations/processors/events",
         "headers": {
@@ -53,10 +78,10 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a17f38968e7dad8e4ceb7c9256b485",
+          "handoffId": "01a19f978e8f7ce59f029367ee12219e",
           "status": "failed",
           "processorName": "Weir",
-          "libraryId": "01a17f3407ce7f4e86138051bb7a1d13",
+          "libraryId": "01a19f93e9207a1fad6bcba1c0f56332",
           "releaseName": "ScnReject.2020.1080p.WEB-DL.x264-WEIR",
           "message": "Weir only processes movie and TV files that contain a video stream. This file contains no video, so it was rejected before any output was written.",
           "disposition": "rejected",
@@ -72,10 +97,10 @@
         },
         "body": {
           "status": "rejected",
-          "handoffId": "01a17f38968e7dad8e4ceb7c9256b485",
-          "activityId": "01a17f38991a74a1821836e9242f1c0f",
-          "blockedReleaseId": "6d61b24aaef347eea9110ae4916eb87f",
-          "searchJobId": "01a17f3899167b3cb4fa9f1d2666fe69"
+          "handoffId": "01a19f978e8f7ce59f029367ee12219e",
+          "activityId": "01a19f987b9f777bb2a932cb87843c21",
+          "blockedReleaseId": "3a2f2ca3ba8c46f69e85fc851124e24f",
+          "searchJobId": "01a19f987b9b7e1d940f2512c871aadb"
         }
       }
     }
