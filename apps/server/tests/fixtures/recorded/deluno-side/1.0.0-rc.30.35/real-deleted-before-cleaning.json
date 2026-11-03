@@ -2,7 +2,7 @@
   "app": "deluno",
   "version": "1.0.0-rc.30.35",
   "state": "real-deleted-before-cleaning",
-  "recordedAt": "2026-10-27T21:31:30.487Z",
+  "recordedAt": "2026-11-03T04:24:05.709Z",
   "note": "A release handed to Weir by a real Deluno while Weir was paused, and deleted from its folder before Weir started on it: Deluno's questions while it waited, then Weir's failed report (source_gone) and Deluno's reply, as the proxy between them saw it.",
   "exchanges": [
     {
@@ -10,18 +10,18 @@
         "method": "POST",
         "path": "/api/v1/intake/webhook/deluno",
         "headers": {
-          "idempotency-key": "01a17f3c443c7e57abfb0cea61b141d8:1793136018492",
+          "idempotency-key": "01a19f9c27c07d0fb90aa0acddbbe3b9:1793679173568",
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "eventType": "deluno.processor-handoff",
-          "handoffId": "01a17f3c443c7e57abfb0cea61b141d8",
-          "libraryId": "01a17f3407ce7f4e86138051bb7a1d13",
+          "handoffId": "01a19f9c27c07d0fb90aa0acddbbe3b9",
+          "libraryId": "01a19f93e9207a1fad6bcba1c0f56332",
           "mediaType": "movies",
           "sourcePath": "/downloads/completed/Movies/ScnGone.2020.1080p.WEB-DL.x264-WEIR",
           "releaseName": "ScnGone.2020.1080p.WEB-DL.x264-WEIR",
-          "queueItemId": "3c20b052ef1cb70ac7a2cf917d7e8c08a0af5443",
+          "queueItemId": "792c477a5baa1a8a18af484a5911c60e96dfb055",
           "callbackPath": "/api/integrations/processors/events",
           "title": "ScnGone",
           "year": 2020,
@@ -47,7 +47,7 @@
     {
       "request": {
         "method": "GET",
-        "path": "/api/v1/intake/handoffs/deluno/01a17f3c443c7e57abfb0cea61b141d8",
+        "path": "/api/v1/intake/handoffs/deluno/01a19f9c27c07d0fb90aa0acddbbe3b9",
         "headers": {
           "x-webhook-secret": "<scrubbed>"
         }
@@ -58,11 +58,11 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a17f3c443c7e57abfb0cea61b141d8",
+          "handoffId": "01a19f9c27c07d0fb90aa0acddbbe3b9",
           "state": "queued",
           "queuePosition": null,
           "scheduledFor": null,
-          "lastChangedUtc": "2026-10-27T21:20:24Z",
+          "lastChangedUtc": "2026-11-03T04:12:59Z",
           "outputPath": null,
           "outputFiles": null,
           "message": "This file is no longer in the watched folder. Weir will look again shortly, and stops listing it if it has not come back."
@@ -78,10 +78,10 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a17f3c443c7e57abfb0cea61b141d8",
+          "handoffId": "01a19f9c27c07d0fb90aa0acddbbe3b9",
           "status": "failed",
           "processorName": "Weir",
-          "libraryId": "01a17f3407ce7f4e86138051bb7a1d13",
+          "libraryId": "01a19f93e9207a1fad6bcba1c0f56332",
           "releaseName": "ScnGone.2020.1080p.WEB-DL.x264-WEIR",
           "message": "The download is no longer there, so Weir had nothing to do.",
           "sourceRemoved": false,
@@ -96,8 +96,8 @@
         },
         "body": {
           "status": "failed",
-          "handoffId": "01a17f3c443c7e57abfb0cea61b141d8",
-          "activityId": "01a17f4682cd73c6b1ab5c813a538e27",
+          "handoffId": "01a19f9c27c07d0fb90aa0acddbbe3b9",
+          "activityId": "01a19fa667267d00a3d66389ffa3504b",
           "settled": false
         }
       }
