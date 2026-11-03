@@ -212,7 +212,8 @@
 }
 
 .mm-stat__label {
-  font-size: var(--mm-type-eyebrow);
+  font-size: 11px;
+  line-height: 16px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;

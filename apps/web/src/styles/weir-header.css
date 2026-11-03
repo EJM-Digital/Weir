@@ -15,10 +15,10 @@
   /* Its own width is what the page's controls in it are sized by (a container query), not the window's, since the
      menu takes a different share of the window open and collapsed. */
   container: mm-header / inline-size;
-  /* The title sits lower than the header's middle by half of the eyebrow's line (1.35 times its size) and of the 4px
+  /* The title sits lower than the header's middle by half of the eyebrow's 14px line and of the 4px
      under it, less 0.45px that the title's line has above its letters. A control on the title line moves down by that
      much, so it is centred on the title's text; a transform keeps the header's height. */
-  --title-line-shift: calc(var(--mm-type-eyebrow) * 0.675 + 1.55px);
+  --title-line-shift: 8.55px;
 }
 
 /* Phones only: the button that opens the side menu. */
@@ -32,10 +32,10 @@
 }
 
 .mm-header__eyebrow {
-  font-size: var(--mm-type-eyebrow);
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: var(--mm-tracking-eyebrow);
-  line-height: 1.35;
+  letter-spacing: 0.14em;
+  line-height: 14px;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
