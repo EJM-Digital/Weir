@@ -18,7 +18,8 @@ name: Mutation
 
 on:
   schedule:
-    - cron: "41 2 * * 0"
+  # Sundays, 11:17 UTC (Sunday 22:17 Sydney, AEDT). Off the top of the hour. GitHub may start a scheduled run late on busy days.
+    - cron: "17 11 * * 0"
   workflow_dispatch:
     inputs:
       targets:
@@ -71,6 +72,7 @@ jobs:
     if: needs.select.outputs.any == 'true'
     strategy:
       fail-fast: false
+      max-parallel: 12
       matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

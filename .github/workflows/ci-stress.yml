@@ -1,11 +1,17 @@
 # The SQLite pool-race stress test (SqlitePoolRaceStressTests, Category=Stress), excluded from ci.yml's
 # normal run because it deliberately runs several seconds of wall clock across 8 threads and would starve
-# every other test running alongside it. Runs nightly and on demand instead.
+# every other test running alongside it. Runs weekly, on a pull request that touches the pool code or this test, and on demand instead.
 name: Stress
 
 on:
   schedule:
-    - cron: "17 3 * * *"
+  # Sundays, 10:43 UTC (Sunday 21:43 Sydney, AEDT). Off the top of the hour. GitHub may start a scheduled run late on busy days.
+    - cron: "43 10 * * 0"
+  pull_request:
+    paths:
+      - apps/server/src/Weir.Infrastructure/Sqlite/**
+      - apps/server/tests/Weir.Infrastructure.Tests/Sqlite/SqlitePoolRaceStressTests.cs
+      - .github/workflows/ci-stress.yml
   workflow_dispatch:
 
 permissions:

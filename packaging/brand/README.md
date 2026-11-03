@@ -19,8 +19,12 @@ There are **two drawings of this mark in the repo, and that is deliberate, not d
   survive being rasterised down to 16px: a 1.85-unit band on a 24-unit grid is 1.23 device pixels
   there, sub-pixel by construction, and the arcs fuse into a smear (see `gate-16px.png` in this
   folder). This drawing exists only to be the 16px frame
-  inside the `.ico` files: the favicon `.ico`, the docs `.ico`, and the Windows tray icon. It is
+  inside the favicon `.ico` files: `apps/web/public/favicon.ico` and the docs `.ico`. It is
   not used anywhere a person looks at an SVG or a large raster directly.
+- **The Windows tray icon is the exception: three streams at every size, 16px included.** That is the
+  owner's choice (3 Nov 2026), made knowing the 16px frame blurs a little. Windows uses the 16px frame at
+  normal display scaling, and the tray should show the same mark as the logo. The favicon `.ico` files
+  keep the two-stream 16px fallback.
 
 This is the standard type-design move of shipping separate "text" and "display" masters of one
 typeface: the identity is one mark, traced once, but which optical size represents it changes
@@ -29,7 +33,7 @@ the two (the three-stream drawing is the two-stream one plus one more band on th
 "fixing" the two to match by deleting one of them would be removing a deliberate accommodation,
 not tidying up an inconsistency.
 
-**Where the cutoff sits.** Only the 16px frame falls back. `gate-16px.png` in this folder
+**Where the cutoff sits.** Only the 16px frame of the favicon `.ico` files falls back. `gate-16px.png` in this folder
 renders both drawings at 16 and 32 in dark, light and single colour: at 32 a band is 1.33 device
 pixels, the three arcs separate cleanly and the crest holds in every rendering including the
 single-colour one the tray icon uses; at 16 a band is sub-pixel and they fuse. An earlier revision
@@ -41,8 +45,8 @@ person actually sees in a tab strip or a system tray for no legibility gain. See
 | --- | --- | --- |
 | `weir-mark.svg` | three (primary) | Mark for dark backgrounds: accent `#3ed7c8`. |
 | `weir-mark-light.svg` | three (primary) | Mark for light backgrounds: accent `#0d6f68`. |
-| `weir-app-icon.svg` | three (primary) | The mark on the `#0b1418` rounded tile. Source of every favicon/Windows icon frame **24px and above**. |
-| `weir-app-icon-small.svg` | two (fallback) | The same tile with the small-size fallback geometry. Source of the favicon/Windows icon frame at **16px only**. |
+| `weir-app-icon.svg` | three (primary) | The mark on the `#0b1418` rounded tile. Source of every favicon/Windows icon frame **24px and above**, and of every tray icon frame. |
+| `weir-app-icon-small.svg` | two (fallback) | The same tile with the small-size fallback geometry. Source of the favicon `.ico` 16px frame **only**. |
 
 Those accents are the Tailrace theme tokens from `apps/web/src/styles/weir-tokens.css`.
 The web app draws the same geometry inline (`apps/web/src/components/brand/weir-logo.tsx`) so it

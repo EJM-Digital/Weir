@@ -136,7 +136,7 @@ integer and the Argon2 loop's total overflowed to a negative number that read as
 
 Some server code is reached by a test only when timing or the size of a read goes one way: a race between two tasks, a pipe that
 hands over its data in one piece or in two. A run that goes the other way leaves that line or branch unreached and the floor turns
-red with no change to the code. One run cannot show this, so a daily workflow (`.github/workflows/coverage-flips.yml`) looks at
+red with no change to the code. One run cannot show this, so a daily workflow that runs on days CI ran (`.github/workflows/coverage-flips.yml`) looks at
 the last runs side by side:
 
 - `scripts/fetch-coverage-runs.mjs` downloads the `coverage-server-linux` and `coverage-server-windows` artifacts of the newest

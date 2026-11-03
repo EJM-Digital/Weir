@@ -8,9 +8,10 @@
 # (qbittorrent/, transmission/, deluge/, sabnzbd/, nzbget/) to apps/server/tests/fixtures/recorded/ unchanged, then regenerate each
 # MANIFEST.sha256 with `node scripts/check-recorded-manifest.mjs --write`.
 #
-# Weekly it is also the drift check: it records against the pinned images and against the newest releases, and fails when either set of
-# replies differs from the checked-in ones once times, ids and sizes are set aside (scripts/compare-arr-recordings.mjs). A failure on the
-# pinned images means the recording is not repeatable; a failure on the newest releases means the client has changed what it says.
+# When a compose file changes (a pull request or a push to main) it is also the drift check: it records against the pinned images and
+# fails when the replies differ from the checked-in ones once times, ids and sizes are set aside (scripts/compare-arr-recordings.mjs),
+# which means the recording is not repeatable. By hand, images: latest with compare: true does the same against the newest releases; a
+# failure there means the client has changed what it says.
 name: Record the download clients
 
 on:
@@ -25,9 +26,17 @@ on:
         description: "Also fail when the replies differ from the checked-in ones."
         type: boolean
         default: false
-  schedule:
-    # Mondays, 06:17 UTC.
-    - cron: "17 6 * * 1"
+  # Not on a schedule: the pinned images only change in the compose files, so a change to either (on a pull request, and again on
+  # main) is what records and compares. The newest releases are compared by hand (images: latest, compare: true).
+  pull_request:
+    paths:
+      - apps/server/tools/Weir.ClientRecorder/compose.yaml
+      - apps/server/tools/Weir.ArrRecorder/compose.yaml
+  push:
+    branches: [main]
+    paths:
+      - apps/server/tools/Weir.ClientRecorder/compose.yaml
+      - apps/server/tools/Weir.ArrRecorder/compose.yaml
 
 permissions:
   contents: read
@@ -45,7 +54,7 @@ jobs:
       fail-fast: false
       matrix:
         client: [qbittorrent4, qbittorrent5, transmission, deluge, sabnzbd, nzbget]
-        images: ${{ fromJSON(github.event_name == 'schedule' && '["pinned","latest"]' || format('["{0}"]', inputs.images || 'pinned')) }}
+        images: ${{ fromJSON(format('["{0}"]', inputs.images || 'pinned')) }}
         exclude:
           # qBittorrent 4.x is a release line that ended, so there is no newer 4.x to compare with.
           - client: qbittorrent4
@@ -136,5 +145,5 @@ jobs:
           if-no-files-found: error
 
       - name: Compare with the checked-in replies
-        if: (github.event_name == 'schedule' || inputs.compare) && (success() || failure())
+        if: (github.event_name != 'workflow_dispatch' || inputs.compare) && (success() || failure())
         run: node scripts/compare-arr-recordings.mjs "$RECORDER_OUT_DIR" --apps "$RECORDER_CLIENT"

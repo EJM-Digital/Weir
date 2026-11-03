@@ -137,3 +137,11 @@ test("mutation testing is refused in a workflow a pull request triggers, and all
   assert.deepEqual(findProblems("mutation.yml", pullRequestWorkflow(stryker, "schedule:")), []);
   assert.equal(findProblems("mutation.yml", pullRequestWorkflow(stryker, "pull_request_target:")).length, 1);
 });
+
+test("a Windows job in a workflow whose pull_request trigger lists paths is filtered by those paths", () => {
+  const windowsJob = "  stress:\n    runs-on: windows-latest\n    timeout-minutes: 10\n    steps:\n      - run: echo hi\n";
+  assert.equal(findProblems("ci-stress.yml", pullRequestWorkflow(windowsJob)).length, 1);
+  assert.deepEqual(findProblems("ci-stress.yml", pullRequestWorkflow(windowsJob, "pull_request:\n    paths:\n      - apps/server/src/Weir.Infrastructure/Sqlite/**")), []);
+  // A branches filter is not a path filter.
+  assert.equal(findProblems("ci-stress.yml", pullRequestWorkflow(windowsJob, "pull_request:\n    branches: [main]")).length, 1);
+});

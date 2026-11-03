@@ -40,7 +40,7 @@ How a recording is made, and what it holds, is in the recorder's `README.md`. Wh
   edited: run the recorder again, copy its output over the folder, then `node scripts/check-recorded-manifest.mjs --write`.
 - `node scripts/check-recorded-replays.mjs` fails when a recorded state is named by no test.
 - `node scripts/check-recorded-freshness.mjs` fails when the newest Weir build named in `weir-builds-recorded.json` is more than one release behind the repository. A new folder under `deluno/` or `deluno-side/` is listed there with the Weir build it was recorded against, or the check fails.
-- Weekly, `record-arr.yml` records again against the pinned images and the newest releases and fails when the replies differ from these
+- When a recorder compose file changes, `record-arr.yml` and `record-clients.yml` record again against the pinned images (by hand, also the newest releases) and fail when the replies differ from these
   once times, ids, sizes and the progress of a command are set aside (`node scripts/compare-arr-recordings.mjs`).
 
 ## The download clients
