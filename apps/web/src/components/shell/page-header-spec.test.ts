@@ -12,7 +12,8 @@ function declarations(css: string, selector: string): Record<string, string> {
   const found: Record<string, string> = {};
   for (const line of rule[1].split(";")) {
     const colon = line.indexOf(":");
-    if (colon > 0) found[line.slice(0, colon).trim()] = line.slice(colon + 1).trim();
+    if (colon > 0)
+      found[line.slice(0, colon).trim()] = line.slice(colon + 1).trim();
   }
   return found;
 }
