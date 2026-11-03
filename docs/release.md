@@ -160,6 +160,11 @@ hand-off made earlier is counted, not judged; with none made later the run makes
   -Version 1.0.0-rc.23 -CommitSha <the same SHA> -Phases WithDeluno,Fresh
 ```
 
+Deluno's `Invoke-ScenarioSuite.ps1` does both through `-AfterSetupScript` (a script that runs `-Phases Update`) and `-AfterSuiteScript` (one that runs
+`-Phases WithDeluno,Fresh`). It leaves the Weir login file and the key for the second only when its run is the whole suite or includes its
+last VM group (`github`), so a shorter round is `-Groups install,films,github`; without that group the WithDeluno scenarios are not
+applicable and the status stays pending. Run on their own, on a VM that Deluno's suite did not just set up, the Update and WithDeluno phases fail.
+
 Both invocations write into the same `artifacts/weir-scenarios-<version>-<short sha>/` folder (a full run has no time in its folder name, so its invocations merge), and the record merges every
 phase found there; the `golden-path` status is set by the invocation that completes the record (or by either one as soon as
 a scenario fails). With no `-Phases` all three run back to back, which is the right way to try the suite but cannot pass: the
