@@ -65,7 +65,12 @@ function Initialize-Deluno {
         $script:Ctx.NoDelunoReason = 'This run was not pointed at a Deluno (a rehearsal does not look for one).'
         return $false
     }
-    $obtained = Get-DelunoApiKey
+    # A way in that fails part way fails the scenario that tried it with Deluno's answer, and the ones after it say what that was.
+    try { $obtained = Get-DelunoApiKey }
+    catch {
+        $script:Ctx.NoDelunoReason = "Setting up a way into Deluno at $($script:Ctx.DelunoUrl) failed when an earlier scenario tried it: $($_.Exception.Message)"
+        throw
+    }
     if (-not $obtained.Key) { $script:Ctx.NoDelunoReason = $obtained.Reason; return $false }
     $script:Ctx.DelunoKey = $obtained.Key
     $script:Ctx.DelunoReady = $true
