@@ -131,7 +131,7 @@ public sealed class RejectedFileActionTests
         await scenario.PostHandoffAsync("handoff-reject-action-1", source);
         await scenario.WaitForHandoffStateAsync("handoff-reject-action-1", "rejected");
 
-        var report = Assert.Single(Scenario.Callbacks(fake, "handoff-reject-action-1"));
+        var report = Assert.Single(await scenario.WaitForReportsAsync(fake, "handoff-reject-action-1"));
         Assert.Equal("rejected", (string)report["disposition"]!);
         Assert.False((bool)report["sourceRemoved"]!);
         Assert.True(File.Exists(source), "The download is the manager's to remove, so Weir leaves it.");

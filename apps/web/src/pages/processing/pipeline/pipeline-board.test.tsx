@@ -358,6 +358,20 @@ describe("a file that has just ended", () => {
     );
   });
 
+  it("is counted at Delivering while its card shows, and not once the card has gone", () => {
+    const { rerender } = render(board(lanesOf([]), { leaving: delivered }));
+
+    expect(
+      screen.getByRole("group", { name: "Delivering: 1" }),
+    ).toBeInTheDocument();
+
+    rerender(board(lanesOf([]), { leaving: NOTHING_ENDED }));
+
+    expect(
+      screen.getByRole("group", { name: "Delivering: 0" }),
+    ).toBeInTheDocument();
+  });
+
   it("does not count towards what is in progress", () => {
     render(board(lanesOf([aWriting(2)]), { leaving: delivered }));
 

@@ -191,8 +191,12 @@ export function PipelineBoard({
   // Queued files past the first page of files have no card; they are counted, not drawn, and only where downloads show.
   const uncarded = (stage: PipelineStage) =>
     stage === "queued" && filter !== "library" ? queuedMore : 0;
+  // A delivered card counts at Delivering for as long as it shows, so the count equals the cards in the lane.
   const countAt = (stage: PipelineStage) =>
-    live.filter((card) => card.stage === stage).length + uncarded(stage);
+    cards.filter(
+      (card) =>
+        card.stage === stage && (card.end === null || card.end === "delivered"),
+    ).length + uncarded(stage);
   const places = new Map<string, CardPlace>();
   const more: { stage: PipelineStage; left: number; titles: string }[] = [];
   PIPELINE_STAGES.forEach((stage, column) => {

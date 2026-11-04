@@ -119,10 +119,21 @@ public sealed class ConnectionActivityTests(NoWebhookSecretFixture fixture) : IC
         var row = (await admin.GetAsync($"{ManagerConnections.Route}/{connectionId}")).Fields;
         Assert.True(JsonFields.IsWholeNumber(row["last_answer_ms"]) && (long)row["last_answer_ms"]! >= 0, row.ToJsonString());
         Assert.EndsWith("Z", (string)row["last_used_at"]!);
-        var listed = Assert.Single((await admin.GetAsync(ManagerConnections.Route)).Elements)!;
-        Assert.Equal(row["last_answer_ms"]!.ToJsonString(), listed["last_answer_ms"]!.ToJsonString());
-        Assert.Equal((string)row["last_used_at"]!, (string)listed["last_used_at"]!);
+        // Weir also calls the manager on its own (the workflow sync after a connection is added), and every call moves these two fields,
+        // so the list is compared with the row read just before it only when a third read shows no call came between them.
+        var pair = await Poll.UntilAsync(
+            async () =>
+            {
+                var first = (await admin.GetAsync($"{ManagerConnections.Route}/{connectionId}")).Fields;
+                var inList = Assert.Single((await admin.GetAsync(ManagerConnections.Route)).Elements)!.AsObject();
+                var after = (await admin.GetAsync($"{ManagerConnections.Route}/{connectionId}")).Fields;
+                return Usage(first) == Usage(after) ? new[] { first, inList } : null;
+            },
+            "a reading of the connection with no call to the manager in between");
+        Assert.Equal(Usage(pair[0]), Usage(pair[1]));
     }
+
+    private static string Usage(JsonObject row) => $"{row["last_answer_ms"]?.ToJsonString()} {(string?)row["last_used_at"]}";
 
     [Fact]
     public async Task Testing_a_manager_sends_an_asked_frame_and_then_an_answered_one()
