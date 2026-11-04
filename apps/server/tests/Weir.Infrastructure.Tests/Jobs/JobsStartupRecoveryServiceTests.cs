@@ -25,8 +25,19 @@ public sealed class JobsStartupRecoveryServiceTests : IDisposable
     private readonly JobsTestDatabase _db = new();
     private readonly CapturingLogger<JobsStartupRecoveryService> _log = new();
     private readonly SwapScenario _swap = new();
+    private readonly RecordingHandoffRepair _repair = new();
 
     public void Dispose() => _db.Dispose();
+
+    [Fact]
+    public async Task Startup_gives_the_hand_offs_left_waiting_a_fresh_pass_once_before_the_lanes_may_start()
+    {
+        var service = Service(sweep: null);
+
+        await StartAndWaitAsync(service);
+
+        Assert.Equal(1, _repair.Runs);
+    }
 
     [Fact]
     public async Task The_sweep_walks_every_library_folder_from_the_settings_and_puts_back_an_original_it_finds_missing()
@@ -303,7 +314,7 @@ public sealed class JobsStartupRecoveryServiceTests : IDisposable
     private HeldSweep HoldTheSweep() => new(_swap.Files);
 
     private JobsStartupRecoveryService Service(SwapRecoverySweep? sweep) =>
-        new(_db.Store, Options(), new LibrarySettingsStore(), new LibraryStore(), _db.Clock, _log, sweep);
+        new(_db.Store, Options(), new LibrarySettingsStore(), new LibraryStore(), _db.Clock, _log, _repair, sweep);
 
     private async Task StartAndWaitAsync(JobsStartupRecoveryService service)
     {

@@ -43,6 +43,8 @@ public static class MediaManagerServices
         services.AddWeirJobStore();
         services.AddWeirArtwork();
         services.TryAddSingleton<MediaManagerIntake>();
+        // At startup, a hand-off left waiting with nothing to run gets a fresh pass.
+        services.TryAddSingleton<IStuckHandoffRepair, StuckHandoffRepair>();
         services.TryAddSingleton<HandoffCompletionReporter>();
         // Cancelling one queued job from the jobs list in System › Logs (#745 part 5): the ledger, the report and the file
         // state it touches, constructor-injected instead of passed in on every call.
