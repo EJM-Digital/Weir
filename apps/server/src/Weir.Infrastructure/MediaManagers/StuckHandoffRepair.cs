@@ -5,6 +5,13 @@ using Weir.Infrastructure.Sqlite;
 
 namespace Weir.Infrastructure.MediaManagers;
 
+/// <summary>What startup runs to give the hand-offs left waiting with nothing to run a fresh pass.</summary>
+public interface IStuckHandoffRepair
+{
+    /// <summary>Gives every stuck hand-off a pass; returns how many it repaired.</summary>
+    Task<int> RepairAsync(CancellationToken cancellationToken);
+}
+
 /// <summary>
 /// At startup, gives a hand-off that is still waiting but has no work left to run a fresh pass, the way a send of it again would.
 /// A hand-off can be left like that when its last job ended without the hand-off reaching a final state; nothing would ever
@@ -14,7 +21,7 @@ namespace Weir.Infrastructure.MediaManagers;
 /// A hand-off with a job waiting or running, one waiting out a retry, and one that has ended are left alone, so running this
 /// again while the fresh pass is still waiting queues nothing more.
 /// </remarks>
-public sealed class StuckHandoffRepair
+public sealed class StuckHandoffRepair : IStuckHandoffRepair
 {
     private readonly SqliteDatabase _database;
     private readonly HandoffLedgerStore _ledger;
@@ -29,7 +36,6 @@ public sealed class StuckHandoffRepair
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    /// <summary>Gives every stuck hand-off a pass; returns how many it repaired.</summary>
     public async Task<int> RepairAsync(CancellationToken cancellationToken)
     {
         var stuck = await StuckAsync(cancellationToken).ConfigureAwait(false);
@@ -45,7 +51,19 @@ public sealed class StuckHandoffRepair
                     continue;
                 }
 
-                await _intake.EnqueueRefineAsync(uow, await ResendOfAsync(uow, row, library).ConfigureAwait(false), row.ConnectionId).ConfigureAwait(false);
+                try
+                {
+                    await _intake.EnqueueRefineAsync(uow, await ResendOfAsync(uow, row, library).ConfigureAwait(false), row.ConnectionId).ConfigureAwait(false);
+                }
+                catch (IntakeRefusedException exception)
+                {
+                    _logger.LogWarning(
+                        "{Release} was waiting for Weir to start it but Weir could not give it a fresh pass: {Reason}",
+                        row.RelativePath.TrimEnd('/').Split('/')[^1],
+                        exception.Message);
+                    continue;
+                }
+
                 await uow.CommitAsync().ConfigureAwait(false);
             }
 

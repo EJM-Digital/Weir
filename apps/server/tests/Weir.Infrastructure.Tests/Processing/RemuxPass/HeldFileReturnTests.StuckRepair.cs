@@ -66,6 +66,41 @@ public sealed partial class HeldFileReturnTests
     }
 
     [Fact]
+    public async Task A_hand_off_whose_jobs_have_been_pruned_still_gets_a_pass()
+    {
+        await LeaveHandoffWaitingWithNoWorkAsync();
+        await _fixture.Store.Execute("DELETE FROM jobs");
+
+        Assert.Equal(1, await Repair().RepairAsync(CancellationToken.None));
+
+        Assert.Equal(1, await JobCountAsync());
+    }
+
+    [Fact]
+    public async Task A_hand_off_whose_workflow_is_gone_is_left_alone()
+    {
+        await LeaveHandoffWaitingWithNoWorkAsync();
+        await _fixture.Store.Execute("UPDATE media_manager_handoffs SET library_id = NULL");
+        var jobs = await JobCountAsync();
+
+        Assert.Equal(0, await Repair().RepairAsync(CancellationToken.None));
+
+        Assert.Equal(jobs, await JobCountAsync());
+    }
+
+    [Fact]
+    public async Task A_hand_off_Weir_cannot_send_again_is_skipped_and_the_others_still_get_their_pass()
+    {
+        await LeaveHandoffWaitingWithNoWorkAsync();
+        await _fixture.Store.Execute("UPDATE jobs SET payload_json = replace(payload_json, '\"callback_path\":\"/api', '\"callback_path\":\"//api')");
+        var jobs = await JobCountAsync();
+
+        Assert.Equal(0, await Repair().RepairAsync(CancellationToken.None));
+
+        Assert.Equal(jobs, await JobCountAsync());
+    }
+
+    [Fact]
     public async Task A_hand_off_with_a_pass_still_waiting_is_left_alone()
     {
         await SetUpAsync(releaseFolder: true);
