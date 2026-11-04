@@ -48,7 +48,7 @@ describe("the shared page grid", () => {
   });
 
   it("measures the Pipeline's chrome and keeps its comfortable row to three rows of 86px cards", () => {
-    expect(BOARD_CHROME_PX).toBe(106);
+    expect(BOARD_CHROME_PX).toBe(110);
     // Deluno's mockup's comfortable journey row, the same constant in both products.
     expect(BOARD_PX).toBe(398);
   });
@@ -64,23 +64,23 @@ describe("the shared page grid", () => {
   });
 
   it("gives way band first (never under 144px), then the Pipeline (never under three rows of 60px cards)", () => {
-    // 663px: the band keeps 144px, the Pipeline goes from 398px to 324px, the lower row gets what is left.
+    // 663px: the band keeps 144px, the Pipeline goes from 398px to 328px, the lower row gets what is left.
     expect(gridRows(663)).toEqual({
       band: 144,
-      board: 324,
-      low: 171,
-      template: "144px 324px 171px",
+      board: 328,
+      low: 167,
+      template: "144px 328px 167px",
     });
     expect(gridRows(700).band).toBeGreaterThanOrEqual(144);
   });
 
   it("gives the lower row way last, down to its floor", () => {
-    expect(gridRows(615)).toMatchObject({ band: 144, board: 324, low: 123 });
-    expect(gridRows(300)).toMatchObject({ band: 144, board: 324, low: 110 });
+    expect(gridRows(615)).toMatchObject({ band: 144, board: 328, low: 119 });
+    expect(gridRows(300)).toMatchObject({ band: 144, board: 328, low: 110 });
   });
 
   it("holds a page as tall as the three least rows and the gaps between them", () => {
-    expect(MIN_GRID_PX).toBe(144 + 324 + 110 + 24);
+    expect(MIN_GRID_PX).toBe(144 + 328 + 110 + 24);
     const least = gridRows(MIN_GRID_PX);
     expect(least.band + least.board + least.low + 24).toBe(MIN_GRID_PX);
   });

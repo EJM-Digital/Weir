@@ -10,7 +10,8 @@ function declarations(css: string, selector: string): Record<string, string> {
   const rule = new RegExp(`(?:^|\\})\\s*${escaped}\\s*\\{([^}]*)\\}`).exec(css);
   if (!rule) throw new Error(`No rule for ${selector}`);
   const found: Record<string, string> = {};
-  for (const line of rule[1].split(";")) {
+  const body = rule[1].replace(/\/\*[\s\S]*?\*\//g, "");
+  for (const line of body.split(";")) {
     const colon = line.indexOf(":");
     if (colon > 0)
       found[line.slice(0, colon).trim()] = line.slice(colon + 1).trim();
@@ -53,5 +54,11 @@ describe("page header matches the shared spec", () => {
     expect(title["line-height"]).toBe("var(--panel-line)");
     expect(panels).toMatch(/--panel-line:\s*23px;/);
     expect(tokens).toMatch(/--mm-type-panel:\s*1rem;/);
+  });
+
+  it("makes a panel header 48px high with its title box 12px below the panel top (1px border, 11px padding)", () => {
+    const head = declarations(panels, ".mm-panel__head");
+    expect(head["min-height"]).toBe("48px");
+    expect(head["padding"]).toBe("11px 18px 14px");
   });
 });
