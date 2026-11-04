@@ -75,8 +75,7 @@ public sealed class HandoffRetryCorrectnessTests
         var expected = $"{Scenario.DelunoOutputRoot}/Broken.Origin.531/film.mkv";
         Assert.Equal(expected, ((string)status["outputPath"]!).Replace('\\', '/'));
 
-        var reports = Scenario.Callbacks(fake, "handoff-origin-531");
-        Assert.True(reports.Count > 0, "a retried-then-passed-through hand-off must still report a completion callback");
+        var reports = await scenario.WaitForReportsAsync(fake, "handoff-origin-531");
         Assert.False(string.IsNullOrEmpty((string?)reports[^1]["outputPath"]));
     }
 }
