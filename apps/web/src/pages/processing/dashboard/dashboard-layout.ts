@@ -56,10 +56,10 @@ export const LOW_COLUMNS = "minmax(0, 1.15fr) minmax(0, 1fr)";
 
 /**
  * What sits around the Pipeline's lanes, measured on the rendered board: the panel's top border (1px) and header
- * (44px, as tall as Deluno's card header), the ribbon with the space under it (50px), the space under the lanes
+ * (48px, as tall as the shared shell standard's panel header), the ribbon with the space under it (50px), the space under the lanes
  * (10px) and the panel's bottom border (1px).
  */
-export const BOARD_CHROME_PX = 106;
+export const BOARD_CHROME_PX = 110;
 /**
  * The Pipeline's row at a comfortable size, Deluno's mockup's 398px (its JOURNEY_PX), kept as the same constant rather
  * than worked out from the chrome so the two products share their rows at every height.

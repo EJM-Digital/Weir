@@ -455,7 +455,7 @@ public sealed class JobServicesTests : IDisposable
             TimeProvider.System,
             NullLogger<ProcessingJobProcessor>.Instance);
         // Never started, so RecoveryCompleted reads as already done and this slot never waits on it.
-        var recovery = new JobsStartupRecoveryService(_db.Store, options, new LibrarySettingsStore(), new LibraryStore(), TimeProvider.System, NullLogger<JobsStartupRecoveryService>.Instance);
+        var recovery = new JobsStartupRecoveryService(_db.Store, options, new LibrarySettingsStore(), new LibraryStore(), TimeProvider.System, NullLogger<JobsStartupRecoveryService>.Instance, new RecordingHandoffRepair());
         return new ProcessingWorkerService(processor, _db.Store, heartbeats, options, timings, TimeProvider.System, logger ?? NullLogger<ProcessingWorkerService>.Instance, registry, recovery);
     }
 

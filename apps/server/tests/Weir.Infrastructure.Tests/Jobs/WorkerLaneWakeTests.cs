@@ -228,7 +228,7 @@ public sealed partial class WorkerLaneWakeTests : IDisposable
 
     /// <summary>Never started, so its recovery reads as already done and no slot waits on it.</summary>
     private JobsStartupRecoveryService Recovery(WeirOptions options) =>
-        new(_store, options, new LibrarySettingsStore(), new LibraryStore(), _db.Clock, NullLogger<JobsStartupRecoveryService>.Instance);
+        new(_store, options, new LibrarySettingsStore(), new LibraryStore(), _db.Clock, NullLogger<JobsStartupRecoveryService>.Instance, new RecordingHandoffRepair());
 
     private WeirOptions Options(int workerCount) =>
         WeirOptionsLoader.Load(new RuntimeEnvironment(

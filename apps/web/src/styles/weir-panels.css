@@ -19,10 +19,10 @@
   flex-shrink: 0;
   align-items: baseline;
   gap: 12px;
-  /* Deluno's card header is 44px whether or not it has a link or a count: 10px above and 11px below the title's own 23px
-     line, on which its letters, and so a card's controls, are centred. */
-  min-height: 44px;
-  padding: 10px 18px 11px;
+  /* The shared shell standard: a panel header is 48px high and its title is centred on a 23px line, so the title box
+     starts 12px below the panel's top edge (the 1px border and 11px of padding). Its controls are centred on that line. */
+  min-height: 48px;
+  padding: 11px 18px 14px;
   --panel-line: 23px;
 }
 
@@ -124,7 +124,7 @@
 }
 
 /* A picker in a card's header is a card control's height, as the buttons beside it are, and sits in the header's own
-   padding so the header stays 44px tall like every card's. */
+   padding so the header stays 48px tall like every card's. */
 .mm-panel__aside .mm-input {
   height: var(--mm-control-height-sm);
   min-height: 0;

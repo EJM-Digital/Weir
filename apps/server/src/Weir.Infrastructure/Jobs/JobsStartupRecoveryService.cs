@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Weir.Core.Configuration;
 using Weir.Core.Processing;
 using Weir.Infrastructure.LibraryMode;
+using Weir.Infrastructure.MediaManagers;
 using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Sqlite;
 
@@ -23,6 +24,7 @@ public sealed class JobsStartupRecoveryService : IHostedService
     private readonly TimeProvider _time;
     private readonly ILogger<JobsStartupRecoveryService> _logger;
     private readonly SwapRecoverySweep? _swapSweep;
+    private readonly IStuckHandoffRepair _handoffRepair;
     private TaskCompletionSource? _recoveryCompleted;
 
     public JobsStartupRecoveryService(
@@ -32,6 +34,7 @@ public sealed class JobsStartupRecoveryService : IHostedService
         LibraryStore libraries,
         TimeProvider time,
         ILogger<JobsStartupRecoveryService> logger,
+        IStuckHandoffRepair handoffRepair,
         SwapRecoverySweep? swapSweep = null)
     {
         _store = store;
@@ -41,6 +44,7 @@ public sealed class JobsStartupRecoveryService : IHostedService
         _time = time;
         _logger = logger;
         _swapSweep = swapSweep;
+        _handoffRepair = handoffRepair;
     }
 
     public StartupRecoveryReport? LastReport { get; private set; }
@@ -79,6 +83,7 @@ public sealed class JobsStartupRecoveryService : IHostedService
                 _store, _options.WeirHome, _time.GetUtcNow(), TimeSpan.FromSeconds(_options.ProcessingWorkTempStaleSweepMinStaleAgeSeconds), _logger, CancellationToken.None).ConfigureAwait(false);
             await GiveEveryLibraryAProfileAsync(CancellationToken.None).ConfigureAwait(false);
             await WarnAboutReservedLibraryFoldersAsync(CancellationToken.None).ConfigureAwait(false);
+            await _handoffRepair.RepairAsync(CancellationToken.None).ConfigureAwait(false);
 
             // #506's startup sweep runs after the recovery above and before any worker starts claiming jobs
             // (workers await RecoveryCompleted) — see docs/archive/server-port-notes.md, "Library mode: safe swap".
