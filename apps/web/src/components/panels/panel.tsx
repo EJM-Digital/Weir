@@ -5,7 +5,7 @@ type PanelProps = {
   title: string;
   /** A quiet line after the title. It truncates before anything else when the panel is narrow. */
   count?: ReactNode;
-  /** A quiet line under the title, inside the header, which is then 54px tall rather than 44px. */
+  /** A quiet line under the title, inside the header, which is then taller than the 48px of a header without one. */
   note?: ReactNode;
   /**
    * Controls that take the count's place between the title and the link, such as a row of chips. They scroll
