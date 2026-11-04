@@ -44,7 +44,12 @@ public sealed class FailurePoliciesTests
         // The source is never deleted by a pass-through.
         Assert.Equal(original, await File.ReadAllBytesAsync(source));
         Assert.Equal(2, scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux").Count);
-        Assert.Equal(["completed"], (await scenario.JobsAsync(Scenario.PassThroughKind)).Select(job => (string)job["status"]!));
+        // The hand-off reads passed-through once its report is made, which can be a moment before the pass-through job closes.
+        Assert.Equal(
+            ["completed"],
+            await scenario.WaitWhileWorkedOnAsync(
+                async () => (await scenario.JobsAsync(Scenario.PassThroughKind)).Select(job => (string)job["status"]!).ToList() is ["completed"] statuses ? statuses : null,
+                "the pass-through job to close"));
         // No failure report ever reaches the manager: the file was delivered, not lost.
         Assert.All(Scenario.Callbacks(fake, "handoff-pt-1"), report => Assert.NotEqual("failed", (string)report["status"]!));
         var row = await scenario.FileStateAfterStopAsync(library, rel);
