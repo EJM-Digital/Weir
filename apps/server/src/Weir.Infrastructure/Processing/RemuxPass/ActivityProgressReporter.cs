@@ -86,7 +86,7 @@ public sealed class ActivityProgressReporter
             body.Set(key, value);
         }
 
-        // The row is rewritten in place, so its created_at stays at the pass's start. This is how a reader
+        // The row is rewritten in place, so its created_at stays at the pass's start until the completed row restamps it. This is how a reader
         // tells a long pass that is still reporting from one that died (LiveProgressStore).
         body.Set("reported_at", Timestamp.UtcNow(_time).ToWireText());
 

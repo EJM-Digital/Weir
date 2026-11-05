@@ -42,7 +42,7 @@ public sealed partial class RemuxPassHandler
                     }
 
                     if (activityId is { } id &&
-                        await SqliteActivityWriter.UpdateAsync(uow, id, ActivityEventTypes.ProcessingFileRemuxPassCompleted, title, detail).ConfigureAwait(false))
+                        await SqliteActivityWriter.UpdateAsync(uow, id, ActivityEventTypes.ProcessingFileRemuxPassCompleted, title, detail, restamp: true).ConfigureAwait(false))
                     {
                         return;
                     }

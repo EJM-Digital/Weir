@@ -116,6 +116,25 @@ public sealed partial class RemuxPassHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task The_completed_row_is_stamped_when_the_pass_finishes_not_when_its_progress_row_started()
+    {
+        var library = await LibraryAsync();
+        var progress = await new SqliteActivityWriter(_fixture.Store.Database).RecordAsync(
+            new Weir.Core.Activity.ActivityEventDraft(Weir.Core.Activity.ActivityEventTypes.ProcessingFileProcessingProgress, "processing", "Processing file.mkv", "{\"percent\":3}"));
+        await _fixture.Store.Execute($"UPDATE activity_events SET created_at = datetime('now', '-30 seconds') WHERE id = {progress}");
+        var payload = new WireObject()
+            .Set("ok", true)
+            .Set("outcome", "live_output_written")
+            .Set("relative_media_path", "Movie/file.mkv")
+            .Set("library_id", library);
+
+        await Handler().RecordAsync(payload, progress);
+
+        Assert.Equal("processing.file_remux_pass_completed", await ScalarText($"SELECT event_type FROM activity_events WHERE id = {progress}"));
+        Assert.Equal(1, await _fixture.Store.Scalar($"SELECT count(*) FROM activity_events WHERE id = {progress} AND created_at >= datetime('now', '-10 seconds')"));
+    }
+
+    [Fact]
     public async Task The_progress_row_becomes_the_completed_activity_row_and_the_file_is_processed()
     {
         var library = await LibraryAsync();
