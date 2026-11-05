@@ -14,7 +14,7 @@ body:
     attributes:
       label: Weir version
       description: Use the release tag, commit SHA, or "main" if running from source.
-      placeholder: v1.0.0-rc.26
+      placeholder: v1.0.0-rc.27
     validations:
       required: true
   - type: dropdown
