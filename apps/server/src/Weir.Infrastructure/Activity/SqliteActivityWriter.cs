@@ -29,6 +29,10 @@ public sealed class SqliteActivityWriter : IActivityWriter
         "UPDATE activity_events SET event_type=@event_type, title=@title, detail=@detail, \"trigger\"=@trigger, result=@result, " +
         "library_id=@library_id, relative_path=@relative_path, run_key=@run_key WHERE activity_events.id = @id";
 
+    private const string RestampSql =
+        "UPDATE activity_events SET created_at=CURRENT_TIMESTAMP, event_type=@event_type, title=@title, detail=@detail, \"trigger\"=@trigger, result=@result, " +
+        "library_id=@library_id, relative_path=@relative_path, run_key=@run_key WHERE activity_events.id = @id";
+
     private readonly SqliteDatabase _database;
 
     public SqliteActivityWriter(SqliteDatabase database)
@@ -75,8 +79,11 @@ public sealed class SqliteActivityWriter : IActivityWriter
         return id;
     }
 
-    /// <summary>Updates an event inside a unit of work.</summary>
-    public static async Task<bool> UpdateAsync(UnitOfWork uow, long activityId, string? eventType = null, string? title = null, string? detail = null)
+    /// <summary>
+    /// Updates an event inside a unit of work. With <paramref name="restamp"/> the event is dated now: a row that finishes what it
+    /// began as (a progress row becoming the completed row) records when it finished, not when it started.
+    /// </summary>
+    public static async Task<bool> UpdateAsync(UnitOfWork uow, long activityId, string? eventType = null, string? title = null, string? detail = null, bool restamp = false)
     {
         ArgumentNullException.ThrowIfNull(uow);
         var current = await uow.QuerySingleAsync(SelectSql, ReadDraft, ("@id", activityId)).ConfigureAwait(false);
@@ -85,7 +92,7 @@ public sealed class SqliteActivityWriter : IActivityWriter
             return false;
         }
 
-        await uow.ExecuteAsync(UpdateSql, UpdateParameters(activityId, Merge(current, eventType, title, detail))).ConfigureAwait(false);
+        await uow.ExecuteAsync(restamp ? RestampSql : UpdateSql, UpdateParameters(activityId, Merge(current, eventType, title, detail))).ConfigureAwait(false);
         ActivityNotifications.Track(uow, activityId);
         return true;
     }
