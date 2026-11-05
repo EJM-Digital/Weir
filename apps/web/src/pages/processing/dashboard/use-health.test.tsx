@@ -170,12 +170,20 @@ describe("useHealth", () => {
     );
     const checked = result.current.workflows[0].verdict;
     expect(checked.words).not.toBe(CHECKING_WORDS);
+    const answered = () =>
+      client
+        .getQueryCache()
+        .findAll({ queryKey: processingKeys.libraryFolderChains })
+        .filter((query) => query.state.data !== undefined).length;
+    rerender({ workflow: { ...movies, output_folder: "D:\\Elsewhere" } });
+    await waitFor(() => expect(answered()).toBe(2));
+    const asked = vi.mocked(fetchLibraryFolderChain).mock.calls.length;
     vi.mocked(fetchLibraryFolderChain).mockReturnValue(new Promise(() => {}));
 
-    rerender({ workflow: { ...movies, output_folder: "D:\\Elsewhere" } });
+    rerender({ workflow: { ...movies, output_folder: "D:\\Again" } });
 
     await waitFor(() =>
-      expect(fetchLibraryFolderChain).toHaveBeenCalledTimes(2),
+      expect(fetchLibraryFolderChain).toHaveBeenCalledTimes(asked + 1),
     );
     expect(result.current.workflows[0].verdict).toEqual(checked);
     expect(result.current.workflows[0].chain).toBeDefined();
