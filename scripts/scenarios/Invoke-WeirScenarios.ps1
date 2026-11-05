@@ -246,14 +246,16 @@ function Copy-ToVm([string] $Source, [string] $Destination) {
     try {
         Copy-Item -LiteralPath $Source -Destination $staged -ToSession $rig
         $hash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash
-        $inVm = Invoke-Command -Session $rig -ArgumentList $staged, (Split-Path $Source -Leaf), $Destination, $VmName, $vmCred -ScriptBlock {
-            param($dir, $file, $target, $name, $cred)
-            $s = New-PSSession -VMName $name -Credential $cred
-            try {
-                Invoke-Command -Session $s -ArgumentList $target -ScriptBlock { param($t) New-Item -ItemType Directory -Force -Path $t | Out-Null }
-                Copy-Item -LiteralPath (Join-Path $dir $file) -Destination $target -ToSession $s -Force
-                Invoke-Command -Session $s -ArgumentList (Join-Path $target $file) -ScriptBlock { param($p) (Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash }
-            } finally { Remove-PSSession $s }
+        $inVm = Invoke-WithPsDirectRetry "Copy $(Split-Path $Source -Leaf) to the VM" {
+            Invoke-Command -Session $rig -ArgumentList $staged, (Split-Path $Source -Leaf), $Destination, $VmName, $vmCred -ScriptBlock {
+                param($dir, $file, $target, $name, $cred)
+                $s = New-PSSession -VMName $name -Credential $cred
+                try {
+                    Invoke-Command -Session $s -ArgumentList $target -ScriptBlock { param($t) New-Item -ItemType Directory -Force -Path $t | Out-Null }
+                    Copy-Item -LiteralPath (Join-Path $dir $file) -Destination $target -ToSession $s -Force
+                    Invoke-Command -Session $s -ArgumentList (Join-Path $target $file) -ScriptBlock { param($p) (Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash }
+                } finally { Remove-PSSession $s }
+            }
         }
         if ($inVm -ne $hash) { throw "Hash mismatch after copying $Source (local $hash, VM $inVm)." }
     }
@@ -279,13 +281,28 @@ function Copy-FromVm([string] $VmFolder, [string] $LocalFolder) {
     finally { Invoke-Command -Session $rig -ArgumentList $staged -ScriptBlock { param($d) Remove-Item -LiteralPath $d -Recurse -Force -ErrorAction SilentlyContinue } }
 }
 
-function Wait-VmAnswers {
+# With -RequireHeartbeat (a VM that was just restored or started) the VM is ready only when the host reports its Heartbeat integration
+# service healthy AND PowerShell Direct runs a command: a restored checkpoint answers once while its integration services are still
+# reconnecting, then drops the next call. One 15-minute deadline covers both.
+function Wait-VmAnswers([switch] $RequireHeartbeat) {
     $deadline = (Get-Date).AddMinutes(15)
     $lastError = ''
     while ((Get-Date) -lt $deadline) {
-        try { $null = Invoke-InVm { $env:COMPUTERNAME }; return } catch { $lastError = $_.Exception.Message; Start-Sleep -Seconds 5 }
+        try {
+            if ($RequireHeartbeat) {
+                $heartbeat = Invoke-Command -Session $rig -ArgumentList $VmName -ScriptBlock { param($n) Get-VMIntegrationService -VMName $n -Name Heartbeat }
+                if (-not (Test-VmHeartbeatOk $heartbeat)) {
+                    $lastError = "Heartbeat integration service is '$($heartbeat.PrimaryStatusDescription)' / '$($heartbeat.PrimaryOperationalStatus)', not OK"
+                    Start-Sleep -Seconds 5
+                    continue
+                }
+            }
+            $null = Invoke-InVm { $env:COMPUTERNAME }
+            return
+        }
+        catch { $lastError = $_.Exception.Message; Start-Sleep -Seconds 5 }
     }
-    throw "The VM did not answer over PowerShell Direct within 15 minutes (last error: $lastError)."
+    throw "The VM did not answer over PowerShell Direct$(if ($RequireHeartbeat) { ' with its Heartbeat healthy' }) within 15 minutes (last error: $lastError)."
 }
 
 # The Fresh phase's start: the clean checkpoint, which has no Deluno.
@@ -296,7 +313,7 @@ function Restore-CleanVm {
         Restore-VMSnapshot -VMName $name -Name $cp -Confirm:$false
         Start-VM -Name $name
     }
-    Wait-VmAnswers
+    Wait-VmAnswers -RequireHeartbeat
 }
 
 # The Update and WithDeluno phases' start: nothing is restored; the VM must already be running as Deluno's picker, then Deluno's suite, left it.
@@ -346,7 +363,7 @@ function Invoke-Phase([string] $Phase) {
     }
 
     $vmScripts = 'C:\golden\weir\scripts'
-    Invoke-InVm { Remove-Item 'C:\golden\weir\scripts' -Recurse -Force -ErrorAction SilentlyContinue }
+    Invoke-WithPsDirectRetry 'Clear the scenario scripts folder in the VM' { Invoke-InVm { Remove-Item 'C:\golden\weir\scripts' -Recurse -Force -ErrorAction SilentlyContinue } }
     foreach ($script in Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1') { if ($script.Name -ne 'Invoke-WeirScenarios.ps1') { Copy-ToVm $script.FullName $vmScripts } }
     Copy-ToVm $InstallerPath 'C:\golden\weir\candidate'
     if ($SourceFilm) { Copy-ToVm $SourceFilm 'C:\golden\weir\film' }
@@ -358,7 +375,7 @@ function Invoke-Phase([string] $Phase) {
 
     $pairs = foreach ($key in $arguments.Keys) { "-$key '" + ([string]$arguments[$key]).Replace("'", "''") + "'" }
     $wrapper = New-PhaseWrapperText -RunFolder 'C:\golden\weir\run' -RunnerPath 'C:\golden\weir\scripts\Run-WeirScenarios.ps1' -Arguments ($pairs -join ' ')
-    $started = Invoke-InVm {
+    $started = Invoke-WithPsDirectRetry 'Start the scenario task in the VM' { Invoke-InVm {
         param($wrapper)
         $run = 'C:\golden\weir\run'
         Remove-Item $run -Recurse -Force -ErrorAction SilentlyContinue
@@ -371,7 +388,7 @@ function Invoke-Phase([string] $Phase) {
         Register-ScheduledTask -TaskName 'WeirScenarios' -Action $action -Principal $principal -Settings $settings -Force | Out-Null
         Start-ScheduledTask -TaskName 'WeirScenarios'
         'started'
-    } @($wrapper)
+    } @($wrapper) }
     if ($started -ne 'started') { throw 'The scenario task did not start.' }
 
     # Wait for the phase, and whatever happens while waiting, bring back what it had done. A poll that fails (the VM is busy, a read

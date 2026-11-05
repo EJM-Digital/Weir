@@ -328,6 +328,46 @@ function Get-NoRestoreRefusal {
     "-NoRestore would run on the Weir already on the machine, which is $what, not the build under test ($Version, commit $shortSha). None of the chosen scenarios installs the build. Include fresh-install in -Scenarios, or run without -NoRestore."
 }
 
+# --- the PowerShell Direct link to a VM -----------------------------------------------------------------------------------
+
+# True when the host reports the guest's Heartbeat integration service healthy: the guest's integration services are up, which a VM
+# restored from a checkpoint lacks for a while after it first starts answering. $Service is Get-VMIntegrationService's row (or any
+# object with the same two properties).
+function Test-VmHeartbeatOk {
+    param($Service)
+    if ($null -eq $Service) { return $false }
+    ([string]$Service.PrimaryStatusDescription -eq 'OK') -and ([string]$Service.PrimaryOperationalStatus -eq 'Ok')
+}
+
+# True for the failure of the link itself (the PowerShell Direct transport dropped or never opened), not for an error the command ran
+# into. The class is PSRemotingTransportException; "Starting a command on the remote server failed" is what a guest that is still
+# reconnecting its integration services answers with, and it arrives as plain text across the host hop.
+function Test-PsDirectTransportFailure {
+    param($ErrorRecord)
+    if ($null -eq $ErrorRecord) { return $false }
+    $exception = if ($ErrorRecord -is [System.Management.Automation.ErrorRecord]) { $ErrorRecord.Exception } else { $ErrorRecord }
+    for ($e = $exception; $null -ne $e; $e = $e.InnerException) {
+        if ($e.GetType().Name -eq 'PSRemotingTransportException') { return $true }
+        if ([string]$e.Message -match 'Starting a command on the remote server failed|PSRemotingTransportException') { return $true }
+    }
+    $false
+}
+
+# Runs an idempotent setup step on the VM and tries it again when, and only when, the PowerShell Direct link failed. Each retry is
+# logged with the error. Any other error, and the last attempt's transport failure, is thrown at once. Never wrap a scenario step in
+# this: a scenario's own failure has to stay a failure.
+function Invoke-WithPsDirectRetry {
+    param([Parameter(Mandatory)] [string] $What, [Parameter(Mandatory)] [scriptblock] $Action, [int] $Attempts = 5, [int] $DelaySeconds = 10)
+    for ($attempt = 1; ; $attempt++) {
+        try { return & $Action }
+        catch {
+            if ($attempt -ge $Attempts -or -not (Test-PsDirectTransportFailure $_)) { throw }
+            Write-Host "   ${What}: the PowerShell Direct link failed (attempt $attempt of $Attempts), trying again in ${DelaySeconds}s: $($_.Exception.Message)" -ForegroundColor Yellow
+            Start-Sleep -Seconds $DelaySeconds
+        }
+    }
+}
+
 # The exit code in the file's text, or $null while there is none (no file yet, or text that is not a number).
 function Read-ExitCodeText {
     param($Text)

@@ -1177,3 +1177,63 @@ test("the orchestrator writes which commit its scenario scripts ran from into th
   assert.match(source, /status --porcelain/);
   assert.match(source, /\+uncommitted/);
 });
+
+test("a restored VM is ready only when the host reports its Heartbeat healthy and PowerShell Direct answers", { skip }, () => {
+  const script = [
+    "$ErrorActionPreference = 'Stop'",
+    `. '${join(scenarios, "Weir.Scenarios.Lib.ps1")}'`,
+    "function Row($d, $o) { [pscustomobject]@{ PrimaryStatusDescription = $d; PrimaryOperationalStatus = $o } }",
+    "'ok=' + (Test-VmHeartbeatOk (Row 'OK' 'Ok'))",
+    "'nodata=' + (Test-VmHeartbeatOk (Row 'No Contact' 'NoContact'))",
+    "'lost=' + (Test-VmHeartbeatOk (Row 'Lost Communication' 'LostCommunication'))",
+    "'null=' + (Test-VmHeartbeatOk $null)",
+  ].join("\n");
+  const run = powershell(["-Command", script]);
+  assert.equal(run.status, 0, run.err);
+  assert.match(run.out, /ok=True/);
+  assert.match(run.out, /nodata=False/);
+  assert.match(run.out, /lost=False/);
+  assert.match(run.out, /null=False/);
+
+  const source = readFileSync(join(scenarios, "Invoke-WeirScenarios.ps1"), "utf8");
+  const wait = source.match(/function Wait-VmAnswers[\s\S]*?\r?\n\}/)[0];
+  assert.match(wait, /Get-VMIntegrationService -VMName \$n -Name Heartbeat/);
+  assert.match(wait, /Test-VmHeartbeatOk/);
+  assert.match(wait, /Invoke-InVm \{ \$env:COMPUTERNAME \}/);
+  assert.equal((wait.match(/AddMinutes\(15\)/g) ?? []).length, 1, "one deadline covers the heartbeat and the answer");
+  assert.match(source, /function Restore-CleanVm[\s\S]*?Wait-VmAnswers -RequireHeartbeat/);
+  assert.doesNotMatch(source.match(/function Use-VmAsItIs[\s\S]*?\r?\n\}/)[0], /RequireHeartbeat/);
+});
+
+test("setup calls after a restore retry a dropped PowerShell Direct link and nothing else", { skip }, () => {
+  const script = [
+    "$ErrorActionPreference = 'Stop'",
+    `. '${join(scenarios, "Weir.Scenarios.Lib.ps1")}'`,
+    "$transport = 'Starting a command on the remote server failed with the following error message : x'",
+    "'t1=' + (Test-PsDirectTransportFailure ([System.Exception]::new($transport)))",
+    "'t2=' + (Test-PsDirectTransportFailure ([System.Exception]::new('outer', [System.Exception]::new($transport))))",
+    "'t3=' + (Test-PsDirectTransportFailure ([System.Exception]::new('Access to the path is denied.')))",
+    "'t4=' + (Test-PsDirectTransportFailure ([System.Exception]::new('Hash mismatch after copying x')))",
+    "$script:n = 0",
+    "$r = Invoke-WithPsDirectRetry 'step' { $script:n++; if ($script:n -lt 3) { throw $transport }; 'done' } -DelaySeconds 0",
+    "'retried=' + $r + ':' + $script:n",
+    "$script:n = 0",
+    "try { Invoke-WithPsDirectRetry 'step' { $script:n++; throw 'Access to the path is denied.' } -DelaySeconds 0 } catch { 'other=' + $_.Exception.Message + ':' + $script:n }",
+    "$script:n = 0",
+    "try { Invoke-WithPsDirectRetry 'step' { $script:n++; throw $transport } -Attempts 4 -DelaySeconds 0 } catch { 'bounded=' + $script:n }",
+  ].join("\n");
+  const run = powershell(["-Command", script]);
+  assert.equal(run.status, 0, run.err);
+  assert.match(run.out, /t1=True/);
+  assert.match(run.out, /t2=True/);
+  assert.match(run.out, /t3=False/);
+  assert.match(run.out, /t4=False/);
+  assert.match(run.out, /retried=done:3/);
+  assert.match(run.out, /other=Access to the path is denied\.:1/, "a non-transport error is thrown on the first attempt");
+  assert.match(run.out, /bounded=4/);
+
+  const source = readFileSync(join(scenarios, "Invoke-WeirScenarios.ps1"), "utf8");
+  assert.match(source, /Invoke-WithPsDirectRetry 'Clear the scenario scripts folder in the VM'/);
+  assert.match(source, /function Copy-ToVm[\s\S]*?Invoke-WithPsDirectRetry "Copy [\s\S]*?Hash mismatch/);
+  assert.match(source, /\$started = Invoke-WithPsDirectRetry 'Start the scenario task in the VM'/);
+});
