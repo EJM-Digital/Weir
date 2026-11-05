@@ -20,7 +20,9 @@
 // Usage: node scripts/docker-compose-smoke.mjs <scenario> --candidate <local image>
 //                                              [--releasing <version being released>] [--previous <image>] [--logs <folder>]
 // `--releasing` picks the previous release as the newest one older than it; without it, the newest published release is the previous
-// one. Releases come from `gh api` (GH_TOKEN, GITHUB_REPOSITORY); `--previous <image>` names the image directly.
+// one. Either way it must have its image in the registry (`docker manifest inspect`): a release is on GitHub before `publish-docker` has
+// pushed its image, and that release is passed over, with a log line. Releases come from `gh api` (GH_TOKEN, GITHUB_REPOSITORY);
+// `--previous <image>` names the image directly.
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -30,9 +32,9 @@ import { arm64Starts } from "./docker-smoke/arm64-scenario.mjs";
 import { headRevision } from "./docker-smoke/database.mjs";
 import { refusesBadSettings, remapsAndKeepsSecrets, takesOverTheDataFolder } from "./docker-smoke/identity-scenarios.mjs";
 import { deliversIntoMediaFolder } from "./docker-smoke/media-folder-scenario.mjs";
-import { previousRelease } from "./docker-smoke/previous-image.mjs";
+import { imageIsPublished, previousPublishedRelease } from "./docker-smoke/previous-image.mjs";
 import { restartKeepsData, upgradeKeepsData } from "./docker-smoke/scenarios.mjs";
-import { run } from "./docker-smoke/shell.mjs";
+import { run, runForStatus } from "./docker-smoke/shell.mjs";
 import { ORIGIN, Stack } from "./docker-smoke/docker-stack.mjs";
 import { WeirClient } from "./docker-smoke/weir-client.mjs";
 import { REPOSITORY } from "./repository.mjs";
@@ -48,7 +50,7 @@ function publishedReleaseTags() {
 }
 
 async function upgrade(world, { releasing, previous, scratch }) {
-  const from = previous ? { version: previous, image: previous } : previousRelease(publishedReleaseTags(), releasing);
+  const from = previous ? { version: previous, image: previous } : previousPublishedRelease(publishedReleaseTags(), releasing, (image) => imageIsPublished(image, runForStatus));
   if (!from) {
     console.log("::notice::There is no earlier release to upgrade from, so there is nothing to upgrade.");
     return "There is no earlier release, so there was nothing to upgrade.";
