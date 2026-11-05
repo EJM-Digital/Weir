@@ -188,7 +188,10 @@ export function NeedsPanel({
   onOpen,
 }: NeedsPanelProps) {
   const workflows = useProcessingLibrariesQuery().data;
-  const { groups, files, filesError } = useNeedsYou(workflowId, filter);
+  const { groups, files, filesError, filesPending } = useNeedsYou(
+    workflowId,
+    filter,
+  );
   const count = files.length;
   const [notice, setNotice] = useState<NeedNotice | null>(null);
   const [listRef, fits] = useFittingRows();
@@ -235,7 +238,11 @@ export function NeedsPanel({
         <div ref={listRef} className="mm-needs__fit">
           {filesError ? <ReadFailed error={filesError} /> : null}
           {groups.length === 0 ? (
-            filesError ? null : (
+            filesError ? null : filesPending ? (
+              <p className="mm-needs__clear">
+                Looking for files that need you…
+              </p>
+            ) : (
               <AllClear filter={filter} />
             )
           ) : (

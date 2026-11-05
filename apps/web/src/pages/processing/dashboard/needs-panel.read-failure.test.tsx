@@ -10,6 +10,7 @@ import {
   readyServer,
   workflowRow,
 } from "../../../test/dashboard-fixtures";
+import { held } from "../../../test/held";
 import {
   jsonAnswer,
   stubWeirApi,
@@ -61,6 +62,23 @@ describe("the Needs you panel when it cannot read the files", () => {
 
     expect(await within(panel).findByText("All clear")).toBeInTheDocument();
     expect(within(panel).queryByRole("alert")).toBeNull();
+  });
+
+  it("says it is looking, never All clear, until the first read of the files answers", async () => {
+    const answer = held<Response>();
+    stubServer(() => answer.promise);
+
+    const panel = renderPanel();
+
+    expect(
+      await within(panel).findByText("Looking for files that need you…"),
+    ).toBeInTheDocument();
+    expect(within(panel).queryByText("All clear")).toBeNull();
+    answer.resolve(jsonAnswer(filesPage([])));
+    expect(await within(panel).findByText("All clear")).toBeInTheDocument();
+    expect(
+      within(panel).queryByText("Looking for files that need you…"),
+    ).toBeNull();
   });
 
   it("says it could not read the files, never All clear, when the server fails the read", async () => {

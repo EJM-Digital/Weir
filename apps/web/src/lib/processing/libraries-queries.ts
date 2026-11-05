@@ -27,6 +27,7 @@ import {
 import {
   fetchConnectionFolderChain,
   fetchLibraryFolderChain,
+  type LibraryFolderChain,
 } from "./library-folder-chain-api";
 import {
   createProcessingRuleSet,
@@ -112,6 +113,24 @@ export function libraryFolderChainOptions(
     staleTime: 30_000,
     retry: false,
   };
+}
+
+/**
+ * The newest chain read for a library under any folders, for a view that must not blink back to "Checking" when its
+ * folders are saved and the key, which holds them, changes under it. The new check's own answer replaces it.
+ */
+export function heldFolderChain(
+  client: QueryClient,
+  libraryId: number,
+): LibraryFolderChain | undefined {
+  return client
+    .getQueryCache()
+    .findAll({
+      queryKey: [...processingKeys.libraryFolderChains, libraryId],
+    })
+    .filter((query) => query.state.data !== undefined)
+    .sort((a, b) => b.state.dataUpdatedAt - a.state.dataUpdatedAt)[0]?.state
+    .data as LibraryFolderChain | undefined;
 }
 
 /** The folder chain for one saved library, once it has an id: a new library has nothing to check yet. */

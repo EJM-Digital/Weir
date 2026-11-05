@@ -46,7 +46,8 @@ export function SystemView({ layout }: SystemViewProps) {
   const [jump, setJump] = useState(0);
 
   if (workflows.isPending) return <PageLoading label="Loading the system" />;
-  if (workflows.isError) return <ApiEntryError error={workflows.error} />;
+  if (workflows.isError && !workflows.data)
+    return <ApiEntryError error={workflows.error} />;
 
   const summary = healthSummary(health.checks);
   const ringChecks =

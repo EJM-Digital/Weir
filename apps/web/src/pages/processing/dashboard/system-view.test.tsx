@@ -113,7 +113,7 @@ describe("the System view's cards", () => {
       isPending: false,
       isError: true,
       error: new Error("down"),
-      data: [],
+      data: undefined,
     };
     render(<SystemView layout={beside} />);
 
@@ -122,6 +122,26 @@ describe("the System view's cards", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reload" })).toBeInTheDocument();
     expect(screen.queryByText("computer")).toBeNull();
+    vi.unstubAllEnvs();
+  });
+
+  it("keeps the same cards when a read it already holds fails again", () => {
+    vi.stubEnv("DEV", false);
+    const { rerender } = render(<SystemView layout={beside} />);
+    const computer = screen.getByText("computer");
+
+    libraries = {
+      isPending: false,
+      isError: true,
+      error: new Error("down"),
+      data: [],
+    };
+    rerender(<SystemView layout={beside} />);
+
+    expect(
+      screen.queryByRole("heading", { name: "Weir hit a problem" }),
+    ).toBeNull();
+    expect(screen.getByText("computer")).toBe(computer);
     vi.unstubAllEnvs();
   });
 
