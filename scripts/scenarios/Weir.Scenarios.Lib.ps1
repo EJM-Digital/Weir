@@ -358,14 +358,20 @@ function Test-PsDirectTransportFailure {
 # this: a scenario's own failure has to stay a failure.
 function Invoke-WithPsDirectRetry {
     param([Parameter(Mandatory)] [string] $What, [Parameter(Mandatory)] [scriptblock] $Action, [int] $Attempts = 5, [int] $DelaySeconds = 10)
-    for ($attempt = 1; ; $attempt++) {
-        try { return & $Action }
+    $state = @{ Attempt = 0 }
+    # Wait-Until supplies the interval between tries. Every run of the probe ends the wait except a transport failure with attempts
+    # left, so the attempts bound it and the ceiling below is never what ends it.
+    $outcome = Wait-Until -What $What -TimeoutSeconds 86400 -IntervalMilliseconds ($DelaySeconds * 1000) -Probe {
+        $state.Attempt++
+        try { @{ Value = (& $Action) } }
         catch {
-            if ($attempt -ge $Attempts -or -not (Test-PsDirectTransportFailure $_)) { throw }
-            Write-Host "   ${What}: the PowerShell Direct link failed (attempt $attempt of $Attempts), trying again in ${DelaySeconds}s: $($_.Exception.Message)" -ForegroundColor Yellow
-            Start-Sleep -Seconds $DelaySeconds
+            if ($state.Attempt -ge $Attempts -or -not (Test-PsDirectTransportFailure $_)) { return @{ Failure = $_ } }
+            Write-Host "   ${What}: the PowerShell Direct link failed (attempt $($state.Attempt) of $Attempts), trying again in ${DelaySeconds}s: $($_.Exception.Message)" -ForegroundColor Yellow
+            $null
         }
     }
+    if ($outcome.ContainsKey('Failure')) { throw $outcome.Failure }
+    $outcome.Value
 }
 
 # The exit code in the file's text, or $null while there is none (no file yet, or text that is not a number).

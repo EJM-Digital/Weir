@@ -292,15 +292,14 @@ function Wait-VmAnswers([switch] $RequireHeartbeat) {
             if ($RequireHeartbeat) {
                 $heartbeat = Invoke-Command -Session $rig -ArgumentList $VmName -ScriptBlock { param($n) Get-VMIntegrationService -VMName $n -Name Heartbeat }
                 if (-not (Test-VmHeartbeatOk $heartbeat)) {
-                    $lastError = "Heartbeat integration service is '$($heartbeat.PrimaryStatusDescription)' / '$($heartbeat.PrimaryOperationalStatus)', not OK"
-                    Start-Sleep -Seconds 5
-                    continue
+                    throw "Heartbeat integration service is '$($heartbeat.PrimaryStatusDescription)' / '$($heartbeat.PrimaryOperationalStatus)', not OK"
                 }
             }
             $null = Invoke-InVm { $env:COMPUTERNAME }
             return
         }
-        catch { $lastError = $_.Exception.Message; Start-Sleep -Seconds 5 }
+        catch { $lastError = $_.Exception.Message }
+        Start-Sleep -Seconds 5
     }
     throw "The VM did not answer over PowerShell Direct$(if ($RequireHeartbeat) { ' with its Heartbeat healthy' }) within 15 minutes (last error: $lastError)."
 }
