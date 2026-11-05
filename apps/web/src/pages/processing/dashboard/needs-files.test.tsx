@@ -46,6 +46,13 @@ describe("the failed, rejected, held and skipped files the Needs you panel reads
     });
   });
 
+  it("is pending until the first read answers, then not", async () => {
+    const { result } = renderHook(() => useNeedsFiles(null), { wrapper });
+
+    expect(result.current.pending).toBe(true);
+    await waitFor(() => expect(result.current.pending).toBe(false));
+  });
+
   it("reads every workflow's files when it is not narrowed", async () => {
     const { result } = renderHook(() => useNeedsFiles(null), { wrapper });
 

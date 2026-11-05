@@ -17,6 +17,8 @@ export type NeedsFiles = {
   files: ProcessingFile[];
   /** Why the latest read failed, or null when it worked. The files are then the last that were read, or none. */
   error: unknown;
+  /** The first read has not answered, so no files yet is not the same as none waiting. */
+  pending: boolean;
 };
 
 /**
@@ -43,5 +45,9 @@ export function useNeedsFiles(
     exact: true,
     throttleMs: STREAM_THROTTLE_MS,
   });
-  return { files: files.data?.files ?? NO_FILES, error: files.error };
+  return {
+    files: files.data?.files ?? NO_FILES,
+    error: files.error,
+    pending: files.isPending,
+  };
 }

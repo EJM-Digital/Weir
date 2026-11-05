@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { ProcessingLibrary } from "../../../lib/processing/libraries-api";
 import { fetchLibraryFolderChain } from "../../../lib/processing/library-folder-chain-api";
 import { processingKeys } from "../../../lib/processing/query-keys";
+import { CHECKING_WORDS } from "./health-model";
 import { useHealth } from "./use-health";
 
 vi.mock(
@@ -152,6 +153,32 @@ describe("useHealth", () => {
     expect(result.current.downloadClients).toEqual([]);
     managerRows = [];
     clientRows = [];
+  });
+
+  it("keeps a workflow's verdict while its saved folders are checked again", async () => {
+    vi.mocked(fetchLibraryFolderChain).mockResolvedValue(answer);
+    const client = new QueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const { result, rerender } = renderHook(
+      ({ workflow }: { workflow: ProcessingLibrary }) => useHealth([workflow]),
+      { wrapper, initialProps: { workflow: movies } },
+    );
+    await waitFor(() =>
+      expect(result.current.workflows[0].chain).toBeDefined(),
+    );
+    const checked = result.current.workflows[0].verdict;
+    expect(checked.words).not.toBe(CHECKING_WORDS);
+    vi.mocked(fetchLibraryFolderChain).mockReturnValue(new Promise(() => {}));
+
+    rerender({ workflow: { ...movies, output_folder: "D:\\Elsewhere" } });
+
+    await waitFor(() =>
+      expect(fetchLibraryFolderChain).toHaveBeenCalledTimes(2),
+    );
+    expect(result.current.workflows[0].verdict).toEqual(checked);
+    expect(result.current.workflows[0].chain).toBeDefined();
   });
 
   it("reads one workflow's chain again, and every chain again, when asked", async () => {
