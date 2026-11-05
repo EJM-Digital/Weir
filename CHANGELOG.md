@@ -10,6 +10,7 @@ Earlier version numbers were retired when Weir restarted at 1.0.0-rc.1. Their hi
 
 ## 1.x
 
+- **1.0.0-rc.27** (2026-11-05). Speeds read in KB/s under 1 MB/s, MB/s from there and GB/s from 1000 MB/s, everywhere, as in Deluno. Activity dates a finished file by when it finished, not when its write began (#1376). The filter chips on Just finished read at 12px, as in Deluno. [notes](docs/release-notes/v1.0.0-rc.27.md) · [release](https://github.com/EJM-Digital/Weir/releases/tag/v1.0.0-rc.27)
 - **1.0.0-rc.26** (2026-11-05). The Dashboard's rows take their heights from the window alone, by the same rule as Deluno, so nothing shifts when you switch between them. [notes](docs/release-notes/v1.0.0-rc.26.md) · [release](https://github.com/EJM-Digital/Weir/releases/tag/v1.0.0-rc.26)
 - **1.0.0-rc.25** (2026-11-05). A download already left waiting for ever before rc.24 is finished when Weir starts, and Weir says what it found (#1365). Panel titles sit 12px below the panel top, as in Deluno. [notes](docs/release-notes/v1.0.0-rc.25.md) · [release](https://github.com/EJM-Digital/Weir/releases/tag/v1.0.0-rc.25)
 - **1.0.0-rc.24** (2026-11-04). A download Deluno sends again after Weir finished with it, and whose folder is gone, always gets an answer instead of waiting for ever (#1365). The Delivering count includes the file whose Delivered card is showing (#1351). [notes](docs/release-notes/v1.0.0-rc.24.md) · [release](https://github.com/EJM-Digital/Weir/releases/tag/v1.0.0-rc.24)

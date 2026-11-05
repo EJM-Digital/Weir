@@ -2,7 +2,7 @@
   "app": "deluno",
   "version": "1.0.0-rc.30.35",
   "state": "real-connection",
-  "recordedAt": "2026-11-05T01:53:53.269Z",
+  "recordedAt": "2026-11-05T05:36:26.357Z",
   "note": "Weir connected to a real Deluno, and Deluno to Weir: what Weir read of Deluno's manifest and folders, and what Deluno asked of Weir, the first time each was said.",
   "exchanges": [
     {
@@ -74,7 +74,7 @@
           },
           "libraries": [
             {
-              "id": "01a1a95808b67458bd227ff9cd8303cf",
+              "id": "01a1aa22dbd77bc3a0af6879c6fe370b",
               "name": "Movies",
               "mediaType": "movies",
               "rootPath": "/media/Movies",
@@ -95,7 +95,7 @@
           ],
           "indexers": [
             {
-              "id": "01a1a95808c57ee989538f17f825021f",
+              "id": "01a1aa22dbef7c0786f323e6e7bf065d",
               "name": "Scenario feed",
               "protocol": "torznab",
               "mediaScope": "both",
@@ -106,7 +106,7 @@
           ],
           "downloadClients": [
             {
-              "id": "01a1a958082a77c5be26fef7b918f693",
+              "id": "01a1aa22da5f7a3388d30b3f9af602d8",
               "name": "qBittorrent on qbittorrent",
               "protocol": "qbittorrent",
               "moviesCategory": "deluno-movies",
@@ -137,7 +137,7 @@
         "body": {
           "libraries": [
             {
-              "libraryId": "01a1a95808b67458bd227ff9cd8303cf",
+              "libraryId": "01a1aa22dbd77bc3a0af6879c6fe370b",
               "libraryName": "Movies",
               "mediaType": "movies",
               "downloadsPath": "/downloads/completed/Movies",
@@ -145,7 +145,7 @@
               "importWorkflow": "standard",
               "destinations": [
                 {
-                  "downloadClientId": "01a1a958082a77c5be26fef7b918f693",
+                  "downloadClientId": "01a1aa22da5f7a3388d30b3f9af602d8",
                   "downloadClientName": "qBittorrent on qbittorrent",
                   "protocol": "qbittorrent",
                   "category": "deluno-movies",
