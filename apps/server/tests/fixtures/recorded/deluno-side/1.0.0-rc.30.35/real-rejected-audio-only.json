@@ -2,7 +2,7 @@
   "app": "deluno",
   "version": "1.0.0-rc.30.35",
   "state": "real-rejected-audio-only",
-  "recordedAt": "2026-11-03T04:24:05.709Z",
+  "recordedAt": "2026-11-04T20:31:51.968Z",
   "note": "A release whose film has sound and no picture, handed to Weir by a real Deluno in a workflow set to reject: Weir reports it rejected and leaves the download; Deluno refuses the release. The hand-off, Deluno's questions about it, Weir's report and Deluno's reply, as the proxy between them saw it.",
   "exchanges": [
     {
@@ -10,18 +10,18 @@
         "method": "POST",
         "path": "/api/v1/intake/webhook/deluno",
         "headers": {
-          "idempotency-key": "01a19f978e8f7ce59f029367ee12219e:1793678872207",
+          "idempotency-key": "01a1a834db4679aa894a9f049d05dc5b:1793823398726",
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "eventType": "deluno.processor-handoff",
-          "handoffId": "01a19f978e8f7ce59f029367ee12219e",
-          "libraryId": "01a19f93e9207a1fad6bcba1c0f56332",
+          "handoffId": "01a1a834db4679aa894a9f049d05dc5b",
+          "libraryId": "01a1a8304e007d208cc56a3ee5a7a80e",
           "mediaType": "movies",
           "sourcePath": "/downloads/completed/Movies/ScnReject.2020.1080p.WEB-DL.x264-WEIR",
           "releaseName": "ScnReject.2020.1080p.WEB-DL.x264-WEIR",
-          "queueItemId": "d2234c4429c65f84730d76a2c11d783628b215db",
+          "queueItemId": "b5ef52b43211877f25c32117aacced3b7b6e9347",
           "callbackPath": "/api/integrations/processors/events",
           "title": "ScnReject",
           "year": 2020,
@@ -46,31 +46,6 @@
     },
     {
       "request": {
-        "method": "GET",
-        "path": "/api/v1/intake/handoffs/deluno/01a19f978e8f7ce59f029367ee12219e",
-        "headers": {
-          "x-webhook-secret": "<scrubbed>"
-        }
-      },
-      "reply": {
-        "status": 200,
-        "headers": {
-          "content-type": "application/json"
-        },
-        "body": {
-          "handoffId": "01a19f978e8f7ce59f029367ee12219e",
-          "state": "working",
-          "queuePosition": null,
-          "scheduledFor": null,
-          "lastChangedUtc": "2026-11-03T04:08:52Z",
-          "outputPath": null,
-          "outputFiles": null,
-          "message": "Weir only processes movie and TV files that contain a video stream. This file contains no video, so it was rejected before any output was written. Weir is telling your media manager this release is bad so it can find a different one, and removes the download only once the manager accepts."
-        }
-      }
-    },
-    {
-      "request": {
         "method": "POST",
         "path": "/api/integrations/processors/events",
         "headers": {
@@ -78,10 +53,10 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a19f978e8f7ce59f029367ee12219e",
+          "handoffId": "01a1a834db4679aa894a9f049d05dc5b",
           "status": "failed",
           "processorName": "Weir",
-          "libraryId": "01a19f93e9207a1fad6bcba1c0f56332",
+          "libraryId": "01a1a8304e007d208cc56a3ee5a7a80e",
           "releaseName": "ScnReject.2020.1080p.WEB-DL.x264-WEIR",
           "message": "Weir only processes movie and TV files that contain a video stream. This file contains no video, so it was rejected before any output was written.",
           "disposition": "rejected",
@@ -97,10 +72,10 @@
         },
         "body": {
           "status": "rejected",
-          "handoffId": "01a19f978e8f7ce59f029367ee12219e",
-          "activityId": "01a19f987b9f777bb2a932cb87843c21",
-          "blockedReleaseId": "3a2f2ca3ba8c46f69e85fc851124e24f",
-          "searchJobId": "01a19f987b9b7e1d940f2512c871aadb"
+          "handoffId": "01a1a834db4679aa894a9f049d05dc5b",
+          "activityId": "01a1a834ddd97af3909a8b0133324f43",
+          "blockedReleaseId": "c7203fcd571240eba368652e7a2499fe",
+          "searchJobId": "01a1a834ddd575e18929d90aa2238622"
         }
       }
     }
