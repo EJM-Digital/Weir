@@ -137,7 +137,7 @@ describe("the Working on now tile", () => {
     renderTile();
 
     expect(screen.getByText("Nothing being cleaned.")).toBeInTheDocument();
-    expect(screen.queryByTestId("live-working")).toBeNull();
+    expect(screen.getByTestId("live-working")).not.toBeVisible();
   });
 
   it("names the wait for a new download beside the figure, where the tile's width never hides it", () => {
@@ -230,5 +230,36 @@ describe("the Working on now tile", () => {
         screen.queryByRole("link", { name: /more in Activity/ }),
       ).toBeNull();
     });
+  });
+});
+
+describe("the Working on now tile when its list empties and refills", () => {
+  function tileOf(working: WorkingItem[]) {
+    return (
+      <MemoryRouter>
+        <WorkingTile
+          working={working}
+          filesAtOnce={2}
+          waitSeconds={60}
+          onOpen={vi.fn()}
+        />
+      </MemoryRouter>
+    );
+  }
+
+  it("keeps its list element, showing it only while there is something to list", () => {
+    const { rerender } = render(tileOf([item({})]));
+    const list = screen.getByTestId("live-working");
+    expect(list).toBeVisible();
+
+    rerender(tileOf([]));
+    expect(screen.getByTestId("live-working")).toBe(list);
+    expect(list).not.toBeVisible();
+    expect(screen.getByText("Nothing being cleaned.")).toBeVisible();
+
+    rerender(tileOf([item({})]));
+    expect(screen.getByTestId("live-working")).toBe(list);
+    expect(list).toBeVisible();
+    expect(screen.getByText("Nothing being cleaned.")).not.toBeVisible();
   });
 });

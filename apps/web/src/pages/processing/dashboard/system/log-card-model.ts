@@ -57,7 +57,9 @@ function lineOf(
   if (time === null) return null;
   const level = levelOf(rawLevel);
   return {
-    key: `${time}|${level}|${message}`,
+    // The stream and the log read both write the server's one timestamp (to the microsecond) and level, and the stream
+    // trims the message, so a line keeps its key, and its element, when the read returns the line the stream brought.
+    key: `${time}|${level}|${message.trim()}`,
     at: time,
     level,
     message,

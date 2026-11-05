@@ -10,6 +10,7 @@ import { motionAllowed } from "../../../lib/ui/motion-allowed";
 import { ACTIVITY_PATH } from "../../activity/activity-links";
 import { ACTIVITY_MODULE_OF_WORK, type Filter } from "../processing-filter";
 import { useFittingRows } from "./fit-rows";
+import { PULSE_MS } from "./system/log-card-model";
 import { StreamIcon } from "./stream-icons";
 import {
   buildStream,
@@ -49,9 +50,20 @@ function Line({
   now: number;
   fresh: boolean;
 }) {
+  // Whether the line arrived while the page was open is settled when it appears, and the glow ends with its
+  // animation, so a line that is later updated in place never plays its entrance again.
+  const [entering, setEntering] = useState(fresh);
+  useEffect(() => {
+    if (!entering) return undefined;
+    const timer = window.setTimeout(() => setEntering(false), PULSE_MS);
+    return () => window.clearTimeout(timer);
+  }, [entering]);
   return (
     <li
-      className={classNames("mm-stream__item", fresh && "mm-stream__item--new")}
+      className={classNames(
+        "mm-stream__item",
+        entering && "mm-stream__item--new",
+      )}
       data-fit=""
     >
       <Link to={row.to} className="mm-stream__link">

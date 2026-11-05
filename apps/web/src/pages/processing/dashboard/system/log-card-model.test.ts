@@ -136,6 +136,28 @@ describe("shownLines", () => {
   });
 });
 
+describe("a line's key", () => {
+  it("is the same for the line the stream brought and the one the log read returns, so the line keeps its element", () => {
+    // The server writes one timestamp (to the microsecond, "Z" for UTC) to both, and the stream trims the message.
+    const streamed = lineFromFrame(
+      {
+        at: "2026-10-02T09:59:58.123456Z",
+        level: "WARNING",
+        message: "Disk is nearly full",
+      },
+      NOW,
+    );
+    const read = lineFromEntry({
+      timestamp: "2026-10-02T09:59:58.123456Z",
+      level: "WARNING",
+      message: " Disk is nearly full\n",
+    });
+
+    expect(streamed?.key).toBe(read?.key);
+    expect(mergeLines([[streamed!], [read!]])).toHaveLength(1);
+  });
+});
+
 describe("defaultFilter", () => {
   it("is the problems when there have been errors or warnings today", () => {
     expect(defaultFilter({ errors: 2, warnings: 0 })).toBe("problems");

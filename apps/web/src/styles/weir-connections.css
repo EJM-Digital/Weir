@@ -94,9 +94,12 @@
   color: var(--mm-text2);
 }
 
+/* The time takes a reserved width, right-aligned, so "just now · 104 ms" becoming "1 min ago · 98 ms" does not move the role beside it. */
 .mm-conn__when {
   flex: none;
+  min-width: 18ch;
   margin-left: auto;
+  text-align: right;
   font-size: var(--mm-type-caption);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;

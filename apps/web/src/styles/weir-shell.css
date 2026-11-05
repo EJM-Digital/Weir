@@ -160,12 +160,35 @@ kbd {
   min-width: 0;
 }
 
-/* Live updates are lost: what is on screen may be out of date until Weir answers again. Full width under the header. */
+/* Where the shell's banners lie: over the foot of the window, out of the page's flow, so a banner that comes or goes never
+   changes the size of what the page fits to. The header and its controls stay clear above. */
+.mm-banners {
+  position: fixed;
+  z-index: 30;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.mm-banners > *,
+.mm-banners .mm-live-banner {
+  pointer-events: auto;
+}
+
+/* Live updates are lost: what is on screen may be out of date until Weir answers again. */
 .mm-live-banner {
+  max-width: 36rem;
   margin: 0;
-  padding: 8px var(--mm-header-pad-x);
-  border-bottom: 1px solid color-mix(in srgb, var(--mm-st) 40%, transparent);
-  background: color-mix(in srgb, var(--mm-st) 6%, var(--mm-bg-main));
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--mm-st) 40%, transparent);
+  border-radius: var(--mm-radius-panel);
+  background: color-mix(in srgb, var(--mm-st) 8%, var(--mm-card-bg));
+  box-shadow: var(--mm-shadow-card);
   font-size: var(--mm-type-body);
   line-height: 1.5;
 }

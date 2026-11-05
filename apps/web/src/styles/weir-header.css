@@ -295,11 +295,20 @@
 }
 
 /* Empty while all is well, so a pill here is always news. */
+/* The status hangs from the header's lower edge at the right, over the top corner of the page, instead of taking room in
+   the header: a pill that comes or goes moves none of the header's controls and never changes its height. */
 .mm-header-status {
+  position: absolute;
+  z-index: 1;
+  top: 100%;
+  right: var(--mm-header-pad-x);
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: var(--mm-card-bg);
 }
 
 .mm-header-status:empty {

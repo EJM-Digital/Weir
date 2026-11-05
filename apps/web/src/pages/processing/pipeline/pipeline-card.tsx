@@ -144,11 +144,14 @@ export function spokenName(card: Card): string {
 export function PipelineCardView({
   card,
   place,
+  order,
   arrived,
   onOpen,
 }: {
   card: Card;
   place?: CardPlace;
+  /** Stacked board only: the card's place in the one flat list, set by CSS order. */
+  order?: number;
   /** The card has just changed station, and glows as it arrives. */
   arrived: boolean;
   onOpen: (file: ProcessingFile) => void;
@@ -158,6 +161,7 @@ export function PipelineCardView({
     style.left = `calc(${place.column} * 100% / ${place.stations} + 6px)`;
     style.top = `${place.top}px`;
   }
+  if (order !== undefined) style.order = order;
   const className = classNames(
     "mm-pipe__card",
     card.end === "delivered" && "mm-pipe__card--delivered",

@@ -34,6 +34,7 @@ const DAY_HOURS = 24;
 export type StreamPart = string | { bold: string };
 
 export type StreamRow = {
+  /** Stable while the row lives: the id of the oldest event the row stands for, so a newer identical event does not re-make it. */
   key: string;
   /** The newest event's id, for telling a line that has arrived from one already on screen. */
   id: number;
@@ -157,6 +158,8 @@ export function buildStream(items: readonly ActivityEventItem[]): Stream {
     const previous = rows.at(-1);
     if (previous && sentence(previous) === sentence(row)) {
       previous.times += 1;
+      // The run is known by its oldest event, so a new identical event updates "N times" in the same row.
+      previous.key = row.key;
     } else {
       rows.push(row);
     }

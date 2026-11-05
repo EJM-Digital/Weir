@@ -1,9 +1,10 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ActivityEventItem } from "../../../lib/api/types";
 import { ActivityStream } from "./activity-stream";
+import { PULSE_MS } from "./system/log-card-model";
 
 const NOW = Date.parse("2026-08-18T10:00:00Z");
 const feed: { items: ActivityEventItem[] } = { items: [] };
@@ -142,6 +143,71 @@ describe("the activity stream panel", () => {
 
     expect(lines()[0]).toHaveClass("mm-stream__item--new");
     expect(lines()[1]).not.toHaveClass("mm-stream__item--new");
+  });
+
+  it("updates a merged run in place when another identical event arrives, without playing its entrance again", () => {
+    feed.items = [passEvent(2, "Heat.1995.mkv"), passEvent(1, "Heat.1995.mkv")];
+    const { rerender } = renderStream();
+    const list = () => screen.getByTestId("live-stream");
+    const before = within(list()).getAllByRole("listitem")[0];
+    expect(before).toHaveTextContent("2 times");
+
+    feed.items = [
+      passEvent(3, "Heat.1995.mkv"),
+      passEvent(2, "Heat.1995.mkv"),
+      passEvent(1, "Heat.1995.mkv"),
+    ];
+    rerender(
+      <MemoryRouter>
+        <ActivityStream now={NOW} />
+      </MemoryRouter>,
+    );
+
+    const after = within(list()).getAllByRole("listitem");
+    expect(after).toHaveLength(1);
+    expect(after[0]).toBe(before);
+    expect(after[0]).toHaveTextContent("3 times");
+    expect(after[0]).not.toHaveClass("mm-stream__item--new");
+  });
+
+  it("ends a new line's glow once its animation is over, and does not bring it back when the line is updated", () => {
+    vi.useFakeTimers();
+    try {
+      feed.items = [passEvent(1, "Heat.1995.mkv")];
+      const { rerender } = renderStream();
+      const again = () =>
+        rerender(
+          <MemoryRouter>
+            <ActivityStream now={NOW} />
+          </MemoryRouter>,
+        );
+      const line = () =>
+        within(screen.getByTestId("live-stream")).getAllByRole("listitem")[0];
+
+      feed.items = [
+        passEvent(2, "Sintel.2010.mkv"),
+        passEvent(1, "Heat.1995.mkv"),
+      ];
+      again();
+      expect(line()).toHaveClass("mm-stream__item--new");
+
+      act(() => {
+        vi.advanceTimersByTime(PULSE_MS);
+      });
+      expect(line()).not.toHaveClass("mm-stream__item--new");
+
+      feed.items = [
+        passEvent(3, "Sintel.2010.mkv"),
+        passEvent(2, "Sintel.2010.mkv"),
+        passEvent(1, "Heat.1995.mkv"),
+      ];
+      const node = line();
+      again();
+      expect(line()).toBe(node);
+      expect(line()).not.toHaveClass("mm-stream__item--new");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("shows only the whole lines that fit and says how many more there are", () => {

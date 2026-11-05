@@ -544,6 +544,28 @@ describe("the shell's header", () => {
     );
   });
 
+  it("keeps the banner in the shell's overlay, so it does not change the size of the page that fits to the window", () => {
+    vi.useFakeTimers();
+    renderShell("/");
+    act(() => void reportLiveConnection("opened"));
+    const main = screen.getByRole("main");
+    const mainBefore = main.parentElement;
+    const overlay = document.querySelector(".mm-banners");
+    expect(overlay).not.toBeNull();
+    expect(overlay?.contains(main)).toBe(false);
+
+    act(() => void reportLiveConnection("dropped"));
+    act(() => void vi.advanceTimersByTime(LOST_CONNECTION_GRACE_MS));
+
+    const banner = screen.getByTestId("live-connection-banner");
+    expect(overlay).toContainElement(banner);
+    expect(screen.getByRole("main")).toBe(main);
+    expect(main.parentElement).toBe(mainBefore);
+    expect(banner.closest("main")).toBeNull();
+    // role="status" stays on the banner's region, so it is still announced.
+    expect(banner.closest('[role="status"]')).not.toBeNull();
+  });
+
   it("says Weir cannot be reached when it does not answer", () => {
     readiness.isError = true;
     renderShell("/");
