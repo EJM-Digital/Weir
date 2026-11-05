@@ -52,7 +52,7 @@ describe("the This computer card", () => {
     expect(screen.getByText("Disk")).toBeInTheDocument();
     expect(screen.getByText("16")).toBeInTheDocument();
     expect(
-      screen.getByText("read 4.0 · write 12 · 18% busy"),
+      screen.getByText("read 4.0 MB/s · write 12 MB/s · 18% busy"),
     ).toBeInTheDocument();
   });
 
@@ -65,7 +65,7 @@ describe("the This computer card", () => {
     expect(traces).toEqual([
       "CPU, last 10 minutes | lines 1 | points 2 | top 100 | floor 0",
       "Memory, last 10 minutes | lines 1 | points 2 | top 100 | floor 0",
-      "Disk, last 10 minutes | lines 1 | points 2 | top null | floor 1",
+      "Disk, last 10 minutes | lines 1 | points 2 | top null | floor 1048576",
     ]);
   });
 

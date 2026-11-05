@@ -78,6 +78,14 @@ describe("a drive's block", () => {
     );
   });
 
+  it("gives each speed its own unit when one is under a megabyte and the other is not", () => {
+    expect(
+      driveBlocks([
+        drive({ read_bytes_per_sec: 120 * 1024, busy_percent: null }),
+      ])[0].ioLine,
+    ).toBe("read 120 KB/s · write 12 MB/s");
+  });
+
   it("names the workflows that use it", () => {
     expect(driveBlocks([drive()])[0].workflows).toBe("Movies, TV");
   });

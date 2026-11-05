@@ -1,6 +1,7 @@
 /** What the Storage card says: one block for each drive any workflow reads from or writes to. */
 import type { SystemDrive } from "../../../../lib/system/system-stats-types";
-import { fullInWords, megabytes, rateFigure, sizeWords } from "./system-words";
+import { formatRatePair } from "../../../../lib/format/rate";
+import { fullInWords, sizeWords } from "./system-words";
 
 export type DriveBlock = {
   key: string;
@@ -33,7 +34,11 @@ function shareOf(bytes: number, total: number): number {
 function ioLine(drive: SystemDrive): string {
   if (drive.read_bytes_per_sec === null || drive.write_bytes_per_sec === null)
     return "";
-  const rates = `read ${rateFigure(megabytes(drive.read_bytes_per_sec))} · write ${rateFigure(megabytes(drive.write_bytes_per_sec))} MB/s`;
+  const pair = formatRatePair(
+    drive.read_bytes_per_sec,
+    drive.write_bytes_per_sec,
+  );
+  const rates = `read ${pair.first} · write ${pair.second}`;
   return drive.busy_percent === null
     ? rates
     : `${rates} · ${Math.round(drive.busy_percent)}% busy`;

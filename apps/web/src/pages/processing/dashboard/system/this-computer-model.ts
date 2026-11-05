@@ -1,6 +1,11 @@
 /** What the This computer card says: three readings with their traces, and the machine's own tags. */
 import type { TraceSample } from "../../../../components/charts/live-trace-math";
 import { formatBytes } from "../../../../lib/format/bytes";
+import {
+  formatRate,
+  formatRatePair,
+  rateScale,
+} from "../../../../lib/format/rate";
 import { seriesOf } from "../../../../lib/system/system-stats-model";
 import type {
   SystemNow,
@@ -8,14 +13,7 @@ import type {
 } from "../../../../lib/system/system-stats-types";
 import { narrowing, type Words } from "../../../../lib/ui/fit-text";
 import type { StatusMeaning } from "../../../../lib/ui/status-meaning";
-import {
-  gigabytes,
-  machineUpWords,
-  megabytes,
-  rateFigure,
-  rateScale,
-  rateWords,
-} from "./system-words";
+import { gigabytes, machineUpWords } from "./system-words";
 
 export type ComputerKey = "cpu" | "memory" | "disk";
 
@@ -45,16 +43,16 @@ const wholeFigure = (value: number) => Math.round(value).toString();
 const tenthsFigure = (value: number) => value.toFixed(1);
 const percentReadout = (value: number) => `${Math.round(value)}%`;
 
-/** A disk trace is never scaled tighter than this, in MB/s, so an idle disk reads as idle. */
-const DISK_FLOOR_MB = 1;
+/** A disk trace is never scaled tighter than this, in bytes a second (1 MB/s), so an idle disk reads as idle. */
+const DISK_FLOOR = 1024 * 1024;
 
-/** Reads and writes together, in MB/s; null unless both can be read, so a trace shows a gap rather than a made-up zero. */
-export function diskMegabytes(
+/** Reads and writes together, in bytes a second; null unless both can be read, so a trace shows a gap rather than a made-up zero. */
+export function diskBytesPerSecond(
   read: number | null,
   write: number | null,
 ): number | null {
   if (read === null || write === null) return null;
-  return megabytes(read + write);
+  return read + write;
 }
 
 /** The parts that have a reading, as the words of a line that narrows as the least important is dropped. */
@@ -106,9 +104,9 @@ function diskSub(now: SystemNow): Words {
   const { disk_read_bytes_per_sec: read, disk_write_bytes_per_sec: write } =
     now;
   if (read === null || write === null) return ["not available"];
-  const reads = rateFigure(megabytes(read));
-  const writes = rateFigure(megabytes(write));
-  const split = [`read ${reads} · write ${writes}`, `R ${reads} · W ${writes}`];
+  const full = `read ${formatRate(read)} · write ${formatRate(write)}`;
+  const shared = formatRatePair(read, write);
+  const split = [full, `R ${shared.first} · W ${shared.second}`];
   if (now.disk_busy_percent === null) return split;
   const busy = `${Math.round(now.disk_busy_percent)}% busy`;
   return [`${split[0]} · ${busy}`, ...split, busy];
@@ -117,7 +115,7 @@ function diskSub(now: SystemNow): Words {
 /** The three columns, CPU, memory and disk, each with its reading now and its last ten minutes. */
 export function computerColumns(stats: SystemStats): ComputerColumn[] {
   const { now, history } = stats;
-  const disk = diskMegabytes(
+  const disk = diskBytesPerSecond(
     now.disk_read_bytes_per_sec,
     now.disk_write_bytes_per_sec,
   );
@@ -157,13 +155,13 @@ export function computerColumns(stats: SystemStats): ComputerColumn[] {
       ...rateScale(disk),
       sub: diskSub(now),
       samples: seriesOf(history, (point) =>
-        diskMegabytes(
+        diskBytesPerSecond(
           point.disk_read_bytes_per_sec,
           point.disk_write_bytes_per_sec,
         ),
       ),
-      scale: { kind: "rate", floorTop: DISK_FLOOR_MB },
-      readout: rateWords,
+      scale: { kind: "rate", floorTop: DISK_FLOOR },
+      readout: formatRate,
     },
   ];
 }
