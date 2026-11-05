@@ -22,7 +22,9 @@ permissions:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    # Measured: the C# leg takes about 4.5 minutes (two traced builds of about 40 seconds each, then 1 minute of
+    # database finalisation and the queries); the others take 1 to 1.5 minutes.
     timeout-minutes: 15
     permissions:
       contents: read
@@ -32,19 +34,44 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # C# without a build: CodeQL's build-mode none reads the source directly, so this job needs
-          # no .NET SDK setup and cannot fail on a build step.
+          # C# is traced through a real build of both solutions (build-mode manual), so CodeQL sees the compiled
+          # code with its resolved references instead of guessing from source (build-mode none is flagged as
+          # low analysis quality). One job covers the server and the tray under the one category /language:csharp.
+          # Windows, because the tray targets Windows and cannot be built anywhere else; the server builds there too
+          # (ci.yml's server-windows leg).
           - language: csharp
-            build-mode: none
+            build-mode: manual
+            runner: windows-latest
           - language: javascript-typescript
             build-mode: none
+            runner: ubuntu-latest
           # Scans the workflow YAML itself for injection (untrusted github.event.* reaching run:,
           # unpinned actions, etc.) — same build-mode none, no extra setup.
           - language: actions
             build-mode: none
+            runner: ubuntu-latest
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # The pinned SDK, with the same package cache as ci.yml. Not needed by the build-mode none languages.
+      - name: Set up .NET
+        if: matrix.language == 'csharp'
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: apps/server/global.json
+          cache: true
+          cache-dependency-path: |
+            apps/server/**/packages.lock.json
+            apps/tray/**/packages.lock.json
+
+      # Restored before CodeQL starts tracing, so the traced build is compilation only. Locked, as in ci.yml; the
+      # server is restored from apps/server so its global.json picks the pinned SDK.
+      - name: Restore Weir server and tray (locked)
+        if: matrix.language == 'csharp'
+        run: |
+          dotnet restore apps/server/Weir.slnx --locked-mode
+          dotnet restore apps/tray/Weir.Tray.slnx --locked-mode
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
@@ -53,6 +80,14 @@ jobs:
           build-mode: ${{ matrix.build-mode }}
           config-file: ./.github/codeql/codeql-config.yml
           queries: security-extended
+
+      # Everything in the two solutions is compiled from scratch (no incremental reuse, no shared compiler server),
+      # because CodeQL only extracts what it sees compiled. No tests run.
+      - name: Build Weir server and tray
+        if: matrix.language == 'csharp'
+        run: |
+          dotnet build apps/server/Weir.slnx -c Release --no-restore --no-incremental -p:UseSharedCompilation=false
+          dotnet build apps/tray/Weir.Tray.slnx -c Release --no-restore --no-incremental -p:UseSharedCompilation=false
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
