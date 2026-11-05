@@ -1,11 +1,14 @@
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
 
 import type { DownloadClientConnection } from "../../../lib/download-clients/download-clients-api";
 import { useDownloadClientConnectionsQuery } from "../../../lib/download-clients/queries";
 import type { MediaManagerConnection } from "../../../lib/media-managers/media-managers-api";
 import { useMediaManagerConnectionsQuery } from "../../../lib/media-managers/queries";
 import type { ProcessingLibrary } from "../../../lib/processing/libraries-api";
-import { libraryFolderChainOptions } from "../../../lib/processing/libraries-queries";
+import {
+  heldFolderChain,
+  libraryFolderChainOptions,
+} from "../../../lib/processing/libraries-queries";
 import type { LibraryFolderChain } from "../../../lib/processing/library-folder-chain-api";
 import { useMediaToolsQuery } from "../../../lib/system/media-tools";
 import { useServerLooks } from "../../../lib/system/use-server-looks";
@@ -85,6 +88,7 @@ export function useHealth(
     (workflow) =>
       workflow.enabled && (workflowId == null || workflow.id === workflowId),
   );
+  const client = useQueryClient();
   const chains = useQueries({
     queries: enabled.map((workflow) =>
       libraryFolderChainOptions(
@@ -105,12 +109,17 @@ export function useHealth(
   );
   const rows = enabled.map((workflow, index) => {
     const chain = chains[index];
+    // Saving a workflow's folders changes the key its check is read under; the answer it had stays until the check
+    // of the new folders answers, so its row does not go back to Checking.
+    const answer =
+      chain.data ??
+      (chain.isError ? undefined : heldFolderChain(client, workflow.id));
     return {
       workflow,
-      verdict: checkVerdict(chain),
-      why: chain.data ? whyNotInSync(chain.data) : null,
-      chain: chain.data,
-      checkedAt: chain.data
+      verdict: checkVerdict({ data: answer, isError: chain.isError }),
+      why: answer ? whyNotInSync(answer) : null,
+      chain: answer,
+      checkedAt: answer
         ? newestTime(readAts[index], looks.foldersCheckedAt)
         : null,
       recheck: () => chain.refetch(),

@@ -173,7 +173,10 @@ export function LiveView({ filter, workflowId, layout }: LiveViewProps) {
   );
 
   if (files.isPending) return <PageLoading label="Loading the Dashboard" />;
-  if (files.isError) return <ApiEntryError error={files.error} />;
+  // A read that fails again while the files are held leaves the Dashboard as it is: the live-link banner says when
+  // Weir cannot be reached, and tearing the grid down would only replay every card's entrance.
+  if (files.isError && !files.data)
+    return <ApiEntryError error={files.error} />;
 
   const workflows = libraries.data ?? [];
   const workflowNames = new Map(

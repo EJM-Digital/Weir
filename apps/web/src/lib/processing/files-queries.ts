@@ -37,6 +37,8 @@ export function useProcessingFilesQuery(query: ProcessingFilesQuery = {}) {
   return useQuery<ProcessingFilesPage>({
     queryKey: processingKeys.fileList(query),
     queryFn: () => fetchProcessingFiles(query),
+    // Narrowing to another workflow keeps the page that is on screen until the new one arrives.
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -32,6 +32,8 @@ export type NeedsYou = {
   files: ProcessingFile[];
   /** Why the files could not be read, or null when they could. The groups then lack the files that wait on a person. */
   filesError: unknown;
+  /** The first read of the files has not answered: an empty list is then not yet a finding. */
+  filesPending: boolean;
 };
 
 /**
@@ -52,7 +54,11 @@ export function useNeedsYou(
     FAILED_JOBS_LIMIT,
     true,
   );
-  const { files, error: filesError } = useNeedsFiles(workflowId);
+  const {
+    files,
+    error: filesError,
+    pending: filesPending,
+  } = useNeedsFiles(workflowId);
   useActivityStreamInvalidations(FAILED_JOBS_KEYS, {
     exact: true,
     throttleMs: STREAM_THROTTLE_MS,
@@ -73,6 +79,7 @@ export function useNeedsYou(
       groups,
       files: waitingFiles(files, workflowId, filter),
       filesError,
+      filesPending,
     };
   }, [
     workflowList,
@@ -82,5 +89,6 @@ export function useNeedsYou(
     failedJobRows,
     files,
     filesError,
+    filesPending,
   ]);
 }

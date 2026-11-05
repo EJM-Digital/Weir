@@ -79,7 +79,10 @@ function FileChips({
 
 function FileHistory({ path }: { path: string }) {
   const when = useAppDateFormatter();
-  const history = useActivityRecentQuery({ limit: 6, file: path });
+  const history = useActivityRecentQuery(
+    { limit: 6, file: path },
+    { keepWhileLoading: false },
+  );
   const items = history.data?.items ?? [];
   if (items.length === 0) return null;
   return (
