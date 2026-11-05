@@ -23,9 +23,9 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: ${{ matrix.runner }}
-    # Measured: the C# leg takes about 4.5 minutes (two traced builds of about 40 seconds each, then 1 minute of
-    # database finalisation and the queries); the others take 1 to 1.5 minutes.
-    timeout-minutes: 15
+    # Measured (run 42129921955): the C# leg takes about 11 minutes (SDK and restore 1 minute, the traced builds of the
+    # server and the tray 6.5 minutes, the queries 2.5 minutes); the others take 1 to 1.5 minutes. Twice the slowest leg.
+    timeout-minutes: 22
     permissions:
       contents: read
       # Uploading the results to code scanning is the one write this workflow needs.
