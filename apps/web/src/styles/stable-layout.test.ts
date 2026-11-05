@@ -9,7 +9,9 @@ import shell from "./weir-shell.css?raw";
 /** The declarations of the first rule whose selector is exactly `selector`. */
 function declarations(css: string, selector: string): Record<string, string> {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const rule = new RegExp(`(?:^|[}/])\\s*${escaped}\\s*\\{([^}]*)\\}`).exec(css);
+  const rule = new RegExp(`(?:^|[}/])\\s*${escaped}\\s*\\{([^}]*)\\}`).exec(
+    css,
+  );
   if (!rule) throw new Error(`No rule for ${selector}`);
   const found: Record<string, string> = {};
   const body = rule[1].replace(/\/\*[\s\S]*?\*\//g, "");
