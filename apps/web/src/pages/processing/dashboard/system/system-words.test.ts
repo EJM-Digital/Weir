@@ -4,30 +4,10 @@ import {
   fullInWords,
   gigabytes,
   machineUpWords,
-  megabytes,
-  rateFigure,
-  rateScale,
-  rateWords,
   sizeWords,
   splitAddress,
   uptimeWords,
 } from "./system-words";
-
-describe("rates", () => {
-  it("turns bytes a second into megabytes a second", () => {
-    expect(megabytes(5 * 1024 * 1024)).toBe(5);
-  });
-
-  it("reads to a tenth under ten and to a whole number above", () => {
-    expect(rateFigure(0)).toBe("0.0");
-    expect(rateFigure(3.44)).toBe("3.4");
-    expect(rateFigure(41.6)).toBe("42");
-  });
-
-  it("never goes below zero", () => {
-    expect(rateFigure(-2)).toBe("0.0");
-  });
-});
 
 describe("memory", () => {
   it("turns bytes into gigabytes", () => {
@@ -90,24 +70,5 @@ describe("addresses", () => {
       host: "weir.home",
       port: null,
     });
-  });
-});
-
-describe("a big rate", () => {
-  it("stays in MB/s below a thousand", () => {
-    expect(rateScale(999).unit).toBe(" MB/s");
-    expect(rateScale(null).unit).toBe(" MB/s");
-    expect(rateWords(501)).toBe("501 MB/s");
-  });
-
-  it("is said in GB/s to a tenth from a thousand up, so a figure is never four digits wide", () => {
-    const { figure, unit } = rateScale(1127);
-
-    expect(unit).toBe(" GB/s");
-    expect(figure(1127)).toBe("1.1");
-    expect(figure(512)).toBe("0.5");
-    expect(rateWords(1000)).toBe("1.0 GB/s");
-    expect(rateWords(1127)).toBe("1.1 GB/s");
-    expect(rateWords(12_800)).toBe("13 GB/s");
   });
 });

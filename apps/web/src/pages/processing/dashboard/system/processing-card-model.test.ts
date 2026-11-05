@@ -55,10 +55,25 @@ describe("the disk work column", () => {
 
   it("shows what the running passes write, with what they read and what the last ten minutes saved", () => {
     expect(disk()).toMatchObject({
-      value: 6,
+      value: 6 * MB,
       unit: " MB/s",
-      sub: ["reading 20 · 3.00 GB saved", "3.00 GB saved", "read 20"],
+      sub: ["reading 20 MB/s · 3.00 GB saved", "3.00 GB saved", "read 20 MB/s"],
     });
+  });
+
+  it("is said in KB/s under a megabyte a second, with the read in its own unit", () => {
+    const quiet = processingColumns(
+      stats({
+        processing_write_bytes_per_sec: 300 * 1024,
+        processing_read_bytes_per_sec: 2 * MB,
+      }),
+      recent,
+    )[0];
+
+    expect(quiet.unit).toBe(" KB/s");
+    expect(quiet.figure(quiet.value ?? 0)).toBe("300");
+    expect(quiet.readout(300 * 1024)).toBe("300 KB/s");
+    expect(quiet.sub[0]).toBe("reading 2.0 MB/s · 3.00 GB saved");
   });
 
   it("is said in GB/s from a thousand MB/s, so the figure is never four digits wide", () => {
@@ -69,22 +84,22 @@ describe("the disk work column", () => {
 
     expect(big.unit).toBe(" GB/s");
     expect(big.figure(big.value ?? 0)).toBe("1.1");
-    expect(big.readout(1127)).toBe("1.1 GB/s");
+    expect(big.readout(1127 * MB)).toBe("1.1 GB/s");
   });
 
   it("says only what is read while the finished work is still being read", () => {
     expect(processingColumns(stats(), undefined)[0].sub).toEqual([
-      "writing · reading 20",
-      "reading 20",
-      "read 20",
+      "writing · reading 20 MB/s",
+      "reading 20 MB/s",
+      "read 20 MB/s",
     ]);
   });
 
   it("draws reads and writes as two lines", () => {
     const lines = disk().lines;
     expect(lines.map((line) => line.key)).toEqual(["read", "write"]);
-    expect(lines[0].samples[0].value).toBe(10);
-    expect(lines[1].samples[0].value).toBe(4);
+    expect(lines[0].samples[0].value).toBe(10 * MB);
+    expect(lines[1].samples[0].value).toBe(4 * MB);
   });
 });
 

@@ -6,47 +6,8 @@ const SECONDS_PER_HOUR = 3600;
 const SECONDS_PER_DAY = 86_400;
 const MEGABYTE = 1024 * 1024;
 const GIGABYTE = MEGABYTE * 1024;
-/** A rate under this reads to a tenth of a MB/s; above it, to a whole one. */
-const WHOLE_RATE_FROM = 10;
-
-/** Bytes a second as megabytes a second, the unit the System view's rates and traces are in. */
-export const megabytes = (bytes: number): number => bytes / MEGABYTE;
-
 /** Bytes as gigabytes, the unit memory is shown in. */
 export const gigabytes = (bytes: number): number => bytes / GIGABYTE;
-
-/** A rate in MB/s to a tenth under 10 and whole above: "0.0", "3.4", "42". */
-export function rateFigure(megabytesPerSecond: number): string {
-  const value = Math.max(0, megabytesPerSecond);
-  return value < WHOLE_RATE_FROM
-    ? value.toFixed(1)
-    : Math.round(value).toString();
-}
-
-/** From this rate in MB/s a big figure is said in GB/s, so that it is never four digits wide. */
-const GIGABYTE_RATE_FROM = 1000;
-
-/**
- * How a big figure's rate is said: its figure as it counts, and its unit. A rate from 1000 MB/s up is in GB/s to a
- * tenth ("1.1 GB/s", not "1127 MB/s"), and the figure counts in that unit the whole way.
- */
-export function rateScale(megabytesPerSecond: number | null): {
-  figure: (value: number) => string;
-  unit: string;
-} {
-  return megabytesPerSecond !== null && megabytesPerSecond >= GIGABYTE_RATE_FROM
-    ? {
-        figure: (value) => rateFigure(value / 1024),
-        unit: " GB/s",
-      }
-    : { figure: rateFigure, unit: " MB/s" };
-}
-
-/** A rate in MB/s with its unit, as a trace's readout says it: "42 MB/s", "1.1 GB/s". */
-export function rateWords(megabytesPerSecond: number): string {
-  const { figure, unit } = rateScale(megabytesPerSecond);
-  return `${figure(megabytesPerSecond)}${unit}`;
-}
 
 /** A span of time as an uptime counts it, short enough for a small tile: "42:07" in the first hour, then "3h 05m", then "2d 4h". */
 export function uptimeWords(seconds: number): string {

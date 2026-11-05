@@ -7,7 +7,7 @@ import type {
 } from "../../../../lib/system/system-stats-types";
 import {
   computerColumns,
-  diskMegabytes,
+  diskBytesPerSecond,
   machineTags,
 } from "./this-computer-model";
 
@@ -107,10 +107,32 @@ describe("a big disk figure", () => {
       disk_write_bytes_per_sec: 427 * MB,
     });
 
-    expect(big.value).toBe(1127);
+    expect(big.value).toBe(1127 * MB);
     expect(big.unit).toBe(" GB/s");
     expect(big.figure(big.value ?? 0)).toBe("1.1");
-    expect(big.readout(1127)).toBe("1.1 GB/s");
+    expect(big.readout(1127 * MB)).toBe("1.1 GB/s");
+  });
+});
+
+describe("a slow disk", () => {
+  it("counts in KB/s and says each of the two figures in its own unit", () => {
+    const slow = column("disk", {
+      disk_read_bytes_per_sec: 120 * 1024,
+      disk_write_bytes_per_sec: 12 * MB,
+      disk_busy_percent: null,
+    });
+    expect(slow.sub).toEqual([
+      "read 120 KB/s · write 12 MB/s",
+      "R 120 KB/s · W 12 MB/s",
+    ]);
+
+    const quiet = column("disk", {
+      disk_read_bytes_per_sec: 100 * 1024,
+      disk_write_bytes_per_sec: 20 * 1024,
+    });
+    expect(quiet.unit).toBe(" KB/s");
+    expect(quiet.figure(quiet.value ?? 0)).toBe("120");
+    expect(quiet.readout(120 * 1024)).toBe("120 KB/s");
   });
 });
 
@@ -146,14 +168,14 @@ describe("the memory column when the machine does not say", () => {
 describe("the disk column", () => {
   it("leaves out the busy time when the machine does not give one", () => {
     expect(column("disk", { disk_busy_percent: null }).sub).toEqual([
-      "read 4.0 · write 12",
-      "R 4.0 · W 12",
+      "read 4.0 MB/s · write 12 MB/s",
+      "R 4.0 · W 12 MB/s",
     ]);
   });
 
   it("adds reads and writes into one figure, with busy time in the note", () => {
     expect(column("disk")).toMatchObject({
-      value: 16,
+      value: 16 * MB,
       unit: " MB/s",
       scale: { kind: "rate" },
     });
@@ -161,9 +183,9 @@ describe("the disk column", () => {
 
   it("drops the busy time, then the words, for a narrower column, and lastly says only how busy", () => {
     expect(column("disk").sub).toEqual([
-      "read 4.0 · write 12 · 18% busy",
-      "read 4.0 · write 12",
-      "R 4.0 · W 12",
+      "read 4.0 MB/s · write 12 MB/s · 18% busy",
+      "read 4.0 MB/s · write 12 MB/s",
+      "R 4.0 · W 12 MB/s",
       "18% busy",
     ]);
   });
@@ -179,9 +201,9 @@ describe("the disk column", () => {
   });
 
   it("is a gap, not a made-up zero, when either of the two cannot be read", () => {
-    expect(diskMegabytes(null, 2 * MB)).toBeNull();
-    expect(diskMegabytes(2 * MB, null)).toBeNull();
-    expect(diskMegabytes(null, null)).toBeNull();
+    expect(diskBytesPerSecond(null, 2 * MB)).toBeNull();
+    expect(diskBytesPerSecond(2 * MB, null)).toBeNull();
+    expect(diskBytesPerSecond(null, null)).toBeNull();
   });
 });
 

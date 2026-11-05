@@ -1,6 +1,7 @@
 /** The words and numbers on the Processing cards: times, speeds and how a finished file turned out. */
 import type { FinishedFile } from "../../lib/activity/processing-outcome";
 import { formatBytes } from "../../lib/format/bytes";
+import { formatRate } from "../../lib/format/rate";
 import { parseAppTime } from "../../lib/ui/mm-format-date";
 import { plural } from "../../lib/ui/mm-plural";
 import type { ArrivingItem, WorkingItem } from "./processing-model";
@@ -201,7 +202,7 @@ export function workingFigures(item: WorkingItem): WorkingFigures {
   const elapsed = file?.progress_elapsed_seconds ?? 0;
   return {
     speed: speedWords(item.speed),
-    reading: rate ? `${formatBytes(rate)}/s` : null,
+    reading: rate ? formatRate(rate) : null,
     through:
       duration && item.percent != null
         ? `${clock((duration * Math.min(100, item.percent)) / 100)} of ${clock(duration)}`

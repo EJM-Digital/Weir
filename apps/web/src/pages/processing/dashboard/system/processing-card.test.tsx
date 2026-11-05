@@ -37,7 +37,9 @@ describe("the Processing card", () => {
 
     expect(screen.getByText("Disk work")).toBeInTheDocument();
     expect(screen.getByText("6.0")).toBeInTheDocument();
-    expect(screen.getByText("reading 20 · 3.00 GB saved")).toBeInTheDocument();
+    expect(
+      screen.getByText("reading 20 MB/s · 3.00 GB saved"),
+    ).toBeInTheDocument();
   });
 
   it("shows the speed, how many passes run of the slots, and what the last ten minutes finished", () => {

@@ -1,21 +1,16 @@
 /** What the Processing card says: Weir's own disk work and speed over the last ten minutes, and what it finished. */
 import type { TraceSample } from "../../../../components/charts/live-trace-math";
+import { formatRate, rateScale } from "../../../../lib/format/rate";
 import { seriesOf } from "../../../../lib/system/system-stats-model";
 import type { SystemStats } from "../../../../lib/system/system-stats-types";
 import type { Words } from "../../../../lib/ui/fit-text";
-import {
-  megabytes,
-  rateFigure,
-  rateScale,
-  rateWords,
-  sizeWords,
-} from "./system-words";
+import { sizeWords } from "./system-words";
 
 /** The window the card's finished-work figures cover, in minutes: the same ten minutes the traces show. */
 export const RECENT_MINUTES = 10;
 
-/** A disk trace is never scaled tighter than this, in MB/s, so quiet work reads as quiet. */
-const DISK_FLOOR_MB = 1;
+/** A disk trace is never scaled tighter than this, in bytes a second (1 MB/s), so quiet work reads as quiet. */
+const DISK_FLOOR = 1024 * 1024;
 /** A speed trace is never scaled tighter than this, in times real time. */
 const SPEED_FLOOR = 10;
 /** A speed of this or more reads as a whole number. */
@@ -71,7 +66,7 @@ export function processingColumns(
   const saved = recent ? `${sizeWords(recent.savedBytes)} saved` : null;
   const done = recent ? `${recent.done.toLocaleString()} done` : null;
   const running = `${now.running} of ${now.slots} running`;
-  const written = megabytes(now.processing_write_bytes_per_sec);
+  const written = now.processing_write_bytes_per_sec;
   return [
     {
       key: "disk",
@@ -80,7 +75,7 @@ export function processingColumns(
       value: written,
       ...rateScale(written),
       sub: (() => {
-        const read = rateFigure(megabytes(now.processing_read_bytes_per_sec));
+        const read = formatRate(now.processing_read_bytes_per_sec);
         return saved
           ? [`reading ${read} · ${saved}`, saved, `read ${read}`]
           : [`writing · reading ${read}`, `reading ${read}`, `read ${read}`];
@@ -90,21 +85,23 @@ export function processingColumns(
           key: "read",
           label: "read",
           colour: "var(--mm-lane-queued)",
-          samples: seriesOf(history, (point) =>
-            megabytes(point.processing_read_bytes_per_sec),
+          samples: seriesOf(
+            history,
+            (point) => point.processing_read_bytes_per_sec,
           ),
         },
         {
           key: "write",
           label: "write",
           colour: "var(--mm-lane-processing)",
-          samples: seriesOf(history, (point) =>
-            megabytes(point.processing_write_bytes_per_sec),
+          samples: seriesOf(
+            history,
+            (point) => point.processing_write_bytes_per_sec,
           ),
         },
       ],
-      floorTop: DISK_FLOOR_MB,
-      readout: rateWords,
+      floorTop: DISK_FLOOR,
+      readout: formatRate,
     },
     {
       key: "speed",

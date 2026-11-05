@@ -334,7 +334,7 @@ describe("a running pass's figures", () => {
       ),
     ).toEqual({
       speed: "2.5×",
-      reading: "48.8 KB/s",
+      reading: "49 KB/s",
       through: "5:00 of 10:00",
       running: "10 s",
     });
