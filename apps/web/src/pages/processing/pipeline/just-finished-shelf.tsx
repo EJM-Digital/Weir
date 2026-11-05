@@ -23,12 +23,7 @@ import type { Filter } from "../processing-filter";
 import { useFinishedAnnouncement } from "../use-finished-files";
 import { canvasMeasure, type MeasureText } from "../../../lib/ui/measure-text";
 import { statusFont } from "./status-line";
-import {
-  shelfFit,
-  shelfRowNeed,
-  tilesAcross,
-  type ShelfFit,
-} from "./shelf-layout";
+import { shelfFit, tilesAcross, type ShelfFit } from "./shelf-layout";
 import { ShelfFilter } from "./shelf-filter";
 import { shelfOf, todayWords } from "./shelf-model";
 import { ShelfTiles } from "./shelf-tiles";
@@ -62,11 +57,6 @@ export type JustFinishedShelfProps = {
   count?: string;
   /** Opens a finished file's story. */
   onOpen: (item: FinishedFile) => void;
-  /**
-   * Told the height of this whole panel that its tiles can use, whenever it changes: any more would leave empty
-   * space under the tiles, which the page can give to something else.
-   */
-  onHeightNeed?: (px: number) => void;
   /** Measures a line in the caption's font, in place of the canvas the page measures with. */
   measureText?: MeasureText;
 };
@@ -81,7 +71,6 @@ export function JustFinishedShelf({
   enabledWorkflowIds,
   count,
   onOpen,
-  onHeightNeed,
   measureText,
 }: JustFinishedShelfProps): ReactElement {
   const [chosen, setChosen] = useState<number | null>(readShelfWorkflow);
@@ -124,17 +113,7 @@ export function JustFinishedShelf({
         ? current
         : next,
     );
-    // The panel's own chrome (header, chips, padding) is what its height has beyond the row's, and does not change
-    // with the height: the need is that and the height the row's tiles can use at this width.
-    const panel = tiles.closest<HTMLElement>(".mm-panel");
-    if (panel && onHeightNeed) {
-      onHeightNeed(
-        panel.offsetHeight -
-          tiles.clientHeight +
-          shelfRowNeed(tiles.clientWidth),
-      );
-    }
-  }, [shelfSize.width, shelfSize.height, onHeightNeed]);
+  }, [shelfSize.width, shelfSize.height]);
   const [measured, setMeasured] = useState<MeasureText | null>(null);
   // The status line is measured in its own font, read before paint and again when the fonts arrive.
   useLayoutEffect(() => {

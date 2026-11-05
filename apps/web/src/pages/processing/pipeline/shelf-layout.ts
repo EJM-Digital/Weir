@@ -107,21 +107,6 @@ export function shelfFit(rowHeight: number, rowWidth = 0): ShelfFit {
 }
 
 /**
- * The height of a row of `rowWidth` px at which its tiles stop growing: the `SHELF_MIN_TILES` rule has capped them by
- * width, and a taller row would only leave empty space under them. It is the tile's art (1.5 times its width), the
- * caption it would wear there (the full one when the tile is wide enough for it, the tiny one when not) and the row's
- * padding. The page gives a row this tall at most while something else can use the rest.
- */
-export function shelfRowNeed(rowWidth: number): number {
-  const width = widestTile(rowWidth);
-  const art = artOf(width);
-  if (width >= FULL_DECORATIONS_MIN_PX) {
-    return ROW_PAD_Y + art + FULL_CAPTION_PX;
-  }
-  return ROW_PAD_Y + art + TINY_CAPTION_PX;
-}
-
-/**
  * A poster narrower than this is too small for the workflow's tag, whose name would cover a third of the art or more
  * (the tag is 19px tall and as wide as its name, up to the poster's width less 12px).
  */
