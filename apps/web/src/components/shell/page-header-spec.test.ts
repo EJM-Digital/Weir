@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import header from "../../styles/weir-header.css?raw";
 import panels from "../../styles/weir-panels.css?raw";
+import shelf from "../../styles/weir-shelf.css?raw";
 import tokens from "../../styles/weir-tokens.css?raw";
 
 /** The declarations of the first rule whose selector is exactly `selector`. */
@@ -60,5 +61,17 @@ describe("page header matches the shared spec", () => {
     const head = declarations(panels, ".mm-panel__head");
     expect(head["min-height"]).toBe("48px");
     expect(head["padding"]).toBe("11px 18px 14px");
+  });
+
+  it("sets a panel header filter chip to 24px, 12px text, 0 10px padding, 6px gap", () => {
+    const chip = declarations(shelf, ".lsh-chip");
+    expect(chip["height"]).toBe("24px");
+    expect(chip["padding"]).toBe("0 10px");
+    expect(chip["font-size"]).toBe("12px");
+    expect(chip["font-weight"]).toBe("500");
+    expect(
+      declarations(shelf, '.lsh-chip[aria-pressed="true"]')["font-weight"],
+    ).toBe("600");
+    expect(shelf).toMatch(/.lsh-chips {[^}]*gap: 6px;/);
   });
 });
