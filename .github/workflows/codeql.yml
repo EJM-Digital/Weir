@@ -23,7 +23,9 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: ${{ matrix.timeout }}
+    # Measured: the C# leg takes about 4.5 minutes (two traced builds of about 40 seconds each, then 1 minute of
+    # database finalisation and the queries); the others take 1 to 1.5 minutes.
+    timeout-minutes: 15
     permissions:
       contents: read
       # Uploading the results to code scanning is the one write this workflow needs.
@@ -40,17 +42,14 @@ jobs:
           - language: csharp
             build-mode: manual
             runner: windows-latest
-            timeout: 30
           - language: javascript-typescript
             build-mode: none
             runner: ubuntu-latest
-            timeout: 15
           # Scans the workflow YAML itself for injection (untrusted github.event.* reaching run:,
           # unpinned actions, etc.) — same build-mode none, no extra setup.
           - language: actions
             build-mode: none
             runner: ubuntu-latest
-            timeout: 15
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
