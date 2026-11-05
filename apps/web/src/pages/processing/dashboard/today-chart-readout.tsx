@@ -24,11 +24,17 @@ export function TodayChartReadout({
   const lineX = fraction * chartWidth;
   return (
     <>
-      <i className="cs-cursor" style={{ left: `${lineX}px` }} />
+      {/* Moved by transform, never by left, so following the pointer or a new value shifts no layout. */}
+      <i
+        className="cs-cursor"
+        style={{ transform: `translateX(${lineX}px)` }}
+      />
       <div
         ref={readoutRef}
         className="cs-read"
-        style={{ left: `${readoutLeft(lineX, readout.width, chartWidth)}px` }}
+        style={{
+          transform: `translateX(${readoutLeft(lineX, readout.width, chartWidth)}px)`,
+        }}
       >
         {bucketReadout(bucket, clock)}
       </div>

@@ -122,8 +122,7 @@ export function TodayChart({ handed, now }: TodayChartProps) {
           aria-hidden="true"
           className="mm-today-chart__dot"
           style={{
-            left: `${(dot.x / CHART_WIDTH) * 100}%`,
-            top: `${(dot.y / CHART_HEIGHT) * 100}%`,
+            transform: `translate(${(dot.x / CHART_WIDTH) * chartSize.width}px, ${(dot.y / CHART_HEIGHT) * chartSize.height}px) translate(-50%, -50%)`,
           }}
         />
       ) : /* istanbul ignore next -- @preserve */ null}

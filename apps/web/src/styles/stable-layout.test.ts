@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import connections from "./weir-connections.css?raw";
+import chart from "./weir-today-chart.css?raw";
 import header from "./weir-header.css?raw";
 import panels from "./weir-panels.css?raw";
 import side from "./weir-processing-side.css?raw";
@@ -48,6 +49,23 @@ describe("what comes and goes does not move what is around it", () => {
       expect(notice.bottom, selector).toBe("0");
     }
     expect(declarations(panels, ".mm-panel__body").position).toBe("relative");
+  });
+
+  it("moves the Today chart's dot, cursor and readout by transform, never by left or top", () => {
+    for (const selector of [".mm-today-chart__dot", ".cs-cursor", ".cs-read"]) {
+      const rule = declarations(chart, selector);
+      expect(rule.position, selector).toBe("absolute");
+      expect(rule.left, selector).toBe("0");
+    }
+  });
+
+  it("keeps room for two digits in a stat figure, so its unit does not move as the number grows", () => {
+    expect(panels).toMatch(
+      /\.mm-stat__figure > :first-child:not\(\.mm-stat__unit\)\s*\{\s*min-width: 2ch;/,
+    );
+    expect(
+      declarations(panels, ".mm-stat__figure")["font-variant-numeric"],
+    ).toBe("tabular-nums");
   });
 
   it("gives a connection's time a reserved width, right-aligned and in tabular figures, so the role beside it stays put", () => {
