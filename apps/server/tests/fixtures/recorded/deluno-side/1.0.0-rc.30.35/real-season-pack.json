@@ -2,7 +2,7 @@
   "app": "deluno",
   "version": "1.0.0-rc.30.35",
   "state": "real-season-pack",
-  "recordedAt": "2026-11-04T20:31:51.968Z",
+  "recordedAt": "2026-11-05T01:53:53.269Z",
   "note": "A season pack of two episodes in a qBittorrent release folder, handed to Weir by a real Deluno and cleaned in Weir's TV workflow: the hand-off, Deluno's questions about it, Weir's one report for the pack and the outcome, as the proxy between them saw it.",
   "exchanges": [
     {
@@ -10,18 +10,18 @@
         "method": "POST",
         "path": "/api/v1/intake/webhook/deluno",
         "headers": {
-          "idempotency-key": "01a1a8379da37d0c9c90130b8edab7da:1793823579555",
+          "idempotency-key": "01a1a95e701d7e68a85d2bc1e4aa8789:1793842901021",
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "eventType": "deluno.processor-handoff",
-          "handoffId": "01a1a8379da37d0c9c90130b8edab7da",
-          "libraryId": "01a1a835cd6a7e4ebde3567a1f63fac8",
+          "handoffId": "01a1a95e701d7e68a85d2bc1e4aa8789",
+          "libraryId": "01a1a95c9daa728f9b05d79e1f8c2ac3",
           "mediaType": "tv",
           "sourcePath": "/downloads/completed/TV/ScnPack.S01.1080p.WEB-DL.x264-WEIR",
           "releaseName": "ScnPack.S01.1080p.WEB-DL.x264-WEIR",
-          "queueItemId": "ce774e3a5635e986f6b38b19712ed27243097ac2",
+          "queueItemId": "3b29369cf15d708a275c09007aeac90bdf81c5e6",
           "callbackPath": "/api/integrations/processors/events",
           "title": "ScnPack",
           "year": 2020,
@@ -54,10 +54,10 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a1a8379da37d0c9c90130b8edab7da",
+          "handoffId": "01a1a95e701d7e68a85d2bc1e4aa8789",
           "status": "completed",
           "processorName": "Weir",
-          "libraryId": "01a1a835cd6a7e4ebde3567a1f63fac8",
+          "libraryId": "01a1a95c9daa728f9b05d79e1f8c2ac3",
           "releaseName": "ScnPack.S01.1080p.WEB-DL.x264-WEIR",
           "outputPath": "/weir/Ready/TV/ScnPack.S01.1080p.WEB-DL.x264-WEIR",
           "message": "Weir finished 2 files, ready to import from the output folder.",
@@ -74,23 +74,23 @@
         },
         "body": {
           "status": "completed",
-          "handoffId": "01a1a8379da37d0c9c90130b8edab7da",
-          "activityId": "01a1a8381b7472509c408884c007a21b",
-          "importJobId": "01a1a8381b777f129ea96271b818127e"
+          "handoffId": "01a1a95e701d7e68a85d2bc1e4aa8789",
+          "activityId": "01a1a95ed8fb71a0986701e8397f0e2c",
+          "importJobId": "01a1a95ed8fe7808982c194a9cfae599"
         }
       }
     },
     {
       "request": {
         "method": "POST",
-        "path": "/api/v1/intake/handoffs/deluno/01a1a8379da37d0c9c90130b8edab7da/outcome",
+        "path": "/api/v1/intake/handoffs/deluno/01a1a95e701d7e68a85d2bc1e4aa8789/outcome",
         "headers": {
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "outcome": "not-imported",
-          "occurredUtc": "2026-11-04T20:21:46.5700042+00:00",
+          "occurredUtc": "2026-11-05T01:43:40.30516+00:00",
           "importedPath": null,
           "reason": "Season-pack import is blocked: No file in this pack resolves to one or more canonical episodes in this show."
         }
@@ -101,7 +101,7 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a1a8379da37d0c9c90130b8edab7da",
+          "handoffId": "01a1a95e701d7e68a85d2bc1e4aa8789",
           "outcome": "not-imported",
           "released": false,
           "message": "Weir recorded that the file will not be imported, and kept its copy."
