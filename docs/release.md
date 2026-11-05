@@ -237,6 +237,11 @@ scenarios inside those phases only. A run of chosen scenarios keeps its record i
 the run started, so running the same scenarios again never overwrites the first record; with `-OutDirectory` the folder has no time, and a
 second run into the same `-OutDirectory` replaces the first), which lists every other scenario as not chosen; it sets no `golden-path`
 status and is never a pass for the tag. Only a full run of all three phases passes.
+After the restore the run waits (one 15-minute deadline) until the host reports the VM's Heartbeat integration service healthy and PowerShell Direct
+runs a command: a restored checkpoint answers once while its integration services reconnect, then drops the next call. The setup steps that follow
+(clearing the scripts folder, copying the scripts, installer and film with their hash checked, registering and starting the task) are tried again,
+up to five attempts ten seconds apart and each logged with its error, when the PowerShell Direct link itself failed ("Starting a command on the remote
+server failed", `PSRemotingTransportException`); any other error fails at once, and a scenario's own steps are never retried.
 `scripts/scenarios.test.mjs` fails when a scenario reads state another scenario made or names another scenario.
 
 **Running the same scenarios a second time on the same machine.** Run them once (the Fresh phase restores the clean checkpoint), then again
