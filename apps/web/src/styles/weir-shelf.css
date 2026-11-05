@@ -118,7 +118,7 @@
   border-radius: 999px;
   background: transparent;
   color: var(--mm-text2);
-  font-size: var(--mm-type-caption);
+  font-size: 12px;
   font-weight: 500;
   line-height: 1;
   white-space: nowrap;

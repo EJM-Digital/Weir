@@ -12,7 +12,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import { headRevision, readRevision, revisionNumber, usernamesIn } from "./docker-smoke/database.mjs";
 import { upgradeOutcome, parseSetupCode } from "./docker-smoke/server-log.mjs";
-import { previousRelease } from "./docker-smoke/previous-image.mjs";
+import { imageIsPublished, previousPublishedRelease, previousRelease } from "./docker-smoke/previous-image.mjs";
 import { IMAGE_REPOSITORY } from "./repository.mjs";
 import { sessionCookie } from "./docker-smoke/weir-client.mjs";
 import { composeOverride } from "./docker-smoke/override.mjs";
@@ -60,6 +60,38 @@ test("the previous release of a version is the newest older one, and with no ver
   assert.deepEqual(previousRelease(tags, "1.0.0-rc.10"), { version: "1.0.0-rc.9", image: `${IMAGE_REPOSITORY}:1.0.0-rc.9` });
   assert.deepEqual(previousRelease(tags, ""), { version: "1.0.0-rc.18", image: `${IMAGE_REPOSITORY}:1.0.0-rc.18` });
   assert.deepEqual(previousRelease([...tags, "v1.0.0-rc.19"], "1.0.0-rc.20"), { version: "1.0.0-rc.19", image: `${IMAGE_REPOSITORY}:1.0.0-rc.19` });
+});
+
+test("a release whose image is not pushed yet is passed over for the newest one that has an image", () => {
+  const tags = ["v1.0.0-rc.24", "v1.0.0-rc.25", "v1.0.0-rc.26"];
+  const imaged = (...versions) => (image) => versions.some((version) => image === `${IMAGE_REPOSITORY}:${version}`);
+  const lines = [];
+  const log = (line) => lines.push(line);
+
+  assert.deepEqual(previousPublishedRelease(tags, "1.0.0-rc.27", imaged("1.0.0-rc.24", "1.0.0-rc.25"), log), {
+    version: "1.0.0-rc.25",
+    image: `${IMAGE_REPOSITORY}:1.0.0-rc.25`,
+  });
+  assert.deepEqual(lines, ["1.0.0-rc.26 has a GitHub release but no image yet; upgrading from 1.0.0-rc.25."]);
+
+  lines.length = 0;
+  assert.equal(previousPublishedRelease(tags, "", imaged("1.0.0-rc.24"), log).version, "1.0.0-rc.24");
+  assert.deepEqual(lines, ["1.0.0-rc.26, 1.0.0-rc.25 have a GitHub release but no image yet; upgrading from 1.0.0-rc.24."]);
+
+  lines.length = 0;
+  assert.equal(previousPublishedRelease(tags, "1.0.0-rc.27", imaged("1.0.0-rc.26"), log).version, "1.0.0-rc.26");
+  assert.deepEqual(lines, []);
+
+  assert.equal(previousPublishedRelease(tags, "1.0.0-rc.27", imaged(), log), null);
+  assert.equal(previousPublishedRelease([], "1.0.0-rc.1", imaged(), log), null);
+});
+
+test("an image is published when the registry has its manifest; only a missing manifest is absent", () => {
+  const answering = (status, output) => () => ({ status, output });
+  assert.equal(imageIsPublished("x:1", answering(0, "{}")), true);
+  assert.equal(imageIsPublished("x:1", answering(1, "manifest unknown")), false);
+  assert.equal(imageIsPublished("x:1", answering(1, "no such manifest: ghcr.io/x:1")), false);
+  assert.throws(() => imageIsPublished("x:1", answering(1, "toomanyrequests")), /toomanyrequests/);
 });
 
 test("the first release has no previous release to upgrade from", () => {
