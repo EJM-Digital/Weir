@@ -11,14 +11,12 @@ import {
   stackedBoardBudget,
 } from "./pipeline-layout";
 import {
-  CAPTION_PX,
   FULL_CAPTION_PX,
   TINY_CAPTION_PX,
   FULL_DECORATIONS_MIN_PX,
   posterSize,
   SHELF_MIN_TILES,
   shelfFit,
-  shelfRowNeed,
   tilesAcross,
 } from "./shelf-layout";
 
@@ -156,45 +154,6 @@ describe("the shelf's tiles", () => {
 
   it("never makes a tile narrower than the least art, however narrow the row", () => {
     expect(shelfFit(250, 100).width).toBe(24);
-  });
-
-  it("need the height of the art the five-tile rule leaves them, plus the caption and the row's padding", () => {
-    // 570px wide: 102px tiles, 153px of art, the 72px full caption and 12px of padding.
-    expect(shelfRowNeed(570)).toBe(237);
-    // A row too wide for the rule to bind: the tallest tile is 255px of art.
-    expect(shelfRowNeed(3000)).toBe(255 + 72 + 12);
-    // Tiles too small for the full caption: the least art, the tiny caption and the padding.
-    expect(shelfRowNeed(100)).toBe(36 + 21 + 12);
-  });
-
-  it("need the height at which the full caption shows, and the tiles have long stopped growing", () => {
-    for (const width of [430, 570, 622, 829, 1200, 3000]) {
-      const need = shelfRowNeed(width);
-      const widest = shelfFit(10_000, width).width;
-      expect(shelfFit(need, width)).toEqual({ caption: "full", width: widest });
-      // A pixel less and the caption is the compact one, under tiles as wide.
-      expect(shelfFit(need - 1, width)).toEqual({
-        caption: "compact",
-        width: widest,
-      });
-      // A taller row only leaves empty space under the tiles.
-      expect(shelfFit(need + 80, width)).toEqual(shelfFit(need, width));
-      // The tiles only narrow once the compact caption has no room either.
-      expect(
-        shelfFit(need - (FULL_CAPTION_PX - CAPTION_PX) - 1, width).width,
-      ).toBeLessThan(widest);
-    }
-  });
-
-  it("need no more than their art and the tiny caption, where the tiles are too small for the full one", () => {
-    // 300px wide holds five 48px tiles: 72px of art, a 21px line and 12px of padding.
-    expect(shelfRowNeed(300)).toBe(12 + 72 + 21);
-    expect(shelfFit(shelfRowNeed(300), 300)).toEqual({
-      caption: "tiny",
-      width: 48,
-    });
-    // A row tall enough for the compact caption gives them that, at the same width.
-    expect(shelfFit(10_000, 300)).toEqual({ caption: "compact", width: 48 });
   });
 
   it("have the full caption under tiles 64px wide and up, and not under narrower ones", () => {

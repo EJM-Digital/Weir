@@ -7,7 +7,6 @@ import {
   GRID_AREAS_SYSTEM,
   GRID_COLUMNS,
   gridRows,
-  lowNeedOfGrid,
   type PageLayout,
 } from "../dashboard-layout";
 
@@ -19,8 +18,7 @@ type SystemGridProps = {
 /**
  * The grid the System view's cards sit in, on Live's columns and rows: beside the right column it is as tall as the
  * page, and its three rows are shares of the height it has, measured again whenever it changes size and divided by
- * Live's rule (told what Live's shelf row would need at this width, so the two views' rows are always the same);
- * below that the cards stack and the page scrolls. The cells name their areas in weir-system-cards.css. Nothing moves while the
+ * the rule Live uses, so the two views' rows are always the same; below that the cards stack and the page scrolls. The cells name their areas in weir-system-cards.css. Nothing moves while the
  * window is being resized.
  */
 export function SystemGrid({ layout, children }: SystemGridProps) {
@@ -30,9 +28,7 @@ export function SystemGrid({ layout, children }: SystemGridProps) {
   const style: CSSProperties | undefined = beside
     ? {
         gridTemplateColumns: GRID_COLUMNS,
-        gridTemplateRows: gridRows(grid.height, {
-          lowNeed: grid.width > 0 ? lowNeedOfGrid(grid.width) : undefined,
-        }).template,
+        gridTemplateRows: gridRows(grid.height).template,
         gridTemplateAreas: GRID_AREAS_SYSTEM,
       }
     : undefined;
