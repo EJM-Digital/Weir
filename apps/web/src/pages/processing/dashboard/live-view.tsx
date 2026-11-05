@@ -113,7 +113,6 @@ export function LiveView({ filter, workflowId, layout }: LiveViewProps) {
   const fileLog = useProcessingFileLog();
   const navigate = useNavigate();
   const [storyFile, setStoryFile] = useState<StoryFile | null>(null);
-  const [lowNeed, setLowNeed] = useState<number>();
   // Cards that left are tracked against every workflow's lanes, so narrowing the page to one kind of file or
   // one workflow is never taken for a file leaving.
   const { files: finished, error: finishedError } = useFinishedFiles(
@@ -197,7 +196,7 @@ export function LiveView({ filter, workflowId, layout }: LiveViewProps) {
 
   return (
     <>
-      <LiveGrid layout={layout} lowNeed={lowNeed}>
+      <LiveGrid layout={layout}>
         <div className="mm-dash__band">
           <div
             className={classNames(
@@ -259,7 +258,6 @@ export function LiveView({ filter, workflowId, layout }: LiveViewProps) {
             enabledWorkflowIds={enabledWorkflowIds}
             count={workflowId === null ? cleanedToday(today) : undefined}
             onOpen={openFinished}
-            onHeightNeed={setLowNeed}
           />
           <ActivityStream now={now} workflowId={workflowId} filter={filter} />
         </div>
