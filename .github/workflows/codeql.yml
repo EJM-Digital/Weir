@@ -65,13 +65,20 @@ jobs:
             apps/server/**/packages.lock.json
             apps/tray/**/packages.lock.json
 
-      # Restored before CodeQL starts tracing, so the traced build is compilation only. Locked, as in ci.yml; the
-      # server is restored from apps/server so its global.json picks the pinned SDK.
+      # Restored before CodeQL starts tracing, so the traced build is compilation only. Locked, as in ci.yml. Run from
+      # apps/server so its global.json picks the pinned SDK: from the repository root no global.json applies and the
+      # runner image's newer preinstalled SDK is used, which brings newer trimming tools (ILLink.Tasks 10.0.14, the
+      # lock files hold 10.0.11) and fails the locked restore with NU1004. The shell is bash because the default
+      # PowerShell step reports only the last command's exit code: the failed restore above was hidden by the tray
+      # restore after it, and the job went on to analyse a server that was never compiled.
       - name: Restore Weir server and tray (locked)
         if: matrix.language == 'csharp'
+        working-directory: apps/server
+        shell: bash
         run: |
-          dotnet restore apps/server/Weir.slnx --locked-mode
-          dotnet restore apps/tray/Weir.Tray.slnx --locked-mode
+          dotnet --version
+          dotnet restore Weir.slnx --locked-mode
+          dotnet restore ../tray/Weir.Tray.slnx --locked-mode
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
@@ -85,9 +92,11 @@ jobs:
       # because CodeQL only extracts what it sees compiled. No tests run.
       - name: Build Weir server and tray
         if: matrix.language == 'csharp'
+        working-directory: apps/server
+        shell: bash
         run: |
-          dotnet build apps/server/Weir.slnx -c Release --no-restore --no-incremental -p:UseSharedCompilation=false
-          dotnet build apps/tray/Weir.Tray.slnx -c Release --no-restore --no-incremental -p:UseSharedCompilation=false
+          dotnet build Weir.slnx -c Release --no-restore --no-incremental -p:UseSharedCompilation=false
+          dotnet build ../tray/Weir.Tray.slnx -c Release --no-restore --no-incremental -p:UseSharedCompilation=false
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
