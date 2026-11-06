@@ -74,4 +74,16 @@ describe("page header matches the shared spec", () => {
     ).toBe("600");
     expect(shelf).toMatch(/.lsh-chips {[^}]*gap: 6px;/);
   });
+
+  it("gives a panel title with controls beside it a 96px minimum width, so the controls start 12px after that", () => {
+    const title = declarations(
+      panels,
+      ".mm-panel__head:has(> .mm-panel__controls) .mm-panel__title",
+    );
+    expect(title["min-width"]).toBe("96px");
+    expect(declarations(panels, ".mm-panel__head")["gap"]).toBe("12px");
+    expect(
+      declarations(panels, ".mm-panel__title")["min-width"],
+    ).toBeUndefined();
+  });
 });
