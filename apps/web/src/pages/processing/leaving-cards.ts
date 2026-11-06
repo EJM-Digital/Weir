@@ -221,6 +221,11 @@ export function endedCards(state: LeavingState): LeavingCard[] {
   );
 }
 
+/** The time the departures are measured against; read as it is when the lanes change, not at a fixed point of a render. */
+function clockNow(): number {
+  return Date.now();
+}
+
 /**
  * The ended cards to draw now. `waiting`, `working` and `handing` are the lanes before any filter, so
  * narrowing the page to one kind of file is never mistaken for a file leaving.
@@ -235,17 +240,17 @@ export function useLeavingCards(
     () => shownCards(waiting, working, handing),
     [waiting, working, handing],
   );
-  const [state, setState] = useState(NO_LEAVING_CARDS);
-
-  useEffect(() => {
-    setState((before) => advance(before, cards, files, Date.now()));
-  }, [cards, files]);
+  const [held, setHeld] = useState(NO_LEAVING_CARDS);
+  // Worked out while rendering, not in an effect after it: the render that takes a card off the lanes already
+  // carries its ended card, so the card is never missing from a commit and its element is kept (#1383).
+  const state = advance(held, cards, files, clockNow());
+  if (state !== held) setHeld(state);
 
   useEffect(() => {
     const due = nextChangeAt(state);
     if (due == null) return;
     const timer = window.setTimeout(
-      () => setState((before) => advance(before, cards, files, Date.now())),
+      () => setHeld((before) => advance(before, cards, files, Date.now())),
       Math.max(0, due - Date.now()),
     );
     return () => window.clearTimeout(timer);
