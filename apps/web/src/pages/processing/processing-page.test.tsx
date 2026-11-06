@@ -655,7 +655,7 @@ describe("ProcessingPage", () => {
       const board = screen.getByTestId("pipeline-board");
       expect(board).toHaveTextContent("Glass Orchard S01E04");
       expect(board).toHaveTextContent("✓ Delivered");
-      expect(screen.queryByTestId("live-working")).toBeNull();
+      expect(screen.getByTestId("live-working")).not.toBeVisible();
 
       act(() => {
         vi.advanceTimersByTime(LEAVING_CARD_MS);

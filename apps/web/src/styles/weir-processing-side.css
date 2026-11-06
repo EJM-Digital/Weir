@@ -51,8 +51,17 @@
   color: var(--mm-st);
 }
 
+/* A notice lies over the foot of the panel, so it never pushes the list. */
 .mm-health__notice {
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  bottom: 0;
+  left: 0;
   margin: 0;
+  padding: 8px 18px;
+  border-top: 1px solid var(--mm-panel-border);
+  background: var(--mm-card-bg);
   font-size: var(--mm-type-body);
   color: var(--mm-text2);
 }
@@ -175,8 +184,17 @@
   color: var(--mm-st);
 }
 
+/* A notice lies over the foot of the panel, so it never pushes the list: the list does not move when it comes and goes. */
 .mm-needs__notice {
-  margin: 0 18px 10px;
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: 0;
+  padding: 8px 18px;
+  border-top: 1px solid var(--mm-panel-border);
+  background: var(--mm-card-bg);
   font-size: var(--mm-type-body);
   color: var(--mm-text2);
 }

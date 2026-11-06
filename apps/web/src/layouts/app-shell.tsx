@@ -54,8 +54,10 @@ export function AppShell() {
             menuOpen={menuOpen}
             onToggleMenu={() => setMenuOpen((open) => !open)}
           />
-          <LiveConnectionBanner />
-          <SignOutFailedBanner />
+          <div className="mm-banners">
+            <LiveConnectionBanner />
+            <SignOutFailedBanner />
+          </div>
           <RecoveryCodesPrompt />
           <main className="mm-main" id="mm-main-content" tabIndex={-1}>
             <div className="mm-main-inner">

@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 import { StatTile, StatUnit } from "../../../components/panels/stat-tile";
@@ -31,68 +30,67 @@ type NextTileProps = {
   across?: boolean;
 };
 
-type TileParts = { figure: ReactNode; body: ReactNode };
-
-function pausedParts(): TileParts {
+/**
+ * The tile is one set of parts in every state, so pausing and resuming change their text and what shows, never
+ * which elements there are: the countdown bar keeps its place and its width glides.
+ */
+function partsOf({
+  items,
+  now,
+  paused,
+  filter,
+}: {
+  items: readonly NextItem[];
+  now: number;
+  paused: boolean;
+  filter: Filter;
+}) {
+  const [first, ...rest] = paused ? [] : items;
+  const idle = paused
+    ? "Running files finish first."
+    : first
+      ? ""
+      : NOTHING_SCHEDULED_WORDS[filter];
+  const fraction = (first && waitFraction(first, now)) ?? 0;
   return {
     figure: (
       <>
-        <span>Paused</span>
-        <StatUnit>nothing new starts</StatUnit>
-      </>
-    ),
-    body: <p className="mm-stat__idle">Running files finish first.</p>,
-  };
-}
-
-function nothingScheduledParts(filter: Filter): TileParts {
-  return {
-    figure: <StatUnit>nothing scheduled</StatUnit>,
-    body: <p className="mm-stat__idle">{NOTHING_SCHEDULED_WORDS[filter]}</p>,
-  };
-}
-
-function scheduledParts(
-  [first, ...rest]: readonly [NextItem, ...NextItem[]],
-  now: number,
-): TileParts {
-  const fraction = waitFraction(first, now) ?? 0;
-  return {
-    figure: (
-      <>
-        <span data-testid="live-next-figure">{figureWords(first.at, now)}</span>
-        <StatUnit>{first.label}</StatUnit>
+        <span
+          data-testid={first ? "live-next-figure" : undefined}
+          hidden={!paused && !first}
+        >
+          {paused ? "Paused" : first ? figureWords(first.at, now) : ""}
+        </span>
+        <StatUnit>
+          {paused
+            ? "nothing new starts"
+            : first
+              ? first.label
+              : "nothing scheduled"}
+        </StatUnit>
       </>
     ),
     body: (
       <div>
-        <span className="mm-next__bar" aria-hidden="true">
-          <i style={{ width: `${Math.round(fraction * 100)}%` }} />
-        </span>
-        <ul className="mm-next__then" data-testid="live-next-then">
-          {rest.slice(0, THEN_LINES).map((item) => (
-            <li key={item.key} data-fit="">
-              <Link to={item.to}>then {item.label}</Link>
-              <span>{lineWords(item.at, now)}</span>
-            </li>
-          ))}
-        </ul>
+        <p className="mm-stat__idle" hidden={idle === ""}>
+          {idle}
+        </p>
+        <div hidden={!first}>
+          <span className="mm-next__bar" aria-hidden="true">
+            <i style={{ width: `${Math.round(fraction * 100)}%` }} />
+          </span>
+          <ul className="mm-next__then" data-testid="live-next-then">
+            {rest.slice(0, THEN_LINES).map((item) => (
+              <li key={item.key} data-fit="">
+                <Link to={item.to}>then {item.label}</Link>
+                <span>{lineWords(item.at, now)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     ),
   };
-}
-
-function partsOf(
-  items: readonly NextItem[],
-  now: number,
-  paused: boolean,
-  filter: Filter,
-) {
-  if (paused) return pausedParts();
-  const [first, ...rest] = items;
-  return first
-    ? scheduledParts([first, ...rest], now)
-    : nothingScheduledParts(filter);
 }
 
 /** The next thing Weir does on its own, with a countdown, and what comes after it. */
@@ -104,7 +102,7 @@ export function NextTile({
   across = true,
 }: NextTileProps) {
   const [bodyRef] = useFittingRows(across);
-  const { figure, body } = partsOf(items, now, paused, filter);
+  const { figure, body } = partsOf({ items, now, paused, filter });
   return (
     <StatTile label="Next" aside="on its own" figure={figure} bodyRef={bodyRef}>
       {body}

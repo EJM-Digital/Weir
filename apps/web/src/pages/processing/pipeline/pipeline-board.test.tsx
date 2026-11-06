@@ -509,14 +509,45 @@ describe("the board at the width of a phone", () => {
       (group) => group.getAttribute("data-station"),
     );
     expect(stages).toEqual(["queued", "processing"]);
-    const processing = container.querySelector('[data-station="processing"]')!;
     expect(
-      within(processing as HTMLElement).getByRole("group", {
-        name: "Processing: 2",
-      }),
+      within(
+        container.querySelector('[data-station="processing"]') as HTMLElement,
+      ).getByText("Processing"),
     ).toBeVisible();
-    expect(processing.querySelectorAll(".mm-pipe__card")).toHaveLength(2);
+    expect(screen.getByRole("group", { name: "Processing: 2" })).toBeVisible();
+    expect(
+      container.querySelectorAll('.mm-pipe__card[data-stage="processing"]'),
+    ).toHaveLength(2);
     expect(container.querySelector(".mm-pipe__lanes")).toBeNull();
+  });
+
+  it("keeps one element per card when a card changes station and when a station fills or empties", () => {
+    boardIsWide(320);
+    const { container, rerender } = render(
+      board(lanesOf([aFile(1, "unprocessed"), aFile(2, "unprocessed")])),
+    );
+    const before = [...container.querySelectorAll(".mm-pipe__card")];
+    expect(container.querySelector('[data-station="processing"]')).toBeNull();
+
+    rerender(board(lanesOf([aWriting(1), aFile(2, "unprocessed")])));
+
+    const after = [...container.querySelectorAll(".mm-pipe__card")];
+    expect(after).toHaveLength(2);
+    after.forEach((card) => expect(before).toContain(card));
+    const moved = cardNamed(/S01E01/);
+    expect(moved).toHaveAttribute("data-stage", "processing");
+    const heading = container.querySelector('[data-station="processing"]')!;
+    const order = (el: Element) => Number((el as HTMLElement).style.order);
+    expect(order(moved)).toBeGreaterThan(order(heading));
+    expect(order(heading)).toBeGreaterThan(
+      order(container.querySelector('[data-station="queued"]')!),
+    );
+    expect(order(cardNamed(/S01E02/))).toBeLessThan(order(heading));
+
+    rerender(board(lanesOf([aWriting(1), aWriting(2)])));
+    expect(container.querySelector('[data-station="queued"]')).toBeNull();
+    expect(moved.isConnected).toBe(true);
+    expect(container.querySelectorAll(".mm-pipe__card")).toHaveLength(2);
   });
 
   it("shows every file in a station however many there are, with no 'and more' line", () => {

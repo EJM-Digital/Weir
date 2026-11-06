@@ -186,6 +186,7 @@
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+  position: relative;
 }
 
 /* ---- Stat tile (components/panels/stat-tile.tsx) ------------------------- */
@@ -261,6 +262,11 @@ a.mm-stat__label:hover {
   line-height: 44px;
   white-space: nowrap;
   color: var(--mm-text1);
+}
+
+/* The figure keeps room for two digits, so the unit beside it does not move when a count goes from 9 to 10 or back. */
+.mm-stat__figure > :first-child:not(.mm-stat__unit) {
+  min-width: 2ch;
 }
 
 .mm-stat__unit {

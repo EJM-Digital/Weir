@@ -144,15 +144,19 @@ export function WorkingTile({
         </>
       }
     >
-      {working.length === 0 ? (
-        <p className="mm-stat__idle">{IDLE_WORDS[filter]}</p>
-      ) : (
-        <ul className="mm-ops" data-testid="live-working">
-          {shown.map((item) => (
-            <Operation key={item.key} item={item} onOpen={onOpen} />
-          ))}
-        </ul>
-      )}
+      {/* Both are always there and one is hidden, so the list keeps its element when it empties and fills. */}
+      <p className="mm-stat__idle" hidden={working.length > 0}>
+        {IDLE_WORDS[filter]}
+      </p>
+      <ul
+        className="mm-ops"
+        data-testid="live-working"
+        hidden={working.length === 0}
+      >
+        {shown.map((item) => (
+          <Operation key={item.key} item={item} onOpen={onOpen} />
+        ))}
+      </ul>
     </StatTile>
   );
 }

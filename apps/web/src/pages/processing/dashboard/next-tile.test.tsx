@@ -153,3 +153,51 @@ describe("the Next tile", () => {
     expect(lines.map((line) => line.style.visibility)).toEqual(["", "", ""]);
   });
 });
+
+describe("the Next tile when it changes state", () => {
+  function tileOf(items: NextItem[], paused: boolean) {
+    return (
+      <MemoryRouter>
+        <NextTile items={items} now={NOW} paused={paused} />
+      </MemoryRouter>
+    );
+  }
+  const scheduled = [item("scan", 42, "Look for new downloads in TV")];
+
+  it("keeps the same elements, and the countdown bar, when it pauses and resumes", () => {
+    const { container, rerender } = render(tileOf(scheduled, false));
+    const every = () => [...container.querySelectorAll("*")];
+    const before = every();
+    const bar = container.querySelector(".mm-next__bar i");
+    const figure = container.querySelector(".mm-stat__figure span");
+
+    rerender(tileOf(scheduled, true));
+    expect(container.querySelector(".mm-next__bar i")).toBe(bar);
+    expect(container.querySelector(".mm-stat__figure span")).toBe(figure);
+    expect(screen.getByRole("region", { name: "Next" })).toHaveTextContent(
+      "Paused",
+    );
+    expect(
+      container.querySelector(".mm-next__bar")?.parentElement,
+    ).not.toBeVisible();
+
+    rerender(tileOf(scheduled, false));
+    const after = every();
+    expect(after).toHaveLength(before.length);
+    after.forEach((node, index) => expect(node).toBe(before[index]));
+    expect(container.querySelector(".mm-next__bar i")).toBe(bar);
+  });
+
+  it("keeps the same elements when nothing is scheduled and then something is", () => {
+    const { container, rerender } = render(tileOf(scheduled, false));
+    const bar = container.querySelector(".mm-next__bar i");
+
+    rerender(tileOf([], false));
+    expect(
+      screen.getByText("Switch on a workflow or a cleanup job."),
+    ).toBeVisible();
+
+    rerender(tileOf(scheduled, false));
+    expect(container.querySelector(".mm-next__bar i")).toBe(bar);
+  });
+});

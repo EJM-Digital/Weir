@@ -61,6 +61,8 @@ const NOTHING_IN_PROGRESS_WORDS: Record<Filter, string> = {
   download: "No new downloads in progress.",
   library: "No library cleaning right now.",
 };
+/** Room for a station's heading and all its cards between one station and the next in the stacked board. */
+const STACK_SPAN = 1_000_000;
 const PAUSED = "Paused · nothing new starts.";
 
 /** The station's tooltip: its name and its count in full, for a ribbon that is too narrow to show them whole. */
@@ -69,10 +71,21 @@ function stationTitle(stage: PipelineStage, count: number): string {
   return `${STAGE_LABEL[stage]}: ${files}`;
 }
 
-function Station({ stage, count }: { stage: PipelineStage; count: number }) {
+function Station({
+  stage,
+  count,
+  order,
+}: {
+  stage: PipelineStage;
+  count: number;
+  /** Stacked board only: the station's place in the one flat list. */
+  order?: number;
+}) {
   return (
     <div
       role="group"
+      data-station={order === undefined ? undefined : stage}
+      style={order === undefined ? undefined : { order }}
       aria-label={`${STAGE_LABEL[stage]}: ${count}`}
       title={stationTitle(stage, count)}
       data-stage={stage}
@@ -217,6 +230,13 @@ export function PipelineBoard({
       });
     }
   });
+  // The stacked board lays the same flat list out by CSS order: a station's heading, then its cards.
+  const stackOrder = new Map<string, number>();
+  PIPELINE_STAGES.forEach((stage, column) =>
+    grouped[stage].forEach((card, row) =>
+      stackOrder.set(card.key, column * STACK_SPAN + 1 + row),
+    ),
+  );
   // One stable order for every card, so a card that changes station keeps its element and glides instead of being re-made.
   const everyCard = [...cards].sort((a, b) => (a.key < b.key ? -1 : 1));
 
@@ -274,21 +294,25 @@ export function PipelineBoard({
           {stacked ? (
             <>
               {calm ? <p className="mm-pipe__calm">{calmLine}</p> : null}
-              {PIPELINE_STAGES.map((stage) =>
+              {PIPELINE_STAGES.map((stage, column) =>
                 grouped[stage].length === 0 ? null : (
-                  <div key={stage} data-station={stage}>
-                    <Station stage={stage} count={countAt(stage)} />
-                    {grouped[stage].map((card) => (
-                      <PipelineCardView
-                        key={card.key}
-                        card={card}
-                        arrived={arrived.has(card.key)}
-                        onOpen={onOpen}
-                      />
-                    ))}
-                  </div>
+                  <Station
+                    key={stage}
+                    stage={stage}
+                    count={countAt(stage)}
+                    order={column * STACK_SPAN}
+                  />
                 ),
               )}
+              {everyCard.map((card) => (
+                <PipelineCardView
+                  key={card.key}
+                  card={card}
+                  order={stackOrder.get(card.key)}
+                  arrived={arrived.has(card.key)}
+                  onOpen={onOpen}
+                />
+              ))}
             </>
           ) : (
             <>

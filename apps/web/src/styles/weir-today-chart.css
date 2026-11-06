@@ -39,13 +39,14 @@
 
 .mm-today-chart__dot {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--mm-primary);
   box-shadow: 0 0 10px var(--mm-primary);
   pointer-events: none;
-  transform: translate(-50%, -50%);
 }
 
 .mm-today-chart__empty {
@@ -149,6 +150,7 @@
 .cs-cursor {
   position: absolute;
   top: 0;
+  left: 0;
   bottom: 0;
   width: 0;
   border-left: 1px solid color-mix(in srgb, var(--mm-text1) 45%, transparent);
@@ -158,6 +160,7 @@
 .cs-read {
   position: absolute;
   top: 2px;
+  left: 0;
   z-index: 2;
   padding: 3px 7px;
   border: 1px solid var(--mm-border);
