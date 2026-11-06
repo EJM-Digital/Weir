@@ -245,21 +245,25 @@ export function NeedsPanel({
             ) : (
               <AllClear filter={filter} />
             )
-          ) : (
-            <div className="mm-needs__list" data-testid="live-needs">
-              {groups.map((group) => (
-                <Group
-                  key={group.key}
-                  group={group}
-                  workflowId={workflowId}
-                  workflowName={workflowName}
-                  mediaScopes={mediaScopes}
-                  onNotice={setNotice}
-                  onOpen={onOpen}
-                />
-              ))}
-            </div>
-          )}
+          ) : null}
+          {/* Always mounted, hidden while empty: a list that empties and fills is updated, never torn down and rebuilt. */}
+          <div
+            className="mm-needs__list"
+            data-testid="live-needs"
+            hidden={groups.length === 0}
+          >
+            {groups.map((group) => (
+              <Group
+                key={group.key}
+                group={group}
+                workflowId={workflowId}
+                workflowName={workflowName}
+                mediaScopes={mediaScopes}
+                onNotice={setNotice}
+                onOpen={onOpen}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </Panel>

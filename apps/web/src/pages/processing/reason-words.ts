@@ -24,6 +24,21 @@ const BOOKED_LOOK_REASON = /another look at this file booked/i;
 const SETTLING_REASON =
   /changed too recently|still growing|only just found|confirming that nothing|stopped changing|still being written|no other program is writing/i;
 
+/** A file Weir could not read from start to finish yet, which is usually one still arriving. */
+const NOT_READABLE_YET_REASON = /can.t read this file yet/i;
+
+/**
+ * Whether a hold is Weir waiting on its own, for a file to settle or for a look it has booked, and ends by itself. Such a
+ * hold needs nobody, with or without a clock on it. A hold for a full drive or an output folder it cannot write to does.
+ */
+export function holdResolvesItself(reason: string): boolean {
+  return (
+    SETTLING_REASON.test(reason) ||
+    BOOKED_LOOK_REASON.test(reason) ||
+    NOT_READABLE_YET_REASON.test(reason)
+  );
+}
+
 /** What an arriving file is waiting for, from the reason its hold gave. */
 export function holdWords(reason: string): string {
   if (CANNOT_OPEN_REASON.test(reason)) return CANNOT_OPEN;

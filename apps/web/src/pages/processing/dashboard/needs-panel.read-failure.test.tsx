@@ -130,7 +130,7 @@ describe("the Needs you panel when it cannot read the files", () => {
       "Weir couldn't load the files that need you.",
     );
     await waitFor(() =>
-      expect(within(panel).getByTestId("live-needs")).toBeInTheDocument(),
+      expect(within(panel).getByTestId("live-needs")).toBeVisible(),
     );
     expect(within(panel).queryByText("All clear")).toBeNull();
   });
@@ -142,8 +142,10 @@ describe("the Needs you panel when it cannot read the files", () => {
 
     const panel = renderPanel();
 
-    expect(await within(panel).findByTestId("live-needs")).toHaveTextContent(
-      "Ember",
+    await waitFor(() =>
+      expect(within(panel).getByTestId("live-needs")).toHaveTextContent(
+        "Ember",
+      ),
     );
     expect(within(panel).queryByRole("alert")).toBeNull();
   });

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { holdWords, outOfScheduleWords } from "./reason-words";
+import {
+  holdResolvesItself,
+  holdWords,
+  outOfScheduleWords,
+} from "./reason-words";
 
 describe("what an arriving file is waiting for", () => {
   it.each([
@@ -45,6 +49,24 @@ describe("what an arriving file is waiting for", () => {
     expect(holdWords("Something nobody wrote a short word for.")).toBe(
       "On hold",
     );
+  });
+});
+
+describe("which holds end by themselves", () => {
+  it.each([
+    "This file changed too recently. Weir waits 60s after the last change.",
+    "Weir can't read this file yet. It may still be arriving, so Weir will look again later.",
+    "Weir has another look at this file booked, and leaves it alone until then.",
+  ])("is Weir's own wait: %s", (reason) => {
+    expect(holdResolvesItself(reason)).toBe(true);
+  });
+
+  it.each([
+    "Weir cannot write to the output folder (D:/Out), so ...",
+    "Waiting: the D: has less than 10.0 GB free (2.1 GB free now).",
+    "",
+  ])("needs a person: %s", (reason) => {
+    expect(holdResolvesItself(reason)).toBe(false);
   });
 });
 
