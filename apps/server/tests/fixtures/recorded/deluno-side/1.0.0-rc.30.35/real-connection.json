@@ -2,36 +2,9 @@
   "app": "deluno",
   "version": "1.0.0-rc.30.35",
   "state": "real-connection",
-  "recordedAt": "2026-11-05T05:36:26.357Z",
+  "recordedAt": "2026-11-06T00:04:36.853Z",
   "note": "Weir connected to a real Deluno, and Deluno to Weir: what Weir read of Deluno's manifest and folders, and what Deluno asked of Weir, the first time each was said.",
   "exchanges": [
-    {
-      "request": {
-        "method": "GET",
-        "path": "/api/v1/intake/capabilities",
-        "headers": {
-          "x-webhook-secret": "<scrubbed>"
-        }
-      },
-      "reply": {
-        "status": 200,
-        "headers": {
-          "content-type": "application/json"
-        },
-        "body": {
-          "capabilities": [
-            "handoff-status",
-            "handoff-cancel",
-            "handoff-outcome",
-            "handoff-outcome-codes",
-            "library-folders"
-          ],
-          "machine_name": "<scrubbed>",
-          "product": "Weir",
-          "version": "0.0.1-dev"
-        }
-      }
-    },
     {
       "request": {
         "method": "GET",
@@ -74,7 +47,7 @@
           },
           "libraries": [
             {
-              "id": "01a1aa22dbd77bc3a0af6879c6fe370b",
+              "id": "01a1ae1969617738a4b70e3debd8cdc5",
               "name": "Movies",
               "mediaType": "movies",
               "rootPath": "/media/Movies",
@@ -95,7 +68,7 @@
           ],
           "indexers": [
             {
-              "id": "01a1aa22dbef7c0786f323e6e7bf065d",
+              "id": "01a1ae19697d766480c57b4f45135438",
               "name": "Scenario feed",
               "protocol": "torznab",
               "mediaScope": "both",
@@ -106,7 +79,7 @@
           ],
           "downloadClients": [
             {
-              "id": "01a1aa22da5f7a3388d30b3f9af602d8",
+              "id": "01a1ae19681772ba91a895bc50ee4ea6",
               "name": "qBittorrent on qbittorrent",
               "protocol": "qbittorrent",
               "moviesCategory": "deluno-movies",
@@ -118,6 +91,33 @@
             }
           ],
           "connections": []
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/capabilities",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "capabilities": [
+            "handoff-status",
+            "handoff-cancel",
+            "handoff-outcome",
+            "handoff-outcome-codes",
+            "library-folders"
+          ],
+          "machine_name": "<scrubbed>",
+          "product": "Weir",
+          "version": "0.0.1-dev"
         }
       }
     },
@@ -137,7 +137,7 @@
         "body": {
           "libraries": [
             {
-              "libraryId": "01a1aa22dbd77bc3a0af6879c6fe370b",
+              "libraryId": "01a1ae1969617738a4b70e3debd8cdc5",
               "libraryName": "Movies",
               "mediaType": "movies",
               "downloadsPath": "/downloads/completed/Movies",
@@ -145,7 +145,7 @@
               "importWorkflow": "standard",
               "destinations": [
                 {
-                  "downloadClientId": "01a1aa22da5f7a3388d30b3f9af602d8",
+                  "downloadClientId": "01a1ae19681772ba91a895bc50ee4ea6",
                   "downloadClientName": "qBittorrent on qbittorrent",
                   "protocol": "qbittorrent",
                   "category": "deluno-movies",

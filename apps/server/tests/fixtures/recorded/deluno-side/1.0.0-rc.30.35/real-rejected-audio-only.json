@@ -2,7 +2,7 @@
   "app": "deluno",
   "version": "1.0.0-rc.30.35",
   "state": "real-rejected-audio-only",
-  "recordedAt": "2026-11-05T05:36:26.357Z",
+  "recordedAt": "2026-11-06T00:04:36.853Z",
   "note": "A release whose film has sound and no picture, handed to Weir by a real Deluno in a workflow set to reject: Weir reports it rejected and leaves the download; Deluno refuses the release. The hand-off, Deluno's questions about it, Weir's report and Deluno's reply, as the proxy between them saw it.",
   "exchanges": [
     {
@@ -10,18 +10,18 @@
         "method": "POST",
         "path": "/api/v1/intake/webhook/deluno",
         "headers": {
-          "idempotency-key": "01a1aa27683d7704a51c2f0c08eb7ad9:1793856071740",
+          "idempotency-key": "01a1ae1d0e8074a18f646eef49807989:1793922502272",
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "eventType": "deluno.processor-handoff",
-          "handoffId": "01a1aa27683d7704a51c2f0c08eb7ad9",
-          "libraryId": "01a1aa22dbd77bc3a0af6879c6fe370b",
+          "handoffId": "01a1ae1d0e8074a18f646eef49807989",
+          "libraryId": "01a1ae1969617738a4b70e3debd8cdc5",
           "mediaType": "movies",
           "sourcePath": "/downloads/completed/Movies/ScnReject.2020.1080p.WEB-DL.x264-WEIR",
           "releaseName": "ScnReject.2020.1080p.WEB-DL.x264-WEIR",
-          "queueItemId": "6a9558e975521bcd6af95d0d38138dd718ef9504",
+          "queueItemId": "3ec2d6fc683195a45708cea9ea2ef7f9cd926e22",
           "callbackPath": "/api/integrations/processors/events",
           "title": "ScnReject",
           "year": 2020,
@@ -46,6 +46,31 @@
     },
     {
       "request": {
+        "method": "GET",
+        "path": "/api/v1/intake/handoffs/deluno/01a1ae1d0e8074a18f646eef49807989",
+        "headers": {
+          "x-webhook-secret": "<scrubbed>"
+        }
+      },
+      "reply": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "handoffId": "01a1ae1d0e8074a18f646eef49807989",
+          "state": "queued",
+          "queuePosition": null,
+          "scheduledFor": null,
+          "lastChangedUtc": "2026-11-05T23:48:22.505737Z",
+          "outputPath": null,
+          "outputFiles": null,
+          "message": "This file changed too recently. Weir waits 60s after the last change before processing, so it has about 59s to go."
+        }
+      }
+    },
+    {
+      "request": {
         "method": "POST",
         "path": "/api/integrations/processors/events",
         "headers": {
@@ -53,10 +78,10 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a1aa27683d7704a51c2f0c08eb7ad9",
+          "handoffId": "01a1ae1d0e8074a18f646eef49807989",
           "status": "failed",
           "processorName": "Weir",
-          "libraryId": "01a1aa22dbd77bc3a0af6879c6fe370b",
+          "libraryId": "01a1ae1969617738a4b70e3debd8cdc5",
           "releaseName": "ScnReject.2020.1080p.WEB-DL.x264-WEIR",
           "message": "Weir only processes movie and TV files that contain a video stream. This file contains no video, so it was rejected before any output was written.",
           "disposition": "rejected",
@@ -72,10 +97,10 @@
         },
         "body": {
           "status": "rejected",
-          "handoffId": "01a1aa27683d7704a51c2f0c08eb7ad9",
-          "activityId": "01a1aa276ac47c1cbe2f240f5bf56ecf",
-          "blockedReleaseId": "3de470b76ada412ebe6fe0156a81c865",
-          "searchJobId": "01a1aa276ac0798499b63e74dc6c8f82"
+          "handoffId": "01a1ae1d0e8074a18f646eef49807989",
+          "activityId": "01a1ae1e0ef07db093f5cebce04c3a5f",
+          "blockedReleaseId": "2a83b9dde21b4354b05a096695358f99",
+          "searchJobId": "01a1ae1e0eec7437bf1aca93fb34ac63"
         }
       }
     }
