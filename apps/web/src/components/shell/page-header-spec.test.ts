@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import header from "../../styles/weir-header.css?raw";
 import panels from "../../styles/weir-panels.css?raw";
 import shelf from "../../styles/weir-shelf.css?raw";
+import sidebar from "../../styles/weir-sidebar-nav.css?raw";
 import tokens from "../../styles/weir-tokens.css?raw";
 
 /** The declarations of the first rule whose selector is exactly `selector`. */
@@ -61,6 +62,13 @@ describe("page header matches the shared spec", () => {
     const head = declarations(panels, ".mm-panel__head");
     expect(head["min-height"]).toBe("48px");
     expect(head["padding"]).toBe("11px 18px 14px");
+  });
+
+  it("sets a sidebar group label to 12px, 600, 19px line", () => {
+    const label = declarations(sidebar, ".mm-sidebar-group__label");
+    expect(label["font-size"]).toBe("12px");
+    expect(label["font-weight"]).toBe("600");
+    expect(label["line-height"]).toBe("19px");
   });
 
   it("sets a panel header link to 13px, 500, 17px line", () => {
