@@ -58,6 +58,7 @@
   border-top: 1px solid color-mix(in srgb, var(--mm-hairline) 70%, transparent);
   font-size: 12px;
   font-weight: 600;
+  line-height: 19px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--mm-text2);

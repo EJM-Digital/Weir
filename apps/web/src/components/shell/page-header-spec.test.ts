@@ -65,11 +65,11 @@ describe("page header matches the shared spec", () => {
     expect(head["padding"]).toBe("11px 18px 14px");
   });
 
-  it("sets a sidebar group label to 12px, 600, on the sidebar's 1.52 line", () => {
+  it("sets a sidebar group label to 12px, 600, 19px line", () => {
     const label = declarations(sidebar, ".mm-sidebar-group__label");
     expect(label["font-size"]).toBe("12px");
     expect(label["font-weight"]).toBe("600");
-    expect(label["line-height"]).toBeUndefined();
+    expect(label["line-height"]).toBe("19px");
   });
 
   it("sets the sidebar tagline under the app name to 12px on the sidebar's 1.52 line", () => {
