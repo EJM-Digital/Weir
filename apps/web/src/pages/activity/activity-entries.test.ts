@@ -256,6 +256,37 @@ describe("the files that wait on a person", () => {
     ).toBe(true);
   });
 
+  it("leave out a hold that is only Weir waiting for the file to settle, whether or not a clock is on it", () => {
+    for (const status_reason of [
+      "This file changed too recently. Weir waits 30s after the last change before processing, so it has about 28s to go.",
+      "Weir has only just found this file and is checking whether anything is still writing to it.",
+      "This file is still growing, so something is writing to it. Weir will wait until it stops.",
+      "Weir is waiting until no other program is writing this file.",
+      "Weir can't read this file yet. It may still be arriving, so Weir will look again later.",
+      "Weir has another look at this file booked, and leaves it alone until then.",
+    ]) {
+      expect(
+        waitsOnAPerson(
+          file({ status: "on_hold", hold_until: null, status_reason }),
+        ),
+      ).toBe(false);
+    }
+  });
+
+  it("keep a hold with no clock whose reason is not Weir's own wait", () => {
+    for (const status_reason of [
+      "The output folder has less than 20 GB free.",
+      "Weir cannot write to the output folder.",
+      "",
+    ]) {
+      expect(
+        waitsOnAPerson(
+          file({ status: "on_hold", hold_until: null, status_reason }),
+        ),
+      ).toBe(true);
+    }
+  });
+
   it("leave out a hold that is counting down, a routine skip and a file Weir is still working on", () => {
     expect(
       waitsOnAPerson(

@@ -164,6 +164,10 @@
   gap: 14px;
 }
 
+.mm-needs__list[hidden] {
+  display: none;
+}
+
 /* How many things need a person, in the header, where a glance finds it. */
 .mm-needs__count {
   font-weight: 600;

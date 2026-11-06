@@ -1,3 +1,4 @@
+import { holdResolvesItself } from "../processing/reason-words";
 import {
   isBelowMinimumSize,
   type ProcessingFile,
@@ -153,7 +154,7 @@ export function activityGroupOf(file: ProcessingFile): ActivityGroup | null {
 const SKIPPED_BY_RULE = /^skipped because/i;
 
 /**
- * Whether a file waits on a person: a failure, a rejection, a hold with no clock on it, or a skip by a rule. A file under the
+ * Whether a file waits on a person: a failure, a rejection, a hold with no clock on it that is not Weir's own wait to settle, or a skip by a rule. A file under the
  * workflow's minimum size is left out: the minimum is doing its job, skipping samples and extras. The badge, Needs you panel
  * and Activity chip count the same files.
  */
@@ -163,7 +164,7 @@ export function waitsOnAPerson(file: ProcessingFile): boolean {
     case "rejected":
       return true;
     case "on_hold":
-      return !file.hold_until;
+      return !file.hold_until && !holdResolvesItself(file.status_reason);
     case "skipped":
       return (
         SKIPPED_BY_RULE.test(file.status_reason) && !isBelowMinimumSize(file)

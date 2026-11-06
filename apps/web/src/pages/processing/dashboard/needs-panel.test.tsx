@@ -160,7 +160,7 @@ describe("the Needs you panel when nothing needs a person", () => {
 
     expect(within(panel).getByText("All clear")).toBeInTheDocument();
     expect(panel).not.toHaveTextContent("to look at");
-    expect(screen.queryByTestId("live-needs")).toBeNull();
+    expect(screen.getByTestId("live-needs")).toBeEmptyDOMElement();
   });
 
   it("stays clear for an extra the workflow's minimum size left alone", () => {
@@ -180,7 +180,34 @@ describe("the Needs you panel when nothing needs a person", () => {
 
     expect(within(panel).getByText("All clear")).toBeInTheDocument();
     expect(panel).not.toHaveTextContent("Excluded by a rule");
-    expect(screen.queryByTestId("live-needs")).toBeNull();
+    expect(screen.getByTestId("live-needs")).toBeEmptyDOMElement();
+  });
+});
+
+describe("the Needs you panel keeps its list as files come and go", () => {
+  it("is the same list element when it fills and empties again, and says All clear beside it", () => {
+    const tree = () => (
+      <MemoryRouter>
+        <NeedsPanel />
+      </MemoryRouter>
+    );
+    const { rerender } = render(tree());
+    const list = screen.getByTestId("live-needs");
+    expect(list).toBeEmptyDOMElement();
+    expect(list).not.toBeVisible();
+
+    needFiles.files = [stuckFile];
+    rerender(tree());
+    expect(screen.getByTestId("live-needs")).toBe(list);
+    expect(list).toBeVisible();
+    expect(list).toHaveTextContent("couldn't finish writing");
+    expect(screen.queryByText("All clear")).toBeNull();
+
+    needFiles.files = [];
+    rerender(tree());
+    expect(screen.getByTestId("live-needs")).toBe(list);
+    expect(list).not.toBeVisible();
+    expect(screen.getByText("All clear")).toBeInTheDocument();
   });
 });
 
