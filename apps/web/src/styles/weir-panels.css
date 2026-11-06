@@ -35,6 +35,12 @@
   color: var(--mm-text1);
 }
 
+.mm-panel__head:has(> .mm-panel__controls) .mm-panel__title {
+  /* The shared shell standard (Deluno#1461): a title with controls beside it is at least 96px wide, so the controls start
+     96px + the 12px gap after the title's left edge whatever the title says. A plain title keeps its own width. */
+  min-width: 96px;
+}
+
 /* A header with a note under its title: the title and the note are one block, centred on the line with the controls. */
 .mm-panel__head--note {
   --panel-line: var(--mm-type-panel);
