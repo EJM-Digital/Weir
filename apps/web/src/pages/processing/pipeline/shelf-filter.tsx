@@ -1,18 +1,21 @@
 import { useState } from "react";
 
-import { MoreMenu } from "../../../components/shell/more-menu";
+import { SegmentedControl } from "../../../components/panels/segmented-control";
 import {
   foldedChipIndexes,
   useTitleLineFit,
 } from "../../../components/shell/title-line-fit";
 
-/** One chip: a workflow, or null for all of them. */
+/** One choice: a workflow, or null for all of them. */
 export type ShelfFilterChoice = { id: number | null; name: string };
 
+const ALL = "all";
+const valueOf = (choice: ShelfFilterChoice) => String(choice.id ?? ALL);
+
 /**
- * The workflows to narrow the shelf to, as a row of toggle buttons that each say whether they are pressed. When the
- * header has no room for every chip the last ones fold into a "More" menu: chips are whole or not there, and none runs
- * under the link beside them.
+ * The workflows to narrow the shelf to, as the boxed switch every filter uses. When the header has no room for every
+ * option the last ones fold into the switch's "More" menu: options are whole or not there, and none runs under the link
+ * beside them.
  */
 export function ShelfFilter({
   choices,
@@ -31,39 +34,27 @@ export function ShelfFilter({
     chips: choices.length,
     refit: `${chosen}|${choices.map((choice) => choice.name).join("\u0000")}`,
   });
-  const hidden = foldedChipIndexes(
-    choices.length,
-    folded,
-    choices.findIndex((choice) => choice.id === chosen),
+  const hidden = new Set(
+    [
+      ...foldedChipIndexes(
+        choices.length,
+        folded,
+        choices.findIndex((choice) => choice.id === chosen),
+      ),
+    ].map((index) => valueOf(choices[index])),
   );
   return (
-    <div ref={setRow} className="lsh-chips" role="group" aria-label="Workflows">
-      {choices.map((choice, index) =>
-        hidden.has(index) ? null : (
-          <button
-            key={choice.id ?? "all"}
-            type="button"
-            className="lsh-chip"
-            aria-pressed={choice.id === chosen}
-            data-library={choice.id ?? "all"}
-            onClick={() => onChoose(choice.id)}
-          >
-            {choice.name}
-          </button>
-        ),
-      )}
-      {hidden.size > 0 ? (
-        <MoreMenu
-          menuLabel="More workflows"
-          folded={choices.flatMap((choice, index) =>
-            hidden.has(index)
-              ? [{ id: String(choice.id ?? "all"), label: choice.name }]
-              : [],
-          )}
-          onChoose={(id) => onChoose(id === "all" ? null : Number(id))}
-          buttonClassName="lsh-chip"
-        />
-      ) : null}
+    <div ref={setRow} className="mm-shelf-filter">
+      <SegmentedControl
+        ariaLabel="Workflows"
+        value={String(chosen ?? ALL)}
+        options={choices.map((choice) => ({
+          value: valueOf(choice),
+          label: choice.name,
+        }))}
+        onChange={(value) => onChoose(value === ALL ? null : Number(value))}
+        fold={{ hidden, menuLabel: "More workflows" }}
+      />
     </div>
   );
 }

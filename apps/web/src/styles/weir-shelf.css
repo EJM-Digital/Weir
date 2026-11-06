@@ -92,58 +92,27 @@
   font-size: inherit;
 }
 
-/* The chips that narrow the shelf to a workflow, in the panel's header. When the header has no room for them all the
-   last ones fold into "More" (components/shell/title-line-fit.ts); the padding keeps the focus ring from being cut.
-   The tokens are the panel's own: the header is outside .mm-shelf, where the --pipe-* block does not reach. */
-.lsh-chips {
+/* The switch that narrows the shelf to a workflow, in the panel's header: the shared boxed switch (.mm-segmented), kept
+   on one line. When the header has no room for every option the last ones fold into "More"
+   (components/shell/title-line-fit.ts). The panel's controls sit 8px out to either side (.mm-panel__controls), so the
+   side padding puts the switch back where the header's gap puts it and keeps its focus ring from being cut. The
+   switch is 38px high, so with the controls' negative margin it takes 22px of the title's 23px line. */
+.mm-shelf-filter {
   display: flex;
   flex: 1;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 6px;
   min-width: 0;
-  padding: 4px 8px;
+  padding: 0 8px;
+}
+
+.mm-shelf-filter .mm-segmented {
+  flex-wrap: nowrap;
+  width: max-content;
 }
 
 /* The shelf is the last card on the page, so its More menu opens upwards, where there is room. */
 .mm-shelf-panel .mm-more__menu {
   top: auto;
   bottom: calc(100% + 8px);
-}
-
-.lsh-chip {
-  height: 24px;
-  padding: 0 10px;
-  border: 1px solid var(--mm-hairline);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--mm-text2);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1;
-  white-space: nowrap;
-  cursor: pointer;
-  transition:
-    background-color 0.15s,
-    color 0.15s,
-    border-color 0.15s;
-}
-
-.lsh-chip:hover {
-  background: color-mix(in srgb, var(--mm-text) 5%, transparent);
-  color: var(--mm-text);
-}
-
-.lsh-chip[aria-pressed="true"] {
-  border-color: color-mix(in srgb, var(--mm-primary) 45%, transparent);
-  background: color-mix(in srgb, var(--mm-primary) 16%, transparent);
-  color: var(--mm-primary-text);
-  font-weight: 600;
-}
-
-.lsh-chip:focus-visible {
-  outline: 2px solid var(--mm-primary);
-  outline-offset: 2px;
 }
 
 /* The workflow the file belongs to, a pill as wide as its name centred on the foot of its poster. --aw is the poster's width, and the poster is 2:3. */

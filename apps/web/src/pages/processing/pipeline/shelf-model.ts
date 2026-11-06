@@ -4,7 +4,6 @@ import {
 } from "../../../lib/activity/processing-outcome";
 import type { StatusMeaning } from "../../../lib/ui/status-meaning";
 import { formatBytes } from "../../../lib/format/bytes";
-import { parseAppTime } from "../../../lib/ui/mm-format-date";
 import { shownBy, type Filter } from "../processing-filter";
 import { prettyName } from "../processing-model";
 import { ago, finishedLine, removedTrackWords } from "../processing-words";
@@ -55,13 +54,8 @@ export type ShelfTile = {
   item: FinishedFile;
 };
 
-/** What Just finished adds up to: today's counts and the tiles to show, newest first. */
+/** What Just finished shows: the tiles, newest first. */
 export type Shelf = {
-  /** Files that finished today, and what they add up to. */
-  today: number;
-  savedBytes: number;
-  /** Nothing finished today, so the tiles are the latest from before. */
-  latest: boolean;
   tiles: ShelfTile[];
 };
 
@@ -147,13 +141,6 @@ function detailOf(item: FinishedFile): LineWords | null {
   return [parts.join(" · "), `−${tracks} ${tracks === 1 ? "track" : "tracks"}`];
 }
 
-function isToday(iso: string, now: number): boolean {
-  const at = parseAppTime(iso);
-  return (
-    at != null && new Date(at).toDateString() === new Date(now).toDateString()
-  );
-}
-
 function tileOf(
   item: FinishedFile,
   now: number,
@@ -179,35 +166,22 @@ function tileOf(
 }
 
 /**
- * The shelf for the files the page's filter and workflow let through: today's files if there are any,
- * and otherwise the latest from before.
+ * The shelf for the files the page's filter and workflow let through: the most recent ones, newest first, however long
+ * ago they finished.
  */
 export function shelfOf(
   items: readonly FinishedFile[],
   scope: ShelfScope,
   names: ReadonlyMap<number, string>,
 ): Shelf {
-  const wanted = items.filter(
-    (item) =>
-      shownBy(scope.filter, item) &&
-      (scope.workflowId === null || item.libraryId === scope.workflowId),
-  );
-  const today = wanted.filter((item) => isToday(item.finishedAt, scope.now));
-  const latest = today.length === 0;
   return {
-    today: today.length,
-    savedBytes: today.reduce((sum, item) => sum + (item.savedBytes ?? 0), 0),
-    latest,
-    tiles: (latest ? wanted : today)
+    tiles: items
+      .filter(
+        (item) =>
+          shownBy(scope.filter, item) &&
+          (scope.workflowId === null || item.libraryId === scope.workflowId),
+      )
       .slice(0, SHELF_LIMIT)
       .map((item) => tileOf(item, scope.now, names)),
   };
-}
-
-/** "12 today · 41.20 GB saved": what the shelf's files finished today. */
-export function todayWords(shelf: Shelf): string {
-  if (shelf.latest) return "Nothing yet today · latest arrivals";
-  const saved =
-    shelf.savedBytes > 0 ? ` · ${formatBytes(shelf.savedBytes)} saved` : "";
-  return `${shelf.today} today${saved}`;
 }
