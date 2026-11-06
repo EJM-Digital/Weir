@@ -23,8 +23,16 @@ public sealed partial class HandoffCompletionReporter
     {
         ArgumentNullException.ThrowIfNull(uow);
         var answered = 0;
-        foreach (var (handoffId, reportJson) in await HandoffLedgerStore.PendingReportsAsync(uow, sourceKey).ConfigureAwait(false))
+        foreach (var (handoffId, _) in await HandoffLedgerStore.PendingReportsAsync(uow, sourceKey).ConfigureAwait(false))
         {
+            // The list may be stale by now: a pass can have delivered a report since it was read, or be delivering it still. Only the one
+            // holding the hand-off sends, and it sends what is owed now.
+            using var claim = TryBeginDelivery(sourceKey, handoffId);
+            if (claim is null || await HandoffLedgerStore.PendingReportAsync(uow, sourceKey, handoffId).ConfigureAwait(false) is not { } reportJson)
+            {
+                continue;
+            }
+
             if (PendingReport.Parse(reportJson) is not { } pending)
             {
                 await HandoffLedgerStore.SetPendingReportAsync(uow, sourceKey, handoffId, null).ConfigureAwait(false);
@@ -61,6 +69,20 @@ public sealed partial class HandoffCompletionReporter
         }
 
         return answered;
+    }
+
+    /// <summary>
+    /// Takes the right to deliver one hand-off's owed report, or null when something else is delivering it. A report is owed
+    /// durably before its first send (#667), so the heartbeat can find it while the pass that claimed the hand-off is still
+    /// waiting for the manager's answer; whoever holds this sends it, and the other leaves it alone. Disposing gives it up, once
+    /// the delivery has been settled on the hand-off.
+    /// </summary>
+    private DeliveryClaim? TryBeginDelivery(string sourceKey, string handoffId) =>
+        _delivering.TryAdd((sourceKey, handoffId), 0) ? new DeliveryClaim(_delivering, (sourceKey, handoffId)) : null;
+
+    private sealed class DeliveryClaim(System.Collections.Concurrent.ConcurrentDictionary<(string SourceKey, string HandoffId), byte> held, (string SourceKey, string HandoffId) key) : IDisposable
+    {
+        public void Dispose() => held.TryRemove(key, out _);
     }
 
     /// <summary>

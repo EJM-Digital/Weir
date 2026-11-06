@@ -26,6 +26,8 @@ public sealed partial class HandoffCompletionReporter
     {
         var ready = await StageReadyReportAsync(uow, origin, finish, result, libraryId, cancellationToken).ConfigureAwait(false);
 
+        // Held from before the report is owed to after it is settled, so the heartbeat never finds it mid-delivery and sends it again.
+        using var claim = deliverNow && ready.Target is not null ? TryBeginDelivery(origin.SourceKey, origin.HandoffId!) : null;
         PendingReport? owed;
         try
         {
@@ -59,7 +61,7 @@ public sealed partial class HandoffCompletionReporter
             return "queued: the manager would not list its libraries, so the report waits until Weir can say where it sees the output";
         }
 
-        if (!deliverNow)
+        if (!deliverNow || claim is null)
         {
             return "queued: the report is owed and goes out with the next delivery";
         }

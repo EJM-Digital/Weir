@@ -183,6 +183,18 @@ public sealed partial class HandoffLedgerStore
             ("$id", handoffId));
     }
 
+    /// <summary>The report Weir still owes for one hand-off as it is saved now, or null when it owes none.</summary>
+    public static async Task<string?> PendingReportAsync(UnitOfWork uow, string sourceKey, string handoffId)
+    {
+        ArgumentNullException.ThrowIfNull(uow);
+        var saved = await uow.QueryAsync(
+            "SELECT pending_report_json FROM media_manager_handoffs WHERE source_key = $source AND handoff_id = $id AND pending_report_json IS NOT NULL",
+            reader => SqliteValues.GetString(reader, 0),
+            ("$source", sourceKey),
+            ("$id", handoffId)).ConfigureAwait(false);
+        return saved.Count == 0 ? null : saved[0];
+    }
+
     /// <summary>Every report Weir still owes a manager of this kind: the hand-off id and the saved report.</summary>
     public static Task<List<(string HandoffId, string ReportJson)>> PendingReportsAsync(UnitOfWork uow, string sourceKey)
     {
