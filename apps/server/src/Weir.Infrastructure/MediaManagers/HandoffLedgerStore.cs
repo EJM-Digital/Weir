@@ -192,7 +192,7 @@ public sealed partial class HandoffLedgerStore
             reader => SqliteValues.GetString(reader, 0),
             ("$source", sourceKey),
             ("$id", handoffId)).ConfigureAwait(false);
-        return saved.Count == 0 ? null : saved[0];
+        return saved.FirstOrDefault();
     }
 
     /// <summary>Every report Weir still owes a manager of this kind: the hand-off id and the saved report.</summary>
