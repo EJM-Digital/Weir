@@ -63,6 +63,13 @@ describe("page header matches the shared spec", () => {
     expect(head["padding"]).toBe("11px 18px 14px");
   });
 
+  it("sets a panel header link to 13px, 500, 17px line", () => {
+    const link = declarations(panels, ".mm-panel__link");
+    expect(link["font-size"]).toBe("13px");
+    expect(link["font-weight"]).toBe("500");
+    expect(link["line-height"]).toBe("17px");
+  });
+
   it("sets a panel header filter chip to 24px, 12px text, 0 10px padding, 6px gap", () => {
     const chip = declarations(shelf, ".lsh-chip");
     expect(chip["height"]).toBe("24px");

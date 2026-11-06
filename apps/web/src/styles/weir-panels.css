@@ -86,7 +86,8 @@
   flex-shrink: 0;
   align-items: center;
   gap: 5px;
-  font-size: 0.875rem;
+  /* The shared standard's 13px, in px: a rem would land off the step on the 15px base. */
+  font-size: 13px;
   font-weight: 500;
   /* A 13px link on its inherited line box is 19.76px tall and lowers the whole header line by 1px; 17px is the
      height of the 12px count beside it, so every header sets its title and count at the same height. */
