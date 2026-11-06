@@ -10,7 +10,9 @@ import tokens from "../../styles/weir-tokens.css?raw";
 /** The declarations of the first rule whose selector is exactly `selector`. */
 function declarations(css: string, selector: string): Record<string, string> {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const rule = new RegExp(`(?:^|\\})\\s*${escaped}\\s*\\{([^}]*)\\}`).exec(css);
+  const rule = new RegExp(`(?:^|\\})\\s*${escaped}\\s*\\{([^}]*)\\}`).exec(
+    css.replace(/\/\*[\s\S]*?\*\//g, ""),
+  );
   if (!rule) throw new Error(`No rule for ${selector}`);
   const found: Record<string, string> = {};
   const body = rule[1].replace(/\/\*[\s\S]*?\*\//g, "");
@@ -85,16 +87,25 @@ describe("page header matches the shared spec", () => {
     expect(link["line-height"]).toBe("17px");
   });
 
-  it("sets a panel header filter chip to 24px, 12px text, 0 10px padding, 6px gap", () => {
-    const chip = declarations(shelf, ".lsh-chip");
-    expect(chip["height"]).toBe("24px");
-    expect(chip["padding"]).toBe("0 10px");
-    expect(chip["font-size"]).toBe("12px");
-    expect(chip["font-weight"]).toBe("500");
-    expect(
-      declarations(shelf, '.lsh-chip[aria-pressed="true"]')["font-weight"],
-    ).toBe("600");
-    expect(shelf).toMatch(/.lsh-chips {[^}]*gap: 6px;/);
+  it("sets a panel header filter to the boxed switch: 30px, 13px/500 options in a 3px-padded, 2px-gap box, on one line", () => {
+    const box = declarations(panels, ".mm-segmented");
+    expect(box["padding"]).toBe("3px");
+    expect(box["gap"]).toBe("2px");
+    expect(box["border"]).toBe("1px solid var(--mm-hairline)");
+    const option = declarations(panels, ".mm-segmented__option");
+    expect(option["height"]).toBe("30px");
+    expect(option["padding"]).toBe("0 14px");
+    expect(option["font-size"]).toBe("13px");
+    expect(option["font-weight"]).toBe("500");
+    expect(shelf).not.toContain(".lsh-chip");
+    expect(declarations(shelf, ".mm-shelf-filter .mm-segmented")).toMatchObject(
+      { "flex-wrap": "nowrap", width: "max-content" },
+    );
+    // 30px option + 2 x 3px padding + 2 x 1px border = 38px; the controls' -8px margins leave 22px of the 23px line.
+    expect(declarations(panels, ".mm-panel__controls")["margin"]).toBe(
+      "-8px -8px",
+    );
+    expect(declarations(shelf, ".mm-shelf-filter")["padding"]).toBe("0 8px");
   });
 
   it("gives a panel title with controls beside it a 96px minimum width, so the controls start 12px after that", () => {

@@ -22889,7 +22889,7 @@
     {
       "id": "web-dashboard.just-finished-shelf.shelf-header-count-text-38-cleaned-today-41-20",
       "area": "web-dashboard",
-      "behaviour": "Shelf header count text (\"38 cleaned today · 41.20 GB saved\" or \"N today · size\"; \"Nothing yet today\") and Activity link",
+      "behaviour": "Shelf header: the title, the workflow switch and the Activity link, with no count (the shelf shows the latest finished, however long ago)",
       "kind": "screen action",
       "severity": "medium",
       "touches": "disk",
@@ -22908,7 +22908,7 @@
         {
           "type": "vitest",
           "file": "apps/web/src/pages/processing/pipeline/just-finished-shelf.test.tsx",
-          "name": "describes what the page counts for the day across every workflow, rather than showing it in the header"
+          "name": "says only its title in the header, and shows the latest finished however long ago"
         }
       ],
       "audit": {

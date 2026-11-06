@@ -20,7 +20,6 @@ import type { FinishedFile } from "../../../lib/activity/processing-outcome";
 import { activityKeys } from "../../../lib/activity/query-keys";
 import { useActivityStreamInvalidations } from "../../../lib/activity/use-activity-stream-invalidation";
 import { loadErrorMessage } from "../../../lib/api/error-message";
-import { formatBytes } from "../../../lib/format/bytes";
 import { usePauseQuery } from "../../../lib/pause/pause-queries";
 import type { ProcessingFile } from "../../../lib/processing/files-api";
 import { useProcessingFileLog } from "../../../lib/processing/files-queries";
@@ -52,7 +51,6 @@ import { NeedsPanel } from "./needs-panel";
 import { NextTile } from "./next-tile";
 import { TodayTile } from "./today-tile";
 import { useNextItems } from "./use-next-items";
-import { useTodayFigures, type TodayFigures } from "./use-today-figures";
 import { WorkingTile } from "./working-tile";
 import { sharedWaitSeconds } from "./working-words";
 
@@ -77,14 +75,6 @@ const TOTAL_KEYS = [
 const LANE_THROTTLE_MS = 750;
 const TOTAL_THROTTLE_MS = 3_000;
 
-/** "38 cleaned today · 41.2 GB saved", for the shelf's title row; no space is claimed when none is recorded. */
-function cleanedToday(figures: TodayFigures | undefined): string | undefined {
-  if (!figures) return undefined;
-  const cleaned = `${figures.cleaned.toLocaleString()} cleaned today`;
-  if (figures.savedBytes === null) return cleaned;
-  return `${cleaned} · ${formatBytes(figures.savedBytes)} saved`;
-}
-
 /** The file whose story is open: its name, and what its header shows beside it. */
 type StoryFile = Pick<FileStoryPanelProps, "poster"> & {
   id: number;
@@ -108,7 +98,6 @@ export function LiveView({ filter, workflowId, layout }: LiveViewProps) {
   const board = useLanes(workflowId);
   const { files, libraries, lanes, scoped, queuedMore } = board;
   const filesAtOnce = useProcessingFilesAtOnceQuery();
-  const today = useTodayFigures(workflowId, filter, now).figures;
   const pause = usePauseQuery();
   const fileLog = useProcessingFileLog();
   const navigate = useNavigate();
@@ -259,7 +248,6 @@ export function LiveView({ filter, workflowId, layout }: LiveViewProps) {
             now={now}
             workflowNames={workflowNames}
             enabledWorkflowIds={enabledWorkflowIds}
-            count={workflowId === null ? cleanedToday(today) : undefined}
             onOpen={openFinished}
           />
           <ActivityStream now={now} workflowId={workflowId} filter={filter} />

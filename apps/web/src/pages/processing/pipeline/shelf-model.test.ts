@@ -2,12 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { FinishedFile } from "../../../lib/activity/processing-outcome";
 import { NOW } from "./pipeline-fixtures";
-import {
-  SHELF_LIMIT,
-  shelfOf,
-  todayWords,
-  type ShelfScope,
-} from "./shelf-model";
+import { SHELF_LIMIT, shelfOf, type ShelfScope } from "./shelf-model";
 
 function finished(
   id: number,
@@ -33,7 +28,6 @@ const NAMES = new Map([
   [2, "TV"],
 ]);
 const EVERYTHING: ShelfScope = { filter: "all", workflowId: null, now: NOW };
-const yesterday = () => new Date(NOW - 36 * 3_600_000).toISOString();
 
 function shelf(items: FinishedFile[], scope: ShelfScope = EVERYTHING) {
   return shelfOf(items, scope, NAMES);
@@ -229,7 +223,6 @@ describe("the shelf's tiles", () => {
     const narrowed = shelf(items, { ...EVERYTHING, workflowId: 1 });
 
     expect(narrowed.tiles.map((tile) => tile.key)).toEqual(["2"]);
-    expect(narrowed.today).toBe(1);
   });
 
   it("are at most as many as the shelf holds, newest first", () => {
@@ -244,34 +237,26 @@ describe("the shelf's tiles", () => {
   });
 });
 
-describe("what the shelf adds up to", () => {
-  it("counts what finished today and what it saved", () => {
+describe("which files the shelf shows", () => {
+  const yesterday = () => new Date(NOW - 36 * 3_600_000).toISOString();
+
+  it("keeps yesterday's files after today's, newest first, when something finished today", () => {
     const result = shelf([
       finished(1),
-      finished(2, { savedBytes: 2 * 1024 ** 2 }),
-      finished(3, { kind: "rejected", savedBytes: null }),
-      finished(4, { kind: "failed", savedBytes: null }),
-      finished(5, { finishedAt: yesterday() }),
+      finished(2, { finishedAt: yesterday() }),
+      finished(3, { finishedAt: yesterday() }),
     ]);
 
-    expect(result).toMatchObject({
-      today: 4,
-      savedBytes: 320 * 1024 ** 2,
-      latest: false,
-    });
-    expect(result.tiles.map((tile) => tile.key)).toEqual(["1", "2", "3", "4"]);
-    expect(todayWords(result)).toBe("4 today · 320 MB saved");
+    expect(result.tiles.map((tile) => tile.key)).toEqual(["1", "2", "3"]);
   });
 
-  it("shows the latest from before when nothing finished today", () => {
+  it("shows the latest files when nothing finished today", () => {
     const result = shelf([finished(5, { finishedAt: yesterday() })]);
 
-    expect(result).toMatchObject({ today: 0, latest: true });
     expect(result.tiles.map((tile) => tile.key)).toEqual(["5"]);
-    expect(todayWords(result)).toBe("Nothing yet today · latest arrivals");
   });
 
-  it("is empty, and says nothing finished today, when there are no files at all", () => {
-    expect(shelf([])).toMatchObject({ today: 0, latest: true, tiles: [] });
+  it("is empty when there are no files at all", () => {
+    expect(shelf([]).tiles).toEqual([]);
   });
 });

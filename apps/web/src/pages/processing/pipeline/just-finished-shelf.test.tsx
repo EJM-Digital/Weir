@@ -225,9 +225,6 @@ describe("Just finished's workflow chips", () => {
       "aria-pressed",
       "true",
     );
-    expect(
-      screen.getByRole("region", { name: "Just finished" }),
-    ).toHaveAccessibleDescription("1 today · 318 MB saved");
 
     fireEvent.click(screen.getByRole("button", { name: "All" }));
 
@@ -265,34 +262,20 @@ describe("Just finished's workflow chips", () => {
     ).toBeInTheDocument();
   });
 
-  it("describes what the page counts for the day across every workflow, rather than showing it in the header", () => {
+  it("says only its title in the header, and shows the latest finished however long ago", () => {
     render(
-      shelf([finished(1, { kind: "failed" })], {
-        count: "38 cleaned today · 41.20 GB saved",
-      }),
+      shelf([
+        finished(1),
+        finished(2, {
+          finishedAt: new Date(NOW - 30 * 3_600_000).toISOString(),
+        }),
+      ]),
     );
 
     expect(
       screen.getByRole("region", { name: "Just finished" }),
-    ).toHaveAccessibleDescription("38 cleaned today · 41.20 GB saved");
-  });
-
-  it("says nothing finished yet today, and shows the latest from before", () => {
-    render(
-      shelf(
-        [
-          finished(1, {
-            finishedAt: new Date(NOW - 30 * 3_600_000).toISOString(),
-          }),
-        ],
-        { count: "0 cleaned today · 0 B saved" },
-      ),
-    );
-
-    expect(
-      screen.getByRole("region", { name: "Just finished" }),
-    ).toHaveAccessibleDescription("Nothing yet today · latest arrivals");
-    expect(tiles()).toHaveLength(1);
+    ).not.toHaveAccessibleDescription();
+    expect(tiles()).toHaveLength(2);
   });
 
   it("remembers the chip pressed, and opens on it the next time", () => {

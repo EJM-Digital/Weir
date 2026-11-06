@@ -1,7 +1,6 @@
 /**
- * Just finished: the files Weir has recently handed back, as one shelf of 2:3 tiles, newest first. Chips
- * in the panel's header narrow it to one workflow, and its description counts what that choice finished today.
- * Each
+ * Just finished: the latest files Weir has handed back, however long ago they finished, as one shelf of 2:3 tiles,
+ * newest first. A switch in the panel's header narrows it to one workflow. Each
  * tile is tagged with its workflow, and the tag goes to that workflow's library. Clicking a tile opens the
  * file's story.
  *
@@ -25,7 +24,7 @@ import { canvasMeasure, type MeasureText } from "../../../lib/ui/measure-text";
 import { statusFont } from "./status-line";
 import { shelfFit, tilesAcross, type ShelfFit } from "./shelf-layout";
 import { ShelfFilter } from "./shelf-filter";
-import { shelfOf, todayWords } from "./shelf-model";
+import { shelfOf } from "./shelf-model";
 import { ShelfTiles } from "./shelf-tiles";
 import { readShelfWorkflow, saveShelfWorkflow } from "./shelf-workflow-choice";
 
@@ -53,8 +52,6 @@ export type JustFinishedShelfProps = {
   workflowNames?: ReadonlyMap<number, string>;
   /** The workflows that have a chip; every named workflow when left out. */
   enabledWorkflowIds?: ReadonlySet<number>;
-  /** What the day adds up to across every workflow, when the page knows better than the loaded files tell. */
-  count?: string;
   /** Opens a finished file's story. */
   onOpen: (item: FinishedFile) => void;
   /** Measures a line in the caption's font, in place of the canvas the page measures with. */
@@ -69,7 +66,6 @@ export function JustFinishedShelf({
   now,
   workflowNames = NO_NAMES,
   enabledWorkflowIds,
-  count,
   onOpen,
   measureText,
 }: JustFinishedShelfProps): ReactElement {
@@ -130,10 +126,6 @@ export function JustFinishedShelf({
       live = false;
     };
   }, []);
-  const countWords =
-    picked === null && count !== undefined && !shelf.latest
-      ? count
-      : todayWords(shelf);
   const choose = (workflowId: number | null) => {
     setChosen(workflowId);
     saveShelfWorkflow(workflowId);
@@ -145,7 +137,6 @@ export function JustFinishedShelf({
       controls={
         <ShelfFilter choices={choices} chosen={narrowedTo} onChoose={choose} />
       }
-      description={countWords}
       to="/activity"
       toLabel="Activity"
     >
