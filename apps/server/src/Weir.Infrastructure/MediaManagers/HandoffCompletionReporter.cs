@@ -37,6 +37,9 @@ public sealed partial class HandoffCompletionReporter
     private readonly TimeProvider _time;
     private readonly ILogger _logger;
 
+    /// <summary>The hand-offs whose owed report is being delivered right now (<see cref="TryBeginDelivery"/>).</summary>
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<(string SourceKey, string HandoffId), byte> _delivering = new();
+
     public HandoffCompletionReporter(
         MediaManagerConnectionService connections,
         MediaManagerConnectionStore connectionStore,

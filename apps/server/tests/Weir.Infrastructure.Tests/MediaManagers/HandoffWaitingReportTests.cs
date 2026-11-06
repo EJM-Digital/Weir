@@ -94,6 +94,49 @@ public sealed class HandoffWaitingReportTests
         Assert.Equal(0, await fixture.Store.Scalar("SELECT count(*) FROM media_manager_handoffs WHERE pending_report_json IS NOT NULL"));
     }
 
+    [Fact]
+    public async Task A_report_being_delivered_is_not_sent_a_second_time_by_the_heartbeat()
+    {
+        using var fixture = new MediaManagerFixture();
+        await fixture.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
+        var library = await fixture.LibraryAsync("movie", fixture.Store.Home.Join("watched"));
+        await fixture.Db(async uow =>
+        {
+            var row = await fixture.Ledger.RecordReceivedAsync(uow, "deluno", "h1", library, "Film/film.mkv");
+            await fixture.Targets.AddAsync(uow, row, ["Film/film.mkv"]);
+            return 0;
+        });
+        await fixture.Store.Execute(
+            $"INSERT INTO files (library_id, relative_path, status, status_reason) VALUES ({library}, 'Film/film.mkv', 'processed', 'Finished processing this file.')");
+        using var arrived = new ManualResetEventSlim();
+        using var answer = new ManualResetEventSlim();
+        fixture.Http.Route(HttpMethod.Post, Callback, _ =>
+        {
+            arrived.Set();
+            answer.Wait(TimeSpan.FromSeconds(30));
+            return FakeManagerHttp.Response(HttpStatusCode.OK);
+        });
+        var payload =
+            $$$"""{"relative_media_path":"Film/film.mkv","library_id":{{{library}}},"media_scope":"movie","origin":{"source_key":"deluno","handoff_id":"h1","library_id":"lib-movies","callback_path":"{{{Callback}}}"}}""";
+        var result = (WireObject)WireJsonParser.Parse("""{"ok":true,"outcome":"live_output_written","output_file":"/out/Film/film.mkv","relative_media_path":"Film/film.mkv"}""");
+
+        // The pass has claimed the hand-off and owes its report durably, and the manager has not answered the first send yet.
+        var pass = Task.Run(() => fixture.Db(uow => fixture.Reporter.ReportHandoffCompletionAsync(uow, payload, result), commit: false));
+        Assert.True(arrived.Wait(TimeSpan.FromSeconds(30)), "the pass never sent its report");
+        Assert.Equal(1, await fixture.Store.Scalar("SELECT count(*) FROM media_manager_handoffs WHERE pending_report_json IS NOT NULL"));
+
+        // The heartbeat comes round now: the report is in flight, so it is not the heartbeat's to send.
+        Assert.Equal(0, await fixture.Db(uow => fixture.Reporter.SendWaitingReportsAsync(uow, "deluno"), commit: false));
+        Assert.Single(fixture.Http.RequestsTo(HttpMethod.Post, Callback));
+
+        answer.Set();
+        await pass;
+        Assert.Single(fixture.Http.RequestsTo(HttpMethod.Post, Callback));
+        Assert.Equal(0, await fixture.Store.Scalar("SELECT count(*) FROM media_manager_handoffs WHERE pending_report_json IS NOT NULL"));
+        Assert.Equal(0, await fixture.Db(uow => fixture.Reporter.SendWaitingReportsAsync(uow, "deluno"), commit: false));
+        Assert.Single(fixture.Http.RequestsTo(HttpMethod.Post, Callback));
+    }
+
     private static async Task<string> ReasonAsync(MediaManagerFixture fixture) =>
         await fixture.Db(async uow => (string)(await uow.ScalarAsync("SELECT status_reason FROM files WHERE relative_path = 'Film/film.mkv'"))!, commit: false);
 }
