@@ -4,6 +4,7 @@ import header from "../../styles/weir-header.css?raw";
 import panels from "../../styles/weir-panels.css?raw";
 import shelf from "../../styles/weir-shelf.css?raw";
 import sidebar from "../../styles/weir-sidebar-nav.css?raw";
+import sidebarBrand from "../../styles/weir-sidebar.css?raw";
 import tokens from "../../styles/weir-tokens.css?raw";
 
 /** The declarations of the first rule whose selector is exactly `selector`. */
@@ -69,6 +70,12 @@ describe("page header matches the shared spec", () => {
     expect(label["font-size"]).toBe("12px");
     expect(label["font-weight"]).toBe("600");
     expect(label["line-height"]).toBe("19px");
+  });
+
+  it("sets the sidebar tagline under the app name to 12px on the sidebar's 1.52 line", () => {
+    const tagline = declarations(sidebarBrand, ".mm-sidebar-brand__tagline");
+    expect(tagline["font-size"]).toBe("12px");
+    expect(tagline["line-height"]).toBeUndefined();
   });
 
   it("sets a panel header link to 13px, 500, 17px line", () => {
