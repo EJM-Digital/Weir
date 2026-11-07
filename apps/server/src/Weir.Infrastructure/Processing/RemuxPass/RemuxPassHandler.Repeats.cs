@@ -25,6 +25,7 @@ public sealed partial class RemuxPassHandler
         string? outputFolder = null;
         long? workflowId = null;
         var trigger = provenance.Get("trigger") is WireString { Value.Length: > 0 } named ? named.Value : "worker";
+        var managerAsked = data.Get("origin") is not null || trigger == "webhook";
         await LockedWrites.RunAsync(
             _database,
             async uow =>
@@ -35,7 +36,8 @@ public sealed partial class RemuxPassHandler
                     return;
                 }
 
-                earlier = await CleanedSources.FindAsync(uow, library.Id, library.WatchedFolder, rel).ConfigureAwait(false);
+                // A pass a manager asked for needs a copy that exists now; one it already collected is gone.
+                earlier = await CleanedSources.FindAsync(uow, library.Id, library.WatchedFolder, rel, answerFromCollected: !managerAsked).ConfigureAwait(false);
                 if (earlier is not null)
                 {
                     await CleanedSources.RecordSkipAsync(uow, library.Id, rel, earlier, trigger).ConfigureAwait(false);

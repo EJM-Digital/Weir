@@ -357,11 +357,12 @@ public sealed partial class MediaManagerIntake
 
             // The same source again (a resend, a replay) is never cleaned twice, whichever manager or connection sends it. It is
             // covered like any other target, so it counts toward the hand-off's report, and is settled below once the hand-off is
-            // on the ledger. Looked at inside the write transaction, so a pass cannot finish between this look and the writes
+            // on the ledger. A copy the manager already collected is not an answer: it was released, and the manager asking again
+            // wants a copy that exists now, so that send is processed. Looked at inside the write transaction, so a pass cannot finish between this look and the writes
             // that follow it.
             var connection = uow.Connection;
             var transaction = await uow.WriteTransactionAsync().ConfigureAwait(false);
-            if (await CleanedSources.FindAsync(uow, library.Id, library.WatchedFolder, target).ConfigureAwait(false) is { } cleaned)
+            if (await CleanedSources.FindAsync(uow, library.Id, library.WatchedFolder, target, answerFromCollected: false).ConfigureAwait(false) is { } cleaned)
             {
                 repeats.Add((target, cleaned));
                 covered.Add(target);
