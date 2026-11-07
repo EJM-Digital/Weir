@@ -2,7 +2,7 @@
   "app": "deluno",
   "version": "1.0.0-rc.30.35",
   "state": "real-failed-unreadable",
-  "recordedAt": "2026-11-06T00:04:36.853Z",
+  "recordedAt": "2026-11-07T01:12:47.177Z",
   "note": "A release whose film is a file of zero bytes, handed to Weir by a real Deluno: Weir cannot read it and reports it failed. The hand-off, Deluno's questions about it, Weir's report and Deluno's reply, as the proxy between them saw it.",
   "exchanges": [
     {
@@ -10,14 +10,14 @@
         "method": "POST",
         "path": "/api/v1/intake/webhook/deluno",
         "headers": {
-          "idempotency-key": "01a1ae1c230371a8ae5b53c6b310933e:1793922441987",
+          "idempotency-key": "01a1b380ea26762d8c656b65d16bd6c7:1794012932646",
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "eventType": "deluno.processor-handoff",
-          "handoffId": "01a1ae1c230371a8ae5b53c6b310933e",
-          "libraryId": "01a1ae1969617738a4b70e3debd8cdc5",
+          "handoffId": "01a1b380ea26762d8c656b65d16bd6c7",
+          "libraryId": "01a1b37e32b37cd29e21c69d7a027d5e",
           "mediaType": "movies",
           "sourcePath": "/downloads/completed/Movies/ScnFail.2020.1080p.WEB-DL.x264-WEIR",
           "releaseName": "ScnFail.2020.1080p.WEB-DL.x264-WEIR",
@@ -53,10 +53,10 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a1ae1c230371a8ae5b53c6b310933e",
+          "handoffId": "01a1b380ea26762d8c656b65d16bd6c7",
           "status": "failed",
           "processorName": "Weir",
-          "libraryId": "01a1ae1969617738a4b70e3debd8cdc5",
+          "libraryId": "01a1b37e32b37cd29e21c69d7a027d5e",
           "releaseName": "ScnFail.2020.1080p.WEB-DL.x264-WEIR",
           "message": "Weir can't read this file yet. It may still be arriving, so Weir will look again later.",
           "disposition": "held",
@@ -71,8 +71,8 @@
         },
         "body": {
           "status": "failed",
-          "handoffId": "01a1ae1c230371a8ae5b53c6b310933e",
-          "activityId": "01a1ae1cfc3e720eb73620748c739adb",
+          "handoffId": "01a1b380ea26762d8c656b65d16bd6c7",
+          "activityId": "01a1b381afc270b480bd5d567b47440c",
           "importJobId": null
         }
       }

@@ -2,7 +2,7 @@
   "app": "deluno",
   "version": "1.0.0-rc.30.35",
   "state": "real-release-folder",
-  "recordedAt": "2026-11-06T00:04:36.853Z",
+  "recordedAt": "2026-11-07T01:12:47.177Z",
   "note": "A film in a qBittorrent release folder (the film and an .nfo), handed to Weir by a real Deluno and cleaned: the hand-off, what Deluno asked about it, Weir's report that it was cleaned and the outcome Deluno told Weir, as the proxy between them saw it.",
   "exchanges": [
     {
@@ -10,18 +10,18 @@
         "method": "POST",
         "path": "/api/v1/intake/webhook/deluno",
         "headers": {
-          "idempotency-key": "01a1ae1a4be5706b8a93da37522ff64b:1793922321381",
+          "idempotency-key": "01a1b37f12fc7658987d315fad5667e3:1794012812028",
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "eventType": "deluno.processor-handoff",
-          "handoffId": "01a1ae1a4be5706b8a93da37522ff64b",
-          "libraryId": "01a1ae1969617738a4b70e3debd8cdc5",
+          "handoffId": "01a1b37f12fc7658987d315fad5667e3",
+          "libraryId": "01a1b37e32b37cd29e21c69d7a027d5e",
           "mediaType": "movies",
           "sourcePath": "/downloads/completed/Movies/ScnFilm.2020.1080p.WEB-DL.x264-WEIR",
           "releaseName": "ScnFilm.2020.1080p.WEB-DL.x264-WEIR",
-          "queueItemId": "db5eb3ce3b30f6b1d8e31cee1c64b268c1b06c21",
+          "queueItemId": "7d06704ad75e9bb1cc5585882c2556d7948d985c",
           "callbackPath": "/api/integrations/processors/events",
           "title": "ScnFilm",
           "year": 2020,
@@ -53,10 +53,10 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a1ae1a4be5706b8a93da37522ff64b",
+          "handoffId": "01a1b37f12fc7658987d315fad5667e3",
           "status": "completed",
           "processorName": "Weir",
-          "libraryId": "01a1ae1969617738a4b70e3debd8cdc5",
+          "libraryId": "01a1b37e32b37cd29e21c69d7a027d5e",
           "releaseName": "ScnFilm.2020.1080p.WEB-DL.x264-WEIR",
           "outputPath": "/weir/Ready/Movies/ScnFilm.2020.1080p.WEB-DL.x264-WEIR/ScnFilm.2020.1080p.WEB-DL.x264-WEIR.mkv",
           "message": "Removed 2 audio tracks and 2 subtitle tracks.",
@@ -72,23 +72,23 @@
         },
         "body": {
           "status": "completed",
-          "handoffId": "01a1ae1a4be5706b8a93da37522ff64b",
-          "activityId": "01a1ae1aa0347064b0e712bfa2a437ca",
-          "importJobId": "01a1ae1aa03e75a1bf1abaed1113a3ed"
+          "handoffId": "01a1b37f12fc7658987d315fad5667e3",
+          "activityId": "01a1b37f677074c995fd215b911081e6",
+          "importJobId": "01a1b37f677b7712afe6c932cd6e01d2"
         }
       }
     },
     {
       "request": {
         "method": "POST",
-        "path": "/api/v1/intake/handoffs/deluno/01a1ae1a4be5706b8a93da37522ff64b/outcome",
+        "path": "/api/v1/intake/handoffs/deluno/01a1b37f12fc7658987d315fad5667e3/outcome",
         "headers": {
           "x-webhook-secret": "<scrubbed>",
           "content-type": "application/json; charset=utf-8"
         },
         "body": {
           "outcome": "imported",
-          "occurredUtc": "2026-11-05T23:45:45.3341812+00:00",
+          "occurredUtc": "2026-11-07T00:53:56.0126505+00:00",
           "importedPath": "/media/Movies/ScnFilm (2020)/ScnFilm.2020.1080p.WEB-DL.x264-WEIR.mkv",
           "reason": null
         }
@@ -99,7 +99,7 @@
           "content-type": "application/json"
         },
         "body": {
-          "handoffId": "01a1ae1a4be5706b8a93da37522ff64b",
+          "handoffId": "01a1b37f12fc7658987d315fad5667e3",
           "outcome": "imported",
           "released": false,
           "message": "Weir recorded that Deluno imported the file. Deluno moved Weir's copy into its library, so there was nothing for Weir to remove."

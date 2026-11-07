@@ -8,13 +8,6 @@ It sits beside the tools you already use. Deluno, Radarr or Sonarr finds and dow
 
 It runs on Windows and in Docker. It is for one person, and your files and settings stay on your machine.
 
-> **Weir is early.** It is in active, hard testing, and it is not finished. Expect some
-> rough edges, and please do not point it at the only copy of anything you cannot
-> replace. Weir works on a copy of each file and only replaces the original once the
-> new one checks out, and everything it does is written to Activity. If something looks
-> wrong, confusing or just ugly, [tell us](https://github.com/EJM-Digital/Weir/issues/new/choose).
-> That is the most useful thing you can do right now, and every report gets read.
-
 <img src="docs/assets/screenshots/dashboard-live.png" width="49%"> <img src="docs/assets/screenshots/dashboard-system.png" width="49%">
 
 *The Dashboard: every file being worked on right now, and the health of the machine*
