@@ -24,13 +24,13 @@ This release focuses on <plain-language summary in one sentence>.
 
 ## Docker
 
-- `ghcr.io/jampat000/weir:X.Y.Z`  <!-- no `v`: release.yml strips it for the image tag -->
-- `ghcr.io/jampat000/weir:latest`  <!-- stable releases only: a release candidate lists its version tag alone and moves no other tag -->
+- `ghcr.io/ejm-digital/weir:X.Y.Z`  <!-- no `v`: release.yml strips it for the image tag -->
+- `ghcr.io/ejm-digital/weir:latest`  <!-- stable releases only: a release candidate lists its version tag alone and moves no other tag -->
 - Images are published for `linux/amd64` and `linux/arm64`, and run the .NET build of the Weir server.
 
 ## Full Changelog
 
-https://github.com/jampat000/Weir/compare/vPREVIOUS...vX.Y.Z
+https://github.com/EJM-Digital/Weir/compare/vPREVIOUS...vX.Y.Z
 
 ---
 
