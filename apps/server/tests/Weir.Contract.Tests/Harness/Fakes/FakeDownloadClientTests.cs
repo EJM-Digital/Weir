@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json.Nodes;
 
@@ -13,7 +14,7 @@ public sealed class FakeDownloadClientTests : IDisposable
 
     public void Dispose() => _http.Dispose();
 
-    private static StringContent Json(string body) => new(body, Encoding.UTF8, "application/json");
+    private static JsonContent Json(string body) => JsonContent.Create(JsonNode.Parse(body));
 
     private static AuthenticationHeaderValue Basic(string user, string secret) =>
         new("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{user}:{secret}")));
@@ -107,7 +108,7 @@ public sealed class FakeDownloadClientTests : IDisposable
     {
         using var client = FakeDownloadClient.Start("deluge", null, "right");
         async Task<JsonNode> Login(string password) => JsonNode.Parse(await (await _http.PostAsync(
-            $"{client.BaseUrl}/json", Json($$"""{"method":"auth.login","params":["{{password}}"],"id":1}"""))).Content.ReadAsStringAsync())!;
+            $"{client.BaseUrl}/json", JsonContent.Create(new JsonObject { ["method"] = "auth.login", ["params"] = new JsonArray(password), ["id"] = 1 }))).Content.ReadAsStringAsync())!;
 
         var refused = await Login("wrong");
         var accepted = await Login("right");
