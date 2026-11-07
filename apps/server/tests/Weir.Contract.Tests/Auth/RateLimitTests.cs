@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
 
 namespace Weir.Contract.Tests.Auth;
@@ -10,24 +11,38 @@ namespace Weir.Contract.Tests.Auth;
 [ContractArea("auth")]
 public sealed class RateLimitTests(RateLimitTests.RateLimitServerFixture fixture) : AuthTestBase(fixture), IClassFixture<RateLimitTests.RateLimitServerFixture>
 {
-    // Long enough that three Argon2-hashed sign-ins fit inside it on a CI runner busy with other test classes.
+    // The limiter stamps an attempt when the request arrives, and a wrong-password attempt then spends the rest of its
+    // time in Argon2. On a CI runner busy with other test classes that was 10 to 23 seconds an attempt, so the first stamp
+    // aged out of the window before the third attempt arrived (run 42320939793). The attempts here are rejected for their
+    // CSRF token, which the server checks after counting the attempt and before any hashing: they count the same and cost
+    // milliseconds, so the three of them sit far inside the window however loaded the machine is.
     private const int WindowSeconds = 30;
 
     [Fact]
     public async Task Login_rate_limit_window_slides()
     {
         var session = NewSession();
-        Assert.Equal(HttpStatusCode.Unauthorized, (await session.AttemptLoginAsync(password: "wrong")).Status);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await session.AttemptLoginAsync(password: "wrong")).Status);
-        var limited = await session.AttemptLoginAsync(password: "wrong");
+        Assert.Equal(HttpStatusCode.BadRequest, (await CountedLoginAttemptAsync(session)).Status);
+        Assert.Equal(HttpStatusCode.BadRequest, (await CountedLoginAttemptAsync(session)).Status);
+        var limited = await CountedLoginAttemptAsync(session);
         Assert.Equal(HttpStatusCode.TooManyRequests, limited.Status);
         Assert.Equal(WindowSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture), limited.Header("Retry-After"));
 
         await Poll.UntilAsync(
-            async () => (await session.AttemptLoginAsync(password: "wrong")).Status == HttpStatusCode.Unauthorized,
+            async () => (await CountedLoginAttemptAsync(session)).Status == HttpStatusCode.BadRequest,
             "the login window to slide past the earlier attempts",
             TimeSpan.FromSeconds(WindowSeconds * 5));
     }
+
+    private static Task<WeirResponse> CountedLoginAttemptAsync(WeirClient session) =>
+        session.PostAsync(
+            $"{WeirClient.Api}/auth/login",
+            new JsonObject
+            {
+                ["username"] = WeirClient.AdminUsername,
+                ["password"] = "wrong",
+                ["csrf_token"] = "invalid-token",
+            });
 
     [Fact]
     public async Task Bootstrap_rate_limited()
