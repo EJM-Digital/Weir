@@ -7,8 +7,8 @@ namespace Weir.Contract.Tests.Processing;
 
 /// <summary>
 /// What Weir knows about a copy it handed back does not depend on the file being listed. A file taken off the list (Remove from the
-/// list, or any other way its row goes) and handed over again, unchanged, is not cleaned a second time, so the manager's earlier
-/// "imported" is not lost to a new copy that nobody has answered. A manager's answer that comes after the file left the list is
+/// list, or any other way its row goes) and handed over again, unchanged, is not cleaned a second time while its copy is still there.
+/// Once the manager collected the copy and Weir released it, a new hand-off is cleaned again (#1401). A manager's answer that comes after the file left the list is
 /// still recorded and still releases the copy.
 /// </summary>
 [ContractArea("processing")]
@@ -38,7 +38,7 @@ public sealed class ForgottenFileTests
     }
 
     [Fact]
-    public async Task A_forgotten_file_handed_over_again_is_not_cleaned_twice_and_still_reads_imported()
+    public async Task A_forgotten_file_handed_over_again_after_Deluno_imported_it_is_cleaned_again_into_a_copy_that_exists()
     {
         await using var scenario = await Scenario.StartAsync();
         var (fake, library, source) = await FinishedHandoffAsync(scenario, "first");
@@ -51,32 +51,42 @@ public sealed class ForgottenFileTests
         await scenario.PostHandoffAsync("again", source);
         await scenario.WaitForHandoffStateAsync("again", "completed");
 
+        // #1401: the copy the first send named was released, so the second send is a real pass and names the copy it wrote.
         var report = (await scenario.WaitForReportsAsync(fake, "again"))[0];
         Assert.Equal("completed", (string)report["status"]!);
         Assert.Equal((string)Scenario.Callbacks(fake, "first")[0]["outputPath"]!, (string)report["outputPath"]!);
         Assert.Null(report["disposition"]);
-        Assert.Single(scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux"));
-        Assert.Single(await scenario.JobsAsync(Scenario.RemuxKind));
-        Assert.False(File.Exists(output), "no second copy is written");
-
-        var skip = Assert.Single(await scenario.ActivityAsync("processing.file_skipped_repeat"));
-        Assert.Equal($"Skipped: already imported ({FileName})", (string)skip["title"]!);
+        Assert.Equal(2, scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux").Count);
+        Assert.Equal(2, (await scenario.JobsAsync(Scenario.RemuxKind)).Count);
+        Assert.True(File.Exists(output), "the second send has a copy Deluno can import");
+        Assert.Empty(await scenario.ActivityAsync("processing.file_skipped_repeat"));
 
         var row = await scenario.FileRowAsync(library, FileName);
         Assert.NotNull(row);
         Assert.Equal("processed", (string)row["status"]!);
-        Assert.StartsWith("Already imported: Deluno collected the cleaned copy on ", (string)row["status_reason"]!, StringComparison.Ordinal);
-        var handback = row["handback"]!;
-        Assert.Equal(("imported", "Deluno"), ((string)handback["outcome"]!, (string)handback["outcome_by"]!));
 
-        // Activity lists the last week by default, by when each file was last seen.
-        var recent = await scenario.Admin.GetAsync($"{WeirClient.Api}/processing/files", ("within_days", 7), ("path_contains", FileName));
-        Assert.Single(recent.Fields["files"]!.AsArray());
-
-        // Deluno answers the repeat as it answers any hand-off.
+        // Deluno answers the second send as it answers any hand-off.
         var again = await scenario.PostOutcomeAsync("again", "imported", ImportedPath);
         Assert.True(again.Status == HttpStatusCode.OK, again.ToString());
         Assert.Equal("imported", (string)(await scenario.FileRowAsync(library, FileName))!["handback"]!["outcome"]!);
+    }
+
+    [Fact]
+    public async Task A_file_handed_over_again_while_its_copy_is_still_there_is_not_cleaned_twice()
+    {
+        await using var scenario = await Scenario.StartAsync();
+        var (fake, _, source) = await FinishedHandoffAsync(scenario, "first");
+        var output = Path.Combine(scenario.Folders.Output, FileName);
+        Assert.True(File.Exists(output));
+
+        await scenario.PostHandoffAsync("again", source);
+        await scenario.WaitForHandoffStateAsync("again", "completed");
+
+        var report = (await scenario.WaitForReportsAsync(fake, "again"))[0];
+        Assert.Equal((string)Scenario.Callbacks(fake, "first")[0]["outputPath"]!, (string)report["outputPath"]!);
+        Assert.Single(scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux"));
+        Assert.True(File.Exists(output));
+        Assert.Single(await scenario.ActivityAsync("processing.file_skipped_repeat"));
     }
 
     [Fact]
@@ -96,11 +106,11 @@ public sealed class ForgottenFileTests
         var line = Assert.Single(await scenario.ActivityAsync("processing.handback_outcome"));
         Assert.Equal($"Deluno imported {FileName}", (string)line["title"]!);
 
-        // The answer is on the copy, so the file reads as imported when it comes back.
+        // The answer is on the copy and the copy was released, so when the file comes back it is cleaned again (#1401).
         await scenario.PostHandoffAsync("again", source);
         await scenario.WaitForHandoffStateAsync("again", "completed");
-        Assert.Single(scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux"));
-        Assert.Equal("imported", (string)(await scenario.FileRowAsync(library, FileName))!["handback"]!["outcome"]!);
+        Assert.Equal(2, scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux").Count);
+        Assert.True(File.Exists(output));
     }
 
     [Fact]
