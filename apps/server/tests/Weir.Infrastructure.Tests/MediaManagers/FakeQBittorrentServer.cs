@@ -15,6 +15,7 @@ internal sealed class FakeQBittorrentServer : IDisposable
     private readonly HttpListener _listener = new();
     private readonly ConcurrentDictionary<string, byte> _liveSessions = new();
     private readonly ConcurrentQueue<string?> _loginCookieHeaders = new();
+    private readonly Dictionary<string, Action<HttpListenerContext, bool, string?>> _routes;
     private int _sessionCount;
 
     public FakeQBittorrentServer()
@@ -22,6 +23,7 @@ internal sealed class FakeQBittorrentServer : IDisposable
         Port = FreePort();
         _listener.Prefixes.Add($"http://127.0.0.1:{Port}/");
         _listener.Start();
+        _routes = new Dictionary<string, Action<HttpListenerContext, bool, string?>> { ["/api/v2/auth/login"] = Login };
         _ = ServeAsync();
     }
 
@@ -72,26 +74,26 @@ internal sealed class FakeQBittorrentServer : IDisposable
         var response = context.Response;
         var cookieHeader = request.Headers["Cookie"];
         var hasLiveSession = HasLiveSession(cookieHeader);
-        if (request.Url!.AbsolutePath == "/api/v2/auth/login")
-        {
-            _loginCookieHeaders.Enqueue(cookieHeader);
-            Login(context, hasLiveSession);
-        }
-        else
-        {
-            response.StatusCode = hasLiveSession ? (int)HttpStatusCode.OK : (int)HttpStatusCode.Forbidden;
-            if (hasLiveSession)
-            {
-                using var writer = new StreamWriter(response.OutputStream);
-                writer.Write("{}");
-            }
-        }
+        var route = _routes.GetValueOrDefault(request.Url!.AbsolutePath, ReadWithSession);
+        route(context, hasLiveSession, cookieHeader);
 
         response.Close();
     }
 
-    private void Login(HttpListenerContext context, bool hasLiveSession)
+    private void ReadWithSession(HttpListenerContext context, bool hasLiveSession, string? cookieHeader)
     {
+        var response = context.Response;
+        response.StatusCode = hasLiveSession ? (int)HttpStatusCode.OK : (int)HttpStatusCode.Forbidden;
+        if (hasLiveSession)
+        {
+            using var writer = new StreamWriter(response.OutputStream);
+            writer.Write("{}");
+        }
+    }
+
+    private void Login(HttpListenerContext context, bool hasLiveSession, string? cookieHeader)
+    {
+        _loginCookieHeaders.Enqueue(cookieHeader);
         using var reader = new StreamReader(context.Request.InputStream);
         var body = reader.ReadToEnd();
         if (!body.Contains($"password={CorrectPassword}", StringComparison.Ordinal))
