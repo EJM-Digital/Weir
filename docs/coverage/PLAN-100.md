@@ -4,22 +4,11 @@ The goal is 100% line and branch coverage of production code in the server (Core
 app and the Node scripts, with every exclusion listed and justified. This page is the plan: where the gaps are, in what order they
 are closed, and when code may be left out. [`README.md`](README.md) says how coverage is measured and how floors move.
 
-The figures below are from CI on `main` (the `coverage` job's table). They change with every merge, so read the newest run for the
-real number; the order of the gaps changes slowly.
+The current figures are not copied here, because a copy goes stale with every merge. The floors CI holds, one line and branch figure per project, are in [`floors.json`](floors.json); the newest `coverage` job table on `main` shows the figures measured. Every server project, the tray, the web app and the Node scripts are at their 100% floors. The order below is the record of how the gaps were closed.
 
-## Where it stands
+## What the figures count
 
-| Project | Lines | Branches | Lines not run | Branches not run |
-| --- | ---: | ---: | ---: | ---: |
-| Server: Weir.Core | 93.0% | 84.6% | 1,153 | 1,429 |
-| Server: Weir.Infrastructure | 91.1% | 77.9% | 2,571 | 2,380 |
-| Server: Weir.Api | 92.9% | 74.0% | 983 | 1,112 |
-| Server: Weir.Host | 89.2% | 79.1% | 51 | 15 |
-| Tray | 75.2% | 74.1% | 1,209 | 406 |
-| Web app | 98.3% | 92.7% | 193 | 678 |
-| Node scripts | 89.5% | 89.7% | 1,366 | 432 |
-
-The Weir.Core row is from before the first step. The server rows merge the Linux and Windows unit legs (`Weir.Core.Tests`, `Weir.Infrastructure.Tests`,
+The server rows merge the Linux and Windows unit legs (`Weir.Core.Tests`, `Weir.Infrastructure.Tests`,
 `Weir.Api.Tests`); the tray row is `Weir.Tray.Tests` on Windows; the web row is the whole vitest suite, and from the browser-coverage pull request the web figure also counts the browser (E2E) tests, merged with it (`README.md`, "The web figure counts the browser tests"). The out-of-process figure
 (contract suite and E2E smoke, 74.7% to 94.6% lines by project) is counted a different way and is not part of this target; it rises
 as a side effect.

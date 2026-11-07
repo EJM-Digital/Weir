@@ -177,5 +177,5 @@ prefix, or a queue. Everything stays on `jobs` under `processing.*`.
 - [ADR-0013](ADR-0013-media-managers-are-kinds-not-products.md) — a media manager is a kind
 - Execution plan (archived): [`docs/archive/processing-library-model.md`](../archive/processing-library-model.md)
 
-[#350]: https://github.com/jampat000/Weir/issues/350
-[#351]: https://github.com/jampat000/Weir/issues/351
+[#350]: https://github.com/EJM-Digital/Weir/issues/350
+[#351]: https://github.com/EJM-Digital/Weir/issues/351

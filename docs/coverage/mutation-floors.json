@@ -1,7 +1,7 @@
 {
   "measuredFrom": {
     "commit": "65268611",
-    "note": "Each floor is the score the Mutation workflow measured on the run named for it under runs, rounded down to one decimal. write-gate-database was re-measured on run 39232657649 because the database tests were reorganised on main. core-rules is held at 0 until its measuring run, which lost its report to a full disk on the runner, is read.",
+    "note": "Each floor is the score the Mutation workflow measured on the run named for it under runs, rounded down to one decimal. write-gate-database was re-measured on run 39232657649 because the database tests were reorganised on main.",
     "runs": {
       "file-lifecycle-recovery": 39124477233,
       "file-lifecycle-moves": 39124477233,
