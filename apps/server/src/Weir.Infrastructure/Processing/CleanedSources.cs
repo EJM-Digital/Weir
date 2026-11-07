@@ -29,20 +29,29 @@ public static class CleanedSources
     /// not cleaned (or has changed since), or the copy it wrote is gone and nobody collected it. A file whose row says it was
     /// since rejected, failed or held is not a repeat: it is being dealt with again.
     /// </summary>
-    public static Task<CleanedEarlier?> FindAsync(UnitOfWork uow, long libraryId, string watchedFolder, string relativePath) =>
-        FindAsync(uow, libraryId, relativePath, recorded => SourceIsUnchanged(watchedFolder, relativePath, recorded));
+    /// <param name="uow">The unit of work to read in.</param>
+    /// <param name="libraryId">The workflow the file belongs to.</param>
+    /// <param name="watchedFolder">The workflow's watched folder, where the source is measured.</param>
+    /// <param name="relativePath">The source, relative to the watched folder.</param>
+    /// <param name="answerFromCollected">
+    /// Whether a copy a manager collected (and Weir released) still counts as the answer. A scan, a requeue or a replay of the
+    /// same hand-off may settle on it. A manager asking afresh for a file may not: it wants a copy it can import, and the
+    /// collected one is gone, so the source is processed again.
+    /// </param>
+    public static Task<CleanedEarlier?> FindAsync(UnitOfWork uow, long libraryId, string watchedFolder, string relativePath, bool answerFromCollected = true) =>
+        FindAsync(uow, libraryId, relativePath, recorded => SourceIsUnchanged(watchedFolder, relativePath, recorded), answerFromCollected);
 
     /// <summary>
     /// What Weir already did with a file whose original is no longer in the watched folder: there is no source to compare, and
     /// nothing left to process, so the earlier cleaning is the answer whenever its copy is still there or a manager collected it.
     /// </summary>
     public static Task<CleanedEarlier?> FindForMissingOriginalAsync(UnitOfWork uow, long libraryId, string relativePath) =>
-        FindAsync(uow, libraryId, relativePath, _ => true);
+        FindAsync(uow, libraryId, relativePath, _ => true, answerFromCollected: true);
 
     /// <summary>The source a copy was cleaned from, as the hand-back row recorded it; null when it did not.</summary>
     private sealed record RecordedSource(long? SizeBytes, long? ModifiedTimeNs);
 
-    private static async Task<CleanedEarlier?> FindAsync(UnitOfWork uow, long libraryId, string relativePath, Func<RecordedSource, bool> sourceIsUnchanged)
+    private static async Task<CleanedEarlier?> FindAsync(UnitOfWork uow, long libraryId, string relativePath, Func<RecordedSource, bool> sourceIsUnchanged, bool answerFromCollected)
     {
         ArgumentNullException.ThrowIfNull(uow);
         var earlier = await uow.QuerySingleAsync(
@@ -73,7 +82,7 @@ public static class CleanedSources
             return new CleanedEarlier(earlier.OutputPath, writtenAt, Collected: false, Manager: null, CollectedAt: null);
         }
 
-        return earlier.Outcome == HandbackRules.Imported
+        return answerFromCollected && earlier.Outcome == HandbackRules.Imported
             ? new CleanedEarlier(earlier.OutputPath, writtenAt, Collected: true, earlier.OutcomeBy, earlier.OutcomeAt)
             : null;
     }

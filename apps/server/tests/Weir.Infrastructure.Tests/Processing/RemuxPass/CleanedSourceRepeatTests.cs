@@ -318,10 +318,61 @@ public sealed class CleanedSourceRepeatTests : IDisposable
     }
 
     [Fact]
-    public async Task A_repeat_after_the_manager_collected_the_copy_is_skipped_as_already_imported_and_names_the_same_path()
+    public async Task A_new_hand_off_after_the_manager_collected_the_copy_is_processed_again_and_names_a_copy_that_exists()
     {
         await SetUpAsync();
         await HandOffAndDrainAsync("h1");
+        await ManagerCollectsTheCopyAsync();
+        Assert.False(File.Exists(OutputFile));
+
+        await HandOffAndDrainAsync("h2");
+
+        Assert.Equal(2, await RemuxJobCountAsync());
+        Assert.Equal(2, _media.Remuxes.Count());
+        Assert.Equal(0, await SkipLineCountAsync());
+        Assert.True(File.Exists(OutputFile), "the second send has a copy the manager can import");
+        var reports = Reports();
+        Assert.Equal(2, reports.Count);
+        Assert.Equal("h2", Field(reports[1], "handoffId"));
+        Assert.Equal("completed", Field(reports[1], "status"));
+        Assert.Equal(OutputFile, Field(reports[1], "outputPath"));
+        Assert.NotEqual(CleanedEarlier.ReportMessage, Field(reports[1], "message"));
+        Assert.Equal(string.Empty, await ScalarText("SELECT coalesce(outcome, '') FROM handbacks"));
+    }
+
+    [Fact]
+    public async Task A_new_hand_off_after_the_manager_collected_the_copy_is_processed_again_even_when_it_carries_no_hand_off_id()
+    {
+        await SetUpAsync();
+        await HandOffAndDrainAsync("h1");
+        await ManagerCollectsTheCopyAsync();
+
+        var send = new MediaManagerImportEvent { SourceKey = "deluno", EventKind = "handoff", MediaScope = "movie", FilePath = SourceFile };
+        await _fixture.Db(uow => _fixture.Intake.EnqueueRefineAsync(uow, send));
+        await DrainAsync();
+
+        Assert.Equal(2, await RemuxJobCountAsync());
+        Assert.True(File.Exists(OutputFile));
+        Assert.Equal(0, await SkipLineCountAsync());
+    }
+
+    [Fact]
+    public async Task A_scan_or_requeue_after_the_manager_collected_the_copy_still_leaves_the_source_alone()
+    {
+        await SetUpAsync();
+        await HandOffAndDrainAsync("h1");
+        await ManagerCollectsTheCopyAsync();
+        var row = (await _fixture.Db(uow => _fixture.Files.ListAsync(uow, new ProcessingFileListFilter { LibraryId = _libraryId }))).Single();
+
+        var result = await _fixture.Db(uow => new RequeueStore(_fixture.Jobs, _fixture.Libraries).RequeueFileAsync(uow, row));
+
+        Assert.Equal((0, 1, 1), (result.Requeued, result.Skipped, result.AlreadyCleaned));
+        Assert.Equal(1, await RemuxJobCountAsync());
+        Assert.False(File.Exists(OutputFile));
+    }
+
+    private async Task ManagerCollectsTheCopyAsync()
+    {
         var handback = await _fixture.Db(uow => _fixture.Handback.FindAsync(uow, _libraryId, Relative));
         var collectedAt = DateTimeOffset.Parse("2026-10-07T04:30:00Z", CultureInfo.InvariantCulture);
         await _fixture.Db(async uow =>
@@ -330,15 +381,6 @@ public sealed class CleanedSourceRepeatTests : IDisposable
             return 0;
         });
         File.Delete(OutputFile);
-
-        await HandOffAndDrainAsync("h1");
-
-        await AssertNothingWasProcessedAgainAsync();
-        Assert.False(File.Exists(OutputFile));
-        AssertSecondReportIsTheFirstCompletion("h1");
-        Assert.Equal("Skipped: already imported (film.mkv)", await ScalarText($"SELECT title FROM activity_events WHERE event_type = '{ActivityEventTypes.ProcessingFileSkippedRepeat}'"));
-        var detail = (WireObject)WireJsonParser.Parse(await ScalarText($"SELECT detail FROM activity_events WHERE event_type = '{ActivityEventTypes.ProcessingFileSkippedRepeat}'"));
-        Assert.Equal("Already imported: Deluno collected the cleaned copy on 2026-10-07", Field(detail, "user_message"));
     }
 
     [Fact]
