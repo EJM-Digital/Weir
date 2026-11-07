@@ -66,13 +66,13 @@ test("neither publish job may wait for the other", () => {
 });
 
 test("each publish job needs every shared check and its own build's checks", () => {
-  for (const job of ["ci-passed", "golden-path", "windows-proof", "mutation-proof", "validate", "e2e", "windows-smoke"]) {
+  for (const job of ["ci-passed", "golden-path", "windows-proof", "validate", "e2e", "windows-smoke"]) {
     rejects(
       editJob(real.release, "publish-windows", (body) => withoutNeed(body, job)),
       new RegExp(`publish-windows does not need ${job}`),
     );
   }
-  for (const job of ["ci-passed", "golden-path", "windows-proof", "mutation-proof", "validate", "e2e", "docker-candidate", "docker-arm64"]) {
+  for (const job of ["ci-passed", "golden-path", "windows-proof", "validate", "e2e", "docker-candidate", "docker-arm64"]) {
     rejects(
       editJob(real.release, "publish-docker", (body) => withoutNeed(body, job)),
       new RegExp(`publish-docker does not need ${job}`),
@@ -272,8 +272,8 @@ test("the golden-path job cannot be skipped for a release candidate or anything 
   );
 });
 
-test("a release needs the Windows legs and the mutation scores to have passed, and no step of either may be dropped or skipped", () => {
-  for (const [job, script] of [["windows-proof", "windows"], ["mutation-proof", "mutation"]]) {
+test("a release needs the Windows legs to have passed, and no step of it may be dropped or skipped", () => {
+  for (const [job, script] of [["windows-proof", "windows"]]) {
     rejects(editJob(real.release, job, (body) => body.replace(`verify-heavy-ci-for-release.mjs ${script}`, "something-else.mjs")), new RegExp(`${job} job`));
     rejects(editJob(real.release, job, (body) => body.replace("          fetch-depth: 0\n", "")), /fetch-depth: 0/);
     rejects(editJob(real.release, job, (body) => body.replace("actions: read", "actions: write")), /actions: (read|write)/);
@@ -298,21 +298,4 @@ test("the Windows legs stay their own CI jobs with their own flags, so a pull re
 
 test("ci-passed keeps the step that succeeds only when the Windows legs ran", () => {
   assert.throws(() => checkReleaseGates({ ...real, ci: real.ci.replace("- name: The Windows legs ran and passed\n", "- name: Something else\n") }), /The Windows legs ran and passed/);
-});
-
-test("the mutation workflow is never triggered by a pull request and keeps the step the release reads", () => {
-  const triggered = real.mutation.replace("  workflow_dispatch:\n", "  workflow_dispatch:\n  pull_request:\n");
-  assert.throws(() => checkReleaseGates({ ...real, mutation: triggered }), /triggered by a pull request/);
-  const targeted = real.mutation.replace("  workflow_dispatch:\n", "  workflow_dispatch:\n  pull_request_target:\n");
-  assert.throws(() => checkReleaseGates({ ...real, mutation: targeted }), /triggered by a pull request/);
-  assert.throws(() => checkReleaseGates({ ...real, mutation: real.mutation.replace("- name: Mutation scores against the floors\n", "- name: Something else\n") }), /Mutation scores against the floors/);
-});
-
-test("the mutation workflow can run chosen targets, names each target's job and judges only the targets that ran", () => {
-  const without = (from, to) => checkReleaseGates({ ...real, mutation: replaceOnce(real.mutation, from, to) });
-  assert.throws(() => without("    inputs:\n      targets:\n", "    inputs:\n      other:\n"), /workflow_dispatch trigger/);
-  assert.throws(() => without("REQUESTED: ${{ inputs.targets }}", "REQUESTED: all"), /REQUESTED/);
-  assert.throws(() => without("node scripts/resolve-mutation-targets.mjs", "node scripts/select-mutation-targets.mjs --all"), /resolve-mutation-targets/);
-  assert.throws(() => without("name: Mutate ${{ matrix.target }}\n", "name: Mutate\n"), /Mutate/);
-  assert.throws(() => without('--only "$TARGETS"', ""), /--only/);
 });

@@ -66,12 +66,13 @@ a new target is added there, to `mutation-floors.json` and as a config in the `m
 
 ## When it runs
 
-Weekly (Sunday, 02:41 UTC), on demand (Actions, Mutation, Run workflow, or `gh workflow run mutation.yml --ref <branch>`) and
-before a release tag, and never on a pull request: a target takes tens of minutes to hours on a Windows runner, because
-Stryker first runs the whole test project once to learn which tests cover which line. The weekly run mutates every target;
-a run by hand can name targets (`-f targets=a,b`, or `-f targets=changed:<sha>`). Each run holds the scores of the targets
-it ran to their floors. The release will not publish unless every target has a passing run on the tagged commit or on an
-earlier one where that target's own mutated files, tests and mutation setup are unchanged ([`../ci-cost.md`](../ci-cost.md)). To try
+Mutation runs weekly (Sunday 11:17 UTC) and by hand. It gates nothing; each weekly run's findings are raised as issues and fixed during the week. By hand: Actions, Mutation, Run workflow, or
+`gh workflow run mutation.yml --ref <branch>`. It never runs on a pull request and a release does not wait for it (owner
+decision, 7 November 2026). A target takes tens of minutes to hours on a Windows runner, because Stryker first runs the whole
+test project once to learn which tests cover which line. The weekly run mutates every target; a run by hand can name targets
+(`-f targets=a,b`, or `-f targets=changed:<sha>` for the ones whose files, tests or setup differ from that commit). Each run
+holds the scores of the targets it ran to their floors: a target below its floor fails the run's `check` job, and the
+survivors are listed on its summary page. No automation files the issues; whoever reads the run raises them. To try
 one target by hand, run it from its test project:
 
 ```

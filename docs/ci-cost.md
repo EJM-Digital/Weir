@@ -12,7 +12,7 @@ its change cannot affect.
 
 | Job | Pull request | Push to `main` | Nightly | By hand | Before a tag |
 | --- | --- | --- | --- | --- | --- |
-| Mutation testing (`mutation.yml`) | never | never | weekly (Sunday) | yes, all or chosen targets | each target must have passed |
+| Mutation testing (`mutation.yml`) | never | never | weekly (Sunday 11:17 UTC) | yes, all or chosen targets | not needed: it gates nothing |
 | Contract suite, Windows legs (`contract-windows`) | only with a Windows path | when the server changed | yes | yes | must have passed |
 | Windows package smoke, update package and scenario shards (`packaging-windows`) | only with a Windows path | when the package or app changed | yes | yes | must have passed |
 | Contract suite, Linux legs, E2E shards, Docker smokes, Linux scenario shards, web, server on Linux | by their own path filters in `ci.yml` | as today | no | yes | `ci-passed` on the tagged commit |
@@ -61,7 +61,6 @@ Times are Sydney (AEDT, UTC+11), all off the top of the hour. "Peak jobs" is the
 | `audit.yml` | Sunday 20:29 | by hand | 2 Linux |
 | `codeql.yml` | Sunday 20:37 | push, pull request | 3 |
 | `ci-stress.yml` | Sunday 21:43 | pull request touching the SQLite pool or its stress test, by hand | 1 Windows |
-| `mutation.yml` | Sunday 22:17 | by hand (never pull request) | 12 |
 | `record-arr.yml`, `record-clients.yml` | no schedule | pull request and push to `main` that change a recorder `compose.yaml`, by hand | 1 and 6 Linux |
 
 The recorders have no schedule: the images they record are pinned by digest in the compose files, so nothing changes until a
@@ -70,41 +69,26 @@ compose file does. The newest releases of Sonarr, Radarr and the download client
 
 ## How a release gets the proof
 
-`release.yml` has two jobs next to `ci-passed` and `golden-path`, and both publish jobs need them:
+`release.yml` has a `windows-proof` job next to `ci-passed` and `golden-path`, and both publish jobs need all three:
 
 - **`windows-proof`** looks for a push, nightly or manual run of `ci.yml` whose `ci-passed` job passed and whose step "The
   Windows legs ran and passed" succeeded. That step runs only when both Windows jobs were due, so a run that skipped them
   does not count. The run may be on the tagged commit or on an earlier one with the same shipped files
   (`scripts/release/shipped-paths.mjs`, the rule the golden-path gate uses): a documentation commit after the last run needs
   no new one.
-- **`mutation-proof`** judges each mutation target (`.github/mutation-targets.json`) on its own. A target counts as proved by
-  a weekly or manual run of `mutation.yml` in which its `Mutate <target>` job succeeded and the `check` job held the scores of
-  the targets that ran to their floors. That run may be on the tagged commit or on an earlier one, as long as the target's
-  own inputs are the same on both (`scripts/release/mutation-inputs.mjs`):
-  - the files it mutates, from the `mutate` list of its Stryker config, and the config itself;
-  - the tests that kill its mutants. A .NET target's tests are its test projects (`test-projects` in the config, else the
-    project the run starts in), the test-support projects they reference and the shared test sources. A web target that runs
-    `vitest run <paths>` has exactly those paths and the test setup; one that runs `vitest related <files>` finds its tests
-    through the import graph, which the gate cannot know, so every web test file counts (the conservative choice);
-  - its mutation setup: its entry in `mutation-targets.json`, `mutation.yml`, `check-mutation-floors.mjs`, and the build and
-    package settings (`Directory.Build.props`, `Directory.Packages.props`, `global.json`, `NuGet.Config`; `package.json`, the
-    lock file, `vite.config.ts` and the tsconfig files for the web app).
+`windows-proof` uses `scripts/verify-heavy-ci-for-release.mjs`, reads at most the 100 commits before the tag, never waits, and
+fails at once with the command to run, `gh workflow run ci.yml --ref vX.Y.Z`. A `pull_request` run never counts.
 
-  A change to another target's files does not matter, so unchanged targets carry forward from their last passing run while
-  the changed ones need a run that covers them. A run that did not pass its `check` job proves none of its targets.
+Mutation testing is not part of the release. Mutation runs weekly (Sunday 11:17 UTC) and by hand. It gates nothing; each weekly run's findings are raised as issues and fixed during the week. A target below its floor fails that run's `check` job,
+which shows in Actions.
 
-Both use `scripts/verify-heavy-ci-for-release.mjs`, read at most the 100 commits before the tag, never wait, and fail at
-once with the command to run. For the Windows legs that is `gh workflow run ci.yml --ref vX.Y.Z`. For mutation it lists the
-targets with no proof and the command that runs only those, for example
-`gh workflow run mutation.yml --ref vX.Y.Z -f targets=core-rules,web-api-client`. A `pull_request` run never counts.
-
-Running only some targets: the `targets` input of `mutation.yml` takes `all` (the default, and the weekly run), a comma-separated
+Running only some targets: the `targets` input of `mutation.yml` takes `all` (the default), a comma-separated
 list of target ids, or `changed:<sha>`, which runs the targets whose own inputs differ from that commit. A run of a few
-targets takes minutes, not hours, so a release that changed only a little needs only a short run; the weekly full run and the
-only-up floors in `docs/coverage/mutation-floors.json` stay as they are.
+targets takes minutes, not hours. The only-up floors in `docs/coverage/mutation-floors.json` stay as they are, and `ci.yml` still
+holds a pull request to the ratchet on the floors file.
 
-`scripts/check-release-workflow-gates.mjs` keeps this shape: both jobs exist, both publish jobs need them, neither can be
-skipped or waved through, `mutation.yml` has no pull-request trigger, and `ci-passed` keeps the step the release reads.
+`scripts/check-release-workflow-gates.mjs` keeps this shape: the job exists, both publish jobs need it, it cannot be
+skipped or waved through, and `ci-passed` keeps the step the release reads.
 
 ## Keeping it this way
 
