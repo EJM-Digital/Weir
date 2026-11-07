@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 
 import { GATES, verdict } from "./ci-passed.mjs";
 import { auditWithRetry, classifyAuditOutput, main as auditMain, meetsAuditLevel, runNpmAuditOnce, unapprovedAdvisories } from "./npm-audit-retry.mjs";
-import { entryChanged, inputsOf } from "./release/mutation-inputs.mjs";
+import { inputsOf } from "./release/mutation-inputs.mjs";
 import { repository } from "./release/temporary-repository.mjs";
 import { sameShippedFiles } from "./release/shipped-paths.mjs";
 
@@ -178,13 +178,6 @@ test("shipped-paths, run as a command in a repository, compares two commits and 
 });
 
 // --- the mutation inputs ---
-
-test("a target's entry that cannot be read at a commit counts as changed, and one that is in neither list counts as unchanged", () => {
-  const target = { target: "core" };
-  assert.equal(entryChanged(target, "a", "b", () => { throw new Error("no such commit"); }), true);
-  assert.equal(entryChanged(target, "a", "b", () => "[]"), false);
-  assert.equal(entryChanged(target, "a", "b", (args) => (args[1].startsWith("a:") ? "[]" : '[{"target":"core","x":1}]')), true);
-});
 
 test("the inputs of a .NET target follow its test projects' references, once each, skipping source projects and projects that are gone", () => {
   inFolder((root) => {

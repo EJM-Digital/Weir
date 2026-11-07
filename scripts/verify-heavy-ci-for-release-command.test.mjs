@@ -2,14 +2,11 @@
 // The heavy-CI release gate as a command: reading the run lists, what it prints when it refuses, and the git history it cannot read.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { loadTargets } from "./select-mutation-targets.mjs";
-import { PROOFS, findProof, findTargetProofs, main, runGate } from "./verify-heavy-ci-for-release.mjs";
+import { PROOFS, findProof, main, runGate } from "./verify-heavy-ci-for-release.mjs";
 
-const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const TAG = "c".repeat(40);
 const OLD = "a".repeat(40);
 
@@ -20,16 +17,14 @@ const windowsJobs = [
   ] },
 ];
 
-function history({ changes = {}, readable = true, diffReadable = true } = {}) {
+function history({ changes = {}, readable = true } = {}) {
   return (args) => {
     if (args[0] === "rev-list") {
       if (!readable) throw new Error("fatal: not a git repository\nmore");
       return [TAG, OLD].join("\n");
     }
     if (args[0] === "merge-base") return "";
-    if (args[0] === "show") return JSON.stringify(loadTargets(repositoryRoot));
     if (args[0] === "diff") {
-      if (!diffReadable) throw new Error("fatal: bad object\nmore");
       return (changes[args.at(-2)] ?? []).join("\0");
     }
     throw new Error(`unexpected git ${args.join(" ")}`);
@@ -37,45 +32,11 @@ function history({ changes = {}, readable = true, diffReadable = true } = {}) {
 }
 
 const failedRun = { databaseId: 4, event: "push", status: "completed", conclusion: "failure", url: "https://example.test/4" };
-const passedRun = { ...failedRun, databaseId: 5, conclusion: "success", url: "https://example.test/5" };
 
 test("when the history cannot be read the gate says to fetch it all", () => {
   const found = findProof({ proof: PROOFS.windows, sha: TAG, runsOf: () => [], jobsOf: () => [], git: history({ readable: false }) });
   assert.equal(found.ok, false);
   assert.deepEqual(found.problems, [`the commits before ${TAG} could not be read (fatal: not a git repository); fetch the full history`]);
-
-  const [first] = findTargetProofs({ proof: PROOFS.mutation, sha: TAG, root: repositoryRoot, targets: loadTargets(repositoryRoot), runsOf: () => [], jobsOf: () => [], git: history({ readable: false }) });
-  assert.equal(first.problems[0], `the commits before ${TAG} could not be read (fatal: not a git repository); fetch the full history`);
-});
-
-test("a mutation pass that cannot be compared with the tag is not carried, and the reason says so", () => {
-  const targets = loadTargets(repositoryRoot);
-  const [first] = findTargetProofs({
-    proof: PROOFS.mutation, sha: TAG, root: repositoryRoot, targets, runsOf: (commit) => (commit === OLD ? [{ ...passedRun, event: "schedule" }] : []),
-    jobsOf: () => [], git: history({ diffReadable: false }),
-  });
-  assert.equal(first.ok, false);
-  assert.match(first.problems.join("\n"), /the changes since could not be read \(fatal: bad object\)/);
-});
-
-test("a long list of reasons is cut to three and the rest counted", () => {
-  const targets = loadTargets(repositoryRoot).filter((target) => target.target === "core-rules");
-  const lines = [];
-  const changed = [
-    "apps/server/tests/Weir.Core.Tests/A.cs",
-    "apps/server/tests/Weir.Core.Tests/B.cs",
-    "apps/server/tests/Weir.Core.Tests/C.cs",
-    "apps/server/tests/Weir.Core.Tests/D.cs",
-    ".github/workflows/mutation.yml",
-  ];
-  const passed = runGate({
-    name: "mutation", repository: "o/r", sha: TAG, root: repositoryRoot, targets,
-    runsOf: (commit) => (commit === OLD ? [{ ...passedRun, event: "schedule" }] : []), jobsOf: () => [], git: history({ changes: { [OLD]: changed } }),
-    log: () => {}, error: (line) => lines.push(line),
-  });
-  assert.equal(passed, false);
-  assert.match(lines.join("\n"), /, and \d+ more\)/);
-  assert.ok(lines.includes("  gh workflow run mutation.yml --repo o/r --ref <tag> -f targets=core-rules"));
 });
 
 test("the gate refuses a missing repository and a short commit, before it asks GitHub anything", () => {
@@ -145,7 +106,7 @@ test("the command takes --sha before the environment's commit before the checked
 test("the command asks for a proof by name", () => {
   const errors = [];
   assert.equal(main(["nothing"], {}, { error: (line) => errors.push(line) }), 2);
-  assert.deepEqual(errors, ["Usage: node scripts/verify-heavy-ci-for-release.mjs <windows|mutation> [--sha <sha>]"]);
+  assert.deepEqual(errors, ["Usage: node scripts/verify-heavy-ci-for-release.mjs <windows> [--sha <sha>]"]);
 });
 
 test("run as a command, a missing repository is an error annotation and exit 1", () => {
