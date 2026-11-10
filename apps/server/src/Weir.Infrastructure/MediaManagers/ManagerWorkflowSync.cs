@@ -239,7 +239,7 @@ public sealed partial class ManagerWorkflowSync : IDisposable
     private static TimeSpan RetryDelay(int retry) => retry < QuickRetries.Length ? QuickRetries[retry] : RetryEvery;
 
     /// <summary>The enabled connections that have no workflow yet; none when syncing is switched off or the look fails (the periodic task still checks).</summary>
-    private async Task<List<(long Id, ManagerConnection Connection)>> WaitingForWorkflowsAsync(CancellationToken cancellationToken)
+    internal async Task<List<(long Id, ManagerConnection Connection)>> WaitingForWorkflowsAsync(CancellationToken cancellationToken)
     {
         if (!_options.ManagerWorkflowSyncEnabled)
         {
@@ -265,6 +265,10 @@ public sealed partial class ManagerWorkflowSync : IDisposable
 
                 return connections.Where(entry => !linkedTo.Contains(entry.Id)).ToList();
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return [];
         }
 #pragma warning disable CA1031 // The retries are a convenience; a failed look ends them and the periodic task still checks.
         catch (Exception exception)

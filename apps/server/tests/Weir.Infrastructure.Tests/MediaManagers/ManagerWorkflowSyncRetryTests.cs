@@ -233,6 +233,19 @@ public sealed class ManagerWorkflowSyncRetryTests : IDisposable
     }
 
     [Fact]
+    public async Task A_look_at_who_is_still_waiting_that_is_cancelled_returns_nothing_and_is_not_logged_as_a_failure()
+    {
+        await ConnectAsync();
+        using var stopped = new CancellationTokenSource();
+        await stopped.CancelAsync();
+
+        var waiting = await _sync.WaitingForWorkflowsAsync(stopped.Token);
+
+        Assert.Empty(waiting);
+        Assert.DoesNotContain(_log.Messages, message => message.Message.Contains("will not look again", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task The_retries_stop_when_the_server_stops()
     {
         await ConnectAsync();
