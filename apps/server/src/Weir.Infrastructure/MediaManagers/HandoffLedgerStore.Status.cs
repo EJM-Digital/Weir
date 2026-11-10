@@ -4,6 +4,7 @@ using Weir.Core.Json;
 using Weir.Core.MediaManagers;
 using Weir.Core.Processing;
 using Weir.Core.Time;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Jobs;
 using Weir.Infrastructure.Sqlite;
 
@@ -46,7 +47,7 @@ public sealed partial class HandoffLedgerStore
                 TimestampColumns.Parse(reader.GetValue(5))),
             ("$library", libraryId)).ConfigureAwait(false);
 
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var comparison = PathCase.PathComparison(caseSensitive: !OperatingSystem.IsWindows());
         var prefix = path + "/";
         var underPath = rows.Where(file => string.Equals(file.RelativePath, path, comparison) || file.RelativePath.StartsWith(prefix, comparison)).ToList();
 
@@ -56,7 +57,7 @@ public sealed partial class HandoffLedgerStore
             return underPath;
         }
 
-        var coveredPaths = new HashSet<string>(covered, OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+        var coveredPaths = new HashSet<string>(covered, PathCase.PathComparer(caseSensitive: !OperatingSystem.IsWindows()));
         return [.. underPath.Where(file => coveredPaths.Contains(file.RelativePath))];
     }
 
@@ -75,7 +76,7 @@ public sealed partial class HandoffLedgerStore
             return targets;
         }
 
-        var comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        var comparer = PathCase.PathComparer(caseSensitive: !OperatingSystem.IsWindows());
         return [.. new[] { row.RelativePath.TrimEnd('/') }.Concat((await FileRowsAsync(uow, row).ConfigureAwait(false)).Select(file => file.RelativePath)).Distinct(comparer)];
     }
 
@@ -178,6 +179,7 @@ public sealed partial class HandoffLedgerStore
             var targets = await _targets.ListAsync(uow, row.Id).ConfigureAwait(false);
             var states = new List<string>();
             var stamps = new List<DateTimeOffset>();
+            var scheduledTimes = new List<DateTimeOffset>();
             var busyPaths = new HashSet<string>(StringComparer.Ordinal);
 
             foreach (var job in jobs)
@@ -223,6 +225,7 @@ public sealed partial class HandoffLedgerStore
                 if (job.Status == ProcessingJobStatus.Leased)
                 {
                     states.Add(HandoffLedgerRules.Working);
+                    // Stryker disable once Statement : Equivalent. Falling through only adds queued or scheduled states, a position and a time, and Combine answers working whenever one working state is present, while a position and a time are cleared for every state but queued and scheduled.
                     continue;
                 }
 
@@ -234,7 +237,7 @@ public sealed partial class HandoffLedgerStore
                     states.Add(HandoffLedgerRules.Scheduled);
                     if (job.NotBefore is { } outcomeNotBefore && outcomeNotBefore > now)
                     {
-                        scheduledFor = scheduledFor is { } currentOutcome ? Min(currentOutcome, outcomeNotBefore) : outcomeNotBefore;
+                        scheduledTimes.Add(outcomeNotBefore);
                     }
 
                     continue;
@@ -243,7 +246,7 @@ public sealed partial class HandoffLedgerStore
                 if (job.NotBefore is { } notBefore && notBefore > now)
                 {
                     states.Add(HandoffLedgerRules.Scheduled);
-                    scheduledFor = scheduledFor is { } current ? Min(current, notBefore) : notBefore;
+                    scheduledTimes.Add(notBefore);
                 }
                 else
                 {
@@ -287,7 +290,7 @@ public sealed partial class HandoffLedgerStore
                 states.Add(state);
                 if (when is { } whenValue)
                 {
-                    scheduledFor = scheduledFor is { } current ? Min(current, whenValue) : whenValue;
+                    scheduledTimes.Add(whenValue);
                 }
 
                 if (file.StatusReason.Length > 0 && (message is null || !(HandoffLedgerRules.TerminalStates.Contains(state) || state == HandoffLedgerRules.Skipped)))
@@ -305,10 +308,7 @@ public sealed partial class HandoffLedgerStore
                     queuePosition = null;
                 }
 
-                if (liveState != HandoffLedgerRules.Scheduled)
-                {
-                    scheduledFor = null;
-                }
+                scheduledFor = liveState == HandoffLedgerRules.Scheduled && scheduledTimes.Count > 0 ? scheduledTimes.Min() : null;
             }
         }
 
@@ -370,7 +370,7 @@ public sealed partial class HandoffLedgerStore
     /// </summary>
     private static bool LeftAloneByTheWorkflow(HandoffFileRow file, IReadOnlyList<HandoffTarget> targets)
     {
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var comparison = PathCase.PathComparison(caseSensitive: !OperatingSystem.IsWindows());
         return file.Status == ProcessingFileStatuses.Skipped &&
                targets.FirstOrDefault(target => string.Equals(target.RelativePath, file.RelativePath, comparison)) is { Result: HandoffLedgerRules.Skipped } target &&
                FolderHandoffReports.MayBeLeftAlone(target, targets);
@@ -412,8 +412,6 @@ public sealed partial class HandoffLedgerStore
     }
 
     private DateTimeOffset NowToMicroseconds() => Timestamp.TruncateToMicroseconds(_time.GetUtcNow());
-
-    private static DateTimeOffset Min(DateTimeOffset a, DateTimeOffset b) => a <= b ? a : b;
 
     /// <summary>
     /// How much older than the hand-off a record must be to belong to an earlier one. Receiving a hand-off writes its

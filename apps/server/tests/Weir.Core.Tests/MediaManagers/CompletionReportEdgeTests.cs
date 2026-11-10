@@ -10,6 +10,16 @@ public sealed class CompletionReportEdgeTests
 
     private static readonly HandoffOrigin Origin = new("deluno", "handoff-1", "/events", "Film.2020");
 
+    [Fact]
+    public void The_answer_to_a_send_for_a_kept_file_says_it_was_not_delivered_and_why()
+    {
+        var result = CompletionReports.KeptResult("Film/film.mkv", "A person kept it.");
+
+        Assert.Equal(
+            """{"ok":false,"outcome":"failed","relative_media_path":"Film/film.mkv","reason":"A person kept it."}""",
+            WireJsonWriter.Dumps(result, WireJsonFormat.Compact));
+    }
+
     // --- the origin on a payload -------------------------------------------------------------
 
     [Theory]
