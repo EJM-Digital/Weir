@@ -337,4 +337,5 @@ it("removes nothing when a workflow starts using the profile while the confirmat
   fireEvent.click(screen.getByTestId("remove-rule-set-dialog-confirm"));
 
   expect(removed).not.toHaveBeenCalled();
+  expect(screen.queryByTestId("remove-rule-set-dialog")).toBeNull();
 });

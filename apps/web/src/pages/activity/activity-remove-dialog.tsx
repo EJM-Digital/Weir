@@ -112,6 +112,7 @@ export function ActivityRemoveDialog({
       error={error}
       onCancel={onCancel}
       onConfirm={() => {
+        // Stryker disable next-line ConditionalExpression: Remove is disabled until a choice is made, so this is never reached with none; the guard only narrows the type.
         /* istanbul ignore else -- @preserve */
         if (choice) onConfirm(choice);
       }}

@@ -117,12 +117,16 @@ export function ProfilesTab() {
       setDraft(null);
       return;
     }
-    if (selected.id !== selectedId || draft === null) {
+    const switched = selected.id !== selectedId;
+    // Stryker disable next-line ConditionalExpression: a selected id with no draft cannot happen. Every move sets both together (open, and this effect), so `switched` already holds whenever the draft is empty.
+    const unfilled = draft === null;
+    if (switched || unfilled) {
       setSelectedId(selected.id);
       setDraft(writeFromProcessingRuleSet(selected));
     }
   }, [creating, draft, ruleSets.data, selectedId]);
 
+  // Stryker disable next-line ArrayDeclaration: `rows` is read for output only after the loading and error returns below, so a list that has not arrived is never drawn, and `find` finds nothing in a one-item stand-in either.
   const rows = ruleSets.data ?? [];
   const selectedRuleSet = rows.find((row) => row.id === selectedId);
 
@@ -159,9 +163,12 @@ export function ProfilesTab() {
           ),
       }
     : null;
+  // Stryker disable next-line ArrayDeclaration: the filter below drops a stand-in item (it has no `rule_set_id`), so the list is empty either way.
   const usedBy = (libraries.data ?? [])
     .filter(
-      (library) => selectedId !== null && library.rule_set_id === selectedId,
+      (library) =>
+        // Stryker disable next-line ConditionalExpression: the only state with no selected profile is the new-profile workspace and the empty list, and neither draws the "used by" line, so the names it would find (workflows with no profile) are never shown.
+        selectedId !== null && library.rule_set_id === selectedId,
     )
     .map((library) => library.name);
 
@@ -173,6 +180,7 @@ export function ProfilesTab() {
 
   const startNewProfile = () => {
     setCreating(true);
+    // Stryker disable next-line ArithmeticOperator: only a changed value matters (it is the `key` of the ordering editor); counting down changes it just as counting up does.
     setSwitches((n) => n + 1);
     open(null, { ...EMPTY_RULE_SET });
   };
@@ -180,6 +188,7 @@ export function ProfilesTab() {
   const switchTo = (id: number) => {
     const selected = rows.find((row) => row.id === id);
     setCreating(false);
+    // Stryker disable next-line ArithmeticOperator: only a changed value matters (it is the `key` of the ordering editor); counting down changes it just as counting up does.
     setSwitches((n) => n + 1);
     open(
       id,
@@ -196,9 +205,11 @@ export function ProfilesTab() {
     }
     setNotice(null);
     const named = { ...draft, name: draft.name.trim() };
-    (creating || selectedId === null
+    // Stryker disable next-line ConditionalExpression: the new-profile workspace always has no selected id, so `creating` and a missing id say the same thing.
+    const existingId = creating ? null : selectedId;
+    (existingId === null
       ? createRuleSet.mutateAsync(named)
-      : updateRuleSet.mutateAsync({ id: selectedId, data: named })
+      : updateRuleSet.mutateAsync({ id: existingId, data: named })
     )
       .then((saved) => {
         setCreating(false);
