@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { connectionRequestCases } from "../../test/wire/connections.cases";
 import { homeNetworkRequestCases } from "../../test/wire/home-network.cases";
 import { activityRequestCases } from "../../test/wire/files.cases";
+import { processingSettingsRequestCases } from "../../test/wire/processing-settings.cases";
 import { workflowRequestCases } from "../../test/wire/libraries.cases";
 import { ruleRequestCases } from "../../test/wire/rule-sets.cases";
 
@@ -34,9 +35,6 @@ const NOT_YET_COVERED: Record<string, string> = {
   "api/auth-api.ts": "#1142",
   "pause/pause-api.ts": "#1142",
   "processing/jobs-inspection/api.ts": "#1142",
-  "processing/operator-settings-api.ts": "#1142",
-  "processing/overview-stats-api.ts": "#1142",
-  "processing/runtime-settings-api.ts": "#1142",
   "system/directory-browser-api.ts": "#1142",
   "system/media-tools.ts": "#1142",
   "system/readiness-api.ts": "#1142",
@@ -70,6 +68,7 @@ const covered = new Set(
     ...ruleRequestCases,
     ...connectionRequestCases,
     ...homeNetworkRequestCases,
+    ...processingSettingsRequestCases,
   ].map((testCase) => testCase.fn.name),
 );
 
