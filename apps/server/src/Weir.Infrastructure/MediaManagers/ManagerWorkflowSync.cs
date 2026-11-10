@@ -26,6 +26,17 @@ public sealed partial class ManagerWorkflowSync : IDisposable
     /// <summary>Why a sync runs, as an Activity trigger: the periodic task came round.</summary>
     public const string ScheduledTrigger = "scheduled";
 
+    /// <summary>How often a connection with no workflow yet is looked at again, after the first few quicker looks.</summary>
+    internal static readonly TimeSpan RetryEvery = TimeSpan.FromSeconds(15);
+
+    /// <summary>How long a connection with no workflow yet is looked at again for; after that the periodic task keeps checking.</summary>
+    internal static readonly TimeSpan RetryFor = TimeSpan.FromMinutes(5);
+
+    private static readonly TimeSpan[] QuickRetries = [TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10), RetryEvery];
+
+    private static readonly int RetryLimit =
+        QuickRetries.Length + (int)((RetryFor - TimeSpan.FromTicks(QuickRetries.Sum(step => step.Ticks))) / RetryEvery);
+
     private readonly SqliteDatabase _database;
     private readonly MediaManagerConnectionStore _connectionStore;
     private readonly MediaManagerConnectionService _connections;
@@ -37,8 +48,11 @@ public sealed partial class ManagerWorkflowSync : IDisposable
     private readonly ILogger<ManagerWorkflowSync> _logger;
     private readonly SemaphoreSlim _running = new(1, 1);
     private readonly object _gate = new();
+    private readonly CancellationTokenSource _stopping = new();
     private bool _draining;
     private bool _again;
+    private CancellationTokenSource? _wake;
+    private Task _drain = Task.CompletedTask;
 
     public ManagerWorkflowSync(
         SqliteDatabase database,
@@ -64,31 +78,56 @@ public sealed partial class ManagerWorkflowSync : IDisposable
 
     /// <summary>
     /// Runs a sync in the background and returns at once. Requests that arrive while one runs are folded into one more run
-    /// after it, so a burst of saves never queues a sync each.
+    /// after it, so a burst of saves never queues a sync each. A request that arrives while the retries wait ends the wait and
+    /// starts them afresh, so there is only ever one loop, whatever the number of connections or requests.
     /// </summary>
     public void RequestSync()
     {
         lock (_gate)
         {
+            if (_stopping.IsCancellationRequested)
+            {
+                return;
+            }
+
             if (_draining)
             {
                 _again = true;
+                _wake?.Cancel();
                 return;
             }
 
             _draining = true;
+            _drain = Task.Run(DrainAsync, CancellationToken.None);
         }
+    }
 
-        _ = Task.Run(DrainAsync, CancellationToken.None);
+    /// <summary>Completes when the background sync and its retries have ended; already complete when none is running.</summary>
+    internal Task Drained
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _drain;
+            }
+        }
     }
 
     private async Task DrainAsync()
     {
-        while (true)
+        var stopping = _stopping.Token;
+        var retries = 0;
+        HashSet<long>? only = null;
+        while (!stopping.IsCancellationRequested)
         {
             try
             {
-                await SyncAllAsync(ManualTrigger, CancellationToken.None).ConfigureAwait(false);
+                await SyncAsync(ManualTrigger, only, stopping).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (stopping.IsCancellationRequested)
+            {
+                break;
             }
 #pragma warning disable CA1031 // A sync nobody is waiting for must never end the process; the next request or run tries again.
             catch (Exception exception)
@@ -97,21 +136,148 @@ public sealed partial class ManagerWorkflowSync : IDisposable
                 LogSyncFailed(_logger, exception);
             }
 
-            lock (_gate)
+            if (TakeRequest())
             {
-                if (!_again)
+                (retries, only) = (0, null);
+                continue;
+            }
+
+            var waiting = await WaitingForWorkflowsAsync(stopping).ConfigureAwait(false);
+            if (waiting.Count == 0 || retries >= RetryLimit)
+            {
+                if (EndUnlessRequested())
                 {
-                    _draining = false;
                     return;
                 }
 
+                (retries, only) = (0, null);
+                continue;
+            }
+
+            var pause = RetryDelay(retries++);
+            foreach (var label in waiting.Select(entry => entry.Connection.Label))
+            {
+                LogWillLookAgain(_logger, label, (int)pause.TotalSeconds);
+            }
+
+            only = [.. waiting.Select(entry => entry.Id)];
+            await PauseAsync(pause, stopping).ConfigureAwait(false);
+            if (TakeRequest())
+            {
+                (retries, only) = (0, null);
+            }
+        }
+
+        lock (_gate)
+        {
+            _draining = false;
+        }
+    }
+
+    /// <summary>True when a request came in since the last look, which is then answered by the next pass.</summary>
+    private bool TakeRequest()
+    {
+        lock (_gate)
+        {
+            var requested = _again;
+            _again = false;
+            return requested;
+        }
+    }
+
+    /// <summary>Ends the loop and returns true, unless a request came in meanwhile (then false, and the request is taken).</summary>
+    private bool EndUnlessRequested()
+    {
+        lock (_gate)
+        {
+            if (_again)
+            {
                 _again = false;
+                return false;
+            }
+
+            _draining = false;
+            return true;
+        }
+    }
+
+    /// <summary>Waits <paramref name="pause"/> on the injected clock, or less when a request or the server stopping ends it.</summary>
+    private async Task PauseAsync(TimeSpan pause, CancellationToken stopping)
+    {
+        using var wake = CancellationTokenSource.CreateLinkedTokenSource(stopping);
+        lock (_gate)
+        {
+            _wake = wake;
+            if (_again)
+            {
+                wake.Cancel();
+            }
+        }
+
+        try
+        {
+            await Task.Delay(pause, _time, wake.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // A new request or the server stopping; the loop reads which.
+        }
+        finally
+        {
+            lock (_gate)
+            {
+                _wake = null;
             }
         }
     }
 
+    private static TimeSpan RetryDelay(int retry) => retry < QuickRetries.Length ? QuickRetries[retry] : RetryEvery;
+
+    /// <summary>The enabled connections that have no workflow yet; none when syncing is switched off or the look fails (the periodic task still checks).</summary>
+    private async Task<List<(long Id, ManagerConnection Connection)>> WaitingForWorkflowsAsync(CancellationToken cancellationToken)
+    {
+        if (!_options.ManagerWorkflowSyncEnabled)
+        {
+            return [];
+        }
+
+        try
+        {
+            var connections = await SyncingConnectionsAsync(cancellationToken).ConfigureAwait(false);
+            var uow = await UnitOfWork.OpenAsync(_database, cancellationToken).ConfigureAwait(false);
+            await using (uow.ConfigureAwait(false))
+            {
+                var linkedTo = new HashSet<long>();
+                foreach (var workflow in await _libraries.ListAsync(uow).ConfigureAwait(false))
+                {
+                    if (workflow.DiscoveredFromConnectionId is { } discovered)
+                    {
+                        linkedTo.Add(discovered);
+                    }
+
+                    linkedTo.UnionWith(await _libraries.ManagerConnectionIdsAsync(uow, workflow.Id).ConfigureAwait(false));
+                }
+
+                return connections.Where(entry => !linkedTo.Contains(entry.Id)).ToList();
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return [];
+        }
+#pragma warning disable CA1031 // The retries are a convenience; a failed look ends them and the periodic task still checks.
+        catch (Exception exception)
+#pragma warning restore CA1031
+        {
+            LogLookFailed(_logger, exception);
+            return [];
+        }
+    }
+
     /// <summary>One pass over every enabled Deluno connection. <paramref name="trigger"/> is why it runs, as an Activity trigger.</summary>
-    public async Task SyncAllAsync(string trigger, CancellationToken cancellationToken)
+    public Task SyncAllAsync(string trigger, CancellationToken cancellationToken) => SyncAsync(trigger, null, cancellationToken);
+
+    private async Task SyncAsync(string trigger, HashSet<long>? only, CancellationToken cancellationToken)
     {
         if (!_options.ManagerWorkflowSyncEnabled)
         {
@@ -123,7 +289,10 @@ public sealed partial class ManagerWorkflowSync : IDisposable
         {
             foreach (var (connectionId, connection) in await SyncingConnectionsAsync(cancellationToken).ConfigureAwait(false))
             {
-                await SyncConnectionAsync(connectionId, connection, trigger, cancellationToken).ConfigureAwait(false);
+                if (only is null || only.Contains(connectionId))
+                {
+                    await SyncConnectionAsync(connectionId, connection, trigger, cancellationToken).ConfigureAwait(false);
+                }
             }
         }
         finally
@@ -178,7 +347,22 @@ public sealed partial class ManagerWorkflowSync : IDisposable
         }
     }
 
-    public void Dispose() => _running.Dispose();
+    public void Dispose()
+    {
+        lock (_gate)
+        {
+            _stopping.Cancel();
+            _wake?.Cancel();
+        }
+
+        _running.Dispose();
+    }
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Weir could not check which media managers still have no workflows, so it will not look again until the next scheduled update.")]
+    private static partial void LogLookFailed(ILogger logger, Exception error);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "{Label} has not reported any libraries for Weir's workflows yet, so Weir will look again in {Seconds} seconds.")]
+    private static partial void LogWillLookAgain(ILogger logger, string label, int seconds);
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "{Label} did not answer, so Weir left its workflows as they are and will look again.")]
     private static partial void LogNotAnswering(ILogger logger, string label);

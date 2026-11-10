@@ -12,6 +12,7 @@ using Weir.Core.Settings;
 using Weir.Core.Time;
 using Weir.Core.Validation;
 using Weir.Infrastructure.Logging;
+using Weir.Infrastructure.MediaManagers;
 using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Settings;
 
@@ -74,6 +75,7 @@ internal sealed class SuiteConfigurationEndpointHandlers
     private readonly ITimeZoneResolver _zones;
     private readonly ScanSettingsChanges _scanSettingsChanges;
     private readonly WeirLogFile _logFile;
+    private readonly ManagerWorkflowSync _workflowSync;
 
     public SuiteConfigurationEndpointHandlers(
         SuiteSettingsStore suiteSettings,
@@ -82,8 +84,10 @@ internal sealed class SuiteConfigurationEndpointHandlers
         BackupPasswordStore backupPassword,
         ITimeZoneResolver zones,
         ScanSettingsChanges scanSettingsChanges,
-        WeirLogFile logFile)
+        WeirLogFile logFile,
+        ManagerWorkflowSync workflowSync)
     {
+        _workflowSync = workflowSync;
         _suiteSettings = suiteSettings;
         _bundle = bundle;
         _backups = backups;
@@ -138,6 +142,12 @@ internal sealed class SuiteConfigurationEndpointHandlers
 
         await request.CommitAsync().ConfigureAwait(false);
         PruneLog(request, (int)Math.Max(1, Math.Min(3650, updated.LogRetentionDays)));
+        if (wizard is not null && string.Equals(updated.SetupWizardState, "completed", StringComparison.Ordinal))
+        {
+            // Setup is where a person connects a manager and confirms its libraries; look for its folders now, not at the next tick.
+            _workflowSync.RequestSync();
+        }
+
         return ApiRoutes.Ok(output);
     }
 

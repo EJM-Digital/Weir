@@ -220,6 +220,34 @@ public sealed class DelunoWorkflowSyncApiTests
     }
 
     [Fact]
+    public async Task Finishing_first_run_setup_runs_the_sync_at_once()
+    {
+        using var rig = new Rig();
+        var (server, client, manager) = await StartAsync(rig);
+        await using var _server = server;
+        await ConnectAsync(client);
+        await SyncedWorkflowsAsync(client);
+        manager.Json(HttpMethod.Get, DestinationsPath, Destinations(rig, "Completed/Movies 4K"));
+
+        using var done = await client.PutAsync("/api/v1/suite/settings", new
+        {
+            csrf_token = await client.CsrfAsync(),
+            setup_wizard_state = "completed",
+            app_timezone = "UTC",
+            log_retention_days = 30,
+        });
+        Assert.Equal(HttpStatusCode.OK, done.StatusCode);
+
+        var expected = rig.Folder("Completed/Movies 4K");
+        var workflows = await Eventually.PollAsync(
+            () => WorkflowsAsync(client),
+            all => Workflow(all, "movie")["watched_folder"]!.GetValue<string>() == expected,
+            TimeSpan.FromSeconds(30));
+
+        Assert.Equal(expected, Workflow(workflows, "movie")["watched_folder"]!.GetValue<string>());
+    }
+
+    [Fact]
     public async Task Unlinking_a_workflow_makes_its_folders_its_own_and_the_sync_leaves_it_alone()
     {
         using var rig = new Rig();
