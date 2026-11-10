@@ -18,6 +18,7 @@ public sealed partial class MediaManagerIntake
     {
         if (repeats.Count == 0)
         {
+            // Stryker disable once Statement : Equivalent. With no repeat the lines below only read the output folder and loop over nothing.
             return;
         }
 

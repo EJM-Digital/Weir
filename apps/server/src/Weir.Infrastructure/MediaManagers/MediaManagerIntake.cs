@@ -161,6 +161,7 @@ public sealed partial class MediaManagerIntake
             return new MediaManagerIntakeIdentity(Authenticated: false, soleConnectionId);
         }
 
+        // Stryker disable once String : Equivalent. A missing secret and a made-up one both fail the digest comparison below with the same refusal.
         var provided = WireStrings.Strip(presented ?? string.Empty);
         if (provided.Length == 0 || !MediaManagerConnectionService.CompareDigest(provided, configured))
         {
@@ -394,6 +395,7 @@ public sealed partial class MediaManagerIntake
                 {
                     foreach (var retired in GoneLooks.RetireOthers(connection, transaction, active, library.Id, target))
                     {
+                        // Stryker disable once Statement : Equivalent. The takeover above announces the same topics for the same lane, and a unit of work says each topic once.
                         _jobs.AnnounceQueueChange(transaction, retired.JobKind);
                     }
 

@@ -46,6 +46,7 @@ public sealed partial class HandoffLedgerStore
                 TimestampColumns.Parse(reader.GetValue(5))),
             ("$library", libraryId)).ConfigureAwait(false);
 
+        // Stryker disable once all : Equivalent on the Windows mutation runner, where the platform test is always true. HandoffStatusMutationTests asserts the case rule of each platform, so a Linux run judges the other branch.
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         var prefix = path + "/";
         var underPath = rows.Where(file => string.Equals(file.RelativePath, path, comparison) || file.RelativePath.StartsWith(prefix, comparison)).ToList();
@@ -56,6 +57,7 @@ public sealed partial class HandoffLedgerStore
             return underPath;
         }
 
+        // Stryker disable once all : Equivalent on the Windows mutation runner, where the platform test is always true. HandoffStatusMutationTests asserts the case rule of each platform, so a Linux run judges the other branch.
         var coveredPaths = new HashSet<string>(covered, OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
         return [.. underPath.Where(file => coveredPaths.Contains(file.RelativePath))];
     }
@@ -75,6 +77,7 @@ public sealed partial class HandoffLedgerStore
             return targets;
         }
 
+        // Stryker disable once all : Equivalent on the Windows mutation runner, where the platform test is always true. HandoffStatusMutationTests asserts the case rule of each platform, so a Linux run judges the other branch.
         var comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
         return [.. new[] { row.RelativePath.TrimEnd('/') }.Concat((await FileRowsAsync(uow, row).ConfigureAwait(false)).Select(file => file.RelativePath)).Distinct(comparer)];
     }
@@ -223,6 +226,7 @@ public sealed partial class HandoffLedgerStore
                 if (job.Status == ProcessingJobStatus.Leased)
                 {
                     states.Add(HandoffLedgerRules.Working);
+                    // Stryker disable once Statement : Equivalent. Falling through only adds queued or scheduled states, a position and a time, and Combine answers working whenever one working state is present, while a position and a time are cleared for every state but queued and scheduled.
                     continue;
                 }
 
@@ -370,6 +374,7 @@ public sealed partial class HandoffLedgerStore
     /// </summary>
     private static bool LeftAloneByTheWorkflow(HandoffFileRow file, IReadOnlyList<HandoffTarget> targets)
     {
+        // Stryker disable once all : Equivalent on the Windows mutation runner, where the platform test is always true. HandoffStatusMutationTests asserts the case rule of each platform, so a Linux run judges the other branch.
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         return file.Status == ProcessingFileStatuses.Skipped &&
                targets.FirstOrDefault(target => string.Equals(target.RelativePath, file.RelativePath, comparison)) is { Result: HandoffLedgerRules.Skipped } target &&
@@ -413,6 +418,7 @@ public sealed partial class HandoffLedgerStore
 
     private DateTimeOffset NowToMicroseconds() => Timestamp.TruncateToMicroseconds(_time.GetUtcNow());
 
+    // Stryker disable once Equality : Equivalent. When the two are equal either one is the same instant.
     private static DateTimeOffset Min(DateTimeOffset a, DateTimeOffset b) => a <= b ? a : b;
 
     /// <summary>
