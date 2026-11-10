@@ -133,7 +133,10 @@ public sealed partial class HandoffCompletionReporter
         TimeSpan? retryAfter;
         try
         {
-            using var client = new HttpClient(_handlers.Handler(followRedirects: false), disposeHandler: false) { Timeout = CompletionReports.Timeout };
+            // The wait for the manager is timed on the injected clock, so a test moves it instead of waiting it out.
+            using var timeout = new CancellationTokenSource(CompletionReports.Timeout, _time);
+            using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
+            using var client = new HttpClient(_handlers.Handler(followRedirects: false), disposeHandler: false);
             using var request = new HttpRequestMessage(HttpMethod.Post, target.Url)
             {
                 // Compact, UTF-8, no ASCII escaping: the body bytes managers already receive.
@@ -150,12 +153,12 @@ public sealed partial class HandoffCompletionReporter
                 }
             }
 
-            using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            using var response = await client.SendAsync(request, limit.Token).ConfigureAwait(false);
             status = (int)response.StatusCode;
             retryAfter = RetryAfterOf(response);
             if (status == (int)HttpStatusCode.Conflict)
             {
-                tooLate = CompletionReports.IsTooLate(status, await ReadAnswerAsync(response, cancellationToken).ConfigureAwait(false));
+                tooLate = CompletionReports.IsTooLate(status, await ReadAnswerAsync(response, limit.Token).ConfigureAwait(false));
             }
         }
         catch (Exception exception) when (exception is HttpRequestException or IOException or TaskCanceledException or UriFormatException or InvalidOperationException)

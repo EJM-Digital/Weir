@@ -6,7 +6,8 @@ namespace Weir.Infrastructure.IO;
 /// </summary>
 public static class PathContainment
 {
-    private static StringComparison Comparison =>
+    /// <summary>How paths are compared on this machine: ignoring case on Windows, exactly elsewhere.</summary>
+    public static StringComparison Comparison =>
         OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
     /// <summary>

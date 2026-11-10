@@ -35,6 +35,7 @@ public sealed class ServerHostTests
 
         Assert.Equal(Policy.StartLimitBurst, gaveUp.Attempts);
         Assert.StartsWith("exited with code 3", gaveUp.Reason, StringComparison.Ordinal);
+        Assert.Matches(@"^exited with code 3 after running [0-9.]+ s [(].+[)]$", gaveUp.Reason);
         Assert.Equal($"Weir did not start after {Policy.StartLimitBurst} attempts; the last failed: {gaveUp.Reason}", gaveUp.Message);
         // The waits between the five attempts, with the jitter's random number at 0: half of 2, 4, 8 and 16 seconds.
         Assert.Equal(

@@ -87,17 +87,22 @@ public sealed class HandoffReportPostingTests : IDisposable
         Assert.Contains((LogLevel.Warning, $"Hand-off report to {Url} failed: The wire was cut."), _fixture.ReporterLog.Messages);
     }
 
-    [Fact(Timeout = 60_000)]
-    public async Task A_report_to_a_manager_that_never_answers_is_given_up_on_after_twenty_seconds()
+    [Fact(Timeout = 30_000)]
+    public async Task A_report_to_a_manager_that_never_answers_is_given_up_on_when_the_clock_has_run_the_timeout_out()
     {
-        var hanging = new HandoffCompletionReporter(
-            _fixture.Connections, _fixture.ConnectionStore, _fixture.Ledger, _fixture.Targets, _fixture.Libraries, new HangingHandlers(), _fixture.Store.Clock, _fixture.ReporterLog);
-        var started = System.Diagnostics.Stopwatch.StartNew();
+        var hanging = new HangingHandlers();
+        var reporter = new HandoffCompletionReporter(
+            _fixture.Connections, _fixture.ConnectionStore, _fixture.Ledger, _fixture.Targets, _fixture.Libraries, hanging, _fixture.Store.Clock, _fixture.ReporterLog);
 
-        var delivery = await hanging.PostHandoffReportAsync(Target(), Body());
+        var posting = reporter.PostHandoffReportAsync(Target(), Body());
+        await hanging.Arrived.Task;
+        _fixture.Store.Clock.Advance(CompletionReports.Timeout - TimeSpan.FromSeconds(1));
+        Assert.False(posting.IsCompleted);
+        _fixture.Store.Clock.Advance(TimeSpan.FromSeconds(1));
+        var delivery = await posting;
 
+        Assert.False(delivery.Accepted);
         Assert.StartsWith("failed: could not reach ", delivery.Status, StringComparison.Ordinal);
-        Assert.InRange(started.Elapsed, CompletionReports.Timeout - TimeSpan.FromSeconds(2), CompletionReports.Timeout + TimeSpan.FromSeconds(15));
     }
 
     [Theory]
@@ -202,12 +207,15 @@ public sealed class HandoffReportPostingTests : IDisposable
     /// <summary>A manager that takes the request and never answers it.</summary>
     private sealed class HangingHandlers : IManagerHttpHandlerFactory
     {
-        public HttpMessageHandler Handler(bool followRedirects, ManagerAddressPolicy policy = ManagerAddressPolicy.Local) => new Hanging();
+        public TaskCompletionSource Arrived { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        private sealed class Hanging : HttpMessageHandler
+        public HttpMessageHandler Handler(bool followRedirects, ManagerAddressPolicy policy = ManagerAddressPolicy.Local) => new Hanging(Arrived);
+
+        private sealed class Hanging(TaskCompletionSource arrived) : HttpMessageHandler
         {
             protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
+                arrived.TrySetResult();
                 var never = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
                 await using var registration = cancellationToken.Register(() => never.TrySetCanceled(cancellationToken));
                 return await never.Task;

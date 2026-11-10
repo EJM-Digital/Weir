@@ -27,7 +27,8 @@ public sealed partial class HandoffCompletionReporter
         var ready = await StageReadyReportAsync(uow, origin, finish, result, libraryId, cancellationToken).ConfigureAwait(false);
 
         // Held from before the report is owed to after it is settled, so the heartbeat never finds it mid-delivery and sends it again.
-        // Stryker disable once Conditional,Logical : the claim is held only until this method returns and is read only to skip a second delivery; taking it with no target or with no delivery to make changes nothing the heartbeat or a caller can see.
+        // Stryker disable once Conditional : the claim is held only until this method returns and is read only to skip a second delivery; taking it with no target or with no delivery to make changes nothing the heartbeat or a caller can see.
+        // Stryker disable once Logical : the claim is held only until this method returns and is read only to skip a second delivery; taking it with no target or with no delivery to make changes nothing the heartbeat or a caller can see.
         using var claim = deliverNow && ready.Target is not null ? TryBeginDelivery(origin.SourceKey, origin.HandoffId!) : null;
         PendingReport? owed;
         try

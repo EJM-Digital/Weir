@@ -64,6 +64,24 @@ public sealed class ServerHostWatchdogTests
     }
 
     [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_watchdog_that_has_given_up_does_not_look_at_the_server_again()
+    {
+        using var rig = new StartRig();
+        await rig.StartReadyAsync();
+        var lookedWhenGivingUp = -1;
+        rig.Host.Watch(() => lookedWhenGivingUp = rig.Host.WatchLooks, CancellationToken.None);
+        StartRig.Steer(ExitCode, "3");
+        await KillAsync(rig.Starts[0].Pid);
+        var ended = Task.Run(() => StartRig.UntilAsync(() => lookedWhenGivingUp >= 0 && !rig.Host.IsWatching, "the watchdog to give up"));
+        await rig.DriveAsync(ended, AfterRetry(rig.LatestExitedAsync));
+
+        rig.Clock.Advance(TimeSpan.FromMinutes(5));
+
+        Assert.True(lookedWhenGivingUp > 0);
+        Assert.Equal(lookedWhenGivingUp, rig.Host.WatchLooks);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
     public async Task A_server_stopped_on_purpose_is_never_started_again_by_the_watchdog()
     {
         using var rig = new StartRig();

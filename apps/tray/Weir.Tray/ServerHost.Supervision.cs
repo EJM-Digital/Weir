@@ -134,11 +134,6 @@ sealed partial class ServerHost
                 // Stopped on purpose (quit, update).
                 return;
             }
-            if (exited is null)
-            {
-                continue;
-            }
-
             if (!await RestartAfterExitAsync(exited, cancellationToken).ConfigureAwait(false))
             {
                 onGaveUp();
@@ -176,13 +171,13 @@ sealed partial class ServerHost
 
     // The server ran and then exited. That is a failed run like any other: counted, waited for, tried again, or given up on.
     // Returns whether the server is back and ready.
-    internal async Task<bool> RestartAfterExitAsync(Process exited, CancellationToken cancellationToken)
+    internal async Task<bool> RestartAfterExitAsync(Process? exited, CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            // A port change may have replaced the server while the watchdog waited.
-            if (!ReferenceEquals(_process, exited))
+            // A port change may have replaced the server, or a quit cleared it, while the watchdog waited: nothing then exited.
+            if (exited is null || !ReferenceEquals(_process, exited))
             {
                 return true;
             }
@@ -407,6 +402,9 @@ sealed partial class ServerHost
     internal Func<Process, Task<ServerStopOutcome>> StopHung { get; set; } =
         process => ServerProcessStop.StopAsync(process, ServerStopTimeouts.Orphan);
 
+    // Starts the server process from its start info. A test replaces it to read the start info.
+    internal Func<ProcessStartInfo, Process?> Launch { get; set; } = Process.Start;
+
     // What the server said about why it cannot start, or null. A test replaces it.
     internal Func<StartupError?>? ServerSaidOverride { get; set; }
 
@@ -520,7 +518,7 @@ sealed partial class ServerHost
         // The server reports its progress on standard output as well as in the file; the tray owns that pipe.
         start.Environment[StartProgressFile.PipeVariable] = "1";
 
-        var process = Started(Process.Start(start));
+        var process = Started(Launch(start));
         _feed = new StartProgressFeed(process.Id);
         _output.Attach(process, _feed);
 
