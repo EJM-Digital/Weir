@@ -346,6 +346,7 @@ sealed partial class ServerHost
         }
         catch (ServerExitedException ex)
         {
+            // Stryker disable once Statement : the exited process stays in _process, and every reader of _process treats an exited process as not running (HasExited), so only the unreleased handle differs.
             ForgetFailedProcess(process);
             var got = watch.Last is { } last ? $" (last phase: {last.Words})" : " (before it reported anything)";
             _lastAttemptFoundPortInUse = ex.ExitCode == ServerExitCodes.PortInUse;
@@ -436,6 +437,7 @@ sealed partial class ServerHost
     {
         if (TakeProcess(process))
         {
+            // Stryker disable once Statement : releases the exited process's OS handle, which the finalizer releases anyway; no behaviour a test can observe.
             process.Dispose();
         }
     }

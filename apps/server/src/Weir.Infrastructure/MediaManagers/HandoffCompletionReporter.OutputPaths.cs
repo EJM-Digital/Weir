@@ -44,6 +44,7 @@ public sealed partial class HandoffCompletionReporter
             return null;
         }
 
+        // Stryker disable once Conditional : paths ignore case on Windows, where this mutation run is made, so the true branch is the real one there; the other branch is killed on Linux by HandoffOutputPathTranslationTests.A_folder_named_with_other_capitals_is_the_same_folder_only_where_paths_ignore_case.
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         var fileParts = file.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Where(p => p.Length > 0).ToList();
         var folderParts = folder.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Where(p => p.Length > 0).ToList();

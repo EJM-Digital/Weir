@@ -58,6 +58,11 @@ public sealed class StartWatchTests
         watch.Check(Reading("ready", at: TimeSpan.FromSeconds(2)), Reading("ready", at: TimeSpan.FromSeconds(3)));
 
         Assert.True(watch.ReportedReady);
+
+        // One channel alone says it again.
+        watch.Check(Reading("ready", at: TimeSpan.FromSeconds(4)), null);
+
+        Assert.True(watch.ReportedReady);
     }
 
     [Fact]

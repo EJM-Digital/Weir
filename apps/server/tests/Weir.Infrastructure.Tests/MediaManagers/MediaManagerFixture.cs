@@ -33,7 +33,7 @@ internal sealed class MediaManagerFixture : IDisposable
         Ledger = new HandoffLedgerStore(Store.Clock, Targets, Files);
         Jobs = new ProcessingJobStore(Store.Database, Store.Clock, wakeSignals: WakeSignals, changes: Changes);
         SkipMarkers = new FileSkipMarkerStore();
-        Reporter = new HandoffCompletionReporter(Connections, ConnectionStore, Ledger, Targets, Libraries, Http, Store.Clock);
+        Reporter = new HandoffCompletionReporter(Connections, ConnectionStore, Ledger, Targets, Libraries, Http, Store.Clock, ReporterLog);
         Artwork = new ArtworkSubjects(new ArtworkLookupStore(), new ArtworkFileStore());
         Intake = new MediaManagerIntake(Store.Options, Connections, ConnectionStore, Ledger, Targets, Jobs, SkipMarkers, Reporter, Artwork, Store.Clock, Activity);
         OperatorSettings = new OperatorSettingsStore();
@@ -87,6 +87,9 @@ internal sealed class MediaManagerFixture : IDisposable
     public MediaManagerIntake Intake { get; }
 
     public HandoffCompletionReporter Reporter { get; }
+
+    /// <summary>What the reporter logged, at every level.</summary>
+    public CapturingLogger<HandoffCompletionReporter> ReporterLog { get; } = new();
 
     public OperatorSettingsStore OperatorSettings { get; }
 

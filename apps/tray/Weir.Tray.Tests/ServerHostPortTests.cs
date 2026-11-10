@@ -133,7 +133,7 @@ public sealed class ServerHostPortTests
 
         // The tray says what happened, not "after 1 tries".
         Assert.True(rig.Host.NoPortChosen);
-        Assert.Equal("No port chosen", rig.Host.GaveUpError?.Headline);
+        Assert.Equal(new StartupError("No port chosen", string.Empty), rig.Host.GaveUpError);
         Assert.DoesNotContain("tries", rig.Host.GaveUpError?.Headline, StringComparison.Ordinal);
     }
 
@@ -143,7 +143,12 @@ public sealed class ServerHostPortTests
         using var rig = new StartRig(portUnknown: true);
         var port = StartRig.AnotherPort();
         var chosen = false;
-        rig.Host.ResolvePort = _ => Task.FromResult(new PortChoice.Resolution(chosen ? port : null, Busy: false));
+        bool? closedWhenAskedAgain = null;
+        rig.Host.ResolvePort = _ =>
+        {
+            closedWhenAskedAgain = chosen ? rig.Host.NoPortChosen : null;
+            return Task.FromResult(new PortChoice.Resolution(chosen ? port : null, Busy: false));
+        };
         await GiveUpAsync(rig, rig.Host.StartAsync(CancellationToken.None));
         Assert.True(rig.Host.NoPortChosen);
 
@@ -158,6 +163,7 @@ public sealed class ServerHostPortTests
         });
 
         Assert.True(await restart);
+        Assert.False(closedWhenAskedAgain);
         Assert.False(rig.Host.NoPortChosen);
         Assert.Null(rig.Host.GaveUpError);
     }
@@ -173,5 +179,7 @@ public sealed class ServerHostPortTests
         Assert.False(File.Exists(PortFile(rig)));
         Assert.Empty(rig.Starts);
         Assert.Equal(ListenScope.ThisPcOnly, rig.Host.Scope);
+        Assert.Contains("Change port: not done, because the saved port is not known yet. Restart Weir first.", rig.TrayLog, StringComparison.Ordinal);
+        Assert.Contains("LAN access: not changed, because the port is not known yet. Restart Weir first.", rig.TrayLog, StringComparison.Ordinal);
     }
 }

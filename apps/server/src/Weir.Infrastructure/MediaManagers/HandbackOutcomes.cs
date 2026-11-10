@@ -201,6 +201,7 @@ public sealed class HandbackOutcomes
             }
         }
 
+        // Stryker disable once Assignment : afterAll is already true only when a copy heard the word, and that copy is in named, so the right-hand side is false then and |= and ^= agree.
         afterAll |= supersedes && named.Count == 0;
         var released = outcome == HandbackRules.Imported && removed > 0 && kept == 0;
         var message = HandbackRules.OutcomeMessage(manager, outcome, removed, gone, kept, firstKeptNote, importedBy);
@@ -293,6 +294,7 @@ public sealed class HandbackOutcomes
     /// <summary>One candidate: of the right kind of library when there is a choice, still looked after, newest.</summary>
     private static HandbackRow? Choose(List<HandbackRow> candidates, string mediaScope)
     {
+        // Stryker disable once Equality : with exactly one candidate both branches return it: the scope filter keeps it or falls back to all candidates, which is the same row.
         if (candidates.Count <= 1)
         {
             return candidates.FirstOrDefault();

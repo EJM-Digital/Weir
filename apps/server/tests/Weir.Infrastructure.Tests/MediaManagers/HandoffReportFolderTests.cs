@@ -1,5 +1,6 @@
 using System.Net;
 using Weir.Core.Json;
+using Weir.Core.MediaManagers;
 
 namespace Weir.Infrastructure.Tests.MediaManagers;
 
@@ -215,5 +216,104 @@ public sealed class HandoffReportFolderTests : IDisposable
         Assert.StartsWith("queued: the manager would not list its libraries", status, StringComparison.Ordinal);
         Assert.Equal(1, await OwedAsync());
         Assert.Empty(_fixture.Http.RequestsTo(HttpMethod.Post, Callback));
+    }
+
+    private WireObject FailedInTheOutputFolder(string relative) => Failed(relative).Set("processing_output_folder_resolved", Output);
+
+    [Fact]
+    public async Task A_folder_hand_off_that_failed_where_the_output_folder_is_known_is_reported_at_once_though_the_manager_will_not_list_its_libraries()
+    {
+        var library = await _fixture.LibraryAsync("tv", _fixture.Store.Home.Join("tv"));
+        await StartAsync(library);
+        _fixture.Http.Throw(HttpMethod.Get, Manifest, new HttpRequestException("refused"));
+
+        await ReportAsync(Episodes[0], FailedInTheOutputFolder(Episodes[0]), library);
+        var status = await ReportAfterTheRetriesAsync(Episodes[1], FailedInTheOutputFolder(Episodes[1]), library);
+
+        Assert.Equal("reported failed to Deluno on 192.0.2.30", status);
+        Assert.Equal("failed", await LedgerStateAsync());
+        Assert.Equal(0, await OwedAsync());
+        Assert.Single(_fixture.Http.RequestsTo(HttpMethod.Post, Callback));
+    }
+
+    [Fact]
+    public async Task A_folder_hand_off_delivered_with_no_output_folder_anywhere_names_no_folder()
+    {
+        var library = await _fixture.LibraryAsync("tv", _fixture.Store.Home.Join("tv"));
+        await _fixture.Store.Execute($"UPDATE libraries SET output_folder = '' WHERE id = {library}");
+        await StartAsync(library);
+        _fixture.DelunoListsNoLibraries();
+
+        await ReportAsync(Episodes[0], Delivered(Episodes[0], withFolder: false), library);
+        await ReportAsync(Episodes[1], Delivered(Episodes[1], withFolder: false), library);
+
+        var body = (WireObject)Assert.Single(_fixture.Http.RequestsTo(HttpMethod.Post, Callback)).Json!;
+        Assert.Equal("completed", ((WireString)body["status"]).Value);
+        Assert.False(body.ContainsKey("outputPath"));
+    }
+
+    [Fact]
+    public async Task A_file_that_needed_no_work_is_counted_delivered_but_lists_no_output_file()
+    {
+        var library = await _fixture.LibraryAsync("tv", _fixture.Store.Home.Join("tv"));
+        await StartAsync(library);
+        _fixture.DelunoListsNoLibraries();
+        var needsNothing = new WireObject()
+            .Set("ok", true)
+            .Set("outcome", "live_skipped_not_required")
+            .Set("relative_media_path", Episodes[1])
+            .Set("processing_output_folder_resolved", Output);
+
+        await ReportAsync(Episodes[0], Delivered(Episodes[0]), library);
+        await ReportAsync(Episodes[1], needsNothing, library);
+
+        var body = (WireObject)Assert.Single(_fixture.Http.RequestsTo(HttpMethod.Post, Callback)).Json!;
+        Assert.Equal("completed", ((WireString)body["status"]).Value);
+        Assert.Equal(
+            [Path.Join(Output, "Show.S01", "Show.S01E01.mkv")],
+            ((WireArray)body["outputFiles"]).Items.Select(item => ((WireString)item).Value));
+    }
+
+    [Fact]
+    public async Task A_folder_hand_off_whose_files_were_all_taken_over_by_a_newer_send_is_cancelled_in_the_ledger()
+    {
+        var library = await _fixture.LibraryAsync("tv", _fixture.Store.Home.Join("tv"));
+        await StartAsync(library);
+        _fixture.DelunoListsNoLibraries();
+
+        await ReportAsync(Episodes[0], CompletionReports.SupersededResult(Episodes[0]), library);
+        await ReportAsync(Episodes[1], CompletionReports.SupersededResult(Episodes[1]), library);
+
+        Assert.Equal(HandoffLedgerRules.Cancelled, await LedgerStateAsync());
+        var body = (WireObject)Assert.Single(_fixture.Http.RequestsTo(HttpMethod.Post, Callback)).Json!;
+        Assert.Equal(CompletionReports.SupersededFailureClass, ((WireString)body["failureClass"]).Value);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_report_that_waits_for_the_manager_says_so_on_the_files_of_the_library_the_pass_named_before_the_ledgers(bool passNamesALibrary)
+    {
+        var ledgerLibrary = await _fixture.LibraryAsync("tv", _fixture.Store.Home.Join("tv"));
+        var passLibrary = await _fixture.LibraryAsync("tv", _fixture.Store.Home.Join("tv-2"), name: "Second TV");
+        await StartAsync(ledgerLibrary);
+        var withFiles = passNamesALibrary ? passLibrary : ledgerLibrary;
+        foreach (var episode in Episodes)
+        {
+            await _fixture.Store.Execute(
+                $"INSERT INTO files (library_id, relative_path, status, status_reason) VALUES ({withFiles}, '{episode}', 'processed', 'Finished processing this file.')");
+        }
+
+        _fixture.Http.Throw(HttpMethod.Get, Manifest, new HttpRequestException("refused"));
+        long? named = passNamesALibrary ? passLibrary : null;
+
+        await ReportAsync(Episodes[0], Delivered(Episodes[0]), named);
+        await ReportAfterTheRetriesAsync(Episodes[1], Delivered(Episodes[1]), named);
+
+        foreach (var episode in Episodes)
+        {
+            var reason = await _fixture.Store.ScalarText($"SELECT status_reason FROM files WHERE library_id = {withFiles} AND relative_path = '{episode}'");
+            Assert.Contains("Waiting for Deluno on 192.0.2.30", reason, StringComparison.Ordinal);
+        }
     }
 }

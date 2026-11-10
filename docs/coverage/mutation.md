@@ -128,4 +128,12 @@ For each survivor, write the test that fails on the changed line and passes on t
 the mutated line before you keep it: edit the line to what the survivor says it became, run the test, see it fail, put
 the line back. Tests use real recorded replies or real tools, never an assumed shape, and wait on events and fake clocks,
 never on a guessed delay. When a survivor cannot be killed because the change does not alter behaviour (an equivalent
-mutant, for example a different but equal way to build the same string), say so in the issue.
+mutant, for example a different but equal way to build the same string), say so in the issue and mark it in the code, on the line before the
+statement, so that next week's run does not report it again:
+
+```csharp
+// Stryker disable once Statement : the reason no test, however written, could tell the difference.
+process.Dispose();
+```
+
+The word after `once` is the mutator (`Statement`, `Block`, `String`, `Equality`, `Logical`, `Conditional`, `Assignment`, `NullCoalescing`, `Linq` and so on, as the survivor list names it). The reason is required and says why behaviour cannot change; "no test catches it" is not a reason. An equivalent mark that a later change makes untrue is removed with that change.

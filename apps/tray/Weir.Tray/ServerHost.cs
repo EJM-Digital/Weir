@@ -324,8 +324,10 @@ sealed partial class ServerHost : ITrayServer, IDisposable
     // leaves the server running, and the next tray start stops it as an orphan (Program.StopOrphanedServers).
     public void Dispose()
     {
+        // Stryker disable once Statement : disposing the HttpClient only frees its handler, which nothing here can see; the process is going away.
         _http.Dispose();
         _gate.Dispose();
+        // Stryker disable once Statement : disposing the output log only closes its file writer, and the file keeps everything already written.
         _output.Dispose();
     }
 }

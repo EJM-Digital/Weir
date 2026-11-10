@@ -116,6 +116,46 @@ public sealed class ServerHostWatchdogTests
 
         Assert.True(await restart);
         Assert.True(rig.Host.IsWatching);
+        Assert.Contains($"Restart: restarting the server on port {rig.Host.Port.ToString(CultureInfo.InvariantCulture)} ({ListenScope.ThisPcOnly.Describe()}).", rig.TrayLog, StringComparison.Ordinal);
+
+        // The restart has let go of the host: the next change is not kept waiting.
+        using var ceiling = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        Assert.Equal(ScopeChange.Unchanged, await rig.Host.MoveToScopeAsync(ListenScope.ThisPcOnly, ceiling.Token));
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task The_watchdog_is_started_again_when_a_move_to_other_devices_brings_the_server_back()
+    {
+        using var rig = new StartRig();
+        await rig.StartReadyAsync();
+        Assert.Equal(1, await GiveUpAsync(rig));
+        StartRig.Steer(ExitCode, null);
+
+        var move = rig.Host.MoveToScopeAsync(ListenScope.OtherDevices, CancellationToken.None);
+        await rig.DriveAsync(move, AfterRetry(rig.LatestListeningAsync));
+
+        Assert.Equal(ScopeChange.Applied, await move);
+        Assert.True(rig.Host.IsWatching);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_restart_shows_Starting_while_it_stops_and_starts_the_server_and_a_move_does_too()
+    {
+        using var rig = new StartRig();
+        await rig.StartReadyAsync();
+        var phases = new List<ServerPhase>();
+        rig.Host.PhaseChanged += () => phases.Add(rig.Host.Phase);
+
+        var restart = rig.Host.RestartNowAsync(CancellationToken.None);
+        await rig.DriveAsync(restart, AfterRetry(rig.LatestListeningAsync));
+        Assert.True(await restart);
+        Assert.Equal([ServerPhase.Starting, ServerPhase.Running], phases);
+
+        phases.Clear();
+        var move = rig.Host.MoveToPortAsync(StartRig.AnotherPort(), CancellationToken.None);
+        await rig.DriveAsync(move, AfterRetry(rig.LatestListeningAsync));
+        Assert.Equal(PortMove.Moved, await move);
+        Assert.Equal([ServerPhase.Starting, ServerPhase.Running], phases);
     }
 
     [Fact(Timeout = TestTimeoutMs)]
@@ -123,6 +163,7 @@ public sealed class ServerHostWatchdogTests
     {
         using var rig = new StartRig();
         await rig.StartReadyAsync();
+        var was = rig.Host.Port;
         var to = StartRig.AnotherPort();
 
         var move = rig.Host.MoveToPortAsync(to, CancellationToken.None);
@@ -135,6 +176,7 @@ public sealed class ServerHostWatchdogTests
         Assert.Equal(port, File.ReadAllText(FileOf(rig, ServerHost.CurrentPortFileName)).Trim());
         Assert.Equal(ServerPhase.Running, rig.Host.Phase);
         Assert.Contains($"Change port: Weir is healthy on http://127.0.0.1:{port}/ and port {port} is saved.", rig.TrayLog, StringComparison.Ordinal);
+        Assert.Contains($"Change port: restarting the server on port {port} (was {was.ToString(CultureInfo.InvariantCulture)}).", rig.TrayLog, StringComparison.Ordinal);
     }
 
     [Fact(Timeout = TestTimeoutMs)]
@@ -145,6 +187,8 @@ public sealed class ServerHostWatchdogTests
         var old = rig.Host.Port;
         var before = rig.Starts.Count;
         StartRig.Steer(ExitCode, "3");
+        // Going back must say again which port the server is on, whatever the file held in the meantime.
+        File.Delete(FileOf(rig, ServerHost.CurrentPortFileName));
 
         var move = rig.Host.MoveToPortAsync(StartRig.AnotherPort(), CancellationToken.None);
         await rig.DriveAsync(move, async delay =>
@@ -170,6 +214,7 @@ public sealed class ServerHostWatchdogTests
         Assert.Equal(old, rig.Host.Port);
         Assert.Equal(ServerPhase.Running, rig.Host.Phase);
         Assert.False(File.Exists(FileOf(rig, PortChoice.SavedPortFileName)));
+        Assert.Equal(old.ToString(CultureInfo.InvariantCulture), File.ReadAllText(FileOf(rig, ServerHost.CurrentPortFileName)).Trim());
         Assert.Contains($"Change port: going back to port {old.ToString(CultureInfo.InvariantCulture)}.", rig.TrayLog, StringComparison.Ordinal);
     }
 

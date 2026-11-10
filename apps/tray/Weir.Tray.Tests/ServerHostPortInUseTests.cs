@@ -53,7 +53,7 @@ public sealed class ServerHostPortInUseTests
         var port = rig.Host.Port.ToString(CultureInfo.InvariantCulture);
         Assert.Equal(ServerPhase.Stopped, rig.Host.Phase);
         Assert.Equal(rig.Host.Port, rig.Host.GaveUpPortInUse);
-        Assert.Equal($"Port {port} is in use", rig.Host.GaveUpError?.Headline);
+        Assert.Equal(new StartupError($"Port {port} is in use", string.Empty), rig.Host.GaveUpError);
         Assert.Contains($"Close the program that is using port {port}", rig.TrayLog, StringComparison.Ordinal);
         Assert.Contains("then use Restart Weir", rig.TrayLog, StringComparison.Ordinal);
         Assert.DoesNotContain("Restart Weir tries again", rig.TrayLog, StringComparison.Ordinal);
@@ -97,7 +97,7 @@ public sealed class ServerHostPortInUseTests
         await GiveUpAsync(rig, rig.Host.StartAsync(CancellationToken.None));
 
         Assert.Equal(0, rig.Host.GaveUpPortInUse);
-        Assert.Equal("Didn't start after 5 tries", rig.Host.GaveUpError?.Headline);
+        Assert.Equal(new StartupError("Didn't start after 5 tries", string.Empty), rig.Host.GaveUpError);
         Assert.DoesNotContain("in use by another program", rig.TrayLog, StringComparison.Ordinal);
     }
 

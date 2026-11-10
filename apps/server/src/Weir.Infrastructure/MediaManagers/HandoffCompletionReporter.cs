@@ -81,6 +81,7 @@ public sealed partial class HandoffCompletionReporter
         // The connection that sent the hand-off is the only one told how it ended. A second connection of the same kind never saw it, so
         // when the sender is known but switched off or removed the report waits for it; the first enabled one is used only when the
         // hand-off does not say who sent it.
+        // Stryker disable once Conditional : FindAsync with a null id matches no row (handoff_id = NULL is never true) and an empty id is never stored, so the guard only saves a query.
         var owner = string.IsNullOrEmpty(origin.HandoffId) ? null : await HandoffLedgerStore.FindAsync(uow, origin.SourceKey, origin.HandoffId).ConfigureAwait(false);
         MediaManagerConnectionRecord? connection;
         if (owner?.ConnectionId is { } owningId)
@@ -142,6 +143,7 @@ public sealed partial class HandoffCompletionReporter
             ConnectionTag.Apply(request, target.Connection.Reference);
             foreach (var (header, value) in target.Headers)
             {
+                // Stryker disable once String : HttpRequestHeaders refuses a content header name (TryAddWithoutValidation returns false), so adding Content-Type here is a no-op.
                 if (!string.Equals(header, "Content-Type", StringComparison.OrdinalIgnoreCase))
                 {
                     request.Headers.TryAddWithoutValidation(header, value);
@@ -340,6 +342,7 @@ public sealed partial class HandoffCompletionReporter
         HandoffTargetFinish finish;
         try
         {
+            // Stryker disable once Conditional : FindAsync with a null id matches no row (handoff_id = NULL is never true) and an empty id is never stored, so the guard only saves a query.
             var row = string.IsNullOrEmpty(origin.HandoffId) ? null : await HandoffLedgerStore.FindAsync(uow, origin.SourceKey, origin.HandoffId).ConfigureAwait(false);
             finish = await _targets.FinishAsync(uow, row, relative ?? string.Empty, result).ConfigureAwait(false);
             // Durable regardless of outcome: the next pass to finish must see this file's result even if it is not
@@ -444,7 +447,7 @@ public sealed partial class HandoffCompletionReporter
                 {
                     var waiting = IsTransientFailure(sent.Delivery);
                     var owed = waiting
-                        ? ToSendAgain(new PendingReport(origin.CallbackPath, origin.ReleaseName, origin.LibraryId, body, outcome.LibraryId, outcome.Subject, outcome.Files), sent.Delivery, _time.GetUtcNow())!.ToJson()
+                        ? ToSendAgain(new PendingReport(origin.CallbackPath, origin.LibraryId, body, outcome.LibraryId, outcome.Subject, outcome.Files), sent.Delivery, _time.GetUtcNow())!.ToJson()
                         : null;
                     await HandoffLedgerStore.SetPendingReportAsync(uow, origin.SourceKey, origin.HandoffId, owed).ConfigureAwait(false);
                     if (waiting && outcome.LibraryId is { } library)
