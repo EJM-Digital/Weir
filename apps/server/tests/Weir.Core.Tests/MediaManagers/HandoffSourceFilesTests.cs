@@ -69,7 +69,7 @@ public sealed class HandoffSourceFilesTests
     [InlineData("/w/Film", "/w/Film/../Other/other.mkv", false)]
     [InlineData("/w/Film", "/w/Film/sub/../../Other/other.mkv", false)]
     [InlineData("/w/Film", "/../../etc/other.mkv", false)]
-    [InlineData("/w/Film", "film.mkv", false)]
+    [InlineData("/w/Film", "/../w/Film/film.mkv", false)]    [InlineData("/w/Film", "film.mkv", false)]
     [InlineData(@"D:\Downloads\Film", @"D:\Downloads\Film\..\Other\other.mkv", true)]
     [InlineData(@"D:\Downloads\Film", @"E:\Downloads\Film\other.mkv", true)]
     public void A_file_outside_the_folder_refuses_the_list_naming_only_the_file(string sourcePath, string outside, bool windows)

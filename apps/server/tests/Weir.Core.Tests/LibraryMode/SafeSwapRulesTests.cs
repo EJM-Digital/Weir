@@ -31,7 +31,8 @@ public sealed class SafeSwapRulesTests
     [InlineData("/lib/Movie.weir-tmpx.mkv")]
     public void Only_exact_weir_names_are_leftovers(string path)
     {
-        Assert.False(SafeSwapRules.TryParseLeftover(path, out _, out _));
+        Assert.False(SafeSwapRules.TryParseLeftover(path, out var kind, out var original));
+        Assert.Equal((default(SwapLeftoverKind), string.Empty), (kind, original));
     }
 
     [Fact]

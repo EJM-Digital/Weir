@@ -60,6 +60,11 @@ public sealed class MediaManagerRulesTests
             "The hand-off names 'y.mkv', which is not inside Weir's watched folder for this media type. Point the media manager and Weir at the same folder — both hosts have to see it at that path.",
             HandoffPaths.RelativeMediaPathForHandoff("/srv", "/x/y.mkv").Problem);
         Assert.DoesNotContain("/srv", HandoffPaths.RelativeMediaPathForHandoff("/srv", "/x/y.mkv").Problem, StringComparison.Ordinal);
+        // A path with no file name in it is refused naming nothing.
+        Assert.StartsWith(
+            "The hand-off names '', which is not inside Weir's watched folder for this media type.",
+            HandoffPaths.RelativeMediaPathForHandoff("/srv", "/").Problem,
+            StringComparison.Ordinal);
     }
 
     [Fact]
