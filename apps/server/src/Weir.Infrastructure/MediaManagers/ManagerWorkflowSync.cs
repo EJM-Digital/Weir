@@ -136,12 +136,7 @@ public sealed partial class ManagerWorkflowSync : IDisposable
                 LogSyncFailed(_logger, exception);
             }
 
-            if (TakeRequest())
-            {
-                (retries, only) = (0, null);
-                continue;
-            }
-
+            // A request that came in during the pass or the look is not taken here: it ends the wait below at once and starts the retries afresh.
             var waiting = await WaitingForWorkflowsAsync(stopping).ConfigureAwait(false);
             if (waiting.Count == 0 || retries >= RetryLimit)
             {
@@ -249,10 +244,10 @@ public sealed partial class ManagerWorkflowSync : IDisposable
         try
         {
             var connections = await SyncingConnectionsAsync(cancellationToken).ConfigureAwait(false);
+            var linkedTo = new HashSet<long>();
             var uow = await UnitOfWork.OpenAsync(_database, cancellationToken).ConfigureAwait(false);
             await using (uow.ConfigureAwait(false))
             {
-                var linkedTo = new HashSet<long>();
                 foreach (var workflow in await _libraries.ListAsync(uow).ConfigureAwait(false))
                 {
                     if (workflow.DiscoveredFromConnectionId is { } discovered)
@@ -262,9 +257,9 @@ public sealed partial class ManagerWorkflowSync : IDisposable
 
                     linkedTo.UnionWith(await _libraries.ManagerConnectionIdsAsync(uow, workflow.Id).ConfigureAwait(false));
                 }
-
-                return connections.Where(entry => !linkedTo.Contains(entry.Id)).ToList();
             }
+
+            return connections.Where(entry => !linkedTo.Contains(entry.Id)).ToList();
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
