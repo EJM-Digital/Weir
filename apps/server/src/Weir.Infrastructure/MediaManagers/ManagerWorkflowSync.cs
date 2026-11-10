@@ -266,10 +266,6 @@ public sealed partial class ManagerWorkflowSync : IDisposable
                 return connections.Where(entry => !linkedTo.Contains(entry.Id)).ToList();
             }
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            return [];
-        }
 #pragma warning disable CA1031 // The retries are a convenience; a failed look ends them and the periodic task still checks.
         catch (Exception exception)
 #pragma warning restore CA1031

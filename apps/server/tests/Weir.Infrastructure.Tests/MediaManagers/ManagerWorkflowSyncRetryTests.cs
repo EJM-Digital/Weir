@@ -208,6 +208,31 @@ public sealed class ManagerWorkflowSyncRetryTests : IDisposable
     }
 
     [Fact]
+    public async Task With_syncing_switched_off_a_request_asks_nobody_and_starts_no_retries()
+    {
+        using var off = new MediaManagerFixture(("WEIR_MEDIA_MANAGER_WORKFLOW_SYNC_ENABLED", "0"));
+        await off.AddConnectionAsync("deluno", "http://192.0.2.30:5099", "k1");
+
+        off.WorkflowSync.RequestSync();
+        await off.WorkflowSync.Drained;
+
+        Assert.Empty(off.Http.Requests);
+    }
+
+    [Fact]
+    public async Task When_the_look_at_who_is_still_waiting_fails_the_retries_end_and_the_periodic_task_still_checks()
+    {
+        await ConnectAsync();
+        await _fixture.Store.Execute("ALTER TABLE libraries RENAME TO libraries_unavailable");
+
+        _sync.RequestSync();
+        await _sync.Drained;
+
+        Assert.Equal(0, _clock.TimersSet);
+        Assert.Contains(_log.Messages, message => message.Level == LogLevel.Debug && message.Message.Contains("will not look again", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task The_retries_stop_when_the_server_stops()
     {
         await ConnectAsync();
