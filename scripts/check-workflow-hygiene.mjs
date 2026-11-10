@@ -93,7 +93,7 @@ function findUnfilteredHeavyJobs(relative, lines) {
 
   const code = lines.map((line) => line.split("#")[0]);
   if (code.some((line) => /\bstryker\b/i.test(line))) {
-    failures.push(`${relative}: runs mutation testing and is triggered by a pull request. Mutation runs weekly and by hand only, and gates nothing (docs/ci-cost.md).`);
+    failures.push(`${relative}: runs mutation testing and is triggered by a pull request. Mutation runs automatically once a week (Sunday 11:17 UTC) and can also be started by hand; it gates nothing (docs/ci-cost.md).`);
   }
 
   const jobsAt = lines.findIndex((line) => /^jobs:/.test(line));
