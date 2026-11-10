@@ -78,6 +78,7 @@ function isNetworkUnreachableError(error: unknown): boolean {
 }
 
 let unauthorizedHandler: UnauthorizedHandler | null = null;
+// Stryker disable next-line BooleanLiteral: equivalent. No handler exists until setUnauthorizedHandler runs, and it sets this flag first.
 let unauthorizedHandled = false;
 
 export function setUnauthorizedHandler(
@@ -88,8 +89,7 @@ export function setUnauthorizedHandler(
 }
 
 export function resetUnauthorizedHandlingForTests(): void {
-  unauthorizedHandler = null;
-  unauthorizedHandled = false;
+  setUnauthorizedHandler(null);
 }
 
 function baseUrl(): string {
@@ -202,6 +202,7 @@ export async function readJson<T>(r: Response): Promise<T> {
 }
 
 async function readJsonBody(r: Response): Promise<unknown> {
+  // Stryker disable next-line StringLiteral: equivalent. Any non-empty stand-in for a missing header also lacks "application/json", so the next line returns the same.
   const ctype = (r.headers.get("content-type") || "").toLowerCase();
   if (!ctype.includes("application/json")) return undefined;
   try {

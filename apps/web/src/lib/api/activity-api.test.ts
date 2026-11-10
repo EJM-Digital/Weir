@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest";
-import { activityExportPath, activityRecentPath } from "./activity-api";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { jsonAnswer } from "../../test/stub-weir-api";
+import { expectRead, stubWire } from "../../test/wire";
+import {
+  activityExportPath,
+  activityRecentPath,
+  fetchActivityRecent,
+} from "./activity-api";
 
 describe("activity-api paths", () => {
   it("sends the new history filters on the feed", () => {
@@ -65,4 +71,27 @@ it("leaves out a number that is not a number instead of asking for NaN", () => {
     limit: Number.NaN,
   });
   expect(path).toBe("/api/v1/activity/recent");
+});
+
+describe("fetchActivityRecent", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("asks for the feed at its path and returns the answer", async () => {
+    const answer = { items: [], total: 0 };
+    const api = stubWire({ "GET /api/v1/activity/recent": answer });
+
+    await expect(fetchActivityRecent({ limit: 5 })).resolves.toEqual(answer);
+
+    expectRead(api, "/api/v1/activity/recent", [["limit", "5"]]);
+  });
+
+  it("says what failed when the server gives no reason it wants shown", async () => {
+    stubWire({
+      "GET /api/v1/activity/recent": jsonAnswer({ detail: "log text" }, 500),
+    });
+
+    await expect(fetchActivityRecent()).rejects.toThrow(
+      "Could not load activity.",
+    );
+  });
 });
