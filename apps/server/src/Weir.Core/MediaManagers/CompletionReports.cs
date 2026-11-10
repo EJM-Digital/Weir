@@ -123,6 +123,7 @@ public static class CompletionReports
     }
 
     private static string Outcome(WireObject result) =>
+        // Stryker disable once String : the text only has to equal none of the outcomes compared with, as the empty text does.
         WireStrings.Strip(result.Get("outcome") is { IsTruthy: true } value ? WireConvert.Str(value) : string.Empty);
 
     /// <summary><c>ok</c> and an outcome that actually wrote or verified a file.</summary>

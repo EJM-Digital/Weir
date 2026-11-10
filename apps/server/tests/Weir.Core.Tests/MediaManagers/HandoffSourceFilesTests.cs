@@ -69,7 +69,8 @@ public sealed class HandoffSourceFilesTests
     [InlineData("/w/Film", "/w/Film/../Other/other.mkv", false)]
     [InlineData("/w/Film", "/w/Film/sub/../../Other/other.mkv", false)]
     [InlineData("/w/Film", "/../../etc/other.mkv", false)]
-    [InlineData("/w/Film", "/../w/Film/film.mkv", false)]    [InlineData("/w/Film", "film.mkv", false)]
+    [InlineData("/w/Film", "/../w/Film/film.mkv", false)]
+    [InlineData("/w/Film", "film.mkv", false)]
     [InlineData(@"D:\Downloads\Film", @"D:\Downloads\Film\..\Other\other.mkv", true)]
     [InlineData(@"D:\Downloads\Film", @"E:\Downloads\Film\other.mkv", true)]
     public void A_file_outside_the_folder_refuses_the_list_naming_only_the_file(string sourcePath, string outside, bool windows)
@@ -81,6 +82,15 @@ public sealed class HandoffSourceFilesTests
         Assert.Equal(HandoffSourceFiles.OutsideDetail(outside), result.Problem);
         Assert.DoesNotContain("Downloads", result.Problem, StringComparison.Ordinal);
         Assert.EndsWith("Nothing was queued.", result.Problem, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_listed_path_with_no_file_name_is_refused_naming_nothing()
+    {
+        var result = HandoffSourceFiles.Resolve("/w/Film", "Film", ["/"], windows: false);
+
+        Assert.False(result.Ok);
+        Assert.Equal("The hand-off lists '', which is not inside the folder the hand-off names. Nothing was queued.", result.Problem);
     }
 
     [Fact]

@@ -146,13 +146,12 @@ public sealed class SqliteDatabase
     /// </summary>
     public void ClearPool()
     {
-        using var connection = new SqliteConnection(ConnectionString);
         if (_poolGate is null)
         {
-            SqliteConnection.ClearPool(connection);
             return;
         }
 
+        using var connection = new SqliteConnection(ConnectionString);
         lock (_poolGate)
         {
             SqliteConnection.ClearPool(connection);
@@ -353,6 +352,7 @@ public sealed class SqliteDatabase
         }
         catch
         {
+            // Stryker disable once Statement : every way into this catch fails before a handle is leased, so disposing releases nothing.
             connection.Dispose();
             throw;
         }

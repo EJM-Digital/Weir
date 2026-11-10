@@ -32,7 +32,7 @@ public static class WriteLockTurns
     public static TimeSpan PauseAfter(TimeSpan held)
     {
         var pause = held * PauseFactor;
-        return pause < MinimumPause ? MinimumPause : pause > MaximumPause ? MaximumPause : pause;
+        return TimeSpan.FromTicks(Math.Clamp(pause.Ticks, MinimumPause.Ticks, MaximumPause.Ticks));
     }
 
     /// <summary>Runs one of a bulk job's transactions, then leaves the lock free for a while before the job's next one.</summary>

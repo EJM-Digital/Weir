@@ -127,4 +127,6 @@ For each survivor, write the test that fails on the changed line and passes on t
 the mutated line before you keep it: edit the line to what the survivor says it became, run the test, see it fail, put
 the line back. Tests use real recorded replies or real tools, never an assumed shape, and wait on events and fake clocks,
 never on a guessed delay. When a survivor cannot be killed because the change does not alter behaviour (an equivalent
-mutant, for example a different but equal way to build the same string), say so in the issue.
+mutant, for example a different but equal way to build the same string), say so in the issue, and mark it in the code with a
+`// Stryker disable once <Mutator> : <reason>` comment on the line before, so the next run does not list it again. Do not put the
+comment in a file whose target mutates a span of characters (`SafeSwap.cs`), because it moves the span.
