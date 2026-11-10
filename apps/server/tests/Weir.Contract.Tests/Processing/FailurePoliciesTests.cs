@@ -29,7 +29,9 @@ public sealed class FailurePoliciesTests
         // The retry is queued by the hand-off itself and starts when the one-second backoff ends, so how many attempts a look
         // finds depends on how quickly the machine answers it: the file may be on its first failure, on its last, or already
         // handed back. So the scenario does not wait for a particular look. It watches every look until the original has been
-        // handed back: the count only goes up, and a failure that is still to be retried reports nothing to the manager.
+        // handed back: the count only goes up and never outruns the remuxes ffmpeg was asked for (the fake logs each one before
+        // failing it), and a look that finds the first failure finds it to be retried. That nothing was reported before the
+        // retries were spent is proven below, by the one report there is.
         var seen = 0L;
         await scenario.DriveRetriesUntilAsync(
             library,
@@ -40,16 +42,12 @@ public sealed class FailurePoliciesTests
                     var count = Scenario.Whole(row["failure_attempts"]);
                     Assert.True(count >= seen, $"the failure count went from {seen} to {count}: a retry started it over");
                     seen = count;
+                    var remuxes = scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux").Count;
+                    Assert.True(count <= remuxes, $"{count} failures were counted for {remuxes} attempts: a failure was counted twice");
                     if (count == 1 && (string)row["status"]! == "processing_failed")
                     {
                         Assert.Equal("execution", (string)row["failure_class"]!);
                         Assert.NotNull(row["next_retry_at"]);
-                        // Reports only ever accumulate, so one found now is the second failure's if the file has moved on since the row was read.
-                        if (Scenario.Callbacks(fake, "handoff-pt-1").Count > 0)
-                        {
-                            var later = await scenario.FileRowAsync(library, rel);
-                            Assert.True(Scenario.Whole(later!["failure_attempts"]) > 1, "a failure that will be retried is not final, so nothing is reported to the manager yet");
-                        }
                     }
                 }
 
@@ -68,8 +66,11 @@ public sealed class FailurePoliciesTests
             await scenario.WaitWhileWorkedOnAsync(
                 async () => (await scenario.JobsAsync(Scenario.PassThroughKind)).Select(job => (string)job["status"]!).ToList() is ["completed"] statuses ? statuses : null,
                 "the pass-through job to close"));
-        // No failure report ever reaches the manager: the file was delivered, not lost.
-        Assert.All(await scenario.WaitForReportsAsync(fake, "handoff-pt-1"), report => Assert.NotEqual("failed", (string)report["status"]!));
+        // One report reaches the manager, ever: the file was delivered, not lost. A failure that was going to be retried reports
+        // nothing, so this single report, made once the retries were spent, holds at any speed. It is not a failure.
+        var report = Assert.Single(await scenario.WaitForReportsAsync(fake, "handoff-pt-1"));
+        Assert.Equal("completed", (string)report["status"]!);
+        Assert.Equal($"{Scenario.DelunoOutputRoot}/Broken.Remux.2021/film.mkv", ((string)report["outputPath"]!).Replace('\\', '/'));
         var row = await scenario.FileStateAfterStopAsync(library, rel);
         Assert.Equal("passed_through", row["status"]);
         Assert.Equal(2L, row["failure_attempts"]);
