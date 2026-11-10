@@ -117,15 +117,11 @@ export function ProfilesTab() {
       setDraft(null);
       return;
     }
-    if (
-      selected.id !== selectedId ||
-      // Stryker disable next-line ConditionalExpression: a selected id with no draft cannot happen. Every move sets both together (open, and this effect), so the id test already holds whenever the draft is empty.
-      draft === null
-    ) {
+    if (selected.id !== selectedId) {
       setSelectedId(selected.id);
       setDraft(writeFromProcessingRuleSet(selected));
     }
-  }, [creating, draft, ruleSets.data, selectedId]);
+  }, [creating, ruleSets.data, selectedId]);
 
   // Stryker disable next-line ArrayDeclaration: `rows` is read for output only after the loading and error returns below, so a list that has not arrived is never drawn; and the one-item stand-in has no `id`, so the `find` before those returns matches nothing, as the empty list does.
   const rows = ruleSets.data ?? [];
@@ -166,12 +162,7 @@ export function ProfilesTab() {
     : null;
   // Stryker disable next-line ArrayDeclaration: the filter below drops a stand-in item (it has no `rule_set_id`), so the list is empty either way.
   const usedBy = (libraries.data ?? [])
-    .filter(
-      (library) =>
-        library.rule_set_id === selectedId &&
-        // Stryker disable next-line ConditionalExpression: the only state with no selected profile is the new-profile workspace and the empty list, and neither draws the "used by" line, so the names it would find (workflows with no profile) are never shown.
-        selectedId !== null,
-    )
+    .filter((library) => library.rule_set_id === selectedId)
     .map((library) => library.name);
 
   const open = (id: number | null, next: ProcessingRuleSetWrite | null) => {
