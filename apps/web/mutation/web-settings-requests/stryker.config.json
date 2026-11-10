@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-js/master/packages/core/schema/stryker-core.json",
   "testRunner": "command",
   "commandRunner": {
-    "command": "npx vitest run src/lib/settings"
+    "command": "npx vitest run src/lib/settings src/lib/api/request-builders.test.ts"
   },
   "mutate": [
     "src/lib/settings/settings-api.ts"

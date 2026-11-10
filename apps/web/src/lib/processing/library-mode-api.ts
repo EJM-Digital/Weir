@@ -248,10 +248,7 @@ export async function cleanLibraryFiles(
     ...(manual
       ? {
           manual_plan: { keep: manual.keep, order: manual.order },
-          // Stryker disable next-line ConditionalExpression: with `false` the body holds `expected_size_bytes: undefined`, and JSON.stringify leaves an undefined field out, so the request sent is the same.
-          ...(manual.expected_size_bytes === undefined
-            ? {}
-            : { expected_size_bytes: manual.expected_size_bytes }),
+          expected_size_bytes: manual.expected_size_bytes,
         }
       : {}),
   });
@@ -260,8 +257,7 @@ export async function cleanLibraryFiles(
     r,
     CLEAN_START_FAILED,
   );
-  // Stryker disable next-line StringLiteral: with the key emptied every result is rebuilt as `{ kind: "cleaned", ...result }`, and a confirmation's own `kind` comes after and wins, so the value returned is equal.
-  return "kind" in result ? result : { kind: "cleaned", ...result };
+  return { kind: "cleaned", ...result };
 }
 
 /** "Leave this file alone" and its undo; a rescan does not forget it. */

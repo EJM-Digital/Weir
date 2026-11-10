@@ -4,10 +4,6 @@ import { ApiHttpError } from "../api/client";
 import { recordedBody } from "../../test/recorded";
 import { unexpectedProblem } from "../../test/stub-weir-api";
 import { stubWire } from "../../test/wire";
-import { activityRequestCases } from "../../test/wire/files.cases";
-import { workflowRequestCases } from "../../test/wire/libraries.cases";
-import { describeRequests } from "../../test/wire/request-case";
-import { ruleRequestCases } from "../../test/wire/rule-sets.cases";
 import {
   createProcessingLibrary,
   deleteProcessingLibrary,
@@ -54,14 +50,6 @@ import {
   updateProcessingRuleSet,
   type ProcessingRuleSetWrite,
 } from "./rule-sets-api";
-
-// What each request sends and what comes back, one recorded case at a time.
-describeRequests("Workflow and library requests", workflowRequestCases);
-describeRequests("Rule requests", ruleRequestCases);
-describeRequests(
-  "Library clean requests",
-  activityRequestCases.filter((c) => c.fn === fetchLibraryCleans),
-);
 
 const LIBRARIES = "/api/v1/processing/libraries";
 const RULE_SETS = "/api/v1/processing/rule-sets";
