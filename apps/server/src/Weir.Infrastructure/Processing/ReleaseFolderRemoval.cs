@@ -127,8 +127,7 @@ public static partial class ReleaseFolderRemoval
         }
 
         var self = Path.GetFullPath(file);
-        // Stryker disable once Conditional : equivalent on the Windows runner the mutation run uses, where IsWindows() is already true. The Linux test run kills it (The_film_itself_is_never_another_video_but_the_same_name_in_another_case_is_one_only_where_names_are_case_sensitive).
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var comparison = NameComparison(!OperatingSystem.IsWindows());
         var options = new EnumerationOptions
         {
             RecurseSubdirectories = true,
@@ -155,6 +154,10 @@ public static partial class ReleaseFolderRemoval
 
         return false;
     }
+
+    /// <summary>How two file names are compared: exactly where the file system tells names apart by case, ignoring case where it does not.</summary>
+    internal static StringComparison NameComparison(bool caseSensitiveNames) =>
+        caseSensitiveNames ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
     /// <summary>A sample clip: a <c>sample</c> or <c>samples</c> folder on the way, or "sample" as a word in the name.</summary>
     public static bool IsSample(string relativePath)

@@ -5,13 +5,26 @@ using Weir.Infrastructure.Processing;
 
 namespace Weir.Infrastructure.Tests.Processing;
 
+/// <summary>A fact that is skipped where a permission deny does not bind: a privileged (root) process off Windows.</summary>
+[AttributeUsage(AttributeTargets.Method)]
+public sealed class RequiresUnrestrictedAccessFactAttribute : FactAttribute
+{
+    public RequiresUnrestrictedAccessFactAttribute()
+    {
+        if (!OperatingSystem.IsWindows() && Environment.IsPrivilegedProcess)
+        {
+            Skip = "A privileged process can list a folder whose permissions deny it, so there is no unreadable folder to test with.";
+        }
+    }
+}
+
 /// <summary>
 /// A release folder with a subfolder the operating system will not let Weir read. The video inside it cannot be seen, so the
 /// folder must never be taken for one that holds nothing else: only the film goes, never the folder and what is in it.
 /// </summary>
 public sealed class ReleaseFolderRemovalUnreadableTests
 {
-    [Fact]
+    [RequiresUnrestrictedAccessFact]
     public void An_unreadable_subfolder_is_an_error_not_a_folder_with_nothing_in_it()
     {
         using var temp = new TempDirectory();
@@ -21,14 +34,14 @@ public sealed class ReleaseFolderRemovalUnreadableTests
         {
             if (CanStillList(locked))
             {
-                return; // Running as a user the permission does not bind (root): there is no unreadable folder to test with.
+                Assert.Fail("the deny did not take effect");
             }
 
             Assert.Throws<UnauthorizedAccessException>(() => HoldsOthers(film));
         }
     }
 
-    [Fact]
+    [RequiresUnrestrictedAccessFact]
     public void A_release_with_an_unreadable_subfolder_loses_only_its_film()
     {
         using var temp = new TempDirectory();
@@ -40,7 +53,7 @@ public sealed class ReleaseFolderRemovalUnreadableTests
         {
             if (CanStillList(locked))
             {
-                return;
+                Assert.Fail("the deny did not take effect");
             }
 
             removal = ReleaseFolderRemoval.Remove(root, film, null);
