@@ -208,8 +208,9 @@ public sealed class HandoffReportPostingTests : IDisposable
         {
             protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
-                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
-                throw new InvalidOperationException("unreachable");
+                var never = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+                await using var registration = cancellationToken.Register(() => never.TrySetCanceled(cancellationToken));
+                return await never.Task;
             }
         }
     }
