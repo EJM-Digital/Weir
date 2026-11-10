@@ -61,6 +61,7 @@ Times are Sydney (AEDT, UTC+11), all off the top of the hour. "Peak jobs" is the
 | `audit.yml` | Sunday 20:29 | by hand | 2 Linux |
 | `codeql.yml` | Sunday 20:37 | push, pull request | 3 |
 | `ci-stress.yml` | Sunday 21:43 | pull request touching the SQLite pool or its stress test, by hand | 1 Windows |
+| `mutation.yml` | Sunday 22:17 | by hand (never pull request); gates nothing | 12 |
 | `record-arr.yml`, `record-clients.yml` | no schedule | pull request and push to `main` that change a recorder `compose.yaml`, by hand | 1 and 6 Linux |
 
 The recorders have no schedule: the images they record are pinned by digest in the compose files, so nothing changes until a
