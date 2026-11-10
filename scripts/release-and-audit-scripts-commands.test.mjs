@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 
 import { GATES, verdict } from "./ci-passed.mjs";
 import { auditWithRetry, classifyAuditOutput, main as auditMain, meetsAuditLevel, runNpmAuditOnce, unapprovedAdvisories } from "./npm-audit-retry.mjs";
-import { inputsOf } from "./release/mutation-inputs.mjs";
+import { changesToTarget, inputsOf } from "./release/mutation-inputs.mjs";
 import { repository } from "./release/temporary-repository.mjs";
 import { sameShippedFiles } from "./release/shipped-paths.mjs";
 
@@ -178,6 +178,23 @@ test("shipped-paths, run as a command in a repository, compares two commits and 
 });
 
 // --- the mutation inputs ---
+
+test("a changed path is named for why it alters a target's score: its mutated file, a test it runs, or its setup", () => {
+  inFolder((root) => {
+    const tests = "apps/server/tests/Weir.Core.Tests";
+    put(root, `${tests}/stryker-config.json`, JSON.stringify({ "stryker-config": { project: "Weir.Core.csproj", mutate: ["**/Weir.Core/Plan.cs"], "test-projects": ["Weir.Core.Tests.csproj"] } }));
+    put(root, `${tests}/Weir.Core.Tests.csproj`, "<Project />");
+    const target = { target: "core", kind: "dotnet", directory: tests, config: "stryker-config.json", restore: "apps/server" };
+
+    const reasons = changesToTarget(target, ["apps/server/src/Weir.Core/Plan.cs", `${tests}/PlanTests.cs`, "apps/server/Directory.Build.props", "docs/README.md"], root);
+
+    assert.deepEqual(reasons, [
+      "apps/server/src/Weir.Core/Plan.cs (a file it mutates)",
+      `${tests}/PlanTests.cs (a test it runs)`,
+      "apps/server/Directory.Build.props (its mutation setup)",
+    ]);
+  });
+});
 
 test("the inputs of a .NET target follow its test projects' references, once each, skipping source projects and projects that are gone", () => {
   inFolder((root) => {

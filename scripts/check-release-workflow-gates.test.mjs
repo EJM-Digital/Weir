@@ -296,6 +296,10 @@ test("the Windows legs stay their own CI jobs with their own flags, so a pull re
   assert.throws(() => checkReleaseGates({ ...real, ci: real.ci.replace("platforms: '[\"windows\"]'", "platforms: '[\"linux\", \"windows\"]'") }), /platforms/);
 });
 
+test("a release without the job that proves the Windows legs is refused by name", () => {
+  rejects(replaceOnce(real.release, "\n  windows-proof:\n", "\n  windows-checked:\n"), /release\.yml is missing required job: windows-proof/);
+});
+
 test("ci-passed keeps the step that succeeds only when the Windows legs ran", () => {
   assert.throws(() => checkReleaseGates({ ...real, ci: real.ci.replace("- name: The Windows legs ran and passed\n", "- name: Something else\n") }), /The Windows legs ran and passed/);
 });
