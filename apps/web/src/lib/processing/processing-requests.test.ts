@@ -4,10 +4,7 @@ import { connectionRequestCases } from "../../test/wire/connections.cases";
 import { activityRequestCases } from "../../test/wire/files.cases";
 import { workflowRequestCases } from "../../test/wire/libraries.cases";
 import { processingSettingsRequestCases } from "../../test/wire/processing-settings.cases";
-import {
-  describeRequests,
-  type RequestCase,
-} from "../../test/wire/request-case";
+import { type RequestCase } from "../../test/wire/request-case";
 import { ruleRequestCases } from "../../test/wire/rule-sets.cases";
 import { stubWire } from "../../test/wire";
 import { unexpectedProblem } from "../../test/stub-weir-api";
@@ -26,8 +23,7 @@ import * as runtimeSettings from "./runtime-settings-api";
 import * as watchedFolderScan from "./watched-folder-scan-api";
 
 /**
- * The mutation run of these files runs only the tests under lib/processing, so the fetch-level cases that hold each request
- * to its method, address and body are run here as well, for the request functions of the files it mutates.
+ * The request functions of the files this target mutates, with the fetch-level cases that exercise each one.
  */
 const OWN_FUNCTIONS = new Set<unknown>(
   [
@@ -53,8 +49,6 @@ const cases: RequestCase[] = [
   ...connectionRequestCases,
   ...processingSettingsRequestCases,
 ].filter((testCase) => OWN_FUNCTIONS.has(testCase.fn));
-
-describeRequests("The processing file and settings requests", cases);
 
 /** What each request says when the server fails without a reason of its own to give: the words a person reads. */
 const FAILURE_WORDS: Record<string, string> = {
