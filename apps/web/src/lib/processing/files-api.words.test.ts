@@ -45,9 +45,9 @@ describe("the plain word for a file's state", () => {
   });
 
   it("is plain Rejected only for a rejection the rules themselves made", () => {
-    expect(
-      processingFileStatusLabel(file("rejected", "", null, "rules")),
-    ).toBe("Rejected");
+    expect(processingFileStatusLabel(file("rejected", "", null, "rules"))).toBe(
+      "Rejected",
+    );
     expect(
       processingFileStatusLabel(file("rejected", "", null, "manager")),
     ).toBe("Rejected for a replacement");

@@ -65,7 +65,8 @@ const FAILURE_WORDS: Record<string, string> = {
   fetchProcessingFileRemoveOptions:
     "Could not read what removing this file would do.",
   forgetProcessingFile: "Could not remove that file from the list.",
-  moveProcessingFileToTop: "Could not move that file to the front of the queue.",
+  moveProcessingFileToTop:
+    "Could not move that file to the front of the queue.",
   requeueProcessingFile: "Could not queue that file again.",
   requeueProcessingFiles: "Could not queue those files again.",
   fetchProcessingWhyHeld: "Could not ask why that file is held.",
