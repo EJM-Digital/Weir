@@ -338,13 +338,6 @@
       "reason": "A one-off analysis a developer runs over a test log by hand to find thread pool stalls; CI never runs it and it ships nowhere."
     },
     {
-      "id": "web-activity-remove-choice",
-      "file": "apps/web/src/pages/activity/activity-remove-dialog.tsx",
-      "marker": "v8 ignore",
-      "kind": "unreachable",
-      "reason": "The Remove button is disabled until a choice is made, so its click handler never runs with no choice; the check only narrows the choice's type for onConfirm."
-    },
-    {
       "id": "web-library-chip-found",
       "file": "apps/web/src/pages/library/library-filters.tsx",
       "marker": "v8 ignore",
