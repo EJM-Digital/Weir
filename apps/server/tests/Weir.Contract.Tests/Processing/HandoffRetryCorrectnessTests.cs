@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Weir.Contract.Tests.Harness;
 using Weir.Contract.Tests.Harness.Fakes;
 
@@ -32,16 +33,41 @@ public sealed class HandoffRetryCorrectnessTests
         // A hand-off's fingerprint must be recorded on arrival: no scan ever looks at this workflow first.
         await scenario.PostHandoffAsync("handoff-attempts-531", source);
 
+        // The retry is queued by the hand-off itself and starts when the one-second backoff ends, so on a slow machine the
+        // first look at the failed file may come after the second attempt has failed too. What the first look can claim is that
+        // the file has failed at least once (a count of 0 is a reset) and that its size was recorded on arrival.
         var first = await scenario.WaitForFileStatusAsync(library, rel, "processing_failed");
-        Assert.Equal(1, (int)first["failure_attempts"]!);
+        var seen = Scenario.Whole(first["failure_attempts"]);
+        Assert.True(seen >= 1, $"a failed hand-off must keep its failure count, not start it over: {first}");
+        AssertNoMoreFailuresThanAttempts(scenario, seen);
         Assert.True(
             Scenario.Whole(first["size_bytes"]) > 0,
             "a hand-off must record the file's size at intake, not leave it for the first scan to discover");
 
-        // The retries come from the hand-off itself; each adds to the count and none starts it over (#531 item 1).
-        // The count is read between attempts: a retry already under way still shows the failures before it, as "processing".
-        var retried = await scenario.FailureAttemptsReachAsync(library, rel, 3);
+        // The retries come from the hand-off itself; each adds to the count and none starts it over (#531 item 1): every look
+        // from here on shows at least what the last one did, and never more failures than ffmpeg was asked to remux (the fake
+        // logs each remux before it fails it, one per attempt, so a failure counted twice would outrun them). The count is read between attempts: a retry already under way
+        // still shows the failures before it, as "processing".
+        var retried = await scenario.DriveRetriesUntilAsync<JsonObject>(
+            library,
+            async () =>
+            {
+                var row = await scenario.FileRowAsync(library, rel);
+                var count = Scenario.Whole(row!["failure_attempts"]);
+                Assert.True(count >= seen, $"the failure count went from {seen} to {count}: a retry started it over");
+                seen = count;
+                AssertNoMoreFailuresThanAttempts(scenario, count);
+                return count >= 3 && (string)row["status"]! != "processing" ? row : null;
+            },
+            $"{rel} to fail 3 times");
         Assert.Equal("processing_failed", (string)retried["status"]!);
+    }
+
+    /// <summary>Read after the count: the remux is logged before its failure is recorded, so the calls can only be ahead of the count.</summary>
+    private static void AssertNoMoreFailuresThanAttempts(Scenario scenario, long failures)
+    {
+        var attempts = scenario.FakeTools.Calls(tool: "ffmpeg", step: "remux").Count;
+        Assert.True(failures <= attempts, $"{failures} failures were counted for {attempts} attempts: a failure was counted twice");
     }
 
     [Fact]
