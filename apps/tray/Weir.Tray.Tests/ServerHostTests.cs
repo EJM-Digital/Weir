@@ -468,6 +468,7 @@ public sealed class ServerHostTests
             }
         }));
         Assert.Equal("3", rig.Starts[^1].Attempt);
+        Assert.Contains("; attempt 2: exited with code 7", rig.Starts[^1].Failures, StringComparison.Ordinal);
         var startsBefore = rig.Starts.Count;
         StartRig.Steer("WEIR_STANDIN_EXIT_CODE", null);
 

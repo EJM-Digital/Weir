@@ -242,7 +242,8 @@ public sealed class ServerHostEdgeTests
 
         Assert.Single(rig.Starts);
         Assert.Equal(ServerPhase.Running, rig.Host.Phase);
-        Assert.Contains($"Starting bundled server host: {Path.Combine(rig.Server, "WeirServer.exe")}", rig.TrayLog, StringComparison.Ordinal);
+        Assert.Contains($"Starting bundled server host: {Path.Combine(rig.Server, "WeirServer.exe")} (attempt 1)", rig.TrayLog, StringComparison.Ordinal);
+        Assert.Contains($"Bundled server host pid={rig.Starts[0].Pid}", rig.TrayLog, StringComparison.Ordinal);
     }
 
     [Fact(Timeout = TestTimeoutMs)]
@@ -310,6 +311,7 @@ public sealed class ServerHostEdgeTests
         Assert.Equal(ScopeChange.Failed, await move);
         Assert.Equal(ListenScope.ThisPcOnly, rig.Host.Scope);
         Assert.Equal(ServerPhase.Running, rig.Host.Phase);
+        Assert.Contains($"The server did not start on port {rig.Host.Port} ({ListenScope.OtherDevices.Describe()}): exited with code 3", rig.TrayLog, StringComparison.Ordinal);
         Assert.Contains(
             $"LAN access: the server did not start that way, so it goes back to how it was: {ListenScope.ThisPcOnly.Describe()}.",
             rig.TrayLog,
