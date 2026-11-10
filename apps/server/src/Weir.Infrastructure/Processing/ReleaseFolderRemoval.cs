@@ -127,12 +127,13 @@ public static partial class ReleaseFolderRemoval
         }
 
         var self = Path.GetFullPath(file);
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var comparison = NameComparison(!OperatingSystem.IsWindows());
         var options = new EnumerationOptions
         {
             RecurseSubdirectories = true,
             AttributesToSkip = FileAttributes.ReparsePoint,
             IgnoreInaccessible = false,
+            // Stryker disable once Boolean : equivalent. ReturnSpecialDirectories only adds "." and ".." to a listing of folders, and this call lists files.
             ReturnSpecialDirectories = false,
         };
         foreach (var candidate in files.EnumerateFiles(folder, "*", options))
@@ -153,6 +154,10 @@ public static partial class ReleaseFolderRemoval
 
         return false;
     }
+
+    /// <summary>How two file names are compared: exactly where the file system tells names apart by case, ignoring case where it does not.</summary>
+    internal static StringComparison NameComparison(bool caseSensitiveNames) =>
+        caseSensitiveNames ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
     /// <summary>A sample clip: a <c>sample</c> or <c>samples</c> folder on the way, or "sample" as a word in the name.</summary>
     public static bool IsSample(string relativePath)

@@ -80,6 +80,20 @@ public sealed class OriginalsMoverTests
         Assert.Equal(["EnsureDirectory(/lib/.weir-originals)", $"TryReserve({Source})", "TryReserve(film.mkv)"], files.Operations);
     }
 
+    [Theory]
+    [InlineData("/film.mkv")]
+    [InlineData("\\film.mkv")]
+    public void A_file_directly_under_the_root_has_no_folder_to_make_not_an_empty_one(string rootFile)
+    {
+        // Directory.CreateDirectory("") throws, so asking for the "folder" of a file under the root would fail the swap.
+        var files = new FakeSwapFileSystem();
+
+        var reserved = OriginalsMover.Reserve(files, rootFile);
+
+        Assert.Equal(rootFile, reserved);
+        Assert.Equal([$"TryReserve({rootFile})"], files.Operations);
+    }
+
     [Fact]
     public void Fill_replaces_the_reservation_on_the_same_volume()
     {

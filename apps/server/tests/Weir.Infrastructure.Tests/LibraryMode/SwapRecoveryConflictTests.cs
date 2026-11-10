@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Weir.Core.LibraryMode;
 using Weir.Infrastructure.LibraryMode;
 
@@ -23,6 +24,18 @@ public sealed class SwapRecoveryConflictTests
         Assert.Equal("OL", s.Files.Read(Destination));
         Assert.Equal("NEW", s.Files.Read(Original));
         Assert.Single(s.ActivityWriter.Events);
+    }
+
+    [Fact]
+    public async Task A_kept_original_that_does_not_match_its_backup_is_logged_as_a_warning_with_its_cause()
+    {
+        var s = await ConflictRecordedAsync();
+
+        var warning = Assert.Single(
+            s.SweepLogger.Entries,
+            entry => entry.Level == LogLevel.Warning && entry.Message.Contains("kept original that does not match its backup", StringComparison.Ordinal));
+        Assert.Contains($"backup={Backup}", warning.Message, StringComparison.Ordinal);
+        Assert.Single(s.SweepLogger.Exceptions.OfType<OriginalsKeepConflictException>());
     }
 
     [Fact]

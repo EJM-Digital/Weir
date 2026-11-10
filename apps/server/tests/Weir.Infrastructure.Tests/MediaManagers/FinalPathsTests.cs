@@ -52,6 +52,18 @@ public sealed class FinalPathsTests
     }
 
     [Fact]
+    public void It_asks_the_file_system_it_is_given_not_the_real_one()
+    {
+        using var temp = new TempDirectory();
+        var plain = Directory.CreateDirectory(temp.Join("Downloads")).FullName;
+        var files = new FaultingFileSystem().Hide(plain);
+
+        Assert.Null(FinalPaths.Resolve(plain, files));
+        Assert.Contains(files.Calls, call => call.Call == FileCall.DirectoryExists);
+        Assert.Equal(plain, FinalPaths.Resolve(plain), ignoreCase: true);
+    }
+
+    [Fact]
     public void A_folder_that_does_not_exist_here_does_not_resolve()
     {
         using var temp = new TempDirectory();

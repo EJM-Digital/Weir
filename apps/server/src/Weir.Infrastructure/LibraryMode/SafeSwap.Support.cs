@@ -73,6 +73,7 @@ public sealed partial class SafeSwap
         {
             return _files.FileExists(path);
         }
+        // Stryker disable once Block : equivalent — an empty catch falls through to the method end, whose only return is default(bool?) = null, the same as return null.
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             return null;

@@ -183,6 +183,15 @@ public sealed class ReleaseFolderRemovalTests : IDisposable
     }
 
     [Fact]
+    public void Names_are_compared_exactly_where_case_matters_and_ignoring_case_where_it_does_not()
+    {
+        Assert.Equal(StringComparison.Ordinal, ReleaseFolderRemoval.NameComparison(caseSensitiveNames: true));
+        Assert.Equal(StringComparison.OrdinalIgnoreCase, ReleaseFolderRemoval.NameComparison(caseSensitiveNames: false));
+        Assert.False(string.Equals("Film.mkv", "FILM.MKV", ReleaseFolderRemoval.NameComparison(true)));
+        Assert.True(string.Equals("Film.mkv", "FILM.MKV", ReleaseFolderRemoval.NameComparison(false)));
+    }
+
+    [Fact]
     public void A_path_with_nothing_in_it_is_not_a_sample()
     {
         Assert.False(ReleaseFolderRemoval.IsSample(string.Empty));
