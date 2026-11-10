@@ -12,6 +12,7 @@ using Weir.Core.Settings;
 using Weir.Core.Time;
 using Weir.Core.Validation;
 using Weir.Infrastructure.Logging;
+using Weir.Infrastructure.MediaManagers;
 using Weir.Infrastructure.Processing;
 using Weir.Infrastructure.Settings;
 
@@ -74,6 +75,7 @@ internal sealed class SuiteConfigurationEndpointHandlers
     private readonly ITimeZoneResolver _zones;
     private readonly ScanSettingsChanges _scanSettingsChanges;
     private readonly WeirLogFile _logFile;
+    private readonly ManagerWorkflowSync _workflowSync;
 
     public SuiteConfigurationEndpointHandlers(
         SuiteSettingsStore suiteSettings,
@@ -82,8 +84,10 @@ internal sealed class SuiteConfigurationEndpointHandlers
         BackupPasswordStore backupPassword,
         ITimeZoneResolver zones,
         ScanSettingsChanges scanSettingsChanges,
-        WeirLogFile logFile)
+        WeirLogFile logFile,
+        ManagerWorkflowSync workflowSync)
     {
+        _workflowSync = workflowSync;
         _suiteSettings = suiteSettings;
         _bundle = bundle;
         _backups = backups;
@@ -121,6 +125,7 @@ internal sealed class SuiteConfigurationEndpointHandlers
         var uow = await request.DbAsync().ConfigureAwait(false);
         WireObject output;
         SuiteSettingsRecord updated;
+        var finishedSetup = false;
         try
         {
             var normalized = SuiteSettingsRules.Normalize(
@@ -129,6 +134,8 @@ internal sealed class SuiteConfigurationEndpointHandlers
             var before = await _suiteSettings.EnsureAsync(uow).ConfigureAwait(false);
             await _suiteSettings.UpdateAsync(uow, before, SuiteSettingsRules.Apply(before, normalized)).ConfigureAwait(false);
             updated = await _suiteSettings.EnsureAsync(uow).ConfigureAwait(false);
+            finishedSetup = !string.Equals(before.SetupWizardState, "completed", StringComparison.Ordinal)
+                && string.Equals(updated.SetupWizardState, "completed", StringComparison.Ordinal);
             output = SuiteSettingsRules.BuildOut(updated);
         }
         catch (WireValueException exception)
@@ -138,6 +145,12 @@ internal sealed class SuiteConfigurationEndpointHandlers
 
         await request.CommitAsync().ConfigureAwait(false);
         PruneLog(request, (int)Math.Max(1, Math.Min(3650, updated.LogRetentionDays)));
+        if (finishedSetup)
+        {
+            // Setup is where a person connects a manager and confirms its libraries; look for its folders now, not at the next tick.
+            _workflowSync.RequestSync();
+        }
+
         return ApiRoutes.Ok(output);
     }
 
