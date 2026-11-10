@@ -497,6 +497,9 @@ public sealed class HomeNetworkSignInApiTests
     {
         var (server, owner) = await StartAsync();
         await using var _ = server;
+        // The workers count as passing only once start-up recovery has finished, and that runs after the server is already
+        // answering; without this wait the first reading can land before it and the second after, a difference of one.
+        await server.WaitForStartupRecoveryAsync();
         var before = (await Json(await owner.GetAsync("/api/v1/system/overview")))["checks"]!;
 
         await TurnOnAsync(owner);
