@@ -227,3 +227,19 @@ test("a web target whose config names no command counts every web test file", ()
     assert.equal(inputs.mutated.length, 1);
   });
 });
+
+test("a web target that runs named test paths also counts the shared test support, but not other tests", () => {
+  inFolder((root) => {
+    put(root, "apps/web/stryker.config.json", JSON.stringify({ mutate: ["src/lib/a.ts"], commandRunner: { command: "npx vitest run src/lib/processing src/lib/api/request-builders.test.ts src/test/wire" } }));
+    const inputs = inputsOf({ target: "web", kind: "web", directory: "apps/web", config: "stryker.config.json", restore: "apps/web" }, root);
+    assert.equal(inputs.tests("apps/web/src/lib/processing/a.test.ts"), true);
+    assert.equal(inputs.tests("apps/web/src/lib/api/request-builders.test.ts"), true);
+    assert.equal(inputs.tests("apps/web/src/test/wire/libraries.cases.ts"), true);
+    for (const support of ["apps/web/src/test/setup.ts", "apps/web/src/test/wire.ts", "apps/web/src/test/stub-weir-api.ts", "apps/web/src/test/recorded/processing.json"]) {
+      assert.equal(inputs.tests(support), true, support);
+    }
+    assert.equal(inputs.tests("apps/web/src/test/hang-guard.test.tsx"), false, "a test of its own that the target does not run");
+    assert.equal(inputs.tests("apps/web/src/lib/settings/settings-api.test.ts"), false);
+    assert.equal(inputs.tests("apps/web/src/lib/api/client.test.ts"), false);
+  });
+});

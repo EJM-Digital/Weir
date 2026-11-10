@@ -237,6 +237,22 @@ describe("cleaning files", () => {
     );
   });
 
+  it("tells a person, when the server gave no reason, that nothing was changed", async () => {
+    answers(json(500, {}));
+
+    await expect(cleanLibraryFiles(4, ["a.mkv"], false)).rejects.toThrow(
+      "Weir couldn't start the clean. Nothing was changed. Try again.",
+    );
+  });
+
+  it("takes an answer for a request for confirmation only when it is a 400", async () => {
+    answers(json(409, { error: "confirm_final_removal_required" }));
+
+    await expect(cleanLibraryFiles(4, ["a.mkv"], false)).rejects.toThrow(
+      "Weir couldn't start the clean. Nothing was changed. Try again.",
+    );
+  });
+
   it.each([
     ["another refusal", json(400, { error: "something_else" })],
     ["a refusal with no reason", json(500, {})],

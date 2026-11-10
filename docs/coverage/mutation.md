@@ -28,9 +28,9 @@ files it names and the tests that cover them.
 | `core-rules` | Stryker.NET | `SafeSwapRules`, `LibraryFolderPublishing`, `HandoffLedgerRules`, `HandoffPaths`, `HandoffSourceFiles`, `HandbackRules`, `CompletionReports` | `Weir.Core.Tests` and `Weir.Infrastructure.Tests` |
 | `start-supervision` | Stryker.NET | `ServerHost*`, `StartWatch`, `StartProgress*` (the tray) | `Weir.Tray.Tests` |
 | `web-api-client` | StrykerJS | `lib/api/client.ts`, `send-json.ts`, `auth-api.ts`, `activity-api.ts` and `lib/auth/queries.ts` | the tests under `src/lib/api` and `src/lib/auth` |
-| `web-processing-files` | StrykerJS | the file, kept-file, rejected-file, remux, direct-play, maintenance, settings, stats, preview and scan request builders in `lib/processing` | the tests under `src/lib/processing` |
-| `web-processing-libraries` | StrykerJS | the library, clean, folder-chain, manager, mode, redownload, setup and rule-set request builders in `lib/processing`, and `jobs-inspection/api.ts` | the tests under `src/lib/processing` |
-| `web-settings-requests` | StrykerJS | `lib/settings/settings-api.ts` | the tests under `src/lib/settings` |
+| `web-processing-files` | StrykerJS | the file, kept-file, rejected-file, remux, direct-play, maintenance, settings, stats, preview and scan request builders in `lib/processing` | the tests under `src/lib/processing`, `src/lib/api/request-builders.test.ts` and `src/test/wire` |
+| `web-processing-libraries` | StrykerJS | the library, clean, folder-chain, manager, mode, redownload, setup and rule-set request builders in `lib/processing`, and `jobs-inspection/api.ts` | the tests under `src/lib/processing`, `src/lib/api/request-builders.test.ts` and `src/test/wire` |
+| `web-settings-requests` | StrykerJS | `lib/settings/settings-api.ts` | the tests under `src/lib/settings` and `src/lib/api/request-builders.test.ts` |
 | `web-dialogs-library` | StrykerJS | `confirm-dialog.tsx`, the Library clean dialog and the workflow remove dialog | the tests that import them (`vitest related`) |
 | `web-dialogs-activity-profile` | StrykerJS | the Activity remove dialog and the profile remove dialog (`profiles-tab.tsx`) | the tests that import them (`vitest related`) |
 
@@ -128,4 +128,7 @@ For each survivor, write the test that fails on the changed line and passes on t
 the mutated line before you keep it: edit the line to what the survivor says it became, run the test, see it fail, put
 the line back. Tests use real recorded replies or real tools, never an assumed shape, and wait on events and fake clocks,
 never on a guessed delay. When a survivor cannot be killed because the change does not alter behaviour (an equivalent
-mutant, for example a different but equal way to build the same string), say so in the issue.
+mutant, for example a different but equal way to build the same string), say so in the issue, and mark it in the code so the next run does not list it again. Prefer removing the redundant code to marking it. A mark names only the equivalent mutator and gives the reason after the colon ("hard to test" is not a reason).
+
+- Stryker.NET: `// Stryker disable once <Mutator> : <reason>` on the line before. Not in a file whose target mutates a span of characters (`SafeSwap.cs`): the comment moves the span.
+- StrykerJS: `// Stryker disable next-line <Mutator>: <reason>` on the line before. It switches off every mutant of that mutator on that line, so first check the line has no other one (a second string, the other half of `true`/`false` on a condition, or a whole `a && b` starting there). A condition outside `||`/`&&`, including one moved into a `const`, gets both `true` and `false`. If the line holds another, put the equivalent part on its own line inside the expression, or remove the code.

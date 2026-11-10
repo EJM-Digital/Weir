@@ -66,10 +66,15 @@ function vitestRunPaths(command) {
   return words.slice(at + 2).filter((word) => !word.startsWith("-")).map((word) => posix(path.posix.join(WEB, word)).replace(/\/$/, ""));
 }
 
+/** The shared test support every vitest run loads (setup.ts, the stubbed server, the recorded replies): a file under src/test that is not itself a test. */
+function isTestSupport(changed) {
+  return changed.startsWith(`${WEB}src/test/`) && !/\.test\.[^/]+$/.test(changed);
+}
+
 function webTests(config) {
   const paths = vitestRunPaths(config.commandRunner?.command);
   if (!paths) return (changed) => WEB_TEST_FILE.test(changed);
-  return (changed) => changed === `${WEB}src/test/setup.ts` || paths.some((entry) => changed === entry || changed.startsWith(`${entry}/`));
+  return (changed) => isTestSupport(changed) || paths.some((entry) => changed === entry || changed.startsWith(`${entry}/`));
 }
 
 /** The inputs of one target: { mutated: RegExp[], tests(path), setup: string[] }, read from the checkout at `root`. */

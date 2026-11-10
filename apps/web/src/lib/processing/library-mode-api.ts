@@ -204,6 +204,7 @@ async function readConfirmationOr<T>(
   if (r.status === 400) {
     // Read from a copy: a refusal that is not a confirmation is read again for its reason.
     const body = await readJson<Record<string, unknown>>(r.clone()).catch(
+      // Stryker disable next-line ArrowFunction: null and undefined are both falsy, and the next line only reads `body` as a truth value.
       () => null,
     );
     if (body && body.error === "confirm_final_removal_required") {
@@ -247,9 +248,7 @@ export async function cleanLibraryFiles(
     ...(manual
       ? {
           manual_plan: { keep: manual.keep, order: manual.order },
-          ...(manual.expected_size_bytes === undefined
-            ? {}
-            : { expected_size_bytes: manual.expected_size_bytes }),
+          expected_size_bytes: manual.expected_size_bytes,
         }
       : {}),
   });
@@ -258,7 +257,7 @@ export async function cleanLibraryFiles(
     r,
     CLEAN_START_FAILED,
   );
-  return "kind" in result ? result : { kind: "cleaned", ...result };
+  return { kind: "cleaned", ...result };
 }
 
 /** "Leave this file alone" and its undo; a rescan does not forget it. */
