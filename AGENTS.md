@@ -42,6 +42,8 @@ This file is the short entry point for coding agents. Keep detailed rules in lin
 
 ## Working Style
 
+- How an issue is worked (owner rule, 7 Nov 2026): raise it; fix it; have the fix peer-reviewed by a higher-capability model (a round table of reviewers when it is risky or contested) before it merges; prove it live on a CI build installed on the rig; close it. Nothing per issue waits on mutation testing or any other multi-hour run.
+- Mutation testing gates nothing. It runs weekly on a schedule (`mutation.yml`, Sunday 11:17 UTC), and can also be started by hand. Each weekly run is the finding run: every surviving mutant or floor drop is raised as an issue and fixed during the week, and the next run checks the fixes. The loop continues until a full mutation run passes with no new issues.
 - Encode recurring lessons in docs, scripts, tests, or CI instead of relying on chat memory.
 - Prefer small PRs with focused validation.
 - No user-facing issue closes without live proof on the rig, and every tag, release candidates included, needs a passing scenario-suite record before it is made, on its exact commit or on an earlier one with the same shipped files and the same version (a change only to tests, scripts, docs or CI keeps a pass; no waivers): [`docs/release-governance.md`](docs/release-governance.md), [`docs/release.md`](docs/release.md).
