@@ -1,5 +1,5 @@
-// What a mutation target's score depends on, so a release can carry a passing result forward while the target's own
-// inputs are unchanged (docs/ci-cost.md). A target's inputs are:
+// What a mutation target's score depends on, so a run by hand can be limited to the targets whose own inputs changed
+// (`targets=changed:<sha>`, scripts/resolve-mutation-targets.mjs). A target's inputs are:
 //
 //   mutated files  the files its Stryker config's `mutate` list names, and the config itself, which holds the list.
 //   its tests      the tests that kill its mutants, as the config defines them. A Stryker.NET config names its test
@@ -98,19 +98,6 @@ export function changesToTarget(target, changedPaths, root) {
     else if (inputs.setup.includes(changed)) reasons.push(`${changed} (its mutation setup)`);
   }
   return reasons;
-}
-
-/** Whether the target's own entry in .github/mutation-targets.json differs between two commits (or cannot be read). */
-export function entryChanged(target, base, head, git) {
-  const entryAt = (commit) => {
-    const list = JSON.parse(git(["show", `${commit}:.github/mutation-targets.json`]));
-    return JSON.stringify(list.find((entry) => entry.target === target.target) ?? null);
-  };
-  try {
-    return entryAt(base) !== entryAt(head);
-  } catch {
-    return true;
-  }
 }
 
 /** The targets (in the targets file's order) with something changed in the paths, each with the reasons. */
