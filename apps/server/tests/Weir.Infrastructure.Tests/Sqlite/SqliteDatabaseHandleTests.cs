@@ -248,7 +248,19 @@ public sealed class SqliteDatabaseHandleTests : IDisposable
         }
 
         var full = Path.GetFullPath(path);
-        return Directory.EnumerateFileSystemEntries("/proc/self/fd")
-            .Any(descriptor => string.Equals(File.ResolveLinkTarget(descriptor, returnFinalTarget: false)?.FullName, full, StringComparison.Ordinal));
+        return Directory.EnumerateFileSystemEntries("/proc/self/fd").Any(descriptor => LinksTo(descriptor, full));
+    }
+
+    /// <summary>The listing's own descriptor, and any other closed while it is read, is gone by the time it is resolved.</summary>
+    private static bool LinksTo(string descriptor, string full)
+    {
+        try
+        {
+            return string.Equals(File.ResolveLinkTarget(descriptor, returnFinalTarget: false)?.FullName, full, StringComparison.Ordinal);
+        }
+        catch (FileNotFoundException)
+        {
+            return false;
+        }
     }
 }
