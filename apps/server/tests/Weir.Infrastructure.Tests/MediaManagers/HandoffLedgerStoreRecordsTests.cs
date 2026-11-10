@@ -5,9 +5,9 @@ namespace Weir.Infrastructure.Tests.MediaManagers;
 
 /// <summary>
 /// The ledger store's own edges: what it records and reads back, which hand-offs have not ended, which belong to a connection,
-/// and when a cancelled pass ends a hand-off. Each case sits where a one-step change to the code would give another answer.
+/// and when a cancelled pass ends a hand-off.
 /// </summary>
-public sealed class HandoffLedgerStoreMutationTests : IDisposable
+public sealed class HandoffLedgerStoreRecordsTests : IDisposable
 {
     private const string Pack = "Show.S01";
 

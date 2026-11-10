@@ -4,6 +4,7 @@ using Weir.Core.Json;
 using Weir.Core.MediaManagers;
 using Weir.Core.Processing;
 using Weir.Core.Time;
+using Weir.Infrastructure.IO;
 using Weir.Infrastructure.Jobs;
 using Weir.Infrastructure.Sqlite;
 
@@ -46,8 +47,7 @@ public sealed partial class HandoffLedgerStore
                 TimestampColumns.Parse(reader.GetValue(5))),
             ("$library", libraryId)).ConfigureAwait(false);
 
-        // Stryker disable once all : Equivalent on the Windows mutation runner, where the platform test is always true. HandoffStatusMutationTests asserts the case rule of each platform, so a Linux run judges the other branch.
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var comparison = PathCase.PathComparison(caseSensitive: !OperatingSystem.IsWindows());
         var prefix = path + "/";
         var underPath = rows.Where(file => string.Equals(file.RelativePath, path, comparison) || file.RelativePath.StartsWith(prefix, comparison)).ToList();
 
@@ -57,8 +57,7 @@ public sealed partial class HandoffLedgerStore
             return underPath;
         }
 
-        // Stryker disable once all : Equivalent on the Windows mutation runner, where the platform test is always true. HandoffStatusMutationTests asserts the case rule of each platform, so a Linux run judges the other branch.
-        var coveredPaths = new HashSet<string>(covered, OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+        var coveredPaths = new HashSet<string>(covered, PathCase.PathComparer(caseSensitive: !OperatingSystem.IsWindows()));
         return [.. underPath.Where(file => coveredPaths.Contains(file.RelativePath))];
     }
 
@@ -77,8 +76,7 @@ public sealed partial class HandoffLedgerStore
             return targets;
         }
 
-        // Stryker disable once all : Equivalent on the Windows mutation runner, where the platform test is always true. HandoffStatusMutationTests asserts the case rule of each platform, so a Linux run judges the other branch.
-        var comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        var comparer = PathCase.PathComparer(caseSensitive: !OperatingSystem.IsWindows());
         return [.. new[] { row.RelativePath.TrimEnd('/') }.Concat((await FileRowsAsync(uow, row).ConfigureAwait(false)).Select(file => file.RelativePath)).Distinct(comparer)];
     }
 
@@ -181,6 +179,7 @@ public sealed partial class HandoffLedgerStore
             var targets = await _targets.ListAsync(uow, row.Id).ConfigureAwait(false);
             var states = new List<string>();
             var stamps = new List<DateTimeOffset>();
+            var scheduledTimes = new List<DateTimeOffset>();
             var busyPaths = new HashSet<string>(StringComparer.Ordinal);
 
             foreach (var job in jobs)
@@ -238,7 +237,7 @@ public sealed partial class HandoffLedgerStore
                     states.Add(HandoffLedgerRules.Scheduled);
                     if (job.NotBefore is { } outcomeNotBefore && outcomeNotBefore > now)
                     {
-                        scheduledFor = scheduledFor is { } currentOutcome ? Min(currentOutcome, outcomeNotBefore) : outcomeNotBefore;
+                        scheduledTimes.Add(outcomeNotBefore);
                     }
 
                     continue;
@@ -247,7 +246,7 @@ public sealed partial class HandoffLedgerStore
                 if (job.NotBefore is { } notBefore && notBefore > now)
                 {
                     states.Add(HandoffLedgerRules.Scheduled);
-                    scheduledFor = scheduledFor is { } current ? Min(current, notBefore) : notBefore;
+                    scheduledTimes.Add(notBefore);
                 }
                 else
                 {
@@ -291,7 +290,7 @@ public sealed partial class HandoffLedgerStore
                 states.Add(state);
                 if (when is { } whenValue)
                 {
-                    scheduledFor = scheduledFor is { } current ? Min(current, whenValue) : whenValue;
+                    scheduledTimes.Add(whenValue);
                 }
 
                 if (file.StatusReason.Length > 0 && (message is null || !(HandoffLedgerRules.TerminalStates.Contains(state) || state == HandoffLedgerRules.Skipped)))
@@ -309,10 +308,7 @@ public sealed partial class HandoffLedgerStore
                     queuePosition = null;
                 }
 
-                if (liveState != HandoffLedgerRules.Scheduled)
-                {
-                    scheduledFor = null;
-                }
+                scheduledFor = liveState == HandoffLedgerRules.Scheduled && scheduledTimes.Count > 0 ? scheduledTimes.Min() : null;
             }
         }
 
@@ -374,8 +370,7 @@ public sealed partial class HandoffLedgerStore
     /// </summary>
     private static bool LeftAloneByTheWorkflow(HandoffFileRow file, IReadOnlyList<HandoffTarget> targets)
     {
-        // Stryker disable once all : Equivalent on the Windows mutation runner, where the platform test is always true. HandoffStatusMutationTests asserts the case rule of each platform, so a Linux run judges the other branch.
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var comparison = PathCase.PathComparison(caseSensitive: !OperatingSystem.IsWindows());
         return file.Status == ProcessingFileStatuses.Skipped &&
                targets.FirstOrDefault(target => string.Equals(target.RelativePath, file.RelativePath, comparison)) is { Result: HandoffLedgerRules.Skipped } target &&
                FolderHandoffReports.MayBeLeftAlone(target, targets);
@@ -417,9 +412,6 @@ public sealed partial class HandoffLedgerStore
     }
 
     private DateTimeOffset NowToMicroseconds() => Timestamp.TruncateToMicroseconds(_time.GetUtcNow());
-
-    // Stryker disable once Equality : Equivalent. When the two are equal either one is the same instant.
-    private static DateTimeOffset Min(DateTimeOffset a, DateTimeOffset b) => a <= b ? a : b;
 
     /// <summary>
     /// How much older than the hand-off a record must be to belong to an earlier one. Receiving a hand-off writes its

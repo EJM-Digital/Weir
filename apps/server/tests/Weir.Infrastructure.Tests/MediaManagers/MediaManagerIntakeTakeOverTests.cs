@@ -11,10 +11,9 @@ namespace Weir.Infrastructure.Tests.MediaManagers;
 
 /// <summary>
 /// The edges of taking in a hand-off: who is let in, which files a folder or a list means, what happens to a pass already queued for
-/// the file, a file a person chose to keep and a source Weir already cleaned. Each case sits where a one-step change to the code
-/// would give another answer.
+/// the file, a file a person chose to keep and a source Weir already cleaned.
 /// </summary>
-public sealed class MediaManagerIntakeMutationTests : IDisposable
+public sealed class MediaManagerIntakeTakeOverTests : IDisposable
 {
     private const string Callback = "/api/integrations/processors/events";
     private const string Film = "Film/film.mkv";
@@ -25,7 +24,7 @@ public sealed class MediaManagerIntakeMutationTests : IDisposable
     private readonly PublishedTopics _published;
     private long _libraryId;
 
-    public MediaManagerIntakeMutationTests() => _published = new PublishedTopics(_fixture.Changes);
+    public MediaManagerIntakeTakeOverTests() => _published = new PublishedTopics(_fixture.Changes);
 
     public void Dispose()
     {

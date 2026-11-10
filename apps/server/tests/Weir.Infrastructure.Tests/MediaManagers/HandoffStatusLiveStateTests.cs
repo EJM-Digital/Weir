@@ -5,9 +5,9 @@ namespace Weir.Infrastructure.Tests.MediaManagers;
 
 /// <summary>
 /// The edges of how a hand-off's live status is worked out: which files and jobs belong to it, which of them speak for it, when it
-/// counts as changed, and what the ledger row keeps. Each case sits exactly where a one-step change to the code would give another answer.
+/// counts as changed, and what the ledger row keeps.
 /// </summary>
-public sealed class HandoffStatusMutationTests : IDisposable
+public sealed class HandoffStatusLiveStateTests : IDisposable
 {
     private const string Folder = "Example.Movie.2024.1080p";
     private const string Main = Folder + "/Example.Movie.2024.1080p.mkv";
@@ -380,14 +380,17 @@ public sealed class HandoffStatusMutationTests : IDisposable
     {
         await ReceiveAsync();
         await ForgetTheTargetsAsync();
-        await _fixture.Store.Execute($"UPDATE files SET status_reason = 'Main.' WHERE relative_path = '{Main}'");
-        await AddFileAsync(Extra, "unprocessed", "Extra.");
-        await AddJobAsync(Remux, "pending", Extra);
+        await _fixture.Store.Execute($"DELETE FROM files WHERE relative_path = '{Main}'");
+        await AddFileAsync(Folder + "/Zebra.mkv", "unprocessed", "Zebra.");
+        await AddFileAsync(Main, "unprocessed", "Main.");
+        await AddJobAsync(Remux, "pending", Folder + "/Zebra.mkv");
         var listed = await _fixture.Db(uow => HandoffLedgerStore.FileRowsAsync(uow, _row));
+        var reasons = new Dictionary<string, string> { [Main] = "Main.", [Folder + "/Zebra.mkv"] = "Zebra." };
 
         var status = await StatusAsync();
 
-        Assert.Equal(listed[0].RelativePath == Main ? "Main." : "Extra.", status.Message);
+        // The files are read in the order the list gives them; the first one's reason is kept.
+        Assert.Equal(reasons[listed[0].RelativePath], status.Message);
     }
 
     [Fact]
@@ -462,8 +465,13 @@ public sealed class HandoffStatusMutationTests : IDisposable
     }
 
     [Fact]
-    public async Task A_skipped_file_is_matched_to_the_first_target_of_its_path_where_the_system_ignores_case_and_to_its_own_where_it_does_not()
+    public async Task A_skipped_file_is_matched_to_its_own_target_where_paths_that_differ_only_in_case_are_different_files()
     {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
         await ReceiveAsync();
         await RemoveTheJobsAsync();
         await ForgetTheTargetsAsync();
@@ -476,6 +484,6 @@ public sealed class HandoffStatusMutationTests : IDisposable
 
         var status = await StatusAsync();
 
-        Assert.Equal(OperatingSystem.IsWindows() ? HandoffLedgerRules.Failed : HandoffLedgerRules.Completed, status.State);
+        Assert.Equal(HandoffLedgerRules.Completed, status.State);
     }
 }

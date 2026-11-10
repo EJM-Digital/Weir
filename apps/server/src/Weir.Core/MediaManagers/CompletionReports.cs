@@ -109,6 +109,10 @@ public static class CompletionReports
     public static WireObject NotTakenResult(string relativeMediaPath) =>
         new WireObject().Set("ok", false).Set("outcome", NotTakenOutcome).Set("relative_media_path", relativeMediaPath);
 
+    /// <summary>The result that answers a send for a file a person chose to keep: not delivered, and why.</summary>
+    public static WireObject KeptResult(string relativeMediaPath, string reason) =>
+        new WireObject().Set("ok", false).Set("outcome", "failed").Set("relative_media_path", relativeMediaPath).Set("reason", reason);
+
     public static bool IsNotTaken(WireObject result)
     {
         ArgumentNullException.ThrowIfNull(result);

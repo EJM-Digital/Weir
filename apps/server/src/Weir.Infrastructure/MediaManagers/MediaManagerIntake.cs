@@ -395,7 +395,7 @@ public sealed partial class MediaManagerIntake
                 {
                     foreach (var retired in GoneLooks.RetireOthers(connection, transaction, active, library.Id, target))
                     {
-                        // Stryker disable once Statement : Equivalent. The takeover above announces the same topics for the same lane, and a unit of work says each topic once.
+                        // Stryker disable once Statement : Equivalent. A remux pass and a pass-through are both file-lane kinds that are not maintenance, so TopicsMovedBy gives the same topics for both, and PublishOnCommit sends each topic once per unit of work; the takeover has already announced them.
                         _jobs.AnnounceQueueChange(transaction, retired.JobKind);
                     }
 
@@ -430,7 +430,7 @@ public sealed partial class MediaManagerIntake
             foreach (var target in kept)
             {
                 var keptPayload = IntakeRules.Payload(importEvent, library, relativePath, target);
-                var keptResult = new WireObject().Set("ok", false).Set("outcome", "failed").Set("relative_media_path", target).Set("reason", KeptReason);
+                var keptResult = CompletionReports.KeptResult(target, KeptReason);
                 await _reporter.ReportHandoffCompletionAsync(uow, IntakeRules.PayloadJson(keptPayload), keptResult).ConfigureAwait(false);
             }
 
