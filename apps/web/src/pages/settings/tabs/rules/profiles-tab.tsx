@@ -117,16 +117,17 @@ export function ProfilesTab() {
       setDraft(null);
       return;
     }
-    const switched = selected.id !== selectedId;
-    // Stryker disable next-line ConditionalExpression: a selected id with no draft cannot happen. Every move sets both together (open, and this effect), so `switched` already holds whenever the draft is empty.
-    const unfilled = draft === null;
-    if (switched || unfilled) {
+    if (
+      selected.id !== selectedId ||
+      // Stryker disable next-line ConditionalExpression: a selected id with no draft cannot happen. Every move sets both together (open, and this effect), so the id test already holds whenever the draft is empty.
+      draft === null
+    ) {
       setSelectedId(selected.id);
       setDraft(writeFromProcessingRuleSet(selected));
     }
   }, [creating, draft, ruleSets.data, selectedId]);
 
-  // Stryker disable next-line ArrayDeclaration: `rows` is read for output only after the loading and error returns below, so a list that has not arrived is never drawn, and `find` finds nothing in a one-item stand-in either.
+  // Stryker disable next-line ArrayDeclaration: `rows` is read for output only after the loading and error returns below, so a list that has not arrived is never drawn; and the one-item stand-in has no `id`, so the `find` before those returns matches nothing, as the empty list does.
   const rows = ruleSets.data ?? [];
   const selectedRuleSet = rows.find((row) => row.id === selectedId);
 
@@ -167,8 +168,9 @@ export function ProfilesTab() {
   const usedBy = (libraries.data ?? [])
     .filter(
       (library) =>
+        library.rule_set_id === selectedId &&
         // Stryker disable next-line ConditionalExpression: the only state with no selected profile is the new-profile workspace and the empty list, and neither draws the "used by" line, so the names it would find (workflows with no profile) are never shown.
-        selectedId !== null && library.rule_set_id === selectedId,
+        selectedId !== null,
     )
     .map((library) => library.name);
 
@@ -205,7 +207,6 @@ export function ProfilesTab() {
     }
     setNotice(null);
     const named = { ...draft, name: draft.name.trim() };
-    // Stryker disable next-line ConditionalExpression: the new-profile workspace always has no selected id, so `creating` and a missing id say the same thing.
     const existingId = creating ? null : selectedId;
     (existingId === null
       ? createRuleSet.mutateAsync(named)

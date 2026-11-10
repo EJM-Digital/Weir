@@ -129,4 +129,3 @@ the mutated line before you keep it: edit the line to what the survivor says it 
 the line back. Tests use real recorded replies or real tools, never an assumed shape, and wait on events and fake clocks,
 never on a guessed delay. When a survivor cannot be killed because the change does not alter behaviour (an equivalent
 mutant, for example a different but equal way to build the same string), say so in the issue.
-In StrykerJS code, mark it where it lives with `// Stryker disable next-line <Mutator>: <reason>`, naming only the mutators that are equivalent and giving the reason in the same comment.

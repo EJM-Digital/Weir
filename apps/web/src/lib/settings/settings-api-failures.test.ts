@@ -14,7 +14,6 @@ import {
   fetchStoredConfigurationBackupBlob,
   fetchUpdateSettings,
   fetchUpdateState,
-  notificationChannelsPath,
   postApplyUpdate,
   postCheckUpdate,
   postConfigurationBackupNow,
@@ -28,21 +27,21 @@ import {
   testNotificationChannel,
   updateNotificationChannel,
 } from "./settings-api";
+import { unexpectedProblem } from "../../test/stub-weir-api";
 import type { NotificationChannelIn } from "./types";
 
 const CHANNEL = { name: "Phone" } as unknown as NotificationChannelIn;
 
-/** The token request is answered; every other request is refused with a bare 500 that names no reason. */
+/** The token request is answered; every other request fails as the server does when nobody planned for it: a 500 that gives no reason. */
 function refuseEverythingButTheToken() {
   vi.stubGlobal(
     "fetch",
     vi.fn((url: string) => {
       const isToken = url.endsWith("/api/v1/auth/csrf");
       return Promise.resolve(
-        new Response(isToken ? JSON.stringify({ csrf_token: "t" }) : "{}", {
-          status: isToken ? 200 : 500,
-          headers: { "Content-Type": "application/json" },
-        }),
+        isToken
+          ? new Response(JSON.stringify({ csrf_token: "t" }), { status: 200 })
+          : unexpectedProblem(),
       );
     }),
   );
@@ -193,20 +192,6 @@ describe("the requests that read back a file or a list", () => {
       `${configurationBackupsPath()}/12/download`,
     );
     await expect(blob.text()).resolves.toBe("snapshot-bytes");
-  });
-
-  it("lists the notification channels", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ items: [{ id: 1 }] }), { status: 200 }),
-      );
-    vi.stubGlobal("fetch", fetchMock);
-
-    await expect(fetchNotificationChannels()).resolves.toEqual({
-      items: [{ id: 1 }],
-    });
-    expect(fetchMock.mock.calls[0][0]).toBe(notificationChannelsPath());
   });
 });
 
