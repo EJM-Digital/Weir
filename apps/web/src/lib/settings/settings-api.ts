@@ -310,9 +310,7 @@ export async function deleteNotificationChannel(id: number): Promise<void> {
     method: "DELETE",
     headers: { "X-CSRF-Token": csrf_token },
   });
-  if (!r.ok && r.status !== 204) {
-    await requireOk(path, r, "Could not delete notification channel");
-  }
+  await requireOk(path, r, "Could not delete notification channel");
 }
 
 export async function testNotificationChannel(

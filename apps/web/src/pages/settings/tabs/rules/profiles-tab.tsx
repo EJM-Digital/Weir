@@ -117,12 +117,13 @@ export function ProfilesTab() {
       setDraft(null);
       return;
     }
-    if (selected.id !== selectedId || draft === null) {
+    if (selected.id !== selectedId) {
       setSelectedId(selected.id);
       setDraft(writeFromProcessingRuleSet(selected));
     }
-  }, [creating, draft, ruleSets.data, selectedId]);
+  }, [creating, ruleSets.data, selectedId]);
 
+  // Stryker disable next-line ArrayDeclaration: `rows` is read for output only after the loading and error returns below, so a list that has not arrived is never drawn; and the one-item stand-in has no `id`, so the `find` before those returns matches nothing, as the empty list does.
   const rows = ruleSets.data ?? [];
   const selectedRuleSet = rows.find((row) => row.id === selectedId);
 
@@ -159,10 +160,9 @@ export function ProfilesTab() {
           ),
       }
     : null;
+  // Stryker disable next-line ArrayDeclaration: the filter below drops a stand-in item (it has no `rule_set_id`), so the list is empty either way.
   const usedBy = (libraries.data ?? [])
-    .filter(
-      (library) => selectedId !== null && library.rule_set_id === selectedId,
-    )
+    .filter((library) => library.rule_set_id === selectedId)
     .map((library) => library.name);
 
   const open = (id: number | null, next: ProcessingRuleSetWrite | null) => {
@@ -173,6 +173,7 @@ export function ProfilesTab() {
 
   const startNewProfile = () => {
     setCreating(true);
+    // Stryker disable next-line ArithmeticOperator: only a changed value matters (it is the `key` of the ordering editor); counting down changes it just as counting up does.
     setSwitches((n) => n + 1);
     open(null, { ...EMPTY_RULE_SET });
   };
@@ -180,6 +181,7 @@ export function ProfilesTab() {
   const switchTo = (id: number) => {
     const selected = rows.find((row) => row.id === id);
     setCreating(false);
+    // Stryker disable next-line ArithmeticOperator: only a changed value matters (it is the `key` of the ordering editor); counting down changes it just as counting up does.
     setSwitches((n) => n + 1);
     open(
       id,
@@ -196,9 +198,10 @@ export function ProfilesTab() {
     }
     setNotice(null);
     const named = { ...draft, name: draft.name.trim() };
-    (creating || selectedId === null
+    const existingId = creating ? null : selectedId;
+    (existingId === null
       ? createRuleSet.mutateAsync(named)
-      : updateRuleSet.mutateAsync({ id: selectedId, data: named })
+      : updateRuleSet.mutateAsync({ id: existingId, data: named })
     )
       .then((saved) => {
         setCreating(false);

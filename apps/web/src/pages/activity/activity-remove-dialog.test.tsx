@@ -114,12 +114,18 @@ describe("ActivityRemoveDialog", () => {
     expect(
       within(choice("delete")).getByText("Delete the file"),
     ).toBeInTheDocument();
+    expect(
+      within(choice("delete")).getByText("Weir alone: the file is deleted."),
+    ).toBeInTheDocument();
   });
 
   it("deletes the file itself when the manager handles deletes but is not named", () => {
     renderDialog({ manager_label: null, delete_handled_by_manager: true });
     expect(
       within(choice("delete")).getByText("Delete the file"),
+    ).toBeInTheDocument();
+    expect(
+      within(choice("delete")).getByText("Weir alone: the file is deleted."),
     ).toBeInTheDocument();
   });
 
@@ -166,6 +172,8 @@ describe("ActivityRemoveDialog", () => {
 
     fireEvent.click(within(choice("retry")).getByRole("radio"));
 
+    expect(within(choice("retry")).getByRole("radio")).toBeChecked();
+    expect(within(choice("delete")).getByRole("radio")).not.toBeChecked();
     expect(choice("retry")).toHaveClass("mm-dialog-choice--chosen");
     expect(choice("delete")).not.toHaveClass("mm-dialog-choice--chosen");
     expect(choice("keep")).not.toHaveClass("mm-dialog-choice--chosen");
@@ -226,6 +234,7 @@ describe("ActivityRemoveDialog", () => {
 
     const details = screen.getByTestId("activity-remove-dialog-unconfirmed");
     expect(details).toHaveTextContent("Film (2024).mkv");
+    expect(details.querySelector("p")?.textContent).toBe("Film (2024).mkv");
     expect(details).not.toHaveTextContent("0 B");
     expect(details).not.toHaveTextContent("·");
     expect(details).not.toHaveTextContent("modified");

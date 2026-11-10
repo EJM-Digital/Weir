@@ -111,10 +111,7 @@ export function ActivityRemoveDialog({
       initialFocus={firstChoice}
       error={error}
       onCancel={onCancel}
-      onConfirm={() => {
-        /* istanbul ignore else -- @preserve */
-        if (choice) onConfirm(choice);
-      }}
+      onConfirm={() => choice && onConfirm(choice)}
       description={
         <fieldset>
           <legend className="mb-2">
