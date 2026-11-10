@@ -18,7 +18,7 @@ export function ConfirmDialog({
   busyLabel = "Removing…",
   confirmDisabled = false,
   initialFocus,
-  tone = "default",
+  tone,
   error = null,
   testId,
   onCancel,

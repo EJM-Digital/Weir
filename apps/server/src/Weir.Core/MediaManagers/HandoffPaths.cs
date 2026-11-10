@@ -34,6 +34,7 @@ public static class HandoffPaths
         var targetPartsCmp = Comparable(target).Split('/').Where(p => p.Length > 0).ToList();
         var targetPartsRaw = WireStrings.Strip(target.Replace('\\', '/')).Split('/').Where(p => p.Length > 0).ToList();
 
+        // Stryker disable once Equality : a target with exactly the folder's parts leaves an empty relative path, which the check below refuses with the same message.
         if (targetPartsCmp.Count <= folderParts.Count || !targetPartsCmp.Take(folderParts.Count).SequenceEqual(folderParts, StringComparer.Ordinal))
         {
             return new HandoffPathResult(null, OutsideMessage(targetPartsRaw));

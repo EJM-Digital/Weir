@@ -74,6 +74,15 @@ public sealed class HandbackWordsTests
             $"Weir recorded that Deluno imported the file. {HandbackRules.UnrecordedNote}",
             HandbackRules.OutcomeMessage("Deluno", HandbackRules.Imported, 0, 0, 1, null));
         Assert.Equal(
+            $"Weir recorded that Deluno imported the file. {kept}",
+            HandbackRules.OutcomeMessage("Deluno", HandbackRules.Imported, 1, 0, 1, kept));
+        Assert.Equal(
+            $"Weir recorded that Deluno imported the file. {kept}",
+            HandbackRules.OutcomeMessage("Deluno", HandbackRules.Imported, 0, 2, 2, kept));
+        Assert.Equal(
+            "Weir recorded that Deluno imported the file and released its copy.",
+            HandbackRules.OutcomeMessage("Deluno", HandbackRules.Imported, 1, 1, 0, null));
+        Assert.Equal(
             "Weir recorded that Deluno imported the file and released its copy.",
             HandbackRules.OutcomeMessage("Deluno", HandbackRules.Imported, 1, 0, 0, null));
         Assert.Equal(

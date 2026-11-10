@@ -152,7 +152,7 @@ public static class HandbackRules
         [.. path.Trim().Split('/', '\\').Where(part => part.Length > 0 && part != ".")];
 
     /// <summary>A Windows-style path (a drive letter or a backslash) ignores case, as Windows does; any other does not.</summary>
-    private static StringComparison Comparison(string path, bool hostIsWindows)
+    internal static StringComparison Comparison(string path, bool hostIsWindows)
     {
         var text = path.Trim();
         var windows = text.Contains('\\', StringComparison.Ordinal) || (text.Length >= 2 && text[1] == ':' && char.IsLetter(text[0]));

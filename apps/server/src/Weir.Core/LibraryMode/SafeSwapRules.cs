@@ -162,7 +162,7 @@ public static class SafeSwapRules
         }
 
         return unit == 0
-            ? string.Create(CultureInfo.InvariantCulture, $"{(long)value} bytes")
+            ? string.Create(CultureInfo.InvariantCulture, $"{(long)value} {units[0]}")
             : string.Create(CultureInfo.InvariantCulture, $"{value:0.0} {units[unit]}");
     }
 

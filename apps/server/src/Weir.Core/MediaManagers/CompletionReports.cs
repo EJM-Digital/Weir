@@ -123,6 +123,7 @@ public static class CompletionReports
     }
 
     private static string Outcome(WireObject result) =>
+        // Stryker disable once String : the text only has to equal none of the outcomes compared with, as the empty text does.
         WireStrings.Strip(result.Get("outcome") is { IsTruthy: true } value ? WireConvert.Str(value) : string.Empty);
 
     /// <summary><c>ok</c> and an outcome that actually wrote or verified a file.</summary>
@@ -298,13 +299,13 @@ public static class CompletionReports
                 var pieces = normalized[2..].Split('\\');
                 var share = pieces.Length > 1 ? $@"\\{pieces[0]}\{pieces[1]}\" : $@"\\{pieces[0]}\";
                 anchor = share;
-                rest = pieces.Length > 2 ? string.Join('\\', pieces.Skip(2)) : string.Empty;
+                rest = string.Join('\\', pieces.Skip(2));
             }
             else if (normalized.Length >= 2 && normalized[1] == ':')
             {
                 var rooted = normalized.Length >= 3 && normalized[2] == '\\';
                 anchor = normalized[..2] + (rooted ? "\\" : string.Empty);
-                rest = normalized[(rooted ? 3 : 2)..];
+                rest = normalized[2..]; // A separator left at the front is dropped with the other empty parts below.
             }
             else if (normalized.StartsWith('\\'))
             {

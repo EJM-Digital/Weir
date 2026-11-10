@@ -29,6 +29,21 @@ public sealed class PublishedLibraryFoldersTests
     }
 
     [Fact]
+    public void Every_workflows_folders_are_published_in_one_list()
+    {
+        PublishedLibraryFolders[] libraries =
+        [
+            new(1, "Movies", "movie", "/in", "/work", "/out", "lib-movies", true, null),
+            new(2, "TV", "tv", "/tv", "/work", "/out", null, false, null),
+        ];
+
+        Assert.Equal(
+            "{\"libraries\":[" + Dump(libraries[0]) + "," + Dump(libraries[1]) + "]}",
+            WireJsonWriter.Dumps(LibraryFolderPublishing.ToOut(libraries), WireJsonFormat.Response));
+        Assert.Equal("""{"libraries":[]}""", WireJsonWriter.Dumps(LibraryFolderPublishing.ToOut([]), WireJsonFormat.Response));
+    }
+
+    [Fact]
     public void The_minimum_is_published_in_bytes_and_none_when_the_workflow_has_no_minimum()
     {
         Assert.Equal(50L * 1024 * 1024, PublishedLibraryFolders.MinimumBytesOf(50));
