@@ -78,6 +78,7 @@ function isNetworkUnreachableError(error: unknown): boolean {
 }
 
 let unauthorizedHandler: UnauthorizedHandler | null = null;
+// Stryker disable next-line BooleanLiteral: equivalent. No handler exists until setUnauthorizedHandler runs, and it sets this flag first.
 let unauthorizedHandled = false;
 
 export function setUnauthorizedHandler(
@@ -88,8 +89,7 @@ export function setUnauthorizedHandler(
 }
 
 export function resetUnauthorizedHandlingForTests(): void {
-  unauthorizedHandler = null;
-  unauthorizedHandled = false;
+  setUnauthorizedHandler(null);
 }
 
 function baseUrl(): string {
@@ -202,8 +202,8 @@ export async function readJson<T>(r: Response): Promise<T> {
 }
 
 async function readJsonBody(r: Response): Promise<unknown> {
-  const ctype = (r.headers.get("content-type") || "").toLowerCase();
-  if (!ctype.includes("application/json")) return undefined;
+  const ctype = r.headers.get("content-type");
+  if (!ctype?.toLowerCase().includes("application/json")) return undefined;
   try {
     return (await r.clone().json()) as unknown;
   } catch (error) {

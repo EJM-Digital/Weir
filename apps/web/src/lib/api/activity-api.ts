@@ -32,7 +32,7 @@ export type ActivityRecentFilters = {
 
 /** Whether a number can be asked for: one that is not a number (NaN, infinity) is left out of the address, as an unset one is. */
 function isWhole(value: number | undefined): value is number {
-  return value !== undefined && Number.isFinite(value);
+  return Number.isFinite(value);
 }
 
 /** The filters shared by the feed and the export, as query parameters. */
@@ -97,5 +97,6 @@ export function filenameFromDisposition(
   fallback: string,
 ): string {
   const match = header?.match(/filename="?([^";]+)"?/i);
-  return match?.[1]?.trim() || fallback;
+  const name = match?.[1];
+  return name ? name.trim() || fallback : fallback;
 }

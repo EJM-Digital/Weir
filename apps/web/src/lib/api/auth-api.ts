@@ -122,9 +122,7 @@ export async function postLogout(
     },
     body: JSON.stringify({ csrf_token: csrf }),
   });
-  if (!r.ok && r.status !== 204) {
-    await requireOk(path, r, "Could not sign out");
-  }
+  await requireOk(path, r, "Could not sign out");
 }
 
 export async function postBootstrap(
