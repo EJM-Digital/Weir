@@ -129,13 +129,3 @@ the mutated line before you keep it: edit the line to what the survivor says it 
 the line back. Tests use real recorded replies or real tools, never an assumed shape, and wait on events and fake clocks,
 never on a guessed delay. When a survivor cannot be killed because the change does not alter behaviour (an equivalent
 mutant, for example a different but equal way to build the same string), say so in the issue.
-
-In StrykerJS code the mark goes in the source, on the line above the mutated one, so the review sees the reason beside the
-code and the next run stops reporting it:
-
-```ts
-// Stryker disable next-line ConditionalExpression: equivalent. Number.isFinite(undefined) is already false.
-```
-
-Name the mutator the report shows (`ConditionalExpression`, `BooleanLiteral`, `StringLiteral`, `OptionalChaining`, ...)
-and give the reason after the colon; "hard to test" is not one. Prefer removing the redundant code to marking it.

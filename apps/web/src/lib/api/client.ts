@@ -202,9 +202,8 @@ export async function readJson<T>(r: Response): Promise<T> {
 }
 
 async function readJsonBody(r: Response): Promise<unknown> {
-  // Stryker disable next-line StringLiteral: equivalent. Any non-empty stand-in for a missing header also lacks "application/json", so the next line returns the same.
-  const ctype = (r.headers.get("content-type") || "").toLowerCase();
-  if (!ctype.includes("application/json")) return undefined;
+  const ctype = r.headers.get("content-type");
+  if (!ctype?.toLowerCase().includes("application/json")) return undefined;
   try {
     return (await r.clone().json()) as unknown;
   } catch (error) {

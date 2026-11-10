@@ -32,8 +32,7 @@ export type ActivityRecentFilters = {
 
 /** Whether a number can be asked for: one that is not a number (NaN, infinity) is left out of the address, as an unset one is. */
 function isWhole(value: number | undefined): value is number {
-  // Stryker disable next-line ConditionalExpression: equivalent. Number.isFinite(undefined) is already false; the check only narrows the type.
-  return value !== undefined && Number.isFinite(value);
+  return Number.isFinite(value);
 }
 
 /** The filters shared by the feed and the export, as query parameters. */
@@ -98,6 +97,6 @@ export function filenameFromDisposition(
   fallback: string,
 ): string {
   const match = header?.match(/filename="?([^";]+)"?/i);
-  // Stryker disable next-line OptionalChaining: equivalent. The group is not optional, so a match always has [1]; the ?. only satisfies noUncheckedIndexedAccess.
-  return match?.[1]?.trim() || fallback;
+  const name = match?.[1];
+  return name ? name.trim() || fallback : fallback;
 }
