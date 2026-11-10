@@ -145,6 +145,6 @@ public static class OriginalsMover
     private static string? DirectoryOf(string path)
     {
         var lastSeparator = path.LastIndexOfAny(['\\', '/']);
-        return lastSeparator < 0 ? null : path[..lastSeparator];
+        return lastSeparator <= 0 ? null : path[..lastSeparator];
     }
 }

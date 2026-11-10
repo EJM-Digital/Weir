@@ -127,12 +127,14 @@ public static partial class ReleaseFolderRemoval
         }
 
         var self = Path.GetFullPath(file);
+        // Stryker disable once Conditional : equivalent on the Windows runner the mutation run uses, where IsWindows() is already true. The Linux test run kills it (The_film_itself_is_never_another_video_but_the_same_name_in_another_case_is_one_only_where_names_are_case_sensitive).
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         var options = new EnumerationOptions
         {
             RecurseSubdirectories = true,
             AttributesToSkip = FileAttributes.ReparsePoint,
             IgnoreInaccessible = false,
+            // Stryker disable once Boolean : equivalent. ReturnSpecialDirectories only adds "." and ".." to a listing of folders, and this call lists files.
             ReturnSpecialDirectories = false,
         };
         foreach (var candidate in files.EnumerateFiles(folder, "*", options))
