@@ -26,17 +26,35 @@ public sealed class FailurePoliciesTests
 
         await scenario.PostHandoffAsync("handoff-pt-1", source);
 
-        var first = await scenario.WaitForFileStatusAsync(library, rel, "processing_failed");
-        Assert.Equal("execution", (string)first["failure_class"]!);
-        Assert.Equal(1, (int)first["failure_attempts"]!);
-        Assert.NotNull(first["next_retry_at"]);
-        // A failure that will be retried is not final, so nothing is reported to the manager yet.
-        Assert.Empty(Scenario.Callbacks(fake, "handoff-pt-1"));
-
-        // Once the second attempt fails the retries are spent, and the original is handed back.
+        // The retry is queued by the hand-off itself and starts when the one-second backoff ends, so how many attempts a look
+        // finds depends on how quickly the machine answers it: the file may be on its first failure, on its last, or already
+        // handed back. So the scenario does not wait for a particular look. It watches every look until the original has been
+        // handed back: the count only goes up, and a failure that is still to be retried reports nothing to the manager.
+        var seen = 0L;
         await scenario.DriveRetriesUntilAsync(
             library,
-            async () => (string)(await scenario.HandoffStatusAsync("handoff-pt-1"))["state"]! == "passed-through",
+            async () =>
+            {
+                if (await scenario.FileRowAsync(library, rel) is { } row)
+                {
+                    var count = Scenario.Whole(row["failure_attempts"]);
+                    Assert.True(count >= seen, $"the failure count went from {seen} to {count}: a retry started it over");
+                    seen = count;
+                    if (count == 1 && (string)row["status"]! == "processing_failed")
+                    {
+                        Assert.Equal("execution", (string)row["failure_class"]!);
+                        Assert.NotNull(row["next_retry_at"]);
+                        // Reports only ever accumulate, so one found now is the second failure's if the file has moved on since the row was read.
+                        if (Scenario.Callbacks(fake, "handoff-pt-1").Count > 0)
+                        {
+                            var later = await scenario.FileRowAsync(library, rel);
+                            Assert.True(Scenario.Whole(later!["failure_attempts"]) > 1, "a failure that will be retried is not final, so nothing is reported to the manager yet");
+                        }
+                    }
+                }
+
+                return (string)(await scenario.HandoffStatusAsync("handoff-pt-1"))["state"]! == "passed-through";
+            },
             "the hand-off to be passed through");
 
         var delivered = Path.Combine(scenario.Folders.Output, "Broken.Remux.2021", "film.mkv");
