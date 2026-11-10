@@ -125,7 +125,7 @@ public sealed partial class ManagerWorkflowSync : IDisposable
             {
                 await SyncAsync(ManualTrigger, only, stopping).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) when (stopping.IsCancellationRequested)
+            catch (Exception stop) when (stop is OperationCanceledException or ObjectDisposedException && stopping.IsCancellationRequested)
             {
                 break;
             }
@@ -145,6 +145,11 @@ public sealed partial class ManagerWorkflowSync : IDisposable
             var waiting = await WaitingForWorkflowsAsync(stopping).ConfigureAwait(false);
             if (waiting.Count == 0 || retries >= RetryLimit)
             {
+                foreach (var entry in waiting)
+                {
+                    LogGivingUp(_logger, entry.Connection.Label);
+                }
+
                 if (EndUnlessRequested())
                 {
                     return;
@@ -351,17 +356,26 @@ public sealed partial class ManagerWorkflowSync : IDisposable
     {
         lock (_gate)
         {
+            if (_stopping.IsCancellationRequested)
+            {
+                return;
+            }
+
             _stopping.Cancel();
             _wake?.Cancel();
         }
 
         _running.Dispose();
+        _stopping.Dispose();
     }
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Weir could not check which media managers still have no workflows, so it will not look again until the next scheduled update.")]
     private static partial void LogLookFailed(ILogger logger, Exception error);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "{Label} has not reported any libraries for Weir's workflows yet, so Weir will look again in {Seconds} seconds.")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Weir still has no workflows from {Label}, so it will check again at the next scheduled update.")]
+    private static partial void LogGivingUp(ILogger logger, string label);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Weir has no workflows from {Label} yet, so it will look again in {Seconds} seconds.")]
     private static partial void LogWillLookAgain(ILogger logger, string label, int seconds);
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "{Label} did not answer, so Weir left its workflows as they are and will look again.")]

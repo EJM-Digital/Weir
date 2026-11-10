@@ -125,6 +125,7 @@ internal sealed class SuiteConfigurationEndpointHandlers
         var uow = await request.DbAsync().ConfigureAwait(false);
         WireObject output;
         SuiteSettingsRecord updated;
+        var finishedSetup = false;
         try
         {
             var normalized = SuiteSettingsRules.Normalize(
@@ -133,6 +134,8 @@ internal sealed class SuiteConfigurationEndpointHandlers
             var before = await _suiteSettings.EnsureAsync(uow).ConfigureAwait(false);
             await _suiteSettings.UpdateAsync(uow, before, SuiteSettingsRules.Apply(before, normalized)).ConfigureAwait(false);
             updated = await _suiteSettings.EnsureAsync(uow).ConfigureAwait(false);
+            finishedSetup = !string.Equals(before.SetupWizardState, "completed", StringComparison.Ordinal)
+                && string.Equals(updated.SetupWizardState, "completed", StringComparison.Ordinal);
             output = SuiteSettingsRules.BuildOut(updated);
         }
         catch (WireValueException exception)
@@ -142,7 +145,7 @@ internal sealed class SuiteConfigurationEndpointHandlers
 
         await request.CommitAsync().ConfigureAwait(false);
         PruneLog(request, (int)Math.Max(1, Math.Min(3650, updated.LogRetentionDays)));
-        if (wizard is not null && string.Equals(updated.SetupWizardState, "completed", StringComparison.Ordinal))
+        if (finishedSetup)
         {
             // Setup is where a person connects a manager and confirms its libraries; look for its folders now, not at the next tick.
             _workflowSync.RequestSync();

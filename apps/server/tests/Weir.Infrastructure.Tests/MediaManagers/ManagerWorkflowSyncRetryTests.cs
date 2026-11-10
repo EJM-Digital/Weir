@@ -23,6 +23,8 @@ public sealed class ManagerWorkflowSyncRetryTests : IDisposable
     private int _manifestCalls;
     private volatile bool _ready;
     private volatile bool _answering = true;
+    private readonly ManualResetEventSlim _hold = new(true);
+    private TaskCompletionSource? _inside;
 
     public ManagerWorkflowSyncRetryTests()
     {
@@ -35,6 +37,8 @@ public sealed class ManagerWorkflowSyncRetryTests : IDisposable
             .Route(HttpMethod.Get, Manifest, _ =>
             {
                 Interlocked.Increment(ref _manifestCalls);
+                _inside?.TrySetResult();
+                Assert.True(_hold.Wait(TimeSpan.FromSeconds(30)), "The held request was never let go.");
                 return !_answering
                     ? FakeManagerHttp.Response(HttpStatusCode.ServiceUnavailable)
                     : FakeManagerHttp.Response(HttpStatusCode.OK, _ready ? Reported : """{"libraries":[]}""");
@@ -43,7 +47,9 @@ public sealed class ManagerWorkflowSyncRetryTests : IDisposable
 
     public void Dispose()
     {
+        _hold.Set();
         _sync.Dispose();
+        _hold.Dispose();
         _fixture.Dispose();
     }
 
@@ -128,6 +134,7 @@ public sealed class ManagerWorkflowSyncRetryTests : IDisposable
         Assert.Equal(TimeSpan.FromMinutes(5), advanced);
         Assert.Equal(21, _clock.TimersSet);
         Assert.Equal(22, ManifestCalls);
+        Assert.True(Said("check again at the next scheduled update"));
     }
 
     [Fact]
@@ -214,6 +221,40 @@ public sealed class ManagerWorkflowSyncRetryTests : IDisposable
         _sync.RequestSync();
         await _sync.Drained;
         Assert.Equal(1, ManifestCalls);
+    }
+
+    [Fact]
+    public async Task Stopping_the_server_during_a_request_to_the_manager_ends_quietly_with_no_warning()
+    {
+        await ConnectAsync();
+        _inside = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _hold.Reset();
+        _sync.RequestSync();
+        await _inside.Task;
+
+        _sync.Dispose();
+        _hold.Set();
+        await _sync.Drained;
+
+        Assert.DoesNotContain(_log.Messages, message => message.Level >= LogLevel.Warning);
+    }
+
+    [Fact]
+    public async Task A_request_that_arrives_during_a_pass_gets_one_more_pass_and_the_retries_start_again()
+    {
+        await ConnectAsync();
+        _inside = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _hold.Reset();
+        _sync.RequestSync();
+        await _inside.Task;
+        _inside = null;
+
+        _sync.RequestSync();
+        _sync.RequestSync();
+        _hold.Set();
+        await ParkedAsync(1);
+
+        Assert.Equal(2, ManifestCalls);
     }
 
     [Fact]

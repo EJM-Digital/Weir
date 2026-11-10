@@ -245,6 +245,19 @@ public sealed class DelunoWorkflowSyncApiTests
             TimeSpan.FromSeconds(30));
 
         Assert.Equal(expected, Workflow(workflows, "movie")["watched_folder"]!.GetValue<string>());
+
+        // An ordinary save that sends the finished state back again is not the end of setup and syncs nothing.
+        var manifestCalls = manager.Calls.Count(call => call.PathAndQuery.StartsWith(ManifestPath, StringComparison.Ordinal));
+        using var again = await client.PutAsync("/api/v1/suite/settings", new
+        {
+            csrf_token = await client.CsrfAsync(),
+            setup_wizard_state = "completed",
+            app_timezone = "UTC",
+            log_retention_days = 31,
+        });
+        Assert.Equal(HttpStatusCode.OK, again.StatusCode);
+        _ = await WorkflowsAsync(client);
+        Assert.Equal(manifestCalls, manager.Calls.Count(call => call.PathAndQuery.StartsWith(ManifestPath, StringComparison.Ordinal)));
     }
 
     [Fact]
